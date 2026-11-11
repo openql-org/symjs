@@ -82,3 +82,14 @@ describe('isZeroDimensional', () => {
     expect(sj.isZeroDimensional([parse('x + y**2')], [x, y], 'grlex')).toBe(false);
   });
 });
+
+it('converts GroebnerBasis orders with FGLM and preserves the coefficient domain', () => {
+  const inputs = [[parse('x**2-y'), parse('y**2-1')], [parse('x**2-y/2'), parse('y**2-1')], [parse('a*x-y'), parse('y**2-1')]];
+  for (const input of inputs) {
+    const G = sj.groebner(input, [x, y], 'grevlex');
+    expect(String(G.fglm('lex'))).toBe(String(sj.groebner(input, [x, y], 'lex')));
+    expect(G.fglm(sj.grevlex)).toBe(G);
+    expect(() => G.fglm('invalid')).toThrow('Unsupported monomial order');
+  }
+  expect(() => sj.groebner([x.mul(y)], [x, y]).fglm('grlex')).toThrow('positive dimension');
+});

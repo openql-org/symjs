@@ -36,4 +36,5 @@ export * from './crypto';
 export * from './liealgebras';
 export type { PermutationLike } from './tensor';
 
-export * from './categories';
+export { SymObject, categoryObject, Morphism, IdentityMorphism, NamedMorphism, CompositeMorphism, Category, CategoryClass, Diagram } from './categories';
+export type { DiagramInput, MorphismProperties } from './categories';

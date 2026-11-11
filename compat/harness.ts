@@ -12,9 +12,14 @@
 
 import { readFileSync } from 'node:fs';
 import * as sj from '../packages/symjs/src';
+import * as dg from '@symjs/symjs/diffgeom';
+import * as categories from '../packages/symjs/src/categories';
+import * as plotting from '../packages/symjs/src/plotting';
 import * as parsing from '../packages/symjs/src/parsing';
-const publicApi = { ...sj, ...parsing };
+// Category dispatch selects diffgeom.Point; the root geometry Point keeps its name.
+const publicApi = { ...dg, ...sj, ...parsing };
 import { equivalent } from './equivalence';
+import { GrowableGrid } from '../packages/symjs/src/categories/diagram_drawing';
 import { PORTS } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src';
@@ -172,6 +177,18 @@ const fmtItem = (v: unknown): string => {
 };
 
 export function fmt(v: unknown): string {
+  if (v instanceof sj.PolyElement && v.ring.domain instanceof sj.AlgebraicField) {
+    // SymPy prints sparse algebraic coefficients in their ANP representation.
+    const K = v.ring.domain;
+    const terms = v.terms().map(([m, c], i) => {
+      const negative = K.isNegative(K.convert(c));
+      const monomial = m.flatMap((n, j) => n === 0 ? [] : [sj.str(v.ring.symbols[j]!) + (n === 1 ? '' : `**${n}`)]).join('*');
+      const coeff = K.convert(negative && monomial ? sj.neg(c) : c);
+      const factor = monomial && coeff.equals(K.one) ? '' : coeff.repr();
+      return (i === 0 ? negative ? '-' : '' : negative ? ' - ' : ' + ') + factor + (factor && monomial ? '*' : '') + monomial;
+    });
+    return terms.join('') || K.convert(0).repr();
+  }
   if (v instanceof Expr) return sj.str(v);
   if (v instanceof Matrix) return v.toString();
   if (v instanceof sj.Poly) return v.toString();
@@ -272,6 +289,7 @@ export function matches(v: unknown, expectedIn: string): boolean {
 function matches0(v: unknown, expected: string, got: string): boolean {
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (normalizeLayout(got) === normalizeLayout(expected)) return true;
+  if (v instanceof sj.GroebnerBasis && expected.startsWith('[')) return matches(new JsList(v.exprs), expected);
   if (v instanceof sj.SDM && expected.startsWith('{')) {
     // The corpus stores dense rows, which cannot preserve explicitly empty
     // sparse rows. Their presence does not change any matrix entry.
@@ -309,7 +327,72 @@ function matches0(v: unknown, expected: string, got: string): boolean {
 // Deserialization of SymPy objects
 // ---------------------------------------------------------------------------
 
-type Tree = { t: string; [k: string]: unknown };
+export type Tree = { t: string; [k: string]: unknown };
+
+const diffgeomNamespace: Record<string, unknown> = dg;
+function isDiffgeomTree(tree: Tree | undefined): boolean {
+  return tree?.t === 'Diffgeom';
+}
+
+function diffgeomPlain(value: unknown): unknown {
+  if (value instanceof JsList || value instanceof JsTuple) return value.items.map(diffgeomPlain);
+  if (value instanceof JsDict) return new Map(value.entries.map(([k, v]) => [diffgeomPlain(k), diffgeomPlain(v)]));
+  if (value instanceof JsLambda) {
+    const body = diffgeomPlain(value.body);
+    return sj.Lambda(value.vars, Array.isArray(body) ? new sj.Tuple(body) : (body as sj.Expr));
+  }
+  return value;
+}
+const diffgeomInteger = (v: unknown): number => Number(String(v));
+function constructDiffgeom(name: string, args: unknown[], kwargs: Record<string, unknown> = {}): unknown {
+  const fn = diffgeomNamespace[camel(name)];
+  if (typeof fn !== 'function') throw new Unsupported(`diffgeom export ${name}`);
+  const a = args.map(diffgeomPlain);
+  if (['Manifold', 'CoordinateSymbol', 'BaseScalarField', 'BaseVectorField', 'BaseCovarDerivativeOp'].includes(name))
+    a[1] = diffgeomInteger(a[1]);
+  if (name === 'CoordSystem' && Object.keys(kwargs).length) {
+    a[2] = a[2] ?? diffgeomPlain(kwargs['symbols'] ?? kwargs['names']);
+    a[3] = a[3] ?? diffgeomPlain(kwargs['relations']);
+  }
+  if (name === 'intcurve_series') {
+    a[3] = diffgeomInteger(a[3] ?? kwargs['n'] ?? 6);
+    a[4] = { coordSys: a[4] ?? kwargs['coord_sys'], coeffs: a[5] ?? kwargs['coeffs'] ?? false };
+    a.length = 5;
+  }
+  if (name === 'intcurve_diffequ') a[3] = a[3] ?? kwargs['coord_sys'];
+  const result = /^class[\s{]/.test(Function.prototype.toString.call(fn)) ? Reflect.construct(fn, a) : fn(...a);
+  return name === 'intcurve_diffequ' ? new JsTuple((result as unknown[][]).map((xs) => new JsList(xs))) : result;
+}
+
+export function diffgeomAdapter(c: Case): Adapter | undefined {
+  if (c.category !== 'diffgeom') return undefined;
+  if (!c.fn.startsWith('.') && camel(c.fn) in diffgeomNamespace) return (args, kw) => constructDiffgeom(c.fn, args, kw);
+  if ((c.fn.startsWith('.__') && c.fn !== '.__call__') || c.fn.startsWith('.is_')) return undefined;
+  if (c.fn === '.rcall' || c.fn === '.__call__')
+    return (args, _kw, self) => {
+      if (!(self instanceof sj.Expr)) throw new Unsupported('not a callable field');
+      return sj.rcall(self, ...(args.map(diffgeomPlain) as (sj.ExprLike | null)[]));
+    };
+  if (c.fn === '.rewrite' && isDiffgeomTree(c.self) && c.self?.['cls'] === 'CoordinateSymbol')
+    return (args, _kw, self) => (self as dg.CoordinateSymbol).rewrite(args[0] as dg.CoordSystem);
+  if (!isDiffgeomTree(c.self)) return undefined;
+  const method = camel(c.fn.slice(1));
+  return (args, kw, self) => {
+    if (self === undefined || self === null) throw new Unsupported('missing receiver');
+    const member: unknown = Reflect.get(self, method);
+    const a = args.map(diffgeomPlain);
+    if (['baseScalar', 'baseVector', 'baseOneform', 'coordFunction'].includes(method)) a[0] = diffgeomInteger(a[0]);
+    if (method === 'connectTo') a[3] = { inverse: kw['inverse'], fillInGaps: kw['fill_in_gaps'] };
+    if (member === undefined) throw new Unsupported(`diffgeom method ${method}`);
+    const result =
+      typeof member === 'function'
+        ? Reflect.apply(member, self, a)
+        : member instanceof sj.Expr && 'call' in member
+          ? sj.rcall(member, ...(a as (sj.ExprLike | null)[]))
+          : member;
+    return method === 'symbols' ? new JsTuple(result as unknown[]) : result;
+  };
+}
 
 const REL_OPS: Record<string, sj.RelOp> = {
   Equality: 'Eq',
@@ -330,6 +413,7 @@ const definedOr = <T>(v: T | undefined, what: string): T => {
 
 /** A serialized SymPy domain as the symjs domain (undefined when symjs has no counterpart). */
 function deserializeDomain(tree: Tree): sj.Domain | undefined {
+  if (tree['t'] === 'FiniteExtension') return new sj.FiniteExtension(deserialize(tree['modulus'] as Tree) as sj.Poly).toDomain();
   const name = tree['name'] as string;
   const known: Record<string, sj.Domain> = { ZZ: sj.ZZ, QQ: sj.QQ, RR: sj.RR, CC: sj.CC, EX: sj.EX, EXRAW: sj.EXRAW, ZZ_I: sj.ZZ_I, QQ_I: sj.QQ_I };
   if (tree['mod'] !== undefined) return sj.GF(tree['mod'] as number, tree['symmetric'] as boolean);
@@ -457,6 +541,14 @@ function orderNode(e: unknown, rest: unknown[]): Expr {
 
 export function deserialize(tree: Tree): unknown {
   switch (tree.t) {
+    case 'Diffgeom': {
+      if ('ref' in tree) {
+        const name = camel(String(tree['ref']));
+        if (!(name in diffgeomNamespace)) throw new Unsupported(`diffgeom reference ${name}`);
+        return diffgeomNamespace[name];
+      }
+      return constructDiffgeom(String(tree['cls']), (tree['args'] as Tree[]).map(deserialize));
+    }
     case 'PublicObject': {
       const name = String(tree['cls']);
       const cls = (sj as unknown as Record<string, unknown>)[name];
@@ -578,6 +670,29 @@ export function deserialize(tree: Tree): unknown {
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
       return new Sym(tree['name'] as string, Object.fromEntries(Object.entries(a).map(([k,v]) => [camel(k),v])));
+    }
+    case 'DiagramGrid': {
+      const entries = (deserialize(tree['morphisms'] as Tree) as JsDict).entries;
+      const d = sj.Diagram(new Map(entries.map(([m, p]) => [m as sj.Morphism, p as sj.SetExpr])));
+      const grid = new categories.DiagramGrid(d);
+      // the serialized grid lists its morphisms; rebuilding the diagram from them would compose them again
+      grid.morphisms.clear();
+      for (const [m, p] of entries) grid.morphisms.set(m as sj.Morphism, p as sj.SetExpr);
+      const cells = (tree['cells'] as Tree[][]).map((row) => row.map(deserialize));
+      const storage = new GrowableGrid<Expr>(cells[0]?.length ?? 0, cells.length);
+      cells.forEach((row, i) => row.forEach((cell, j) => storage.set(i, j, cell instanceof Expr ? cell : sj.NoMatch)));
+      Object.defineProperty(grid, 'grid', { value: storage });
+      return grid;
+    }
+    case 'XypicDiagramDrawer': {
+      const drawer = new categories.XypicDiagramDrawer();
+      drawer.unit = String(tree['unit']); drawer.defaultCurvingAmount = Number(tree['amount']); drawer.defaultCurvingStep = Number(tree['step']);
+      const formatter = (state: Record<string, unknown>) => (arrow: categories.ArrowStringDescription) => {
+        for (const [key, v] of Object.entries(state)) Reflect.set(arrow, camel(key), typeof v === 'string' ? v.replace(/@([a-z_]+)@/g, (_, name: string) => String(Reflect.get(arrow, camel(name)))) : v);
+      };
+      if (tree['defaultFormatter']) drawer.defaultArrowFormatter = formatter(tree['defaultFormatter'] as Record<string, unknown>);
+      for (const [name, f] of Object.entries(tree['formatters'] as Record<string, Record<string, unknown>>)) drawer.arrowFormatters.set(name, formatter(f));
+      return drawer;
     }
     case 'CategoryObject': return new sj.SymObject(String(tree['name']));
     case 'CategoryClass': return new sj.CategoryClass(deserialize(tree['objects'] as Tree) as sj.SetExpr);
@@ -1120,11 +1235,14 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'UFn':
       return sj.SymFunction(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
-    case 'Derivative':
-      return sj.derivative(
-        deserialize(tree['expr'] as Tree) as Expr,
-        (tree['vc'] as [Tree, number][]).map(([v, n]) => [deserialize(v) as Expr, n] as [Expr, number]),
-      );
+    case 'Derivative': {
+      const expr = deserialize(tree['expr'] as Tree) as Expr | Matrix;
+      const variables = (tree['vc'] as [Tree, number][]).map(([v, n]): [Expr | Matrix, number] => [deserialize(v) as Expr | Matrix, n]);
+      const shaped = (value: Expr | Matrix) => value instanceof Matrix || value instanceof sj.MatrixExpr || value instanceof sj.NDimArray || value instanceof sj.ArrayExpr;
+      // The original corpus serialized ArrayDerivative using its Derivative base tag.
+      if (shaped(expr) || variables.some(([v]) => shaped(v))) return sj.ArrayDerivative(expr, ...variables);
+      return sj.derivative(expr as Expr, variables as [Expr, number][]);
+    }
     case 'Dict':
       return new JsDict((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k), deserialize(v)] as const));
     case 'MatrixSymbol':
@@ -1234,6 +1352,11 @@ function expressionContainer(v: unknown): Expr {
   if (v instanceof JsDict) return sj.Dict(v.entries.map(([k, x]) => [expressionContainer(k), expressionContainer(x)]));
   return asExpr(v);
 }
+const asExprList = (value: unknown): Expr[] => {
+  if (value instanceof JsList || value instanceof JsTuple || value instanceof JsSet) return value.items.map(asExpr);
+  throw new Unsupported('expression sequence');
+};
+
 const asExprOrPoly = (v: unknown): Expr => (v instanceof sj.Poly ? v.asExpr() : asExpr(v));
 /** Translate Python coefficient-domain options; all arithmetic stays in the public API. */
 const polynomialOptions = (kw: Record<string, unknown>): sj.PolynomialDomainOptions => ({
@@ -1990,11 +2113,49 @@ export const ADAPTERS: Record<string, Adapter> = {
     const lms = G.exprs.map((g) => sj.Poly.from(g, vars).monoms()[0]!);
     return vars.every((_, i) => lms.some((m) => m.every((k, j) => (j === i ? k > 0 : k === 0))));
   },
+  '.keys': (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof JsDict)) throw new Unsupported('dictionary keys');
+    return { toString: () => `dict_keys(${fmt(new JsList(self.entries.map(([key]) => key)))})` };
+  },
+  _linsolve: (args, kw) => {
+    noKw(kw);
+    const result = sj._linsolve(asExprList(args[0]), asExprList(args[1]));
+    return result === sj.EmptySet ? null : fromJs(result);
+  },
+  _lin_eq2dict: (args, kw) => {
+    noKw(kw);
+    const result = sj._linEq2dict(asExpr(args[0]), new Set(asExprList(args[1])));
+    return new JsTuple(result.map(fromJs));
+  },
+  _linear_eq_to_dict: (args, kw) => {
+    noKw(kw);
+    return new JsTuple(sj._linearEqToDict(asExprList(args[0]), asExprList(args[1])).map(fromJs));
+  },
+  dom_eigenvects: (args, kw) => {
+    noKw(kw);
+    const [rational, algebraic] = sj.domEigenvects(args[0] as sj.DomainMatrix, args[1] as Sym | undefined);
+    const pack = (rows: unknown[][]) => new JsList(rows.map((row) => new JsTuple(row.map(fromJs))));
+    return new JsTuple([pack(rational), pack(algebraic)]);
+  },
+  dom_eigenvects_to_sympy: (args, kw) => {
+    for (const name of Object.keys(kw)) if (!['cubics', 'quartics', 'quintics'].includes(name)) throw new Unsupported(`kwargs ${name}`);
+    const convert = (v: unknown) => (v as JsList).items.map((row) => (row as JsTuple).items.map((x, i) => i === 2 ? Number(x) : x instanceof JsDomain ? x.domain : x));
+    const result = sj.domEigenvectsToSympy(convert(args[0]) as sj.RationalEigenvectors[], convert(args[1]) as sj.AlgebraicEigenvectors[], Matrix, kw);
+    return new JsList(result.map(([value, mult, vectors]) => new JsTuple([value, mult, new JsList(vectors)])));
+  },
+  '.fglm': (args, kw, self) => {
+    noKw(kw);
+    return (self as sj.GroebnerBasis).fglm(String(args[0]) as sj.MonomialOrder);
+  },
   groebner: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['order', 'method'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const F = (args[0] as JsList).items.map(asExpr);
     const gens = args.slice(1).map(asSym);
-    return sj.groebner(F, gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]), (kw['order'] as sj.MonomialOrder | undefined) ?? 'lex');
+    // a Python ordering object (order=lex) selects the ordering by its alias
+    const o = kw['order'];
+    const order = typeof o === 'object' && o !== null && 'alias' in o ? o.alias : o;
+    return sj.groebner(F, gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]), (order as sj.MonomialOrder | undefined) ?? 'lex');
   },
   '.reduce': (args, kw, self) => {
     noKw(kw);
@@ -2626,18 +2787,19 @@ export const ADAPTERS: Record<string, Adapter> = {
     return f;
   },
   roots: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'multiple') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['multiple', 'quintics'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args[0] instanceof JsTuple) {
       // a list of coefficients
       const cs = args[0].items.map(asExpr);
       const t = new Sym('x');
-      return rootsDict(sj.roots(sj.add(...cs.map((c, i) => sj.mul(c, sj.pow(t, cs.length - 1 - i)))), t, { multiple: true, skipQuintic: true }));
+      const result = sj.roots(sj.add(...cs.map((c, i) => sj.mul(c, sj.pow(t, cs.length - 1 - i)))), t, { multiple: true, skipQuintic: true, quintics: kw['quintics'] === true });
+      return kw['multiple'] === true ? new JsList(result) : rootsDict(result);
     }
     const e = asExprOrPoly(args[0]);
     const syms = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     const x = args[1] ? asSym(args[1]) : args[0] instanceof sj.Poly ? (args[0].gens[0] as Sym) : syms.length === 1 ? syms[0]! : undefined;
     if (!x) throw new Unsupported('roots generator');
-    const roots = sj.roots(e, x, { multiple: true, skipQuintic: true });
+    const roots = sj.roots(e, x, { multiple: true, skipQuintic: true, quintics: kw['quintics'] === true });
     return kw['multiple'] === true ? new JsList(roots) : rootsDict(roots);
   },
   solve: (args, kw) => {
@@ -4012,6 +4174,16 @@ Object.assign(ADAPTERS, {
     return sj.fps(asExpr(self), asSym(args[0]), args[1] === undefined ? 0 : asExpr(args[1]));
   },
   // ---- sympy.series.sequences, limitseq, residues and sympy.calculus.finite_diff, euler
+  '.find_linear_recurrence': (args, kw, self) => {
+    if (!(self instanceof sj.SeqBase)) throw new Unsupported('sequence receiver');
+    for (const key of Object.keys(kw)) if (!['n', 'd', 'gfvar'].includes(key)) throw new Unsupported(`kwargs ${key}`);
+    const n = intArg(args[0] ?? kw['n']);
+    const d = args[1] ?? kw['d'] ?? undefined;
+    const gfvar = args[2] ?? kw['gfvar'] ?? undefined;
+    if (gfvar === undefined) return new JsList(self.findLinearRecurrence(n, d === undefined ? undefined : intArg(d)));
+    const [coefficients, generatingFunction] = self.findLinearRecurrence(n, d === undefined ? undefined : intArg(d), asSym(gfvar));
+    return new JsTuple([new JsList(coefficients), generatingFunction]);
+  },
   sequence: (args, kw) => {
     noKw(kw);
     const seq = args[0] instanceof JsTuple || args[0] instanceof JsList ? args[0].items.map(asExpr) : asExpr(args[0]);
@@ -4275,7 +4447,14 @@ ADAPTERS['TableForm'] = (args, kw) => {
   const options = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), printable(v)]));
   return new sj.TableForm(data, options);
 };
-for (const name of ['pretty', 'pprint'] as const) ADAPTERS[name] = (args, kw) => sj[name](prettyArg(args[0]) as sj.Printable, printOptions(kw));
+ADAPTERS['.draw'] = (args, kw, self) => {
+  if (!(self instanceof categories.XypicDiagramDrawer)) return unsupportedOp('draw');
+  const masked = kw['masked'] instanceof JsTuple ? kw['masked'].items : Array.isArray(kw['masked']) ? kw['masked'] : [];
+  const options: categories.XypicDrawOptions = { masked: masked as sj.Morphism[] };
+  if (typeof kw['diagram_format'] === 'string') options.diagramFormat = kw['diagram_format'];
+  return self.draw(args[0] as sj.Diagram, args[1] as categories.DiagramGrid, options);
+};
+for (const name of ['pretty', 'pprint'] as const) ADAPTERS[name] = (args, kw) => args[0] instanceof categories.DiagramGrid ? args[0].toPretty() + (name === 'pprint' ? '\n' : '') : sj[name](prettyArg(args[0]) as sj.Printable, printOptions(kw));
 ADAPTERS['latex'] = (args, kw) => sj.latex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['print_latex'] = (args, kw) => sj.printLatex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['multiline_latex'] = (args, kw) => {
@@ -4417,7 +4596,14 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
-    const index = i instanceof JsTuple ? i.items : Array.isArray(i) && (a instanceof Matrix || a instanceof sj.MatrixExpr || a instanceof sj.NDimArray || a instanceof sj.IndexedBase || a instanceof sj.ArraySymbol) ? i : [i];
+    if (a instanceof sj.SeriesBase) {
+      if (i instanceof sj.Slice) {
+        const [start, stop, step] = i.toString().split(':').map((part) => part === '' ? undefined : Number(part));
+        return a.slice(start, stop, step);
+      }
+      return a.getItem(Number(i));
+    }
+    const index = i instanceof JsTuple ? i.items : Array.isArray(i) && (a instanceof Matrix || a instanceof sj.MatrixExpr || a instanceof sj.NDimArray || a instanceof sj.IndexedBase || a instanceof sj.ArraySymbol || a instanceof categories.DiagramGrid) ? i : [i];
     if (index.some((j) => j instanceof sj.Slice)) {
       if (a instanceof sj.MatrixExpr) {
         const spec = (v: unknown): sj.SliceSpec => v instanceof sj.Slice ? v.toString().split(':').map((p) => p === '' ? null : Number(p)) as [number | null, number | null, number | null] : asExpr(v);
@@ -4432,6 +4618,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
         return a.slice(indices(index[0], a.rows), indices(index[1], a.cols));
       }
     }
+    if (a instanceof categories.DiagramGrid) return a.get(Number(index[0]), Number(index[1]));
     if (a instanceof Matrix) {
       const indices = index;
       const n = (v: unknown): number => Number(v);
@@ -4577,6 +4764,25 @@ function intpolyAdapter(c: Case): Adapter | undefined {
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.fn === 'xypic_draw_diagram') return (args, kw) => categories.xypicDrawDiagram(args[0] as sj.Diagram, Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), toJs(v, true)])));
+  if (c.module.startsWith('sympy.plotting.intervalmath.') && ['And', 'Or', 'intervalMembership'].includes(c.fn)) {
+    // Python's None is the third truth value of interval membership
+    const truth = (v: unknown): sj.Truth => v === null || v === undefined ? 'unknown' : v === true;
+    const membership = (v: unknown): plotting.intervalmath.intervalMembership =>
+      v instanceof plotting.intervalmath.intervalMembership ? v : new plotting.intervalmath.intervalMembership(truth((v as JsTuple).items[0]), truth((v as JsTuple).items[1]));
+    const tuple = (m: plotting.intervalmath.intervalMembership): JsTuple => new JsTuple([m.value, m.isValid].map((v) => v === 'unknown' ? null : v));
+    if (c.fn === 'intervalMembership') return (args) => new plotting.intervalmath.intervalMembership(...(args.map(truth) as [sj.Truth, sj.Truth]));
+    const f = c.fn === 'And' ? plotting.intervalmath.And : plotting.intervalmath.Or;
+    return (args) => tuple(f(...args.map(membership)));
+  }
+  if (c.category === 'plotting') {
+    const f = (plotting as unknown as Record<string, (...args: unknown[]) => unknown>)[camel(c.fn)];
+    if (f) return (args, kw) => {
+      const value = f(...placeArgs(f, args, kw, (x) => toJs(x, true)));
+      if (c.fn === 'check_arguments') return new JsList((value as unknown[][]).map((row) => new JsTuple(row.map((v) => Array.isArray(v) ? new JsTuple(v) : v))));
+      return fromJs(value);
+    };
+  }
   if (c.fn === 'smoothness_p') return (args, kw) => {
     const flag = (v: unknown): boolean => v === true || (v instanceof sj.Rational && !v.isZero);
     const opts = { ...(kw['m'] === undefined ? {} : { m: intArg(kw['m']) }), power: flag(kw['power']) };
@@ -4620,6 +4826,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       const self = self0 instanceof JsTuple ? sj.Tuple(...self0.items.map(asExpr)) : self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0 instanceof JsLambda ? sj.Lambda(self0.vars, self0.body) : self0;
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
       if (name === 'arguments' && self instanceof sj.AppliedPredicate) return new JsTuple(self.arguments);
+      if (name === 'func' && self instanceof sj.CRootOf) return new TypeRef('polys.rootoftools.ComplexRootOf');
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
       if (name === 'name' && typeof self === 'function' && 'predicateName' in self) return new Sym(String(self.predicateName));
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);
@@ -4686,6 +4893,7 @@ function autoAdapter(c: Case): Adapter | undefined {
 
 /** Explicit public aliases: an adapter by itself is never evidence of an API. */
 export const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
+  _linear_eq_to_dict: '_linearEqToDict', _lin_eq2dict: '_linEq2dict',
   Catalan: 'S.Catalan', EulerGamma: 'S.EulerGamma', GoldenRatio: 'S.GoldenRatio', TribonacciConstant: 'S.TribonacciConstant',
   Integer: 'Rational.of', Equality: 'Eq', Unequality: 'Ne', GreaterThan: 'Ge', LessThan: 'Le', StrictGreaterThan: 'Gt', StrictLessThan: 'Lt',
   N: 'evalf', ln: 'log', minpoly: 'minimalPolynomial', poly: 'Poly.from',
@@ -4717,7 +4925,13 @@ export const MATRIX_MEMBER_ALIASES: Readonly<Record<string, string>> = {
 
 /** The actual public export/member supporting a name, or undefined when absent. */
 export function counterpartFor(a: { name: string; owner?: string; category?: string }): string | undefined {
+  if (camel(a.name) in categories && ['DiagramGrid', 'XypicDiagramDrawer', 'xypicDrawDiagram', 'ArrowStringDescription'].includes(camel(a.name))) return 'categories.' + camel(a.name);
+  if (a.category === 'plotting' && camel(a.name) in plotting) return 'plotting.' + camel(a.name);
   const camelMethod = (n: string): string => n.replace(/_([a-zA-Z0-9])/g, (_m, c: string) => c.toUpperCase());
+  if (a.category === 'diffgeom' && !a.name.startsWith('.')) {
+    const name = camel(a.name);
+    return name in diffgeomNamespace ? `@symjs/symjs/diffgeom.${name}` : undefined;
+  }
   if (!a.name.startsWith('.')) {
     const alias = PUBLIC_ALIASES[a.name];
     const candidates = [camelIn(a.name, a.category), ...(alias ? [alias] : [])];
@@ -4805,7 +5019,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
   // a sympy.stats name that symjs exports under another name (stats E is the expectation, not the constant)
-  const adapter = (c.module === 'sympy.integrals.intpoly' ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  const adapter = diffgeomAdapter(c) ?? (c.module === 'sympy.integrals.intpoly' ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     const args = (c.args ?? []).map(deserialize);

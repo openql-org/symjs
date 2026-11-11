@@ -666,6 +666,7 @@ describe('dmp_lift (SymPy 1.14: the norm, a resultant with the minimal polynomia
     const K = QQ.algebraicField(sj.I);
     const R = new PolyRing([sj.symbol('x')], K);
     expect(String(R.dmpLift(R.fromExpr(sj.parse('x**2 + I*x + 2*I'))))).toBe('x**4 + x**2 + 4*x + 4');
+    expect(R.dmpLift(R.fromExpr(sj.parse('x + I'))).ring.domain).toBe(QQ);
     const L = QQ.algebraicField(sj.sqrt(2));
     const S = new PolyRing([sj.symbol('x'), sj.symbol('y')], L);
     expect(String(S.dmpLift(S.fromExpr(sj.parse('x**2 + sqrt(2)*y'))))).toBe('x**4 - 2*y**2');
@@ -674,6 +675,7 @@ describe('dmp_lift (SymPy 1.14: the norm, a resultant with the minimal polynomia
     expect(String(G.dmpLift(G.fromExpr(sj.parse('x**2 + I*x + 1'))))).toBe('x**4 + 3*x**2 + 1');
     const Z = new PolyRing([sj.symbol('x')], sj.ZZ_I);
     expect(String(Z.dmpLift(Z.fromExpr(sj.parse('x**2 + I'))))).toBe('x**4 + 1');
+    expect(Z.dmpLift(Z.fromExpr(sj.parse('x + I'))).ring.domain).toBe(ZZ);
     const Q = new PolyRing([sj.symbol('x')], QQ);
     expect(() => Q.dmpLift(Q.fromExpr(sj.symbol('x')))).toThrow(sj.DomainError);
   });

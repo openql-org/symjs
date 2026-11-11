@@ -853,10 +853,31 @@ export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): bool
   return go(e);
 }
 
-/** SymPy dummy_eq: equality up to renaming the single dummy symbol. */
+/** SymPy dummy_eq: normalize bound indices, then rename a single free dummy. */
 export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
-  const a = sympify(aIn);
-  const b = sympify(bIn);
+  const a0 = sympify(aIn);
+  const b0 = sympify(bIn);
+  // asDummy does not rename the variables bound by sets (ImageSet, ConditionSet), and freeSymbols
+  // reports them: such expressions also compare by renaming the one dummy to the one unmatched symbol
+  if ((containsSet(a0) || containsSet(b0)) && renamedDummyEq(a0, b0, symbol)) return true;
+  const a = asDummy(a0);
+  const b = asDummy(b0);
+  const dummies = [...freeSymbols(a)].filter((s) => s instanceof Dummy);
+  if (dummies.length !== 1) return a.key === b.key;
+  const d = at(dummies, 0);
+  let target = symbol;
+  if (!target) {
+    const cand = [...freeSymbols(b)];
+    if (cand.length !== 1) return a.key === b.key;
+    target = at(cand, 0);
+  }
+  const fresh = new Dummy();
+  return xreplaceM(a, [[d, fresh]]).key === xreplaceM(b, [[target, fresh]]).key;
+}
+
+const containsSet = (e: Expr): boolean => e.kind === 'Set' || e.args.some(containsSet);
+
+function renamedDummyEq(a: Expr, b: Expr, symbol?: Expr): boolean {
   const dummies = [...freeSymbols(a)].filter((s) => s instanceof Dummy);
   if (dummies.length === 0) return a.key === b.key;
   if (dummies.length > 1) return false;
@@ -1132,14 +1153,15 @@ export function nseries(eIn: ExprLike, x?: Sym, x0: ExprLike = 0, n = 6): Expr {
 }
 
 /** An expression that can be applied to arguments (a Lambda, a random process, ...: SymPy callable()). */
-const isCallableExpr = (e: Expr): e is Expr & { call(...args: ExprLike[]): Expr } => 'call' in e && typeof e.call === 'function';
+const isCallableExpr = (e: Expr): e is Expr & { call(...args: (ExprLike | null)[]): Expr } => 'call' in e && typeof e.call === 'function';
 
 /**
  * SymPy `rcall(*args)`: applies the callable parts of the expression to args
  * (`rcall(x + Lambda(y, 2*y), z)` is `x + 2*z`), the abuse of notation for
- * operators.
+ * operators. A null argument leaves that tensor slot uncontracted when the
+ * callable supports partial contractions (sympy.diffgeom).
  */
-export function rcall(eIn: ExprLike, ...args: ExprLike[]): Expr {
+export function rcall(eIn: ExprLike, ...args: (ExprLike | null)[]): Expr {
   const e = sympify(eIn);
   if (isCallableExpr(e)) return e.call(...args);
   if (e.args.length === 0) return e;

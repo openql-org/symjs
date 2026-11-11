@@ -283,3 +283,20 @@ Notes on the implementation:
 | `expand_log` | stable | `expandLog` | camelCase |
 | `expand_trig` | stable | `expandTrig` | camelCase |
 | `expand_complex` | stable | `expandComplex` | camelCase |
+
+## Differential geometry subpath
+
+`@symjs/symjs/diffgeom` exposes SymPy's differential-geometry namespace,
+including `Point`, `TensorProduct`, `WedgeProduct`, and `Commutator`. Its `Point`
+is distinct from the Euclidean `Point` in `@symjs/symjs/geometry`. Names in this
+namespace are qualified by the subpath and are not re-exported from the root entry. Evaluating constructors (`Differential`,
+`TensorProduct`, `WedgeProduct`, `Commutator`, `LieDerivative`) are factory calls
+returning expressions, including zero or scalar results. Use the base `rcall`
+to apply them and expressions containing them. `rcall` accepts null input slots
+for partial contractions; its result is always an expression. The public names
+and their stability levels are listed in the base API report.
+
+Predefined charts follow the same camelCase conversion: `R2_r` becomes `R2R`,
+`R2_origin` becomes `R2Origin`, and `e_x` becomes `eX`. Coordinate relations are
+Maps keyed by `[sourceName, targetName]`. Series keyword arguments are the
+trailing `{ coordSys, coeffs }` object.

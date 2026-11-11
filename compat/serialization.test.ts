@@ -9,6 +9,16 @@ import * as sj from '../packages/symjs/src';
 
 const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')) as { cases: Case[] };
 
+it('converts sequence recurrence counts to integer indices', () => {
+  const cases = corpus.cases.filter((c) => c.module === 'sympy.series.sequences' && c.fn === '.find_linear_recurrence');
+  expect(cases).toHaveLength(8);
+  for (const c of cases) expect(['pass', 'equivalent'], c.src).toContain(runCase(c).status);
+  const c = cases.find((entry) => entry.src === 'sequence(n**2).find_linear_recurrence(10)');
+  const n = c?.args?.[0];
+  if (c === undefined || n === undefined) throw new TypeError('missing recurrence fixture');
+  expect(runCase({ ...c, args: [], kwargs: { n, d: { t: 'Js', v: null } } }).status).toBe('pass');
+});
+
 it('preserves ImageSet representatives and compares sparse rows independently of empty storage', () => {
   for (const c of corpus.cases.filter((c) => (c.module === 'sympy.solvers.solveset' && c.src === 'pprint(sd(f3, x, S.Reals), use_unicode=False)') || (c.module === 'sympy.polys.matrices.sdm' && c.src === 'B'))) expect(runCase(c).status).toBe('pass');
   const m = sj.SDM.fromList([[sj.S.Zero, sj.sympify(2)], [sj.S.Zero, sj.S.Zero]], [2, 2], sj.QQ);

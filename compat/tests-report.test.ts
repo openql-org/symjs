@@ -2,7 +2,17 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { expect, it } from 'vitest';
-import { failureKind, ratchetDifferences } from './tests-report';
+import { failureKind, ratchetDifferences, replayDeadlineMs } from './tests-report';
+
+it('validates optional replay deadlines while preserving category defaults', () => {
+  expect(replayDeadlineMs('core', '')).toBe(30_000);
+  expect(replayDeadlineMs('polys', '')).toBe(30_000);
+  expect(replayDeadlineMs('tensor', '')).toBe(5000);
+  expect(replayDeadlineMs('tensor', '30000')).toBe(30_000);
+  for (const invalid of ['0', '-1', '1.5', 'NaN', 'Infinity']) {
+    expect(() => replayDeadlineMs('tensor', invalid)).toThrow(RangeError);
+  }
+});
 
 it('ratchets completed assertions strictly and keeps incomplete observations separate', () => {
   expect(ratchetDifferences({ cases: ['old'] }, ['new'], [])).toEqual({ regressions: ['new'], fixed: ['old'] });

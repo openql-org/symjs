@@ -10,6 +10,19 @@ factor(parse('x**3 - x')).toString(); // 'x*(x - 1)*(x + 1)'
 diff(sin(x).pow(2), x).toString();    // '2*sin(x)*cos(x)'
 ```
 
+Differential geometry is available through the `@symjs/symjs/diffgeom` subpath:
+
+```ts
+import { rcall } from '@symjs/symjs';
+import { Differential, R2 } from '@symjs/symjs/diffgeom';
+
+rcall(Differential(R2.x), R2.eX).toString(); // '1'
+```
+
+This subpath exposes manifolds, coordinate charts, fields, tensor and wedge
+products, connections, integral curves and curvature. Its names are not
+re-exported from the root entry.
+
 See the repository README for the feature list, the SymPy compatibility report and the extend modules.
 
 ## License

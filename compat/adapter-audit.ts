@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-import { ADAPTERS, type Case } from './harness';
+import { ADAPTERS, diffgeomAdapter, type Case } from './harness';
 import { PORTS } from './ports';
 
 /** A passing adapter is not automatically evidence of a public implementation. */
@@ -10,6 +10,11 @@ export const REVIEWED_ADAPTERS: Readonly<Record<string, string>> = {
   substitution: 'substitution',
   checksol: 'checksol',
   linsolve: 'linsolve / linsolveAugmented / gaussJordanSolve',
+  _linsolve: '_linsolve; map EmptySet to the internal Python None result',
+  _linear_eq_to_dict: '_linearEqToDict; preserve the result tuple and coefficient maps',
+  _lin_eq2dict: '_linEq2dict; convert the symbol set and preserve the result tuple',
+  dom_eigenvects: 'domEigenvects; preserve nested tuples and lists',
+  dom_eigenvects_to_sympy: 'domEigenvectsToSympy; convert domain tuples and the column-matrix factory',
   solve_lin_sys: 'solveLinSys; reconstruct PolyRing inputs and convert expression coefficients to the Python domain representation',
   solve_linear_system: 'linsolveAugmented',
   solve_linear_system_LU: 'linsolveAugmented',
@@ -43,6 +48,7 @@ export const COMPUTATIONAL_ADAPTERS: Readonly<Record<string, string>> = {
 };
 export type Evidence = 'public-call' | 'reviewed-conversion' | 'harness-computation' | 'unreviewed-adapter' | 'unreviewed-translation';
 export function evidenceFor(c: Case): Evidence {
+  if (diffgeomAdapter(c)) return 'reviewed-conversion';
   if (PORTS[`${c.module}:${c.src}`]) return 'unreviewed-translation';
   if (COMPUTATIONAL_ADAPTERS[c.fn]) return 'harness-computation';
   if (REVIEWED_ADAPTERS[c.fn]) return 'reviewed-conversion';

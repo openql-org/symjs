@@ -6,13 +6,26 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Assumptions } from '../../src/core/nodes';
-import { detQuick, diff, type Expr, invQuick, Matrix, nonlinsolve, solveLinearSystemLU, NotImplementedError, nsolve, parse, solve, solveLinear, solveUndeterminedCoeffs, sstr, Sym, symbols, SymFunction } from '../../src';
+import { detQuick, diff, type Expr, invQuick, Matrix, nonlinsolve, solveLinearSystemLU, NotImplementedError, nsolve, parse, solve, solveLinear, solveUndeterminedCoeffs, sstr, Sym, symbols, SymFunction, CRootOf, Poly, evalf, toComplex } from '../../src';
 import { xreplace } from '../../src/core/traverse';
 import { invertEquation, nonlinsolve as nonlinsolveCoordinates } from '../../src/solvers/solve';
 import { at } from '../../src/core/guard';
 
 const [x, y] = symbols('x y');
 const show = (r: readonly Expr[]): string => `[${r.map(String).join(', ')}]`;
+it('returns radical quintic solutions and preserves the CRootOf fallback', () => {
+  const p = Poly.from(parse('x**5-5*x+12'), [x]);
+  const rs = solve(p.asExpr(), x, { check: false });
+  expect(rs).toHaveLength(5);
+  for (const r of rs) {
+    expect(r instanceof CRootOf).toBe(false);
+    const residual = p.eval(evalf(r, 30));
+    if (residual instanceof Poly) throw new TypeError('expected scalar residual');
+    const value = toComplex(residual);
+    expect(Math.hypot(value.re, value.im)).toBeLessThan(1e-20);
+  }
+  expect(solve(parse('x**5-x+1'), x).every(r => r instanceof CRootOf)).toBe(true);
+});
 it('inverts shifted exponentials and hyperbolic functions (SymPy 1.14)', () => {
   for (const [source, expected] of [
     ['exp(2*x+1)-3', '[-1/2 + log(3)/2, -1/2 + log(3)/2 + I*pi]'],

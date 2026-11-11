@@ -7,7 +7,7 @@ import { performance } from 'node:perf_hooks';
 import { createContext, Script } from 'node:vm';
 import { expect, inject, it } from 'vitest';
 import { runTestCase, testCaseKey } from './tests-harness';
-import { corpusIndex, emptyCounts, failureKind, ratchetDifferences } from './tests-report';
+import { corpusIndex, emptyCounts, failureKind, ratchetDifferences, replayDeadlineMs } from './tests-report';
 import type { TestCase, TestOutcome } from './tests-harness';
 import type { CategoryResult, TestGaps } from './tests-report';
 
@@ -28,6 +28,7 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
   // vm interrupts synchronous library calls too; vitest's asynchronous test timeout cannot.
   const context = createContext({ runTestCase, current: undefined });
   const script = new Script('runTestCase(current)');
+  const deadline = replayDeadlineMs(category);
   for (const shard of audit.shards) {
     const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${shard.file}`, import.meta.url), 'utf8'));
     expect(cases.length).toBe(shard.cases);
@@ -41,10 +42,10 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
       let o: TestOutcome;
       try {
         context['current'] = c;
-        o = script.runInContext(context, { timeout: category === 'core' || category === 'polys' ? 30_000 : 5000 });
+        o = script.runInContext(context, { timeout: deadline });
       } catch (error) {
         if (typeof error !== 'object' || error === null || !('code' in error) || error.code !== 'ERR_SCRIPT_EXECUTION_TIMEOUT') throw error;
-        o = { status: 'error', reason: `Replay deadline exceeded (${category === 'core' || category === 'polys' ? 30 : 5} s)` };
+        o = { status: 'error', reason: `Replay deadline exceeded (${deadline / 1000} s)` };
       }
       const status = o.status === 'pass' ? 'exact' : o.status;
       for (const counts of [result.total, result.modules[c.module] ??= emptyCounts()]) { counts.cases++; counts[status]++; }

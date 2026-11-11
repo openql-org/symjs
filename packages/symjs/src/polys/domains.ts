@@ -23,11 +23,12 @@ import { freeSymbols } from '../core/traverse';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { limitDenominator } from '../core/numberutils';
 import { isqrt, div as mpfDiv, fromRational as mpfFromRational, toRational as mpfToRational } from '../numeric/mpf';
-import { evalf } from '../numeric/evalf';
+import { evalfPrec } from '../numeric/evalf';
 import { str } from '../printing/str';
 import { expand, expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { polyCoefficients } from './poly';
+import { RealElement, ComplexElement, MPContext } from './domains/mpelements';
 import { PythonMPQ } from './domains/pythonrational';
 import type { FreeModule } from './agca/modules';
 import type { ModuleImplementedIdeal } from './agca/ideals';
@@ -57,6 +58,7 @@ function floatToRational(f: Float): Rational {
 export function groundToSympy(a: unknown): unknown {
   if (typeof a === 'bigint') return Rational.of(a);
   if (typeof a === 'number') return Number.isInteger(a) ? Rational.of(BigInt(a)) : sympify(a);
+  if (a instanceof RealElement || a instanceof ComplexElement) return a.toSympy();
   if (a instanceof PythonMPQ) return Rational.of(a.numerator, a.denominator);
   return a;
 }
@@ -422,24 +424,33 @@ export class RationalField extends Domain {
 
 /** SymPy RR: floating-point numbers with 53 bits. */
 export class RealField extends Domain {
+  readonly context: MPContext;
+  constructor(prec = 53) {
+    super();
+    this.context = new MPContext(prec, { real: true, parent: this });
+  }
+  get precision(): number { return this.context.prec; }
+  get dps(): number { return this.context.dps; }
+  dtype(value: unknown = 0): RealElement { return this.context.mpf(value); }
   readonly ground = 'RR' as const;
   readonly isField = true;
   toString(): string {
-    return 'RR';
+    return this.precision === 53 ? 'RR' : `RR_${this.precision}`;
   }
+  override equals(other: Domain): boolean { return other instanceof RealField && other.precision === this.precision; }
   canon(e: Expr): Expr {
-    return e instanceof Rational ? new Float(mpfFromRational(e.p, e.q, 53)) : e;
+    return e instanceof Rational ? new Float(mpfFromRational(e.p, e.q, this.precision), this.precision) : e;
   }
   override quo(a: Expr, b: Expr): Expr {
     const [fa, fb] = [this.canon(a), this.canon(b)];
-    return new Float(mpfDiv(expectType(fa, isFloat, 'RR element').mpf, expectType(fb, isFloat, 'RR element').mpf, 53));
+    return new Float(mpfDiv(expectType(fa, isFloat, 'RR element').mpf, expectType(fb, isFloat, 'RR element').mpf, this.precision), this.precision);
   }
   fromSympy(eIn: ExprLike): Expr {
     const e = sympify(eIn);
-    if (e instanceof Float) return e.prec === 53 ? e : new Float(e.mpf, 53);
-    if (e instanceof Rational) return evalf(e);
+    if (e instanceof Float) return e.prec === this.precision ? e : new Float(e.mpf, this.precision);
+    if (e instanceof Rational) return evalfPrec(e, this.precision);
     if (freeSymbols(e).size === 0) {
-      const v = evalf(e);
+      const v = evalfPrec(e, this.precision);
       if (v instanceof Float) return v;
     }
     throw new CoercionFailed(`expected a real number, got ${str(e)}`);

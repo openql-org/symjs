@@ -219,6 +219,8 @@ export type { RingSymbols, DomainLike, OrderLike, GenLike, SringOptions, Monom }
 export { IPolys, hasAssocRing } from './polys/compatibility';
 // dense polynomial representation and distributed modules (SymPy densebasic, distributedmodules)
 export * from './polys/densebasic';
+export * from './polys/densearith';
+export * from './polys/modulargcd';
 export * from './polys/distributedmodules';
 export { Options, buildOptions, allowedFlags, preprocessDomain } from './polys/polyoptions';
 export type { OptionArgs } from './polys/polyoptions';
@@ -229,6 +231,7 @@ export { PythonMPQ, PythonMPQ as MPQ } from './polys/domains/pythonrational';
 export { FiniteField, ModularInteger, GF, FF } from './polys/domains/finitefield';
 export { GaussianIntegerRing, GaussianRationalField, GaussianElement, GaussianInteger, GaussianRational, ZZ_I, QQ_I } from './polys/domains/gaussiandomains';
 export { AlgebraicField, ANP } from './polys/domains/algebraicfield';
+export { RealElement, ComplexElement, MPContext, type MPContextOptions } from './polys/domains/mpelements';
 export { ComplexField, CC } from './polys/domains/complexfield';
 export { ExpressionRawDomain, EXRAW } from './polys/domains/expressionrawdomain';
 // matrices over domains (SymPy sympy.polys.matrices)
@@ -264,11 +267,16 @@ export type { MultTab, HnfOptions, HomomorphismCodomain } from './polys/numberfi
 export { roundTwo, nilradicalModP, PrimeIdeal, primeDecomp, primeValuation } from './polys/numberfields/index';
 export type { RoundTwoOptions, PrimeDecompOptions } from './polys/numberfields/index';
 export { ClosureFailure, StructureError, MissingUnityError } from './polys/numberfields/exceptions';
-export { rootFactors } from './polys/polyroots';
+export { rootFactors, rootsQuintic } from './polys/polyroots';
+export { PolyQuintic } from './polys/polyquinticconst';
 export { PolyMatrix, MutablePolyDenseMatrix, MutablePolyMatrix } from './polys/polymatrix';
 export type { PolyMatrixOptions, PolyMatrixEntry } from './polys/polymatrix';
 export { DixonResultant, MacaulayResultant } from './polys/multivariateresultants';
 export { dmpAlgInject } from './polys/densetools';
 export { dmpSqfNorm } from './polys/sqfreetools';
+export { matrixFglm } from './polys/fglmtools';
+export { domEigenvects, domEigenvectsToSympy } from './polys/matrices/eigen';
+export type { RationalEigenvectors, AlgebraicEigenvectors } from './polys/matrices/eigen';
+export { _linsolve, _linEq2dict, _linearEqToDict, sympyDictToDm } from './polys/matrices/linsolve';
 export { galoisGroup, hasSquareDisc, MaxTriesException, getResolventByLookup } from './polys/numberfields/index';
 export type { GaloisGroupOptions, GaloisGroupResult } from './polys/numberfields/index';

@@ -34,6 +34,8 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // core namespace; shared arithmetic and symbol introspection add <1 KiB to strategies.
 // Precision-aware comparability, bound-variable hashing and full free-symbol
 // sets add up to 2 KiB to core consumers. Reduced ODE solvers also reach stats.
+// Dummit's quintic coefficient tables and branch selection add at most 80 KiB
+// to consumers that load radical polynomial solving.
 const CASES = [
   ['core', 'Rational', 190],
   ['core', 'parse, str', 204],
@@ -42,16 +44,16 @@ const CASES = [
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 383],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 890],
+  ['simplify', 'simplify', 970],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
-  ['polys', 'factor', 596],
+  ['polys', 'factor', 676],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 917],
-  ['solvers', 'solve', 975],
-  ['solvers', 'dsolve', 990],
+  ['calculus', 'integrate', 997],
+  ['solvers', 'solve', 1055],
+  ['solvers', 'dsolve', 1070],
   ['sets', '*', 353],
   ['matrices', 'Matrix', 749],
   ['printing', 'pretty', 230],
@@ -63,18 +65,23 @@ const CASES = [
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 547],
-  ['holonomic', 'exprToHolonomic', 1025],
-  ['geometry', '*', 998],
-  ['vector', '*', 1096],
-  ['stats', '*', 1140],
-  ['categories', '*', 363],
+  ['holonomic', 'exprToHolonomic', 1140],
+  ['geometry', '*', 1078],
+  ['vector', '*', 1176],
+  ['stats', '*', 1285],
+  // Diagram layout, pretty grids and Xy-pic text generation.
+  ['categories', '*', 442],
+  // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
+  ['plotting', '*', 1005],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
   ['index', 'Rational', 195],
   // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB).
-  ['index', '*', 2520],
+  ['index', '*', 2620],
+  // Differential geometry includes symbolic inversion and curvature calculations.
+  ['diffgeom', '*', 1200],
 ];
 
 async function measure(entry, names) {

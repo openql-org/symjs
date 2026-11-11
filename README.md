@@ -41,7 +41,7 @@ symjs is a pnpm monorepo. The general-purpose CAS is the **base module**; functi
 | [`@symjs/physics-quantum`](packages/physics-quantum) | `packages/physics-quantum/` | Extend module for quantum physics (SymPy `sympy.physics.quantum`) |
 | [`@symjs/mathjs`](packages/mathjs) | `packages/mathjs/` | Extend module: conversion to and from math.js (math.js is not a dependency) |
 
-Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module. `physics-quantum` is the first extend module.
+Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module.
 
 ```ts
 import { Matrix } from '@symjs/symjs';
@@ -54,7 +54,7 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 
 ### Entry points and bundle size
 
-`@symjs/symjs` imports the base module except the separate LaTeX parsing subpath. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
+`@symjs/symjs` re-exports every feature entry except `diffgeom`, `parsing` and `plotting`, which are available through dedicated subpaths. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
 
 | Entry point | Contents |
 |---|---|
@@ -71,10 +71,13 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/sets` | Intervals, finite sets, image and condition sets |
 | `@symjs/symjs/matrices` | `Matrix` and linear algebra; also loads the matrix handlers of `ask` |
 | `@symjs/symjs/geometry` | Points, lines, planes, polygons, ellipses, curves and parabolas, `intersection`, `convexHull`, ... |
+| `@symjs/symjs/diffgeom` | Manifolds, coordinate charts, scalar/vector fields, differential forms, tensor/wedge products, connections, integral curves and curvature (subpath only) |
 | `@symjs/symjs/vector` | `CoordSys3D`, vectors and dyadics, `Del`, `gradient`, `divergence`, `curl`, `express`, parametric and implicit regions, `vectorIntegrate`, ... |
 | `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, joint distributions (`MultivariateNormal`, `Dirichlet`, `Multinomial`, `JointRV`, `marginalDistribution`, ...), matrix distributions (`Wishart`, `MatrixNormal`, ...), random matrices (`GaussianUnitaryEnsemble`, `CircularEnsemble`, ...), stochastic processes (`DiscreteMarkovChain`, `ContinuousMarkovChain`, `PoissonProcess`, `WienerProcess`, ...), `ExpectationMatrix`, `VarianceMatrix`, `CrossCovarianceMatrix`, ... |
 | `@symjs/symjs/crypto` | Classical ciphers (shift, affine, Vigenère, Hill, Bifid, rail fence, ...), Morse code, linear feedback shift registers, RSA, ElGamal, Diffie–Hellman, Goldwasser–Micali and Blum–Goldwasser |
 | `@symjs/symjs/liealgebras` | `CartanType`, `CartanMatrix`, `DynkinDiagram`, `RootSystem` and `WeylGroup` of the simple Lie algebras |
+
+Differential geometry mirrors `sympy.diffgeom`: import its names from `@symjs/symjs/diffgeom`. Its doctests and unit assertions are included in the [base compatibility reports](compat/README.md).
 
 LaTeX parsing is imported separately:
 
@@ -223,8 +226,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 Runtime-specific backends are deliberately excluded; mathematical modules remain in the inventory even when not implemented:
 
 - Sampling of random variables in `sympy.stats` (`sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=`, the `sample` methods of distributions, spaces and processes; `sympy/stats/sampling/`), which draws samples with numpy, scipy or pymc
-- Plotting (`sympy.plotting`, the `plot`/`show` methods)
-- Drawing of category diagrams (`sympy.categories.diagram_drawing`: `DiagramGrid`, `XypicDiagramDrawer`, `xypic_draw_diagram`)
+- Rendering of plots and diagrams: the plotting backends (Matplotlib, pyglet), `show`/`save`, and `preview_diagram`; `@symjs/symjs/plotting` computes the plot data and `categories` produces the Xy-pic text for connector packages
 - The TensorFlow back end of `lambdify`
 - Printers and wrappers that generate or compile Python code: `pycode`, the NumPy printer, `lambdarepr`, the `python` printer and `autowrap`
 - Python-runtime tooling without mathematical content: test runners and test helpers, caching and dispatch decorators, compilation helpers, package metadata, the gmpy2/python-flint ground-type back ends, bindings to external SAT solvers (MiniSat, pycosat, Z3), typing protocols, REPL and display helpers
@@ -234,8 +236,7 @@ Runtime-specific backends are deliberately excluded; mathematical modules remain
 Modules that are not ported yet but stay in scope:
 
 - Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
-- The Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
-- Differential geometry (`sympy.diffgeom`): an extend package
+- The Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: not ported
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License

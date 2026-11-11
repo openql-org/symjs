@@ -12,6 +12,13 @@
   "note": "For partial and unimplemented modules: what is ported, or where the module is planned (base module or an extend package).",
   "declaredPublicNames": "Public source definitions, explicit __all__ exports and declared class methods/properties. The API criterion also checks inherited members and class attributes. Python protocols are excluded except mapped arithmetic/comparison operators."
  },
+ "apiExclusions": {
+  "sympy.plotting.plot.Plot.show": "Rendering is done by connector packages.",
+  "sympy.plotting.plot.Plot.save": "Rendering is done by connector packages.",
+  "sympy.plotting.plotgrid.PlotGrid.show": "Rendering is done by connector packages.",
+  "sympy.plotting.plotgrid.PlotGrid.save": "Rendering is done by connector packages.",
+  "sympy.categories.diagram_drawing.preview_diagram": "Renders Xy-pic through an external TeX installation and viewer."
+ },
  "modules": [
   {
    "module": "sympy",
@@ -76,10 +83,7 @@
       "octave_code",
       "pdiv",
       "pexquo",
-      "plot",
       "plot_backends",
-      "plot_implicit",
-      "plot_parametric",
       "pquo",
       "prem",
       "preview",
@@ -105,7 +109,6 @@
       "sturm",
       "subresultants",
       "test",
-      "textplot",
       "timed",
       "total_degree",
       "trunc",
@@ -4275,7 +4278,7 @@
      "testFile": "sympy/calculus/tests/test_singularities.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 6,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -4382,15 +4385,9 @@
       "Diagram.conclusions",
       "Diagram.objects",
       "Diagram.premises",
-      "DiagramGrid",
-      "DiagramGrid.height",
       "DiagramGrid.morphisms",
-      "DiagramGrid.width",
       "NamedMorphism.name",
-      "XypicDiagramDrawer",
-      "XypicDiagramDrawer.draw",
-      "preview_diagram",
-      "xypic_draw_diagram"
+      "preview_diagram"
      ],
      "unresolvedBases": [
       "sympy.core.Basic",
@@ -4502,7 +4499,6 @@
       {
        "area": "Category theory",
        "remaining": [
-        "Diagram layout and Xy-pic output",
         "General category hom sets (also unavailable upstream)",
         "Functors and natural transformations (outside SymPy 1.14 implementation)"
        ]
@@ -4548,11 +4544,61 @@
   {
    "module": "sympy.categories.diagram_drawing",
    "sha256": "95f476f5fe905feacaf9c080a26fb6991278c4bca18b9e5c87dd42c843c25c04",
-   "status": "excluded",
-   "reason": "diagram drawing",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "categories/diagram_drawing.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "DiagramGrid.morphisms",
+      "preview_diagram"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 19,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "non-call-expression": 3,
+      "not-exported-api": 1,
+      "printing-expression": 5
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.categories.tests.test_diagram_drawing",
+     "testFile": "sympy/categories/tests/test_diagram_drawing.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": false,
+     "note": "",
+     "capabilities": [
+      {
+       "area": "Category theory",
+       "remaining": [
+        "General category hom sets (also unavailable upstream)",
+        "Functors and natural transformations (outside SymPy 1.14 implementation)"
+       ]
+      }
+     ]
+    }
+   },
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 28,
    "declaredPublicNames": [
     "ArrowStringDescription",
@@ -16067,7 +16113,7 @@
      "testFile": "sympy/core/tests/test_numbers.py",
      "inCorpus": true,
      "caseCount": 1616,
-     "gapCount": 205,
+     "gapCount": 204,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -18623,10 +18669,142 @@
   {
    "module": "sympy.diffgeom",
    "sha256": "7168f837b01f360ad87062017b15fe52b5b17ddd5b3fd0d336a5262d6509f670",
-   "status": "unimplemented",
-   "note": "extend package (planned): differential geometry",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "note": "base subpath @symjs/symjs/diffgeom",
+   "sources": [
+    "diffgeom.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "BaseCovarDerivativeOp.christoffel",
+      "BaseCovarDerivativeOp.coord_sys",
+      "BaseCovarDerivativeOp.index",
+      "BaseScalarField.coord_sys",
+      "BaseScalarField.index",
+      "BaseVectorField.coord_sys",
+      "BaseVectorField.index",
+      "Commutator.v1",
+      "Commutator.v2",
+      "CoordSystem.name",
+      "CoordSystem.patch",
+      "CoordSystem.relations",
+      "CoordinateSymbol.__floordiv__",
+      "CoordinateSymbol.__lshift__",
+      "CoordinateSymbol.__rfloordiv__",
+      "CoordinateSymbol.__rmod__",
+      "CoordinateSymbol.__rshift__",
+      "CoordinateSymbol.args",
+      "CoordinateSymbol.as_set",
+      "CoordinateSymbol.binary_symbols",
+      "CoordinateSymbol.canonical_variables",
+      "CoordinateSymbol.default_assumptions",
+      "CoordinateSymbol.expr_free_symbols",
+      "CoordinateSymbol.func",
+      "CoordinateSymbol.is_Add",
+      "CoordinateSymbol.is_AlgebraicNumber",
+      "CoordinateSymbol.is_Boolean",
+      "CoordinateSymbol.is_Derivative",
+      "CoordinateSymbol.is_Dummy",
+      "CoordinateSymbol.is_Equality",
+      "CoordinateSymbol.is_Float",
+      "CoordinateSymbol.is_Indexed",
+      "CoordinateSymbol.is_Integer",
+      "CoordinateSymbol.is_MatAdd",
+      "CoordinateSymbol.is_MatMul",
+      "CoordinateSymbol.is_Matrix",
+      "CoordinateSymbol.is_Mul",
+      "CoordinateSymbol.is_Not",
+      "CoordinateSymbol.is_NumberSymbol",
+      "CoordinateSymbol.is_Order",
+      "CoordinateSymbol.is_Piecewise",
+      "CoordinateSymbol.is_Point",
+      "CoordinateSymbol.is_Poly",
+      "CoordinateSymbol.is_Pow",
+      "CoordinateSymbol.is_Rational",
+      "CoordinateSymbol.is_Relational",
+      "CoordinateSymbol.is_Symbol",
+      "CoordinateSymbol.is_Vector",
+      "CoordinateSymbol.is_Wild",
+      "CoordinateSymbol.is_algebraic",
+      "CoordinateSymbol.is_antihermitian",
+      "CoordinateSymbol.is_complex",
+      "CoordinateSymbol.is_composite",
+      "CoordinateSymbol.is_even",
+      "CoordinateSymbol.is_extended_negative",
+      "CoordinateSymbol.is_extended_nonnegative",
+      "CoordinateSymbol.is_extended_nonpositive",
+      "CoordinateSymbol.is_extended_nonzero",
+      "CoordinateSymbol.is_extended_positive",
+      "CoordinateSymbol.is_extended_real",
+      "CoordinateSymbol.is_finite",
+      "CoordinateSymbol.is_hermitian",
+      "CoordinateSymbol.is_imaginary",
+      "CoordinateSymbol.is_infinite",
+      "CoordinateSymbol.is_irrational",
+      "CoordinateSymbol.is_negative",
+      "CoordinateSymbol.is_noninteger",
+      "CoordinateSymbol.is_nonnegative",
+      "CoordinateSymbol.is_nonpositive",
+      "CoordinateSymbol.is_nonzero",
+      "CoordinateSymbol.is_odd",
+      "CoordinateSymbol.is_polar",
+      "CoordinateSymbol.is_positive",
+      "CoordinateSymbol.is_prime",
+      "CoordinateSymbol.is_rational",
+      "CoordinateSymbol.is_real",
+      "CoordinateSymbol.is_scalar",
+      "CoordinateSymbol.is_symbol",
+      "CoordinateSymbol.is_transcendental",
+      "CoordinateSymbol.is_zero",
+      "CoordinateSymbol.name",
+      "CoordinateSymbol.to_nnf",
+      "CovarDerivativeOp.christoffel",
+      "CovarDerivativeOp.wrt",
+      "Differential.form_field",
+      "Differential.is_commutative",
+      "LieDerivative.expr",
+      "LieDerivative.v_field",
+      "Manifold.dim",
+      "Manifold.name",
+      "Patch.manifold",
+      "Patch.name"
+     ],
+     "unresolvedBases": [
+      "sympy.core.Basic",
+      "sympy.core.Expr"
+     ]
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.tests.test_diffgeom",
+     "testFile": "sympy/tests/test_diffgeom.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": true,
+     "note": "base subpath @symjs/symjs/diffgeom",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -18659,11 +18837,152 @@
   {
    "module": "sympy.diffgeom.diffgeom",
    "sha256": "0e0c60c4ff41ecd4fe3351dbd7ed40c0760706f5d993f63afcca997063ec98e8",
-   "status": "unimplemented",
-   "note": "extend package (planned): differential geometry",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "note": "base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves",
+   "sources": [
+    "diffgeom/diffgeom.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "BaseCovarDerivativeOp.christoffel",
+      "BaseCovarDerivativeOp.coord_sys",
+      "BaseCovarDerivativeOp.index",
+      "BaseScalarField.coord_sys",
+      "BaseScalarField.index",
+      "BaseVectorField.coord_sys",
+      "BaseVectorField.index",
+      "Commutator.v1",
+      "Commutator.v2",
+      "CoordSystem.name",
+      "CoordSystem.patch",
+      "CoordSystem.relations",
+      "CoordinateSymbol.__floordiv__",
+      "CoordinateSymbol.__lshift__",
+      "CoordinateSymbol.__rfloordiv__",
+      "CoordinateSymbol.__rmod__",
+      "CoordinateSymbol.__rshift__",
+      "CoordinateSymbol.args",
+      "CoordinateSymbol.as_set",
+      "CoordinateSymbol.binary_symbols",
+      "CoordinateSymbol.canonical_variables",
+      "CoordinateSymbol.default_assumptions",
+      "CoordinateSymbol.expr_free_symbols",
+      "CoordinateSymbol.func",
+      "CoordinateSymbol.is_Add",
+      "CoordinateSymbol.is_AlgebraicNumber",
+      "CoordinateSymbol.is_Boolean",
+      "CoordinateSymbol.is_Derivative",
+      "CoordinateSymbol.is_Dummy",
+      "CoordinateSymbol.is_Equality",
+      "CoordinateSymbol.is_Float",
+      "CoordinateSymbol.is_Indexed",
+      "CoordinateSymbol.is_Integer",
+      "CoordinateSymbol.is_MatAdd",
+      "CoordinateSymbol.is_MatMul",
+      "CoordinateSymbol.is_Matrix",
+      "CoordinateSymbol.is_Mul",
+      "CoordinateSymbol.is_Not",
+      "CoordinateSymbol.is_NumberSymbol",
+      "CoordinateSymbol.is_Order",
+      "CoordinateSymbol.is_Piecewise",
+      "CoordinateSymbol.is_Point",
+      "CoordinateSymbol.is_Poly",
+      "CoordinateSymbol.is_Pow",
+      "CoordinateSymbol.is_Rational",
+      "CoordinateSymbol.is_Relational",
+      "CoordinateSymbol.is_Symbol",
+      "CoordinateSymbol.is_Vector",
+      "CoordinateSymbol.is_Wild",
+      "CoordinateSymbol.is_algebraic",
+      "CoordinateSymbol.is_antihermitian",
+      "CoordinateSymbol.is_complex",
+      "CoordinateSymbol.is_composite",
+      "CoordinateSymbol.is_even",
+      "CoordinateSymbol.is_extended_negative",
+      "CoordinateSymbol.is_extended_nonnegative",
+      "CoordinateSymbol.is_extended_nonpositive",
+      "CoordinateSymbol.is_extended_nonzero",
+      "CoordinateSymbol.is_extended_positive",
+      "CoordinateSymbol.is_extended_real",
+      "CoordinateSymbol.is_finite",
+      "CoordinateSymbol.is_hermitian",
+      "CoordinateSymbol.is_imaginary",
+      "CoordinateSymbol.is_infinite",
+      "CoordinateSymbol.is_irrational",
+      "CoordinateSymbol.is_negative",
+      "CoordinateSymbol.is_noninteger",
+      "CoordinateSymbol.is_nonnegative",
+      "CoordinateSymbol.is_nonpositive",
+      "CoordinateSymbol.is_nonzero",
+      "CoordinateSymbol.is_odd",
+      "CoordinateSymbol.is_polar",
+      "CoordinateSymbol.is_positive",
+      "CoordinateSymbol.is_prime",
+      "CoordinateSymbol.is_rational",
+      "CoordinateSymbol.is_real",
+      "CoordinateSymbol.is_scalar",
+      "CoordinateSymbol.is_symbol",
+      "CoordinateSymbol.is_transcendental",
+      "CoordinateSymbol.is_zero",
+      "CoordinateSymbol.name",
+      "CoordinateSymbol.to_nnf",
+      "CovarDerivativeOp.christoffel",
+      "CovarDerivativeOp.wrt",
+      "Differential.form_field",
+      "Differential.is_commutative",
+      "LieDerivative.expr",
+      "LieDerivative.v_field",
+      "Manifold.dim",
+      "Manifold.name",
+      "Patch.manifold",
+      "Patch.name",
+      "dummyfy"
+     ],
+     "unresolvedBases": [
+      "sympy.core.Basic",
+      "sympy.core.Expr"
+     ]
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 98,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "non-call-expression": 5,
+      "reference-exception": 1
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.diffgeom.tests.test_diffgeom",
+     "testFile": "sympy/diffgeom/tests/test_diffgeom.py",
+     "inCorpus": true,
+     "caseCount": 101,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-call-expression": 8,
+      "not-executed": 1,
+      "not-exported-api": 4,
+      "unsupported-assertion": 8
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": true,
+     "note": "base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 104,
    "declaredPublicNames": [
     "BaseCovarDerivativeOp",
@@ -18746,10 +19065,46 @@
   {
    "module": "sympy.diffgeom.rn",
    "sha256": "92f82d87aacd256b7de24cd5a2ca59c221f9dc2face154a2a2b92d40d98ca1b4",
-   "status": "unimplemented",
-   "note": "extend package (planned): differential geometry",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "note": "base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems",
+   "sources": [
+    "diffgeom/rn.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.diffgeom.tests.test_rn",
+     "testFile": "sympy/diffgeom/tests/test_rn.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": true,
+     "note": "base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -41988,7 +42343,7 @@
      "testFile": "sympy/functions/special/tests/test_beta_functions.py",
      "inCorpus": true,
      "caseCount": 46,
-     "gapCount": 14,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -42639,7 +42994,7 @@
      "testFile": "sympy/functions/special/tests/test_elliptic_integrals.py",
      "inCorpus": true,
      "caseCount": 78,
-     "gapCount": 12,
+     "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 8
@@ -44217,7 +44572,7 @@
      "testFile": "sympy/functions/special/tests/test_error_functions.py",
      "inCorpus": true,
      "caseCount": 331,
-     "gapCount": 132,
+     "gapCount": 125,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 36,
@@ -44959,7 +45314,7 @@
      "testFile": "sympy/functions/special/tests/test_gamma_functions.py",
      "inCorpus": true,
      "caseCount": 291,
-     "gapCount": 94,
+     "gapCount": 91,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -65450,7 +65805,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_applyfunc.py",
      "inCorpus": true,
      "caseCount": 29,
-     "gapCount": 9,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -66403,7 +66758,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_funcmatrix.py",
      "inCorpus": true,
      "caseCount": 17,
-     "gapCount": 2,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 3,
@@ -67249,7 +67604,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matexpr.py",
      "inCorpus": true,
      "caseCount": 164,
-     "gapCount": 32,
+     "gapCount": 31,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 3,
@@ -72945,11 +73300,11 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "testModule": "sympy.parsing.tests.test_latex",
      "testFile": "sympy/parsing/tests/test_latex.py",
-     "inCorpus": false,
-     "caseCount": 0,
+     "inCorpus": true,
+     "caseCount": 228,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
@@ -73587,7 +73942,7 @@
      "testFile": "sympy/parsing/tests/test_mathematica.py",
      "inCorpus": true,
      "caseCount": 67,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 132
@@ -79483,9 +79838,47 @@
   {
    "module": "sympy.plotting",
    "sha256": "84074e8da8bcfa56a3efdacb2761d96e25b5a245e5cf4a75724f82a1e354ea6f",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "plotting.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "PygletPlot",
+      "plot_backends"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.tests.test_plotting",
+     "testFile": "sympy/tests/test_plotting.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79507,7 +79900,7 @@
    "module": "sympy.plotting.backends",
    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79518,7 +79911,7 @@
    "module": "sympy.plotting.backends.base_backend",
    "sha256": "6a87f972cf26586e9f97cec369d479b1906363cb2c31e94ec0a1568b6efe14ed",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79542,7 +79935,7 @@
    "module": "sympy.plotting.backends.matplotlibbackend",
    "sha256": "333b33e378246a789dd761bcaa739cc0935b6efa9fe9e1a9a67f8867224232da",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79556,7 +79949,7 @@
    "module": "sympy.plotting.backends.matplotlibbackend.matplotlib",
    "sha256": "f5e7eeed24ff0f733efdf7a96423d3732f137581085f43c2932a1c0c655f6cf1",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79574,7 +79967,7 @@
    "module": "sympy.plotting.backends.textbackend",
    "sha256": "9e757f0bb249fe4c067107b60beb699caeb7e56f2f4ee21fe46aefbe6babd2b4",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79587,7 +79980,7 @@
    "module": "sympy.plotting.backends.textbackend.text",
    "sha256": "d6e900ae3c304165040fd481fb5766901e982f911c276ad4a2c51ffcd701a57b",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79602,7 +79995,7 @@
    "module": "sympy.plotting.experimental_lambdify",
    "sha256": "c5c06196f676876d1a23532950deaa004a4ed3be43bf5df60166d027b9775b38",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Python source generation is replaced by symjs numeric evaluation.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79626,9 +80019,66 @@
   {
    "module": "sympy.plotting.intervalmath",
    "sha256": "7d057bb0b67d347a593b95c697665fa97e7ac7e99dabeb1886d58428b9e01e55",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "plotting/intervalmath/index.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "ceil",
+      "imax",
+      "imin",
+      "interval.__add__",
+      "interval.__eq__",
+      "interval.__ge__",
+      "interval.__gt__",
+      "interval.__le__",
+      "interval.__lt__",
+      "interval.__mul__",
+      "interval.__ne__",
+      "interval.__neg__",
+      "interval.__pow__",
+      "interval.__rpow__",
+      "interval.__rsub__",
+      "interval.__rtruediv__",
+      "interval.__sub__",
+      "interval.__truediv__",
+      "interval.mid",
+      "interval.width",
+      "log10"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_intervalmath",
+     "testFile": "sympy/plotting/tests/test_intervalmath.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79662,10 +80112,63 @@
   {
    "module": "sympy.plotting.intervalmath.interval_arithmetic",
    "sha256": "8efe58a2536cea939ac0886e4ac4c157082482674e1703eb18dff52ad8df708b",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/intervalmath/interval_arithmetic.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "interval.__add__",
+      "interval.__eq__",
+      "interval.__ge__",
+      "interval.__gt__",
+      "interval.__le__",
+      "interval.__lt__",
+      "interval.__mul__",
+      "interval.__ne__",
+      "interval.__neg__",
+      "interval.__pow__",
+      "interval.__rpow__",
+      "interval.__rsub__",
+      "interval.__rtruediv__",
+      "interval.__sub__",
+      "interval.__truediv__",
+      "interval.mid",
+      "interval.width"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.intervalmath.tests.test_interval_arithmetic",
+     "testFile": "sympy/plotting/intervalmath/tests/test_interval_arithmetic.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -79692,10 +80195,57 @@
   {
    "module": "sympy.plotting.intervalmath.interval_membership",
    "sha256": "d55a4ed53ed48ef3f170cc920b91a1665f3e54cfc3c488ab4960b76469b12006",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/intervalmath/interval_membership.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "intervalMembership",
+      "intervalMembership.__and__",
+      "intervalMembership.__eq__",
+      "intervalMembership.__invert__",
+      "intervalMembership.__ne__",
+      "intervalMembership.__or__",
+      "intervalMembership.__xor__"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.intervalmath.tests.test_interval_membership",
+     "testFile": "sympy/plotting/intervalmath/tests/test_interval_membership.py",
+     "inCorpus": true,
+     "caseCount": 2,
+     "gapCount": 1,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-boolean-assertion": 1,
+      "not-exported-api": 2,
+      "unserializable-input": 49
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -79711,10 +80261,50 @@
   {
    "module": "sympy.plotting.intervalmath.lib_interval",
    "sha256": "598d6a46dcae6f830325a662cf0e9c5d023934c1085c13bd50458f108f34696f",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/intervalmath/lib_interval.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "ceil",
+      "imax",
+      "imin",
+      "log10"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.intervalmath.tests.test_lib_interval",
+     "testFile": "sympy/plotting/intervalmath/tests/test_lib_interval.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -79746,11 +80336,50 @@
   {
    "module": "sympy.plotting.plot",
    "sha256": "ba6bc6e3b788a8e744528e6a922de30e44ba2d82a74d6153679ab3c59641800c",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "plotting/plot.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "plot_factory"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 2,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "rendering-backend-construction: rendering is done by connector packages": 13
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_plot",
+     "testFile": "sympy/plotting/tests/test_plot.py",
+     "inCorpus": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 15,
    "declaredPublicNames": [
     "check_arguments",
@@ -79766,10 +80395,47 @@
   {
    "module": "sympy.plotting.plot_implicit",
    "sha256": "d71208af8795d60214e12910da4e783c164652060c0a0b0fb6d63ef6e6767993",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/plot_implicit.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_plot_implicit",
+     "testFile": "sympy/plotting/tests/test_plot_implicit.py",
+     "inCorpus": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "unserializable-input": 2
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -79779,10 +80445,52 @@
   {
    "module": "sympy.plotting.plotgrid",
    "sha256": "41999bc58f9f7203eeb1e60b9ca54316ca07ea6e7b0a8b2fcb85bb9788c8a96c",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/plotgrid.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "PlotGrid.close",
+      "PlotGrid.fig",
+      "PlotGrid.save",
+      "PlotGrid.show"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "rendering-backend-construction: rendering is done by connector packages": 3
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_plotgrid",
+     "testFile": "sympy/plotting/tests/test_plotgrid.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 3,
    "declaredPublicNames": [
@@ -79797,7 +80505,7 @@
    "module": "sympy.plotting.pygletplot",
    "sha256": "0ccec651141b7527dc75d1f3db733139285ab4115cdbab4ffec7771bca460901",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79810,7 +80518,7 @@
    "module": "sympy.plotting.pygletplot.color_scheme",
    "sha256": "3603d46a692577281fac83e3d0bbc2ff503386c715b60d7c152b9d125bc5601f",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79828,7 +80536,7 @@
    "module": "sympy.plotting.pygletplot.managed_window",
    "sha256": "37b00ab4cec42df2092e27bacef23e27af8e411067319bba00bd544b3ee11449",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79845,7 +80553,7 @@
    "module": "sympy.plotting.pygletplot.plot",
    "sha256": "b3ee40241d0a7a51ecf561a8148548758acea0c5df7699cce7e1b6705f31cc34",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79868,7 +80576,7 @@
    "module": "sympy.plotting.pygletplot.plot_axes",
    "sha256": "43d60df16d077753de7e51cbbcebd267e87178b5382aade75052d80c2d31d04f",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79902,7 +80610,7 @@
    "module": "sympy.plotting.pygletplot.plot_camera",
    "sha256": "9b262d29bbf5a2ffe5b60477e217fc051efab770304d2bb8405518e5863e7b51",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79925,7 +80633,7 @@
    "module": "sympy.plotting.pygletplot.plot_controller",
    "sha256": "32ba092523c26c10d3f201acfc676aa55fca1ec96530d269c71d0c537bca255f",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79946,7 +80654,7 @@
    "module": "sympy.plotting.pygletplot.plot_curve",
    "sha256": "630280da5602ec8c0239025a3959f0c3c0001b83f7e9c02b81b0b588b57d3852",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79961,7 +80669,7 @@
    "module": "sympy.plotting.pygletplot.plot_interval",
    "sha256": "768aabdb0c67ac40f83090e5931434ec616f69a817dfa1d46fbee5cbfbc8b8a4",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79990,7 +80698,7 @@
    "module": "sympy.plotting.pygletplot.plot_mode",
    "sha256": "0e3abe7b0566b3f2684ab883a68943861b6db412507493bc043e04d27c8e59c4",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80005,7 +80713,7 @@
    "module": "sympy.plotting.pygletplot.plot_mode_base",
    "sha256": "df3dd68de37b4d3b251c97af86bdd7ffb1d11cf81495e6129e0bbadbce6547a9",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80022,7 +80730,7 @@
    "module": "sympy.plotting.pygletplot.plot_modes",
    "sha256": "80acc94a1cfa3976ba10729aafc4ae1d6ac42d5ce7c60fecd9de480509247981",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80043,7 +80751,7 @@
    "module": "sympy.plotting.pygletplot.plot_object",
    "sha256": "a86b7370aba9e08b750aa6768f103b167a2b0ae6b84bd23e07fec8dd21c18dc4",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80057,7 +80765,7 @@
    "module": "sympy.plotting.pygletplot.plot_rotation",
    "sha256": "2863024f2692879fd4403f45286088a68237f826db3a15f14dc8c0735a39f8f5",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80075,7 +80783,7 @@
    "module": "sympy.plotting.pygletplot.plot_surface",
    "sha256": "0b4abdb730e6c730b52295a234a638965cdca29c7a761a2d18e2e92b537d9b7b",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80090,7 +80798,7 @@
    "module": "sympy.plotting.pygletplot.plot_window",
    "sha256": "e5ba02d85926938ebe8161aa5b375390f99330d1c73a90340a707dabde3a1f07",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80108,7 +80816,7 @@
    "module": "sympy.plotting.pygletplot.util",
    "sha256": "9b34108030dba74e01d372b226ba2cb0ba7c62aef6449ce3a7edc0adf8db307f",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80141,10 +80849,210 @@
   {
    "module": "sympy.plotting.series",
    "sha256": "84f90c89c022dbd463a09905a4c0add42467d31741558535c0b9e28a01e009a3",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/series.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "BaseSeries.get_data",
+      "BaseSeries.is_2Dvector",
+      "BaseSeries.is_3D",
+      "BaseSeries.is_3Dvector",
+      "BaseSeries.is_line",
+      "BaseSeries.is_vector",
+      "BaseSeries.params",
+      "BaseSeries.ranges",
+      "BaseSeries.rendering_kw",
+      "BaseSeries.scales",
+      "ContourSeries.is_2Dvector",
+      "ContourSeries.is_3D",
+      "ContourSeries.is_3Dvector",
+      "ContourSeries.is_line",
+      "ContourSeries.is_vector",
+      "ContourSeries.params",
+      "ContourSeries.ranges",
+      "ContourSeries.rendering_kw",
+      "ContourSeries.scales",
+      "GenericDataSeries.is_2Dvector",
+      "GenericDataSeries.is_3D",
+      "GenericDataSeries.is_3Dvector",
+      "GenericDataSeries.is_line",
+      "GenericDataSeries.is_vector",
+      "GenericDataSeries.params",
+      "GenericDataSeries.ranges",
+      "GenericDataSeries.rendering_kw",
+      "GenericDataSeries.scales",
+      "ImplicitSeries.color",
+      "ImplicitSeries.is_2Dvector",
+      "ImplicitSeries.is_3D",
+      "ImplicitSeries.is_3Dvector",
+      "ImplicitSeries.is_line",
+      "ImplicitSeries.is_vector",
+      "ImplicitSeries.params",
+      "ImplicitSeries.ranges",
+      "ImplicitSeries.rendering_kw",
+      "ImplicitSeries.scales",
+      "ImplicitSeries.use_cm",
+      "IntervalMathPrinter",
+      "IntervalMathPrinter.doprint",
+      "IntervalMathPrinter.emptyPrinter",
+      "IntervalMathPrinter.language",
+      "IntervalMathPrinter.modules",
+      "IntervalMathPrinter.order",
+      "IntervalMathPrinter.parenthesize",
+      "IntervalMathPrinter.printmethod",
+      "IntervalMathPrinter.reserved_words",
+      "IntervalMathPrinter.set_global_settings",
+      "IntervalMathPrinter.stringify",
+      "IntervalMathPrinter.tab",
+      "Line2DBaseSeries.get_segments",
+      "Line2DBaseSeries.is_2Dvector",
+      "Line2DBaseSeries.is_3D",
+      "Line2DBaseSeries.is_3Dvector",
+      "Line2DBaseSeries.is_line",
+      "Line2DBaseSeries.is_vector",
+      "Line2DBaseSeries.params",
+      "Line2DBaseSeries.ranges",
+      "Line2DBaseSeries.rendering_kw",
+      "Line2DBaseSeries.scales",
+      "Line2DBaseSeries.xscale",
+      "Line3DBaseSeries.get_segments",
+      "Line3DBaseSeries.is_2Dvector",
+      "Line3DBaseSeries.is_3D",
+      "Line3DBaseSeries.is_3Dvector",
+      "Line3DBaseSeries.is_line",
+      "Line3DBaseSeries.is_vector",
+      "Line3DBaseSeries.params",
+      "Line3DBaseSeries.ranges",
+      "Line3DBaseSeries.rendering_kw",
+      "Line3DBaseSeries.scales",
+      "Line3DBaseSeries.xscale",
+      "LineOver1DRangeSeries.get_segments",
+      "LineOver1DRangeSeries.is_2Dvector",
+      "LineOver1DRangeSeries.is_3D",
+      "LineOver1DRangeSeries.is_3Dvector",
+      "LineOver1DRangeSeries.is_line",
+      "LineOver1DRangeSeries.is_vector",
+      "LineOver1DRangeSeries.params",
+      "LineOver1DRangeSeries.ranges",
+      "LineOver1DRangeSeries.rendering_kw",
+      "LineOver1DRangeSeries.scales",
+      "LineOver1DRangeSeries.xscale",
+      "List2DSeries.get_segments",
+      "List2DSeries.is_2Dvector",
+      "List2DSeries.is_3D",
+      "List2DSeries.is_3Dvector",
+      "List2DSeries.is_line",
+      "List2DSeries.is_vector",
+      "List2DSeries.params",
+      "List2DSeries.ranges",
+      "List2DSeries.rendering_kw",
+      "List2DSeries.scales",
+      "List2DSeries.xscale",
+      "Parametric2DLineSeries.get_segments",
+      "Parametric2DLineSeries.is_2Dvector",
+      "Parametric2DLineSeries.is_3D",
+      "Parametric2DLineSeries.is_3Dvector",
+      "Parametric2DLineSeries.is_line",
+      "Parametric2DLineSeries.is_vector",
+      "Parametric2DLineSeries.params",
+      "Parametric2DLineSeries.ranges",
+      "Parametric2DLineSeries.rendering_kw",
+      "Parametric2DLineSeries.scales",
+      "Parametric2DLineSeries.xscale",
+      "Parametric3DLineSeries.get_segments",
+      "Parametric3DLineSeries.is_2Dvector",
+      "Parametric3DLineSeries.is_3D",
+      "Parametric3DLineSeries.is_3Dvector",
+      "Parametric3DLineSeries.is_line",
+      "Parametric3DLineSeries.is_vector",
+      "Parametric3DLineSeries.params",
+      "Parametric3DLineSeries.ranges",
+      "Parametric3DLineSeries.rendering_kw",
+      "Parametric3DLineSeries.scales",
+      "Parametric3DLineSeries.xscale",
+      "ParametricLineBaseSeries.get_segments",
+      "ParametricLineBaseSeries.is_2Dvector",
+      "ParametricLineBaseSeries.is_3D",
+      "ParametricLineBaseSeries.is_3Dvector",
+      "ParametricLineBaseSeries.is_line",
+      "ParametricLineBaseSeries.is_vector",
+      "ParametricLineBaseSeries.params",
+      "ParametricLineBaseSeries.ranges",
+      "ParametricLineBaseSeries.rendering_kw",
+      "ParametricLineBaseSeries.scales",
+      "ParametricLineBaseSeries.xscale",
+      "ParametricSurfaceSeries.is_2Dvector",
+      "ParametricSurfaceSeries.is_3D",
+      "ParametricSurfaceSeries.is_3Dvector",
+      "ParametricSurfaceSeries.is_line",
+      "ParametricSurfaceSeries.is_vector",
+      "ParametricSurfaceSeries.params",
+      "ParametricSurfaceSeries.ranges",
+      "ParametricSurfaceSeries.rendering_kw",
+      "ParametricSurfaceSeries.scales",
+      "SurfaceBaseSeries.get_data",
+      "SurfaceBaseSeries.is_2Dvector",
+      "SurfaceBaseSeries.is_3D",
+      "SurfaceBaseSeries.is_3Dvector",
+      "SurfaceBaseSeries.is_line",
+      "SurfaceBaseSeries.is_vector",
+      "SurfaceBaseSeries.params",
+      "SurfaceBaseSeries.ranges",
+      "SurfaceBaseSeries.rendering_kw",
+      "SurfaceBaseSeries.scales",
+      "SurfaceOver2DRangeSeries.is_2Dvector",
+      "SurfaceOver2DRangeSeries.is_3D",
+      "SurfaceOver2DRangeSeries.is_3Dvector",
+      "SurfaceOver2DRangeSeries.is_line",
+      "SurfaceOver2DRangeSeries.is_vector",
+      "SurfaceOver2DRangeSeries.params",
+      "SurfaceOver2DRangeSeries.ranges",
+      "SurfaceOver2DRangeSeries.rendering_kw",
+      "SurfaceOver2DRangeSeries.scales"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_series",
+     "testFile": "sympy/plotting/tests/test_series.py",
+     "inCorpus": true,
+     "caseCount": 9,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-boolean-assertion": 51,
+      "non-call-expression": 51,
+      "not-executed": 1,
+      "not-exported-api": 191,
+      "stateful-iterator-input": 8,
+      "unserializable-input": 86,
+      "unsupported-assertion": 22
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -80226,11 +81134,53 @@
   {
    "module": "sympy.plotting.textplot",
    "sha256": "5dcf9b5afcd53aaf10527fc1c43949bfd6ebc82a60cec815ef75e8410c158f44",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "plotting/textplot.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "is_valid",
+      "linspace",
+      "rescale"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 1,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_textplot",
+     "testFile": "sympy/plotting/tests/test_textplot.py",
+     "inCorpus": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-call-expression": 5,
+      "stateful-iterator-input": 2
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 1,
    "declaredPublicNames": [
     "is_valid",
@@ -80243,10 +81193,51 @@
   {
    "module": "sympy.plotting.utils",
    "sha256": "0a29a7a3d3101a371b7b8ad0e9337ceabe2b336b7ad8280046a3ed805d26851f",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/utils.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "non-call-expression": 3,
+      "not-exported-api": 4
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_utils",
+     "testFile": "sympy/plotting/tests/test_utils.py",
+     "inCorpus": true,
+     "caseCount": 4,
+     "gapCount": 1,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-call-expression": 13,
+      "not-exported-api": 27
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 7,
    "declaredPublicNames": [
@@ -80306,7 +81297,6 @@
       "GroebnerBasis.dummy_eq",
       "GroebnerBasis.expr_free_symbols",
       "GroebnerBasis.exprs",
-      "GroebnerBasis.fglm",
       "GroebnerBasis.find",
       "GroebnerBasis.fromiter",
       "GroebnerBasis.func",
@@ -82526,9 +83516,46 @@
   {
    "module": "sympy.polys.densearith",
    "sha256": "eb007a0c958a341d1103b4dd83b8cc81120446365db40a77d8e421210eb0995e",
-   "status": "unimplemented",
-   "note": "dense recursive list arithmetic (dup_*/dmp_*); to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/densearith.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 75,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "reference-exception": 4
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": true,
+     "testModule": "sympy.polys.tests.test_densearith",
+     "testFile": "sympy/polys/tests/test_densearith.py",
+     "inCorpus": true,
+     "caseCount": 312,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 79,
@@ -83151,7 +84178,6 @@
       "ComplexField.cyclotomic_field",
       "ComplexField.denom",
       "ComplexField.drop",
-      "ComplexField.dtype",
       "ComplexField.evalf",
       "ComplexField.exsqrt",
       "ComplexField.from_AlgebraicField",
@@ -83915,9 +84941,7 @@
       "RealField.convert_from",
       "RealField.cyclotomic_field",
       "RealField.denom",
-      "RealField.dps",
       "RealField.drop",
-      "RealField.dtype",
       "RealField.evalf",
       "RealField.exsqrt",
       "RealField.from_AlgebraicField",
@@ -83991,7 +85015,6 @@
       "RealField.one",
       "RealField.pos",
       "RealField.pow",
-      "RealField.precision",
       "RealField.real",
       "RealField.rep",
       "RealField.revert",
@@ -84429,7 +85452,6 @@
       "ComplexField.cyclotomic_field",
       "ComplexField.denom",
       "ComplexField.drop",
-      "ComplexField.dtype",
       "ComplexField.evalf",
       "ComplexField.exsqrt",
       "ComplexField.from_AlgebraicField",
@@ -86583,9 +87605,49 @@
   {
    "module": "sympy.polys.domains.mpelements",
    "sha256": "3d11035aafd60397abdb3cdfb6de4b834a299d6cf2141b0890b29cc865d4573d",
-   "status": "unimplemented",
-   "note": "RealField/ComplexField elements; to be ported to ./polys on numeric/ (the mpmath _mpf/_mpc subclassing and context plumbing are Python-specific and excluded)",
-   "sources": [],
+   "status": "partial",
+   "note": "RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.",
+   "sources": [
+    "polys/domains/mpelements.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [],
+     "unresolvedBases": [
+      "mpmath.ctx_mp_python.PythonMPContext",
+      "mpmath.ctx_mp_python._mpc",
+      "mpmath.ctx_mp_python._mpf"
+     ]
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.polys.domains.tests.test_mpelements",
+     "testFile": "sympy/polys/domains/tests/test_mpelements.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": true,
+     "note": "RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -87855,9 +88917,7 @@
       "RealField.convert_from",
       "RealField.cyclotomic_field",
       "RealField.denom",
-      "RealField.dps",
       "RealField.drop",
-      "RealField.dtype",
       "RealField.evalf",
       "RealField.exsqrt",
       "RealField.from_AlgebraicField",
@@ -87931,7 +88991,6 @@
       "RealField.one",
       "RealField.pos",
       "RealField.pow",
-      "RealField.precision",
       "RealField.real",
       "RealField.rep",
       "RealField.revert",
@@ -88643,9 +89702,44 @@
   {
    "module": "sympy.polys.fglmtools",
    "sha256": "677552fc82ac66ed68de0db628f4c81f57de34bf1c4e989e68d5af2ee20b98ae",
-   "status": "unimplemented",
-   "note": "FGLM change of monomial order; to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/fglmtools.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.polys.tests.test_fglmtools",
+     "testFile": "sympy/polys/tests/test_fglmtools.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -89649,9 +90743,46 @@
   {
    "module": "sympy.polys.matrices.eigen",
    "sha256": "82502bc6cf7fad3ac4fecb33d9f77680a093b20b92c841f0a1e40ff36b6621c3",
-   "status": "unimplemented",
-   "note": "DomainMatrix eigenvalues and eigenvectors; to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/eigen.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.polys.matrices.tests.test_eigen",
+     "testFile": "sympy/polys/matrices/tests/test_eigen.py",
+     "inCorpus": true,
+     "caseCount": 4,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-call-expression": 2
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -89720,11 +90851,48 @@
   {
    "module": "sympy.polys.matrices.linsolve",
    "sha256": "a7cea39493fd8770b1657f76c64dac875580bca064079fd80f9e64d686299862",
-   "status": "unimplemented",
-   "note": "DomainMatrix linear system solving; to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/linsolve.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 4,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.polys.matrices.tests.test_linsolve",
+     "testFile": "sympy/polys/matrices/tests/test_linsolve.py",
+     "inCorpus": true,
+     "caseCount": 4,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "not-exported-api": 11
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 4,
    "declaredPublicNames": [
     "sympy_dict_to_dm"
@@ -90040,9 +91208,50 @@
   {
    "module": "sympy.polys.modulargcd",
    "sha256": "80ec288c84a257c22771a10764964c1ce0b5a1d37bc5128de4bd4bb38b3344e2",
-   "status": "unimplemented",
-   "note": "modular GCD algorithms (modgcd_*, func_field_modgcd); to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/modulargcd.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 15,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "non-call-expression": 21,
+      "not-exported-api": 10
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.polys.tests.test_modulargcd",
+     "testFile": "sympy/polys/tests/test_modulargcd.py",
+     "inCorpus": true,
+     "caseCount": 43,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-call-expression": 7,
+      "not-exported-api": 5
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 46,
@@ -90580,8 +91789,8 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 126,
-     "gapCount": 28,
-     "timeoutCount": 1,
+     "gapCount": 29,
+     "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-slow": 1,
       "non-call-expression": 25,
@@ -91274,7 +92483,7 @@
      "testFile": "sympy/polys/tests/test_partfrac.py",
      "inCorpus": true,
      "caseCount": 35,
-     "gapCount": 8,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 3,
@@ -92849,9 +94058,44 @@
   {
    "module": "sympy.polys.polyquinticconst",
    "sha256": "9982c559206adc7dd8d08f1cc7be99ff16ae2f1d58795882e3117ac96b124cf4",
-   "status": "unimplemented",
-   "note": "constants of the quintic solver; to be ported to ./polys with roots_quintic",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/polyquinticconst.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.polys.tests.test_polyquinticconst",
+     "testFile": "sympy/polys/tests/test_polyquinticconst.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -92888,8 +94132,7 @@
       "roots_cyclotomic",
       "roots_linear",
       "roots_quadratic",
-      "roots_quartic",
-      "roots_quintic"
+      "roots_quartic"
      ],
      "unresolvedBases": []
     },
@@ -92911,7 +94154,7 @@
      "testFile": "sympy/polys/tests/test_polyroots.py",
      "inCorpus": true,
      "caseCount": 108,
-     "gapCount": 50,
+     "gapCount": 49,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 2,
@@ -92978,7 +94221,6 @@
       "GroebnerBasis.dummy_eq",
       "GroebnerBasis.expr_free_symbols",
       "GroebnerBasis.exprs",
-      "GroebnerBasis.fglm",
       "GroebnerBasis.find",
       "GroebnerBasis.fromiter",
       "GroebnerBasis.func",
@@ -93494,7 +94736,7 @@
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
      "caseCount": 1584,
-     "gapCount": 647,
+     "gapCount": 631,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -97627,26 +98869,19 @@
       "FormalPowerSeries.__floordiv__",
       "FormalPowerSeries.__rfloordiv__",
       "FormalPowerSeries.__rmod__",
-      "FormalPowerSeries.__truediv__",
       "FormalPowerSeries.ak",
       "FormalPowerSeries.args",
       "FormalPowerSeries.assumptions0",
       "FormalPowerSeries.canonical_variables",
       "FormalPowerSeries.coeff_bell",
-      "FormalPowerSeries.conjugate",
       "FormalPowerSeries.default_assumptions",
-      "FormalPowerSeries.equals",
       "FormalPowerSeries.expr_free_symbols",
-      "FormalPowerSeries.fromiter",
       "FormalPowerSeries.func",
       "FormalPowerSeries.function",
-      "FormalPowerSeries.has",
       "FormalPowerSeries.ind",
       "FormalPowerSeries.infinite",
-      "FormalPowerSeries.interval",
       "FormalPowerSeries.is_Add",
       "FormalPowerSeries.is_AlgebraicNumber",
-      "FormalPowerSeries.is_Atom",
       "FormalPowerSeries.is_Boolean",
       "FormalPowerSeries.is_Derivative",
       "FormalPowerSeries.is_Dummy",
@@ -97672,8 +98907,6 @@
       "FormalPowerSeries.is_Wild",
       "FormalPowerSeries.is_algebraic",
       "FormalPowerSeries.is_antihermitian",
-      "FormalPowerSeries.is_commutative",
-      "FormalPowerSeries.is_comparable",
       "FormalPowerSeries.is_complex",
       "FormalPowerSeries.is_composite",
       "FormalPowerSeries.is_even",
@@ -97693,24 +98926,15 @@
       "FormalPowerSeries.is_nonnegative",
       "FormalPowerSeries.is_nonpositive",
       "FormalPowerSeries.is_nonzero",
-      "FormalPowerSeries.is_number",
       "FormalPowerSeries.is_odd",
       "FormalPowerSeries.is_polar",
       "FormalPowerSeries.is_positive",
       "FormalPowerSeries.is_prime",
       "FormalPowerSeries.is_rational",
       "FormalPowerSeries.is_real",
-      "FormalPowerSeries.is_scalar",
       "FormalPowerSeries.is_symbol",
       "FormalPowerSeries.is_transcendental",
       "FormalPowerSeries.is_zero",
-      "FormalPowerSeries.length",
-      "FormalPowerSeries.n",
-      "FormalPowerSeries.start",
-      "FormalPowerSeries.stop",
-      "FormalPowerSeries.subs",
-      "FormalPowerSeries.term",
-      "FormalPowerSeries.variables",
       "FormalPowerSeries.x",
       "FormalPowerSeries.x0",
       "FormalPowerSeries.xk",
@@ -98043,7 +99267,7 @@
      "testFile": "sympy/series/tests/test_formal.py",
      "inCorpus": true,
      "caseCount": 132,
-     "gapCount": 59,
+     "gapCount": 53,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -98237,22 +99461,15 @@
       "FourierSeries.__floordiv__",
       "FourierSeries.__rfloordiv__",
       "FourierSeries.__rmod__",
-      "FourierSeries.__truediv__",
       "FourierSeries.args",
       "FourierSeries.assumptions0",
       "FourierSeries.canonical_variables",
-      "FourierSeries.conjugate",
       "FourierSeries.default_assumptions",
-      "FourierSeries.equals",
       "FourierSeries.expr_free_symbols",
-      "FourierSeries.fromiter",
       "FourierSeries.func",
       "FourierSeries.function",
-      "FourierSeries.has",
-      "FourierSeries.interval",
       "FourierSeries.is_Add",
       "FourierSeries.is_AlgebraicNumber",
-      "FourierSeries.is_Atom",
       "FourierSeries.is_Boolean",
       "FourierSeries.is_Derivative",
       "FourierSeries.is_Dummy",
@@ -98278,8 +99495,6 @@
       "FourierSeries.is_Wild",
       "FourierSeries.is_algebraic",
       "FourierSeries.is_antihermitian",
-      "FourierSeries.is_commutative",
-      "FourierSeries.is_comparable",
       "FourierSeries.is_complex",
       "FourierSeries.is_composite",
       "FourierSeries.is_even",
@@ -98299,24 +99514,16 @@
       "FourierSeries.is_nonnegative",
       "FourierSeries.is_nonpositive",
       "FourierSeries.is_nonzero",
-      "FourierSeries.is_number",
       "FourierSeries.is_odd",
       "FourierSeries.is_polar",
       "FourierSeries.is_positive",
       "FourierSeries.is_prime",
       "FourierSeries.is_rational",
       "FourierSeries.is_real",
-      "FourierSeries.is_scalar",
       "FourierSeries.is_symbol",
       "FourierSeries.is_transcendental",
       "FourierSeries.is_zero",
-      "FourierSeries.length",
-      "FourierSeries.n",
       "FourierSeries.period",
-      "FourierSeries.start",
-      "FourierSeries.stop",
-      "FourierSeries.subs",
-      "FourierSeries.variables",
       "FourierSeries.x",
       "finite_check",
       "fourier_cos_seq",
@@ -98344,7 +99551,7 @@
      "testFile": "sympy/series/tests/test_fourier.py",
      "inCorpus": true,
      "caseCount": 42,
-     "gapCount": 15,
+     "gapCount": 11,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 12,
@@ -99117,7 +100324,6 @@
       "SeqBase.gen",
       "SeqBase.has_free",
       "SeqBase.has_xfree",
-      "SeqBase.interval",
       "SeqBase.is_Add",
       "SeqBase.is_AlgebraicNumber",
       "SeqBase.is_Boolean",
@@ -99906,10 +101112,110 @@
   {
    "module": "sympy.series.series_class",
    "sha256": "d37dcd27945ef004b87aaf9c8667dcb77f8bcf6bc1a9d16a5ed9eb6f1b304f1d",
-   "status": "unimplemented",
-   "note": "SeriesBase, abstract base class of sequences/fourier/formal series; to be ported to ./calculus",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "series/series_class.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "SeriesBase.__floordiv__",
+      "SeriesBase.__rfloordiv__",
+      "SeriesBase.__rmod__",
+      "SeriesBase.args",
+      "SeriesBase.assumptions0",
+      "SeriesBase.canonical_variables",
+      "SeriesBase.default_assumptions",
+      "SeriesBase.expr_free_symbols",
+      "SeriesBase.func",
+      "SeriesBase.is_Add",
+      "SeriesBase.is_AlgebraicNumber",
+      "SeriesBase.is_Boolean",
+      "SeriesBase.is_Derivative",
+      "SeriesBase.is_Dummy",
+      "SeriesBase.is_Equality",
+      "SeriesBase.is_Float",
+      "SeriesBase.is_Indexed",
+      "SeriesBase.is_Integer",
+      "SeriesBase.is_MatAdd",
+      "SeriesBase.is_MatMul",
+      "SeriesBase.is_Matrix",
+      "SeriesBase.is_Mul",
+      "SeriesBase.is_Not",
+      "SeriesBase.is_NumberSymbol",
+      "SeriesBase.is_Order",
+      "SeriesBase.is_Piecewise",
+      "SeriesBase.is_Point",
+      "SeriesBase.is_Poly",
+      "SeriesBase.is_Pow",
+      "SeriesBase.is_Rational",
+      "SeriesBase.is_Relational",
+      "SeriesBase.is_Symbol",
+      "SeriesBase.is_Vector",
+      "SeriesBase.is_Wild",
+      "SeriesBase.is_algebraic",
+      "SeriesBase.is_antihermitian",
+      "SeriesBase.is_complex",
+      "SeriesBase.is_composite",
+      "SeriesBase.is_even",
+      "SeriesBase.is_extended_negative",
+      "SeriesBase.is_extended_nonnegative",
+      "SeriesBase.is_extended_nonpositive",
+      "SeriesBase.is_extended_nonzero",
+      "SeriesBase.is_extended_positive",
+      "SeriesBase.is_extended_real",
+      "SeriesBase.is_finite",
+      "SeriesBase.is_hermitian",
+      "SeriesBase.is_imaginary",
+      "SeriesBase.is_infinite",
+      "SeriesBase.is_irrational",
+      "SeriesBase.is_negative",
+      "SeriesBase.is_noninteger",
+      "SeriesBase.is_nonnegative",
+      "SeriesBase.is_nonpositive",
+      "SeriesBase.is_nonzero",
+      "SeriesBase.is_odd",
+      "SeriesBase.is_polar",
+      "SeriesBase.is_positive",
+      "SeriesBase.is_prime",
+      "SeriesBase.is_rational",
+      "SeriesBase.is_real",
+      "SeriesBase.is_symbol",
+      "SeriesBase.is_transcendental",
+      "SeriesBase.is_zero"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.series.tests.test_series_class",
+     "testFile": "sympy/series/tests/test_series_class.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -101984,7 +103290,7 @@
      "testFile": "sympy/sets/tests/test_conditionset.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 36,
+     "gapCount": 37,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -108251,7 +109557,7 @@
      "testFile": "sympy/solvers/ode/tests/test_single.py",
      "inCorpus": true,
      "caseCount": 12,
-     "gapCount": 7,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 15,
@@ -108555,7 +109861,7 @@
      "testFile": "sympy/solvers/tests/test_polysys.py",
      "inCorpus": true,
      "caseCount": 106,
-     "gapCount": 23,
+     "gapCount": 22,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -108744,7 +110050,7 @@
      "testFile": "sympy/solvers/tests/test_solvers.py",
      "inCorpus": true,
      "caseCount": 437,
-     "gapCount": 229,
+     "gapCount": 219,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 215,
@@ -108832,8 +110138,8 @@
      "testFile": "sympy/solvers/tests/test_solveset.py",
      "inCorpus": true,
      "caseCount": 568,
-     "gapCount": 293,
-     "timeoutCount": 3,
+     "gapCount": 264,
+     "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-skip": 1,
       "marked-slow": 2,
@@ -120398,7 +121704,7 @@
      "testFile": "sympy/stats/tests/test_joint_rv.py",
      "inCorpus": true,
      "caseCount": 61,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 3,
@@ -121955,7 +123261,7 @@
      "testFile": "sympy/stats/tests/test_matrix_distributions.py",
      "inCorpus": true,
      "caseCount": 44,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 1,
@@ -122129,7 +123435,7 @@
      "testFile": "sympy/stats/tests/test_random_matrix.py",
      "inCorpus": true,
      "caseCount": 22,
-     "gapCount": 10,
+     "gapCount": 7,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -124160,7 +125466,7 @@
      "testFile": "sympy/stats/tests/test_rv.py",
      "inCorpus": true,
      "caseCount": 102,
-     "gapCount": 12,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -126474,7 +127780,7 @@
      "testFile": "sympy/stats/tests/test_symbolic_probability.py",
      "inCorpus": true,
      "caseCount": 87,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
@@ -127541,9 +128847,118 @@
   {
    "module": "sympy.tensor.array.array_derivatives",
    "sha256": "73e818780feaa57398dda7b1cb3ee9b12aa64d5206541adc183bd2916e5d655d",
-   "status": "unimplemented",
-   "note": "ArrayDerivative; to be ported to ./tensor",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "tensor/array/arrayderivatives.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "ArrayDerivative.__floordiv__",
+      "ArrayDerivative.__rfloordiv__",
+      "ArrayDerivative.__rmod__",
+      "ArrayDerivative.args",
+      "ArrayDerivative.as_finite_difference",
+      "ArrayDerivative.assumptions0",
+      "ArrayDerivative.canonical",
+      "ArrayDerivative.canonical_variables",
+      "ArrayDerivative.default_assumptions",
+      "ArrayDerivative.derivative_count",
+      "ArrayDerivative.doit_numerically",
+      "ArrayDerivative.expr_free_symbols",
+      "ArrayDerivative.func",
+      "ArrayDerivative.is_Add",
+      "ArrayDerivative.is_AlgebraicNumber",
+      "ArrayDerivative.is_Boolean",
+      "ArrayDerivative.is_Derivative",
+      "ArrayDerivative.is_Dummy",
+      "ArrayDerivative.is_Equality",
+      "ArrayDerivative.is_Float",
+      "ArrayDerivative.is_Indexed",
+      "ArrayDerivative.is_Integer",
+      "ArrayDerivative.is_MatAdd",
+      "ArrayDerivative.is_MatMul",
+      "ArrayDerivative.is_Matrix",
+      "ArrayDerivative.is_Mul",
+      "ArrayDerivative.is_Not",
+      "ArrayDerivative.is_NumberSymbol",
+      "ArrayDerivative.is_Order",
+      "ArrayDerivative.is_Piecewise",
+      "ArrayDerivative.is_Point",
+      "ArrayDerivative.is_Poly",
+      "ArrayDerivative.is_Pow",
+      "ArrayDerivative.is_Rational",
+      "ArrayDerivative.is_Relational",
+      "ArrayDerivative.is_Symbol",
+      "ArrayDerivative.is_Vector",
+      "ArrayDerivative.is_Wild",
+      "ArrayDerivative.is_algebraic",
+      "ArrayDerivative.is_antihermitian",
+      "ArrayDerivative.is_complex",
+      "ArrayDerivative.is_composite",
+      "ArrayDerivative.is_even",
+      "ArrayDerivative.is_extended_negative",
+      "ArrayDerivative.is_extended_nonnegative",
+      "ArrayDerivative.is_extended_nonpositive",
+      "ArrayDerivative.is_extended_nonzero",
+      "ArrayDerivative.is_extended_positive",
+      "ArrayDerivative.is_extended_real",
+      "ArrayDerivative.is_finite",
+      "ArrayDerivative.is_hermitian",
+      "ArrayDerivative.is_imaginary",
+      "ArrayDerivative.is_infinite",
+      "ArrayDerivative.is_irrational",
+      "ArrayDerivative.is_negative",
+      "ArrayDerivative.is_noninteger",
+      "ArrayDerivative.is_nonnegative",
+      "ArrayDerivative.is_nonpositive",
+      "ArrayDerivative.is_nonzero",
+      "ArrayDerivative.is_odd",
+      "ArrayDerivative.is_polar",
+      "ArrayDerivative.is_positive",
+      "ArrayDerivative.is_prime",
+      "ArrayDerivative.is_rational",
+      "ArrayDerivative.is_real",
+      "ArrayDerivative.is_scalar",
+      "ArrayDerivative.is_symbol",
+      "ArrayDerivative.is_transcendental",
+      "ArrayDerivative.is_zero",
+      "ArrayDerivative.shape",
+      "ArrayDerivative.variables"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.tensor.array.tests.test_array_derivatives",
+     "testFile": "sympy/tensor/array/tests/test_array_derivatives.py",
+     "inCorpus": true,
+     "caseCount": 12,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "not-exported-api": 6
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -128094,13 +129509,9 @@
       "ArrayElement.is_transcendental",
       "ArrayElement.is_zero",
       "ArrayElement.name",
-      "ArrayElementwiseApplyFunc",
-      "ArrayElementwiseApplyFunc.__eq__",
-      "ArrayElementwiseApplyFunc.__ne__",
       "ArrayElementwiseApplyFunc.args",
       "ArrayElementwiseApplyFunc.as_content_primitive",
       "ArrayElementwiseApplyFunc.as_dummy",
-      "ArrayElementwiseApplyFunc.as_explicit",
       "ArrayElementwiseApplyFunc.assumptions0",
       "ArrayElementwiseApplyFunc.atoms",
       "ArrayElementwiseApplyFunc.canonical_variables",
@@ -128111,20 +129522,16 @@
       "ArrayElementwiseApplyFunc.count",
       "ArrayElementwiseApplyFunc.count_ops",
       "ArrayElementwiseApplyFunc.default_assumptions",
-      "ArrayElementwiseApplyFunc.doit",
       "ArrayElementwiseApplyFunc.dummy_eq",
       "ArrayElementwiseApplyFunc.expr",
       "ArrayElementwiseApplyFunc.expr_free_symbols",
       "ArrayElementwiseApplyFunc.find",
-      "ArrayElementwiseApplyFunc.fromiter",
       "ArrayElementwiseApplyFunc.func",
       "ArrayElementwiseApplyFunc.function",
-      "ArrayElementwiseApplyFunc.has",
       "ArrayElementwiseApplyFunc.has_free",
       "ArrayElementwiseApplyFunc.has_xfree",
       "ArrayElementwiseApplyFunc.is_Add",
       "ArrayElementwiseApplyFunc.is_AlgebraicNumber",
-      "ArrayElementwiseApplyFunc.is_Atom",
       "ArrayElementwiseApplyFunc.is_Boolean",
       "ArrayElementwiseApplyFunc.is_Derivative",
       "ArrayElementwiseApplyFunc.is_Dummy",
@@ -128150,8 +129557,6 @@
       "ArrayElementwiseApplyFunc.is_Wild",
       "ArrayElementwiseApplyFunc.is_algebraic",
       "ArrayElementwiseApplyFunc.is_antihermitian",
-      "ArrayElementwiseApplyFunc.is_commutative",
-      "ArrayElementwiseApplyFunc.is_comparable",
       "ArrayElementwiseApplyFunc.is_complex",
       "ArrayElementwiseApplyFunc.is_composite",
       "ArrayElementwiseApplyFunc.is_even",
@@ -128172,7 +129577,6 @@
       "ArrayElementwiseApplyFunc.is_nonnegative",
       "ArrayElementwiseApplyFunc.is_nonpositive",
       "ArrayElementwiseApplyFunc.is_nonzero",
-      "ArrayElementwiseApplyFunc.is_number",
       "ArrayElementwiseApplyFunc.is_odd",
       "ArrayElementwiseApplyFunc.is_polar",
       "ArrayElementwiseApplyFunc.is_positive",
@@ -128188,13 +129592,10 @@
       "ArrayElementwiseApplyFunc.rcall",
       "ArrayElementwiseApplyFunc.refine",
       "ArrayElementwiseApplyFunc.replace",
-      "ArrayElementwiseApplyFunc.rewrite",
       "ArrayElementwiseApplyFunc.shape",
-      "ArrayElementwiseApplyFunc.simplify",
       "ArrayElementwiseApplyFunc.sort_key",
       "ArrayElementwiseApplyFunc.subrank",
       "ArrayElementwiseApplyFunc.subranks",
-      "ArrayElementwiseApplyFunc.subs",
       "ArrayElementwiseApplyFunc.xreplace",
       "ArraySymbol.__floordiv__",
       "ArraySymbol.__rfloordiv__",
@@ -128347,25 +129748,17 @@
       "ArrayTensorProduct.sort_key",
       "ArrayTensorProduct.subrank",
       "ArrayTensorProduct.xreplace",
-      "OneArray",
       "OneArray.__floordiv__",
       "OneArray.__rfloordiv__",
       "OneArray.__rmod__",
-      "OneArray.__truediv__",
       "OneArray.args",
-      "OneArray.as_explicit",
       "OneArray.assumptions0",
       "OneArray.canonical_variables",
-      "OneArray.conjugate",
       "OneArray.default_assumptions",
-      "OneArray.equals",
       "OneArray.expr_free_symbols",
-      "OneArray.fromiter",
       "OneArray.func",
-      "OneArray.has",
       "OneArray.is_Add",
       "OneArray.is_AlgebraicNumber",
-      "OneArray.is_Atom",
       "OneArray.is_Boolean",
       "OneArray.is_Derivative",
       "OneArray.is_Dummy",
@@ -128391,8 +129784,6 @@
       "OneArray.is_Wild",
       "OneArray.is_algebraic",
       "OneArray.is_antihermitian",
-      "OneArray.is_commutative",
-      "OneArray.is_comparable",
       "OneArray.is_complex",
       "OneArray.is_composite",
       "OneArray.is_even",
@@ -128412,20 +129803,16 @@
       "OneArray.is_nonnegative",
       "OneArray.is_nonpositive",
       "OneArray.is_nonzero",
-      "OneArray.is_number",
       "OneArray.is_odd",
       "OneArray.is_polar",
       "OneArray.is_positive",
       "OneArray.is_prime",
       "OneArray.is_rational",
       "OneArray.is_real",
-      "OneArray.is_scalar",
       "OneArray.is_symbol",
       "OneArray.is_transcendental",
       "OneArray.is_zero",
-      "OneArray.n",
       "OneArray.shape",
-      "OneArray.subs",
       "PermuteDims.args",
       "PermuteDims.as_content_primitive",
       "PermuteDims.as_dummy",
@@ -128666,8 +130053,7 @@
       "ZeroArray.is_symbol",
       "ZeroArray.is_transcendental",
       "ZeroArray.is_zero",
-      "ZeroArray.shape",
-      "convert_array_to_indexed"
+      "ZeroArray.shape"
      ],
      "unresolvedBases": []
     },
@@ -129075,13 +130461,9 @@
       "ArrayElement.is_transcendental",
       "ArrayElement.is_zero",
       "ArrayElement.name",
-      "ArrayElementwiseApplyFunc",
-      "ArrayElementwiseApplyFunc.__eq__",
-      "ArrayElementwiseApplyFunc.__ne__",
       "ArrayElementwiseApplyFunc.args",
       "ArrayElementwiseApplyFunc.as_content_primitive",
       "ArrayElementwiseApplyFunc.as_dummy",
-      "ArrayElementwiseApplyFunc.as_explicit",
       "ArrayElementwiseApplyFunc.assumptions0",
       "ArrayElementwiseApplyFunc.atoms",
       "ArrayElementwiseApplyFunc.canonical_variables",
@@ -129092,20 +130474,16 @@
       "ArrayElementwiseApplyFunc.count",
       "ArrayElementwiseApplyFunc.count_ops",
       "ArrayElementwiseApplyFunc.default_assumptions",
-      "ArrayElementwiseApplyFunc.doit",
       "ArrayElementwiseApplyFunc.dummy_eq",
       "ArrayElementwiseApplyFunc.expr",
       "ArrayElementwiseApplyFunc.expr_free_symbols",
       "ArrayElementwiseApplyFunc.find",
-      "ArrayElementwiseApplyFunc.fromiter",
       "ArrayElementwiseApplyFunc.func",
       "ArrayElementwiseApplyFunc.function",
-      "ArrayElementwiseApplyFunc.has",
       "ArrayElementwiseApplyFunc.has_free",
       "ArrayElementwiseApplyFunc.has_xfree",
       "ArrayElementwiseApplyFunc.is_Add",
       "ArrayElementwiseApplyFunc.is_AlgebraicNumber",
-      "ArrayElementwiseApplyFunc.is_Atom",
       "ArrayElementwiseApplyFunc.is_Boolean",
       "ArrayElementwiseApplyFunc.is_Derivative",
       "ArrayElementwiseApplyFunc.is_Dummy",
@@ -129131,8 +130509,6 @@
       "ArrayElementwiseApplyFunc.is_Wild",
       "ArrayElementwiseApplyFunc.is_algebraic",
       "ArrayElementwiseApplyFunc.is_antihermitian",
-      "ArrayElementwiseApplyFunc.is_commutative",
-      "ArrayElementwiseApplyFunc.is_comparable",
       "ArrayElementwiseApplyFunc.is_complex",
       "ArrayElementwiseApplyFunc.is_composite",
       "ArrayElementwiseApplyFunc.is_even",
@@ -129153,7 +130529,6 @@
       "ArrayElementwiseApplyFunc.is_nonnegative",
       "ArrayElementwiseApplyFunc.is_nonpositive",
       "ArrayElementwiseApplyFunc.is_nonzero",
-      "ArrayElementwiseApplyFunc.is_number",
       "ArrayElementwiseApplyFunc.is_odd",
       "ArrayElementwiseApplyFunc.is_polar",
       "ArrayElementwiseApplyFunc.is_positive",
@@ -129169,13 +130544,10 @@
       "ArrayElementwiseApplyFunc.rcall",
       "ArrayElementwiseApplyFunc.refine",
       "ArrayElementwiseApplyFunc.replace",
-      "ArrayElementwiseApplyFunc.rewrite",
       "ArrayElementwiseApplyFunc.shape",
-      "ArrayElementwiseApplyFunc.simplify",
       "ArrayElementwiseApplyFunc.sort_key",
       "ArrayElementwiseApplyFunc.subrank",
       "ArrayElementwiseApplyFunc.subranks",
-      "ArrayElementwiseApplyFunc.subs",
       "ArrayElementwiseApplyFunc.xreplace",
       "ArraySymbol.__floordiv__",
       "ArraySymbol.__rfloordiv__",
@@ -129328,25 +130700,17 @@
       "ArrayTensorProduct.sort_key",
       "ArrayTensorProduct.subrank",
       "ArrayTensorProduct.xreplace",
-      "OneArray",
       "OneArray.__floordiv__",
       "OneArray.__rfloordiv__",
       "OneArray.__rmod__",
-      "OneArray.__truediv__",
       "OneArray.args",
-      "OneArray.as_explicit",
       "OneArray.assumptions0",
       "OneArray.canonical_variables",
-      "OneArray.conjugate",
       "OneArray.default_assumptions",
-      "OneArray.equals",
       "OneArray.expr_free_symbols",
-      "OneArray.fromiter",
       "OneArray.func",
-      "OneArray.has",
       "OneArray.is_Add",
       "OneArray.is_AlgebraicNumber",
-      "OneArray.is_Atom",
       "OneArray.is_Boolean",
       "OneArray.is_Derivative",
       "OneArray.is_Dummy",
@@ -129372,8 +130736,6 @@
       "OneArray.is_Wild",
       "OneArray.is_algebraic",
       "OneArray.is_antihermitian",
-      "OneArray.is_commutative",
-      "OneArray.is_comparable",
       "OneArray.is_complex",
       "OneArray.is_composite",
       "OneArray.is_even",
@@ -129393,20 +130755,16 @@
       "OneArray.is_nonnegative",
       "OneArray.is_nonpositive",
       "OneArray.is_nonzero",
-      "OneArray.is_number",
       "OneArray.is_odd",
       "OneArray.is_polar",
       "OneArray.is_positive",
       "OneArray.is_prime",
       "OneArray.is_rational",
       "OneArray.is_real",
-      "OneArray.is_scalar",
       "OneArray.is_symbol",
       "OneArray.is_transcendental",
       "OneArray.is_zero",
-      "OneArray.n",
       "OneArray.shape",
-      "OneArray.subs",
       "PermuteDims.args",
       "PermuteDims.as_content_primitive",
       "PermuteDims.as_dummy",
@@ -129787,7 +131145,7 @@
      "testFile": "sympy/tensor/array/expressions/tests/test_arrayexpr_derivatives.py",
      "inCorpus": true,
      "caseCount": 1,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 6,
@@ -129825,10 +131183,57 @@
   {
    "module": "sympy.tensor.array.expressions.conv_array_to_indexed",
    "sha256": "048c2542bed1282f1b64dde647c2020b94d8382f6e6ac61c57465cd5534a9a21",
-   "status": "unimplemented",
-   "note": "array expressions to Indexed; to be ported to ./tensor",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/fromarraytoindexed.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.tensor.array.expressions.tests.test_conv_array_to_indexed",
+     "testFile": "sympy/tensor/array/expressions/tests/test_conv_array_to_indexed.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": false,
+     "note": "",
+     "capabilities": [
+      {
+       "area": "Array expressions",
+       "remaining": [
+        "General fixed-index slices and shifted-index conversion",
+        "Index-dependent scalar weights and partial summation ranges",
+        "General Hadamard and nonlinear elementwise matrix recognition",
+        "Inverse and noninteger matrix-power derivatives",
+        "Matrix-power expansion beyond 100 factors",
+        "Further canonicalization of mixed diagonal and permutation expressions"
+       ]
+      }
+     ]
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": []
@@ -130010,10 +131415,57 @@
   {
    "module": "sympy.tensor.array.expressions.from_array_to_indexed",
    "sha256": "dd821cb00cd6556411258412f74b8fbd297674ced9a8b57faadec4f7eb98536f",
-   "status": "unimplemented",
-   "note": "array expressions to Indexed; to be ported to ./tensor",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/fromarraytoindexed.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.tensor.array.expressions.tests.test_from_array_to_indexed",
+     "testFile": "sympy/tensor/array/expressions/tests/test_from_array_to_indexed.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": false,
+     "note": "",
+     "capabilities": [
+      {
+       "area": "Array expressions",
+       "remaining": [
+        "General fixed-index slices and shifted-index conversion",
+        "Index-dependent scalar weights and partial summation ranges",
+        "General Hadamard and nonlinear elementwise matrix recognition",
+        "Inverse and noninteger matrix-power derivatives",
+        "Matrix-power expansion beyond 100 factors",
+        "Further canonicalization of mixed diagonal and permutation expressions"
+       ]
+      }
+     ]
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -130210,10 +131662,57 @@
   {
    "module": "sympy.tensor.array.expressions.utils",
    "sha256": "467e7c6e81c7504a01645b629c3a6bb8b585064341c2091543873d9bb3729b5a",
-   "status": "unimplemented",
-   "note": "array expression helpers; to be ported to ./tensor",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/utils.ts"
+   ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.tensor.array.expressions.tests.test_utils",
+     "testFile": "sympy/tensor/array/expressions/tests/test_utils.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": false,
+     "note": "",
+     "capabilities": [
+      {
+       "area": "Array expressions",
+       "remaining": [
+        "General fixed-index slices and shifted-index conversion",
+        "Index-dependent scalar weights and partial summation ranges",
+        "General Hadamard and nonlinear elementwise matrix recognition",
+        "Inverse and noninteger matrix-power derivatives",
+        "Matrix-power expansion beyond 100 factors",
+        "Further canonicalization of mixed diagonal and permutation expressions"
+       ]
+      }
+     ]
+    }
+   },
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": []
@@ -130632,7 +132131,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "TensorProduct",
       "TensorProduct.__floordiv__",
       "TensorProduct.__rfloordiv__",
       "TensorProduct.__rmod__",
@@ -130732,7 +132230,7 @@
      "testFile": "sympy/tensor/tests/test_functions.py",
      "inCorpus": true,
      "caseCount": 1,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,

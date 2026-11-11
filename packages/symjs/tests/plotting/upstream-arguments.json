@@ -1,0 +1,6602 @@
+{
+ "sympy": "1.14.0",
+ "factories": [
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "expr": "x + 1"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x + 1",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    "label"
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "label",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x + 1",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test",
+    {
+     "color": "r"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "color": "r"
+     },
+     "data": [
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    {
+     "expr": "x**2"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x + 1",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ]
+     ]
+    },
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x**2",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       100.0,
+       25.0,
+       0.0,
+       25.0,
+       100.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    {
+     "expr": "x**2"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     5
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x + 1",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "5"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       0.0,
+       1.25,
+       2.5,
+       3.75,
+       5.0
+      ],
+      [
+       1.0,
+       2.25,
+       3.5,
+       4.75,
+       6.0
+      ]
+     ]
+    },
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x**2",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "5"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       0.0,
+       1.25,
+       2.5,
+       3.75,
+       5.0
+      ],
+      [
+       0.0,
+       1.5625,
+       6.25,
+       14.0625,
+       25.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    {
+     "expr": "x**2"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     5
+    ],
+    {
+     "color": "r"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x + 1",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "5"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "color": "r"
+     },
+     "data": [
+      [
+       0.0,
+       1.25,
+       2.5,
+       3.75,
+       5.0
+      ],
+      [
+       1.0,
+       2.25,
+       3.5,
+       4.75,
+       6.0
+      ]
+     ]
+    },
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x**2",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "5"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "color": "r"
+     },
+     "data": [
+      [
+       0.0,
+       1.25,
+       2.5,
+       3.75,
+       5.0
+      ],
+      [
+       0.0,
+       1.5625,
+       6.25,
+       14.0625,
+       25.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      0,
+      5
+     ]
+    ],
+    [
+     {
+      "expr": "x**2"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      -2,
+      2
+     ],
+     "test",
+     {
+      "color": "r"
+     }
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "x + 1",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "5"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       0.0,
+       1.25,
+       2.5,
+       3.75,
+       5.0
+      ],
+      [
+       1.0,
+       2.25,
+       3.5,
+       4.75,
+       6.0
+      ]
+     ]
+    },
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "color": "r"
+     },
+     "data": [
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       4.0,
+       1.0,
+       0.0,
+       1.0,
+       4.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "callback": "t",
+     "parameters": [
+      "t"
+     ]
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "",
+     "ranges": [
+      [
+       {
+        "expr": "_Dummy_59"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_arguments",
+   "factory": "plot",
+   "args": [
+    {
+     "callback": "t",
+     "parameters": [
+      "t"
+     ]
+    },
+    [
+     "t",
+     -5,
+     6
+    ],
+    "test"
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "LineOver1DRangeSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "t"
+       },
+       {
+        "expr": "-5"
+       },
+       {
+        "expr": "6"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -5.0,
+       -2.25,
+       0.5,
+       3.25,
+       6.0
+      ],
+      [
+       -5.0,
+       -2.25,
+       0.5,
+       3.25,
+       6.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    {
+     "expr": "x"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test",
+    {
+     "cmap": "Reds"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     }
+    ],
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     }
+    ],
+    [
+     {
+      "expr": "x**2"
+     },
+     {
+      "expr": "x + 1"
+     }
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    },
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       100.0,
+       25.0,
+       0.0,
+       25.0,
+       100.0
+      ],
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     }
+    ],
+    [
+     {
+      "expr": "y**2"
+     },
+     {
+      "expr": "y + 1"
+     },
+     "test"
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    },
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       100.0,
+       25.0,
+       0.0,
+       25.0,
+       100.0
+      ],
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     }
+    ],
+    [
+     {
+      "expr": "x**2"
+     },
+     {
+      "expr": "x + 1"
+     }
+    ],
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ]
+     ]
+    },
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       4.0,
+       1.0,
+       0.0,
+       1.0,
+       4.0
+      ],
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      -2,
+      2
+     ],
+     "test1"
+    ],
+    [
+     {
+      "expr": "x**2"
+     },
+     {
+      "expr": "x + 1"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      -3,
+      3
+     ],
+     "test2",
+     {
+      "cmap": "Reds"
+     }
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "test1",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ]
+     ]
+    },
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "test2",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-3"
+       },
+       {
+        "expr": "3"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       9.0,
+       2.25,
+       0.0,
+       2.25,
+       9.0
+      ],
+      [
+       -2.0,
+       -0.5,
+       1.0,
+       2.5,
+       4.0
+      ],
+      [
+       -3.0,
+       -1.5,
+       0.0,
+       1.5,
+       3.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    {
+     "callback": "t",
+     "parameters": [
+      "t"
+     ]
+    },
+    {
+     "callback": "2*t",
+     "parameters": [
+      "t"
+     ]
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "_Dummy_105",
+     "ranges": [
+      [
+       {
+        "expr": "_Dummy_105"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -20.0,
+       -10.0,
+       0.0,
+       10.0,
+       20.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot_parametric_arguments",
+   "factory": "plot_parametric",
+   "args": [
+    {
+     "callback": "t",
+     "parameters": [
+      "t"
+     ]
+    },
+    {
+     "callback": "2*t",
+     "parameters": [
+      "t"
+     ]
+    },
+    [
+     "t",
+     0,
+     2
+    ],
+    "test"
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric2DLineSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "t"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0
+      ],
+      [
+       0.0,
+       1.0,
+       2.0,
+       3.0,
+       4.0
+      ],
+      [
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_line_arguments",
+   "factory": "plot3d_parametric_line",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    {
+     "expr": "x"
+    },
+    {
+     "expr": "sin(x)"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       0.5440211108893698,
+       0.9589242746631385,
+       0.0,
+       -0.9589242746631385,
+       -0.5440211108893698
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_line_arguments",
+   "factory": "plot3d_parametric_line",
+   "args": [
+    {
+     "expr": "x + 1"
+    },
+    {
+     "expr": "x"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test",
+    {
+     "cmap": "Reds"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       -0.9092974268256817,
+       -0.8414709848078965,
+       0.0,
+       0.8414709848078965,
+       0.9092974268256817
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_line_arguments",
+   "factory": "plot3d_parametric_line",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     },
+     {
+      "expr": "sin(x)"
+     }
+    ],
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -1.0,
+       0.0,
+       1.0,
+       2.0,
+       3.0
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ],
+      [
+       -0.9092974268256817,
+       -0.8414709848078965,
+       0.0,
+       0.8414709848078965,
+       0.9092974268256817
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_line_arguments",
+   "factory": "plot3d_parametric_line",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     },
+     {
+      "expr": "sin(x)"
+     }
+    ],
+    [
+     {
+      "expr": "x**2"
+     },
+     1,
+     {
+      "expr": "cos(x)"
+     },
+     {
+      "cmap": "Reds"
+     }
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       0.5440211108893698,
+       0.9589242746631385,
+       0.0,
+       -0.9589242746631385,
+       -0.5440211108893698
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    },
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       100.0,
+       25.0,
+       0.0,
+       25.0,
+       100.0
+      ],
+      [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ],
+      [
+       -0.8390715290764524,
+       0.28366218546322625,
+       1.0,
+       0.28366218546322625,
+       -0.8390715290764524
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_line_arguments",
+   "factory": "plot3d_parametric_line",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     },
+     {
+      "expr": "sin(x)"
+     }
+    ],
+    [
+     {
+      "expr": "y**2"
+     },
+     1,
+     {
+      "expr": "cos(y)"
+     }
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       0.5440211108893698,
+       0.9589242746631385,
+       0.0,
+       -0.9589242746631385,
+       -0.5440211108893698
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    },
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "y",
+     "ranges": [
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       100.0,
+       25.0,
+       0.0,
+       25.0,
+       100.0
+      ],
+      [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ],
+      [
+       -0.8390715290764524,
+       0.28366218546322625,
+       1.0,
+       0.28366218546322625,
+       -0.8390715290764524
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_line_arguments",
+   "factory": "plot3d_parametric_line",
+   "args": [
+    [
+     {
+      "expr": "x + 1"
+     },
+     {
+      "expr": "x"
+     },
+     {
+      "expr": "sin(x)"
+     }
+    ],
+    [
+     {
+      "expr": "x**2"
+     },
+     1,
+     {
+      "expr": "cos(x)"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      -2,
+      2
+     ],
+     "test",
+     {
+      "cmap": "Reds"
+     }
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "x",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -9.0,
+       -4.0,
+       1.0,
+       6.0,
+       11.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       0.5440211108893698,
+       0.9589242746631385,
+       0.0,
+       -0.9589242746631385,
+       -0.5440211108893698
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    },
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       4.0,
+       1.0,
+       0.0,
+       1.0,
+       4.0
+      ],
+      [
+       1.0,
+       1.0,
+       1.0,
+       1.0,
+       1.0
+      ],
+      [
+       -0.4161468365471424,
+       0.5403023058681398,
+       1.0,
+       0.5403023058681398,
+       -0.4161468365471424
+      ],
+      [
+       -2.0,
+       -1.0,
+       0.0,
+       1.0,
+       2.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_line_arguments",
+   "factory": "plot3d_parametric_line",
+   "args": [
+    {
+     "callback": "t",
+     "parameters": [
+      "t"
+     ]
+    },
+    {
+     "callback": "2*t",
+     "parameters": [
+      "t"
+     ]
+    },
+    {
+     "callback": "3*t",
+     "parameters": [
+      "t"
+     ]
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "_Dummy_161",
+     "ranges": [
+      [
+       {
+        "expr": "_Dummy_161"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ],
+      [
+       -20.0,
+       -10.0,
+       0.0,
+       10.0,
+       20.0
+      ],
+      [
+       -30.0,
+       -15.0,
+       0.0,
+       15.0,
+       30.0
+      ],
+      [
+       -10.0,
+       -5.0,
+       0.0,
+       5.0,
+       10.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_line_arguments",
+   "factory": "plot3d_parametric_line",
+   "args": [
+    {
+     "callback": "t",
+     "parameters": [
+      "t"
+     ]
+    },
+    {
+     "callback": "2*t",
+     "parameters": [
+      "t"
+     ]
+    },
+    {
+     "callback": "3*t",
+     "parameters": [
+      "t"
+     ]
+    },
+    [
+     "t",
+     0,
+     2
+    ],
+    "test"
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "Parametric3DLineSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "t"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "2"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0
+      ],
+      [
+       0.0,
+       1.0,
+       2.0,
+       3.0,
+       4.0
+      ],
+      [
+       0.0,
+       1.5,
+       3.0,
+       4.5,
+       6.0
+      ],
+      [
+       0.0,
+       0.5,
+       1.0,
+       1.5,
+       2.0
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    {
+     "expr": "x + y"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "x + y",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -20.0,
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0
+       ],
+       [
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0,
+        5.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -5.0,
+        0.0,
+        5.0,
+        10.0,
+        15.0
+       ],
+       [
+        0.0,
+        5.0,
+        10.0,
+        15.0,
+        20.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    {
+     "expr": "x + y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test",
+    {
+     "cmap": "Reds"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -12.0,
+        -11.0,
+        -10.0,
+        -9.0,
+        -8.0
+       ],
+       [
+        -7.0,
+        -6.0,
+        -5.0,
+        -4.0,
+        -3.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0
+       ],
+       [
+        8.0,
+        9.0,
+        10.0,
+        11.0,
+        12.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    {
+     "expr": "x + y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -4,
+     4
+    ],
+    "test"
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-4"
+       },
+       {
+        "expr": "4"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ]
+      ],
+      [
+       [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+       ],
+       [
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ],
+      [
+       [
+        -6.0,
+        -5.0,
+        -4.0,
+        -3.0,
+        -2.0
+       ],
+       [
+        -4.0,
+        -3.0,
+        -2.0,
+        -1.0,
+        0.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+       ],
+       [
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    {
+     "expr": "x + y"
+    },
+    {
+     "expr": "x*y"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "x + y",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -20.0,
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0
+       ],
+       [
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0,
+        5.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -5.0,
+        0.0,
+        5.0,
+        10.0,
+        15.0
+       ],
+       [
+        0.0,
+        5.0,
+        10.0,
+        15.0,
+        20.0
+       ]
+      ]
+     ]
+    },
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "x*y",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        100.0,
+        50.0,
+        -0.0,
+        -50.0,
+        -100.0
+       ],
+       [
+        50.0,
+        25.0,
+        -0.0,
+        -25.0,
+        -50.0
+       ],
+       [
+        -0.0,
+        -0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        -50.0,
+        -25.0,
+        0.0,
+        25.0,
+        50.0
+       ],
+       [
+        -100.0,
+        -50.0,
+        0.0,
+        50.0,
+        100.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    {
+     "expr": "x + y"
+    },
+    {
+     "expr": "x*y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -4,
+     4
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "x + y",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-4"
+       },
+       {
+        "expr": "4"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ]
+      ],
+      [
+       [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+       ],
+       [
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ],
+      [
+       [
+        -6.0,
+        -5.0,
+        -4.0,
+        -3.0,
+        -2.0
+       ],
+       [
+        -4.0,
+        -3.0,
+        -2.0,
+        -1.0,
+        0.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+       ],
+       [
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+       ]
+      ]
+     ]
+    },
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "x*y",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-4"
+       },
+       {
+        "expr": "4"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ]
+      ],
+      [
+       [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+       ],
+       [
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ],
+      [
+       [
+        8.0,
+        4.0,
+        -0.0,
+        -4.0,
+        -8.0
+       ],
+       [
+        4.0,
+        2.0,
+        -0.0,
+        -2.0,
+        -4.0
+       ],
+       [
+        -0.0,
+        -0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        -4.0,
+        -2.0,
+        0.0,
+        2.0,
+        4.0
+       ],
+       [
+        -8.0,
+        -4.0,
+        0.0,
+        4.0,
+        8.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    [
+     {
+      "expr": "x + y"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      -2,
+      2
+     ],
+     [
+      {
+       "expr": "y"
+      },
+      -4,
+      4
+     ]
+    ],
+    [
+     {
+      "expr": "x*y"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      -3,
+      3
+     ],
+     [
+      {
+       "expr": "y"
+      },
+      -6,
+      6
+     ],
+     "test",
+     {
+      "cmap": "Reds"
+     }
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "x + y",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-4"
+       },
+       {
+        "expr": "4"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ]
+      ],
+      [
+       [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+       ],
+       [
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ],
+      [
+       [
+        -6.0,
+        -5.0,
+        -4.0,
+        -3.0,
+        -2.0
+       ],
+       [
+        -4.0,
+        -3.0,
+        -2.0,
+        -1.0,
+        0.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+       ],
+       [
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+       ]
+      ]
+     ]
+    },
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-3"
+       },
+       {
+        "expr": "3"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-6"
+       },
+       {
+        "expr": "6"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ]
+      ],
+      [
+       [
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0,
+        -6.0
+       ],
+       [
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        3.0
+       ],
+       [
+        6.0,
+        6.0,
+        6.0,
+        6.0,
+        6.0
+       ]
+      ],
+      [
+       [
+        18.0,
+        9.0,
+        -0.0,
+        -9.0,
+        -18.0
+       ],
+       [
+        9.0,
+        4.5,
+        -0.0,
+        -4.5,
+        -9.0
+       ],
+       [
+        -0.0,
+        -0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        -9.0,
+        -4.5,
+        0.0,
+        4.5,
+        9.0
+       ],
+       [
+        -18.0,
+        -9.0,
+        0.0,
+        9.0,
+        18.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    {
+     "callback": "x + y",
+     "parameters": [
+      "x",
+      "y"
+     ]
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "",
+     "ranges": [
+      [
+       {
+        "expr": "_Dummy_200"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ],
+      [
+       {
+        "expr": "_Dummy_201"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -20.0,
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0
+       ],
+       [
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0,
+        5.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -5.0,
+        0.0,
+        5.0,
+        10.0,
+        15.0
+       ],
+       [
+        0.0,
+        5.0,
+        10.0,
+        15.0,
+        20.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    {
+     "callback": "x + y",
+     "parameters": [
+      "x",
+      "y"
+     ]
+    },
+    [
+     "a",
+     -5,
+     3
+    ],
+    [
+     "b",
+     -2,
+     1
+    ],
+    "test"
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "a"
+       },
+       {
+        "expr": "-5"
+       },
+       {
+        "expr": "3"
+       }
+      ],
+      [
+       {
+        "expr": "b"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "1"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -5.0,
+        -3.0,
+        -1.0,
+        1.0,
+        3.0
+       ],
+       [
+        -5.0,
+        -3.0,
+        -1.0,
+        1.0,
+        3.0
+       ],
+       [
+        -5.0,
+        -3.0,
+        -1.0,
+        1.0,
+        3.0
+       ],
+       [
+        -5.0,
+        -3.0,
+        -1.0,
+        1.0,
+        3.0
+       ],
+       [
+        -5.0,
+        -3.0,
+        -1.0,
+        1.0,
+        3.0
+       ]
+      ],
+      [
+       [
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0
+       ],
+       [
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25
+       ],
+       [
+        -0.5,
+        -0.5,
+        -0.5,
+        -0.5,
+        -0.5
+       ],
+       [
+        0.25,
+        0.25,
+        0.25,
+        0.25,
+        0.25
+       ],
+       [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+       ]
+      ],
+      [
+       [
+        -7.0,
+        -5.0,
+        -3.0,
+        -1.0,
+        1.0
+       ],
+       [
+        -6.25,
+        -4.25,
+        -2.25,
+        -0.25,
+        1.75
+       ],
+       [
+        -5.5,
+        -3.5,
+        -1.5,
+        0.5,
+        2.5
+       ],
+       [
+        -4.75,
+        -2.75,
+        -0.75,
+        1.25,
+        3.25
+       ],
+       [
+        -4.0,
+        -2.0,
+        0.0,
+        2.0,
+        4.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_plot_contour_arguments",
+   "factory": "plot3d",
+   "args": [
+    {
+     "expr": "Min(x, y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     10
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     0,
+     10
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "SurfaceOver2DRangeSeries",
+     "label": "Min(x, y)",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "10"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        0.0,
+        2.5,
+        5.0,
+        7.5,
+        10.0
+       ],
+       [
+        0.0,
+        2.5,
+        5.0,
+        7.5,
+        10.0
+       ],
+       [
+        0.0,
+        2.5,
+        5.0,
+        7.5,
+        10.0
+       ],
+       [
+        0.0,
+        2.5,
+        5.0,
+        7.5,
+        10.0
+       ],
+       [
+        0.0,
+        2.5,
+        5.0,
+        7.5,
+        10.0
+       ]
+      ],
+      [
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        2.5,
+        2.5,
+        2.5,
+        2.5,
+        2.5
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        7.5,
+        7.5,
+        7.5,
+        7.5,
+        7.5
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        0.0,
+        2.5,
+        2.5,
+        2.5,
+        2.5
+       ],
+       [
+        0.0,
+        2.5,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        0.0,
+        2.5,
+        5.0,
+        7.5,
+        7.5
+       ],
+       [
+        0.0,
+        2.5,
+        5.0,
+        7.5,
+        10.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_surface_arguments",
+   "factory": "plot3d_parametric_surface",
+   "args": [
+    {
+     "expr": "x + y"
+    },
+    {
+     "expr": "cos(x + y)"
+    },
+    {
+     "expr": "sin(x + y)"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "(x + y, cos(x + y), sin(x + y))",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -20.0,
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0
+       ],
+       [
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0,
+        5.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -5.0,
+        0.0,
+        5.0,
+        10.0,
+        15.0
+       ],
+       [
+        0.0,
+        5.0,
+        10.0,
+        15.0,
+        20.0
+       ]
+      ],
+      [
+       [
+        0.408082061813392,
+        -0.7596879128588213,
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0
+       ],
+       [
+        -0.7596879128588213,
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625
+       ],
+       [
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524
+       ],
+       [
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524,
+        -0.7596879128588213
+       ],
+       [
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524,
+        -0.7596879128588213,
+        0.408082061813392
+       ]
+      ],
+      [
+       [
+        -0.9129452507276277,
+        -0.6502878401571168,
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0
+       ],
+       [
+        -0.6502878401571168,
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385
+       ],
+       [
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698
+       ],
+       [
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698,
+        0.6502878401571168
+       ],
+       [
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698,
+        0.6502878401571168,
+        0.9129452507276277
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_surface_arguments",
+   "factory": "plot3d_parametric_surface",
+   "args": [
+    {
+     "expr": "x + y"
+    },
+    {
+     "expr": "cos(x + y)"
+    },
+    {
+     "expr": "sin(x + y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -4,
+     4
+    ],
+    "test",
+    {
+     "cmap": "Reds"
+    }
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-4"
+       },
+       {
+        "expr": "4"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       [
+        -6.0,
+        -5.0,
+        -4.0,
+        -3.0,
+        -2.0
+       ],
+       [
+        -4.0,
+        -3.0,
+        -2.0,
+        -1.0,
+        0.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+       ],
+       [
+        2.0,
+        3.0,
+        4.0,
+        5.0,
+        6.0
+       ]
+      ],
+      [
+       [
+        0.960170286650366,
+        0.28366218546322625,
+        -0.6536436208636119,
+        -0.9899924966004454,
+        -0.4161468365471424
+       ],
+       [
+        -0.6536436208636119,
+        -0.9899924966004454,
+        -0.4161468365471424,
+        0.5403023058681398,
+        1.0
+       ],
+       [
+        -0.4161468365471424,
+        0.5403023058681398,
+        1.0,
+        0.5403023058681398,
+        -0.4161468365471424
+       ],
+       [
+        1.0,
+        0.5403023058681398,
+        -0.4161468365471424,
+        -0.9899924966004454,
+        -0.6536436208636119
+       ],
+       [
+        -0.4161468365471424,
+        -0.9899924966004454,
+        -0.6536436208636119,
+        0.28366218546322625,
+        0.960170286650366
+       ]
+      ],
+      [
+       [
+        0.27941549819892586,
+        0.9589242746631385,
+        0.7568024953079283,
+        -0.1411200080598672,
+        -0.9092974268256817
+       ],
+       [
+        0.7568024953079283,
+        -0.1411200080598672,
+        -0.9092974268256817,
+        -0.8414709848078965,
+        0.0
+       ],
+       [
+        -0.9092974268256817,
+        -0.8414709848078965,
+        0.0,
+        0.8414709848078965,
+        0.9092974268256817
+       ],
+       [
+        0.0,
+        0.8414709848078965,
+        0.9092974268256817,
+        0.1411200080598672,
+        -0.7568024953079283
+       ],
+       [
+        0.9092974268256817,
+        0.1411200080598672,
+        -0.7568024953079283,
+        -0.9589242746631385,
+        -0.27941549819892586
+       ]
+      ],
+      [
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ]
+      ],
+      [
+       [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+       ],
+       [
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_surface_arguments",
+   "factory": "plot3d_parametric_surface",
+   "args": [
+    [
+     {
+      "expr": "x + y"
+     },
+     {
+      "expr": "cos(x + y)"
+     },
+     {
+      "expr": "sin(x + y)"
+     }
+    ],
+    [
+     {
+      "expr": "x - y"
+     },
+     {
+      "expr": "cos(x - y)"
+     },
+     {
+      "expr": "sin(x - y)"
+     },
+     "test"
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "(x + y, cos(x + y), sin(x + y))",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -20.0,
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0
+       ],
+       [
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0,
+        5.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -5.0,
+        0.0,
+        5.0,
+        10.0,
+        15.0
+       ],
+       [
+        0.0,
+        5.0,
+        10.0,
+        15.0,
+        20.0
+       ]
+      ],
+      [
+       [
+        0.408082061813392,
+        -0.7596879128588213,
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0
+       ],
+       [
+        -0.7596879128588213,
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625
+       ],
+       [
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524
+       ],
+       [
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524,
+        -0.7596879128588213
+       ],
+       [
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524,
+        -0.7596879128588213,
+        0.408082061813392
+       ]
+      ],
+      [
+       [
+        -0.9129452507276277,
+        -0.6502878401571168,
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0
+       ],
+       [
+        -0.6502878401571168,
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385
+       ],
+       [
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698
+       ],
+       [
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698,
+        0.6502878401571168
+       ],
+       [
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698,
+        0.6502878401571168,
+        0.9129452507276277
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ]
+     ]
+    },
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        0.0,
+        5.0,
+        10.0,
+        15.0,
+        20.0
+       ],
+       [
+        -5.0,
+        0.0,
+        5.0,
+        10.0,
+        15.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0,
+        5.0
+       ],
+       [
+        -20.0,
+        -15.0,
+        -10.0,
+        -5.0,
+        0.0
+       ]
+      ],
+      [
+       [
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524,
+        -0.7596879128588213,
+        0.408082061813392
+       ],
+       [
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524,
+        -0.7596879128588213
+       ],
+       [
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625,
+        -0.8390715290764524
+       ],
+       [
+        -0.7596879128588213,
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0,
+        0.28366218546322625
+       ],
+       [
+        0.408082061813392,
+        -0.7596879128588213,
+        -0.8390715290764524,
+        0.28366218546322625,
+        1.0
+       ]
+      ],
+      [
+       [
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698,
+        0.6502878401571168,
+        0.9129452507276277
+       ],
+       [
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698,
+        0.6502878401571168
+       ],
+       [
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385,
+        -0.5440211108893698
+       ],
+       [
+        -0.6502878401571168,
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0,
+        -0.9589242746631385
+       ],
+       [
+        -0.9129452507276277,
+        -0.6502878401571168,
+        0.5440211108893698,
+        0.9589242746631385,
+        0.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ],
+       [
+        -10.0,
+        -5.0,
+        0.0,
+        5.0,
+        10.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_surface_arguments",
+   "factory": "plot3d_parametric_surface",
+   "args": [
+    [
+     {
+      "expr": "x + y"
+     },
+     {
+      "expr": "cos(x + y)"
+     },
+     {
+      "expr": "sin(x + y)"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      -2,
+      2
+     ],
+     "test"
+    ],
+    [
+     {
+      "expr": "x - y"
+     },
+     {
+      "expr": "cos(x - y)"
+     },
+     {
+      "expr": "sin(x - y)"
+     },
+     [
+      {
+       "expr": "x"
+      },
+      -3,
+      3
+     ],
+     [
+      {
+       "expr": "y"
+      },
+      -4,
+      4
+     ],
+     "test2",
+     {
+      "cmap": "Reds"
+     }
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-10"
+       },
+       {
+        "expr": "10"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -12.0,
+        -11.0,
+        -10.0,
+        -9.0,
+        -8.0
+       ],
+       [
+        -7.0,
+        -6.0,
+        -5.0,
+        -4.0,
+        -3.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        3.0,
+        4.0,
+        5.0,
+        6.0,
+        7.0
+       ],
+       [
+        8.0,
+        9.0,
+        10.0,
+        11.0,
+        12.0
+       ]
+      ],
+      [
+       [
+        0.8438539587324921,
+        0.004425697988050785,
+        -0.8390715290764524,
+        -0.9111302618846769,
+        -0.14550003380861354
+       ],
+       [
+        0.7539022543433046,
+        0.960170286650366,
+        0.28366218546322625,
+        -0.6536436208636119,
+        -0.9899924966004454
+       ],
+       [
+        -0.4161468365471424,
+        0.5403023058681398,
+        1.0,
+        0.5403023058681398,
+        -0.4161468365471424
+       ],
+       [
+        -0.9899924966004454,
+        -0.6536436208636119,
+        0.28366218546322625,
+        0.960170286650366,
+        0.7539022543433046
+       ],
+       [
+        -0.14550003380861354,
+        -0.9111302618846769,
+        -0.8390715290764524,
+        0.004425697988050785,
+        0.8438539587324921
+       ]
+      ],
+      [
+       [
+        0.5365729180004349,
+        0.9999902065507035,
+        0.5440211108893698,
+        -0.4121184852417566,
+        -0.9893582466233818
+       ],
+       [
+        -0.6569865987187891,
+        0.27941549819892586,
+        0.9589242746631385,
+        0.7568024953079283,
+        -0.1411200080598672
+       ],
+       [
+        -0.9092974268256817,
+        -0.8414709848078965,
+        0.0,
+        0.8414709848078965,
+        0.9092974268256817
+       ],
+       [
+        0.1411200080598672,
+        -0.7568024953079283,
+        -0.9589242746631385,
+        -0.27941549819892586,
+        0.6569865987187891
+       ],
+       [
+        0.9893582466233818,
+        0.4121184852417566,
+        -0.5440211108893698,
+        -0.9999902065507035,
+        -0.5365729180004349
+       ]
+      ],
+      [
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ],
+       [
+        -2.0,
+        -1.0,
+        0.0,
+        1.0,
+        2.0
+       ]
+      ],
+      [
+       [
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0,
+        -10.0
+       ],
+       [
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0,
+        -5.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ],
+       [
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0
+       ]
+      ]
+     ]
+    },
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "test2",
+     "ranges": [
+      [
+       {
+        "expr": "x"
+       },
+       {
+        "expr": "-3"
+       },
+       {
+        "expr": "3"
+       }
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       {
+        "expr": "-4"
+       },
+       {
+        "expr": "4"
+       }
+      ]
+     ],
+     "renderingKw": {
+      "cmap": "Reds"
+     },
+     "data": [
+      [
+       [
+        1.0,
+        2.5,
+        4.0,
+        5.5,
+        7.0
+       ],
+       [
+        -1.0,
+        0.5,
+        2.0,
+        3.5,
+        5.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -5.0,
+        -3.5,
+        -2.0,
+        -0.5,
+        1.0
+       ],
+       [
+        -7.0,
+        -5.5,
+        -4.0,
+        -2.5,
+        -1.0
+       ]
+      ],
+      [
+       [
+        0.5403023058681398,
+        -0.8011436155469337,
+        -0.6536436208636119,
+        0.70866977429126,
+        0.7539022543433046
+       ],
+       [
+        0.5403023058681398,
+        0.8775825618903728,
+        -0.4161468365471424,
+        -0.9364566872907963,
+        0.28366218546322625
+       ],
+       [
+        -0.9899924966004454,
+        0.0707372016677029,
+        1.0,
+        0.0707372016677029,
+        -0.9899924966004454
+       ],
+       [
+        0.28366218546322625,
+        -0.9364566872907963,
+        -0.4161468365471424,
+        0.8775825618903728,
+        0.5403023058681398
+       ],
+       [
+        0.7539022543433046,
+        0.70866977429126,
+        -0.6536436208636119,
+        -0.8011436155469337,
+        0.5403023058681398
+       ]
+      ],
+      [
+       [
+        0.8414709848078965,
+        0.5984721441039564,
+        -0.7568024953079283,
+        -0.7055403255703919,
+        0.6569865987187891
+       ],
+       [
+        -0.8414709848078965,
+        0.479425538604203,
+        0.9092974268256817,
+        -0.35078322768961984,
+        -0.9589242746631385
+       ],
+       [
+        -0.1411200080598672,
+        -0.9974949866040544,
+        0.0,
+        0.9974949866040544,
+        0.1411200080598672
+       ],
+       [
+        0.9589242746631385,
+        0.35078322768961984,
+        -0.9092974268256817,
+        -0.479425538604203,
+        0.8414709848078965
+       ],
+       [
+        -0.6569865987187891,
+        0.7055403255703919,
+        0.7568024953079283,
+        -0.5984721441039564,
+        -0.8414709848078965
+       ]
+      ],
+      [
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ],
+       [
+        -3.0,
+        -1.5,
+        0.0,
+        1.5,
+        3.0
+       ]
+      ],
+      [
+       [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+       ],
+       [
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0,
+        -2.0
+       ],
+       [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+       ],
+       [
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_surface_arguments",
+   "factory": "plot3d_parametric_surface",
+   "args": [
+    {
+     "callback": "u",
+     "parameters": [
+      "u",
+      "v"
+     ]
+    },
+    {
+     "callback": "v",
+     "parameters": [
+      "u",
+      "v"
+     ]
+    },
+    {
+     "callback": "u + v",
+     "parameters": [
+      "u",
+      "v"
+     ]
+    },
+    [
+     "u",
+     0,
+     2
+    ],
+    [
+     "v",
+     -3,
+     4
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "",
+     "ranges": [
+      [
+       {
+        "expr": "u"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "v"
+       },
+       {
+        "expr": "-3"
+       },
+       {
+        "expr": "4"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ]
+      ],
+      [
+       [
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0
+       ],
+       [
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25
+       ],
+       [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+       ],
+       [
+        2.25,
+        2.25,
+        2.25,
+        2.25,
+        2.25
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ],
+      [
+       [
+        -3.0,
+        -2.5,
+        -2.0,
+        -1.5,
+        -1.0
+       ],
+       [
+        -1.25,
+        -0.75,
+        -0.25,
+        0.25,
+        0.75
+       ],
+       [
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5
+       ],
+       [
+        2.25,
+        2.75,
+        3.25,
+        3.75,
+        4.25
+       ],
+       [
+        4.0,
+        4.5,
+        5.0,
+        5.5,
+        6.0
+       ]
+      ],
+      [
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ]
+      ],
+      [
+       [
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0
+       ],
+       [
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25
+       ],
+       [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+       ],
+       [
+        2.25,
+        2.25,
+        2.25,
+        2.25,
+        2.25
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ]
+     ]
+    }
+   ]
+  },
+  {
+   "test": "test_plot3d_parametric_surface_arguments",
+   "factory": "plot3d_parametric_surface",
+   "args": [
+    [
+     {
+      "callback": "u",
+      "parameters": [
+       "u",
+       "v"
+      ]
+     },
+     {
+      "callback": "v",
+      "parameters": [
+       "u",
+       "v"
+      ]
+     },
+     {
+      "callback": "u + v",
+      "parameters": [
+       "u",
+       "v"
+      ]
+     },
+     [
+      "u",
+      0,
+      2
+     ],
+     [
+      "v",
+      -3,
+      4
+     ]
+    ],
+    [
+     {
+      "callback": "v",
+      "parameters": [
+       "u",
+       "v"
+      ]
+     },
+     {
+      "callback": "u",
+      "parameters": [
+       "u",
+       "v"
+      ]
+     },
+     {
+      "callback": "u - v",
+      "parameters": [
+       "u",
+       "v"
+      ]
+     },
+     [
+      "u",
+      -2,
+      3
+     ],
+     [
+      "v",
+      -4,
+      5
+     ],
+     "test"
+    ]
+   ],
+   "options": {},
+   "series": [
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "",
+     "ranges": [
+      [
+       {
+        "expr": "u"
+       },
+       {
+        "expr": "0"
+       },
+       {
+        "expr": "2"
+       }
+      ],
+      [
+       {
+        "expr": "v"
+       },
+       {
+        "expr": "-3"
+       },
+       {
+        "expr": "4"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ]
+      ],
+      [
+       [
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0
+       ],
+       [
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25
+       ],
+       [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+       ],
+       [
+        2.25,
+        2.25,
+        2.25,
+        2.25,
+        2.25
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ],
+      [
+       [
+        -3.0,
+        -2.5,
+        -2.0,
+        -1.5,
+        -1.0
+       ],
+       [
+        -1.25,
+        -0.75,
+        -0.25,
+        0.25,
+        0.75
+       ],
+       [
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5
+       ],
+       [
+        2.25,
+        2.75,
+        3.25,
+        3.75,
+        4.25
+       ],
+       [
+        4.0,
+        4.5,
+        5.0,
+        5.5,
+        6.0
+       ]
+      ],
+      [
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ],
+       [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0
+       ]
+      ],
+      [
+       [
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0,
+        -3.0
+       ],
+       [
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25,
+        -1.25
+       ],
+       [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+       ],
+       [
+        2.25,
+        2.25,
+        2.25,
+        2.25,
+        2.25
+       ],
+       [
+        4.0,
+        4.0,
+        4.0,
+        4.0,
+        4.0
+       ]
+      ]
+     ]
+    },
+    {
+     "class": "ParametricSurfaceSeries",
+     "label": "test",
+     "ranges": [
+      [
+       {
+        "expr": "u"
+       },
+       {
+        "expr": "-2"
+       },
+       {
+        "expr": "3"
+       }
+      ],
+      [
+       {
+        "expr": "v"
+       },
+       {
+        "expr": "-4"
+       },
+       {
+        "expr": "5"
+       }
+      ]
+     ],
+     "renderingKw": {},
+     "data": [
+      [
+       [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+       ],
+       [
+        -1.75,
+        -1.75,
+        -1.75,
+        -1.75,
+        -1.75
+       ],
+       [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+       ],
+       [
+        2.75,
+        2.75,
+        2.75,
+        2.75,
+        2.75
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ]
+      ],
+      [
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ],
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ],
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ],
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ],
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ]
+      ],
+      [
+       [
+        2.0,
+        3.25,
+        4.5,
+        5.75,
+        7.0
+       ],
+       [
+        -0.25,
+        1.0,
+        2.25,
+        3.5,
+        4.75
+       ],
+       [
+        -2.5,
+        -1.25,
+        0.0,
+        1.25,
+        2.5
+       ],
+       [
+        -4.75,
+        -3.5,
+        -2.25,
+        -1.0,
+        0.25
+       ],
+       [
+        -7.0,
+        -5.75,
+        -4.5,
+        -3.25,
+        -2.0
+       ]
+      ],
+      [
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ],
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ],
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ],
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ],
+       [
+        -2.0,
+        -0.75,
+        0.5,
+        1.75,
+        3.0
+       ]
+      ],
+      [
+       [
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0,
+        -4.0
+       ],
+       [
+        -1.75,
+        -1.75,
+        -1.75,
+        -1.75,
+        -1.75
+       ],
+       [
+        0.5,
+        0.5,
+        0.5,
+        0.5,
+        0.5
+       ],
+       [
+        2.75,
+        2.75,
+        2.75,
+        2.75,
+        2.75
+       ],
+       [
+        5.0,
+        5.0,
+        5.0,
+        5.0,
+        5.0
+       ]
+      ]
+     ]
+    }
+   ]
+  }
+ ],
+ "texts": [
+  {
+   "test": "test_axes_alignment",
+   "expr": "x",
+   "a": -1,
+   "b": 1,
+   "width": 55,
+   "height": 21,
+   "lines": [
+    "      1 |                                                     ..",
+    "        |                                                  ...  ",
+    "        |                                                ..     ",
+    "        |                                             ...       ",
+    "        |                                          ...          ",
+    "        |                                        ..             ",
+    "        |                                     ...               ",
+    "        |                                  ...                  ",
+    "        |                                ..                     ",
+    "        |                             ...                       ",
+    "      0 |--------------------------...--------------------------",
+    "        |                       ...                             ",
+    "        |                     ..                                ",
+    "        |                  ...                                  ",
+    "        |               ...                                     ",
+    "        |             ..                                        ",
+    "        |          ...                                          ",
+    "        |       ...                                             ",
+    "        |     ..                                                ",
+    "        |  ...                                                  ",
+    "     -1 |_______________________________________________________",
+    "         -1                         0                          1"
+   ]
+  },
+  {
+   "test": "test_axes_alignment",
+   "expr": "x",
+   "a": -1,
+   "b": 1,
+   "width": 55,
+   "height": 17,
+   "lines": [
+    "      1 |                                                     ..",
+    "        |                                                 ....  ",
+    "        |                                              ...      ",
+    "        |                                           ...         ",
+    "        |                                       ....            ",
+    "        |                                    ...                ",
+    "        |                                 ...                   ",
+    "        |                             ....                      ",
+    "      0 |--------------------------...--------------------------",
+    "        |                      ....                             ",
+    "        |                   ...                                 ",
+    "        |                ...                                    ",
+    "        |            ....                                       ",
+    "        |         ...                                           ",
+    "        |      ...                                              ",
+    "        |  ....                                                 ",
+    "     -1 |_______________________________________________________",
+    "         -1                         0                          1"
+   ]
+  },
+  {
+   "test": "test_singularity",
+   "expr": "1/x",
+   "a": 0,
+   "b": 1,
+   "width": 55,
+   "height": 21,
+   "lines": [
+    "     54 | .                                                     ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "   27.5 |--.----------------------------------------------------",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |   .                                                   ",
+    "        |    \\                                                  ",
+    "        |     \\                                                 ",
+    "        |      ..                                               ",
+    "        |        ...                                            ",
+    "        |           .............                               ",
+    "      1 |_______________________________________________________",
+    "         0                          0.5                        1"
+   ]
+  },
+  {
+   "test": "test_singularity",
+   "expr": "log(x)",
+   "a": 0,
+   "b": 1,
+   "width": 55,
+   "height": 21,
+   "lines": [
+    "      0 |                                                 ......",
+    "        |                                         ........      ",
+    "        |                                 ........              ",
+    "        |                           ......                      ",
+    "        |                      .....                            ",
+    "        |                  ....                                 ",
+    "        |               ...                                     ",
+    "        |             ..                                        ",
+    "        |          ...                                          ",
+    "        |         /                                             ",
+    "     -2 |-------..----------------------------------------------",
+    "        |      /                                                ",
+    "        |     /                                                 ",
+    "        |    /                                                  ",
+    "        |   .                                                   ",
+    "        |                                                       ",
+    "        |  .                                                    ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "     -4 |_______________________________________________________",
+    "         0                          0.5                        1"
+   ]
+  },
+  {
+   "test": "test_sinc",
+   "expr": "sin(x)/x",
+   "a": -10,
+   "b": 10,
+   "width": 55,
+   "height": 21,
+   "lines": [
+    "      1 |                          . .                          ",
+    "        |                         .   .                         ",
+    "        |                                                       ",
+    "        |                        .     .                        ",
+    "        |                                                       ",
+    "        |                       .       .                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                      .         .                      ",
+    "        |                                                       ",
+    "    0.4 |-------------------------------------------------------",
+    "        |                     .           .                     ",
+    "        |                                                       ",
+    "        |                    .             .                    ",
+    "        |                                                       ",
+    "        |    .....                                     .....    ",
+    "        |  ..     \\         .               .         /     ..  ",
+    "        | /        \\                                 /        \\ ",
+    "        |/          \\      .                 .      /          \\",
+    "        |            \\    /                   \\    /            ",
+    "   -0.2 |_______________________________________________________",
+    "         -10                        0                          10"
+   ]
+  },
+  {
+   "test": "test_imaginary",
+   "expr": "sqrt(x)",
+   "a": -1,
+   "b": 1,
+   "width": 55,
+   "height": 21,
+   "lines": [
+    "      1 |                                                     ..",
+    "        |                                                   ..  ",
+    "        |                                                ...    ",
+    "        |                                              ..       ",
+    "        |                                            ..         ",
+    "        |                                          ..           ",
+    "        |                                        ..             ",
+    "        |                                      ..               ",
+    "        |                                    ..                 ",
+    "        |                                   /                   ",
+    "    0.5 |----------------------------------/--------------------",
+    "        |                                ..                     ",
+    "        |                               /                       ",
+    "        |                              .                        ",
+    "        |                                                       ",
+    "        |                             .                         ",
+    "        |                            .                          ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "      0 |_______________________________________________________",
+    "         -1                         0                          1"
+   ]
+  },
+  {
+   "test": "test_imaginary",
+   "expr": "I",
+   "a": -1,
+   "b": 1,
+   "width": 55,
+   "height": 21,
+   "lines": [
+    "      1 |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "      0 |-------------------------------------------------------",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "        |                                                       ",
+    "     -1 |_______________________________________________________",
+    "         -1                         0                          1"
+   ]
+  }
+ ]
+}

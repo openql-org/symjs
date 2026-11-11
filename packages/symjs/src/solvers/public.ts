@@ -9,7 +9,7 @@
  */
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { at } from '../core/guard';
+import { at, defined } from '../core/guard';
 import { sympify } from '../core/ops';
 import { NonlinearError } from '../core/errors';
 import type { NoMatchResult, Truth, UnsolvedResult } from '../core/truth';
@@ -20,6 +20,7 @@ import * as S from './solve';
 import * as I from './inequalities';
 import * as O from './ode';
 import * as R from './recurr';
+import { _linsolve } from '../polys/matrices/linsolve';
 
 /** SymPy linear_eq_to_matrix: [A, b] with A x = b; throws NonlinearError for nonlinear equations. */
 export function linearEqToMatrix(eqs: readonly ExprLike[], syms: readonly Sym[]): [Matrix, Matrix] {
@@ -33,8 +34,8 @@ export function linearEqToMatrix(eqs: readonly ExprLike[], syms: readonly Sym[])
  * (free symbols stand for parameters), or EmptySet when it is inconsistent.
  */
 export function linsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Expr[] | typeof EmptySet {
-  const [A, b] = linearEqToMatrix(eqs, syms);
-  return S.solveAugmented(A.hstack(b), syms) ?? EmptySet;
+  const result = _linsolve(eqs, syms);
+  return result instanceof Map ? syms.map((s) => defined(result.get(s))) : result;
 }
 
 /** Solve an augmented linear system [A | b], preserving free parameters. */

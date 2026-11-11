@@ -28,14 +28,16 @@ const cjsReservedExports = {
   name: 'cjs-reserved-exports',
   renderChunk(this: { format: string }, code: string) {
     if (this.format !== 'cjs') return undefined;
-    const at = code.indexOf('\n0 && (module.exports = {');
-    if (at < 0) return undefined;
-    return { code: code.slice(0, at) + code.slice(at).replace(STRICT_RESERVED, '  $1: null$2') };
+    // Relative .cjs files are preserved ES modules with __esModule metadata.
+    // Node-mode interop would wrap their default export in another namespace.
+    const interop = code.replace(/__toESM\((require\("\.\.?\/[^"\n]+\.cjs"\)), 1\)/g, '__toESM($1)');
+    const at = interop.indexOf('\n0 && (module.exports = {');
+    return { code: at < 0 ? interop : interop.slice(0, at) + interop.slice(at).replace(STRICT_RESERVED, '  $1: null$2') };
   },
 };
 
 export default defineConfig({
-  // Includes every subpath entry, including src/parsing.ts.
+  // Includes every subpath entry, including diffgeom and parsing.
   entry: ['src/**/*.ts'],
   format: ['esm', 'cjs'],
   bundle: true,

@@ -36,9 +36,23 @@ from sympy import Basic, MatrixBase
 
 # module -> category
 MODULES = {
+    "sympy.diffgeom": "diffgeom",
+    "sympy.diffgeom.diffgeom": "diffgeom",
+    "sympy.diffgeom.rn": "diffgeom",
     # Category theory and previously unmeasured mathematical modules remain in
     # the denominator even while their implementations are incomplete.
     "sympy.categories.baseclasses": "categories",
+    "sympy.categories.diagram_drawing": "categories",
+    "sympy.plotting.series": "plotting",
+    "sympy.plotting.plot": "plotting",
+    "sympy.plotting.plot_implicit": "plotting",
+    "sympy.plotting.plotgrid": "plotting",
+    "sympy.plotting.textplot": "plotting",
+    "sympy.plotting.utils": "plotting",
+    "sympy.plotting.intervalmath.interval_arithmetic": "plotting",
+    "sympy.plotting.intervalmath.interval_membership": "plotting",
+    "sympy.plotting.intervalmath.lib_interval": "plotting",
+
     "sympy.polys.numberfields.subfield": "polys",
     "sympy.combinatorics.perm_groups": "combinatorics",
     "sympy.combinatorics.named_groups": "combinatorics",
@@ -192,6 +206,7 @@ MODULES = {
     "sympy.series.fourier": "calculus",
     "sympy.series.limitseq": "calculus",
     "sympy.series.sequences": "calculus",
+    "sympy.series.series_class": "calculus",
     "sympy.series.residues": "calculus",
     "sympy.concrete.gosper": "calculus",
     "sympy.concrete.delta": "calculus",
@@ -491,6 +506,9 @@ MODULES = {
     "sympy.tensor.array.array_comprehension": "tensor",
     "sympy.tensor.array.expressions": "tensor",
     "sympy.tensor.array.expressions.array_expressions": "tensor",
+    "sympy.tensor.array.expressions.conv_array_to_indexed": "tensor",
+    "sympy.tensor.array.expressions.from_array_to_indexed": "tensor",
+    "sympy.tensor.array.expressions.utils": "tensor",
     "sympy.tensor.array.expressions.from_array_to_matrix": "tensor",
     "sympy.tensor.array.expressions.from_indexed_to_array": "tensor",
     "sympy.tensor.functions": "tensor",
@@ -514,9 +532,6 @@ MODULES = {
     "sympy.tensor.toperators": "tensor",
 }
 
-# sympy.categories.diagram_drawing (DiagramGrid, XypicDiagramDrawer, xypic_draw_diagram): drawing category
-# diagrams is not ported, like plotting
-CATEGORIES_DRAWING = {"DiagramGrid", "XypicDiagramDrawer", "xypic_draw_diagram"}
 
 # names of sympy.stats that need an external sampling library (numpy, scipy, pymc): out of scope
 STATS_SAMPLING = {"sample", "sample_iter", "sampling_density", "sample_stochastic_process"}
@@ -535,6 +550,7 @@ def stats_public():
 # selected core/assumptions/logic/... modules and modules whose documented functions live in the module only
 # (deltasummation, gosper_sum, dpll_satisfiable, finite_diff, compogen, groups_count, ...)
 LOCAL_PUBLIC = {
+    "sympy.categories.diagram_drawing", "sympy.plotting.textplot", "sympy.plotting.plot",
     "sympy.abc", "sympy.assumptions.assume", "sympy.assumptions.cnf", "sympy.assumptions.facts",
     "sympy.assumptions.lra_satask", "sympy.assumptions.predicates.calculus", "sympy.assumptions.predicates.common",
     "sympy.assumptions.predicates.matrices", "sympy.assumptions.predicates.ntheory",
@@ -571,6 +587,8 @@ LOCAL_PUBLIC = {
     "sympy.tensor.array", "sympy.tensor.array.array_comprehension", "sympy.tensor.array.array_derivatives",
     "sympy.tensor.array.dense_ndim_array", "sympy.tensor.array.expressions",
     "sympy.tensor.array.expressions.array_expressions", "sympy.tensor.array.expressions.from_array_to_matrix",
+    "sympy.tensor.array.expressions.conv_array_to_indexed", "sympy.tensor.array.expressions.from_array_to_indexed",
+    "sympy.tensor.array.expressions.utils",
     "sympy.tensor.array.expressions.from_indexed_to_array", "sympy.tensor.array.mutable_ndim_array",
     "sympy.tensor.array.sparse_ndim_array", "sympy.tensor.functions", "sympy.tensor.indexed",
     "sympy.combinatorics.tensor_can", "sympy.combinatorics.util", "sympy.core.assumptions", "sympy.core.kind", "sympy.core.logic", "sympy.holonomic.holonomic", "sympy.holonomic.recurrence", "sympy.solvers.ode.lie_group", "sympy.integrals.deltafunctions", "sympy.integrals.heurisch", "sympy.integrals.meijerint", "sympy.integrals.rationaltools", "sympy.integrals.trigonometry", "sympy.ntheory.digits", "sympy.ntheory.ecm", "sympy.ntheory.modular", "sympy.ntheory.qs", "sympy.polys.orthopolys", "sympy.printing.conventions", "sympy.printing.pretty.pretty_symbology", "sympy.printing.pretty.stringpict", "sympy.stats.error_prop", "sympy.strategies.tree", "sympy.unify.rewrite", "sympy.unify.usympy", "sympy.utilities.decorator", "sympy.utilities.misc", "sympy.matrices.kind",
@@ -599,6 +617,7 @@ INTERNAL_PUBLIC = {
 }
 
 SUBPACKAGE_PUBLIC = {
+    "sympy.diffgeom": ("sympy.diffgeom",),
     "sympy.crypto.": ("sympy.crypto",),
     "sympy.liealgebras.": ("sympy.liealgebras",),
     "sympy.categories.": ("sympy.categories",),
@@ -622,6 +641,8 @@ def subpackage_public(modname):
     names = {n for n, v in vars(mod).items()
              if not n.startswith("_") and callable(v)
              and getattr(v, "__module__", None) == modname}
+    if modname == "sympy.polys.matrices.linsolve":
+        names |= {"_linsolve", "_linear_eq_to_dict", "_lin_eq2dict"}
     if modname.startswith("sympy.stats."):
         names -= STATS_SAMPLING
         names |= set(stats_public())
@@ -733,6 +754,27 @@ def ser(o):
     """Serialize a SymPy object (or Python value) into a JSON tree."""
     from sympy import Float, Integer, Rational, Symbol, Tuple
     from sympy.core.relational import Relational
+
+    # Charts carry identity and relation data beyond their ordinary Expr args.
+    from sympy.diffgeom import diffgeom, rn
+    if type(o).__module__ == diffgeom.__name__:
+        for name in rn.__all__:
+            if o is getattr(rn, name):
+                return {"t": "Diffgeom", "ref": name}
+        if isinstance(o, diffgeom.CoordinateSymbol):
+            args = [o.coord_sys, o.index]
+        elif isinstance(o, diffgeom.CoordSystem):
+            args = [str(o.name), o.patch, o.args[2], o.relations]
+        elif isinstance(o, diffgeom.Manifold):
+            args = [str(o.name), int(o.dim)]
+        elif isinstance(o, diffgeom.Patch):
+            args = [str(o.name), o.manifold]
+        else:
+            args = o.args
+        return {"t": "Diffgeom", "cls": type(o).__name__, "args": [ser(a) for a in args]}
+    from sympy.core.symbol import Str
+    if isinstance(o, Str):
+        return ser(str(o))
 
     if o is None or isinstance(o, bool):
         return {"t": "Js", "v": o}
@@ -913,6 +955,23 @@ def ser(o):
     from sympy.combinatorics.permutations import Cycle as _Cycle
     from sympy.categories import Object as _CatObject, Category as _Category, Diagram as _Diagram, Morphism as _Morphism
     from sympy.categories.baseclasses import Class as _Class
+    from sympy.categories.diagram_drawing import DiagramGrid as _DiagramGrid, XypicDiagramDrawer as _XypicDrawer
+    if isinstance(o, _DiagramGrid):
+        return {"t": "DiagramGrid", "morphisms": ser(o.morphisms), "cells": [[ser(o[i, j]) for j in range(o.width)] for i in range(o.height)]}
+    if isinstance(o, _XypicDrawer):
+        def formatter_state(f):
+            if f is None:
+                return None
+            from sympy.categories.diagram_drawing import ArrowStringDescription
+            a = ArrowStringDescription("@unit@", "@curving@", 0, "@looping_start@", "@looping_end@", "@horizontal_direction@", "@vertical_direction@", "@label_position@", "@label@")
+            a.label_displacement = "@label_displacement@"
+            a.arrow_style = "@arrow_style@"
+            before = vars(a).copy()
+            f(a)
+            return {k: v for k, v in vars(a).items() if v != before[k]}
+        return {"t": "XypicDiagramDrawer", "unit": o.unit, "amount": o.default_curving_amount,
+                "step": o.default_curving_step, "defaultFormatter": formatter_state(o.default_arrow_formatter),
+                "formatters": {k: formatter_state(f) for k, f in o.arrow_formatters.items()}}
     if isinstance(o, _CatObject):
         return {"t": "CategoryObject", "name": o.name}
     if isinstance(o, _Class):
@@ -1430,7 +1489,7 @@ def api_inventory():
         out.append({"name": name, "category": "vector"})
     import sympy.categories as _categories
     for name in _categories.__all__:
-        if name != 'preview_diagram' and name not in CATEGORIES_DRAWING:
+        if name != 'preview_diagram':
             out.append({"name": name, "category": "categories"})
     for name in sorted(_combinatorics.__all__):
         obj = getattr(_combinatorics, name)
@@ -1439,7 +1498,8 @@ def api_inventory():
     from sympy.tensor.tensor import TensorIndexType, TensorIndex, TensorHead, TensorSymmetry, tensor_indices, tensor_heads, canon_bp, contract_metric
     for obj in (TensorIndexType, TensorIndex, TensorHead, TensorSymmetry, tensor_indices, tensor_heads, canon_bp, contract_metric):
         out.append({"name": obj.__name__, "category": "tensor"})
-    for pkg, cat in (("sympy.crypto", "crypto"), ("sympy.liealgebras", "liealgebras")):
+    for pkg, cat in (("sympy.crypto", "crypto"), ("sympy.liealgebras", "liealgebras"),
+                     ("sympy.diffgeom", "diffgeom")):
         # subpackages whose names are not top-level sympy names
         m = importlib.import_module(pkg)
         for name in sorted(m.__all__):
@@ -1500,6 +1560,8 @@ MUTATING_FUNCTIONS = {"define_schreier_generators", "reidemeister_relators", "el
 # the number-field doctests print their modules, elements and ideals (print(A)) and combine them with
 # operators (e + f, e ** 2, f // g): these are recorded as the special methods __str__, __add__, ...
 VALUE_EXAMPLE_MODULES = {"sympy.polys.numberfields.modules", "sympy.polys.numberfields.primes"}
+# These examples display the complete tuple produced by a saved public call.
+TUPLE_ASSIGNMENT_MODULES = {"sympy.polys.modulargcd"}
 _VALUE_OPS = {ast.Add: "__add__", ast.Sub: "__sub__", ast.Mult: "__mul__", ast.Pow: "__pow__",
               ast.FloorDiv: "__floordiv__", ast.Mod: "__mod__"}
 
@@ -1583,6 +1645,9 @@ ONLY = [m for m in os.environ.get("ONLY_MODULES", "").split(",") if m]
 
 def public_api_reason(fn, globs, extra_public):
     """The ordinary-call public API filter, also used for saved assignments."""
+    value = globs.get(fn)
+    if isinstance(value, sympy.Expr) and type(value).__module__ == "sympy.diffgeom.diffgeom" and callable(value):
+        return None
     if fn.startswith("."):
         if fn[1:].startswith("_") and fn not in OPERATOR_FNS:
             return "private-api"
@@ -1595,6 +1660,11 @@ def public_api_reason(fn, globs, extra_public):
 def serialize_call(record, call, globs, assumed, pre_args=None, printed=False):
     """Freeze a call's receiver, arguments and assumptions at the current state."""
     DUMMY_IDS.clear()
+    name = record['fn']
+    value = globs.get(name)
+    if isinstance(value, sympy.Expr) and type(value).__module__ == "sympy.diffgeom.diffgeom" and callable(value):
+        record['fn'] = '.__call__'
+        record['selfSrc'] = name
     if "selfSrc" in record:
         receiver_src = record.pop("selfSrc")
         receiver = eval(receiver_src, globs)
@@ -1739,6 +1809,8 @@ def main(dst, baseline_path=None):
     if sympy.__version__ != "1.14.0":
         raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
     import random
+    from sympy.plotting.backends.base_backend import unset_show
+    unset_show()  # Rendering is outside the numeric-data compatibility scope.
     # SymPy's doctest runner prints in ASCII (pprint_use_unicode(False)); so do the corpus cases
     from sympy.printing.pretty.pretty_symbology import pretty_use_unicode
     pretty_use_unicode(False)
@@ -1771,6 +1843,17 @@ def main(dst, baseline_path=None):
             for ex in test.examples:
                 extraction["examined"] += 1
                 src = ex.source.strip()
+                if modname == "sympy.categories.diagram_drawing" and test.name.endswith("preview_diagram"):
+                    omit("external-TeX-rendering", modname, ex)
+                    continue
+                if modname.startswith("sympy.plotting") and re.search(r"\b(plot|plot3d|plot_parametric|plot_contour|plot_implicit|plot3d_parametric_line|plot3d_parametric_surface|PlotGrid)\s*\(", src):
+                    bindings = {}
+                    omit("rendering-backend-construction: rendering is done by connector packages", modname, ex)
+                    continue
+                if modname.startswith("sympy.plotting") and ("Plot object containing:" in ex.want or "PlotGrid object containing:" in ex.want or re.search(r"\.(show|save)\(", src)):
+                    bindings = {}
+                    omit("rendering-backend-object: rendering is done by connector packages", modname, ex)
+                    continue
                 if ex.options.get(doctest.SKIP):
                     bindings = {}
                     omit("upstream-skip", modname, ex)
@@ -1803,6 +1886,12 @@ def main(dst, baseline_path=None):
                     continue
                 call = tree.body
                 bound = bindings.get(call.id) if isinstance(call, ast.Name) and ex.want.strip() else None
+                if modname in TUPLE_ASSIGNMENT_MODULES and isinstance(call, ast.Tuple) and ex.want.strip():
+                    saved = [bindings.get(n.id) if isinstance(n, ast.Name) else None for n in call.elts]
+                    if saved and all(r is not None and r.get("pick") == i for i, r in enumerate(saved)):
+                        records = [{k: v for k, v in r.items() if k != "pick"} for r in saved]
+                        if all(r == records[0] for r in records) and len(saved) == len(bindings):
+                            bound = records[0]
                 if bound is None:
                     bindings = {}
                 if modname in VALUE_EXAMPLE_MODULES:
@@ -1855,7 +1944,7 @@ def main(dst, baseline_path=None):
                 if TEXT_OUTPUT and record is not None and record["fn"] not in ("str", "repr"):
                     if printed:
                         text = str(result)
-                    elif result is None and _out.getvalue() and "print" in record["fn"]:
+                    elif result is None and _out.getvalue() and ("print" in record["fn"] or record["fn"] == "textplot"):
                         text = _out.getvalue()[:-1] if _out.getvalue().endswith("\n") else _out.getvalue()
                     elif isinstance(result, str):
                         text = result

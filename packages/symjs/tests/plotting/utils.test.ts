@@ -1,0 +1,9 @@
+import { expect, it } from 'vitest';
+import { symbol } from '../../src/core';
+import { FiniteSet, ImageSet, Integers, Naturals, Naturals0, Reals } from '../../src/sets';
+import { createRanges, getFreeSymbols, extractSolution, isPlotRange } from '../../src/plotting/utils';
+const x = symbol('x'), y = symbol('y'), a = symbol('a');
+it('distinguishes parametric coordinates from ranges depending on their own variable', () => { expect(isPlotRange([x, x, x.add(1)])).toBe(false); expect(isPlotRange([x, a, a.add(1)])).toBe(true); });
+it('creates defaults, preserves ranges and removes parameter symbols', () => { expect(createRanges([x], [], 1)).toEqual([[x, -10, 10]]); expect(createRanges([x.add(y)], [[y, 0, 1]], 2)).toEqual([[y, 0, 1], [x, -10, 10]]); expect(createRanges([x.mul(a)], [], 1, new Map([[a, 1]]))).toEqual([[x, -10, 10]]); expect(createRanges([1], [], 2)).toHaveLength(2); expect(getFreeSymbols([(x) => x])).toEqual([]); });
+it('rejects duplicate, missing and excessive variables', () => { expect(() => createRanges([x.add(y)], [], 1)).toThrow(RangeError); expect(() => createRanges([x], [[x, 0, 1], [x, 0, 2]], 2)).toThrow(RangeError); expect(() => createRanges([x], [[y, 0, 1]], 1)).toThrow(RangeError); expect(isPlotRange([x, 0, 1])).toBe(true); expect(isPlotRange([x, 'label', 1])).toBe(false); expect(isPlotRange([x, { re: 0, im: 1 }, 2])).toBe(true); });
+it('samples finite prefixes of integer ImageSets', () => { const finite = FiniteSet.of(1, 2); expect(extractSolution(finite)).toBe(finite); expect(extractSolution(new ImageSet(x, x.mul(2), Integers), 5).equals(FiniteSet.of(-4, -2, 0, 2, 4))).toBe(true); expect(extractSolution(new ImageSet(x, x, Naturals), 3).equals(FiniteSet.of(1, 2, 3))).toBe(true); expect(extractSolution(new ImageSet(x, x, Naturals0), 3).equals(FiniteSet.of(0, 1, 2))).toBe(true); expect(() => extractSolution(finite, -1)).toThrow(RangeError); expect(() => extractSolution(new ImageSet(x, x, Reals))).toThrow(TypeError); });

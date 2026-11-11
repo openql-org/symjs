@@ -10,7 +10,7 @@
  */
 
 import type { ExprLike } from '../core/nodes';
-import { Dummy, type Expr, ExtensionExpr, Rational, S, Special, Sym, UndefFn } from '../core/nodes';
+import { Dummy, type Expr, Rational, S, Special, Sym, UndefFn } from '../core/nodes';
 import { at, cast } from '../core/guard';
 import { add, mul, pow, sub, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
@@ -24,6 +24,7 @@ import { simplify } from '../simplify/simplify';
 import { Tuple } from '../core/containers';
 import { Eq } from '../core/logic';
 import { NotImplementedError } from '../core/errors';
+import { SeriesBase } from './series_class';
 
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
 const isInf = (e: Expr, name: 'oo' | '-oo'): boolean => e instanceof Special && e.name === name;
@@ -44,24 +45,28 @@ function asIndex(pt: Expr): number {
 }
 
 /** SymPy SeqBase: the base class of sequences. */
-export abstract class SeqBase extends ExtensionExpr {
+export abstract class SeqBase extends SeriesBase {
+  override readonly name: string;
+  constructor(name: string, args: readonly Expr[]) {
+    super(...args);
+    this.name = name;
+  }
+  protected override evalTerm(pt: Expr): Expr {
+    return this.coeff(pt);
+  }
   /** The interval on which the sequence is defined. */
-  abstract get interval(): SetExpr;
+  abstract override get interval(): SetExpr;
   /** The first point (SymPy start). */
-  get start(): Expr {
+  override get start(): Expr {
     return inf(this.interval);
   }
   /** The last point (SymPy stop). */
-  get stop(): Expr {
+  override get stop(): Expr {
     return sup(this.interval);
   }
   /** The number of terms (stop - start + 1, oo for an infinite sequence). */
-  get length(): Expr {
+  override get length(): Expr {
     return add(sub(this.stop, this.start), 1);
-  }
-  /** The bound variables. */
-  get variables(): Sym[] {
-    return [];
   }
   /** The term at the point pt (SymPy coeff). */
   abstract coeff(pt: ExprLike): Expr;
@@ -70,10 +75,6 @@ export abstract class SeqBase extends ExtensionExpr {
     const p = sympify(pt);
     if (less(p, this.start) || less(this.stop, p)) throw new RangeError(`Index ${p.toString()} out of bounds ${this.interval.toString()}`);
     return p;
-  }
-  /** The i-th point (counted from the start, or backwards from the stop of a sequence unbounded below). */
-  protected ithPoint(i: number): Expr {
-    return isInf(this.start, '-oo') ? add(this.stop, -i) : add(this.start, i);
   }
   /**
    * Every term multiplied by coeff (SymPy coeff_mul). The operation is not
@@ -103,23 +104,6 @@ export abstract class SeqBase extends ExtensionExpr {
     if (!(other instanceof SeqBase)) throw new TypeError(`cannot multiply sequence and ${String(other)}`);
     return SeqMul(this, other);
   }
-  /** The i-th term (SymPy seq[i]). */
-  getItem(i: number): Expr {
-    return this.coeff(this.ithPoint(i));
-  }
-  /** The terms i = start, start + step, ... before stop (SymPy seq[start:stop:step]). */
-  slice(start = 0, stop?: number, step = 1): Expr[] {
-    const end = stop ?? asIndex(this.length);
-    const out: Expr[] = [];
-    for (let i = start; step > 0 ? i < end : i > end; i += step) out.push(this.getItem(i));
-    return out;
-  }
-  /** The terms in order (an infinite sequence never ends). */
-  *[Symbol.iterator](): Generator<Expr, void, undefined> {
-    const len = this.length;
-    for (let i = 0; isInf(len, 'oo') || i < asIndex(len); i++) yield this.getItem(i);
-  }
-
   /**
    * SymPy find_linear_recurrence(n, d, gfvar): the coefficients [c1, ..., ck]
    * of the shortest linear recurrence a(m) = c1*a(m-1) + ... + ck*a(m-k) of
@@ -169,10 +153,10 @@ export class EmptySequenceNode extends SeqBase {
   constructor() {
     super('EmptySequence', []);
   }
-  withArgs(): Expr {
+  override withArgs(): Expr {
     return EmptySequence;
   }
-  get interval(): SetExpr {
+  override get interval(): SetExpr {
     return EmptySet;
   }
   override get length(): Expr {
@@ -207,7 +191,7 @@ abstract class SeqExprBase extends SeqBase {
   get variable(): Sym {
     return cast(at(this.args, 0), Sym, 'sequence variable');
   }
-  get interval(): SetExpr {
+  override get interval(): SetExpr {
     return interval(at(this.args, 1), at(this.args, 2));
   }
   override get start(): Expr {
@@ -229,7 +213,7 @@ export class SeqExprNode extends SeqExprBase {
   constructor(gen: Expr, variable: Sym, start: Expr, stop: Expr) {
     super('SeqExpr', [variable, start, stop, gen]);
   }
-  withArgs(args: readonly Expr[]): Expr {
+  override withArgs(args: readonly Expr[]): Expr {
     return new SeqExprNode(at(args, 3), cast(at(args, 0), Sym), at(args, 1), at(args, 2));
   }
   coeff(): Expr { throw new NotImplementedError('SeqExpr: no term evaluation rule'); }
@@ -267,7 +251,7 @@ export class SeqFormulaNode extends SeqExprBase {
   get formula(): Expr {
     return at(this.args, 3);
   }
-  withArgs(args: readonly Expr[]): Expr {
+  override withArgs(args: readonly Expr[]): Expr {
     return SeqFormula(at(args, 3), [cast(at(args, 0), Sym, 'sequence variable'), at(args, 1), at(args, 2)]);
   }
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
@@ -322,7 +306,7 @@ export class SeqPerNode extends SeqExprBase {
   get period(): number {
     return this.args.length - 3;
   }
-  withArgs(args: readonly Expr[]): Expr {
+  override withArgs(args: readonly Expr[]): Expr {
     return SeqPer(args.slice(3), [cast(at(args, 0), Sym, 'sequence variable'), at(args, 1), at(args, 2)]);
   }
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
@@ -410,10 +394,10 @@ export class RecursiveSeqNode extends SeqBase {
   override get stop(): Expr {
     return S.Infinity;
   }
-  get interval(): SetExpr {
+  override get interval(): SetExpr {
     return interval(this.start, S.Infinity);
   }
-  withArgs(args: readonly Expr[]): Expr {
+  override withArgs(args: readonly Expr[]): Expr {
     return RecursiveSeq(at(args, 0), at(args, 1), at(args, 2), args.slice(4), at(args, 3));
   }
   coeff(pt: ExprLike): Expr {
@@ -561,7 +545,7 @@ abstract class SeqExprOpBase extends SeqBase {
   get seqs(): SeqBase[] {
     return this.args.map((a) => cast(a, SeqBase, 'sequence'));
   }
-  get interval(): SetExpr {
+  override get interval(): SetExpr {
     return commonInterval(this.seqs);
   }
   override get variables(): Sym[] {
@@ -572,7 +556,7 @@ abstract class SeqExprOpBase extends SeqBase {
 /** An unevaluated operation on sequences, with their common interval. */
 export class SeqExprOpNode extends SeqExprOpBase {
   constructor(seqs: readonly SeqBase[]) { super('SeqExprOp', seqs); }
-  withArgs(args: readonly Expr[]): Expr { return new SeqExprOpNode(args.map((a) => cast(a, SeqBase))); }
+  override withArgs(args: readonly Expr[]): Expr { return new SeqExprOpNode(args.map((a) => cast(a, SeqBase))); }
   coeff(): Expr { throw new NotImplementedError('SeqExprOp: no term evaluation rule'); }
 }
 
@@ -584,7 +568,7 @@ export class SeqAddNode extends SeqExprOpBase {
   constructor(args: readonly SeqBase[]) {
     super('SeqAdd', args);
   }
-  withArgs(args: readonly Expr[]): Expr {
+  override withArgs(args: readonly Expr[]): Expr {
     return SeqAdd(...args.map((a) => cast(a, SeqBase, 'sequence')));
   }
   coeff(pt0: ExprLike): Expr {
@@ -598,7 +582,7 @@ export class SeqMulNode extends SeqExprOpBase {
   constructor(args: readonly SeqBase[]) {
     super('SeqMul', args);
   }
-  withArgs(args: readonly Expr[]): Expr {
+  override withArgs(args: readonly Expr[]): Expr {
     return SeqMul(...args.map((a) => cast(a, SeqBase, 'sequence')));
   }
   coeff(pt0: ExprLike): Expr {

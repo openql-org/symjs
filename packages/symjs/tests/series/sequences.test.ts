@@ -36,6 +36,8 @@ describe('SeqFormula and SeqPer', () => {
 
   it('give terms', () => {
     const s = sj.SeqFormula(P('n**2'), [n, 0, 5]);
+    expect(s).toBeInstanceOf(sj.SeriesBase);
+    expect(s.term(3)).toEqual(s.coeff(3));
     expect(show(s.coeff(3))).toBe('9');
     expect(() => s.coeff(7)).toThrow('Index 7 out of bounds Interval(0, 5)');
     expect(() => s.coeff(-1)).toThrow('out of bounds');

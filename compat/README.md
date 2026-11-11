@@ -19,11 +19,12 @@ For unit-test extraction and selective replay:
 
 ```sh
 pnpm compat:extract-tests --only geometry,vector
+pnpm compat:extract-tests --only diffgeom
 pnpm compat:test-extract
 npx vitest run --config compat/vitest.config.ts --project unit-geometry
 ```
 
-The unit-test extractor scans nested test directories in 30 base areas. Its
+The unit-test extractor scans nested test directories in 31 base areas. Its
 `FILE_SCOPE`, `EXCLUDED_AREAS` and `MIXED_DEFAULTS` tables define inclusion and
 technical exclusions; the report lists every excluded file. Categories are
 actual top-level packages: `integrals`, `series`, `concrete`, and `calculus`
@@ -42,7 +43,9 @@ all previously observed modules and extracting only unmeasured modules.
 Replay runs one named Vitest project/test per category, with four workers. It
 reuses the doctest serializer format, deserializer and public API adapters.
 Synchronous calls have a 30-second deadline for core/polys and 5 seconds for
-other categories. Timeouts are failures. Missing adapters and input conversion
+other categories. Set `COMPAT_TESTS_TIMEOUT_MS` to a positive integer to override
+the per-case deadline on slower machines; the generated report records it.
+Timeouts are failures. Missing adapters and input conversion
 failures cannot satisfy exception assertions; invoked exceptions with different
 classes are accepted but counted separately. Reports distinguish wrong results,
 missing APIs/adapters, unsupported values, conversion errors, API exceptions,

@@ -62,7 +62,7 @@ export async function generateApiMembers(): Promise<ApiMembers> {
   for (const entry of Object.keys(manifest.exports).sort()) {
     if (entry === './package.json') continue;
     const name = entry === '.' ? 'index' : entry.slice(2);
-    entries[entry] = await import(`../packages/symjs/src/${name}.ts`) as Record<string, unknown>;
+    entries[entry] = await import(/* @vite-ignore */ new URL(`../packages/symjs/src/${name}.ts`, import.meta.url).href) as Record<string, unknown>;
   }
   const api = collectApiMembers(entries);
   api.policy = { renames: JS_GLOBAL_RENAMES, aliases: PUBLIC_ALIASES, attributeFunctions: ATTRIBUTE_FUNCTIONS, memberFunctions: MEMBER_FUNCTIONS, matrixMemberAliases: MATRIX_MEMBER_ALIASES };

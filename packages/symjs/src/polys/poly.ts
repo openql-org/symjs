@@ -24,7 +24,7 @@ import { decomposePower, factorTerms } from '../simplify/exprtools';
 import type { PolynomialDomainOptions } from './sympoly';
 
 /** cancel, registered by simplify/rational (which imports this module). @internal */
-export const polyHooks: { cancel?: (e: Expr) => Expr; cancelDomain?: (e: Expr, opts: PolynomialDomainOptions) => Expr; factorList?: (e: Expr) => [Expr, [Expr, number][]] } = {};
+export const polyHooks: { cancel?: (e: Expr) => Expr; cancelDomain?: (e: Expr, opts: PolynomialDomainOptions) => Expr; factorList?: (e: Expr) => [Expr, [Expr, number][]]; quintic?: (e: Expr, x: Sym) => Expr[] } = {};
 const cancel = (e: Expr): Expr => defined(polyHooks.cancel, 'cancel hook')(e);
 /** factor, registered by polys/sympoly (loaded with this module by every entry point). */
 const factorE = (e: Expr): Expr => defined(impl.factor?.(e), 'factor hook');
@@ -331,11 +331,12 @@ function quadraticRoots(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
  * SymPy `roots(f, x)`: the roots with their multiplicities. With
  * `{ multiple: true }` a list with each root repeated by its multiplicity
  * (SymPy `roots(f, x, multiple=True)`). With `{ skipQuintic: true }` the roots
- * of irreducible factors of degree 5 or more are omitted, as SymPy does.
+ * of irreducible factors of degree 5 or more are omitted. `{ quintics: true }`
+ * enables Dummit's radical formula for solvable quintics, as in SymPy.
  */
-export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple: true; skipQuintic?: boolean }): Expr[];
-export function rootsDict(ex: ExprLike, x: Sym, opts?: { multiple?: false; skipQuintic?: boolean }): ExprMap<number>;
-export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple?: boolean; skipQuintic?: boolean } = {}): ExprMap<number> | Expr[] {
+export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple: true; skipQuintic?: boolean; quintics?: boolean }): Expr[];
+export function rootsDict(ex: ExprLike, x: Sym, opts?: { multiple?: false; skipQuintic?: boolean; quintics?: boolean }): ExprMap<number>;
+export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple?: boolean; skipQuintic?: boolean; quintics?: boolean } = {}): ExprMap<number> | Expr[] {
   const m = new ExprMap<number>();
   for (const r of roots(ex, x, opts)) m.set(r, (m.get(r) ?? 0) + 1);
   if (!opts.multiple) return m;
@@ -344,7 +345,7 @@ export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple?: boolean; skip
 }
 
 /** Roots repeated by multiplicity (the list form used internally). */
-export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}): Expr[] {
+export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean; quintics?: boolean } = {}): Expr[] {
   const coeffs = polyCoefficients(ex, x);
   if (!coeffs) throw new PolynomialError('roots: expression is not a polynomial in the given symbol');
   const deg = Math.max(-1, ...coeffs.keys());
@@ -362,6 +363,7 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
       else if (f.degree === 2) rs = quadraticRoots(c2, c1, c0);
       else if (f.degree === 3) rs = cubicRoots(c3, c2, c1, c0);
       else if (f.degree === 4) rs = symbolicQuarticRoots(qMul(c3, qInv(f.lc)), qMul(c2, qInv(f.lc)), qMul(c1, qInv(f.lc)), qMul(c0, qInv(f.lc)), opts);
+      else if (f.degree === 5 && opts.quintics) rs = defined(polyHooks.quintic, 'quintic solver')(f.toExpr(x), x);
       else if (opts.skipQuintic && f.degree >= 5) continue; // SymPy roots() omits roots it cannot express in radicals
       else throw new NotImplementedError(`roots: cannot solve irreducible factor of degree ${f.degree}`);
       for (const r of rs) for (let i = 0; i < m; i++) out.push(r);
@@ -372,7 +374,7 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   const lead = defined(coeffs.get(deg), 'leading coefficient');
   const normalized = new Map([...coeffs].map(([k, v]) => [k, cancel(mul(v, pow(lead, -1)))] as const));
   if ([...normalized.values()].every((v) => v instanceof Rational)) {
-    return roots(add(...[...normalized].map(([k, v]) => mul(v, pow(x, k)))), x);
+    return roots(add(...[...normalized].map(([k, v]) => mul(v, pow(x, k)))), x, opts);
   }
   const get = (k: number) => normalized.get(k) ?? S.Zero;
   // factor out x^k for zero low-order coefficients
@@ -441,7 +443,7 @@ function canonicalEq(p: Expr): Expr {
  * Descartes-Euler method with a rational resolvent root, else Ferrari's method,
  * with a Piecewise on p = 0 when its sign is not known.
  */
-function symbolicQuarticRoots(a: Expr, b: Expr, c: Expr, d: Expr, opts: { skipQuintic?: boolean }): Expr[] {
+function symbolicQuarticRoots(a: Expr, b: Expr, c: Expr, d: Expr, opts: { skipQuintic?: boolean; quintics?: boolean }): Expr[] {
   const y = new Dummy('y');
   const rootsOf = (cs: Expr[]): Expr[] => roots(add(...cs.map((k, i) => mul(k, pow(y, cs.length - 1 - i)))), y, opts);
   if (!isZeroE(a) && expand(pow(mul(c, pow(a, -1)), 2)).key === expand(d).key) {

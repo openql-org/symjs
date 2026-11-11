@@ -30,6 +30,33 @@ describe('fps without a variable', () => {
 
 describe('formal power series operations', () => {
   const f = (e: string, x0: unknown = 0) => sj.fps(P(e), x, x0 as number);
+  it('shares SeriesBase indexing, including zero terms, and rebuilds expressions', () => {
+    const series = f('sin(x)');
+    expect(series).toBeInstanceOf(sj.SeriesBase);
+    expect(sj.str(series)).toBe(series.toString());
+    expect([series.start, series.stop, series.length, series.interval].map(String)).toEqual(['0', 'oo', 'oo', 'Interval(0, oo)']);
+    expect(series.slice(0, 5).map(String)).toEqual(['0', 'x', '0', '-x**3/6', '0']);
+    expect(series.slice(3, -1, -1).map(String)).toEqual(['-x**3/6', '0', 'x', '0']);
+    const iterator = series[Symbol.iterator]();
+    expect([iterator.next().value, iterator.next().value].map(String)).toEqual(['0', 'x']);
+    expect(f('1 + x + x**2').slice(0, 5).map(String)).toEqual(['1', 'x', 'x**2', '0', '0']);
+    expect(f('x**n*sin(x**2)').slice(0, 4).map(String)).toEqual(['0', '0', 'x**(n + 2)', '0']);
+    expect(f('1/x + exp(x)').slice(0, 3).map(String)).toEqual(['1 + 1/x', 'x', 'x**2/2']);
+    expect([...sj.freeSymbols(f('a*cos(x)', y))].map(String).sort()).toEqual(['a', 'x', 'y']);
+    for (const direction of ['+', '-'] as const) {
+      const shifted = sj.fps(sj.mul(y, sj.exp(x)), x, 1, direction);
+      const rebuilt = sj.subs(shifted, [[y, 2]]);
+      expect(rebuilt).toBeInstanceOf(sj.FormalPowerSeries);
+      if (!(rebuilt instanceof sj.FormalPowerSeries)) throw new TypeError('FormalPowerSeries');
+      expect(rebuilt.direction).toBe(direction);
+      expect(rebuilt.slice(0, 3).map(String)).toEqual(['2*E', '2*E*(x - 1)', 'E*(x - 1)**2']);
+    }
+    expect(() => series.term(-1)).toThrow(RangeError);
+    expect(() => series.term(sj.Rational.of(1, 2))).toThrow(TypeError);
+    expect(() => series.term(new Sym('k', { nonnegative: true }))).toThrow(TypeError);
+    expect(() => series.term(Number.MAX_SAFE_INTEGER + 1)).toThrow(TypeError);
+  });
+
   it('multiplies, composes and inverts series like SymPy', () => {
     expect(f('sin(x)').product(f('exp(x)'), x).truncate(4).toString()).toBe('x + x**2 + x**3/3 + O(x**4)');
     expect(f('exp(x)').compose(f('sin(x)'), x).truncate().toString()).toBe('1 + x + x**2/2 - x**4/8 - x**5/15 + O(x**6)');

@@ -18,8 +18,19 @@ from pathlib import Path
 import sys
 import sympy
 
+# preview_diagram requires an external TeX installation and image viewer.
+API_EXCLUSIONS = {
+    'sympy.plotting.plot.Plot.show': 'Rendering is done by connector packages.',
+    'sympy.plotting.plot.Plot.save': 'Rendering is done by connector packages.',
+    'sympy.plotting.plotgrid.PlotGrid.show': 'Rendering is done by connector packages.',
+    'sympy.plotting.plotgrid.PlotGrid.save': 'Rendering is done by connector packages.',
+    'sympy.categories.diagram_drawing.preview_diagram': 'Renders Xy-pic through an external TeX installation and viewer.',
+}
+
 EXCLUSIONS = {
-    'sympy.plotting': 'Rendering backends and interactive plotting are separate from the symbolic engine.',
+    'sympy.plotting.backends': 'Rendering is done by connector packages; backend classes are not part of the base engine.',
+    'sympy.plotting.pygletplot': 'Interactive OpenGL rendering is done by connector packages.',
+    'sympy.plotting.experimental_lambdify': 'Python source generation is replaced by symjs numeric evaluation.',
     'sympy.interactive': 'Python REPL/session integration does not apply to the JavaScript runtime.',
     'sympy.testing': 'Upstream test runners are infrastructure, not mathematical APIs.',
     'sympy.external': 'Python bindings to optional external libraries are runtime-specific.',
@@ -27,7 +38,6 @@ EXCLUSIONS = {
     'sympy.parsing.autolev._antlr': 'Generated Python parser runtime; an equivalent parser may be supplied separately.',
     'sympy.parsing.latex._antlr': 'Generated Python parser runtime; this does not exclude the LaTeX parsing feature.',
     'sympy.stats.sampling': 'External sampling-library adapters; symbolic probability remains in scope.',
-    'sympy.categories.diagram_drawing': 'diagram drawing',
     'sympy.polys.domains.gmpyintegerring': 'Ground-type backend binding gmpy2/python-flint; ZZ itself is in scope (domains.integerring).',
     'sympy.polys.domains.gmpyrationalfield': 'Ground-type backend binding gmpy2/python-flint; QQ itself is in scope (domains.rationalfield).',
     'sympy.polys.domains.gmpyfinitefield': 'Ground-type backend binding gmpy2/python-flint; GF(p) itself is in scope (domains.finitefield).',
@@ -91,6 +101,10 @@ EXCLUSIONS = {
 
 # Explicit correspondences for the different kernel layout and combined modules.
 CORRESPONDENCES = {
+    'sympy.polys.domains.mpelements': ['polys/domains/mpelements.ts'],
+    'sympy.polys.matrices.linsolve': ['polys/matrices/linsolve.ts'],
+    'sympy.polys.matrices.eigen': ['polys/matrices/eigen.ts'],
+    'sympy.polys.fglmtools': ['polys/fglmtools.ts'],
     'sympy.core.basic': ['core/basic.ts', 'core/compare.ts', 'core/nodes.ts'],
     'sympy.core.expr': ['core/nodes.ts', 'core/methods.ts', 'core/expr.ts'],
     'sympy.core.add': ['core/ops.ts'],
@@ -106,6 +120,9 @@ CORRESPONDENCES = {
     'sympy.core.traversal': ['core/traverse.ts'],
     'sympy.core.evalf': ['numeric/evalf.ts'],
     'sympy.polys.polytools': ['polys/sympoly.ts'],
+    'sympy.polys.densearith': ['polys/densearith.ts'],
+    'sympy.polys.modulargcd': ['polys/modulargcd.ts'],
+    'sympy.polys.polyquinticconst': ['polys/polyquinticconst.ts'],
     'sympy.polys.polyroots': ['polys/poly.ts', 'polys/polyroots.ts'],
     'sympy.polys.numberfields.minpoly': ['polys/numberfields.ts'],
     'sympy.integrals.integrals': ['integrals/integrate.ts'],
@@ -305,6 +322,7 @@ CORRESPONDENCES = {
     'sympy.series.aseries': ['series/series.ts'],
     'sympy.series.kauers': ['series/kauers.ts'],
     'sympy.series.order': ['core/nodes.ts', 'series/series.ts'],
+    'sympy.series.series_class': ['series/series_class.ts'],
     'sympy.sets': ['sets.ts', 'sets/sets.ts'],
     'sympy.sets.conditionset': ['sets/sets.ts'],
     'sympy.sets.contains': ['sets/sets.ts'],
@@ -341,6 +359,7 @@ CORRESPONDENCES = {
     'sympy.tensor': ['tensor.ts', 'tensor/index.ts'],
     'sympy.tensor.array': ['tensor/arrayop.ts', 'tensor/ndimarray.ts'],
     'sympy.tensor.array.array_comprehension': ['tensor/comprehension.ts'],
+    'sympy.tensor.array.array_derivatives': ['tensor/array/arrayderivatives.ts'],
     'sympy.tensor.array.dense_ndim_array': ['tensor/ndimarray.ts'],
     'sympy.tensor.array.mutable_ndim_array': ['tensor/ndimarray.ts'],
     'sympy.tensor.array.sparse_ndim_array': ['tensor/ndimarray.ts'],
@@ -349,6 +368,9 @@ CORRESPONDENCES = {
     'sympy.polys.domains.modularinteger': ['polys/domains/finitefield.ts'],
     'sympy.tensor.array.expressions': ['tensor/array/expressions/arrayexpressions.ts', 'tensor/array/expressions/arrayexprderivatives.ts', 'tensor/array/expressions/fromarraytomatrix.ts', 'tensor/array/expressions/fromindexedtoarray.ts', 'tensor/array/expressions/frommatrixtoarray.ts'],
     'sympy.tensor.array.expressions.conv_array_to_matrix': ['tensor/array/expressions/fromarraytomatrix.ts'],
+    'sympy.tensor.array.expressions.conv_array_to_indexed': ['tensor/array/expressions/fromarraytoindexed.ts'],
+    'sympy.tensor.array.expressions.from_array_to_indexed': ['tensor/array/expressions/fromarraytoindexed.ts'],
+    'sympy.tensor.array.expressions.utils': ['tensor/array/expressions/utils.ts'],
     'sympy.tensor.array.expressions.conv_indexed_to_array': ['tensor/array/expressions/fromindexedtoarray.ts'],
     'sympy.tensor.array.expressions.conv_matrix_to_array': ['tensor/array/expressions/frommatrixtoarray.ts'],
     'sympy.tensor.indexed': ['core/indexed.ts', 'tensor/idx.ts'],
@@ -364,9 +386,24 @@ CORRESPONDENCES = {
     'sympy.utilities': ['utilities.ts', 'utilities/index.ts'],
     'sympy.utilities.lambdify': ['numeric/evalf.ts'],
     'sympy': ['index.ts'],
+    'sympy.plotting': ['plotting.ts'],
+    'sympy.plotting.series': ['plotting/series.ts'],
+    'sympy.plotting.plot': ['plotting/plot.ts'],
+    'sympy.plotting.plot_implicit': ['plotting/plot_implicit.ts'],
+    'sympy.plotting.plotgrid': ['plotting/plotgrid.ts'],
+    'sympy.plotting.textplot': ['plotting/textplot.ts'],
+    'sympy.plotting.utils': ['plotting/utils.ts'],
+    'sympy.plotting.intervalmath': ['plotting/intervalmath/index.ts'],
+    'sympy.plotting.intervalmath.interval_arithmetic': ['plotting/intervalmath/interval_arithmetic.ts'],
+    'sympy.plotting.intervalmath.interval_membership': ['plotting/intervalmath/interval_membership.ts'],
+    'sympy.plotting.intervalmath.lib_interval': ['plotting/intervalmath/lib_interval.ts'],
     'sympy.categories': ['categories.ts'],
+    'sympy.categories.diagram_drawing': ['categories/diagram_drawing.ts'],
     'sympy.parsing': ['parsing/parser.ts'],
     'sympy.physics.quantum.gate': ['../../physics-quantum/src/gates.ts'],
+    'sympy.diffgeom': ['diffgeom.ts'],
+    'sympy.diffgeom.diffgeom': ['diffgeom/diffgeom.ts'],
+    'sympy.diffgeom.rn': ['diffgeom/rn.ts'],
 }
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
@@ -389,9 +426,6 @@ NOT_IMPLEMENTED = {
     'sympy.codegen.scipy_nodes': 'extend package @symjs/codegen (planned)',
     'sympy.combinatorics.galois': 'transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)',
     'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
-    'sympy.diffgeom': 'extend package (planned): differential geometry',
-    'sympy.diffgeom.diffgeom': 'extend package (planned): differential geometry',
-    'sympy.diffgeom.rn': 'extend package (planned): differential geometry',
     'sympy.integrals.quadrature': 'Gauss quadrature nodes and weights',
     'sympy.parsing.autolev': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
     'sympy.parsing.autolev._listener_autolev_antlr': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
@@ -402,19 +436,12 @@ NOT_IMPLEMENTED = {
     'sympy.parsing.fortran.fortran_parser': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
     'sympy.parsing.maxima': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
     'sympy.parsing.sym_expr': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
-    'sympy.polys.densearith': 'dense recursive list arithmetic (dup_*/dmp_*); to be ported to ./polys',
     'sympy.polys.densetools': 'dense recursive list representation',
-    'sympy.polys.domains.mpelements': 'RealField/ComplexField elements; to be ported to ./polys on numeric/ (the mpmath _mpf/_mpc subclassing and context plumbing are Python-specific and excluded)',
-    'sympy.polys.fglmtools': 'FGLM change of monomial order; to be ported to ./polys',
-    'sympy.polys.matrices.eigen': 'DomainMatrix eigenvalues and eigenvectors; to be ported to ./polys',
-    'sympy.polys.matrices.linsolve': 'DomainMatrix linear system solving; to be ported to ./polys',
-    'sympy.polys.modulargcd': 'modular GCD algorithms (modgcd_*, func_field_modgcd); to be ported to ./polys',
     'sympy.polys.multivariate_resultants': 'DixonResultant, MacaulayResultant',
     'sympy.polys.numberfields.galois_resolvents': '',
     'sympy.polys.numberfields.galoisgroups': '',
     'sympy.polys.numberfields.resolvent_lookup': '',
     'sympy.polys.polymatrix': 'PolyMatrix',
-    'sympy.polys.polyquinticconst': 'constants of the quintic solver; to be ported to ./polys with roots_quintic',
     'sympy.printing.c': 'extend package @symjs/codegen (planned)',
     'sympy.printing.codeprinter': 'extend package @symjs/codegen (planned)',
     'sympy.printing.cxx': 'extend package @symjs/codegen (planned)',
@@ -427,11 +454,6 @@ NOT_IMPLEMENTED = {
     'sympy.printing.rcode': 'extend package @symjs/codegen (planned)',
     'sympy.printing.rust': 'extend package @symjs/codegen (planned)',
     'sympy.printing.smtlib': 'extend package @symjs/codegen (planned)',
-    'sympy.series.series_class': 'SeriesBase, abstract base class of sequences/fourier/formal series; to be ported to ./calculus',
-    'sympy.tensor.array.array_derivatives': 'ArrayDerivative; to be ported to ./tensor',
-    'sympy.tensor.array.expressions.conv_array_to_indexed': 'array expressions to Indexed; to be ported to ./tensor',
-    'sympy.tensor.array.expressions.from_array_to_indexed': 'array expressions to Indexed; to be ported to ./tensor',
-    'sympy.tensor.array.expressions.utils': 'array expression helpers; to be ported to ./tensor',
     'sympy.tensor.toperators': '',
     'sympy.utilities.codegen': 'extend package @symjs/codegen (planned)',
 }
@@ -441,6 +463,10 @@ NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/phys
  'sympy.physics': 'per-field extend package (planned)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
+    'sympy.polys.domains.mpelements': 'RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.',
+    'sympy.diffgeom': 'base subpath @symjs/symjs/diffgeom',
+    'sympy.diffgeom.diffgeom': 'base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves',
+    'sympy.diffgeom.rn': 'base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems',
     'sympy.functions.special.bsplines': 'Cox-de Boor B-spline bases and exact collocation interpolation on strictly increasing real coordinates.',
     'sympy.matrices.kind': 'Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.',
     'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.',
@@ -805,6 +831,7 @@ def build_inventory(root):
     measured = {c['module'] for c in corpus['cases']}
     selected_ast = ast.parse((root / 'compat/extract.py').read_text())
     selected = next(ast.literal_eval(n.value) for n in selected_ast.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'MODULES' for t in n.targets))
+    selected = set(selected)
     api = json.loads((root / 'compat/api-members.json').read_text())
     evidence = load_evidence(root, corpus)
     trees = {}
@@ -868,7 +895,7 @@ def build_inventory(root):
                             'excluded': 'An explicit runtime/infrastructure exclusion, with its reason.',
                             'note': 'For partial and unimplemented modules: what is ported, or where the module is planned (base module or an extend package).',
                             'declaredPublicNames': 'Public source definitions, explicit __all__ exports and declared class methods/properties. The API criterion also checks inherited members and class attributes. Python protocols are excluded except mapped arithmetic/comparison operators.'},
-            'modules': rows}
+            'apiExclusions': API_EXCLUSIONS, 'modules': rows}
 
 
 if __name__ == '__main__':

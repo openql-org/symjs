@@ -5,6 +5,8 @@
 import './core';
 export { SymObject, categoryObject, Morphism, IdentityMorphism, NamedMorphism, CompositeMorphism, Category, CategoryClass, Diagram } from './categories/baseclasses';
 export type { DiagramInput, MorphismProperties } from './categories/baseclasses';
+export { DiagramGrid, ArrowStringDescription, XypicDiagramDrawer, xypicDrawDiagram } from './categories/diagram_drawing';
+export type { DiagramHints, DiagramGroup, DiagramGroups, DiagramGridOptions, ArrowFormatter, XypicDrawOptions, XypicDiagramOptions } from './categories/diagram_drawing';
 
 import { prettyHooks as _prettyHooks_ } from './printing/pretty/pretty';
 import { prettyCategories as _prettyCategories_ } from './categories/pretty';

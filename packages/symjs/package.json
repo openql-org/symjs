@@ -21,6 +21,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./plotting": {
+      "import": {
+        "types": "./dist/plotting.d.ts",
+        "default": "./dist/plotting.js"
+      },
+      "require": {
+        "types": "./dist/plotting.d.cts",
+        "default": "./dist/plotting.cjs"
+      }
+    },
     "./core": {
       "import": {
         "types": "./dist/core.d.ts",
@@ -272,6 +282,16 @@
         "default": "./dist/liealgebras.cjs"
       }
     },
+    "./diffgeom": {
+      "import": {
+        "types": "./dist/diffgeom.d.ts",
+        "default": "./dist/diffgeom.js"
+      },
+      "require": {
+        "types": "./dist/diffgeom.d.cts",
+        "default": "./dist/diffgeom.cjs"
+      }
+    },
     "./parsing": {
       "import": {
         "types": "./dist/parsing.d.ts",
@@ -347,6 +367,9 @@
     "./src/crypto.ts",
     "./dist/crypto.js",
     "./dist/crypto.cjs",
+    "./src/diffgeom.ts",
+    "./dist/diffgeom.js",
+    "./dist/diffgeom.cjs",
     "./src/discrete.ts",
     "./dist/discrete.js",
     "./dist/discrete.cjs",
@@ -437,6 +460,9 @@
     "./src/parsing.ts",
     "./dist/parsing.js",
     "./dist/parsing.cjs",
+    "./src/plotting.ts",
+    "./dist/plotting.js",
+    "./dist/plotting.cjs",
     "./src/polys.ts",
     "./dist/polys.js",
     "./dist/polys.cjs",
@@ -479,6 +505,9 @@
     "./src/polys/numberfields/primes.ts",
     "./dist/polys/numberfields/primes.js",
     "./dist/polys/numberfields/primes.cjs",
+    "./src/polys/polyroots.ts",
+    "./dist/polys/polyroots.js",
+    "./dist/polys/polyroots.cjs",
     "./src/polys/rootof.ts",
     "./dist/polys/rootof.js",
     "./dist/polys/rootof.cjs",

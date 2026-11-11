@@ -6,3 +6,4 @@ compat/report.json
 compat/tests-report.json
 
 compat/tests-results/
+__pycache__/

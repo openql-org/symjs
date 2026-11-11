@@ -269,3 +269,22 @@ it('reports availability of associated fields', () => {
   class BrokenField extends IntegerRing { override getField(): never { throw new TypeError('broken field'); } }
   expect(() => new BrokenField().hasAssocField).toThrow('broken field');
 });
+
+it('RealField contexts retain precision and convert their owned elements', () => {
+  const field = new RealField(100);
+  expect(field.fromSympy(0)).toEqual(Rational.of(0n));
+  expect(field.dps).toBe(29);
+  expect(field.precision).toBe(100);
+  expect(field.toString()).toBe('RR_100');
+  expect(field.equals(new RealField(100))).toBe(true);
+  expect(field.equals(RR)).toBe(false);
+  expect(field.equals(QQ)).toBe(false);
+  const element = field.dtype('1.000000000000000001');
+  expect(element.parent()).toBe(field);
+  expect(field.dtype().isZero).toBe(true);
+  expect(field.toSympy(element)).toEqual(element.toSympy());
+  const third = field.fromSympy(Rational.of(1n, 3n));
+  expect(third).toBeInstanceOf(Float);
+  if (third instanceof Float) expect(third.prec).toBe(100);
+  expect(field.quo(Rational.of(1n), Rational.of(3n))).toEqual(third);
+});

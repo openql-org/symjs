@@ -1026,7 +1026,8 @@ const isArrayLike = (v: unknown): v is NDimArray | Matrix | readonly NestedArray
 
 /** SymPy _diff_wrt: symbols, undefined functions, Indexed, derivatives and arrays can be differentiated by. */
 const diffWrt = (e: Expr): boolean =>
-  e.kind === 'Symbol' || e instanceof UndefFn || e instanceof Indexed || e instanceof Derivative || e instanceof NDimArray;
+  e.kind === 'Symbol' || e instanceof UndefFn || e instanceof Indexed || e instanceof Derivative || e instanceof NDimArray ||
+  (e instanceof ExtensionExpr && (e.name === 'MatrixElement' || e.name === 'ArrayElement'));
 
 /**
  * SymPy derive_by_array(expr, dx): the derivative of an expression or

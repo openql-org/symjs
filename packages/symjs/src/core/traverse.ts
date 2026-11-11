@@ -47,7 +47,7 @@ export function rebuild(e: Expr, args?: readonly Expr[]): Expr {
   if (e instanceof UndefFn) return new UndefFn(e.name, args);
   if (e instanceof Concrete) return new Concrete(e.kind2, args);
   // SymPy keeps a rebuilt derivative unevaluated: Derivative(f(x), x).subs(f(x), x**2) = Derivative(x**2, x)
-  if (e instanceof Derivative) return new Derivative(args);
+  if (e instanceof Derivative) return e.withArgs(args);
   // a set node (sets/ is a higher layer, which registers its constructors)
   if (e.kind === 'Set') return defined(impl.rebuildSet, 'sets')(e, args);
   // atoms (and nodes of higher layers without withArgs) are returned as they are

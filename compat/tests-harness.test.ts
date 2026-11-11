@@ -3,13 +3,26 @@
 
 import { expect, it } from 'vitest';
 import { assertionOutcome, runTestCase, testCaseKey } from './tests-harness';
-import { deserialize } from './harness';
+import { deserialize, runCase, counterpartFor } from './harness';
+import type { Case, Tree } from './harness';
+import * as dg from '@symjs/symjs/diffgeom';
 import * as sj from '../packages/symjs/src';
 import type { TestCase } from './tests-harness';
 
 const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'core',
   test: 'test_fixture', line: 1, src: 'assert Integer(1) == 1', fn: 'Integer',
   args: [{ t: 'Rational', p: '1', q: '1' }], kwargs: {}, expected: '1', op: '==' };
+
+it('replays series indices and slices with the SeriesBase offset semantics', () => {
+  const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const self = { t: 'FormalPowerSeries', f: { t: 'Fn', name: 'sin', args: [x] }, x, x0: integer(0), dir: '+' };
+  const c = { ...base, module: 'sympy.series.tests.test_formal', category: 'series', fn: '.__getitem__', self };
+  expect(runTestCase({ ...c, args: [integer(1)], expected: 'x' })).toEqual({ status: 'pass' });
+  const absent = { t: 'Js', v: null };
+  expect(runTestCase({ ...c, args: [{ t: 'Slice', start: absent, stop: integer(4), step: absent }], expected: '[0, x, 0, -x**3/6]' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, args: [{ t: 'Slice', start: integer(3), stop: integer(-1), step: integer(-1) }], expected: '[-x**3/6, 0, x, 0]' })).toEqual({ status: 'pass' });
+});
 
 it('reuses ordinary exact/equivalent matching and inverts only comparable inequality results', () => {
   expect(runTestCase(base)).toEqual({ status: 'pass' });
@@ -103,4 +116,67 @@ it('does not discard private deterministic random fixtures when replaying public
   const c = { ...base, kwargs: { _random_prec: { t: 'Dict', items: [] } } };
   expect(runTestCase(c)).toEqual({ status: 'unsupported', reason: 'upstream private random fixture _random_prec' });
   expect(runTestCase({ ...c, raises: 'ValueError' }).status).toBe('unsupported');
+});
+
+const chart: Tree = { t: 'Diffgeom', ref: 'R2_r' };
+const field = (cls: string, n: number): Tree => ({
+  t: 'Diffgeom',
+  cls,
+  args: [chart, { t: 'Rational', p: String(n), q: '1' }],
+});
+const call: Case = {
+  module: 'sympy.diffgeom.diffgeom',
+  category: 'diffgeom',
+  fn: '.__call__',
+  src: 'e_x(x)',
+  self: field('BaseVectorField', 0),
+  args: [field('BaseScalarField', 0)],
+  expected: '1',
+};
+
+it('replays differential geometry directly through the base harness', () => {
+  expect(runCase(call)).toEqual({ status: 'pass' });
+  expect(deserialize(chart)).toBe(dg.R2R);
+  expect(counterpartFor({ name: 'Point', category: 'diffgeom' })).toBe('@symjs/symjs/diffgeom.Point');
+  expect(counterpartFor({ name: 'Point', category: 'geometry' })).toBe('Point');
+  expect(() => deserialize({ t: 'Diffgeom', ref: 'missing' })).toThrow(/diffgeom reference/);
+});
+it('reports differential-geometry exception classes through the shared harness', () => {
+  const c = { ...call, args: [field('BaseVectorField', 0)], test: 'invalid_vector', line: 1, op: '==' as const };
+  expect(runTestCase({ ...c, raises: 'ValueError' }).status).toBe('pass');
+  expect(runTestCase({ ...c, raises: 'TypeError' }).exceptionMismatch).toEqual({ expected: 'TypeError', actual: 'RangeError' });
+});
+it('keeps differential-geometry and Euclidean Point dispatch distinct', () => {
+  expect(
+    runCase({
+      ...call,
+      fn: 'Point',
+      self: undefined,
+      args: [
+        chart,
+        {
+          t: 'Tuple',
+          list: true,
+          items: [
+            { t: 'Rational', p: '1', q: '1' },
+            { t: 'Rational', p: '2', q: '1' },
+          ],
+        },
+      ],
+      expected: 'Point(rectangular, Matrix([[1], [2]]))',
+    }).status,
+  ).toBe('pass');
+  expect(
+    runCase({
+      module: 'sympy.geometry.point',
+      category: 'geometry',
+      fn: 'Point',
+      src: 'Point(1, 2)',
+      args: [
+        { t: 'Rational', p: '1', q: '1' },
+        { t: 'Rational', p: '2', q: '1' },
+      ],
+      expected: 'Point2D(1, 2)',
+    }).status,
+  ).toBe('pass');
 });

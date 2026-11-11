@@ -7,7 +7,7 @@
  * ideal membership (SymPy groebner / GroebnerBasis).
  */
 
-import { PolynomialError } from '../core/errors';
+import { NotImplementedError, PolynomialError } from '../core/errors';
 import { at, defined } from '../core/guard';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Add, Constant, Dummy, Mul, Pow, Rational, S, impl } from '../core/nodes';
@@ -17,6 +17,8 @@ import { str } from '../printing/str';
 import { cancel, fraction } from '../simplify/rational';
 import { mlcm } from './mpoly';
 import { Poly, sortGens } from './sympoly';
+import { matrixFglmBasis, type FglmRing } from './fglmtools';
+import type { OrderLike } from './rings';
 
 export type MonomialOrder = 'lex' | 'grlex' | 'grevlex';
 
@@ -170,6 +172,48 @@ function buchberger(F: SP[], order: MonomialOrder): SP[] {
   return G.sort((a, b) => cmpMonom(lead(b, order)[0], lead(a, order)[0], order));
 }
 
+/** Polynomial adapter that keeps FGLM independent of the heavier PolyRing implementation. */
+class FglmElement {
+  constructor(readonly polynomial: SP, readonly order: MonomialOrder) {}
+  get LM(): Monom { return lead(this.polynomial, this.order)[0]; }
+  get isZero(): boolean { return this.polynomial.size === 0; }
+  terms(): [Monom, Expr][] { return [...this.polynomial.values()]; }
+  rem(divisors: readonly FglmElement[]): FglmElement {
+    return new FglmElement(divide(this.polynomial, divisors.map((g) => g.polynomial), this.order)[1], this.order);
+  }
+  sub(other: FglmElement): FglmElement {
+    const p = new Map(this.polynomial);
+    for (const [m, c] of other.polynomial.values()) addTerm(p, m, cmul(S.NegOne, c));
+    return new FglmElement(p, this.order);
+  }
+  monic(): FglmElement { return new FglmElement(monic(this.polynomial, this.order), this.order); }
+}
+
+function fglmOrder(order: OrderLike): MonomialOrder {
+  const name = typeof order === 'string' ? order : order.alias;
+  if (name !== 'lex' && name !== 'grlex' && name !== 'grevlex') throw new PolynomialError(`Unsupported monomial order: ${name}`);
+  return name;
+}
+
+function fglmRing(gens: readonly Sym[], order: MonomialOrder): FglmRing<FglmElement> {
+  const zero = gens.map(() => 0);
+  const fromDict = (terms: Iterable<readonly [readonly number[], Expr]>): FglmElement => {
+    const p: SP = new Map();
+    for (const [m, c] of terms) addTerm(p, [...m], c);
+    return new FglmElement(p, order);
+  };
+  return {
+    domain: { zero: S.Zero, one: S.One, isField: true, isZero: (v) => v instanceof Rational && v.isZero, add: cadd, sub: (a, b) => cadd(a, cmul(S.NegOne, b)), mul: cmul, quo: cdiv },
+    symbols: gens,
+    zeroMonom: zero,
+    one: fromDict([[zero, S.One]]),
+    order: { isGlobal: true, compare: (a, b) => cmpMonom([...a], [...b], order) },
+    clone: ({ order: next }) => fglmRing(gens, fglmOrder(next)),
+    termNew: (m, c) => fromDict([[m, c]]),
+    fromDict,
+  };
+}
+
 /** A Groebner basis with its generators, domain and order (SymPy GroebnerBasis). */
 export class GroebnerBasis {
   constructor(
@@ -178,6 +222,24 @@ export class GroebnerBasis {
     readonly domain: string,
     readonly order: MonomialOrder,
   ) {}
+  /** Convert this zero-dimensional basis to another monomial order using FGLM. */
+  fglm(orderIn: OrderLike): GroebnerBasis {
+    const order = fglmOrder(orderIn);
+    if (order === this.order) return this;
+    if (!this.isZeroDimensional) throw new NotImplementedError('Cannot convert a Groebner basis of an ideal with positive dimension');
+    const coefficients = this.exprs.flatMap((e) => Poly.from(e, this.gens).coeffs());
+    const atoms = paramDomain(coefficients).atoms;
+    const reps = atoms.map((a): [Expr, Expr] => [a, new Dummy('c')]);
+    const back = reps.map(([a, d]): [Expr, Expr] => [d, a]);
+    const ring = fglmRing(this.gens, this.order);
+    const basis = matrixFglmBasis(this.exprs.map((e) => new FglmElement(fromExpr(xreplace(e, reps), this.gens), this.order).monic()), ring, order);
+    const exprs = basis.map((g) => {
+      const p = this.domain.endsWith(']') ? clearDenoms(g.polynomial, reps.map(([, d]) => d), this.domain.startsWith('QQ')) : g.polynomial;
+      const e = xreplace(toExpr(p, this.gens), back);
+      return this.domain === 'ZZ' ? Poly.from(e, this.gens).clearDenoms(true)[1].asExpr() : e;
+    });
+    return new GroebnerBasis(exprs, this.gens, this.domain, order);
+  }
   /** Is f in the ideal? */
   contains(f: ExprLike): boolean {
     const r = this.reduce(f)[1];
