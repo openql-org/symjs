@@ -56,3 +56,13 @@ describe('QQ_I', () => {
     expect(new GaussianRational(1n).parent()).toBe(QQ_I);
   });
 });
+
+it('exposes Euclidean quotient and remainder operators', async () => {
+  const a = await import('../../../src');
+  const x = a.ZZ_I.new(5,0), y = a.ZZ_I.new(1,3);
+  const q = x.floordiv(y), r = x.mod(y);
+  expect(q.mul(y).add(r).equals(x)).toBe(true);
+  const v = a.QQ_I.new(5,1), w = a.QQ_I.new(2,0);
+  expect(v.floordiv(w).mul(w).equals(v)).toBe(true);
+  expect(v.mod(w).isZero).toBe(true);
+});

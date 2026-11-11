@@ -14,6 +14,8 @@ import { freeSymbols, subs, xreplace } from '../core/traverse';
 import { asRealImag, atoms } from '../core/methods';
 import { replace, type Query, type Replacement } from '../core/match';
 import type { Truth } from '../core/truth';
+import { toTruth, truthAnd } from '../core/truth';
+import { isZero } from '../core/assumptions';
 import { sympifyMethod } from '../core/sympify';
 import { conjugate } from '../functions/elementary/elementary';
 import { evalf, lambdify, toComplex } from '../numeric/evalf';
@@ -145,6 +147,30 @@ export class Matrix {
   }
   get isSquare(): boolean {
     return this.rows === this.cols;
+  }
+
+  /** Whether every entry is zero, with undecidable entries kept unknown. */
+  get isZeroMatrix(): Truth {
+    return truthAnd(...this.data.map((e) => toTruth(isZero(e))));
+  }
+
+  get isLowerHessenberg(): boolean {
+    return this.data.every((e, k) => k % this.cols <= Math.floor(k / this.cols) + 1 || isZeroEntry(e));
+  }
+
+  get isUpperHessenberg(): boolean {
+    return this.data.every((e, k) => Math.floor(k / this.cols) <= k % this.cols + 1 || isZeroEntry(e));
+  }
+
+  /** Elementwise conjugate (SymPy Matrix.C). */
+  get C(): Matrix {
+    return this.conjugate();
+  }
+
+  /** Dirac conjugate: the Hermitian conjugate times diag(1, 1, -1, -1). */
+  get D(): Matrix {
+    if (this.rows !== 4) throw new ShapeError('Dirac conjugation requires four rows');
+    return this.H.mul(Matrix.diag(1, 1, -1, -1));
   }
 
   get(i: number, j: number): Expr {

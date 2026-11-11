@@ -4,6 +4,8 @@
 // Development Team, BSD 3-Clause License (see LICENSE).
 
 /** Sparse finite Puiseux polynomials with exact rational (possibly negative) exponents. */
+import { lcm } from '../core/numbers';
+import { NoMatch, type NoMatchResult } from '../core/truth';
 import { at, first } from '../core/guard';
 import { NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
@@ -99,6 +101,26 @@ export class PuiseuxRing {
 export class PuiseuxPoly {
   readonly ring: PuiseuxRing;
   private readonly data: ReadonlyMap<string, readonly [PuiseuxMonom, Expr]>;
+
+  /** Integer polynomial, denominator monomial and exponent denominators of the normalized representation. */
+  private representation(): { poly: PolyElement; monom: bigint[]; ns: bigint[] } {
+    const terms = this.terms();
+    const ns = this.ring.symbols.map((_, i) => terms.reduce((n, [m]) => lcm(n, at(m, i).q), 1n));
+    const integerMonoms = terms.map(([m]) => m.map((e, i) => e.p * at(ns, i) / e.q));
+    const shifts = ns.map((_, i) => integerMonoms.length === 0 ? 0n : -integerMonoms.reduce((minimum, m) => at(m, i) < minimum ? at(m, i) : minimum, at(first(integerMonoms), i)));
+    const monom = shifts.some((e) => e > 0n) ? shifts : ns.map(() => 0n);
+    const poly = this.ring.polyRing.fromDict(terms.map(([, c], j) => [at(integerMonoms, j).map((v, i) => Number(v + at(monom, i))), c]));
+    return { poly, monom, ns };
+  }
+  get poly(): PolyElement { return this.representation().poly; }
+  get monom(): readonly bigint[] | NoMatchResult {
+    const m = this.representation().monom;
+    return m.some((e) => e !== 0n) ? m : NoMatch;
+  }
+  get ns(): readonly bigint[] | NoMatchResult {
+    const ns = this.representation().ns;
+    return ns.some((e) => e !== 1n) ? ns : NoMatch;
+  }
 
   constructor(poly: PolyElement | Iterable<PuiseuxTerm>, ring: PuiseuxRing) {
     this.ring = ring;

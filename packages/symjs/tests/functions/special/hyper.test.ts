@@ -439,3 +439,13 @@ describe('hyper convergence_statement with complementary relations (SymPy Or._ne
     expect(str((hyper([ar], [], sj.Rational.of(1n, 10n)) as Hyper).convergenceStatement)).toBe('(a >= 1) | (a < 0) | ((a >= 0) & (a < 1))');
   });
 });
+
+it('sets deltas across disjoint Fermi sectors to zero', async () => {
+  const a = await import('../../../src');
+  const i = new a.Sym('i',{belowFermi:true}), u = new a.Sym('u',{aboveFermi:true}), p = new a.Sym('p');
+  expect(a.KroneckerDelta(i,u)).toBe(a.S.Zero);
+  expect(a.KroneckerDelta(u,i)).toBe(a.S.Zero);
+  expect(a.KroneckerDelta(i,p)).toBeInstanceOf(a.Fn);
+  expect(a.KroneckerDelta(u,p)).toBeInstanceOf(a.Fn);
+  expect(a.KroneckerDelta(p,1)).toBeInstanceOf(a.Fn);
+});

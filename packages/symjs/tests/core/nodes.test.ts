@@ -178,3 +178,27 @@ it('lets an extension specify free symbols independently of its displayed argume
   expect([...sj.freeSymbols(new BoundBox([x]))]).toEqual([y]);
   expect([...sj.freeSymbols(sj.add(new BoundBox([x]), y))]).toEqual([y]);
 });
+
+it('provides assumption facts and strict/weak relation variants', async () => {
+  const a = await import('../../src');
+  const v = new a.Sym('v');
+  expect(v.assumptions0).toEqual(new Map([['commutative',true]]));
+  expect(new a.Sym('p',{positive:true}).assumptions0.get('finite')).toBe(true);
+  expect(new a.Sym('n',{commutative:false}).assumptions0.get('commutative')).toBe(false);
+  for (const [op, text, strict, weak] of [['Eq','==','Eq','Eq'],['Ne','!=','Ne','Ne'],['Lt','<','Lt','Le'],['Le','<=','Lt','Le'],['Gt','>','Gt','Ge'],['Ge','>=','Gt','Ge']] as const) {
+    const r = new a.Rel(op,v,a.S.One);
+    expect(r.relOp).toBe(text); expect(r.strict.op).toBe(strict); expect(r.weak.op).toBe(weak);
+  }
+  const inner = new a.Integral([v,v]);
+  expect(inner.function).toBe(v);
+  expect(new a.Integral([inner,v]).function).toBe(v);
+});
+
+it('collects only bound variables of nested integrals', async () => {
+  const a = await import('../../src');
+  const [i,j,k] = a.symbols('i j k');
+  const inner = new a.Integral([a.S.One,i!,a.S.One,a.S.Two]);
+  const outer = new a.Integral([new a.Integral([inner,j!,a.S.Two]),k!]);
+  expect(outer.boundSymbols).toEqual([i,j]);
+  expect(new a.Integral([a.S.One,k!]).boundSymbols).toEqual([]);
+});

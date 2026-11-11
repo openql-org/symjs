@@ -16,7 +16,9 @@
 import { NotImplementedError } from '../core/errors';
 import type { Truth } from '../core/truth';
 import type { ExprLike } from '../core/nodes';
-import { Add, Constant, Expr, ExtensionExpr, Float, Mul, Rational, S, Special, Sym, impl } from '../core/nodes';
+import { Add, Constant, Expr, ExtensionExpr, Float, Mul, Rational, S, Special, Sym, WildFunction, impl } from '../core/nodes';
+import type { UndefinedFunction } from '../core/undef';
+import { isNoMatch, truthAnd } from '../core/truth';
 import { add, div, mul, neg, pow, sympify } from '../core/ops';
 import { Eq, Ge, Gt, Le, Lt } from '../core/logic';
 import { and, not, or } from '../core/boolalg';
@@ -43,6 +45,15 @@ export abstract class SetExpr extends Expr {
   get isEmpty(): boolean {
     return false;
   }
+  get isIterable(): boolean { return false; }
+  /** Topological boundary in the real line. */
+  get boundary(): SetExpr { throw new NotImplementedError(`boundary of ${this.className}`); }
+  get closure(): SetExpr { return union(this, this.boundary); }
+  get interior(): SetExpr { return complement(this, this.boundary); }
+  get isClosed(): Truth { return isSubset(this.boundary, this) ?? 'unknown'; }
+  get isOpen(): Truth { return isSubset(intersection(this, this.boundary), EmptySet) ?? 'unknown'; }
+  /** Lebesgue measure. */
+  get measure(): Expr { throw new NotImplementedError(`measure of ${this.className}`); }
   /** A set of the same class with new arguments (the sets of this module are rebuilt by rebuildSet). */
   withArgs(_args: readonly Expr[]): Expr {
     return this;
@@ -98,6 +109,16 @@ export function cmpReal(a: Expr, b: Expr): number | undefined {
 // ---------------------------------------------------------------------------
 
 class NamedSet extends SetExpr {
+  override get isIterable(): boolean { return ['EmptySet', 'Integers', 'Naturals', 'Naturals0'].includes(this.name); }
+  override get boundary(): SetExpr {
+    if (this.name === 'Reals' || this.name === 'EmptySet') return EmptySet;
+    throw new NotImplementedError(`boundary of ${this.name}`);
+  }
+  override get measure(): Expr {
+    if (this.name === 'Reals') return S.Infinity;
+    if (['EmptySet', 'Integers', 'Naturals', 'Naturals0', 'Rationals'].includes(this.name)) return S.Zero;
+    throw new NotImplementedError(`measure of ${this.name}`);
+  }
   readonly args: readonly Expr[] = [];
   constructor(readonly name: 'Reals' | 'Rationals' | 'Integers' | 'Naturals' | 'Naturals0' | 'Complexes' | 'EmptySet' | 'UniversalSet') {
     super();
@@ -108,8 +129,8 @@ class NamedSet extends SetExpr {
   get isEmpty(): boolean {
     return this.name === 'EmptySet';
   }
-  /** Openness in the usual real or complex topology. */
-  get isOpen(): boolean {
+  /** Openness in the usual real or complex topology (decided for every named set). */
+  override get isOpen(): boolean {
     return ['Reals', 'Complexes', 'EmptySet', 'UniversalSet'].includes(this.name);
   }
   protected computeKey(): string {
@@ -129,11 +150,19 @@ export const Naturals0 = new NamedSet('Naturals0');
 export const Complexes = new NamedSet('Complexes');
 export const UniversalSet = new NamedSet('UniversalSet');
 
+/** The allowed argument counts of an undefined or wildcard function. */
+export function nargs(f: UndefinedFunction | WildFunction): SetExpr {
+  const arities = f instanceof WildFunction ? f.nargs : f.arity;
+  return arities === undefined || isNoMatch(arities) ? Naturals0 : finiteSet(...arities);
+}
+
 // ---------------------------------------------------------------------------
 // Interval
 // ---------------------------------------------------------------------------
 
 export class Interval extends SetExpr {
+  override get boundary(): SetExpr { return finiteSet(...[this.start, this.end].filter((e) => !isInf(e))); }
+  override get measure(): Expr { return add(this.end, neg(this.start)); }
   readonly args: readonly Expr[];
   /** SymPy `Interval(a, b, left_open, right_open)` (EmptySet or a point when degenerate). */
   static of(a: ExprLike, b: ExprLike, leftOpen = false, rightOpen = false): SetExpr {
@@ -212,6 +241,9 @@ export const Ropen = (a: ExprLike, b: ExprLike): SetExpr => interval(a, b, false
 // ---------------------------------------------------------------------------
 
 export class FiniteSet extends SetExpr {
+  override get isIterable(): boolean { return true; }
+  override get boundary(): SetExpr { return this; }
+  override get measure(): Expr { return S.Zero; }
   readonly args: readonly Expr[];
   /** SymPy `FiniteSet(*elements)` (EmptySet when empty, duplicates removed). */
   static of(...xs: ExprLike[]): SetExpr {
@@ -276,6 +308,7 @@ const extPositive = (n: Expr): boolean => isPositive(n) === true || infSign(n) =
  * known when the assumptions tell.
  */
 export class Range extends SetExpr {
+  override get isIterable(): boolean { return true; }
   readonly args: readonly Expr[];
   /** SymPy `Range(stop)` or `Range(start, stop, step)` (canonical, with Range(0, 0, 1) when empty). */
   static of(start: ExprLike, stop?: ExprLike, step: ExprLike = 1): SetExpr {
@@ -593,18 +626,16 @@ export class ConditionSet extends SetExpr {
   get baseSet(): SetExpr {
     return this.base;
   }
-  /** SymPy ConditionSet(sym, condition, base) with the evaluation of its constructor. */
-  static of(sym: Expr, condition: ExprLike | boolean, base: SetExpr = UniversalSet): SetExpr {
-    return conditionSet(sym, condition, base);
-  }
-  /** Membership requires both the base set and the substituted condition. */
   override elementOf(x: Expr): Truth {
     const inBase = containsQ(this.base, x);
     if (inBase === false) return false;
-    const condition = this.condition.subs([[this.variable, x]]);
-    if (condition === S.false) return false;
-    if (inBase === true && condition === S.true) return true;
-    return 'unknown';
+    const condition = xreplace(this.condition, [[this.variable, x]]);
+    const satisfied = condition === S.true ? true : condition === S.false ? false : 'unknown';
+    return truthAnd(inBase ?? 'unknown', satisfied);
+  }
+  /** SymPy ConditionSet(sym, condition, base) with the evaluation of its constructor. */
+  static of(sym: Expr, condition: ExprLike | boolean, base: SetExpr = UniversalSet): SetExpr {
+    return conditionSet(sym, condition, base);
   }
   protected computeKey(): string {
     return `ConditionSet(${this.variable.key},${this.condition.key},${this.base.key})`;
@@ -799,6 +830,13 @@ export function conditionSet(symIn: Expr, conditionIn: ExprLike | boolean, baseI
 // ---------------------------------------------------------------------------
 
 class SetOp extends SetExpr {
+  override get measure(): Expr {
+    if (this.op !== 'Union') throw new NotImplementedError(`measure of ${this.op}`);
+    // Inclusion-exclusion also handles intervals whose overlap is symbolic.
+    const a = first(this.args);
+    const b = union(...this.args.slice(1));
+    return add(a.measure, b.measure, neg(intersection(a, b).measure));
+  }
   constructor(
     readonly op: 'Union' | 'Intersection' | 'Complement',
     readonly args: readonly SetExpr[],

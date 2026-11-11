@@ -19,3 +19,15 @@ describe('small core nodes', () => {
     expect(() => sj.Subs(x, [x, y], [1])).toThrow(RangeError);
   });
 });
+
+it('validates and enforces declared function arities', () => {
+  const f = sj.SymFunction('f',{nargs:1}), g = sj.SymFunction('g',{nargs:[2,1,2]});
+  expect(String(f(x!))).toBe('f(x)');
+  expect(g.arity).toEqual([1,2]);
+  expect(String(g(x!,y!))).toBe('g(x, y)');
+  expect(() => f()).toThrow(TypeError);
+  expect(() => f(x!,y!)).toThrow(TypeError);
+  expect(() => sj.SymFunction('f',{nargs:-1})).toThrow(RangeError);
+  expect(() => sj.SymFunction('f',{nargs:0.5})).toThrow(RangeError);
+  expect(String(sj.SymFunction('z',{nargs:0})())).toBe('z()');
+});

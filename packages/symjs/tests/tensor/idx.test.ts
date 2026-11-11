@@ -97,3 +97,10 @@ describe('ArrayComprehension and Idx', () => {
     expect(() => new Idx(sympify(3))).toThrow(TypeError);
   });
 });
+
+it('reports bounds and missing bounds for indexed expressions', async () => {
+  const a = await import('../../src');
+  const i = a.Idx('i',3), j = a.Idx('j');
+  const r = a.ranges(new a.IndexedBase('A').at(i,j,2));
+  expect(r.map((v) => a.isNoMatch(v) ? 'none' : v.map(String))).toEqual([['0','2'],'none','none']);
+});

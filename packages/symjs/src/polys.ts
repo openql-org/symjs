@@ -210,12 +210,13 @@ export { Module, FreeModule, SubModule, QuotientModule, ModuleElement } from './
 export type { ModuleInput } from './polys/agca/modules';
 export { ModuleImplementedIdeal } from './polys/agca/ideals';
 export { ModuleHomomorphism, homomorphism } from './polys/agca/homomorphisms';
+export { identityHom, inclusionHom, quotientHom } from './polys/agca/homomorphisms';
 export { ExtensionElement, FiniteExtension } from './polys/agca/extensions';
 export type { PuiseuxMonom, PuiseuxTerm } from './polys/puiseux';
 export { powXin, rsTrunc, rsMul, rsSquare, rsDiff, rsIntegrate, rsIsPuiseux, rsPow, rsSeriesInversion, rsNthRoot, rsExp, rsSin, rsCos, rsSinh, rsCosh, rsAsin, rsAsinh, rsAtan, rsAtanh, rsLambertW, rsTan, rsTanh, rsCot, rsLog, rsSeriesFromList, rsSubs, rsSeriesReversion, rsPuiseux, rsFun, rsHadamardExp, rsNewton, rsComposeAdd, rsSeries } from './polys/ringseries';
 export type { SeriesPoly, SeriesFunction } from './polys/ringseries';
 export type { RingSymbols, DomainLike, OrderLike, GenLike, SringOptions, Monom } from './polys/rings';
-export { IPolys } from './polys/compatibility';
+export { IPolys, hasAssocRing } from './polys/compatibility';
 // dense polynomial representation and distributed modules (SymPy densebasic, distributedmodules)
 export * from './polys/densebasic';
 export * from './polys/distributedmodules';

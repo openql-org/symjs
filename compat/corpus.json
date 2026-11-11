@@ -51708,7 +51708,10 @@
    "fn": ".nargs",
    "self": {
     "t": "UFnClass",
-    "name": "f"
+    "name": "f",
+    "nargs": [
+     1
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -51721,7 +51724,11 @@
    "fn": ".nargs",
    "self": {
     "t": "UFnClass",
-    "name": "f"
+    "name": "f",
+    "nargs": [
+     1,
+     2
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -245801,7 +245808,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -245826,7 +245835,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -245851,7 +245862,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -245901,7 +245914,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -245926,7 +245941,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -245976,7 +245993,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -246026,7 +246045,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -246051,7 +246072,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -246101,7 +246124,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -246126,7 +246151,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -246151,7 +246178,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -246176,12 +246205,16 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
       "name": "j",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      }
     ]
    },
@@ -246201,7 +246234,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -246226,7 +246261,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -246251,12 +246288,16 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
       "name": "j",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      }
     ]
    },
@@ -272261,7 +272302,8 @@
     "shape": [
      3,
      3
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -272322,7 +272364,8 @@
      "shape": [
       3,
       3
-     ]
+     ],
+     "sparse": true
     }
    ],
    "kwargs": {},
@@ -272364,7 +272407,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -272461,7 +272505,8 @@
     "shape": [
      3,
      3
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -272530,7 +272575,8 @@
     "shape": [
      3,
      3
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -272591,7 +272637,8 @@
      "shape": [
       3,
       3
-     ]
+     ],
+     "sparse": true
     }
    ],
    "kwargs": {},
@@ -272651,7 +272698,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -272702,7 +272750,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -272735,7 +272784,8 @@
      "shape": [
       2,
       2
-     ]
+     ],
+     "sparse": true
     }
    ],
    "kwargs": {},
@@ -272777,7 +272827,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -272811,7 +272862,8 @@
      "shape": [
       2,
       2
-     ]
+     ],
+     "sparse": true
     }
    ],
    "kwargs": {},
@@ -272853,7 +272905,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -272959,7 +273012,8 @@
     "shape": [
      4,
      4
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -273001,7 +273055,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -273107,7 +273162,8 @@
     "shape": [
      4,
      4
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -276964,48 +277020,39 @@
   {
    "fn": ".members",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "4",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "5",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277018,48 +277065,39 @@
   {
    "fn": ".RGS",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "4",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "5",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277072,48 +277110,39 @@
   {
    "fn": ".__add__",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "4",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "5",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [
@@ -277132,33 +277161,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277171,33 +277194,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277210,33 +277227,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277249,11 +277260,44 @@
   {
    "fn": ".__le__",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
+    ]
+   },
+   "args": [
+    {
+     "t": "Partition",
+     "blocks": [
+      [
        {
         "t": "Rational",
         "p": "1",
@@ -277264,11 +277308,8 @@
         "p": "2",
         "q": "1"
        }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
+      ],
+      [
        {
         "t": "Rational",
         "p": "3",
@@ -277285,48 +277326,6 @@
         "q": "1"
        }
       ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "FiniteSet",
-     "items": [
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "4",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "5",
-         "q": "1"
-        }
-       ]
-      }
      ]
     }
    ],
@@ -277339,94 +277338,76 @@
   {
    "fn": ".__le__",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
+    ]
+   },
+   "args": [
+    {
+     "t": "Partition",
+     "blocks": [
+      [
        {
         "t": "Rational",
         "p": "1",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "2",
         "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
+       },
        {
         "t": "Rational",
         "p": "3",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "4",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "5",
         "q": "1"
        }
       ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "FiniteSet",
-     "items": [
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "4",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "5",
-         "q": "1"
-        }
-       ]
-      }
      ]
     }
    ],
@@ -277439,94 +277420,76 @@
   {
    "fn": ".__lt__",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
+    ]
+   },
+   "args": [
+    {
+     "t": "Partition",
+     "blocks": [
+      [
        {
         "t": "Rational",
         "p": "1",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "2",
         "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
+       },
        {
         "t": "Rational",
         "p": "3",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "4",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "5",
         "q": "1"
        }
       ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "FiniteSet",
-     "items": [
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "4",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "5",
-         "q": "1"
-        }
-       ]
-      }
      ]
     }
    ],
@@ -277539,33 +277502,27 @@
   {
    "fn": ".partition",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277578,33 +277535,27 @@
   {
    "fn": ".members",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277707,33 +277658,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277746,28 +277691,25 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -277780,33 +277722,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -278035,33 +277971,27 @@
   {
    "fn": ".partition",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -278074,48 +278004,39 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "4",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "5",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -378730,7 +378651,7 @@
   {
    "fn": ".dict",
    "self": {
-    "t": "Dict",
+    "t": "FiniteDensity",
     "items": [
      [
       {
@@ -380045,7 +379966,7 @@
   {
    "fn": ".dict",
    "self": {
-    "t": "Dict",
+    "t": "FiniteDensity",
     "items": [
      [
       {
@@ -515706,8 +515627,44 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "Domain",
-    "name": "ZZ[x]/(x**2 - 2)"
+    "t": "FiniteExtension",
+    "modulus": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-2",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "ZZ",
+     "pure": false
+    }
    },
    "args": [],
    "kwargs": {},
@@ -515809,8 +515766,59 @@
   {
    "fn": ".basis",
    "self": {
-    "t": "Domain",
-    "name": "GF(5)[x]/(x**3 + x**2 + 2)"
+    "t": "FiniteExtension",
+    "modulus": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "GF(5)",
+     "pure": false
+    }
    },
    "args": [],
    "kwargs": {},

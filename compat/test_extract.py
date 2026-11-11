@@ -53,6 +53,20 @@ class ExtractTests(unittest.TestCase):
         with self.assertRaises(extract.Unsupported):
             extract.ser(Transform(lambda x: x, lambda x: bool(x)))
 
+    def test_property_receivers_preserve_type_and_metadata(self):
+        from sympy.combinatorics.partitions import Partition
+        from sympy.polys.agca.extensions import FiniteExtension
+        from sympy.stats.frv import FiniteDensity
+        x = sympy.Symbol("x")
+        self.assertEqual(extract.ser(Partition([1, 2], [3]))["t"], "Partition")
+        self.assertEqual(extract.ser(FiniteExtension(sympy.Poly(x**2 + 1, x)))["t"], "FiniteExtension")
+        self.assertEqual(extract.ser(FiniteDensity({sympy.S.One: sympy.S.One}))["t"], "FiniteDensity")
+        self.assertEqual(extract.ser(sympy.Function("f", nargs=(2, 1)))["nargs"], [1, 2])
+        self.assertNotIn("nargs", extract.ser(sympy.Function("f")))
+        self.assertTrue(extract.ser(sympy.SparseMatrix([[1]]))["sparse"])
+        self.assertNotIn("sparse", extract.ser(sympy.Matrix([[1]])))
+        self.assertEqual(extract.ser(sympy.Symbol("i", below_fermi=True))["assume"], {"below_fermi": True})
+
     def test_public_definitions_need_not_be_top_level_exports(self):
         for module, name in [
             ("sympy.simplify.fu", "TR10"),

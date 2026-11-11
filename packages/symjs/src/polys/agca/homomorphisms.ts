@@ -6,11 +6,22 @@
 import { at } from '../../core/guard';
 import { add, mul } from '../../core/ops';
 import type { Expr } from '../../core/nodes';
-import { type Module, type ModuleElement, SubModule, type ModuleInput } from './modules';
+import { str } from '../../printing/str';
+import { type Module, type ModuleElement, SubModule, QuotientModule, type ModuleInput } from './modules';
 
 /** A linear map given by the images of the ambient coordinate vectors. */
 export class ModuleHomomorphism {
   readonly matrix: readonly ModuleElement[];
+  /** SymPy's matrix representation with the domain and codomain beside it. */
+  toString(): string {
+    const rows = Array.from({ length: this.codomain.rank }, (_, j) => this.matrix.map((column) => str(at(column.data, j))));
+    const widths = this.matrix.map((_, i) => Math.max(0, ...rows.map((r) => at(r, i).length)));
+    const printed = rows.map((r) => `[${r.map((s, i) => s.padStart(at(widths, i))).join(', ')}]`);
+    const matrix = !this.domain.rank || !this.codomain.rank ? `Matrix(${this.codomain.rank}, ${this.domain.rank}, [])` : printed.length === 1 ? `Matrix([${at(printed, 0)}])` : `Matrix([\n${printed.join(',\n')}])`;
+    const lines = matrix.split('\n');
+    const label = ` : ${this.domain.toString()} -> ${this.codomain.toString()}`;
+    return lines.map((line, i) => line + (i === Math.floor(lines.length / 2) ? label : ' '.repeat(label.length))).join('\n');
+  }
   constructor(readonly domain: Module, readonly codomain: Module, matrix: readonly ModuleInput[]) {
     if (!domain.ring.equals(codomain.ring)) throw new RangeError('homomorphism modules must have the same ring');
     if (matrix.length !== domain.rank) throw new RangeError('one image is required per ambient domain coordinate');
@@ -57,4 +68,23 @@ export class ModuleHomomorphism {
 /** Construct a map, validating both the image and the relations of the domain. */
 export function homomorphism(domain: Module, codomain: Module, matrix: readonly ModuleInput[]): ModuleHomomorphism {
   return new ModuleHomomorphism(domain, codomain, matrix);
+}
+
+/** The identity map on a module (SymPy Module.identity_hom). */
+export function identityHom(module: Module): ModuleHomomorphism {
+  return homomorphism(module, module, Array.from({ length: module.rank }, (_, i) => Array.from({ length: module.rank }, (_, j) => i === j ? 1 : 0)));
+}
+
+/** Inclusion of a submodule in its ambient module. */
+export function inclusionHom(module: SubModule): ModuleHomomorphism {
+  return identityHom(module.container).restrictDomain(module);
+}
+
+/** Natural projection onto a quotient or a submodule of a quotient. */
+export function quotientHom(module: QuotientModule | SubModule): ModuleHomomorphism {
+  if (module instanceof QuotientModule) return identityHom(module.base).quotientCodomain(module.killedModule);
+  const ambient = module.container;
+  if (!(ambient instanceof QuotientModule)) throw new TypeError('expected a submodule of a quotient');
+  const preimage = ambient.base.submodule(...module.gens.map((g) => g.data), ...ambient.killedModule.gens);
+  return identityHom(preimage).quotientCodomain(ambient.killedModule);
 }

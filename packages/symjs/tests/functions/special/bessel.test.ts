@@ -311,3 +311,13 @@ describe('Hankel functions, Marcum Q and the Bessel rewrites', () => {
     expect(S(sj.series(airybi(z), z, 0, 6))).toBe('3**(1/3)*gamma(1/3)/(2*pi) + 3**(2/3)*z*gamma(2/3)/(2*pi) + 3**(1/3)*z**3*gamma(4/3)/(4*pi) + 3**(2/3)*z**4*gamma(5/3)/(16*pi) + O(z**6)');
   });
 });
+
+it('exposes the order and argument of Bessel functions', async () => {
+  const a = await import('../../../src');
+  const n = new a.Sym('n'), z = new a.Sym('z');
+  const b = a.besselj(n,z);
+  expect(a.order(b)).toBe(n);
+  expect(a.argument(b)).toBe(z);
+  expect(() => a.order(n)).toThrow(TypeError);
+  expect(() => a.argument(a.sin(z))).toThrow(TypeError);
+});

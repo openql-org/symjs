@@ -13,6 +13,8 @@ import { add, sympify } from '../core/ops';
 import { isIntegerQ } from '../core/assumptions';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
+import type { Indexed } from '../core/indexed';
+import { isNoMatch } from '../core/truth';
 import { latex } from '../printing/latex';
 import { str } from '../printing/str';
 
@@ -20,6 +22,11 @@ const isInfinite = (e: Expr): boolean => e instanceof Special && (e.name === 'oo
 
 /** The range argument of Idx: a dimension n (bounds 0 and n - 1) or a pair [lower, upper]. */
 export type IdxRange = ExprLike | readonly ExprLike[];
+
+/** Bounds of each index of an Indexed expression (SymPy Indexed.ranges). */
+export function ranges(e: Indexed): (readonly [Expr, Expr] | NoMatchResult)[] {
+  return e.indices.map((i) => i instanceof IdxNode && !isNoMatch(i.lower) && !isNoMatch(i.upper) ? [i.lower, i.upper] : NoMatch);
+}
 
 /**
  * SymPy Idx(label, range): an integer index. The label is an integer

@@ -112,3 +112,12 @@ describe('SymPy array expressions', () => {
     expect(str(first(cast(new Reshape(A, [4]).asExplicit(), SymArray).flatElements()))).toBe('A[0, 0]');
   });
 });
+
+it('retains the ranks of tensor factors under contractions', async () => {
+  const a = await import('../../../../src');
+  const x = new a.MatrixSymbol('X',3,3);
+  const tp = new a.ArrayTensorProduct(x,x,x);
+  expect(tp.subranks).toEqual([2,2,2]);
+  expect(new a.ArrayContraction(tp,[1,2]).subranks).toEqual([2,2,2]);
+  expect(new a.ArrayContraction(x,[0,1]).subranks).toEqual([2]);
+});

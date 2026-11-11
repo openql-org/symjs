@@ -86,6 +86,8 @@ export type PredicateName =
 
 /** A predicate applied to arguments, such as Q.positive(x) (SymPy AppliedPredicate). */
 export class AppliedPredicate extends ExtensionExpr {
+  /** The predicate applied by this expression (SymPy AppliedPredicate.function). */
+  get function(): Predicate { return Q[this.predicate] ?? Predicate(this.predicate); }
   constructor(
     /** The predicate name (positive for Q.positive). */
     readonly predicate: string,
@@ -739,7 +741,11 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
-      if (isConst(b, 'E')) return this.q('algebraic', x) === true && this.q('nonzero', x) === true ? false : undefined;
+      if (isConst(b, 'E')) {
+        // exp(pi*I*r) is a root of unity when r is rational.
+        if (this.q('rational', mul(x, pow(mul(S.Pi, S.I), -1))) === true) return true;
+        return this.q('algebraic', x) === true && this.q('nonzero', x) === true ? false : undefined;
+      }
       if (this.q('rational', x) === true) return this.q('algebraic', b);
       return undefined;
     }

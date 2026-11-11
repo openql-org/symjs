@@ -148,3 +148,4 @@ export { findSimpleRecurrenceVector, findSimpleRecurrence, rationalize, guessGen
 export type { GuessGeneratingFunctionOptions, GuessOptions } from './concrete/guess';
 export { approximants } from './series/approximants';
 export type { ApproximantsOptions } from './series/approximants';
+export { variables, hasFiniteLimits, hasReversedLimits } from './concrete/exprwithlimits';

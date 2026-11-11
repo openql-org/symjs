@@ -638,7 +638,7 @@ def subpackage_public(modname):
         names |= {n for n, v in vars(mod).items() if not n.startswith("_") and callable(v) and getattr(v, "__module__", None) == modname}
     return names
 
-ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative", "polar"]
+ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative", "polar", "above_fermi", "below_fermi"]
 
 
 DUMMY_IDS = {}
@@ -859,10 +859,12 @@ def ser(o):
         return {"t": "SingleODEProblem", "eq": ser(o.eq), "func": ser(o.func), "sym": ser(o.sym)}
     if isinstance(o, _SODES):
         return {"t": "SingleODESolver", "cls": type(o).__name__, "problem": ser(o.ode_problem)}
-    from sympy.combinatorics.partitions import IntegerPartition as _IntegerPartition
+    from sympy.combinatorics.partitions import IntegerPartition as _IntegerPartition, Partition as _Partition
     from sympy.printing.str import StrPrinter as _StrPrinter
     if isinstance(o, _IntegerPartition):
         return {"t": "IntegerPartition", "parts": list(o.partition)}
+    if isinstance(o, _Partition):
+        return {"t": "Partition", "blocks": [[ser(e) for e in block] for block in o.args]}
     if isinstance(o, _StrPrinter):
         return {"t": "StrPrinter", "settings": ser(o._settings)}
     from sympy.combinatorics import Permutation as _Perm
@@ -1089,16 +1091,20 @@ def ser(o):
         return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
     if isinstance(o, (tuple, Tuple)):
         return {"t": "Tuple", "items": [ser(i) for i in o]}
+    from sympy.stats.frv import FiniteDensity as _FiniteDensity
+    if isinstance(o, _FiniteDensity):
+        return {"t": "FiniteDensity", "items": [[ser(k), ser(v)] for k, v in o.items()]}
     if isinstance(o, dict):
         return {"t": "Dict", "items": [[ser(k), ser(v)] for k, v in o.items()]}
     if isinstance(o, sympy.Dict):
         # a SymPy Dict (Diagram.premises, ...): printed like a dict
         return {"t": "Dict", "items": [[ser(k), ser(v)] for k, v in o.items()]}
     if isinstance(o, MatrixBase):
-        return {"t": "Matrix", "rows": [[ser(o[i, j]) for j in range(o.cols)] for i in range(o.rows)], "shape": [o.rows, o.cols]}
+        sparse = isinstance(o, sympy.matrices.sparse.SparseRepMatrix)
+        return {"t": "Matrix", "rows": [[ser(o[i, j]) for j in range(o.cols)] for i in range(o.rows)], "shape": [o.rows, o.cols], **({"sparse": True} if sparse else {})}
     from sympy.core.function import UndefinedFunction as _UF
     if isinstance(o, _UF):
-        return {"t": "UFnClass", "name": o.__name__}
+        return {"t": "UFnClass", "name": o.__name__, **({"nargs": sorted(int(n) for n in o.nargs)} if o.nargs != sympy.S.Naturals0 else {})}
     if isinstance(o, sympy.polys.polytools.GroebnerBasis):
         return {"t": "Groebner", "exprs": [ser(e) for e in o.exprs], "gens": [ser(g) for g in o.gens], "order": str(o.order)}
     if isinstance(o, sympy.Poly):
@@ -1117,6 +1123,9 @@ def ser(o):
     if isinstance(o, sympy.FunctionClass) and not isinstance(o, _UF):
         return {"t": "FnClass", "name": o.__name__}
     from sympy.polys.domains.domain import Domain as _Domain
+    from sympy.polys.agca.extensions import MonogenicFiniteExtension as _FiniteExtension
+    if isinstance(o, _FiniteExtension):
+        return {"t": "FiniteExtension", "modulus": ser(o.modulus)}
     from sympy.polys.rings import PolyRing as _PolyRing, PolyElement as _PolyElement
     from sympy.polys.fields import FracField as _FracField, FracElement as _FracElement
     from sympy.polys.matrices import DomainMatrix as _DM
@@ -1304,7 +1313,7 @@ def ser(o):
             return {"t": "Const", "name": v}
     from sympy.core.function import AppliedUndef, UndefinedFunction
     if isinstance(o, UndefinedFunction):
-        return {"t": "UFnClass", "name": o.__name__}
+        return {"t": "UFnClass", "name": o.__name__, **({"nargs": sorted(int(n) for n in o.nargs)} if o.nargs != sympy.S.Naturals0 else {})}
     if isinstance(o, AppliedUndef):
         return {"t": "UFn", "name": type(o).__name__, "args": [ser(a) for a in o.args]}
     if isinstance(o, sympy.Subs):

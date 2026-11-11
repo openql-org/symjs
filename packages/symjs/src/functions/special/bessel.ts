@@ -31,6 +31,16 @@ import { cgamma, funcExpanders } from './special';
 
 type BName = 'besselj' | 'bessely' | 'besseli' | 'besselk';
 type HName = 'hankel1' | 'hankel2';
+/** Order of a Bessel function (SymPy BesselBase.order). */
+export function order(e: Expr): Expr {
+  if (!(e instanceof Fn) || !['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'hn1', 'hn2'].includes(e.name)) throw new TypeError('expected a Bessel function');
+  return at(e.args, 0);
+}
+/** Argument of a Bessel function (SymPy BesselBase.argument). */
+export function argument(e: Expr): Expr {
+  order(e);
+  return at(e.args, 1);
+}
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 const isOo = (e: Expr) => e instanceof Special && (e.name === 'oo' || e.name === '-oo');
 

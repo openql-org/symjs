@@ -243,7 +243,7 @@ describe('Range, Integers in an interval and ImageSet membership', () => {
     expect(String(C(Sets.range(n('-oo'), 4), -10))).toBe('True');
     expect(String(C(Sets.range(1, 1), 0))).toBe('False');
     expect(Sets.range(0, 3).equals(Sets.Range.of(0, 3, 1))).toBe(true);
-    // Substitute the candidate into the condition (SymPy: True).
+    // Substitute the candidate into the condition after checking the base set.
     expect(String(C(new Sets.ConditionSet(x, sj.parse('x > 1'), Sets.Reals), 2))).toBe('True');
     expect([Sets.inf(r3), Sets.sup(r3), Sets.inf(Sets.range(5, -1, -2)), Sets.sup(Sets.range(5, -1, -2))].map(String)).toEqual(['0', '4', '1', '5']);
   });
@@ -890,4 +890,73 @@ it('keeps membership of a set with no decision procedure unevaluated', () => {
     printStr(): string { return 'UnknownSet'; }
   }
   expect(String(sj.contains(new UnknownSet(), x))).toBe('Contains(x, UnknownSet)');
+});
+
+it('exposes topology and measure of real intervals and finite sets', async () => {
+  const a = await import('../../src');
+  const closed = a.Interval.of(0,1), open = a.Interval.open(0,1);
+  expect(closed.isIterable).toBe(false);
+  expect(a.FiniteSet.of(1,2).isIterable).toBe(true);
+  expect(String(closed.boundary)).toBe('{0, 1}');
+  expect(String(open.closure)).toBe('Interval(0, 1)');
+  expect(String(closed.interior)).toBe('Interval.open(0, 1)');
+  expect(closed.boundary.interior).toBe(a.EmptySet);
+  expect(closed.isClosed).toBe(true);
+  expect(open.isClosed).toBe(false);
+  expect(open.isOpen).toBe(true);
+  expect(closed.isOpen).toBe(false);
+  expect(a.Reals.closure).toBe(a.Reals);
+  expect(a.Reals.isOpen).toBe(true);
+  expect(a.Reals.measure).toBe(a.S.Infinity);
+  expect(a.EmptySet.boundary).toBe(a.EmptySet);
+  expect(a.EmptySet.measure).toBe(a.S.Zero);
+  expect(a.Integers.measure).toBe(a.S.Zero);
+  expect(a.Integers.isIterable).toBe(true);
+  expect(a.Reals.isIterable).toBe(false);
+  expect(a.Range.of(0,3).isIterable).toBe(true);
+  expect(String(a.Interval.of(0,a.oo).boundary)).toBe('{0}');
+  expect(String(closed.measure)).toBe('1');
+  expect(String(a.Union(closed,a.Interval.of(2,3)).measure)).toBe('2');
+  expect(a.FiniteSet.of(1).measure).toBe(a.S.Zero);
+  expect(() => a.Complexes.measure).toThrow(a.NotImplementedError);
+  expect(() => a.Complexes.boundary).toThrow(a.NotImplementedError);
+  // Unevaluated products and intersections have no implemented real-line measure.
+  const product = a.ProductSet(closed,closed);
+  expect(() => product.measure).toThrow(a.NotImplementedError);
+  expect(() => product.boundary).toThrow(a.NotImplementedError);
+});
+
+it('returns sets of permitted function arities', async () => {
+  const a = await import('../../src');
+  expect(a.nargs(a.SymFunction('f'))).toBe(a.Naturals0);
+  expect(a.nargs(new a.WildFunction('F'))).toBe(a.Naturals0);
+  expect(String(a.nargs(a.SymFunction('f',{nargs:1})))).toBe('{1}');
+  expect(String(a.nargs(new a.WildFunction('F',[2,1])))).toBe('{1, 2}');
+  expect(a.nargs(a.SymFunction('f',{nargs:[]}))).toBe(a.EmptySet);
+});
+
+it('evaluates condition-set membership with the base restriction', async () => {
+  const a = await import('../../src');
+  const x = new a.Sym('x'), y = new a.Sym('y');
+  const s = new a.ConditionSet(x,a.Eq(a.sin(x),0),a.Interval.of(0,a.mul(2,a.pi)));
+  expect(a.containsQ(s,a.mul(2,a.pi))).toBe(true);
+  expect(a.containsQ(s,a.mul(3,a.pi))).toBe(false);
+  expect(a.containsQ(s,a.mul(a.S.Half,a.pi))).toBe(false);
+  expect(a.containsQ(s,y)).toBe('unknown');
+  expect(a.containsQ(new a.ConditionSet(x,a.S.true,a.Reals),y)).toBe('unknown');
+  expect(new a.Interval(a.S.Zero,y,false,false).isClosed).toBe('unknown');
+  expect(new a.Interval(a.S.Zero,y,false,false).isOpen).toBe('unknown');
+  const { SetOp } = await import('../../src/sets/sets');
+  expect(() => new SetOp('Intersection',[s,a.Reals]).measure).toThrow(a.NotImplementedError);
+});
+
+it('keeps membership symbolic for a set subclass without a membership implementation', () => {
+  class UndecidedSet extends Sets.SetExpr {
+    readonly args: readonly sj.Expr[] = [];
+    readonly className = 'UndecidedSet';
+    protected computeKey(): string { return 'UndecidedSet'; }
+  }
+  const s = new UndecidedSet();
+  expect(sj.containsQ(s, x)).toBe('unknown');
+  expect(sj.contains(s, x)).toBeInstanceOf(sj.Contains);
 });

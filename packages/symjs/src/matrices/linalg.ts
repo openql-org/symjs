@@ -11,7 +11,7 @@
 import { at, defined, expectType, first, last } from '../core/guard';
 import { UPoly } from '../polys/poly';
 import { isNegative, isPositive, isReal, isZero } from '../core/assumptions';
-import { toTruth } from '../core/truth';
+import { toTruth, truthAnd, truthNot } from '../core/truth';
 import type { Truth } from '../core/truth';
 import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotImplementedError, NotLoadedError, ShapeError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
@@ -491,6 +491,22 @@ export function isNegativeDefinite(m: Matrix): Truth {
 /** The matrix is negative semidefinite (SymPy is_negative_semidefinite). */
 export function isNegativeSemidefinite(m: Matrix): Truth {
   return isPositiveSemidefinite(m.neg());
+}
+
+/** The Hermitian part has both positive and negative directions. */
+export function isIndefinite(m: Matrix): Truth {
+  if (!m.isSquare) return false;
+  return truthAnd(truthNot(isPositiveSemidefinite(m)), truthNot(isNegativeSemidefinite(m)));
+}
+
+/** Strict row diagonal dominance (SymPy is_strongly_diagonally_dominant). */
+export function isStronglyDiagonallyDominant(m: Matrix): Truth {
+  return m.isSquare ? toTruth(diagonallyDominant(m, true)) : false;
+}
+
+/** Weak row diagonal dominance (SymPy is_weakly_diagonally_dominant). */
+export function isWeaklyDiagonallyDominant(m: Matrix): Truth {
+  return m.isSquare ? toTruth(diagonallyDominant(m, false)) : false;
 }
 
 /** Cholesky: lower L with A = L L^H (hermitian) or A = L L^T. */

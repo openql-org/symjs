@@ -17,6 +17,7 @@ import { InvariantError, NotImplementedError, NotLoadedError } from './errors';
 import type { Kind } from './kind';
 import { at } from './guard';
 import { gcd } from './numbers';
+import { deduceAllFacts } from './facts';
 import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
 
 export type ExprKind =
@@ -71,6 +72,9 @@ export type Substitution =
   | Readonly<Record<string, ExprLike>>;
 
 export interface Assumptions {
+  /** Fermionic index restrictions (SymPy above_fermi / below_fermi). */
+  readonly aboveFermi?: boolean;
+  readonly belowFermi?: boolean;
   readonly real?: boolean;
   readonly positive?: boolean;
   readonly nonnegative?: boolean;
@@ -661,6 +665,11 @@ export class Sym extends Expr {
   readonly kind = 'Symbol' as const;
   readonly args: readonly Expr[] = [];
   readonly assumptions: Assumptions;
+  /** All consequences of the assumptions used to construct this symbol. */
+  get assumptions0(): Map<string, boolean> {
+    const { aboveFermi, belowFermi, ...facts } = this.assumptions;
+    return deduceAllFacts({ commutative: true, ...facts, ...(aboveFermi === true ? { above_fermi: true } : {}), ...(belowFermi === true ? { below_fermi: true } : {}) });
+  }
 
   constructor(readonly name: string, assumptions: Assumptions = {}) {
     super();
@@ -687,6 +696,8 @@ export class Sym extends Expr {
     else if (assumptions.integer === false) a.integer = false;
     if (assumptions.commutative === false) a.commutative = false;
     if (assumptions.polar === true) a.polar = true;
+    if (assumptions.aboveFermi === true) a.aboveFermi = true;
+    if (assumptions.belowFermi === true) a.belowFermi = true;
     if (zero) a.zero = true;
     else if (positive || negative || a.integer === false || assumptions.zero === false) a.zero = false;
     this.assumptions = Object.freeze(a);
@@ -742,7 +753,8 @@ export class Sym extends Expr {
   protected computeKey(): string {
     const a = this.assumptions;
     const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}${a.polar ? 'o' : ''}${a.zero === false && !a.positive && !a.negative && a.integer !== false ? 'z' : ''}${a.zero === true ? 'Z' : ''}${a.integer === false ? 'I' : ''}`;
-    return flags ? `$${this.name}[${flags}]` : `$${this.name}`;
+    const allFlags = flags + (a.aboveFermi === true ? 'A' : '') + (a.belowFermi === true ? 'B' : '');
+    return allFlags ? `$${this.name}[${allFlags}]` : `$${this.name}`;
   }
 }
 
@@ -912,6 +924,15 @@ export class Rel extends Expr {
   get rhs(): Expr {
     return this.args[1];
   }
+  get relOp(): string {
+    return { Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' }[this.op];
+  }
+  get strict(): Rel {
+    return new Rel(this.op === 'Le' ? 'Lt' : this.op === 'Ge' ? 'Gt' : this.op, this.lhs, this.rhs);
+  }
+  get weak(): Rel {
+    return new Rel(this.op === 'Lt' ? 'Le' : this.op === 'Gt' ? 'Ge' : this.op, this.lhs, this.rhs);
+  }
   protected computeKey(): string {
     return `${this.op}(${this.args[0].key},${this.args[1].key})`;
   }
@@ -941,6 +962,11 @@ export class Integral extends Expr {
   }
   get integrand(): Expr {
     return at(this.args, 0);
+  }
+  get function(): Expr { return this.integrand instanceof Integral ? this.integrand.function : this.integrand; }
+  /** Variables bound by definite limits, including nested integral limits. */
+  get boundSymbols(): Expr[] {
+    return [...(this.integrand instanceof Integral ? this.integrand.boundSymbols : []), ...(this.args.length >= 3 ? [this.variable] : [])];
   }
   get variable(): Expr {
     return at(this.args, 1);

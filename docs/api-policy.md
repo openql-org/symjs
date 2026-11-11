@@ -52,6 +52,9 @@ Renamed exports keep their old name as a `@deprecated` alias during 0.x; exports
 
 Notes on the implementation:
 
+- Introspection follows the function-first convention: `canonicalRelation(r)` is `Relational.canonical`; `ranges(indexed)` is `Indexed.ranges`; `nargs(f)` returns the set of allowed argument counts; `variables(e)`, `hasFiniteLimits(e)` and `hasReversedLimits(e)` inspect sums, products and integrals. `SymFunction('f', { nargs: [1, 2] })` enforces its declared arities. Keeping the `nargs` set construction in the sets entry avoids importing sets into the core.
+- Matrix definiteness and diagonal-dominance predicates are functions of a matrix. Bessel `order` and `argument`, Kronecker-delta Fermi predicates and index selectors, and module `identityHom`, `inclusionHom` and `quotientHom` likewise use the canonical function form. Symbols accept `aboveFermi` and `belowFermi`; `assumptions0` preserves SymPy's string keys in its `Map`.
+
 - `Derivative` and `Piecewise` are the node classes and can also be called like SymPy's constructors (`Derivative(f(x), x, [y, 2])`, `Piecewise([x, Lt(x, 0)], [0, true])`).
 - Results that are dicts in SymPy are `ExprMap`s: `Map`s whose expression keys compare structurally. `roots(f, x)` returns root -> multiplicity; `roots(f, x, { multiple: true })` returns the list.
 - `div` is SymPy's polynomial division; the former arithmetic helper `div(a, b)` is `a.div(b)` (or `mul(a, pow(b, -1))`).

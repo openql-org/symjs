@@ -579,3 +579,15 @@ describe('predicates on nan', () => {
     expect(ask(Q.commutative(sj.S.NaN))).toBe(true);
   });
 });
+
+it('retains the function of applied predicates', async () => {
+  const a = await import('../../src');
+  expect(a.Q.integer(1).function).toBe(a.Q.integer);
+  expect(String(a.Predicate('custom_property')(1).function)).toBe('Q.custom_property');
+});
+
+it('recognizes rational roots of unity as algebraic', async () => {
+  const a = await import('../../src');
+  const exponent = a.mul(a.Rational.of(2,3),a.pi,a.I);
+  expect(a.isAlgebraic(a.exp(exponent))).toBe(true);
+});

@@ -13,6 +13,7 @@ import * as M from './methods';
 import { match as matchImpl } from './match';
 import type { NoMatchResult, Truth } from './truth';
 import { NoMatch, orNoMatch, toTruth } from './truth';
+import { ask, Q } from './refine';
 
 /** e is real (SymPy is_real): true, false or 'unknown'. */
 export const isReal = (e: ExprLike): Truth => toTruth(A.isReal(sympify(e)));
@@ -28,6 +29,16 @@ export const isNonZero = (e: ExprLike): Truth => toTruth(A.isNonZero(sympify(e))
 export const isZero = (e: ExprLike): Truth => toTruth(A.isZero(sympify(e)));
 /** e is an integer (SymPy is_integer). */
 export const isIntegerValued = (e: ExprLike): Truth => toTruth(A.isIntegerQ(sympify(e)));
+/** e is irrational (SymPy is_irrational). */
+export const isIrrational = (e: ExprLike): Truth => ask(Q.irrational(e));
+/** e is algebraic (SymPy is_algebraic). */
+export const isAlgebraic = (e: ExprLike): Truth => ask(Q.algebraic(e));
+/** e is a complex number (SymPy is_complex). */
+export const isComplex = (e: ExprLike): Truth => ask(Q.complex(e));
+/** e is finite (SymPy is_finite). */
+export const isFinite = (e: ExprLike): Truth => ask(Q.finite(e));
+/** e is a prime integer (SymPy is_prime). */
+export const isPrime = (e: ExprLike): Truth => ask(Q.prime(e));
 
 /**
  * SymPy Expr.match: the values of the Wilds making pattern equal to expr,

@@ -33,3 +33,30 @@ describe('LeviCivita', () => {
     expect(String(Eijk(i, j, k))).toBe('LeviCivita(i, j, k)');
   });
 });
+
+it('preserves Fermi restrictions when eliminating delta indices', async () => {
+  const a = await import('../../../src');
+  const p = new a.Sym('p'), q = new a.Sym('q');
+  const i = new a.Sym('i',{belowFermi:true}), j = new a.Sym('j',{belowFermi:true});
+  const u = new a.Sym('u',{aboveFermi:true}), v = new a.Sym('v',{aboveFermi:true});
+  for (const [left,right,above,below,equal,preferred] of [
+    [p,q,true,true,true,p], [p,i,false,true,false,i], [i,p,false,true,false,i],
+    [p,u,true,false,false,u], [u,p,true,false,false,u], [i,j,false,true,true,i], [u,v,true,false,true,u],
+    [p,a.add(q,1),true,true,true,p],
+  ] as const) {
+    const delta = new a.Fn('KroneckerDelta',[left,right]);
+    expect(a.isAboveFermi(delta)).toBe(above);
+    expect(a.isBelowFermi(delta)).toBe(below);
+    expect(a.isOnlyAboveFermi(delta)).toBe(!below);
+    expect(a.isOnlyBelowFermi(delta)).toBe(!above);
+    expect(a.indicesContainEqualInformation(delta)).toBe(equal);
+    expect(a.preferredIndex(delta)).toBe(preferred);
+    expect(a.killableIndex(delta)).toBe(preferred === left ? right : left);
+  }
+  expect(() => a.isAboveFermi(p)).toThrow(TypeError);
+  expect(() => a.isBelowFermi(a.sin(p))).toThrow(TypeError);
+  expect(i.assumptions0.get('below_fermi')).toBe(true);
+  expect(u.assumptions0.get('above_fermi')).toBe(true);
+  expect(i.equals(new a.Sym('i'))).toBe(false);
+  expect(u.equals(new a.Sym('u'))).toBe(false);
+});

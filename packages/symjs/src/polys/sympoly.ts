@@ -268,6 +268,58 @@ export class Poly {
   readonly domain: string;
   readonly pure: boolean;
 
+  get gen(): Expr { return first(this.gens); }
+  get freeSymbolsInDomain(): Set<Sym> {
+    const symbols = new Map<string, Sym>();
+    for (const { coeff } of this.termList) for (const s of freeSymbols(coeff)) symbols.set(s.key, s);
+    return new Set(symbols.values());
+  }
+  get isGround(): boolean { return this.totalDegree() <= 0; }
+  get isHomogeneous(): boolean {
+    return this.termList.every((t) => t.monom.reduce((a, b) => a + b, 0) === this.totalDegree());
+  }
+  get isLinear(): boolean { return this.totalDegree() <= 1; }
+  get isQuadratic(): boolean { return this.totalDegree() <= 2; }
+  get isMonic(): boolean { return this.LC().equals(S.One); }
+  get isMonomial(): boolean { return this.termList.length <= 1; }
+  get isMultivariate(): boolean { return this.gens.length > 1; }
+  get isUnivariate(): boolean { return this.gens.length === 1; }
+  get isOne(): boolean { return this.isGround && this.LC().equals(S.One); }
+  get isPrimitive(): boolean { return this.content().equals(S.One); }
+  get isIrreducible(): boolean {
+    // As in SymPy, content is ignored; nonzero ground polynomials have no
+    // nonconstant factors. Zero is excluded: it is divisible by every polynomial.
+    if (this.isGround) return !this.isZero;
+    const [, factors] = this.factorList();
+    return factors.length === 1 && first(factors)[1] === 1;
+  }
+  get isSqf(): boolean {
+    // SymPy 1.14 calls zero square-free, but x**2 divides zero. Keep the
+    // mathematical predicate false instead of treating an empty factor list as proof.
+    if (this.isZero) return false;
+    let g: Poly = this;
+    for (const x of this.gens) g = g.gcd(this.diff(x));
+    return g.isGround;
+  }
+
+  /** SymPy dup_cyclotomic_p: split even/odd powers and recurse on degree. */
+  get isCyclotomic(): boolean {
+    if (!this.isUnivariate || this.isGround || !['ZZ', 'QQ'].includes(this.domain)) return false;
+    const cs = this.allCoeffs();
+    if (!cs.every((c) => c instanceof Rational && c.isInteger) || !this.isMonic || !this.isIrreducible) return false;
+    const tc = this.coeffMonomial([0]);
+    if (!tc.equals(S.One) && !tc.equals(S.NegOne)) return false;
+    const x = this.gen;
+    const part = (parity: number): Poly => Poly.from(add(...this.termList.filter((t) => first(t.monom) % 2 === parity).map((t) => mul(t.coeff, pow(x, Math.floor(first(t.monom) / 2))))), [x]);
+    const g = part(this.degree() % 2), h = part(1 - this.degree() % 2);
+    const f = g.mul(g).sub(h.mul(h).mul(x)).monic();
+    if (f.asExpr().equals(this.asExpr())) return true;
+    const mirror = Poly.from(xreplace(this.asExpr(), [[x, mul(-1, x)]]), [x]).monic();
+    if (f.asExpr().equals(mirror.asExpr())) return mirror.isCyclotomic;
+    const s = f.sqfPart();
+    return s.mul(s).asExpr().equals(f.asExpr()) && s.isCyclotomic;
+  }
+
   private constructor(gens: readonly Expr[], terms: Term[], domain: string, pure = false) {
     this.gens = gens;
     this.termList = terms.sort((a, b) => monomCmp(b.monom, a.monom));

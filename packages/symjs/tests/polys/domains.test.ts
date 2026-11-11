@@ -260,3 +260,12 @@ describe('SymPy ground elements (bigint ZZ, PythonMPQ QQ)', () => {
     expect([R.ngens, R.dom]).toEqual([2, ZZ]);
   });
 });
+
+it('reports availability of associated fields', () => {
+  expect(ZZ.hasAssocField).toBe(true);
+  expect(QQ.hasAssocField).toBe(true);
+  expect(RR.hasAssocField).toBe(true);
+  expect(QQ.oldPolyRing(x).quotientRing(QQ.oldPolyRing(x).ideal(x)).hasAssocField).toBe(false);
+  class BrokenField extends IntegerRing { override getField(): never { throw new TypeError('broken field'); } }
+  expect(() => new BrokenField().hasAssocField).toThrow('broken field');
+});
