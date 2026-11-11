@@ -17,6 +17,23 @@ const P = (s: string) => parse(s);
 
 describe('Fourier series operations', () => {
   const s = () => sj.fourierSeries(P('x**2'), x);
+  it('shares the SeriesBase protocol and rebuilds transformed series', () => {
+    const series = s();
+    expect(series).toBeInstanceOf(sj.SeriesBase);
+    expect([series.start, series.stop, series.length, series.interval].map(String)).toEqual(['0', 'oo', 'oo', 'Interval(0, oo)']);
+    expect(series.slice(0, 3).map(String)).toEqual(['pi**2/3', '-4*cos(x)', 'cos(2*x)']);
+    expect(String(series[Symbol.iterator]().next().value)).toBe('pi**2/3');
+    expect(String(series.term(sj.Rational.of(2)))).toBe('cos(2*x)');
+    expect(() => series.getItem(-1)).toThrow(RangeError);
+    const y = V('y');
+    const shifted = sj.fourierSeries(sj.mul(y, x), x).shiftx(1).scale(2).shift(3);
+    const rebuilt = sj.subs(shifted, [[y, 2]]);
+    expect(rebuilt).toBeInstanceOf(sj.FourierSeries);
+    if (!(rebuilt instanceof sj.FourierSeries)) throw new TypeError('FourierSeries');
+    expect(rebuilt.slice(0, 3).map(String)).toEqual(['3', '8*sin(x + 1)', '-4*sin(2*x + 2)']);
+    expect([...sj.freeSymbols(shifted)].map(String).sort()).toEqual(['x', 'y']);
+  });
+
   it('shifts and scales like SymPy', () => {
     expect(s().shiftx(1).truncate().toString()).toBe('-4*cos(x + 1) + cos(2*x + 2) + pi**2/3');
     expect(s().scalex(2).truncate().toString()).toBe('-4*cos(2*x) + cos(4*x) + pi**2/3');

@@ -6,14 +6,17 @@
  * FourierSeries).
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Rational, S } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sub, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { cos, fn, sin } from '../functions/elementary/elementary';
 import { integrate } from '../integrals/integrate';
 import { simplify } from '../simplify/simplify';
 import { str } from '../printing/str';
+import { at, cast } from '../core/guard';
+import { interval, type SetExpr } from '../sets/sets';
+import { SeriesBase } from './series_class';
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
 
@@ -23,7 +26,8 @@ const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
  * shiftx or scalex keeps the coefficients of the original function and
  * transforms its terms.
  */
-export class FourierSeries {
+export class FourierSeries extends SeriesBase {
+  override readonly name = 'FourierSeries';
   private readonly L: Expr;
   /** The function whose coefficients are computed (fn itself unless transformed). */
   private readonly source: Expr;
@@ -40,16 +44,27 @@ export class FourierSeries {
     readonly b: Expr,
     transform?: { source: Expr; xmap: Expr; factor: Expr; offset: Expr },
   ) {
+    super(fn, x, a, b, transform?.source ?? fn, transform?.xmap ?? x, transform?.factor ?? S.One, transform?.offset ?? S.Zero);
     this.L = mul(sub(b, a), Rational.of(1n, 2n));
     this.source = transform?.source ?? fn;
     this.xmap = transform?.xmap ?? x;
     this.factor = transform?.factor ?? S.One;
     this.offset = transform?.offset ?? S.Zero;
   }
-  private arg(k: number): Expr {
+  override withArgs(args: readonly Expr[]): Expr {
+    return new FourierSeries(at(args, 0), cast(at(args, 1), Sym), at(args, 2), at(args, 3), {
+      source: at(args, 4), xmap: at(args, 5), factor: at(args, 6), offset: at(args, 7),
+    });
+  }
+  override get interval(): SetExpr { return interval(0, S.Infinity); }
+  override get start(): Expr { return S.Zero; }
+  override get stop(): Expr { return S.Infinity; }
+  override get length(): Expr { return S.Infinity; }
+
+  private arg(k: ExprLike): Expr {
     return mul(k, S.Pi, this.xmap, pow(this.L, -1));
   }
-  private coefficient(k: number, trig: (e: Expr) => Expr): Expr {
+  private coefficient(k: ExprLike, trig: (e: Expr) => Expr): Expr {
     const v = integrate(mul(this.source, trig(mul(k, S.Pi, this.x, pow(this.L, -1)))), this.x, [this.a, this.b]);
     return simplify(mul(v, pow(this.L, -1)));
   }
@@ -59,16 +74,16 @@ export class FourierSeries {
     return add(mul(c, this.factor), this.offset);
   }
   /** The cosine coefficient of order k >= 1. */
-  an(k: number): Expr {
+  an(k: ExprLike): Expr {
     return mul(this.coefficient(k, cos), this.factor);
   }
   /** The sine coefficient of order k >= 1. */
-  bn(k: number): Expr {
+  bn(k: ExprLike): Expr {
     return mul(this.coefficient(k, sin), this.factor);
   }
   /** The terms of order k (k = 0 is the constant term). */
-  term(k: number): Expr {
-    if (k === 0) return this.a0();
+  protected override evalTerm(k: Expr): Expr {
+    if (isZeroExpr(k)) return this.a0();
     return add(mul(this.an(k), cos(this.arg(k))), mul(this.bn(k), sin(this.arg(k))));
   }
   /** The first n nonzero terms (SymPy truncate). */

@@ -34,6 +34,8 @@ import { NoMatch, isNoMatch } from '../core/truth';
 import type { NoMatchResult } from '../core/truth';
 import { Eq, piecewise } from '../core/logic';
 import { Mod } from '../functions/mod';
+import { interval, type SetExpr } from '../sets/sets';
+import { SeriesBase } from './series_class';
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
 
@@ -88,7 +90,8 @@ export function hyperRe(DE: ExprLike, r: UndefinedFunction, k: Sym): Expr {
 }
 
 /** SymPy FormalPowerSeries: the power series of a function, truncated on request. */
-export class FormalPowerSeries {
+export class FormalPowerSeries extends SeriesBase {
+  override readonly name = 'FormalPowerSeries';
   /** The factor of the function free of x but with other symbols (x**n), kept out of the expansion (SymPy symb). */
   private readonly symb: Expr;
   /** The function without that factor. */
@@ -99,12 +102,31 @@ export class FormalPowerSeries {
     readonly x0: Expr,
     readonly direction: '+' | '-',
   ) {
+    super(fn, x, x0, direction === '+' ? 1 : -1);
     // SymPy _compute_fps: (f, symb) = expand(f).as_independent(*syms) for the symbols other than x
     const others = [...freeSymbols(fn)].filter((s) => s instanceof Sym).filter((s) => s.key !== x.key);
     const [core, symb] = others.length && !(fn instanceof Add) ? asIndependent(expand(fn), others) : [fn, S.One];
     this.core = core;
     this.symb = symb;
   }
+  override withArgs(args: readonly Expr[]): Expr {
+    return new FormalPowerSeries(at(args, 0), cast(at(args, 1), Sym), at(args, 2), at(args, 3).key === S.One.key ? '+' : '-');
+  }
+  override get interval(): SetExpr { return interval(0, S.Infinity); }
+  override get start(): Expr { return S.Zero; }
+  override get stop(): Expr { return S.Infinity; }
+  override get length(): Expr { return S.Infinity; }
+
+  /** The term of order k, retaining zero terms and the independent part at zero. */
+  protected override evalTerm(pt: Expr): Expr {
+    if (!(pt instanceof Rational) || !pt.isInteger || !Number.isSafeInteger(Number(pt.p))) {
+      throw new TypeError('formal power series term index must be a safe integer');
+    }
+    const k = Number(pt.p);
+    const lower = new Set(k === 0 ? [] : seriesTerms(this.core, this.x, this.x0, k, this.direction).terms.map((t) => t.key));
+    return add(...seriesTerms(this.core, this.x, this.x0, k + 1, this.direction).terms.filter((t) => !lower.has(t.key)).map((t) => this.withSymb(t)));
+  }
+
   /** The series up to O((x - x0)**n) (SymPy truncate). */
   truncate(n = 6): Expr {
     if (this.symb.key === S.One.key) return series(this.fn, this.x, this.x0, n, this.direction);
@@ -162,14 +184,14 @@ export class FormalPowerSeries {
    * The series of the antiderivative (SymPy FormalPowerSeries.integrate), or
    * with limits the definite integral of the function.
    */
-  integrate(x?: Sym): FormalPowerSeries;
-  integrate(x: Sym, limits: readonly [ExprLike, ExprLike]): Expr;
-  integrate(x?: Sym, limits?: readonly [ExprLike, ExprLike]): FormalPowerSeries | Expr {
+  override integrate(x?: Sym): FormalPowerSeries;
+  override integrate(x: Sym, limits: readonly [ExprLike, ExprLike]): Expr;
+  override integrate(x?: Sym, limits?: readonly [ExprLike, ExprLike]): FormalPowerSeries | Expr {
     const v = x ?? this.x;
     if (limits) return integrate(this.fn, v, [sympify(limits[0]), sympify(limits[1])]);
     return new FormalPowerSeries(integrate(this.fn, v), this.x, this.x0, this.direction);
   }
-  toString(): string {
+  override toString(): string {
     const k = new Dummy('k');
     const direction = this.direction === '+' ? 1 : -1;
     const xk = pow(mul(direction, sub(this.x, this.x0)), k);
@@ -177,6 +199,10 @@ export class FormalPowerSeries {
     if (description === undefined) return str(this.fn);
     const seq = `SeqFormula(${description.formula}, (${str(k)}, ${description.start}, oo))`;
     return `FormalPowerSeries(${str(this.fn)}, ${str(this.x)}, ${str(this.x0)}, ${direction}, (${seq}, SeqFormula(${str(xk)}, (${str(k)}, 0, oo)), ${str(description.independent)}))`;
+  }
+
+  override printStr(): string {
+    return this.toString();
   }
 
   /** A hypergeometric coefficient formula when available, otherwise the defining Taylor derivative. */
