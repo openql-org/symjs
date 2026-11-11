@@ -28,6 +28,7 @@ const MODULES: [string, () => Promise<Record<string, unknown>>][] = [
   ['../../src/categories', () => import('../src/categories')],
   ['../../src/plotting', () => import('../src/plotting')],
   ['../../src/plotting/intervalmath/index', () => import('../src/plotting/intervalmath/index')],
+  ['../../src/parsing', () => import('../src/parsing')],
   ['../../../physics-quantum/src/index', () => import('../../physics-quantum/src/index')],
   ['../../../mathjs/src/index', () => import('../../mathjs/src/index')],
 ];

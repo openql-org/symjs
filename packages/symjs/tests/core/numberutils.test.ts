@@ -81,6 +81,11 @@ describe('igcd, ilcm, trailing, numDigits, modInverse, limitDenominator', () => 
     expect(sj.ilcm(3n, 0n, 5n)).toBe(0n);
     expect([sj.trailing(0n), sj.trailing(-12n), sj.trailing(40n)]).toEqual([0, 2, 3]);
     expect([sj.numDigits(-12345n), sj.numDigits(255n, 16), sj.numDigits(0n)]).toEqual([5, 2, 1]);
+    // bases above 36 (beyond Number#toString), as SymPy
+    expect([sj.numDigits(69n ** 32n, 69), sj.numDigits(69n ** 32n - 1n, 69), sj.numDigits(-100n, 1000)]).toEqual([33, 32, 1]);
+    expect(sj.numDigits(0n, 0)).toBe(1);
+    expect(() => sj.numDigits(5n, -2)).toThrow(RangeError);
+    expect(() => sj.numDigits(5n, 1)).toThrow(RangeError);
   });
   it('mod_inverse: the result has the sign of m', () => {
     expect(String(sj.modInverse(R(3), R(11)))).toBe('4');

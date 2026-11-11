@@ -1,0 +1,4168 @@
+[
+  {
+    "backend": "antlr",
+    "src": "\\sum_{1=0}^2 x",
+    "index": 0,
+    "error": "ValueError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sum_{x+1=0}^2 x",
+    "index": 1,
+    "error": "ValueError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sum_{f(x)=0}^2 f(x)",
+    "index": 2,
+    "expected": [
+      "Sum",
+      [
+        "f",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "f",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sum_{\\frac{d f(x)}{dx}=0}^2 f(x)",
+    "index": 3,
+    "expected": [
+      "Sum",
+      [
+        "f",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Derivative",
+        [
+          "f",
+          [
+            "Symbol",
+            "x"
+          ]
+        ],
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "1",
+          "1"
+        ]
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "(\\int x dx) x 3",
+    "index": 4,
+    "expected": [
+      "Mul",
+      [
+        "Integral",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "3",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "1.23456789012345678901234567890",
+    "index": 5,
+    "expected": [
+      "Float",
+      1.2345678901234567
+    ],
+    "precision": 103,
+    "str": "1.23456789012345678901234567890"
+  },
+  {
+    "backend": "antlr",
+    "src": "-1.23456789012345678901234567890",
+    "index": 6,
+    "expected": [
+      "Float",
+      -1.2345678901234567
+    ],
+    "precision": 103,
+    "str": "-1.23456789012345678901234567890"
+  },
+  {
+    "backend": "antlr",
+    "src": "",
+    "index": 7,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "+x",
+    "index": 8,
+    "expected": [
+      "Symbol",
+      "x"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "--x",
+    "index": 9,
+    "expected": [
+      "Symbol",
+      "x"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "+",
+    "index": 10,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "x+",
+    "index": 11,
+    "expected": [
+      "Symbol",
+      "x"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x y z",
+    "index": 12,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "y"
+        ],
+        [
+          "Symbol",
+          "z"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x^2y",
+    "index": 13,
+    "expected": [
+      "Mul",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x^2^3",
+    "index": 14,
+    "expected": [
+      "Pow",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a_bc",
+    "index": 15,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a_{b}"
+      ],
+      [
+        "Symbol",
+        "c"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a_{bc}",
+    "index": 16,
+    "expected": [
+      "Symbol",
+      "a_{b*c}"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sinx",
+    "index": 17,
+    "expected": [
+      "Symbol",
+      "sinx"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\alphax",
+    "index": 18,
+    "expected": [
+      "Symbol",
+      "alphax"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\leftx",
+    "index": 19,
+    "expected": [
+      "Symbol",
+      "leftx"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sinh x",
+    "index": 20,
+    "expected": [
+      "sinh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\cosh x",
+    "index": 21,
+    "expected": [
+      "cosh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\tanh x",
+    "index": 22,
+    "expected": [
+      "tanh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\arsinh x",
+    "index": 23,
+    "expected": [
+      "asinh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\arcosh x",
+    "index": 24,
+    "expected": [
+      "acosh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\artanh x",
+    "index": 25,
+    "expected": [
+      "atanh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sin x+y",
+    "index": 26,
+    "expected": [
+      "Add",
+      [
+        "sin",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sin x^2",
+    "index": 27,
+    "expected": [
+      "sin",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sin^0 x",
+    "index": 28,
+    "expected": [
+      "sin",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "difference": "A zero function exponent must not be discarded.",
+    "correctExpected": [
+      "Pow",
+      [
+        "sin",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\cos^2 x",
+    "index": 29,
+    "expected": [
+      "Pow",
+      [
+        "cos",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\tan^{-1}x",
+    "index": 30,
+    "expected": [
+      "atan",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\csc^{-1}x",
+    "index": 31,
+    "expected": [
+      "acsc",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sec^{-1}x",
+    "index": 32,
+    "expected": [
+      "asec",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\cot^{-1}x",
+    "index": 33,
+    "expected": [
+      "acot",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\arcsin x",
+    "index": 34,
+    "expected": [
+      "asin",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\arccos x",
+    "index": 35,
+    "expected": [
+      "acos",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\arctan x",
+    "index": 36,
+    "expected": [
+      "atan",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\arccsc x",
+    "index": 37,
+    "expected": [
+      "acsc",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\arcsec x",
+    "index": 38,
+    "expected": [
+      "asec",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\arccot x",
+    "index": 39,
+    "expected": [
+      "acot",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sinh^{-1}x",
+    "index": 40,
+    "expected": [
+      "asinh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\exp^2 x",
+    "index": 41,
+    "expected": [
+      "Pow",
+      [
+        "Pow",
+        [
+          "E"
+        ],
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\exp^0 x",
+    "index": 42,
+    "expected": [
+      "Pow",
+      [
+        "E"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "difference": "A zero function exponent must not be discarded.",
+    "correctExpected": [
+      "Pow",
+      [
+        "Pow",
+        [
+          "E"
+        ],
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\ln_2 x",
+    "index": 43,
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\log^2_3 x",
+    "index": 44,
+    "expected": [
+      "Pow",
+      [
+        "log",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "3",
+          "1"
+        ]
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\log_3^2 x",
+    "index": 45,
+    "expected": [
+      "Pow",
+      [
+        "log",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "3",
+          "1"
+        ]
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sin(x,y)",
+    "index": 46,
+    "expected": [
+      "sin",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sin(x)\\cos(y)",
+    "index": 47,
+    "expected": [
+      "Mul",
+      [
+        "sin",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "cos",
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac1x",
+    "index": 48,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac1{xy}",
+    "index": 49,
+    "expected": [
+      "Pow",
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "Rational",
+        "-1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{a}b",
+    "index": 50,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{a}{dx}",
+    "index": 51,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "dx"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{d}{dx}",
+    "index": 52,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{d}{dx}x^2",
+    "index": 53,
+    "expected": [
+      "Derivative",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{\\partial}{\\partial x}f(x)",
+    "index": 54,
+    "expected": [
+      "Derivative",
+      [
+        "f",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{\\partial f(x)}{\\partial x}",
+    "index": 55,
+    "expected": [
+      "Derivative",
+      [
+        "f",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{d}{dx}!",
+    "index": 56,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{d}{dx}^2",
+    "index": 57,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\frac{d}{dx}+1",
+    "index": 58,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\nicefrac12",
+    "index": 59,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "nicefrac"
+      ],
+      [
+        "Rational",
+        "12",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\binom12",
+    "index": 60,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\dbinom2x",
+    "index": 61,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\binom{2}x",
+    "index": 62,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\overline2",
+    "index": 63,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sqrt[2]{4}",
+    "index": 64,
+    "expected": [
+      "Pow",
+      [
+        "Rational",
+        "4",
+        "1"
+      ],
+      [
+        "Rational",
+        "1",
+        "2"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sqrt[3]{8}",
+    "index": 65,
+    "expected": [
+      "Pow",
+      [
+        "Rational",
+        "8",
+        "1"
+      ],
+      [
+        "Rational",
+        "1",
+        "3"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sqrt[1+x]{y}",
+    "index": 66,
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "y"
+      ],
+      [
+        "Pow",
+        [
+          "Add",
+          [
+            "Rational",
+            "1",
+            "1"
+          ],
+          [
+            "Symbol",
+            "x"
+          ]
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\mathit{}",
+    "index": 67,
+    "expected": [
+      "Symbol",
+      ""
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\mathit{foo bar}",
+    "index": 68,
+    "expected": [
+      "Symbol",
+      "foo bar"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\mathit{foo}",
+    "index": 69,
+    "expected": [
+      "Symbol",
+      "foo"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\intop x dx",
+    "index": 70,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "intop"
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "dx"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\int^2_0 dx",
+    "index": 71,
+    "expected": [
+      "Integral",
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\int_0 x dx",
+    "index": 72,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\int^2 x dx",
+    "index": 73,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\int_0^2 x",
+    "index": 74,
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\int_0^1\\frac{\\mathrm{d}x}{x}",
+    "index": 75,
+    "expected": [
+      "Integral",
+      [
+        "Mul",
+        [
+          "Mul",
+          [
+            "Symbol",
+            "mathrm"
+          ],
+          [
+            "Mul",
+            [
+              "Symbol",
+              "d"
+            ],
+            [
+              "Symbol",
+              "x"
+            ]
+          ]
+        ],
+        [
+          "Pow",
+          [
+            "Symbol",
+            "x"
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\int \\frac{x dx}{1+x}",
+    "index": 76,
+    "expected": [
+      "Integral",
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Pow",
+          [
+            "Add",
+            [
+              "Rational",
+              "1",
+              "1"
+            ],
+            [
+              "Symbol",
+              "x"
+            ]
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\int x\\text{d}x",
+    "index": 77,
+    "expected": [
+      "Integral",
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Mul",
+          [
+            "Symbol",
+            "text"
+          ],
+          [
+            "Mul",
+            [
+              "Symbol",
+              "d"
+            ],
+            [
+              "Symbol",
+              "x"
+            ]
+          ]
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sum_{n=1}^3 n+x",
+    "index": 78,
+    "expected": [
+      "Add",
+      [
+        "Sum",
+        [
+          "Symbol",
+          "n"
+        ],
+        [
+          "Symbol",
+          "n"
+        ],
+        [
+          "Rational",
+          "1",
+          "1"
+        ],
+        [
+          "Rational",
+          "3",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sum_{n=0}^{3} n^2",
+    "index": 79,
+    "expected": [
+      "Sum",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "n"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sum_{n=x+1}^3 n",
+    "index": 80,
+    "expected": [
+      "Sum",
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "1",
+          "1"
+        ]
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\prod^3_{n=1} n",
+    "index": 81,
+    "expected": [
+      "Product",
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\lim_{x\\to-\\infty}x",
+    "index": 82,
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "-oo"
+      ],
+      "+"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\lim_{x\\to0^-}x+1",
+    "index": 83,
+    "expected": [
+      "Add",
+      [
+        "Limit",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "0",
+          "1"
+        ],
+        "-"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x|_{x=1}",
+    "index": 84,
+    "expected": [
+      "Rational",
+      "1",
+      "1"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x|^{x=2}_{x=1}",
+    "index": 85,
+    "expected": [
+      "Add",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Rational",
+        "-1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x|^{2}",
+    "index": 86,
+    "expected": [
+      "Symbol",
+      "x"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x|^{y+1}",
+    "index": 87,
+    "expected": [
+      "Symbol",
+      "x"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "2 x 3",
+    "index": 88,
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "2 x y",
+    "index": 89,
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "2:3",
+    "index": 90,
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Pow",
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "1,234.5",
+    "index": 91,
+    "expected": [
+      "Float",
+      1234.5
+    ],
+    "precision": 53,
+    "str": "1234.50000000000"
+  },
+  {
+    "backend": "antlr",
+    "src": "12.",
+    "index": 92,
+    "expected": [
+      "Rational",
+      "1",
+      "1"
+    ],
+    "difference": "A trailing decimal point must not truncate the integer part.",
+    "correctExpected": [
+      "Rational",
+      "12",
+      "1"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": ".5",
+    "index": 93,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\vartheta",
+    "index": 94,
+    "expected": [
+      "Symbol",
+      "vartheta"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\varphi_\\varepsilon",
+    "index": 95,
+    "expected": [
+      "Symbol",
+      "varphi_{varepsilon}"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\alpha'",
+    "index": 96,
+    "expected": [
+      "Symbol",
+      "alpha"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\alpha'_1",
+    "index": 97,
+    "expected": [
+      "Symbol",
+      "alpha_{1}"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a_{\\alpha'}'",
+    "index": 98,
+    "expected": [
+      "Symbol",
+      "a_{alpha}'"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a_{12}",
+    "index": 99,
+    "expected": [
+      "Symbol",
+      "a_{12}"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a_12",
+    "index": 100,
+    "expected": [
+      "Symbol",
+      "a_{12}"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a_{b+c}",
+    "index": 101,
+    "expected": [
+      "Symbol",
+      "a_{b + c}"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\omega",
+    "index": 102,
+    "expected": [
+      "Symbol",
+      "omega"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\pi",
+    "index": 103,
+    "expected": [
+      "Symbol",
+      "pi"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\sigma",
+    "index": 104,
+    "expected": [
+      "Symbol",
+      "sigma"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\Gamma",
+    "index": 105,
+    "expected": [
+      "Symbol",
+      "Gamma"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\foo",
+    "index": 106,
+    "expected": [
+      "Symbol",
+      "foo"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x\\ne y",
+    "index": 107,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "ne"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x\\leqslant y",
+    "index": 108,
+    "expected": [
+      "LessThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x\\geqq y",
+    "index": 109,
+    "expected": [
+      "GreaterThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "1=1",
+    "index": 110,
+    "expected": [
+      "True"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "2<3",
+    "index": 111,
+    "expected": [
+      "True"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x<y<z",
+    "index": 112,
+    "error": "TypeError"
+  },
+  {
+    "backend": "antlr",
+    "src": "x&=y",
+    "index": 113,
+    "expected": [
+      "Equality",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a\\hfil b",
+    "index": 114,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a\\hfill b",
+    "index": 115,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "hfill"
+        ],
+        [
+          "Symbol",
+          "b"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "a\\displaystyle b",
+    "index": 116,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "displaystyle"
+        ],
+        [
+          "Symbol",
+          "b"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\langle x|y\\rangle",
+    "index": 117,
+    "expected": [
+      "Mul",
+      [
+        "Bra",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "|x\\rangle\\langle y|",
+    "index": 118,
+    "expected": [
+      "OuterProduct",
+      [
+        "Ket",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Bra",
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "(x+y)\\prime",
+    "index": 119,
+    "expected": [
+      "Mul",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "Symbol",
+        "prime"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x^\\prime",
+    "index": 120,
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "prime"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "x^{*}",
+    "index": 121,
+    "expected": [
+      "Symbol",
+      "x"
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "(x)\\' ",
+    "index": 122,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\det x",
+    "index": 123,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "det"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\trace x",
+    "index": 124,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "trace"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\adjugate x",
+    "index": 125,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "adjugate"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\begin{pmatrix}1\\end{pmatrix}/\\begin{pmatrix}2\\end{pmatrix}",
+    "index": 126,
+    "expected": [
+      "Mul",
+      [
+        "Mul",
+        [
+          "Symbol",
+          "begin"
+        ],
+        [
+          "Mul",
+          [
+            "Mul",
+            [
+              "Symbol",
+              "p"
+            ],
+            [
+              "Mul",
+              [
+                "Symbol",
+                "m"
+              ],
+              [
+                "Mul",
+                [
+                  "Symbol",
+                  "a"
+                ],
+                [
+                  "Mul",
+                  [
+                    "Symbol",
+                    "t"
+                  ],
+                  [
+                    "Mul",
+                    [
+                      "Symbol",
+                      "r"
+                    ],
+                    [
+                      "Mul",
+                      [
+                        "Symbol",
+                        "i"
+                      ],
+                      [
+                        "Symbol",
+                        "x"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "Mul",
+            [
+              "Rational",
+              "1",
+              "1"
+            ],
+            [
+              "Mul",
+              [
+                "Symbol",
+                "end"
+              ],
+              [
+                "Mul",
+                [
+                  "Symbol",
+                  "p"
+                ],
+                [
+                  "Mul",
+                  [
+                    "Symbol",
+                    "m"
+                  ],
+                  [
+                    "Mul",
+                    [
+                      "Symbol",
+                      "a"
+                    ],
+                    [
+                      "Mul",
+                      [
+                        "Symbol",
+                        "t"
+                      ],
+                      [
+                        "Mul",
+                        [
+                          "Symbol",
+                          "r"
+                        ],
+                        [
+                          "Mul",
+                          [
+                            "Symbol",
+                            "i"
+                          ],
+                          [
+                            "Symbol",
+                            "x"
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "Mul",
+          [
+            "Symbol",
+            "begin"
+          ],
+          [
+            "Mul",
+            [
+              "Mul",
+              [
+                "Symbol",
+                "p"
+              ],
+              [
+                "Mul",
+                [
+                  "Symbol",
+                  "m"
+                ],
+                [
+                  "Mul",
+                  [
+                    "Symbol",
+                    "a"
+                  ],
+                  [
+                    "Mul",
+                    [
+                      "Symbol",
+                      "t"
+                    ],
+                    [
+                      "Mul",
+                      [
+                        "Symbol",
+                        "r"
+                      ],
+                      [
+                        "Mul",
+                        [
+                          "Symbol",
+                          "i"
+                        ],
+                        [
+                          "Symbol",
+                          "x"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ],
+            [
+              "Mul",
+              [
+                "Rational",
+                "2",
+                "1"
+              ],
+              [
+                "Mul",
+                [
+                  "Symbol",
+                  "end"
+                ],
+                [
+                  "Mul",
+                  [
+                    "Symbol",
+                    "p"
+                  ],
+                  [
+                    "Mul",
+                    [
+                      "Symbol",
+                      "m"
+                    ],
+                    [
+                      "Mul",
+                      [
+                        "Symbol",
+                        "a"
+                      ],
+                      [
+                        "Mul",
+                        [
+                          "Symbol",
+                          "t"
+                        ],
+                        [
+                          "Mul",
+                          [
+                            "Symbol",
+                            "r"
+                          ],
+                          [
+                            "Mul",
+                            [
+                              "Symbol",
+                              "i"
+                            ],
+                            [
+                              "Symbol",
+                              "x"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "antlr",
+    "src": "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}^2",
+    "index": 127,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}^{-1}",
+    "index": 128,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\begin{vmatrix}1&2\\\\3&4\\end{vmatrix}",
+    "index": 129,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "|\\begin{array}{cc}1&2\\\\3&4\\end{array}|",
+    "index": 130,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\begin{pmatrix}1\\end{bmatrix}",
+    "index": 131,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "(\\begin{matrix}1\\end{matrix}]",
+    "index": 132,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\begin{bmatrix}1",
+    "index": 133,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "antlr",
+    "src": "\\end{pmatrix}",
+    "index": 134,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\sum_{1=0}^2 x",
+    "index": 0,
+    "error": "VisitError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\sum_{x+1=0}^2 x",
+    "index": 1,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\sum_{f(x)=0}^2 f(x)",
+    "index": 2,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\sum_{\\frac{d f(x)}{dx}=0}^2 f(x)",
+    "index": 3,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "(\\int x dx) x 3",
+    "index": 4,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "1.23456789012345678901234567890",
+    "index": 5,
+    "expected": [
+      "Float",
+      1.2345678901234567
+    ],
+    "precision": 103,
+    "str": "1.23456789012345678901234567890"
+  },
+  {
+    "backend": "lark",
+    "src": "-1.23456789012345678901234567890",
+    "index": 6,
+    "expected": [
+      "Float",
+      -1.2345678901234567
+    ],
+    "precision": 103,
+    "str": "-1.23456789012345678901234567890"
+  },
+  {
+    "backend": "lark",
+    "src": "",
+    "index": 7,
+    "error": "UnexpectedEOF"
+  },
+  {
+    "backend": "lark",
+    "src": "+x",
+    "index": 8,
+    "expected": [
+      "Symbol",
+      "x"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "--x",
+    "index": 9,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "+",
+    "index": 10,
+    "error": "UnexpectedEOF"
+  },
+  {
+    "backend": "lark",
+    "src": "x+",
+    "index": 11,
+    "error": "UnexpectedEOF"
+  },
+  {
+    "backend": "lark",
+    "src": "x y z",
+    "index": 12,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "x^2y",
+    "index": 13,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "x^2^3",
+    "index": 14,
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "8",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "a_bc",
+    "index": 15,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a_{b}"
+      ],
+      [
+        "Symbol",
+        "c"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "a_{bc}",
+    "index": 16,
+    "expected": [
+      "Symbol",
+      "a_{bc}"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sinx",
+    "index": 17,
+    "expected": [
+      "sin",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\alphax",
+    "index": 18,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "alpha"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\leftx",
+    "index": 19,
+    "expected": [
+      "Symbol",
+      "x"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sinh x",
+    "index": 20,
+    "expected": [
+      "_ambig",
+      [
+        "sin",
+        [
+          "Mul",
+          [
+            "Symbol",
+            "h"
+          ],
+          [
+            "Symbol",
+            "x"
+          ]
+        ]
+      ],
+      [
+        "sinh",
+        [
+          "Symbol",
+          "x"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\cosh x",
+    "index": 21,
+    "expected": [
+      "_ambig",
+      [
+        "cos",
+        [
+          "Mul",
+          [
+            "Symbol",
+            "h"
+          ],
+          [
+            "Symbol",
+            "x"
+          ]
+        ]
+      ],
+      [
+        "cosh",
+        [
+          "Symbol",
+          "x"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\tanh x",
+    "index": 22,
+    "expected": [
+      "_ambig",
+      [
+        "tan",
+        [
+          "Mul",
+          [
+            "Symbol",
+            "h"
+          ],
+          [
+            "Symbol",
+            "x"
+          ]
+        ]
+      ],
+      [
+        "tanh",
+        [
+          "Symbol",
+          "x"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\arsinh x",
+    "index": 23,
+    "expected": [
+      "asinh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\arcosh x",
+    "index": 24,
+    "expected": [
+      "acosh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\artanh x",
+    "index": 25,
+    "expected": [
+      "atanh",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sin x+y",
+    "index": 26,
+    "expected": [
+      "_ambig",
+      [
+        "sin",
+        [
+          "Add",
+          [
+            "Symbol",
+            "x"
+          ],
+          [
+            "Symbol",
+            "y"
+          ]
+        ]
+      ],
+      [
+        "Add",
+        [
+          "Symbol",
+          "y"
+        ],
+        [
+          "sin",
+          [
+            "Symbol",
+            "x"
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sin x^2",
+    "index": 27,
+    "expected": [
+      "_ambig",
+      [
+        "sin",
+        [
+          "Pow",
+          [
+            "Symbol",
+            "x"
+          ],
+          [
+            "Rational",
+            "2",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "sin",
+          [
+            "Symbol",
+            "x"
+          ]
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sin^0 x",
+    "index": 28,
+    "expected": [
+      "Rational",
+      "1",
+      "1"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\cos^2 x",
+    "index": 29,
+    "expected": [
+      "Pow",
+      [
+        "cos",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\tan^{-1}x",
+    "index": 30,
+    "expected": [
+      "atan",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\csc^{-1}x",
+    "index": 31,
+    "expected": [
+      "acsc",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sec^{-1}x",
+    "index": 32,
+    "expected": [
+      "asec",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\cot^{-1}x",
+    "index": 33,
+    "expected": [
+      "acot",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\arcsin x",
+    "index": 34,
+    "expected": [
+      "asin",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\arccos x",
+    "index": 35,
+    "expected": [
+      "acos",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\arctan x",
+    "index": 36,
+    "expected": [
+      "atan",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\arccsc x",
+    "index": 37,
+    "expected": [
+      "acsc",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\arcsec x",
+    "index": 38,
+    "expected": [
+      "asec",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\arccot x",
+    "index": 39,
+    "expected": [
+      "acot",
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sinh^{-1}x",
+    "index": 40,
+    "error": "UnexpectedEOF"
+  },
+  {
+    "backend": "lark",
+    "src": "\\exp^2 x",
+    "index": 41,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\exp^0 x",
+    "index": 42,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\ln_2 x",
+    "index": 43,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\log^2_3 x",
+    "index": 44,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\log_3^2 x",
+    "index": 45,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\sin(x,y)",
+    "index": 46,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\sin(x)\\cos(y)",
+    "index": 47,
+    "expected": [
+      "Mul",
+      [
+        "cos",
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "sin",
+        [
+          "Symbol",
+          "x"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac1x",
+    "index": 48,
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "-1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac1{xy}",
+    "index": 49,
+    "expected": [
+      "Mul",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "y"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{a}b",
+    "index": 50,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "b"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{a}{dx}",
+    "index": 51,
+    "expected": [
+      "tuple",
+      [
+        "text",
+        "derivative"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "difference": "A fraction without a differential numerator must retain its numerator and denominator.",
+    "correctExpected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "d"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{d}{dx}",
+    "index": 52,
+    "expected": [
+      "tuple",
+      [
+        "text",
+        "derivative"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{d}{dx}x^2",
+    "index": 53,
+    "expected": [
+      "Derivative",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{\\partial}{\\partial x}f(x)",
+    "index": 54,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{\\partial f(x)}{\\partial x}",
+    "index": 55,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{d}{dx}!",
+    "index": 56,
+    "expected": [
+      "factorial",
+      [
+        "Tuple",
+        [
+          "Symbol",
+          "derivative"
+        ],
+        [
+          "Symbol",
+          "x"
+        ]
+      ]
+    ],
+    "difference": "An unapplied derivative operator is not a scalar factorial or summand.",
+    "correctError": "LaTeXParsingError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{d}{dx}^2",
+    "index": 57,
+    "error": "VisitError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\frac{d}{dx}+1",
+    "index": 58,
+    "expected": [
+      "Add",
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Tuple",
+        [
+          "Symbol",
+          "derivative"
+        ],
+        [
+          "Symbol",
+          "x"
+        ]
+      ]
+    ],
+    "difference": "An unapplied derivative operator is not a scalar factorial or summand.",
+    "correctError": "LaTeXParsingError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\nicefrac12",
+    "index": 59,
+    "expected": [
+      "Rational",
+      "1",
+      "2"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\binom12",
+    "index": 60,
+    "expected": [
+      "Rational",
+      "0",
+      "1"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\dbinom2x",
+    "index": 61,
+    "expected": [
+      "binomial",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\binom{2}x",
+    "index": 62,
+    "expected": [
+      "binomial",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\overline2",
+    "index": 63,
+    "expected": [
+      "Rational",
+      "2",
+      "1"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sqrt[2]{4}",
+    "index": 64,
+    "expected": [
+      "Rational",
+      "2",
+      "1"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sqrt[3]{8}",
+    "index": 65,
+    "expected": [
+      "Rational",
+      "2",
+      "1"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sqrt[1+x]{y}",
+    "index": 66,
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "y"
+      ],
+      [
+        "Pow",
+        [
+          "Add",
+          [
+            "Rational",
+            "1",
+            "1"
+          ],
+          [
+            "Symbol",
+            "x"
+          ]
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\mathit{}",
+    "index": 67,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\mathit{foo bar}",
+    "index": 68,
+    "expected": [
+      "Symbol",
+      "foo bar"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\mathit{foo}",
+    "index": 69,
+    "expected": [
+      "Symbol",
+      "foo"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\intop x dx",
+    "index": 70,
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\int^2_0 dx",
+    "index": 71,
+    "expected": [
+      "Integral",
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\int_0 x dx",
+    "index": 72,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\int^2 x dx",
+    "index": 73,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\int_0^2 x",
+    "index": 74,
+    "error": "UnexpectedEOF"
+  },
+  {
+    "backend": "lark",
+    "src": "\\int_0^1\\frac{\\mathrm{d}x}{x}",
+    "index": 75,
+    "expected": [
+      "Integral",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\int \\frac{x dx}{1+x}",
+    "index": 76,
+    "expected": [
+      "Integral",
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Pow",
+          [
+            "Add",
+            [
+              "Rational",
+              "1",
+              "1"
+            ],
+            [
+              "Symbol",
+              "x"
+            ]
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\int x\\text{d}x",
+    "index": 77,
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sum_{n=1}^3 n+x",
+    "index": 78,
+    "expected": [
+      "_ambig",
+      [
+        "Sum",
+        [
+          "Add",
+          [
+            "Symbol",
+            "n"
+          ],
+          [
+            "Symbol",
+            "x"
+          ]
+        ],
+        [
+          "Symbol",
+          "n"
+        ],
+        [
+          "Rational",
+          "1",
+          "1"
+        ],
+        [
+          "Rational",
+          "3",
+          "1"
+        ]
+      ],
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Sum",
+          [
+            "Symbol",
+            "n"
+          ],
+          [
+            "Symbol",
+            "n"
+          ],
+          [
+            "Rational",
+            "1",
+            "1"
+          ],
+          [
+            "Rational",
+            "3",
+            "1"
+          ]
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sum_{n=0}^{3} n^2",
+    "index": 79,
+    "expected": [
+      "Sum",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "n"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\sum_{n=x+1}^3 n",
+    "index": 80,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\prod^3_{n=1} n",
+    "index": 81,
+    "expected": [
+      "Product",
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\lim_{x\\to-\\infty}x",
+    "index": 82,
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "-oo"
+      ],
+      "+"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\lim_{x\\to0^-}x+1",
+    "index": 83,
+    "expected": [
+      "_ambig",
+      [
+        "Limit",
+        [
+          "Add",
+          [
+            "Rational",
+            "1",
+            "1"
+          ],
+          [
+            "Symbol",
+            "x"
+          ]
+        ],
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "0",
+          "1"
+        ],
+        "-"
+      ],
+      [
+        "Add",
+        [
+          "Rational",
+          "1",
+          "1"
+        ],
+        [
+          "Limit",
+          [
+            "Symbol",
+            "x"
+          ],
+          [
+            "Symbol",
+            "x"
+          ],
+          [
+            "Rational",
+            "0",
+            "1"
+          ],
+          "-"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "x|_{x=1}",
+    "index": 84,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "x|^{x=2}_{x=1}",
+    "index": 85,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "x|^{2}",
+    "index": 86,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "x|^{y+1}",
+    "index": 87,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "2 x 3",
+    "index": 88,
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "6",
+        "1"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "2 x y",
+    "index": 89,
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "2:3",
+    "index": 90,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "1,234.5",
+    "index": 91,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "12.",
+    "index": 92,
+    "expected": [
+      "Float",
+      12.0
+    ],
+    "precision": 53,
+    "str": "12.0000000000000"
+  },
+  {
+    "backend": "lark",
+    "src": ".5",
+    "index": 93,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\vartheta",
+    "index": 94,
+    "expected": [
+      "Symbol",
+      "theta"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\varphi_\\varepsilon",
+    "index": 95,
+    "expected": [
+      "Symbol",
+      "phi_{epsilon}"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\alpha'",
+    "index": 96,
+    "expected": [
+      "Symbol",
+      "alpha'"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\alpha'_1",
+    "index": 97,
+    "expected": [
+      "Symbol",
+      "alpha'_{1}"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "a_{\\alpha'}'",
+    "index": 98,
+    "expected": [
+      "Symbol",
+      "a_{alpha'}'"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "a_{12}",
+    "index": 99,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "a_12",
+    "index": 100,
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Symbol",
+        "a_{1}"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "a_{b+c}",
+    "index": 101,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\omega",
+    "index": 102,
+    "expected": [
+      "Symbol",
+      "omega"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\pi",
+    "index": 103,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\sigma",
+    "index": 104,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\Gamma",
+    "index": 105,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\foo",
+    "index": 106,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "x\\ne y",
+    "index": 107,
+    "expected": [
+      "Unequality",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "x\\leqslant y",
+    "index": 108,
+    "expected": [
+      "LessThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "x\\geqq y",
+    "index": 109,
+    "expected": [
+      "GreaterThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "q"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "1=1",
+    "index": 110,
+    "expected": [
+      "True"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "2<3",
+    "index": 111,
+    "expected": [
+      "True"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "x<y<z",
+    "index": 112,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "x&=y",
+    "index": 113,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "a\\hfil b",
+    "index": 114,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "a\\hfill b",
+    "index": 115,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "a\\displaystyle b",
+    "index": 116,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\langle x|y\\rangle",
+    "index": 117,
+    "expected": [
+      "InnerProduct",
+      [
+        "Bra",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Ket",
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "|x\\rangle\\langle y|",
+    "index": 118,
+    "expected": [
+      "OuterProduct",
+      [
+        "Ket",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Bra",
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "(x+y)\\prime",
+    "index": 119,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "x^\\prime",
+    "index": 120,
+    "error": "VisitError"
+  },
+  {
+    "backend": "lark",
+    "src": "x^{*}",
+    "index": 121,
+    "error": "VisitError"
+  },
+  {
+    "backend": "lark",
+    "src": "(x)\\' ",
+    "index": 122,
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "backend": "lark",
+    "src": "\\det x",
+    "index": 123,
+    "error": "VisitError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\trace x",
+    "index": 124,
+    "error": "VisitError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\adjugate x",
+    "index": 125,
+    "error": "VisitError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\begin{pmatrix}1\\end{pmatrix}/\\begin{pmatrix}2\\end{pmatrix}",
+    "index": 126,
+    "error": "VisitError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}^2",
+    "index": 127,
+    "expected": [
+      "MatPow",
+      [
+        "Matrix",
+        2,
+        2,
+        [
+          "Rational",
+          "1",
+          "1"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ],
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Rational",
+          "4",
+          "1"
+        ]
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\begin{pmatrix}1&2\\\\3&4\\end{pmatrix}^{-1}",
+    "index": 128,
+    "expected": [
+      "MatPow",
+      [
+        "Matrix",
+        2,
+        2,
+        [
+          "Rational",
+          "1",
+          "1"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ],
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Rational",
+          "4",
+          "1"
+        ]
+      ],
+      [
+        "Rational",
+        "-1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\begin{vmatrix}1&2\\\\3&4\\end{vmatrix}",
+    "index": 129,
+    "expected": [
+      "Rational",
+      "-2",
+      "1"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "|\\begin{array}{cc}1&2\\\\3&4\\end{array}|",
+    "index": 130,
+    "expected": [
+      "Rational",
+      "-2",
+      "1"
+    ]
+  },
+  {
+    "backend": "lark",
+    "src": "\\begin{pmatrix}1\\end{bmatrix}",
+    "index": 131,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "lark",
+    "src": "(\\begin{matrix}1\\end{matrix}]",
+    "index": 132,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\begin{bmatrix}1",
+    "index": 133,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "backend": "lark",
+    "src": "\\end{pmatrix}",
+    "index": 134,
+    "error": "LaTeXParsingError"
+  }
+]

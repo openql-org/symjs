@@ -54,11 +54,12 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 
 ### Entry points and bundle size
 
-`@symjs/symjs` imports the whole base module. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
+`@symjs/symjs` imports the base module except the separate LaTeX parsing subpath. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
 
 | Entry point | Contents |
 |---|---|
 | `@symjs/symjs/core` | Expressions, numbers and assumptions, symbols and undefined functions, elementary functions, substitution and matching, `diff`, `expand`, `evalf`, parsing, `str` and `latex` |
+| `@symjs/symjs/parsing` | `parseLatex`, `parseLatexLark`, `LarkLaTeXParser`, `TransformToSymPyExpr`, `LaTeXParsingError`; hand-written ANTLR and Lark LaTeX grammars |
 | `@symjs/symjs/special` | Special and combinatorial functions (Gamma, zeta, error functions, Bessel and Airy functions, ...) |
 | `@symjs/symjs/simplify` | `simplify`, `trigsimp`, `powsimp`, `radsimp`, `together`, `cancel`, `rewrite`, ... |
 | `@symjs/symjs/polys` | Polynomials: `factor`, `roots`, `CRootOf`, `groebner`, `apart`, `primitiveElement`, `toNumberField`, ... |
@@ -74,6 +75,24 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, joint distributions (`MultivariateNormal`, `Dirichlet`, `Multinomial`, `JointRV`, `marginalDistribution`, ...), matrix distributions (`Wishart`, `MatrixNormal`, ...), random matrices (`GaussianUnitaryEnsemble`, `CircularEnsemble`, ...), stochastic processes (`DiscreteMarkovChain`, `ContinuousMarkovChain`, `PoissonProcess`, `WienerProcess`, ...), `ExpectationMatrix`, `VarianceMatrix`, `CrossCovarianceMatrix`, ... |
 | `@symjs/symjs/crypto` | Classical ciphers (shift, affine, Vigenère, Hill, Bifid, rail fence, ...), Morse code, linear feedback shift registers, RSA, ElGamal, Diffie–Hellman, Goldwasser–Micali and Blum–Goldwasser |
 | `@symjs/symjs/liealgebras` | `CartanType`, `CartanMatrix`, `DynkinDiagram`, `RootSystem` and `WeylGroup` of the simple Lie algebras |
+
+LaTeX parsing is imported separately:
+
+```ts
+import { parseLatex, parseLatexLark, LarkLaTeXParser } from '@symjs/symjs/parsing';
+
+parseLatex(String.raw`\frac{1}{2}x`); // ANTLR semantics: preserves unevaluated arithmetic
+parseLatexLark(String.raw`\frac{1}{2}x`); // Lark semantics: evaluates arithmetic
+parseLatex('x +', { strict: true }); // throws LaTeXParsingError
+const parser = new LarkLaTeXParser({ transform: false });
+parser.doparse('f(x)'); // explicit ambiguity tree: function application or multiplication
+```
+
+`LarkLaTeXParser` accepts a `transformer` subclass and a `grammar` object with
+`decimalSeparator`, `multiplicationSymbols`, and `divisionSymbols` terminal overrides.
+These options implement the custom grammar examples without loading grammar files or
+using a parser-generator runtime. `debug` receives the syntax tree as a callback.
+`parseExpr` remains in `core`; `parseMathematica` remains in `simplify`.
 
 Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [compat/capabilities.json](compat/capabilities.json).
 
@@ -100,7 +119,7 @@ To add an extend module, create `packages/<name>/` with its own `package.json` (
 
 Compatibility has separate measurements; none is a whole-SymPy completion percentage:
 
-- The pinned [scope inventory](compat/scope-inventory.json) lists **all 825 production modules of SymPy 1.14.0**, including partial, unimplemented, unassessed and explicitly excluded modules.
+- The pinned [scope inventory](compat/scope-inventory.json) lists **all 825 production modules of SymPy 1.14.0**, including complete, partial, unimplemented, unassessed and explicitly excluded modules. Complete modules have every public export and class member, passing doctest and unit-test evidence with only explicitly allowed omissions, and no recorded limitation; partial modules list the criteria that fail.
 - **Corpus result agreement** measures extracted examples. The [extraction audit](compat/REPORT.md#extraction-audit) records omitted examples and their reasons.
 - **Verified public-call results** count automatic public API calls and reviewed conversion adapters. Mathematical computations remaining in the harness and unreviewed translations are reported separately, even when their results match.
 - **API presence** requires an actual exported function or member, with its concrete path recorded. It does not establish behavior or completeness. An adapter alone no longer counts as an API.
@@ -190,7 +209,6 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 - Definite integration splits at polynomial singularities using one-sided limits; when their locations cannot be resolved, the integral is left unevaluated.
 - Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet); `hyper` and `meijerg` are available as functions but are not used to integrate or to evaluate in closed form
 - ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, homogeneous coefficients, linear coefficients, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear and first order (constant coefficients in closed form, 2x2 variable coefficients in terms of a particular solution like SymPy) or triangular (solved one function at a time); individual supported hints are recorded in the ODE checks
-- JavaScript code printing (`jscode`) remains unimplemented, rather than excluded: exporting expressions to JavaScript is a separate capability from running the engine in JavaScript.
 - Number-field embeddings use exact rational power bases for supported radical presentations; general `RootOf` embeddings, maximal orders and Galois groups remain incomplete.
 - Permutation groups provide Schreier–Sims stabilizer chains, orbits, blocks, series, centralizers, subgroup search and cosets; finitely presented groups, Sylow subgroups and presentations remain incomplete.
 - Abstract tensors (`sympy.tensor.tensor`) are fully ported, including tensor sums, Butler–Portugal canonicalization under general slot symmetries, component arrays and wild tensors; the tensor differential operators (`sympy.tensor.toperators`) are not implemented.
@@ -216,7 +234,7 @@ Runtime-specific backends are deliberately excluded; mathematical modules remain
 Modules that are not ported yet but stay in scope:
 
 - Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
-- The LaTeX parser (`parse_latex`) and the Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
+- The Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
 - Differential geometry (`sympy.diffgeom`): an extend package
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 

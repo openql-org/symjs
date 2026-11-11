@@ -281,6 +281,16 @@
         "types": "./dist/liealgebras.d.cts",
         "default": "./dist/liealgebras.cjs"
       }
+    },
+    "./parsing": {
+      "import": {
+        "types": "./dist/parsing.d.ts",
+        "default": "./dist/parsing.js"
+      },
+      "require": {
+        "types": "./dist/parsing.d.cts",
+        "default": "./dist/parsing.cjs"
+      }
     }
   },
   "files": [
@@ -437,6 +447,9 @@
     "./src/plotting.ts",
     "./dist/plotting.js",
     "./dist/plotting.cjs",
+    "./src/parsing.ts",
+    "./dist/parsing.js",
+    "./dist/parsing.cjs",
     "./src/polys.ts",
     "./dist/polys.js",
     "./dist/polys.cjs",
