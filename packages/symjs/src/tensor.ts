@@ -36,3 +36,4 @@ export const Array = _ImmutableDenseNDimArray_;
 /** @deprecated Use `SymArray` (`Array` shadows the JavaScript global); removed in 1.0. */
 export type Array = _ImmutableDenseNDimArray_;
 export { ranges } from './tensor/idx';
+export { PartialDerivative, PartialDerivativeNode } from './tensor/toperators';

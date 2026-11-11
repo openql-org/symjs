@@ -112,3 +112,45 @@ it('constructs normalized exponential and ordinary coefficient recurrences', () 
   expect(sj.rationalIndependent([P('cos(x)'), P('sin(x)')], V('x')).map(String)).toEqual(['cos(x)', 'sin(x)']);
   expect(sj.rationalIndependent([P('x**2'), P('sin(x)'), P('x*sin(x)'), P('x**3')], V('x')).map(String)).toEqual(['x**3 + x**2', 'x*sin(x) + sin(x)']);
 });
+
+it('discovers rational differential equations and solves hypergeometric recurrences', () => {
+  const k = V('k'), g = sj.SymFunction('g');
+  for (const [source, initial, start] of [['exp(x)', '1', 1], ['log(1+x)', 'x', 2], ['sin(x)', 'x', 2], ['cos(x)', '1', 1]] as const) {
+    const result = sj.hyperAlgorithm(P(source), x, k);
+    expect(sj.isNoMatch(result)).toBe(false);
+    if (sj.isNoMatch(result)) continue;
+    expect(String(result[1])).toBe(initial); expect(result[2]).toBe(start);
+    for (let n = start; n < 9; n++) {
+      const coefficient = sj.simplify(sj.subs(result[0], [[k,n]]));
+      expect(sj.simplify(coefficient.sub(sj.fps(P(source), x).coeff(n))).equals(0)).toBe(true);
+    }
+  }
+  const [de, order] = [...sj.simpleDE(P('log(1+x)'), x, g, 2)][0]!;
+  expect(order).toBe(2);
+  const sol = sj.solveDe(P('log(1+x)'), x, de, order, g, k);
+  expect(String(Array.isArray(sol) ? sol[0] : sol)).toBe('Piecewise(((-1)**(k - 1)*factorial(k - 1)/RisingFactorial(2, k - 1), Eq(Mod(k, 1), 0)), (0, True))');
+  expect([...sj.simpleDE(P('exp(sin(x))'), x, g, 1)]).toEqual([]);
+  expect([...sj.simpleDE(P('x**2'), x, g, 3)].length).toBeGreaterThan(0);
+});
+it('returns NoMatch when a DE has no supported hypergeometric coefficient form', () => {
+  const k = V('k'), g = sj.SymFunction('g');
+  expect(sj.hyperAlgorithm(P('exp(sin(x))'), x, k, 1)).toBe(sj.NoMatch);
+  expect(sj.hyperAlgorithm(1, x, k, 1)).toBe(sj.NoMatch);
+  expect(sj.solveDe(0, x, P('g(x)'), 1, g, k)).toBe(sj.NoMatch);
+  expect(sj.solveDe(0, x, P('Derivative(g(x), x)-g(x)'), 1, g, k)).toBe(sj.NoMatch);
+  expect(sj.solveDe(P('exp(1/x)'), x, P('x**2*Derivative(g(x), x)+g(x)'), 1, g, k)).toBe(sj.NoMatch);
+  expect(sj.solveDe(P('sqrt(x)'), x, P('2*x*Derivative(g(x), (x, 2))+Derivative(g(x), x)'), 2, g, k)).toBe(sj.NoMatch);
+  expect(sj.solveDe(0, x, P('(x**5+x+1)*g(x)+Derivative(g(x),x)'), 1, g, k)).toBe(sj.NoMatch);
+  expect(() => sj.solveDe(1, x, g(x), 0, g, k)).toThrow(RangeError);
+});
+it('handles sums during DE discovery and unsupported recurrence factorizations', () => {
+  const k = V('k'), g = sj.SymFunction('g');
+  expect([...sj.simpleDE(P('exp(x)+sin(x)'), x, g, 3)].length).toBe(1);
+  expect(sj.solveDe(0,x,P('x*Derivative(g(x),(x,2))+Derivative(g(x),x)/2-g(x)'),2,g,k)).toBe(sj.NoMatch);
+  expect(sj.solveDe(0,x,P('x**5*Derivative(g(x),(x,5))+10*x**4*Derivative(g(x),(x,4))+25*x**3*Derivative(g(x),(x,3))+15*x**2*Derivative(g(x),(x,2))+g(x)+Derivative(g(x),x)'),5,g,k)).toBe(sj.NoMatch);
+});
+it('declines recurrences with unresolved denominator roots', () => {
+  const k = V('k'), g = sj.SymFunction('g');
+  const de = sj.add(g(x), ...[-29,210,-285,125,-20,1].map((c,i) => sj.mul(c, x.pow(i), sj.diff(g(x),x,i+1))));
+  expect(sj.solveDe(0,x,de,6,g,k)).toBe(sj.NoMatch);
+});

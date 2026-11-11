@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **12933** cases: **8059 exact**, **228 equivalent**, **4646 failing**. Agreement: **64.08%**.
+Measured **12933** cases: **8070 exact**, **228 equivalent**, **4635 failing**. Agreement: **64.16%**.
 
-Replay runtime: **71.65 s**. Known gaps: **4646**. Exception class mismatches accepted in the pilot: **177**.
+Replay runtime: **324.54 s**. Known gaps: **4635**. Exception class mismatches accepted in the pilot: **177**.
 
 Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the existing doctest matching and equivalence rules.
 
@@ -13,7 +13,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | Category | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | core | 7858 | 5447 | 180 | 1276 | 661 | 294 | 71.61% |
-| polys | 5075 | 2612 | 48 | 297 | 1676 | 442 | 52.41% |
+| polys | 5075 | 2623 | 48 | 298 | 1661 | 445 | 52.63% |
 
 ## Agreement by test module
 
@@ -82,7 +82,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | sympy.polys.tests.test_partfrac | 35 | 25 | 2 | 4 | 2 | 2 | 77.14% |
 | sympy.polys.tests.test_polyclasses | 142 | 16 | 0 | 2 | 115 | 9 | 11.27% |
 | sympy.polys.tests.test_polyfuncs | 46 | 39 | 0 | 4 | 0 | 3 | 84.78% |
-| sympy.polys.tests.test_polymatrix | 15 | 0 | 0 | 0 | 15 | 0 | 0.00% |
+| sympy.polys.tests.test_polymatrix | 15 | 11 | 0 | 1 | 0 | 3 | 73.33% |
 | sympy.polys.tests.test_polyoptions | 9 | 3 | 0 | 0 | 6 | 0 | 33.33% |
 | sympy.polys.tests.test_polyroots | 108 | 51 | 7 | 13 | 32 | 5 | 53.70% |
 | sympy.polys.tests.test_polytools | 1584 | 911 | 26 | 212 | 302 | 133 | 59.15% |

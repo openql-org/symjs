@@ -159,3 +159,10 @@ it('checks every nested ODE family and rejects an invalid alternative', () => {
   expect(solvesDsolveCase(equations, [[positive], [sj.Eq(f, sj.add(C1, sj.mul(3, x)))]] )).toBe(false);
   expect(solvesDsolveCase(equations, [])).toBe(false);
 });
+
+it('replays tensor derivatives, polynomial matrices, resultants and set wrappers', () => {
+  const modules = new Set(['sympy.tensor.toperators', 'sympy.polys.polymatrix', 'sympy.polys.multivariate_resultants', 'sympy.sets.setexpr', 'sympy.polys.numberfields.galoisgroups']);
+  const cases = corpus.cases.filter((c) => modules.has(c.module));
+  expect(cases.length).toBeGreaterThanOrEqual(19);
+  for (const c of cases) expect(['pass', 'equivalent'], `${c.module}: ${c.src}`).toContain(runCase(c).status);
+});

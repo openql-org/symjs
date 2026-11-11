@@ -11,9 +11,9 @@ import { Add, Derivative, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym, UndefF
 import { add, couldExtractMinusSign, exp, mul, pow, sub, sympify } from '../core/ops';
 import { asIndependent, isMeromorphic, isPolynomial, isRationalFunction } from '../core/methods';
 import { NotImplementedError } from '../core/errors';
-import { at, cast, first } from '../core/guard';
+import { at, cast, expectType, first, getOrThrow } from '../core/guard';
 import type { UndefinedFunction } from '../core/undef';
-import { cancel } from '../simplify/rational';
+import { cancel, fraction } from '../simplify/rational';
 import { freeSymbols, some, subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { fn } from '../functions/elementary/elementary';
@@ -24,6 +24,16 @@ import { polyCoefficients } from '../polys/poly';
 import { str } from '../printing/str';
 import { O, series } from './series';
 import { lseries, seriesTerms } from './lseries';
+
+import { Matrix } from '../matrices/matrix';
+import { nullspace } from '../matrices/linalg';
+import { Poly } from '../polys/sympoly';
+import { rootsDict } from '../polys/poly';
+import { SymFunction } from '../core/undef';
+import { NoMatch, isNoMatch } from '../core/truth';
+import type { NoMatchResult } from '../core/truth';
+import { Eq, piecewise } from '../core/logic';
+import { Mod } from '../functions/mod';
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
 
@@ -237,3 +247,87 @@ export function fps(ex: ExprLike, x?: Sym, x0: ExprLike = 0, direction: '+' | '-
   return new FormalPowerSeries(f, first(free), sympify(x0), direction);
 }
 
+
+/** Discover linear differential equations over the rational functions in x. */
+export function* simpleDE(fIn: ExprLike, x: Sym, g: UndefinedFunction, order = 4): Generator<[Expr, number]> {
+  const f = sympify(fIn);
+  const derivatives: Expr[] = [f];
+  for (let n = 1; n <= order; n++) {
+    derivatives.push(diff(at(derivatives, n - 1), x));
+    const basis: Expr[] = [];
+    const columns = derivatives.map((d) => {
+      const coefficients = new Map<number, Expr>();
+      const expanded = expand(d);
+      for (const term of expanded instanceof Add ? expanded.args : [expanded]) {
+        if (isZeroExpr(term)) continue;
+        let i = basis.findIndex((b) => isRationalFunction(cancel(mul(term, pow(b, -1))), [x]));
+        if (i < 0) { i = basis.length; basis.push(term); }
+        const ratio = cancel(mul(term, pow(at(basis, i), -1)));
+        coefficients.set(i, add(coefficients.get(i) ?? S.Zero, ratio));
+      }
+      return coefficients;
+    });
+    const matrix = Matrix.fromFunction(basis.length, n + 1, (i, j) => at(columns, j).get(i) ?? S.Zero);
+    const relation = nullspace(matrix).find((v) => !isZeroExpr(v.get(n, 0)));
+    if (relation === undefined) continue;
+    const denominator = mul(...relation.data.map((c) => fraction(cancel(c))[1]));
+    const equation = add(...relation.data.map((c, i) => mul(cancel(mul(c, denominator)), diff(g(x), x, i))));
+    yield [equation, n];
+  }
+}
+
+export type HyperSeriesResult = [Expr, Expr, number];
+
+/** Solve a two-term ordinary-series recurrence obtained from a linear DE. */
+export function solveDe(fIn: ExprLike, x: Sym, DE: ExprLike, order: number, g: UndefinedFunction, k: Sym): HyperSeriesResult | NoMatchResult {
+  if (!Number.isInteger(order) || order < 1) throw new RangeError('positive differential order required');
+  const f = sympify(fIn);
+  const recurrence = expand(hyperRe(DE, g, k));
+  const coefficients = new Map<number, Expr>();
+  for (const term of recurrence instanceof Add ? recurrence.args : [recurrence]) {
+    const factors = term instanceof Mul ? term.args : [term];
+    const call = cast(factors.find((a) => a instanceof UndefFn), UndefFn);
+    // hyperRe constructs integer shifts and exactly one coefficient function per term.
+    const offset = expectType(sub(first(call.args), k), (e): e is Rational => e instanceof Rational, 'integer shift');
+    const index = Number(offset.p);
+    coefficients.set(index, add(coefficients.get(index) ?? S.Zero, mul(...factors.filter((a) => a !== call))));
+  }
+  const shifts = [...coefficients.keys()].sort((a, b) => a - b);
+  if (shifts.length !== 2) return NoMatch;
+  const step = at(shifts, 1);
+  const P = Poly.from(getOrThrow(coefficients, 0), [k]);
+  const Q = Poly.from(getOrThrow(coefficients, step), [k]);
+  const pRoots = rootsDict(P.asExpr(), k, { skipQuintic: true }), qRoots = rootsDict(Q.asExpr(), k, { skipQuintic: true });
+  if ([...pRoots.values()].reduce((a, b) => a + b, 0) !== P.degree() || [...qRoots.values()].reduce((a, b) => a + b, 0) !== Q.degree()) return NoMatch;
+  const integerRoots = [...qRoots.keys()];
+  if (integerRoots.some((r) => !(r instanceof Rational) || !r.isInteger)) return NoMatch;
+  const maxRoot = integerRoots.length ? Math.max(...integerRoots.map((r) => Number(r))) : -1;
+  const initial = Math.max(0, maxRoot + 1);
+  const branches: [Expr, Expr | boolean][] = [];
+  let independent: Expr = S.Zero;
+  let lastInitial = -1;
+  const coefficient = (i: number): Expr => mul(subs(diff(f, x, i), [[x, S.Zero]]), pow(fn('factorial', [sympify(i)]), -1));
+  for (let i = 0; i < initial + step; i++) {
+    const c = coefficient(i);
+    if (some(c, (e) => e instanceof Special) || c.has(x)) return NoMatch;
+    if (!isZeroExpr(c)) { independent = add(independent, mul(c, pow(x, i))); lastInitial = i; }
+    if (i < initial || isZeroExpr(c)) continue;
+    const t = mul(sub(k, i), Rational.of(1, step));
+    const scale = mul(-1, P.LC(), pow(Q.LC(), -1), pow(step, P.degree() - Q.degree()));
+    const rising = (r: Expr, multiplicity: number): Expr => pow(fn('rf', [mul(sub(i, r), Rational.of(1, step)), t]), multiplicity);
+    const formula = mul(c, pow(scale, t), ...[...pRoots].map(([r, m]) => rising(r, m)), ...[...qRoots].map(([r, m]) => pow(rising(r, m), -1)));
+    branches.push([formula, Eq(Mod(k, step), i % step)]);
+  }
+  if (!branches.length) return NoMatch;
+  return [piecewise(...branches, [S.Zero, true]), independent, lastInitial + 1];
+}
+
+/** Discover a differential equation and solve its hypergeometric coefficient recurrence. */
+export function hyperAlgorithm(f: ExprLike, x: Sym, k: Sym, order = 4): HyperSeriesResult | NoMatchResult {
+  const g = SymFunction('g');
+  for (const [equation, n] of simpleDE(f, x, g, order)) {
+    const solution = solveDe(f, x, equation, n, g, k);
+    if (!isNoMatch(solution)) return solution;
+  }
+  return NoMatch;
+}

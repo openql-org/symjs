@@ -730,6 +730,24 @@ def ser(o):
     def public_object(name, *args):
         return {"t": "PublicObject", "cls": name, "args": [ser(a) for a in args]}
 
+    from sympy.tensor.toperators import PartialDerivative
+    from sympy.polys.polymatrix import MutablePolyDenseMatrix
+    from sympy.polys.multivariate_resultants import DixonResultant, MacaulayResultant
+    from sympy.sets.setexpr import SetExpr as ArithmeticSetExpr
+    from sympy.combinatorics.galois import (S1TransitiveSubgroups, S2TransitiveSubgroups,
+        S3TransitiveSubgroups, S4TransitiveSubgroups, S5TransitiveSubgroups, S6TransitiveSubgroups)
+    if isinstance(o, PartialDerivative):
+        return public_object("PartialDerivative", *o.args)
+    if isinstance(o, MutablePolyDenseMatrix):
+        return {"t": "PolyMatrix", "entries": ser(o.to_Matrix().tolist()), "ring": ser(o.ring)}
+    if isinstance(o, (DixonResultant, MacaulayResultant)):
+        return public_object(type(o).__name__, o.polynomials, o.variables)
+    if isinstance(o, ArithmeticSetExpr):
+        return public_object("SetExpression", o.set)
+    if isinstance(o, (S1TransitiveSubgroups, S2TransitiveSubgroups, S3TransitiveSubgroups,
+                      S4TransitiveSubgroups, S5TransitiveSubgroups, S6TransitiveSubgroups)):
+        return {"t": "TransitiveSubgroup", "degree": int(type(o).__name__[1]), "name": o.name}
+
     from sympy.combinatorics.subsets import Subset
     from sympy.combinatorics.graycode import GrayCode
     from sympy.combinatorics.prufer import Prufer

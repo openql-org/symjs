@@ -104,3 +104,9 @@ describe('AlgebraicField number-field methods', () => {
     expect(String(new AlgebraicField(QQ, new AlgebraicNumber(sqrt(2), [2, 0])).ext.root)).toBe('2*sqrt(2)');
   });
 });
+it('computes the Galois group of the defining polynomial', () => {
+  const x = new Sym('x');
+  const K = new AlgebraicField(QQ, new AlgebraicNumber(new Sym('a'), [1,0], {minpoly: Poly.from(P('x**4+1'), [x])}));
+  expect(String(K.galoisGroup({byName:true})[0])).toBe('S4TransitiveSubgroups.V');
+  expect(K.galoisGroup()[1]).toBe(true);
+});

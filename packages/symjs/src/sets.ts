@@ -101,3 +101,4 @@ export function isSubset(a: _SetExpr_, b: _SetExpr_): Truth {
   return _toTruth_(_isSubset_(a, b));
 }
 export { nargs } from './sets/sets';
+export { SetExpression, SetExpressionNode } from './sets/setexpr';

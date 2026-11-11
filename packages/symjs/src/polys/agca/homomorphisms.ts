@@ -67,6 +67,12 @@ export class ModuleHomomorphism {
 
 /** Construct a map, validating both the image and the relations of the domain. */
 export function homomorphism(domain: Module, codomain: Module, matrix: readonly ModuleInput[]): ModuleHomomorphism {
+  if (domain instanceof SubModule && domain.container instanceof QuotientModule) {
+    const ambient = domain.container;
+    // A presentation of a subquotient includes the generators of its kernel.
+    const presented = ambient.submodule(...domain.gens, ...ambient.killedModule.gens.map((g) => g.data));
+    return new ModuleHomomorphism(presented, codomain, matrix);
+  }
   return new ModuleHomomorphism(domain, codomain, matrix);
 }
 

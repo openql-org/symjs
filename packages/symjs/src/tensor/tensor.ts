@@ -898,7 +898,7 @@ function indicesToFreeDum(argsIndices: readonly TensorIndexNode[][]): { indices:
 }
 
 /** SymPy _tensMul_contract_indices: the dummy pairs of the arguments, renamed L_0, L_1, ... when `replace`. */
-function contractIndices(argsIn: readonly Expr[], replace: boolean): { args: Expr[]; indices: TensorIndexNode[]; free: Free[]; dum: Dum[] } {
+export function contractIndices(argsIn: readonly Expr[], replace: boolean): { args: Expr[]; indices: TensorIndexNode[]; free: Free[]; dum: Dum[] } {
   let args = [...argsIn];
   let r = indicesToFreeDum(args.map(getIndicesOf));
   if (replace && r.dummyData.length) {

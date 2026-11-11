@@ -14,3 +14,6 @@ export { roundTwo, nilradicalModP } from './basis';
 export type { RoundTwoOptions } from './basis';
 export { PrimeIdeal, primeDecomp, primeValuation } from './primes';
 export type { PrimeDecompOptions } from './primes';
+export { galoisGroup, hasSquareDisc, MaxTriesException } from './galoisgroups';
+export type { GaloisGroupOptions, GaloisGroupResult } from './galoisgroups';
+export { getResolventByLookup } from './galoisresolvents';

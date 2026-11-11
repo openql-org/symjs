@@ -136,3 +136,12 @@ describe('quotient modules and quotient coefficients', () => {
     expect(fmt([new ModuleElement(F, [x, y])])).toBe('[[x, y]]');
   });
 });
+it('prints quotient coefficients and lifts them to polynomial-module cosets', () => {
+  const F = QQ.oldPolyRing(x).quotientRing([x.pow(2).add(1)]).freeModule(2);
+  const e = F.convert([1,0]);
+  expect(String(e)).toBe('[1 + <x**2 + 1>, 0 + <x**2 + 1>]');
+  const lifted = F.lift(e);
+  expect(String(lifted)).toBe('[1, 0] + <[x**2 + 1, 0], [0, x**2 + 1]>');
+  expect(F.quot.contains(lifted)).toBe(true);
+  expect(F.convert([x.pow(2),0]).equals(e.neg())).toBe(true);
+});

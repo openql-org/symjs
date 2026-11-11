@@ -338,3 +338,12 @@ describe('small core functions', () => {
     expect(sstr(Rem(parse('x**3'), y).subs([[x, -5], [y, 3]] as never))).toBe('-2');
   });
 });
+
+it('finds symbols by name while preserving dummy identity', () => {
+  const x = symbols('x')[0]!, d = new Dummy('x');
+  expect(find('x', x)).toBe(x);
+  expect(find('x', d)).toBe(d);
+  expect(() => find('y', x)).toThrow('could not find');
+  expect(() => find('x', add(x,d))).toThrow('ambiguous');
+  expect(() => Reflect.apply(find, undefined, ['x', {fn:'sin'}])).toThrow(TypeError);
+});

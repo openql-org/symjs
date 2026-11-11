@@ -1457,9 +1457,11 @@
   {
    "module": "sympy.combinatorics.galois",
    "sha256": "7297768876927629b9fb7f9caaf939f183fe02e4ba0af25e09d516a6239d2192",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)",
-   "sources": [],
+   "sources": [
+    "combinatorics/galois.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -13294,9 +13296,11 @@
   {
    "module": "sympy.polys.densetools",
    "sha256": "034675135e9e571e7bef3c3ce26f0a6604f9a3a75b0d75e89d6f13a9f2122596",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "dense recursive list representation",
-   "sources": [],
+   "sources": [
+    "polys/densetools.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 58,
@@ -15261,9 +15265,11 @@
   {
    "module": "sympy.polys.multivariate_resultants",
    "sha256": "e9bc1d17e95c52ab4aa150eb9ce2a19bf3f23dfa3cc34632cbf1ad1126ad405c",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "DixonResultant, MacaulayResultant",
-   "sources": [],
+   "sources": [
+    "polys/multivariateresultants.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 4,
@@ -15333,8 +15339,10 @@
   {
    "module": "sympy.polys.numberfields.galois_resolvents",
    "sha256": "38bdeef86eac0b0bd9b81bae6103b44292fec16c6d8f115a06355086d890fd9f",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/numberfields/galoisresolvents.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 3,
@@ -15358,8 +15366,10 @@
   {
    "module": "sympy.polys.numberfields.galoisgroups",
    "sha256": "738b3acff984524a1629ecc5adf8ca894dad667127c51e26d4b61a6a089c567a",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/numberfields/galoisgroups.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 5,
@@ -15513,8 +15523,10 @@
   {
    "module": "sympy.polys.numberfields.resolvent_lookup",
    "sha256": "a9f2cd28ecff5a3b57c295657f3cbc1240f8830d767a9c7d9e913d1ec8f221d8",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/numberfields/resolventlookup.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -16008,9 +16020,11 @@
   {
    "module": "sympy.polys.polymatrix",
    "sha256": "88d6be13222bcefed979731a3ff3e3a2380d776f409c8a2d644dcd785dad7b8e",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "PolyMatrix",
-   "sources": [],
+   "sources": [
+    "polys/polymatrix.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 5,
@@ -16816,6 +16830,7 @@
    "sha256": "a1116538b85c5f3e4e2a373d490b4eb8484cbda72f907c93484aa193a4a78756",
    "status": "partial",
    "sources": [
+    "polys/sqfreetools.ts",
     "polys/sympoly.ts"
    ],
    "selectedForExtraction": true,
@@ -18256,6 +18271,7 @@
    "sha256": "8cc3908a00ec70b4eb14f5ef1eaa353835511bd06a0b8ca7dfc123e26e963dad",
    "status": "partial",
    "sources": [
+    "sets/setexpr.ts",
     "sets/sets.ts"
    ],
    "selectedForExtraction": true,
@@ -21316,8 +21332,10 @@
   {
    "module": "sympy.tensor.toperators",
    "sha256": "7e7893529758cf43afb4d9c582b1c835e757f3a17155cc5f2a3f65fe5d69f51c",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "tensor/toperators.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 12,

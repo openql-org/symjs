@@ -317,3 +317,9 @@ reason) or unassessed. Mathematical content is never excluded.
 The condition-level scope and remaining limitations are maintained in
 [`compat/capabilities.json`](../compat/capabilities.json). API existence and
 source-file size do not establish full SymPy compatibility.
+
+The generated `combinatorics/galoisdata.ts` and
+`polys/numberfields/resolventlookupdata.ts` contain the permutation generators
+and exact resolvent coefficient tables of SymPy 1.14. Regenerate them with
+`python3 packages/symjs/scripts/generate-galois.py`; the algorithms live in
+`combinatorics/galois.ts` and `polys/numberfields/galoisgroups.ts`.

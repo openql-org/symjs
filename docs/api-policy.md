@@ -15,6 +15,8 @@ Status: implemented.
 9. **Results are never `undefined` or `null`** (see below).
 10. **One definition per name.** A name means the same function or class in every entry point that exports it. Where SymPy has one name in two modules (`is_palindromic` of an integer in `ntheory` and of a sequence in `utilities.iterables`, `connected_components` of a graph and the `Matrix` method), the one function accepts both forms. `factorint` is exported by `ntheory` and the root entry only (the core entry keeps the deprecated `factorInt`).
 
+SymPy's `sympy.sets.setexpr.SetExpr` is exported as `SetExpression`, the pointwise set-arithmetic wrapper. `SetExpr` remains the base class of sets; these are distinct types with distinct names.
+
 ## Results of the public computation API
 
 The public computation API of symjs does not represent a missing result with `undefined` or `null`. An unevaluated computation is kept as an expression; an undecidable answer, a mismatch and the absence of a solution each have a type with a meaning. Invalid input is reported as a clear error according to the contract of each API.
