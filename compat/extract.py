@@ -1657,6 +1657,23 @@ def public_api_reason(fn, globs, extra_public):
     return None
 
 
+def expand_starred(call, globs):
+    """The call with each *argument that is a tuple or list replaced by its items (X[0], X[1], ...)."""
+    args = []
+    for a in call.args:
+        if not isinstance(a, ast.Starred):
+            args.append(a)
+            continue
+        try:
+            value = eval(compile(ast.Expression(a.value), "<starred>", "eval"), globs)
+        except Exception:
+            return call
+        if not isinstance(value, (tuple, list)):
+            return call
+        args.extend(ast.Subscript(value=a.value, slice=ast.Constant(i), ctx=ast.Load()) for i in range(len(value)))
+    return ast.fix_missing_locations(ast.Call(func=call.func, args=args, keywords=call.keywords))
+
+
 def serialize_call(record, call, globs, assumed, pre_args=None, printed=False):
     """Freeze a call's receiver, arguments and assumptions at the current state."""
     DUMMY_IDS.clear()
@@ -1885,6 +1902,13 @@ def main(dst, baseline_path=None):
                         signal.alarm(0)
                     continue
                 call = tree.body
+                # print(G) of a name saved from a call: the printed text of the saved result
+                printed_name = (TEXT_OUTPUT and modname not in VALUE_EXAMPLE_MODULES and isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "print"
+                                and len(call.args) == 1 and not call.keywords and isinstance(call.args[0], ast.Name)
+                                and call.args[0].id in bindings and ex.want.strip())
+                if printed_name:
+                    call = call.args[0]
+                    tree = ast.Expression(call)
                 bound = bindings.get(call.id) if isinstance(call, ast.Name) and ex.want.strip() else None
                 if modname in TUPLE_ASSIGNMENT_MODULES and isinstance(call, ast.Tuple) and ex.want.strip():
                     saved = [bindings.get(n.id) if isinstance(n, ast.Name) else None for n in call.elts]
@@ -1906,6 +1930,11 @@ def main(dst, baseline_path=None):
                            and len(call.args) == 1 and not call.keywords and isinstance(call.args[0], ast.Call))
                 if printed:
                     call = call.args[0]
+                    tree = ast.Expression(call)
+                printed = printed or bool(printed_name)
+                # a computed callable applied to unpacked arguments (R.root_lambdas[0](*X)): the arguments one by one
+                if bound is None and isinstance(call, ast.Call) and not isinstance(call.func, (ast.Name, ast.Attribute)):
+                    call = expand_starred(call, globs)
                     tree = ast.Expression(call)
                 if isinstance(call, ast.Call) and not any(isinstance(a, ast.Starred) for a in call.args):
                     if isinstance(call.func, ast.Name):

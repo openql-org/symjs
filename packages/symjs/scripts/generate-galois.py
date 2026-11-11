@@ -3,7 +3,6 @@ import json
 from pathlib import Path
 import sympy as sp
 from sympy.polys.numberfields.resolvent_lookup import resolvent_coeff_lambdas
-from sympy.combinatorics import galois
 
 assert sp.__version__ == '1.14.0'
 root = Path(__file__).resolve().parents[1] / 'src'
@@ -19,9 +18,3 @@ for (degree, number), coefficients in resolvent_coeff_lambdas.items():
         for fn in coefficients
     ]
 (root / 'polys/numberfields/resolventlookupdata.ts').write_text(header + json.dumps(resolvents, separators=(',', ':')) + ';\n')
-groups = []
-for degree in range(1, 7):
-    for name in getattr(galois, f'S{degree}TransitiveSubgroups'):
-        groups.append({'degree': degree, 'name': name.name, 'value': name.value,
-                       'generators': [p.array_form for p in name.get_perm_group().generators]})
-(root / 'combinatorics/galoisdata.ts').write_text(header + json.dumps(groups, indent=2) + ';\n')

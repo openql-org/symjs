@@ -3361,12 +3361,6 @@
 {"module":"sympy.polys.numberfields.tests.test_basis","category":"polys","test":"test_AlgebraicField_integral_basis","line":82,"src":"assert B0 == [k([1]), k([S.Half, S.Half])]","reason":"non-call-expression","count":1},
 {"module":"sympy.polys.numberfields.tests.test_basis","category":"polys","test":"test_AlgebraicField_integral_basis","line":83,"src":"assert B1 == [1, S.Half + alpha/2]","reason":"non-call-expression","count":1},
 {"module":"sympy.polys.numberfields.tests.test_basis","category":"polys","test":"test_AlgebraicField_integral_basis","line":84,"src":"assert B2 == [k.ext.field_element([1]),\n                  k.ext.field_element([S.Half, S.Half])]","reason":"non-call-expression","count":1},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","category":"polys","test":"test_tschirnhausen_transformation","line":33,"src":"assert field_isomorphism(K.ext, L.ext) is not None","reason":"unsupported-assertion","count":4},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","category":"polys","test":"test_galois_group_not_by_name","line":114,"src":"assert G == G_name.get_perm_group()","reason":"non-call-expression","count":6},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","category":"polys","test":"test__galois_group_degree_4_root_approx","line":128,"src":"assert _galois_group_degree_4_root_approx(Poly(T)) == (G, alt)","reason":"not-exported-api","count":5},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","category":"polys","test":"test__galois_group_degree_5_hybrid","line":133,"src":"assert _galois_group_degree_5_hybrid(Poly(T)) == (G, alt)","reason":"not-exported-api","count":5},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","category":"polys","test":"test_AlgebraicField_galois_group","line":139,"src":"assert G == S4TransitiveSubgroups.V","reason":"non-call-expression","count":1},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","category":"polys","test":"test_AlgebraicField_galois_group","line":143,"src":"assert G == S4TransitiveSubgroups.D4","reason":"non-call-expression","count":1},
 {"module":"sympy.polys.numberfields.tests.test_minpoly","category":"polys","test":"test_minimal_polynomial","line":126,"src":"assert mp == 25*x**4 + 5000*x**2 + 250016","reason":"non-call-expression","count":1},
 {"module":"sympy.polys.numberfields.tests.test_minpoly","category":"polys","test":"test_minimal_polynomial","line":130,"src":"assert mp == x**4 - 4*x**3 - 4*x**2 + 16*x - 8","reason":"non-call-expression","count":1},
 {"module":"sympy.polys.numberfields.tests.test_minpoly","category":"polys","test":"test_minimal_polynomial","line":134,"src":"assert mp == 8*x**4 - 16*x**3 + 4*x**2 + 4*x - 1","reason":"non-call-expression","count":1},
@@ -3487,7 +3481,9 @@
 {"module":"sympy.polys.numberfields.tests.test_utilities","category":"polys","test":"test_AlgIntPowers_02","line":38,"src":"assert computed == expected","reason":"non-call-expression","count":10},
 {"module":"sympy.polys.numberfields.tests.test_utilities","category":"polys","test":"test_coeff_search","line":48,"src":"assert C == [[1, 1], [1, 0], [1, -1], [0, 1], [2, 2], [2, 1], [2, 0], [2, -1], [2, -2], [1, 2], [1, -2], [0, 2], [3, 3]]","reason":"non-call-expression","count":1},
 {"module":"sympy.polys.numberfields.tests.test_utilities","category":"polys","test":"test_extract_fundamental_discriminant","line":69,"src":"assert D == D_expected","reason":"non-call-expression","count":9},
-{"module":"sympy.polys.numberfields.tests.test_utilities","category":"polys","test":"test_extract_fundamental_discriminant","line":70,"src":"assert F == F_expected","reason":"non-call-expression","count":9}
+{"module":"sympy.polys.numberfields.tests.test_utilities","category":"polys","test":"test_extract_fundamental_discriminant","line":70,"src":"assert F == F_expected","reason":"non-call-expression","count":9},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","category":"polys","test":"test__galois_group_degree_4_root_approx","line":128,"src":"assert _galois_group_degree_4_root_approx(Poly(T)) == (G, alt)","reason":"private-api","count":5},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","category":"polys","test":"test__galois_group_degree_5_hybrid","line":133,"src":"assert _galois_group_degree_5_hybrid(Poly(T)) == (G, alt)","reason":"private-api","count":5}
 ],"tests":[
 {"module":"sympy.polys.tests.test_appellseqs","test":"test_bernoulli_poly","parameter":0,"status":"completed"},
 {"module":"sympy.polys.tests.test_appellseqs","test":"test_bernoulli_c_poly","parameter":0,"status":"completed"},
@@ -5672,14 +5668,6 @@
 {"module":"sympy.polys.matrices.tests.test_xxm","test":"test_XXM_fflu","parameter":2,"status":"upstream-skip"},
 {"module":"sympy.polys.numberfields.tests.test_basis","test":"test_round_two","parameter":0,"status":"completed"},
 {"module":"sympy.polys.numberfields.tests.test_basis","test":"test_AlgebraicField_integral_basis","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_tschirnhausen_transformation","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_galois_group","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_galois_group_degree_out_of_bounds","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_galois_group_not_by_name","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_galois_group_not_monic_over_ZZ","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test__galois_group_degree_4_root_approx","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test__galois_group_degree_5_hybrid","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_AlgebraicField_galois_group","parameter":0,"status":"completed"},
 {"module":"sympy.polys.numberfields.tests.test_minpoly","test":"test_minimal_polynomial","parameter":0,"status":"completed"},
 {"module":"sympy.polys.numberfields.tests.test_minpoly","test":"test_issue_26903","parameter":0,"status":"completed"},
 {"module":"sympy.polys.numberfields.tests.test_minpoly","test":"test_issue_8353","parameter":0,"status":"completed"},
@@ -5792,5 +5780,13 @@
 {"module":"sympy.polys.numberfields.tests.test_utilities","test":"test_supplement_a_subspace_1","parameter":0,"status":"completed"},
 {"module":"sympy.polys.numberfields.tests.test_utilities","test":"test_supplement_a_subspace_2","parameter":0,"status":"completed"},
 {"module":"sympy.polys.numberfields.tests.test_utilities","test":"test_IntervalPrinter","parameter":0,"status":"completed"},
-{"module":"sympy.polys.numberfields.tests.test_utilities","test":"test_isolate","parameter":0,"status":"completed"}
+{"module":"sympy.polys.numberfields.tests.test_utilities","test":"test_isolate","parameter":0,"status":"completed"},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_tschirnhausen_transformation","parameter":0,"status":"completed"},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_galois_group","parameter":0,"status":"completed"},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_galois_group_degree_out_of_bounds","parameter":0,"status":"completed"},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_galois_group_not_by_name","parameter":0,"status":"completed"},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_galois_group_not_monic_over_ZZ","parameter":0,"status":"completed"},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test__galois_group_degree_4_root_approx","parameter":0,"status":"completed"},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test__galois_group_degree_5_hybrid","parameter":0,"status":"completed"},
+{"module":"sympy.polys.numberfields.tests.test_galoisgroups","test":"test_AlgebraicField_galois_group","parameter":0,"status":"completed"}
 ]}

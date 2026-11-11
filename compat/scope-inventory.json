@@ -5628,40 +5628,15 @@
   {
    "module": "sympy.combinatorics.galois",
    "sha256": "7297768876927629b9fb7f9caaf939f183fe02e4ba0af25e09d516a6239d2192",
-   "status": "partial",
-   "note": "transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)",
+   "status": "complete",
    "sources": [
     "combinatorics/galois.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "A4_in_S6",
-      "A4xC2",
-      "G18",
-      "G36m",
-      "G36p",
-      "G72",
-      "M20",
-      "PGL2F5",
-      "PSL2F5",
-      "S1TransitiveSubgroups.get_perm_group",
-      "S2TransitiveSubgroups.get_perm_group",
-      "S3TransitiveSubgroups.get_perm_group",
-      "S3_in_S6",
-      "S4TransitiveSubgroups.get_perm_group",
-      "S4m",
-      "S4p",
-      "S4xC2",
-      "S5TransitiveSubgroups.get_perm_group",
-      "S6TransitiveSubgroups.get_perm_group",
-      "find_transitive_subgroups_of_S6",
-      "four_group"
-     ],
-     "unresolvedBases": [
-      "enum.Enum"
-     ]
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
     },
     "doctests": {
      "pass": true,
@@ -5674,16 +5649,14 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "testModule": "sympy.combinatorics.tests.test_galois",
      "testFile": "sympy/combinatorics/tests/test_galois.py",
      "inCorpus": true,
-     "caseCount": 62,
+     "caseCount": 78,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "unsupported-assertion": 16
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -6040,11 +6013,8 @@
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "set_alternating_group_properties",
-      "set_symmetric_group_properties"
-     ],
+     "pass": true,
+     "missingNames": [],
      "unresolvedBases": []
     },
     "doctests": {
@@ -91545,7 +91515,7 @@
        "remaining": [
         "General algebraic presentations and RootOf embeddings",
         "Unbounded primitive-element search",
-        "Galois groups and maximal orders"
+        "Maximal orders"
        ]
       }
      ]
@@ -91615,38 +91585,23 @@
    "module": "sympy.polys.numberfields.galois_resolvents",
    "sha256": "38bdeef86eac0b0bd9b81bae6103b44292fec16c6d8f115a06355086d890fd9f",
    "status": "partial",
+   "note": "SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_galois_resolvents.py); Resolvent and the lookup resolvents are exercised through test_galoisgroups and the doctests.",
    "sources": [
     "polys/numberfields/galoisresolvents.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "GaloisGroupException",
-      "Resolvent",
-      "Resolvent.approximate_roots_of_poly",
-      "Resolvent.eval_for_poly",
-      "Resolvent.get_prec",
-      "Resolvent.round_mpf",
-      "Resolvent.round_roots_to_integers_for_poly",
-      "ResolventException",
-      "define_resolvents",
-      "generate_lambda_lookup",
-      "s_vars",
-      "sparse_symmetrize_resolvent_coeffs",
-      "wrap"
-     ],
+     "pass": true,
+     "missingNames": [],
      "unresolvedBases": []
     },
     "doctests": {
-     "pass": false,
-     "caseCount": 0,
+     "pass": true,
+     "caseCount": 3,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
-     "disallowedOmissions": {
-      "non-call-expression": 3
-     },
+     "disallowedOmissions": {},
      "unaccountedExamples": 0,
      "notSelected": false
     },
@@ -91662,14 +91617,14 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": true,
-     "hasNote": false,
-     "note": "",
+     "pass": false,
+     "hasNote": true,
+     "note": "SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_galois_resolvents.py); Resolvent and the lookup resolvents are exercised through test_galoisgroups and the doctests.",
      "capabilities": []
     }
    },
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 3,
    "declaredPublicNames": [
     "GaloisGroupException",
@@ -91691,60 +91646,42 @@
   {
    "module": "sympy.polys.numberfields.galoisgroups",
    "sha256": "738b3acff984524a1629ecc5adf8ca894dad667127c51e26d4b61a6a089c567a",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "polys/numberfields/galoisgroups.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "tschirnhausen_transformation"
-     ],
+     "pass": true,
+     "missingNames": [],
      "unresolvedBases": []
     },
     "doctests": {
-     "pass": false,
-     "caseCount": 2,
+     "pass": true,
+     "caseCount": 5,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
-     "disallowedOmissions": {
-      "non-call-expression": 1,
-      "not-exported-api": 2
-     },
+     "disallowedOmissions": {},
      "unaccountedExamples": 0,
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "testModule": "sympy.polys.numberfields.tests.test_galoisgroups",
      "testFile": "sympy/polys/numberfields/tests/test_galoisgroups.py",
      "inCorpus": true,
-     "caseCount": 51,
-     "gapCount": 36,
+     "caseCount": 63,
+     "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 8,
-      "not-exported-api": 10,
-      "unsupported-assertion": 4
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "hasNote": false,
      "note": "",
-     "capabilities": [
-      {
-       "area": "Number fields",
-       "remaining": [
-        "General algebraic presentations and RootOf embeddings",
-        "Unbounded primitive-element search",
-        "Galois groups and maximal orders"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -92079,6 +92016,7 @@
    "module": "sympy.polys.numberfields.resolvent_lookup",
    "sha256": "a9f2cd28ecff5a3b57c295657f3cbc1240f8830d767a9c7d9e913d1ec8f221d8",
    "status": "partial",
+   "note": "SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_resolvent_lookup.py); the table is exercised through test_galoisgroups.",
    "sources": [
     "polys/numberfields/resolventlookup.ts"
    ],
@@ -92110,9 +92048,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": true,
-     "hasNote": false,
-     "note": "",
+     "pass": false,
+     "hasNote": true,
+     "note": "SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_resolvent_lookup.py); the table is exercised through test_galoisgroups.",
      "capabilities": []
     }
    },
@@ -92171,7 +92109,7 @@
        "remaining": [
         "General algebraic presentations and RootOf embeddings",
         "Unbounded primitive-element search",
-        "Galois groups and maximal orders"
+        "Maximal orders"
        ]
       }
      ]

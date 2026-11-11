@@ -73,7 +73,6 @@
 {"module":"sympy.combinatorics.tests.test_free_groups","category":"combinatorics","test":"test_FreeGroupElm_comparison","line":185,"src":"assert x**2 <= y**2","reason":"unsupported-assertion","count":1},
 {"module":"sympy.combinatorics.tests.test_free_groups","category":"combinatorics","test":"test_FreeGroupElm_comparison","line":186,"src":"assert x**2 <= x**2","reason":"unsupported-assertion","count":1},
 {"module":"sympy.combinatorics.tests.test_free_groups","category":"combinatorics","test":"test_FreeGroupElm_comparison","line":189,"src":"assert x > x**-1","reason":"unsupported-assertion","count":1},
-{"module":"sympy.combinatorics.tests.test_galois","category":"combinatorics","test":"test_S6_transitive_subgroups","line":77,"src":"assert G.is_subgroup(A6) is alt","reason":"unsupported-assertion","count":16},
 {"module":"sympy.combinatorics.tests.test_generators","category":"combinatorics","test":"test_generators","line":8,"src":"assert list(cyclic(6)) == [\n        Permutation([0, 1, 2, 3, 4, 5]),\n        Permutation([1, 2, 3, 4, 5, 0]),\n        Permutation([2, 3, 4, 5, 0, 1]),\n        Permutation([3, 4, 5, 0, 1, 2]),\n        Permutation([4, 5, 0, 1, 2, 3]),\n        Permutation([5, 0, 1, 2, 3, 4])]","reason":"stateful-iterator-input","count":1},
 {"module":"sympy.combinatorics.tests.test_generators","category":"combinatorics","test":"test_generators","line":16,"src":"assert list(cyclic(10)) == [\n        Permutation([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]),\n        Permutation([1, 2, 3, 4, 5, 6, 7, 8, 9, 0]),\n        Permutation([2, 3, 4, 5, 6, 7, 8, 9, 0, 1]),\n        Permutation([3, 4, 5, 6, 7, 8, 9, 0, 1, 2]),\n        Permutation([4, 5, 6, 7, 8, 9, 0, 1, 2, 3]),\n        Permutation([5, 6, 7, 8, 9, 0, 1, 2, 3, 4]),\n        Permutation([6, 7, 8, 9, 0, 1, 2, 3, 4, 5]),\n        Permutation([7, 8, 9, 0, 1, 2, 3, 4, 5, 6]),\n        Permutation([8, 9, 0, 1, 2, 3, 4, 5, 6, 7]),\n        Permutation([9, 0, 1, 2, 3, 4, 5, 6, 7, 8])]","reason":"stateful-iterator-input","count":1},
 {"module":"sympy.combinatorics.tests.test_generators","category":"combinatorics","test":"test_generators","line":28,"src":"assert list(alternating(4)) == [\n        Permutation([0, 1, 2, 3]),\n        Permutation([0, 2, 3, 1]),\n        Permutation([0, 3, 1, 2]),\n        Permutation([1, 0, 3, 2]),\n        Permutation([1, 2, 0, 3]),\n        Permutation([1, 3, 2, 0]),\n        Permutation([2, 0, 1, 3]),\n        Permutation([2, 1, 3, 0]),\n        Permutation([2, 3, 0, 1]),\n        Permutation([3, 0, 2, 1]),\n        Permutation([3, 1, 0, 2]),\n        Permutation([3, 2, 1, 0])]","reason":"stateful-iterator-input","count":1},
@@ -499,9 +498,6 @@
 {"module":"sympy.combinatorics.tests.test_free_groups","test":"test_FreeGroup_exponents","parameter":0,"status":"completed"},
 {"module":"sympy.combinatorics.tests.test_free_groups","test":"test_FreeGroup_generators","parameter":0,"status":"completed"},
 {"module":"sympy.combinatorics.tests.test_free_groups","test":"test_FreeGroupElm_words","parameter":0,"status":"completed"},
-{"module":"sympy.combinatorics.tests.test_galois","test":"test_four_group","parameter":0,"status":"completed"},
-{"module":"sympy.combinatorics.tests.test_galois","test":"test_M20","parameter":0,"status":"completed"},
-{"module":"sympy.combinatorics.tests.test_galois","test":"test_S6_transitive_subgroups","parameter":0,"status":"completed"},
 {"module":"sympy.combinatorics.tests.test_generators","test":"test_generators","parameter":0,"status":"completed"},
 {"module":"sympy.combinatorics.tests.test_graycode","test":"test_graycode","parameter":0,"status":"completed"},
 {"module":"sympy.combinatorics.tests.test_graycode","test":"test_live_issue_117","parameter":0,"status":"completed"},
@@ -639,5 +635,8 @@
 {"module":"sympy.combinatorics.tests.test_util","test":"test_orbits_transversals_from_bsgs","parameter":0,"status":"completed"},
 {"module":"sympy.combinatorics.tests.test_util","test":"test_handle_precomputed_bsgs","parameter":0,"status":"completed"},
 {"module":"sympy.combinatorics.tests.test_util","test":"test_base_ordering","parameter":0,"status":"completed"},
-{"module":"sympy.combinatorics.tests.test_util","test":"test_remove_gens","parameter":0,"status":"completed"}
+{"module":"sympy.combinatorics.tests.test_util","test":"test_remove_gens","parameter":0,"status":"completed"},
+{"module":"sympy.combinatorics.tests.test_galois","test":"test_four_group","parameter":0,"status":"completed"},
+{"module":"sympy.combinatorics.tests.test_galois","test":"test_M20","parameter":0,"status":"completed"},
+{"module":"sympy.combinatorics.tests.test_galois","test":"test_S6_transitive_subgroups","parameter":0,"status":"completed"}
 ]}

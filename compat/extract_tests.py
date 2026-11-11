@@ -153,8 +153,21 @@ def test_alarm(signum, frame):
         raise TestDeadline() from None
 
 
+OPERATORS = {"==": operator.eq, "!=": operator.ne, "is": operator.is_, "is not": operator.is_not,
+             "truthy": lambda a, b: bool(a), "falsy": lambda a, b: not a}
+
+
 def call_hook(name, *args):
     return ast.Call(ast.Attribute(ast.Name("_compat_capture", ast.Load()), name, ast.Load()), list(args), [])
+
+
+def asserted_name(test):
+    """The name an assertion tests directly: G in `assert G == H`, `assert not G`, `assert G is None`."""
+    if isinstance(test, ast.UnaryOp) and isinstance(test.op, ast.Not):
+        test = test.operand
+    elif isinstance(test, ast.Compare) and len(test.ops) == 1:
+        test = test.left
+    return test.id if isinstance(test, ast.Name) else None
 
 
 def raises_call(node):
@@ -170,6 +183,8 @@ class Instrument(ast.NodeTransformer):
         self.source = source
         self.sites = []
         self.owner = "<module>"
+        # Names that assertions of the current function test directly (assert G == ...).
+        self.asserted = set()
 
     def site(self, node):
         index = len(self.sites)
@@ -178,10 +193,12 @@ class Instrument(ast.NodeTransformer):
         return ast.Constant(index)
 
     def visit_FunctionDef(self, node):
-        before = self.owner
+        before, asserted = self.owner, self.asserted
         self.owner = node.name
+        self.asserted = {name for child in ast.walk(node) if isinstance(child, ast.Assert)
+                         for name in [asserted_name(child.test)] if name}
         self.generic_visit(node)
-        self.owner = before
+        self.owner, self.asserted = before, asserted
         return node
 
     def measured(self, node, site):
@@ -197,6 +214,27 @@ class Instrument(ast.NodeTransformer):
             return ast.copy_location(call_hook("synthetic", site, ast.Constant(name), receiver, *args), node)
         return None
 
+    def visit_Assign(self, node):
+        # A call assigned to names, e.g. `G, alt = galois_group(f)`: its measured
+        # record is kept so that a later assertion about these names can replay it.
+        self.generic_visit(node)
+        target = node.targets[0] if len(node.targets) == 1 else None
+        names = ([target.id] if isinstance(target, ast.Name) else
+                 [t.id for t in target.elts] if isinstance(target, (ast.Tuple, ast.List))
+                 and all(isinstance(t, ast.Name) for t in target.elts) else None)
+        call = node.value
+        if (names is None or not self.asserted.intersection(names) or len(set(names)) != len(names)
+                or not isinstance(call, ast.Call) or raises_call(call)
+                or any(isinstance(a, ast.Starred) for a in call.args) or any(k.arg is None for k in call.keywords)):
+            return node
+        unpacked = ast.Constant((tuple(names), not isinstance(target, ast.Name)))
+        if isinstance(call.func, ast.Attribute):
+            prepared = call_hook("bind_method", unpacked, call.func.value, ast.Constant(call.func.attr))
+        else:
+            prepared = call_hook("bind_function", unpacked, call.func)
+        node.value = ast.copy_location(ast.Call(prepared, call.args, call.keywords), call)
+        return node
+
     def visit_Assert(self, node):
         site = self.site(node)
         lhs, rhs, op = node.test, ast.Constant(True), "truthy"
@@ -205,13 +243,19 @@ class Instrument(ast.NodeTransformer):
         elif isinstance(lhs, ast.Compare):
             if len(lhs.ops) == 1 and isinstance(lhs.ops[0], (ast.Eq, ast.NotEq)):
                 lhs, rhs, op = lhs.left, lhs.comparators[0], "==" if isinstance(lhs.ops[0], ast.Eq) else "!="
-            elif (len(lhs.ops) == 1 and isinstance(lhs.ops[0], ast.Is)
+            elif len(lhs.ops) == 1 and isinstance(lhs.ops[0], ast.Is):
+                # The right-hand side must evaluate to True, False or None (checked when run).
+                lhs, rhs, op = lhs.left, lhs.comparators[0], "is"
+            elif (len(lhs.ops) == 1 and isinstance(lhs.ops[0], ast.IsNot)
                   and isinstance(lhs.comparators[0], ast.Constant)
                   and any(lhs.comparators[0].value is v for v in (True, False, None))):
-                lhs, rhs, op = lhs.left, lhs.comparators[0], "is"
+                lhs, rhs, op = lhs.left, lhs.comparators[0], "is not"
             else:
                 return [ast.copy_location(ast.Expr(call_hook("omit", site, ast.Constant("unsupported-assertion"))), node), node]
         measured = self.measured(lhs, site)
+        if measured is None and isinstance(lhs, ast.Name):
+            node.test = ast.copy_location(call_hook("check_bound", site, ast.Constant(op), ast.Constant(lhs.id), lhs, rhs), node.test)
+            return node
         if measured is None:
             return [ast.copy_location(ast.Expr(call_hook("omit", site, ast.Constant("non-call-expression"))), node), node]
         node.test = ast.copy_location(call_hook("check", site, ast.Constant(op), measured, rhs), node.test)
@@ -292,6 +336,8 @@ class Capture:
         self.events = []
         self.pending = {}
         self.exceptions = {}
+        # name -> (test, record, result object, its str when assigned)
+        self.bound = {}
 
     def metadata(self, site):
         return {"module": self.module, "category": self.category, "test": self.test,
@@ -315,6 +361,9 @@ class Capture:
                 return {"reason": "test-utility"}
             else:
                 module = getattr(function, "__module__", "") or ""
+                if (name.startswith("_") and module.startswith("sympy.") and ".tests." not in module
+                        and not module.startswith("sympy.testing.")):
+                    return {"reason": "private-api"}
                 if (not module.startswith("sympy.") or ".tests." in module
                         or module.startswith("sympy.testing.") or name not in public_names(module)):
                     return {"reason": "not-exported-api"}
@@ -389,12 +438,58 @@ class Capture:
             case["text"] = True
         self.events.append((site, case))
 
+    def bind(self, targets, receiver, name, function, args, kwargs):
+        record = self.snapshot(None, name, receiver, args, kwargs, function=function)
+        value = function(*args, **kwargs)
+        names, unpacked = targets
+        if not unpacked:
+            values = [(None, value)]
+        elif isinstance(value, (tuple, list)) and len(value) == len(names):
+            values = list(enumerate(value))
+        else:
+            return value
+        for (pick, item), target in zip(values, names):
+            try:
+                text = str(item)
+            except Exception:
+                continue
+            entry = record if pick is None or "reason" in record else {**record, "pick": pick}
+            self.bound[target] = (self.test, entry, item, text)
+        return value
+
+    def bind_function(self, names, function):
+        name = getattr(function, "__name__", "")
+        if not name:
+            return function
+        return lambda *args, **kw: self.bind(names, None, name, function, args, kw)
+
+    def bind_method(self, names, receiver, name):
+        function = getattr(receiver, name)
+        if isinstance(receiver, types.ModuleType):
+            return self.bind_function(names, function)
+        return lambda *args, **kw: self.bind(names, receiver, "." + name, function, args, kw)
+
+    def check_bound(self, site, op, name, value, rhs):
+        """An assertion about a name assigned from a call: the call is replayed only if the name
+        still refers to the unchanged object that the call returned."""
+        test, record, item, text = self.bound.get(name, (None, None, None, None))
+        try:
+            unchanged = test == self.test and item is value and str(value) == text
+        except Exception:
+            unchanged = False
+        if not unchanged:
+            self.omit(site, "non-call-expression")
+            return OPERATORS[op](value, rhs)
+        self.pending[site] = copy.deepcopy(record)
+        return self.check(site, op, value, rhs)
+
     def check(self, site, op, lhs, rhs):
         record = self.pending.pop(site)
-        result = {"==": operator.eq, "!=": operator.ne, "is": operator.is_,
-                  "truthy": lambda a, b: bool(a), "falsy": lambda a, b: not a}[op](lhs, rhs)
+        result = OPERATORS[op](lhs, rhs)
         if op in ("truthy", "falsy") and not isinstance(lhs, (bool, sympy.logic.boolalg.BooleanAtom)):
             self.omit(site, "non-boolean-assertion")
+        elif op == "is" and not any(rhs is v for v in (True, False, None)):
+            self.omit(site, "unsupported-assertion")
         elif not result:
             self.omit(site, "reference-assertion-failed")
         else:
@@ -560,6 +655,7 @@ def execute_source(source, module, category, filename, timeout=extract.ALARM_SEC
                 continue
             for index, kwargs in enumerate(parameters(function)):
                 capture.test = name
+                capture.bound.clear()
                 reason = kwargs.pop("_compat_skip", None)
                 start = len(capture.events)
                 sympy.Dummy._count = int.from_bytes(hashlib.sha256(f"{module}:{name}:{index}".encode()).digest()[:6], "big")
