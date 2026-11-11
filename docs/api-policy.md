@@ -52,6 +52,22 @@ The policy is enforced by:
 
 Renamed exports keep their old name as a `@deprecated` alias during 0.x; exports classified as internal are likewise deprecated during 0.x and removed from the entry points in 1.0. The public API is recorded in [packages/symjs/api-report.md](../packages/symjs/api-report.md) (every export of every entry point with its kind and level, from the `@experimental` and `@deprecated` JSDoc tags), generated and checked by `tests/api-report.test.ts`; changes to it are reviewed with every change.
 
+The scope inventory uses [compat/api-members.json](../compat/api-members.json),
+generated from every package entry point by `compat/api-members.ts`. It records
+exports, inherited prototype members, accessors and static members without
+constructing objects or invoking getters. Regenerate it with
+`UPDATE_API_MEMBERS=1 npx vitest run compat/scope.test.ts -t 'generates a deterministic'`,
+then run `python3 compat/inventory.py`. The scope tests check both artifacts for
+staleness. The harness's `PUBLIC_ALIASES`, `MEMBER_FUNCTIONS`,
+`MATRIX_MEMBER_ALIASES` and `ATTRIBUTE_FUNCTIONS` tables specify the documented
+function-first counterparts for expression and matrix methods and attributes;
+an unrelated export with the same name does not establish a class member.
+Python protocol hooks are excluded from the inventory contract except for
+arithmetic and comparison operators mapped by the harness. Doctest and unit-test
+omission allowlists are explicit in `compat/inventory.py`; unrecognized reasons
+prevent a module from being complete. `compat/capabilities.json` associates each
+remaining limitation with explicit module names or package prefixes.
+
 Notes on the implementation:
 
 - Introspection follows the function-first convention: `canonicalRelation(r)` is `Relational.canonical`; `ranges(indexed)` is `Indexed.ranges`; `nargs(f)` returns the set of allowed argument counts; `variables(e)`, `hasFiniteLimits(e)` and `hasReversedLimits(e)` inspect sums, products and integrals. `SymFunction('f', { nargs: [1, 2] })` enforces its declared arities. Keeping the `nargs` set construction in the sets entry avoids importing sets into the core.
