@@ -229,7 +229,7 @@ Runtime-specific backends, source-code generation for other languages and parser
 - Rendering of plots and diagrams: the plotting backends (Matplotlib, pyglet), `show`/`save`, and `preview_diagram`; `@symjs/symjs/plotting` computes the plot data and `categories` produces the Xy-pic text for connector packages
 - The TensorFlow back end of `lambdify`
 - Printers and wrappers that generate or compile Python code: `pycode`, the NumPy printer, `lambdarepr`, the `python` printer and `autowrap`
-- Source-code generation for other languages: the code printers (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB and their `codeprinter` base), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`
+- Source-code generation for other languages: the code printers (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB and their `codeprinter` base), `sympy.codegen` (including `rewriting`, `approximations` and `algorithms`; the math functions of `sympy.codegen.cfunctions` stay in scope) and `sympy.utilities.codegen`
 - Parsers for other input languages: Maxima, Autolev, C and Fortran, and `sympy.parsing.sym_expr`
 - Python-runtime tooling without mathematical content: test runners and test helpers, caching and dispatch decorators, compilation helpers, package metadata, the gmpy2/python-flint ground-type back ends, bindings to external SAT solvers (MiniSat, pycosat, Z3), typing protocols, REPL and display helpers
 
@@ -237,6 +237,7 @@ Runtime-specific backends, source-code generation for other languages and parser
 
 Modules that are not ported yet but stay in scope:
 
+- `sympy.codegen.cfunctions` (`expm1`, `log1p`, `exp2`, `log2`, `fma`, `log10`, `Sqrt`, `Cbrt`, `hypot`, `isnan`, `isinf`): base
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License

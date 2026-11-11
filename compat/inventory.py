@@ -427,6 +427,7 @@ CORRESPONDENCES = {
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
 NOT_IMPLEMENTED = {
+    'sympy.codegen.cfunctions': 'base module (planned): expm1, log1p, exp2, log2, fma, log10, Sqrt, Cbrt, hypot, isnan, isinf',
     'sympy.combinatorics.galois': 'transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)',
     'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
     'sympy.integrals.quadrature': 'Gauss quadrature nodes and weights',
@@ -856,7 +857,7 @@ def build_inventory(root):
         if (source / candidate).is_file():
             counterpart.append(candidate)
         counterpart = sorted({p for p in counterpart if (source / p).is_file()})
-        reason = next((why for prefix, why in EXCLUSIONS.items() if module == prefix or module.startswith(prefix + '.')), None)
+        reason = None if module in NOT_IMPLEMENTED or module in CORRESPONDENCES else next((why for prefix, why in EXCLUSIONS.items() if module == prefix or module.startswith(prefix + '.')), None)
         package = next((p for p in sorted(NOT_IMPLEMENTED_PACKAGES, key=len, reverse=True) if module == p or module.startswith(p + '.')), None)
         status = 'excluded' if reason else 'partial' if counterpart else 'unimplemented' if module in NOT_IMPLEMENTED or package else 'unassessed'
         note = NOTES.get(module) or NOT_IMPLEMENTED.get(module) or (NOT_IMPLEMENTED_PACKAGES[package] if package and status == 'unimplemented' else '')

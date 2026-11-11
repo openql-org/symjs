@@ -4773,8 +4773,8 @@
   {
    "module": "sympy.codegen.cfunctions",
    "sha256": "8eb1566918eb427a47ceeebe9b016d77a711b292bc268ec1dd10e8d403a84cba",
-   "status": "excluded",
-   "reason": "Source-code generation for other languages is outside the project scope; expressions are evaluated in JavaScript directly (lambdify).",
+   "status": "unimplemented",
+   "note": "base module (planned): expm1, log1p, exp2, log2, fma, log10, Sqrt, Cbrt, hypot, isnan, isinf",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,

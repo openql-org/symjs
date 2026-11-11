@@ -256,7 +256,8 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 
 | SymPy module | symjs | Scope |
 |---|---|---|
-| `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams; drawing diagrams (`categories/diagram_drawing.py`) is not ported, like plotting |
+| `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams |
+| `categories/diagram_drawing.py` | `categories/diagram_drawing.ts` | diagram grid layout and Xy-pic text output; rendering is left to connector packages |
 | `combinatorics/perm_groups.py`, `named_groups.py` | `combinatorics/permgroups.ts`, `namedgroups.ts` | Schreier-Sims bases, membership, orbits, blocks, series, centralizers, cosets, SymmetricPermutationGroup, Coset and the named groups (AbelianGroup, RubikGroup, ...) |
 | `combinatorics/free_groups.py`, `fp_groups.py`, `coset_table.py`, `rewritingsystem.py`, `rewritingsystem_fsm.py` | `combinatorics/freegroups.ts`, `fpgroups.ts`, `cosettable.ts`, `rewritingsystem.ts` | free groups and words, finitely presented groups and subgroups, Todd-Coxeter coset enumeration (HLT, Felsch, modified), low index subgroups, Reidemeister-Schreier presentations, Knuth-Bendix rewriting systems with their reduction automata; subgroups of free groups use Stallings foldings (SymPy's membership test can fail to terminate) |
 | `combinatorics/homomorphisms.py`, `pc_groups.py`; `PermutationGroup.presentation`, `strong_presentation`, `polycyclic_group` | `combinatorics/fpgroups.ts` (GroupHomomorphism, shared with the finitely presented groups), `homomorphisms.ts`, `pcgroups.ts`, `permpresentation.ts` | group homomorphisms and isomorphisms, polycyclic groups and collectors, presentations of permutation groups (registered on PermutationGroup by the combinatorics entry) |
@@ -306,18 +307,21 @@ members are present, doctest and unit-test evidence passes strict gap and
 omission checks, and no limitation is recorded), partial (a symjs counterpart
 exists but one or more completeness criteria fail, with reasons in the inventory),
 unimplemented (with a note on where it is planned), excluded (with the
-reason) or unassessed. Mathematical content is excluded only as part of source-code generation or parsing for other languages.
+reason) or unassessed. Mathematical content is excluded only as part of source-code generation or parsing for other languages; the C math functions of `codegen/cfunctions.py` stay in base.
 
 | SymPy modules | Status |
 |---|---|
-| `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; all of `codegen/` (including `cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py`); `utilities/codegen.py` | out of scope: source-code generation for other languages |
+| `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; `codegen/` other than `cfunctions.py` (including `rewriting.py`, `approximations.py`, `algorithms.py`); `utilities/codegen.py` | out of scope: source-code generation for other languages |
+| `codegen/cfunctions.py` | base module (planned): `expm1`, `log1p`, `exp2`, `log2`, `fma`, `log10`, `Sqrt`, `Cbrt`, `hypot`, `isnan`, `isinf` |
 | `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
 | `printing/jscode.py` | out of scope: JavaScript source output (expressions are evaluated in JavaScript directly) |
 | `sandbox/` | out of scope: experimental modules outside the public SymPy API |
 | `parsing/maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | out of scope: parsers for other input languages |
 | `diffgeom/` | base subpath `@symjs/symjs/diffgeom`; `diffgeom.ts` and `rn.ts` mirror SymPy |
 | `physics/` | extend packages per field; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
-| `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | not ported (rendering and display) |
+| `plotting/` | base subpath `@symjs/symjs/plotting` computes plot data; the backends, `pygletplot`, `experimental_lambdify` and `show`/`save` are out of scope (rendering is done by connector packages) |
+| `categories/diagram_drawing.py` | in base `categories`; `preview_diagram` is out of scope (external TeX installation and viewer) |
+| `printing/preview.py` | out of scope: display through an external TeX installation and viewer |
 | test runners and helpers, caching, dispatch decorators, compilation helpers, release metadata, the gmpy2/python-flint ground-type back ends, SAT-solver bindings, typing protocols, REPL and display helpers | out of scope: Python-runtime tooling |
 
 The condition-level scope and remaining limitations are maintained in
