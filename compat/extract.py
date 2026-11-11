@@ -1254,6 +1254,10 @@ def ser(o):
     if isinstance(o, _GE):
         # an element x + y*I of ZZ_I or QQ_I
         return {"t": "GaussianElement", "domain": str(o.parent()), "x": ser(o.x), "y": ser(o.y)}
+    from sympy.polys.domains.expressiondomain import ExpressionDomain as _ExpressionDomain
+    if isinstance(o, _ExpressionDomain.Expression):
+        # an element of EX: the wrapped expression
+        return {"t": "EXElement", "ex": ser(o.ex)}
     if isinstance(o, _ANP):
         # an element of an algebraic number field: coefficients in the primitive element, its minimal polynomial
         return {"t": "ANP", "rep": [ser(c) for c in o.to_list()], "mod": [ser(c) for c in o.mod_to_list()], "dom": ser(o.dom)}

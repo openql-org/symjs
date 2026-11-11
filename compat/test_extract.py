@@ -35,6 +35,13 @@ class ExtractTests(unittest.TestCase):
         self.assertTrue(operators)
         self.assertEqual(extract.ser(operators[0])["cls"], "Operator")
 
+    def test_serializes_expression_domain_elements(self):
+        from sympy import EX, sin
+        x = sympy.Symbol("x")
+        tree = extract.ser(EX(sin(x) / x))
+        self.assertEqual(tree["t"], "EXElement")
+        self.assertEqual(tree["ex"], extract.ser(sin(x) / x))
+
     def test_sequence_base_serialization(self):
         from sympy.series.sequences import SeqExpr, SeqExprOp, sequence
         n = sympy.Symbol("n")

@@ -652,6 +652,8 @@ export function deserialize(tree: Tree): unknown {
       const dom = tree['domain'] === 'ZZ_I' ? sj.ZZ_I : sj.QQ_I;
       return dom.new(deserialize(tree['x'] as Tree), deserialize(tree['y'] as Tree));
     }
+    case 'EXElement':
+      return new sj.Expression(deserialize(tree['ex'] as Tree) as Expr);
     case 'ANP':
       // an element of an algebraic number field (coefficients in the primitive element, its minimal polynomial)
       return new sj.ANP((tree['rep'] as Tree[]).map(deserialize), (tree['mod'] as Tree[]).map(deserialize), deserializeDomain(tree['dom'] as Tree));
@@ -4794,7 +4796,9 @@ function autoAdapter(c: Case): Adapter | undefined {
   const conv = (x: unknown): unknown => {
     if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return (sj as unknown as Record<string, unknown>)[camel(x.name)];
     if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
-    const converted = toJs(x, numbers);
+    // The dense tools keep GF(p) coefficients as field elements: a zero-order derivative returns them unchanged.
+    const fieldElements = (v: unknown): unknown => v instanceof JsFFElement ? plain(v) : v instanceof JsList ? new JsList(v.items.map(fieldElements)) : v instanceof JsTuple ? new JsTuple(v.items.map(fieldElements)) : v;
+    const converted = toJs(c.module === 'sympy.polys.tests.test_densetools' ? fieldElements(x) : x, numbers);
     // The public sparse-ring APIs use Expr coefficients/exponents. Python's
     // ground-domain MPQ wrapper is only a serialized input representation.
     const rationalInputs = (v: unknown): unknown => {
@@ -4809,7 +4813,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (Array.isArray(v)) return v.map(polynomialInputs);
       return v;
     };
-    const normalized = c.module === 'sympy.polys.densebasic' || c.fn === '.to_sympy' ? polynomialInputs(converted) : converted;
+    const normalized = c.module === 'sympy.polys.densebasic' || c.module === 'sympy.polys.tests.test_densetools' || c.fn === '.to_sympy' ? polynomialInputs(converted) : converted;
     return expressionCoefficients.includes(c.module) || c.module.startsWith('sympy.polys.matrices.') ? rationalInputs(normalized) : normalized;
   };
   const dunder = c.fn === '.__str__' ? undefined : DUNDER[c.fn];

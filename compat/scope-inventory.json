@@ -83749,52 +83749,14 @@
    "module": "sympy.polys.densetools",
    "sha256": "034675135e9e571e7bef3c3ce26f0a6604f9a3a75b0d75e89d6f13a9f2122596",
    "status": "partial",
-   "note": "dense recursive list representation",
+   "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result), and RR fraction-field elements keep the denominator as given instead of making it monic.",
    "sources": [
     "polys/densetools.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "dmp_clear_denoms",
-      "dmp_compose",
-      "dmp_diff",
-      "dmp_diff_eval_in",
-      "dmp_diff_in",
-      "dmp_eval",
-      "dmp_eval_in",
-      "dmp_eval_tail",
-      "dmp_ground_content",
-      "dmp_ground_extract",
-      "dmp_ground_monic",
-      "dmp_ground_primitive",
-      "dmp_ground_trunc",
-      "dmp_integrate",
-      "dmp_integrate_in",
-      "dmp_lift",
-      "dmp_revert",
-      "dmp_shift",
-      "dmp_trunc",
-      "dup_clear_denoms",
-      "dup_compose",
-      "dup_content",
-      "dup_decompose",
-      "dup_diff",
-      "dup_eval",
-      "dup_extract",
-      "dup_integrate",
-      "dup_mirror",
-      "dup_monic",
-      "dup_primitive",
-      "dup_real_imag",
-      "dup_revert",
-      "dup_scale",
-      "dup_shift",
-      "dup_sign_variations",
-      "dup_transform",
-      "dup_trunc"
-     ],
+     "pass": true,
+     "missingNames": [],
      "unresolvedBases": []
     },
     "doctests": {
@@ -83812,19 +83774,18 @@
      "testModule": "sympy.polys.tests.test_densetools",
      "testFile": "sympy/polys/tests/test_densetools.py",
      "inCorpus": true,
-     "caseCount": 292,
-     "gapCount": 292,
+     "caseCount": 300,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 1,
-      "unserializable-input": 8
+      "not-exported-api": 1
      },
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": true,
-     "hasNote": false,
-     "note": "",
+     "pass": false,
+     "hasNote": true,
+     "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result), and RR fraction-field elements keep the denominator as given instead of making it monic.",
      "capabilities": []
     }
    },
