@@ -398,6 +398,22 @@ describe('equal_valued, is_same, dummy_eq, as_terms', () => {
     expect(sj.dummyEq(Ad(d, y), Ad(d, y))).toBe(true);
     expect(sj.dummyEq(Ad(d, x), M(2, x), x)).toBe(false);
   });
+  it('dummy_eq renames the one dummy of an expression containing a set', () => {
+    const n = new sj.Sym('n');
+    const m = new sj.Sym('m');
+    const d = new sj.Dummy('n');
+    const e = new sj.Dummy('e');
+    const image = (v: sj.Expr, w: sj.Expr) => new sj.ImageSet(v, sj.add(sj.mul(2, sj.pi, v), w), sj.Integers);
+    // the set variable is reported as free: the dummy is renamed to the unmatched symbol
+    expect(sj.dummyEq(image(d, x), image(n, x))).toBe(true);
+    expect(sj.dummyEq(image(d, x), image(m, x), m)).toBe(true);
+    // without a dummy, or with two, only the asDummy comparison remains
+    expect(sj.dummyEq(image(n, x), image(m, x))).toBe(false);
+    expect(sj.dummyEq(image(d, e), image(n, m))).toBe(false);
+    // two unmatched symbols leave the renaming ambiguous
+    expect(sj.dummyEq(image(d, x), image(n, y))).toBe(false);
+    expect(sj.dummyEq(x, image(d, x))).toBe(false);
+  });
   it('dummy_eq normalizes bound indices without inferring ambiguous free replacements', () => {
     const d = new sj.Dummy('d');
     const a = new sj.Sym('a');

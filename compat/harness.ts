@@ -2051,7 +2051,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (!['order', 'method'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const F = (args[0] as JsList).items.map(asExpr);
     const gens = args.slice(1).map(asSym);
-    return sj.groebner(F, gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]), (kw['order'] as sj.MonomialOrder | undefined) ?? 'lex');
+    // a Python ordering object (order=lex) selects the ordering by its alias
+    const o = kw['order'];
+    const order = typeof o === 'object' && o !== null && 'alias' in o ? o.alias : o;
+    return sj.groebner(F, gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]), (order as sj.MonomialOrder | undefined) ?? 'lex');
   },
   '.reduce': (args, kw, self) => {
     noKw(kw);

@@ -855,8 +855,13 @@ export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): bool
 
 /** SymPy dummy_eq: normalize bound indices, then rename a single free dummy. */
 export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
-  const a = asDummy(aIn);
-  const b = asDummy(bIn);
+  const a0 = sympify(aIn);
+  const b0 = sympify(bIn);
+  // asDummy does not rename the variables bound by sets (ImageSet, ConditionSet), and freeSymbols
+  // reports them: such expressions also compare by renaming the one dummy to the one unmatched symbol
+  if ((containsSet(a0) || containsSet(b0)) && renamedDummyEq(a0, b0, symbol)) return true;
+  const a = asDummy(a0);
+  const b = asDummy(b0);
   const dummies = [...freeSymbols(a)].filter((s) => s instanceof Dummy);
   if (dummies.length !== 1) return a.key === b.key;
   const d = at(dummies, 0);
@@ -868,6 +873,22 @@ export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
   }
   const fresh = new Dummy();
   return xreplaceM(a, [[d, fresh]]).key === xreplaceM(b, [[target, fresh]]).key;
+}
+
+const containsSet = (e: Expr): boolean => e.kind === 'Set' || e.args.some(containsSet);
+
+function renamedDummyEq(a: Expr, b: Expr, symbol?: Expr): boolean {
+  const dummies = [...freeSymbols(a)].filter((s) => s instanceof Dummy);
+  if (dummies.length === 0) return a.key === b.key;
+  if (dummies.length > 1) return false;
+  const d = at(dummies, 0);
+  let target = symbol;
+  if (!target) {
+    const cand = [...freeSymbols(b)].filter((s) => ![...freeSymbols(a)].some((t) => t.key === s.key));
+    if (cand.length !== 1) return false;
+    target = at(cand, 0);
+  }
+  return xreplaceM(a, [[d, target]]).key === b.key;
 }
 
 /**
