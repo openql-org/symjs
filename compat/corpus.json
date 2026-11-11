@@ -261036,7 +261036,51 @@
   },
   {
    "fn": ".gen",
-   "unsupportedArg": "SeqExpr",
+   "self": {
+    "t": "SeqExpr",
+    "gen": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    "limits": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.gen",
@@ -261044,7 +261088,51 @@
   },
   {
    "fn": ".interval",
-   "unsupportedArg": "SeqExpr",
+   "self": {
+    "t": "SeqExpr",
+    "gen": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    "limits": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.interval",
@@ -261052,7 +261140,51 @@
   },
   {
    "fn": ".length",
-   "unsupportedArg": "SeqExpr",
+   "self": {
+    "t": "SeqExpr",
+    "gen": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    "limits": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.length",
@@ -261060,7 +261192,83 @@
   },
   {
    "fn": ".gen",
-   "unsupportedArg": "SeqExprOp",
+   "self": {
+    "t": "SeqExprOp",
+    "args": [
+     {
+      "t": "SeqFormula",
+      "items": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     },
+     {
+      "t": "SeqPer",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.gen",
@@ -261068,7 +261276,83 @@
   },
   {
    "fn": ".interval",
-   "unsupportedArg": "SeqExprOp",
+   "self": {
+    "t": "SeqExprOp",
+    "args": [
+     {
+      "t": "SeqFormula",
+      "items": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     },
+     {
+      "t": "SeqPer",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.interval",
@@ -261076,7 +261360,83 @@
   },
   {
    "fn": ".length",
-   "unsupportedArg": "SeqExprOp",
+   "self": {
+    "t": "SeqExprOp",
+    "args": [
+     {
+      "t": "SeqFormula",
+      "items": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     },
+     {
+      "t": "SeqPer",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.length",
@@ -703936,76 +704296,6 @@
     "reason": "not-exported-api"
    },
    {
-    "module": "sympy.series.sequences",
-    "src": "EmptySequence",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "fib[:6] # supports slicing",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "for x in zip(range(10), fib): # supports iteration\n    print(x)",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "SeqPer((1, 2, 3), (-10, 10))._ith_point(0)",
-    "reason": "private-api"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "SeqPer((1, 2, 3), (-10, 10))._ith_point(5)",
-    "reason": "private-api"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "SeqPer((1, 2, 3), (0, oo))._ith_point(5)",
-    "reason": "private-api"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "SeqPer((1, 2, 3), (-oo, 0))._ith_point(5)",
-    "reason": "private-api"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "s[:]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "list(s)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "SeqFormula(n**2, (-oo, 0))[0:6]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "s[:]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "list(s)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "SeqPer((1, 2, 3), (-oo, 0))[0:6]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "SeqPer((k, k**2, k**3), (k, 0, oo))[0:6]",
-    "reason": "non-call-expression"
-   },
-   {
     "module": "sympy.concrete.gosper",
     "src": "_.subs(n, 2) == sum(f.subs(k, i) for i in [0, 1, 2])",
     "reason": "reference-exception"
@@ -708974,6 +709264,76 @@
     "module": "sympy.tensor.toperators",
     "src": "expr.replace_with_arrays({A(i): compA, B(i): compB}, [-j, i])",
     "reason": "unsupported-result-type"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "EmptySequence",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "fib[:6] # supports slicing",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "for x in zip(range(10), fib): # supports iteration\n    print(x)",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "SeqPer((1, 2, 3), (-10, 10))._ith_point(0)",
+    "reason": "private-api"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "SeqPer((1, 2, 3), (-10, 10))._ith_point(5)",
+    "reason": "private-api"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "SeqPer((1, 2, 3), (0, oo))._ith_point(5)",
+    "reason": "private-api"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "SeqPer((1, 2, 3), (-oo, 0))._ith_point(5)",
+    "reason": "private-api"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "s[:]",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "list(s)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "SeqFormula(n**2, (-oo, 0))[0:6]",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "s[:]",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "list(s)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "SeqPer((1, 2, 3), (-oo, 0))[0:6]",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "SeqPer((k, k**2, k**3), (k, 0, oo))[0:6]",
+    "reason": "non-call-expression"
    }
   ],
   "preservedReferences": [

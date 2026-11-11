@@ -11,13 +11,16 @@ import { NotImplementedError } from '../core/errors';
 import { dsolveSystem, registerSingleOdeSolver } from './odesystem';
 import { SubsNode } from '../core/subsnode';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Derivative, Rel, Sym, UndefFn } from '../core/nodes';
+import { Derivative, Dummy, Rel, Sym, UndefFn } from '../core/nodes';
+import { NoMatch } from '../core/truth';
+import { coeff } from '../core/methods';
+import { expand } from '../simplify/expand';
 import { Eq } from '../core/logic';
 import { at, cast, first } from '../core/guard';
 import { add, mul, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
-import { asEquation, linsolve } from './solve';
+import { asEquation, linearEqToMatrix, linsolve } from './solve';
 import { dsolveRaw } from './dsolve';
 
 /** Order of the highest derivative of f in e. */
@@ -29,6 +32,30 @@ export function odeOrder(e: Expr, f: UndefFn): number {
   };
   go(e);
   return n;
+}
+
+/** Classify a system by its derivative orders, coefficients and linearity. */
+export function classifySysode(eqs: readonly ExprLike[], funcs?: readonly UndefFn[]): Map<string, unknown> {
+  const equations = eqs.map((e) => expand(asEquation(e)));
+  const found = new Map<string, UndefFn>();
+  const visit = (e: Expr): void => {
+    if (e instanceof Derivative && e.expr instanceof UndefFn) found.set(e.expr.key, e.expr);
+    e.args.forEach(visit);
+  };
+  equations.forEach(visit);
+  const functions = funcs ?? [...found.values()];
+  if (!functions.length) throw new TypeError('classifySysode: no dependent functions');
+  const orders = new Map(functions.map((f) => [f, Math.max(...equations.map((e) => odeOrder(e, f)))]));
+  const jets = [...orders].flatMap(([f, order]) => Array.from({ length: order + 1 }, (_, k) => ({ f, k, jet: k === 0 ? f : new Derivative([f, first(f.args), sympify(k)]) })));
+  const variables = jets.map((_, i) => new Dummy(`jet${i}`));
+  const replacements = jets.map(({ jet }, i): [Expr, Expr] => [jet, at(variables, i)]);
+  const substituted = equations.map((e) => xreplace(e, replacements));
+  const coefficients = new Map<readonly [number, UndefFn, number], Expr>();
+  for (const [i, equation] of substituted.entries()) for (const [j, { f, k }] of jets.entries()) coefficients.set([i, f, k], coeff(equation, at(variables, j)));
+  return new Map<string, unknown>([
+    ['no_of_equation', equations.length], ['eq', equations], ['func', functions], ['order', orders],
+    ['func_coeff', coefficients], ['is_linear', linearEqToMatrix(substituted, variables) !== undefined], ['type_of_equation', NoMatch],
+  ]);
 }
 
 /**
@@ -54,7 +81,10 @@ const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Ar
  */
 export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: DsolveOptions = {}): Expr | Expr[] | Expr[][] {
   // a system of equations: a list of solutions, or a list of solution lists (SymPy)
-  if (isExprList(eqIn)) return dsolveSystem(eqIn, isExprList(fx) ? fx.map((f) => cast(f, UndefFn, 'unknown function')) : undefined);
+  if (isExprList(eqIn)) {
+    const solutions = dsolveSystem(eqIn, isExprList(fx) ? fx.map((f) => cast(f, UndefFn, 'unknown function')) : undefined, undefined, opts.ics === undefined ? undefined : new Map(opts.ics));
+    return solutions.length === 1 ? first(solutions) : solutions;
+  }
   if (isExprList(fx)) throw new TypeError('dsolve: the unknown function f(x) is required');
   return dsolveSingle(eqIn, fx ?? unknownFunction(asEquation(eqIn)), opts);
 }

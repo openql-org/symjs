@@ -1395,6 +1395,11 @@ export function cornacchia(a: ExprLike | bigint, b: ExprLike | bigint, m: ExprLi
   return cornacchiaImpl(asBig(a), asBig(b), asBig(m));
 }
 
+/** Length of the aperiodic part plus one period of (P + sqrt(D))/Q. */
+export function length(P: ExprLike | bigint, Q: ExprLike | bigint, D: ExprLike | bigint): number {
+  return continuedFractionPeriodic(asBig(P), asBig(Q), asBig(D)).reduce<number>((n, a) => n + (Array.isArray(a) ? a.length : 1), 0);
+}
+
 /**
  * SymPy `PQa(P_0, Q_0, D)`: the sequences (P_i, Q_i, a_i, A_i, B_i, G_i) of
  * the continued fraction of `(P_0 + sqrt(D))/Q_0`.
@@ -1459,9 +1464,11 @@ export function diopBfDN(DIn: ExprLike | bigint, NIn: ExprLike | bigint, t: Expr
   return sol;
 }
 
-/** The solutions (u, v) and (r, s) of x**2 - D*y**2 = N are in the same class (SymPy equivalent). */
-function equivalent(u: bigint, v: bigint, r: bigint, s: bigint, D: bigint, N: bigint): boolean {
-  return (u * r - D * v * s) % N === 0n && (u * s - v * r) % N === 0n;
+/** Whether two solutions of x**2 - D*y**2 = N belong to the same Pell class. */
+export function equivalent(u: ExprLike | bigint, v: ExprLike | bigint, r: ExprLike | bigint, s: ExprLike | bigint, D: ExprLike | bigint, N: ExprLike | bigint): boolean {
+  const [a, b, c, d, disc, norm] = [asBig(u), asBig(v), asBig(r), asBig(s), asBig(D), asBig(N)];
+  if (norm === 0n) throw new RangeError('equivalent: N must be nonzero');
+  return (a * c - disc * b * d) % norm === 0n && (a * d - b * c) % norm === 0n;
 }
 
 /** The length of the aperiodic plus the periodic part of the continued fraction of (P + sqrt(D))/Q (SymPy length). */

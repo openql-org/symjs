@@ -446,3 +446,24 @@ describe('classify_ode', () => {
     ]);
   });
 });
+
+it('rejects extraneous constant roots introduced by a homogeneous coordinate shift', () => {
+  const x = new sj.Sym('x'), f = sj.SymFunction('f');
+  const equation = sj.parseExpr('(x + f(x) + 1)*Derivative(f(x),x) + f(x) - 6*x + 1');
+  const result = sj.dsolve(equation,f(x),{hint:'linear_coefficients'});
+  expect(Array.isArray(result) ? result.map(String) : String(result)).toEqual([
+    'Eq(f(x), -x - sqrt(C1 + 7*x**2) - 1)',
+    'Eq(f(x), -x + sqrt(C1 + 7*x**2) - 1)',
+  ]);
+});
+
+it('integrates autonomous acceleration by conservation of energy', () => {
+  const hint = '2nd_nonlinear_autonomous_conserved';
+  expect(show(dsolve(parse('Derivative(f(x), x, x) - g(f(x))'), fx, { hint }))).toBe('[Eq(Integral(1/sqrt(C1 + 2*Integral(g(_u), _u)), (_u, f(x))), C2 + x), Eq(Integral(1/sqrt(C1 + 2*Integral(g(_u), _u)), (_u, f(x))), C2 - x)]');
+  expect(show(dsolve(parse('Derivative(f(x), x, x) - exp(f(x)) + log(f(x))'), fx, { hint }))).toBe('[Eq(Integral(1/sqrt(-2*_u*log(_u) + 2*_u + C1 + 2*exp(_u)), (_u, f(x))), C2 + x), Eq(Integral(1/sqrt(-2*_u*log(_u) + 2*_u + C1 + 2*exp(_u)), (_u, f(x))), C2 - x)]');
+  expect(classifyOde(parse('Derivative(f(x), x, x) - g(f(x))'), fx)).toContain(hint);
+  for (const eq of ['Derivative(f(x),x)-f(x)', 'Derivative(f(x),x,x)**2-f(x)', 'sin(Derivative(f(x),x,x))-f(x)', 'Derivative(f(x),x,x)-x*f(x)']) {
+    expect(() => dsolve(parse(eq), fx, { hint })).toThrow();
+  }
+  expect(show(dsolve(parse('Derivative(f(x),x,x)'), fx, { hint }))).toContain('sqrt(C1)');
+});

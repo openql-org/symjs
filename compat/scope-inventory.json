@@ -5534,9 +5534,11 @@
   {
    "module": "sympy.integrals.quadrature",
    "sha256": "e818372669488c876e21f6867cd55cc0d7d2ae01222ceb3370df163f3b1736a1",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "Gauss quadrature nodes and weights",
-   "sources": [],
+   "sources": [
+    "integrals/quadrature.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 32,

@@ -1294,6 +1294,7 @@ export class PrettyPrinter {
   }
 
   private printExtension(e: ExtensionExpr): PrettyForm {
+    if (e.name === 'Tuple') return this.printTuple(e.args);
     const hook = prettyHooks.extension.get(e.name);
     if (hook) return hook(e, this);
     for (const f of prettyHooks.extensionFallbacks) {

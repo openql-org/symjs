@@ -202,3 +202,12 @@ it('collects only bound variables of nested integrals', async () => {
   expect(outer.boundSymbols).toEqual([i,j]);
   expect(new a.Integral([a.S.One,k!]).boundSymbols).toEqual([]);
 });
+
+it('Order.contains reports a missing calculus registration', () => {
+  const previous = sjImpl.orderContains;
+  try {
+    sjImpl.orderContains = undefined;
+    expect(() => new sj.Order([sj.S.One]).contains(1)).toThrow(sj.NotLoadedError);
+  } finally { sjImpl.orderContains = previous; }
+});
+import { impl as sjImpl } from '../../src/core/nodes';

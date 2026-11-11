@@ -149,7 +149,7 @@ describe('RecursiveSeq', () => {
     expect(show(f.slice(0, 6))).toBe('[0, 1, 1, 2, 3, 5]');
     expect(show(f.coeff(7))).toBe('13');
     expect((f as sj.RecursiveSeqNode).degree).toBe(2);
-    expect(show((f as sj.RecursiveSeqNode).recurrence)).toBe('y(n - 2) + y(n - 1)');
+    expect(show((f as sj.RecursiveSeqNode).recurrence)).toBe('Eq(y(n), y(n - 2) + y(n - 1))');
     expect(show((f as sj.RecursiveSeqNode).initial)).toBe('[0, 1]');
     expect(show(f.interval)).toBe('Interval(0, oo)');
     const g = sj.RecursiveSeq(sj.add(yf(sj.sub(n, 1)), 1), yf(n), n);
@@ -211,4 +211,29 @@ describe('find_linear_recurrence', () => {
     expect(show(sj.sequence(P('n**2')).findLinearRecurrence(10, 1, x))).toBe('[[], None]');
     expect(show(sj.SeqPer([1, 0, 0]).findLinearRecurrence(9, undefined, x))).toBe('[[0, 0, 1], -1/(x**3 - 1)]');
   });
+});
+
+it('exposes base sequence generators and recurrence equations', () => {
+  const n = new sj.Sym('n');
+  const base = sj.SeqExpr(sj.Tuple(1,2,3),[n,0,10]);
+  expect(String(base.gen)).toBe('(1, 2, 3)');
+  expect(String(base.interval)).toBe('Interval(0, 10)');
+  expect(String(base.length)).toBe('11');
+  expect(base.withArgs(base.args).key).toBe(base.key);
+  expect(() => base.coeff()).toThrow(sj.NotImplementedError);
+  const a = sj.SeqFormula(sj.pow(n,2),[n,0,10]);
+  const b = sj.SeqPer([1,2,3],[n,5,10]);
+  const op = sj.SeqExprOp(a,b);
+  expect(String(op.gen)).toBe('(n**2, (1, 2, 3))');
+  expect(String(op.interval)).toBe('Interval(5, 10)');
+  expect(String(op.length)).toBe('6');
+  expect(op.variables).toEqual([n,n]);
+  expect(op.withArgs(op.args).key).toBe(op.key);
+  expect(() => op.coeff()).toThrow(sj.NotImplementedError);
+  expect(String(sj.SeqExprOp(op).gen)).toBe('((n**2, (1, 2, 3)),)');
+  expect(() => sj.SeqExprOp(sj.EmptySequence).gen).toThrow(TypeError);
+  const y = sj.SymFunction('y');
+  const fib = sj.RecursiveSeq(sj.add(y(sj.add(n,-1)),y(sj.add(n,-2))),y(n),n,[0,1]) as sj.RecursiveSeqNode;
+  expect(String(fib.recurrence)).toBe('Eq(y(n), y(n - 2) + y(n - 1))');
+  expect(fib.slice(0,7).map(String)).toEqual(['0','1','1','2','3','5','8']);
 });

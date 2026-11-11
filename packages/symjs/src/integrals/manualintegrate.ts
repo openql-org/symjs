@@ -16,16 +16,34 @@ import { isReal } from '../core/assumptions';
 import { at, defined, getOrThrow } from '../core/guard';
 import { Ne, piecewise } from '../core/logic';
 import { asIndependent } from '../core/methods';
-import type { Expr, Sym } from '../core/nodes';
-import { Dummy, Mul, Piecewise, Pow, Rational, S } from '../core/nodes';
-import { add, mul, pow, sqrt } from '../core/ops';
-import { xreplace } from '../core/traverse';
-import { log } from '../functions/elementary/elementary';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Dummy, Fn, Mul, Piecewise, Pow, Rational, S, Special, impl } from '../core/nodes';
+import { add, mul, pow, sqrt, sympify } from '../core/ops';
+import { preorderTraversal, xreplace } from '../core/traverse';
+import { atan, cos, log } from '../functions/elementary/elementary';
+import { diff } from '../calculus/diff';
 import { polyCoefficients } from '../polys/poly';
 import { expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
+
+/**
+ * Elementary antiderivatives using the shared substitution, parts and polynomial rules.
+ * Preserve the manual tangent rule's logarithm of cosine; unresolved inputs remain Integrals.
+ */
+export function manualintegrate(f: ExprLike, x: Sym): Expr {
+  const e = sympify(f);
+  if (e instanceof Fn && e.name === 'tan' && at(e.args, 0).equals(x)) return mul(-1, log(cos(x)));
+  // Reverse the chain rule for c*u'/(1 + u**2) before rational integration
+  // introduces logarithms of complex roots.
+  for (const u of preorderTraversal(e)) {
+    if (!(u instanceof Fn || u instanceof Pow) || !u.has(x)) continue;
+    const ratio = cancel(mul(e, add(1, pow(u, 2)), pow(diff(u, x), -1)));
+    if (!ratio.has(x) && !(ratio instanceof Special)) return mul(ratio, atan(u));
+  }
+  return impl.integrate(e, x);
+}
 
 /** The integral of a polynomial (coefficients cancelled) term by term. */
 function polyIntegral(p: Expr, x: Sym): Expr {

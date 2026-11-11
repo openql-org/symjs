@@ -21,6 +21,9 @@ import { factor } from '../polys/sympoly';
 import { EmptySet, type SetExpr, inf, intersection, interval, sup } from '../sets/sets';
 import { expand } from '../simplify/expand';
 import { simplify } from '../simplify/simplify';
+import { Tuple } from '../core/containers';
+import { Eq } from '../core/logic';
+import { NotImplementedError } from '../core/errors';
 
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
 const isInf = (e: Expr, name: 'oo' | '-oo'): boolean => e instanceof Special && e.name === name;
@@ -197,7 +200,9 @@ export class EmptySequenceNode extends SeqBase {
 export const EmptySequence: SeqBase = new EmptySequenceNode();
 
 /** A sequence given by an expression of its variable on an interval (SymPy SeqExpr). */
-abstract class SeqExpr extends SeqBase {
+abstract class SeqExprBase extends SeqBase {
+  /** The expression generating this sequence. */
+  get gen(): Expr { return at(this.args, 3); }
   /** The bound variable. */
   get variable(): Sym {
     return cast(at(this.args, 0), Sym, 'sequence variable');
@@ -219,6 +224,22 @@ abstract class SeqExpr extends SeqBase {
   }
 }
 
+/** A symbolic sequence expression, without a rule for evaluating its terms. */
+export class SeqExprNode extends SeqExprBase {
+  constructor(gen: Expr, variable: Sym, start: Expr, stop: Expr) {
+    super('SeqExpr', [variable, start, stop, gen]);
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new SeqExprNode(at(args, 3), cast(at(args, 0), Sym), at(args, 1), at(args, 2));
+  }
+  coeff(): Expr { throw new NotImplementedError('SeqExpr: no term evaluation rule'); }
+}
+
+/** Construct the base expression sequence (SymPy SeqExpr). */
+export function SeqExpr(gen: ExprLike, limits: readonly [Sym, ExprLike, ExprLike]): SeqExprNode {
+  return new SeqExprNode(sympify(gen), limits[0], sympify(limits[1]), sympify(limits[2]));
+}
+
 /** Limits (x, start, stop) or (start, stop) of a sequence. */
 export type SeqLimits = readonly [Sym, ExprLike, ExprLike] | readonly [ExprLike, ExprLike];
 
@@ -238,7 +259,7 @@ function parseLimits(limits: SeqLimits | undefined, find: () => Sym): [Sym, Expr
 }
 
 /** SymPy SeqFormula: the sequence of the values of a formula. */
-export class SeqFormulaNode extends SeqExpr {
+export class SeqFormulaNode extends SeqExprBase {
   constructor(formula: Expr, x: Sym, start: Expr, stop: Expr) {
     super('SeqFormula', [x, start, stop, formula]);
   }
@@ -288,7 +309,7 @@ export function SeqFormula(formulaIn: ExprLike, limits?: SeqLimits): SeqBase {
 }
 
 /** SymPy SeqPer: a periodic sequence. */
-export class SeqPerNode extends SeqExpr {
+export class SeqPerNode extends SeqExprBase {
   constructor(periodical: readonly Expr[], x: Sym, start: Expr, stop: Expr) {
     super('SeqPer', [x, start, stop, ...periodical]);
   }
@@ -296,6 +317,7 @@ export class SeqPerNode extends SeqExpr {
   get periodical(): Expr[] {
     return this.args.slice(3);
   }
+  override get gen(): Expr { return Tuple(...this.periodical); }
   /** The length of the period. */
   get period(): number {
     return this.args.length - 3;
@@ -366,9 +388,9 @@ export class RecursiveSeqNode extends SeqBase {
     this.degree = degree;
     this.terms = [...initial];
   }
-  /** The right-hand side of the recurrence y(n) = recurrence. */
+  /** The equation y(n) = recurrence. */
   get recurrence(): Expr {
-    return at(this.args, 0);
+    return Eq(this.yn, at(this.args, 0));
   }
   /** The term y(n). */
   get yn(): UndefFn {
@@ -398,7 +420,7 @@ export class RecursiveSeqNode extends SeqBase {
     const index = this.point(pt);
     const i = asIndex(sub(index, this.start));
     for (let current = this.terms.length; current <= i; current++) {
-      const rec = xreplace(this.recurrence, [[this.variable, add(this.start, current)]]);
+      const rec = xreplace(at(this.args, 0), [[this.variable, add(this.start, current)]]);
       // the earlier terms y(start + k) by their values
       const known = this.terms.map((t, k): [Expr, Expr] => [new UndefFn(this.yn.name, [add(this.start, k)]), t]);
       this.terms.push(xreplace(rec, known));
@@ -407,7 +429,7 @@ export class RecursiveSeqNode extends SeqBase {
   }
   override printStr(print: (e: Expr) => string): string {
     const init = this.initial;
-    return `RecursiveSeq(${print(this.recurrence)}, ${print(this.yn)}, ${print(this.variable)}, (${init.map(print).join(', ')}${init.length === 1 ? ',' : ''}), ${print(this.start)})`;
+    return `RecursiveSeq(${print(at(this.args, 0))}, ${print(this.yn)}, ${print(this.variable)}, (${init.map(print).join(', ')}${init.length === 1 ? ',' : ''}), ${print(this.start)})`;
   }
 }
 
@@ -527,7 +549,14 @@ function reduce(args0: readonly SeqBase[], rule: (s: SeqBase, t: SeqBase) => Seq
 }
 
 /** Term-wise operation of sequences (SymPy SeqExprOp). */
-abstract class SeqExprOp extends SeqBase {
+abstract class SeqExprOpBase extends SeqBase {
+  /** The generators of all operands, preserving their order. */
+  get gen(): Expr {
+    return Tuple(...this.seqs.map((s) => {
+      if (s instanceof SeqExprBase || s instanceof SeqExprOpBase) return s.gen;
+      throw new TypeError('SeqExprOp: operand has no expression generator');
+    }));
+  }
   /** The operand sequences. */
   get seqs(): SeqBase[] {
     return this.args.map((a) => cast(a, SeqBase, 'sequence'));
@@ -540,8 +569,18 @@ abstract class SeqExprOp extends SeqBase {
   }
 }
 
+/** An unevaluated operation on sequences, with their common interval. */
+export class SeqExprOpNode extends SeqExprOpBase {
+  constructor(seqs: readonly SeqBase[]) { super('SeqExprOp', seqs); }
+  withArgs(args: readonly Expr[]): Expr { return new SeqExprOpNode(args.map((a) => cast(a, SeqBase))); }
+  coeff(): Expr { throw new NotImplementedError('SeqExprOp: no term evaluation rule'); }
+}
+
+/** Construct the base sequence operation (SymPy SeqExprOp). */
+export function SeqExprOp(...seqs: SeqBase[]): SeqExprOpNode { return new SeqExprOpNode(seqs); }
+
 /** SymPy SeqAdd: the term-wise sum of sequences (unevaluated). */
-export class SeqAddNode extends SeqExprOp {
+export class SeqAddNode extends SeqExprOpBase {
   constructor(args: readonly SeqBase[]) {
     super('SeqAdd', args);
   }
@@ -555,7 +594,7 @@ export class SeqAddNode extends SeqExprOp {
 }
 
 /** SymPy SeqMul: the term-wise product of sequences (unevaluated). */
-export class SeqMulNode extends SeqExprOp {
+export class SeqMulNode extends SeqExprOpBase {
   constructor(args: readonly SeqBase[]) {
     super('SeqMul', args);
   }

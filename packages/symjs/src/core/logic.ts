@@ -7,7 +7,7 @@
 
 import { Special } from './nodes';
 import type { Expr, ExprLike, RelOp } from './nodes';
-import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, isNum } from './nodes';
+import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, impl, isNum } from './nodes';
 import { numCmp } from './num';
 import { add, couldExtractMinusSign, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
@@ -30,6 +30,15 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   const lhs = sympify(a);
   const rhs = sympify(b);
   const equality = op === 'Eq' || op === 'Ne';
+  const bounds = impl.accumBounds;
+  if (!equality && bounds !== undefined && (bounds.is(lhs) || bounds.is(rhs))) {
+    const [a, b] = bounds.is(lhs) ? bounds.bounds(lhs) : [lhs, lhs];
+    const [c, d] = bounds.is(rhs) ? bounds.bounds(rhs) : [rhs, rhs];
+    const lower = op === 'Lt' || op === 'Le';
+    if (rel(op, lower ? b : a, lower ? c : d) === S.true) return S.true;
+    if (rel(op, lower ? a : b, lower ? d : c) === S.false) return S.false;
+    return new Rel(op, lhs, rhs);
+  }
   // nan is not equal to anything (SymPy Eq(nan, nan) is False) and cannot be ordered
   if ([lhs, rhs].some(isSpecial('nan'))) {
     if (!equality) throw new TypeError('Invalid NaN comparison');

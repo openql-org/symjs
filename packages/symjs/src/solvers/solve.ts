@@ -14,6 +14,7 @@ import { Expr, Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Spec
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, subs, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import type { Truth } from '../core/truth';
+import { NoMatch, type NoMatchResult } from '../core/truth';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
 import { evalMp, fromMpc } from '../numeric/mpeval';
@@ -74,6 +75,62 @@ function denominators(e: Expr): Expr[] {
   };
   go(e);
   return out;
+}
+
+/** SymPy denoms: unique denominator bases, optionally restricted to symbols. */
+export function denoms(expr: ExprLike, ...symbols: Sym[]): Set<Expr> {
+  const found = new Map<string, Expr>();
+  const visit = (e: Expr): void => {
+    const d = asNumerDenom(e)[1];
+    const factors = d instanceof Mul ? d.args : [d];
+    for (const f of factors) {
+      const base = f instanceof Pow ? f.base : f;
+      if (!base.equals(S.One) && (!symbols.length || symbols.some((s) => base.has(s)))) found.set(base.key, base);
+    }
+    e.args.forEach(visit);
+  };
+  visit(sympify(expr));
+  return new Set(found.values());
+}
+
+/**
+ * Remove rational powers from an equation. The resulting equation can have
+ * extraneous roots: candidates must be checked in the original expression.
+ * Common-base radicals use a new variable and return its defining equation.
+ */
+export function unrad(expr: ExprLike, ...symbols: Sym[]): [Expr, Expr[]] | NoMatchResult {
+  const e = expandMul(asNumerDenom(asEquation(expr))[0]);
+  const syms = symbols.length ? symbols : [...e.freeSymbols()];
+  const radicals = new Map<string, [Pow, Rational]>();
+  const visit = (a: Expr): void => {
+    if (a instanceof Pow && a.exp instanceof Rational && !a.exp.isInteger && syms.some((s) => a.base.has(s))) radicals.set(a.key, [a, a.exp]);
+    a.args.forEach(visit);
+  };
+  visit(e);
+  if (!radicals.size) return NoMatch;
+  const rads = [...radicals.values()];
+  const L = rads.reduce((l, [, p]) => l * p.q / gcdBig(l, p.q), 1n);
+  const canonical = (a: Expr): Expr => {
+    const b = expandMul(a);
+    return couldExtractMinusSign(b) ? mul(-1, b) : b;
+  };
+  const single = unradOnce(e, syms);
+  if (single !== undefined) return [canonical(single), []];
+  const base = first(rads)[0].base;
+  if (base instanceof Sym && rads.every(([r]) => r.base.equals(base))) {
+    const p = new Dummy('p');
+    const replaced = xreplace(e, rads.map(([r, exponent]): [Expr, Expr] => [r, pow(p, mul(exponent, Rational.of(L)))]));
+    return [canonical(xreplace(replaced, [[base, pow(p, Rational.of(L))]])), [p, add(pow(p, Rational.of(L)), mul(-1, base))]];
+  }
+  const terms = e instanceof Add ? e.args : [e];
+  if (terms.length === 2 && terms.every((t) => rads.some(([r]) => t.has(r)))) {
+    const [a, b] = [at(sortExprs([...terms]), 1), at(sortExprs([...terms]), 0)];
+    const cleared = canonical(add(pow(a, Rational.of(L)), mul(-1, pow(mul(-1, b), Rational.of(L)))));
+    radicals.clear();
+    visit(cleared);
+    if (!radicals.size) return [cleared, []];
+  }
+  throw new NotImplementedError('unrad: cannot remove these coupled radicals');
 }
 
 /** Does the candidate solution satisfy the assumptions of x and keep denominators nonzero? */
@@ -996,9 +1053,31 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Sym[], sym
 const isBracket = (v: ExprLike | readonly [ExprLike, ExprLike]): v is readonly [ExprLike, ExprLike] => Array.isArray(v);
 
 /** Numeric root of f near x0 by Newton's method (complex arithmetic). */
-export function nsolve(e: ExprLike, x: Sym, x0: ExprLike | readonly [ExprLike, ExprLike], opts: { prec?: number; solver?: 'newton' | 'bisect' } = {}): Expr {
+export function nsolve(e: readonly ExprLike[], x: readonly Sym[], x0: readonly ExprLike[], opts?: { prec?: number; solver?: 'newton' | 'bisect' }): Matrix;
+export function nsolve(e: ExprLike, x: Sym, x0: ExprLike | readonly [ExprLike, ExprLike], opts?: { prec?: number; solver?: 'newton' | 'bisect' }): Expr;
+export function nsolve(e: ExprLike | readonly ExprLike[], x: Sym | readonly Sym[], x0: ExprLike | readonly ExprLike[], opts: { prec?: number; solver?: 'newton' | 'bisect' } = {}): Expr | Matrix {
+  const list = (v: ExprLike | readonly ExprLike[]): v is readonly ExprLike[] => Array.isArray(v);
+  if (list(e)) {
+    if (x instanceof Sym || !list(x0) || !x.length || x0.length !== x.length || e.length !== x.length) throw new RangeError('nsolve: a square system and one starting value per variable are required');
+    if (opts.solver === 'bisect') throw new TypeError('nsolve: bisection requires a scalar equation');
+    const digits = opts.prec ?? 15;
+    const equations = e.map(asEquation);
+    const jacobian = Matrix.of(equations.map((f) => x.map((v) => diff(f, v))));
+    let point = x0.map((p) => evalf(sympify(p), digits + 15));
+    for (let iteration = 0; iteration < 100; iteration++) {
+      const replacements = x.map((v, i): [Expr, Expr] => [v, at(point, i)]);
+      const evaluate = (f: Expr): Expr => evalf(xreplace(f, replacements), digits + 15);
+      const residual = Matrix.col(...equations.map(evaluate));
+      if (residual.data.every((v) => Math.hypot(v.toComplex().re, v.toComplex().im) < 10 ** -digits)) return Matrix.col(...point.map((p) => evalf(p, digits)));
+      const step = luSolve(jacobian.map(evaluate), residual);
+      point = point.map((p, i) => evalf(add(p, mul(-1, step.get(i, 0))), digits + 15));
+    }
+    throw new RangeError('nsolve: Newton iteration did not converge');
+  }
+  if (!(x instanceof Sym) || (list(x0) && x0.length !== 2)) throw new TypeError('nsolve: a scalar variable and a starting value or two endpoints are required');
+  const initial = list(x0) ? [at(x0, 0), at(x0, 1)] as const : x0;
   // a bracket is narrowed by bisection in double precision, then refined like a starting point
-  const r = isBracket(x0) ? nsolveBisect(e, x, x0) : nsolveDouble(e, x, x0);
+  const r = isBracket(initial) ? nsolveBisect(e, x, initial) : nsolveDouble(e, x, initial);
   // refine with Newton steps in arbitrary precision so that the result is the
   // correctly rounded root (SymPy's mpmath findroot; nsolve(..., prec=n))
   const dps = opts.prec ?? 15;

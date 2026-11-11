@@ -3,15 +3,85 @@
 // Ported from SymPy 1.14 (solvers/solveset.py), BSD-3-Clause; see LICENSE.
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { S } from '../core/nodes';
+import { Add, Mul, S, Special } from '../core/nodes';
 import { at, defined } from '../core/guard';
-import { sympify } from '../core/ops';
+import { add, mul, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
-import { NotImplementedError } from '../core/errors';
-import { EmptySet, FiniteSet, ImageSet, Reals, imageSet } from '../sets/sets';
+import { NonlinearError, NotImplementedError } from '../core/errors';
+import { NoMatch, type NoMatchResult } from '../core/truth';
+import { Complexes, ConditionSet, EmptySet, FiniteSet, ImageSet, Interval, Reals, SetOp, type SetExpr, imageSet, intersection, union } from '../sets/sets';
 import { expand } from '../simplify/expand';
 import { asEquation, nonlinsolve as finiteNonlinsolve } from './solve';
-import { solveset } from './inequalities';
+import { periodicity, solveset } from './inequalities';
+
+/** Whether every subexpression is finite at the proposed solution. */
+export function domainCheck(f: ExprLike, symbol: Sym, p: ExprLike): boolean {
+  const point = sympify(p);
+  if (point instanceof Special) return false;
+  const check = (e: Expr): boolean => !(subs(e, [[symbol, point]]) instanceof Special) && e.args.every(check);
+  return check(sympify(f));
+}
+
+/** Linear coefficients followed by the constant term; rejects nonlinear structure before expansion. */
+export function linearCoeffs(eq: ExprLike, ...syms: Sym[]): Expr[] {
+  if (new Set(syms.map((s) => s.key)).size !== syms.length) throw new RangeError('linearCoeffs: duplicate symbols');
+  const zero = (): Expr[] => Array.from({ length: syms.length + 1 }, () => S.Zero);
+  const visit = (e: Expr): Expr[] => {
+    const i = syms.findIndex((s) => s.equals(e));
+    if (i >= 0) { const out = zero(); out[i] = S.One; return out; }
+    if (!syms.some((s) => e.has(s))) { const out = zero(); out[syms.length] = e; return out; }
+    if (e instanceof Add) {
+      const rows = e.args.map(visit);
+      return zero().map((_, j) => add(...rows.map((r) => at(r, j))));
+    }
+    if (e instanceof Mul) {
+      const dep = e.args.filter((a) => syms.some((s) => a.has(s)));
+      if (dep.length !== 1) throw new NonlinearError('linearCoeffs: symbol-dependent cross-terms');
+      const independent = mul(...e.args.filter((a) => !syms.some((s) => a.has(s))));
+      return visit(at(dep, 0)).map((c) => mul(independent, c));
+    }
+    throw new NonlinearError('linearCoeffs: nonlinear in given generators');
+  };
+  return visit(sympify(eq));
+}
+
+/** Solve over the real domain. */
+export function solvesetReal(f: ExprLike, symbol: Sym): SetExpr {
+  return solveset(f, symbol, Reals);
+}
+
+function invert(f: ExprLike, y: ExprLike, x: Sym, domain: SetExpr): [Expr, SetExpr] {
+  const expression = sympify(f), value = sympify(y);
+  if (!expression.has(x) || value.has(x)) throw new RangeError('invert: f must depend on x and y must be independent of x');
+  const solutions = solveset(add(expression, mul(-1, value)), x, domain);
+  return solutions instanceof ConditionSet ? [expression, FiniteSet.of(value)] : [x, solutions];
+}
+
+/** Invert f(x) = y over the complex numbers, retaining unresolved equations. */
+export function invertComplex(f: ExprLike, y: ExprLike, x: Sym): [Expr, SetExpr] {
+  return invert(f, y, x, Complexes);
+}
+
+/** Invert f(x) = y over the real numbers, retaining unresolved equations. */
+export function invertReal(f: ExprLike, y: ExprLike, x: Sym): [Expr, SetExpr] {
+  return invert(f, y, x, Reals);
+}
+
+/** Finite solutions, or representatives in one period; NoMatch for other infinite sets. */
+export function solvify(f: ExprLike, symbol: Sym, domain: SetExpr): Expr[] | NoMatchResult {
+  const result = solveset(f, symbol, domain);
+  if (result === EmptySet) return [];
+  if (result instanceof ConditionSet) throw new NotImplementedError('solvify: solveset could not solve the equation');
+  if (result instanceof FiniteSet) return [...result.args];
+  const period = periodicity(f, symbol);
+  const parts = result instanceof SetOp && result.op === 'Union' ? result.args : [result];
+  if (period !== undefined && parts.every((s) => s instanceof ImageSet)) {
+    const window = Interval.Ropen(0, period);
+    const principal = union(...parts.map((s) => intersection(s, window)));
+    if (principal instanceof FiniteSet) return [...principal.args];
+  }
+  return NoMatch;
+}
 
 /**
  * Solve a nonlinear system over the complex numbers. Infinite solution

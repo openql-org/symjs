@@ -28,8 +28,10 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Symbol metadata, relation accessors, function arities and special-function
 // queries add at most 2 KiB to the affected core/special/printing consumers.
 // Assumption-aware solve loads the predicate engine; keep its cost explicit.
+// Order containment and AccumBounds interval comparisons add at most 1 KiB
+// to consumers of core; pretty also gains symbolic-tuple layout.
 const CASES = [
-  ['core', 'Rational', 187],
+  ['core', 'Rational', 188],
   ['core', 'parse, str', 202],
   ['core', 'parse, diff, expand, str, latex', 202],
   ['core', '*', 277],
@@ -47,9 +49,9 @@ const CASES = [
   ['solvers', 'dsolve', 990],
   ['sets', '*', 353],
   ['matrices', 'Matrix', 749],
-  ['printing', 'pretty', 226],
+  ['printing', 'pretty', 227],
   ['discrete', '*', 285],
-  ['strategies', '*', 198],
+  ['strategies', '*', 199],
   ['unify', '*', 225],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).

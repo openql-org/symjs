@@ -18,6 +18,17 @@ import extract
 
 
 class ExtractTests(unittest.TestCase):
+    def test_sequence_base_serialization(self):
+        from sympy.series.sequences import SeqExpr, SeqExprOp, sequence
+        n = sympy.Symbol("n")
+        base = SeqExpr(sympy.Tuple(1, 2, 3), sympy.Tuple(n, 0, 10))
+        tree = extract.ser(base)
+        self.assertEqual(tree["t"], "SeqExpr")
+        self.assertEqual(len(tree["gen"]["items"]), 3)
+        op = SeqExprOp(sequence(n**2, (n, 0, 10)), sequence((1, 2, 3), (n, 5, 10)))
+        self.assertEqual(extract.ser(op)["t"], "SeqExprOp")
+        self.assertEqual([a["t"] for a in extract.ser(op)["args"]], ["SeqFormula", "SeqPer"])
+
     def extract_examples(self, source, module="sympy.core.expr"):
         parser = doctest.DocTestParser()
         sources = [source] if isinstance(source, str) else source

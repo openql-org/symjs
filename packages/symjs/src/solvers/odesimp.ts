@@ -6,10 +6,12 @@
  * odesimp, constantsimp and constant_renumber).
  */
 
-import { Expr, Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
+import { Expr, Add, Constant, Derivative, Dummy, Fn, Integral, Mul, Order, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { SubsNode } from '../core/subsnode';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
-import { freeSymbols, rebuild, subs, xreplace } from '../core/traverse';
+import { freeSymbols, rebuild, some, subs, xreplace } from '../core/traverse';
 import { asNumerDenom } from '../core/methods';
 import { at, cast, first, getOrThrow } from '../core/guard';
 import { diff } from '../calculus/diff';
@@ -20,7 +22,47 @@ import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand } from '../simplify/expand';
 import { logcombine, powsimp } from '../simplify/powsimp';
 import { simplify } from '../simplify/simplify';
-import { solve } from './solve';
+import { linsolve, solve } from './solve';
+
+/** Rank ODE solutions: explicit (-2), solvable (-1), string length, or infinity for integrals. */
+export function odeSolSimplicity(sol: Expr | readonly Expr[], func: Expr, trysolving = true): number | Expr {
+  if (!(sol instanceof Expr)) {
+    return sol.some((s) => odeSolSimplicity(s, func, trysolving) === S.Infinity) ? S.Infinity : `[${sol.map(String).join(', ')}]`.length;
+  }
+  if (some(sol, (e) => e instanceof Integral)) return S.Infinity;
+  if (!(sol instanceof Rel)) throw new TypeError('odeSolSimplicity: an equation is required');
+  if ((sol.lhs.equals(func) && !sol.rhs.has(func)) || (sol.rhs.equals(func) && !sol.lhs.has(func))) return -2;
+  if (trysolving) {
+    try {
+      if (solve(sol, func).length) return -1;
+    } catch {
+      // An unsolved implicit equation is still ranked by its printed length.
+    }
+  }
+  return String(sol).length;
+}
+
+/** Determine integration constants from function and derivative initial conditions. */
+export function solveIcs(sols: readonly Expr[], funcs: readonly Expr[], constants: readonly Sym[], ics: ReadonlyMap<Expr, ExprLike>): Map<Sym, Expr> {
+  const equations: Expr[] = [];
+  for (const [condition, value] of ics) {
+    const conditionExpr = condition instanceof SubsNode ? condition.expr : condition;
+    const fn = conditionExpr instanceof Derivative ? conditionExpr.expr : conditionExpr;
+    if (!(fn instanceof UndefFn)) throw new TypeError('solveIcs: function or derivative conditions required');
+    const func = funcs.find((f) => f instanceof UndefFn && f.name === fn.name);
+    if (func === undefined) throw new RangeError('solveIcs: condition refers to an unknown function');
+    const x = cast(first(func.args), Sym);
+    const solution = sols.find((s) => s instanceof Rel && s.lhs.equals(func));
+    if (!(solution instanceof Rel)) throw new TypeError('solveIcs: explicit solutions are required');
+    const order = conditionExpr instanceof Derivative ? conditionExpr.variableCount.reduce((s, [, n]) => s + n, 0) : 0;
+    const point = condition instanceof SubsNode ? first(condition.point) : first(fn.args);
+    if (point.has(x)) throw new RangeError('solveIcs: initial point must be independent of the variable');
+    equations.push(add(subs(diff(solution.rhs, x, order), [[x, point]]), mul(-1, value)));
+  }
+  const values = linsolve(equations, constants);
+  if (values === undefined) throw new RangeError('solveIcs: inconsistent initial conditions');
+  return new Map(constants.map((c, i) => [c, at(values, i)]));
+}
 
 const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
@@ -109,7 +151,13 @@ function removeLinearRedundancies(expr: Expr, CsIn: readonly Sym[]): Expr {
 
 /** terms_gcd unless it would put exp both outside and inside a sum (SymPy _conditional_term_factoring). */
 function conditionalTermFactoring(expr: Expr): Expr {
-  const apply = (e: Expr): Expr => termsGcd(e, { clear: false, deep: true, expand: false });
+  // An Order term is an asymptotic remainder, so extracting a numerical
+  // content must not treat it as an algebraic coefficient of a polynomial.
+  const apply = (e: Expr): Expr => {
+    if (e instanceof Order) return e;
+    if (some(e, (a) => a instanceof Order)) return rebuild(e, e.args.map(apply));
+    return termsGcd(e, { clear: false, deep: true, expand: false });
+  };
   // SymPy applies terms_gcd to the whole Equality, so the exp check below never fires for equations
   if (expr instanceof Rel) return Eq(apply(expr.lhs), apply(expr.rhs));
   const ne = apply(expr);
@@ -166,9 +214,9 @@ export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
 }
 
 /** Renumber the constants C1, C2, ... in order of appearance (SymPy constant_renumber). */
-export function constantRenumber(expr: Expr, variables: readonly Expr[]): Expr {
-  const vars = new Set(variables.map((v) => v.key));
-  const consts = [...freeSymbols(expr)].filter((s) => !vars.has(s.key) && /^C\d+$/.test(s.name));
+export function constantRenumber(expr: Expr, variables?: readonly Expr[], newconstants?: readonly Sym[]): Expr {
+  const vars = new Set(variables?.map((v) => v.key));
+  const consts = [...freeSymbols(expr)].filter((s) => !vars.has(s.key) && (variables !== undefined || /^C\d+$/.test(s.name)));
   const isConst = (e: Expr) => consts.some((c) => c.key === e.key);
   const found: Sym[] = [];
   const one = consts.map((c) => [c, Rational.of(1)] as [Expr, Expr]);
@@ -192,7 +240,7 @@ export function constantRenumber(expr: Expr, variables: readonly Expr[]): Expr {
     [...e.args].sort((a, b) => compareKeys(key(a), key(b))).forEach(walk);
   };
   walk(expr);
-  const fresh = found.map((_, i) => new Sym(`C${i + 1}`));
+  const fresh = newconstants ?? Array.from({ length: found.length + vars.size }, (_, i) => new Sym(`C${i + 1}`)).filter((c) => !vars.has(c.key));
   const tmp = found.map((_, i) => new Sym(`_Ctmp${i}`));
   let r = xreplace(expr, found.map((c, i): [Expr, Expr] => [c, at(tmp, i)]));
   r = xreplace(r, tmp.map((t, i): [Expr, Expr] => [t, at(fresh, i)]));

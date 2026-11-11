@@ -72,6 +72,9 @@ export class AccumBoundsNode extends ExtensionExpr {
   /** x lies in the interval (SymPy `x in AccumBounds(...)`). */
   contains(x: ExprLike): boolean {
     const v = val(sympify(x));
+    // AccumBounds identifies the two ends of the extended real line: either
+    // infinity is an accumulation value when the interval is unbounded.
+    if (Math.abs(v) === Infinity) return isNegInf(this.min) || isInf(this.max);
     return val(this.min) <= v && v <= val(this.max);
   }
   /** The intersection with another AccumBounds, an Interval or a FiniteSet (SymPy intersection). */
@@ -130,6 +133,11 @@ function abMul(abs: readonly Expr[], c: Expr): Expr {
 
 /** An interval raised to a number. */
 function abPow(a: AccumBoundsNode, e: Expr): Expr {
+  if (e instanceof AccumBoundsNode) {
+    if (val(a.min) <= 0) return new Pow(a, e);
+    const endpoints = [pow(a.min, e.min), pow(a.min, e.max), pow(a.max, e.min), pow(a.max, e.max)];
+    return accumBounds(minOf(endpoints), maxOf(endpoints));
+  }
   // SymPy AccumBounds.__pow__: [a, b]**-oo = (1/[a, b])**oo
   if (e === S.NegativeInfinity) return pow(abPow(a, S.NegOne), S.Infinity);
   if (e === S.Infinity) {

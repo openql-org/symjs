@@ -278,6 +278,8 @@ export interface Impl {
   collect?(e: Expr, syms: readonly Expr[]): Expr;
   /** Leading term [c, e] of e ~ c*x**e as x -> 0+ (registered by series/series). */
   leadterm?(e: Expr, x: Sym): [Expr, Expr];
+  /** Asymptotic containment, registered by series/series. */
+  orderContains?: (order: Order, expr: Expr) => boolean | 'unknown';
   /** The value of a sum or product with finite integer limits, for evalf (registered by calculus/doit); undefined when it is not a number. */
   evalConcrete?(c: Expr): Expr | undefined;
   /** Lambert W function (registered by functions/special). */
@@ -1058,6 +1060,11 @@ export class Order extends Expr {
   }
   get point(): Expr | undefined {
     return this.args[2];
+  }
+  /** Whether expr is bounded by this order term at its expansion point. */
+  contains(expr: ExprLike): boolean | 'unknown' {
+    if (impl.orderContains === undefined) return notLoaded('Order.contains', 'calculus');
+    return impl.orderContains(this, impl.sympify(expr));
   }
   protected computeKey(): string {
     return `O(${this.args.map((a) => a.key).join(',')})`;

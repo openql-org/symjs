@@ -3,7 +3,7 @@
 
 import { expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ADAPTERS, JsList, JsTuple, deserialize, matches, runCase } from './harness';
+import { ADAPTERS, JsList, JsTuple, deserialize, matches, runCase, solvesDsolveCase } from './harness';
 import type { Case } from './harness';
 import * as sj from '../packages/symjs/src';
 
@@ -112,4 +112,35 @@ it('replays sparse rational row reduction with the explicit coefficient field', 
     args: [rows], pick: 0, expected: '{0: {0: MPQ(1,1)}, 1: {1: MPQ(1,1)}}' };
   expect(runCase(c)).toEqual({ status: 'pass' });
   expect(runCase({ ...c, src: 'pivots', pick: 1, expected: '[0, 1]' })).toEqual({ status: 'pass' });
+});
+
+it('preserves solver collection shapes, finite-difference orders and sequence bases', () => {
+  const names = new Set(['cornacchia', 'diop_univariate', 'diop_quadratic', 'diop_solve', 'diop_general_sum_of_squares', 'diop_general_sum_of_even_powers', 'prime_as_sum_of_two_squares', 'integer_powers', 'finite_diff_weights']);
+  const cases = corpus.cases.filter((c) => names.has(c.fn) || (c.module === 'sympy.series.sequences' && (c.self?.t === 'SeqExpr' || c.self?.t === 'SeqExprOp')));
+  expect(cases.length).toBeGreaterThanOrEqual(16);
+  for (const c of cases) expect(['pass','equivalent'], c.src).toContain(runCase(c).status);
+  const unevaluated = corpus.cases.find((c) => c.src.startsWith('domain_check(Mul'))!;
+  expect(runCase(unevaluated)).toEqual({status:'pass'});
+});
+
+it('preserves tuples nested in finite sets and table cells', () => {
+  const cases = corpus.cases.filter((c) => c.fn === 'TableForm' || c.src === 'pprint(nonlinsolve(system, [a, b, c, d]), use_unicode=False)');
+  expect(cases.length).toBeGreaterThan(1);
+  for (const c of cases) expect(['pass', 'equivalent'], c.src).toContain(runCase(c).status);
+});
+
+it('verifies system ODE families under the same arbitrary-constant convention as dsolve', () => {
+  const cases = corpus.cases.filter((c) => c.fn === 'dsolve_system');
+  expect(cases.length).toBeGreaterThan(0);
+  for (const c of cases) expect(['pass', 'equivalent'], c.src).toContain(runCase(c).status);
+});
+
+it('checks every nested ODE family and rejects an invalid alternative', () => {
+  const x = sj.symbol('x'), f = sj.SymFunction('f')(x), C1 = sj.symbol('C1');
+  const equations = new JsTuple([sj.add(sj.pow(sj.diff(f, x), 2), -4)]);
+  const positive = sj.Eq(f, sj.add(C1, sj.mul(2, x)));
+  const negative = sj.Eq(f, sj.add(C1, sj.mul(-2, x)));
+  expect(solvesDsolveCase(equations, new JsList([new JsList([positive]), new JsList([negative])]))).toBe(true);
+  expect(solvesDsolveCase(equations, [[positive], [sj.Eq(f, sj.add(C1, sj.mul(3, x)))]] )).toBe(false);
+  expect(solvesDsolveCase(equations, [])).toBe(false);
 });

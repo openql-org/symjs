@@ -1110,7 +1110,12 @@ function homogeneousBest(p: OdeProblem, m: { d: Expr; e: Expr; y: Dummy }, xarg?
   for (const [dep, hint] of [[false, '1st_homogeneous_coeff_subs_indep_div_dep'], [true, '1st_homogeneous_coeff_subs_dep_div_indep']] as const) {
     try {
       const raw = homogeneousSolution(p, m, dep, xarg, yarg);
-      if (raw) cands.push(odesimp(p.eq, raw, p.fx, hint));
+      if (raw) {
+        // Clearing denominators of the homogeneous substitution can introduce
+        // constant roots (including the translated origin) that fail the ODE.
+        const solutions = odesimp(p.eq, raw, p.fx, hint).filter((s) => !(s instanceof Rel && s.lhs.equals(p.fx) && !s.rhs.has(p.x)) || isZero(simplify(subFuncDoit(p.eq, p, s.rhs))));
+        cands.push(solutions);
+      }
     } catch {
       // this substitution fails; the other one may work
     }
@@ -1169,7 +1174,21 @@ const lieGroup: Solver = (p) => {
 };
 
 /** Hints whose solvers return solutions already simplified by odesimp. */
-const PRESIMPLIFIED = new Set(['1st_homogeneous_coeff_best', 'linear_coefficients']);
+/** Energy conservation for y'' = F(y): (y')² = C1 + 2 Integral(F(y), y). */
+const autonomousConserved: Solver = (p) => {
+  if (p.order !== 2) return undefined;
+  const acceleration = new Dummy('a'), u = new Dummy('u');
+  const coefficients = polyCoefficients(xreplace(p.eq, [[D(p, 2), acceleration], [p.fx, u]]), acceleration);
+  if (coefficients === undefined || Math.max(...coefficients.keys()) !== 1) return undefined;
+  const force = cancel(mul(-1, coefficients.get(0) ?? S.Zero, pow(getOrThrow(coefficients, 1), -1)));
+  if (force.has(p.x)) return undefined;
+  if (matching) return [];
+  const energy = add(C(1), expandMul(mul(2, integrate(force, u))));
+  const quadrature = new Integral([pow(energy, Rational.of(-1, 2)), u, p.fx]);
+  return [Eq(quadrature, add(C(2), p.x)), Eq(quadrature, add(C(2), mul(-1, p.x)))];
+};
+
+const PRESIMPLIFIED = new Set(['1st_homogeneous_coeff_best', 'linear_coefficients', '2nd_nonlinear_autonomous_conserved']);
 
 // ---------------------------------------------------------------------------
 // driver
@@ -1195,6 +1214,7 @@ const HINTS: [string, Solver][] = [
   // SymPy reaches f'' + f'**2 = 0 through factorable/nth_order_reducible before Liouville
   ['nth_order_reducible', nthOrderReducible],
   ['Liouville', liouville],
+  ['2nd_nonlinear_autonomous_conserved', autonomousConserved],
   ['2nd_linear_airy', airy],
   ['2nd_linear_bessel', bessel],
   ['nth_algebraic', nthAlgebraic],

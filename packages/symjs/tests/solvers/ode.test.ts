@@ -60,3 +60,19 @@ describe('dsolve without the unknown function (SymPy _preprocess)', () => {
     expect(() => dsolve(parse('f(x) - 1'))).toThrow('the unknown function f(x) is required');
   });
 });
+
+import * as sjClassify from '../../src';
+it('classifies differential systems with complete coefficient tables', () => {
+  const [t] = sjClassify.symbols('t');
+  const x = sjClassify.SymFunction('x')(t) as sjClassify.UndefFn;
+  const eqs = ['Derivative(x(t),t)-12*x(t)+6*y(t)','Derivative(y(t),t)-11*x(t)-3*y(t)'].map((e) => sjClassify.parseExpr(e));
+  const result = sjClassify.classifySysode(eqs);
+  expect(result.get('no_of_equation')).toBe(2);
+  expect((result.get('func') as sjClassify.Expr[]).map(String)).toEqual(['x(t)','y(t)']);
+  expect([...(result.get('order') as Map<sjClassify.Expr,number>)].map(([f,k]) => [String(f),k])).toEqual([['x(t)',1],['y(t)',1]]);
+  expect(result.get('is_linear')).toBe(true);
+  expect(result.get('type_of_equation')).toBe(sjClassify.NoMatch);
+  expect((result.get('func_coeff') as Map<unknown,sjClassify.Expr>).size).toBe(8);
+  expect(sjClassify.classifySysode([sjClassify.parseExpr('Derivative(x(t),t)-x(t)**2')],[x]).get('is_linear')).toBe(false);
+  expect(() => sjClassify.classifySysode([1])).toThrow(TypeError);
+});

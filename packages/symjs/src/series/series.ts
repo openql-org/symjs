@@ -7,7 +7,7 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Fn, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
+import { Add, Fn, Order, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul, isMulLike } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
@@ -28,6 +28,7 @@ const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => 
  */
 export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): Expr {
   const e = sympify(ex);
+  if (e.equals(S.Zero)) return S.Zero;
   const p = sympify(x0);
   const syms = [...e.freeSymbols()];
   const vars = isSymList(xIn) ? xIn : xIn === undefined && syms.length > 1 ? (sortSyms(syms)) : undefined;
@@ -57,7 +58,7 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
   } catch {
     // keep the expression as given
   }
-  return atZero ? new Order([reduced]) : new Order([reduced, v, p]);
+  return atZero && reduced.has(v) ? new Order([reduced]) : new Order([reduced, v, p]);
 }
 
 function sortSyms(xs: Sym[]): Sym[] {
@@ -369,3 +370,34 @@ export function aseries(ex: ExprLike, x: Sym, n = 6, hir = false): Expr {
 parserHooks.order = (e, vars, p) => O(e, vars.length ? vars : undefined, p);
 // and the derivative of an Order (diff(O(x**2), x) = O(x))
 diffHooks.order = parserHooks.order;
+
+/** Expansion variables, including those absent from a constant leading term. */
+function orderVariables(o: Order): Sym[] {
+  return o.args.length > 1 ? o.args.slice(1, -1).filter((v): v is Sym => v instanceof Sym) : [...o.expr.freeSymbols()];
+}
+
+impl.orderContains = (o, e) => {
+  const variables = orderVariables(o);
+  const point = o.args.length > 1 ? at(o.args, -1) : S.Zero;
+  const other = e instanceof Order ? e.expr : e;
+  const otherVariables = e instanceof Order ? orderVariables(e) : [...e.freeSymbols()];
+  if (otherVariables.some((v) => !variables.some((w) => w.equals(v)))) return false;
+  if (e instanceof Order && e.args.length > 1 && !at(e.args, -1).equals(point)) return 'unknown';
+  if (other.equals(S.Zero)) return true;
+  if (!variables.length) return ![S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((v) => other.has(v));
+  if (variables.length > 1) return 'unknown';
+  const ratio = impl.limit(mul(other, pow(o.expr, -1)), first(variables), point, '+');
+  if (ratio instanceof Special) return ratio.name === 'nan' ? 'unknown' : false;
+  return ratio.freeSymbols().size === 0 && ratio.kind !== 'Limit' ? true : 'unknown';
+};
+
+registerArithmetic((op, args) => {
+  if (op !== 'mul') return undefined;
+  const orders = args.filter((a): a is Order => a instanceof Order);
+  if (!orders.length) return undefined;
+  const point = (o: Order): Expr => o.args.length > 1 ? at(o.args, -1) : S.Zero;
+  const p = point(first(orders));
+  if (orders.some((o) => !point(o).equals(p))) return undefined;
+  const variables = [...new Map(orders.flatMap(orderVariables).map((v) => [v.key, v])).values()];
+  return O(mul(...args.map((a) => a instanceof Order ? a.expr : a)), variables, p);
+});

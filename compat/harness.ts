@@ -165,7 +165,7 @@ export function fmt(v: unknown): string {
   if (typeof v === 'number' || typeof v === 'bigint') return String(v);
   if (v === 'EmptySet') return 'EmptySet';
   if (typeof v === 'string') return `'${v}'`;
-  if (v instanceof JsList) return `[${v.items.map(fmtItem).join(', ')}]`;
+  if (v instanceof JsList || (v instanceof JsTuple && v.isList)) return `[${v.items.map(fmtItem).join(', ')}]`;
   if (v instanceof JsTuple) return v.items.length === 1 ? `(${fmtItem(v.items[0])},)` : `(${v.items.map(fmtItem).join(', ')})`;
   if (v instanceof JsDefaultDict) return `defaultdict(<class 'int'>, ${fmt(new JsDict(v.entries))})`;
   if (v instanceof JsDict) return `{${v.entries.map(([k, x]) => `${fmtItem(k)}: ${fmtItem(x)}`).join(', ')}}`;
@@ -570,6 +570,9 @@ export function deserialize(tree: Tree): unknown {
       // (factorint(n, visual=True))
       const numeric = (a: Expr): boolean => a instanceof sj.Rational || (a instanceof sj.Pow && a.base instanceof sj.Rational && a.exp instanceof sj.Rational && a.exp.isInteger);
       if (tree['t'] === 'Mul' && args.length > 1 && args.every(numeric) && args.some((a) => a instanceof sj.Pow)) return new sj.Mul(args);
+      // Canceled reciprocal factors in a serialized Mul prove it was unevaluated.
+      // Preserve its domain restrictions (e.g. x * 1/x at x = 0).
+      if (tree['t'] === 'Mul' && args.some((a) => a instanceof sj.Pow && a.exp instanceof sj.Rational && a.exp.isNegative && args.some((b) => b.equals(a.base)))) return new sj.Mul(args);
       return sj.mul(...args);
     }
     case 'AccumBounds':
@@ -733,7 +736,7 @@ export function deserialize(tree: Tree): unknown {
     case 'Interval':
       return sj.interval(deserialize(tree['a'] as Tree) as Expr, deserialize(tree['b'] as Tree) as Expr, tree['lo'] as boolean, tree['ro'] as boolean);
     case 'FiniteSet':
-      return sj.finiteSet(...(tree['items'] as Tree[]).map((x) => deserialize(x) as Expr));
+      return sj.finiteSet(...(tree['items'] as Tree[]).map((x) => expressionContainer(deserialize(x))));
     case 'Range':
       return sj.Range.of(deserialize(tree['start'] as Tree) as Expr, deserialize(tree['stop'] as Tree) as Expr, deserialize(tree['step'] as Tree) as Expr);
     case 'Contains':
@@ -759,6 +762,13 @@ export function deserialize(tree: Tree): unknown {
       return sj.fps(deserialize(tree['f'] as Tree) as Expr, deserialize(tree['x'] as Tree) as Sym, deserialize(tree['x0'] as Tree) as Expr, tree['dir'] as '+' | '-');
     case 'EmptySequence':
       return sj.EmptySequence;
+    case 'SeqExpr': {
+      const gen = deserialize(tree['gen'] as Tree);
+      const lim = deserialize(tree['limits'] as Tree) as JsTuple;
+      return sj.SeqExpr(gen instanceof JsTuple ? sj.Tuple(...gen.items.map(asExpr)) : asExpr(gen), [asSym(lim.items[0]), asExpr(lim.items[1]), asExpr(lim.items[2])]);
+    }
+    case 'SeqExprOp':
+      return sj.SeqExprOp(...(tree['args'] as Tree[]).map((t) => deserialize(t) as sj.SeqBase));
     case 'SeqFormula':
     case 'SeqPer': {
       // sympy.series.sequences: (items, (x, start, stop))
@@ -1123,6 +1133,12 @@ const asExpr = (v: unknown): Expr => {
   if (typeof v === 'boolean') return v ? S.true : S.false;
   throw new Unsupported(`expected an expression, got ${fmt(v)}`);
 };
+/** Tuples and dictionaries embedded in expressions need symbolic containers. */
+function expressionContainer(v: unknown): Expr {
+  if (v instanceof JsTuple) return sj.Tuple(...v.items.map(expressionContainer));
+  if (v instanceof JsDict) return sj.Dict(v.entries.map(([k, x]) => [expressionContainer(k), expressionContainer(x)]));
+  return asExpr(v);
+}
 const asExprOrPoly = (v: unknown): Expr => (v instanceof sj.Poly ? v.asExpr() : asExpr(v));
 /** Translate Python coefficient-domain options; all arithmetic stays in the public API. */
 const polynomialOptions = (kw: Record<string, unknown>): sj.PolynomialDomainOptions => ({
@@ -1397,7 +1413,42 @@ const none = (v: unknown): unknown => (v === undefined || v === null || v === 'u
 
 const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as const;
 
+/** Python's Diophantine helpers return sets of solution tuples. */
+function diophantineSet(result: unknown): unknown {
+  return Array.isArray(result) ? new JsSet(result.map((t) => new JsTuple(t))) : none(result);
+}
+
+/** SymPy polynomial Options objects serialize as dictionaries. */
+function polynomialGenerators(options: unknown): Sym[] {
+  if (!(options instanceof JsDict)) throw new Unsupported('polynomial options');
+  const gens = options.entries.find(([key]) => key === 'gens')?.[1];
+  if (!(gens instanceof JsTuple)) throw new Unsupported('polynomial generators');
+  return gens.items.map(asSym);
+}
+
 export const ADAPTERS: Record<string, Adapter> = {
+  invert_complex: (args, kw) => (noKw(kw), new JsTuple(sj.invertComplex(asExpr(args[0]), asExpr(args[1]), asSym(args[2])))),
+  invert_real: (args, kw) => (noKw(kw), new JsTuple(sj.invertReal(asExpr(args[0]), asExpr(args[1]), asSym(args[2])))),
+  solve_generic: (args, kw) => (noKw(kw), new JsList(sj.solveGeneric((args[0] as JsTuple).items as sj.Poly[], polynomialGenerators(args[1])).map((row) => new JsTuple(row)))),
+  solve_biquadratic: (args, kw) => (noKw(kw), new JsList(sj.solveBiquadratic(args[0] as sj.Poly, args[1] as sj.Poly, polynomialGenerators(args[2])).map((row) => new JsTuple(row)))),
+  finite_diff_weights: (args, kw) => (noKw(kw), fromJs(sj.finiteDiffWeights(intArg(args[0]), (args[1] as JsTuple).items.map(asExpr), args[2] === undefined ? 1 : asExpr(args[2])))),
+  constantsimp: (args, kw) => (noKw(kw), sj.constantsimp(asExpr(args[0]), [...(args[1] as JsSet).items].map(asSym))),
+  integer_powers: (args, kw) => (noKw(kw), new JsList(sj.integerPowers((args[0] as JsTuple).items.map(asExpr)).map(([base, powers]) => new JsTuple([base, new JsList(powers.map((p) => new JsTuple(p)))])))),
+  cornacchia: (args, kw) => (noKw(kw), new JsSet(sj.cornacchia(asExpr(args[0]), asExpr(args[1]), asExpr(args[2])).map((t) => new JsTuple(t)))),
+  diop_univariate: (args, kw) => (noKw(kw), diophantineSet(sj.diopUnivariate(asExpr(args[0])))),
+  diop_quadratic: (args, kw) => (noKw(kw), diophantineSet(sj.diopQuadratic(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1])))),
+  diop_general_sum_of_squares: (args, kw) => (noKw(kw), diophantineSet(sj.diopGeneralSumOfSquares(asExpr(args[0]), args[1] === undefined ? undefined : intArg(args[1])))),
+  diop_general_sum_of_even_powers: (args, kw) => (noKw(kw), diophantineSet(sj.diopGeneralSumOfEvenPowers(asExpr(args[0]), args[1] === undefined ? undefined : intArg(args[1])))),
+  diop_solve: (args, kw) => {
+    noKw(kw);
+    const r = sj.diopSolve(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]));
+    return Array.isArray(r) && !Array.isArray(r[0]) ? new JsTuple(r) : diophantineSet(r);
+  },
+  prime_as_sum_of_two_squares: (args, kw) => {
+    noKw(kw);
+    const r = sj.primeAsSumOfTwoSquares(asExpr(args[0]));
+    return Array.isArray(r) ? new JsTuple(r) : null;
+  },
   sdm_irref: (args, kw) => {
     noKw(kw);
     const input = args[0];
@@ -2709,6 +2760,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   nsolve: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['prec', 'solver', 'verify'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const opts = kw['prec'] === undefined ? {} : { prec: Number((kw['prec'] as sj.Rational).p) };
+    if (args[0] instanceof JsTuple && args[1] instanceof JsTuple && args[2] instanceof JsTuple) return sj.nsolve(args[0].items.map(asExpr), args[1].items.map(asSym), args[2].items.map(asExpr), opts);
     const e = asExpr(args[0]);
     const last = args[args.length - 1];
     if (last instanceof JsTuple && last.items.length === 2) {
@@ -3599,8 +3651,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof sj.Integral) {
       noKw(kw);
       const spec = args[1];
-      if (spec instanceof JsTuple) return sj.transformIntegral(self, asSym(args[0]), asExpr(spec.items[0]), asSym(spec.items[1]));
-      return sj.transformIntegral(self, asSym(args[0]), asExpr(spec));
+      if (spec instanceof JsTuple) return sj.transformIntegral(self, asExpr(args[0]), asExpr(spec.items[0]), asSym(spec.items[1]));
+      return sj.transformIntegral(self, asExpr(args[0]), asExpr(spec));
     }
     return polyM((p, a) => p.transform(a[0] as sj.Poly, a[1] as sj.Poly))(args, kw, self);
   },
@@ -4105,6 +4157,12 @@ function prettyArg(v: unknown): unknown {
   if (v instanceof JsSet) return new Set(v.items.map(prettyArg));
   return v;
 }
+ADAPTERS['TableForm'] = (args, kw) => {
+  const cell = (v: unknown): sj.TableEntry => v instanceof JsTuple || v instanceof JsList || v instanceof JsDict || v instanceof JsSet ? fmt(v) : v as sj.TableEntry;
+  const data = args[0] instanceof Matrix ? args[0] : (args[0] as JsTuple).items.map((r) => (r as JsTuple).items.map(cell));
+  const options = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), printable(v)]));
+  return new sj.TableForm(data, options);
+};
 for (const name of ['pretty', 'pprint'] as const) ADAPTERS[name] = (args, kw) => sj[name](prettyArg(args[0]) as sj.Printable, printOptions(kw));
 ADAPTERS['latex'] = (args, kw) => sj.latex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['print_latex'] = (args, kw) => sj.printLatex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
@@ -4167,7 +4225,7 @@ for (const name of Object.keys(sj.Q)) {
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
-const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix']);
+const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix', 'gauss_legendre', 'gauss_laguerre', 'gauss_hermite', 'gauss_gen_laguerre', 'gauss_jacobi', 'gauss_chebyshev_t', 'gauss_chebyshev_u', 'gauss_lobatto']);
 /** Python operators recorded as their special methods (the number-field doctests), and the methods that implement them. */
 /** A value that symjs arithmetic accepts directly (an expression or a JS number). */
 const isScalar = (v: unknown): v is ExprLike => v instanceof Expr || typeof v === 'number' || typeof v === 'bigint';
@@ -4635,9 +4693,10 @@ function runCase0(c: Case): Outcome {
     if (equivalent(got, c.expected, [...syms.values()], { fn: c.fn, input })) return { status: 'equivalent', got };
     // dsolve: a solution in another form that satisfies the equations with as many constants (SymPy checkodesol);
     // this also accepts a correct solution where SymPy's printed one is wrong
-    if (c.fn === 'dsolve' && solvesDsolveCase(args[0], v) && constantCount(got) === constantCount(c.expected)) return { status: 'equivalent', got };
+    if (['dsolve', 'dsolve_system'].includes(c.fn) && solvesDsolveCase(args[0], v) && constantCount(got) === constantCount(c.expected)) return { status: 'equivalent', got };
     // a doctest whose printed output is mathematically wrong: the correct value counts as compatible
-    if ((SYMPY_ERRATA[`${c.module}:${c.src}`] ?? SYMPY_ERRATA[c.src]) === got) return { status: 'equivalent', got };
+    const erratum = SYMPY_ERRATA[`${c.module}:${c.src}`] ?? SYMPY_ERRATA[c.src];
+    if (typeof erratum === 'string' ? erratum === got : erratum?.includes(got)) return { status: 'equivalent', got };
     return { status: 'fail', got };
   } catch (e) {
     if (e instanceof Unsupported) return { status: 'unsupported', reason: e.message };
@@ -4649,7 +4708,13 @@ function runCase0(c: Case): Outcome {
  * Doctests whose SymPy output is mathematically wrong, with the correct
  * printed value symjs gives (keyed by the doctest source).
  */
-const SYMPY_ERRATA: Readonly<Record<string, string>> = {
+const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // SymPy mixes Poly.gens=(y,x) with Options.gens=(x,y). Neither published
+  // result solves the original pair; these tuples satisfy both equations.
+  'sympy.solvers.polysys:solve_biquadratic(a, b, NewOption)': [
+    '[(11/9, 5/3), (3, -1)]',
+    '[(-1/2 + sqrt(29)/2, -9/2 + sqrt(29)/2), (-sqrt(29)/2 - 1/2, -9/2 - sqrt(29)/2)]',
+  ],
   // The polar Jacobian r gives pi*(5**2 - 2**2), not (5 - 2)*2*pi.
   'sympy.sets.fancysets:c2.measure': '21*pi',
   // SymPy's pdiv with a non-first generator starts the quotient at the generator index (rings.py: `q, r, dr = x, f, df`),
@@ -4665,9 +4730,12 @@ const SYMPY_ERRATA: Readonly<Record<string, string>> = {
 };
 
 /** The dsolve result v solves the equation (or system) eqArg. */
-function solvesDsolveCase(eqArg: unknown, v: unknown): boolean {
+export function solvesDsolveCase(eqArg: unknown, v: unknown): boolean {
   const eqs = (eqArg instanceof JsTuple || eqArg instanceof JsList ? eqArg.items : [eqArg]).filter((e): e is Expr => e instanceof Expr);
-  const sols = (v instanceof JsTuple || v instanceof JsList || v instanceof JsSet ? v.items : Array.isArray(v) ? v : [v]).filter((e): e is Expr => e instanceof Expr);
+  const items = v instanceof JsTuple || v instanceof JsList || v instanceof JsSet ? v.items : Array.isArray(v) ? v : [v];
+  // Systems can have several alternative families; each must solve every equation.
+  if (items.length && items.every((s) => s instanceof JsTuple || s instanceof JsList || Array.isArray(s))) return items.every((s) => solvesDsolveCase(eqArg, s));
+  const sols = items.filter((e): e is Expr => e instanceof Expr);
   const fns = sols.flatMap((s) => (s instanceof sj.Rel && s.lhs instanceof sj.UndefFn ? [s.lhs] : []));
   const x = fns[0]?.args[0];
   if (!eqs.length || !(x instanceof Sym)) return false;

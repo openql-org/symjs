@@ -528,3 +528,13 @@ describe('reduceAbsInequality and reduceAbsInequalities (SymPy)', () => {
     expect(() => Q.reduceAbsInequality(E('sqrt(Abs(x)) - 1'), '<', x)).toThrow('Only Integer Powers are allowed on Abs.');
   });
 });
+
+it('reduces OR groups of rational inequalities in all input forms', () => {
+  expect(String(Q.reduceRationalInequalities([[p('x**2 <= 0')]], x))).toBe('Eq(x, 0)');
+  expect(String(Q.reduceRationalInequalities([[[add(xr, 2), '>']]], xr))).toBe('-2 < x');
+  expect(String(Q.reduceRationalInequalities([[add(x, 2)]], x))).toBe('Eq(x, -2)');
+  expect(String(Q.reduceRationalInequalities([[p('x + 2 > 0')]], x, false))).toBe('Interval.open(-2, oo)');
+  expect(() => Q.reduceRationalInequalities([[[x, 'bad']]], x)).toThrow(TypeError);
+  expect(String(Q.reduceRationalInequalities([], x))).toBe('False');
+  expect(String(Q.solvePolyInequalities([[P('x**2 - 3'), '>'], [P('1 - x**2'), '>']]))).toBe('Union(Interval.open(-oo, -sqrt(3)), Interval.open(-1, 1), Interval.open(sqrt(3), oo))');
+});

@@ -539,3 +539,65 @@ describe('detQuick, invQuick and solveLinearSystemLU (SymPy solvers.py)', () => 
     expect(() => solveLinearSystemLU(M([[1, 2, 3]]), [x, y])).toThrow('Rows should be equal to columns - 1');
   });
 });
+
+it('denoms collects denominator bases and filters symbols', () => {
+  const names = (e: string, ...symbols: sj.Sym[]) => [...sj.denoms(sj.parseExpr(e), ...symbols)].map(String).sort();
+  const y = new sj.Sym('y'), z = new sj.Sym('z');
+  expect(names('x/y')).toEqual(['y']);
+  expect(names('x/(y*z)')).toEqual(['y', 'z']);
+  expect(names('3/x + y/z')).toEqual(['x', 'z']);
+  expect(names('x/2 + y/z')).toEqual(['2', 'z']);
+  expect(names('1/x + 1/y + 1/z', y, z)).toEqual(['y', 'z']);
+  expect(names('1/x**2 + 1/x')).toEqual(['x']);
+  expect(names('x + 1')).toEqual([]);
+});
+import * as sj from '../../src';
+
+it('solves numeric systems with a Jacobian and arbitrary precision', () => {
+  const equations = [parse('3*x**2 - 2*y**2 - 1'), parse('x**2 - 2*x + y**2 + 2*y - 8')];
+  const root = nsolve(equations, [x, y], [-1, 1]);
+  expect(root.get(0, 0).toNumber()).toBeCloseTo(-1.19287309935246, 13);
+  expect(root.get(1, 0).toNumber()).toBeCloseTo(1.27844411169911, 13);
+  for (const eq of equations) expect(Math.abs(sj.subs(eq, [[x, root.get(0, 0)], [y, root.get(1, 0)]]).toNumber())).toBeLessThan(1e-12);
+  expect(String(nsolve([parse('x**2 - 2')], [x], [1], { prec: 40 }).get(0, 0))).toContain('1.414213562373095048801688724209698078570');
+  const complex = nsolve([parse('x**2 + 1')], [x], [sj.add(1, sj.S.I)]).get(0, 0).toComplex();
+  expect(complex.im).toBeCloseTo(1, 13);
+  expect(() => nsolve([], [], [])).toThrow(RangeError);
+  expect(() => nsolve([x], [x], [])).toThrow(RangeError);
+  expect(() => nsolve([x, y], [x], [1])).toThrow(RangeError);
+  expect(() => nsolve([x], x as never, [1])).toThrow(RangeError);
+  expect(() => nsolve([x], [x], 1 as never)).toThrow(RangeError);
+  expect(() => nsolve([x], [x], [1], { solver: 'bisect' })).toThrow(TypeError);
+  expect(() => nsolve(x, [x] as never, 1)).toThrow(TypeError);
+  expect(() => nsolve(x, x, [1] as never)).toThrow(TypeError);
+  expect(() => nsolve([parse('x**3 - 2*x + 2')], [x], [0])).toThrow('did not converge');
+});
+
+describe('unrad', () => {
+  it('clears radicals while retaining their polynomial supersets', () => {
+    for (const [input, output] of [
+      ['x**(5/6) + 2', 'x**5 - 64'],
+      ['sqrt(x) + (x + 1)**(1/3)', '-x**3 + x**2 + 2*x + 1'],
+      ['sqrt(x) - 2', 'x - 4'],
+      ['-sqrt(x) + 2', 'x - 4'],
+    ] as const) {
+      const result = sj.unrad(parse(input));
+      if (sj.isNoMatch(result)) throw new TypeError('expected radical elimination');
+      expect(String(result[0])).toBe(output);
+      expect(result[1]).toEqual([]);
+    }
+    expect(sj.unrad(x.add(1))).toBe(sj.NoMatch);
+    expect(sj.unrad(parse('sqrt(x)'), sj.symbol('y'))).toBe(sj.NoMatch);
+    expect(() => sj.unrad(parse('sqrt(x) + (x+1)**(1/3) + 1'))).toThrow(sj.NotImplementedError);
+    expect(() => sj.unrad(parse('sin(sqrt(x)) + sqrt(x+1)'))).toThrow(sj.NotImplementedError);
+    expect(() => sj.unrad(parse('(x + 1)**(1/7)'))).toThrow(sj.NotImplementedError);
+  });
+  it('returns the change of variable for common-base radicals', () => {
+    const result = sj.unrad(parse('sqrt(x) + x**(1/3) - 2'));
+    if (sj.isNoMatch(result)) throw new TypeError('expected change of variable');
+    const [e, cov] = result;
+    expect(String(e)).toBe('_p**3 + _p**2 - 2');
+    expect(cov.map(String)).toEqual(['_p', '_p**6 - x']);
+    expect(String(e.subs([[cov[0]!, sj.S.One]]))).toBe('0');
+  });
+});

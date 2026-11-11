@@ -60,3 +60,46 @@ it('handles complex-only exponential families and inconsistent equations', () =>
 it('reports an unresolved transcendental equation explicitly', () => {
   expect(() => nonlinsolve([add(y, sin(y)), x], [x, y])).toThrow();
 });
+
+import * as sj from '../../src';
+it('checks the domain of every original subexpression', () => {
+  expect(sj.domainCheck(sj.parseExpr('1/(1 + 1/(x + 1)**2)'), x, -1)).toBe(false);
+  expect(sj.domainCheck(pow(x, 2), x, 0)).toBe(true);
+  expect(sj.domainCheck(pow(x, -1), x, S.Infinity)).toBe(false);
+  expect(sj.domainCheck(mul(x, pow(x, -1)), x, 0)).toBe(true);
+  expect(sj.domainCheck(new sj.Mul([x, pow(x, -1)]), x, 0)).toBe(false);
+});
+it('collects unexpanded linear coefficients and rejects hidden nonlinearities', () => {
+  expect(sj.linearCoeffs(sj.parseExpr('3*x + 2*y - 1'), x, y).map(String)).toEqual(['3', '2', '-1']);
+  expect(sj.linearCoeffs(sj.parseExpr('x + y*(z*(3*x + 2) + 3)'), x).map(String)).toEqual(['3*y*z + 1', 'y*(2*z + 3)']);
+  expect(sj.linearCoeffs(1, x).map(String)).toEqual(['0', '1']);
+  expect(sj.linearCoeffs(x).map(String)).toEqual(['x']);
+  expect(() => sj.linearCoeffs(x, x, x)).toThrow(RangeError);
+  expect(() => sj.linearCoeffs(mul(x, add(y, 1)), x, y)).toThrow(sj.NonlinearError);
+  expect(() => sj.linearCoeffs(pow(x, 2), x)).toThrow(sj.NonlinearError);
+  expect(() => sj.linearCoeffs(sj.parseExpr('(x - 1)/x + 1/x'), x)).toThrow(sj.NonlinearError);
+});
+it('returns real and periodic solution representatives', () => {
+  expect(String(sj.solvesetReal(add(exp(x), -1), x))).toBe('{0}');
+  expect(sj.solvify(add(pow(x, 2), -9), x, sj.Reals)).toEqual([sj.Rational.of(-3), sj.Rational.of(3)]);
+  expect(sj.solvify(1, x, sj.Reals)).toEqual([]);
+  expect(sj.solvify(add(exp(x), -1), x, sj.Complexes)).toBe(sj.NoMatch);
+  expect(sj.solvify(add(sin(x), -1), x, sj.Reals).toString()).toBe('pi/2');
+  expect(sj.solvify(sj.tan(x), x, sj.Reals).toString()).toBe('0');
+  expect(() => sj.solvify(add(sin(x), x), x, sj.Reals)).toThrow(sj.NotImplementedError);
+});
+
+it('inverts functions over real and complex domains', () => {
+  expect(sj.invertReal(exp(x), 1, x).map(String)).toEqual(['x', '{0}']);
+  expect(sj.invertReal(exp(x), y, x).map(String)).toEqual(['x', 'Intersection({log(y)}, Reals)']);
+  expect(sj.invertComplex(exp(x), 1, x)[1]).toBeInstanceOf(ImageSet);
+  expect(sj.invertComplex(add(sin(x), x), y, x).map(String)).toEqual(['x + sin(x)', '{y}']);
+  expect(() => sj.invertReal(y, 1, x)).toThrow(RangeError);
+  expect(() => sj.invertReal(x, x, x)).toThrow(RangeError);
+});
+
+it('handles unions and non-real periodic representatives', () => {
+  expect(sj.solvify(sin(x),x,sj.Reals).toString()).toBe('0,pi');
+  expect(sj.solvify(sin(x),x,sj.Integers)).toEqual([S.Zero]);
+  expect(sj.solvify(add(exp(mul(S.I,x)),-2),x,sj.Complexes)).toBe(sj.NoMatch);
+});

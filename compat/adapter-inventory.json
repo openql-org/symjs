@@ -2685,6 +2685,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "TableForm",
+  "status": "reviewed-conversion",
+  "note": "TableForm; convert nested collection cells to their Python text representation"
+ },
+ {
   "name": "TribonacciConstant",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -2955,9 +2960,19 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "constantsimp",
+  "status": "reviewed-conversion",
+  "note": "constantsimp; convert the set of constants to an array"
+ },
+ {
   "name": "content",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "cornacchia",
+  "status": "reviewed-conversion",
+  "note": "cornacchia; format the solution set as tuples"
  },
  {
   "name": "cos",
@@ -3053,6 +3068,31 @@
   "name": "digamma",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "diop_general_sum_of_even_powers",
+  "status": "reviewed-conversion",
+  "note": "diopGeneralSumOfEvenPowers; format the solution set as tuples"
+ },
+ {
+  "name": "diop_general_sum_of_squares",
+  "status": "reviewed-conversion",
+  "note": "diopGeneralSumOfSquares; format the solution set as tuples"
+ },
+ {
+  "name": "diop_quadratic",
+  "status": "reviewed-conversion",
+  "note": "diopQuadratic; format the solution set as tuples"
+ },
+ {
+  "name": "diop_solve",
+  "status": "reviewed-conversion",
+  "note": "diopSolve; preserve the tuple versus set result"
+ },
+ {
+  "name": "diop_univariate",
+  "status": "reviewed-conversion",
+  "note": "diopUnivariate; format the solution set as tuples"
  },
  {
   "name": "diophantine",
@@ -3275,6 +3315,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "finite_diff_weights",
+  "status": "reviewed-conversion",
+  "note": "finiteDiffWeights; convert the derivative order to a JavaScript number"
+ },
+ {
   "name": "floor",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -3435,6 +3480,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "integer_powers",
+  "status": "reviewed-conversion",
+  "note": "integerPowers; preserve Python tuple/list nesting"
+ },
+ {
   "name": "integrate",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -3458,6 +3508,16 @@
   "name": "invert",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "invert_complex",
+  "status": "reviewed-conversion",
+  "note": "invertComplex; preserve the result tuple"
+ },
+ {
+  "name": "invert_real",
+  "status": "reviewed-conversion",
+  "note": "invertReal; preserve the result tuple"
  },
  {
   "name": "is_convex",
@@ -3746,8 +3806,8 @@
  },
  {
   "name": "nsolve",
-  "status": "unreviewed-adapter",
-  "note": "Review required; a passing result is not counted as verified public-API behavior."
+  "status": "reviewed-conversion",
+  "note": "nsolve; scalar and system arguments only"
  },
  {
   "name": "nth_power_roots_poly",
@@ -3888,6 +3948,11 @@
   "name": "pretty",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "prime_as_sum_of_two_squares",
+  "status": "reviewed-conversion",
+  "note": "primeAsSumOfTwoSquares; represent EmptySet as the Python None result"
  },
  {
   "name": "primenu",
@@ -4188,6 +4253,16 @@
   "name": "solve",
   "status": "harness-computation",
   "note": "Implicit and special-form solving branches are implemented in the adapter."
+ },
+ {
+  "name": "solve_biquadratic",
+  "status": "reviewed-conversion",
+  "note": "solveBiquadratic; extract the generator order from polynomial Options"
+ },
+ {
+  "name": "solve_generic",
+  "status": "reviewed-conversion",
+  "note": "solveGeneric; extract the generator order from polynomial Options"
  },
  {
   "name": "solve_lin_sys",
