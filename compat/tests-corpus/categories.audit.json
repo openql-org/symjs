@@ -1,0 +1,25 @@
+{"omitted":[
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_morphisms","line":21,"src":"assert f == NamedMorphism(A, B, \"f\")","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_morphisms","line":28,"src":"assert id_A == IdentityMorphism(A)","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_morphisms","line":29,"src":"assert id_A != id_B","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_morphisms","line":34,"src":"assert g != f","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_morphisms","line":35,"src":"assert g == NamedMorphism(B, C, \"g\")","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_morphisms","line":36,"src":"assert g != NamedMorphism(B, C, \"f\")","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_morphisms","line":39,"src":"assert f == CompositeMorphism(f)","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_morphisms","line":62,"src":"assert isinstance(u2, NamedMorphism)","reason":"not-exported-api","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":107,"src":"assert d1 == Diagram([id_A, f])","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":108,"src":"assert d1 == Diagram([f, f])","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":115,"src":"assert g * f in d2.premises.keys()","reason":"unsupported-assertion","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":116,"src":"assert homAC == FiniteSet(g * f)","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":121,"src":"assert d1 == d11","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":122,"src":"assert d1 != d2","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":123,"src":"assert hash(d1) == hash(d11)","reason":"not-exported-api","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":126,"src":"assert d1 != d11","reason":"non-call-expression","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":158,"src":"assert f in d.premises","reason":"unsupported-assertion","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":159,"src":"assert g in d.premises","reason":"unsupported-assertion","count":1},
+{"module":"sympy.categories.tests.test_baseclasses","category":"categories","test":"test_diagram","line":183,"src":"assert d1 == Diagram([f], {f: \"unique\"})","reason":"non-call-expression","count":1}
+],"tests":[
+{"module":"sympy.categories.tests.test_baseclasses","test":"test_morphisms","parameter":0,"status":"completed"},
+{"module":"sympy.categories.tests.test_baseclasses","test":"test_diagram","parameter":0,"status":"completed"},
+{"module":"sympy.categories.tests.test_baseclasses","test":"test_category","parameter":0,"status":"completed"}
+]}

@@ -1,0 +1,30 @@
+{"omitted":[
+{"module":"sympy.discrete.tests.test_convolutions","category":"discrete","test":"test_convolution","line":46,"src":"assert convolution(a, b, subset=True) == convolution_subset(a, b) == \\\n            convolution(a, b, subset=True, dyadic=False) == \\\n                convolution(a, b, subset=True)","reason":"unsupported-assertion","count":1},
+{"module":"sympy.discrete.tests.test_convolutions","category":"discrete","test":"test_cyclic_convolution","line":70,"src":"assert convolution([1, 2, 3], [4, 5, 6], cycle=0) == \\\n            convolution([1, 2, 3], [4, 5, 6], cycle=5) == \\\n                convolution([1, 2, 3], [4, 5, 6])","reason":"unsupported-assertion","count":1},
+{"module":"sympy.discrete.tests.test_convolutions","category":"discrete","test":"test_cyclic_convolution","line":95,"src":"assert convolution(a, b, prime=19*2**10 + 1, cycle=0) == \\\n            convolution(a, b, prime=19*2**10 + 1, cycle=8) == \\\n                convolution(a, b, prime=19*2**10 + 1)","reason":"unsupported-assertion","count":1},
+{"module":"sympy.discrete.tests.test_convolutions","category":"discrete","test":"test_convolution_fft","line":161,"src":"assert all(convolution_fft([], x, dps=y) == [] for x in ([], [1]) for y in (None, 3))","reason":"stateful-iterator-input","count":1},
+{"module":"sympy.discrete.tests.test_convolutions","category":"discrete","test":"test_convolution_ntt","line":198,"src":"assert all(convolution_ntt([], x, prime=y) == [] for x in ([], [1]) for y in (p, q, r))","reason":"stateful-iterator-input","count":1},
+{"module":"sympy.discrete.tests.test_recurrences","category":"discrete","test":"test_linrec","line":17,"src":"assert linrec(coeffs=[11, 13, 15, 17], init=[1, 2, 3, 4], n=10**4)","reason":"non-boolean-assertion","count":1},
+{"module":"sympy.discrete.tests.test_recurrences","category":"discrete","test":"test_linrec","line":18,"src":"assert linrec(coeffs=[11, 13, 15, 17], init=[1, 2, 3, 4], n=10**5)","reason":"non-boolean-assertion","count":1},
+{"module":"sympy.discrete.tests.test_recurrences","category":"discrete","test":"test_linrec","line":20,"src":"assert all(linrec(coeffs=[1, 1], init=[0, 1], n=n) == fibonacci(n)\n                                                    for n in range(95, 115))","reason":"stateful-iterator-input","count":1},
+{"module":"sympy.discrete.tests.test_recurrences","category":"discrete","test":"test_linrec","line":23,"src":"assert all(linrec(coeffs=[1, 1], init=[1, 1], n=n) == fibonacci(n + 1)\n                                                    for n in range(595, 615))","reason":"stateful-iterator-input","count":1},
+{"module":"sympy.discrete.tests.test_transforms","category":"discrete","test":"test_fft_ifft","line":9,"src":"assert all(tf(ls) == ls for tf in (fft, ifft)\n                            for ls in ([], [Rational(5, 3)]))","reason":"stateful-iterator-input","count":1},
+{"module":"sympy.discrete.tests.test_transforms","category":"discrete","test":"test_ntt_intt","line":39,"src":"assert all(tf(ls, p) == ls for tf in (ntt, intt)\n                                for ls in ([], [5]))","reason":"stateful-iterator-input","count":1},
+{"module":"sympy.discrete.tests.test_transforms","category":"discrete","test":"test_fwht_ifwht","line":62,"src":"assert all(tf(ls) == ls for tf in (fwht, ifwht) \\\n                        for ls in ([], [Rational(7, 4)]))","reason":"stateful-iterator-input","count":1},
+{"module":"sympy.discrete.tests.test_transforms","category":"discrete","test":"test_mobius_transform","line":110,"src":"assert all(tf(ls, subset=subset) == ls\n                for ls in ([], [Rational(7, 4)]) for subset in (True, False)\n                for tf in (mobius_transform, inverse_mobius_transform))","reason":"stateful-iterator-input","count":1}
+],"tests":[
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_convolution","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_cyclic_convolution","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_convolution_fft","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_convolution_ntt","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_convolution_fwht","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_convolution_subset","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_covering_product","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_intersecting_product","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_convolutions","test":"test_convolution_int","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_recurrences","test":"test_linrec","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_transforms","test":"test_fft_ifft","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_transforms","test":"test_ntt_intt","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_transforms","test":"test_fwht_ifwht","parameter":0,"status":"completed"},
+{"module":"sympy.discrete.tests.test_transforms","test":"test_mobius_transform","parameter":0,"status":"completed"}
+]}

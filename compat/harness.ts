@@ -136,7 +136,7 @@ export class JsLambda {
 }
 
 /** A Lambda inside an expression is a Lambda node (a JsLambda is the form passed as an argument). */
-const lambdaAsNode = (v: unknown): unknown => v instanceof sj.AlgebraicNumber ? (v.alias ?? v.asExpr()) : v instanceof JsLambda ? sj.Lambda(v.vars, v.body) : v;
+const lambdaAsNode = (v: unknown): unknown => v instanceof sj.AlgebraicNumber ? (v.alias ?? v.asExpr()) : v instanceof JsLambda ? sj.Lambda(v.vars, expressionContainer(v.body)) : v;
 
 /** A library function passed as an argument (equal_valued, factor, math.isclose, ...). */
 export class JsFunc {
@@ -1156,7 +1156,9 @@ function deserializeVector(tree: Tree): unknown {
     if (t instanceof JsTuple && t.items[0] instanceof Matrix) {
       return sj.CoordSys3D(tree['name'] as string, { ...names, rotationMatrix: t.items[0], location: parent ? (t.items[1] as Expr) : undefined });
     }
-    return sj.CoordSys3D(tree['name'] as string, { ...names, transformation: t as sj.Lambda });
+    const transformation = lambdaAsNode(t);
+    if (!(transformation instanceof sj.Lambda)) throw new Unsupported('coordinate transformation');
+    return sj.CoordSys3D(tree['name'] as string, { ...names, transformation });
   }
   const args = (tree['args'] as Tree[]).map((a) => deserialize(a));
   const items = (v: unknown): unknown[] => (v instanceof JsTuple ? [...v.items] : [v]);
@@ -2255,7 +2257,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_two_terms': exprMethod((e) => new JsTuple(sj.asTwoTerms(e))),
   '.has_xfree': (args, kw, self) => (noKw(kw), sj.hasXfree(asExpr(self), (args[0] as JsSet).items.filter((i) => !(i instanceof UFnClass)).map(asExpr))),
   '.is_algebraic_expr': (args, kw, self) => (noKw(kw), sj.isAlgebraicExpr(asExpr(self), args.map(asExpr))),
-  '.dummy_eq': (args, kw, self) => (noKw(kw), sj.dummyEq(asExpr(self), asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
+  '.dummy_eq': (args, kw, self) => (noKw(kw), sj.dummyEq(asExpr(lambdaAsNode(self)), asExpr(lambdaAsNode(args[0])), args[1] === undefined ? undefined : asExpr(args[1]))),
   '.compare': (args, kw, self) => (noKw(kw), Math.sign(sj.compareKeys(sj.sortKey(asExpr(self)), sj.sortKey(asExpr(args[0]))))),
   '.could_extract_minus_sign': exprMethod((e) => sj.couldExtractMinusSign(e)),
   '.as_ordered_factors': exprMethod((e) => new JsList(sj.orderedFactors ? sj.orderedFactors(e) : [e])),
@@ -4464,7 +4466,7 @@ const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymN
 /** sympy.vector names that symjs exports under another name (SymPy's top-level Point is the geometric one). */
 const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
 /** sympy.stats names that symjs exports under another name: E is Euler's number and Chi the hyperbolic cosine integral. */
-const STATS_RENAMES: Record<string, string> = { E: 'expectation', Chi: 'ChiRV' };
+const STATS_RENAMES: Record<string, string> = { E: 'expectation', probability: 'P', Chi: 'ChiRV' };
 /** sympy.combinatorics names that symjs exports under another name (homomorphism and rewrite are taken by agca and simplify). */
 const GROUP_RENAMES: Record<string, string> = { homomorphism: 'groupHomomorphism', rewrite: 'reidemeisterRewrite' };
 /** sympy.utilities names that symjs exports under another name (replace is the expression operation). */

@@ -5,6 +5,8 @@
 import os
 import json
 import textwrap
+import tempfile
+from pathlib import Path
 import unittest
 from unittest.mock import patch
 
@@ -202,6 +204,119 @@ class UnitTestExtractorTests(unittest.TestCase):
                 assert Dummy().dummy_index != 0
         '''
         self.assertEqual(self.extract(source), self.extract(source))
+
+
+class CategoryShardTests(unittest.TestCase):
+    def test_pinned_printing_and_parsing_files_have_explicit_scope_decisions(self):
+        root = Path(unit.sympy.__file__).parent
+        for category in ('printing', 'parsing'):
+            for path in (root / category).rglob('test_*.py'):
+                self.assertIn(path.relative_to(root).as_posix(), unit.FILE_SCOPE)
+
+    def test_discovery_includes_nested_areas_and_excludes_mixed_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            names = ["polys/tests/test_z.py", "polys/agca/tests/test_a.py",
+                     "tensor/array/expressions/tests/test_array.py", "solvers/ode/tests/test_ode.py",
+                     "strategies/branch/tests/test_core.py", "functions/special/tests/test_gamma.py",
+                     "printing/tests/test_str.py", "printing/pretty/tests/test_pretty.py",
+                     "printing/tests/test_c.py", "parsing/tests/test_latex.py",
+                     "parsing/tests/test_mathematica.py", "parsing/tests/test_sympy_parser.py",
+                     "stats/sampling/tests/test_sample.py", "utilities/_compilation/tests/test_build.py",
+                     "categories/tests/test_drawing.py", "physics/tests/test_units.py",
+                     "multipledispatch/tests/test_core.py"]
+            for name in names:
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.touch()
+            included, excluded = unit.discover(root)
+            self.assertEqual([p.relative_to(root).as_posix() for p in included['polys']], names[:2])
+            self.assertEqual(len(included['printing']), 2)
+            self.assertEqual(len(included['parsing']), 2)
+            self.assertEqual(len(excluded), 7)
+            self.assertEqual(sum(map(len, included.values())) + len(excluded), len(names))
+            self.assertTrue(all(e['reason'] for e in excluded))
+
+    def test_audit_uses_top_level_category_and_includes_empty_areas(self):
+        events = [{"category": "tensor", "module": "sympy.tensor.array.tests.test_x", "reason": "non-call-expression"}]
+        corpus = unit.corpus_from_events(events, [], 1, ['tensor', 'unify'])
+        self.assertEqual(set(corpus['extraction']['categories']), {'tensor', 'unify'})
+        self.assertEqual(corpus['extraction']['categories']['tensor']['examined'], 1)
+        self.assertEqual(corpus['extraction']['categories']['unify']['examined'], 0)
+
+    def test_shards_round_trip_record_order_ascii_and_byte_boundaries(self):
+        cases = [{"category": "sets", "expected": value} for value in ['α', '\ud800', 'x' * 60, 'z']]
+        corpus = unit.corpus_from_events(cases, [], 4, ['sets'])
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            summary = unit.write_category(directory, 'sets', corpus, max_bytes=130)
+            restored = []
+            for shard in summary['shards']:
+                path = directory / shard['file']
+                self.assertLessEqual(path.stat().st_size, 130)
+                text = path.read_text(encoding='ascii')
+                restored.extend(json.loads(text))
+                self.assertEqual(len(text.splitlines()), shard['cases'] + 2)
+            self.assertEqual(restored, cases)
+            self.assertEqual(summary['cases'], len(cases))
+            self.assertEqual(json.loads((directory / summary['auditFile']).read_text()), {'omitted': [], 'tests': []})
+            with self.assertRaisesRegex(ValueError, 'Single sets case'):
+                unit.write_category(directory, 'sets', corpus, max_bytes=20)
+
+    def test_nonfinite_json_is_rejected_and_other_category_files_are_retained(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            retained = directory / 'core.json'
+            retained.write_bytes(b'[1]\n')
+            corpus = unit.corpus_from_events([], [], 0, ['sets'])
+            unit.write_category(directory, 'sets', corpus)
+            self.assertEqual(retained.read_bytes(), b'[1]\n')
+            self.assertEqual(json.loads((directory / 'sets.json').read_text()), [])
+            with self.assertRaises(ValueError):
+                unit.json_line({'bad': float('nan')})
+
+    def test_legacy_migration_keeps_cases_and_omissions_without_execution(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root / 'core/tests/test_legacy.py'
+            path.parent.mkdir(parents=True)
+            path.write_text('def test_legacy():\n    assert Integer(1) == 1\n')
+            case = {'module': 'sympy.core.tests.test_legacy', 'category': 'core', 'test': 'test_legacy',
+                    'line': 2, 'src': 'assert Integer(1) == 1', 'fn': 'Integer', 'args': [],
+                    'kwargs': {}, 'expected': '1', 'op': '=='}
+            tests = [{'module': case['module'], 'test': case['test'], 'status': 'completed'}]
+            baseline = root / 'baseline.json'
+            baseline.write_text(json.dumps(unit.corpus_from_events([case], tests, 1)))
+            with patch.object(unit.sympy, '__file__', str(root / '__init__.py')), patch.object(unit, 'execute_source') as execute:
+                corpus = unit.extract_category('core', [path], 1, baseline)
+            execute.assert_not_called()
+            self.assertEqual(corpus['cases'], [case])
+            self.assertEqual(list(corpus['cases'][0]), list(case))
+            self.assertEqual(corpus['extraction']['sourceSites'], 1)
+            self.assertEqual(corpus['extraction']['retainedModules'], 1)
+
+    def test_repeated_omissions_are_losslessly_compacted_and_repacking_is_idempotent(self):
+        event = {'module': 'sympy.ntheory.tests.test_digits', 'category': 'ntheory',
+                 'line': 1, 'src': 'assert f(n) == n', 'reason': 'duplicate'}
+        corpus = unit.corpus_from_events([event, event, event], [], 1, ['ntheory'])
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            summary = unit.write_category(directory, 'ntheory', corpus)
+            path = directory / summary['auditFile']
+            audit = json.loads(path.read_text())
+            self.assertEqual(audit['omitted'], [{**event, 'count': 3}])
+            self.assertEqual(summary['examined'], 3)
+            (directory / 'index.json').write_text(json.dumps({'categories': {'ntheory': summary}}))
+            before = path.read_bytes()
+            cases = (directory / 'ntheory.json').read_bytes()
+            unit.compact_audits(directory, ['ntheory'])
+            self.assertEqual(path.read_bytes(), before)
+            self.assertEqual((directory / 'ntheory.json').read_bytes(), cases)
+
+    def test_unknown_categories_are_rejected(self):
+        with patch.dict(os.environ, {'PYTHONHASHSEED': '0'}):
+            with self.assertRaisesRegex(ValueError, 'Unknown categories'):
+                unit.main('unused', only=['calculus,typo'])
 
 
 if __name__ == '__main__':
