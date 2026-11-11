@@ -30,6 +30,7 @@ import { PREC, precedence } from '../printing/str';
 import type { Key } from '../printing/sortkey';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { Permutation } from '../combinatorics/permutations';
+import { Matrix } from '../matrices/matrix';
 import { ImmutableDenseNDimArray, NDimArray, Slice } from './ndimarray';
 import type { ArrayInput } from './ndimarray';
 import { permutedims, tensorcontraction, tensorproduct } from './arrayop';
@@ -596,6 +597,20 @@ export abstract class TensExpr extends ExtensionExpr {
   abstract contractMetric(g: TensorHeadNode): Expr;
   /** SymPy substitute_indices((old, new), ...). */
   abstract substituteIndices(...indexTuples: [TensorIndexNode, TensorIndexNode][]): Expr;
+  /** SymPy fun_eval((old, new), ...): the deprecated name of substituteIndices. */
+  funEval(...indexTuples: [TensorIndexNode, TensorIndexNode][]): Expr {
+    return this.substituteIndices(...indexTuples);
+  }
+  /**
+   * SymPy get_matrix: the components as a Matrix (a column for rank 1), for an
+   * expression of rank 1 or 2. SymPy reads the deprecated global component
+   * data; the components here are given as in replaceWithArrays.
+   */
+  getMatrix(replacements: ArrayReplacements): Matrix {
+    const array = this.replaceWithArrays(replacements);
+    if (!(array instanceof NDimArray) || array.rank() < 1 || array.rank() > 2) throw new NotImplementedError('missing multidimensional reduction to matrix.');
+    return array.rank() === 2 ? array.tomatrix() : Matrix.of(array.flatElements().map((e) => [e]));
+  }
   protected override computeCommutative(): boolean {
     return false;
   }

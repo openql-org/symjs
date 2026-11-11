@@ -430,14 +430,10 @@ NOT_IMPLEMENTED = {
     'sympy.codegen.cfunctions': 'base module (planned): expm1, log1p, exp2, log2, fma, log10, Sqrt, Cbrt, hypot, isnan, isinf',
     'sympy.combinatorics.galois': 'transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)',
     'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
-    'sympy.integrals.quadrature': 'Gauss quadrature nodes and weights',
     'sympy.polys.densetools': 'dense recursive list representation',
-    'sympy.polys.multivariate_resultants': 'DixonResultant, MacaulayResultant',
     'sympy.polys.numberfields.galois_resolvents': '',
     'sympy.polys.numberfields.galoisgroups': '',
     'sympy.polys.numberfields.resolvent_lookup': '',
-    'sympy.polys.polymatrix': 'PolyMatrix',
-    'sympy.tensor.toperators': '',
 }
 # Packages whose modules are not implemented as a whole, with the plan; the
 # most specific prefix wins and a module with a counterpart stays partial.
@@ -476,6 +472,7 @@ NOTES = {
     'sympy.simplify._cse_diff': 'private CSE of Jacobians (forward differentiation)',
     'sympy.simplify.traversaltools': 'deprecated alias of use',
     'sympy.tensor.functions': 'shape, NoShapeError; TensorProduct not ported',
+    'sympy.tensor.toperators': 'PartialDerivative with doit, fun_eval, get_matrix and component arrays; the inventory does not resolve its base sympy.core.Expr (imported through the sympy.core package), and the Basic/Expr members inherited by Expr subclasses are not mapped to symjs members.',
 }
 
 
@@ -634,6 +631,9 @@ class PublicContracts:
             if name in {'object', 'Exception', 'BaseException', 'ValueError', 'TypeError', 'IndexError', 'KeyError', 'RuntimeError', 'ArithmeticError', 'ZeroDivisionError', 'NotImplementedError', 'tuple', 'dict', 'list', 'set', 'frozenset', 'int', 'str', 'type'}:
                 continue
             parent = self.resolve(module, name)
+            if parent == 'abc.ABC':
+                # The abstract-base-class marker declares no members.
+                continue
             if parent not in self.classes:
                 unresolved.add(parent)
                 continue
@@ -741,7 +741,13 @@ def disallowed_omissions(rows, allowed):
     return dict(sorted(counts.items()))
 
 
+# SymPy test files named differently from the module they test.
+TEST_MODULES = {'sympy.tensor.toperators': 'sympy.tensor.tests.test_tensor_operators'}
+
+
 def test_module_for(module):
+    if module in TEST_MODULES:
+        return TEST_MODULES[module]
     package, _, name = module.rpartition('.')
     return (package or module) + '.tests.test_' + name
 

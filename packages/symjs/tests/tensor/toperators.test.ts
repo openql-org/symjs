@@ -37,3 +37,15 @@ it('differentiates component arrays with derivand axes first', () => {
   expect(String(PartialDerivative(x, B.at(j)).extractData(new ExprMap([[B.at(j), new ImmutableDenseNDimArray([x, y])]]))[1])).toBe('[1, 0]');
   expect(String(PartialDerivative(x, x).substituteIndices([i,j]))).toBe('PartialDerivative(x, x)');
 });
+it('rebuilds with doit and reads component matrices', () => {
+  const derivative = PartialDerivative(A.at(i), B.at(j));
+  expect(String(derivative.doit())).toBe('PartialDerivative(A(i), B(j))');
+  expect(String(derivative.funEval([j, k]))).toBe('PartialDerivative(A(i), B(k))');
+  const replacements = new Map([[A.at(i), [p('sin(x)'), p('log(x)*y**3')]], [B.at(i), [x, y]]]);
+  expect(String(derivative.getMatrix(replacements))).toBe('Matrix([[cos(x), 0], [y**3/x, 3*y**2*log(x)]])');
+  expect(String(PartialDerivative(A.at(i), x).getMatrix(replacements))).toBe('Matrix([[cos(x)], [y**3/x]])');
+  expect(() => PartialDerivative(A.at(i), B.at(i)).getMatrix(replacements)).toThrow(NotImplementedError);
+  const C = TensorHead('C', [L, L]);
+  const cube = new Map([[A.at(i), [x, y]], [C.at(j, k), [[x, y], [y, x]]]]);
+  expect(() => PartialDerivative(A.at(i), C.at(j, k)).getMatrix(cube)).toThrow(NotImplementedError);
+});

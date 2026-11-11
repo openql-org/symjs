@@ -269,8 +269,8 @@ export type { RoundTwoOptions, PrimeDecompOptions } from './polys/numberfields/i
 export { ClosureFailure, StructureError, MissingUnityError } from './polys/numberfields/exceptions';
 export { rootFactors, rootsQuintic } from './polys/polyroots';
 export { PolyQuintic } from './polys/polyquinticconst';
-export { PolyMatrix, MutablePolyDenseMatrix, MutablePolyMatrix } from './polys/polymatrix';
-export type { PolyMatrixOptions, PolyMatrixEntry } from './polys/polymatrix';
+export { PolyMatrix, MutablePolyDenseMatrix, MutablePolyMatrix, PolyMatrixRing } from './polys/polymatrix';
+export type { PolyMatrixOptions, PolyMatrixEntry, PolyMatrixGens, PolyMatrixEntryFunction, PolyMatrixArgument } from './polys/polymatrix';
 export { DixonResultant, MacaulayResultant } from './polys/multivariateresultants';
 export { dmpAlgInject } from './polys/densetools';
 export { dmpSqfNorm } from './polys/sqfreetools';
