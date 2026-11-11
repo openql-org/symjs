@@ -209,3 +209,16 @@ it('canonicalizes nested relations before comparing them', async () => {
   const [x,y] = a.symbols('x y');
   expect(a.canonicalRelation(new a.Rel('Eq',new a.Rel('Lt',x!,y!),new a.Rel('Gt',y!,x!)))).toBe(a.S.true);
 });
+
+it('orders accumulation intervals only when their endpoints determine the relation', () => {
+  const a = sj.AccumBounds(1,3), b = sj.AccumBounds(4,5);
+  expect(Lt(a,4)).toBe(S.true);
+  expect(Lt(a,-1)).toBe(S.false);
+  expect(Lt(a,2)).toBeInstanceOf(sj.Rel);
+  expect(Gt(4,a)).toBe(S.true);
+  expect(Ge(-1,a)).toBe(S.false);
+  expect(Le(2,a)).toBeInstanceOf(sj.Rel);
+  expect(Lt(a,b)).toBe(S.true);
+  expect(Ge(a,b)).toBe(S.false);
+  expect(Ge(a,2)).toBeInstanceOf(sj.Rel);
+});

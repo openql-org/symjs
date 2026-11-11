@@ -1004,7 +1004,6 @@
   "sympy.core.tests.test_evalf:test_scaled_zero:488 #4265f7895593aad5e5ab",
   "sympy.core.tests.test_evalf:test_scaled_zero:489 #5457e3e35bee117dfe94",
   "sympy.core.tests.test_evalf:test_subs:435 #5a13f5379ef6c4b8afb9",
-  "sympy.core.tests.test_expand:test_expand_arit:209 #7a16cb9e19d97fade305",
   "sympy.core.tests.test_expand:test_expand_frac:139 #0dc327d6255d2a5018b7",
   "sympy.core.tests.test_expand:test_expand_frac:145 #82aa9b3cce8116feae49",
   "sympy.core.tests.test_expand:test_expand_frac:146 #2b276918e0b8725d45df",

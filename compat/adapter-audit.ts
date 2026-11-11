@@ -5,6 +5,7 @@ import { PORTS } from './ports';
 
 /** A passing adapter is not automatically evidence of a public implementation. */
 export const REVIEWED_ADAPTERS: Readonly<Record<string, string>> = {
+  TableForm: 'TableForm; convert nested collection cells to their Python text representation',
   nonlinsolve: 'nonlinsolve',
   substitution: 'substitution',
   checksol: 'checksol',
@@ -15,6 +16,21 @@ export const REVIEWED_ADAPTERS: Readonly<Record<string, string>> = {
   solve_poly_system: 'solvePolySystem',
   solve_undetermined_coeffs: 'solveUndeterminedCoeffs',
   trigsimp_groebner: 'trigsimpGroebner; convert Python function hints and containers to public options',
+  nsolve: 'nsolve; scalar and system arguments only',
+  finite_diff_weights: 'finiteDiffWeights; convert the derivative order to a JavaScript number',
+  constantsimp: 'constantsimp; convert the set of constants to an array',
+  integer_powers: 'integerPowers; preserve Python tuple/list nesting',
+  cornacchia: 'cornacchia; format the solution set as tuples',
+  diop_univariate: 'diopUnivariate; format the solution set as tuples',
+  diop_quadratic: 'diopQuadratic; format the solution set as tuples',
+  diop_solve: 'diopSolve; preserve the tuple versus set result',
+  diop_general_sum_of_squares: 'diopGeneralSumOfSquares; format the solution set as tuples',
+  diop_general_sum_of_even_powers: 'diopGeneralSumOfEvenPowers; format the solution set as tuples',
+  prime_as_sum_of_two_squares: 'primeAsSumOfTwoSquares; represent EmptySet as the Python None result',
+  invert_complex: 'invertComplex; preserve the result tuple',
+  invert_real: 'invertReal; preserve the result tuple',
+  solve_generic: 'solveGeneric; extract the generator order from polynomial Options',
+  solve_biquadratic: 'solveBiquadratic; extract the generator order from polynomial Options',
 };
 /** Known mathematical implementations still in the harness, pending migration. */
 export const COMPUTATIONAL_ADAPTERS: Readonly<Record<string, string>> = {

@@ -19,6 +19,8 @@ import { compareKeys, sortKey } from '../printing/sortkey';
 import { Poly, factorListExpr, sortGens } from '../polys/sympoly';
 import { expand } from '../simplify/expand';
 import { radsimp } from '../simplify/sqrtdenest';
+import { Eq } from '../core/logic';
+import { and, or } from '../core/boolalg';
 
 type Factor = { expr: Expr; ground: boolean };
 
@@ -40,6 +42,32 @@ export function factorSystem(eqs: readonly ExprLike[], gens: readonly Expr[] = [
   return factorSystemRaw(eqs, gens)
     .filter((s) => !s.some((f) => f.ground))
     .map((s) => s.map((f) => f.expr));
+}
+
+/** Boolean description of every branch of a factored polynomial system. */
+export function factorSystemBool(eqs: readonly ExprLike[], gens: readonly Expr[] = []): Expr {
+  return or(...factorSystemCond(eqs, gens).map((system) => and(...system.map((e) => Eq(e, 0)))));
+}
+
+/** Factor a polynomial system while preserving its generators and coefficient domain. */
+export function factorSystemPoly(polys: readonly Poly[]): Poly[][] {
+  if (!polys.length) return [[]];
+  const p = first(polys);
+  if (polys.some((q) => q.domain !== p.domain || q.gens.map((g) => g.key).join() !== p.gens.map((g) => g.key).join())) throw new TypeError('factorSystemPoly: polynomials must have the same generators and domain');
+  return factorSystemCond(polys.map((q) => q.asExpr()), p.gens).map((s) => s.map((e) => Poly.from(e, p.gens, { domain: p.domain })));
+}
+
+/** Solve polynomial objects in the specified generator order. */
+export function solveGeneric(polys: readonly Poly[], gens: readonly Sym[]): Expr[][] {
+  return solvePolySystem(polys.map((p) => p.asExpr()), gens);
+}
+
+/** Solve two polynomials of degree at most two in each of two generators. */
+export function solveBiquadratic(f: Poly, g: Poly, gens: readonly Sym[]): Expr[][] {
+  if (gens.length !== 2 || [f, g].some((p) => gens.some((x) => Poly.from(p.asExpr(), gens).degree(x) > 2))) throw new RangeError('solveBiquadratic: two generators and biquadratic polynomials required');
+  // SymPy 1.14's low-level routine can mix Poly.gens with opt.gens and return
+  // tuples that do not satisfy either equation. Rebuild by expression in gens.
+  return solveGeneric([f, g], gens);
 }
 
 function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[]): Factor[][] {

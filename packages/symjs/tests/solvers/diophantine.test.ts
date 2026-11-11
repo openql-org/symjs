@@ -713,3 +713,13 @@ describe('diopSolve and the solvers of each type', () => {
     expect([...D.sumOfSquares(25, 2)].map(tup)).toEqual(['(3, 4)']);
   });
 });
+
+it('exposes Pell equivalence and complete continued-fraction lengths', () => {
+  expect(sj.equivalent(18, 5, -18, -5, 13, -1)).toBe(true);
+  expect(sj.equivalent(3, 1, -18, 393, 109, -4)).toBe(false);
+  expect(sj.equivalent(1, 0, 2, 1, 2, 2)).toBe(false);
+  expect(() => sj.equivalent(1, 0, 1, 0, 2, 0)).toThrow(RangeError);
+  expect(sj.length(-2, 4, 5)).toBe(3);
+  expect(sj.length(-5, 4, 17)).toBe(4);
+  expect(sj.length(1, 2, 0)).toBe(2);
+});

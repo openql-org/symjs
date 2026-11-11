@@ -180,3 +180,37 @@ describe('solveTriangulated', () => {
     expect(show(solveTriangulated(P(['x - y', 'y**2 - 4', 'z*y - 2']), [x, y, z]))).toBe('[[-2, -2, -1], [2, 2, 1]]');
   });
 });
+
+import { factorSystemBool } from '../../src';
+it('expresses factored solution branches as Boolean conditions', () => {
+  expect(String(factorSystemBool(P(['x**2 - 1'])))).toBe('Eq(x - 1, 0) | Eq(x + 1, 0)');
+  expect(String(factorSystemBool(P(['x**2 - 1', 'y - 1'])))).toBe('(Eq(x - 1, 0) & Eq(y - 1, 0)) | (Eq(x + 1, 0) & Eq(y - 1, 0))');
+  expect(String(factorSystemBool(P(['x**2 + 2*x + 1 - (x + 1)**2'])))).toBe('True');
+  expect(String(factorSystemBool([1]))).toBe('False');
+});
+
+import * as sj from '../../src';
+it('solves polynomial objects in the requested order, correcting SymPy biquadratic errata', () => {
+  const examples = [['y**2 + x - 4', '2*y + 3*x - 7'], ['x**2 + y - 3', 'x - y - 4']];
+  for (const eqs of examples) {
+    const [a, b] = eqs.map((e) => sj.Poly.from(parse(e), [y, x]));
+    const roots = sj.solveBiquadratic(a!, b!, [x, y]);
+    expect(roots).toHaveLength(2);
+    // SymPy 1.14's documented tuples mix the polynomial and options generator
+    // orders. Verify the actual equations rather than repeating those outputs.
+    for (const row of roots) for (const eq of eqs) expect(String(sj.simplify(sj.subs(parse(eq), [[x, row[0]!], [y, row[1]!]])))).toBe('0');
+  }
+  expect(sj.solveGeneric([sj.Poly.from(parse('x-y+5')), sj.Poly.from(parse('x+y-3'))], [x,y]).map((r) => r.map(String))).toEqual([['-1','4']]);
+  expect(() => sj.solveBiquadratic(sj.Poly.from(x), sj.Poly.from(y), [x])).toThrow(RangeError);
+  expect(() => sj.solveBiquadratic(sj.Poly.from(parse('x**3')), sj.Poly.from(y), [x,y])).toThrow(RangeError);
+});
+it('preserves polynomial generators and coefficient domains while factoring systems', () => {
+  const polys = P(['(a-1)*(x-2)', '(b-3)*(x-2)', 'c']).map((e) => sj.Poly.from(e, [x], {domain:'ZZ[a,b,c]'}));
+  expect(sj.factorSystemPoly(polys).map((row) => row.map(String))).toEqual([
+    ["Poly(x - 2, x, domain='ZZ[a,b,c]')", "Poly(c, x, domain='ZZ[a,b,c]')"],
+    ["Poly(a - 1, x, domain='ZZ[a,b,c]')", "Poly(b - 3, x, domain='ZZ[a,b,c]')", "Poly(c, x, domain='ZZ[a,b,c]')"],
+  ]);
+  expect(sj.factorSystemPoly([])).toEqual([[]]);
+  expect(() => sj.factorSystemPoly([sj.Poly.from(x,[x]), sj.Poly.from(y,[y])])).toThrow(TypeError);
+  expect(() => sj.factorSystemPoly([sj.Poly.from(x,[x]), sj.Poly.from(x,[x],{domain:'QQ'})])).toThrow(TypeError);
+});

@@ -43,3 +43,19 @@ describe('sqrt_quadratic_rule', () => {
     expect(M('exp(x)')).toBe('None');
   });
 });
+
+import * as sj from '../../src';
+it('exposes elementary manual integration through the calculus entry', () => {
+  for (const [input, expected] of [
+    ['1/x', 'log(x)'], ['log(x)', 'x*log(x) - x'],
+    ['exp(x)/(1 + exp(2*x))', 'atan(exp(x))'],
+    ['cos(x)**4*sin(x)', '-cos(x)**5/5'],
+    ['cos(x)**4*sin(x)**3', 'cos(x)**7/7 - cos(x)**5/5'],
+    ['tan(x)', '-log(cos(x))'],
+  ]) {
+    const primitive = sj.manualintegrate(parse(input!), x);
+    expect(String(primitive)).toBe(expected);
+    expect(String(sj.trigsimp(sj.simplify(sj.sub(sj.diff(primitive, x), parse(input!)))))).toBe('0');
+  }
+  expect(String(sj.manualintegrate(sj.tan(sj.pow(x, 2)), x))).toContain('Integral');
+});

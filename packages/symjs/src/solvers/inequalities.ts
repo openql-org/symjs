@@ -422,6 +422,26 @@ export function solveRationalInequalities(eqs: readonly (readonly [[Poly, Poly],
   return result;
 }
 
+/** Union of the solution sets of polynomial inequalities. */
+export function solvePolyInequalities(polys: readonly (readonly [Poly, string])[]): SetExpr {
+  return union(...polys.flatMap(([p, r]) => solvePolyInequality(p, r)));
+}
+
+/** OR of AND groups of rational inequalities, optionally as a set. */
+export function reduceRationalInequalities(exprs: readonly (readonly (ExprLike | readonly [ExprLike, string])[])[], gen: Sym, relational = true): Expr {
+  const relation = (e: ExprLike | readonly [ExprLike, string]): Expr => {
+    const isPair = (a: ExprLike | readonly [ExprLike, string]): a is readonly [ExprLike, string] => Array.isArray(a);
+    if (!isPair(e)) return sympify(e);
+    const [f, op] = e;
+    const constructors: Readonly<Record<string, (a: ExprLike, b: ExprLike) => Expr>> = { '>': Gt, '>=': Ge, '<': Lt, '<=': Le, '==': Eq, '!=': Ne };
+    const make = constructors[op];
+    if (make === undefined) throw new TypeError(`reduceRationalInequalities: invalid relation ${op}`);
+    return make(f, 0);
+  };
+  const result = orB(...exprs.map((group) => reduceInequalities(group.map(relation), [gen])));
+  return relational ? result : asSet(result);
+}
+
 /** SymPy reduce_inequalities: a relational description of the solutions. */
 export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symbols: readonly Sym[] = []): Expr {
   const ineqs = (isExprList(ineqsIn) ? ineqsIn : [ineqsIn]).map((e) => sympify(e));

@@ -262281,7 +262281,51 @@
   },
   {
    "fn": ".gen",
-   "unsupportedArg": "SeqExpr",
+   "self": {
+    "t": "SeqExpr",
+    "gen": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    "limits": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.gen",
@@ -262289,7 +262333,51 @@
   },
   {
    "fn": ".interval",
-   "unsupportedArg": "SeqExpr",
+   "self": {
+    "t": "SeqExpr",
+    "gen": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    "limits": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.interval",
@@ -262297,7 +262385,51 @@
   },
   {
    "fn": ".length",
-   "unsupportedArg": "SeqExpr",
+   "self": {
+    "t": "SeqExpr",
+    "gen": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    "limits": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.length",
@@ -262305,7 +262437,83 @@
   },
   {
    "fn": ".gen",
-   "unsupportedArg": "SeqExprOp",
+   "self": {
+    "t": "SeqExprOp",
+    "args": [
+     {
+      "t": "SeqFormula",
+      "items": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     },
+     {
+      "t": "SeqPer",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.gen",
@@ -262313,7 +262521,83 @@
   },
   {
    "fn": ".interval",
-   "unsupportedArg": "SeqExprOp",
+   "self": {
+    "t": "SeqExprOp",
+    "args": [
+     {
+      "t": "SeqFormula",
+      "items": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     },
+     {
+      "t": "SeqPer",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.interval",
@@ -262321,7 +262605,83 @@
   },
   {
    "fn": ".length",
-   "unsupportedArg": "SeqExprOp",
+   "self": {
+    "t": "SeqExprOp",
+    "args": [
+     {
+      "t": "SeqFormula",
+      "items": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     },
+     {
+      "t": "SeqPer",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ],
+      "x": {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      },
+      "start": {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.length",

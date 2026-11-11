@@ -1026,3 +1026,10 @@ describe('pretty of a SymPy Dict', () => {
     expect(sj.pretty(sj.Dict([[x, 1], [2, sj.Rational.of(1n, 2n)]]), { useUnicode: false })).toBe('{2: 1/2, x: 1}');
   });
 });
+
+it('prints symbolic tuples inside sets with multiline elements', () => {
+  const x = sym('x');
+  const tuple = sj.Tuple(sj.pow(x, -1), sj.complement(sj.finiteSet(x), sj.finiteSet(0)));
+  expect(pretty(tuple, { useUnicode: false })).toBe(' 1            \n(-, {x} \\ {0})\n x            ');
+  expect(pretty(sj.finiteSet(tuple), { useUnicode: false })).toBe('  1             \n{(-, {x} \\ {0})}\n  x             ');
+});

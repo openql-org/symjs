@@ -97,3 +97,18 @@ describe('coefficient sequence representation', () => {
     expect(String(sj.fps(P('exp(2*x**3+1)'), x, 0, '-'))).toContain('Piecewise(((-2)**(_k/3)*E/factorial(_k/3), Eq(Mod(_k, 3), 0))');
   });
 });
+
+it('constructs normalized exponential and ordinary coefficient recurrences', () => {
+  const r = sj.SymFunction('r'), k = V('k');
+  expect(String(sj.expRe(P('-f(x) + Derivative(f(x), x)'), r, k))).toBe('-r(k) + r(k + 1)');
+  expect(String(sj.expRe(P('Derivative(f(x), x) + Derivative(f(x), (x, 2))'), r, k))).toBe('r(k) + r(k + 1)');
+  expect(String(sj.hyperRe(P('-f(x) + Derivative(f(x), x)'), r, k))).toBe('(k + 1)*r(k + 1) - r(k)');
+  expect(String(sj.hyperRe(P('-x*f(x) + Derivative(f(x), (x, 2))'), r, k))).toBe('(k + 2)*(k + 3)*r(k + 3) - r(k)');
+  expect(String(sj.expRe(P('f(x)'), r, k))).toBe('r(k)');
+  expect(() => sj.expRe(P('x*f(x)'), r, k)).toThrow(TypeError);
+  expect(() => sj.expRe(1, r, k)).toThrow(TypeError);
+  expect(() => sj.hyperRe(P('sin(x)*f(x)'), r, k)).toThrow(TypeError);
+  expect(sj.rationalIndependent([], V('x'))).toEqual([]);
+  expect(sj.rationalIndependent([P('cos(x)'), P('sin(x)')], V('x')).map(String)).toEqual(['cos(x)', 'sin(x)']);
+  expect(sj.rationalIndependent([P('x**2'), P('sin(x)'), P('x*sin(x)'), P('x**3')], V('x')).map(String)).toEqual(['x**3 + x**2', 'x*sin(x) + sin(x)']);
+});

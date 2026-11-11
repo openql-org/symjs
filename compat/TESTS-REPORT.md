@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **12933** cases: **7851 exact**, **227 equivalent**, **4855 failing**. Agreement: **62.46%**.
+Measured **12933** cases: **7852 exact**, **227 equivalent**, **4854 failing**. Agreement: **62.47%**.
 
-Replay runtime: **200.45 s**. Known gaps: **4855**. Exception class mismatches accepted in the pilot: **160**.
+Replay runtime: **69.86 s**. Known gaps: **4854**. Exception class mismatches accepted in the pilot: **160**.
 
 Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the existing doctest matching and equivalence rules.
 
@@ -12,7 +12,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| core | 7858 | 5239 | 179 | 1245 | 918 | 277 | 68.95% |
+| core | 7858 | 5240 | 179 | 1244 | 918 | 277 | 68.96% |
 | polys | 5075 | 2612 | 48 | 297 | 1679 | 439 | 52.41% |
 
 ## Agreement by test module
@@ -33,7 +33,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | sympy.core.tests.test_equal | 12 | 12 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_eval | 33 | 33 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_evalf | 133 | 61 | 18 | 23 | 30 | 1 | 59.40% |
-| sympy.core.tests.test_expand | 145 | 110 | 2 | 17 | 16 | 0 | 77.24% |
+| sympy.core.tests.test_expand | 145 | 111 | 2 | 16 | 16 | 0 | 77.93% |
 | sympy.core.tests.test_expr | 846 | 666 | 14 | 94 | 30 | 42 | 80.38% |
 | sympy.core.tests.test_exprtools | 183 | 129 | 6 | 12 | 9 | 27 | 73.77% |
 | sympy.core.tests.test_facts | 1 | 0 | 0 | 0 | 1 | 0 | 0.00% |

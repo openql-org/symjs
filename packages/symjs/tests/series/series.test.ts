@@ -414,3 +414,25 @@ describe('essential singularities, complex infinity and irrational exponents (Sy
     expect(show(sj.dir(P('x**(1 - sqrt(2))'), x, 1))).toBe('1 - sqrt(2)');
   });
 });
+
+it('retains order variables and implements asymptotic containment and products', () => {
+  const x=V('x'),y=V('y');
+  const o = (e: sj.ExprLike, v?: sj.Sym, p: sj.ExprLike=0) => sj.O(e,v,p) as sj.Order;
+  expect(o(1).contains(o(1,x))).toBe(false);
+  expect(o(1,x).contains(o(x))).toBe(true);
+  expect(o(x).contains(o(sj.pow(x,2)))).toBe(true);
+  expect(o(sj.pow(x,2)).contains(x)).toBe(false);
+  expect(o(x).contains(0)).toBe(true);
+  expect(o(1).contains(2)).toBe(true);
+  expect(o(1).contains(sj.oo)).toBe(false);
+  expect(o(x).contains(o(x,x,1))).toBe('unknown');
+  expect((sj.O(sj.mul(x,y),[x,y]) as sj.Order).contains(sj.mul(x,y))).toBe('unknown');
+  expect(o(1,x).contains(sj.SymFunction('h')(x))).toBe('unknown');
+  expect(o(1,x).contains(sj.S.NaN)).toBe('unknown');
+  expect(new sj.Order([sj.mul(y,x),x,sj.S.Zero]).contains(x)).toBe('unknown');
+  expect(String(sj.mul(o(x),x))).toBe('O(x**2)');
+  expect(String(sj.sub(o(x),o(x)))).toBe('O(x)');
+  expect(String(sj.mul(o(x),o(y)))).toBe('O(x*y, x, y)');
+  expect(String(sj.mul(o(x),o(x,x,1)))).toContain('*');
+  expect(sj.mul(o(x),0)).toBe(sj.S.Zero);
+});

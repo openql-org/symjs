@@ -6,12 +6,14 @@
  * FormalPowerSeries).
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Dummy, Fn, Pow, Rational, S, Special } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Derivative, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sub, sympify } from '../core/ops';
-import { asIndependent, isMeromorphic, isPolynomial } from '../core/methods';
+import { asIndependent, isMeromorphic, isPolynomial, isRationalFunction } from '../core/methods';
 import { NotImplementedError } from '../core/errors';
-import { first } from '../core/guard';
+import { at, cast, first } from '../core/guard';
+import type { UndefinedFunction } from '../core/undef';
+import { cancel } from '../simplify/rational';
 import { freeSymbols, some, subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { fn } from '../functions/elementary/elementary';
@@ -24,6 +26,56 @@ import { O, series } from './series';
 import { lseries, seriesTerms } from './lseries';
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
+
+/** Group terms whose quotients are rational functions of x. */
+export function rationalIndependent(terms: readonly ExprLike[], x: Sym): Expr[] {
+  const independent: Expr[] = [];
+  for (const term of terms.map(sympify)) {
+    const n = asIndependent(term, [x])[1];
+    const i = independent.findIndex((d) => isRationalFunction(cancel(mul(n, pow(asIndependent(d, [x])[1], -1))), [x]));
+    if (i < 0) independent.push(term);
+    else independent[i] = add(at(independent, i), term);
+  }
+  return independent;
+}
+
+function differentialRecurrence(DE: ExprLike, r: UndefinedFunction, k: Sym, ordinary: boolean): Expr {
+  const e = expand(sympify(DE));
+  const terms = e instanceof Add ? e.args : [e];
+  const parts: { c: Expr; order: number; power: number }[] = [];
+  for (const term of terms) {
+    const factors = term instanceof Mul ? term.args : [term];
+    const dependent = factors.filter((f) => f instanceof UndefFn || f instanceof Derivative);
+    if (dependent.length !== 1) throw new TypeError('recurrence: a linear homogeneous differential equation is required');
+    const d = at(dependent, 0);
+    const f = cast(d instanceof Derivative ? d.expr : d, UndefFn);
+    const x = cast(at(f.args, 0), Sym);
+    const order = d instanceof Derivative ? d.variableCount.reduce((a, [, j]) => a + j, 0) : 0;
+    const coefficient = mul(...factors.filter((a) => a !== d));
+    if (ordinary) {
+      const powers = polyCoefficients(coefficient, x);
+      if (powers === undefined) throw new TypeError('hyperRe: polynomial differential coefficients required');
+      for (const [power, c] of powers) parts.push({ c, order, power });
+    } else {
+      if (coefficient.has(x)) throw new TypeError('expRe: constant differential coefficients required');
+      parts.push({ c: coefficient, order, power: 0 });
+    }
+  }
+  const shift = Math.min(...parts.map((p) => p.order - p.power));
+  return add(...parts.map(({ c, order, power }) => mul(c,
+    ...(ordinary ? Array.from({ length: order }, (_, j) => add(k, 1 - power - shift + j)) : []),
+    r(add(k, order - power - shift)))));
+}
+
+/** Convert a constant-coefficient differential equation to an exponential-series recurrence. */
+export function expRe(DE: ExprLike, r: UndefinedFunction, k: Sym): Expr {
+  return differentialRecurrence(DE, r, k, false);
+}
+
+/** Convert a polynomial-coefficient differential equation to an ordinary-series recurrence. */
+export function hyperRe(DE: ExprLike, r: UndefinedFunction, k: Sym): Expr {
+  return differentialRecurrence(DE, r, k, true);
+}
 
 /** SymPy FormalPowerSeries: the power series of a function, truncated on request. */
 export class FormalPowerSeries {

@@ -315,3 +315,39 @@ describe('sub_func_doit and checksysodesol (SymPy 1.14)', () => {
     expect(sj.checksysodesol(eqs, sols).map(String)).toEqual(['true', '0,0']);
   });
 });
+
+it('exposes all system families and applies initial conditions', () => {
+  const ft = f(t) as sj.UndefFn, gt = g(t) as sj.UndefFn;
+  const equations = [Eq(diff(ft,t),gt), Eq(diff(gt,t),ft)];
+  const family = sj.dsolveSystem(equations);
+  expect(family).toHaveLength(1);
+  expect(solvesOdeSystem(equations,t,family[0]!)).toBe(true);
+  const initial = sj.dsolveSystem(equations,[ft,gt],t,new Map([[f(0),1],[g(0),0]]));
+  expect(initial[0]!.map(String)).toEqual(['Eq(f(t), exp(t)/2 + exp(-t)/2)','Eq(g(t), exp(t)/2 - exp(-t)/2)']);
+  expect(() => sj.dsolveSystem(equations,[ft,gt],new sj.Sym('q'))).toThrow(RangeError);
+  expect(String(sj.dsolve(equations,[ft,gt],{ics:[[f(0),1],[g(0),0]]}))).toBe(String(initial[0]));
+});
+it('canonicalizes linear and nonlinear systems by their highest derivatives', () => {
+  const ft = f(t) as sj.UndefFn, gt = g(t) as sj.UndefFn;
+  const equations = [parse('Derivative(f(t),t) - 7*f(t) - 12*g(t)'),parse('Derivative(g(t),t)+g(t)-20*f(t)')];
+  expect(sj.canonicalOdes(equations,[ft,gt],t).map((row) => row.map(String))).toEqual([['Eq(Derivative(f(t), t), 7*f(t) + 12*g(t))','Eq(Derivative(g(t), t), 20*f(t) - g(t))']]);
+  const nonlinear = [parse('Derivative(f(t),t)**2-2*Derivative(f(t),t)-3'),parse('Derivative(g(t),t)-f(t)')];
+  expect(sj.canonicalOdes(nonlinear,[ft,gt],t)).toHaveLength(2);
+  expect(() => sj.canonicalOdes([ft],[ft],t)).toThrow(RangeError);
+  expect(() => sj.canonicalOdes([new sj.Derivative([ft,new sj.Sym('q'),sj.S.One])],[ft],t)).toThrow(RangeError);
+});
+it('classifies commuting linear systems and validates their dimensions', () => {
+  const A = sj.Matrix.of([[1,1],[2,3]]), B = sj.Matrix.col(1,1);
+  const variable = sj.Matrix.of([[1,t],[sj.neg(t),1]]);
+  expect(sj.linodesolveType(A,t).get('type_of_equation')).toBe('type1');
+  expect(sj.linodesolveType(A,t).get('antiderivative')).toBe(sj.NoMatch);
+  expect(sj.linodesolveType(A,t,B).get('type_of_equation')).toBe('type2');
+  expect(sj.linodesolveType(variable,t).get('type_of_equation')).toBe('type3');
+  expect(sj.linodesolveType(variable,t,B).get('type_of_equation')).toBe('type4');
+  expect(String(sj.linodesolveType(variable,t).get('antiderivative'))).toBe('Matrix([[t, t**2/2], [-t**2/2, t]])');
+  expect(sj.linodesolveType(A,t,sj.Matrix.col(0,0)).get('type_of_equation')).toBe('type1');
+  expect(() => sj.linodesolveType(sj.Matrix.col(1,2),t)).toThrow(RangeError);
+  expect(() => sj.linodesolveType(A,t,sj.Matrix.col(1))).toThrow(RangeError);
+  expect(() => sj.linodesolveType(A,t,A)).toThrow(RangeError);
+  expect(() => sj.linodesolveType(sj.Matrix.of([[t,1],[0,0]]),t)).toThrow(NotImplementedError);
+});

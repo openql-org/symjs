@@ -29,6 +29,8 @@ export {
 
 export {
   solve,
+  denoms,
+  unrad,
   checksol,
   solveLinear,
   solveUndeterminedCoeffs,
@@ -37,8 +39,8 @@ export {
   invQuick,
   solveLinearSystemLU,
 } from './solvers/solve';
-export { nonlinsolve, substitution } from './solvers/solveset';
-export { dsolveSystem, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
+export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvify, invertComplex, invertReal } from './solvers/solveset';
+export { dsolveSystem, canonicalOdes, linodesolveType, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
 export {
   diophantine,
   classifyDiop,
@@ -50,6 +52,8 @@ export {
   diopDN,
   diopBfDN,
   cornacchia,
+  equivalent,
+  length,
   PQa,
   transformationToDN,
   findDN,
@@ -87,9 +91,11 @@ export {
 } from './solvers/diophantine';
 export type { DiophantineOptions, DiophantineSolveOptions, PowerRepresentationOptions } from './solvers/diophantine';
 export { classifyOde } from './solvers/dsolve';
+export { constantsimp, constantRenumber, odeSolSimplicity, solveIcs } from './solvers/odesimp';
 export {
   dsolve,
   odeOrder,
+  classifySysode,
 } from './solvers/ode';
 export type { DsolveOptions } from './solvers/ode';
 export { infinitesimals, checkinfsol } from './solvers/liegroup';
@@ -99,6 +105,8 @@ export {
   asSet,
   solvePolyInequality,
   solveRationalInequalities,
+  solvePolyInequalities,
+  reduceRationalInequalities,
   reduceInequalities,
   reduceAbsInequality,
   reduceAbsInequalities,
@@ -114,6 +122,10 @@ export {
 export {
   factorSystem,
   factorSystemCond,
+  factorSystemBool,
+  factorSystemPoly,
+  solveGeneric,
+  solveBiquadratic,
   solvePolySystem,
   solveTriangulated,
 } from './solvers/polysys';

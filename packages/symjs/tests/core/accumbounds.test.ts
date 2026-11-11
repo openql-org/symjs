@@ -155,3 +155,13 @@ describe('AccumBounds to an infinite power (SymPy AccumBounds.__pow__)', () => {
     expect(s(pow(A(-1, 2), -1))).toBe('AccumBounds(-oo, oo)');
   });
 });
+
+it('raises positive intervals to interval powers and preserves unresolved negative bases', () => {
+  expect(String(pow(A(2,3),A(-1,2)))).toBe('AccumBounds(1/3, 9)');
+  expect(String(pow(A(0.5,2),A(-1,2)))).toBe('AccumBounds(0.25, 4)');
+  expect(String(pow(A(-2,3),A(-1,2)))).toBe('AccumBounds(-2, 3)**AccumBounds(-1, 2)');
+  expect((A(1,oo) as sj.AccumBoundsNode).contains(sj.S.NegativeInfinity)).toBe(true);
+  expect((A(sj.S.NegativeInfinity,0) as sj.AccumBoundsNode).contains(oo)).toBe(true);
+  expect((A(1,2) as sj.AccumBoundsNode).contains(oo)).toBe(false);
+  expect((A(1,2) as sj.AccumBoundsNode).contains(1.5)).toBe(true);
+});

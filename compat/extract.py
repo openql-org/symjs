@@ -1244,6 +1244,10 @@ def ser(o):
     from sympy.series import sequences as _seqs
     if o is sympy.S.EmptySequence:
         return {"t": "EmptySequence"}
+    if type(o) is _seqs.SeqExpr:
+        return {"t": "SeqExpr", "gen": ser(o.gen), "limits": ser(o.args[1])}
+    if type(o) is _seqs.SeqExprOp:
+        return {"t": "SeqExprOp", "args": [ser(a) for a in o.args]}
     if type(o) in (_seqs.SeqFormula, _seqs.SeqPer):
         x, start, stop = o.args[1]
         items = [ser(i) for i in o.periodical] if type(o) is _seqs.SeqPer else [ser(o.formula)]

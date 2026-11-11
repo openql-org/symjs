@@ -21,6 +21,7 @@ import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { doit } from '../calculus/doit';
 import { Eq } from '../core/logic';
+import { NoMatch, type NoMatchResult } from '../core/truth';
 import { cos, im, log, re, sin, sinh, fn } from '../functions/elementary/elementary';
 import { factor } from '../polys/sympoly';
 import { cancel } from '../simplify/rational';
@@ -30,7 +31,8 @@ import { simplify } from '../simplify/simplify';
 import { integrate } from '../integrals/integrate';
 import { Matrix } from '../matrices/matrix';
 import { jordanForm } from '../matrices/linalg';
-import { linearEqToMatrix, solve } from './solve';
+import { asEquation, linearEqToMatrix, nonlinsolve, solve } from './solve';
+import { solveIcs } from './odesimp';
 
 /** The single-equation dsolve, registered by solvers/ode.ts (which imports this module). */
 let dsolveOne: (eq: Expr, f: Expr) => Expr | Expr[] = () => {
@@ -49,9 +51,46 @@ const isOne = (e: Expr) => e instanceof Rational && e.p === 1n && e.q === 1n;
  * [Eq(f(t), ...), Eq(g(t), ...)], or, like SymPy, a list of such lists when the
  * system has several solution families (a nonlinear triangular system).
  */
-export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[]): Expr[] | Expr[][] {
+export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[], t?: Sym, ics?: ReadonlyMap<Expr, ExprLike>): Expr[][] {
   const sols = dsolveSystemAll(eqsIn, funcsIn);
-  return sols.length === 1 ? first(sols) : sols;
+  const funcs = funcsIn ?? findFunctions(eqsIn.map(sympify));
+  if (t !== undefined && funcs.some((f) => !first(f.args).equals(t))) throw new RangeError('dsolveSystem: inconsistent independent variable');
+  if (ics === undefined) return sols;
+  const parameters = new Set(eqsIn.flatMap((e) => [...sympify(e).freeSymbols()].map((s) => s.key)));
+  return sols.map((family) => {
+    const constants = [...new Map(family.flatMap((e) => [...e.freeSymbols()]).filter((s) => !parameters.has(s.key)).map((s) => [s.key, s])).values()];
+    const values = solveIcs(family, funcs, constants, ics);
+    return family.map((e) => xreplace(e, [...values]));
+  });
+}
+
+/** Solve an ODE system for each function's highest derivative. */
+export function canonicalOdes(eqs: readonly ExprLike[], funcs: readonly UndefFn[], t: Sym): Expr[][] {
+  const equations = eqs.map(asEquation);
+  const derivatives = funcs.map((f) => {
+    let order = 0;
+    const visit = (e: Expr): void => {
+      if (e instanceof Derivative && e.expr.equals(f)) order = Math.max(order, e.variableCount.reduce((n, [v, k]) => n + (v.equals(t) ? k : 0), 0));
+      e.args.forEach(visit);
+    };
+    equations.forEach(visit);
+    if (order === 0) throw new RangeError('canonicalOdes: a derivative is required for every function');
+    return new Derivative([f, t, Rational.of(order)]);
+  });
+  const unknowns = funcs.map((_, i) => new Dummy(`d${i}`));
+  const replacement = derivatives.map((d, i): [Expr, Expr] => [d, at(unknowns, i)]);
+  return nonlinsolve(equations.map((e) => xreplace(e, replacement)), unknowns)
+    .map((row) => derivatives.map((d, i) => Eq(d, at(row, i))));
+}
+
+/** Classify a first-order linear system by forcing and commutativity with its antiderivative. */
+export function linodesolveType(A: Matrix, t: Sym, b?: Matrix): Map<string, string | Matrix | NoMatchResult> {
+  if (A.rows !== A.cols || (b !== undefined && (b.rows !== A.rows || b.cols !== 1))) throw new RangeError('linodesolveType: incompatible system dimensions');
+  const variable = A.data.some((e) => e.has(t));
+  const forced = b?.data.some((e) => !isZero(e)) ?? false;
+  const antiderivative = variable ? A.map((e) => integrate(e, t)) : NoMatch;
+  if (antiderivative instanceof Matrix && A.mul(antiderivative).sub(antiderivative.mul(A)).data.some((e) => !isZero(simplify(e)))) throw new NotImplementedError('linodesolveType: matrix does not commute with its antiderivative');
+  return new Map<string, string | Matrix | NoMatchResult>([['type_of_equation', `type${1 + (variable ? 2 : 0) + (forced ? 1 : 0)}`], ['antiderivative', antiderivative]]);
 }
 
 /** Every solution list of the system. */

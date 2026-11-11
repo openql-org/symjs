@@ -120,3 +120,9 @@ describe('limit_seq', () => {
     expect(show(dominant(P('factorial(n) + 2**n'), n))).toBe('factorial(n)');
   });
 });
+
+it('exposes dominant with NoMatch for tied growth', () => {
+  expect(String(sj.dominant(P('5*n**3 + 4*n**2 + n + 1'), n))).toBe('5*n**3');
+  expect(String(sj.dominant(sj.add(sj.pow(2, n), sj.Sum(k, [k, 0, n])), n))).toBe('2**n');
+  expect(sj.dominant(P('sin(n) + cos(n)'), n)).toBe(sj.NoMatch);
+});

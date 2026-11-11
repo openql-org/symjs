@@ -28,11 +28,13 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Symbol metadata, relation accessors, function arities and special-function
 // queries add at most 2 KiB to the affected core/special/printing consumers.
 // Assumption-aware solve loads the predicate engine; keep its cost explicit.
+// Order containment and AccumBounds interval comparisons add at most 1 KiB
+// to consumers of core; pretty also gains symbolic-tuple layout.
 const CASES = [
-  ['core', 'Rational', 187],
+  ['core', 'Rational', 188],
   ['core', 'parse, str', 202],
   ['core', 'parse, diff, expand, str, latex', 202],
-  ['core', '*', 277],
+  ['core', '*', 279],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 380],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
@@ -48,9 +50,9 @@ const CASES = [
   ['solvers', 'dsolve', 990],
   ['sets', '*', 353],
   ['matrices', 'Matrix', 749],
-  ['printing', 'pretty', 226],
+  ['printing', 'pretty', 227],
   ['discrete', '*', 285],
-  ['strategies', '*', 198],
+  ['strategies', '*', 199],
   ['unify', '*', 225],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
@@ -58,7 +60,7 @@ const CASES = [
   ['holonomic', 'exprToHolonomic', 1025],
   ['geometry', '*', 998],
   ['vector', '*', 1096],
-  ['stats', '*', 1130],
+  ['stats', '*', 1135],
   ['categories', '*', 363],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],

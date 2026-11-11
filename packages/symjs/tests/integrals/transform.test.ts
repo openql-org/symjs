@@ -5,6 +5,7 @@
 // IntegralTransform and the unevaluated transform classes. Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
+import { NotImplementedError } from '../../src/core/errors';
 import { Curve } from '../../src/geometry/curve';
 import {
   Integral,
@@ -134,4 +135,23 @@ describe('as_sum, euler_maclaurin and nsolve bisection', () => {
     expect(eulerMaclaurin(Sum(k, [k, 2, b]) as never).map((e) => sstr(e))).toEqual(['b**2/2 + b/2 - 1', '0']);
     expect(sstr(nsolve(parse('cos(x)*cosh(x) - 1'), x, [313, 317]))).toBe('315.730061685774');
   });
+});
+
+it('uses an expression for the old variable and rejects ambiguous inverse branches', () => {
+  const old = parse('x**2 - 1');
+  const input = new Integral([parse('x*cos(x**2 - 1)'),x,S.Zero,S.One]);
+  expect(String(transformIntegral(input,old,u))).toBe('Integral(cos(u)/2, (u, -1, 0))');
+  expect(String(transformIntegral(new Integral([parse('x*cos(x**2 - 1)'),x]),old,u))).toBe('Integral(cos(u)/2, u)');
+  expect(String(transformIntegral(new Integral([parse('x**3'),x]),pow(x,2),u))).toBe('Integral(u/2, u)');
+  expect(() => transformIntegral(input,old,pow(u,2))).toThrow(TypeError);
+  expect(() => transformIntegral(input,old,u,u)).toThrow(TypeError);
+  expect(() => transformIntegral(new Integral([S.One,x]),pow(x,2),u)).toThrow('different integrands');
+  expect(() => transformIntegral(new Integral([S.One,x]),parse('x + sin(x)'),u)).toThrow(NotImplementedError);
+});
+
+it('checks inverse existence and accepts equivalent inverse branches', () => {
+  expect(() => transformIntegral(new Integral([x, x]), pow(u, 2), new Sym('v'))).toThrow('zero Jacobian');
+  const old = parse('x**2 + x');
+  const integrand = parse('(2*x + 1)*(x**2 + x)**2');
+  expect(String(transformIntegral(new Integral([integrand,x]),old,u))).toBe('Integral(u**2, u)');
 });

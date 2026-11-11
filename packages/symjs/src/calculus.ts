@@ -25,7 +25,8 @@ export {
 export type { ParametricCurve } from './integrals/transform';
 // integral transforms (SymPy sympy.integrals.transforms and laplace)
 export * from './integrals/transforms/index';
-export { NonElementaryIntegral } from './integrals/risch';
+export { NonElementaryIntegral, integerPowers } from './integrals/risch';
+export { manualintegrate } from './integrals/manualintegrate';
 export { singularityintegrate } from './integrals/singularityfunctions';
 // the helpers of SymPy's integrators (rationaltools, trigonometry, deltafunctions, meijerint, heurisch)
 export { ratintRatpart, logToAtan } from './integrals/rationaltools';
@@ -84,6 +85,10 @@ export { gosperNormal, gosperTerm, gosperSum } from './concrete/gosper';
 export type { DeltaLimit } from './concrete/delta';
 export {
   SeqBase,
+  SeqExpr,
+  SeqExprNode,
+  SeqExprOp,
+  SeqExprOpNode,
   EmptySequenceNode,
   EmptySequence,
   SeqFormulaNode,
@@ -111,6 +116,13 @@ import type { Expr as _Expr_, ExprLike as _ExprLike_ } from './core/nodes';
 import type { Concrete as _Concrete_ } from './concrete/summations';
 import { sumIsAbsolutelyConvergent as _sumIsAbsolutelyConvergent_ } from './concrete/summations';
 import { extractLeadingOrder as _extractLeadingOrder_ } from './series/series';
+import { dominant as _dominant_ } from './series/limitseq';
+import type { Sym as _Sym_ } from './core/nodes';
+
+/** The unique asymptotically dominant term of a sum, or NoMatch. */
+export function dominant(expr: _ExprLike_, n: _Sym_): _Expr_ | NoMatchResult {
+  return _orNoMatch_(_dominant_(expr, n));
+}
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const doitConcrete = _doitConcrete_;
@@ -137,7 +149,7 @@ export function getn(e: _ExprLike_): _Expr_ | NoMatchResult {
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const extractLeadingOrder = _extractLeadingOrder_;
 export { lseries, dir } from './series/lseries';
-export { fps, FormalPowerSeries } from './series/formal';
+export { fps, FormalPowerSeries, expRe, hyperRe, rationalIndependent } from './series/formal';
 export { fourierSeries, FourierSeries } from './series/fourier';
 // integration of polynomials over polytopes (SymPy sympy.integrals.intpoly); the helpers, whose names collide with
 // other SymPy functions (decompose, intersection, norm), are members of the namespace intpoly
@@ -150,3 +162,5 @@ export type { GuessGeneratingFunctionOptions, GuessOptions } from './concrete/gu
 export { approximants } from './series/approximants';
 export type { ApproximantsOptions } from './series/approximants';
 export { variables, hasFiniteLimits, hasReversedLimits } from './concrete/exprwithlimits';
+export { gaussLegendre, gaussLaguerre, gaussHermite, gaussGenLaguerre, gaussJacobi, gaussChebyshevT, gaussChebyshevU, gaussLobatto } from './integrals/quadrature';
+export type { QuadratureRule } from './integrals/quadrature';

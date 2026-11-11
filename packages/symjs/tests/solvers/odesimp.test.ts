@@ -93,3 +93,34 @@ describe('odesimp', () => {
     expect(() => odesimp(ode, parse('x + C1'), fx, 'separable')).toThrow(InvariantError);
   });
 });
+
+it('renumbers constants with protected variables and supplied names', () => {
+  expect(String(sj.constantRenumber(parse('C3 + C2*x + C1*x**2')))).toBe('C1 + C2*x + C3*x**2');
+  expect(String(sj.constantRenumber(parse('C3 + C2*x + C1*x**2'), [C1, x]))).toBe('C1*x**2 + C2 + C3*x');
+  expect(String(sj.constantRenumber(parse('C3 + C2*x + C1*x**2'), [x], sj.symbols('E1 E2 E3')))).toBe('E1 + E2*x + E3*x**2');
+  expect(String(sj.constantRenumber(parse('a + b*x'), [x]))).toBe('C1 + C2*x');
+});
+
+it('ranks explicit, implicit and integral ODE solutions', () => {
+  expect(sj.odeSolSimplicity(parse('Eq(f(x), C1*x**2)'), fx)).toBe(-2);
+  expect(sj.odeSolSimplicity(parse('Eq(C1*x**2, f(x))'), fx)).toBe(-2);
+  expect(sj.odeSolSimplicity(parse('Eq(x**2 + f(x), C1)'), fx)).toBe(-1);
+  const implicit = parse('Eq(x**2 + f(x), C1)');
+  expect(sj.odeSolSimplicity(implicit, fx, false)).toBe(String(implicit).length);
+  expect(sj.odeSolSimplicity(parse('Eq(f(x), C1*Integral(2*x, x))'), fx)).toBe(sj.oo);
+  expect(sj.odeSolSimplicity([implicit, parse('Eq(f(x), Integral(x,x))')], fx)).toBe(sj.oo);
+  expect(sj.odeSolSimplicity([implicit], fx)).toBe(`[${String(implicit)}]`.length);
+  expect(() => sj.odeSolSimplicity(x, fx)).toThrow(TypeError);
+  expect(sj.odeSolSimplicity(parse('Eq(sin(f(x)) + f(x), C1)'), fx)).toBeGreaterThan(0);
+});
+it('solves function and derivative initial conditions', () => {
+  const sol = parse('Eq(f(x), C1*exp(x) + C2)');
+  const conditions = new Map<sj.Expr, sj.ExprLike>([[f(0), 3], [sj.Subs(sj.derivative(fx, [[x, 1]]), x, 0), 2]]);
+  expect([...sj.solveIcs([sol], [fx], [C1,C2], conditions)].map(([k,v]) => [String(k),String(v)])).toEqual([['C1','2'],['C2','1']]);
+  expect([...sj.solveIcs([parse('Eq(f(x),C1*exp(x))')], [fx], [C1], new Map([[f(0),2]]))].map(([k,v]) => [String(k),String(v)])).toEqual([['C1','2']]);
+  expect(() => sj.solveIcs([sol], [fx], [C1], new Map([[x,1]]))).toThrow(TypeError);
+  expect(() => sj.solveIcs([sol], [fx], [C1], new Map([[sj.SymFunction('g')(0),1]]))).toThrow(RangeError);
+  expect(() => sj.solveIcs([x], [fx], [C1], new Map([[f(0),1]]))).toThrow(TypeError);
+  expect(() => sj.solveIcs([sol], [fx], [C1], new Map([[fx,1]]))).toThrow(RangeError);
+  expect(() => sj.solveIcs([parse('Eq(f(x),C1)')], [fx], [C1], new Map([[f(0),1],[f(1),2]]))).toThrow(RangeError);
+});

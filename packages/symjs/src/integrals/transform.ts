@@ -19,6 +19,8 @@ import { freeSymbols, some, subs } from '../core/traverse';
 import { sign } from '../functions/special/special';
 import { diff } from '../calculus/diff';
 import { solve } from '../solvers/solve';
+import { cancel } from '../simplify/rational';
+import { simplify } from '../simplify/simplify';
 
 /**
  * Substitute x = g(u) in the integral (SymPy Integral.transform(x, (g, u))).
@@ -28,8 +30,24 @@ import { solve } from '../solvers/solve';
  * of x = u**2 is sqrt(x)); a limit where G is infinite or undefined is
  * reached by a limit. Reversed limits are swapped and the integrand negated.
  */
-export function transformIntegral(integral: Integral, x: Sym, gIn: ExprLike, uIn?: Sym): Integral {
+export function transformIntegral(integral: Integral, x: Expr, gIn: ExprLike, uIn?: Sym): Integral {
   const g = sympify(gIn);
+  if (!(x instanceof Sym)) {
+    if (!(g instanceof Sym) || uIn !== undefined) throw new TypeError('transform: an expression for the old variable requires a new symbol');
+    const variable = cast(integral.variable, Sym);
+    const jacobian = diff(x, variable);
+    if (jacobian.equals(S.Zero)) throw new RangeError('transform: substitution has zero Jacobian');
+    const quotient = cancel(mul(integral.integrand, pow(jacobian, -1)));
+    let transformed = subs(quotient, [[x, g]]);
+    if (transformed.has(variable)) {
+      const inverses = solve(add(x, mul(-1, g)), variable);
+      const candidates = inverses.map((root) => simplify(subs(quotient, [[variable, root]])));
+      transformed = first(candidates);
+      if (candidates.some((f) => !simplify(add(f, mul(-1, transformed))).equals(S.Zero))) throw new RangeError('transform: inverse branches give different integrands');
+    }
+    const limits = integral.limits;
+    return new Integral(limits === undefined ? [transformed, g] : [transformed, g, ...limits.map((p) => subs(x, [[variable, p]]))]);
+  }
   const free = [...freeSymbols(g)];
   if (!uIn && free.length !== 1) throw new TypeError('transform: the new variable must be given');
   const u = uIn ?? first(free);
