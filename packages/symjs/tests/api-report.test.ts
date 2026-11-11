@@ -15,7 +15,7 @@ import { expect, it } from 'vitest';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const src = join(root, 'src');
-const ENTRIES = ['core', 'special', 'simplify', 'polys', 'calculus', 'solvers', 'sets', 'matrices', 'logic', 'ntheory', 'combinatorics', 'utilities', 'tensor', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'holonomic', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras'];
+const ENTRIES = ['core', 'special', 'simplify', 'polys', 'calculus', 'solvers', 'sets', 'matrices', 'logic', 'ntheory', 'combinatorics', 'utilities', 'tensor', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'holonomic', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras', 'diffgeom'];
 
 type Row = { name: string; kind: string; level: string };
 
@@ -69,7 +69,7 @@ it('api-report.md is up to date', async () => {
     for (const r of rs) total[r.level] = (total[r.level] ?? 0) + 1;
     sections.push(`\n## \`@symjs/symjs/${entry}\` (${rs.length})\n\n| Export | Kind | Level |\n|---|---|---|\n` + rs.map((r) => `| \`${r.name}\` | ${r.kind} | ${r.level} |`).join('\n') + '\n');
   }
-  md += `\nTotal: ${total['stable']} stable, ${total['experimental']} experimental, ${total['deprecated']} deprecated. The root \`@symjs/symjs\` re-exports every entry point.\n` + sections.join('');
+  md += `\nTotal: ${total['stable']} stable, ${total['experimental']} experimental, ${total['deprecated']} deprecated. The root \`@symjs/symjs\` re-exports every entry point except \`diffgeom\`, which is available only as a subpath.\n` + sections.join('');
   const file = join(root, 'api-report.md');
   if (process.env['UPDATE_API_REPORT'] || !existsSync(file)) writeFileSync(file, md);
   expect(readFileSync(file, 'utf8')).toBe(md);

@@ -271,6 +271,16 @@
         "types": "./dist/liealgebras.d.cts",
         "default": "./dist/liealgebras.cjs"
       }
+    },
+    "./diffgeom": {
+      "import": {
+        "types": "./dist/diffgeom.d.ts",
+        "default": "./dist/diffgeom.js"
+      },
+      "require": {
+        "types": "./dist/diffgeom.d.cts",
+        "default": "./dist/diffgeom.cjs"
+      }
     }
   },
   "files": [
@@ -337,6 +347,9 @@
     "./src/crypto.ts",
     "./dist/crypto.js",
     "./dist/crypto.cjs",
+    "./src/diffgeom.ts",
+    "./dist/diffgeom.js",
+    "./dist/diffgeom.cjs",
     "./src/discrete.ts",
     "./dist/discrete.js",
     "./dist/discrete.cjs",

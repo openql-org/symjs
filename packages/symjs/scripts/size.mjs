@@ -74,13 +74,11 @@ const CASES = [
   // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB).
   ['index', '*', 2520],
   // Differential geometry includes symbolic inversion and curvature calculations.
-  ['@symjs/diffgeom', '*', 1200],
+  ['diffgeom', '*', 1200],
 ];
 
 async function measure(entry, names) {
-  const file = entry.startsWith('@symjs/')
-    ? join(root, '..', entry.slice('@symjs/'.length), 'dist', 'index.js')
-    : join(root, 'dist', `${entry}.js`);
+  const file = join(root, 'dist', `${entry}.js`);
   const code = names === '*' ? `import * as m from ${JSON.stringify(file)}; console.log(m);` : `import { ${names} } from ${JSON.stringify(file)}; console.log(${names});`;
   const r = await esbuild.build({
     stdin: { contents: code, resolveDir: root, loader: 'js' },

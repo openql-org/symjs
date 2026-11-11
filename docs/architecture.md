@@ -17,7 +17,7 @@ without the higher ones.
 | L1 functions | elementary and special functions, numeric evaluation (evalf, lambdify), parsing, differentiation, expansion and rewriting, propositional logic, number theory, discrete transforms and convolutions, iterable utilities, rewrite strategies and unification | `functions/`, `logic/`, `ntheory/`, `discrete/`, `utilities/`, `strategies/`, `unify/`, `numeric/` (other files), `parsing/`, `concrete/node.ts`, `calculus/diff.ts`, `calculus/finitediff.ts`, `simplify/expand.ts`, `simplify/rewrite.ts` |
 | L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations and groups, abstract tensors and N-dimensional arrays, categories, quaternions, the assumption helpers and the matrix handlers of `ask`, ciphers and cryptosystems, simple Lie algebras | `polys/`, `combinatorics/`, `tensor/`, `categories/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts`, `assumptions/`, `crypto/`, `liealgebras/` |
 | L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series, holonomic functions, sums of Kronecker deltas and Gosper's summation (which solve equations) | `solvers/`, `integrals/`, `holonomic/`, `calculus/doit.ts`, `series/formal.ts`, `series/fourier.ts`, `concrete/delta.ts`, `concrete/gosper.ts` |
-| L4 geometry | points, lines, planes, polygons, ellipses, curves and parabolas, which intersect by solving equations | `geometry/` |
+| L4 geometry | points, lines, planes, polygons, ellipses, curves and parabolas; differential geometry with coordinate transformations, fields, tensors, connections and curvature | `geometry/`, `diffgeom/` |
 | L5 vector | coordinate systems, vectors and dyadics, vector differential operators, integrals over parametric, implicit and geometric regions | `vector/` |
 | L6 stats | random symbols, probability spaces and distributions (continuous, discrete, finite, compound, joint, matrix, random-matrix ensembles, stochastic processes), probabilities, expectations, densities and moments, which are integrals, sums and solutions of equations | `stats/` |
 
@@ -309,7 +309,7 @@ reason) or unassessed. Mathematical content is never excluded.
 | `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
 | `printing/jscode.py` | not ported: JavaScript code output |
 | `parsing/latex/`, `maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | extend package (planned) |
-| `diffgeom/` | extend package `@symjs/diffgeom`; independent corpus in `compat/extend/diffgeom/` |
+| `diffgeom/` | base subpath `@symjs/symjs/diffgeom`; `diffgeom.ts` and `rn.ts` mirror SymPy |
 | `physics/` | extend packages per field; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
 | `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | not ported (rendering and display) |
 | test runners and helpers, caching, dispatch decorators, compilation helpers, release metadata, the gmpy2/python-flint ground-type back ends, SAT-solver bindings, typing protocols, REPL and display helpers | out of scope: Python-runtime tooling |
@@ -324,8 +324,13 @@ and exact resolvent coefficient tables of SymPy 1.14. Regenerate them with
 `python3 packages/symjs/scripts/generate-galois.py`; the algorithms live in
 `combinatorics/galois.ts` and `polys/numberfields/galoisgroups.ts`.
 
-`@symjs/diffgeom` imports only the public base API. Its expression nodes use
-`ExtensionExpr`; coordinate symbols subclass `Sym` with chart-dependent identity.
-Coordinate relations are Maps. The scoped compatibility dispatch in
-`compat/harness.ts` resolves the extension before base functions and restores the
-base dispatch after each case. Base corpora and known-gap files are independent.
+`@symjs/symjs/diffgeom` imports internal base modules at L0–L3. Its expression
+nodes use `ExtensionExpr`; coordinate symbols subclass `Sym` with chart-dependent
+identity. Coordinate relations are Maps. The subpath loads core registrations
+and `calculus/doit`; the root entry does not import or re-export it. Its `Point`
+and tensor operations follow SymPy's differential-geometry namespace.
+
+Differential-geometry doctests belong to the base corpus. The shared harness
+resolves their constructors and methods from the public diffgeom subpath, using
+only argument and result conversions. Unit assertions are measured separately
+in `compat/diffgeom-tests/` through the same base dispatch.

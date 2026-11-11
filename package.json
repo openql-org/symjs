@@ -19,8 +19,8 @@
     "golden": "python3 scripts/gen_golden.py packages/symjs/tests/golden/cases.json packages/symjs/tests/golden/expected.json",
     "lint": "oxlint --type-aware --deny-warnings packages",
     "test:package": "pnpm build && node scripts/check-package.mjs",
-    "compat:extract-diffgeom": "PYTHONHASHSEED=0 python3 -B compat/extend/diffgeom/extract.py",
-    "compat:diffgeom": "vitest run --config compat/vitest.config.ts compat/extend/diffgeom/compat.test.ts"
+    "compat:extract-diffgeom": "PYTHONHASHSEED=0 python3 -B compat/diffgeom-tests/extract.py",
+    "compat:diffgeom": "vitest run --config compat/vitest.config.ts compat/diffgeom-tests/compat.test.ts"
   },
   "engines": {
     "node": ">=18"

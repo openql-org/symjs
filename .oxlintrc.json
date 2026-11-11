@@ -176,7 +176,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -294,7 +296,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -384,7 +388,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -460,7 +466,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -578,7 +586,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -658,7 +668,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -738,7 +750,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -798,7 +812,9 @@
                   "../concrete/delta",
                   "../concrete/gosper",
                   "../../concrete/delta",
-                  "../../concrete/gosper"
+                  "../../concrete/gosper",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -878,7 +894,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -958,7 +976,9 @@
                   "../crypto/**",
                   "../../crypto/**",
                   "../liealgebras/**",
-                  "../../liealgebras/**"
+                  "../../liealgebras/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -991,7 +1011,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../diffgeom/**",
+                  "../../diffgeom/**"
                 ],
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)",
                 "allowTypeImports": true
@@ -1003,7 +1025,8 @@
     },
     {
       "files": [
-        "packages/symjs/src/geometry/**"
+        "packages/symjs/src/geometry/**",
+        "packages/symjs/src/diffgeom/**"
       ],
       "rules": {
         "no-restricted-imports": [

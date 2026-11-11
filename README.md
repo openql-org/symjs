@@ -39,10 +39,9 @@ symjs is a pnpm monorepo. The general-purpose CAS is the **base module**; functi
 |---|---|---|
 | [`@symjs/symjs`](packages/symjs) | `packages/symjs/` | Base module: expressions, numbers, printing and parsing, functions, simplification, polynomials, calculus, equation solving, matrices, sets |
 | [`@symjs/physics-quantum`](packages/physics-quantum) | `packages/physics-quantum/` | Extend module for quantum physics (SymPy `sympy.physics.quantum`) |
-| [`@symjs/diffgeom`](packages/diffgeom) | `packages/diffgeom/` | Differential geometry: coordinate systems, fields, tensors, connections and curvature |
 | [`@symjs/mathjs`](packages/mathjs) | `packages/mathjs/` | Extend module: conversion to and from math.js (math.js is not a dependency) |
 
-Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module. Differential geometry has its own [compatibility corpus](compat/extend/diffgeom/REPORT.md).
+Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module.
 
 ```ts
 import { Matrix } from '@symjs/symjs';
@@ -55,7 +54,7 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 
 ### Entry points and bundle size
 
-`@symjs/symjs` imports the whole base module. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
+`@symjs/symjs` imports the base module except differential geometry, which is available through its dedicated subpath. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
 
 | Entry point | Contents |
 |---|---|
@@ -71,10 +70,13 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/sets` | Intervals, finite sets, image and condition sets |
 | `@symjs/symjs/matrices` | `Matrix` and linear algebra; also loads the matrix handlers of `ask` |
 | `@symjs/symjs/geometry` | Points, lines, planes, polygons, ellipses, curves and parabolas, `intersection`, `convexHull`, ... |
+| `@symjs/symjs/diffgeom` | Manifolds, coordinate charts, scalar/vector fields, differential forms, tensor/wedge products, connections, integral curves and curvature (subpath only) |
 | `@symjs/symjs/vector` | `CoordSys3D`, vectors and dyadics, `Del`, `gradient`, `divergence`, `curl`, `express`, parametric and implicit regions, `vectorIntegrate`, ... |
 | `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, joint distributions (`MultivariateNormal`, `Dirichlet`, `Multinomial`, `JointRV`, `marginalDistribution`, ...), matrix distributions (`Wishart`, `MatrixNormal`, ...), random matrices (`GaussianUnitaryEnsemble`, `CircularEnsemble`, ...), stochastic processes (`DiscreteMarkovChain`, `ContinuousMarkovChain`, `PoissonProcess`, `WienerProcess`, ...), `ExpectationMatrix`, `VarianceMatrix`, `CrossCovarianceMatrix`, ... |
 | `@symjs/symjs/crypto` | Classical ciphers (shift, affine, Vigenère, Hill, Bifid, rail fence, ...), Morse code, linear feedback shift registers, RSA, ElGamal, Diffie–Hellman, Goldwasser–Micali and Blum–Goldwasser |
 | `@symjs/symjs/liealgebras` | `CartanType`, `CartanMatrix`, `DynkinDiagram`, `RootSystem` and `WeylGroup` of the simple Lie algebras |
+
+Differential geometry mirrors `sympy.diffgeom`: import its names from `@symjs/symjs/diffgeom`. Its doctests are included in the [base compatibility report](compat/REPORT.md); its unit assertions have a [separate report](compat/diffgeom-tests/REPORT.md).
 
 Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [compat/capabilities.json](compat/capabilities.json).
 
@@ -89,7 +91,6 @@ packages/
                         calculus/ series/ integrals/ solvers/ matrices/ concrete/ sets/
                         (outside core/, the paths follow SymPy's module tree, see docs/architecture.md)
     tests/              unit tests mirroring src/ (tests/<path>/<name>.test.ts for src/<path>/<name>.ts), cross-cutting tests and SymPy golden tests at the top
-  diffgeom/            @symjs/diffgeom (extend module)
   physics-quantum/      @symjs/physics-quantum (extend module)
     src/  tests/
 compat/                 SymPy doctest compatibility measurement of the base module
@@ -219,9 +220,8 @@ Modules that are not ported yet but stay in scope:
 
 - Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
 - The LaTeX parser (`parse_latex`) and the Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
-- Differential geometry (`sympy.diffgeom`) is available as [`@symjs/diffgeom`](packages/diffgeom), with [separate compatibility results](compat/extend/diffgeom/REPORT.md)
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License
 
-MIT (see [LICENSE](LICENSE)). symjs is a port of [SymPy](https://www.sympy.org) and, for arbitrary-precision numerics, of [mpmath](https://mpmath.org); the ported code is also subject to their BSD 3-Clause licenses, whose notices are reproduced in the LICENSE file of each package that contains such code (`@symjs/symjs`: SymPy and mpmath; `@symjs/physics-quantum` and `@symjs/diffgeom`: SymPy). symjs is an independent project and is not affiliated with or endorsed by the SymPy or mpmath developers.
+MIT (see [LICENSE](LICENSE)). symjs is a port of [SymPy](https://www.sympy.org) and, for arbitrary-precision numerics, of [mpmath](https://mpmath.org); the ported code is also subject to their BSD 3-Clause licenses, whose notices are reproduced in the LICENSE file of each package that contains such code (`@symjs/symjs`: SymPy and mpmath; `@symjs/physics-quantum`: SymPy). symjs is an independent project and is not affiliated with or endorsed by the SymPy or mpmath developers.

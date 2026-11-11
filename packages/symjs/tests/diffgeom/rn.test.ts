@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: MIT
 import { expect, it } from 'vitest';
 import { pi, rcall, simplify, sub } from '@symjs/symjs';
-import { R2, R2R, R2P, R2Origin, R3, R3R, R3C, R3S, R3Origin, relations2d, relations3d } from '../src/rn';
+import { R2, R2R, R2P, R2Origin, R3, R3R, R3C, R3S, R3Origin, relations2d, relations3d } from '../../src/diffgeom/rn';
 
 it('exposes the Euclidean manifolds, charts and field shortcuts', () => {
-  expect(R2.dim).toBe(2); expect(R3.dim).toBe(3); expect(R3Origin.manifold).toBe(R3);
-  expect(R2Origin.x).toBe(R2.x); expect(R2R.x).toBe(R2.x); expect(R2P.r).toBe(R2.r);
-  expect(relations2d.size).toBe(2); expect(relations3d.size).toBe(6);
+  expect(R2.dim).toBe(2);
+  expect(R3.dim).toBe(3);
+  expect(R3Origin.manifold).toBe(R3);
+  expect(R2Origin.x).toBe(R2.x);
+  expect(R2R.x).toBe(R2.x);
+  expect(R2P.r).toBe(R2.r);
+  expect(relations2d.size).toBe(2);
+  expect(relations3d.size).toBe(6);
   for (const chart of [R2R, R2P, R3R, R3C, R3S]) {
     chart.baseScalars().forEach((field, i) => {
       expect(chart.baseVectors()[i]!.call(field).equals(1)).toBe(true);

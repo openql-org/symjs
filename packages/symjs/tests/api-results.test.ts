@@ -26,7 +26,7 @@ const dir = join(repo, 'packages/symjs/tests/.api-results');
 const MODULES: [string, () => Promise<Record<string, unknown>>][] = [
   ['../../src/index', () => import('../src/index')],
   ['../../../physics-quantum/src/index', () => import('../../physics-quantum/src/index')],
-  ['../../../diffgeom/src/index', () => import('../../diffgeom/src/index')],
+  ['../../src/diffgeom', () => import('../src/diffgeom')],
   ['../../../mathjs/src/index', () => import('../../mathjs/src/index')],
 ];
 

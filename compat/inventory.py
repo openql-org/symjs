@@ -356,9 +356,9 @@ CORRESPONDENCES = {
     'sympy.categories': ['categories.ts'],
     'sympy.parsing': ['parsing/parser.ts'],
     'sympy.physics.quantum.gate': ['../../physics-quantum/src/gates.ts'],
-    'sympy.diffgeom': ['../../diffgeom/src/index.ts'],
-    'sympy.diffgeom.diffgeom': ['../../diffgeom/src/diffgeom.ts'],
-    'sympy.diffgeom.rn': ['../../diffgeom/src/rn.ts'],
+    'sympy.diffgeom': ['diffgeom.ts'],
+    'sympy.diffgeom.diffgeom': ['diffgeom/diffgeom.ts'],
+    'sympy.diffgeom.rn': ['diffgeom/rn.ts'],
 }
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
@@ -440,9 +440,9 @@ NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/phys
  'sympy.physics': 'per-field extend package (planned)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
-    'sympy.diffgeom': 'extend package @symjs/diffgeom; measured separately in compat/extend/diffgeom',
-    'sympy.diffgeom.diffgeom': 'extend package @symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves',
-    'sympy.diffgeom.rn': 'extend package @symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems',
+    'sympy.diffgeom': 'base subpath @symjs/symjs/diffgeom',
+    'sympy.diffgeom.diffgeom': 'base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves',
+    'sympy.diffgeom.rn': 'base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems',
     'sympy.functions.special.bsplines': 'Cox-de Boor B-spline bases and exact collocation interpolation on strictly increasing real coordinates.',
     'sympy.matrices.kind': 'Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.',
     'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.',
@@ -478,14 +478,9 @@ def build_inventory(root):
     source = root / 'packages/symjs/src'
     corpus = json.loads((root / 'compat/corpus.json').read_text())
     measured = {c['module'] for c in corpus['cases']}
-    extend_modules = set()
-    for path in sorted((root / 'compat/extend').glob('*/corpus.json')):
-        extend = json.loads(path.read_text())
-        extend_modules.update(extend.get('modules', (c['module'] for c in extend['cases'])))
-        measured.update(c['module'] for c in extend['cases'])
     selected_ast = ast.parse((root / 'compat/extract.py').read_text())
     selected = next(ast.literal_eval(n.value) for n in selected_ast.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'MODULES' for t in n.targets))
-    selected = set(selected) | extend_modules
+    selected = set(selected)
     rows = []
     parser = doctest.DocTestParser()
     for path in sorted(reference.rglob('*.py')):

@@ -1,1439 +1,412 @@
 {
   "reference": "SymPy 1.14.0",
   "totals": {
-    "cases": 275,
-    "passed": 275,
-    "remaining": 0,
-    "doctests": 98,
-    "unitAssertions": 177
+    "cases": 177,
+    "passed": 177,
+    "remaining": 0
   },
   "extraction": {
-    "doctests": {
-      "examined": 256,
-      "reasons": {
-        "statement-or-setup": 152,
-        "non-call-expression": 5,
-        "reference-exception": 1
-      },
-      "omitted": [
-        {
-          "module": "sympy.diffgeom.diffgeom",
-          "src": "c_xy",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.diffgeom",
-          "src": "c_xr",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.diffgeom",
-          "src": "Car2D",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.diffgeom",
-          "src": "_[0].func",
-          "reason": "reference-exception"
-        },
-        {
-          "module": "sympy.diffgeom.diffgeom",
-          "src": "non_trivial_metric",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.diffgeom",
-          "src": "non_trivial_metric",
-          "reason": "non-call-expression"
-        }
-      ]
+    "examined": 205,
+    "cases": 177,
+    "reasons": {
+      "non-call-expression": 13,
+      "not-executed": 1,
+      "not-exported-api": 4,
+      "stateful-iterator-input": 2,
+      "unsupported-assertion": 8
     },
-    "unit": {
-      "examined": 205,
-      "cases": 177,
-      "reasons": {
-        "non-call-expression": 13,
-        "not-executed": 1,
-        "not-exported-api": 4,
-        "stateful-iterator-input": 2,
-        "unsupported-assertion": 8
-      },
-      "sourceSites": 205,
-      "categories": {
-        "diffgeom": {
-          "examined": 205,
-          "cases": 177,
-          "reasons": {
-            "non-call-expression": 13,
-            "not-executed": 1,
-            "not-exported-api": 4,
-            "stateful-iterator-input": 2,
-            "unsupported-assertion": 8
-          }
+    "sourceSites": 205,
+    "categories": {
+      "diffgeom": {
+        "examined": 205,
+        "cases": 177,
+        "reasons": {
+          "non-call-expression": 13,
+          "not-executed": 1,
+          "not-exported-api": 4,
+          "stateful-iterator-input": 2,
+          "unsupported-assertion": 8
         }
-      },
-      "omitted": [
-        {
-          "module": "sympy.diffgeom.tests.test_class_structure",
-          "category": "diffgeom",
-          "test": "test_point",
-          "line": 18,
-          "src": "assert point != Point(cs, [2, y])",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_class_structure",
-          "category": "diffgeom",
-          "test": "test_deprecated",
-          "line": 33,
-          "src": "assert cs_wname == cs_wname.func(*cs_wname.args)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_R2",
-          "line": 104,
-          "src": "assert m == R2_p.transform(R2_r, R2_r.transform(R2_p, m)).applyfunc(simplify)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_R2",
-          "line": 108,
-          "src": "assert m == R2_p.coord_tuple_transform_to(\n            R2_r, R2_r.coord_tuple_transform_to(R2_p, m)).applyfunc(simplify)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_R3",
-          "line": 116,
-          "src": "assert m == R3_c.transform(R3_r, R3_r.transform(R3_c, m)).applyfunc(simplify)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_R3",
-          "line": 118,
-          "src": "assert m == R3_s.transform(\n        R3_r, R3_r.transform(R3_s, m)).applyfunc(simplify)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_R3",
-          "line": 121,
-          "src": "assert m == R3_s.transform(\n        R3_c, R3_c.transform(R3_s, m)).applyfunc(simplify)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_R3",
-          "line": 126,
-          "src": "assert m == R3_c.coord_tuple_transform_to(\n            R3_r, R3_r.coord_tuple_transform_to(R3_c, m)).applyfunc(simplify)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_R3",
-          "line": 129,
-          "src": "assert m == R3_s.coord_tuple_transform_to(\n            R3_r, R3_r.coord_tuple_transform_to(R3_s, m)).applyfunc(simplify)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_R3",
-          "line": 132,
-          "src": "assert m == R3_s.coord_tuple_transform_to(\n            R3_c, R3_c.coord_tuple_transform_to(R3_s, m)).applyfunc(simplify)",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_point",
-          "line": 147,
-          "src": "assert p.coords(R2_r) == p.coords() == Matrix([x, y])",
-          "reason": "unsupported-assertion"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_products",
-          "line": 169,
-          "src": "assert TensorProduct(\n        R2.dx, R2.dy)(R2.e_x, R2.e_y) == R2.dx(R2.e_x)*R2.dy(R2.e_y) == 1",
-          "reason": "unsupported-assertion"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_products",
-          "line": 175,
-          "src": "assert TensorProduct(\n        R2.e_x, R2.e_y)(R2.x, R2.y) == R2.e_x(R2.x) * R2.e_y(R2.y) == 1",
-          "reason": "unsupported-assertion"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_products",
-          "line": 181,
-          "src": "assert TensorProduct(\n        R2.dx, R2.e_y)(R2.e_x, R2.y) == R2.dx(R2.e_x) * R2.e_y(R2.y) == 1",
-          "reason": "unsupported-assertion"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_products",
-          "line": 187,
-          "src": "assert TensorProduct(\n        R2.e_x, R2.dy)(R2.x, R2.e_y) == R2.e_x(R2.x) * R2.dy(R2.e_y) == 1",
-          "reason": "unsupported-assertion"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_lie_derivative",
-          "line": 199,
-          "src": "assert LieDerivative(R2.e_x, R2.y) == R2.e_x(R2.y) == 0",
-          "reason": "unsupported-assertion"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_lie_derivative",
-          "line": 200,
-          "src": "assert LieDerivative(R2.e_x, R2.x) == R2.e_x(R2.x) == 1",
-          "reason": "unsupported-assertion"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_lie_derivative",
-          "line": 201,
-          "src": "assert LieDerivative(R2.e_x, R2.e_x) == Commutator(R2.e_x, R2.e_x) == 0",
-          "reason": "unsupported-assertion"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_intcurve_diffequ",
-          "line": 225,
-          "src": "assert str(equations) == '[f_1(t) + Derivative(f_0(t), t), -f_0(t) + Derivative(f_1(t), t)]'",
-          "reason": "not-exported-api"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_intcurve_diffequ",
-          "line": 226,
-          "src": "assert str(init_cond) == '[f_0(0) - 1, f_1(0)]'",
-          "reason": "not-exported-api"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_intcurve_diffequ",
-          "line": 228,
-          "src": "assert str(\n        equations) == '[Derivative(f_0(t), t), Derivative(f_1(t), t) - 1]'",
-          "reason": "not-exported-api"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_intcurve_diffequ",
-          "line": 230,
-          "src": "assert str(init_cond) == '[f_0(0) - 1, f_1(0)]'",
-          "reason": "not-exported-api"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "category": "diffgeom",
-          "test": "test_correct_arguments",
-          "line": 289,
-          "src": "raises(ValueError, lambda: Differential(Differential(R2.e_x)))",
-          "reason": "not-executed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
-          "category": "diffgeom",
-          "test": "test_functional_diffgeom_ch3",
-          "line": 71,
-          "src": "assert all(\n        term == cos(t).taylor_term(i, t) for i, term in enumerate(series_x))",
-          "reason": "stateful-iterator-input"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
-          "category": "diffgeom",
-          "test": "test_functional_diffgeom_ch3",
-          "line": 73,
-          "src": "assert all(\n        term == sin(t).taylor_term(i, t) for i, term in enumerate(series_y))",
-          "reason": "stateful-iterator-input"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_hyperbolic_space",
-          "category": "diffgeom",
-          "test": "test_H2",
-          "line": 32,
-          "src": "assert mat == automat",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_hyperbolic_space",
-          "category": "diffgeom",
-          "test": "test_H2",
-          "line": 83,
-          "src": "assert Ric == ImmutableDenseNDimArray([-y**(-2), 0, 0, -y**(-2)], (2, 2))",
-          "reason": "non-call-expression"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_hyperbolic_space",
-          "category": "diffgeom",
-          "test": "test_H2",
-          "line": 88,
-          "src": "assert R == -2",
-          "reason": "non-call-expression"
-        }
-      ],
-      "tests": [
-        {
-          "module": "sympy.diffgeom.tests.test_class_structure",
-          "test": "test_point",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_class_structure",
-          "test": "test_subs",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_class_structure",
-          "test": "test_deprecated",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_coordsys_transform",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_R2",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_R3",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_CoordinateSymbol",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_point",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_commutator",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_differential",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_products",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_lie_derivative",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_covar_deriv",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_intcurve_diffequ",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_helpers_and_coordinate_dependent",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_correct_arguments",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_simplify",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_issue_17917",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_diffgeom",
-          "test": "test_deprecations",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
-          "test": "test_functional_diffgeom_ch2",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
-          "test": "test_functional_diffgeom_ch3",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
-          "test": "test_functional_diffgeom_ch4",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
-          "test": "test_functional_diffgeom_ch6",
-          "parameter": 0,
-          "status": "completed"
-        },
-        {
-          "module": "sympy.diffgeom.tests.test_hyperbolic_space",
-          "test": "test_H2",
-          "parameter": 0,
-          "status": "completed"
-        }
-      ],
-      "testStatuses": {
-        "completed": 24
       }
+    },
+    "omitted": [
+      {
+        "module": "sympy.diffgeom.tests.test_class_structure",
+        "category": "diffgeom",
+        "test": "test_point",
+        "line": 18,
+        "src": "assert point != Point(cs, [2, y])",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_class_structure",
+        "category": "diffgeom",
+        "test": "test_deprecated",
+        "line": 33,
+        "src": "assert cs_wname == cs_wname.func(*cs_wname.args)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_R2",
+        "line": 104,
+        "src": "assert m == R2_p.transform(R2_r, R2_r.transform(R2_p, m)).applyfunc(simplify)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_R2",
+        "line": 108,
+        "src": "assert m == R2_p.coord_tuple_transform_to(\n            R2_r, R2_r.coord_tuple_transform_to(R2_p, m)).applyfunc(simplify)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_R3",
+        "line": 116,
+        "src": "assert m == R3_c.transform(R3_r, R3_r.transform(R3_c, m)).applyfunc(simplify)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_R3",
+        "line": 118,
+        "src": "assert m == R3_s.transform(\n        R3_r, R3_r.transform(R3_s, m)).applyfunc(simplify)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_R3",
+        "line": 121,
+        "src": "assert m == R3_s.transform(\n        R3_c, R3_c.transform(R3_s, m)).applyfunc(simplify)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_R3",
+        "line": 126,
+        "src": "assert m == R3_c.coord_tuple_transform_to(\n            R3_r, R3_r.coord_tuple_transform_to(R3_c, m)).applyfunc(simplify)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_R3",
+        "line": 129,
+        "src": "assert m == R3_s.coord_tuple_transform_to(\n            R3_r, R3_r.coord_tuple_transform_to(R3_s, m)).applyfunc(simplify)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_R3",
+        "line": 132,
+        "src": "assert m == R3_s.coord_tuple_transform_to(\n            R3_c, R3_c.coord_tuple_transform_to(R3_s, m)).applyfunc(simplify)",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_point",
+        "line": 147,
+        "src": "assert p.coords(R2_r) == p.coords() == Matrix([x, y])",
+        "reason": "unsupported-assertion"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_products",
+        "line": 169,
+        "src": "assert TensorProduct(\n        R2.dx, R2.dy)(R2.e_x, R2.e_y) == R2.dx(R2.e_x)*R2.dy(R2.e_y) == 1",
+        "reason": "unsupported-assertion"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_products",
+        "line": 175,
+        "src": "assert TensorProduct(\n        R2.e_x, R2.e_y)(R2.x, R2.y) == R2.e_x(R2.x) * R2.e_y(R2.y) == 1",
+        "reason": "unsupported-assertion"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_products",
+        "line": 181,
+        "src": "assert TensorProduct(\n        R2.dx, R2.e_y)(R2.e_x, R2.y) == R2.dx(R2.e_x) * R2.e_y(R2.y) == 1",
+        "reason": "unsupported-assertion"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_products",
+        "line": 187,
+        "src": "assert TensorProduct(\n        R2.e_x, R2.dy)(R2.x, R2.e_y) == R2.e_x(R2.x) * R2.dy(R2.e_y) == 1",
+        "reason": "unsupported-assertion"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_lie_derivative",
+        "line": 199,
+        "src": "assert LieDerivative(R2.e_x, R2.y) == R2.e_x(R2.y) == 0",
+        "reason": "unsupported-assertion"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_lie_derivative",
+        "line": 200,
+        "src": "assert LieDerivative(R2.e_x, R2.x) == R2.e_x(R2.x) == 1",
+        "reason": "unsupported-assertion"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_lie_derivative",
+        "line": 201,
+        "src": "assert LieDerivative(R2.e_x, R2.e_x) == Commutator(R2.e_x, R2.e_x) == 0",
+        "reason": "unsupported-assertion"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_intcurve_diffequ",
+        "line": 225,
+        "src": "assert str(equations) == '[f_1(t) + Derivative(f_0(t), t), -f_0(t) + Derivative(f_1(t), t)]'",
+        "reason": "not-exported-api"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_intcurve_diffequ",
+        "line": 226,
+        "src": "assert str(init_cond) == '[f_0(0) - 1, f_1(0)]'",
+        "reason": "not-exported-api"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_intcurve_diffequ",
+        "line": 228,
+        "src": "assert str(\n        equations) == '[Derivative(f_0(t), t), Derivative(f_1(t), t) - 1]'",
+        "reason": "not-exported-api"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_intcurve_diffequ",
+        "line": 230,
+        "src": "assert str(init_cond) == '[f_0(0) - 1, f_1(0)]'",
+        "reason": "not-exported-api"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "category": "diffgeom",
+        "test": "test_correct_arguments",
+        "line": 289,
+        "src": "raises(ValueError, lambda: Differential(Differential(R2.e_x)))",
+        "reason": "not-executed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
+        "category": "diffgeom",
+        "test": "test_functional_diffgeom_ch3",
+        "line": 71,
+        "src": "assert all(\n        term == cos(t).taylor_term(i, t) for i, term in enumerate(series_x))",
+        "reason": "stateful-iterator-input"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
+        "category": "diffgeom",
+        "test": "test_functional_diffgeom_ch3",
+        "line": 73,
+        "src": "assert all(\n        term == sin(t).taylor_term(i, t) for i, term in enumerate(series_y))",
+        "reason": "stateful-iterator-input"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_hyperbolic_space",
+        "category": "diffgeom",
+        "test": "test_H2",
+        "line": 32,
+        "src": "assert mat == automat",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_hyperbolic_space",
+        "category": "diffgeom",
+        "test": "test_H2",
+        "line": 83,
+        "src": "assert Ric == ImmutableDenseNDimArray([-y**(-2), 0, 0, -y**(-2)], (2, 2))",
+        "reason": "non-call-expression"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_hyperbolic_space",
+        "category": "diffgeom",
+        "test": "test_H2",
+        "line": 88,
+        "src": "assert R == -2",
+        "reason": "non-call-expression"
+      }
+    ],
+    "tests": [
+      {
+        "module": "sympy.diffgeom.tests.test_class_structure",
+        "test": "test_point",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_class_structure",
+        "test": "test_subs",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_class_structure",
+        "test": "test_deprecated",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_coordsys_transform",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_R2",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_R3",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_CoordinateSymbol",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_point",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_commutator",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_differential",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_products",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_lie_derivative",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_covar_deriv",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_intcurve_diffequ",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_helpers_and_coordinate_dependent",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_correct_arguments",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_simplify",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_issue_17917",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_diffgeom",
+        "test": "test_deprecations",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
+        "test": "test_functional_diffgeom_ch2",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
+        "test": "test_functional_diffgeom_ch3",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
+        "test": "test_functional_diffgeom_ch4",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
+        "test": "test_functional_diffgeom_ch6",
+        "parameter": 0,
+        "status": "completed"
+      },
+      {
+        "module": "sympy.diffgeom.tests.test_hyperbolic_space",
+        "test": "test_H2",
+        "parameter": 0,
+        "status": "completed"
+      }
+    ],
+    "testStatuses": {
+      "completed": 24
     }
   },
   "results": [
     {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: ch #4aa6e1f1ec1cbd9b",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "ch",
-      "expected": "[[[0, 0], [0, 0]], [[0, 0], [0, 0]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: cvd(fx) #4f1938fbcdde268e",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "cvd(fx)",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: cvd(fx*e_x) #72bf240d92996c79",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "cvd(fx*e_x)",
-      "expected": "e_x"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: fx(point) #a4677a05d7ad4e0f",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "fx(point)",
-      "expected": "rho"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: fy(point) #553dad71400ab059",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "fy(point)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: (fx**2+fy**2).rcall(point) #2f07b513ac6c9459",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "(fx**2+fy**2).rcall(point)",
-      "expected": "rho**2"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: fg.rcall(point) #76f24bd576bf2c3d",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "fg.rcall(point)",
-      "expected": "g(-pi)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: pprint(v(s_field)) #a9d3d4f15a938ce5",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "pprint(v(s_field))",
-      "expected": "/ d           \\|    \n|---(g(x, xi))||    \n\\dxi          /|xi=y"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: pprint(v(s_field).rcall(point_r).doit()) #a3e34b96f13b7d69",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "pprint(v(s_field).rcall(point_r).doit())",
-      "expected": "d          \n--(g(x, y))\ndy         "
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: pprint(v(s_field).rcall(point_p)) #23050d375430a2b0",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "pprint(v(s_field).rcall(point_p))",
-      "expected": "/ d                        \\|                 \n|---(g(rho*cos(theta), xi))||                 \n\\dxi                       /|xi=rho*sin(theta)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: simplify(c_xr(fy**2)) #8a64d7b9b1c64093",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "simplify(c_xr(fy**2))",
-      "expected": "-2*cos(theta)*y**2/(x**2 + y**2)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Car2D.dim #23491fe28fa942cc",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Car2D.dim",
-      "expected": "2"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Car2D.symbols #155f2933c5e6cf20",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Car2D.symbols",
-      "expected": "(x, y)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Car2D.transformation(Pol) #9be768b3935c953e",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Car2D.transformation(Pol)",
-      "expected": "Lambda((x, y), Matrix([\n[sqrt(x**2 + y**2)],\n[      atan2(y, x)]]))"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Car2D.transform(Pol) #75c5869bb5e08d73",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Car2D.transform(Pol)",
-      "expected": "Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Car2D.transform(Pol, [1, 2]) #26f549a580ceb8b1",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Car2D.transform(Pol, [1, 2])",
-      "expected": "Matrix([[sqrt(5)], [atan(2)]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Pol.jacobian(Car2D) #aeb18a1d4050a185",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Pol.jacobian(Car2D)",
-      "expected": "Matrix([[cos(theta), -r*sin(theta)], [sin(theta), r*cos(theta)]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Pol.jacobian(Car2D, [1, pi/2]) #93cd5dfc87bae3ca",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Pol.jacobian(Car2D, [1, pi/2])",
-      "expected": "Matrix([[0, -1], [1, 0]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "equivalent",
-        "got": "x**2/(x**2*sqrt(x**2 + y**2) + y**2*sqrt(x**2 + y**2)) + y**2/(x**2*sqrt(x**2 + y**2) + y**2*sqrt(x**2 + y**2))"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Car2D.jacobian_determinant(Pol) #092abf9c339db2da",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Car2D.jacobian_determinant(Pol)",
-      "expected": "1/sqrt(x**2 + y**2)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Car2D.jacobian_determinant(Pol, [1,0]) #5a68bdce35fdd7e8",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Car2D.jacobian_determinant(Pol, [1,0])",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: R2_p.jacobian(R2_r) #c81df08652278909",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "R2_p.jacobian(R2_r)",
-      "expected": "Matrix([[cos(theta), -rho*sin(theta)], [sin(theta), rho*cos(theta)]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: R2_p.jacobian(R2_r, [1, 0]) #30458e35f238cc32",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "R2_p.jacobian(R2_r, [1, 0])",
-      "expected": "Matrix([[1, 0], [0, 1]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "equivalent",
-        "got": "x**2/(x**2*sqrt(x**2 + y**2) + y**2*sqrt(x**2 + y**2)) + y**2/(x**2*sqrt(x**2 + y**2) + y**2*sqrt(x**2 + y**2))"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: R2_r.jacobian_determinant(R2_p) #a6d71005a2d3dd31",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "R2_r.jacobian_determinant(R2_p)",
-      "expected": "1/sqrt(x**2 + y**2)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: R2_r.jacobian_determinant(R2_p, [1, 0]) #79ad591790c37de7",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "R2_r.jacobian_determinant(R2_p, [1, 0])",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: R2_r.transform(R2_p) #a47dbead32f6b8ae",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "R2_r.transform(R2_p)",
-      "expected": "Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: R2_r.transform(R2_p, [0, 1]) #010afe0593308091",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "R2_r.transform(R2_p, [0, 1])",
-      "expected": "Matrix([[1], [pi/2]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: R2_r.transformation(R2_p) #79ee4dc6579ed1ea",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "R2_r.transformation(R2_p)",
-      "expected": "Lambda((x, y), Matrix([\n[sqrt(x**2 + y**2)],\n[      atan2(y, x)]]))"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: x.name #0196d3620de4d9fb",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "x.name",
-      "expected": "x"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: x.coord_sys == Car2D #28ca76b3af540eec",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "x.coord_sys == Car2D",
-      "expected": "True"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: x.index #1e698feb8bffa3d7",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "x.index",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: x.is_real #bb61470dc845f8d1",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "x.is_real",
-      "expected": "True"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: x.rewrite(Pol) #418cee41c6a7d1af",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "x.rewrite(Pol)",
-      "expected": "r*cos(theta)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: sqrt(x**2 + y**2).rewrite(Pol).simplify() #784e60996c567048",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "sqrt(x**2 + y**2).rewrite(Pol).simplify()",
-      "expected": "r"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: ch #4aa6e1f1ec1cbd9b",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "ch",
-      "expected": "[[[0, 0], [0, 0]], [[0, 0], [0, 0]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: cvd(fx) #c85f1d267e898e99",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "cvd(fx)",
-      "expected": "x"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: cvd(fx*e_x) #a55467a485faa7bb",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "cvd(fx*e_x)",
-      "expected": "x*e_x"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: dg #66efc22337fd635d",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "dg",
-      "expected": "d(g(x, y))"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: pprint(dg(e_x)) #cacc38fa8ac34580",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "pprint(dg(e_x))",
-      "expected": "/ d           \\|    \n|---(g(xi, y))||    \n\\dxi          /|xi=x"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: pprint(dg(e_y)) #5844c4b21f359e95",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "pprint(dg(e_y))",
-      "expected": "/ d           \\|    \n|---(g(x, xi))||    \n\\dxi          /|xi=y"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: Differential(dg) #be4d62d625bef035",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "Differential(dg)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: LieDerivative(e_x, fy) #73ab09128151b163",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "LieDerivative(e_x, fy)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: LieDerivative(e_x, fx) #7b567210cd5369ca",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "LieDerivative(e_x, fx)",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: LieDerivative(e_x, e_x) #ed22e6f2b3b7b439",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "LieDerivative(e_x, e_x)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: LieDerivative(e_x, e_rho) #f7a82d135f1e35ff",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "LieDerivative(e_x, e_rho)",
-      "expected": "Commutator(e_x, e_rho)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: LieDerivative(e_x + e_y, fx) #19ec066280950db7",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "LieDerivative(e_x + e_y, fx)",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: LieDerivative(e_x, tp) #f84f3c2113beb95d",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "LieDerivative(e_x, tp)",
-      "expected": "LieDerivative(e_x, TensorProduct(dx, dy))"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: LieDerivative(e_x, tp) #f84f3c2113beb95d",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "LieDerivative(e_x, tp)",
-      "expected": "LieDerivative(e_x, TensorProduct(dx, dy))"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: m #010cbf3a01e5034c",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "m",
-      "expected": "M"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: m.dim #4732007eb6b5acdd",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "m.dim",
-      "expected": "2"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: p #669d67ab4037c4ec",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "p",
-      "expected": "P"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: p.dim #2f2c2da192685f68",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "p.dim",
-      "expected": "2"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: p.manifold == R2 #08dad5e1b43a80cb",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "p.manifold == R2",
-      "expected": "True"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: p.coords() #a09a6a747a439c66",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "p.coords()",
-      "expected": "Matrix([[rho], [3*pi/4]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: p.coords(R2_r) #0aabe8e5d1789eb8",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "p.coords(R2_r)",
-      "expected": "Matrix([[-sqrt(2)*rho/2], [sqrt(2)*rho/2]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: TensorProduct(dx, dy)(e_x, e_y) #179a2ef9eb32b0ce",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "TensorProduct(dx, dy)(e_x, e_y)",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: TensorProduct(dx, dy)(e_y, e_x) #753b997a779379e3",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "TensorProduct(dx, dy)(e_y, e_x)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: TensorProduct(dx, fx*dy)(fx*e_x, e_y) #bdfb2b1643fec40d",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "TensorProduct(dx, fx*dy)(fx*e_x, e_y)",
-      "expected": "x**2"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: TensorProduct(e_x, e_y)(fx**2, fy**2) #38af376d00e0045e",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "TensorProduct(e_x, e_y)(fx**2, fy**2)",
-      "expected": "4*x*y"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: TensorProduct(e_y, dx)(fy) #31f8bd46ca3f3e30",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "TensorProduct(e_y, dx)(fy)",
-      "expected": "dx"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: TensorProduct(tp1, dx)(e_x, e_y, e_x) #dac85da394db64c4",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "TensorProduct(tp1, dx)(e_x, e_y, e_x)",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric.rcall(e_y, None) #3b6476667fe71b1f",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric.rcall(e_y, None)",
-      "expected": "3*dy"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric.rcall(e_y) #03dde3670b4a80f2",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric.rcall(e_y)",
-      "expected": "3*dy"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: WedgeProduct(dx, dy)(e_x, e_y) #eb2f3c2857521e5e",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "WedgeProduct(dx, dy)(e_x, e_y)",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: WedgeProduct(dx, dy)(e_y, e_x) #992c299e6fb906ed",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "WedgeProduct(dx, dy)(e_y, e_x)",
-      "expected": "-1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: WedgeProduct(dx, fx*dy)(fx*e_x, e_y) #7f259b96a472fa76",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "WedgeProduct(dx, fx*dy)(fx*e_x, e_y)",
-      "expected": "x**2"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: WedgeProduct(e_x, e_y)(fy, None) #e0636d14c2c8eba9",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "WedgeProduct(e_x, e_y)(fy, None)",
-      "expected": "-e_x"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: WedgeProduct(wp1, dx)(e_x, e_y, e_x) #78f382c3b2d1639a",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "WedgeProduct(wp1, dx)(e_x, e_y, e_x)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: contravariant_order(a) #fbc1114f931cb75c",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "contravariant_order(a)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: contravariant_order(a*R2.x + 2) #981898bd0d5aca78",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "contravariant_order(a*R2.x + 2)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: contravariant_order(a*R2.x*R2.e_y + R2.e_x) #91f4dde9ed2b3e6b",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "contravariant_order(a*R2.x*R2.e_y + R2.e_x)",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: covariant_order(a) #12bb1de756a9a38d",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "covariant_order(a)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: covariant_order(a*R2.x + 2) #6280c1cd1a67ed0b",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "covariant_order(a*R2.x + 2)",
-      "expected": "0"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: covariant_order(a*R2.x*R2.dy + R2.dx) #5b6a6d7f21a7de4c",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "covariant_order(a*R2.x*R2.dy + R2.dx)",
-      "expected": "1"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: equations #d2df2f5be51fded7",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "equations",
-      "expected": "[f_1(t) + Derivative(f_0(t), t), -f_0(t) + Derivative(f_1(t), t)]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: init_cond #894bf88c6261e740",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "init_cond",
-      "expected": "[f_0(0), f_1(0) - 1]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: equations #381b979ff359ce54",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "equations",
-      "expected": "[Derivative(f_0(t), t), Derivative(f_1(t), t) - 1]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: init_cond #ae9cd47e23e8893d",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "init_cond",
-      "expected": "[f_0(0) - 1, f_1(0) - pi/2]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: intcurve_series(vector_field, t, start_point, n=3) #fa178710dc3417cc",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "intcurve_series(vector_field, t, start_point, n=3)",
-      "expected": "Matrix([[t + x], [y]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: series[0] #ec9fdf7f407cb7cb",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "series[0]",
-      "expected": "Matrix([[x], [y]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: series[1] #5e4315732a67fe9a",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "series[1]",
-      "expected": "Matrix([[t], [0]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: series[2] #b187b25da6985579",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "series[2]",
-      "expected": "Matrix([[0], [0]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: series[0] #9b49561a48343b9e",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "series[0]",
-      "expected": "Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: series[1] #0bd70d3003019b0a",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "series[1]",
-      "expected": "Matrix([[t*x/sqrt(x**2 + y**2)], [-t*y/(x**2 + y**2)]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: series[2] #10047a1255055d24",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "series[2]",
-      "expected": "Matrix([[t**2*(-x**2/(x**2 + y**2)**(3/2) + 1/sqrt(x**2 + y**2))/2], [t**2*x*y/(x**2 + y**2)**2]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric_to_Christoffel_1st(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy)) #08a823234c313864",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric_to_Christoffel_1st(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))",
-      "expected": "[[[0, 0], [0, 0]], [[0, 0], [0, 0]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric_to_Christoffel_1st(R2.x*TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy)) #149099cb55ad5f00",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric_to_Christoffel_1st(R2.x*TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))",
-      "expected": "[[[1/2, 0], [0, 0]], [[0, 0], [0, 0]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric_to_Christoffel_2nd(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy)) #8ed92ed0827492a8",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric_to_Christoffel_2nd(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))",
-      "expected": "[[[0, 0], [0, 0]], [[0, 0], [0, 0]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric_to_Christoffel_2nd(R2.x*TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy)) #ddab7b9c4cc9fcd8",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric_to_Christoffel_2nd(R2.x*TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))",
-      "expected": "[[[1/(2*x), 0], [0, 0]], [[0, 0], [0, 0]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric_to_Ricci_components(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy)) #fda216c6db7420c7",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric_to_Ricci_components(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))",
-      "expected": "[[0, 0], [0, 0]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric_to_Ricci_components(non_trivial_metric) #193d3c28ddfdfe5e",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric_to_Ricci_components(non_trivial_metric)",
-      "expected": "[[1/rho, 0], [0, exp(-2*rho)*rho]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: metric_to_Riemann_components(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy)) #d7d82636f3b19c38",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "metric_to_Riemann_components(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))",
-      "expected": "[[[[0, 0], [0, 0]], [[0, 0], [0, 0]]], [[[0, 0], [0, 0]], [[0, 0], [0, 0]]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: riemann[0, :, :, :] #2d8de248cbeebdcd",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "riemann[0, :, :, :]",
-      "expected": "[[[0, 0], [0, 0]], [[0, exp(-2*rho)*rho], [-exp(-2*rho)*rho, 0]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: riemann[1, :, :, :] #03de9a10f8013694",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "riemann[1, :, :, :]",
-      "expected": "[[[0, -1/rho], [1/rho, 0]], [[0, 0], [0, 0]]]"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: twoform_to_matrix(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy)) #d3a8674b533007b0",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "twoform_to_matrix(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))",
-      "expected": "Matrix([[1, 0], [0, 1]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: twoform_to_matrix(R2.x*TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy)) #8238efab467775d6",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "twoform_to_matrix(R2.x*TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))",
-      "expected": "Matrix([[x, 0], [0, 1]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: twoform_to_matrix(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy) - TP(R2.dx, R2.dy)/2) #5dbe5c884f8c03ee",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "twoform_to_matrix(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy) - TP(R2.dx, R2.dy)/2)",
-      "expected": "Matrix([[1, 0], [-1/2, 1]])"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: vectors_in_basis(R2_r.e_x, R2_p) #6124ff34b72f0425",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "vectors_in_basis(R2_r.e_x, R2_p)",
-      "expected": "-y*e_theta/(x**2 + y**2) + x*e_rho/sqrt(x**2 + y**2)"
-    },
-    {
-      "kind": "doctest",
-      "result": {
-        "status": "pass"
-      },
-      "key": "doctest: sympy.diffgeom.diffgeom: vectors_in_basis(R2_p.e_r, R2_r) #50b54960be92ceb1",
-      "module": "sympy.diffgeom.diffgeom",
-      "src": "vectors_in_basis(R2_p.e_r, R2_r)",
-      "expected": "sin(theta)*e_y + cos(theta)*e_x"
-    },
-    {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1443,7 +416,6 @@
       "expected": "b"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1453,7 +425,6 @@
       "expected": "e_b"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1463,7 +434,6 @@
       "expected": "db"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1473,7 +443,6 @@
       "expected": "x*f(b) + y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1483,7 +452,6 @@
       "expected": "f(a)*e_b"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1493,7 +461,6 @@
       "expected": "y*f(a)*db"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1503,7 +470,6 @@
       "expected": "Matrix([[-s], [r]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1513,7 +479,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1523,7 +488,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1533,7 +497,6 @@
       "expected": "Matrix([[c/2], [d/3]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1543,7 +506,6 @@
       "expected": "Matrix([[6*a], [6*b]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1553,7 +515,6 @@
       "expected": "Matrix([[e/6], [f/6]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1563,7 +524,6 @@
       "expected": "Matrix([[e/3], [f/2]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "equivalent",
         "got": "Matrix([[c/2], [(d - 1)/3]])"
@@ -1574,7 +534,6 @@
       "expected": "Matrix([[c/2], [d/3 - 1/3]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "equivalent",
         "got": "Matrix([[-2*(a + 1)], [(3*b + 1)/2]])"
@@ -1585,7 +544,6 @@
       "expected": "Matrix([[-2*a - 2], [3*b/2 + 1/2]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "equivalent",
         "got": "Matrix([[-(e + 2)/2], [(2*f - 1)/3]])"
@@ -1596,7 +554,6 @@
       "expected": "Matrix([[-e/2 - 1], [2*f/3 - 1/3]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1606,7 +563,6 @@
       "expected": "Matrix([[-e - 2], [2*f]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "equivalent",
         "got": "Matrix([[c/2], [(d - 1)/3]])"
@@ -1617,7 +573,6 @@
       "expected": "Matrix([[c/2], [d/3 - 1/3]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "equivalent",
         "got": "Matrix([[-2*(a + 1)], [(3*b + 1)/2]])"
@@ -1628,7 +583,6 @@
       "expected": "Matrix([[-2*a - 2], [3*b/2 + 1/2]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "equivalent",
         "got": "Matrix([[-(e + 2)/2], [(2*f - 1)/3]])"
@@ -1639,7 +593,6 @@
       "expected": "Matrix([[-e/2 - 1], [2*f/3 - 1/3]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1649,7 +602,6 @@
       "expected": "Matrix([[-e - 2], [2*f]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1659,7 +611,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1669,7 +620,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1679,7 +629,6 @@
       "expected": "2*r0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1689,7 +638,6 @@
       "expected": "rho*sin(theta)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1699,7 +647,6 @@
       "expected": "{y, x}"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1709,7 +656,6 @@
       "expected": "Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1719,7 +665,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1729,7 +674,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1739,7 +683,6 @@
       "expected": "x*e_y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1749,7 +692,6 @@
       "expected": "sin(theta)*y/(x**2 + y**2)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1759,7 +701,6 @@
       "expected": "x*dy"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1769,7 +710,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1779,7 +719,6 @@
       "expected": "x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1789,7 +728,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1799,7 +737,6 @@
       "expected": "dx"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1809,7 +746,6 @@
       "expected": "dy"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1819,7 +755,6 @@
       "expected": "dy"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1829,7 +764,6 @@
       "expected": "x*dx"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1839,7 +773,6 @@
       "expected": "e_x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1849,7 +782,6 @@
       "expected": "e_y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1859,7 +791,6 @@
       "expected": "e_y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1869,7 +800,6 @@
       "expected": "x*e_x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1879,7 +809,6 @@
       "expected": "dx"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1889,7 +818,6 @@
       "expected": "e_y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1899,7 +827,6 @@
       "expected": "e_y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1909,7 +836,6 @@
       "expected": "x*e_x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1919,7 +845,6 @@
       "expected": "e_x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1929,7 +854,6 @@
       "expected": "dy"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1939,7 +863,6 @@
       "expected": "dy"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1949,7 +872,6 @@
       "expected": "4*x*y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1959,7 +881,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1969,7 +890,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1979,7 +899,6 @@
       "expected": "Commutator(e_x, e_rho)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1989,7 +908,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -1999,7 +917,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2009,7 +926,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2019,7 +935,6 @@
       "expected": "e_x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2029,7 +944,6 @@
       "expected": "x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2039,7 +953,6 @@
       "expected": "x*e_x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2049,7 +962,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2059,7 +971,6 @@
       "expected": "2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2069,7 +980,6 @@
       "expected": "3"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2079,7 +989,6 @@
       "expected": "2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2089,7 +998,6 @@
       "expected": "2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2099,7 +1007,6 @@
       "expected": "2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2109,7 +1016,6 @@
       "expected": "2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2119,7 +1025,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2129,7 +1034,6 @@
       "expected": "2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2139,7 +1043,6 @@
       "expected": "3"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2149,7 +1052,6 @@
       "expected": "2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2159,7 +1061,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2169,7 +1070,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2179,7 +1079,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2189,7 +1088,6 @@
       "expected": "Matrix([[1, 0], [0, 1]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2199,7 +1097,6 @@
       "expected": "Matrix([[1, 0], [1, 0]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2209,7 +1106,6 @@
       "expected": "Matrix([[0, -1], [1, 0]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2219,7 +1115,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2229,7 +1124,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2239,7 +1133,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2249,7 +1142,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2259,7 +1151,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2269,7 +1160,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2279,7 +1169,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2289,7 +1178,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2299,7 +1187,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2309,7 +1196,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2319,7 +1205,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2329,7 +1214,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2339,7 +1223,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2349,7 +1232,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2359,7 +1241,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2369,7 +1250,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2379,7 +1259,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2389,7 +1268,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2399,7 +1277,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2409,7 +1286,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2419,7 +1295,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2429,7 +1304,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2439,7 +1313,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2449,7 +1322,6 @@
       "expected": "None"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2459,7 +1331,6 @@
       "expected": "x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2469,7 +1340,6 @@
       "expected": "x*y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2479,7 +1349,6 @@
       "expected": "dx*dy"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2489,7 +1358,6 @@
       "expected": "e_x*e_y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2499,7 +1367,6 @@
       "expected": "dx/(1 - x)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2509,7 +1376,6 @@
       "expected": "x**2*e_x - x*y*e_y - 3*y**2*e_x"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2519,7 +1385,6 @@
       "expected": "Matrix([[sqrt(x0**2 + y0**2)], [atan2(y0, x0)]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2529,7 +1394,6 @@
       "expected": "Matrix([[r0*cos(theta0)], [r0*sin(theta0)]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2539,7 +1403,6 @@
       "expected": "Matrix([[cos(theta0), -r0*sin(theta0)], [sin(theta0), r0*cos(theta0)]])"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2549,7 +1412,6 @@
       "expected": "f(x0, y0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2559,7 +1421,6 @@
       "expected": "f(x0, y0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2569,7 +1430,6 @@
       "expected": "x0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2579,7 +1439,6 @@
       "expected": "r0*cos(theta0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2589,7 +1448,6 @@
       "expected": "r0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2599,7 +1457,6 @@
       "expected": "sqrt(x0**2 + y0**2)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2609,7 +1466,6 @@
       "expected": "atan2(y0, x0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2619,7 +1475,6 @@
       "expected": "x0*(x0**2 + y0**2) + y0**3"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2629,7 +1484,6 @@
       "expected": "r0**3*sin(theta0)**3 + r0**3*cos(theta0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2639,7 +1493,6 @@
       "expected": "b1(x0)*Derivative(f(x0, y0), x0) + b2(y0)*Derivative(f(x0, y0), y0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2649,7 +1502,6 @@
       "expected": "2*x0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2659,7 +1511,6 @@
       "expected": "2*x0 + 4*y0 + 3"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2669,7 +1520,6 @@
       "expected": "b1(x0, y0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2679,7 +1529,6 @@
       "expected": "b2(x0, y0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2689,7 +1538,6 @@
       "expected": "Derivative(f(x0, y0), x0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2699,7 +1547,6 @@
       "expected": "Derivative(f(x0, y0), y0)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2709,7 +1556,6 @@
       "expected": "cos(theta0)*Derivative(f(r0, theta0), r0) - sin(theta0)*Derivative(f(r0, theta0), theta0)/r0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2719,7 +1565,6 @@
       "expected": "sin(theta0)*Derivative(f(r0, theta0), r0) + cos(theta0)*Derivative(f(r0, theta0), theta0)/r0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2729,7 +1574,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2739,7 +1583,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2749,7 +1592,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2759,7 +1601,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2769,7 +1610,6 @@
       "expected": "-y0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2779,7 +1619,6 @@
       "expected": "x0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2789,7 +1628,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2799,7 +1637,6 @@
       "expected": "1"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2809,7 +1646,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2819,7 +1655,6 @@
       "expected": "u0*v1 - u1*v0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2829,7 +1664,6 @@
       "expected": "u0*v1*w2 - u0*v2*w1 - u1*v0*w2 + u1*v2*w0 + u2*v0*w1 - u2*v1*w0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2839,7 +1673,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2849,7 +1682,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2859,7 +1691,6 @@
       "expected": "-1/y**3"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2869,7 +1700,6 @@
       "expected": "-1/y**3"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2879,7 +1709,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2889,7 +1718,6 @@
       "expected": "-1/y**3"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2899,7 +1727,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2909,7 +1736,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2919,7 +1745,6 @@
       "expected": "y**(-3)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2929,7 +1754,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2939,7 +1763,6 @@
       "expected": "-1/y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2949,7 +1772,6 @@
       "expected": "-1/y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2959,7 +1781,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2969,7 +1790,6 @@
       "expected": "-1/y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2979,7 +1799,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2989,7 +1808,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -2999,7 +1817,6 @@
       "expected": "1/y"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3009,7 +1826,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3019,7 +1835,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3029,7 +1844,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3039,7 +1853,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3049,7 +1862,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3059,7 +1871,6 @@
       "expected": "-1/y**2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3069,7 +1880,6 @@
       "expected": "y**(-2)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3079,7 +1889,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3089,7 +1898,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3099,7 +1907,6 @@
       "expected": "y**(-2)"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3109,7 +1916,6 @@
       "expected": "-1/y**2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3119,7 +1925,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3129,7 +1934,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3139,7 +1943,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3149,7 +1952,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3159,7 +1961,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3169,7 +1970,6 @@
       "expected": "-1/y**2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3179,7 +1979,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3189,7 +1988,6 @@
       "expected": "0"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },
@@ -3199,7 +1997,6 @@
       "expected": "-1/y**2"
     },
     {
-      "kind": "unit",
       "result": {
         "status": "pass"
       },

@@ -1,42 +1,5 @@
 [
   {
-    "kind": "doctest",
-    "module": "sympy.diffgeom.diffgeom",
-    "src": "c_xy",
-    "reason": "non-call-expression"
-  },
-  {
-    "kind": "doctest",
-    "module": "sympy.diffgeom.diffgeom",
-    "src": "c_xr",
-    "reason": "non-call-expression"
-  },
-  {
-    "kind": "doctest",
-    "module": "sympy.diffgeom.diffgeom",
-    "src": "Car2D",
-    "reason": "non-call-expression"
-  },
-  {
-    "kind": "doctest",
-    "module": "sympy.diffgeom.diffgeom",
-    "src": "_[0].func",
-    "reason": "reference-exception"
-  },
-  {
-    "kind": "doctest",
-    "module": "sympy.diffgeom.diffgeom",
-    "src": "non_trivial_metric",
-    "reason": "non-call-expression"
-  },
-  {
-    "kind": "doctest",
-    "module": "sympy.diffgeom.diffgeom",
-    "src": "non_trivial_metric",
-    "reason": "non-call-expression"
-  },
-  {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_class_structure",
     "category": "diffgeom",
     "test": "test_point",
@@ -45,7 +8,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_class_structure",
     "category": "diffgeom",
     "test": "test_deprecated",
@@ -54,7 +16,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_R2",
@@ -63,7 +24,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_R2",
@@ -72,7 +32,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_R3",
@@ -81,7 +40,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_R3",
@@ -90,7 +48,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_R3",
@@ -99,7 +56,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_R3",
@@ -108,7 +64,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_R3",
@@ -117,7 +72,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_R3",
@@ -126,7 +80,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_point",
@@ -135,7 +88,6 @@
     "reason": "unsupported-assertion"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_products",
@@ -144,7 +96,6 @@
     "reason": "unsupported-assertion"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_products",
@@ -153,7 +104,6 @@
     "reason": "unsupported-assertion"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_products",
@@ -162,7 +112,6 @@
     "reason": "unsupported-assertion"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_products",
@@ -171,7 +120,6 @@
     "reason": "unsupported-assertion"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_lie_derivative",
@@ -180,7 +128,6 @@
     "reason": "unsupported-assertion"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_lie_derivative",
@@ -189,7 +136,6 @@
     "reason": "unsupported-assertion"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_lie_derivative",
@@ -198,7 +144,6 @@
     "reason": "unsupported-assertion"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_intcurve_diffequ",
@@ -207,7 +152,6 @@
     "reason": "not-exported-api"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_intcurve_diffequ",
@@ -216,7 +160,6 @@
     "reason": "not-exported-api"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_intcurve_diffequ",
@@ -225,7 +168,6 @@
     "reason": "not-exported-api"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_intcurve_diffequ",
@@ -234,7 +176,6 @@
     "reason": "not-exported-api"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_diffgeom",
     "category": "diffgeom",
     "test": "test_correct_arguments",
@@ -243,7 +184,6 @@
     "reason": "not-executed"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
     "category": "diffgeom",
     "test": "test_functional_diffgeom_ch3",
@@ -252,7 +192,6 @@
     "reason": "stateful-iterator-input"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
     "category": "diffgeom",
     "test": "test_functional_diffgeom_ch3",
@@ -261,7 +200,6 @@
     "reason": "stateful-iterator-input"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_hyperbolic_space",
     "category": "diffgeom",
     "test": "test_H2",
@@ -270,7 +208,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_hyperbolic_space",
     "category": "diffgeom",
     "test": "test_H2",
@@ -279,7 +216,6 @@
     "reason": "non-call-expression"
   },
   {
-    "kind": "unit",
     "module": "sympy.diffgeom.tests.test_hyperbolic_space",
     "category": "diffgeom",
     "test": "test_H2",

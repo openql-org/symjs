@@ -20,7 +20,6 @@
     "declaration": true,
     "noEmit": true,
     "paths": {
-      "@symjs/diffgeom": ["./packages/diffgeom/src/index.ts"],
       "@symjs/symjs": [
         "./packages/symjs/src/index.ts"
       ],
