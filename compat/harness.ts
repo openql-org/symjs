@@ -167,6 +167,8 @@ export class TypeRef {
 /** An item of a Python list, tuple, set or dict prints as its repr: Permutation(0, 1, 2) for a Permutation. */
 const fmtItem = (v: unknown): string => {
   if (v instanceof sj.Permutation) return sj.permutationRepr(v);
+  // members of the S<n>TransitiveSubgroups enumerations print their Enum repr inside containers
+  if (v instanceof sj.TransitiveSubgroup) return v.repr();
   // a prime ideal of a number field prints its repr inside containers
   if (v instanceof sj.PrimeIdeal) return v.repr();
   // domain elements (PythonMPQ, Gaussian elements, ModularInteger, ANP) print their repr inside containers
@@ -570,7 +572,7 @@ export function deserialize(tree: Tree): unknown {
     case 'TransitiveSubgroup': {
       const groups = [sj.S1TransitiveSubgroups, sj.S2TransitiveSubgroups, sj.S3TransitiveSubgroups, sj.S4TransitiveSubgroups, sj.S5TransitiveSubgroups, sj.S6TransitiveSubgroups];
       const group = groups[Number(tree['degree']) - 1];
-      const name = group && Object.values(group).find((g) => g.name === String(tree['name']));
+      const name = group && [...group].find((g) => g.name === String(tree['name']));
       if (name === undefined) throw new Unsupported('transitive subgroup name');
       return name;
     }

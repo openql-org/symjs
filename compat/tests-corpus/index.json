@@ -167,7 +167,7 @@
     },
     "combinatorics": {
       "examined": 3530,
-      "cases": 1655,
+      "cases": 1671,
       "reasons": {
         "duplicate": 488,
         "marked-slow": 21,
@@ -182,7 +182,7 @@
         "test-timeout": 7,
         "unserializable-input": 14,
         "unstable-result-representation": 14,
-        "unsupported-assertion": 79
+        "unsupported-assertion": 63
       },
       "sourceSites": 1265,
       "testStatuses": {
@@ -191,17 +191,17 @@
         "marked-xfail": 3,
         "test-timeout": 1
       },
-      "seconds": 73.365,
-      "retainedModules": 0,
+      "seconds": 1.86,
+      "retainedModules": 21,
       "shards": [
         {
           "file": "combinatorics.json",
-          "cases": 1655,
-          "bytes": 903932
+          "cases": 1671,
+          "bytes": 912051
         }
       ],
       "auditFile": "combinatorics.audit.json",
-      "auditBytes": 123856,
+      "auditBytes": 123645,
       "modules": [
         "sympy.combinatorics.tests.test_coset_table",
         "sympy.combinatorics.tests.test_fp_groups",
@@ -928,25 +928,25 @@
     },
     "polys": {
       "examined": 29642,
-      "cases": 9346,
+      "cases": 9358,
       "reasons": {
         "duplicate": 125,
         "marked-slow": 74,
         "marked-tooslow": 2,
         "marked-xfail": 10,
         "non-boolean-assertion": 52,
-        "non-call-expression": 15903,
+        "non-call-expression": 15895,
         "not-executed": 31,
-        "not-exported-api": 1122,
+        "not-exported-api": 1112,
         "optional-dependency": 291,
-        "private-api": 23,
+        "private-api": 33,
         "python-runtime-api": 691,
         "serialization-error": 319,
         "stateful-iterator-input": 137,
         "test-exception:TypeError": 2,
         "test-utility": 50,
         "unserializable-input": 448,
-        "unsupported-assertion": 1015,
+        "unsupported-assertion": 1011,
         "unsupported-raises": 1
       },
       "sourceSites": 10205,
@@ -959,17 +959,17 @@
         "test-exception:TypeError": 1,
         "upstream-skip": 62
       },
-      "seconds": 6.136,
+      "seconds": 19.636,
       "retainedModules": 67,
       "shards": [
         {
           "file": "polys.json",
-          "cases": 9346,
-          "bytes": 7768893
+          "cases": 9358,
+          "bytes": 7781372
         }
       ],
       "auditFile": "polys.audit.json",
-      "auditBytes": 984236,
+      "auditBytes": 983331,
       "modules": [
         "sympy.polys.agca.tests.test_extensions",
         "sympy.polys.agca.tests.test_homomorphisms",

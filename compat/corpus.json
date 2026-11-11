@@ -704969,6 +704969,103 @@
    "expected": "[Piecewise((x**2/2, (x >= 0) & (x <= 1)), (-x**2 + 3*x - 3/2, (x >= 1) & (x <= 2)), (x**2/2 - 3*x + 9/2, (x >= 2) & (x <= 3)), (0, True)), Piecewise((x**2/2 - x + 1/2, (x >= 1) & (x <= 2)), (-x**2 + 5*x - 11/2, (x >= 2) & (x <= 3)), (x**2/2 - 4*x + 8, (x >= 3) & (x <= 4)), (0, True))]"
   },
   {
+   "fn": ".__call__",
+   "unsupportedArg": "function",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galois_resolvents",
+   "src": "R.root_lambdas[0](*X)",
+   "expected": "X0*X2 + X1*X3"
+  },
+  {
+   "fn": ".__call__",
+   "unsupportedArg": "function",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galois_resolvents",
+   "src": "R.root_lambdas[1](*X)",
+   "expected": "X0*X3 + X1*X2"
+  },
+  {
+   "fn": ".__call__",
+   "unsupportedArg": "function",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galois_resolvents",
+   "src": "R.root_lambdas[2](*X)",
+   "expected": "X0*X1 + X2*X3"
+  },
+  {
+   "fn": "galois_group",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "pick": 0,
+   "text": true,
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galoisgroups",
+   "src": "print(G)",
+   "expected": "PermutationGroup([\n    (0 1)(2 3),\n    (0 2)(1 3)])"
+  },
+  {
+   "fn": "galois_group",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "pick": 1,
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galoisgroups",
+   "src": "alt",
+   "expected": "True"
+  },
+  {
    "fn": ".order",
    "self": {
     "t": "PermutationGroup",
@@ -704999,6 +705096,48 @@
    "module": "sympy.polys.numberfields.galoisgroups",
    "src": "G.order()",
    "expected": "4"
+  },
+  {
+   "fn": "galois_group",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "by_name": {
+     "t": "Js",
+     "v": true
+    }
+   },
+   "pick": 0,
+   "text": true,
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galoisgroups",
+   "src": "print(G_name)",
+   "expected": "S4TransitiveSubgroups.V"
   },
   {
    "fn": ".get_perm_group",
@@ -730475,8 +730614,8 @@
   "reasons": {
    "statement-or-setup": 14459,
    "upstream-skip": 113,
-   "not-exported-api": 892,
-   "non-call-expression": 614,
+   "not-exported-api": 890,
+   "non-call-expression": 610,
    "reference-exception": 319,
    "private-api": 61,
    "unsupported-result-type": 91,
@@ -739956,21 +740095,6 @@
     "reason": "reference-exception"
    },
    {
-    "module": "sympy.polys.numberfields.galois_resolvents",
-    "src": "R.root_lambdas[0](*X)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.galois_resolvents",
-    "src": "R.root_lambdas[1](*X)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.galois_resolvents",
-    "src": "R.root_lambdas[2](*X)",
-    "reason": "non-call-expression"
-   },
-   {
     "module": "sympy.polys.numberfields.modules",
     "src": "print((B(0) * C(0)).module == A)",
     "reason": "not-exported-api"
@@ -741628,21 +741752,6 @@
    {
     "module": "sympy.polys.domains.algebraicfield",
     "src": "print(type(B2[1]))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "print(G)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "alt",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "print(G_name)",
     "reason": "not-exported-api"
    },
    {

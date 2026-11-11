@@ -329,11 +329,11 @@ The condition-level scope and remaining limitations are maintained in
 [`compat/capabilities.json`](../compat/capabilities.json). API existence and
 source-file size do not establish full SymPy compatibility.
 
-The generated `combinatorics/galoisdata.ts` and
-`polys/numberfields/resolventlookupdata.ts` contain the permutation generators
-and exact resolvent coefficient tables of SymPy 1.14. Regenerate them with
+The generated `polys/numberfields/resolventlookupdata.ts` contains the exact
+resolvent coefficient tables of SymPy 1.14. Regenerate it with
 `python3 packages/symjs/scripts/generate-galois.py`; the algorithms live in
-`combinatorics/galois.ts` and `polys/numberfields/galoisgroups.ts`.
+`combinatorics/galois.ts`, `polys/numberfields/galoisresolvents.ts` and
+`polys/numberfields/galoisgroups.ts`.
 
 `@symjs/symjs/diffgeom` imports internal base modules at L0–L3. Its expression
 nodes use `ExtensionExpr`; coordinate symbols subclass `Sym` with chart-dependent

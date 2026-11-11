@@ -73,6 +73,33 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertIn('2', str(case['self']))
         self.assertEqual(corpus['extraction']['testStatuses'], {'completed': 1})
 
+    def test_assertions_about_names_assigned_from_calls(self):
+        corpus = self.extract('''
+            from sympy.polys.numberfields.galoisgroups import _galois_group_degree_3
+            def test_bound():
+                x = Symbol('x')
+                q, r = div(x**2 + 1, x)
+                assert q == x
+                assert r == 1
+                e = expand((x + 1)**2)
+                assert e == x**2 + 2*x + 1
+                e = 5
+                assert e == 5
+                m = Matrix([[1, 2]])
+                m[0, 0] = 3
+                assert m == Matrix([[3, 2]])
+                assert _galois_group_degree_3(Poly(x**3 - 2)) is not None
+                assert Integer(2).is_even is (1 == 1)
+                assert Integer(2).is_even is not False
+                assert Integer(2) is Integer(2)
+        ''')
+        cases = corpus['cases']
+        self.assertEqual([(c['fn'], c.get('pick'), c['op'], c['expected']) for c in cases], [
+            ('div', 0, '==', 'x'), ('div', 1, '==', '1'), ('expand', None, '==', 'x**2 + 2*x + 1'),
+            ('.is_even', None, 'is', 'True'), ('.is_even', None, 'is not', 'False')])
+        self.assertEqual(corpus['extraction']['reasons'], {
+            'non-call-expression': 2, 'private-api': 1, 'unsupported-assertion': 1})
+
     def test_loops_helpers_and_full_record_deduplication(self):
         corpus = self.extract('''
             def check(i):

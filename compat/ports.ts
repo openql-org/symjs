@@ -536,6 +536,15 @@ export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]>
 
   // ---- sympy.solvers.diophantine.diophantine: equation-type objects and DiophantineSolutionSet ----
   ...diophantinePorts(),
+
+  // ---- sympy.polys.numberfields.galois_resolvents: R = Resolvent(F, X, s); its conjugates are Python lambdas ----
+  ...Object.fromEntries([0, 1, 2].map((i) => [`sympy.polys.numberfields.galois_resolvents:R.root_lambdas[${i}](*X)`, () => {
+    const X = ['X0', 'X1', 'X2', 'X3'].map((n) => sj.symbol(n));
+    const [X0, X1, X2, X3] = X as [sj.Sym, sj.Sym, sj.Sym, sj.Sym];
+    const s = [[0, 1, 2, 3], [1, 0, 2, 3], [3, 1, 2, 0]].map((a) => new sj.Permutation(a));
+    const R = new sj.Resolvent(sj.add(sj.mul(X0, X2), sj.mul(X1, X3)), X, s);
+    return R.rootLambdas[i]!(...X);
+  }])),
 };
 
 /** The doctests of the Diophantine equation classes, with the objects their setup lines create. */

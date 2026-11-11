@@ -8,7 +8,7 @@ import type { Case, CaseObservation, Outcome } from './harness';
 export interface TestCase extends Case {
   test: string;
   line: number;
-  op: '==' | '!=' | 'is' | 'truthy' | 'falsy';
+  op: '==' | '!=' | 'is' | 'is not' | 'truthy' | 'falsy';
   raises?: string;
 }
 
@@ -53,6 +53,8 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
   // Do not use JS truthiness: Truth 'unknown' is truthy. The shared harness
   // normalizes unknown/NoMatch to null internally (not a public API result).
   const got = value === 'unknown' || value === null ? 'None' : value === undefined ? 'undefined' : fmt(value);
+  // `x is not None` (True, False) holds for every other result.
+  if (c.op === 'is not') return got !== 'undefined' && got !== c.expected ? { status: 'pass' } : { status: 'fail', got };
   return ['True', 'False', 'None'].includes(got) && got === c.expected
     ? { status: 'pass' } : { status: 'fail', got };
 }

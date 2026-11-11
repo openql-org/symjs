@@ -429,13 +429,9 @@ CORRESPONDENCES = {
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
 NOT_IMPLEMENTED = {
-    'sympy.combinatorics.galois': 'transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)',
     'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
     'sympy.integrals.quadrature': 'Gauss quadrature nodes and weights',
     'sympy.polys.multivariate_resultants': 'DixonResultant, MacaulayResultant',
-    'sympy.polys.numberfields.galois_resolvents': '',
-    'sympy.polys.numberfields.galoisgroups': '',
-    'sympy.polys.numberfields.resolvent_lookup': '',
     'sympy.polys.polymatrix': 'PolyMatrix',
     'sympy.tensor.toperators': '',
 }
@@ -445,6 +441,8 @@ NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/phys
  'sympy.physics': 'per-field extend package (planned)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
+    'sympy.polys.numberfields.galois_resolvents': 'SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_galois_resolvents.py); Resolvent and the lookup resolvents are exercised through test_galoisgroups and the doctests.',
+    'sympy.polys.numberfields.resolvent_lookup': 'SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_resolvent_lookup.py); the table is exercised through test_galoisgroups.',
     'sympy.polys.domains.mpelements': 'RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.',
     'sympy.diffgeom': 'base subpath @symjs/symjs/diffgeom',
     'sympy.diffgeom.diffgeom': 'base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves',
@@ -632,7 +630,7 @@ class PublicContracts:
                         names.add(target.id)
         for base in node.bases:
             name = ast.unparse(base)
-            if name in {'object', 'Exception', 'BaseException', 'ValueError', 'TypeError', 'IndexError', 'KeyError', 'RuntimeError', 'ArithmeticError', 'ZeroDivisionError', 'NotImplementedError', 'tuple', 'dict', 'list', 'set', 'frozenset', 'int', 'str', 'type'}:
+            if name in {'object', 'Enum', 'Exception', 'BaseException', 'ValueError', 'TypeError', 'IndexError', 'KeyError', 'RuntimeError', 'ArithmeticError', 'ZeroDivisionError', 'NotImplementedError', 'tuple', 'dict', 'list', 'set', 'frozenset', 'int', 'str', 'type'}:
                 continue
             parent = self.resolve(module, name)
             if parent not in self.classes:

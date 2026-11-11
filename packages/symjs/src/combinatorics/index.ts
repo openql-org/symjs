@@ -30,7 +30,7 @@ export type { PruferEdge } from './prufer';
 export { Subset, ksubsets } from './subsets';
 export { Coset, PermutationGroup, SymmetricPermutationGroup } from './permgroups';
 export type { OrbitAction, PermutationGroupOptions } from './permgroups';
-export { AbelianGroup, AlternatingGroup, CyclicGroup, DihedralGroup, RubikGroup, SymmetricGroup } from './namedgroups';
+export { AbelianGroup, AlternatingGroup, CyclicGroup, DihedralGroup, RubikGroup, SymmetricGroup, setAlternatingGroupProperties, setSymmetricGroupProperties } from './namedgroups';
 export { DirectProduct } from './groupconstructs';
 export { Polyhedron, cube, dodecahedron, icosahedron, octahedron, tetrahedron } from './polyhedron';
 export { alternating, cyclic, dihedral, symmetric } from './generators';

@@ -82,6 +82,7 @@ const CASES = [
   // of the names used (measured 177 KiB, the core entry; was 1312).
   ['index', 'Rational', 195],
   // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB).
+  // Galois resolvents, Tschirnhausen transformations and the S6 subgroup search add about 10 KiB.
   ['index', '*', 2650],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],

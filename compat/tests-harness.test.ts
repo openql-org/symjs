@@ -40,6 +40,10 @@ it('compares Truth explicitly, including unknown, without accepting absent publi
     expect(assertionOutcome({ ...base, op: 'truthy', expected: 'True' }, { status: 'pass' }, { value }).status).toBe('fail');
   }
   expect(assertionOutcome({ ...base, op: 'falsy', expected: 'False' }, { status: 'pass' }, { value: false }).status).toBe('pass');
+  expect(assertionOutcome({ ...base, op: 'is not', expected: 'None' }, { status: 'fail', got: '[x]' }, { value: [1] }).status).toBe('pass');
+  for (const value of [null, 'unknown', undefined]) {
+    expect(assertionOutcome({ ...base, op: 'is not', expected: 'None' }, { status: 'fail', got: 'None' }, { value }).status).toBe('fail');
+  }
   expect(runTestCase({ ...base, fn: '.is_real', self: { t: 'Symbol', name: 'x', assume: {} }, args: [], op: 'is', expected: 'None' }).status).toBe('pass');
   expect(runTestCase({ ...base, fn: '.is_nonnegative', self: { t: 'Symbol', name: 'x', assume: { positive: true } }, args: [], op: 'is', expected: 'True' }).status).toBe('pass');
 });
