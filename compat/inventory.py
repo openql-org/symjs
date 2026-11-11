@@ -82,6 +82,8 @@ EXCLUSIONS = {
     'sympy.printing.python': 'Generates or compiles Python code.',
     'sympy.utilities.autowrap': 'Generates or compiles Python code.',
     'sympy.codegen.pyutils': 'Generates or compiles Python code.',
+    'sympy.printing.jscode': 'JavaScript source output; symjs evaluates expressions in JavaScript directly (lambdify) instead of emitting JavaScript code.',
+    'sympy.sandbox': 'Experimental modules outside the public SymPy API.',
 }
 
 # Explicit correspondences for the different kernel layout and combined modules.
@@ -416,7 +418,6 @@ NOT_IMPLEMENTED = {
     'sympy.printing.cxx': 'extend package @symjs/codegen (planned)',
     'sympy.printing.fortran': 'extend package @symjs/codegen (planned)',
     'sympy.printing.glsl': 'extend package @symjs/codegen (planned)',
-    'sympy.printing.jscode': 'JavaScript code output (not ported)',
     'sympy.printing.julia': 'extend package @symjs/codegen (planned)',
     'sympy.printing.maple': 'extend package @symjs/codegen (planned)',
     'sympy.printing.mathematica': 'extend package @symjs/codegen (planned)',
@@ -424,8 +425,6 @@ NOT_IMPLEMENTED = {
     'sympy.printing.rcode': 'extend package @symjs/codegen (planned)',
     'sympy.printing.rust': 'extend package @symjs/codegen (planned)',
     'sympy.printing.smtlib': 'extend package @symjs/codegen (planned)',
-    'sympy.sandbox': '',
-    'sympy.sandbox.indexed_integrals': '',
     'sympy.series.series_class': 'SeriesBase, abstract base class of sequences/fourier/formal series',
     'sympy.tensor.array.array_derivatives': 'ArrayDerivative',
     'sympy.tensor.array.expressions.conv_array_to_indexed': 'array expressions',

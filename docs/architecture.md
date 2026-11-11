@@ -307,7 +307,8 @@ reason) or unassessed. Mathematical content is never excluded.
 |---|---|
 | `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; all of `codegen/` (including `cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py`); `utilities/codegen.py` | extend package `@symjs/codegen` (planned) |
 | `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
-| `printing/jscode.py` | not ported: JavaScript code output |
+| `printing/jscode.py` | out of scope: JavaScript source output (expressions are evaluated in JavaScript directly) |
+| `sandbox/` | out of scope: experimental modules outside the public SymPy API |
 | `parsing/latex/`, `maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | extend package (planned) |
 | `diffgeom/` | extend package (planned) |
 | `physics/` | extend packages per field; `physics/quantum/` is `@symjs/physics-quantum` (partial) |

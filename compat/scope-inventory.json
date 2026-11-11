@@ -17086,8 +17086,8 @@
   {
    "module": "sympy.printing.jscode",
    "sha256": "04e44e0e8f408a8eb614a8751d8965b86f88c6d242dbaffe216af102212d9abf",
-   "status": "unimplemented",
-   "note": "JavaScript code output (not ported)",
+   "status": "excluded",
+   "reason": "JavaScript source output; symjs evaluates expressions in JavaScript directly (lambdify) instead of emitting JavaScript code.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -17624,7 +17624,8 @@
   {
    "module": "sympy.sandbox",
    "sha256": "21a1153981da67dece1c4bada35506b6116e3b7e5cd2ebc0645654db763211a5",
-   "status": "unimplemented",
+   "status": "excluded",
+   "reason": "Experimental modules outside the public SymPy API.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -17634,7 +17635,8 @@
   {
    "module": "sympy.sandbox.indexed_integrals",
    "sha256": "b2f878c4321af271a90de1f84de45be3d806f2688cbd7a42cc46ab6e8af9f041",
-   "status": "unimplemented",
+   "status": "excluded",
+   "reason": "Experimental modules outside the public SymPy API.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
