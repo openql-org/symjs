@@ -83,10 +83,7 @@
       "octave_code",
       "pdiv",
       "pexquo",
-      "plot",
       "plot_backends",
-      "plot_implicit",
-      "plot_parametric",
       "pquo",
       "prem",
       "preview",
@@ -112,7 +109,6 @@
       "sturm",
       "subresultants",
       "test",
-      "textplot",
       "timed",
       "total_degree",
       "trunc",
@@ -4389,15 +4385,9 @@
       "Diagram.conclusions",
       "Diagram.objects",
       "Diagram.premises",
-      "DiagramGrid",
-      "DiagramGrid.height",
       "DiagramGrid.morphisms",
-      "DiagramGrid.width",
       "NamedMorphism.name",
-      "XypicDiagramDrawer",
-      "XypicDiagramDrawer.draw",
-      "preview_diagram",
-      "xypic_draw_diagram"
+      "preview_diagram"
      ],
      "unresolvedBases": [
       "sympy.core.Basic",
@@ -4509,7 +4499,6 @@
       {
        "area": "Category theory",
        "remaining": [
-        "Diagram layout and Xy-pic output",
         "General category hom sets (also unavailable upstream)",
         "Functors and natural transformations (outside SymPy 1.14 implementation)"
        ]
@@ -4559,6 +4548,55 @@
    "sources": [
     "categories/diagram_drawing.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "DiagramGrid.morphisms",
+      "preview_diagram"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 19,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "non-call-expression": 3,
+      "not-exported-api": 1,
+      "printing-expression": 5
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.categories.tests.test_diagram_drawing",
+     "testFile": "sympy/categories/tests/test_diagram_drawing.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": false,
+     "note": "",
+     "capabilities": [
+      {
+       "area": "Category theory",
+       "remaining": [
+        "General category hom sets (also unavailable upstream)",
+        "Functors and natural transformations (outside SymPy 1.14 implementation)"
+       ]
+      }
+     ]
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 28,
@@ -18636,6 +18674,136 @@
    "sources": [
     "diffgeom.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "BaseCovarDerivativeOp.christoffel",
+      "BaseCovarDerivativeOp.coord_sys",
+      "BaseCovarDerivativeOp.index",
+      "BaseScalarField.coord_sys",
+      "BaseScalarField.index",
+      "BaseVectorField.coord_sys",
+      "BaseVectorField.index",
+      "Commutator.v1",
+      "Commutator.v2",
+      "CoordSystem.name",
+      "CoordSystem.patch",
+      "CoordSystem.relations",
+      "CoordinateSymbol.__floordiv__",
+      "CoordinateSymbol.__lshift__",
+      "CoordinateSymbol.__rfloordiv__",
+      "CoordinateSymbol.__rmod__",
+      "CoordinateSymbol.__rshift__",
+      "CoordinateSymbol.args",
+      "CoordinateSymbol.as_set",
+      "CoordinateSymbol.binary_symbols",
+      "CoordinateSymbol.canonical_variables",
+      "CoordinateSymbol.default_assumptions",
+      "CoordinateSymbol.expr_free_symbols",
+      "CoordinateSymbol.func",
+      "CoordinateSymbol.is_Add",
+      "CoordinateSymbol.is_AlgebraicNumber",
+      "CoordinateSymbol.is_Boolean",
+      "CoordinateSymbol.is_Derivative",
+      "CoordinateSymbol.is_Dummy",
+      "CoordinateSymbol.is_Equality",
+      "CoordinateSymbol.is_Float",
+      "CoordinateSymbol.is_Indexed",
+      "CoordinateSymbol.is_Integer",
+      "CoordinateSymbol.is_MatAdd",
+      "CoordinateSymbol.is_MatMul",
+      "CoordinateSymbol.is_Matrix",
+      "CoordinateSymbol.is_Mul",
+      "CoordinateSymbol.is_Not",
+      "CoordinateSymbol.is_NumberSymbol",
+      "CoordinateSymbol.is_Order",
+      "CoordinateSymbol.is_Piecewise",
+      "CoordinateSymbol.is_Point",
+      "CoordinateSymbol.is_Poly",
+      "CoordinateSymbol.is_Pow",
+      "CoordinateSymbol.is_Rational",
+      "CoordinateSymbol.is_Relational",
+      "CoordinateSymbol.is_Symbol",
+      "CoordinateSymbol.is_Vector",
+      "CoordinateSymbol.is_Wild",
+      "CoordinateSymbol.is_algebraic",
+      "CoordinateSymbol.is_antihermitian",
+      "CoordinateSymbol.is_complex",
+      "CoordinateSymbol.is_composite",
+      "CoordinateSymbol.is_even",
+      "CoordinateSymbol.is_extended_negative",
+      "CoordinateSymbol.is_extended_nonnegative",
+      "CoordinateSymbol.is_extended_nonpositive",
+      "CoordinateSymbol.is_extended_nonzero",
+      "CoordinateSymbol.is_extended_positive",
+      "CoordinateSymbol.is_extended_real",
+      "CoordinateSymbol.is_finite",
+      "CoordinateSymbol.is_hermitian",
+      "CoordinateSymbol.is_imaginary",
+      "CoordinateSymbol.is_infinite",
+      "CoordinateSymbol.is_irrational",
+      "CoordinateSymbol.is_negative",
+      "CoordinateSymbol.is_noninteger",
+      "CoordinateSymbol.is_nonnegative",
+      "CoordinateSymbol.is_nonpositive",
+      "CoordinateSymbol.is_nonzero",
+      "CoordinateSymbol.is_odd",
+      "CoordinateSymbol.is_polar",
+      "CoordinateSymbol.is_positive",
+      "CoordinateSymbol.is_prime",
+      "CoordinateSymbol.is_rational",
+      "CoordinateSymbol.is_real",
+      "CoordinateSymbol.is_scalar",
+      "CoordinateSymbol.is_symbol",
+      "CoordinateSymbol.is_transcendental",
+      "CoordinateSymbol.is_zero",
+      "CoordinateSymbol.name",
+      "CoordinateSymbol.to_nnf",
+      "CovarDerivativeOp.christoffel",
+      "CovarDerivativeOp.wrt",
+      "Differential.form_field",
+      "Differential.is_commutative",
+      "LieDerivative.expr",
+      "LieDerivative.v_field",
+      "Manifold.dim",
+      "Manifold.name",
+      "Patch.manifold",
+      "Patch.name"
+     ],
+     "unresolvedBases": [
+      "sympy.core.Basic",
+      "sympy.core.Expr"
+     ]
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.tests.test_diffgeom",
+     "testFile": "sympy/tests/test_diffgeom.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": true,
+     "note": "base subpath @symjs/symjs/diffgeom",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -18674,6 +18842,145 @@
    "sources": [
     "diffgeom/diffgeom.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "BaseCovarDerivativeOp.christoffel",
+      "BaseCovarDerivativeOp.coord_sys",
+      "BaseCovarDerivativeOp.index",
+      "BaseScalarField.coord_sys",
+      "BaseScalarField.index",
+      "BaseVectorField.coord_sys",
+      "BaseVectorField.index",
+      "Commutator.v1",
+      "Commutator.v2",
+      "CoordSystem.name",
+      "CoordSystem.patch",
+      "CoordSystem.relations",
+      "CoordinateSymbol.__floordiv__",
+      "CoordinateSymbol.__lshift__",
+      "CoordinateSymbol.__rfloordiv__",
+      "CoordinateSymbol.__rmod__",
+      "CoordinateSymbol.__rshift__",
+      "CoordinateSymbol.args",
+      "CoordinateSymbol.as_set",
+      "CoordinateSymbol.binary_symbols",
+      "CoordinateSymbol.canonical_variables",
+      "CoordinateSymbol.default_assumptions",
+      "CoordinateSymbol.expr_free_symbols",
+      "CoordinateSymbol.func",
+      "CoordinateSymbol.is_Add",
+      "CoordinateSymbol.is_AlgebraicNumber",
+      "CoordinateSymbol.is_Boolean",
+      "CoordinateSymbol.is_Derivative",
+      "CoordinateSymbol.is_Dummy",
+      "CoordinateSymbol.is_Equality",
+      "CoordinateSymbol.is_Float",
+      "CoordinateSymbol.is_Indexed",
+      "CoordinateSymbol.is_Integer",
+      "CoordinateSymbol.is_MatAdd",
+      "CoordinateSymbol.is_MatMul",
+      "CoordinateSymbol.is_Matrix",
+      "CoordinateSymbol.is_Mul",
+      "CoordinateSymbol.is_Not",
+      "CoordinateSymbol.is_NumberSymbol",
+      "CoordinateSymbol.is_Order",
+      "CoordinateSymbol.is_Piecewise",
+      "CoordinateSymbol.is_Point",
+      "CoordinateSymbol.is_Poly",
+      "CoordinateSymbol.is_Pow",
+      "CoordinateSymbol.is_Rational",
+      "CoordinateSymbol.is_Relational",
+      "CoordinateSymbol.is_Symbol",
+      "CoordinateSymbol.is_Vector",
+      "CoordinateSymbol.is_Wild",
+      "CoordinateSymbol.is_algebraic",
+      "CoordinateSymbol.is_antihermitian",
+      "CoordinateSymbol.is_complex",
+      "CoordinateSymbol.is_composite",
+      "CoordinateSymbol.is_even",
+      "CoordinateSymbol.is_extended_negative",
+      "CoordinateSymbol.is_extended_nonnegative",
+      "CoordinateSymbol.is_extended_nonpositive",
+      "CoordinateSymbol.is_extended_nonzero",
+      "CoordinateSymbol.is_extended_positive",
+      "CoordinateSymbol.is_extended_real",
+      "CoordinateSymbol.is_finite",
+      "CoordinateSymbol.is_hermitian",
+      "CoordinateSymbol.is_imaginary",
+      "CoordinateSymbol.is_infinite",
+      "CoordinateSymbol.is_irrational",
+      "CoordinateSymbol.is_negative",
+      "CoordinateSymbol.is_noninteger",
+      "CoordinateSymbol.is_nonnegative",
+      "CoordinateSymbol.is_nonpositive",
+      "CoordinateSymbol.is_nonzero",
+      "CoordinateSymbol.is_odd",
+      "CoordinateSymbol.is_polar",
+      "CoordinateSymbol.is_positive",
+      "CoordinateSymbol.is_prime",
+      "CoordinateSymbol.is_rational",
+      "CoordinateSymbol.is_real",
+      "CoordinateSymbol.is_scalar",
+      "CoordinateSymbol.is_symbol",
+      "CoordinateSymbol.is_transcendental",
+      "CoordinateSymbol.is_zero",
+      "CoordinateSymbol.name",
+      "CoordinateSymbol.to_nnf",
+      "CovarDerivativeOp.christoffel",
+      "CovarDerivativeOp.wrt",
+      "Differential.form_field",
+      "Differential.is_commutative",
+      "LieDerivative.expr",
+      "LieDerivative.v_field",
+      "Manifold.dim",
+      "Manifold.name",
+      "Patch.manifold",
+      "Patch.name",
+      "dummyfy"
+     ],
+     "unresolvedBases": [
+      "sympy.core.Basic",
+      "sympy.core.Expr"
+     ]
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 98,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "non-call-expression": 5,
+      "reference-exception": 1
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.diffgeom.tests.test_diffgeom",
+     "testFile": "sympy/diffgeom/tests/test_diffgeom.py",
+     "inCorpus": true,
+     "caseCount": 101,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-call-expression": 8,
+      "not-executed": 1,
+      "not-exported-api": 4,
+      "unsupported-assertion": 8
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": true,
+     "note": "base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 104,
@@ -18763,6 +19070,40 @@
    "sources": [
     "diffgeom/rn.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.diffgeom.tests.test_rn",
+     "testFile": "sympy/diffgeom/tests/test_rn.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": false,
+     "hasNote": true,
+     "note": "base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -72959,11 +73300,11 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "testModule": "sympy.parsing.tests.test_latex",
      "testFile": "sympy/parsing/tests/test_latex.py",
-     "inCorpus": false,
-     "caseCount": 0,
+     "inCorpus": true,
+     "caseCount": 228,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
@@ -79501,6 +79842,43 @@
    "sources": [
     "plotting.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "PygletPlot",
+      "plot_backends"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.tests.test_plotting",
+     "testFile": "sympy/tests/test_plotting.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79645,6 +80023,62 @@
    "sources": [
     "plotting/intervalmath/index.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "ceil",
+      "imax",
+      "imin",
+      "interval.__add__",
+      "interval.__eq__",
+      "interval.__ge__",
+      "interval.__gt__",
+      "interval.__le__",
+      "interval.__lt__",
+      "interval.__mul__",
+      "interval.__ne__",
+      "interval.__neg__",
+      "interval.__pow__",
+      "interval.__rpow__",
+      "interval.__rsub__",
+      "interval.__rtruediv__",
+      "interval.__sub__",
+      "interval.__truediv__",
+      "interval.mid",
+      "interval.width",
+      "log10"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_intervalmath",
+     "testFile": "sympy/plotting/tests/test_intervalmath.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79682,6 +80116,58 @@
    "sources": [
     "plotting/intervalmath/interval_arithmetic.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "interval.__add__",
+      "interval.__eq__",
+      "interval.__ge__",
+      "interval.__gt__",
+      "interval.__le__",
+      "interval.__lt__",
+      "interval.__mul__",
+      "interval.__ne__",
+      "interval.__neg__",
+      "interval.__pow__",
+      "interval.__rpow__",
+      "interval.__rsub__",
+      "interval.__rtruediv__",
+      "interval.__sub__",
+      "interval.__truediv__",
+      "interval.mid",
+      "interval.width"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.intervalmath.tests.test_interval_arithmetic",
+     "testFile": "sympy/plotting/intervalmath/tests/test_interval_arithmetic.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79713,6 +80199,52 @@
    "sources": [
     "plotting/intervalmath/interval_membership.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "intervalMembership",
+      "intervalMembership.__and__",
+      "intervalMembership.__eq__",
+      "intervalMembership.__invert__",
+      "intervalMembership.__ne__",
+      "intervalMembership.__or__",
+      "intervalMembership.__xor__"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.intervalmath.tests.test_interval_membership",
+     "testFile": "sympy/plotting/intervalmath/tests/test_interval_membership.py",
+     "inCorpus": true,
+     "caseCount": 2,
+     "gapCount": 1,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-boolean-assertion": 1,
+      "not-exported-api": 2,
+      "unserializable-input": 49
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79733,6 +80265,45 @@
    "sources": [
     "plotting/intervalmath/lib_interval.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "ceil",
+      "imax",
+      "imin",
+      "log10"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.intervalmath.tests.test_lib_interval",
+     "testFile": "sympy/plotting/intervalmath/tests/test_lib_interval.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79769,6 +80340,44 @@
    "sources": [
     "plotting/plot.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "plot_factory"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 2,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "rendering-backend-construction: rendering is done by connector packages": 13
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_plot",
+     "testFile": "sympy/plotting/tests/test_plot.py",
+     "inCorpus": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 15,
@@ -79790,6 +80399,42 @@
    "sources": [
     "plotting/plot_implicit.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_plot_implicit",
+     "testFile": "sympy/plotting/tests/test_plot_implicit.py",
+     "inCorpus": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "unserializable-input": 2
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79804,6 +80449,47 @@
    "sources": [
     "plotting/plotgrid.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "PlotGrid.close",
+      "PlotGrid.fig",
+      "PlotGrid.save",
+      "PlotGrid.show"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "rendering-backend-construction: rendering is done by connector packages": 3
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_plotgrid",
+     "testFile": "sympy/plotting/tests/test_plotgrid.py",
+     "inCorpus": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {},
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 3,
@@ -80167,6 +80853,205 @@
    "sources": [
     "plotting/series.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "BaseSeries.get_data",
+      "BaseSeries.is_2Dvector",
+      "BaseSeries.is_3D",
+      "BaseSeries.is_3Dvector",
+      "BaseSeries.is_line",
+      "BaseSeries.is_vector",
+      "BaseSeries.params",
+      "BaseSeries.ranges",
+      "BaseSeries.rendering_kw",
+      "BaseSeries.scales",
+      "ContourSeries.is_2Dvector",
+      "ContourSeries.is_3D",
+      "ContourSeries.is_3Dvector",
+      "ContourSeries.is_line",
+      "ContourSeries.is_vector",
+      "ContourSeries.params",
+      "ContourSeries.ranges",
+      "ContourSeries.rendering_kw",
+      "ContourSeries.scales",
+      "GenericDataSeries.is_2Dvector",
+      "GenericDataSeries.is_3D",
+      "GenericDataSeries.is_3Dvector",
+      "GenericDataSeries.is_line",
+      "GenericDataSeries.is_vector",
+      "GenericDataSeries.params",
+      "GenericDataSeries.ranges",
+      "GenericDataSeries.rendering_kw",
+      "GenericDataSeries.scales",
+      "ImplicitSeries.color",
+      "ImplicitSeries.is_2Dvector",
+      "ImplicitSeries.is_3D",
+      "ImplicitSeries.is_3Dvector",
+      "ImplicitSeries.is_line",
+      "ImplicitSeries.is_vector",
+      "ImplicitSeries.params",
+      "ImplicitSeries.ranges",
+      "ImplicitSeries.rendering_kw",
+      "ImplicitSeries.scales",
+      "ImplicitSeries.use_cm",
+      "IntervalMathPrinter",
+      "IntervalMathPrinter.doprint",
+      "IntervalMathPrinter.emptyPrinter",
+      "IntervalMathPrinter.language",
+      "IntervalMathPrinter.modules",
+      "IntervalMathPrinter.order",
+      "IntervalMathPrinter.parenthesize",
+      "IntervalMathPrinter.printmethod",
+      "IntervalMathPrinter.reserved_words",
+      "IntervalMathPrinter.set_global_settings",
+      "IntervalMathPrinter.stringify",
+      "IntervalMathPrinter.tab",
+      "Line2DBaseSeries.get_segments",
+      "Line2DBaseSeries.is_2Dvector",
+      "Line2DBaseSeries.is_3D",
+      "Line2DBaseSeries.is_3Dvector",
+      "Line2DBaseSeries.is_line",
+      "Line2DBaseSeries.is_vector",
+      "Line2DBaseSeries.params",
+      "Line2DBaseSeries.ranges",
+      "Line2DBaseSeries.rendering_kw",
+      "Line2DBaseSeries.scales",
+      "Line2DBaseSeries.xscale",
+      "Line3DBaseSeries.get_segments",
+      "Line3DBaseSeries.is_2Dvector",
+      "Line3DBaseSeries.is_3D",
+      "Line3DBaseSeries.is_3Dvector",
+      "Line3DBaseSeries.is_line",
+      "Line3DBaseSeries.is_vector",
+      "Line3DBaseSeries.params",
+      "Line3DBaseSeries.ranges",
+      "Line3DBaseSeries.rendering_kw",
+      "Line3DBaseSeries.scales",
+      "Line3DBaseSeries.xscale",
+      "LineOver1DRangeSeries.get_segments",
+      "LineOver1DRangeSeries.is_2Dvector",
+      "LineOver1DRangeSeries.is_3D",
+      "LineOver1DRangeSeries.is_3Dvector",
+      "LineOver1DRangeSeries.is_line",
+      "LineOver1DRangeSeries.is_vector",
+      "LineOver1DRangeSeries.params",
+      "LineOver1DRangeSeries.ranges",
+      "LineOver1DRangeSeries.rendering_kw",
+      "LineOver1DRangeSeries.scales",
+      "LineOver1DRangeSeries.xscale",
+      "List2DSeries.get_segments",
+      "List2DSeries.is_2Dvector",
+      "List2DSeries.is_3D",
+      "List2DSeries.is_3Dvector",
+      "List2DSeries.is_line",
+      "List2DSeries.is_vector",
+      "List2DSeries.params",
+      "List2DSeries.ranges",
+      "List2DSeries.rendering_kw",
+      "List2DSeries.scales",
+      "List2DSeries.xscale",
+      "Parametric2DLineSeries.get_segments",
+      "Parametric2DLineSeries.is_2Dvector",
+      "Parametric2DLineSeries.is_3D",
+      "Parametric2DLineSeries.is_3Dvector",
+      "Parametric2DLineSeries.is_line",
+      "Parametric2DLineSeries.is_vector",
+      "Parametric2DLineSeries.params",
+      "Parametric2DLineSeries.ranges",
+      "Parametric2DLineSeries.rendering_kw",
+      "Parametric2DLineSeries.scales",
+      "Parametric2DLineSeries.xscale",
+      "Parametric3DLineSeries.get_segments",
+      "Parametric3DLineSeries.is_2Dvector",
+      "Parametric3DLineSeries.is_3D",
+      "Parametric3DLineSeries.is_3Dvector",
+      "Parametric3DLineSeries.is_line",
+      "Parametric3DLineSeries.is_vector",
+      "Parametric3DLineSeries.params",
+      "Parametric3DLineSeries.ranges",
+      "Parametric3DLineSeries.rendering_kw",
+      "Parametric3DLineSeries.scales",
+      "Parametric3DLineSeries.xscale",
+      "ParametricLineBaseSeries.get_segments",
+      "ParametricLineBaseSeries.is_2Dvector",
+      "ParametricLineBaseSeries.is_3D",
+      "ParametricLineBaseSeries.is_3Dvector",
+      "ParametricLineBaseSeries.is_line",
+      "ParametricLineBaseSeries.is_vector",
+      "ParametricLineBaseSeries.params",
+      "ParametricLineBaseSeries.ranges",
+      "ParametricLineBaseSeries.rendering_kw",
+      "ParametricLineBaseSeries.scales",
+      "ParametricLineBaseSeries.xscale",
+      "ParametricSurfaceSeries.is_2Dvector",
+      "ParametricSurfaceSeries.is_3D",
+      "ParametricSurfaceSeries.is_3Dvector",
+      "ParametricSurfaceSeries.is_line",
+      "ParametricSurfaceSeries.is_vector",
+      "ParametricSurfaceSeries.params",
+      "ParametricSurfaceSeries.ranges",
+      "ParametricSurfaceSeries.rendering_kw",
+      "ParametricSurfaceSeries.scales",
+      "SurfaceBaseSeries.get_data",
+      "SurfaceBaseSeries.is_2Dvector",
+      "SurfaceBaseSeries.is_3D",
+      "SurfaceBaseSeries.is_3Dvector",
+      "SurfaceBaseSeries.is_line",
+      "SurfaceBaseSeries.is_vector",
+      "SurfaceBaseSeries.params",
+      "SurfaceBaseSeries.ranges",
+      "SurfaceBaseSeries.rendering_kw",
+      "SurfaceBaseSeries.scales",
+      "SurfaceOver2DRangeSeries.is_2Dvector",
+      "SurfaceOver2DRangeSeries.is_3D",
+      "SurfaceOver2DRangeSeries.is_3Dvector",
+      "SurfaceOver2DRangeSeries.is_line",
+      "SurfaceOver2DRangeSeries.is_vector",
+      "SurfaceOver2DRangeSeries.params",
+      "SurfaceOver2DRangeSeries.ranges",
+      "SurfaceOver2DRangeSeries.rendering_kw",
+      "SurfaceOver2DRangeSeries.scales"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_series",
+     "testFile": "sympy/plotting/tests/test_series.py",
+     "inCorpus": true,
+     "caseCount": 9,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-boolean-assertion": 51,
+      "non-call-expression": 51,
+      "not-executed": 1,
+      "not-exported-api": 191,
+      "stateful-iterator-input": 8,
+      "unserializable-input": 86,
+      "unsupported-assertion": 22
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -80253,6 +81138,47 @@
    "sources": [
     "plotting/textplot.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": false,
+     "missingNames": [
+      "is_valid",
+      "linspace",
+      "rescale"
+     ],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": true,
+     "caseCount": 1,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {},
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_textplot",
+     "testFile": "sympy/plotting/tests/test_textplot.py",
+     "inCorpus": true,
+     "caseCount": 0,
+     "gapCount": 0,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-call-expression": 5,
+      "stateful-iterator-input": 2
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 1,
@@ -80271,6 +81197,46 @@
    "sources": [
     "plotting/utils.ts"
    ],
+   "completeness": {
+    "publicApi": {
+     "pass": true,
+     "missingNames": [],
+     "unresolvedBases": []
+    },
+    "doctests": {
+     "pass": false,
+     "caseCount": 0,
+     "gapCount": 0,
+     "failingIds": [],
+     "disallowedExclusions": {},
+     "disallowedOmissions": {
+      "non-call-expression": 3,
+      "not-exported-api": 4
+     },
+     "unaccountedExamples": 0,
+     "notSelected": false
+    },
+    "unitTests": {
+     "pass": false,
+     "testModule": "sympy.plotting.tests.test_utils",
+     "testFile": "sympy/plotting/tests/test_utils.py",
+     "inCorpus": true,
+     "caseCount": 4,
+     "gapCount": 1,
+     "timeoutCount": 0,
+     "disallowedOmissions": {
+      "non-call-expression": 13,
+      "not-exported-api": 27
+     },
+     "incompleteTests": {}
+    },
+    "limitations": {
+     "pass": true,
+     "hasNote": false,
+     "note": "",
+     "capabilities": []
+    }
+   },
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 7,
@@ -93770,7 +94736,7 @@
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
      "caseCount": 1584,
-     "gapCount": 633,
+     "gapCount": 631,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -104645,7 +105611,7 @@
      "testFile": "sympy/sets/tests/test_setexpr.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 83,
+     "gapCount": 81,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -109172,7 +110138,7 @@
      "testFile": "sympy/solvers/tests/test_solveset.py",
      "inCorpus": true,
      "caseCount": 568,
-     "gapCount": 268,
+     "gapCount": 264,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-skip": 1,
@@ -131165,7 +132131,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "TensorProduct",
       "TensorProduct.__floordiv__",
       "TensorProduct.__rfloordiv__",
       "TensorProduct.__rmod__",
@@ -131265,7 +132230,7 @@
      "testFile": "sympy/tensor/tests/test_functions.py",
      "inCorpus": true,
      "caseCount": 1,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,

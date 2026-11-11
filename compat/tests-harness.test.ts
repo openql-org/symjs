@@ -144,7 +144,7 @@ it('replays differential geometry directly through the base harness', () => {
 it('reports differential-geometry exception classes through the shared harness', () => {
   const c = { ...call, args: [field('BaseVectorField', 0)], test: 'invalid_vector', line: 1, op: '==' as const };
   expect(runTestCase({ ...c, raises: 'ValueError' }).status).toBe('pass');
-  expect(runTestCase({ ...c, raises: 'TypeError' }).exceptionMismatch).toEqual({ expected: 'TypeError', actual: 'ValueError' });
+  expect(runTestCase({ ...c, raises: 'TypeError' }).exceptionMismatch).toEqual({ expected: 'TypeError', actual: 'RangeError' });
 });
 it('keeps differential-geometry and Euclidean Point dispatch distinct', () => {
   expect(

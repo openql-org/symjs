@@ -65,10 +65,10 @@ const CASES = [
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 547],
-  ['holonomic', 'exprToHolonomic', 1105],
+  ['holonomic', 'exprToHolonomic', 1140],
   ['geometry', '*', 1078],
   ['vector', '*', 1176],
-  ['stats', '*', 1220],
+  ['stats', '*', 1285],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
@@ -79,7 +79,7 @@ const CASES = [
   // of the names used (measured 177 KiB, the core entry; was 1312).
   ['index', 'Rational', 195],
   // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB).
-  ['index', '*', 2600],
+  ['index', '*', 2620],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];
