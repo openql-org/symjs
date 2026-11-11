@@ -341,3 +341,7 @@ resolves their constructors and methods from the public diffgeom subpath, using
 only argument and result conversions. Unit assertions are extracted into
 `compat/tests-corpus/diffgeom.json` and replayed by the `unit-diffgeom` project
 through the same base dispatch.
+
+## Plotting data for connector packages
+
+The `@symjs/symjs/plotting` subpath computes numeric series without rendering dependencies and is isolated from the root entry. `Plot.toData()` returns a version 1 JSON description with plot options and series containing a kind, named coordinate arrays, label and style hints. Surfaces use row-major matrices; implicit plots supply contour meshes or interval boxes. Non-finite samples encode as the strings `NaN`, `Infinity`, and `-Infinity`; `getData()` retains numeric IEEE values. Color values, point/fill flags and plain `renderingKw` objects travel with each series. `PlotGrid.toData()` nests descriptions in row-major order. Connector packages interpret this data and own display, saving and backend dependencies.

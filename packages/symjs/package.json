@@ -21,6 +21,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./plotting": {
+      "import": {
+        "types": "./dist/plotting.d.ts",
+        "default": "./dist/plotting.js"
+      },
+      "require": {
+        "types": "./dist/plotting.d.cts",
+        "default": "./dist/plotting.cjs"
+      }
+    },
     "./core": {
       "import": {
         "types": "./dist/core.d.ts",
@@ -447,6 +457,9 @@
     "./src/numeric/mpspecialfns.ts",
     "./dist/numeric/mpspecialfns.js",
     "./dist/numeric/mpspecialfns.cjs",
+    "./src/plotting.ts",
+    "./dist/plotting.js",
+    "./dist/plotting.cjs",
     "./src/parsing.ts",
     "./dist/parsing.js",
     "./dist/parsing.cjs",

@@ -35,7 +35,7 @@ function categoryOf(fullPath: string): string {
   if (/^src\/(calculus|series|integrals)\//.test(path)) return 'calculus';
   if (path.startsWith('src/matrices/')) return 'matrices';
   if (path.startsWith('src/quantum/')) return 'quantum';
-  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats|categories|tensor|combinatorics|crypto|liealgebras|diffgeom|parsing)[/.]/.exec(path);
+  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats|categories|tensor|combinatorics|crypto|liealgebras|diffgeom|parsing|plotting)[/.]/.exec(path);
   if (sub) return sub[1]!;
   return 'core';
 }
@@ -69,7 +69,7 @@ interface Corpus {
   extraction: { examined: number; reasons: Record<string, number>; omitted: { module: string; src: string; reason: string }[] };
 }
 
-const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'pde', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'holonomic', 'strategies', 'unify', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras', 'diffgeom', 'parsing'];
+const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'pde', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'holonomic', 'strategies', 'unify', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras', 'diffgeom', 'parsing', 'plotting'];
 
 // a rate below 100% never prints as 100.0%
 const pct = (a: number, b: number) => (b === 0 ? '-' : `${(a < b ? Math.min((100 * a) / b, 99.9) : 100).toFixed(1)}%`);
@@ -100,10 +100,6 @@ const apiKey = (a: { name: string; category: string; owner?: string }): string =
  * consistent). Their modules are 'excluded' in scope-inventory.json with the same reason.
  */
 const OUT_OF_SCOPE_API: Readonly<Record<string, string>> = {
-  // sympy.categories.diagram_drawing: drawing category diagrams is not ported, like plotting
-  'categories: DiagramGrid': 'diagram drawing',
-  'categories: XypicDiagramDrawer': 'diagram drawing',
-  'categories: xypic_draw_diagram': 'diagram drawing',
 };
 
 it('computes SymPy compatibility metrics', () => {
@@ -194,7 +190,7 @@ it('computes SymPy compatibility metrics', () => {
     '## Capability conditions', '',
     '| Area | Status | Tested conditions | Remaining scope |', '|---|---|---|---|',
     ...capabilities.areas.map((a) => `| ${a.area} | ${a.status} | ${a.tested.join('; ')} | ${a.remaining.join('; ')} |`), '',
-    'Direct regression-test paths are maintained in `capabilities.json`. Tensor differential operators, category diagram drawing (not ported, like plotting) and unsupported PDE classes remain explicit gaps.', '',
+    'Direct regression-test paths are maintained in `capabilities.json`. Tensor differential operators and unsupported PDE classes remain explicit gaps.', '',
   );
   const base = runBaseChecks();
   const basePass = base.filter((b) => b.pass).length;

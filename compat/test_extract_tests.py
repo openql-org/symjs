@@ -213,6 +213,28 @@ class CategoryShardTests(unittest.TestCase):
             for path in (root / category).rglob('test_*.py'):
                 self.assertIn(path.relative_to(root).as_posix(), unit.FILE_SCOPE)
 
+    def test_plotting_may_use_numpy_but_not_matplotlib(self):
+        source = '''
+import numpy as np
+from sympy.external import import_module
+matplotlib = import_module('matplotlib')
+
+def test_numpy():
+    assert np.sqrt(4) == 2
+
+def test_matplotlib():
+    if not matplotlib:
+        return
+    assert matplotlib is not None
+'''
+        tree = unit.ast.parse(source)
+        functions = {n.name: n for n in tree.body if isinstance(n, unit.ast.FunctionDef)}
+        for category, numpy_reason in (('plotting', None), ('core', 'optional-dependency')):
+            optional = unit.OPTIONAL - unit.ALLOWED_OPTIONAL.get(category, set())
+            aliases = unit.optional_aliases(tree, optional)
+            self.assertEqual(unit.skip_reason(functions['test_numpy'], aliases, functions, optional=optional), numpy_reason)
+            self.assertEqual(unit.skip_reason(functions['test_matplotlib'], aliases, functions, optional=optional), 'optional-dependency')
+
     def test_discovery_includes_nested_areas_and_excludes_mixed_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -232,8 +254,9 @@ class CategoryShardTests(unittest.TestCase):
             included, excluded = unit.discover(root)
             self.assertEqual([p.relative_to(root).as_posix() for p in included['polys']], names[:2])
             self.assertEqual(len(included['printing']), 2)
-            self.assertEqual(len(included['parsing']), 2)
-            self.assertEqual(len(excluded), 7)
+            self.assertEqual(len(included['parsing']), 3)
+            self.assertEqual(len(included['categories']), 1)
+            self.assertEqual(len(excluded), 5)
             self.assertEqual(sum(map(len, included.values())) + len(excluded), len(names))
             self.assertTrue(all(e['reason'] for e in excluded))
 

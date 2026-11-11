@@ -18,8 +18,19 @@ from pathlib import Path
 import sys
 import sympy
 
+# preview_diagram requires an external TeX installation and image viewer.
+API_EXCLUSIONS = {
+    'sympy.plotting.plot.Plot.show': 'Rendering is done by connector packages.',
+    'sympy.plotting.plot.Plot.save': 'Rendering is done by connector packages.',
+    'sympy.plotting.plotgrid.PlotGrid.show': 'Rendering is done by connector packages.',
+    'sympy.plotting.plotgrid.PlotGrid.save': 'Rendering is done by connector packages.',
+    'sympy.categories.diagram_drawing.preview_diagram': 'Renders Xy-pic through an external TeX installation and viewer.',
+}
+
 EXCLUSIONS = {
-    'sympy.plotting': 'Rendering backends and interactive plotting are separate from the symbolic engine.',
+    'sympy.plotting.backends': 'Rendering is done by connector packages; backend classes are not part of the base engine.',
+    'sympy.plotting.pygletplot': 'Interactive OpenGL rendering is done by connector packages.',
+    'sympy.plotting.experimental_lambdify': 'Python source generation is replaced by symjs numeric evaluation.',
     'sympy.interactive': 'Python REPL/session integration does not apply to the JavaScript runtime.',
     'sympy.testing': 'Upstream test runners are infrastructure, not mathematical APIs.',
     'sympy.external': 'Python bindings to optional external libraries are runtime-specific.',
@@ -27,7 +38,6 @@ EXCLUSIONS = {
     'sympy.parsing.autolev._antlr': 'Generated Python parser runtime; an equivalent parser may be supplied separately.',
     'sympy.parsing.latex._antlr': 'Generated Python parser runtime; this does not exclude the LaTeX parsing feature.',
     'sympy.stats.sampling': 'External sampling-library adapters; symbolic probability remains in scope.',
-    'sympy.categories.diagram_drawing': 'diagram drawing',
     'sympy.polys.domains.gmpyintegerring': 'Ground-type backend binding gmpy2/python-flint; ZZ itself is in scope (domains.integerring).',
     'sympy.polys.domains.gmpyrationalfield': 'Ground-type backend binding gmpy2/python-flint; QQ itself is in scope (domains.rationalfield).',
     'sympy.polys.domains.gmpyfinitefield': 'Ground-type backend binding gmpy2/python-flint; GF(p) itself is in scope (domains.finitefield).',
@@ -376,7 +386,19 @@ CORRESPONDENCES = {
     'sympy.utilities': ['utilities.ts', 'utilities/index.ts'],
     'sympy.utilities.lambdify': ['numeric/evalf.ts'],
     'sympy': ['index.ts'],
+    'sympy.plotting': ['plotting.ts'],
+    'sympy.plotting.series': ['plotting/series.ts'],
+    'sympy.plotting.plot': ['plotting/plot.ts'],
+    'sympy.plotting.plot_implicit': ['plotting/plot_implicit.ts'],
+    'sympy.plotting.plotgrid': ['plotting/plotgrid.ts'],
+    'sympy.plotting.textplot': ['plotting/textplot.ts'],
+    'sympy.plotting.utils': ['plotting/utils.ts'],
+    'sympy.plotting.intervalmath': ['plotting/intervalmath/index.ts'],
+    'sympy.plotting.intervalmath.interval_arithmetic': ['plotting/intervalmath/interval_arithmetic.ts'],
+    'sympy.plotting.intervalmath.interval_membership': ['plotting/intervalmath/interval_membership.ts'],
+    'sympy.plotting.intervalmath.lib_interval': ['plotting/intervalmath/lib_interval.ts'],
     'sympy.categories': ['categories.ts'],
+    'sympy.categories.diagram_drawing': ['categories/diagram_drawing.ts'],
     'sympy.parsing': ['parsing/parser.ts'],
     'sympy.physics.quantum.gate': ['../../physics-quantum/src/gates.ts'],
     'sympy.diffgeom': ['diffgeom.ts'],
@@ -873,7 +895,7 @@ def build_inventory(root):
                             'excluded': 'An explicit runtime/infrastructure exclusion, with its reason.',
                             'note': 'For partial and unimplemented modules: what is ported, or where the module is planned (base module or an extend package).',
                             'declaredPublicNames': 'Public source definitions, explicit __all__ exports and declared class methods/properties. The API criterion also checks inherited members and class attributes. Python protocols are excluded except mapped arithmetic/comparison operators.'},
-            'modules': rows}
+            'apiExclusions': API_EXCLUSIONS, 'modules': rows}
 
 
 if __name__ == '__main__':

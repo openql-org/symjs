@@ -12,6 +12,13 @@
   "note": "For partial and unimplemented modules: what is ported, or where the module is planned (base module or an extend package).",
   "declaredPublicNames": "Public source definitions, explicit __all__ exports and declared class methods/properties. The API criterion also checks inherited members and class attributes. Python protocols are excluded except mapped arithmetic/comparison operators."
  },
+ "apiExclusions": {
+  "sympy.plotting.plot.Plot.show": "Rendering is done by connector packages.",
+  "sympy.plotting.plot.Plot.save": "Rendering is done by connector packages.",
+  "sympy.plotting.plotgrid.PlotGrid.show": "Rendering is done by connector packages.",
+  "sympy.plotting.plotgrid.PlotGrid.save": "Rendering is done by connector packages.",
+  "sympy.categories.diagram_drawing.preview_diagram": "Renders Xy-pic through an external TeX installation and viewer."
+ },
  "modules": [
   {
    "module": "sympy",
@@ -4548,11 +4555,12 @@
   {
    "module": "sympy.categories.diagram_drawing",
    "sha256": "95f476f5fe905feacaf9c080a26fb6991278c4bca18b9e5c87dd42c843c25c04",
-   "status": "excluded",
-   "reason": "diagram drawing",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "categories/diagram_drawing.ts"
+   ],
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 28,
    "declaredPublicNames": [
     "ArrowStringDescription",
@@ -79489,9 +79497,10 @@
   {
    "module": "sympy.plotting",
    "sha256": "84074e8da8bcfa56a3efdacb2761d96e25b5a245e5cf4a75724f82a1e354ea6f",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "plotting.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79513,7 +79522,7 @@
    "module": "sympy.plotting.backends",
    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79524,7 +79533,7 @@
    "module": "sympy.plotting.backends.base_backend",
    "sha256": "6a87f972cf26586e9f97cec369d479b1906363cb2c31e94ec0a1568b6efe14ed",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79548,7 +79557,7 @@
    "module": "sympy.plotting.backends.matplotlibbackend",
    "sha256": "333b33e378246a789dd761bcaa739cc0935b6efa9fe9e1a9a67f8867224232da",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79562,7 +79571,7 @@
    "module": "sympy.plotting.backends.matplotlibbackend.matplotlib",
    "sha256": "f5e7eeed24ff0f733efdf7a96423d3732f137581085f43c2932a1c0c655f6cf1",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79580,7 +79589,7 @@
    "module": "sympy.plotting.backends.textbackend",
    "sha256": "9e757f0bb249fe4c067107b60beb699caeb7e56f2f4ee21fe46aefbe6babd2b4",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79593,7 +79602,7 @@
    "module": "sympy.plotting.backends.textbackend.text",
    "sha256": "d6e900ae3c304165040fd481fb5766901e982f911c276ad4a2c51ffcd701a57b",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Rendering is done by connector packages; backend classes are not part of the base engine.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79608,7 +79617,7 @@
    "module": "sympy.plotting.experimental_lambdify",
    "sha256": "c5c06196f676876d1a23532950deaa004a4ed3be43bf5df60166d027b9775b38",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Python source generation is replaced by symjs numeric evaluation.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79632,9 +79641,10 @@
   {
    "module": "sympy.plotting.intervalmath",
    "sha256": "7d057bb0b67d347a593b95c697665fa97e7ac7e99dabeb1886d58428b9e01e55",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "plotting/intervalmath/index.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -79668,10 +79678,11 @@
   {
    "module": "sympy.plotting.intervalmath.interval_arithmetic",
    "sha256": "8efe58a2536cea939ac0886e4ac4c157082482674e1703eb18dff52ad8df708b",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/intervalmath/interval_arithmetic.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -79698,10 +79709,11 @@
   {
    "module": "sympy.plotting.intervalmath.interval_membership",
    "sha256": "d55a4ed53ed48ef3f170cc920b91a1665f3e54cfc3c488ab4960b76469b12006",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/intervalmath/interval_membership.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -79717,10 +79729,11 @@
   {
    "module": "sympy.plotting.intervalmath.lib_interval",
    "sha256": "598d6a46dcae6f830325a662cf0e9c5d023934c1085c13bd50458f108f34696f",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/intervalmath/lib_interval.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -79752,11 +79765,12 @@
   {
    "module": "sympy.plotting.plot",
    "sha256": "ba6bc6e3b788a8e744528e6a922de30e44ba2d82a74d6153679ab3c59641800c",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "plotting/plot.ts"
+   ],
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 15,
    "declaredPublicNames": [
     "check_arguments",
@@ -79772,10 +79786,11 @@
   {
    "module": "sympy.plotting.plot_implicit",
    "sha256": "d71208af8795d60214e12910da4e783c164652060c0a0b0fb6d63ef6e6767993",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/plot_implicit.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -79785,10 +79800,11 @@
   {
    "module": "sympy.plotting.plotgrid",
    "sha256": "41999bc58f9f7203eeb1e60b9ca54316ca07ea6e7b0a8b2fcb85bb9788c8a96c",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/plotgrid.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 3,
    "declaredPublicNames": [
@@ -79803,7 +79819,7 @@
    "module": "sympy.plotting.pygletplot",
    "sha256": "0ccec651141b7527dc75d1f3db733139285ab4115cdbab4ffec7771bca460901",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79816,7 +79832,7 @@
    "module": "sympy.plotting.pygletplot.color_scheme",
    "sha256": "3603d46a692577281fac83e3d0bbc2ff503386c715b60d7c152b9d125bc5601f",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79834,7 +79850,7 @@
    "module": "sympy.plotting.pygletplot.managed_window",
    "sha256": "37b00ab4cec42df2092e27bacef23e27af8e411067319bba00bd544b3ee11449",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79851,7 +79867,7 @@
    "module": "sympy.plotting.pygletplot.plot",
    "sha256": "b3ee40241d0a7a51ecf561a8148548758acea0c5df7699cce7e1b6705f31cc34",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79874,7 +79890,7 @@
    "module": "sympy.plotting.pygletplot.plot_axes",
    "sha256": "43d60df16d077753de7e51cbbcebd267e87178b5382aade75052d80c2d31d04f",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79908,7 +79924,7 @@
    "module": "sympy.plotting.pygletplot.plot_camera",
    "sha256": "9b262d29bbf5a2ffe5b60477e217fc051efab770304d2bb8405518e5863e7b51",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79931,7 +79947,7 @@
    "module": "sympy.plotting.pygletplot.plot_controller",
    "sha256": "32ba092523c26c10d3f201acfc676aa55fca1ec96530d269c71d0c537bca255f",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79952,7 +79968,7 @@
    "module": "sympy.plotting.pygletplot.plot_curve",
    "sha256": "630280da5602ec8c0239025a3959f0c3c0001b83f7e9c02b81b0b588b57d3852",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79967,7 +79983,7 @@
    "module": "sympy.plotting.pygletplot.plot_interval",
    "sha256": "768aabdb0c67ac40f83090e5931434ec616f69a817dfa1d46fbee5cbfbc8b8a4",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79996,7 +80012,7 @@
    "module": "sympy.plotting.pygletplot.plot_mode",
    "sha256": "0e3abe7b0566b3f2684ab883a68943861b6db412507493bc043e04d27c8e59c4",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80011,7 +80027,7 @@
    "module": "sympy.plotting.pygletplot.plot_mode_base",
    "sha256": "df3dd68de37b4d3b251c97af86bdd7ffb1d11cf81495e6129e0bbadbce6547a9",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80028,7 +80044,7 @@
    "module": "sympy.plotting.pygletplot.plot_modes",
    "sha256": "80acc94a1cfa3976ba10729aafc4ae1d6ac42d5ce7c60fecd9de480509247981",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80049,7 +80065,7 @@
    "module": "sympy.plotting.pygletplot.plot_object",
    "sha256": "a86b7370aba9e08b750aa6768f103b167a2b0ae6b84bd23e07fec8dd21c18dc4",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80063,7 +80079,7 @@
    "module": "sympy.plotting.pygletplot.plot_rotation",
    "sha256": "2863024f2692879fd4403f45286088a68237f826db3a15f14dc8c0735a39f8f5",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80081,7 +80097,7 @@
    "module": "sympy.plotting.pygletplot.plot_surface",
    "sha256": "0b4abdb730e6c730b52295a234a638965cdca29c7a761a2d18e2e92b537d9b7b",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80096,7 +80112,7 @@
    "module": "sympy.plotting.pygletplot.plot_window",
    "sha256": "e5ba02d85926938ebe8161aa5b375390f99330d1c73a90340a707dabde3a1f07",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80114,7 +80130,7 @@
    "module": "sympy.plotting.pygletplot.util",
    "sha256": "9b34108030dba74e01d372b226ba2cb0ba7c62aef6449ce3a7edc0adf8db307f",
    "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
+   "reason": "Interactive OpenGL rendering is done by connector packages.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80147,10 +80163,11 @@
   {
    "module": "sympy.plotting.series",
    "sha256": "84f90c89c022dbd463a09905a4c0add42467d31741558535c0b9e28a01e009a3",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/series.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -80232,11 +80249,12 @@
   {
    "module": "sympy.plotting.textplot",
    "sha256": "5dcf9b5afcd53aaf10527fc1c43949bfd6ebc82a60cec815ef75e8410c158f44",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "plotting/textplot.ts"
+   ],
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 1,
    "declaredPublicNames": [
     "is_valid",
@@ -80249,10 +80267,11 @@
   {
    "module": "sympy.plotting.utils",
    "sha256": "0a29a7a3d3101a371b7b8ad0e9337ceabe2b336b7ad8280046a3ed805d26851f",
-   "status": "excluded",
-   "reason": "Rendering backends and interactive plotting are separate from the symbolic engine.",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "plotting/utils.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 7,
    "declaredPublicNames": [

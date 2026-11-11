@@ -69,7 +69,10 @@ const CASES = [
   ['geometry', '*', 1078],
   ['vector', '*', 1176],
   ['stats', '*', 1220],
-  ['categories', '*', 363],
+  // Diagram layout, pretty grids and Xy-pic text generation.
+  ['categories', '*', 442],
+  // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
+  ['plotting', '*', 1005],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
   // The root is side-effect free: a named import brings only the entry points

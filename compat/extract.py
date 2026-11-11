@@ -42,6 +42,17 @@ MODULES = {
     # Category theory and previously unmeasured mathematical modules remain in
     # the denominator even while their implementations are incomplete.
     "sympy.categories.baseclasses": "categories",
+    "sympy.categories.diagram_drawing": "categories",
+    "sympy.plotting.series": "plotting",
+    "sympy.plotting.plot": "plotting",
+    "sympy.plotting.plot_implicit": "plotting",
+    "sympy.plotting.plotgrid": "plotting",
+    "sympy.plotting.textplot": "plotting",
+    "sympy.plotting.utils": "plotting",
+    "sympy.plotting.intervalmath.interval_arithmetic": "plotting",
+    "sympy.plotting.intervalmath.interval_membership": "plotting",
+    "sympy.plotting.intervalmath.lib_interval": "plotting",
+
     "sympy.polys.numberfields.subfield": "polys",
     "sympy.combinatorics.perm_groups": "combinatorics",
     "sympy.combinatorics.named_groups": "combinatorics",
@@ -521,9 +532,6 @@ MODULES = {
     "sympy.tensor.toperators": "tensor",
 }
 
-# sympy.categories.diagram_drawing (DiagramGrid, XypicDiagramDrawer, xypic_draw_diagram): drawing category
-# diagrams is not ported, like plotting
-CATEGORIES_DRAWING = {"DiagramGrid", "XypicDiagramDrawer", "xypic_draw_diagram"}
 
 # names of sympy.stats that need an external sampling library (numpy, scipy, pymc): out of scope
 STATS_SAMPLING = {"sample", "sample_iter", "sampling_density", "sample_stochastic_process"}
@@ -542,6 +550,7 @@ def stats_public():
 # selected core/assumptions/logic/... modules and modules whose documented functions live in the module only
 # (deltasummation, gosper_sum, dpll_satisfiable, finite_diff, compogen, groups_count, ...)
 LOCAL_PUBLIC = {
+    "sympy.categories.diagram_drawing", "sympy.plotting.textplot", "sympy.plotting.plot",
     "sympy.abc", "sympy.assumptions.assume", "sympy.assumptions.cnf", "sympy.assumptions.facts",
     "sympy.assumptions.lra_satask", "sympy.assumptions.predicates.calculus", "sympy.assumptions.predicates.common",
     "sympy.assumptions.predicates.matrices", "sympy.assumptions.predicates.ntheory",
@@ -946,6 +955,23 @@ def ser(o):
     from sympy.combinatorics.permutations import Cycle as _Cycle
     from sympy.categories import Object as _CatObject, Category as _Category, Diagram as _Diagram, Morphism as _Morphism
     from sympy.categories.baseclasses import Class as _Class
+    from sympy.categories.diagram_drawing import DiagramGrid as _DiagramGrid, XypicDiagramDrawer as _XypicDrawer
+    if isinstance(o, _DiagramGrid):
+        return {"t": "DiagramGrid", "morphisms": ser(o.morphisms), "cells": [[ser(o[i, j]) for j in range(o.width)] for i in range(o.height)]}
+    if isinstance(o, _XypicDrawer):
+        def formatter_state(f):
+            if f is None:
+                return None
+            from sympy.categories.diagram_drawing import ArrowStringDescription
+            a = ArrowStringDescription("@unit@", "@curving@", 0, "@looping_start@", "@looping_end@", "@horizontal_direction@", "@vertical_direction@", "@label_position@", "@label@")
+            a.label_displacement = "@label_displacement@"
+            a.arrow_style = "@arrow_style@"
+            before = vars(a).copy()
+            f(a)
+            return {k: v for k, v in vars(a).items() if v != before[k]}
+        return {"t": "XypicDiagramDrawer", "unit": o.unit, "amount": o.default_curving_amount,
+                "step": o.default_curving_step, "defaultFormatter": formatter_state(o.default_arrow_formatter),
+                "formatters": {k: formatter_state(f) for k, f in o.arrow_formatters.items()}}
     if isinstance(o, _CatObject):
         return {"t": "CategoryObject", "name": o.name}
     if isinstance(o, _Class):
@@ -1463,7 +1489,7 @@ def api_inventory():
         out.append({"name": name, "category": "vector"})
     import sympy.categories as _categories
     for name in _categories.__all__:
-        if name != 'preview_diagram' and name not in CATEGORIES_DRAWING:
+        if name != 'preview_diagram':
             out.append({"name": name, "category": "categories"})
     for name in sorted(_combinatorics.__all__):
         obj = getattr(_combinatorics, name)
@@ -1783,6 +1809,8 @@ def main(dst, baseline_path=None):
     if sympy.__version__ != "1.14.0":
         raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
     import random
+    from sympy.plotting.backends.base_backend import unset_show
+    unset_show()  # Rendering is outside the numeric-data compatibility scope.
     # SymPy's doctest runner prints in ASCII (pprint_use_unicode(False)); so do the corpus cases
     from sympy.printing.pretty.pretty_symbology import pretty_use_unicode
     pretty_use_unicode(False)
@@ -1815,6 +1843,17 @@ def main(dst, baseline_path=None):
             for ex in test.examples:
                 extraction["examined"] += 1
                 src = ex.source.strip()
+                if modname == "sympy.categories.diagram_drawing" and test.name.endswith("preview_diagram"):
+                    omit("external-TeX-rendering", modname, ex)
+                    continue
+                if modname.startswith("sympy.plotting") and re.search(r"\b(plot|plot3d|plot_parametric|plot_contour|plot_implicit|plot3d_parametric_line|plot3d_parametric_surface|PlotGrid)\s*\(", src):
+                    bindings = {}
+                    omit("rendering-backend-construction: rendering is done by connector packages", modname, ex)
+                    continue
+                if modname.startswith("sympy.plotting") and ("Plot object containing:" in ex.want or "PlotGrid object containing:" in ex.want or re.search(r"\.(show|save)\(", src)):
+                    bindings = {}
+                    omit("rendering-backend-object: rendering is done by connector packages", modname, ex)
+                    continue
                 if ex.options.get(doctest.SKIP):
                     bindings = {}
                     omit("upstream-skip", modname, ex)
@@ -1905,7 +1944,7 @@ def main(dst, baseline_path=None):
                 if TEXT_OUTPUT and record is not None and record["fn"] not in ("str", "repr"):
                     if printed:
                         text = str(result)
-                    elif result is None and _out.getvalue() and "print" in record["fn"]:
+                    elif result is None and _out.getvalue() and ("print" in record["fn"] or record["fn"] == "textplot"):
                         text = _out.getvalue()[:-1] if _out.getvalue().endswith("\n") else _out.getvalue()
                     elif isinstance(result, str):
                         text = result

@@ -54,7 +54,7 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 
 ### Entry points and bundle size
 
-`@symjs/symjs` re-exports every feature entry except `diffgeom` and `parsing`, which are available through dedicated subpaths. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
+`@symjs/symjs` re-exports every feature entry except `diffgeom`, `parsing` and `plotting`, which are available through dedicated subpaths. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
 
 | Entry point | Contents |
 |---|---|
@@ -226,8 +226,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 Runtime-specific backends are deliberately excluded; mathematical modules remain in the inventory even when not implemented:
 
 - Sampling of random variables in `sympy.stats` (`sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=`, the `sample` methods of distributions, spaces and processes; `sympy/stats/sampling/`), which draws samples with numpy, scipy or pymc
-- Plotting (`sympy.plotting`, the `plot`/`show` methods)
-- Drawing of category diagrams (`sympy.categories.diagram_drawing`: `DiagramGrid`, `XypicDiagramDrawer`, `xypic_draw_diagram`)
+- Rendering of plots and diagrams: the plotting backends (Matplotlib, pyglet), `show`/`save`, and `preview_diagram`; `@symjs/symjs/plotting` computes the plot data and `categories` produces the Xy-pic text for connector packages
 - The TensorFlow back end of `lambdify`
 - Printers and wrappers that generate or compile Python code: `pycode`, the NumPy printer, `lambdarepr`, the `python` printer and `autowrap`
 - Python-runtime tooling without mathematical content: test runners and test helpers, caching and dispatch decorators, compilation helpers, package metadata, the gmpy2/python-flint ground-type back ends, bindings to external SAT solvers (MiniSat, pycosat, Z3), typing protocols, REPL and display helpers
