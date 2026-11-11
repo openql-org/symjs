@@ -54,11 +54,12 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 
 ### Entry points and bundle size
 
-`@symjs/symjs` imports the base module except differential geometry, which is available through its dedicated subpath. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
+`@symjs/symjs` re-exports every feature entry except `diffgeom` and `parsing`, which are available through dedicated subpaths. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
 
 | Entry point | Contents |
 |---|---|
 | `@symjs/symjs/core` | Expressions, numbers and assumptions, symbols and undefined functions, elementary functions, substitution and matching, `diff`, `expand`, `evalf`, parsing, `str` and `latex` |
+| `@symjs/symjs/parsing` | `parseLatex`, `parseLatexLark`, `LarkLaTeXParser`, `TransformToSymPyExpr`, `LaTeXParsingError`; hand-written ANTLR and Lark LaTeX grammars |
 | `@symjs/symjs/special` | Special and combinatorial functions (Gamma, zeta, error functions, Bessel and Airy functions, ...) |
 | `@symjs/symjs/simplify` | `simplify`, `trigsimp`, `powsimp`, `radsimp`, `together`, `cancel`, `rewrite`, ... |
 | `@symjs/symjs/polys` | Polynomials: `factor`, `roots`, `CRootOf`, `groebner`, `apart`, `primitiveElement`, `toNumberField`, ... |
@@ -76,7 +77,25 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/crypto` | Classical ciphers (shift, affine, Vigenère, Hill, Bifid, rail fence, ...), Morse code, linear feedback shift registers, RSA, ElGamal, Diffie–Hellman, Goldwasser–Micali and Blum–Goldwasser |
 | `@symjs/symjs/liealgebras` | `CartanType`, `CartanMatrix`, `DynkinDiagram`, `RootSystem` and `WeylGroup` of the simple Lie algebras |
 
-Differential geometry mirrors `sympy.diffgeom`: import its names from `@symjs/symjs/diffgeom`. Its doctests are included in the [base compatibility report](compat/REPORT.md); its unit assertions have a [separate report](compat/diffgeom-tests/REPORT.md).
+Differential geometry mirrors `sympy.diffgeom`: import its names from `@symjs/symjs/diffgeom`. Its doctests and unit assertions are included in the [base compatibility reports](compat/README.md).
+
+LaTeX parsing is imported separately:
+
+```ts
+import { parseLatex, parseLatexLark, LarkLaTeXParser } from '@symjs/symjs/parsing';
+
+parseLatex(String.raw`\frac{1}{2}x`); // ANTLR semantics: preserves unevaluated arithmetic
+parseLatexLark(String.raw`\frac{1}{2}x`); // Lark semantics: evaluates arithmetic
+parseLatex('x +', { strict: true }); // throws LaTeXParsingError
+const parser = new LarkLaTeXParser({ transform: false });
+parser.doparse('f(x)'); // explicit ambiguity tree: function application or multiplication
+```
+
+`LarkLaTeXParser` accepts a `transformer` subclass and a `grammar` object with
+`decimalSeparator`, `multiplicationSymbols`, and `divisionSymbols` terminal overrides.
+These options implement the custom grammar examples without loading grammar files or
+using a parser-generator runtime. `debug` receives the syntax tree as a callback.
+`parseExpr` remains in `core`; `parseMathematica` remains in `simplify`.
 
 Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [compat/capabilities.json](compat/capabilities.json).
 
@@ -193,7 +212,6 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 - Definite integration splits at polynomial singularities using one-sided limits; when their locations cannot be resolved, the integral is left unevaluated.
 - Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet); `hyper` and `meijerg` are available as functions but are not used to integrate or to evaluate in closed form
 - ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, homogeneous coefficients, linear coefficients, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear and first order (constant coefficients in closed form, 2x2 variable coefficients in terms of a particular solution like SymPy) or triangular (solved one function at a time); individual supported hints are recorded in the ODE checks
-- JavaScript code printing (`jscode`) remains unimplemented, rather than excluded: exporting expressions to JavaScript is a separate capability from running the engine in JavaScript.
 - Number-field embeddings use exact rational power bases for supported radical presentations; general `RootOf` embeddings, maximal orders and Galois groups remain incomplete.
 - Permutation groups provide Schreier–Sims stabilizer chains, orbits, blocks, series, centralizers, subgroup search and cosets; finitely presented groups, Sylow subgroups and presentations remain incomplete.
 - Abstract tensors (`sympy.tensor.tensor`) are fully ported, including tensor sums, Butler–Portugal canonicalization under general slot symmetries, component arrays and wild tensors; the tensor differential operators (`sympy.tensor.toperators`) are not implemented.
@@ -219,7 +237,7 @@ Runtime-specific backends are deliberately excluded; mathematical modules remain
 Modules that are not ported yet but stay in scope:
 
 - Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
-- The LaTeX parser (`parse_latex`) and the Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
+- The Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: not ported
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License

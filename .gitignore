@@ -4,3 +4,5 @@ coverage
 *.tsbuildinfo
 compat/report.json
 compat/tests-report.json
+
+compat/tests-results/

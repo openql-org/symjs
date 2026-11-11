@@ -12,7 +12,7 @@ export interface TestCase extends Case {
   raises?: string;
 }
 
-export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string } };
+export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string }; phase?: 'input' | 'invoke' | 'result' };
 
 export function testCaseKey(c: TestCase): string {
   return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c)).digest('hex').slice(0, 20)}`;
@@ -57,10 +57,15 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
 }
 
 export function runTestCase(c: TestCase): TestOutcome {
+  // Upstream tests inject exact random draws through a private keyword. The
+  // public JS methods have no such input; dropping it would measure a random
+  // experiment instead of the captured assertion.
+  if (c.kwargs && '_random_prec' in c.kwargs) return { status: 'unsupported', reason: 'upstream private random fixture _random_prec' };
   let observation: CaseObservation | undefined;
   // These established public names capitalize the second word after "Non".
   const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero' };
   const fn = alias[c.fn];
   const outcome = runCase(fn === undefined ? c : { ...c, fn }, (event) => { observation = event; });
-  return assertionOutcome(c, outcome, observation);
+  const result = assertionOutcome(c, outcome, observation);
+  return result.status === 'error' ? { ...result, phase: observation === undefined ? 'input' : 'error' in observation ? 'invoke' : 'result' } : result;
 }

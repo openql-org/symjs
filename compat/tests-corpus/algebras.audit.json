@@ -1,0 +1,33 @@
+{"omitted":[
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_quaternion_construction","line":29,"src":"assert q2 == Quaternion(S.Half, S.Half,\n                            S.Half, S.Half)","reason":"non-call-expression","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_quaternion_construction","line":34,"src":"assert q3 == Quaternion(\n        sqrt(2)*sqrt(cos(phi) + 1)/2, 0, 0, sqrt(2 - 2*cos(phi))*sign(sin(phi))/2)","reason":"non-call-expression","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_issue_25254","line":58,"src":"assert ((test - p).norm() < 1E-10)","reason":"unsupported-assertion","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_product_matrices","line":77,"src":"assert R1 == R2","reason":"non-call-expression","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_rotation_matrix_homogeneous","line":319,"src":"assert R1 == R2","reason":"non-call-expression","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_quaternion_multiplication","line":343,"src":"assert Quaternion._generic_mul(S(4), S.One) == 4","reason":"private-api","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_quaternion_multiplication","line":344,"src":"assert (Quaternion._generic_mul(S(4), q1) ==\n            Quaternion(12 + 16*I, 8 + 20*I, 0, 28 + 32*I))","reason":"private-api","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_issue_16318","line":370,"src":"assert (axis, angle) == q.to_axis_angle()","reason":"non-call-expression","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_to_euler","line":384,"src":"assert q_back == q_normalized","reason":"marked-slow","count":1},
+{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_one_case","line":424,"src":"assert angle_error < 10e-7","reason":"not-executed","count":1}
+],"tests":[
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_construction","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_construction_norm","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_issue_25254","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_to_and_from_Matrix","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_product_matrices","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_axis_angle","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_axis_angle_simplification","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_complex_real_addition","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_subs","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_evalf","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_functions","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_conversions","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_rotation_matrix_homogeneous","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_rotation_iss1593","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_quaternion_multiplication","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_issue_16318","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_to_euler","status":"marked-slow"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_to_euler_iss24504","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_to_euler_numerical_singilarities","parameter":0,"status":"completed"},
+{"module":"sympy.algebras.tests.test_quaternion","test":"test_to_euler_options","status":"marked-slow"}
+]}

@@ -39,6 +39,8 @@ try {
     assert.equal(gates.H().mul(gates.H()).equals(sj.Matrix.eye(2)), true);
     assert.equal(String(fromMathjsValue(3)), '3');
     assert.equal('Manifold' in sj, false);
+    assert.equal('parseLatex' in sj, false);
+    assert.equal(String(parsing.parseLatexLark('x^2')), 'x**2');
     assert.notEqual(sj.Point, dg.Point);
     assert.equal(String(sj.rcall(dg.Differential(dg.R2.x), dg.R2.eX)), '1');
     assert.equal(dg.metricToRicciComponents(dg.TensorProduct(dg.R2.dx, dg.R2.dx).add(dg.TensorProduct(dg.R2.dy, dg.R2.dy))).flatElements().every(e => e.equals(0)), true);
@@ -58,6 +60,7 @@ try {
   const esm = `import assert from 'node:assert/strict';
     import * as sj from '@symjs/symjs';
     import * as dg from '@symjs/symjs/diffgeom';
+    import * as parsing from '@symjs/symjs/parsing';
     import { Sym } from '@symjs/symjs/core';
     import { Diagram } from '@symjs/symjs/categories';
     import { encipherShift } from '@symjs/symjs/crypto';
@@ -74,6 +77,7 @@ try {
   const cjs = `const assert = require('node:assert/strict');
     const sj = require('@symjs/symjs');
     const dg = require('@symjs/symjs/diffgeom');
+    const parsing = require('@symjs/symjs/parsing');
     const { Sym } = require('@symjs/symjs/core');
     const { Diagram } = require('@symjs/symjs/categories');
     const { encipherShift } = require('@symjs/symjs/crypto');

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-"""Execute instrumented SymPy 1.14 core/polys unit tests, independently of doctests.
+"""Execute instrumented SymPy 1.14 base-scope unit tests, independently of doctests.
 
-PYTHONHASHSEED=0 python3 -B compat/extract_tests.py compat/tests-corpus.json
+PYTHONHASHSEED=0 python3 -B compat/extract_tests.py compat/tests-corpus
 
 The audit counts executed assertion instances, including duplicates, plus one
 omission for each source site never reached. Test execution has a separate audit.
@@ -52,6 +52,89 @@ OPS = {"__add__": operator.add, "__sub__": operator.sub, "__mul__": operator.mul
        "__contains__": operator.contains, "__neg__": operator.neg,
        "__invert__": operator.invert, "__getitem__": operator.getitem,
        "__call__": lambda f, *args: f(*args)}
+
+
+# Top-level package names, not the doctest report's combined calculus/special labels.
+CATEGORIES = tuple("core polys assumptions sets logic concrete calculus series simplify solvers integrals functions matrices tensor ntheory combinatorics geometry vector stats discrete holonomic crypto liealgebras algebras categories strategies unify utilities printing parsing diffgeom".split())
+EXCLUDED_AREAS = {
+    "physics": "Physics belongs to extension packages, not the base symbolic engine.",
+    "plotting": "Rendering backends and interactive plotting are outside base scope.",
+    "codegen": "Source-code generation and compiler integration are outside this corpus.",
+    "external": "Python bindings to optional external libraries are runtime-specific.",
+    "interactive": "Python REPL/session integration is runtime-specific.",
+    "testing": "Upstream test runners are infrastructure, not mathematical APIs.",
+    "sandbox": "Experimental sandbox APIs are outside the base doctest scope.",
+    "multipledispatch": "Python dispatch infrastructure is replaced by TypeScript expression dispatch; no public port.",
+    "stats/sampling": "External sampling-library adapters require optional dependencies.",
+    "utilities/_compilation": "Compiler and Python-extension build helpers are outside base scope.",
+}
+# File-level decisions for mixed areas. Every selected file has a technical reason;
+# unmatched printing/parsing files are excluded by the defaults below.
+FILE_SCOPE = {
+    **{f"printing/tests/test_{name}.py": (False, "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES.")
+       for name in ("aesaracode", "c", "codeprinter", "cupy", "cxx", "fortran", "glsl", "gtk", "jax", "jscode",
+                    "julia", "lambdarepr", "llvmjit", "maple", "mathematica", "numpy", "octave", "preview",
+                    "pycode", "python", "rcode", "rust", "smtlib", "tensorflow", "theanocode", "torch")},
+    **{f"parsing/tests/test_{name}.py": (False, "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers).")
+       for name in ("ast_parser", "autolev", "c_parser", "custom_latex", "fortran_parser", "latex", "latex_deps",
+                    "latex_lark", "maxima", "sym_expr")},
+    **{f"printing/tests/test_{name}.py": (True, "Base symbolic display printer or shared display support covered by extract.MODULES.")
+       for name in ("str", "repr", "latex", "mathml", "tree", "dot", "tableform", "precedence", "conventions")},
+    "printing/pretty/tests/test_pretty.py": (True, "Base ASCII/Unicode pretty printer covered by extract.MODULES."),
+    **{f"parsing/tests/test_{name}.py": (True, "Public sympy_parser or Mathematica parser behavior.")
+       for name in ("sympy_parser", "implicit_multiplication_application", "mathematica")},
+    "categories/tests/test_drawing.py": (False, "Diagram layout and drawing are outside the symbolic category API."),
+    **{f"utilities/tests/test_{name}.py": (False, reason) for name, reason in {
+        "autowrap": "Compiles generated code with external toolchains.",
+        "codegen": "Source-code generation is outside this corpus.",
+        "codegen_julia": "Julia source-code generation is outside this corpus.",
+        "codegen_octave": "Octave source-code generation is outside this corpus.",
+        "codegen_rust": "Rust source-code generation is outside this corpus.",
+        "matchpy_connector": "Requires the optional matchpy library.",
+        "mathml": "XSLT conversion requires optional lxml; MathML printing is measured separately.",
+        "xxe": "XML stylesheet processing requires optional lxml.",
+        "pickling": "Python pickle persistence is runtime-specific.",
+        "source": "Python import and source inspection are runtime-specific.",
+        "timeutils": "Python benchmark/timing infrastructure is runtime-specific.",
+        "exceptions": "Python warnings machinery has no JavaScript runtime counterpart.",
+        "deprecated": "Deprecated Python module import shims are runtime-specific.",
+    }.items()},
+}
+MIXED_DEFAULTS = {
+    "printing": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES.",
+    "parsing": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers).",
+}
+
+
+def file_scope(relative):
+    name = relative.as_posix()
+    if name in FILE_SCOPE:
+        return FILE_SCOPE[name]
+    for prefix, reason in EXCLUDED_AREAS.items():
+        if name.startswith(prefix + "/"):
+            return False, reason
+    category = relative.parts[0]
+    if category in MIXED_DEFAULTS:
+        return False, MIXED_DEFAULTS[category]
+    return (True, "Base package test directory.") if category in CATEGORIES else (False, "Area outside the base doctest scope.")
+
+
+def discover(root):
+    included = {category: [] for category in CATEGORIES}
+    excluded = []
+    for path in sorted(root.rglob("test_*.py")):
+        relative = path.relative_to(root)
+        if "tests" not in relative.parts:
+            continue
+        keep, reason = file_scope(relative)
+        if keep:
+            included[relative.parts[0]].append(path)
+        else:
+            excluded.append({"file": relative.as_posix(), "reason": reason})
+    # Preserve the established core/polys top-level order before new subpackages.
+    for category in ("core", "polys"):
+        included[category].sort(key=lambda p: (p.parent != root / category / "tests", p.as_posix()))
+    return included, excluded
 
 
 class TestDeadline(BaseException):
@@ -522,7 +605,7 @@ def execute_source(source, module, category, filename, timeout=extract.ALARM_SEC
     return [event for _, event in capture.events], test_audit, len(transform.sites)
 
 
-def corpus_from_events(events, tests, source_sites):
+def corpus_from_events(events, tests, source_sites, categories=None):
     cases, omitted, seen = [], [], set()
     for event in events:
         if "reason" in event:
@@ -540,43 +623,163 @@ def corpus_from_events(events, tests, source_sites):
         return {"examined": len(cs) + len(os_), "cases": len(cs), "reasons": dict(sorted(Counter(c["reason"] for c in os_).items()))}
     return {"sympy": sympy.__version__, "cases": cases,
             "extraction": {**audit(), "sourceSites": source_sites,
-                           "categories": {c: audit(c) for c in ("core", "polys")},
+                           "categories": {c: audit(c) for c in (categories if categories is not None else sorted({e["category"] for e in events}))},
                            "omitted": omitted, "tests": tests,
                            "testStatuses": dict(sorted(Counter(t["status"] for t in tests).items()))}}
 
 
-def main(destination, only=(), timeout=extract.ALARM_SECONDS):
+MAX_SHARD_BYTES = 25_000_000
+
+
+def json_line(value):
+    return json.dumps(value, ensure_ascii=True, allow_nan=False, separators=(",", ":"))
+
+
+def write_array(path, values):
+    path.write_text("[\n" + ",\n".join(json_line(v) for v in values) + "\n]\n", encoding="utf-8")
+
+
+def write_category(destination, category, corpus, max_bytes=MAX_SHARD_BYTES):
+    """Bound shards by encoded bytes; never split a case or change its key order."""
+    destination.mkdir(parents=True, exist_ok=True)
+    chunks, chunk, size = [], [], 4
+    for case in corpus["cases"]:
+        length = len(json_line(case).encode("utf-8")) + 2
+        if length + 4 > max_bytes:
+            raise ValueError(f"Single {category} case exceeds shard size limit")
+        if chunk and size + length > max_bytes:
+            chunks.append(chunk)
+            chunk, size = [], 4
+        chunk.append(case)
+        size += length
+    chunks.append(chunk)
+    shards = []
+    for i, cases in enumerate(chunks):
+        name = f"{category}.json" if len(chunks) == 1 else f"{category}-{i + 1:03}.json"
+        path = destination / name
+        write_array(path, cases)
+        shards.append({"file": name, "cases": len(cases), "bytes": path.stat().st_size})
+    audit = corpus["extraction"]
+    audit_name = write_audit(destination, category, audit["omitted"], audit["tests"])
+
+    return {**{k: v for k, v in audit.items() if k not in ("categories", "omitted", "tests")},
+            "shards": shards, "auditFile": audit_name,
+            "auditBytes": (destination / audit_name).stat().st_size,
+            "modules": sorted({t["module"] for t in audit["tests"]})}
+
+
+
+def write_audit(destination, category, omitted, tests):
+    # Loop omissions often repeat the same source location hundreds of thousands
+    # of times. Keep multiplicities without duplicating identical provenance.
+    groups = {}
+    for event in omitted:
+        details = {k: v for k, v in event.items() if k != "count"}
+        key = json_line(details)
+        if key not in groups:
+            groups[key] = {**details, "count": 0}
+        groups[key]["count"] += event.get("count", 1)
+    audit_name = f"{category}.audit.json"
+    (destination / audit_name).write_text(
+        '{"omitted":' + "[\n" + ",\n".join(json_line(v) for v in groups.values()) +
+        '\n],"tests":[\n' + ",\n".join(json_line(v) for v in tests) + "\n]}\n", encoding="utf-8")
+    return audit_name
+
+
+def compact_audits(destination, only=()):
+    """Repack existing provenance losslessly without re-running upstream tests."""
+    destination = Path(destination)
+    path = destination / "index.json"
+    index = json.loads(path.read_text())
+    selected = {c for item in only for c in item.split(",") if c} or set(index["categories"])
+    if selected - set(index["categories"]):
+        raise ValueError("Unknown categories in audit selection")
+    for category in sorted(selected):
+        summary = index["categories"][category]
+        audit = json.loads((destination / summary["auditFile"]).read_text())
+        name = write_audit(destination, category, audit["omitted"], audit["tests"])
+        summary["auditBytes"] = (destination / name).stat().st_size
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(index, indent=2, ensure_ascii=True, allow_nan=False) + "\n")
+    temporary.replace(path)
+
+def extract_category(category, paths, timeout, baseline):
+    from sympy.printing.pretty.pretty_symbology import pretty_use_unicode
+    pretty_use_unicode(False)
+    root = Path(sympy.__file__).parent
+    start = time.monotonic()
+    events, tests, source_sites = [], [], 0
+    retained = set()
+    if baseline:
+        old = json.loads(Path(baseline).read_text())
+        events.extend(c for c in old["cases"] if c["category"] == category)
+        events.extend(c for c in old["extraction"]["omitted"] if c["category"] == category)
+        tests.extend(t for t in old["extraction"]["tests"] if t["module"].split(".")[1] == category)
+        retained = {t["module"] for t in tests}
+    for path in paths:
+        module = "sympy." + ".".join(path.relative_to(root).with_suffix("").parts)
+        if module in retained:
+            transform = Instrument(path.read_text())
+            transform.visit(ast.parse(path.read_text()))
+            source_sites += len(transform.sites)
+            continue
+        before = time.monotonic()
+        es, ts, count = execute_source(path.read_text(), module, category, str(path), timeout)
+        events.extend(es)
+        tests.extend(ts)
+        source_sites += count
+        print(f"{module}: {len(es)} observations, {len(ts)} tests, {time.monotonic() - before:.2f}s", file=sys.stderr, flush=True)
+    corpus = corpus_from_events(events, tests, source_sites, [category])
+    corpus["extraction"].update(seconds=round(time.monotonic() - start, 3), retainedModules=len(retained))
+    return corpus
+
+
+def main(destination, only=(), timeout=extract.ALARM_SECONDS, jobs=1, baseline=None):
     if sympy.__version__ != "1.14.0":
         raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
     if os.environ.get("PYTHONHASHSEED") != "0":
         raise RuntimeError("Run with PYTHONHASHSEED=0 for deterministic reference output")
-    from sympy.printing.pretty.pretty_symbology import pretty_use_unicode
-    pretty_use_unicode(False)
-    root = Path(sympy.__file__).parent
-    events, tests, source_sites = [], [], 0
-    for category in ("core", "polys"):
-        for path in sorted((root / category / "tests").glob("test_*.py")):
-            module = "sympy." + ".".join(path.relative_to(root).with_suffix("").parts)
-            if only and not any(module.startswith(prefix) for prefix in only):
-                continue
-            start = time.monotonic()
-            es, ts, count = execute_source(path.read_text(), module, category, str(path), timeout)
-            events.extend(es)
-            tests.extend(ts)
-            source_sites += count
-            print(f"{module}: {len(es)} observations, {len(ts)} tests, {time.monotonic() - start:.2f}s", file=sys.stderr, flush=True)
-    corpus = corpus_from_events(events, tests, source_sites)
-    # SymPy's string tests intentionally contain lone UTF-16 surrogates.
-    # JSON escapes preserve them without emitting invalid UTF-8.
-    Path(destination).write_text(json.dumps(corpus, indent=1, ensure_ascii=True, allow_nan=False) + "\n")
-    print(json.dumps({c: a for c, a in corpus["extraction"]["categories"].items()}, indent=2), file=sys.stderr)
+    selected = {c for item in only for c in item.split(",") if c}
+    unknown = selected - set(CATEGORIES)
+    if unknown:
+        raise ValueError(f"Unknown categories: {sorted(unknown)}")
+    included, excluded = discover(Path(sympy.__file__).parent)
+    destination = Path(destination)
+    index_path = destination / "index.json"
+    index = json.loads(index_path.read_text()) if index_path.exists() else {"sympy": sympy.__version__, "categories": {}}
+    start = time.monotonic()
+    from concurrent.futures import ProcessPoolExecutor, as_completed
+    # Each area gets its own process: upstream module globals cannot leak across areas.
+    with ProcessPoolExecutor(max_workers=jobs, max_tasks_per_child=1) as pool:
+        pending = {pool.submit(extract_category, c, paths, timeout, baseline): c
+                   for c, paths in included.items() if not selected or c in selected}
+        for future in as_completed(pending):
+            category = pending[future]
+            corpus = future.result()
+            previous = index["categories"].get(category, {})
+            summary = write_category(destination, category, corpus)
+            index["categories"][category] = summary
+            for shard in previous.get("shards", []):
+                if shard["file"] not in {s["file"] for s in summary["shards"]}:
+                    (destination / shard["file"]).unlink(missing_ok=True)
+            index["categories"] = dict(sorted(index["categories"].items()))
+            index.update(excludedFiles=excluded, timeoutSeconds=timeout, jobs=jobs,
+                         lastRunSeconds=round(time.monotonic() - start, 3))
+            index_path.write_text(json.dumps(index, indent=2, ensure_ascii=True, allow_nan=False) + "\n")
+            print(f"{category}: {summary['cases']} cases, {summary['seconds']}s", file=sys.stderr, flush=True)
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("destination")
-    parser.add_argument("--only", action="append", default=[], help="Test module prefix (repeatable)")
+    parser.add_argument("destination", nargs="?", default="compat/tests-corpus")
+    parser.add_argument("--only", action="append", default=[], help="Category names, comma-separated or repeatable; other shards are retained")
     parser.add_argument("--timeout", type=float, default=extract.ALARM_SECONDS)
+    parser.add_argument("--jobs", type=int, default=4, help="Independent extraction processes")
+    parser.add_argument("--baseline", help="Preserve all records/audits from already measured modules in a legacy corpus")
+    parser.add_argument("--compact-audits", action="store_true", help="Losslessly combine repeated omission records without re-extraction")
     args = parser.parse_args()
-    main(args.destination, args.only, args.timeout)
+    if args.compact_audits:
+        compact_audits(args.destination, args.only)
+    else:
+        main(args.destination, args.only, args.timeout, args.jobs, args.baseline)

@@ -1,0 +1,2298 @@
+{
+  "sympy": "1.14.0",
+  "categories": {
+    "algebras": {
+      "examined": 138,
+      "cases": 128,
+      "reasons": {
+        "marked-slow": 1,
+        "non-call-expression": 5,
+        "not-executed": 1,
+        "private-api": 2,
+        "unsupported-assertion": 1
+      },
+      "sourceSites": 123,
+      "testStatuses": {
+        "completed": 18,
+        "marked-slow": 2
+      },
+      "seconds": 1.896,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "algebras.json",
+          "cases": 128,
+          "bytes": 104409
+        }
+      ],
+      "auditFile": "algebras.audit.json",
+      "auditBytes": 4581,
+      "modules": [
+        "sympy.algebras.tests.test_quaternion"
+      ]
+    },
+    "assumptions": {
+      "examined": 2636,
+      "cases": 2220,
+      "reasons": {
+        "duplicate": 316,
+        "marked-slow": 2,
+        "marked-xfail": 25,
+        "non-boolean-assertion": 22,
+        "non-call-expression": 4,
+        "not-executed": 3,
+        "not-exported-api": 31,
+        "unserializable-input": 6,
+        "unsupported-assertion": 7
+      },
+      "sourceSites": 2186,
+      "testStatuses": {
+        "completed": 146,
+        "marked-slow": 1,
+        "marked-xfail": 10
+      },
+      "seconds": 26.261,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "assumptions.json",
+          "cases": 2220,
+          "bytes": 1068001
+        }
+      ],
+      "auditFile": "assumptions.audit.json",
+      "auditBytes": 85105,
+      "modules": [
+        "sympy.assumptions.tests.test_assumptions_2",
+        "sympy.assumptions.tests.test_context",
+        "sympy.assumptions.tests.test_matrices",
+        "sympy.assumptions.tests.test_query",
+        "sympy.assumptions.tests.test_refine",
+        "sympy.assumptions.tests.test_rel_queries",
+        "sympy.assumptions.tests.test_satask",
+        "sympy.assumptions.tests.test_sathandlers",
+        "sympy.assumptions.tests.test_wrapper"
+      ]
+    },
+    "calculus": {
+      "examined": 617,
+      "cases": 518,
+      "reasons": {
+        "duplicate": 43,
+        "marked-slow": 1,
+        "marked-xfail": 5,
+        "non-boolean-assertion": 1,
+        "non-call-expression": 4,
+        "not-executed": 2,
+        "not-exported-api": 4,
+        "stateful-iterator-input": 2,
+        "unsupported-assertion": 37
+      },
+      "sourceSites": 541,
+      "testStatuses": {
+        "completed": 42,
+        "marked-slow": 1,
+        "marked-xfail": 4
+      },
+      "seconds": 9.972,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "calculus.json",
+          "cases": 518,
+          "bytes": 384185
+        }
+      ],
+      "auditFile": "calculus.audit.json",
+      "auditBytes": 24750,
+      "modules": [
+        "sympy.calculus.tests.test_accumulationbounds",
+        "sympy.calculus.tests.test_euler",
+        "sympy.calculus.tests.test_finite_diff",
+        "sympy.calculus.tests.test_singularities",
+        "sympy.calculus.tests.test_util"
+      ]
+    },
+    "categories": {
+      "examined": 76,
+      "cases": 57,
+      "reasons": {
+        "non-call-expression": 14,
+        "not-exported-api": 2,
+        "unsupported-assertion": 3
+      },
+      "sourceSites": 76,
+      "testStatuses": {
+        "completed": 3
+      },
+      "seconds": 0.545,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "categories.json",
+          "cases": 57,
+          "bytes": 55009
+        }
+      ],
+      "auditFile": "categories.audit.json",
+      "auditBytes": 3963,
+      "modules": [
+        "sympy.categories.tests.test_baseclasses"
+      ]
+    },
+    "combinatorics": {
+      "examined": 3530,
+      "cases": 1655,
+      "reasons": {
+        "duplicate": 488,
+        "marked-slow": 21,
+        "marked-xfail": 6,
+        "non-boolean-assertion": 10,
+        "non-call-expression": 565,
+        "not-executed": 1,
+        "not-exported-api": 607,
+        "private-api": 18,
+        "python-runtime-api": 22,
+        "stateful-iterator-input": 23,
+        "test-timeout": 7,
+        "unserializable-input": 14,
+        "unstable-result-representation": 14,
+        "unsupported-assertion": 79
+      },
+      "sourceSites": 1265,
+      "testStatuses": {
+        "completed": 168,
+        "marked-slow": 3,
+        "marked-xfail": 3,
+        "test-timeout": 1
+      },
+      "seconds": 73.365,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "combinatorics.json",
+          "cases": 1655,
+          "bytes": 903932
+        }
+      ],
+      "auditFile": "combinatorics.audit.json",
+      "auditBytes": 123856,
+      "modules": [
+        "sympy.combinatorics.tests.test_coset_table",
+        "sympy.combinatorics.tests.test_fp_groups",
+        "sympy.combinatorics.tests.test_free_groups",
+        "sympy.combinatorics.tests.test_galois",
+        "sympy.combinatorics.tests.test_generators",
+        "sympy.combinatorics.tests.test_graycode",
+        "sympy.combinatorics.tests.test_group_constructs",
+        "sympy.combinatorics.tests.test_group_numbers",
+        "sympy.combinatorics.tests.test_homomorphisms",
+        "sympy.combinatorics.tests.test_named_groups",
+        "sympy.combinatorics.tests.test_partitions",
+        "sympy.combinatorics.tests.test_pc_groups",
+        "sympy.combinatorics.tests.test_perm_groups",
+        "sympy.combinatorics.tests.test_permutations",
+        "sympy.combinatorics.tests.test_polyhedron",
+        "sympy.combinatorics.tests.test_prufer",
+        "sympy.combinatorics.tests.test_rewriting",
+        "sympy.combinatorics.tests.test_schur_number",
+        "sympy.combinatorics.tests.test_subsets",
+        "sympy.combinatorics.tests.test_tensor_can",
+        "sympy.combinatorics.tests.test_testutil",
+        "sympy.combinatorics.tests.test_util"
+      ]
+    },
+    "concrete": {
+      "examined": 1095,
+      "cases": 856,
+      "reasons": {
+        "duplicate": 7,
+        "marked-slow": 55,
+        "marked-xfail": 4,
+        "non-call-expression": 50,
+        "not-exported-api": 71,
+        "reference-exception": 2,
+        "stateful-iterator-input": 1,
+        "unserializable-input": 3,
+        "unsupported-assertion": 46
+      },
+      "sourceSites": 1001,
+      "testStatuses": {
+        "completed": 155,
+        "marked-slow": 3,
+        "marked-xfail": 2
+      },
+      "seconds": 29.709,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "concrete.json",
+          "cases": 856,
+          "bytes": 684557
+        }
+      ],
+      "auditFile": "concrete.audit.json",
+      "auditBytes": 71311,
+      "modules": [
+        "sympy.concrete.tests.test_delta",
+        "sympy.concrete.tests.test_gosper",
+        "sympy.concrete.tests.test_guess",
+        "sympy.concrete.tests.test_products",
+        "sympy.concrete.tests.test_sums_products"
+      ]
+    },
+    "core": {
+      "examined": 25605,
+      "cases": 7858,
+      "reasons": {
+        "duplicate": 579,
+        "marked-skip": 11,
+        "marked-xfail": 47,
+        "non-boolean-assertion": 22,
+        "non-call-expression": 11791,
+        "not-executed": 27,
+        "not-exported-api": 2176,
+        "optional-dependency": 82,
+        "private-api": 50,
+        "python-runtime-api": 260,
+        "serialization-error": 17,
+        "stateful-iterator-input": 76,
+        "test-utility": 32,
+        "unserializable-input": 867,
+        "unsupported-assertion": 1704,
+        "unsupported-raises": 6
+      },
+      "sourceSites": 9329,
+      "testStatuses": {
+        "completed": 1960,
+        "marked-skip": 71,
+        "marked-xfail": 24,
+        "optional-dependency": 10,
+        "test-exception:Failed": 1
+      },
+      "seconds": 6.505,
+      "retainedModules": 40,
+      "shards": [
+        {
+          "file": "core.json",
+          "cases": 7858,
+          "bytes": 3534962
+        }
+      ],
+      "auditFile": "core.audit.json",
+      "auditBytes": 986914,
+      "modules": [
+        "sympy.core.tests.test_args",
+        "sympy.core.tests.test_arit",
+        "sympy.core.tests.test_assumptions",
+        "sympy.core.tests.test_basic",
+        "sympy.core.tests.test_cache",
+        "sympy.core.tests.test_compatibility",
+        "sympy.core.tests.test_complex",
+        "sympy.core.tests.test_constructor_postprocessor",
+        "sympy.core.tests.test_containers",
+        "sympy.core.tests.test_count_ops",
+        "sympy.core.tests.test_diff",
+        "sympy.core.tests.test_equal",
+        "sympy.core.tests.test_eval",
+        "sympy.core.tests.test_evalf",
+        "sympy.core.tests.test_expand",
+        "sympy.core.tests.test_expr",
+        "sympy.core.tests.test_exprtools",
+        "sympy.core.tests.test_facts",
+        "sympy.core.tests.test_function",
+        "sympy.core.tests.test_kind",
+        "sympy.core.tests.test_logic",
+        "sympy.core.tests.test_match",
+        "sympy.core.tests.test_multidimensional",
+        "sympy.core.tests.test_noncommutative",
+        "sympy.core.tests.test_numbers",
+        "sympy.core.tests.test_operations",
+        "sympy.core.tests.test_parameters",
+        "sympy.core.tests.test_power",
+        "sympy.core.tests.test_priority",
+        "sympy.core.tests.test_random",
+        "sympy.core.tests.test_relational",
+        "sympy.core.tests.test_rules",
+        "sympy.core.tests.test_singleton",
+        "sympy.core.tests.test_sorting",
+        "sympy.core.tests.test_subs",
+        "sympy.core.tests.test_symbol",
+        "sympy.core.tests.test_sympify",
+        "sympy.core.tests.test_traversal",
+        "sympy.core.tests.test_truediv",
+        "sympy.core.tests.test_var"
+      ]
+    },
+    "crypto": {
+      "examined": 5078,
+      "cases": 155,
+      "reasons": {
+        "non-call-expression": 4919,
+        "python-runtime-api": 1,
+        "stateful-iterator-input": 1,
+        "unsupported-assertion": 2
+      },
+      "sourceSites": 185,
+      "testStatuses": {
+        "completed": 51
+      },
+      "seconds": 1.984,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "crypto.json",
+          "cases": 155,
+          "bytes": 60530
+        }
+      ],
+      "auditFile": "crypto.audit.json",
+      "auditBytes": 11364,
+      "modules": [
+        "sympy.crypto.tests.test_crypto"
+      ]
+    },
+    "diffgeom": {
+      "examined": 205,
+      "cases": 177,
+      "reasons": {
+        "non-call-expression": 13,
+        "not-executed": 1,
+        "not-exported-api": 4,
+        "stateful-iterator-input": 2,
+        "unsupported-assertion": 8
+      },
+      "sourceSites": 205,
+      "testStatuses": {
+        "completed": 24
+      },
+      "seconds": 11.223,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "diffgeom.json",
+          "cases": 177,
+          "bytes": 216838
+        }
+      ],
+      "auditFile": "diffgeom.audit.json",
+      "auditBytes": 9347,
+      "modules": [
+        "sympy.diffgeom.tests.test_class_structure",
+        "sympy.diffgeom.tests.test_diffgeom",
+        "sympy.diffgeom.tests.test_function_diffgeom_book",
+        "sympy.diffgeom.tests.test_hyperbolic_space"
+      ]
+    },
+    "discrete": {
+      "examined": 198,
+      "cases": 185,
+      "reasons": {
+        "non-boolean-assertion": 2,
+        "stateful-iterator-input": 8,
+        "unsupported-assertion": 3
+      },
+      "sourceSites": 198,
+      "testStatuses": {
+        "completed": 14
+      },
+      "seconds": 2.817,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "discrete.json",
+          "cases": 185,
+          "bytes": 158625
+        }
+      ],
+      "auditFile": "discrete.audit.json",
+      "auditBytes": 5412,
+      "modules": [
+        "sympy.discrete.tests.test_convolutions",
+        "sympy.discrete.tests.test_recurrences",
+        "sympy.discrete.tests.test_transforms"
+      ]
+    },
+    "functions": {
+      "examined": 23611,
+      "cases": 9853,
+      "reasons": {
+        "duplicate": 7857,
+        "marked-slow": 104,
+        "marked-xfail": 18,
+        "non-boolean-assertion": 5,
+        "non-call-expression": 230,
+        "not-executed": 6,
+        "not-exported-api": 2768,
+        "optional-dependency": 1,
+        "private-api": 146,
+        "python-runtime-api": 1,
+        "stateful-iterator-input": 58,
+        "test-utility": 87,
+        "unserializable-input": 16,
+        "unsupported-assertion": 2461
+      },
+      "sourceSites": 7116,
+      "testStatuses": {
+        "completed": 542,
+        "marked-slow": 14,
+        "marked-xfail": 8,
+        "optional-dependency": 1
+      },
+      "seconds": 118.911,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "functions.json",
+          "cases": 9853,
+          "bytes": 5504119
+        }
+      ],
+      "auditFile": "functions.audit.json",
+      "auditBytes": 390805,
+      "modules": [
+        "sympy.functions.combinatorial.tests.test_comb_factorials",
+        "sympy.functions.combinatorial.tests.test_comb_numbers",
+        "sympy.functions.elementary.tests.test_complexes",
+        "sympy.functions.elementary.tests.test_exponential",
+        "sympy.functions.elementary.tests.test_hyperbolic",
+        "sympy.functions.elementary.tests.test_integers",
+        "sympy.functions.elementary.tests.test_interface",
+        "sympy.functions.elementary.tests.test_miscellaneous",
+        "sympy.functions.elementary.tests.test_piecewise",
+        "sympy.functions.elementary.tests.test_trigonometric",
+        "sympy.functions.special.tests.test_bessel",
+        "sympy.functions.special.tests.test_beta_functions",
+        "sympy.functions.special.tests.test_bsplines",
+        "sympy.functions.special.tests.test_delta_functions",
+        "sympy.functions.special.tests.test_elliptic_integrals",
+        "sympy.functions.special.tests.test_error_functions",
+        "sympy.functions.special.tests.test_gamma_functions",
+        "sympy.functions.special.tests.test_hyper",
+        "sympy.functions.special.tests.test_mathieu",
+        "sympy.functions.special.tests.test_singularity_functions",
+        "sympy.functions.special.tests.test_spec_polynomials",
+        "sympy.functions.special.tests.test_spherical_harmonics",
+        "sympy.functions.special.tests.test_tensor_functions",
+        "sympy.functions.special.tests.test_zeta_functions"
+      ]
+    },
+    "geometry": {
+      "examined": 1514,
+      "cases": 1046,
+      "reasons": {
+        "duplicate": 8,
+        "marked-slow": 301,
+        "non-boolean-assertion": 2,
+        "non-call-expression": 53,
+        "not-exported-api": 11,
+        "private-api": 13,
+        "python-runtime-api": 12,
+        "stateful-iterator-input": 2,
+        "test-utility": 1,
+        "unsupported-assertion": 65
+      },
+      "sourceSites": 1410,
+      "testStatuses": {
+        "completed": 113,
+        "marked-slow": 4
+      },
+      "seconds": 51.936,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "geometry.json",
+          "cases": 1046,
+          "bytes": 779396
+        }
+      ],
+      "auditFile": "geometry.audit.json",
+      "auditBytes": 101709,
+      "modules": [
+        "sympy.geometry.tests.test_curve",
+        "sympy.geometry.tests.test_ellipse",
+        "sympy.geometry.tests.test_entity",
+        "sympy.geometry.tests.test_geometrysets",
+        "sympy.geometry.tests.test_line",
+        "sympy.geometry.tests.test_parabola",
+        "sympy.geometry.tests.test_plane",
+        "sympy.geometry.tests.test_point",
+        "sympy.geometry.tests.test_polygon",
+        "sympy.geometry.tests.test_util"
+      ]
+    },
+    "holonomic": {
+      "examined": 217,
+      "cases": 102,
+      "reasons": {
+        "non-call-expression": 115
+      },
+      "sourceSites": 190,
+      "testStatuses": {
+        "completed": 32
+      },
+      "seconds": 17.873,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "holonomic.json",
+          "cases": 102,
+          "bytes": 103903
+        }
+      ],
+      "auditFile": "holonomic.audit.json",
+      "auditBytes": 19663,
+      "modules": [
+        "sympy.holonomic.tests.test_holonomic",
+        "sympy.holonomic.tests.test_recurrence"
+      ]
+    },
+    "integrals": {
+      "examined": 2444,
+      "cases": 1197,
+      "reasons": {
+        "duplicate": 63,
+        "marked-slow": 607,
+        "marked-tooslow": 1,
+        "marked-xfail": 38,
+        "non-boolean-assertion": 2,
+        "non-call-expression": 202,
+        "not-executed": 1,
+        "not-exported-api": 70,
+        "private-api": 1,
+        "test-utility": 10,
+        "unserializable-input": 188,
+        "unsupported-assertion": 64
+      },
+      "sourceSites": 2228,
+      "testStatuses": {
+        "completed": 413,
+        "marked-slow": 36,
+        "marked-tooslow": 1,
+        "marked-xfail": 36
+      },
+      "seconds": 179.184,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "integrals.json",
+          "cases": 1197,
+          "bytes": 1097285
+        }
+      ],
+      "auditFile": "integrals.audit.json",
+      "auditBytes": 370371,
+      "modules": [
+        "sympy.integrals.tests.test_deltafunctions",
+        "sympy.integrals.tests.test_failing_integrals",
+        "sympy.integrals.tests.test_heurisch",
+        "sympy.integrals.tests.test_integrals",
+        "sympy.integrals.tests.test_intpoly",
+        "sympy.integrals.tests.test_laplace",
+        "sympy.integrals.tests.test_lineintegrals",
+        "sympy.integrals.tests.test_manual",
+        "sympy.integrals.tests.test_meijerint",
+        "sympy.integrals.tests.test_prde",
+        "sympy.integrals.tests.test_quadrature",
+        "sympy.integrals.tests.test_rationaltools",
+        "sympy.integrals.tests.test_rde",
+        "sympy.integrals.tests.test_risch",
+        "sympy.integrals.tests.test_singularityfunctions",
+        "sympy.integrals.tests.test_transforms",
+        "sympy.integrals.tests.test_trigonometry"
+      ]
+    },
+    "liealgebras": {
+      "examined": 95,
+      "cases": 87,
+      "reasons": {
+        "non-call-expression": 8
+      },
+      "sourceSites": 95,
+      "testStatuses": {
+        "completed": 12
+      },
+      "seconds": 0.499,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "liealgebras.json",
+          "cases": 87,
+          "bytes": 59045
+        }
+      ],
+      "auditFile": "liealgebras.audit.json",
+      "auditBytes": 2842,
+      "modules": [
+        "sympy.liealgebras.tests.test_cartan_matrix",
+        "sympy.liealgebras.tests.test_cartan_type",
+        "sympy.liealgebras.tests.test_dynkin_diagram",
+        "sympy.liealgebras.tests.test_root_system",
+        "sympy.liealgebras.tests.test_type_A",
+        "sympy.liealgebras.tests.test_type_B",
+        "sympy.liealgebras.tests.test_type_C",
+        "sympy.liealgebras.tests.test_type_D",
+        "sympy.liealgebras.tests.test_type_E",
+        "sympy.liealgebras.tests.test_type_F",
+        "sympy.liealgebras.tests.test_type_G",
+        "sympy.liealgebras.tests.test_weyl_group"
+      ]
+    },
+    "logic": {
+      "examined": 8596,
+      "cases": 662,
+      "reasons": {
+        "duplicate": 40,
+        "marked-xfail": 18,
+        "non-boolean-assertion": 10,
+        "non-call-expression": 7347,
+        "not-executed": 6,
+        "not-exported-api": 53,
+        "python-runtime-api": 5,
+        "stateful-iterator-input": 19,
+        "unserializable-input": 26,
+        "unsupported-assertion": 394,
+        "unsupported-raises": 2,
+        "upstream-skip": 14
+      },
+      "sourceSites": 944,
+      "testStatuses": {
+        "completed": 119,
+        "marked-slow": 1,
+        "marked-xfail": 4,
+        "upstream-skip": 3
+      },
+      "seconds": 8.501,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "logic.json",
+          "cases": 662,
+          "bytes": 396810
+        }
+      ],
+      "auditFile": "logic.audit.json",
+      "auditBytes": 94565,
+      "modules": [
+        "sympy.logic.tests.test_boolalg",
+        "sympy.logic.tests.test_dimacs",
+        "sympy.logic.tests.test_inference",
+        "sympy.logic.tests.test_lra_theory"
+      ]
+    },
+    "matrices": {
+      "examined": 7002,
+      "cases": 3930,
+      "reasons": {
+        "duplicate": 368,
+        "marked-slow": 52,
+        "marked-xfail": 15,
+        "non-boolean-assertion": 26,
+        "non-call-expression": 1220,
+        "not-executed": 32,
+        "not-exported-api": 404,
+        "optional-dependency": 40,
+        "private-api": 21,
+        "python-runtime-api": 3,
+        "stateful-iterator-input": 73,
+        "unserializable-input": 327,
+        "unsupported-assertion": 487,
+        "unsupported-raises": 4
+      },
+      "sourceSites": 4686,
+      "testStatuses": {
+        "completed": 973,
+        "marked-slow": 6,
+        "marked-xfail": 9,
+        "optional-dependency": 12
+      },
+      "seconds": 76.675,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "matrices.json",
+          "cases": 3930,
+          "bytes": 6935733
+        }
+      ],
+      "auditFile": "matrices.audit.json",
+      "auditBytes": 433701,
+      "modules": [
+        "sympy.matrices.expressions.tests.test_adjoint",
+        "sympy.matrices.expressions.tests.test_applyfunc",
+        "sympy.matrices.expressions.tests.test_blockmatrix",
+        "sympy.matrices.expressions.tests.test_companion",
+        "sympy.matrices.expressions.tests.test_derivatives",
+        "sympy.matrices.expressions.tests.test_determinant",
+        "sympy.matrices.expressions.tests.test_diagonal",
+        "sympy.matrices.expressions.tests.test_dotproduct",
+        "sympy.matrices.expressions.tests.test_factorizations",
+        "sympy.matrices.expressions.tests.test_fourier",
+        "sympy.matrices.expressions.tests.test_funcmatrix",
+        "sympy.matrices.expressions.tests.test_hadamard",
+        "sympy.matrices.expressions.tests.test_indexing",
+        "sympy.matrices.expressions.tests.test_inverse",
+        "sympy.matrices.expressions.tests.test_kronecker",
+        "sympy.matrices.expressions.tests.test_matadd",
+        "sympy.matrices.expressions.tests.test_matexpr",
+        "sympy.matrices.expressions.tests.test_matmul",
+        "sympy.matrices.expressions.tests.test_matpow",
+        "sympy.matrices.expressions.tests.test_permutation",
+        "sympy.matrices.expressions.tests.test_sets",
+        "sympy.matrices.expressions.tests.test_slice",
+        "sympy.matrices.expressions.tests.test_special",
+        "sympy.matrices.expressions.tests.test_trace",
+        "sympy.matrices.expressions.tests.test_transpose",
+        "sympy.matrices.tests.test_commonmatrix",
+        "sympy.matrices.tests.test_decompositions",
+        "sympy.matrices.tests.test_determinant",
+        "sympy.matrices.tests.test_domains",
+        "sympy.matrices.tests.test_eigen",
+        "sympy.matrices.tests.test_graph",
+        "sympy.matrices.tests.test_immutable",
+        "sympy.matrices.tests.test_interactions",
+        "sympy.matrices.tests.test_matrices",
+        "sympy.matrices.tests.test_matrixbase",
+        "sympy.matrices.tests.test_normalforms",
+        "sympy.matrices.tests.test_reductions",
+        "sympy.matrices.tests.test_repmatrix",
+        "sympy.matrices.tests.test_solvers",
+        "sympy.matrices.tests.test_sparse",
+        "sympy.matrices.tests.test_sparsetools",
+        "sympy.matrices.tests.test_subspaces"
+      ]
+    },
+    "ntheory": {
+      "examined": 601899,
+      "cases": 44169,
+      "reasons": {
+        "duplicate": 10,
+        "marked-slow": 98,
+        "non-boolean-assertion": 3104,
+        "non-call-expression": 54281,
+        "not-exported-api": 463131,
+        "optional-dependency": 4,
+        "private-api": 6,
+        "python-runtime-api": 35499,
+        "serialization-error": 7,
+        "stateful-iterator-input": 67,
+        "test-timeout": 41,
+        "unserializable-input": 9,
+        "unsupported-assertion": 1471,
+        "unsupported-raises": 2
+      },
+      "sourceSites": 1039,
+      "testStatuses": {
+        "completed": 81,
+        "marked-slow": 4,
+        "optional-dependency": 3,
+        "test-timeout": 2
+      },
+      "seconds": 108.992,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "ntheory.json",
+          "cases": 44169,
+          "bytes": 15835330
+        }
+      ],
+      "auditFile": "ntheory.audit.json",
+      "auditBytes": 100766,
+      "modules": [
+        "sympy.ntheory.tests.test_bbp_pi",
+        "sympy.ntheory.tests.test_continued_fraction",
+        "sympy.ntheory.tests.test_digits",
+        "sympy.ntheory.tests.test_ecm",
+        "sympy.ntheory.tests.test_egyptian_fraction",
+        "sympy.ntheory.tests.test_elliptic_curve",
+        "sympy.ntheory.tests.test_factor_",
+        "sympy.ntheory.tests.test_generate",
+        "sympy.ntheory.tests.test_hypothesis",
+        "sympy.ntheory.tests.test_modular",
+        "sympy.ntheory.tests.test_multinomial",
+        "sympy.ntheory.tests.test_partitions",
+        "sympy.ntheory.tests.test_primetest",
+        "sympy.ntheory.tests.test_qs",
+        "sympy.ntheory.tests.test_residue"
+      ]
+    },
+    "parsing": {
+      "examined": 1454,
+      "cases": 170,
+      "reasons": {
+        "non-call-expression": 1026,
+        "not-executed": 1,
+        "not-exported-api": 136,
+        "private-api": 4,
+        "python-runtime-api": 12,
+        "unserializable-input": 65,
+        "unsupported-assertion": 40
+      },
+      "sourceSites": 249,
+      "testStatuses": {
+        "completed": 38
+      },
+      "seconds": 0.889,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "parsing.json",
+          "cases": 170,
+          "bytes": 58174
+        }
+      ],
+      "auditFile": "parsing.audit.json",
+      "auditBytes": 49613,
+      "modules": [
+        "sympy.parsing.tests.test_implicit_multiplication_application",
+        "sympy.parsing.tests.test_mathematica",
+        "sympy.parsing.tests.test_sympy_parser"
+      ]
+    },
+    "polys": {
+      "examined": 29642,
+      "cases": 9338,
+      "reasons": {
+        "duplicate": 125,
+        "marked-slow": 74,
+        "marked-tooslow": 2,
+        "marked-xfail": 10,
+        "non-boolean-assertion": 52,
+        "non-call-expression": 15903,
+        "not-executed": 31,
+        "not-exported-api": 1122,
+        "optional-dependency": 291,
+        "private-api": 23,
+        "python-runtime-api": 691,
+        "serialization-error": 319,
+        "stateful-iterator-input": 137,
+        "test-exception:TypeError": 2,
+        "test-utility": 50,
+        "unserializable-input": 456,
+        "unsupported-assertion": 1015,
+        "unsupported-raises": 1
+      },
+      "sourceSites": 10205,
+      "testStatuses": {
+        "completed": 2207,
+        "marked-slow": 6,
+        "marked-tooslow": 2,
+        "marked-xfail": 4,
+        "optional-dependency": 22,
+        "test-exception:TypeError": 1,
+        "upstream-skip": 62
+      },
+      "seconds": 41.527,
+      "retainedModules": 39,
+      "shards": [
+        {
+          "file": "polys.json",
+          "cases": 9338,
+          "bytes": 7734704
+        }
+      ],
+      "auditFile": "polys.audit.json",
+      "auditBytes": 986108,
+      "modules": [
+        "sympy.polys.agca.tests.test_extensions",
+        "sympy.polys.agca.tests.test_homomorphisms",
+        "sympy.polys.agca.tests.test_ideals",
+        "sympy.polys.agca.tests.test_modules",
+        "sympy.polys.domains.tests.test_domains",
+        "sympy.polys.domains.tests.test_polynomialring",
+        "sympy.polys.domains.tests.test_quotientring",
+        "sympy.polys.matrices.tests.test_ddm",
+        "sympy.polys.matrices.tests.test_dense",
+        "sympy.polys.matrices.tests.test_domainmatrix",
+        "sympy.polys.matrices.tests.test_domainscalar",
+        "sympy.polys.matrices.tests.test_eigen",
+        "sympy.polys.matrices.tests.test_fflu",
+        "sympy.polys.matrices.tests.test_inverse",
+        "sympy.polys.matrices.tests.test_linsolve",
+        "sympy.polys.matrices.tests.test_lll",
+        "sympy.polys.matrices.tests.test_normalforms",
+        "sympy.polys.matrices.tests.test_nullspace",
+        "sympy.polys.matrices.tests.test_rref",
+        "sympy.polys.matrices.tests.test_sdm",
+        "sympy.polys.matrices.tests.test_xxm",
+        "sympy.polys.numberfields.tests.test_basis",
+        "sympy.polys.numberfields.tests.test_galoisgroups",
+        "sympy.polys.numberfields.tests.test_minpoly",
+        "sympy.polys.numberfields.tests.test_modules",
+        "sympy.polys.numberfields.tests.test_numbers",
+        "sympy.polys.numberfields.tests.test_primes",
+        "sympy.polys.numberfields.tests.test_subfield",
+        "sympy.polys.numberfields.tests.test_utilities",
+        "sympy.polys.tests.test_appellseqs",
+        "sympy.polys.tests.test_constructor",
+        "sympy.polys.tests.test_densearith",
+        "sympy.polys.tests.test_densebasic",
+        "sympy.polys.tests.test_densetools",
+        "sympy.polys.tests.test_dispersion",
+        "sympy.polys.tests.test_distributedmodules",
+        "sympy.polys.tests.test_euclidtools",
+        "sympy.polys.tests.test_factortools",
+        "sympy.polys.tests.test_fields",
+        "sympy.polys.tests.test_galoistools",
+        "sympy.polys.tests.test_groebnertools",
+        "sympy.polys.tests.test_heuristicgcd",
+        "sympy.polys.tests.test_hypothesis",
+        "sympy.polys.tests.test_injections",
+        "sympy.polys.tests.test_modulargcd",
+        "sympy.polys.tests.test_monomials",
+        "sympy.polys.tests.test_multivariate_resultants",
+        "sympy.polys.tests.test_orderings",
+        "sympy.polys.tests.test_orthopolys",
+        "sympy.polys.tests.test_partfrac",
+        "sympy.polys.tests.test_polyclasses",
+        "sympy.polys.tests.test_polyfuncs",
+        "sympy.polys.tests.test_polymatrix",
+        "sympy.polys.tests.test_polyoptions",
+        "sympy.polys.tests.test_polyroots",
+        "sympy.polys.tests.test_polytools",
+        "sympy.polys.tests.test_polyutils",
+        "sympy.polys.tests.test_puiseux",
+        "sympy.polys.tests.test_pythonrational",
+        "sympy.polys.tests.test_rationaltools",
+        "sympy.polys.tests.test_ring_series",
+        "sympy.polys.tests.test_rings",
+        "sympy.polys.tests.test_rootisolation",
+        "sympy.polys.tests.test_rootoftools",
+        "sympy.polys.tests.test_solvers",
+        "sympy.polys.tests.test_specialpolys",
+        "sympy.polys.tests.test_sqfreetools",
+        "sympy.polys.tests.test_subresultants_qq_zz"
+      ]
+    },
+    "printing": {
+      "examined": 4706,
+      "cases": 1767,
+      "reasons": {
+        "duplicate": 269,
+        "marked-xfail": 8,
+        "non-boolean-assertion": 1,
+        "non-call-expression": 27,
+        "not-executed": 9,
+        "not-exported-api": 1766,
+        "optional-dependency": 5,
+        "private-api": 3,
+        "python-runtime-api": 237,
+        "reference-exception": 1,
+        "serialization-error": 5,
+        "stateful-iterator-input": 9,
+        "test-timeout": 2,
+        "unserializable-input": 451,
+        "unsupported-assertion": 146
+      },
+      "sourceSites": 4068,
+      "testStatuses": {
+        "completed": 614,
+        "marked-xfail": 5,
+        "optional-dependency": 2,
+        "test-exception:NameError": 1,
+        "test-timeout": 1
+      },
+      "seconds": 44.058,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "printing.json",
+          "cases": 1767,
+          "bytes": 991535
+        }
+      ],
+      "auditFile": "printing.audit.json",
+      "auditBytes": 673375,
+      "modules": [
+        "sympy.printing.pretty.tests.test_pretty",
+        "sympy.printing.tests.test_conventions",
+        "sympy.printing.tests.test_dot",
+        "sympy.printing.tests.test_latex",
+        "sympy.printing.tests.test_mathml",
+        "sympy.printing.tests.test_precedence",
+        "sympy.printing.tests.test_repr",
+        "sympy.printing.tests.test_str",
+        "sympy.printing.tests.test_tableform",
+        "sympy.printing.tests.test_tree"
+      ]
+    },
+    "series": {
+      "examined": 2027,
+      "cases": 1626,
+      "reasons": {
+        "duplicate": 4,
+        "marked-slow": 71,
+        "marked-xfail": 22,
+        "non-call-expression": 47,
+        "not-executed": 2,
+        "not-exported-api": 68,
+        "private-api": 11,
+        "stateful-iterator-input": 31,
+        "unserializable-input": 42,
+        "unsupported-assertion": 99,
+        "upstream-skip": 4
+      },
+      "sourceSites": 1960,
+      "testStatuses": {
+        "completed": 470,
+        "marked-slow": 5,
+        "marked-xfail": 12,
+        "upstream-skip": 2
+      },
+      "seconds": 103.33,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "series.json",
+          "cases": 1626,
+          "bytes": 1212954
+        }
+      ],
+      "auditFile": "series.audit.json",
+      "auditBytes": 133937,
+      "modules": [
+        "sympy.series.tests.test_approximants",
+        "sympy.series.tests.test_aseries",
+        "sympy.series.tests.test_demidovich",
+        "sympy.series.tests.test_formal",
+        "sympy.series.tests.test_fourier",
+        "sympy.series.tests.test_gruntz",
+        "sympy.series.tests.test_kauers",
+        "sympy.series.tests.test_limits",
+        "sympy.series.tests.test_limitseq",
+        "sympy.series.tests.test_lseries",
+        "sympy.series.tests.test_nseries",
+        "sympy.series.tests.test_order",
+        "sympy.series.tests.test_residues",
+        "sympy.series.tests.test_sequences",
+        "sympy.series.tests.test_series"
+      ]
+    },
+    "sets": {
+      "examined": 6442,
+      "cases": 1494,
+      "reasons": {
+        "duplicate": 160,
+        "marked-xfail": 21,
+        "non-boolean-assertion": 6,
+        "non-call-expression": 3425,
+        "not-executed": 2,
+        "not-exported-api": 828,
+        "private-api": 10,
+        "python-runtime-api": 5,
+        "stateful-iterator-input": 38,
+        "unserializable-input": 18,
+        "unsupported-assertion": 414,
+        "unsupported-raises": 21
+      },
+      "sourceSites": 1768,
+      "testStatuses": {
+        "completed": 216,
+        "marked-xfail": 8
+      },
+      "seconds": 6.411,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "sets.json",
+          "cases": 1494,
+          "bytes": 784089
+        }
+      ],
+      "auditFile": "sets.audit.json",
+      "auditBytes": 135944,
+      "modules": [
+        "sympy.sets.tests.test_conditionset",
+        "sympy.sets.tests.test_contains",
+        "sympy.sets.tests.test_fancysets",
+        "sympy.sets.tests.test_ordinals",
+        "sympy.sets.tests.test_powerset",
+        "sympy.sets.tests.test_setexpr",
+        "sympy.sets.tests.test_sets"
+      ]
+    },
+    "simplify": {
+      "examined": 2254,
+      "cases": 1402,
+      "reasons": {
+        "duplicate": 61,
+        "marked-slow": 103,
+        "marked-tooslow": 1,
+        "marked-xfail": 101,
+        "non-boolean-assertion": 3,
+        "non-call-expression": 218,
+        "not-executed": 3,
+        "not-exported-api": 155,
+        "private-api": 8,
+        "serialization-error": 1,
+        "stateful-iterator-input": 82,
+        "test-utility": 58,
+        "unserializable-input": 14,
+        "unsupported-assertion": 44
+      },
+      "sourceSites": 1852,
+      "testStatuses": {
+        "completed": 303,
+        "marked-slow": 14,
+        "marked-tooslow": 1,
+        "marked-xfail": 17
+      },
+      "seconds": 37.675,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "simplify.json",
+          "cases": 1402,
+          "bytes": 1111384
+        }
+      ],
+      "auditFile": "simplify.audit.json",
+      "auditBytes": 163075,
+      "modules": [
+        "sympy.simplify.tests.test_combsimp",
+        "sympy.simplify.tests.test_cse",
+        "sympy.simplify.tests.test_cse_diff",
+        "sympy.simplify.tests.test_epathtools",
+        "sympy.simplify.tests.test_fu",
+        "sympy.simplify.tests.test_function",
+        "sympy.simplify.tests.test_gammasimp",
+        "sympy.simplify.tests.test_hyperexpand",
+        "sympy.simplify.tests.test_powsimp",
+        "sympy.simplify.tests.test_radsimp",
+        "sympy.simplify.tests.test_ratsimp",
+        "sympy.simplify.tests.test_rewrite",
+        "sympy.simplify.tests.test_simplify",
+        "sympy.simplify.tests.test_sqrtdenest",
+        "sympy.simplify.tests.test_trigsimp"
+      ]
+    },
+    "solvers": {
+      "examined": 8472,
+      "cases": 2381,
+      "reasons": {
+        "duplicate": 67,
+        "marked-skip": 2,
+        "marked-slow": 421,
+        "marked-tooslow": 5,
+        "marked-xfail": 78,
+        "non-boolean-assertion": 33,
+        "non-call-expression": 253,
+        "not-executed": 14,
+        "not-exported-api": 2871,
+        "private-api": 9,
+        "python-runtime-api": 39,
+        "stateful-iterator-input": 2136,
+        "test-timeout": 11,
+        "test-utility": 14,
+        "unserializable-input": 7,
+        "unsupported-assertion": 129,
+        "upstream-skip": 2
+      },
+      "sourceSites": 3696,
+      "testStatuses": {
+        "completed": 542,
+        "marked-skip": 2,
+        "marked-slow": 53,
+        "marked-tooslow": 6,
+        "marked-xfail": 31,
+        "test-timeout": 1,
+        "upstream-skip": 1
+      },
+      "seconds": 347.979,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "solvers.json",
+          "cases": 2381,
+          "bytes": 2974966
+        }
+      ],
+      "auditFile": "solvers.audit.json",
+      "auditBytes": 446049,
+      "modules": [
+        "sympy.solvers.diophantine.tests.test_diophantine",
+        "sympy.solvers.ode.tests.test_lie_group",
+        "sympy.solvers.ode.tests.test_ode",
+        "sympy.solvers.ode.tests.test_riccati",
+        "sympy.solvers.ode.tests.test_single",
+        "sympy.solvers.ode.tests.test_subscheck",
+        "sympy.solvers.ode.tests.test_systems",
+        "sympy.solvers.tests.test_constantsimp",
+        "sympy.solvers.tests.test_decompogen",
+        "sympy.solvers.tests.test_inequalities",
+        "sympy.solvers.tests.test_numeric",
+        "sympy.solvers.tests.test_pde",
+        "sympy.solvers.tests.test_polysys",
+        "sympy.solvers.tests.test_recurr",
+        "sympy.solvers.tests.test_simplex",
+        "sympy.solvers.tests.test_solvers",
+        "sympy.solvers.tests.test_solveset"
+      ]
+    },
+    "stats": {
+      "examined": 2363,
+      "cases": 1865,
+      "reasons": {
+        "marked-slow": 46,
+        "marked-xfail": 6,
+        "non-boolean-assertion": 10,
+        "non-call-expression": 89,
+        "not-executed": 4,
+        "not-exported-api": 122,
+        "optional-dependency": 48,
+        "stateful-iterator-input": 6,
+        "test-utility": 56,
+        "unserializable-input": 6,
+        "unsupported-assertion": 101,
+        "upstream-skip": 4
+      },
+      "sourceSites": 1582,
+      "testStatuses": {
+        "completed": 203,
+        "marked-slow": 6,
+        "marked-xfail": 4,
+        "optional-dependency": 10,
+        "upstream-skip": 2
+      },
+      "seconds": 89.046,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "stats.json",
+          "cases": 1865,
+          "bytes": 1779902
+        }
+      ],
+      "auditFile": "stats.audit.json",
+      "auditBytes": 91572,
+      "modules": [
+        "sympy.stats.tests.test_compound_rv",
+        "sympy.stats.tests.test_continuous_rv",
+        "sympy.stats.tests.test_discrete_rv",
+        "sympy.stats.tests.test_error_prop",
+        "sympy.stats.tests.test_finite_rv",
+        "sympy.stats.tests.test_joint_rv",
+        "sympy.stats.tests.test_matrix_distributions",
+        "sympy.stats.tests.test_mix",
+        "sympy.stats.tests.test_random_matrix",
+        "sympy.stats.tests.test_rv",
+        "sympy.stats.tests.test_stochastic_process",
+        "sympy.stats.tests.test_symbolic_multivariate",
+        "sympy.stats.tests.test_symbolic_probability"
+      ]
+    },
+    "strategies": {
+      "examined": 105,
+      "cases": 6,
+      "reasons": {
+        "non-call-expression": 3,
+        "not-exported-api": 55,
+        "stateful-iterator-input": 31,
+        "unserializable-input": 3,
+        "unstable-result-representation": 1,
+        "unsupported-assertion": 6
+      },
+      "sourceSites": 103,
+      "testStatuses": {
+        "completed": 50
+      },
+      "seconds": 0.376,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "strategies.json",
+          "cases": 6,
+          "bytes": 2779
+        }
+      ],
+      "auditFile": "strategies.audit.json",
+      "auditBytes": 24605,
+      "modules": [
+        "sympy.strategies.branch.tests.test_core",
+        "sympy.strategies.branch.tests.test_tools",
+        "sympy.strategies.branch.tests.test_traverse",
+        "sympy.strategies.tests.test_core",
+        "sympy.strategies.tests.test_rl",
+        "sympy.strategies.tests.test_tools",
+        "sympy.strategies.tests.test_traverse",
+        "sympy.strategies.tests.test_tree"
+      ]
+    },
+    "tensor": {
+      "examined": 2763,
+      "cases": 1590,
+      "reasons": {
+        "marked-xfail": 4,
+        "non-boolean-assertion": 2,
+        "non-call-expression": 416,
+        "not-executed": 1,
+        "not-exported-api": 370,
+        "private-api": 77,
+        "python-runtime-api": 1,
+        "stateful-iterator-input": 22,
+        "test-timeout": 97,
+        "unserializable-input": 147,
+        "unsupported-assertion": 36
+      },
+      "sourceSites": 2032,
+      "testStatuses": {
+        "completed": 233,
+        "marked-xfail": 1,
+        "test-timeout": 5
+      },
+      "seconds": 169.643,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "tensor.json",
+          "cases": 1590,
+          "bytes": 1866545
+        }
+      ],
+      "auditFile": "tensor.audit.json",
+      "auditBytes": 268437,
+      "modules": [
+        "sympy.tensor.array.expressions.tests.test_array_expressions",
+        "sympy.tensor.array.expressions.tests.test_arrayexpr_derivatives",
+        "sympy.tensor.array.expressions.tests.test_as_explicit",
+        "sympy.tensor.array.expressions.tests.test_convert_array_to_indexed",
+        "sympy.tensor.array.expressions.tests.test_convert_array_to_matrix",
+        "sympy.tensor.array.expressions.tests.test_convert_indexed_to_array",
+        "sympy.tensor.array.expressions.tests.test_convert_matrix_to_array",
+        "sympy.tensor.array.expressions.tests.test_deprecated_conv_modules",
+        "sympy.tensor.array.tests.test_array_comprehension",
+        "sympy.tensor.array.tests.test_array_derivatives",
+        "sympy.tensor.array.tests.test_arrayop",
+        "sympy.tensor.array.tests.test_immutable_ndim_array",
+        "sympy.tensor.array.tests.test_mutable_ndim_array",
+        "sympy.tensor.array.tests.test_ndim_array",
+        "sympy.tensor.array.tests.test_ndim_array_conversions",
+        "sympy.tensor.tests.test_functions",
+        "sympy.tensor.tests.test_index_methods",
+        "sympy.tensor.tests.test_indexed",
+        "sympy.tensor.tests.test_printing",
+        "sympy.tensor.tests.test_tensor",
+        "sympy.tensor.tests.test_tensor_element",
+        "sympy.tensor.tests.test_tensor_operators"
+      ]
+    },
+    "unify": {
+      "examined": 63,
+      "cases": 8,
+      "reasons": {
+        "non-boolean-assertion": 4,
+        "non-call-expression": 2,
+        "not-executed": 2,
+        "not-exported-api": 3,
+        "stateful-iterator-input": 36,
+        "unserializable-input": 6,
+        "unsupported-assertion": 2
+      },
+      "sourceSites": 63,
+      "testStatuses": {
+        "completed": 33
+      },
+      "seconds": 0.404,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "unify.json",
+          "cases": 8,
+          "bytes": 2822
+        }
+      ],
+      "auditFile": "unify.audit.json",
+      "auditBytes": 15257,
+      "modules": [
+        "sympy.unify.tests.test_rewrite",
+        "sympy.unify.tests.test_sympy",
+        "sympy.unify.tests.test_unify"
+      ]
+    },
+    "utilities": {
+      "examined": 25623,
+      "cases": 375,
+      "reasons": {
+        "marked-skip": 3,
+        "marked-slow": 5,
+        "marked-xfail": 104,
+        "non-call-expression": 224,
+        "not-executed": 6,
+        "not-exported-api": 24276,
+        "optional-dependency": 125,
+        "python-runtime-api": 6,
+        "stateful-iterator-input": 158,
+        "test-utility": 2,
+        "unserializable-input": 24,
+        "unsupported-assertion": 313,
+        "unsupported-raises": 2
+      },
+      "sourceSites": 1163,
+      "testStatuses": {
+        "completed": 395,
+        "marked-skip": 3,
+        "marked-slow": 5,
+        "marked-xfail": 147,
+        "optional-dependency": 69
+      },
+      "seconds": 39.099,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "utilities.json",
+          "cases": 375,
+          "bytes": 1355963
+        }
+      ],
+      "auditFile": "utilities.audit.json",
+      "auditBytes": 239872,
+      "modules": [
+        "sympy.utilities.tests.test_decorator",
+        "sympy.utilities.tests.test_enumerative",
+        "sympy.utilities.tests.test_iterables",
+        "sympy.utilities.tests.test_lambdify",
+        "sympy.utilities.tests.test_misc",
+        "sympy.utilities.tests.test_wester"
+      ]
+    },
+    "vector": {
+      "examined": 776,
+      "cases": 620,
+      "reasons": {
+        "duplicate": 8,
+        "marked-xfail": 12,
+        "non-call-expression": 23,
+        "not-exported-api": 49,
+        "private-api": 13,
+        "unserializable-input": 1,
+        "unsupported-assertion": 50
+      },
+      "sourceSites": 768,
+      "testStatuses": {
+        "completed": 65,
+        "marked-xfail": 2
+      },
+      "seconds": 31.098,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "vector.json",
+          "cases": 620,
+          "bytes": 1652629
+        }
+      ],
+      "auditFile": "vector.audit.json",
+      "auditBytes": 38287,
+      "modules": [
+        "sympy.vector.tests.test_coordsysrect",
+        "sympy.vector.tests.test_dyadic",
+        "sympy.vector.tests.test_field_functions",
+        "sympy.vector.tests.test_functions",
+        "sympy.vector.tests.test_implicitregion",
+        "sympy.vector.tests.test_integrals",
+        "sympy.vector.tests.test_operators",
+        "sympy.vector.tests.test_parametricregion",
+        "sympy.vector.tests.test_printing",
+        "sympy.vector.tests.test_vector"
+      ]
+    }
+  },
+  "excludedFiles": [
+    {
+      "file": "categories/tests/test_drawing.py",
+      "reason": "Diagram layout and drawing are outside the symbolic category API."
+    },
+    {
+      "file": "codegen/tests/test_abstract_nodes.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_algorithms.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_applications.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_approximations.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_ast.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_cfunctions.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_cnodes.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_cxxnodes.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_fnodes.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_matrix_nodes.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_numpy_nodes.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_pynodes.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_pyutils.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_rewriting.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "codegen/tests/test_scipy_nodes.py",
+      "reason": "Source-code generation and compiler integration are outside this corpus."
+    },
+    {
+      "file": "external/tests/test_autowrap.py",
+      "reason": "Python bindings to optional external libraries are runtime-specific."
+    },
+    {
+      "file": "external/tests/test_codegen.py",
+      "reason": "Python bindings to optional external libraries are runtime-specific."
+    },
+    {
+      "file": "external/tests/test_gmpy.py",
+      "reason": "Python bindings to optional external libraries are runtime-specific."
+    },
+    {
+      "file": "external/tests/test_importtools.py",
+      "reason": "Python bindings to optional external libraries are runtime-specific."
+    },
+    {
+      "file": "external/tests/test_ntheory.py",
+      "reason": "Python bindings to optional external libraries are runtime-specific."
+    },
+    {
+      "file": "external/tests/test_numpy.py",
+      "reason": "Python bindings to optional external libraries are runtime-specific."
+    },
+    {
+      "file": "external/tests/test_pythonmpq.py",
+      "reason": "Python bindings to optional external libraries are runtime-specific."
+    },
+    {
+      "file": "external/tests/test_scipy.py",
+      "reason": "Python bindings to optional external libraries are runtime-specific."
+    },
+    {
+      "file": "interactive/tests/test_interactive.py",
+      "reason": "Python REPL/session integration is runtime-specific."
+    },
+    {
+      "file": "interactive/tests/test_ipython.py",
+      "reason": "Python REPL/session integration is runtime-specific."
+    },
+    {
+      "file": "multipledispatch/tests/test_conflict.py",
+      "reason": "Python dispatch infrastructure is replaced by TypeScript expression dispatch; no public port."
+    },
+    {
+      "file": "multipledispatch/tests/test_core.py",
+      "reason": "Python dispatch infrastructure is replaced by TypeScript expression dispatch; no public port."
+    },
+    {
+      "file": "multipledispatch/tests/test_dispatcher.py",
+      "reason": "Python dispatch infrastructure is replaced by TypeScript expression dispatch; no public port."
+    },
+    {
+      "file": "parsing/tests/test_ast_parser.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_autolev.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_c_parser.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_custom_latex.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_fortran_parser.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_latex.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_latex_deps.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_latex_lark.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_maxima.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "parsing/tests/test_sym_expr.py",
+      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+    },
+    {
+      "file": "physics/biomechanics/tests/test_activation.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/biomechanics/tests/test_curve.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/biomechanics/tests/test_mixin.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/biomechanics/tests/test_musculotendon.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/continuum_mechanics/tests/test_arch.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/continuum_mechanics/tests/test_beam.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/continuum_mechanics/tests/test_cable.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/continuum_mechanics/tests/test_truss.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/control/tests/test_control_plots.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/control/tests/test_lti.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/hep/tests/test_gamma_matrices.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_actuator.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_body.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_functions.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_inertia.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_joint.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_jointsmethod.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_kane.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_kane2.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_kane3.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_kane4.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_kane5.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_lagrange.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_lagrange2.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_linearity_of_velocity_constraints.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_linearize.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_loads.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_method.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_models.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_particle.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_pathway.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_rigidbody.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_system.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_system_class.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/mechanics/tests/test_wrapping_geometry.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/optics/tests/test_gaussopt.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/optics/tests/test_medium.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/optics/tests/test_polarization.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/optics/tests/test_utils.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/optics/tests/test_waves.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_anticommutator.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_boson.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_cartesian.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_cg.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_circuitplot.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_circuitutils.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_commutator.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_constants.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_dagger.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_density.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_fermion.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_gate.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_grover.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_hilbert.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_identitysearch.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_innerproduct.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_kind.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_matrixutils.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_operator.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_operatorordering.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_operatorset.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_pauli.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_piab.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_printing.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_qapply.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_qasm.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_qexpr.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_qft.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_qubit.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_represent.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_sho1d.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_shor.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_spin.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_state.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_tensorproduct.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_trace.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/quantum/tests/test_transforms.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/tests/test_clebsch_gordan.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/tests/test_hydrogen.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/tests/test_paulialgebra.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/tests/test_physics_matrices.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/tests/test_pring.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/tests/test_qho_1d.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/tests/test_secondquant.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/tests/test_sho.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/units/tests/test_dimensions.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/units/tests/test_dimensionsystem.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/units/tests/test_prefixes.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/units/tests/test_quantities.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/units/tests/test_unit_system_cgs_gauss.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/units/tests/test_unitsystem.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/units/tests/test_util.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/vector/tests/test_dyadic.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/vector/tests/test_fieldfunctions.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/vector/tests/test_frame.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/vector/tests/test_functions.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/vector/tests/test_output.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/vector/tests/test_point.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/vector/tests/test_printing.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "physics/vector/tests/test_vector.py",
+      "reason": "Physics belongs to extension packages, not the base symbolic engine."
+    },
+    {
+      "file": "plotting/intervalmath/tests/test_interval_functions.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/intervalmath/tests/test_interval_membership.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/intervalmath/tests/test_intervalmath.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/pygletplot/tests/test_plotting.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/tests/test_experimental_lambdify.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/tests/test_plot.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/tests/test_plot_implicit.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/tests/test_series.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/tests/test_textplot.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "plotting/tests/test_utils.py",
+      "reason": "Rendering backends and interactive plotting are outside base scope."
+    },
+    {
+      "file": "printing/tests/test_aesaracode.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_c.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_codeprinter.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_cupy.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_cxx.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_fortran.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_glsl.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_gtk.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_jax.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_jscode.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_julia.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_lambdarepr.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_llvmjit.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_maple.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_mathematica.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_numpy.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_octave.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_preview.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_pycode.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_python.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_rcode.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_rust.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_smtlib.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_tensorflow.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_theanocode.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "printing/tests/test_torch.py",
+      "reason": "Code printer or external rendering backend; not a base symbolic display printer in extract.MODULES."
+    },
+    {
+      "file": "sandbox/tests/test_indexed_integrals.py",
+      "reason": "Experimental sandbox APIs are outside the base doctest scope."
+    },
+    {
+      "file": "stats/sampling/tests/test_sample_continuous_rv.py",
+      "reason": "External sampling-library adapters require optional dependencies."
+    },
+    {
+      "file": "stats/sampling/tests/test_sample_discrete_rv.py",
+      "reason": "External sampling-library adapters require optional dependencies."
+    },
+    {
+      "file": "stats/sampling/tests/test_sample_finite_rv.py",
+      "reason": "External sampling-library adapters require optional dependencies."
+    },
+    {
+      "file": "testing/tests/test_code_quality.py",
+      "reason": "Upstream test runners are infrastructure, not mathematical APIs."
+    },
+    {
+      "file": "testing/tests/test_deprecated.py",
+      "reason": "Upstream test runners are infrastructure, not mathematical APIs."
+    },
+    {
+      "file": "testing/tests/test_module_imports.py",
+      "reason": "Upstream test runners are infrastructure, not mathematical APIs."
+    },
+    {
+      "file": "testing/tests/test_pytest.py",
+      "reason": "Upstream test runners are infrastructure, not mathematical APIs."
+    },
+    {
+      "file": "testing/tests/test_runtests_pytest.py",
+      "reason": "Upstream test runners are infrastructure, not mathematical APIs."
+    },
+    {
+      "file": "utilities/_compilation/tests/test_compilation.py",
+      "reason": "Compiler and Python-extension build helpers are outside base scope."
+    },
+    {
+      "file": "utilities/tests/test_autowrap.py",
+      "reason": "Compiles generated code with external toolchains."
+    },
+    {
+      "file": "utilities/tests/test_codegen.py",
+      "reason": "Source-code generation is outside this corpus."
+    },
+    {
+      "file": "utilities/tests/test_codegen_julia.py",
+      "reason": "Julia source-code generation is outside this corpus."
+    },
+    {
+      "file": "utilities/tests/test_codegen_octave.py",
+      "reason": "Octave source-code generation is outside this corpus."
+    },
+    {
+      "file": "utilities/tests/test_codegen_rust.py",
+      "reason": "Rust source-code generation is outside this corpus."
+    },
+    {
+      "file": "utilities/tests/test_deprecated.py",
+      "reason": "Deprecated Python module import shims are runtime-specific."
+    },
+    {
+      "file": "utilities/tests/test_exceptions.py",
+      "reason": "Python warnings machinery has no JavaScript runtime counterpart."
+    },
+    {
+      "file": "utilities/tests/test_matchpy_connector.py",
+      "reason": "Requires the optional matchpy library."
+    },
+    {
+      "file": "utilities/tests/test_mathml.py",
+      "reason": "XSLT conversion requires optional lxml; MathML printing is measured separately."
+    },
+    {
+      "file": "utilities/tests/test_pickling.py",
+      "reason": "Python pickle persistence is runtime-specific."
+    },
+    {
+      "file": "utilities/tests/test_source.py",
+      "reason": "Python import and source inspection are runtime-specific."
+    },
+    {
+      "file": "utilities/tests/test_timeutils.py",
+      "reason": "Python benchmark/timing infrastructure is runtime-specific."
+    },
+    {
+      "file": "utilities/tests/test_xxe.py",
+      "reason": "XML stylesheet processing requires optional lxml."
+    }
+  ],
+  "timeoutSeconds": 30,
+  "jobs": 4,
+  "lastRunSeconds": 12.307
+}

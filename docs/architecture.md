@@ -14,8 +14,8 @@ without the higher ones.
 | Layer | Contents | Paths (under `packages/symjs/src/`) |
 |---|---|---|
 | L0 kernel | expression tree, numbers (including the mpf arithmetic), symbols and assumptions, automatic evaluation, traversal and substitution, Sum/Product nodes, str/LaTeX printing | `core/`, `printing/`, `numeric/mpf.ts`, `numeric/mpfun.ts`, `numeric/mpconst.ts`, `numeric/complex.ts` |
-| L1 functions | elementary and special functions, numeric evaluation (evalf, lambdify), parsing, differentiation, expansion and rewriting, propositional logic, number theory, discrete transforms and convolutions, iterable utilities, rewrite strategies and unification | `functions/`, `logic/`, `ntheory/`, `discrete/`, `utilities/`, `strategies/`, `unify/`, `numeric/` (other files), `parsing/`, `concrete/node.ts`, `calculus/diff.ts`, `calculus/finitediff.ts`, `simplify/expand.ts`, `simplify/rewrite.ts` |
-| L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations and groups, abstract tensors and N-dimensional arrays, categories, quaternions, the assumption helpers and the matrix handlers of `ask`, ciphers and cryptosystems, simple Lie algebras | `polys/`, `combinatorics/`, `tensor/`, `categories/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts`, `assumptions/`, `crypto/`, `liealgebras/` |
+| L1 functions | elementary and special functions, numeric evaluation (evalf, lambdify), parsing, differentiation, expansion and rewriting, propositional logic, number theory, discrete transforms and convolutions, iterable utilities, rewrite strategies and unification | `functions/`, `logic/`, `ntheory/`, `discrete/`, `utilities/`, `strategies/`, `unify/`, `numeric/` (other files), `parsing/*.ts`, `concrete/node.ts`, `calculus/diff.ts`, `calculus/finitediff.ts`, `simplify/expand.ts`, `simplify/rewrite.ts` |
+| L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations and groups, abstract tensors and N-dimensional arrays, categories, quaternions, the assumption helpers and the matrix handlers of `ask`, ciphers and cryptosystems, simple Lie algebras, LaTeX parsing with explicit matrices | `polys/`, `combinatorics/`, `tensor/`, `categories/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts`, `assumptions/`, `crypto/`, `liealgebras/`, `parsing/latex/` |
 | L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series, holonomic functions, sums of Kronecker deltas and Gosper's summation (which solve equations) | `solvers/`, `integrals/`, `holonomic/`, `calculus/doit.ts`, `series/formal.ts`, `series/fourier.ts`, `concrete/delta.ts`, `concrete/gosper.ts` |
 | L4 geometry | points, lines, planes, polygons, ellipses, curves and parabolas; differential geometry with coordinate transformations, fields, tensors, connections and curvature | `geometry/`, `diffgeom/` |
 | L5 vector | coordinate systems, vectors and dyadics, vector differential operators, integrals over parametric, implicit and geometric regions | `vector/` |
@@ -284,6 +284,7 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 | `integrals/intpoly.py` | `integrals/intpoly.ts` | the helpers are members of the namespace `intpoly`; Polygon, Segment and Point are accepted by their structure (the integrals layer does not import geometry) |
 | (none) | `integrals/public.ts` | the public `NoMatch` forms of the helpers of the integrators (`ratint`, `trigintegrate`, `deltaintegrate`, `change_mul`, `meijerint_*`, `heurisch`, `heurisch_wrapper`, `components`) |
 | `concrete/guess.py`, `series/approximants.py` | `concrete/guess.ts`, `series/approximants.ts` | L2 modules |
+| `parsing/latex/` | `parsing/latex/` | The `parsing` subpath exposes hand-written ANTLR and Lark grammars, expression transformation, explicit ambiguities, and terminal overrides. Matrix construction places it in L2. It is independent of the root entry. |
 | `parsing/mathematica.py` | `parsing/mathematica.ts` | `parse_mathematica`, `MathematicaParser`; exported by the simplify entry, which also registers `cancel` for `Cancel` through the parser hook; the deprecated `mathematica()` parser is not ported |
 | `solvers/simplex.py`, `solvers/bivariate.py` | `solvers/simplex.ts`, `solvers/bivariate.ts` | `lpmin`, `lpmax`, `linprog`, `show_linprog`; `bivariate_type` (the Lambert W helpers stay in `solvers/solve.ts`) |
 | `solvers/ode/single.py` | `solvers/ode/single.ts` (`SingleODEProblem`, `SingleODESolver`, `NthAlgebraic`), `solvers/dsolve.ts` (the hint solvers) | |
@@ -307,8 +308,9 @@ reason) or unassessed. Mathematical content is never excluded.
 |---|---|
 | `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; all of `codegen/` (including `cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py`); `utilities/codegen.py` | extend package `@symjs/codegen` (planned) |
 | `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
-| `printing/jscode.py` | not ported: JavaScript code output |
-| `parsing/latex/`, `maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | extend package (planned) |
+| `printing/jscode.py` | out of scope: JavaScript source output (expressions are evaluated in JavaScript directly) |
+| `sandbox/` | out of scope: experimental modules outside the public SymPy API |
+| `parsing/maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | not ported: other input-language parsers |
 | `diffgeom/` | base subpath `@symjs/symjs/diffgeom`; `diffgeom.ts` and `rn.ts` mirror SymPy |
 | `physics/` | extend packages per field; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
 | `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | not ported (rendering and display) |
@@ -332,5 +334,6 @@ and tensor operations follow SymPy's differential-geometry namespace.
 
 Differential-geometry doctests belong to the base corpus. The shared harness
 resolves their constructors and methods from the public diffgeom subpath, using
-only argument and result conversions. Unit assertions are measured separately
-in `compat/diffgeom-tests/` through the same base dispatch.
+only argument and result conversions. Unit assertions are extracted into
+`compat/tests-corpus/diffgeom.json` and replayed by the `unit-diffgeom` project
+through the same base dispatch.

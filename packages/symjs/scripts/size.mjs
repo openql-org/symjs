@@ -57,6 +57,8 @@ const CASES = [
   ['printing', 'pretty', 230],
   ['discrete', '*', 285],
   ['strategies', '*', 203],
+  // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
+  ['parsing', '*', 800],
   ['unify', '*', 228],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).

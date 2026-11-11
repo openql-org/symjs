@@ -13,6 +13,9 @@
 import { readFileSync } from 'node:fs';
 import * as sj from '../packages/symjs/src';
 import * as dg from '@symjs/symjs/diffgeom';
+import * as parsing from '../packages/symjs/src/parsing';
+// Category dispatch selects diffgeom.Point; the root geometry Point keeps its name.
+const publicApi = { ...dg, ...sj, ...parsing };
 import { equivalent } from './equivalence';
 import { PORTS } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
@@ -137,7 +140,7 @@ export class JsLambda {
 }
 
 /** A Lambda inside an expression is a Lambda node (a JsLambda is the form passed as an argument). */
-const lambdaAsNode = (v: unknown): unknown => v instanceof sj.AlgebraicNumber ? (v.alias ?? v.asExpr()) : v instanceof JsLambda ? sj.Lambda(v.vars, v.body) : v;
+const lambdaAsNode = (v: unknown): unknown => v instanceof sj.AlgebraicNumber ? (v.alias ?? v.asExpr()) : v instanceof JsLambda ? sj.Lambda(v.vars, expressionContainer(v.body)) : v;
 
 /** A library function passed as an argument (equal_valued, factor, math.isclose, ...). */
 export class JsFunc {
@@ -311,9 +314,8 @@ function matches0(v: unknown, expected: string, got: string): boolean {
 export type Tree = { t: string; [k: string]: unknown };
 
 const diffgeomNamespace: Record<string, unknown> = dg;
-/** The unit-assertion corpus also accepts its serialized Extension tag. */
 function isDiffgeomTree(tree: Tree | undefined): boolean {
-  return tree?.t === 'Diffgeom' || tree?.t === 'Extension';
+  return tree?.t === 'Diffgeom';
 }
 
 function diffgeomPlain(value: unknown): unknown {
@@ -522,8 +524,7 @@ function orderNode(e: unknown, rest: unknown[]): Expr {
 
 export function deserialize(tree: Tree): unknown {
   switch (tree.t) {
-    case 'Diffgeom':
-    case 'Extension': {
+    case 'Diffgeom': {
       if ('ref' in tree) {
         const name = camel(String(tree['ref']));
         if (!(name in diffgeomNamespace)) throw new Unsupported(`diffgeom reference ${name}`);
@@ -1232,7 +1233,9 @@ function deserializeVector(tree: Tree): unknown {
     if (t instanceof JsTuple && t.items[0] instanceof Matrix) {
       return sj.CoordSys3D(tree['name'] as string, { ...names, rotationMatrix: t.items[0], location: parent ? (t.items[1] as Expr) : undefined });
     }
-    return sj.CoordSys3D(tree['name'] as string, { ...names, transformation: t as sj.Lambda });
+    const transformation = lambdaAsNode(t);
+    if (!(transformation instanceof sj.Lambda)) throw new Unsupported('coordinate transformation');
+    return sj.CoordSys3D(tree['name'] as string, { ...names, transformation });
   }
   const args = (tree['args'] as Tree[]).map((a) => deserialize(a));
   const items = (v: unknown): unknown[] => (v instanceof JsTuple ? [...v.items] : [v]);
@@ -2331,7 +2334,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_two_terms': exprMethod((e) => new JsTuple(sj.asTwoTerms(e))),
   '.has_xfree': (args, kw, self) => (noKw(kw), sj.hasXfree(asExpr(self), (args[0] as JsSet).items.filter((i) => !(i instanceof UFnClass)).map(asExpr))),
   '.is_algebraic_expr': (args, kw, self) => (noKw(kw), sj.isAlgebraicExpr(asExpr(self), args.map(asExpr))),
-  '.dummy_eq': (args, kw, self) => (noKw(kw), sj.dummyEq(asExpr(self), asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
+  '.dummy_eq': (args, kw, self) => (noKw(kw), sj.dummyEq(asExpr(lambdaAsNode(self)), asExpr(lambdaAsNode(args[0])), args[1] === undefined ? undefined : asExpr(args[1]))),
   '.compare': (args, kw, self) => (noKw(kw), Math.sign(sj.compareKeys(sj.sortKey(asExpr(self)), sj.sortKey(asExpr(args[0]))))),
   '.could_extract_minus_sign': exprMethod((e) => sj.couldExtractMinusSign(e)),
   '.as_ordered_factors': exprMethod((e) => new JsList(sj.orderedFactors ? sj.orderedFactors(e) : [e])),
@@ -4540,7 +4543,7 @@ const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymN
 /** sympy.vector names that symjs exports under another name (SymPy's top-level Point is the geometric one). */
 const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
 /** sympy.stats names that symjs exports under another name: E is Euler's number and Chi the hyperbolic cosine integral. */
-const STATS_RENAMES: Record<string, string> = { E: 'expectation', Chi: 'ChiRV' };
+const STATS_RENAMES: Record<string, string> = { E: 'expectation', probability: 'P', Chi: 'ChiRV' };
 /** sympy.combinatorics names that symjs exports under another name (homomorphism and rewrite are taken by agca and simplify). */
 const GROUP_RENAMES: Record<string, string> = { homomorphism: 'groupHomomorphism', rewrite: 'reidemeisterRewrite' };
 /** sympy.utilities names that symjs exports under another name (replace is the expression operation). */
@@ -4746,7 +4749,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       return fromJs(m);
     };
   }
-  const f = (sj as unknown as Record<string, unknown>)[camelIn(c.fn, c.category)] ?? (sj as unknown as Record<string, unknown>)[c.fn];
+  const f = (publicApi as unknown as Record<string, unknown>)[camelIn(c.fn, c.category)] ?? (publicApi as unknown as Record<string, unknown>)[c.fn];
   if (f instanceof sj.Domain) return (args) => fromJs(f.new(...args.map(conv)));
   if (typeof f !== 'function') return undefined;
   const isClass = /^class[\s{]/.test(Function.prototype.toString.call(f));
@@ -4765,7 +4768,7 @@ const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
   true: 'S.true', false: 'S.false', FallingFactorial: 'ff', RisingFactorial: 'rf',
 };
 function publicPathExists(path: string): boolean {
-  let value: unknown = sj;
+  let value: unknown = publicApi;
   for (const key of path.split('.')) {
     if (value === null || (typeof value !== 'object' && typeof value !== 'function') || !(key in value)) return false;
     value = (value as Record<string, unknown>)[key];

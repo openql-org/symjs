@@ -37,7 +37,7 @@ const cjsReservedExports = {
 };
 
 export default defineConfig({
-  // Includes the standalone diffgeom entry and its internal modules.
+  // Includes every subpath entry, including diffgeom and parsing.
   entry: ['src/**/*.ts'],
   format: ['esm', 'cjs'],
   bundle: true,

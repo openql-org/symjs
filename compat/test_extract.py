@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 """Extraction contracts checked against the pinned SymPy reference itself."""
 
+import ast
 import doctest
 import copy
 import importlib

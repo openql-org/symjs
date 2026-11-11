@@ -3,7 +3,9 @@
 
 import { expect, it } from 'vitest';
 import { assertionOutcome, runTestCase, testCaseKey } from './tests-harness';
-import { deserialize } from './harness';
+import { deserialize, runCase, counterpartFor } from './harness';
+import type { Case, Tree } from './harness';
+import * as dg from '@symjs/symjs/diffgeom';
 import * as sj from '../packages/symjs/src';
 import type { TestCase } from './tests-harness';
 
@@ -62,4 +64,108 @@ it('retains unevaluated arithmetic receivers before calling the API', () => {
     expect(value).toBeInstanceOf(t === 'Add' ? sj.Add : t === 'Mul' ? sj.Mul : sj.Pow);
   }
   expect(runTestCase({ ...base, fn: '.args', args: [], self: { t: 'Add', args: [one, one], evaluate: false }, expected: '(1, 1)' })).toEqual({ status: 'pass' });
+});
+
+it('rebuilds tuple-valued coordinate transformations as symbolic Lambdas', () => {
+  const variables = ['x', 'y', 'z'].map((name) => ({ t: 'Symbol', name, assume: {} }));
+  const self = { t: 'Vec', cls: 'CoordSys3D', name: 'a', parent: null,
+    vectorNames: ['i', 'j', 'k'], variableNames: ['x1', 'x2', 'x3'],
+    transformation: { t: 'Fn', name: 'Lambda', args: [
+      { t: 'Tuple', items: variables }, { t: 'Tuple', items: variables },
+    ] },
+  };
+  expect(runTestCase({ ...base, category: 'vector', fn: '.transformation_to_parent', self, args: [], expected: '(a.x1, a.x2, a.x3)' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'vector', fn: '.lame_coefficients', self, args: [], expected: '(1, 1, 1)' })).toEqual({ status: 'pass' });
+});
+
+it('routes the probability implementation name to the public stats P API', () => {
+  const symbol = { t: 'Symbol', name: 'X', assume: {} };
+  const variable = { t: 'Stats', cls: 'RandomSymbol', args: [symbol,
+    { t: 'Stats', cls: 'SingleFinitePSpace', args: [symbol,
+      { t: 'Stats', cls: 'DieDistribution', args: [{ t: 'Rational', p: '6', q: '1' }] },
+    ] },
+  ] };
+  expect(runTestCase({ ...base, category: 'stats', fn: 'probability',
+    args: [{ t: 'Rel', op: 'Equality', args: [variable, { t: 'Rational', p: '1', q: '1' }] }],
+    expected: '1/6',
+  })).toEqual({ status: 'pass' });
+});
+
+it('compares Lambda expressions through dummyEq without turning them into JS callbacks', () => {
+  const lambda = (name: string) => {
+    const variable = { t: 'Symbol', name, assume: {} };
+    return { t: 'Fn', name: 'Lambda', args: [{ t: 'Tuple', items: [variable] },
+      { t: 'Pow', args: [variable, { t: 'Rational', p: '2', q: '1' }] },
+    ] };
+  };
+  expect(runTestCase({ ...base, fn: '.dummy_eq', self: lambda('x'), args: [lambda('x')], expected: 'True' })).toEqual({ status: 'pass' });
+});
+
+it('does not discard private deterministic random fixtures when replaying public APIs', () => {
+  const c = { ...base, kwargs: { _random_prec: { t: 'Dict', items: [] } } };
+  expect(runTestCase(c)).toEqual({ status: 'unsupported', reason: 'upstream private random fixture _random_prec' });
+  expect(runTestCase({ ...c, raises: 'ValueError' }).status).toBe('unsupported');
+});
+
+const chart: Tree = { t: 'Diffgeom', ref: 'R2_r' };
+const field = (cls: string, n: number): Tree => ({
+  t: 'Diffgeom',
+  cls,
+  args: [chart, { t: 'Rational', p: String(n), q: '1' }],
+});
+const call: Case = {
+  module: 'sympy.diffgeom.diffgeom',
+  category: 'diffgeom',
+  fn: '.__call__',
+  src: 'e_x(x)',
+  self: field('BaseVectorField', 0),
+  args: [field('BaseScalarField', 0)],
+  expected: '1',
+};
+
+it('replays differential geometry directly through the base harness', () => {
+  expect(runCase(call)).toEqual({ status: 'pass' });
+  expect(deserialize(chart)).toBe(dg.R2R);
+  expect(counterpartFor({ name: 'Point', category: 'diffgeom' })).toBe('@symjs/symjs/diffgeom.Point');
+  expect(counterpartFor({ name: 'Point', category: 'geometry' })).toBe('Point');
+  expect(() => deserialize({ t: 'Diffgeom', ref: 'missing' })).toThrow(/diffgeom reference/);
+});
+it('reports differential-geometry exception classes through the shared harness', () => {
+  const c = { ...call, args: [field('BaseVectorField', 0)], test: 'invalid_vector', line: 1, op: '==' as const };
+  expect(runTestCase({ ...c, raises: 'ValueError' }).status).toBe('pass');
+  expect(runTestCase({ ...c, raises: 'TypeError' }).exceptionMismatch).toEqual({ expected: 'TypeError', actual: 'ValueError' });
+});
+it('keeps differential-geometry and Euclidean Point dispatch distinct', () => {
+  expect(
+    runCase({
+      ...call,
+      fn: 'Point',
+      self: undefined,
+      args: [
+        chart,
+        {
+          t: 'Tuple',
+          list: true,
+          items: [
+            { t: 'Rational', p: '1', q: '1' },
+            { t: 'Rational', p: '2', q: '1' },
+          ],
+        },
+      ],
+      expected: 'Point(rectangular, Matrix([[1], [2]]))',
+    }).status,
+  ).toBe('pass');
+  expect(
+    runCase({
+      module: 'sympy.geometry.point',
+      category: 'geometry',
+      fn: 'Point',
+      src: 'Point(1, 2)',
+      args: [
+        { t: 'Rational', p: '1', q: '1' },
+        { t: 'Rational', p: '2', q: '1' },
+      ],
+      expected: 'Point2D(1, 2)',
+    }).status,
+  ).toBe('pass');
 });
