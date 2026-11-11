@@ -5538,7 +5538,7 @@
    "note": "Gauss quadrature nodes and weights",
    "sources": [],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 32,
    "declaredPublicNames": [
     "gauss_legendre",

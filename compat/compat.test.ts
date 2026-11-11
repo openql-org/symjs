@@ -79,7 +79,8 @@ interface KnownGaps {
   api: string[];
 }
 const caseLabel = (c: Case): string => `${c.module}: ${c.src}`;
-const caseKey = (c: Case): string => `${caseLabel(c)} #${createHash('sha256').update(JSON.stringify([c.args, c.kwargs, c.self, c.expected, c.assume])).digest('hex').slice(0, 16)}`;
+// Keep established hashes unchanged; different unpacked components are distinct cases.
+const caseKey = (c: Case): string => `${caseLabel(c)} #${createHash('sha256').update(JSON.stringify([c.args, c.kwargs, c.self, c.expected, c.assume, ...(c.pick === undefined ? [] : [c.pick])])).digest('hex').slice(0, 16)}`;
 
 /**
  * Doctests outside the scope of symjs, by case key, with the reason. They are not run or counted:

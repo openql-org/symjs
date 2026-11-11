@@ -1521,13 +1521,83 @@ TEXT_OUTPUT = os.environ.get("TEXT_OUTPUT", "1") == "1"
 ONLY = [m for m in os.environ.get("ONLY_MODULES", "").split(",") if m]
 
 
+def public_api_reason(fn, globs, extra_public):
+    """The ordinary-call public API filter, also used for saved assignments."""
+    if fn.startswith("."):
+        if fn[1:].startswith("_") and fn not in OPERATOR_FNS:
+            return "private-api"
+    elif ((fn not in PUBLIC and fn not in extra_public)
+          or fn in globs and (getattr(globs[fn], "__module__", None) or "__").startswith("__")):
+        return "not-exported-api"
+    return None
+
+
+def serialize_call(record, call, globs, assumed, pre_args=None, printed=False):
+    """Freeze a call's receiver, arguments and assumptions at the current state."""
+    DUMMY_IDS.clear()
+    if "selfSrc" in record:
+        receiver = eval(record.pop("selfSrc"), globs)
+        if record.pop("synthetic", False) and not is_sympy_operand(
+                receiver, [eval(compile(ast.Expression(a), "<a>", "eval"), globs) for a in call.args]):
+            raise NotSympy()
+        if printed and isinstance(receiver, types.ModuleType):
+            raise PythonRuntime()
+        record["self"] = ser(receiver)
+    record["args"] = pre_args if pre_args is not None else [ser_arg(a, globs) for a in call.args]
+    record["kwargs"] = {k.arg: ser_arg(k.value, globs) for k in call.keywords}
+    if assumed:
+        record["assume"] = [ser(a) for a in assumed]
+
+
+def assignment_bindings(src, globs, extra_public):
+    """Capture one direct call before assignment execution, for consecutive displays.
+
+    Nested/starred targets and multiple statements cannot be replayed by one
+    optional result index. Unsupported inputs stay measurable, as for calls.
+    """
+    tree = ast.parse(src, mode="exec")
+    if len(tree.body) != 1 or not isinstance(tree.body[0], ast.Assign):
+        return {}
+    assignment = tree.body[0]
+    if len(assignment.targets) != 1 or not isinstance(assignment.value, ast.Call):
+        return {}
+    target, call = assignment.targets[0], assignment.value
+    if isinstance(target, ast.Name):
+        names = [target.id]
+        unpacked = False
+    elif isinstance(target, (ast.Tuple, ast.List)) and all(isinstance(t, ast.Name) for t in target.elts):
+        names = [t.id for t in target.elts]
+        unpacked = True
+    else:
+        return {}
+    if len(set(names)) != len(names) or any(isinstance(a, ast.Starred) for a in call.args) or any(k.arg is None for k in call.keywords):
+        return {}
+    if isinstance(call.func, ast.Name):
+        record = {"fn": call.func.id}
+    elif isinstance(call.func, ast.Attribute):
+        record = {"fn": "." + call.func.attr, "selfSrc": ast.unparse(call.func.value)}
+    else:
+        return {}
+    if public_api_reason(record["fn"], globs, extra_public):
+        return {}
+    from sympy.assumptions import global_assumptions
+    try:
+        serialize_call(record, call, globs, list(global_assumptions))
+    except Unsupported as err:
+        record.pop("selfSrc", None)
+        record["unsupportedArg"] = str(err)
+    return {name: {**record, **({"pick": i} if unpacked else {})} for i, name in enumerate(names)}
+
+
 def preserve_references(cases, baseline):
     """Keep established inputs when an expansion changes incidental reference state.
 
     Anonymous Dummy names contain a process-global counter, while their serialized
     index is the actual identity. One existing membership example uses an external
     random sampler. Neither is a reason to replace an established reference input.
-    All other changes or missing baseline occurrences are errors, not new cases.
+    Older corpora omitted sparse storage metadata and could not serialize DMP
+    inputs. Match their original representation too, without changing any value
+    they did record. Other changes or missing occurrences remain errors.
     """
     def canonical(value):
         if isinstance(value, list):
@@ -1536,6 +1606,12 @@ def preserve_references(cases, baseline):
             result = {k: canonical(v) for k, v in value.items()}
             if result.get("t") == "Dummy" and re.fullmatch(r"Dummy_\d+", str(result.get("name", ""))):
                 result["name"] = "anonymous:" + str(result["index"])
+            # Dummy hashes can change a map built from a set's insertion order.
+            # xreplace is simultaneous: its mapping order has no semantics.
+            if result.get("fn") == ".xreplace":
+                args = result.get("args", [])
+                if len(args) == 1 and args[0].get("t") == "Dict":
+                    args[0]["items"].sort(key=lambda pair: json.dumps(pair, sort_keys=True))
             # Preserve this fixture's original sampled real value. The operation,
             # set, result and all other input properties must still match.
             if (result.get("module"), result.get("src")) == ("sympy.stats.rv", "samp in N.pspace.domain.set"):
@@ -1546,17 +1622,44 @@ def preserve_references(cases, baseline):
         return value
 
     key = lambda c: json.dumps(c, sort_keys=True, ensure_ascii=False)
+
+    def legacy_serialization(case):
+        def tree(value):
+            if isinstance(value, list):
+                return [tree(v) for v in value]
+            if isinstance(value, dict):
+                if value.get("t") == "DMP":
+                    raise Unsupported("DMP_Python")
+                return {k: tree(v) for k, v in value.items() if not (value.get("t") == "Matrix" and k == "sparse")}
+            return value
+
+        # Serialization stops at the first unsupported input, retaining only
+        # previously completed fields. Reproduce precisely that legacy shape.
+        inputs = ("self", "args", "kwargs", "assume")
+        result = {k: v for k, v in case.items() if k not in inputs}
+        try:
+            for field in inputs:
+                if field in case:
+                    result[field] = tree(case[field])
+        except Unsupported as err:
+            result["unsupportedArg"] = str(err)
+        return result
+
     available = defaultdict(list)
     for case in baseline:
         available[key(canonical(case))].append(case)
     result, preserved, added = [], [], []
     for case in cases:
         matches = available.get(key(canonical(case)), [])
+        reason = "Preserve established anonymous Dummy names, simultaneous replacement-map order or the recorded external real sample."
+        if not matches:
+            matches = available.get(key(canonical(legacy_serialization(case))), [])
+            reason = "Preserve established inputs from before sparse-matrix metadata and DMP serialization."
         if matches:
             original = matches.pop(0)
             if case != original:
                 preserved.append({"module": case["module"], "src": case["src"],
-                                  "reason": "Preserve established anonymous Dummy names or the recorded external real sample."})
+                                  "reason": reason})
             # Keep key order too: compatibility case hashes use JSON.stringify.
             result.append(original)
         else:
@@ -1603,38 +1706,51 @@ def main(dst, baseline_path=None):
             sympy.core.random.seed(0)
             globs = {}
             exec("from sympy import *", globs)
+            bindings = {}
             for ex in test.examples:
                 extraction["examined"] += 1
                 src = ex.source.strip()
                 if ex.options.get(doctest.SKIP):
+                    bindings = {}
                     omit("upstream-skip", modname, ex)
                     # SymPy does not run these either (random or illustrative output)
                     continue
                 if re.fullmatch(r"[\w.]+\(\.\.\.\)", ex.want.strip()):
+                    bindings = {}
                     omit("illustrative-output", modname, ex)
                     # only the class of the result is shown (random output elided with ELLIPSIS)
                     continue
                 try:
                     tree = ast.parse(src, mode="eval")
                 except SyntaxError:
+                    bindings = {}
                     omit("statement-or-setup", modname, ex)
                     # statements (assignments, imports): just execute
                     try:
                         signal.alarm(ALARM_SECONDS)
+                        try:
+                            bindings = assignment_bindings(src, globs, extra_public)
+                        except Exception:
+                            # An unserializable setup still has to execute.
+                            bindings = {}
+                        signal.alarm(ALARM_SECONDS)
                         exec(compile(src, "<doctest>", "exec"), globs)
                     except (Exception, Timeout):
-                        pass
+                        bindings = {}
                     finally:
                         signal.alarm(0)
                     continue
                 call = tree.body
+                bound = bindings.get(call.id) if isinstance(call, ast.Name) and ex.want.strip() else None
+                if bound is None:
+                    bindings = {}
                 if modname in VALUE_EXAMPLE_MODULES:
                     record = value_example(call, globs)
                     if record is not None:
                         record.update({"category": category, "module": modname, "src": src})
                         cases.append(record)
                         continue
-                record = None
+                record = dict(bound) if bound is not None else None
                 # print(f(...)): the printed text of the inner call is the expected output
                 printed = (TEXT_OUTPUT and isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "print"
                            and len(call.args) == 1 and not call.keywords and isinstance(call.args[0], ast.Call))
@@ -1657,7 +1773,7 @@ def main(dst, baseline_path=None):
                 # the in-place functions of sympy.polys.matrices.dense (ddm_iadd, ddm_idet, ...) mutate their
                 # arguments: these are serialized as they are before the call
                 pre_args = None
-                if record is not None and (record["fn"].startswith("ddm_i") or record["fn"] in MUTATING_FUNCTIONS):
+                if bound is None and record is not None and (record["fn"].startswith("ddm_i") or record["fn"] in MUTATING_FUNCTIONS):
                     try:
                         pre_args = [ser_arg(a, globs) for a in call.args]
                     except Exception:
@@ -1668,6 +1784,7 @@ def main(dst, baseline_path=None):
                     with contextlib.redirect_stdout(_out):
                         result = eval(compile(tree, "<doctest>", "eval"), globs)
                 except (Exception, Timeout) as err:
+                    bindings = {}
                     omit("reference-timeout" if isinstance(err, Timeout) else "reference-exception", modname, ex)
                     continue
                 finally:
@@ -1689,29 +1806,15 @@ def main(dst, baseline_path=None):
                     continue
                 fn = record["fn"]
                 # only the public API: top-level sympy names and public methods
-                if fn.startswith("."):
-                    if fn[1:].startswith("_") and fn not in OPERATOR_FNS:
-                        omit("private-api", modname, ex)
-                        continue
-                elif (fn not in PUBLIC and fn not in extra_public) or fn in globs and (getattr(globs[fn], "__module__", None) or "__").startswith("__"):
-                    omit("not-exported-api", modname, ex)
+                reason = public_api_reason(fn, globs, extra_public) if bound is None else None
+                if reason:
+                    omit(reason, modname, ex)
                     continue
-                DUMMY_IDS.clear()
                 try:
-                    if "selfSrc" in record:
-                        _self = eval(record.pop("selfSrc"), globs)
-                        if record.pop("synthetic", False) and not is_sympy_operand(_self, [eval(compile(ast.Expression(a), "<a>", "eval"), globs) for a in call.args]):
-                            # Python values only (2*3, a list subscript, the S registry): no SymPy operation
-                            raise NotSympy()
-                        if printed and isinstance(_self, types.ModuleType):
-                            # the printed output of a function of a Python module (inspect.getsource): not SymPy API
-                            raise PythonRuntime()
-                        record["self"] = ser(_self)
-                    record["args"] = pre_args if pre_args is not None else [ser_arg(a, globs) for a in call.args]
-                    record["kwargs"] = {k.arg: ser_arg(k.value, globs) for k in call.keywords}
-                    if assumed:
-                        # the global assumptions in force (SymPy global_assumptions)
-                        record["assume"] = [ser(a) for a in assumed]
+                    if bound is None:
+                        serialize_call(record, call, globs, assumed, pre_args, printed)
+                    elif "unsupportedArg" in record:
+                        skipped[record["unsupportedArg"]] = skipped.get(record["unsupportedArg"], 0) + 1
                 except PythonRuntime:
                     omit("python-runtime-api", modname, ex)
                     continue
