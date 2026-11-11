@@ -14,8 +14,8 @@
 
 import { NotImplementedError } from '../../core/errors';
 import { at, defined, first } from '../../core/guard';
-import type { Expr, ExprLike } from '../../core/nodes';
-import { Dummy, Rational } from '../../core/nodes';
+import type { ExprLike } from '../../core/nodes';
+import { Dummy, Expr, Rational } from '../../core/nodes';
 import { add, mul, pow } from '../../core/ops';
 import type { Matrix } from '../../matrices/matrix';
 import { MutableDenseMatrix } from '../../matrices/mutable';
@@ -104,11 +104,11 @@ export class DomainMatrix {
     return new DomainMatrix(rep);
   }
   /** The dense matrix of rows of values converted to the domain. */
-  static fromList(rows: readonly (readonly ExprLike[])[], domain: Domain): DomainMatrix {
+  static fromList(rows: readonly (readonly (ExprLike | readonly ExprLike[])[])[], domain: Domain): DomainMatrix {
     const nrows = rows.length;
     const ncols = nrows ? at(rows, 0).length : 0;
     return new DomainMatrix(
-      rows.map((row) => row.map((e) => domain.fromSympy(e))),
+      rows.map((row) => row.map((e) => e instanceof Expr || typeof e === 'number' || typeof e === 'bigint' ? domain.fromSympy(e) : domain.toSympy(domain.new(...e)))),
       [nrows, ncols],
       domain,
     );
@@ -320,9 +320,9 @@ export class DomainMatrix {
   neg(): DomainMatrix {
     return this.fromRep(this.rep.neg());
   }
-  /** Multiplication by a domain element on the right. */
-  mul(b: Expr): DomainMatrix {
-    return this.fromRep(this.rep.mul(b));
+  /** Multiplication by a matrix or by a domain element on the right. */
+  mul(b: Expr | DomainMatrix): DomainMatrix {
+    return b instanceof DomainMatrix ? this.matmul(b) : this.fromRep(this.rep.mul(b));
   }
   /** Multiplication by a domain element on the left. */
   rmul(b: Expr): DomainMatrix {

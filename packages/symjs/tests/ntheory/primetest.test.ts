@@ -176,3 +176,19 @@ describe('Mersenne primes', () => {
     expect(isMersennePrime(2n ** 61n - 1n)).toBe(true);
   });
 });
+
+it('public Miller-Rabin and Proth tests accept integer-like inputs', async () => {
+  const { mr, prothTest } = await import('../../src/ntheory');
+  expect(mr(Rational.of(1373651), [2, 3])).toBe(false);
+  expect(mr(479001599, [31, 73])).toBe(true);
+  expect(() => prothTest(2)).toThrow(RangeError);
+  expect(() => prothTest(7)).toThrow(RangeError);
+  for (let n = 3; n < 4000; n += 2) {
+    let k = n - 1, power = 1;
+    while (k % 2 === 0) { k /= 2; power *= 2; }
+    if (k >= power) continue;
+    let prime = true;
+    for (let d = 2; d * d <= n; d++) if (n % d === 0) prime = false;
+    expect(prothTest(n), String(n)).toBe(prime);
+  }
+});

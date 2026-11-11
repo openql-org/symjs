@@ -4232,8 +4232,11 @@
   {
    "module": "sympy.functions.special.bsplines",
    "sha256": "abb89949e10c951af1e60a573b3964e2e4933c8a2595db8d66e1b030707a7d13",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "note": "Cox-de Boor B-spline bases and exact collocation interpolation on strictly increasing real coordinates.",
+   "sources": [
+    "functions/special/bsplines.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 6,
@@ -7163,9 +7166,11 @@
   {
    "module": "sympy.matrices.kind",
    "sha256": "109c43743e20160bd57c2de545ec7e6dcce17068f00618257f584f0e4d96cd71",
-   "status": "unimplemented",
-   "note": "MatrixKind (kindOf of a matrix is not a MatrixKind yet)",
-   "sources": [],
+   "status": "partial",
+   "note": "Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.",
+   "sources": [
+    "matrices/kind.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 5,
@@ -16136,7 +16141,8 @@
    "sha256": "6c94e866547a599365f5f37190827188fb775e80d0fcae8f6f750e0813dfb0a3",
    "status": "partial",
    "sources": [
-    "polys/poly.ts"
+    "polys/poly.ts",
+    "polys/polyroots.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -16756,7 +16762,7 @@
    "module": "sympy.polys.solvers",
    "sha256": "15aade2aa0d5542e8fd88e328ee762ff7092de4c7449b980cf793bcc79044e01",
    "status": "partial",
-   "note": "eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.",
+   "note": "sympyEqsToRing, eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.",
    "sources": [
     "polys/solvers.ts"
    ],

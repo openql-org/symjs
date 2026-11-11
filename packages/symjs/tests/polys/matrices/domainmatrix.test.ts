@@ -254,3 +254,12 @@ describe('DomainMatrix linear algebra', () => {
     expect(DM([[q(1, 2), q(1, 3)]], QQ).primitive().map(String)).toEqual(['1/6', 'DomainMatrix([[3, 2]], (1, 2), QQ)']);
   });
 });
+
+it('constructs rationals from numerator-denominator tuples and multiplies matrices', () => {
+  const A = DomainMatrix.fromList([[[1,2],[3,1]],[[1,4],[5,1]]],QQ);
+  expect(A.toMatrix().toString()).toBe('Matrix([[1/2, 3], [1/4, 5]])');
+  const B = DomainMatrix.fromList([[2,-2],[4,-4]],QQ);
+  const N = DomainMatrix.fromList([[1],[1]],QQ);
+  expect(B.mul(N).toMatrix().isZero).toBe(true);
+  expect(DomainMatrix.fromList([[1n]],QQ).toMatrix().toString()).toBe('Matrix([[1]])');
+});

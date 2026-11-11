@@ -14,7 +14,7 @@ import { at } from '../core/guard';
 import { add, mul } from '../core/ops';
 import { lcm } from '../core/numbers';
 import type { IntLike } from '../ntheory/intutil';
-import { pmod } from '../ntheory/intutil';
+import { asInt, pmod } from '../ntheory/intutil';
 import { expandMul } from '../simplify/expand';
 import { iterable } from '../utilities/iterables';
 import { asIntValue, fft, fwht, ifft, ifwht, intt, inverseMobiusTransform, mobiusTransform, ntt, padLength, sympifySeq } from './transforms';
@@ -65,7 +65,8 @@ function scaledIntegers(a: readonly ExprLike[]): [bigint[], bigint] | undefined 
  * Like SymPy's packing into one integer, the result ends at the last nonzero
  * term ([0] when every term is 0), and an empty sequence raises SymPy's error.
  */
-function convolutionInt(a: readonly bigint[], b: readonly bigint[]): bigint[] {
+export function convolutionInt(aIn: readonly IntLike[], bIn: readonly IntLike[]): bigint[] {
+  const a = aIn.map((v) => asInt(v)), b = bIn.map((v) => asInt(v));
   if (a.length === 0 || b.length === 0) throw new RangeError('max() iterable argument is empty');
   const out: bigint[] = [];
   for (let k = 0; k < a.length + b.length - 1; k++) out.push(0n);

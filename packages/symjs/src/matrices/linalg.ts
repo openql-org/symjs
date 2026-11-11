@@ -68,29 +68,32 @@ const fromRows = (r: Rows, cols: number): Matrix => (r.length === 0 ? Matrix.zer
 // ---------------------------------------------------------------------------
 
 /** Reduced row echelon form and pivot columns. */
-export function rref(m: Matrix): [Matrix, number[]] {
+export function rref(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}): [Matrix, number[]] {
+  const zero = opts.iszerofunc ?? isZeroE;
   const A = rowsOf(m);
   const pivots: number[] = [];
   let r = 0;
   for (let c = 0; c < m.cols && r < m.rows; c++) {
     let p = -1;
     for (let i = r; i < m.rows; i++) {
-      if (!isZeroE(ent(A, i, c))) {
+      if (!zero(ent(A, i, c))) {
         p = i;
         break;
       }
+      at(A, i)[c] = S.Zero;
     }
     if (p < 0) continue;
     const rowP = at(A, p);
     A[p] = at(A, r);
     const inv = pow(at(rowP, c), -1);
     const pivotRow = rowP.map((v) => tidy(mul(v, inv)));
+    pivotRow[c] = S.One;
     A[r] = pivotRow;
     for (let i = 0; i < m.rows; i++) {
       if (i === r) continue;
       const Ai = at(A, i);
       const f = at(Ai, c);
-      if (isZeroE(f)) continue;
+      if (zero(f)) continue;
       A[i] = Ai.map((v, j) => tidy(add(v, mul(-1, f, at(pivotRow, j)))));
     }
     pivots.push(c);
@@ -400,7 +403,7 @@ function diagonallyDominant(m: Matrix, strong: boolean): boolean | undefined {
 }
 
 /** The hermitian part M + M^H of a square matrix that is not hermitian (SymPy _is_positive_definite). */
-const hermitianPart = (m: Matrix): Matrix => (m.isHermitian() ? m : m.add(m.adjoint()));
+const hermitianPart = (m: Matrix): Matrix => (m.isHermitian() === true ? m : m.add(m.adjoint()));
 
 /** SymPy _is_positive_definite_GE: division-free Gaussian elimination. */
 function positiveDefiniteGE(m0: Matrix): boolean | undefined {
@@ -513,7 +516,7 @@ export function isWeaklyDiagonallyDominant(m: Matrix): Truth {
 export function cholesky(m: Matrix, hermitian = true): Matrix {
   if (!m.isSquare) throw new NonSquareMatrixError('Matrix must be square');
   // SymPy raises ValueError for these two
-  if (hermitian && !m.isHermitian()) throw new MatrixError('Matrix must be Hermitian.');
+  if (hermitian && m.isHermitian() !== true) throw new MatrixError('Matrix must be Hermitian.');
   if (!hermitian && !m.equalsSimplified(m.transpose())) throw new MatrixError('Matrix must be symmetric.');
   const n = m.rows;
   const L: Expr[][] = Array.from({ length: n }, () => Array.from({ length: n }, () => S.Zero as Expr));
@@ -643,7 +646,7 @@ export function qrDecomposition(m: Matrix): [Matrix, Matrix] {
   }
   const k = qs.length;
   const Rm = Matrix.fromFunction(k, m.cols, (i, j) => R[j]?.[i] ?? 0);
-  return [first(qs).hstack(...qs.slice(1)), Rm];
+  return [k === 0 ? Matrix.zeros(m.rows, 0) : first(qs).hstack(...qs.slice(1)), Rm];
 }
 
 // ---------------------------------------------------------------------------
@@ -874,27 +877,29 @@ export function pinvSolve(A: Matrix, B: Matrix, arbitrary?: Matrix): Matrix {
  * an underdetermined system are the parameters tau0, tau1, ...; an
  * inconsistent system throws.
  */
-export function gaussJordanSolve(A: Matrix, b: Matrix): [Matrix, Matrix] {
+export function gaussJordanSolve(A: Matrix, b: Matrix, opts: { freevar: true }): [Matrix, Matrix, number[]];
+export function gaussJordanSolve(A: Matrix, b: Matrix, opts?: { freevar?: false }): [Matrix, Matrix];
+export function gaussJordanSolve(A: Matrix, b: Matrix, opts: { freevar?: boolean } = {}): [Matrix, Matrix] | [Matrix, Matrix, number[]] {
   const n = A.cols;
   const [R, pivots] = rref(A.hstack(b));
   for (let i = 0; i < R.rows; i++) {
     const row = Array.from({ length: n }, (_, j) => R.get(i, j));
-    if (row.every((c) => c instanceof Rational && c.isZero) && !isExactZero(R.get(i, n))) {
+    if (row.every((c) => c instanceof Rational && c.isZero) && Array.from({ length: b.cols }, (_, c) => R.get(i, n + c)).some((e) => !isExactZero(e))) {
       throw new RangeError('Linear system has no solution');
     }
   }
   const pv = pivots.filter((p) => p < n);
   const free = Array.from({ length: n }, (_, j) => j).filter((j) => !pv.includes(j));
-  const taus = free.map((_, k) => new Sym(`tau${k}`));
   const cols = b.cols;
+  const taus = Matrix.fromFunction(free.length, cols, (i, c) => new Sym(`tau${i * cols + c}`));
   const sol = Matrix.fromFunction(n, cols, (j, c) => {
     const f = free.indexOf(j);
-    if (f >= 0) return at(taus, f);
+    if (f >= 0) return taus.get(f, c);
     const i = pv.indexOf(j);
     // x_j = rhs_i - sum over free columns
-    return add(R.get(i, n + c), ...free.map((fj, k) => mul(-1, R.get(i, fj), at(taus, k))));
+    return add(R.get(i, n + c), ...free.map((fj, k) => mul(-1, R.get(i, fj), taus.get(k, c))));
   });
-  return [sol, Matrix.fromFunction(taus.length, 1, (i) => at(taus, i))];
+  return opts.freevar === true ? [sol, taus, free] : [sol, taus];
 }
 
 /** SymPy Matrix.solve (and LUsolve, QRsolve, ...): the unique solution of A*x = b. */
@@ -1186,7 +1191,7 @@ function normalSystem(M: Matrix, rhs: Matrix): [Matrix, Matrix, boolean] {
   let hermitian = true;
   let reform = false;
   if (M.isSymmetric()) hermitian = false;
-  else if (!M.isHermitian()) reform = true;
+  else if (M.isHermitian() !== true) reform = true;
   if (reform || isPositiveDefinite(M) === false) {
     const H = M.adjoint();
     const A = H.mul(M);

@@ -140,6 +140,7 @@ SymPy modules correspond to it as follows.
 | `functions/special/bessel.py` | `functions/special/bessel.ts`, `functions/special/sphericalbessel.ts` | the spherical Bessel and Hankel functions, `jn_zeros` and the hypergeometric rewrites of the Airy functions are a separate module because they need `functions/special/hyper.ts`, which imports `bessel.ts` |
 | `functions/special/hyper.py` | `functions/special/hyper.ts` | also `appellf1`, and `jn`/`yn` (SymPy `bessel.py`) and `KroneckerDelta` (SymPy `tensor_functions.py`), which are registered with the hypergeometric rewrites and `expand_func` rules here |
 | `functions/special/elliptic_integrals.py` | `functions/special/ellipticintegrals.ts` | |
+| `functions/special/bsplines.py` | `functions/special/bsplines.ts` | Cox-de Boor bases and spline interpolation; the L1 collocation solver uses exact scalar elimination without importing matrices |
 | `functions/special/mathieu_functions.py` | `functions/special/mathieufunctions.ts` | |
 | `functions/special/polynomials.py` | `functions/special/polynomials.ts` | the coefficient generators of `polys/orthopolys.py` (`dup_jacobi`, `dup_chebyshevt`, ...) are `functions/special/orthocoeffs.ts`, a module without the special functions, so that `polys/numberfields.ts` and `polys/orthopolys.ts` can use them without loading the special functions |
 | `functions/special/spherical_harmonics.py` | `functions/special/sphericalharmonics.ts` | |

@@ -32,3 +32,11 @@ it('builds domain matrices and validates linear systems',()=>{
   expect(()=>solveLinSys([R.fromExpr(parse('x*y'))],R)).toThrow(NonlinearError);
   expect(()=>solveLinSys([],new PolyRing([x],ZZ))).toThrow(InvariantError);
 });
+
+it('converts symbolic equations to a common polynomial coefficient field', async () => {
+  const { sympyEqsToRing, symbols, parseExpr } = await import('../../src');
+  const [x,y] = symbols('x y');
+  const [eqs,domain] = sympyEqsToRing([parseExpr('x-y'),parseExpr('x+a*y')],[x!,y!]);
+  expect(eqs.map(String)).toEqual(['x - y','x + a*y']);
+  expect(String(domain)).toBe('ZZ(a)[x,y]');
+});

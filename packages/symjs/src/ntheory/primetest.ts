@@ -51,15 +51,33 @@ function mrTest(n: bigint, base: bigint, s: number, t: bigint): boolean {
 }
 
 /** Miller-Rabin test of n for the given bases (SymPy mr). */
-export function mr(n: bigint, bases: readonly bigint[]): boolean {
+export function mr(nIn: IntLike, bases: readonly IntLike[]): boolean {
+  const n = asInt(nIn);
   if (n < 2n || (n > 2n && n % 2n === 0n)) return false;
   const s = bitScan1(n - 1n);
   const t = n >> BigInt(s);
-  for (const b0 of bases) {
+  for (const bIn of bases) {
+    const b0 = asInt(bIn);
     const base = b0 >= n ? b0 % n : b0;
     if (base >= 2n && !mrTest(n, base, s, t)) return false;
   }
   return true;
+}
+
+/** Primality of a Proth number k*2**m + 1, with odd k < 2**m. */
+export function prothTest(nIn: IntLike): boolean {
+  const n = asInt(nIn);
+  if (n < 3n) throw new RangeError('n is not a Proth number');
+  const m = bitScan1(n - 1n), k = n >> BigInt(m);
+  if (m < bitLength(k)) throw new RangeError('n is not a Proth number');
+  if (n % 3n === 0n) return n === 3n;
+  if (k % 3n !== 0n) return powmod(3n, n >> 1n, n) === n - 1n;
+  if (isSquare(n)) return false;
+  for (let a = 5n; ; a++) {
+    const j = jacobi(a, n);
+    if (j === -1) return powmod(a, n >> 1n, n) === n - 1n;
+    if (j === 0) return false;
+  }
 }
 
 /** U_k, V_k, Q^k modulo n of the Lucas sequence (SymPy _lucas_sequence). */

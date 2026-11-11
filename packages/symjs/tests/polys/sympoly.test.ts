@@ -1024,3 +1024,37 @@ it('excludes zero from square-free and irreducible polynomials', () => {
   expect(P('2',x).isIrreducible).toBe(true); // the predicate ignores scalar content
   expect(P('1',x).isCyclotomic).toBe(false);
 });
+
+it('polynomial symbols, unification, rational denominators and square-free norms', () => {
+  const f = sj.Poly.from(E('x**2+y'),[x]);
+  expect(f.freeSymbols()).toEqual(new Set([x,y]));
+  expect(sj.Poly.from(E('x**2+y'),[x],{pure:true}).freeSymbols()).toEqual(new Set([y]));
+  expect(sj.Poly.from(E('x**2+y'),[x,y],{pure:true}).freeSymbols().size).toBe(0);
+  const [a,b] = sj.Poly.from(E('x/2+1'),[x]).unify(sj.Poly.from(E('2*x+1'),[x]));
+  expect([a.domain,b.domain]).toEqual(['QQ','QQ']);
+  expect(a.asExpr().equals(E('x/2+1'))).toBe(true);
+  const [u,v] = sj.Poly.from(x,[x]).unify(sj.Poly.from(y,[y]));
+  expect(u.gens).toEqual([x,y]); expect(v.gens).toEqual([x,y]);
+  expect(sj.Poly.from(x,[x],{modulus:5}).unify(sj.Poly.from(2,[x],{modulus:5})).map(p=>p.domain)).toEqual(['GF(5)','GF(5)']);
+  const F = sj.Poly.from(E('x**2/y+1'),[x]);
+  const G = sj.Poly.from(E('x**3+y'),[x]);
+  const [p,q] = F.ratClearDenoms(G);
+  expect(p.toString()).toBe("Poly(x**2 + y, x, domain='ZZ[y]')");
+  expect(q.toString()).toBe("Poly(y*x**3 + y**2, x, domain='ZZ[y]')");
+  expect(p.mul(G).asExpr().equals(q.mul(F).asExpr())).toBe(true);
+  expect(F.clearDenoms()[1].domain).toBe('ZZ(y)');
+  const h = sj.Poly.from(E('x**2+1'),[x],{domain:'QQ<sqrt(3)>'});
+  const [shift,translated,norm] = h.sqfNorm();
+  expect(shift).toEqual([1]);
+  expect(translated.asExpr().equals(E('x**2-2*sqrt(3)*x+4'))).toBe(true);
+  expect(norm.asExpr().equals(E('x**4-4*x**2+16'))).toBe(true);
+  expect(sj.Poly.from(E('x**2+1'),[x],{domain:'QQ_I'}).sqfNorm()[0]).toEqual([2]);
+  expect(() => f.sqfNorm()).toThrow(sj.DomainError);
+});
+
+it('constructs polynomials from descending coefficient lists', () => {
+  expect(sj.Poly.fromList([1,-5,-2],[x],{domain:'QQ'}).toString()).toBe("Poly(x**2 - 5*x - 2, x, domain='QQ')");
+  expect(sj.Poly.fromList([], [x]).isZero).toBe(true);
+  expect(() => sj.Poly.fromList([1],[])).toThrow(sj.PolynomialError);
+  expect(() => sj.Poly.fromList([1],[x,y])).toThrow(sj.PolynomialError);
+});

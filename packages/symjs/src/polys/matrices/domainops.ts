@@ -15,17 +15,19 @@
  */
 
 import { ExactQuotientFailed, NotImplementedError } from '../../core/errors';
-import { at, expectType, first } from '../../core/guard';
+import { at, cast, expectType, first } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
-import { Rational, S } from '../../core/nodes';
+import { Float, Rational, S } from '../../core/nodes';
 import { sympify } from '../../core/ops';
 import { gcd as igcd, lcm as ilcm } from '../../core/numbers';
 import { igcdex } from '../../core/numberutils';
 import { str } from '../../printing/str';
 import { fraction } from '../../simplify/rational';
 import type { Domain } from '../domains';
-import { FractionField, IntegerRing, PolynomialRing, RationalField } from '../domains';
+import { FractionField, IntegerRing, PolynomialRing, RationalField, RealField } from '../domains';
 import { Poly } from '../sympoly';
+import { FiniteField } from '../domains/finitefield';
+import { floatToString } from '../../numeric/mpf';
 import { constructDomain } from '../constructor';
 
 const isRational = (e: unknown): e is Rational => e instanceof Rational;
@@ -183,7 +185,14 @@ export function convertFrom(K: Domain, a: Expr, K0: Domain): Expr {
 }
 
 /** str() of a domain element. */
-export const elemStr = (K: Domain, a: Expr): string => str(K.toSympy(a));
+export function elemStr(K: Domain, a: Expr): string {
+  if (K instanceof FiniteField) return String(K.convert(a));
+  if (K instanceof RealField) {
+    const value = cast(K.fromSympy(a), Float);
+    return floatToString(value.mpf, value.prec, true);
+  }
+  return str(K.toSympy(a));
+}
 
 /** repr() of a domain element: MPQ(p,q) for QQ (SymPy's pure Python ground type), str otherwise. */
 export function elemRepr(K: Domain, a: Expr): string {

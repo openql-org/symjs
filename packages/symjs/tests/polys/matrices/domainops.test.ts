@@ -85,3 +85,10 @@ describe('domain operations', () => {
     expect(String(ops.domainOfExprs([EX.one])[1])).toBe('1');
   });
 });
+
+it('formats finite and real domain elements using their domain representation', async () => {
+  const { GF } = await import('../../../src');
+  expect(ops.elemStr(GF(7),q(-1))).toBe('6 mod 7');
+  expect(ops.elemStr(RR,new Float(3.4))).toBe('3.4');
+  expect(ops.elemStr(RR,q(1))).toBe('1.0');
+});

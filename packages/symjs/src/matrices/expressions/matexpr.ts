@@ -12,6 +12,8 @@
  * other modules of the directory extend MatrixExpr.
  */
 
+import { asInt, isSquare as integerIsSquare } from '../../ntheory/intutil';
+import { MatrixKind, type MatrixKindNode } from '../kind';
 import { callableClass } from '../../core/callable';
 import { Concrete, Sum } from '../../core/concrete';
 import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError, ShapeError } from '../../core/errors';
@@ -268,6 +270,7 @@ export interface EntryContext {
  * MatMul, MatAdd and MatPow like SymPy's operators.
  */
 export abstract class MatrixExpr extends ExtensionExpr {
+  override kindSelf(): MatrixKindNode { return MatrixKind(); }
   /** The shape (rows, cols). */
   abstract get shape(): [Expr, Expr];
   get rows(): Expr {
@@ -1093,8 +1096,9 @@ export function isMatmulValid(...args: MatArg[]): Expr {
   return and(...conds);
 }
 
-/** SymPy is_square (of sympy.matrices.expressions._shape): the condition Eq(rows, cols). */
+/** SymPy is_square: Eq(rows, cols) for matrices, or the perfect-square predicate for integers. */
 export function isSquare(arg: MatArg): Expr {
+  if (typeof arg === 'number' || typeof arg === 'bigint' || arg instanceof Rational) return integerIsSquare(asInt(arg)) ? S.true : S.false;
   const m = toMatrix(arg);
   return Eq(m.rows, m.cols);
 }

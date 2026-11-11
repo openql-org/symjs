@@ -11,6 +11,6 @@
 
 export { fft, ifft, ntt, intt, fwht, ifwht, mobiusTransform, inverseMobiusTransform } from './transforms';
 export type { FftOptions, MobiusTransformOptions } from './transforms';
-export { convolution, convolutionFft, convolutionNtt, convolutionFwht, convolutionSubset, coveringProduct, intersectingProduct } from './convolutions';
+export { convolution, convolutionInt, convolutionFft, convolutionNtt, convolutionFwht, convolutionSubset, coveringProduct, intersectingProduct } from './convolutions';
 export type { ConvolutionOptions } from './convolutions';
 export { linrec } from './recurrences';

@@ -198,6 +198,7 @@ export type SpecialFnName =
   | 'reduced_totient'
   | 'mobius'
   | 'divisor_sigma'
+  | 'udivisor_sigma'
   | 'primenu'
   | 'primeomega'
   | 'primepi'

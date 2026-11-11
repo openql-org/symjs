@@ -88,6 +88,12 @@ export {
   reducedTotient,
   mobius,
   divisorSigma,
+  udivisorSigma,
+  nC,
+  nP,
+  nD,
+  nT,
+  stirling,
   primenu,
   primeomega,
   primepiFn as primepi,
@@ -140,3 +146,4 @@ export {
 } from './functions/special/polynomials';
 export { migcdex, ipartfrac, fermatCoords } from './functions/elementary/trigonometricspecial';
 export { order, argument } from './functions/special/bessel';
+export { bsplineBasis, bsplineBasisSet, interpolatingSpline } from './functions/special/bsplines';

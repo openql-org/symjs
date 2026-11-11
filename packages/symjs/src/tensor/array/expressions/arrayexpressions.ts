@@ -236,8 +236,16 @@ export class ArrayAdd extends ArrayExpr {
 export class PermuteDims extends ArrayExpr {
   readonly permutation: Permutation;
   readonly shape: readonly Expr[];
-  constructor(readonly expr: Expr, permutation: PermutationLike) {
-    const p = 'arrayForm' in permutation ? [...permutation.arrayForm] : [...permutation], shape = getShape(expr);
+  constructor(readonly expr: Expr, permutation?: PermutationLike, opts: { indexOrderOld?: string; indexOrderNew?: string } = {}) {
+    let perm = permutation;
+    if (perm === undefined) {
+      const old = opts.indexOrderOld, next = opts.indexOrderNew;
+      if (old === undefined || next === undefined) throw new RangeError('provide both index orders');
+      const oldLabels = Array.from(old), newLabels = Array.from(next);
+      if (oldLabels.length !== newLabels.length || new Set(oldLabels).size !== oldLabels.length) throw new RangeError('provide matching index orders');
+      perm = newLabels.map((label) => oldLabels.indexOf(label));
+    }
+    const p = 'arrayForm' in perm ? [...perm.arrayForm] : [...perm], shape = getShape(expr);
     if (p.length !== shape.length || new Set(p).size !== p.length || p.some((i) => !Number.isInteger(i) || i < 0 || i >= p.length)) throw new RangeError('invalid axis permutation');
     super('PermuteDims', [expr, tuple(p)]);
     this.permutation = new Permutation(p);

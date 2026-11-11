@@ -336,3 +336,12 @@ describe('intersectingProduct', () => {
     expect(str(intersectingProduct(L('1; 3; 5/7'), [7, 8]))).toBe('[327/7, 24, 0, 0]');
   });
 });
+
+it('exports exact integer convolution with signed and trailing-zero coefficients', async () => {
+  const { convolutionInt, Rational } = await import('../../src');
+  expect(convolutionInt([2, Rational.of(3)], [4n, 5])).toEqual([8n, 22n, 15n]);
+  expect(convolutionInt([1, 1, -1], [1, 1])).toEqual([1n, 2n, 0n, -1n]);
+  expect(convolutionInt([0, 0], [1, 2])).toEqual([0n]);
+  expect(() => convolutionInt([], [1])).toThrow(RangeError);
+  expect(() => convolutionInt([1], [])).toThrow(RangeError);
+});

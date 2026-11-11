@@ -1029,3 +1029,13 @@ describe('Expr methods of matrix expressions (SymPy MatrixExpr derives from Expr
     expect(sj.isHypergeometric(A, n)).toBe(true);
   });
 });
+
+it('isSquare also recognizes integer squares', () => {
+  expect([sj.isSquare(25),sj.isSquare(2n),sj.isSquare(sj.Rational.of(-1))].map(String)).toEqual(['True','False','False']);
+});
+
+it('matrix kinds propagate through unevaluated integrals', () => {
+  const M = sj.MatrixSymbol('A',2,2);
+  expect(sj.kindOf(M)).toBe(sj.MatrixKind());
+  expect(sj.kindOf(new sj.Integral([M,sj.symbol('x')]))).toBe(sj.MatrixKind());
+});

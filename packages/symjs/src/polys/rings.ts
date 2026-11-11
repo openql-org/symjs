@@ -424,7 +424,7 @@ export type GenLike = PolyElement | IntLike | string;
  */
 export class PolyElement {
   readonly ring: PolyRing;
-  private readonly map: ReadonlyMap<string, readonly [Monom, Expr]>;
+  private map: ReadonlyMap<string, readonly [Monom, Expr]>;
 
   constructor(ring: PolyRing, terms: Iterable<readonly [Monom, Expr]>) {
     this.ring = ring;
@@ -967,6 +967,12 @@ export class PolyElement {
     const c = this.ring.domainNew(x);
     if (groundIsZero(this.K, c)) return this.ring.zero;
     return this.make(this.listterms().map(([m, a]) => [m, this.K.mul(a, c)] as const));
+  }
+
+  /** Multiply all coefficients in place (SymPy imul_num). */
+  imulNum(x: ExprLike): this {
+    this.map = this.mulGround(x).map;
+    return this;
   }
 
   /** f*x**monom (SymPy mul_monom). */

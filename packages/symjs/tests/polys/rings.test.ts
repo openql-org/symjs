@@ -655,3 +655,12 @@ describe('parent', () => {
     expect(String(R.zero.parent())).toBe('ZZ[x,y]');
   });
 });
+
+it('multiplies coefficients in place, including multiplication by zero', async () => {
+  const { PolyRing, ZZ, symbol, parseExpr } = await import('../../src');
+  const R = new PolyRing([symbol('x'),symbol('y')],ZZ);
+  const p = R.fromExpr(parseExpr('x+y**2'));
+  expect(p.imulNum(3)).toBe(p);
+  expect(String(p)).toBe('3*x + 3*y**2');
+  expect(p.imulNum(0).isZero).toBe(true);
+});

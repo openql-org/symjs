@@ -52,6 +52,11 @@ export class Matrix {
     this.data = data;
   }
 
+  /** Union of the free symbols of all entries. */
+  freeSymbols(): Set<Sym> {
+    return new Set(new Map(this.data.flatMap((e) => [...freeSymbols(e)].map((s) => [s.key, s] as const))).values());
+  }
+
   get rows(): number {
     return this.#rows;
   }
@@ -457,8 +462,14 @@ export class Matrix {
   get isZero(): boolean {
     return this.data.every((e) => e instanceof Rational && e.isZero);
   }
-  isHermitian(): boolean {
-    return this.isSquare && this.equalsSimplified(this.adjoint());
+  isHermitian(): Truth {
+    if (!this.isSquare) return false;
+    return truthAnd(...this.sub(this.adjoint()).simplify().data.map((e) => {
+      const zero = isZero(e);
+      if (zero !== undefined) return zero;
+      const [re, im] = asRealImag(e);
+      return truthAnd(toTruth(isZero(re)), toTruth(isZero(im)));
+    }));
   }
   isUnitary(): boolean {
     return this.isSquare && this.mul(this.adjoint()).equalsSimplified(Matrix.eye(this.rows));

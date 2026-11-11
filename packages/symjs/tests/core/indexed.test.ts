@@ -54,3 +54,13 @@ describe('Indexed and equations with several radicals', () => {
     expect(solve(parse('x**(1/2) - x**(1/4) - 2'), x).map((e) => sstr(e))).toEqual(['16']);
   });
 });
+
+it('compares base labels and retains rank and inherited real assumptions', () => {
+  const a = new sj.IndexedBase('A');
+  expect(a.equals(new sj.IndexedBase('A'))).toBe(true);
+  expect(a.equals(new sj.IndexedBase('B'))).toBe(false);
+  expect(a.equals(sj.symbol('A'))).toBe(false);
+  expect(a.at(i,j).rank).toBe(2);
+  expect(a.isReal).toBe('unknown');
+  expect(new sj.IndexedBase(sj.symbol('A', {real:true})).isReal).toBe(true);
+});
