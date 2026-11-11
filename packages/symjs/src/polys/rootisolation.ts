@@ -871,6 +871,19 @@ export class ComplexInterval {
     private readonly f2: Biv,
     readonly conj = false,
   ) {}
+  /**
+   * The isolating rectangle with the corners a (south-west) and b
+   * (north-east) of a root above the real axis of the polynomial with the
+   * dense coefficients f (highest degree first), or of its conjugate when
+   * conj is true; its edge data is computed as SymPy's isolation does.
+   * RangeError when the rectangle does not hold exactly one root.
+   */
+  static fromRectangle(f: readonly (bigint | Q)[], a: [Q, Q], b: [Q, Q], conj = false): ComplexInterval {
+    const [f1, f2] = realImag(toQQ(f));
+    const r = edgeRect(f1, f2, a, b, false);
+    if (r.N !== 1) throw new RangeError(`the rectangle holds ${r.N} roots, not one`);
+    return new ComplexInterval(r.a, r.b, r.I, r.Q, r.F1, r.F2, f1, f2, conj);
+  }
   get ax(): Q {
     return this.a[0];
   }

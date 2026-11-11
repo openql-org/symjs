@@ -725,6 +725,14 @@ def ser(o):
         return {"t": "AssumptionsContext", "items": [ser(a) for a in o]}
     if isinstance(o, _AK):
         return {"t": "QKeys"}
+    from sympy.polys.rootisolation import ComplexInterval as _ComplexInterval
+    if isinstance(o, _ComplexInterval):
+        # the rectangle of the root above the real axis and the polynomial f(x) = Re f(x + I*y) at y = 0
+        from sympy.polys.densetools import dmp_eval_in
+        from sympy.polys.densebasic import dup_strip
+        f = dup_strip(dmp_eval_in(o.f1, o.dom.zero, 1, 1, o.dom))
+        return {"t": "ComplexInterval", "coeffs": [ser(o.dom.to_sympy(c)) for c in f],
+                "a": [ser(o.dom.to_sympy(c)) for c in o.a], "b": [ser(o.dom.to_sympy(c)) for c in o.b], "conj": bool(o.conj)}
     from sympy.ntheory.generate import Sieve as _Sieve
     if isinstance(o, _Sieve):
         return {"t": "Sieve"}

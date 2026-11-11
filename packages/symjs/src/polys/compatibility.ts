@@ -19,7 +19,7 @@
  */
 
 import { DomainError, ExactQuotientFailed, PolynomialError } from '../core/errors';
-import { at, first } from '../core/guard';
+import { at, first, last } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Dummy, Float, Rational, S, Sym } from '../core/nodes';
 import { gcd as igcd, iroot, lcm as ilcm } from '../core/numbers';
@@ -995,21 +995,41 @@ export abstract class IPolys<P extends CompatElement<P>> {
   dupGcd(f: P, g: P): P {
     return this.dmpGcd(f, g);
   }
-  /** The lcm (SymPy dmp_lcm): monic over a field, with the lcm of the contents over a ring. */
-  dmpLcm(f: P, g: P): P {
+  /** f*g/gcd(f, g), zero when f or g is zero. */
+  private lcmPart(f: P, g: P): P {
+    return f.isZero || g.isZero ? this.zero : this.exquoBy(f.mul(g), this.dmpGcd(f, g));
+  }
+  /** The lcm over a ring, with the lcm of the contents and a positive leading coefficient (SymPy dup_rr_lcm). */
+  dupRrLcm(f: P, g: P): P {
     const K = this.domain;
-    if (f.isZero || g.isZero) return this.zero;
-    if (K.isField) {
-      const h = this.exquoBy(f.mul(g), this.dmpGcd(f, g));
-      return h.mulGround(K.quo(K.one, this.groundLC(h)));
-    }
-    const [fc, f1] = this.dmpGroundPrimitive(f);
-    const [gc, g1] = this.dmpGroundPrimitive(g);
-    return this.exquoBy(f1.mul(g1), this.dmpGcd(f1, g1)).mulGround(groundLcm(K, fc, gc));
+    const [fc, F] = this.dupPrimitive(f);
+    const [gc, G] = this.dupPrimitive(g);
+    const h = this.lcmPart(F, G);
+    return h.mulGround(K.mul(groundLcm(K, fc, gc), canonicalUnit(K, this.groundLC(h))));
+  }
+  /** The monic lcm over a field (SymPy dup_ff_lcm). */
+  dupFfLcm(f: P, g: P): P {
+    return this.dupMonic(this.lcmPart(f, g));
   }
   /** The lcm (SymPy dup_lcm). */
   dupLcm(f: P, g: P): P {
-    return this.dmpLcm(f, g);
+    return this.domain.isField ? this.dupFfLcm(f, g) : this.dupRrLcm(f, g);
+  }
+  /** The lcm over a ring, with the lcm of the ground contents (SymPy dmp_rr_lcm). */
+  dmpRrLcm(f: P, g: P): P {
+    const K = this.domain;
+    const [fc, F] = this.dmpGroundPrimitive(f);
+    const [gc, G] = this.dmpGroundPrimitive(g);
+    return this.lcmPart(F, G).mulGround(groundLcm(K, fc, gc));
+  }
+  /** The ground monic lcm over a field (SymPy dmp_ff_lcm). */
+  dmpFfLcm(f: P, g: P): P {
+    return this.dmpGroundMonic(this.lcmPart(f, g));
+  }
+  /** The lcm (SymPy dmp_lcm): monic over a field, with the lcm of the contents over a ring. */
+  dmpLcm(f: P, g: P): P {
+    if (this.ngens === 1) return this.dupLcm(f, g);
+    return this.domain.isField ? this.dmpFfLcm(f, g) : this.dmpRrLcm(f, g);
   }
   /** The content in x_j: the gcd of the coefficients of the powers of x_j (SymPy dmp_content). */
   private contentIn(f: P, j: number): P {
@@ -1237,6 +1257,247 @@ export abstract class IPolys<P extends CompatElement<P>> {
   /** The Sturm sequence (SymPy dup_sturm). */
   dupSturm(f: P): P[] {
     return this.toPoly(f).sturm().map((p) => this.fromPoly(p));
+  }
+
+  // ---- euclidtools: subresultants, resultants, contents, gcds and cancel ----
+
+  /** An element without x_0 as an element of R[1:] (the ring without the first generator). */
+  private toTail(R1: IPolys<P>, f: P): P {
+    return R1.fromTerms(f.listterms().map(([m, c]) => [m.slice(1), c] as const));
+  }
+
+  /**
+   * The subresultant PRS in x_0 and the scalar subresultants, the latter as
+   * elements without x_0 (SymPy dmp_inner_subresultants).
+   */
+  private innerSubresultants(f0: P, g0: P): [P[], P[]] {
+    const K = this.domain;
+    let [f, g] = [f0, g0];
+    let n = this.degIn(f, 0);
+    let m = this.degIn(g, 0);
+    if (n < m) [f, g, n, m] = [g, f, m, n];
+    if (f.isZero) return [[], []];
+    if (g.isZero) return [[f], [this.one]];
+    const R = [f, g];
+    let d = n - m;
+    // b = (-1)**(d + 1)
+    let h = this.dupPrem(f, g).mulGround(d % 2 ? K.one : K.neg(K.one));
+    let lc = this.lcIn(g, 0);
+    let c = lc.pow(d);
+    // the conventional first scalar subdeterminant is 1
+    const S = [this.one, c];
+    c = c.neg();
+    while (!h.isZero) {
+      const k = this.degIn(h, 0);
+      R.push(h);
+      [f, g, d, m] = [g, h, m - k, k];
+      h = this.exquoBy(this.dupPrem(f, g), lc.neg().mul(c.pow(d)));
+      lc = this.lcIn(g, 0);
+      // d > 1 is the abnormal case
+      c = d > 1 ? this.exquoBy(lc.neg().pow(d), c.pow(d - 1)) : lc.neg();
+      S.push(c.neg());
+    }
+    return [R, S];
+  }
+  /** The subresultant PRS and the scalar subresultants (SymPy dup_inner_subresultants). */
+  dupInnerSubresultants(f: P, g: P): [P[], Expr[]] {
+    const [R, S] = this.innerSubresultants(f, g);
+    return [R, S.map((s) => this.groundOf(s))];
+  }
+  /** The subresultant PRS in x_0 and the scalar subresultants in R[1:] (SymPy dmp_inner_subresultants). */
+  dmpInnerSubresultants(f: P, g: P): [P[], (P | Expr)[]] {
+    const [R, S] = this.innerSubresultants(f, g);
+    return [R, S.map((s) => this.dropIn(s, 0))];
+  }
+  /** The subresultant PRS (SymPy dup_subresultants). */
+  dupSubresultants(f: P, g: P): P[] {
+    return this.innerSubresultants(f, g)[0];
+  }
+  /** The subresultant PRS in x_0 (SymPy dmp_subresultants). */
+  dmpSubresultants(f: P, g: P): P[] {
+    return this.innerSubresultants(f, g)[0];
+  }
+  /** The resultant and the PRS, the resultant as an element without x_0. */
+  private prsResultant(f: P, g: P): [P, P[]] {
+    if (f.isZero || g.isZero) return [this.zero, []];
+    const [R, S] = this.innerSubresultants(f, g);
+    return [this.degIn(last(R), 0) > 0 ? this.zero : last(S), R];
+  }
+  /** The resultant from the subresultant PRS and the PRS (SymPy dup_prs_resultant). */
+  dupPrsResultant(f: P, g: P): [Expr, P[]] {
+    const [r, R] = this.prsResultant(f, g);
+    return [this.groundOf(r), R];
+  }
+  /** The resultant in x_0 from the subresultant PRS and the PRS (SymPy dmp_prs_resultant). */
+  dmpPrsResultant(f: P, g: P): [P | Expr, P[]] {
+    const [r, R] = this.prsResultant(f, g);
+    return [this.dropIn(r, 0), R];
+  }
+  /** The resultant in x_0 as an element without x_0 (zero when f or g is zero). */
+  private collinsResultant(f: P, g: P): P {
+    if (f.isZero || g.isZero) return this.zero;
+    return this.fromExprPoly(resultant(f.asExpr(), g.asExpr(), this.gen0()));
+  }
+  /**
+   * The resultant in x_0 modulo the prime p, its coefficients in the symmetric
+   * range (SymPy dmp_zz_modular_resultant). SymPy evaluates and interpolates
+   * modulo p, which gives the same polynomial but raises HomomorphismFailed
+   * when p has too few evaluation points; reducing the resultant itself has
+   * no such limit.
+   */
+  dmpZzModularResultant(f: P, g: P, p: IntLike): P | Expr {
+    if (!isZZ(this.domain)) throw new DomainError(`modular resultants need ZZ, got ${this.domain.toString()}`);
+    return this.dropIn(this.dupTrunc(this.collinsResultant(f, g), p), 0);
+  }
+  /**
+   * The resultant in x_0 over ZZ (SymPy dmp_zz_collins_resultant, Collins's
+   * modular algorithm; the resultant it reconstructs is computed directly).
+   */
+  dmpZzCollinsResultant(f: P, g: P): P | Expr {
+    return this.dropIn(this.collinsResultant(f, g), 0);
+  }
+  /** The resultant in x_0 over QQ (SymPy dmp_qq_collins_resultant). */
+  dmpQqCollinsResultant(f: P, g: P): P | Expr {
+    return this.dropIn(this.collinsResultant(f, g), 0);
+  }
+
+  /**
+   * The content in x_0 as an element without x_0, with a nonnegative ground
+   * leading coefficient (SymPy dmp_content); like SymPy, a polynomial of
+   * degree 0 in x_0 is its own content up to the sign.
+   */
+  private contentOf(f: P): P {
+    if (f.isZero) return f;
+    const n = this.degIn(f, 0);
+    let c = this.coeffIn(f, 0, n);
+    for (let k = n - 1; k >= 0; k--) c = this.dmpGcd(c, this.coeffIn(f, 0, k));
+    return groundIsNegative(this.domain, this.groundLC(c)) ? c.neg() : c;
+  }
+  /** The content in x_0 and the primitive part (SymPy dmp_primitive). */
+  private primitiveOf(f: P): [P, P] {
+    const c = this.contentOf(f);
+    if (f.isZero || c.equals(this.one)) return [c, f];
+    return [c, this.exquoBy(f, c)];
+  }
+  /**
+   * The content in x_0, an element of R[1:] (SymPy dmp_content); in a
+   * univariate ring the ground content (where SymPy fails).
+   */
+  dmpContent(f: P): P | Expr {
+    if (this.ngens === 1) return this.dupContent(f);
+    return this.dropIn(this.contentOf(f), 0);
+  }
+  /** The content in x_0, an element of R[1:], and the primitive part (SymPy dmp_primitive). */
+  dmpPrimitive(f: P): [P | Expr, P] {
+    if (this.ngens === 1) return this.dupPrimitive(f);
+    const [c, p] = this.primitiveOf(f);
+    return [this.dropIn(c, 0), p];
+  }
+
+  /**
+   * The gcd and the cofactors from the subresultant PRS (SymPy dmp_rr_prs_gcd
+   * and dmp_ff_prs_gcd): the gcd of the contents in x_0 times the primitive
+   * part of the last subresultant, with a positive leading coefficient over a
+   * ring (field false) or monic over a field.
+   */
+  private prsGcd(f: P, g: P, field: boolean): [P, P, P] {
+    // the trivial gcds of SymPy have the normalization of dmpInnerGcd
+    if (f.isZero || g.isZero) return this.dmpInnerGcd(f, g);
+    const K = this.domain;
+    const R1 = this.dropRing(0);
+    let h: P;
+    if (!(R1 instanceof IPolys)) {
+      if (field) h = this.dupMonic(last(this.dupSubresultants(f, g)));
+      else {
+        const [fc, F] = this.dupPrimitive(f);
+        const [gc, G] = this.dupPrimitive(g);
+        h = this.dupPrimitive(last(this.dupSubresultants(F, G)))[1];
+        h = h.mulGround(K.mul(groundGcd(K, fc, gc), canonicalUnit(K, this.groundLC(h))));
+      }
+    } else {
+      const [fc, F] = this.primitiveOf(f);
+      const [gc, G] = this.primitiveOf(g);
+      const c = this.embed(R1.prsGcd(this.toTail(R1, fc), this.toTail(R1, gc), field)[0]);
+      h = this.primitiveOf(last(this.dmpSubresultants(F, G)))[1].mul(c);
+      if (field) h = this.dmpGroundMonic(h);
+      else if (groundIsNegative(K, this.groundLC(h))) h = h.neg();
+    }
+    return [h, this.exquoBy(f, h), this.exquoBy(g, h)];
+  }
+  /** The gcd and the cofactors over a ring by the subresultant PRS (SymPy dup_rr_prs_gcd). */
+  dupRrPrsGcd(f: P, g: P): [P, P, P] {
+    return this.prsGcd(f, g, false);
+  }
+  /** The gcd and the cofactors over a field by the subresultant PRS (SymPy dup_ff_prs_gcd). */
+  dupFfPrsGcd(f: P, g: P): [P, P, P] {
+    return this.prsGcd(f, g, true);
+  }
+  /** The gcd and the cofactors over a ring by the subresultant PRS (SymPy dmp_rr_prs_gcd). */
+  dmpRrPrsGcd(f: P, g: P): [P, P, P] {
+    return this.prsGcd(f, g, false);
+  }
+  /** The gcd and the cofactors over a field by the subresultant PRS (SymPy dmp_ff_prs_gcd). */
+  dmpFfPrsGcd(f: P, g: P): [P, P, P] {
+    return this.prsGcd(f, g, true);
+  }
+  /**
+   * The gcd and the cofactors over ZZ by the heuristic gcd (SymPy
+   * dup_zz_heu_gcd). The normalized gcd is unique, so dmpInnerGcd gives it:
+   * it runs the heuristic of euclidtools.ts, with a fallback where SymPy
+   * raises HeuristicGCDFailed.
+   */
+  dupZzHeuGcd(f: P, g: P): [P, P, P] {
+    return this.dmpInnerGcd(f, g);
+  }
+  /** The gcd and the cofactors over ZZ by the heuristic gcd (SymPy dmp_zz_heu_gcd). */
+  dmpZzHeuGcd(f: P, g: P): [P, P, P] {
+    return this.dmpInnerGcd(f, g);
+  }
+  /** The monic gcd and the cofactors over QQ by the heuristic gcd (SymPy dup_qq_heu_gcd). */
+  dupQqHeuGcd(f: P, g: P): [P, P, P] {
+    return this.dmpInnerGcd(f, g);
+  }
+  /** The monic gcd and the cofactors over QQ by the heuristic gcd (SymPy dmp_qq_heu_gcd). */
+  dmpQqHeuGcd(f: P, g: P): [P, P, P] {
+    return this.dmpInnerGcd(f, g);
+  }
+
+  /**
+   * f/g in lowest terms (SymPy dmp_cancel): [p, q], or with include false the
+   * ground factors apart, [cp, cq, p, q] with f/g = (cp*p)/(cq*q). Over QQ the
+   * denominators are cleared first; p and q get nonnegative leading
+   * coefficients.
+   */
+  dmpCancel(f: P, g: P, include?: true): [P, P];
+  dmpCancel(f: P, g: P, include: false): [Expr, Expr, P, P];
+  dmpCancel(f: P, g: P, include = true): [P, P] | [Expr, Expr, P, P] {
+    const K = this.domain;
+    let cp = K.one;
+    let cq = K.one;
+    let p: P;
+    let q: P;
+    if (K.isField && hasAssocRing(K)) {
+      const Z = this.withDomain(ZZ);
+      const [cf, F] = this.dmpClearDenoms(f, true);
+      const [cg, G] = this.dmpClearDenoms(g, true);
+      const [, pz, qz] = Z.dmpInnerGcd(F, G);
+      const c = groundGcd(ZZ, cf, cg);
+      [cp, cq] = [groundExquo(ZZ, cg, c), groundExquo(ZZ, cf, c)];
+      [p, q] = [Z.moveTo(pz, this), Z.moveTo(qz, this)];
+    } else [, p, q] = this.dmpInnerGcd(f, g);
+    const pNeg = groundIsNegative(K, this.groundLC(p));
+    const qNeg = groundIsNegative(K, this.groundLC(q));
+    if (pNeg !== qNeg) cp = K.neg(cp);
+    if (pNeg) p = p.neg();
+    if (qNeg) q = q.neg();
+    if (!include) return [cp, cq, p, q];
+    return [p.mulGround(cp), q.mulGround(cq)];
+  }
+  /** f/g in lowest terms (SymPy dup_cancel). */
+  dupCancel(f: P, g: P, include?: true): [P, P];
+  dupCancel(f: P, g: P, include: false): [Expr, Expr, P, P];
+  dupCancel(f: P, g: P, include = true): [P, P] | [Expr, Expr, P, P] {
+    return include ? this.dmpCancel(f, g) : this.dmpCancel(f, g, false);
   }
 }
 
