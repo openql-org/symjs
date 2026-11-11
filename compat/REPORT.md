@@ -20,9 +20,9 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 432 selected for e
 | Inventory status | Modules |
 |---|---:|
 | partial | 506 |
-| unimplemented | 174 |
+| unimplemented | 171 |
 | unassessed | 0 |
-| excluded | 145 |
+| excluded | 148 |
 
 Partial means a source correspondence exists, not that the module is complete. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.
 
