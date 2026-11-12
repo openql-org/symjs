@@ -4,7 +4,7 @@ Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
 Measured **98726** cases: **82554 exact**, **2548 equivalent**, **13624 failing**. Agreement: **86.20%**.
 
-Compatibility suite wall time: **280.52 s**. Sum of category replay times: **617.23 s** (projects run in parallel).
+Compatibility suite wall time: **280.50 s**. Sum of category replay times: **618.18 s** (projects run in parallel).
 
 Extraction wall time: **0.51 s**, 4 processes, 30 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
@@ -16,39 +16,39 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.55 |
-| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 1.60 |
-| calculus | 518 | 417 | 1 | 100 | 80.69% | 2.23 |
-| categories | 312 | 312 | 0 | 0 | 100.00% | 1.43 |
-| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.54 |
-| combinatorics | 1671 | 1632 | 0 | 39 | 97.67% | 0.77 |
-| concrete | 856 | 602 | 68 | 186 | 78.27% | 7.76 |
-| core | 7858 | 5509 | 187 | 2162 | 72.49% | 83.29 |
-| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.30 |
-| diffgeom | 177 | 171 | 6 | 0 | 100.00% | 0.63 |
-| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.76 |
-| functions | 9853 | 5838 | 1849 | 2166 | 78.02% | 39.66 |
-| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 12.40 |
-| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.73 |
-| integrals | 1313 | 841 | 45 | 427 | 67.48% | 18.55 |
-| liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.05 |
-| logic | 662 | 486 | 1 | 175 | 73.56% | 0.75 |
-| matrices | 3930 | 3184 | 37 | 709 | 81.96% | 57.34 |
-| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 10.28 |
-| parsing | 772 | 653 | 68 | 51 | 93.39% | 0.53 |
+| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.61 |
+| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 1.72 |
+| calculus | 518 | 417 | 1 | 100 | 80.69% | 2.43 |
+| categories | 312 | 312 | 0 | 0 | 100.00% | 1.47 |
+| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.55 |
+| combinatorics | 1671 | 1632 | 0 | 39 | 97.67% | 1.00 |
+| concrete | 856 | 602 | 68 | 186 | 78.27% | 7.98 |
+| core | 7858 | 5509 | 187 | 2162 | 72.49% | 85.28 |
+| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.29 |
+| diffgeom | 177 | 171 | 6 | 0 | 100.00% | 0.64 |
+| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.82 |
+| functions | 9853 | 5838 | 1849 | 2166 | 78.02% | 39.62 |
+| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 12.85 |
+| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.89 |
+| integrals | 1313 | 841 | 45 | 427 | 67.48% | 18.69 |
+| liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.04 |
+| logic | 662 | 486 | 1 | 175 | 73.56% | 0.66 |
+| matrices | 3930 | 3184 | 37 | 709 | 81.96% | 57.66 |
+| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 9.85 |
+| parsing | 772 | 653 | 68 | 51 | 93.39% | 0.51 |
 | plotting | 20 | 17 | 0 | 3 | 85.00% | 0.02 |
-| polys | 9484 | 5360 | 57 | 4067 | 57.12% | 93.68 |
-| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.70 |
-| series | 1626 | 1157 | 29 | 440 | 72.94% | 12.42 |
-| sets | 1494 | 873 | 12 | 609 | 59.24% | 1.69 |
-| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 7.24 |
+| polys | 9484 | 5360 | 57 | 4067 | 57.12% | 93.13 |
+| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.69 |
+| series | 1626 | 1157 | 29 | 440 | 72.94% | 13.27 |
+| sets | 1494 | 873 | 12 | 609 | 59.24% | 1.58 |
+| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 7.05 |
 | solvers | 2381 | 1496 | 77 | 808 | 66.06% | 52.36 |
-| stats | 1865 | 1771 | 41 | 53 | 97.16% | 181.26 |
+| stats | 1865 | 1771 | 41 | 53 | 97.16% | 179.09 |
 | strategies | 6 | 5 | 0 | 1 | 83.33% | 0.01 |
-| tensor | 1593 | 1254 | 1 | 338 | 78.78% | 4.89 |
+| tensor | 1593 | 1254 | 1 | 338 | 78.78% | 4.54 |
 | unify | 8 | 1 | 0 | 7 | 12.50% | 0.01 |
-| utilities | 375 | 311 | 9 | 55 | 85.33% | 18.86 |
-| vector | 620 | 593 | 4 | 23 | 96.29% | 3.93 |
+| utilities | 375 | 311 | 9 | 55 | 85.33% | 18.81 |
+| vector | 620 | 593 | 4 | 23 | 96.29% | 4.05 |
 
 ## Extraction audit
 
