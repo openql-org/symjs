@@ -32,6 +32,7 @@ import sys
 import time
 import types
 import warnings
+import weakref
 from collections import Counter
 from collections.abc import Iterator
 
@@ -345,6 +346,9 @@ class Instrument(ast.NodeTransformer):
         if derived is not None:
             node.test = ast.copy_location(derived, node.test)
             return node
+        if projection(lhs) is not None:
+            # str([...]), len(x.args[0]): the builtin applies to a value no measured call produced.
+            return [ast.copy_location(ast.Expr(call_hook("omit", site, ast.Constant("non-call-expression"))), node), node]
         measured = self.measured(lhs, site)
         if measured is None:
             return [ast.copy_location(ast.Expr(call_hook("omit", site, ast.Constant("non-call-expression"))), node), node]
@@ -385,6 +389,12 @@ def public_names(module):
     return extract.PUBLIC | extract.subpackage_public(module)
 
 
+def sympy_object(value):
+    """A SymPy object, including one that subclasses a Python container (Cycle is a dict)."""
+    return extract.is_sympy_operand(value, []) or (
+        not isinstance(value, type) and (type(value).__module__ or "").startswith("sympy."))
+
+
 # Numerical test helpers of SymPy's own test suite, not mathematical API: they are not ported and
 # their assertions are omitted with the reason "test-utility".
 TEST_UTILITIES = {
@@ -419,7 +429,48 @@ def json_numbers(value):
     return value
 
 
-REPLAY_PROJECTIONS = {"len", "list", "tuple", "str-items"}
+# str(x) and repr(x) are replayed by printing the result (str of a SymPy object is sstr, and so is
+# its repr, except for classes such as Permutation whose repr is their constructor call).
+REPLAY_PROJECTIONS = {"len", "list", "tuple", "str-items", "str", "repr"}
+# Builtin values whose str()/repr() the replay reproduces: containers print their items by repr.
+PRINTABLE_BUILTINS = (type(None), bool, int, float, str, list, tuple, dict, set, frozenset)
+
+
+def python_representation(value):
+    """Whether str()/repr() of the value contains Python's own representation of an object that is
+    neither a SymPy (or mpmath) value nor a builtin number, string or container."""
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return any(python_representation(v) for v in value)
+    if isinstance(value, dict):
+        return any(python_representation(k) or python_representation(v) for k, v in value.items())
+    if isinstance(value, PRINTABLE_BUILTINS + (sympy.Basic,)):
+        # applied undefined functions are Basic instances of classes created at run time
+        return False
+    return not (type(value).__module__ or "").startswith(("sympy.", "mpmath."))
+
+
+def bracket_kinds(value):
+    """The kinds of the Python lists ("l") and tuples ("t") in the value, in preorder.
+
+    JavaScript has one array type for both; the replay prints its arrays in this order with the
+    brackets Python's str() uses for them.
+    """
+    kinds = []
+
+    def walk(v):
+        if isinstance(v, (list, tuple)):
+            kinds.append("l" if isinstance(v, list) else "t")
+            for item in v:
+                walk(item)
+        elif isinstance(v, dict):
+            for key, item in v.items():
+                walk(key)
+                walk(item)
+        elif isinstance(v, (set, frozenset)):
+            for item in v:
+                walk(item)
+    walk(value)
+    return "".join(kinds)
 
 
 def tabulated(args):
@@ -467,7 +518,22 @@ def project(projection, value):
     return getattr(builtins, projection)(value)
 
 
-def safe_str(value):
+def held(value):
+    """A callable returning the value: a weak reference when the value supports one."""
+    try:
+        return weakref.ref(value)
+    except TypeError:
+        return lambda: value
+
+
+def fingerprint(value):
+    """A fingerprint that detects in-place changes of a bound value.
+
+    SymPy Basic objects are immutable; printing one can fill private caches that a test
+    then asserts on (Permutation._cyclic_form), so they are identified by identity alone.
+    """
+    if isinstance(value, sympy.Basic):
+        return "<immutable>"
     try:
         return str(value)
     except Exception:
@@ -504,7 +570,7 @@ class Capture:
             if name.startswith("."):
                 if name[1:].startswith("_") and name not in extract.OPERATOR_FNS:
                     return {"reason": "private-api"}
-                if not extract.is_sympy_operand(receiver, args):
+                if not (extract.is_sympy_operand(receiver, args) or sympy_object(receiver)):
                     return {"reason": "python-runtime-api"}
             elif name in TEST_UTILITIES:
                 return {"reason": "test-utility"}
@@ -562,7 +628,7 @@ class Capture:
 
     def function(self, site, function):
         name = getattr(function, "__name__", "")
-        if not name and extract.is_sympy_operand(function, []):
+        if not name and sympy_object(function):
             return lambda *args, **kw: self.invoke(site, ".__call__", function, function, args, kw)
         return lambda *args, **kw: self.invoke(site, name, None, function, args, kw)
 
@@ -579,6 +645,10 @@ class Capture:
     def finish(self, site, record, op, expected, **extra):
         if "reason" in record:
             self.omit(site, record["reason"])
+            return
+        if (type(expected).__module__ or "").startswith(("_pytest.", "pytest")):
+            # pytest.approx(...): an approximate comparison helper of the test runner
+            self.omit(site, "test-utility")
             return
         text = str(expected)
         # Like extract.py: strings are compared as text, all other values by
@@ -620,9 +690,12 @@ class Capture:
                 self.omit(site, "reference-did-not-raise")
 
     def bind(self, names, record, value):
-        """Remember which measured call produced the value of each assigned name."""
+        """Remember which measured call produced the value of each assigned name.
+
+        Values are held weakly where possible: a test may check that its value is collected.
+        """
         if isinstance(names, str):
-            self.bindings[names] = (record, None, value, safe_str(value))
+            self.bindings[names] = (record, None, held(value), fingerprint(value))
             return value
         items = tuple(value) if isinstance(value, Iterator) else value
         try:
@@ -631,7 +704,7 @@ class Capture:
             return items
         if len(values) == len(names):
             for index, (name, item) in enumerate(zip(names, values)):
-                self.bindings[name] = (record, index, item, safe_str(item))
+                self.bindings[name] = (record, index, held(item), fingerprint(item))
         return items
 
     def bound_call(self, names, name, receiver, function, args, kwargs):
@@ -640,7 +713,7 @@ class Capture:
 
     def bind_function(self, names, function):
         name = getattr(function, "__name__", "")
-        if not name and extract.is_sympy_operand(function, []):
+        if not name and sympy_object(function):
             return lambda *args, **kw: self.bound_call(names, ".__call__", function, function, args, kw)
         return lambda *args, **kw: self.bound_call(names, name, None, function, args, kw)
 
@@ -660,8 +733,6 @@ class Capture:
         result = OPERATORS[op](projected, rhs)
         if builtin is not None and builtin is not getattr(builtins, "str" if projection == "str-items" else projection):
             self.omit(site, "non-call-expression")
-        elif projection == "repr" and repr(value) != str(value):
-            self.omit(site, "non-call-expression")
         elif not result:
             self.omit(site, "reference-assertion-failed")
         elif "reason" in record:
@@ -670,6 +741,11 @@ class Capture:
             self.omit(site, "python-runtime-api" if default_truth(projected) else "non-boolean-assertion")
         elif op == "is" and not (isinstance(rhs, type) or any(rhs is v for v in (True, False, None))):
             self.omit(site, "unsupported-assertion")
+        elif projection in ("str", "repr") and python_representation(value):
+            self.omit(site, "python-object-representation")
+        elif projection in ("str", "repr"):
+            brackets = bracket_kinds(value)
+            self.finish(site, {**record, "post": projection, **({"brackets": brackets} if brackets else {})}, op, rhs)
         else:
             # an undecided query (None) asserted false is recorded as None
             self.finish(site, {**record, "post": projection} if projection in REPLAY_PROJECTIONS else record,
@@ -681,7 +757,7 @@ class Capture:
 
     def check_bound(self, site, op, projection, builtin, name, value, rhs):
         binding = self.bindings.get(name)
-        if binding is None or binding[2] is not value or binding[3] is None or safe_str(value) != binding[3]:
+        if binding is None or binding[2]() is not value or binding[3] is None or fingerprint(value) != binding[3]:
             # Not produced by a measured call (or changed since): only Python evaluates it.
             result = OPERATORS[op](project(projection, value), rhs)
             self.omit(site, "non-call-expression")
@@ -788,6 +864,13 @@ def execute_source(source, module, category, filename, timeout=extract.ALARM_SEC
     saved_dummy_base = sympy.Dummy._base_dummy_index
     original_import = builtins.__import__
     original_warn = warnings.warn
+    original_random = random.Random
+
+    class SeededRandom(original_random):
+        """random.Random() without a seed draws one from the OS (randMatrix's default generator)."""
+
+        def seed(self, a=None, version=2):
+            super().seed(0 if a is None else a, version)
 
     def without_optional(name, *args, **kwargs):
         if name.split(".")[0] in optional:
@@ -814,6 +897,7 @@ def execute_source(source, module, category, filename, timeout=extract.ALARM_SEC
         sympy.Dummy._count = int.from_bytes(hashlib.sha256(module.encode()).digest()[:6], "big")
         builtins.__import__ = without_optional
         warnings.warn = warning_at_test
+        random.Random = SeededRandom
         random.seed(0)
         sympy.core.random.seed(0)
         signal.setitimer(signal.ITIMER_REAL, timeout)
@@ -885,6 +969,7 @@ def execute_source(source, module, category, filename, timeout=extract.ALARM_SEC
         sympy.Dummy._base_dummy_index = saved_dummy_base
         builtins.__import__ = original_import
         warnings.warn = original_warn
+        random.Random = original_random
     return [event for _, event in capture.events], test_audit, len(transform.sites)
 
 

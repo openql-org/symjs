@@ -450,6 +450,8 @@ export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]>
   'sympy.utilities.iterables:sift([sqrt(x), exp(x), (y**x)**2],\n     lambda x: x.as_base_exp()[0])': () =>
     sj.sift([sj.sqrt(x), sj.exp(x), sj.pow(sj.pow(y, x), 2)], (e: Expr) => sj.asBaseExp(e)[0]),
   // F = lambda x: (2048*pow(x, 2, n) + 32767) % n
+  'sympy.parsing.sympy_parser:parse_expr(\'unsplittable\', transformations=standard_transformations +\n(transformation, implicit_multiplication))': () =>
+    sj.parseExpr('unsplittable', { transformations: 'implicit', splitSymbols: (name) => !['list', 'of', 'unsplittable', 'names'].includes(name) && sj.tokenSplittable(name) }),
   'sympy.ntheory.factor_:pollard_rho(n, F=F)': () => {
     const n = 16843009n;
     return sj.pollardRho(n, { F: (v: bigint) => (2048n * ((v * v) % n) + 32767n) % n });

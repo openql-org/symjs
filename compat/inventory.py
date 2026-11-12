@@ -471,7 +471,6 @@ NOTES = {
     'sympy.simplify._cse_diff': 'private CSE of Jacobians (forward differentiation)',
     'sympy.simplify.traversaltools': 'deprecated alias of use',
     'sympy.tensor.functions': 'shape, NoShapeError; TensorProduct not ported',
-    'sympy.tensor.toperators': 'PartialDerivative with doit, fun_eval, get_matrix and component arrays; the inventory does not resolve its base sympy.core.Expr (imported through the sympy.core package), and the Basic/Expr members inherited by Expr subclasses are not mapped to symjs members.',
 }
 
 
@@ -508,6 +507,7 @@ DOCTEST_EXCLUSIONS = frozenset({
 })
 UNIT_OMISSIONS = frozenset({
     'duplicate', 'marked-xfail', 'test-utility', 'python-runtime-api', 'private-api', 'optional-dependency',
+    'python-object-representation',  # str()/repr() of a Python object that is not a SymPy value
 })
 
 # Qualified names disambiguate exports with different meanings in different
@@ -562,12 +562,21 @@ def public_outline(tree, class_body=False):
         elif isinstance(node, (ast.Assign, ast.AnnAssign)):
             targets = node.targets if isinstance(node, ast.Assign) else [node.target]
             is_exports = any(isinstance(t, ast.Name) and t.id == '__all__' for t in targets)
-            if class_body or is_exports:
+            # A module-level `Alias = Name` keeps class aliases resolvable as bases.
+            is_alias = not class_body and isinstance(node, ast.Assign) and len(targets) == 1 and isinstance(targets[0], ast.Name) and isinstance(node.value, ast.Name)
+            if is_alias:
+                body.append(node)
+            elif class_body or is_exports:
                 if not is_exports:
                     node.value = ast.Constant(value=None)
                 body.append(node)
     tree.body = body
     return tree
+
+
+# Python runtime bases that contribute only protocol members, never SymPy API.
+PROTOCOL_BASES = {'RuntimeWarning', 'StopIteration', 'collections.abc.MutableSet', 'collections.abc.MutableMapping',
+                  'typing.NamedTuple', 'threading.local', 'ast.NodeTransformer'}
 
 
 class PublicContracts:
@@ -588,20 +597,18 @@ class PublicContracts:
                     origin = '.'.join(p for p in (prefix, node.module) if p)
                     for alias in node.names:
                         imports[alias.asname or alias.name] = origin + '.' + alias.name
+                elif isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name) and isinstance(node.value, ast.Name):
+                    imports[node.targets[0].id] = imports.get(node.value.id, module + '.' + node.value.id)
                 elif isinstance(node, ast.Import):
                     for alias in node.names:
                         imports[alias.asname or alias.name.split('.')[0]] = alias.name if alias.asname else alias.name.split('.')[0]
         self.cache = {}
 
     def resolve(self, module, name, seen=frozenset()):
-        full = module + '.' + name
-        if full in seen:
-            return full
         head, dot, tail = name.partition('.')
         target = self.imports.get(module, {}).get(head)
-        if target:
-            full = target + (dot + tail if dot else '')
-        if full in self.classes:
+        full = target + (dot + tail if dot else '') if target else module + '.' + name
+        if full in self.classes or full in seen:
             return full
         owner, _, local = full.rpartition('.')
         if owner in self.imports and local in self.imports[owner]:
@@ -626,10 +633,12 @@ class PublicContracts:
                     if isinstance(target, ast.Name) and not target.id.startswith('_'):
                         names.add(target.id)
         for base in node.bases:
-            name = ast.unparse(base)
-            if name in {'object', 'Enum', 'Exception', 'BaseException', 'ValueError', 'TypeError', 'IndexError', 'KeyError', 'RuntimeError', 'ArithmeticError', 'ZeroDivisionError', 'NotImplementedError', 'tuple', 'dict', 'list', 'set', 'frozenset', 'int', 'str', 'type'}:
+            name = ast.unparse(base.value if isinstance(base, ast.Subscript) else base)
+            if name in PROTOCOL_BASES or name in {'object', 'Enum', 'Exception', 'BaseException', 'ValueError', 'TypeError', 'IndexError', 'KeyError', 'RuntimeError', 'ArithmeticError', 'ZeroDivisionError', 'NotImplementedError', 'tuple', 'dict', 'list', 'set', 'frozenset', 'int', 'str', 'type'}:
                 continue
             parent = self.resolve(module, name)
+            if parent in PROTOCOL_BASES:
+                continue
             if parent == 'abc.ABC':
                 # The abstract-base-class marker declares no members.
                 continue
@@ -741,7 +750,8 @@ def disallowed_omissions(rows, allowed):
 
 
 # SymPy test files named differently from the module they test.
-TEST_MODULES = {'sympy.tensor.toperators': 'sympy.tensor.tests.test_tensor_operators'}
+TEST_MODULES = {'sympy.tensor.toperators': 'sympy.tensor.tests.test_tensor_operators',
+                **{f'sympy.liealgebras.type_{t}': f'sympy.liealgebras.tests.test_type_{t.upper()}' for t in 'abcdefg'}}
 
 
 def test_module_for(module):
@@ -762,6 +772,8 @@ def evaluate_completeness(module, contract, api, evidence, documented_examples=0
     unmeasured = documented_examples > 0 and not selected
     test_module = test_module_for(module)
     unit = evidence['units'].get(test_module, {})
+    # Without an upstream test file the module is held to the per-file 100% coverage gate of its own tests.
+    applicable = bool(unit.get('exists')) or test_module in evidence.get('upstreamTests', {test_module})
     gaps = sorted(set(unit.get('gaps', [])) | set(unit.get('timeouts', [])))
     bad_units = disallowed_omissions(unit.get('omitted', []), UNIT_OMISSIONS)
     statuses = Counter(t['status'] for t in unit.get('tests', []) if t['status'] != 'completed' and t['status'] not in UNIT_OMISSIONS)
@@ -772,14 +784,19 @@ def evaluate_completeness(module, contract, api, evidence, documented_examples=0
                      'caseCount': len(docs), 'gapCount': len(failures), 'failingIds': failures,
                      'disallowedExclusions': excluded, 'disallowedOmissions': bad_docs,
                      'unaccountedExamples': missing_examples, 'notSelected': unmeasured},
-        'unitTests': {'pass': bool(unit.get('exists') and unit.get('caseCount', 0)) and not (gaps or bad_units or statuses),
-                      'testModule': test_module, 'testFile': test_module.replace('.', '/') + '.py',
+        'unitTests': {'pass': not applicable or bool(unit.get('exists') and unit.get('caseCount', 0)) and not (gaps or bad_units or statuses),
+                      'applicable': applicable, 'testModule': test_module, 'testFile': test_module.replace('.', '/') + '.py',
                       'inCorpus': unit.get('exists', False), 'caseCount': unit.get('caseCount', 0),
                       'gapCount': len(gaps), 'timeoutCount': len(unit.get('timeouts', [])),
                       'disallowedOmissions': bad_units, 'incompleteTests': dict(sorted(statuses.items()))},
         'limitations': {'pass': note is None and not limits, 'hasNote': note is not None, 'note': note or '',
                        'capabilities': [{'area': a['area'], 'remaining': a['remaining']} for a in limits]},
     }
+
+
+def upstream_tests():
+    reference = Path(sympy.__file__).parent
+    return {'sympy.' + '.'.join(path.relative_to(reference).with_suffix('').parts) for path in reference.rglob('tests/test_*.py')}
 
 
 def load_evidence(root, corpus):
@@ -808,7 +825,7 @@ def load_evidence(root, corpus):
     return {'doctests': by_module(corpus['cases']), 'doctestOmissions': by_module(corpus['extraction']['omitted']),
             'doctestGaps': read(compat / 'known-gaps.json')['cases'],
             'doctestExclusions': read(compat / 'doctest-exclusions.json'),
-            'units': units, 'limitations': read(compat / 'capabilities.json')['areas']}
+            'units': units, 'upstreamTests': upstream_tests(), 'limitations': read(compat / 'capabilities.json')['areas']}
 
 
 def build_inventory(root):
@@ -875,7 +892,7 @@ def build_inventory(root):
                      'selectedForExtraction': module in selected, 'hasCorpusCases': module in measured,
                      'documentedExamples': examples, 'declaredPublicNames': names})
     return {'schema': 2, 'reference': {'sympy': sympy.__version__},
-            'definitions': {'complete': 'All public exports and class members are present; doctest and unit-test evidence passes strict omission/gap checks; no recorded limitation.',
+            'definitions': {'complete': 'All public exports and class members are present; doctest and unit-test evidence passes strict omission/gap checks; no recorded limitation. A module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests.',
                             'partial': 'A source counterpart exists, but at least one measured completeness criterion fails (see completeness).',
                             'unimplemented': 'Inspected mathematical module without an implementation.',
                             'unassessed': 'Not assessed; never treated as implemented or deliberately excluded.',

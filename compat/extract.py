@@ -26,6 +26,7 @@ import signal
 import importlib
 import inspect
 import json
+import math
 import random
 import sys
 import warnings
@@ -1122,6 +1123,11 @@ def ser(o):
     if isinstance(o, _ModInt):
         # an element of GF(p) (the LFSR sequences of sympy.crypto, galoistools): its value and the modulus
         return {"t": "FFElement", "v": int(o.val) % int(o.mod), "mod": int(o.mod), "symmetric": bool(o.sym)}
+    from sympy.core.sympify import CantSympify as _CantSympify
+    if (isinstance(o, _CantSympify) and isinstance(o, (int, float, complex, str))
+            and (".tests." in (type(o).__module__ or "") or not (type(o).__module__ or "").startswith("sympy."))):
+        # a test's own subclass of a Python number or string that sympify must reject
+        raise Unsupported(f"CantSympify value of type {type(o).__name__}")
     if isinstance(o, int):
         return {"t": "Rational", "p": str(o), "q": "1", "py": True}
     if isinstance(o, float):
@@ -1237,6 +1243,9 @@ def ser(o):
     if isinstance(o, type) and o.__module__ == "sympy.polys.polymatrix":
         # PolyMatrix, whose classmethods (eye, zeros, from_Matrix) the tests call
         return {"t": "Type", "name": "PolyMatrix"}
+    if isinstance(o, type) and issubclass(o, NDimArray):
+        # the N-dimensional array classes, whose classmethods (zeros) the doctests call
+        return {"t": "Type", "name": o.__name__}
     if isinstance(o, type) and o.__module__.startswith("sympy.combinatorics."):
         # combinatorics classes whose classmethods the doctests call (Subset.bitlist_from_subset, ...)
         return {"t": "Type", "name": o.__name__}
@@ -1695,7 +1704,8 @@ PY_NUMBER_FORMAT = re.compile(r"%(\.\d+)?[eEf]")
 def public_api_reason(fn, globs, extra_public):
     """The ordinary-call public API filter, also used for saved assignments."""
     value = globs.get(fn)
-    if not fn.startswith(".") and getattr(value, "__module__", None) in PYTHON_NUMERIC_MODULES:
+    # math.prod multiplies SymPy objects exactly as sympy.prod does.
+    if not fn.startswith(".") and getattr(value, "__module__", None) in PYTHON_NUMERIC_MODULES and value is not math.prod:
         return "python-runtime-api"
     if isinstance(value, sympy.Expr) and type(value).__module__ == "sympy.diffgeom.diffgeom" and callable(value):
         return None
@@ -1788,15 +1798,21 @@ def assignment_bindings(src, globs, extra_public):
     return {name: {**record, **({"pick": i} if unpacked else {})} for i, name in enumerate(names)}
 
 
-def preserve_references(cases, baseline):
+# Inputs older corpora could not serialize, with the reason they recorded instead.
+LEGACY_UNSUPPORTED = {"DMP": "DMP_Python", "JsLambda": "function", "Type": "type"}
+
+
+def preserve_references(cases, baseline, refresh=False, omitted=()):
     """Keep established inputs when an expansion changes incidental reference state.
 
     Anonymous Dummy names contain a process-global counter, while their serialized
     index is the actual identity. One existing membership example uses an external
     random sampler. Neither is a reason to replace an established reference input.
-    Older corpora omitted sparse storage metadata and could not serialize DMP
-    inputs. Match their original representation too, without changing any value
-    they did record. Other changes or missing occurrences remain errors.
+    Older corpora omitted sparse storage metadata and Python number markers,
+    recorded indexed bases as their label and iterators as lists, and could not
+    serialize DMP, callable or type inputs. Match their original representation
+    too, without changing any value they did record. Other changes or missing
+    occurrences remain errors.
     """
     def canonical(value):
         if isinstance(value, list):
@@ -1827,9 +1843,15 @@ def preserve_references(cases, baseline):
             if isinstance(value, list):
                 return [tree(v) for v in value]
             if isinstance(value, dict):
-                if value.get("t") == "DMP":
-                    raise Unsupported("DMP_Python")
-                return {k: tree(v) for k, v in value.items() if not (value.get("t") == "Matrix" and k == "sparse")}
+                kind = value.get("t")
+                if kind in LEGACY_UNSUPPORTED:
+                    raise Unsupported(LEGACY_UNSUPPORTED[kind])
+                if kind == "Iterator":
+                    return {"t": "Tuple", "items": tree(value["items"]), "list": True}
+                if kind == "IndexedBase" and set(value) == {"t", "label"}:
+                    return tree(value["label"])
+                return {k: tree(v) for k, v in value.items()
+                        if not (kind == "Matrix" and k == "sparse") and not (kind in ("Rational", "Float") and k == "py")}
             return value
 
         # Serialization stops at the first unsupported input, retaining only
@@ -1841,21 +1863,25 @@ def preserve_references(cases, baseline):
                 if field in case:
                     result[field] = tree(case[field])
         except Unsupported as err:
-            result["unsupportedArg"] = str(err)
+            if "unsupportedArg" not in case:
+                result["unsupportedArg"] = str(err)
         return result
 
     available = defaultdict(list)
-    for case in baseline:
-        available[key(canonical(case))].append(case)
+    for index, case in enumerate(baseline):
+        available[key(canonical(case))].append(index)
+    def take(indices):
+        return indices.pop(0) if indices else None
     result, preserved, added = [], [], []
     for case in cases:
-        matches = available.get(key(canonical(case)), [])
+        match = take(available.get(key(canonical(case)), []))
         reason = "Preserve established anonymous Dummy names, simultaneous replacement-map order or the recorded external real sample."
-        if not matches:
-            matches = available.get(key(canonical(legacy_serialization(case))), [])
-            reason = "Preserve established inputs from before sparse-matrix metadata and DMP serialization."
-        if matches:
-            original = matches.pop(0)
+        if match is None and not refresh:
+            match = take(available.get(key(canonical(legacy_serialization(case))), []))
+            reason = ("Preserve established inputs from before sparse-matrix metadata, Python number markers, IndexedBase, "
+                      "iterator, callable, type and DMP serialization.")
+        if match is not None:
+            original = baseline[match]
             if case != original:
                 preserved.append({"module": case["module"], "src": case["src"],
                                   "reason": reason})
@@ -1864,6 +1890,23 @@ def preserve_references(cases, baseline):
         else:
             result.append(case)
             added.append(case)
+    if refresh:
+        # The same example (module, source and occurrence) as the current extractor serializes it, or
+        # dropped when the current extractor omits it with a recorded reason.
+        pending = defaultdict(list)
+        for index in sorted(i for indices in available.values() for i in indices):
+            pending[(baseline[index]["module"], baseline[index]["src"])].append(index)
+        replaced, remaining = {}, []
+        for case in added:
+            slots = pending.get((case["module"], case["src"]))
+            if slots:
+                replaced[slots.pop(0)] = case
+            else:
+                remaining.append(case)
+        reasons = {(o["module"], o["src"]): o["reason"] for o in omitted}
+        dropped = {i for slots in pending.values() for i in slots if (baseline[i]["module"], baseline[i]["src"]) in reasons}
+        baseline = [replaced.get(i, c) for i, c in enumerate(baseline) if i not in dropped]
+        added = remaining
     missing = Counter(key(c) for c in baseline) - Counter(key(c) for c in result)
     if missing:
         labels = sorted({f"{json.loads(k)['module']}: {json.loads(k)['src']}" for k in missing})
@@ -1873,7 +1916,7 @@ def preserve_references(cases, baseline):
     return list(baseline) + added, preserved
 
 
-def main(dst, baseline_path=None):
+def main(dst, baseline_path=None, refresh=False):
     if sympy.__version__ != "1.14.0":
         raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
     import random
@@ -2047,6 +2090,9 @@ def main(dst, baseline_path=None):
                 fn = record["fn"]
                 # only the public API: top-level sympy names and public methods
                 reason = public_api_reason(fn, globs, extra_public) if bound is None else None
+                if reason is None and re.match(r"_[A-Za-z]", record.get("selfSrc", "")):
+                    # a method of a private class (_TensorDataLazyEvaluator.parse_data)
+                    reason = "private-api"
                 if reason:
                     omit(reason, modname, ex)
                     continue
@@ -2112,7 +2158,7 @@ def main(dst, baseline_path=None):
             baseline = json.load(f)
         if baseline["sympy"] != sympy.__version__:
             raise ValueError("Baseline SymPy version differs from the pinned reference")
-        cases, extraction["preservedReferences"] = preserve_references(cases, baseline["cases"])
+        cases, extraction["preservedReferences"] = preserve_references(cases, baseline["cases"], refresh, extraction["omitted"])
     with open(dst, "w", encoding="utf-8") as f:
         json.dump({"sympy": sympy.__version__, "api": api_inventory(), "cases": cases, "extraction": extraction}, f, indent=1, ensure_ascii=False)
         f.write("\n")
@@ -2128,5 +2174,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("destination")
     parser.add_argument("--baseline", help="Preserve every existing case while expanding this corpus")
+    parser.add_argument("--refresh", action="store_true",
+                        help="With --baseline, replace an example whose inputs the current extractor serializes differently")
     args = parser.parse_args()
-    main(args.destination, args.baseline)
+    main(args.destination, args.baseline, args.refresh)
