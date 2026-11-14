@@ -12,14 +12,16 @@
 import { at, defined, first, last } from '../../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../../core/assumptions';
 import type { ExprLike, FnName } from '../../core/nodes';
-import { Dummy, Expr, Fn, Pow, Rational, S, Special } from '../../core/nodes';
+import { Dummy, Expr, Fn, Pow, Rational, S, Special, impl } from '../../core/nodes';
 import { AccumBounds } from '../../core/accumbounds';
 import { Product } from '../../core/concrete';
 import { add, mul, pow, sympify } from '../../core/ops';
 import { factorInt } from '../../core/numbers';
 import { expandMul } from '../../simplify/expand';
 import { evaluators, fn, forEachEntry } from '../elementary/elementary';
-import { bernoulliNumber, floor as floorFn, gamma } from '../special/special';
+import { bernoulliNumber, ceiling as ceilingFn, floor as floorFn, gamma } from '../special/special';
+import { rel } from '../../core/logic';
+import type { RelOp } from '../../core/nodes';
 import { isprime as ntheoryIsprime } from '../../ntheory/primetest';
 import type { IntLike } from '../../ntheory/intutil';
 import { asInt as intOf, invert } from '../../ntheory/intutil';
@@ -426,6 +428,97 @@ function evalFrac(x: Expr): Expr | undefined {
   return out;
 }
 EVAL.frac = evalFrac;
+
+/** The facts the comparison rules need, from the assumptions of the expressions (an extended real includes oo and -oo). */
+const FACTS = {
+  extended_real: (e: Expr) => isRealQ(e) === true,
+  real: (e: Expr) => isRealQ(e) === true && !(e instanceof Special),
+  finite: (e: Expr) => isRealQ(e) === true && !e.has(S.Infinity) && !e.has(S.NegativeInfinity),
+  integer: (e: Expr) => isIntegerQ(e) === true,
+  noninteger: (e: Expr) => isIntegerQ(e) === false && isRealQ(e) === true,
+  positive: (e: Expr) => isPositive(e) === true && !(e instanceof Special),
+  extended_negative: (e: Expr) => isNegative(e) === true,
+  extended_nonpositive: (e: Expr) => isPositive(e) === false && isRealQ(e) === true,
+} as const;
+const holds = (p: keyof typeof FACTS, e: Expr): boolean => FACTS[p](e);
+const isRoundFn = (e: Expr): e is Fn => e instanceof Fn && (e.name === 'floor' || e.name === 'ceiling' || e.name === 'frac');
+
+/** SymPy frac._value_one_or_more: other is known to be at least 1. */
+const oneOrMore = (other: Expr): boolean =>
+  holds('extended_real', other) && ((other.freeSymbols().size === 0 && rel('Ge', other, 1) === S.true) || (holds('integer', other) && holds('positive', other)));
+
+/**
+ * SymPy floor and ceiling comparisons (their __lt__, __le__, __gt__ and
+ * __ge__): against an integer or a real number the comparison is one of the
+ * argument. The bound of a number is taken through its floor and ceiling,
+ * which is also exact for an integer-valued Float.
+ */
+function floorCeilingRelation(op: Exclude<RelOp, 'Eq' | 'Ne'>, f: Fn, other: Expr): Expr | undefined {
+  const a = first(f.args);
+  const isFloor = f.name === 'floor';
+  if (holds('real', a) && (holds('integer', other) || (other.freeSymbols().size === 0 && holds('real', other)))) {
+    const lo = floorFn(other);
+    const hi = ceilingFn(other);
+    if (isFloor) return { Le: () => rel('Lt', a, add(lo, 1)), Gt: () => rel('Ge', a, add(lo, 1)), Ge: () => rel('Ge', a, hi), Lt: () => rel('Lt', a, hi) }[op]();
+    return { Lt: () => rel('Le', a, add(hi, -1)), Ge: () => rel('Gt', a, add(hi, -1)), Gt: () => rel('Gt', a, lo), Le: () => rel('Le', a, lo) }[op]();
+  }
+  if (a.key === other.key && holds('real', other)) {
+    // floor(x) <= x <= ceiling(x), strictly when x is not an integer
+    const weak = isFloor ? op === 'Le' : op === 'Ge';
+    const strict = isFloor ? op === 'Lt' : op === 'Gt';
+    if (weak) return S.true;
+    if (strict) return holds('noninteger', other) ? S.true : undefined;
+    return op === 'Le' || op === 'Ge' ? (holds('noninteger', other) ? S.false : undefined) : S.false;
+  }
+  if (holds('finite', a) && ((other === S.Infinity && (op === 'Lt' || op === 'Le')) || (other === S.NegativeInfinity && (op === 'Gt' || op === 'Ge')))) return S.true;
+  return undefined;
+}
+
+/** SymPy frac comparisons: 0 <= frac(x) < 1 for an extended real x. */
+function fracRelation(op: Exclude<RelOp, 'Eq' | 'Ne'>, f: Fn, other: Expr): Expr | undefined {
+  if (!holds('extended_real', first(f.args))) return undefined;
+  const large = oneOrMore(other);
+  switch (op) {
+    case 'Ge':
+      return holds('extended_nonpositive', other) ? S.true : large ? S.false : undefined;
+    case 'Gt':
+      return large ? S.false : holds('extended_negative', other) ? S.true : undefined;
+    case 'Le':
+      return holds('extended_negative', other) ? S.false : large ? S.true : undefined;
+    default:
+      return holds('extended_nonpositive', other) ? S.false : large ? S.true : undefined;
+  }
+}
+
+/** SymPy _eval_is_eq of floor, ceiling and frac: true, false or undefined. */
+function roundEquality(f: Fn, other: Expr): boolean | undefined {
+  const a = first(f.args);
+  const forms =
+    f.name === 'floor' ? [mul(-1, ceilingFn(mul(-1, a))), add(a, mul(-1, frac(a)))]
+    : f.name === 'ceiling' ? [mul(-1, floorFn(mul(-1, a))), add(a, frac(mul(-1, a)))]
+    : [add(a, mul(-1, floorFn(a))), add(a, ceilingFn(mul(-1, a)))];
+  if (f.name === 'frac') {
+    if (forms.some((g) => g.key === other.key)) return true;
+    return holds('extended_negative', other) || oneOrMore(other) ? false : undefined;
+  }
+  let result: boolean | undefined;
+  for (const g of forms) {
+    const r = rel('Eq', g, other);
+    if (r === S.true) return true;
+    if (r === S.false) result = false;
+  }
+  return result;
+}
+
+impl.relational = (op, lhs, rhs) => {
+  if (op === 'Eq' || op === 'Ne') {
+    const r = isRoundFn(lhs) ? roundEquality(lhs, rhs) : undefined;
+    const v = r ?? (isRoundFn(rhs) ? roundEquality(rhs, lhs) : undefined);
+    return v === undefined ? undefined : v === (op === 'Eq') ? S.true : S.false;
+  }
+  if (!isRoundFn(lhs)) return undefined;
+  return lhs.name === 'frac' ? fracRelation(op, lhs, rhs) : floorCeilingRelation(op, lhs, rhs);
+};
 
 forEachEntry(EVAL, (name, f) => {
   evaluators[name] = (...a: Expr[]) => f(...a);

@@ -520,6 +520,8 @@ export function conjugate(xx: ExprLike): Expr {
   }
   if (isReal(x)) return x;
   if (isI(x)) return neg(S.I);
+  // SymPy Symbol._eval_conjugate: an imaginary symbol is its negated conjugate
+  if (x instanceof Sym && x.assumptions.imaginary === true) return neg(x);
   if (x instanceof Add) return add(...x.args.map(conjugate));
   if (x instanceof Mul) return mul(...x.args.map(conjugate));
   if (x instanceof Pow) {
@@ -532,6 +534,11 @@ export function conjugate(xx: ExprLike): Expr {
     switch (x.name) {
       case 'conjugate':
         return first(x.args);
+      // conjugate(transpose(A)) = adjoint(A) and conjugate(adjoint(A)) = transpose(A)
+      case 'transpose':
+        return adjoint(first(x.args));
+      case 'adjoint':
+        return transpose(first(x.args));
       case 'sin':
       case 'cos':
       case 'tan':
@@ -560,7 +567,10 @@ export function adjoint(xx: ExprLike): Expr {
     const r = x.adjointSelf();
     if (r !== undefined) return r;
   }
-  if (x.isCommutative) return conjugate(x);
+  // SymPy Expr._eval_adjoint: a hermitian symbol is its own adjoint, an antihermitian one its negative
+  if (x instanceof Sym && x.assumptions.hermitian === true) return x;
+  if (x instanceof Sym && x.assumptions.antihermitian === true) return neg(x);
+  if (x.isCommutative && !(x instanceof Add) && !(x instanceof Mul)) return conjugate(x);
   if (x instanceof Add) return add(...x.args.map(adjoint));
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(adjoint));
   if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(adjoint(x.base), x.exp);

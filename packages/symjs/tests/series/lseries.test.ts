@@ -102,3 +102,57 @@ describe('dir when the leading term of a derivative is not found', () => {
     expect(sj.dir(P('x*log(x) + x**(1 + sqrt(2))'), x, 1).toString()).toBe('-oo');
   });
 });
+
+describe('leading terms that depend on the direction (SymPy test_integers, test_trigonometric, test_hyperbolic)', () => {
+  const x = new Sym('x');
+  const b = sj.symbol('b', { positive: true });
+  const lt = (e: string | sj.Expr, cdir?: number): string => sj.sstr(sj.asLeadingTerm(typeof e === 'string' ? parse(e) : e, x, cdir === undefined ? {} : { cdir }));
+
+  it('takes floor and ceiling next to an integer value from the side of approach', () => {
+    expect(lt('floor((x**3 + x)/(x**2 - x))', 1)).toBe('-2');
+    expect(lt('ceiling((x**3 + x)/(x**2 - x))', -1)).toBe('0');
+    expect(lt('floor(sin(x)/x)', 1)).toBe('0');
+    expect(lt('floor(sin(x)/x)', -1)).toBe('0');
+    expect(lt('ceiling((cos(x) - 1)/x)', 1)).toBe('0');
+    expect(lt('ceiling((cos(x) - 1)/x)', -1)).toBe('1');
+    expect(lt(sj.floor(sj.mul(x, sj.pow(b, -1))), -1)).toBe('-1');
+    expect(lt(sj.floor(sj.mul(x, sj.pow(b, -1))))).toBe('0');
+    expect(lt('floor(x + 1/2)')).toBe('0');
+    expect(() => lt('floor(1/x)')).toThrow();
+    expect(() => lt(sj.floor(sj.mul(x, new Sym('c'))))).toThrow(sj.NotImplementedError);
+  });
+
+  it('takes frac from the side of approach', () => {
+    expect(lt('frac(x)', -1)).toBe('1');
+    expect(lt('frac(x)')).toBe('x');
+    expect(lt('frac(-2*x + 1)', 1)).toBe('1');
+    expect(lt('frac(-2*x + 1)', -1)).toBe('-2*x');
+    expect(lt('frac(sin(x) + 5)', 1)).toBe('x');
+    expect(lt('frac(x + 1/2)')).toBe('1/2');
+    expect(lt('frac(1/x)')).toBe('AccumBounds(0, 1)');
+    expect(lt(sj.frac(sj.mul(x, new Sym('c'))))).toBe('c*x');
+    expect(lt(sj.frac(sj.add(x, new Sym('c'))))).toBe('frac(c)');
+    expect(() => lt('frac(sin(x)/x)')).toThrow(sj.NotImplementedError);
+  });
+
+  it('gives the accumulation intervals and limits of functions of an infinite argument', () => {
+    expect(lt('sin(1/x)')).toBe('AccumBounds(-1, 1)');
+    expect(lt('tan(1/x)')).toBe('AccumBounds(-oo, oo)');
+    expect(lt('sinh(1/x)')).toBe('sinh(1/x)');
+    expect(lt('atan(1/x)', 1)).toBe('pi/2');
+    expect(lt('atan(1/x)', -1)).toBe('-pi/2');
+    expect(lt('atanh(1/x)', 1)).toBe('-I*pi/2');
+    expect(lt('atanh(1/x)', -1)).toBe('I*pi/2');
+    expect(lt('asec(1/x)')).toBe('pi/2');
+    expect(lt('asech(1/x)', 1)).toBe('I*pi/2');
+    expect(lt('acot(1/x)')).toBe('x');
+    expect(lt('acsc(1/x)')).toBe('x');
+    expect(lt('sin(x)')).toBe('x');
+    expect(lt('cosh(x)')).toBe('1');
+    expect(lt('atan(x)')).toBe('x');
+    expect(lt('atanh(x)')).toBe('x');
+    expect(lt('asec(x + 2)')).toBe(sj.sstr(sj.asec(2)));
+    expect(lt('asech(x + 1/2)')).toBe(sj.sstr(sj.asech(sj.Rational.of(1n, 2n))));
+    expect(lt('acot(x + 1)')).toBe('pi/4');
+  });
+});

@@ -130,9 +130,11 @@ export function splitSurds(expr: Expr): [Expr, Expr, Expr] {
   return [g2, add(...a1v), add(...a2v)];
 }
 
+const NAN_OR_ZOO = new Set(['nan', 'zoo']);
+
 /** Does e contain 0, nan or zoo (SymPy d.has(S.Zero, nan, zoo))? */
 const hasZeroOrNaN = (e: Expr): boolean =>
-  (e instanceof Rational && e.isZero) || (e instanceof Special && (e.name === 'nan' || e.name === 'zoo')) || e.args.some(hasZeroOrNaN);
+  (e instanceof Rational && e.isZero) || (e instanceof Special && NAN_OR_ZOO.has(e.name)) || e.args.some(hasZeroOrNaN);
 
 /** SymPy rad_rationalize(num, den): rationalize den = a*sqrt(g) + b step by step. */
 export function radRationalize(numIn: Expr, den: Expr): [Expr, Expr] {

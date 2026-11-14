@@ -664,3 +664,20 @@ it('multiplies coefficients in place, including multiplication by zero', async (
   expect(String(p)).toBe('3*x + 3*y**2');
   expect(p.imulNum(0).isZero).toBe(true);
 });
+
+describe('cancel over a fraction field with an associated ring (SymPy PolyElement.cancel)', () => {
+  it('clears the denominators into ZZ[x] for ZZ(x)', () => {
+    const [Fx] = sj.field('x', ZZ);
+    const [, s] = ring('s', Fx.toDomain()) as [PolyRing, PolyElement];
+    const f = s.mul(sj.parse('(-x**2 - 4)/4'));
+    const g = s.mul(s).add(sj.parse('(x**2 + 2)/2'));
+    expect(f.clearDenoms().map(String)).toEqual(['4', '-(x**2 + 4)*s']);
+    expect(g.clearDenoms().map(String)).toEqual(['2', '2*s**2 + x**2 + 2']);
+    expect(f.cancel(g).map(String)).toEqual(['-(x**2 + 4)*s', '4*s**2 + 2*x**2 + 4']);
+  });
+  it('keeps the coefficients over QQ(x)', () => {
+    const [, w] = ring('w', 'QQ(z)') as [PolyRing, PolyElement];
+    const c = w.mul(sj.parse('z/2 + 1'));
+    expect(c.clearDenoms().map(String)).toEqual(['1', '(z/2 + 1)*w']);
+  });
+});

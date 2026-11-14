@@ -618,3 +618,76 @@ it('derives number-domain consequences from registered symbol predicate handlers
     expect(ask(consequence(value))).toBe('unknown');
   }
 });
+
+describe('ask on functions (SymPy test_miscellaneous, test_complexes, test_exponential, test_hyperbolic)', () => {
+  const { ask, Q, symbol, Max, Min } = sj;
+  const raw = (name: string, ...args: sj.ExprLike[]): sj.Expr => new sj.AppliedFunction(name as never, args.map((a) => sj.sympify(a)));
+  const o = symbol('o', { odd: true });
+  const e = symbol('e', { even: true });
+  const q = symbol('q', { rational: true });
+  const t = symbol('t', { real: true, transcendental: true });
+  const a = symbol('a', { algebraic: true });
+  const na = symbol('na', { algebraic: true, nonzero: true });
+  const r = symbol('r', { real: true });
+  const x = symbol('x');
+  const i = symbol('i', { imaginary: true });
+
+  it('gives Max and Min the properties all their arguments share', () => {
+    expect(ask(Q.odd(Max(o, symbol('o2', { odd: true }))))).toBe(true);
+    expect(ask(Q.even(Min(o, symbol('o2', { odd: true }))))).toBe(false);
+    expect(ask(Q.odd(Max(o, e)))).toBe('unknown');
+    expect(ask(Q.rational(Max(q, o)))).toBe(true);
+    expect(ask(Q.algebraic(Max(t, symbol('t2', { real: true, transcendental: true }))))).toBe(false);
+    expect(ask(Q.real(Max(r, t)))).toBe(true);
+  });
+
+  it('gives a Piecewise the properties all its expressions share', () => {
+    const pw = sj.piecewise([0, sj.Lt(x, 1)], [1, true]);
+    expect(ask(Q.finite(pw))).toBe(true);
+    expect(ask(Q.imaginary(sj.piecewise([sj.I, sj.Lt(x, 1)], [mul2(sj.I), true])))).toBe(true);
+    expect(ask(Q.positive(pw))).toBe('unknown');
+  });
+
+  it('knows the functions that are extended real on the extended real line', () => {
+    expect(ask(Q.extended_real(raw('cot', r)))).toBe(true);
+    expect(ask(Q.extended_real(raw('acsch', symbol('y', { extendedReal: true }))))).toBe(true);
+    expect(ask(Q.extended_real(raw('cot', x)))).toBe('unknown');
+  });
+
+  it('decides Abs from a real argument', () => {
+    expect(ask(Q.rational(raw('abs', q)))).toBe(true);
+    expect(ask(Q.integer(raw('abs', symbol('k', { integer: true }))))).toBe(true);
+    expect(ask(Q.even(raw('abs', symbol('ne', { integer: true, even: false }))))).toBe(false);
+    expect(ask(Q.odd(raw('abs', symbol('no', { integer: true, odd: false }))))).toBe(false);
+    expect(ask(Q.odd(raw('abs', x)))).toBe('unknown');
+    expect(ask(Q.rational(raw('abs', x)))).toBe('unknown');
+  });
+
+  it('knows algebraic and transcendental values of functions', () => {
+    expect(ask(Q.algebraic(raw('sin', mul2(sj.S.Pi, q))))).toBe(true);
+    expect(ask(Q.algebraic(raw('tan', mul2(sj.S.Pi, q))))).toBe('unknown');
+    expect(ask(Q.algebraic(raw('re', a)))).toBe(true);
+    expect(ask(Q.algebraic(raw('LambertW', na)))).toBe(false);
+    expect(ask(Q.algebraic(sj.exp(mul2(sj.S.Pi, symbol('rn', { rational: true, nonzero: true })))))).toBe(false);
+    // pi + sqrt(3) is transcendental
+    expect(ask(Q.rational(sj.add(sj.S.Pi, sj.sqrt(3))))).toBe(false);
+    expect(ask(Q.rational(raw('log', 1)))).toBe(true);
+  });
+
+  it('knows where the inverse hyperbolic functions are finite', () => {
+    expect(ask(Q.finite(raw('asinh', 2)))).toBe(true);
+    expect(ask(Q.finite(raw('acosh', x)))).toBe('unknown');
+    expect(ask(Q.finite(raw('acoth', 2)))).toBe(true);
+    expect(ask(Q.finite(raw('asech', sj.Rational.of(2n, 3n))))).toBe(true);
+    expect(ask(Q.finite(raw('floor', r)))).toBe(true);
+    expect(ask(Q.finite(raw('frac', x)))).toBe(true);
+  });
+
+  it('decides sign(x) through its argument', () => {
+    expect(ask(Q.finite(raw('sign', x)))).toBe(true);
+    expect(ask(Q.imaginary(raw('sign', i)))).toBe(true);
+    expect(ask(Q.imaginary(raw('sign', r)))).toBe(false);
+  });
+});
+
+const mul2 = (...xs: sj.ExprLike[]): sj.Expr => sj.mul(...xs);

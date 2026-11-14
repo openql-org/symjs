@@ -1089,3 +1089,72 @@ it('unifies Gaussian and floating coefficient domains for multiplication', () =>
   }));
   expect(Poly.from(x, [x]).mul(sj.I).domain).toBe('ZZ_I');
 });
+
+describe('gcd and lcm over fields are monic (SymPy dmp_ff_prs_gcd, dmp_ff_lcm)', () => {
+  const g = (a: string, b: string): string => str(sj.gcd(parse(a), parse(b)));
+  const l = (a: string, b: string): string => str(sj.lcm(parse(a), parse(b)));
+  it('over QQ', () => {
+    expect(g('2*x/3 + 2/3', '4*x + 4')).toBe('x + 1');
+    expect(l('2*x/3 + 2/3', '4*x + 4')).toBe('x + 1');
+    expect(l('x/2', '3*x + 3')).toBe('x**2 + x');
+    expect(g('x/2 + y/2', '3*x + 3*y')).toBe('x + y');
+    // over ZZ the leading coefficient is only made positive
+    expect(g('4*x + 4', '-6*x - 6')).toBe('2*x + 2');
+    expect(l('2*x', '3*x + 3')).toBe('6*x**2 + 6*x');
+  });
+  it('over RR through the exact rationals of the coefficients (SymPy dup_inner_gcd)', () => {
+    expect(l('8.0089*x + 2.83', '1')).toBe('1.0*x + 0.353356890459364');
+    expect(l('2.0*x + 1', '3*x')).toBe('1.0*x**2 + 0.5*x');
+    expect(g('4.0*x + 2', '2.0*x + 1')).toBe('1.0*x + 0.5');
+    expect(g('2.0*x**2 - 2', '4.0*x - 4')).toBe('1.0*x - 1.0');
+    expect(g('-2.0*x + 1', '-4.0*x + 2')).toBe('1.0*x - 0.5');
+    expect(g('2.0*x*y + y', '4.0*x + 2')).toBe('1.0*x + 0.5');
+    expect(l('2.0*x*y + y', '4.0*x + 2')).toBe('1.0*x*y + 0.5*y');
+    expect(l('2.0*x', '4.0*x**2')).toBe('1.0*x**2');
+    expect(g('8.0089*x + 2.83', '0')).toBe('1.0*x + 0.353356890459364');
+    expect(l('0', '2.0*x + 1')).toBe('0');
+    // RR.to_rational of 8.0089 and 16.0178 are not proportional, as in SymPy
+    expect(g('8.0089*x + 2.83', '16.0178*x + 5.66')).toBe('1.00000000000000');
+    // numbers: RealField.gcd is one and RealField.lcm the product
+    expect(g('2.0', '4.0')).toBe('1.00000000000000');
+    expect(l('2.0', '3')).toBe('6.00000000000000');
+    expect(g('2', '4')).toBe('2');
+  });
+  it('over CC', () => {
+    expect(g('1.0*I*x + 1.0', '2.0*I*x + 2.0')).toBe('1.0*x - 1.0*I');
+    expect(l('1.0*I*x + 1.0', '3*x')).toBe('1.0*x**2 - 1.0*I*x');
+    expect(g('(2.0 + 1.0*I)*x + 1', '3.0*x + 1')).toBe('1.00000000000000');
+  });
+  it('keeps the other domains and rational functions', () => {
+    expect(g('x/y', 'x')).toBe('x');
+    expect(g('sqrt(2)*x', 'x')).toBe('x');
+    const p = sj.Poly.from(parse('2.0*x + 1'), [new Sym('x')]);
+    expect(str(p.gcd(sj.Poly.from(parse('x**2 + x'), [new Sym('x')])).asExpr())).toBe('1.00000000000000');
+    expect(str(p.lcm(sj.Poly.from(parse('0'), [new Sym('x')], { domain: 'RR' })).asExpr())).toBe('0');
+    const X = new Sym('x');
+    expect(str(sj.Poly.from(parse('x/2'), [X]).gcd(sj.Poly.from(parse('x*y'), [X])).asExpr())).toBe('x/2');
+    expect(str(sj.Poly.from(parse('0'), [new Sym('x')], { domain: 'QQ' }).gcd(sj.Poly.from(parse('0'), [new Sym('x')], { domain: 'QQ' })).asExpr())).toBe('0');
+  });
+  it('of irrational algebraic numbers with a rational ratio (SymPy Q[irrational])', () => {
+    expect(g('6*(1 + sqrt(3))/5', '3*(1 + sqrt(3))/10')).toBe('3/10 + 3*sqrt(3)/10');
+    expect(g('2*sqrt(3)/3', '5/(6*sqrt(3))')).toBe('sqrt(3)/18');
+    expect(g('-sqrt(2)', '2*sqrt(2)')).toBe('sqrt(2)');
+    expect(g('-sqrt(2)', '-2*sqrt(2)')).toBe('sqrt(2)');
+    expect(l('3*sqrt(3)', '4/sqrt(3)')).toBe('12*sqrt(3)');
+    expect(l('5*(1 + 2**(1/3))/6', '3*(1 + 2**(1/3))/8')).toBe('15/2 + 15*2**(1/3)/2');
+    expect(g('sqrt(2)', 'sqrt(3)')).toBe('1');
+    expect(l('sqrt(2)', 'sqrt(3)')).toBe('sqrt(6)');
+    expect(g('sqrt(2)', '2')).toBe('1');
+    // not real algebraic numbers: the polynomial gcd and lcm in the generators
+    expect(g('pi', '2*pi')).toBe('pi');
+    expect(g('2**sqrt(2)', '2*2**sqrt(2)')).toBe('2**(sqrt(2))');
+    expect(g('sqrt(-2)', '2*sqrt(-2)')).toBe('sqrt(2)');
+  });
+  it('infers CC for complex floating-point coefficients', () => {
+    expect(sj.Poly.from(parse('1.0*I*x + 1.0')).domain).toBe('CC');
+    expect(sj.Poly.from(parse('2.0*I*x + 1')).domain).toBe('CC');
+    expect(sj.Poly.from(parse('(2.0 + 1.0*I)*x + 1')).domain).toBe('CC');
+    expect(sj.Poly.from(parse('I*x + 1/2')).domain).toBe('QQ_I');
+    expect(str(sj.Poly.from(parse('I*x + 1'), [new Sym('x')], { domain: 'CC' }).asExpr())).toBe('1.0*I*x + 1.0');
+  });
+});

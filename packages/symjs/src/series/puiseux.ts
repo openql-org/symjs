@@ -12,7 +12,7 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, FnName } from '../core/nodes';
-import { Add, Constant, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, isNum } from '../core/nodes';
+import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, isNum } from '../core/nodes';
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
@@ -275,7 +275,33 @@ export class Expander {
     if (e instanceof UndefFn && (e.name === SCALED_BESSELI || e.name === SCALED_BESSELK)) return this.scaledBessel(e, n);
     if (e instanceof UndefFn && (e.name === SCALED_EI || e.name === SCALED_ERFC)) return this.scaledExponentialIntegral(e, n);
     if (e instanceof Hyper) return this.serHyper(e, n);
+    if (e instanceof ExtensionExpr && e.isTaylorExpandable) return this.serTaylor(e, n);
     throw new SeriesError(`cannot expand ${e.toString()}`);
+  }
+
+  /**
+   * The Taylor series of a function application (SymPy Function._eval_nseries): in its only
+   * argument depending on the variable, or in the variable itself when several arguments depend on
+   * it; at a singular point the series of its rewrite in terms of tractable functions.
+   */
+  private serTaylor(e: ExtensionExpr, n: Rational): PS {
+    const t = this.t;
+    try {
+      const dep = e.args.map((a, i) => [a, i] as const).filter(([a]) => a.has(t));
+      if (dep.length > 1) return this.analytic((w) => subs(e, [[t, w]]), S.Zero, PS.exact([{ e: S.One, c: S.One }]), n);
+      const [g, k] = first(dep);
+      const sg = this.ser(g, n.isPositive ? n : S.One);
+      if (sg.terms.some((term) => term.e.isNegative && !isZeroCoeff(term.c))) throw new SeriesError('essential singularity');
+      const h = new PS(
+        sg.terms.filter((x) => x.e.isPositive),
+        sg.order,
+      );
+      return this.analytic((w) => e.withArgs(e.args.map((a, i) => (i === k ? w : a))), sg.coeff(S.Zero), h, n);
+    } catch (error) {
+      const tractable = e.rewriteSelf('tractable', e.args);
+      if (!(error instanceof SeriesError) || tractable === undefined) throw error;
+      return this.ser(tractable, n);
+    }
   }
 
   /** hyper(ap, bq, z) with z -> 0: the partial sum of its series in z (SymPy hyper._eval_nseries). */

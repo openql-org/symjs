@@ -145,3 +145,13 @@ describe('class keys of matrix sums and products, sums and products', () => {
     expect(str(sj.mul(sj.Product(sj.gamma(k), [k, 1, d]), sj.pow(sj.Determinant(sj.MatrixSymbol('SM', d, d)), new sj.Sym('a'))))).toBe('Determinant(SM)**a*Product(gamma(k), (k, 1, d))');
   });
 });
+
+describe('ordered terms with unevaluated function values', () => {
+  it('an application without a numeric value is a generator, as SymPy complex() fails on it', () => {
+    const e = sj.add(sj.Sqrt(1), Rational.of(-1n, 2n), sj.O(x));
+    expect(str(e)).toBe('-1/2 + Sqrt(1) + O(x)');
+    // a function with a numeric value is a coefficient
+    expect(str(sj.add(sj.log1p(1), Rational.of(-1n, 2n), sj.O(x)))).toBe('log(2) - 1/2 + O(x)');
+    expect(str(sj.add(sj.log2(3), Rational.of(-1n, 2n), sj.O(x)))).toBe('log2(3) - 1/2 + O(x)');
+  });
+});

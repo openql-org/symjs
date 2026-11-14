@@ -861,3 +861,21 @@ describe("summations: results equal SymPy 1.14", () => {
     expect(showList(run())).toBe(want);
   });
 });
+
+/** An extension node without a tractable rewrite. */
+class Opaque extends sj.ExtensionExpr {
+  constructor(args: readonly Expr[]) {
+    super('Opaque', args);
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new Opaque(args);
+  }
+}
+
+describe('extension nodes in limits', () => {
+  it('keeps the nodes without a tractable rewrite', () => {
+    const x = new Sym('x');
+    expect(limit(new Opaque([x]), x, 0).toString()).toBe("Limit(Opaque(x), x, 0, dir='+')");
+    expect(limit(sj.mul(sj.expm1(x), sj.pow(x, -1)), x, 0).toString()).toBe('1');
+  });
+});

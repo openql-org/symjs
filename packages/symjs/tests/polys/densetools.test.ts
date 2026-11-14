@@ -5,7 +5,7 @@ import { expect, it } from 'vitest';
 import { runTestCase } from '../../../../compat/tests-harness';
 import type { TestCase } from '../../../../compat/tests-harness';
 import {
-  DomainError, EX, Float, I, RR, MultivariatePolynomialError, NotReversible, PythonMPQ, QQ, QQ_I, Sym, ZZ, ZZ_I, add, dmpAlgInject, dmpClearDenoms,
+  DomainError, EX, Float, I, RR, MultivariatePolynomialError, mul, NotReversible, PythonMPQ, QQ, QQ_I, Sym, ZZ, ZZ_I, add, dmpAlgInject, dmpClearDenoms,
   dmpEval, dmpRevert, dmpShift, dmpToDict, dupClearDenoms, dupDiff, dupExtract, dupRealImag, dupRevert, dupSignVariations, pow, sqrt, str,
 } from '../../src';
 import type { Expr } from '../../src';
@@ -72,4 +72,21 @@ it('clears denominators over rings, fraction fields and expressions', () => {
   expect(String(c3)).toBe(String(ZZ_I.new(3)));
   expect(k.map(String)).toEqual([String(QQ_I.new(3, 6)), String(QQ_I.new(1, 3))]);
   expect(dmpShift([[1], [2]], [1, 0], 1, ZZ)).toEqual([[1], [3n]]);
+});
+
+it('takes the monic lcm of the denominators over a field of coefficients (SymPy K1.lcm)', () => {
+  const x = new Sym('x');
+  const R = RR.fracField(x);
+  const [common, g] = dupClearDenoms([R.convert(mul(new Float(8.48717), pow(add(mul(new Float(8.0089), x), new Float(2.83)), -1))), R.convert(new Float(0))], R);
+  expect(str(common as Expr)).toBe('1.0*x + 0.353356890459364');
+  expect(g.map((c) => str(c as Expr))).toEqual(['1.05971731448763', '0']);
+  const F = QQ.fracField(x);
+  const [c2, h] = dupClearDenoms([F.convert(pow(add(mul(3, x), 1), -1)), F.convert(0)], F);
+  expect(str(c2 as Expr)).toBe('x + 1/3');
+  expect(h.map((c) => str(c as Expr))).toEqual(['1/3', '0']);
+  const Z = ZZ.fracField(x);
+  expect(str(dupClearDenoms([Z.convert(pow(add(mul(3, x), 1), -1))], Z)[0] as Expr)).toBe('3*x + 1');
+  const E = EX.fracField(x);
+  expect(str(dupClearDenoms([E.convert(pow(add(mul(3, x), 1), -1))], E)[0] as Expr)).toBe('x + 1/3');
+  expect(str(dupClearDenoms([E.convert(pow(add(mul(3, x), 1), -1)), E.convert(pow(add(mul(2, x), 1), -1))], E)[0] as Expr)).toBe('x**2 + 5*x/6 + 1/6');
 });
