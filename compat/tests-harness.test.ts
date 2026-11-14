@@ -32,6 +32,32 @@ it('reuses ordinary exact/equivalent matching and inverts only comparable inequa
   expect(runTestCase({ ...base, fn: 'missingFunction', op: '!=' }).status).toBe('unsupported');
 });
 
+it('replays str() and repr() by printing the result and comparing the text exactly', () => {
+  const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const half = { ...base, src: "assert str(Float('0.5')) == '0.500000000000000'", fn: 'Float', args: [{ t: 'Js', v: '0.5' }], text: true };
+  expect(runTestCase({ ...half, post: 'str', expected: '0.500000000000000' })).toEqual({ status: 'pass' });
+  // an equal value printed differently is not accepted
+  expect(runTestCase({ ...half, post: 'str', expected: '0.5' })).toEqual({ status: 'fail', got: '0.500000000000000' });
+  const perm = { ...base, module: 'sympy.combinatorics.tests.test_permutations', category: 'combinatorics', fn: 'Permutation',
+    args: [integer(1), integer(2)], text: true };
+  expect(runTestCase({ ...perm, post: 'str', expected: '(1 2)' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...perm, post: 'repr', expected: 'Permutation(1, 2)' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...perm, post: 'str', op: '!=', expected: '(1 2)' })).toEqual({ status: 'fail', got: '(1 2)' });
+  const name = { ...base, fn: '.__getitem__', self: { t: 'Tuple', items: [{ t: 'Js', v: 'ab' }] }, args: [integer(0)], text: true };
+  expect(runTestCase({ ...name, post: 'str', expected: 'ab' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...name, post: 'repr', expected: "'ab'" })).toEqual({ status: 'pass' });
+  // JS arrays print with the brackets of the Python list or tuple they stand for
+  const strip = { ...base, module: 'sympy.polys.tests.test_densebasic', category: 'polys', fn: 'dup_strip',
+    args: [{ t: 'Tuple', items: [integer(0), integer(1), integer(2)], list: true }], text: true, post: 'str' as const };
+  expect(runTestCase({ ...strip, brackets: 'l', expected: '[1, 2]' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...strip, brackets: 't', expected: '[1, 2]' })).toEqual({ status: 'fail', got: '(1, 2)' });
+  expect(runTestCase({ ...strip, expected: '(1, 2)' })).toEqual({ status: 'pass' });
+  const factors = { ...base, module: 'sympy.ntheory.tests.test_factor_', category: 'ntheory', fn: 'factorint', args: [integer(12)], text: true, post: 'repr' as const };
+  expect(runTestCase({ ...factors, expected: '{2: 2, 3: 1}' })).toEqual({ status: 'pass' });
+  const pair = { ...base, fn: '.__getitem__', self: { t: 'Tuple', items: [{ t: 'Tuple', items: [integer(1), { t: 'Tuple', items: [integer(2)], list: true }] }] }, args: [integer(0)], text: true, post: 'str' as const };
+  expect(runTestCase({ ...pair, brackets: 'tl', expected: '(1, [2])' })).toEqual({ status: 'pass' });
+});
+
 it('compares Truth explicitly, including unknown, without accepting absent public results', () => {
   for (const [value, expected] of [[true, 'True'], [false, 'False'], ['unknown', 'None']] as const) {
     expect(assertionOutcome({ ...base, op: 'is', expected }, { status: 'fail', got: 'ignored' }, { value }).status).toBe('pass');

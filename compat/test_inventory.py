@@ -35,6 +35,15 @@ class CompletenessTests(unittest.TestCase):
         self.assertEqual(self.test_module, 'sympy.example.tests.test_widget')
         self.assertEqual(test_module_for('sympy'), 'sympy.tests.test_sympy')
         self.assertEqual(test_module_for('sympy.tensor.toperators'), 'sympy.tensor.tests.test_tensor_operators')
+        self.assertEqual(test_module_for('sympy.liealgebras.type_e'), 'sympy.liealgebras.tests.test_type_E')
+        del self.evidence['units'][self.test_module]
+        self.assertFalse(self.evaluate(documented_examples=1)['unitTests']['pass'])
+        self.evidence['upstreamTests'] = set()
+        result = self.evaluate(documented_examples=1)['unitTests']
+        self.assertTrue(result['pass'])
+        self.assertFalse(result['applicable'])
+        self.evidence['upstreamTests'] = {self.test_module}
+        self.assertFalse(self.evaluate(documented_examples=1)['unitTests']['pass'])
 
     def test_missing_export_and_members_are_concrete(self):
         del self.api['exports']['getWidget']
@@ -170,6 +179,15 @@ class Widget(Base, ABC):
         contract = PublicContracts({'sympy.example.base': a, self.module: b}).contract(self.module)
         self.assertEqual(contract['classes']['Widget']['members'], ['public'])
         self.assertEqual(contract['classes']['Parent']['members'], ['public'])
+        package = ast.parse('from .base import Base\nAlias = Base')
+        package.is_package = True
+        c = ast.parse('from sympy.example import Base, Alias\nfrom typing import NamedTuple\nclass Widget(Base): pass\nclass Other(Alias, NamedTuple): pass\nclass Row(list[int]): pass')
+        trees = {'sympy.example.base': a, 'sympy.example': package, self.module: c}
+        contract = PublicContracts(trees).contract(self.module)
+        self.assertEqual(contract['classes']['Widget']['members'], ['public'])
+        self.assertEqual(contract['classes']['Other']['members'], ['public'])
+        self.assertEqual(contract['unresolvedBases'], [])
+        self.assertEqual(PublicContracts({k: public_outline(copy.deepcopy(v)) for k, v in trees.items()}).contract(self.module), contract)
         unknown = ast.parse('class Widget(External): pass')
         contract = PublicContracts({self.module: unknown}).contract(self.module)
         self.assertFalse(api_criterion(self.module, contract, self.api)['pass'])

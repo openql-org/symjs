@@ -40,6 +40,15 @@ that limit. Each upstream test has a 30-second deadline, and timed-out tests
 lose all partial observations. `--baseline` migrates a legacy corpus by retaining
 all previously observed modules and extracting only unmeasured modules.
 
+Assertions on `str(...)` or `repr(...)` of a measured result record the call
+with `post: "str"` or `post: "repr"`. Replay prints the result with symjs's
+str printers (items inside containers by their repr, as Python does) and
+compares the text exactly; `brackets` lists the Python lists and tuples of the
+result in preorder, since JavaScript arrays stand for both. The text of a
+Python object that is not a SymPy value is omitted as
+`python-object-representation`. Unseeded `random.Random()` generators, such as
+the default one of `randMatrix`, are seeded deterministically during extraction.
+
 Replay runs one named Vitest project/test per category, with four workers. It
 reuses the doctest serializer format, deserializer and public API adapters.
 Synchronous calls have a 30-second deadline for core/polys and 5 seconds for

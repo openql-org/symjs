@@ -2888,6 +2888,7 @@
   "toNnf": {"entries":[".","./logic"],"kind":"function","prototype":[],"static":[]},
   "toNumberField": {"entries":[".","./polys"],"kind":"function","prototype":[],"static":[]},
   "together": {"entries":[".","./simplify"],"kind":"function","prototype":[],"static":[]},
+  "tokenSplittable": {"entries":[".","./core"],"kind":"function","prototype":[],"static":[]},
   "tools": {"entries":[".","./strategies"],"kind":"object","prototype":[],"static":["canon","subs","typed"]},
   "topologicalSort": {"entries":[".","./utilities"],"kind":"function","prototype":[],"static":[]},
   "totient": {"entries":[".","./special"],"kind":"function","prototype":[],"static":[]},

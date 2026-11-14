@@ -178,12 +178,63 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertEqual(cases[0]['test'], '_test_disabled')
         self.assertEqual([(c['fn'], c.get('pick'), c.get('post')) for c in cases[1:]], [
             ('div', 0, None), ('.all_coeffs', None, 'str-items'), ('Tuple', None, 'len'), ('Tuple', None, 'list'),
-            ('Integer', None, None), ('Integer', None, None), ('Integer', None, None), ('Integer', None, None),
+            ('Integer', None, 'str'), ('Integer', None, 'repr'), ('Integer', None, None), ('Integer', None, None),
             ('Integer', None, None), ('Integer', None, None), ('.__getitem__', None, None), ('.__call__', None, None)])
         self.assertEqual(cases[2]['expected'], "['1']")
         self.assertTrue(cases[5]['text'])
         self.assertEqual(cases[-2]['args'][0]['t'], 'Slice')
         self.assertEqual(corpus['extraction']['reasons'], {'non-call-expression': 3, 'python-runtime-api': 4})
+
+    def test_str_and_repr_are_replayed_as_printed_text(self):
+        corpus = self.extract('''
+            from sympy.combinatorics import Permutation, Cycle
+            def test_printed():
+                x = Symbol('x')
+                p = Permutation(1, 2)
+                assert str(p) == '(1 2)'
+                assert repr(p) == 'Permutation(1, 2)'
+                assert str(Cycle(1, 2)(4, 5)) == '(1 2)(4 5)'
+                assert str(Tuple(Float(0.5), Symbol("a"))) == "(0.5, a)"
+                assert str([Integer(1)]) == '[1]'
+                assert str(Poly(x**2 - 1).factor_list()) == "(1, [(Poly(x - 1, x, domain='ZZ'), 1), (Poly(x + 1, x, domain='ZZ'), 1)])"
+                assert repr(Rational(1, 2)) == '1/2'
+                assert str(expand((x + 1)**2)) != 'x'
+                assert str(Integer(1).as_coeff_Mul) != ''
+                assert str(Integer(2)) == '3'
+        ''')
+        cases = corpus['cases']
+        self.assertEqual([(c['fn'], c.get('post'), c['op'], c['expected'], c.get('text')) for c in cases], [
+            ('Permutation', 'str', '==', '(1 2)', True), ('Permutation', 'repr', '==', 'Permutation(1, 2)', True),
+            ('.__call__', 'str', '==', '(1 2)(4 5)', True), ('Tuple', 'str', '==', '(0.5, a)', True),
+            ('.factor_list', 'str', '==', "(1, [(Poly(x - 1, x, domain='ZZ'), 1), (Poly(x + 1, x, domain='ZZ'), 1)])", True),
+            ('Rational', 'repr', '==', '1/2', True), ('expand', 'str', '!=', 'x', True)])
+        self.assertEqual(cases[4]['brackets'], 'tltt')
+        self.assertNotIn('brackets', cases[0])
+        self.assertEqual(corpus['extraction']['reasons'], {
+            'python-object-representation': 1, 'non-call-expression': 1, 'reference-assertion-failed': 1})
+
+    def test_bindings_neither_print_nor_retain_their_values(self):
+        corpus = self.extract('''
+            import gc, weakref
+            import pytest
+            from sympy.combinatorics import Permutation
+            def test_cache():
+                p = Permutation([(0, 3, 1, 2), (4, 5)])
+                assert p._cyclic_form is None
+                assert p.size == 6
+            def test_collected():
+                f = Lambda(Symbol('x'), Symbol('x') + 1)
+                assert f(1) == 2
+                r = weakref.ref(f)
+                del f
+                gc.collect()
+                assert r() is None
+            def test_approx():
+                c = Point2D(0.5, 0.25).coordinates
+                assert c == pytest.approx((0.5, 0.25))
+        ''')
+        self.assertEqual(corpus['extraction']['testStatuses'], {'completed': 3})
+        self.assertEqual(corpus['extraction']['reasons'].get('test-utility'), 1)
 
     def test_lambda_arguments_are_expressions_or_recorded_tables(self):
         corpus = self.extract('''
@@ -284,9 +335,18 @@ class UnitTestExtractorTests(unittest.TestCase):
                 assert sympify(object(), strict=False) is None
             def test_bad_reference():
                 assert Integer(1) == 2
+            def test_cant_sympify():
+                from sympy.core.sympify import CantSympify
+                class no(float, CantSympify):
+                    pass
+                raises(SympifyError, lambda: sympify(no(1.2)))
         ''')
         self.assertEqual(len(corpus['cases']), 0)
         self.assertGreater(corpus['extraction']['examined'], 0)
+        self.assertEqual(corpus['extraction']['reasons']['unserializable-input'], 1)
+        # the records cross process boundaries during a full extraction
+        import pickle
+        pickle.dumps(corpus)
 
     def test_hash_seed_and_version_are_required(self):
         with patch.object(unit.sympy, '__version__', '0'):
@@ -302,8 +362,13 @@ class UnitTestExtractorTests(unittest.TestCase):
                 assert Integer(2) == 2
                 assert Symbol('x').is_real is None
                 assert Dummy().dummy_index != 0
+            def test_unseeded_generator():
+                m = randMatrix(3)
+                assert m.det() != Rational(1, 2)
         '''
-        self.assertEqual(self.extract(source), self.extract(source))
+        first = self.extract(source)
+        self.assertEqual(first, self.extract(source))
+        self.assertEqual(sum(c['fn'] == '.det' for c in first['cases']), 1)
 
 
 class CategoryShardTests(unittest.TestCase):

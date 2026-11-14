@@ -814,7 +814,9 @@ export function deserialize(tree: Tree): unknown {
     case 'Indexed': {
       const base = deserialize(tree['base'] as Tree);
       const indices = (tree['indices'] as Tree[]).map((t) => asExpr(deserialize(t)));
-      return base instanceof sj.IndexedBase ? base.at(...indices) : new sj.Indexed([asExpr(base), ...indices]);
+      if (base instanceof sj.IndexedBase) return base.at(...indices);
+      // an array indexed by symbols (a[i, j]) is SymPy's Indexed with the array as its base
+      return base instanceof sj.NDimArray ? base.get(...indices) : new sj.Indexed([asExpr(base), ...indices]);
     }
     case 'IndexedBase':
       return new sj.IndexedBase(deserialize(tree['label'] as Tree) as Sym, tree['shape'] === undefined ? {} : { shape: (tree['shape'] as Tree[]).map((t) => asExpr(deserialize(t))) });
@@ -1551,8 +1553,8 @@ function subsArgs(e: Expr, args: unknown[]): Expr {
   if (args.length === 2) return e.subs(asExpr(args[0]), asExpr(args[1]));
   const a = args[0];
   if (a instanceof JsDict) return sj.subs(e, new Map(a.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const)));
-  if (a instanceof JsTuple) {
-    // sequential substitution like SymPy
+  if (a instanceof JsTuple || a instanceof JsIterator) {
+    // sequential substitution like SymPy (an iterator of pairs too)
     let out = e;
     for (const p of a.items) {
       if (!(p instanceof JsTuple)) throw new Unsupported('subs pair');
@@ -2448,7 +2450,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   mod_inverse: (args, kw) => (noKw(kw), sj.modInverse(args[0] as sj.Rational, args[1] as sj.Rational)),
   prod: (args, kw) => {
     noKw(kw);
-    const xs = args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [];
+    const xs = args[0] instanceof JsList || args[0] instanceof JsTuple || args[0] instanceof JsIterator ? args[0].items.map(asExpr) : [];
     return sj.mul(args[1] === undefined ? 1 : asExpr(args[1]), ...xs);
   },
   nfloat: (args, kw) => {
@@ -4407,8 +4409,10 @@ export interface Case {
   self?: Tree;
   /** Component displayed after unpacking the call's result into named targets. */
   pick?: number;
-  /** Python builtin applied to the result before comparison: len(...), list(...), tuple(...), [str(r) for r in ...]. */
-  post?: 'len' | 'list' | 'tuple' | 'str-items';
+  /** Python builtin applied to the result before comparison: len(...), list(...), tuple(...), [str(r) for r in ...], str(...), repr(...). */
+  post?: 'len' | 'list' | 'tuple' | 'str-items' | 'str' | 'repr';
+  /** For str()/repr(): the Python lists ('l') and tuples ('t') of the result in preorder (JS arrays are either). */
+  brackets?: string;
   unsupportedArg?: string;
   assume?: Tree[];
   /** printed output (print(f(...)), pprint(...), a str result): compared as text */
@@ -4439,6 +4443,17 @@ const polyMatrixClassmethod = (method: (args: unknown[]) => unknown, previous: A
 };
 ADAPTERS['.from_Matrix'] = polyMatrixClassmethod((a) => sj.PolyMatrix.fromMatrix(...(a as Parameters<typeof sj.PolyMatrix.fromMatrix>)), ADAPTERS['.from_Matrix']);
 ADAPTERS['.eye'] = polyMatrixClassmethod((a) => sj.PolyMatrix.eye(...(a as Parameters<typeof sj.PolyMatrix.eye>)), ADAPTERS['.eye']);
+{
+  const zeros = definedOr(ADAPTERS['.zeros'], '.zeros adapter');
+  const arrays = { ImmutableDenseNDimArray: sj.ImmutableDenseNDimArray, MutableDenseNDimArray: sj.MutableDenseNDimArray, ImmutableSparseNDimArray: sj.ImmutableSparseNDimArray, MutableSparseNDimArray: sj.MutableSparseNDimArray };
+  ADAPTERS['.zeros'] = (args, kw, self) => {
+    if (self instanceof TypeRef && Object.hasOwn(arrays, self.name)) {
+      noKw(kw);
+      return arrays[self.name as keyof typeof arrays].zeros(...args.map((a) => intArg(a)));
+    }
+    return zeros(args, kw, self);
+  };
+}
 ADAPTERS['.zeros'] = polyMatrixClassmethod((a) => sj.PolyMatrix.zeros(...(a as Parameters<typeof sj.PolyMatrix.zeros>)), ADAPTERS['.zeros']);
 
 // sympy.crypto LFSRs: symjs takes the values of the GF(p) elements and the modulus
@@ -4518,6 +4533,7 @@ ADAPTERS['TableForm'] = (args, kw) => {
   const options = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), printable(v)]));
   return new sj.TableForm(data, options);
 };
+ADAPTERS['DiagramGrid'] = (args, kw) => (noKw(kw), new categories.DiagramGrid(args[0] as sj.Diagram));
 ADAPTERS['.draw'] = (args, kw, self) => {
   if (!(self instanceof categories.XypicDiagramDrawer)) return unsupportedOp('draw');
   const masked = kw['masked'] instanceof JsTuple ? kw['masked'].items : Array.isArray(kw['masked']) ? kw['masked'] : [];
@@ -5105,7 +5121,35 @@ function resultItems(value: unknown, post: string): readonly unknown[] {
 }
 
 /** Apply the Python builtin of an assertion (len, list, tuple, element-wise str) to a call result. */
-function projectResult(value: unknown, post: NonNullable<Case['post']>): unknown {
+/**
+ * The result with its JS arrays (and the JsLists converted from them) as the Python lists and tuples
+ * they stand for: the containers take the recorded kinds in preorder (an array beyond them prints as
+ * a tuple, like any result). A JsTuple built by an adapter keeps its own kind.
+ */
+function withBrackets(value: unknown, kinds: string): unknown {
+  let next = 0;
+  const kind = (): string | undefined => kinds[next++];
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v) || v instanceof JsList) {
+      const isList = kind() === 'l';
+      return new JsTuple((Array.isArray(v) ? v : v.items).map(walk), isList);
+    }
+    if (v instanceof JsTuple) {
+      kind();
+      return new JsTuple(v.items.map(walk), v.isList);
+    }
+    if (v instanceof Map || v instanceof JsDict) return new JsDict([...(v instanceof Map ? v : v.entries)].map(([k, x]) => [walk(k), walk(x)]));
+    if (v instanceof Set || v instanceof JsSet) return new JsSet([...(v instanceof Set ? v : v.items)].map(walk));
+    return v;
+  };
+  return walk(value);
+}
+
+function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets = ''): unknown {
+  // Python's str() and repr() of a SymPy object are its sstr form, printed by symjs's str printer;
+  // inside containers (and for repr) items print by repr: quoted strings, Permutation(1, 2), ...
+  if (post === 'str') return typeof value === 'string' ? value : fmt(withBrackets(value, brackets));
+  if (post === 'repr') return fmtItem(withBrackets(value, brackets));
   if (post === 'len') {
     if (typeof value === 'string') return value.length;
     if (value instanceof Map || value instanceof Set) return value.size;
@@ -5128,7 +5172,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     try {
       const result = port();
       const picked = c.pick === undefined ? result : pickResult(result, c.pick);
-      const v = fromJs(c.post === undefined ? picked : projectResult(picked, c.post));
+      const v = fromJs(c.post === undefined ? picked : projectResult(picked, c.post, c.brackets));
+      if (c.post === 'str' || c.post === 'repr') return v === c.expected ? { status: 'pass' } : { status: 'fail', got: String(v) };
       return (c.text ? textMatches(v, c) : matches(v, c.expected)) ? { status: 'pass' } : { status: 'fail', got: typeof v === 'string' ? v : fmt(v) };
     } catch (e) {
       return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
@@ -5167,9 +5212,11 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       }
     }
     if (c.pick !== undefined) v = pickResult(v, c.pick);
-    if (c.post !== undefined) v = projectResult(v, c.post);
+    if (c.post !== undefined) v = projectResult(v, c.post, c.brackets);
     if (c.pyFormat !== undefined) v = pyNumberFormat(c.pyFormat, v);
     observe?.({ value: v });
+    // a printed str()/repr() is compared exactly with Python's text
+    if (c.post === 'str' || c.post === 'repr') return v === c.expected ? { status: 'pass' } : { status: 'fail', got: String(v) };
     if (c.text ? textMatches(v, c) : matches(v, c.expected)) return { status: 'pass' };
     if (c.text && typeof v === 'string') return { status: 'fail', got: v };
     const got = fmt(v);
