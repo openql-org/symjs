@@ -177,9 +177,19 @@ describe('old polynomial rings (DMP) and their fraction fields (DMF)', () => {
     expect(() => K.frac(R.one, R.zero)).toThrow(RangeError);
     const KQ = RQ.getField();
     expect(s(KQ.fromSympy(P('x/2')).toSympy())).toBe('x/2');
-    expect(s(KQ.fromSympy(P('(x/2)/(3*x + 1)')).toSympy())).toBe('x/(6*(x + 1/3))');
+    expect(s(KQ.fromSympy(P('(x/2)/(3*x + 1)')).toSympy())).toBe('x/(6*x + 2)');
     const KR = RR.oldPolyRing(x).getField();
     expect(s(KR.fromSympy(P('(2.0*x + 2.0)/(x**2 - 1)')).toSympy())).toBe('2.0/(1.0*x - 1.0)');
+    // SymPy keeps the leading coefficient of the denominator: no monic normalization
+    expect(s(KR.fromSympy(P('(3.0*x + 1)/(8.0089*x + 2.83)')).toSympy())).toBe('(3.0*x + 1.0)/(8.0089*x + 2.83)');
+    expect(s(KR.fromSympy(P('(2.0*x + 1)/(4.0*x**2 - 1)')).toSympy())).toBe('2.0/(4.0*x - 2.0)');
+    expect(s(KR.fromSympy(P('1/(-2.0*x + 1)')).toSympy())).toBe('-1.0/(2.0*x - 1.0)');
+    // RR.to_rational keeps the exact value of a tiny coefficient
+    expect(s(KR.frac(new DMP([new Float(1e-20), new Float(1)], KR.ring), KR.ring.one).toSympy())).toBe('1.0e-20*x + 1.0');
+    expect(s(KR.fromSympy(P('(1e-20*x + 1)/2.0')).toSympy())).toBe('5.0e-21*x + 0.5');
+    expect(s(KR.fromSympy(P('(1e-20*x + 1)/(2.0*x + 1)')).toSympy())).toBe('(1.0e-20*x + 1.0)/(2.0*x + 1.0)');
+    expect(s(KQ.fromSympy(P('(x/2 + 1)/(x/3 - 1)')).toSympy())).toBe('(3*x + 6)/(2*x - 6)');
+    expect(s(KQ.fromSympy(P('1/(-2*x + 4)')).toSympy())).toBe('-1/(2*x - 4)');
     expect(f).toBeInstanceOf(DMF);
     expect(f.numer()).toBeInstanceOf(DMP);
   });
@@ -192,7 +202,7 @@ describe('old polynomial rings (DMP) and their fraction fields (DMF)', () => {
     expect(s(f.toSympy())).toBe('sqrt(2)*I*x/2');
     expect(s(f.mul(f).toSympy())).toBe('-x**2/2');
     // SymPy: DMF(([EX(1), EX(-sqrt(2))], [EX(sqrt(2))]), EX) = (x - sqrt(2))/sqrt(2)
-    expect(s(KE.fromSympy(P('(x**2 - 2)/(sqrt(2)*x + 2)')).toSympy())).toBe('sqrt(2)*x/2 - 1');
+    expect(s(KE.fromSympy(P('(x**2 - 2)/(sqrt(2)*x + 2)')).toSympy())).toBe('sqrt(2)*(x - sqrt(2))/2');
     const p = RE.fromSympy(P('x**2 - 2'));
     const q = RE.fromSympy(P('sqrt(2)*x + 2'));
     expect(s(p.gcd(q).toSympy())).toBe('x + sqrt(2)');

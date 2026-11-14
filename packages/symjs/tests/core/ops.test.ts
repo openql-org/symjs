@@ -184,6 +184,14 @@ describe('sums of complex infinities', () => {
     expect(add(zoo, mul(-1, zoo), symbol('x'))).toBe(nan);
     expect(add(zoo, 1)).toBe(zoo);
   });
+  it('zoo absorbs the nonzero factors of known realness (SymPy Mul.flatten)', () => {
+    const x = symbol('x');
+    const p = symbol('p', { positive: true });
+    expect(sj.str(mul(zoo, pow(x, 3), rational(1, 6)))).toBe('zoo*x**3');
+    expect(sj.str(mul(zoo, I, x, sqrt(2), pi, p))).toBe('zoo*x');
+    expect(sj.str(mul(zoo, add(x, 1), rational(1, 2)))).toBe('zoo*(x + 1)');
+    expect(mul(zoo, p, rational(1, 2))).toBe(zoo);
+  });
 });
 
 describe('Float powers (SymPy Float._eval_power)', () => {

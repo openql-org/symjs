@@ -105,6 +105,8 @@ describe('node classes', () => {
     // SymPy: the adjoint of a scalar is its conjugate
     expect(s(sj.adjoint(b))).toBe('conjugate(Box(x))');
     expect(s(sj.transpose(b))).toBe('Box(x)');
+    // not a function application with a Taylor series
+    expect(b.isTaylorExpandable).toBe(false);
     expect(b).toBeInstanceOf(Expr);
     expect(new BoolAtom(true).key).toBe('!true');
     expect(add(x, y)).toBeInstanceOf(Add);

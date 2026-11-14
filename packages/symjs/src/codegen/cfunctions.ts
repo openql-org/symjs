@@ -337,7 +337,11 @@ abstract class CFunctionBase extends ExtensionExpr {
  *
  * @experimental May change in a minor release.
  */
-export abstract class CFunction extends CFunctionBase {}
+export abstract class CFunction extends CFunctionBase {
+  override get isTaylorExpandable(): boolean {
+    return true;
+  }
+}
 
 /**
  * An application of isnan or isinf (SymPy BooleanFunction).

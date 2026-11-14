@@ -1359,6 +1359,14 @@ export abstract class ExtensionExpr extends Expr {
   get isScalar(): boolean {
     return true;
   }
+  /**
+   * SymPy Function._eval_nseries: true for the application of a function whose series is its
+   * Taylor series in the argument that depends on the variable (the derivatives coming from
+   * diffSelf, a singular point from rewriteSelf('tractable')); false for other nodes.
+   */
+  get isTaylorExpandable(): boolean {
+    return false;
+  }
   /** SymPy is_extended_real of this node: true, false, or undefined when unknown. */
   isRealSelf(): boolean | undefined {
     return undefined;

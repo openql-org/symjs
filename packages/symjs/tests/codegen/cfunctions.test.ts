@@ -54,6 +54,12 @@ import {
   symbols,
   Wild,
   countOps,
+  asLeadingTerm,
+  limit,
+  series,
+  sin,
+  sqrt,
+  taylorTerm,
 } from '../../src';
 import type { Expr } from '../../src';
 import { impl } from '../../src/core/nodes';
@@ -440,5 +446,79 @@ describe('class members', () => {
     } finally {
       Object.assign(impl, saved);
     }
+  });
+});
+
+describe('series, leading terms and limits', () => {
+  const ser = (e: Expr, x0: Expr | number = 0, n = 6): string => s(series(e, x, x0, n));
+  const xp1 = add(x, 1);
+
+  it('Taylor series from the derivatives at the point (SymPy Function._eval_nseries)', () => {
+    expect(ser(expm1(x))).toBe('x + x**2/2 + x**3/6 + x**4/24 + x**5/120 + O(x**6)');
+    expect(ser(expm1(x), 1, 3)).toBe('E - 1 + E*(x - 1) + E*(x - 1)**2/2 + O((x - 1)**3, (x, 1))');
+    expect(ser(log1p(x), 0, 3)).toBe('x - x**2/2 + O(x**3)');
+    expect(ser(log1p(x), 1, 3)).toBe('log(2) - 1/2 - (x - 1)**2/8 + x/2 + O((x - 1)**3, (x, 1))');
+    expect(ser(exp2(x), 0, 3)).toBe('1 + x*log(2) + x**2*log(2)**2/2 + O(x**3)');
+    expect(ser(exp2(x), 1, 3)).toBe('2 + 2*(x - 1)*log(2) + (x - 1)**2*log(2)**2 + O((x - 1)**3, (x, 1))');
+    expect(ser(log2(x), 1, 3)).toBe('(x - 1)/log(2) - (x - 1)**2/(2*log(2)) + O((x - 1)**3, (x, 1))');
+    expect(ser(log10(xp1), 1, 3)).toBe('log10(2) + (x - 1)/(2*log(10)) - (x - 1)**2/(8*log(10)) + O((x - 1)**3, (x, 1))');
+    expect(ser(log2(xp1), 0, 3)).toBe('x/log(2) - x**2/(2*log(2)) + O(x**3)');
+  });
+
+  it('keeps the unevaluated values of Sqrt, Cbrt, hypot and fma at the point', () => {
+    expect(ser(Sqrt(xp1))).toBe('Sqrt(1) + x/2 - x**2/8 + x**3/16 - 5*x**4/128 + 7*x**5/256 + O(x**6)');
+    expect(ser(Sqrt(x), 1, 3)).toBe('-1/2 + Sqrt(1) - (x - 1)**2/8 + x/2 + O((x - 1)**3, (x, 1))');
+    expect(ser(Cbrt(xp1), 1, 3)).toBe('Cbrt(2) + 2**(1/3)*(x - 1)/6 - 2**(1/3)*(x - 1)**2/36 + O((x - 1)**3, (x, 1))');
+    expect(ser(hypot(x, y))).toBe('hypot(0, y) + x**2/(2*hypot(0, y)) - x**4/(8*hypot(0, y)**3) + O(x**6)');
+    expect(ser(hypot(x, y), 1, 3)).toBe('hypot(1, y) + (x - 1)/hypot(1, y) + (x - 1)**2*(1/(2*hypot(1, y)) - 1/(2*hypot(1, y)**3)) + O((x - 1)**3, (x, 1))');
+    expect(ser(fma(x, y, 3))).toBe('fma(0, y, 3) + x*y + O(x**6)');
+    // several arguments depending on x: the Taylor series in x
+    expect(ser(fma(x, x, 1), 0, 4)).toBe('fma(0, 0, 1) + x**2 + O(x**4)');
+    expect(ser(mul(exp2(pow(x, 2)), Sqrt(xp1)), 0, 4)).toBe('Sqrt(1) + x/2 + x**2*(log(2)*Sqrt(1) - 1/8) + x**3*(1/16 + log(2)/2) + O(x**4)');
+  });
+
+  it('composes with other series', () => {
+    expect(ser(expm1(sin(x)), 0, 4)).toBe('x + x**2/2 + O(x**4)');
+    expect(ser(log1p(sqrt(x)), 0, 4)).toBe('-x/2 - x**2/4 - x**3/6 + sqrt(x) + x**(3/2)/3 + x**(5/2)/5 + x**(7/2)/7 + O(x**4)');
+    expect(ser(add(expm1(mul(2, x)), mul(-2, expm1(x))), 0, 4)).toBe('x**2 + x**3 + O(x**4)');
+  });
+
+  it('expands the rewrite at a singular point, where SymPy gives nan', () => {
+    expect(ser(log2(x))).toBe('log(x)/log(2)');
+    expect(ser(log10(x), 0, 3)).toBe('log(x)/log(10)');
+    expect(ser(Sqrt(x))).toBe('sqrt(x)');
+    expect(ser(Cbrt(x))).toBe('x**(1/3)');
+    expect(ser(log1p(x), S.Infinity, 3)).toBe('-1/(2*x**2) + 1/x - log(1/x) + O(x**(-3), (x, oo))');
+    expect(ser(hypot(x, 1), S.Infinity, 3)).toBe('1/(2*x) + x + O(x**(-3), (x, oo))');
+    expect(() => series(expm1(x), x, S.Infinity, 3)).toThrow('essential singularity');
+  });
+
+  it('leading terms come from the series (SymPy raises NotImplementedError or keeps the application)', () => {
+    expect(s(asLeadingTerm(expm1(x), x))).toBe('x');
+    expect(s(asLeadingTerm(log2(xp1), x))).toBe('x/log(2)');
+    expect(s(asLeadingTerm(Sqrt(xp1), x))).toBe('Sqrt(1)');
+    expect(s(asLeadingTerm(hypot(x, y), x))).toBe('hypot(0, y)');
+    expect(s(asLeadingTerm(mul(Sqrt(x), pow(x, -1)), x))).toBe('1/sqrt(x)');
+  });
+
+  it('limits rewrite the functions in terms of tractable ones', () => {
+    expect(s(limit(expm1(x), x, 0))).toBe('0');
+    expect(s(limit(expm1(x), x, S.Infinity))).toBe('oo');
+    expect(s(limit(mul(expm1(x), pow(x, -1)), x, 0))).toBe('1');
+    expect(s(limit(mul(log1p(x), pow(x, -1)), x, 0))).toBe('1');
+    expect(s(limit(exp2(x), x, S.Infinity))).toBe('oo');
+    expect(s(limit(mul(exp2(x), pow(x, -1)), x, 0))).toBe('oo');
+    expect(s(limit(log2(x), x, 0))).toBe('-oo');
+    expect(s(limit(mul(log10(xp1), pow(x, -1)), x, 0))).toBe('1/log(10)');
+    expect(s(limit(Sqrt(xp1), x, 0))).toBe('1');
+    expect(s(limit(Cbrt(x), x, S.Infinity))).toBe('oo');
+    expect(s(limit(hypot(x, 1), x, 0))).toBe('1');
+    expect(s(limit(fma(x, y, 3), x, 0))).toBe('3');
+  });
+
+  it('Taylor terms of a pole are complex infinity', () => {
+    expect(s(taylorTerm(expm1(x), 3, x))).toBe('x**3/6');
+    expect(s(taylorTerm(log2(x), 3, x))).toBe('zoo*x**3');
+    expect(s(taylorTerm(Cbrt(xp1), 3, x))).toBe('5*x**3/81');
   });
 });

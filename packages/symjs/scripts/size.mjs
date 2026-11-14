@@ -43,6 +43,8 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Assumption rules of functions (Max/Min, floor/ceiling/frac, sign, hyperbolic and inverse
 // functions), the comparisons of floor, ceiling and frac and the added rewrites add about
 // 5 KiB to core consumers and 10 KiB to the special namespace.
+// Complex-infinity absorption in products and the Taylor-expandable flag of extension
+// nodes add under 1 KiB to core and sets consumers.
 const CASES = [
   ['core', 'Rational', 196],
   ['core', 'parse, str', 211],
