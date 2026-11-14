@@ -7,8 +7,8 @@
  * replace, find and SymPy's count_ops.
  */
 
-import type { ExprLike } from './nodes';
-import { Add, Constant, Dummy, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, isAddLike, isMulLike, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import type { ExprLike, RelOp } from './nodes';
+import { Add, Constant, Dummy, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, isAddLike, isMulLike, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
 import { Concrete } from './concrete';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { rebuild, xreplace } from './traverse';
@@ -300,6 +300,11 @@ export type Query = { fn: string } | { type: string } | Expr | ((e: Expr) => boo
 export type Replacement = { fn: string } | { type: string } | Expr | ((...args: Expr[]) => Expr);
 
 /** SymPy class name test (isinstance) for a few core classes. */
+/** SymPy relational classes and their operators. */
+const REL_TYPES: Readonly<Record<string, RelOp>> = {
+  Equality: 'Eq', Unequality: 'Ne', LessThan: 'Le', StrictLessThan: 'Lt', GreaterThan: 'Ge', StrictGreaterThan: 'Gt',
+};
+
 export function isInstance(e: Expr, type: string): boolean {
   switch (type) {
     case 'Add':
@@ -340,7 +345,11 @@ export function isInstance(e: Expr, type: string): boolean {
       return true;
     case 'exp':
       return isExpPow(e);
+    case 'Relational':
+      return e instanceof Rel;
   }
+  const op = REL_TYPES[type];
+  if (op !== undefined) return e instanceof Rel && e.op === op;
   return e.kind === type;
 }
 

@@ -1929,12 +1929,11 @@ function normalizeSlice(spec: SliceSpec, size: Expr): Triple {
 }
 
 function sliceOfSlice(s: Triple, t: Triple): Triple {
-  const [start1, stop1, step1] = s;
+  const [start1, , step1] = s;
   const [start2, stop2, step2] = t;
   const start = add(start1, mul(start2, step1));
   const step = mul(step1, step2);
   const stop = add(start1, mul(step1, stop2));
-  if (relTruth('Gt', stop, stop1) === true) throw new RangeError('Invalid slice');
   return [start, stop, step];
 }
 

@@ -596,3 +596,10 @@ it('keeps a residue sum whose denominator has no supported radical roots', () =>
   const value = sj.summation(P('1/(k**6+k**2+3)'), [k, 0, sj.oo]);
   expect(String(value)).toBe('Sum(1/(k**6 + k**2 + 3), (k, 0, oo))');
 });
+
+describe('the root test (SymPy Sum.is_convergent)', () => {
+  it('decides a series whose ratio of terms oscillates', () => {
+    const n = new Sym('n', { integer: true });
+    expect(isConvergent(concExpr(Sum(sj.pow(sj.S.Half, sj.floor(sj.mul(n, sj.S.Half))), [n, 1, oo])))).toBe(true);
+  });
+});

@@ -22,9 +22,11 @@ import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, 
 
 /**
  * Partial derivatives of multi-argument functions: fnPartials[name](args, i)
- * is d f(args) / d args[i]. functions/special/special.ts registers entries.
+ * is d f(args) / d args[i], or undefined where the function has no derivative
+ * formula (the derivative then stays unevaluated). functions/special/special.ts
+ * registers entries.
  */
-export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr>> = {};
+export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr | undefined>> = {};
 
 /**
  * Taylor coefficients at 0 of one-argument functions whose derivatives at 0
@@ -103,10 +105,13 @@ function d(e: Expr, x: Expr): Expr {
     const partial = fnPartials[e.name];
     if (partial) {
       const terms: Expr[] = [];
-      e.args.forEach((a, i) => {
+      for (const [i, a] of e.args.entries()) {
         const da = d(a, x);
-        if (da.key !== S.Zero.key) terms.push(mul(partial(e.args, i), da));
-      });
+        if (da.key === S.Zero.key) continue;
+        const p = partial(e.args, i);
+        if (p === undefined) return derivative(e, [[x, 1]]);
+        terms.push(mul(p, da));
+      }
       return add(...terms);
     }
     const u = first(e.args);

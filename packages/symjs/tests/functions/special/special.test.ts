@@ -907,3 +907,13 @@ it('expands rational harmonic numbers by Gauss\'s digamma theorem', () => {
   }
   expect(String(sj.expandFunc(sj.harmonic(sj.Rational.of(-1, 3))))).toBe('harmonic(-1/3)');
 });
+
+describe('Max and Min need comparable arguments (SymPy test_miscellaneous)', () => {
+  it('rejects arguments that are not real', () => {
+    const x = new Sym('x');
+    expect(() => Max(sj.I)).toThrow(RangeError);
+    expect(() => Min(sj.I, x)).toThrow(RangeError);
+    expect(() => Max(sj.zoo, 1)).toThrow(RangeError);
+    expect(() => sj.subs(Max(sj.cos(x), sj.sin(x)), [[x, sj.I]])).toThrow(RangeError);
+  });
+});

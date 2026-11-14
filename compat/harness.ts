@@ -1692,6 +1692,12 @@ function polynomialGenerators(options: unknown): Sym[] {
 }
 
 export const ADAPTERS: Record<string, Adapter> = {
+  // SymPy returns (None, None) when the expression does not match
+  match_real_imag: (args, kw) => {
+    noKw(kw);
+    const m = sj.matchRealImag(asExpr(args[0]));
+    return new JsTuple(sj.isNoMatch(m) ? [null, null] : m);
+  },
   invert_complex: (args, kw) => (noKw(kw), new JsTuple(sj.invertComplex(asExpr(args[0]), asExpr(args[1]), asSym(args[2])))),
   invert_real: (args, kw) => (noKw(kw), new JsTuple(sj.invertReal(asExpr(args[0]), asExpr(args[1]), asSym(args[2])))),
   solve_generic: (args, kw) => (noKw(kw), new JsList(sj.solveGeneric((args[0] as JsTuple).items as sj.Poly[], polynomialGenerators(args[1])).map((row) => new JsTuple(row)))),
@@ -3553,6 +3559,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     const name = (v: unknown): string => {
       if (v instanceof FnClass || v instanceof UFnClass || v instanceof TypeRef) return v.name;
+      // a target that SymPy defines as a function (sqrt) rather than a class
+      if (v instanceof JsFunc) return v.name.replace(/^.*\./, '');
       if (typeof v === 'string') return v;
       throw new Unsupported('rewrite target');
     };
@@ -4893,6 +4901,8 @@ function autoAdapter(c: Case): Adapter | undefined {
     const opts = { ...(kw['m'] === undefined ? {} : { m: intArg(kw['m']) }), power: flag(kw['power']) };
     return fromJs(flag(kw['visual']) ? sj.smoothnessP(asExpr(args[0]), { ...opts, visual: true }) : sj.smoothnessP(asExpr(args[0]), opts));
   };
+  // SymPy's class flag is_Relational is an instance test of the relation class
+  if (c.fn === '.is_Relational') return (_args, kw, self) => (noKw(kw), self instanceof sj.Rel);
   if (c.fn === '.kind') return (_args, kw, self) => (noKw(kw), sj.kindOf(asExpr(self)));
   if (c.fn === '.nargs') return (_args, kw, self) => (noKw(kw), sj.nargs(self instanceof UFnClass ? sj.SymFunction(self.name, { nargs: self.nargs }) : self as sj.WildFunction));
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
@@ -4977,6 +4987,13 @@ function autoAdapter(c: Case): Adapter | undefined {
           return new JsTuple([result[0], ...result.slice(1).map((rows: Expr[][]) => new JsList(rows.map((row) => name === 'intersect' ? new JsTuple(row.map(coefficient)) : new JsList(row.map(coefficient)))))]);
         }
         return fromJs(result);
+      }
+      // an assumption attribute without a query function of its own is the predicate asked of the
+      // expression (x.is_even -> ask(Q.even(x)); symjs isRational is the class test is_Rational)
+      const predicate = /^is_([a-z_]+)$/.exec(c.fn.slice(1))?.[1];
+      if (m === undefined && args.length === 0 && predicate !== undefined && self instanceof sj.Expr && sj.Q[predicate] !== undefined
+        && (predicate === 'rational' || typeof (sj as unknown as Record<string, unknown>)[ATTRIBUTE_FUNCTIONS[c.fn.slice(1)] ?? name] !== 'function')) {
+        return fromJs(sj.ask(sj.Q[predicate](self)));
       }
       // a SymPy method or attribute that symjs exports as a function of the object (x.is_real -> isReal(x),
       // M.is_positive_definite -> isPositiveDefinite(M); docs/api-policy.md)

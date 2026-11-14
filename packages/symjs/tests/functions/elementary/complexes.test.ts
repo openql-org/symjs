@@ -424,3 +424,20 @@ describe('evalf of polar numbers (SymPy exp_polar._eval_evalf, Ei._eval_evalf)',
     expect(at('Ei(I*x*exp_polar(I*pi))', 2)).toBe('0.422980828774865 - 3.17620930359759*I');
   });
 });
+
+describe('matchRealImag (SymPy match_real_imag)', () => {
+  const [x, y] = [new Sym('x', { real: true }), new Sym('y', { real: true })];
+  const i = new Sym('i', { imaginary: true });
+  const m = (e: sj.ExprLike): string => { const r = sj.matchRealImag(e); return sj.isNoMatch(r) ? 'NoMatch' : r.map((t) => sj.sstr(t)).join(', '); };
+  it('reads the real and imaginary parts off the expression', () => {
+    expect(m(S.One)).toBe('1, 0');
+    expect(m(sj.I)).toBe('0, 1');
+    expect(m(sj.parse('3 - 5*I'))).toBe('3, -5');
+    expect(m(add(x, mul(y, sj.I)))).toBe('x, y');
+    expect(m(mul(add(x, y), sj.I))).toBe('0, x + y');
+    expect(m(mul(i, sj.I, sj.Rational.of(-2n, 3n)))).toBe('NoMatch');
+    expect(m(add(1, mul(-2, i)))).toBe('NoMatch');
+    expect(m(mul(sqrt(2), sj.parse('3 - 5*I')))).toBe('NoMatch');
+    expect(m(new Sym('z'))).toBe('NoMatch');
+  });
+});

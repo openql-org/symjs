@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { I, S, Sym, diff, DiracDelta, Heaviside, SingularityFunction, evalf, expand, isHeaviside, isSimple, isSingularityFunction, latex, parse, rewrite, subs, symbols } from '../../../src';
 import { canonicalCondition } from '../../../src/integrals/transforms/delta';
+import { sign as sjSign, sstr } from '../../../src';
 
 const half = S.Half;
 
@@ -225,5 +226,29 @@ describe('SingularityFunction', () => {
     expect(String(rewrite(SingularityFunction(y.mul(2), 3, -1), 'Heaviside'))).toBe('2*DiracDelta(2*y - 3)');
     // SymPy: KeyError (a variable without free symbols); kept
     expect(rw('SingularityFunction(2, a, -1)', 'Heaviside')).toBe('SingularityFunction(2, a, -1)');
+  });
+});
+
+describe('derivatives and Heaviside forms of sign, Max and Min (SymPy test_complexes, test_miscellaneous)', () => {
+  const [x] = symbols('x');
+  const r = new Sym('r', { real: true });
+  const i = new Sym('i', { imaginary: true });
+  const s = (e: Parameters<typeof sstr>[0]): string => sstr(e);
+  it('differentiates sign for real and imaginary arguments only', () => {
+    expect(s(diff(sjSign(r), r))).toBe('2*DiracDelta(r)');
+    expect(s(diff(sjSign(i), i))).toBe('0');
+    expect(s(diff(sjSign(x), x))).toBe('Derivative(sign(x), x)');
+  });
+  it('differentiates Max and Min with Heaviside steps', () => {
+    expect(s(diff(parse('Max(1, x)'), x))).toBe('Heaviside(x - 1)');
+    expect(s(diff(parse('Min(1, x)'), x))).toBe('Heaviside(1 - x)');
+    expect(s(diff(parse('Max(x**2, x + 1, 1)'), x))).toBe('2*x*Heaviside(x**2 - Max(1, x + 1)) + Heaviside(x - Max(1, x**2) + 1)');
+  });
+  it('rewrites sign, Max and Min with Heaviside', () => {
+    expect(s(rewrite(sjSign(r), 'Heaviside'))).toBe('2*Heaviside(r) - 1');
+    expect(s(rewrite(sjSign(x), 'Heaviside'))).toBe('sign(x)');
+    expect(s(rewrite(parse('Max(0, x)'), 'Heaviside'))).toBe('x*Heaviside(x)');
+    expect(s(rewrite(parse('Min(3, x)'), 'Heaviside'))).toBe('x*Heaviside(3 - x) + 3*Heaviside(x - 3)');
+    expect(s(rewrite(parse('Max(x, y)'), 'Heaviside'))).toBe('x*Heaviside(x - y) + y*Heaviside(-x + y)');
   });
 });

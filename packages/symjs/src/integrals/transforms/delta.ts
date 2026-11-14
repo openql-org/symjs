@@ -22,9 +22,10 @@ import { piecewise, rel } from '../../core/logic';
 import { freeSymbols, subs } from '../../core/traverse';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
-import { abs } from '../../functions/elementary/elementary';
+import { abs, fn } from '../../functions/elementary/elementary';
 import { sign } from '../../functions/special/special';
-import { diff } from '../../calculus/diff';
+import { registerRewrite } from '../../simplify/rewrite';
+import { diff, fnPartials } from '../../calculus/diff';
 import { polyCoefficients, rootsDict } from '../../polys/poly';
 
 const isMinusOne = (c: Expr): boolean => c instanceof Rational && c.p === -1n && c.q === 1n;
@@ -292,3 +293,25 @@ export function isSimple(delta: Expr, x: Expr): boolean {
 export const HeavisideFunction: DefinedFunction = heavisideDef;
 /** The underlying defined function of DiracDelta. */
 export const DiracDeltaFunction: DefinedFunction = diracDef;
+
+// SymPy sign._eval_rewrite_as_Heaviside: a real argument
+registerRewrite('sign', 'Heaviside', (args) => (isReal(first(args)) === true ? sub(mul(2, Heaviside(first(args))), 1) : undefined));
+// SymPy Max and Min _eval_rewrite_as_Heaviside: each argument times the steps on which it is the extreme one
+registerRewrite('Max', 'Heaviside', (args) => add(...args.map((j) => mul(j, ...args.filter((i) => i.key !== j.key).map((i) => Heaviside(sub(j, i)))))));
+registerRewrite('Min', 'Heaviside', (args) => add(...args.map((j) => mul(j, ...args.filter((i) => i.key !== j.key).map((i) => Heaviside(sub(i, j)))))));
+// SymPy sign.fdiff: 2*DiracDelta(x) for a real argument, 2*DiracDelta(-I*x) for an imaginary one
+fnPartials.sign = (args) => {
+  const a = first(args);
+  if (isReal(a) === true) return mul(2, DiracDelta(a));
+  const ia = mul(-1, S.I, a);
+  return isReal(ia) === true ? mul(2, DiracDelta(ia)) : undefined;
+};
+// SymPy MinMaxBase.fdiff: the step where the argument exceeds (Max) or falls below (Min) the extreme of the others
+for (const name of ['Max', 'Min'] as const) {
+  fnPartials[name] = (args, i) => {
+    const rest = args.filter((_, j) => j !== i);
+    const other = rest.length === 1 ? at(rest, 0) : fn(name, rest);
+    const ai = at(args, i);
+    return Heaviside(name === 'Max' ? sub(ai, other) : sub(other, ai));
+  };
+}

@@ -222,3 +222,28 @@ it('orders accumulation intervals only when their endpoints determine the relati
   expect(Ge(a,b)).toBe(S.false);
   expect(Ge(a,2)).toBeInstanceOf(sj.Rel);
 });
+
+describe('relations decided by the function on the left', () => {
+  it('falls back to the generic rules when no function rules are registered', async () => {
+    const { impl } = await import('../../src/core/nodes');
+    const saved: unknown = Reflect.get(impl, 'relational');
+    delete impl.relational;
+    try {
+      const y = sj.symbol('y', { real: true });
+      expect(sj.sstr(Le(sj.floor(y), y))).toBe('floor(y) <= y');
+    } finally {
+      Reflect.set(impl, 'relational', saved);
+    }
+    expect(Le(sj.floor(sj.symbol('y', { real: true })), sj.symbol('y', { real: true }))).toBe(S.true);
+  });
+});
+
+describe('order of a sum of nonpositive terms', () => {
+  it('is not positive', () => {
+    const np = sj.symbol('np', { nonpositive: true });
+    const np2 = sj.symbol('np2', { nonpositive: true });
+    expect(Gt(add(np, np2), 0)).toBe(S.false);
+    // Min(np, r) is not positive but its sign is not known
+    expect(Gt(sj.Min(np, sj.symbol('r', { real: true })), 0)).toBe(S.false);
+  });
+});

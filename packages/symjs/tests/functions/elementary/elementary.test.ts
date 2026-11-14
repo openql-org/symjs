@@ -713,3 +713,28 @@ describe('re and im of an imaginary argument', () => {
     expect(String(abs(y))).toBe('Abs(y)');
   });
 });
+
+describe('conjugate of an imaginary symbol (SymPy Symbol._eval_conjugate)', () => {
+  it('negates it', () => {
+    const i = new Sym('i', { imaginary: true });
+    expect(sj.sstr(conjugate(i))).toBe('-i');
+    expect(sj.sstr(conjugate(fn('sign', [i])))).toBe('-sign(i)');
+  });
+});
+
+describe('adjoint of hermitian and antihermitian symbols (SymPy test_adjoint, test_conjugate_transpose)', () => {
+  it('uses the symbol assumptions', () => {
+    const a = new Sym('a', { antihermitian: true });
+    const b = new Sym('b', { hermitian: true });
+    expect(sj.sstr(adjoint(a))).toBe('-a');
+    expect(sj.sstr(adjoint(mul(I, a)))).toBe('I*a');
+    expect(sj.sstr(adjoint(b))).toBe('b');
+    expect(sj.sstr(adjoint(mul(a, b)))).toBe('-a*b');
+    expect(sj.sstr(adjoint(add(a, b)))).toBe('-a + b');
+  });
+  it('turns conjugate(transpose(A)) into adjoint(A) and back', () => {
+    const A = new Sym('A', { commutative: false });
+    expect(sj.sstr(conjugate(transpose(A)))).toBe('adjoint(A)');
+    expect(sj.sstr(conjugate(adjoint(A)))).toBe('transpose(A)');
+  });
+});

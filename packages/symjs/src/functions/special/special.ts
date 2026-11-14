@@ -833,6 +833,10 @@ function greater(a: Expr, b: Expr): boolean | undefined {
 }
 
 function evalMinMax(name: 'Min' | 'Max', ...args: Expr[]): Expr | undefined {
+  // SymPy MinMaxBase._new_args_filter: the arguments must be comparable
+  for (const a of args) {
+    if (isReal(a) === false || a === S.ComplexInfinity) throw new RangeError(`The argument '${a.toString()}' is not comparable.`);
+  }
   const flat0: Expr[] = [];
   for (const a of args) {
     if (a instanceof Fn && a.name === name) flat0.push(...a.args);
@@ -1436,7 +1440,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     numeric: unary((z) => cFresnel('C', z)),
     conjugate: true,
   },
-  sign: { eval: evalSign, numeric: unary((z) => (z.re === 0 && z.im === 0 ? cx(0) : cdiv(z, cx(Math.hypot(z.re, z.im))))) },
+  sign: { eval: evalSign, conjugate: true, numeric: unary((z) => (z.re === 0 && z.im === 0 ? cx(0) : cdiv(z, cx(Math.hypot(z.re, z.im))))) },
   floor: { eval: (x) => evalFloorCeil('floor', x), numeric: unary((z) => cx(Math.floor(z.re))) },
   ceiling: { eval: (x) => evalFloorCeil('ceiling', x), numeric: unary((z) => cx(Math.ceil(z.re))) },
   atan2: {

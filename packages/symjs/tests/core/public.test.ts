@@ -51,3 +51,14 @@ it('queries the other assumption facts (SymPy expr.is_<fact>)', async () => {
   expect(a.isAntihermitian(ah)).toBe(true);
   expect([a.isExtendedNegative(a.S.NegativeInfinity), a.isExtendedPositive(a.S.Infinity), a.isPolar(a.expPolar(k)), a.isPolar(k)]).toEqual([true, true, true, 'unknown']);
 });
+
+describe('isReal of the infinities (SymPy oo.is_real)', () => {
+  it('does not count oo, -oo and zoo as real numbers', async () => {
+    const sj = await import('../../src');
+    expect(sj.isReal(sj.oo)).toBe(false);
+    expect(sj.isReal(sj.S.NegativeInfinity)).toBe(false);
+    expect(sj.isReal(sj.zoo)).toBe(false);
+    expect(sj.isReal(sj.nan)).toBe('unknown');
+    expect(sj.isReal(2)).toBe(true);
+  });
+});
