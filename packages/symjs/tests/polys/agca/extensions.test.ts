@@ -96,3 +96,23 @@ it('provides expression arithmetic modulo the defining polynomial to DomainMatri
   expect(() => K.quo(K.one, K.zero)).toThrow();
   expect(() => new sj.FiniteExtension(sj.Poly.from(x.pow(2).sub(2), [x], { domain: 'ZZ' })).toDomain().getField()).toThrow('not a field');
 });
+
+describe('FiniteExtension.unify (SymPy test_Domain_unify_FiniteExtension)', () => {
+  it('unifies the coefficient domain after dropping the generator', () => {
+    const [x, y] = [new sj.Sym('x'), new sj.Sym('y')];
+    const K = new FiniteExtension(sj.Poly.from(sj.parse('x**2 - 2'), [x], { domain: 'ZZ' }));
+    expect(K.unify(K)).toBe(K);
+    expect(String(K.unify(sj.QQ))).toBe('QQ[x]/(x**2 - 2)');
+    expect(String(K.unify(sj.ZZ.polyRing(x, y)))).toBe('ZZ[y][x]/(x**2 - 2)');
+    const L = new FiniteExtension(sj.Poly.from(sj.parse('y**2 - 2'), [y], { domain: 'ZZ' }));
+    expect(() => K.unify(L)).toThrow(NotImplementedError);
+  });
+});
+
+describe('ExtensionElement floor division (SymPy test_FiniteExtension_division_ring)', () => {
+  it('divides like true division', () => {
+    const K = new FiniteExtension(sj.Poly.from(sj.parse('x**2 - 2'), [new sj.Sym('x')], { domain: 'QQ' }));
+    expect(String(K.generator.floordiv(K.one))).toBe('x');
+    expect(() => K.generator.floordiv(K.zero)).toThrow(RangeError);
+  });
+});

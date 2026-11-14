@@ -100,6 +100,11 @@ export class ExtensionElement {
     return this.mul(d.inverse());
   }
 
+  /** SymPy f // g: the same quotient as f / g. */
+  floordiv(g: ExtensionElement | ExprLike): ExtensionElement {
+    return this.div(g);
+  }
+
   /** SymPy f % g: zero for an invertible g. */
   mod(g: ExtensionElement | ExprLike): ExtensionElement {
     const d = new ExtensionElement(this.#rep(g), this.ext);
@@ -269,6 +274,19 @@ export class FiniteExtension {
     const base = this.domain.dom;
     const K = rest.length === 0 ? base : this.domain.isField ? base.fracField(...rest) : base.polyRing(...rest);
     return this.setDomain(K);
+  }
+
+  /**
+   * SymPy unify(K): the extension over the unified coefficient domain, with
+   * the generator dropped from K. Unifying two different extensions needs
+   * polynomials over an extension, which are not implemented.
+   */
+  unify(K: Domain | FiniteExtension): FiniteExtension {
+    if (K instanceof FiniteExtension) {
+      if (K.equals(this)) return this;
+      throw new NotImplementedError('unifying two different finite extensions requires polynomials over an extension');
+    }
+    return this.setDomain(this.domain.unify(K.drop(this.symbol)));
   }
 
   /** SymPy quo(f, g) = exquo(f, g). */

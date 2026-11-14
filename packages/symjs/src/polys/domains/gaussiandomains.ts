@@ -18,7 +18,7 @@ import { Add, Expr, Mul, Rational, S } from '../../core/nodes';
 import { add, mul, sympify } from '../../core/ops';
 import { str } from '../../printing/str';
 import { expand } from '../../simplify/expand';
-import { CoercionFailed, Domain, QQ, ZZ, groundRational } from '../domains';
+import { CoercionFailed, Domain, QQ, ZZ, groundRational, type UnificationKind } from '../domains';
 import { PythonMPQ } from './pythonrational';
 
 type Num = PythonMPQ | bigint | number;
@@ -181,6 +181,12 @@ export class GaussianRational extends GaussianElement {
 export abstract class GaussianDomain extends Domain {
   readonly ground = 'EX' as const;
   abstract override new(x: unknown, y?: unknown): GaussianElement;
+  override get hasAssocRing(): boolean {
+    return true;
+  }
+  override get hasCharacteristicZero(): boolean {
+    return true;
+  }
   /** Elements are expressions x + y*I with x, y in dom (the expression model of the domain). */
   canon(e: Expr): Expr {
     return expand(e);
@@ -232,9 +238,9 @@ export abstract class GaussianDomain extends Domain {
     return false;
   }
   /** The unit u with u*d in the first quadrant (SymPy canonical_unit). */
-  canonicalUnit(d: GaussianElement): GaussianElement {
+  override canonicalUnit(a: unknown): GaussianElement {
     const units = [this.new(1n, 0n), this.new(0n, 1n), this.new(-1n, 0n), this.new(0n, -1n)];
-    return at(units, (4 - d.quadrant()) % 4);
+    return at(units, (4 - this.convert(a).quadrant()) % 4);
   }
   /** The generator I of the extension (SymPy imag_unit). */
   imagUnit(): GaussianElement {
@@ -263,6 +269,9 @@ export class GaussianIntegerRing extends GaussianDomain {
   toString(): string {
     return 'ZZ_I';
   }
+  protected override get unificationKind(): UnificationKind {
+    return 'ZZ_I';
+  }
   override new(x: unknown, y: unknown = 0n): GaussianInteger {
     return new GaussianInteger(ZZ.convert(x), ZZ.convert(y));
   }
@@ -272,6 +281,11 @@ export class GaussianIntegerRing extends GaussianDomain {
   }
   override ofType(a: unknown): boolean {
     return a instanceof GaussianInteger;
+  }
+  /** The units of ZZ_I are 1, I, -1 and -I. */
+  override isUnit(a: unknown): boolean {
+    const e = this.convert(a);
+    return e.re.mul(e.re).add(e.im.mul(e.im)).equals(1n);
   }
   getField(): Domain {
     return QQ_I;
@@ -324,6 +338,9 @@ export class GaussianRationalField extends GaussianDomain {
     return QQ;
   }
   toString(): string {
+    return 'QQ_I';
+  }
+  protected override get unificationKind(): UnificationKind {
     return 'QQ_I';
   }
   override new(x: unknown, y: unknown = 0n): GaussianRational {

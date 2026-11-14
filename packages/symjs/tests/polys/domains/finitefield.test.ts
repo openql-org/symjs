@@ -38,3 +38,19 @@ describe('GF(p)', () => {
     expect([F.getField() === F, F.equals(GF(7)), F.equals(GF(7, false)), F.equals(QQ), new ModularInteger(-1n, F).val]).toEqual([true, true, false, false, 6n]);
   });
 });
+
+describe('GF(p) square roots and fields (SymPy test_exsqrt, test_Domain_is_field)', () => {
+  it('finds the square root no larger than p/2', () => {
+    const F7 = GF(7);
+    expect(F7.exsqrt(2)).toEqual(F7.convert(3));
+    expect(F7.isSquare(3)).toBe(false);
+    expect(F7.exsqrt(0)).toEqual(F7.convert(0));
+    expect(GF(2).exsqrt(1)).toEqual(GF(2).convert(1));
+    expect(GF(6).isField).toBe(false);
+    expect(() => GF(6).exsqrt(4)).toThrow();
+    expect(GF(11).exsqrt(3)).toEqual(GF(11).convert(5));
+    expect(GF(13).exsqrt(3)).toEqual(GF(13).convert(4));
+    expect(GF(5).isField).toBe(true);
+    expect(GF(5).characteristic()).toBe(5n);
+  });
+});

@@ -664,7 +664,7 @@ export function deserialize(tree: Tree): unknown {
       const domain = deserializeDomain(tree['domain'] as Tree);
       if (!domain) throw new Unsupported('DMP domain');
       const ring = domain.oldPolyRing(new Sym('_x'));
-      return new sj.DMP((deserialize(tree['coeffs'] as Tree) as JsTuple).items.map(asExpr), ring);
+      return new sj.DMP((deserialize(tree['coeffs'] as Tree) as JsTuple).items.map((c) => c instanceof sj.PythonMPQ ? sj.Rational.of(c.numerator, c.denominator) : asExpr(c)), ring);
     }
     case 'CartanType':
       return sj.CartanType(`${String(tree['series'])}${String(tree['n'])}`);
@@ -4572,6 +4572,24 @@ ADAPTERS['Indexed'] = (args, kw) => {
 
 ADAPTERS['.as_set'] = (_args, kw, self) => (noKw(kw), sj.asSet(self as Expr | boolean));
 
+// K.of_type(a) of a GF(p) element: the element itself, not its integer value
+ADAPTERS['.of_type'] = (args, kw, self0) => {
+  noKw(kw);
+  const self = self0 instanceof JsDomain ? self0.domain : self0;
+  if (!(self instanceof sj.Domain) || !(args[0] instanceof JsFFElement)) throw new Unsupported('no adapter for .of_type');
+  return self.ofType(plain(args[0]));
+};
+
+// R.is_unit(a) of a univariate old polynomial ring R: its elements are dense polynomials (SymPy DMP), deserialized
+// over the placeholder generator _x, which stands for the generator of R
+ADAPTERS['.is_unit'] = (args, kw, self0) => {
+  noKw(kw);
+  const self = self0 instanceof JsDomain ? self0.domain : self0;
+  if (!(self instanceof sj.Domain)) throw new Unsupported('no adapter for .is_unit');
+  const a = args[0];
+  return self.isUnit(a instanceof sj.DMP && self instanceof sj.PolynomialRingBase && self.symbols.length === 1 ? sj.subs(a.toSympy(), [[new Sym('_x'), self.symbols[0]!]]) : a);
+};
+
 // assumptions: an AssumptionsContext (global_assumptions) and Q.<predicate>(...)
 for (const m of ['add', 'remove', 'clear'] as const) {
   const prev = ADAPTERS[`.${m}`];
@@ -4723,6 +4741,8 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
       }
     }
     if (a instanceof categories.DiagramGrid) return a.get(Number(index[0]), Number(index[1]));
+    // K[x, y]: the polynomial ring over a domain
+    if (a instanceof sj.Domain && index.every((g) => g instanceof Sym)) return a.polyRing(...(index as Sym[]));
     if (a instanceof Matrix) {
       const indices = index;
       const n = (v: unknown): number => Number(v);
@@ -4742,7 +4762,8 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     }
     return callMethod(a, a instanceof sj.Transform ? ['at'] : ['getitem', 'get', 'at'], index)?.value ?? unsupportedOp('[]');
   },
-  '.__call__': (a, args) => (typeof a === 'function' ? (a as (...x: unknown[]) => unknown)(...args) : (callMethod(a, ['call', 'apply'], args)?.value ?? unsupportedOp('()'))),
+  // K(a): an element of a domain or a finite extension
+  '.__call__': (a, args) => (typeof a === 'function' ? (a as (...x: unknown[]) => unknown)(...args) : a instanceof sj.Domain || a instanceof sj.FiniteExtension ? callMethod(a, ['new'], args.map((x) => x instanceof JsFFElement ? plain(x) : x))?.value : (callMethod(a, ['call', 'apply'], args)?.value ?? unsupportedOp('()'))),
 };
 function unsupportedOp(op: string): never {
   throw new Unsupported(`no adapter for the operator ${op}`);
@@ -5200,7 +5221,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // an adapter written for another owner of the same method name (Poly.add, ...): try the generic one
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
-      if (!auto || !(e instanceof Unsupported || e instanceof TypeError)) {
+      // (a DomainMatrix error is the method's own result)
+      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }

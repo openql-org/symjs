@@ -51,7 +51,7 @@ const CASES = [
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
-  ['polys', 'factor', 676],
+  ['polys', 'factor', 677],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 997],
@@ -67,11 +67,11 @@ const CASES = [
   ['unify', '*', 228],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 547],
-  ['holonomic', 'exprToHolonomic', 1140],
+  ['algebras', 'Quaternion', 551],
+  ['holonomic', 'exprToHolonomic', 1144],
   ['geometry', '*', 1078],
   ['vector', '*', 1176],
-  ['stats', '*', 1285],
+  ['stats', '*', 1290],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
@@ -85,7 +85,7 @@ const CASES = [
   ['index', 'Rational', 195],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators and quadrature (measured 2648 KiB).
-  ['index', '*', 2660],
+  ['index', '*', 2662],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

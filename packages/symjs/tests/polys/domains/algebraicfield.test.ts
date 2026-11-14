@@ -110,3 +110,11 @@ it('computes the Galois group of the defining polynomial', () => {
   expect(String(K.galoisGroup({byName:true})[0])).toBe('S4TransitiveSubgroups.V');
   expect(K.galoisGroup()[1]).toBe(true);
 });
+
+describe('AlgebraicField characteristic and unification (SymPy test_Domain_unify_algebraic)', () => {
+  it('has characteristic zero and unifies the extensions', () => {
+    expect(K.hasCharacteristicZero).toBe(true);
+    expect(String(K.unify(QQ.algebraicField(sqrt(3))))).toBe('QQ<sqrt(2) + sqrt(3)>');
+    expect(String(K.polyRing(new Sym('x')).unify(K))).toBe('QQ<sqrt(2)>[x]');
+  });
+});

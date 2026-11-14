@@ -16,3 +16,10 @@ describe('EXRAW', () => {
     expect(() => EXRAW.convert('a')).toThrow(CoercionFailed);
   });
 });
+
+describe('EXRAW unification (SymPy test_EX_EXRAW)', () => {
+  it('has characteristic zero and absorbs EX', () => {
+    expect(EXRAW.hasCharacteristicZero).toBe(true);
+    expect(QQ.unify(EXRAW)).toBe(EXRAW);
+  });
+});
