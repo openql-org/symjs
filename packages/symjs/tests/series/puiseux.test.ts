@@ -200,6 +200,10 @@ describe('Taylor series of extension function applications', () => {
   it('expands at a regular point and keeps the value there', () => {
     expect(str(series(new Recip([add(x, 1)]), x, 0, 3))).toBe('Recip(1) - x + x**2 + O(x**3)');
   });
+  it('expands the argument to order one for a non-positive order', () => {
+    const t = new Sym('_t');
+    expect(new Expander(t).ser(new Recip([add(t, 1)]), Rational.of(0)).terms.map((term) => str(term.c))).toEqual(['Recip(1)']);
+  });
   it('throws at a singular point without a tractable rewrite', () => {
     expect(() => series(new Recip([x]), x, 0, 3)).toThrow(SeriesError);
   });

@@ -1131,17 +1131,24 @@ describe('gcd and lcm over fields are monic (SymPy dmp_ff_prs_gcd, dmp_ff_lcm)',
     const p = sj.Poly.from(parse('2.0*x + 1'), [new Sym('x')]);
     expect(str(p.gcd(sj.Poly.from(parse('x**2 + x'), [new Sym('x')])).asExpr())).toBe('1.00000000000000');
     expect(str(p.lcm(sj.Poly.from(parse('0'), [new Sym('x')], { domain: 'RR' })).asExpr())).toBe('0');
+    const X = new Sym('x');
+    expect(str(sj.Poly.from(parse('x/2'), [X]).gcd(sj.Poly.from(parse('x*y'), [X])).asExpr())).toBe('x/2');
     expect(str(sj.Poly.from(parse('0'), [new Sym('x')], { domain: 'QQ' }).gcd(sj.Poly.from(parse('0'), [new Sym('x')], { domain: 'QQ' })).asExpr())).toBe('0');
   });
   it('of irrational algebraic numbers with a rational ratio (SymPy Q[irrational])', () => {
     expect(g('6*(1 + sqrt(3))/5', '3*(1 + sqrt(3))/10')).toBe('3/10 + 3*sqrt(3)/10');
     expect(g('2*sqrt(3)/3', '5/(6*sqrt(3))')).toBe('sqrt(3)/18');
     expect(g('-sqrt(2)', '2*sqrt(2)')).toBe('sqrt(2)');
+    expect(g('-sqrt(2)', '-2*sqrt(2)')).toBe('sqrt(2)');
     expect(l('3*sqrt(3)', '4/sqrt(3)')).toBe('12*sqrt(3)');
     expect(l('5*(1 + 2**(1/3))/6', '3*(1 + 2**(1/3))/8')).toBe('15/2 + 15*2**(1/3)/2');
     expect(g('sqrt(2)', 'sqrt(3)')).toBe('1');
     expect(l('sqrt(2)', 'sqrt(3)')).toBe('sqrt(6)');
     expect(g('sqrt(2)', '2')).toBe('1');
+    // not real algebraic numbers: the polynomial gcd and lcm in the generators
+    expect(g('pi', '2*pi')).toBe('pi');
+    expect(g('2**sqrt(2)', '2*2**sqrt(2)')).toBe('2**(sqrt(2))');
+    expect(g('sqrt(-2)', '2*sqrt(-2)')).toBe('sqrt(2)');
   });
   it('infers CC for complex floating-point coefficients', () => {
     expect(sj.Poly.from(parse('1.0*I*x + 1.0')).domain).toBe('CC');

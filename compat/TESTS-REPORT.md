@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **98726** cases: **82554 exact**, **2548 equivalent**, **13624 failing**. Agreement: **86.20%**.
+Measured **98726** cases: **82564 exact**, **2546 equivalent**, **13616 failing**. Agreement: **86.21%**.
 
-Compatibility suite wall time: **280.50 s**. Sum of category replay times: **618.18 s** (projects run in parallel).
+Compatibility suite wall time: **483.55 s**. Sum of category replay times: **706.93 s** (projects run in parallel).
 
 Extraction wall time: **0.51 s**, 4 processes, 30 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
@@ -16,39 +16,39 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.61 |
-| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 1.72 |
-| calculus | 518 | 417 | 1 | 100 | 80.69% | 2.43 |
-| categories | 312 | 312 | 0 | 0 | 100.00% | 1.47 |
-| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.55 |
-| combinatorics | 1671 | 1632 | 0 | 39 | 97.67% | 1.00 |
-| concrete | 856 | 602 | 68 | 186 | 78.27% | 7.98 |
-| core | 7858 | 5509 | 187 | 2162 | 72.49% | 85.28 |
-| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.29 |
-| diffgeom | 177 | 171 | 6 | 0 | 100.00% | 0.64 |
-| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.82 |
-| functions | 9853 | 5838 | 1849 | 2166 | 78.02% | 39.62 |
-| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 12.85 |
-| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.89 |
-| integrals | 1313 | 841 | 45 | 427 | 67.48% | 18.69 |
-| liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.04 |
-| logic | 662 | 486 | 1 | 175 | 73.56% | 0.66 |
-| matrices | 3930 | 3184 | 37 | 709 | 81.96% | 57.66 |
-| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 9.85 |
-| parsing | 772 | 653 | 68 | 51 | 93.39% | 0.51 |
-| plotting | 20 | 17 | 0 | 3 | 85.00% | 0.02 |
-| polys | 9484 | 5360 | 57 | 4067 | 57.12% | 93.13 |
-| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.69 |
-| series | 1626 | 1157 | 29 | 440 | 72.94% | 13.27 |
-| sets | 1494 | 873 | 12 | 609 | 59.24% | 1.58 |
-| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 7.05 |
-| solvers | 2381 | 1496 | 77 | 808 | 66.06% | 52.36 |
-| stats | 1865 | 1771 | 41 | 53 | 97.16% | 179.09 |
-| strategies | 6 | 5 | 0 | 1 | 83.33% | 0.01 |
-| tensor | 1593 | 1254 | 1 | 338 | 78.78% | 4.54 |
+| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.56 |
+| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 2.48 |
+| calculus | 518 | 417 | 1 | 100 | 80.69% | 2.73 |
+| categories | 312 | 312 | 0 | 0 | 100.00% | 1.76 |
+| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.66 |
+| combinatorics | 1671 | 1632 | 0 | 39 | 97.67% | 0.98 |
+| concrete | 856 | 602 | 68 | 186 | 78.27% | 8.24 |
+| core | 7858 | 5516 | 185 | 2157 | 72.55% | 94.50 |
+| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.31 |
+| diffgeom | 177 | 171 | 6 | 0 | 100.00% | 0.72 |
+| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.88 |
+| functions | 9853 | 5838 | 1849 | 2166 | 78.02% | 42.39 |
+| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 14.42 |
+| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.97 |
+| integrals | 1313 | 841 | 45 | 427 | 67.48% | 20.53 |
+| liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.08 |
+| logic | 662 | 486 | 1 | 175 | 73.56% | 0.90 |
+| matrices | 3930 | 3184 | 37 | 709 | 81.96% | 59.29 |
+| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 12.31 |
+| parsing | 772 | 653 | 68 | 51 | 93.39% | 0.75 |
+| plotting | 20 | 17 | 0 | 3 | 85.00% | 0.04 |
+| polys | 9484 | 5368 | 57 | 4059 | 57.20% | 106.68 |
+| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.78 |
+| series | 1626 | 1157 | 29 | 440 | 72.94% | 18.17 |
+| sets | 1494 | 873 | 12 | 609 | 59.24% | 2.00 |
+| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 8.77 |
+| solvers | 2381 | 1496 | 77 | 808 | 66.06% | 62.71 |
+| stats | 1865 | 1766 | 41 | 58 | 96.89% | 211.23 |
+| strategies | 6 | 5 | 0 | 1 | 83.33% | 0.02 |
+| tensor | 1593 | 1254 | 1 | 338 | 78.78% | 6.11 |
 | unify | 8 | 1 | 0 | 7 | 12.50% | 0.01 |
-| utilities | 375 | 311 | 9 | 55 | 85.33% | 18.81 |
-| vector | 620 | 593 | 4 | 23 | 96.29% | 4.05 |
+| utilities | 375 | 311 | 9 | 55 | 85.33% | 20.32 |
+| vector | 620 | 593 | 4 | 23 | 96.29% | 4.65 |
 
 ## Extraction audit
 
@@ -558,7 +558,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | core | result comparison exception | 14 |
 | core | unexpected exception | 256 |
 | core | unsupported value/input type | 65 |
-| core | wrong result | 948 |
+| core | wrong result | 943 |
 | core | exception class mismatch (accepted) | 102 |
 | crypto | wrong result | 2 |
 | crypto | exception class mismatch (accepted) | 1 |
@@ -625,11 +625,11 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | polys | exception not raised | 88 |
 | polys | input conversion exception | 22 |
 | polys | missing API/adapter | 2126 |
-| polys | replay timeout | 1 |
+| polys | replay timeout | 2 |
 | polys | result comparison exception | 8 |
 | polys | unexpected exception | 1177 |
 | polys | unsupported value/input type | 327 |
-| polys | wrong result | 318 |
+| polys | wrong result | 309 |
 | polys | exception class mismatch (accepted) | 128 |
 | printing | exception not raised | 5 |
 | printing | input conversion exception | 7 |
@@ -670,7 +670,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | stats | exception not raised | 3 |
 | stats | input conversion exception | 2 |
 | stats | missing API/adapter | 4 |
-| stats | replay timeout | 15 |
+| stats | replay timeout | 20 |
 | stats | unexpected exception | 5 |
 | stats | unsupported value/input type | 4 |
 | stats | wrong result | 20 |
@@ -885,9 +885,9 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | solvers | classify_ode (fail) | 27 |
 | solvers | solveset_complex (unsupported) | 24 |
 | solvers | matrix_exp (fail) | 18 |
+| stats | skewness (error) | 8 |
+| stats | kurtosis (error) | 8 |
 | stats | .dummy_eq (fail) | 8 |
-| stats | skewness (error) | 6 |
-| stats | kurtosis (error) | 6 |
 | stats | .__getitem__ (unsupported) | 4 |
 | stats | median (fail) | 3 |
 | stats | variance (error) | 3 |

@@ -196,18 +196,18 @@ Direct regression-test paths are maintained in `capabilities.json`. Tensor diffe
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
-**Fully covered (100% test coverage): 100.0% of source files (487/487), 100.0% of statements (105605/105605)**
+**Fully covered (100% test coverage): 99.4% of source files (484/487), 97.2% of statements (102706/105715)**
 
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | core | 100.0% | 1006 | 100.0% | 0 | 0 | 0 | 0 | 1006 | 100.0% (188/188) | 100.0% (137/137) |
 | functions | 100.0% | 268 | 100.0% | 0 | 0 | 0 | 0 | 268 | 100.0% (59/59) | 100.0% (7/7) |
-| simplify | 100.0% | 331 | 99.4% | 2 | 0 | 0 | 0 | 333 | 100.0% (35/35) | 100.0% (18/18) |
-| polys | 100.0% | 1620 | 99.4% | 9 | 0 | 0 | 0 | 1629 | 100.0% (155/155) | 100.0% (81/81) |
+| simplify | 100.0% | 331 | 99.4% | 2 | 0 | 0 | 0 | 333 | 100.0% (35/35) | 94.4% (17/18) |
+| polys | 100.0% | 1620 | 99.4% | 9 | 0 | 0 | 0 | 1629 | 100.0% (155/155) | 98.8% (80/81) |
 | solvers | 100.0% | 320 | 99.1% | 3 | 0 | 0 | 0 | 323 | 100.0% (29/29) | 100.0% (17/17) |
 | ode | 100.0% | 107 | 94.7% | 6 | 0 | 0 | 0 | 113 | 100.0% (5/5) | 100.0% (1/1) |
 | pde | 100.0% | 15 | 93.8% | 1 | 0 | 0 | 0 | 16 | 100.0% (6/6) | 100.0% (1/1) |
-| calculus | 100.0% | 590 | 99.0% | 6 | 0 | 0 | 0 | 596 | 100.0% (68/68) | 100.0% (41/41) |
+| calculus | 100.0% | 590 | 99.0% | 6 | 0 | 0 | 0 | 596 | 100.0% (68/68) | 97.6% (40/41) |
 | matrices | 100.0% | 1094 | 100.0% | 0 | 0 | 0 | 0 | 1094 | 100.0% (353/353) | 100.0% (23/23) |
 | special | 100.0% | 755 | 99.2% | 6 | 0 | 0 | 0 | 761 | 100.0% (118/118) | 100.0% (12/12) |
 | logic | 100.0% | 210 | 100.0% | 0 | 0 | 0 | 0 | 210 | 100.0% (19/19) | - |
@@ -276,7 +276,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/series/limits.ts` | calculus | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/series/limitseq.ts` | calculus | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/series/lseries.ts` | calculus | 100% | 100% | 100% | 100% | yes |
-| `packages/symjs/src/series/puiseux.ts` | calculus | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/series/puiseux.ts` | calculus | 100% | 99.73% | 100% | 100% |  |
 | `packages/symjs/src/series/residues.ts` | calculus | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/series/sequences.ts` | calculus | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/series/series_class.ts` | calculus | 100% | 100% | 100% | 100% | yes |
@@ -610,7 +610,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/polys/solvers.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/specialpolys.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/sqfreetools.ts` | polys | 100% | 100% | 100% | 100% | yes |
-| `packages/symjs/src/polys/sympoly.ts` | polys | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/polys/sympoly.ts` | polys | 100% | 99.92% | 100% | 100% |  |
 | `packages/symjs/src/polys/wang.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/zassenhaus.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/simplify/besselsimp.ts` | simplify | 100% | 100% | 100% | 100% | yes |
@@ -629,7 +629,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/simplify/rewrite.ts` | simplify | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/simplify/separatevars.ts` | simplify | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/simplify/simplify.ts` | simplify | 100% | 100% | 100% | 100% | yes |
-| `packages/symjs/src/simplify/sqrtdenest.ts` | simplify | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/simplify/sqrtdenest.ts` | simplify | 100% | 99.77% | 100% | 100% |  |
 | `packages/symjs/src/simplify/trigsimp.ts` | simplify | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/solvers/bivariate.ts` | solvers | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/solvers/calculusutil.ts` | solvers | 100% | 100% | 100% | 100% | yes |

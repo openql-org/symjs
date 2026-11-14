@@ -492,12 +492,14 @@ function numerator(c: unknown, K: Domain): unknown {
 }
 
 function groundLcm(a: unknown, b: unknown, K: Domain): unknown {
-  if (K instanceof PolynomialRing && K.ground !== 'EX') {
+  if (K instanceof PolynomialRing) {
     // SymPy PolyElement.lcm: monic when the coefficients are a field
     const domain = { domain: K.ground };
-    return K.convert(Poly.from(K.toSympy(a), K.symbols, domain).lcm(Poly.from(K.toSympy(b), K.symbols, domain)).asExpr());
+    const [f, g] = [Poly.from(K.toSympy(a), K.symbols, domain), Poly.from(K.toSympy(b), K.symbols, domain)];
+    const l = K.ground === 'EX' ? Poly.from(lcmList([f.asExpr(), g.asExpr()]), K.symbols, domain).monic() : f.lcm(g);
+    return K.convert(l.asExpr());
   }
-  if (K instanceof ExpressionDomain || K instanceof PolynomialRing) return K.convert(lcmList([K.toSympy(a), K.toSympy(b)]));
+  if (K instanceof ExpressionDomain) return K.convert(lcmList([K.toSympy(a), K.toSympy(b)]));
   return K.lcm(a, b);
 }
 

@@ -37,10 +37,12 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Dummit's quintic coefficient tables and branch selection add at most 80 KiB
 // to consumers that load radical polynomial solving.
 // The dense recursive polynomial tools (densetools) are part of the root namespace.
+// Complex-infinity absorption in products and the Taylor-expandable flag of extension
+// nodes add under 1 KiB to core and sets consumers.
 const CASES = [
   ['core', 'Rational', 190],
-  ['core', 'parse, str', 204],
-  ['core', 'parse, diff, expand, str, latex', 204],
+  ['core', 'parse, str', 205],
+  ['core', 'parse, diff, expand, str, latex', 205],
   ['core', '*', 288],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 383],
@@ -55,7 +57,7 @@ const CASES = [
   ['calculus', 'integrate', 997],
   ['solvers', 'solve', 1055],
   ['solvers', 'dsolve', 1070],
-  ['sets', '*', 353],
+  ['sets', '*', 354],
   ['matrices', 'Matrix', 749],
   ['printing', 'pretty', 230],
   ['discrete', '*', 285],

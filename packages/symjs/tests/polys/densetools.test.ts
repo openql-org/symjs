@@ -87,5 +87,6 @@ it('takes the monic lcm of the denominators over a field of coefficients (SymPy 
   const Z = ZZ.fracField(x);
   expect(str(dupClearDenoms([Z.convert(pow(add(mul(3, x), 1), -1))], Z)[0] as Expr)).toBe('3*x + 1');
   const E = EX.fracField(x);
-  expect(str(dupClearDenoms([E.convert(pow(add(mul(3, x), 1), -1))], E)[0] as Expr)).toBe('3*x + 1');
+  expect(str(dupClearDenoms([E.convert(pow(add(mul(3, x), 1), -1))], E)[0] as Expr)).toBe('x + 1/3');
+  expect(str(dupClearDenoms([E.convert(pow(add(mul(3, x), 1), -1)), E.convert(pow(add(mul(2, x), 1), -1))], E)[0] as Expr)).toBe('x**2 + 5*x/6 + 1/6');
 });

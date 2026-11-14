@@ -16,7 +16,7 @@ import type { NoMatchResult } from '../core/truth';
 import { NoMatch, isNoMatch } from '../core/truth';
 import { asRealImag, isPolynomial } from '../core/methods';
 import { at, defined, expectType, first, getOrThrow, pair } from '../core/guard';
-import { isIntegerQ, isPositive } from '../core/assumptions';
+import { isIntegerQ, isPositive, isReal } from '../core/assumptions';
 import { factorModP } from './zassenhaus';
 import type { ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Expr, Float, Mul, Pow, Rational, S, Sym, compareExpr, impl, isNum } from '../core/nodes';
@@ -27,8 +27,7 @@ import { diff } from '../calculus/diff';
 import { str } from '../printing/str';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { sqrtdenest } from '../simplify/sqrtdenest';
-import { cancel, fraction, ratsimp, together } from '../simplify/rational';
-import { Q, ask } from '../core/refine';
+import { cancel, fraction, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { modInverse, rationalFromFloat } from '../core/numberutils';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
@@ -2108,13 +2107,20 @@ export function polyLcm(f: Poly | ExprLike, g: Poly | ExprLike, opts: Polynomial
  * (the domain Q[irrational]): |a/n| and a*d; undefined otherwise.
  */
 function algebraicGcdLcm(a: Expr, b: Expr, op: 'gcd' | 'lcm'): Expr | undefined {
-  const irrational = (e: Expr): boolean => freeSymbols(e).size === 0 && ask(Q.algebraic(e)) === true && ask(Q.irrational(e)) === true;
+  const irrational = (e: Expr): boolean => !(e instanceof Rational) && algebraicNumber(e) && isReal(e) === true;
   if (!irrational(a) || !irrational(b)) return undefined;
-  const frc = ratsimp(mul(a, pow(b, -1)));
+  const frc = cancel(mul(a, pow(b, -1)));
   if (!(frc instanceof Rational)) return undefined;
   if (op === 'lcm') return mul(a, Rational.of(frc.q));
   const g = mul(a, Rational.of(1n, frc.p));
   return isPositive(g) === false ? mul(-1, g) : g;
+}
+
+/** A number built from rationals by sums, products and rational powers. */
+function algebraicNumber(e: Expr): boolean {
+  if (e instanceof Rational) return true;
+  if (e instanceof Pow) return e.exp instanceof Rational && algebraicNumber(e.base);
+  return (e instanceof Add || e instanceof Mul) && e.args.every(algebraicNumber);
 }
 
 /**

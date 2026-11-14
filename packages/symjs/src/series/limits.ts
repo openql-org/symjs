@@ -711,16 +711,16 @@ class Limiter {
 }
 
 /**
- * Limit of e as z -> z0. dir is '+' (default, like SymPy), '-' or '+-'
- * (two-sided; throws if the one-sided limits differ). Returns an unevaluated
- * `Limit` when the limit cannot be determined.
- */
-/**
  * The function applications depending on z rewritten in terms of tractable functions
  * (SymPy gruntz: e.rewrite('tractable', deep=True, limitvar=z)); expm1(z) = exp(z) - 1.
  */
 const tractable = (e: Expr, z: Sym): Expr => mapBottomUp(e, (a) => (a instanceof ExtensionExpr && a.has(z) ? (a.rewriteSelf('tractable', a.args) ?? a) : a));
 
+/**
+ * Limit of e as z -> z0. dir is '+' (default, like SymPy), '-' or '+-'
+ * (two-sided; throws if the one-sided limits differ). Returns an unevaluated
+ * `Limit` when the limit cannot be determined.
+ */
 export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-' = '+'): Expr {
   return limitWithin(ex, z, z0x, dir, BUDGET);
 }

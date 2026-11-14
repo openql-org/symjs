@@ -76,7 +76,7 @@ function parseSymbols(symbols: RingSymbols): Expr[] {
   throw new GeneratorsError('expected a string, Symbol or expression or a non-empty sequence of strings, Symbols or expressions');
 }
 
-/** The ring of a field with an associated ring (SymPy get_ring when has_assoc_Ring): ZZ for QQ, ZZ[X] for ZZ(X). */
+/** The ring of a field with an associated ring (SymPy get_ring when has_assoc_Ring): ZZ for QQ, ZZ[X] for ZZ(X); fraction fields over other grounds are not handled. */
 function assocRing(K: Domain): Domain | undefined {
   if (K instanceof FractionField) return K.ground === 'ZZ' ? K.getRing() : undefined;
   return K.isField && hasAssocRing(K) ? groundRing(K) : undefined;
