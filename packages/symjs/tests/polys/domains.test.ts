@@ -21,7 +21,7 @@ describe('ground domains', () => {
     expect(String(QQ.fracField(a))).toBe('QQ(a)');
     expect(String(ZZ.polyRing(a).getField())).toBe('ZZ(a)');
     expect(String(ZZ.fracField(a))).toBe('ZZ(a)');
-    expect(String(QQ.polyRing(a).fracField(b))).toBe('QQ(a,b)');
+    expect(String(QQ.polyRing(a).fracField(b))).toBe('QQ[a](b)');
     expect([ZZ.isField, QQ.isField, RR.isField, QQ.polyRing(a).isField]).toEqual([false, true, true, false]);
     expect(ZZ.getField()).toBe(QQ);
     expect(RR.getField()).toBe(RR);
@@ -52,7 +52,7 @@ describe('ground domains', () => {
     expect(s(F.fromSympy(P('(a**2 - 1)/(a + 1)')))).toBe('a - 1');
     expect(() => F.fromSympy(P('sin(a)'))).toThrow(CoercionFailed);
     expect(() => F.fromSympy(P('b'))).toThrow(CoercionFailed);
-    expect(() => F.fromSympy(new Float(1.5))).toThrow(CoercionFailed);
+    expect(s(F.fromSympy(new Float(1.5)))).toBe('3/2');
     expect(s(F.fromSympy(a))).toBe('a');
     expect(s(RR.fracField(a).fromSympy(P('1.5*a')))).toBe('1.5*a');
     const Pa = QQ.polyRing(a);
@@ -297,4 +297,193 @@ it('RealField contexts retain precision and convert their owned elements', () =>
   expect(third).toBeInstanceOf(Float);
   if (third instanceof Float) expect(third.prec).toBe(100);
   expect(field.quo(Rational.of(1n), Rational.of(3n))).toEqual(third);
+});
+
+describe('domain properties, membership and unification (SymPy 1.14.0 test_domains)', () => {
+  const [y, z] = [new Sym('y'), new Sym('z')];
+  it('tests membership by conversion, rejecting nan and the infinities', async () => {
+    const { S } = await import('../../src/core/nodes');
+    expect(ZZ.contains(P('3'))).toBe(true);
+    expect(ZZ.contains(P('1/2'))).toBe(false);
+    expect(ZZ.contains(S.Infinity)).toBe(false);
+    expect(ZZ.contains(Number.NaN)).toBe(false);
+    expect(ZZ.polyRing(x, y).contains(new Float(3))).toBe(true);
+    expect(QQ.polyRing(x, y).contains(new Float(3.14))).toBe(true);
+    expect(RR.polyRing(x, y).contains(P('sqrt(7)*x + sin(1)'))).toBe(true);
+    expect(RR.polyRing(x, y).contains(P('I'))).toBe(false);
+    expect(ZZ.polyRing(x).contains(P('(x + 1)**2'))).toBe(true);
+    expect(EX.polyRing(x).contains(P('sin(y)*x'))).toBe(true);
+    expect(QQ.fracField(P('1/x') as Sym).contains(P('2*x/3'))).toBe(true);
+    expect(QQ.fracField(P('1/x') as Sym, P('1/y') as Sym).contains(P('x**2 + y**2'))).toBe(true);
+    expect(() => EX.convert(S.NaN)).toThrow(CoercionFailed);
+    expect(() => ZZ.contains({ mul: () => { throw new RangeError('boom'); } })).not.toThrow();
+  });
+  it('reports exactness, characteristic and associated rings', async () => {
+    const { GF } = await import('../../src/polys/domains/finitefield');
+    expect(ZZ.isExact && QQ.isExact && EX.isExact).toBe(true);
+    expect(RR.isExact).toBe(false);
+    expect(RR.getExact()).toBe(QQ);
+    expect(ZZ.getExact()).toBe(ZZ);
+    expect(String(RR.polyRing(x).getExact())).toBe('QQ[x]');
+    expect(String(RR.fracField(x).getExact())).toBe('QQ(x)');
+    expect([ZZ, QQ, RR, EX].every((K) => K.hasCharacteristicZero && K.characteristic() === 0n)).toBe(true);
+    expect(ZZ.polyRing(x).characteristic()).toBe(0n);
+    expect(ZZ.polyRing(x).hasCharacteristicZero).toBe(true);
+    expect(GF(5).hasCharacteristicZero).toBe(false);
+    expect(GF(6).isField).toBe(false);
+    const Q = QQ.oldPolyRing(x, y).quotientRing([P('x')]);
+    expect(Q.hasCharacteristicZero).toBe(false);
+    expect(() => Q.characteristic()).toThrow(NotImplementedError);
+    expect([ZZ, QQ, ZZ.polyRing(x), QQ.fracField(x)].every((K) => K.hasAssocRing)).toBe(true);
+    expect([RR, EX].some((K) => K.hasAssocRing)).toBe(false);
+  });
+  it('nests composite domains and sets, injects and drops generators', () => {
+    const R = ZZ.polyRing(z).polyRing(x);
+    expect(String(R)).toBe('ZZ[z][x]');
+    expect(R.symbols.map(String)).toEqual(['z', 'x']);
+    expect(s(R.fromSympy(P('(z + x)**2')))).toBe('x**2 + 2*x*z + z**2');
+    expect(String(R.getField())).toBe('ZZ[z](x)');
+    expect(String(ZZ.polyRing(z).fracField(x).getRing())).toBe('ZZ[z][x]');
+    expect(String((R as PolynomialRing).setDomain(QQ))).toBe('QQ[x]');
+    expect(String((QQ.fracField(x) as FractionField).setDomain(RR))).toBe('RR(x)');
+    expect(String(ZZ.inject(x, y))).toBe('ZZ[x,y]');
+    expect(String(ZZ.polyRing(x).inject(y))).toBe('ZZ[x,y]');
+    expect(String(ZZ.fracField(x).inject(y))).toBe('ZZ(x,y)');
+    expect(() => ZZ.polyRing(x).inject(x)).toThrow();
+    expect(ZZ.drop(x)).toBe(ZZ);
+    expect(String(ZZ.polyRing(x, y).drop(x))).toBe('ZZ[y]');
+    expect(String(ZZ.fracField(x).drop(x))).toBe('ZZ');
+    expect(String(R.drop(z))).toBe('ZZ[x]');
+  });
+  it('finds units, canonical units and square roots', () => {
+    expect([-2, -1, 0, 1, 2].map((n) => ZZ.isUnit(n))).toEqual([false, true, false, true, false]);
+    expect([-2, 0].map((n) => QQ.isUnit(n))).toEqual([true, false]);
+    expect(ZZ.polyRing(x).isUnit(P('-1'))).toBe(true);
+    expect(ZZ.polyRing(x).isUnit(P('x'))).toBe(false);
+    expect(() => QQ.oldPolyRing(x, y).quotientRing([P('x')]).isUnit(P('1'))).toThrow(NotImplementedError);
+    expect(ZZ.canonicalUnit(-2)).toBe(-1n);
+    expect(String(QQ.canonicalUnit(2))).toBe('1');
+    const K = ZZ.polyRing(x);
+    expect(s(K.canonicalUnit(P('-x + 1')) as never)).toBe('-1');
+    expect(s(K.canonicalUnit(0) as never)).toBe('1');
+    expect(s(ZZ.polyRing(z).polyRing(x).canonicalUnit(P('-z*x + z**2')) as never)).toBe('-1');
+    expect(ZZ.exsqrt(4)).toBe(2n);
+    expect(ZZ.isSquare(42)).toBe(false);
+    expect(ZZ.isSquare(-1)).toBe(false);
+    expect(String(QQ.exsqrt(new PythonMPQ(18n, 8n)))).toBe('3/2');
+    expect(QQ.isSquare(new PythonMPQ(9n, 5n))).toBe(false);
+    expect(s(RR.exsqrt(6.25) as never)).toBe('2.50000000000000');
+    expect(RR.isSquare(-1)).toBe(false);
+    expect(() => EX.exsqrt(4)).toThrow(NotImplementedError);
+    expect(String(ZZ.convertFrom(new PythonMPQ(4n), QQ))).toBe('4');
+  });
+  it('unifies domains as SymPy unify does', async () => {
+    const { CC, ComplexField } = await import('../../src/polys/domains/complexfield');
+    const { ZZ_I, QQ_I } = await import('../../src/polys/domains/gaussiandomains');
+    const { EXRAW } = await import('../../src/polys/domains/expressionrawdomain');
+    const { GF } = await import('../../src/polys/domains/finitefield');
+    const { unifyGens } = await import('../../src/polys/domains');
+    const u = (A: { unify(B: unknown): unknown }, B: unknown): string => String(A.unify(B));
+    expect(u(ZZ, QQ)).toBe('QQ');
+    expect(u(QQ, ZZ)).toBe('QQ');
+    expect(u(ZZ, ZZ)).toBe('ZZ');
+    expect(u(EXRAW, EX)).toBe('EXRAW');
+    expect(u(EX, EXRAW)).toBe('EXRAW');
+    expect(u(EX, ZZ)).toBe('EX');
+    expect(u(ZZ, EX)).toBe('EX');
+    expect(u(RR, CC)).toBe('CC');
+    expect(u(new RealField(100), CC)).toBe('CC_100');
+    expect(u(CC, new ComplexField(80))).toBe('CC_80');
+    expect(u(new ComplexField(80), CC)).toBe('CC_80');
+    expect(u(CC, ZZ)).toBe('CC');
+    expect(u(RR, new RealField(80))).toBe('RR_80');
+    expect(u(new RealField(80), RR)).toBe('RR_80');
+    expect(u(ZZ_I, RR)).toBe('CC');
+    expect(u(RR, QQ)).toBe('RR');
+    const alg = QQ.algebraicField(P('sqrt(5)'));
+    expect(u(alg, QQ.algebraicField(P('sqrt(7)')))).toBe('QQ<sqrt(5) + sqrt(7)>');
+    expect(u(alg, ZZ_I)).toBe('QQ<sqrt(5) + I>');
+    expect(u(QQ_I, alg)).toBe('QQ<sqrt(5) + I>');
+    expect(u(alg, ZZ)).toBe('QQ<sqrt(5)>');
+    expect(u(ZZ_I, QQ)).toBe('QQ_I');
+    expect(u(QQ, ZZ_I)).toBe('QQ_I');
+    expect(u(ZZ_I, ZZ)).toBe('ZZ_I');
+    expect(u(ZZ, QQ_I)).toBe('QQ_I');
+    expect(u(ZZ.polyRing(x), QQ.fracField(y))).toBe('ZZ(x,y)');
+    expect(u(QQ.fracField(y), ZZ.polyRing(x))).toBe('ZZ(y,x)');
+    expect(u(ZZ.polyRing(x), QQ)).toBe('QQ[x]');
+    expect(u(QQ, ZZ.polyRing(x))).toBe('QQ[x]');
+    expect(u(GF(5), GF(5).polyRing(x))).toBe('GF(5)[x]');
+    expect(() => GF(5).unify(ZZ)).toThrow();
+    const { PolynomialRingBase } = await import('../../src/polys/domains/oldpolynomialring');
+    expect(u(new PolynomialRingBase(ZZ, [x, y]), QQ)).toBe('QQ[x,y]');
+    expect(() => QQ.oldPolyRing(x, y).quotientRing([P('x')]).unify(ZZ)).toThrow(NotImplementedError);
+    class Other extends RationalField {
+      override toString(): string { return 'OTHER'; }
+      protected override get unificationKind(): 'other' { return 'other'; }
+    }
+    class Other2 extends Other {
+      override toString(): string { return 'OTHER2'; }
+    }
+    expect(u(new Other(), new Other2())).toBe('EX');
+    expect(() => ZZ.polyRing(x, y).unifyWithSymbols(ZZ, [y, z])).toThrow();
+    expect(() => ZZ.unifyWithSymbols(ZZ.polyRing(x, y), [y, z])).toThrow();
+    expect(String(ZZ.unifyWithSymbols(QQ, [y]))).toBe('QQ');
+    expect(unifyGens([x, y], [y, z]).map(String)).toEqual(['x', 'y', 'z']);
+    expect(unifyGens([x], [x]).map(String)).toEqual(['x']);
+    expect(() => ZZ.polyRing(x).fracField(y).polyRing(z)).not.toThrow();
+  });
+  it('converts sparse and dense polynomial elements through their expressions', async () => {
+    const { PolyRing } = await import('../../src/polys/rings');
+    const R = new PolyRing([x], ZZ);
+    expect(ZZ.convert(R.fromExpr(P('x')).sub(R.fromExpr(P('x'))))).toBe(0n);
+    expect(s(groundToSympy(new DMP([P('1'), P('0')], QQ.oldPolyRing(x))) as never)).toBe('x');
+  });
+});
+
+describe('conversion from composite domains (SymPy test_PolynomialRing_from_FractionField)', () => {
+  it('converts a fraction with a polynomial value, NoMatch otherwise', async () => {
+    const { FracField } = await import('../../src/polys/fields');
+    const { PolyRing } = await import('../../src/polys/rings');
+    const { isNoMatch } = await import('../../src/core/truth');
+    const y = new Sym('y');
+    const F = new FracField([x, y], QQ);
+    const R = new PolyRing([x, y], QQ);
+    const K = QQ.polyRing(x, y);
+    expect(s(K.fromFractionField(F.fromExpr(P('(x**2 + y**2)/4')), QQ.fracField(x, y)) as never)).toBe('x**2/4 + y**2/4');
+    expect(isNoMatch(K.fromFractionField(F.fromExpr(P('(x**2 + y**2)/(x + 1)')), QQ.fracField(x, y)))).toBe(true);
+    expect(s(ZZ.fracField(x, y).fromPolynomialRing(R.fromExpr(P('x**2/3 + y**2/5')), K) as never)).toBe('x**2/3 + y**2/5');
+    expect(() => K.fromFractionField({ mul: () => 0, ring: 1, asExpr: () => { throw new RangeError('boom'); } }, QQ.fracField(x, y))).toThrow(RangeError);
+  });
+});
+
+describe('unification defaults and remaining branches', () => {
+  const y = new Sym('y');
+  it('uses the defaults of the unification hooks', async () => {
+    const { CC } = await import('../../src/polys/domains/complexfield');
+    const { sqrt } = await import('../../src/index');
+    class FakeReal extends RationalField {
+      override toString(): string { return 'FAKE_RR'; }
+      protected override get unificationKind(): 'RR' { return 'RR'; }
+    }
+    class FakeAlgebraic extends RationalField {
+      override toString(): string { return 'FAKE_ALG'; }
+      protected override get unificationKind(): 'ALG' { return 'ALG'; }
+    }
+    class FakeComposite extends RationalField {
+      override toString(): string { return 'FAKE[x]'; }
+      protected override get compositeParts(): readonly [IntegerRing, readonly Sym[]] { return [ZZ, [x]]; }
+    }
+    expect(String(CC.unify(new FakeReal()))).toBe('CC');
+    expect(String(new FakeAlgebraic().unify(QQ.algebraicField(sqrt(2))))).toBe('QQ<sqrt(2)>');
+    expect(() => new FakeComposite().unify(QQ)).toThrow(NotImplementedError);
+    expect(String(CC.unify(RR))).toBe('CC');
+  });
+  it('covers membership errors, exactness of composites and lex ties', () => {
+    expect(() => ZZ.contains({ ring: 1, asExpr: () => { throw new RangeError('boom'); } })).toThrow(RangeError);
+    expect(RR.polyRing(x).isExact).toBe(false);
+    expect(QQ.polyRing(x).isExact).toBe(true);
+    expect(s(ZZ.polyRing(x, y).canonicalUnit(P('x*y - x')) as never)).toBe('1');
+    expect(s(ZZ.polyRing(x, y).canonicalUnit(P('-x*y**2 + x*y')) as never)).toBe('-1');
+  });
 });

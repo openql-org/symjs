@@ -8,6 +8,8 @@
 
 // every entry point brings the core with its registrations
 import './core';
+// polynomial rings and fraction fields over the non-ground coefficient domains
+import './polys/domains/compositedomain';
 
 export {
 } from './polys/poly';

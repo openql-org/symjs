@@ -62,6 +62,40 @@ export class PolynomialRingBase extends Domain {
     if (![QQ, ZZ, RR, EX].includes(this.dom)) throw new NotImplementedError('fraction fields over this coefficient domain are not implemented');
     return this.dom.fracField(...this.symbols);
   }
+  /** The ring over another coefficient domain, with the same generators and order (SymPy set_domain). */
+  setDomain(K: Domain): PolynomialRingBase {
+    return new PolynomialRingBase(K, this.symbols, this.order);
+  }
+  /**
+   * The units (SymPy is_unit): the constants that are units of the coefficient
+   * domain, and for a local order the elements with such a constant term.
+   */
+  override isUnit(a: unknown): boolean {
+    const p = this.polynomialRing.fromExpr(this.toSympy(this.convert(a)));
+    if (this.order.isGlobal && !p.isGround) return false;
+    return this.dom.isUnit(this.dom.convert(p.const()));
+  }
+  protected override get compositeParts(): readonly [Domain, readonly Sym[]] {
+    return [this.dom, this.symbols];
+  }
+  protected override recompose(K: Domain, gens: readonly Sym[]): Domain {
+    return new PolynomialRingBase(K, gens, this.order);
+  }
+  override get hasAssocRing(): boolean {
+    return true;
+  }
+  override get isExact(): boolean {
+    return this.dom.isExact;
+  }
+  override getExact(): Domain {
+    return this.setDomain(this.dom.getExact());
+  }
+  override get hasCharacteristicZero(): boolean {
+    return this.dom.hasCharacteristicZero;
+  }
+  override characteristic(): bigint {
+    return this.dom.characteristic();
+  }
 }
 
 domainHooks.polynomialRing = (K, gens) => new PolynomialRingBase(K, gens);

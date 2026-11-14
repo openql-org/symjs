@@ -53,18 +53,18 @@ const CASES = [
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 395],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 975],
+  ['simplify', 'simplify', 981],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
-  ['polys', 'factor', 676],
+  ['polys', 'factor', 683],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 997],
-  ['solvers', 'solve', 1060],
-  ['solvers', 'dsolve', 1075],
+  ['solvers', 'solve', 1067],
+  ['solvers', 'dsolve', 1082],
   ['sets', '*', 365],
-  ['matrices', 'Matrix', 752],
+  ['matrices', 'Matrix', 759],
   ['printing', 'pretty', 235],
   ['discrete', '*', 291],
   ['strategies', '*', 207],
@@ -73,15 +73,15 @@ const CASES = [
   ['unify', '*', 235],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 559],
-  ['holonomic', 'exprToHolonomic', 1149],
+  ['algebras', 'Quaternion', 566],
+  ['holonomic', 'exprToHolonomic', 1158],
   ['geometry', '*', 1078],
   ['vector', '*', 1176],
-  ['stats', '*', 1298],
+  ['stats', '*', 1306],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1012],
+  ['plotting', '*', 1019],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
@@ -91,7 +91,7 @@ const CASES = [
   ['index', 'Rational', 195],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators and quadrature (measured 2648 KiB).
-  ['index', '*', 2693],
+  ['index', '*', 2704],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

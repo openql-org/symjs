@@ -34,3 +34,14 @@ it('ComplexField elements keep their domain and precision', () => {
   expect(field.dtype(1).imag.isZero).toBe(true);
   expect(field.toSympy(element)).toEqual(element.toSympy());
 });
+
+describe('CC exactness, square roots and unification (SymPy test_domains)', () => {
+  it('is inexact with principal square roots', () => {
+    expect(CC.isExact).toBe(false);
+    expect(CC.hasCharacteristicZero).toBe(true);
+    expect(CC.isSquare(-1)).toBe(true);
+    expect(String(CC.exsqrt(P('-3 - 4*I')))).toBe('1.0 - 2.0*I');
+    expect(String(CC.unify(QQ))).toBe('CC');
+    expect(String(QQ_I.unify(CC))).toBe('CC');
+  });
+});

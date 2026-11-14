@@ -66,3 +66,16 @@ it('exposes Euclidean quotient and remainder operators', async () => {
   expect(v.floordiv(w).mul(w).equals(v)).toBe(true);
   expect(v.mod(w).isZero).toBe(true);
 });
+
+describe('Gaussian units (SymPy test_canonical_unit)', () => {
+  it('finds units and canonical units', () => {
+    const i = ZZ_I.fromSympy(I);
+    expect(String(ZZ_I.canonicalUnit(ZZ_I.convert(mul(2, i))))).toBe('-I');
+    expect(String(QQ_I.canonicalUnit(QQ_I.convert(-2)))).toBe('-1');
+    expect(ZZ_I.isUnit(I)).toBe(true);
+    expect(ZZ_I.isUnit(2)).toBe(false);
+    expect(QQ_I.isUnit(2)).toBe(true);
+    expect(ZZ_I.hasCharacteristicZero && ZZ_I.hasAssocRing).toBe(true);
+    expect(String(ZZ_I.unify(QQ))).toBe('QQ_I');
+  });
+});
