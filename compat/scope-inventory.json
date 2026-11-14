@@ -7045,12 +7045,8 @@
       "IndexedBase.offset",
       "IndexedBase.strides",
       "Integer.__floordiv__",
-      "Integer.__lshift__",
       "Integer.__rfloordiv__",
-      "Integer.__rlshift__",
       "Integer.__rmod__",
-      "Integer.__rrshift__",
-      "Integer.__rshift__",
       "Integer.args",
       "Integer.assumptions0",
       "Integer.canonical_variables",
@@ -39537,7 +39533,7 @@
      "testFile": "sympy/calculus/tests/test_accumulationbounds.py",
      "inCorpus": true,
      "caseCount": 197,
-     "gapCount": 58,
+     "gapCount": 57,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -47826,12 +47822,8 @@
       "Gt.weak",
       "Gt.xreplace",
       "Integer.__floordiv__",
-      "Integer.__lshift__",
       "Integer.__rfloordiv__",
-      "Integer.__rlshift__",
       "Integer.__rmod__",
-      "Integer.__rrshift__",
-      "Integer.__rshift__",
       "Integer.args",
       "Integer.assumptions0",
       "Integer.canonical_variables",
@@ -50153,7 +50145,7 @@
      "testFile": "sympy/core/tests/test_assumptions.py",
      "inCorpus": true,
      "caseCount": 699,
-     "gapCount": 336,
+     "gapCount": 217,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 7,
@@ -51553,7 +51545,7 @@
      "testFile": "sympy/core/tests/test_exprtools.py",
      "inCorpus": true,
      "caseCount": 183,
-     "gapCount": 48,
+     "gapCount": 44,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -52343,7 +52335,7 @@
      "testFile": "sympy/core/tests/test_function.py",
      "inCorpus": true,
      "caseCount": 389,
-     "gapCount": 154,
+     "gapCount": 150,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 4,
@@ -53769,12 +53761,8 @@
       "Infinity.n",
       "Infinity.subs",
       "Integer.__floordiv__",
-      "Integer.__lshift__",
       "Integer.__rfloordiv__",
-      "Integer.__rlshift__",
       "Integer.__rmod__",
-      "Integer.__rrshift__",
-      "Integer.__rshift__",
       "Integer.args",
       "Integer.assumptions0",
       "Integer.canonical_variables",
@@ -54887,7 +54875,7 @@
      "testFile": "sympy/core/tests/test_numbers.py",
      "inCorpus": true,
      "caseCount": 1616,
-     "gapCount": 204,
+     "gapCount": 132,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -55544,7 +55532,7 @@
      "testFile": "sympy/core/tests/test_power.py",
      "inCorpus": true,
      "caseCount": 184,
-     "gapCount": 52,
+     "gapCount": 22,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 3,
@@ -77745,7 +77733,7 @@
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
      "caseCount": 449,
-     "gapCount": 106,
+     "gapCount": 58,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -78242,7 +78230,7 @@
      "testFile": "sympy/functions/elementary/tests/test_exponential.py",
      "inCorpus": true,
      "caseCount": 476,
-     "gapCount": 120,
+     "gapCount": 98,
      "timeoutCount": 3,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -79528,7 +79516,7 @@
      "testFile": "sympy/functions/elementary/tests/test_hyperbolic.py",
      "inCorpus": true,
      "caseCount": 743,
-     "gapCount": 163,
+     "gapCount": 146,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 4,
@@ -79964,7 +79952,7 @@
      "testFile": "sympy/functions/elementary/tests/test_integers.py",
      "inCorpus": true,
      "caseCount": 430,
-     "gapCount": 192,
+     "gapCount": 177,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -80445,7 +80433,7 @@
      "testFile": "sympy/functions/elementary/tests/test_miscellaneous.py",
      "inCorpus": true,
      "caseCount": 976,
-     "gapCount": 519,
+     "gapCount": 343,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -80697,7 +80685,7 @@
      "testFile": "sympy/functions/elementary/tests/test_piecewise.py",
      "inCorpus": true,
      "caseCount": 458,
-     "gapCount": 130,
+     "gapCount": 129,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -82137,7 +82125,7 @@
      "testFile": "sympy/functions/elementary/tests/test_trigonometric.py",
      "inCorpus": true,
      "caseCount": 2818,
-     "gapCount": 218,
+     "gapCount": 209,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -87147,7 +87135,7 @@
      "testFile": "sympy/functions/special/tests/test_gamma_functions.py",
      "inCorpus": true,
      "caseCount": 291,
-     "gapCount": 91,
+     "gapCount": 82,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -113108,7 +113096,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_dotproduct.py",
      "inCorpus": true,
      "caseCount": 11,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 1
@@ -160739,7 +160727,7 @@
      "testFile": "sympy/simplify/tests/test_radsimp.py",
      "inCorpus": true,
      "caseCount": 154,
-     "gapCount": 13,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,

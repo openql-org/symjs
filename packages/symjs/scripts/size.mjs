@@ -37,11 +37,14 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Dummit's quintic coefficient tables and branch selection add at most 80 KiB
 // to consumers that load radical polynomial solving.
 // The dense recursive polynomial tools (densetools) are part of the root namespace.
+// SymPy's assumption handlers behind the public is* queries (core/exprfacts) add
+// about 22 KiB to the core namespace; Integer bitwise methods add under 1 KiB to
+// core consumers.
 const CASES = [
-  ['core', 'Rational', 190],
-  ['core', 'parse, str', 204],
-  ['core', 'parse, diff, expand, str, latex', 204],
-  ['core', '*', 288],
+  ['core', 'Rational', 191],
+  ['core', 'parse, str', 206],
+  ['core', 'parse, diff, expand, str, latex', 206],
+  ['core', '*', 310],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 383],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
@@ -55,10 +58,10 @@ const CASES = [
   ['calculus', 'integrate', 997],
   ['solvers', 'solve', 1055],
   ['solvers', 'dsolve', 1070],
-  ['sets', '*', 353],
+  ['sets', '*', 355],
   ['matrices', 'Matrix', 749],
   ['printing', 'pretty', 230],
-  ['discrete', '*', 285],
+  ['discrete', '*', 286],
   ['strategies', '*', 203],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
   ['parsing', '*', 800],
@@ -83,7 +86,7 @@ const CASES = [
   ['index', 'Rational', 195],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators and quadrature (measured 2648 KiB).
-  ['index', '*', 2660],
+  ['index', '*', 2685],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

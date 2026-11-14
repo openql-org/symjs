@@ -4897,7 +4897,9 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.nargs') return (_args, kw, self) => (noKw(kw), sj.nargs(self instanceof UFnClass ? sj.SymFunction(self.name, { nargs: self.nargs }) : self as sj.WildFunction));
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {
-    if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return (sj as unknown as Record<string, unknown>)[camel(x.name)];
+    // the evaluating constructors of the arithmetic classes (Python calls the class: Pow(b, e))
+    const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow };
+    if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[camel(x.name)];
     if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
     // The dense tools keep GF(p) coefficients as field elements: a zero-order derivative returns them unchanged.
     const fieldElements = (v: unknown): unknown => v instanceof JsFFElement ? plain(v) : v instanceof JsList ? new JsList(v.items.map(fieldElements)) : v instanceof JsTuple ? new JsTuple(v.items.map(fieldElements)) : v;

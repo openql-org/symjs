@@ -193,3 +193,20 @@ describe('rewrite(..., log) of the inverse trigonometric and hyperbolic function
     for (const [e, r] of cases) expect(String(rewrite(parse(e), 'log'))).toBe(r);
   });
 });
+
+describe('rewrite of a power as exp (SymPy Pow._eval_rewrite_as_exp)', () => {
+  it('writes b**e as exp(e*log(b))', async () => {
+    const { I, Pow: PowNode, S: s, exp: e, pow, sqrt } = await import('../../src');
+    expect(String(rewrite(pow(x, y), 'exp'))).toBe('exp(y*log(x))');
+    expect(String(rewrite(pow(7, x), 'exp'))).toBe('exp(x*log(7))');
+    expect(String(rewrite(pow(I, I), 'exp'))).toBe('exp(-pi/2)');
+    expect(String(rewrite(P('(2 + 3*I)**x'), 'exp'))).toBe('exp(x*(log(sqrt(13)) + I*atan(3/2)))');
+    // a power of a symbol to an exponent without symbols stays a power
+    expect(String(rewrite(pow(x, 2), 'exp'))).toBe('x**2');
+    // a power of 0 or one that contains exp is kept
+    expect(String(rewrite(new PowNode(s.Zero, x), 'exp'))).toBe('0**x');
+    expect(String(rewrite(pow(e(x), y), 'exp'))).toBe('exp(x)**y');
+    expect(String(rewrite(pow(x, e(y)), 'exp'))).toBe('x**exp(y)');
+    expect(String(rewrite(sqrt(2), 'exp'))).toBe('sqrt(2)');
+  });
+});

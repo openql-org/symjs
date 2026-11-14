@@ -234,6 +234,10 @@ describe('calculus and rewriting', () => {
 });
 
 describe('assumptions', () => {
+  it('answers the internal realness query of the core', async () => {
+    const { isReal: isRealQuery } = await import('../../src/core/assumptions');
+    expect([isRealQuery(expm1(r)), isRealQuery(expm1(x)), isRealQuery(Sqrt(r))]).toEqual([true, undefined, undefined]);
+  });
   it('expm1 is real and finite with its argument', () => {
     expect(isReal(expm1(r))).toBe(true);
     expect(isReal(expm1(x))).toBe('unknown');

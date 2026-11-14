@@ -8,37 +8,57 @@
 
 import type { Expr, ExprLike, Sym } from './nodes';
 import { sympify } from './ops';
-import * as A from './assumptions';
 import * as M from './methods';
 import { match as matchImpl } from './match';
 import type { NoMatchResult, Truth } from './truth';
 import { NoMatch, orNoMatch, toTruth } from './truth';
-import { ask, Q } from './refine';
+import { fact } from './exprfacts';
+
+/** SymPy `e.is_<name>` of the assumption fact name, as a Truth. */
+const factTruth = (e: ExprLike, name: string): Truth => toTruth(fact(sympify(e), name));
 
 /** e is real (SymPy is_real): true, false or 'unknown'. */
-export const isReal = (e: ExprLike): Truth => toTruth(A.isReal(sympify(e)));
+export const isReal = (e: ExprLike): Truth => factTruth(e, 'real');
 /** e is positive (SymPy is_positive). */
-export const isPositive = (e: ExprLike): Truth => toTruth(A.isPositive(sympify(e)));
+export const isPositive = (e: ExprLike): Truth => factTruth(e, 'positive');
 /** e is negative (SymPy is_negative). */
-export const isNegative = (e: ExprLike): Truth => toTruth(A.isNegative(sympify(e)));
+export const isNegative = (e: ExprLike): Truth => factTruth(e, 'negative');
 /** e is nonnegative (SymPy is_nonnegative). */
-export const isNonNegative = (e: ExprLike): Truth => toTruth(A.isNonNegative(sympify(e)));
+export const isNonNegative = (e: ExprLike): Truth => factTruth(e, 'nonnegative');
 /** e is nonzero (SymPy is_nonzero). */
-export const isNonZero = (e: ExprLike): Truth => toTruth(A.isNonZero(sympify(e)));
+export const isNonZero = (e: ExprLike): Truth => factTruth(e, 'nonzero');
 /** e is zero (SymPy is_zero). */
-export const isZero = (e: ExprLike): Truth => toTruth(A.isZero(sympify(e)));
+export const isZero = (e: ExprLike): Truth => factTruth(e, 'zero');
 /** e is an integer (SymPy is_integer). */
-export const isIntegerValued = (e: ExprLike): Truth => toTruth(A.isIntegerQ(sympify(e)));
+export const isIntegerValued = (e: ExprLike): Truth => factTruth(e, 'integer');
 /** e is irrational (SymPy is_irrational). */
-export const isIrrational = (e: ExprLike): Truth => ask(Q.irrational(e));
+export const isIrrational = (e: ExprLike): Truth => factTruth(e, 'irrational');
 /** e is algebraic (SymPy is_algebraic). */
-export const isAlgebraic = (e: ExprLike): Truth => ask(Q.algebraic(e));
+export const isAlgebraic = (e: ExprLike): Truth => factTruth(e, 'algebraic');
 /** e is a complex number (SymPy is_complex). */
-export const isComplex = (e: ExprLike): Truth => ask(Q.complex(e));
+export const isComplex = (e: ExprLike): Truth => factTruth(e, 'complex');
 /** e is finite (SymPy is_finite). */
-export const isFinite = (e: ExprLike): Truth => ask(Q.finite(e));
+export const isFinite = (e: ExprLike): Truth => factTruth(e, 'finite');
 /** e is a prime integer (SymPy is_prime). */
-export const isPrime = (e: ExprLike): Truth => ask(Q.prime(e));
+export const isPrime = (e: ExprLike): Truth => factTruth(e, 'prime');
+/** e is nonpositive (SymPy is_nonpositive). */
+export const isNonPositive = (e: ExprLike): Truth => factTruth(e, 'nonpositive');
+/** e is an even integer (SymPy is_even). */
+export const isEven = (e: ExprLike): Truth => factTruth(e, 'even');
+/** e is an odd integer (SymPy is_odd). */
+export const isOdd = (e: ExprLike): Truth => factTruth(e, 'odd');
+/** e is a nonzero imaginary number (SymPy is_imaginary). */
+export const isImaginary = (e: ExprLike): Truth => factTruth(e, 'imaginary');
+/** e is hermitian (SymPy is_hermitian). */
+export const isHermitian = (e: ExprLike): Truth => factTruth(e, 'hermitian');
+/** e is antihermitian (SymPy is_antihermitian). */
+export const isAntihermitian = (e: ExprLike): Truth => factTruth(e, 'antihermitian');
+/** e is real or infinite, and negative (SymPy is_extended_negative). */
+export const isExtendedNegative = (e: ExprLike): Truth => factTruth(e, 'extended_negative');
+/** e is real or infinite, and positive (SymPy is_extended_positive). */
+export const isExtendedPositive = (e: ExprLike): Truth => factTruth(e, 'extended_positive');
+/** e is a point of the Riemann surface of the logarithm (SymPy is_polar). */
+export const isPolar = (e: ExprLike): Truth => factTruth(e, 'polar');
 
 /**
  * SymPy Expr.match: the values of the Wilds making pattern equal to expr,
@@ -79,3 +99,4 @@ export function isMeromorphic(e: ExprLike, x: Expr, a: ExprLike): Truth {
 }
 
 export { NoMatch };
+

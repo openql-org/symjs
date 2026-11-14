@@ -38,3 +38,16 @@ it('queries irrationality, algebraicity, complexity, finiteness and primality', 
   expect(a.isPrime(a.I)).toBe(false);
   expect(a.isPrime(7)).toBe(true);
 });
+
+it('queries the other assumption facts (SymPy expr.is_<fact>)', async () => {
+  const a = await import('../../src');
+  const [k, o] = [new a.Sym('k', { integer: true }), new a.Sym('o', { odd: true })];
+  const [i, h, ah] = [new a.Sym('i', { imaginary: true }), new a.Sym('h', { hermitian: true }), new a.Sym('ah', { antihermitian: true })];
+  expect(a.isReal(a.S.Infinity)).toBe(false);
+  expect([a.isPositive(2), a.isNegative(-2), a.isNonNegative(0), a.isNonZero(a.I), a.isZero(k)]).toEqual([true, true, true, false, 'unknown']);
+  expect(a.isIntegerValued(a.mul(2, k))).toBe(true);
+  expect([a.isNonPositive(a.mul(-1, a.pow(k, 2))), a.isEven(a.mul(2, k)), a.isOdd(a.add(o, 2)), a.isOdd(a.mul(2, k))]).toEqual([true, true, true, false]);
+  expect([a.isImaginary(a.mul(2, i)), a.isImaginary(a.pow(i, 2)), a.isHermitian(h), a.isAntihermitian(a.mul(a.I, h))]).toEqual([true, false, true, 'unknown']);
+  expect(a.isAntihermitian(ah)).toBe(true);
+  expect([a.isExtendedNegative(a.S.NegativeInfinity), a.isExtendedPositive(a.S.Infinity), a.isPolar(a.expPolar(k)), a.isPolar(k)]).toEqual([true, true, true, 'unknown']);
+});

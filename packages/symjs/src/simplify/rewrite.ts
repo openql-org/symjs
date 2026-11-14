@@ -9,11 +9,11 @@
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
 import { Eq, Ge, Gt, Lt, Ne, piecewise } from '../core/logic';
-import { isIntegerQ, isNegative, isPositive, isReal } from '../core/assumptions';
+import { isIntegerQ, isNegative, isPositive, isReal, isZero } from '../core/assumptions';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { isFunctionOf } from '../core/match';
 import { rebuild } from '../core/traverse';
-import { abs, acos, asin, atan, conjugate, cos, cosh, fn, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
+import { abs, acos, arg, asin, atan, conjugate, cos, cosh, fn, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, ff, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special/special';
 import { Sum } from '../core/concrete';
 import { first, pair } from '../core/guard';
@@ -182,6 +182,17 @@ reg1('exp', 'Pow', (a) => {
   const l = a.args.find((t) => t instanceof Fn && t.name === 'log' && t.args.length === 1);
   if (!l) return undefined;
   return pow(first(l.args), div(a, l));
+});
+/**
+ * SymPy Pow._eval_rewrite_as_exp: b**e as exp(e*log(b)), with log(Abs(b)) + I*arg(b) for a base
+ * without symbols. A power with a symbolic base and an exponent without symbols stays a power
+ * (SymPy keeps exp(e*log(b)) unevaluated there, which a product turns back into b**e).
+ */
+reg2('Pow', 'exp', (base, expo) => {
+  const hasExp = (x: Expr): boolean => isExp(x) || x.args.some(hasExp);
+  if (isZero(base) === true || hasExp(base) || hasExp(expo)) return pow(base, expo);
+  if (base.freeSymbols().size === 0) return exp(mul(add(log(abs(base)), mul(I, arg(base))), expo));
+  return expo.freeSymbols().size ? exp(mul(log(base), expo)) : undefined;
 });
 reg1('exp', 'sqrt', (a) => {
   if (!(a instanceof Mul)) return undefined;

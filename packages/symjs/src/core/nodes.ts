@@ -644,7 +644,38 @@ export class Rational extends Expr {
   protected computeKey(): string {
     return this.q === 1n ? `${this.p}` : `${this.p}/${this.q}`;
   }
+
+  /** The integer result of a bitwise operation on this and other (a TypeError when one is not an integer). */
+  private bits(other: Rational | number | bigint, op: (a: bigint, b: bigint) => bigint): Rational {
+    const b = other instanceof Rational ? (other.q === 1n ? other.p : undefined) : typeof other === 'bigint' || Number.isInteger(other) ? BigInt(other) : undefined;
+    if (this.q !== 1n || b === undefined) throw new TypeError('bitwise operations need integers');
+    return Rational.of(op(this.p, b));
+  }
+  /** SymPy Integer.__lshift__: the integer shifted left by n bits (a RangeError for a negative n). */
+  lshift(n: Rational | number | bigint): Rational {
+    return this.bits(n, (a, b) => (b < 0n ? negativeShift() : a << b));
+  }
+  /** SymPy Integer.__rshift__: the integer shifted right by n bits, rounding down (a RangeError for a negative n). */
+  rshift(n: Rational | number | bigint): Rational {
+    return this.bits(n, (a, b) => (b < 0n ? negativeShift() : a >> b));
+  }
+  /** SymPy Integer.__and__: the bitwise and of two integers (in two's complement). */
+  and(other: Rational | number | bigint): Rational {
+    return this.bits(other, (a, b) => a & b);
+  }
+  /** SymPy Integer.__or__: the bitwise or of two integers (in two's complement). */
+  or(other: Rational | number | bigint): Rational {
+    return this.bits(other, (a, b) => a | b);
+  }
+  /** SymPy Integer.__xor__: the bitwise exclusive or of two integers (in two's complement). */
+  xor(other: Rational | number | bigint): Rational {
+    return this.bits(other, (a, b) => a ^ b);
+  }
 }
+
+const negativeShift = (): never => {
+  throw new RangeError('negative shift count');
+};
 
 /** Floating-point number. */
 export class Float extends Expr {
