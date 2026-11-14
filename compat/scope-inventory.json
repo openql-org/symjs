@@ -16099,7 +16099,7 @@
      "testFile": "sympy/core/tests/test_numbers.py",
      "inCorpus": true,
      "caseCount": 1616,
-     "gapCount": 204,
+     "gapCount": 200,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -83606,7 +83606,7 @@
    "module": "sympy.polys.densetools",
    "sha256": "034675135e9e571e7bef3c3ce26f0a6604f9a3a75b0d75e89d6f13a9f2122596",
    "status": "partial",
-   "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result), and RR fraction-field elements keep the denominator as given instead of making it monic.",
+   "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result).",
    "sources": [
     "polys/densetools.ts"
    ],
@@ -83642,7 +83642,7 @@
     "limitations": {
      "pass": false,
      "hasNote": true,
-     "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result), and RR fraction-field elements keep the denominator as given instead of making it monic.",
+     "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result).",
      "capabilities": []
     }
    },
@@ -94491,7 +94491,7 @@
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
      "caseCount": 1584,
-     "gapCount": 631,
+     "gapCount": 623,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -95269,7 +95269,7 @@
      "testFile": "sympy/polys/tests/test_rings.py",
      "inCorpus": true,
      "caseCount": 166,
-     "gapCount": 18,
+     "gapCount": 17,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,

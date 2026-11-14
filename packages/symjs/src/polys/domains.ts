@@ -47,7 +47,22 @@ const GROUND_RANK: Record<Ground, number> = { ZZ: 0, QQ: 1, RR: 2, EX: 3 };
 const RR_MAX_DENOM = 45035996273704n;
 function floatToRational(f: Float): Rational {
   const [p, q] = mpfToRational(f.mpf);
-  return limitDenominator(Rational.of(p, q), RR_MAX_DENOM);
+  const r = Rational.of(p, q);
+  if (q <= RR_MAX_DENOM) return r;
+  // SymPy to_rational keeps the exact value when a bound of the approximation is 0 (a tiny float)
+  const [p0, q0, p1, q1] = convergents(p, q, RR_MAX_DENOM);
+  return p1 === 0n || p0 + ((RR_MAX_DENOM - q0) / q1) * p1 === 0n ? r : limitDenominator(r, RR_MAX_DENOM);
+}
+
+/** The last two continued fraction convergents p0/q0, p1/q1 of p/q with denominators at most maxDen. */
+function convergents(p: bigint, q: bigint, maxDen: bigint): [bigint, bigint, bigint, bigint] {
+  let [p0, q0, p1, q1, n, d] = [0n, 1n, 1n, 0n, p, q];
+  for (;;) {
+    const a = n / d - (n < 0n && n % d !== 0n ? 1n : 0n);
+    const q2 = q0 + a * q1;
+    if (q2 > maxDen) return [p0, q0, p1, q1];
+    [p0, q0, p1, q1, n, d] = [p1, q1, p0 + a * p1, q2, d, n - a * d];
+  }
 }
 
 /**
@@ -1049,23 +1064,33 @@ export class OldFractionField {
   new(p: DMP | readonly Expr[]): DMF {
     return this.frac(p instanceof DMP ? p : new DMP(p, this.ring), this.ring.one);
   }
-  /** The fraction num/den with common factors cancelled (SymPy dmp_cancel). */
+  /**
+   * The fraction num/den with common factors cancelled (SymPy dmp_cancel): over QQ the
+   * denominators are cleared and the gcd is taken over ZZ, over RR over the exact rationals of the
+   * coefficients; the denominator gets a positive leading coefficient.
+   */
   frac(num: DMP, den: DMP): DMF {
     if (den.isZero) throw new RangeError('division by zero in a fraction field');
     if (num.isZero) return new DMF(num, this.ring.one, this);
     const dom = this.dom;
+    let [p, q]: [Rep, Rep] = [num.rep, den.rep];
     if (dom === RR) {
-      const exact = new OldFractionField(new GlobalPolynomialRing(QQ, this.ring.gen));
-      const r = exact.frac(new DMP(toExactRep(num.rep), exact.ring), new DMP(toExactRep(den.rep), exact.ring));
-      return new DMF(new DMP(toFloatRep(r.num.rep), this.ring), new DMP(toFloatRep(r.den.rep), this.ring), this);
+      const [f, g] = [strip(QQ, toExactRep(p)), strip(QQ, toExactRep(q))];
+      const h = repGcd(QQ, f, g);
+      [p, q] = [toFloatRep(repExquo(QQ, f, h)), toFloatRep(repExquo(QQ, g, h))];
+    } else if (dom === QQ) {
+      const denominator = (f: Rep): bigint => f.reduce((m, c) => ilcm(m, rat(c).q), 1n);
+      const [cq, cp] = [denominator(p), denominator(q)];
+      const [f, g] = [repMulGround(QQ, p, Rational.of(cq)), repMulGround(QQ, q, Rational.of(cp))];
+      const h = repGcd(ZZ, f, g);
+      const c = igcd(cp, cq);
+      [p, q] = [repMulGround(QQ, repExquo(ZZ, f, h), Rational.of(cp / c)), repMulGround(QQ, repExquo(ZZ, g, h), Rational.of(cq / c))];
+    } else {
+      const h = repGcd(dom, p, q);
+      [p, q] = [repExquo(dom, p, h), repExquo(dom, q, h)];
     }
-    const g = num.gcd(den);
-    let [p, q] = [num.exquo(g), den.exquo(g)];
-    if (dom.isField) {
-      const lc = q.LC();
-      if (!dom.isOne(lc)) [p, q] = [new DMP(p.rep.map((c) => dom.quo(c, lc)), this.ring), new DMP(q.rep.map((c) => dom.quo(c, lc)), this.ring)];
-    } else if (dom.isNegative(q.LC())) [p, q] = [p.neg(), q.neg()];
-    return new DMF(p, q, this);
+    if (dom.isNegative(first(q))) [p, q] = [repNeg(dom, p), repNeg(dom, q)];
+    return new DMF(new DMP(p, this.ring), new DMP(q, this.ring), this);
   }
   /** Convert a rational function of the generator (SymPy from_sympy); throws CoercionFailed. */
   fromSympy(eIn: ExprLike): DMF {

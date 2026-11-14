@@ -22,6 +22,7 @@ import { multinomialCoefficients } from '../ntheory/multinomial';
 import type { IntLike } from '../ntheory/intutil';
 import { PREC, str } from '../printing/str';
 import { expand } from '../simplify/expand';
+import { fraction, together } from '../simplify/rational';
 import {
   IPolys,
   canonicalUnit,
@@ -73,6 +74,12 @@ function parseSymbols(symbols: RingSymbols): Expr[] {
   if (symbols.every((s) => typeof s === 'string')) return symbols.flatMap((s) => expandSymbolNames(s).map((n) => new Sym(n)));
   if (symbols.every((s) => s instanceof Expr)) return [...symbols];
   throw new GeneratorsError('expected a string, Symbol or expression or a non-empty sequence of strings, Symbols or expressions');
+}
+
+/** The ring of a field with an associated ring (SymPy get_ring when has_assoc_Ring): ZZ for QQ, ZZ[X] for ZZ(X). */
+function assocRing(K: Domain): Domain | undefined {
+  if (K instanceof FractionField) return K.ground === 'ZZ' ? K.getRing() : undefined;
+  return K.isField && hasAssocRing(K) ? groundRing(K) : undefined;
 }
 
 /** A domain from its name (SymPy Domain option). */
@@ -489,9 +496,10 @@ export class PolyElement {
   /** The lcm of the coefficient denominators and the polynomial multiplied by it (SymPy clear_denoms). */
   clearDenoms(): [Expr, PolyElement] {
     const K = this.K;
-    if (!K.isField || !hasAssocRing(K)) return [K.one, this];
-    let common: Expr = Rational.of(1);
-    for (const [, c] of this.listterms()) common = groundLcm(ZZ, common, groundDenom(c));
+    const R = assocRing(K);
+    if (R === undefined) return [K.one, this];
+    let common: Expr = R.one;
+    for (const [, c] of this.listterms()) common = groundLcm(R, common, K instanceof FractionField ? R.fromSympy(fraction(together(c))[1]) : groundDenom(c));
     return [common, this.mulGround(common)];
   }
 
@@ -1124,15 +1132,16 @@ export class PolyElement {
     if (this.isZero) return [this, R.one];
     let p: PolyElement;
     let q: PolyElement;
-    if (!(K.isField && hasAssocRing(K))) [, p, q] = this.cofactors(g);
+    const Z = assocRing(K);
+    if (Z === undefined) [, p, q] = this.cofactors(g);
     else {
-      const ZR = R.clone({ domain: groundRing(K) });
+      const ZR = R.clone({ domain: Z });
       const [cq, f1] = this.clearDenoms();
       const [cp, g1] = g.clearDenoms();
       [, p, q] = f1.setRing(ZR).cofactors(g1.setRing(ZR));
-      const c = groundGcd(ZZ, cp, cq);
-      p = p.setRing(R).mulGround(groundQuo(ZZ, cp, c));
-      q = q.setRing(R).mulGround(groundQuo(ZZ, cq, c));
+      const c = groundGcd(Z, cp, cq);
+      p = p.setRing(R).mulGround(groundQuo(Z, cp, c));
+      q = q.setRing(R).mulGround(groundQuo(Z, cq, c));
     }
     const u = q.canonicalUnit();
     if (groundEq(u, K.one)) return [p, q];

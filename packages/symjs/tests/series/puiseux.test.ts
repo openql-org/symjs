@@ -9,7 +9,7 @@ import * as sj from '../../src';
 import { Rational, Sym, add, beta, hyper, mul, parse, pow, series, str } from '../../src';
 import type { Expr } from '../../src';
 import { Expander, SCALED_BESSELI, SCALED_EI, SCALED_ERFC, SeriesError } from '../../src/series/puiseux';
-import { UndefFn } from '../../src/core/nodes';
+import { ExtensionExpr, UndefFn } from '../../src/core/nodes';
 
 // Remaining branches of the limit, series and summation code. Expected values are the str() forms printed by SymPy 1.14
 // (p is a positive, q a negative and r a real symbol).
@@ -168,5 +168,42 @@ describe('abs of a term with a negative leading coefficient', () => {
     expect(qs.terms.map((u) => `${u.c.toString()}*t**${u.e.toString()}`).join(' + ')).toBe('1*t**1 + b*t**2');
     // a symbolic leading coefficient: its sign is not known
     expect(() => new Expander(t).ser(parse('Abs(b*_t + _t**2)', { symbols: [t] }), Rational.of(3))).toThrow(SeriesError);
+  });
+});
+
+/** A function application with a Taylor series and no tractable rewrite: f(u) = 1/u, f'(u) = -1/u**2. */
+class Recip extends ExtensionExpr {
+  constructor(args: readonly Expr[]) {
+    super('Recip', args);
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new Recip(args);
+  }
+  override get isTaylorExpandable(): boolean {
+    return true;
+  }
+  override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
+    const u = this.args[0] ?? x;
+    return mul(-1, pow(u, -2), d(u, x));
+  }
+}
+
+/** A function application whose derivative cannot be taken. */
+class Broken extends Recip {
+  override withArgs(): Expr {
+    throw new TypeError('no rebuild');
+  }
+}
+
+describe('Taylor series of extension function applications', () => {
+  const x = new Sym('x');
+  it('expands at a regular point and keeps the value there', () => {
+    expect(str(series(new Recip([add(x, 1)]), x, 0, 3))).toBe('Recip(1) - x + x**2 + O(x**3)');
+  });
+  it('throws at a singular point without a tractable rewrite', () => {
+    expect(() => series(new Recip([x]), x, 0, 3)).toThrow(SeriesError);
+  });
+  it('rethrows other errors', () => {
+    expect(() => series(new Broken([add(x, 1)]), x, 0, 3)).toThrow('no rebuild');
   });
 });

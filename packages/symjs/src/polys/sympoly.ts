@@ -27,7 +27,8 @@ import { diff } from '../calculus/diff';
 import { str } from '../printing/str';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { sqrtdenest } from '../simplify/sqrtdenest';
-import { cancel, fraction, together } from '../simplify/rational';
+import { cancel, fraction, ratsimp, together } from '../simplify/rational';
+import { Q, ask } from '../core/refine';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { modInverse, rationalFromFloat } from '../core/numberutils';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
@@ -35,7 +36,7 @@ import { ordered as orderedExprs } from '../core/match';
 import { divExact, ffDiv, mfactorList, mgcd, mlcm } from './mpoly';
 import { countComplexRoots, isolateComplexRootsSqf, isolateRealRoots, isolateRealRootsSqf, refineRealRoot } from './rootisolation';
 import { UPoly, polyCoefficients, polyHooks, roots as rootsOf } from './poly';
-import { CoercionFailed, groundRational } from './domains';
+import { CoercionFailed, QQ, groundRational } from './domains';
 import type { Domain } from './domains';
 import { OptionError, UnificationFailed } from './polyerrors';
 import { gfDiv, gfFactor, gfGcd, gfLcm, gfGcdex, gfQuoGround, gfSqfList } from './galoistools';
@@ -171,21 +172,23 @@ function numberDomain(cs: Expr[]): string | undefined {
       real = true;
       continue;
     }
-    // a + b*I with rational a, b
+    // a + b*I with rational or floating-point a, b
     const parts = c instanceof Add ? c.args : [c];
     let ok = true;
     for (const p of parts) {
-      const [k, r] = p instanceof Mul && p.args[0] instanceof Rational ? [p.args[0], p.args.length === 2 ? at(p.args, 1) : new Mul(p.args.slice(1))] : [S.One, p];
+      const [k, r] = p instanceof Mul && (p.args[0] instanceof Rational || p.args[0] instanceof Float) ? [p.args[0], p.args.length === 2 ? at(p.args, 1) : new Mul(p.args.slice(1))] : [S.One, p];
       if (r instanceof Constant && r.name === 'I') {
         complex = true;
-        if (!(k).isInteger) rational = true;
-      } else if (p instanceof Rational) {
+        if (k instanceof Float) real = true;
+        else if (!k.isInteger) rational = true;
+      } else if (p instanceof Float) real = true;
+      else if (p instanceof Rational) {
         if (!p.isInteger) rational = true;
       } else ok = false;
     }
     if (!ok) return undefined;
   }
-  if (real) return 'RR';
+  if (real) return complex ? 'CC' : 'RR';
   if (complex) return rational ? 'QQ_I' : 'ZZ_I';
   return rational ? 'QQ' : 'ZZ';
 }
@@ -344,7 +347,7 @@ export class Poly {
     const requestedDomain = opts.domain === undefined ? undefined : String(opts.domain);
     const e = expand(sympify(ex));
     // over RR the generators are the symbols (numbers such as sqrt(3) become coefficients)
-    const real = requestedDomain === 'R' || requestedDomain === 'RR';
+    const real = requestedDomain === 'R' || requestedDomain === 'RR' || requestedDomain === 'CC';
     const algebraicDomain = /^(?:ZZ|QQ)(?:_I|<)/.test(requestedDomain ?? '');
     const algebraic = opts.extension !== undefined || opts.gaussian === true || algebraicDomain;
     const gs = gens?.length ? [...gens] : real ? sortGens([...freeSymbols(e)].filter((s) => s instanceof Sym)) : detectGens(e).filter((g) => !algebraic || freeSymbols(g).size > 0);
@@ -387,9 +390,9 @@ export class Poly {
       return new Poly(gs, finite, `GF(${modulus})`, opts.pure ?? false);
     }
     if (real) {
-      // real floating-point coefficients
+      // floating-point coefficients
       const real = list.map((t) => ({ monom: t.monom, coeff: impl.evalf(t.coeff, 15) }));
-      return new Poly(gs, real, 'RR', opts.pure ?? false);
+      return new Poly(gs, real, requestedDomain === 'CC' ? 'CC' : 'RR', opts.pure ?? false);
     }
     const inferred = requestedDomain ?? inferDomain(list.length ? list.map((t) => t.coeff) : [S.Zero]);
     const domain = opts.field === true && requestedDomain === undefined ? fieldDomainName(inferred) : inferred;
@@ -738,12 +741,20 @@ export class Poly {
   gcd(o: Poly): Poly {
     const finite = this.finitePair(o);
     if (finite) { const [a,b,p] = finite; return a.fromFiniteDense(gfGcd(a.finiteDense(), b.finiteDense(), p)); }
-    return Poly.from(mgcd(this.asExpr(), o.asExpr(), this.gens), this.gens);
+    const [f, g] = fieldPair(this, o);
+    if (f === undefined) return Poly.from(mgcd(this.asExpr(), o.asExpr(), this.gens), this.gens);
+    // SymPy dup_inner_gcd: RR and CC are computed over their exact domains
+    const h = Poly.from(mgcd(exactCoeffs(f), exactCoeffs(g), f.gens), f.gens, { domain: f.domain });
+    return h.isZero ? h : h.monic();
   }
   lcm(o: Poly): Poly {
     const finite = this.finitePair(o);
     if (finite) { const [a,b,p] = finite; return a.fromFiniteDense(gfLcm(a.finiteDense(), b.finiteDense(), p)); }
-    return Poly.from(mlcm(this.asExpr(), o.asExpr(), this.gens), this.gens);
+    const [f, g] = fieldPair(this, o);
+    if (f === undefined) return Poly.from(mlcm(this.asExpr(), o.asExpr(), this.gens), this.gens);
+    // SymPy dmp_ff_lcm: the monic quotient f*g / gcd(f, g)
+    if (f.isZero || g.isZero) return Poly.from(0, f.gens, { domain: f.domain });
+    return f.mul(g).div(f.gcd(g))[0].monic();
   }
   monic(): Poly {
     if (this.finiteModulus !== undefined) return this.isZero ? this : this.exquoGround(this.LC());
@@ -1973,6 +1984,19 @@ function factorListRaw(e: Expr, vars: readonly Expr[]): [Rational, [Expr, number
   });
 }
 
+/** The domains over which SymPy's gcd and lcm are monic (dmp_ff_prs_gcd, dmp_ff_lcm). */
+const MONIC_DOMAINS = new Set(['QQ', 'RR', 'CC']);
+
+/** Two polynomials over a common field among MONIC_DOMAINS, or undefined. */
+function fieldPair(a: Poly, b: Poly): [Poly, Poly] | [undefined, undefined] {
+  if (!MONIC_DOMAINS.has(a.domain) && !MONIC_DOMAINS.has(b.domain)) return [undefined, undefined];
+  const [f, g] = a.unify(b);
+  return MONIC_DOMAINS.has(f.domain) ? [f, g] : [undefined, undefined];
+}
+
+/** The polynomial as an expression with its floating-point coefficients made exact (SymPy RR.to_rational). */
+const exactCoeffs = (p: Poly): Expr => mapBottomUp(p.asExpr(), (e) => (e instanceof Float ? QQ.fromSympy(e) : e));
+
 const mulR = (a: Rational, b: Rational): Rational => asRational(mul(a, b), 'product of rationals');
 const powR = (a: Rational, k: number): Rational => asRational(pow(a, k), 'power of a rational');
 
@@ -2060,7 +2084,8 @@ export function polyGcd(f: Poly | ExprLike, g: Poly | ExprLike, opts: Polynomial
   const a = toExpr(f);
   const b = toExpr(g);
   // SymPy parallel_poly_from_expr: algebraic numbers (sqrt(2), pi) are generators unless an extension is given
-  return mgcd(a, b, gensFor(a, b));
+  const gens = gensFor(a, b);
+  return algebraicGcdLcm(a, b, 'gcd') ?? fieldGcdLcm(a, b, gens, 'gcd') ?? mgcd(a, b, gens);
 }
 export function polyLcm(f: Poly | ExprLike, g: Poly | ExprLike, opts: PolynomialDomainOptions = {}): Expr {
   if (opts.extension !== undefined) {
@@ -2074,7 +2099,39 @@ export function polyLcm(f: Poly | ExprLike, g: Poly | ExprLike, opts: Polynomial
   if (f instanceof Poly && g instanceof Poly) return f.lcm(g).asExpr();
   const a = toExpr(f);
   const b = toExpr(g);
-  return mlcm(a, b, varsFor(a, b));
+  const gens = varsFor(a, b);
+  return algebraicGcdLcm(a, b, 'lcm') ?? fieldGcdLcm(a, b, gens, 'lcm') ?? mlcm(a, b, gens);
+}
+
+/**
+ * SymPy gcd and lcm of two irrational algebraic numbers with a rational ratio a/b = n/d
+ * (the domain Q[irrational]): |a/n| and a*d; undefined otherwise.
+ */
+function algebraicGcdLcm(a: Expr, b: Expr, op: 'gcd' | 'lcm'): Expr | undefined {
+  const irrational = (e: Expr): boolean => freeSymbols(e).size === 0 && ask(Q.algebraic(e)) === true && ask(Q.irrational(e)) === true;
+  if (!irrational(a) || !irrational(b)) return undefined;
+  const frc = ratsimp(mul(a, pow(b, -1)));
+  if (!(frc instanceof Rational)) return undefined;
+  if (op === 'lcm') return mul(a, Rational.of(frc.q));
+  const g = mul(a, Rational.of(1n, frc.p));
+  return isPositive(g) === false ? mul(-1, g) : g;
+}
+
+/**
+ * The gcd or lcm over QQ, RR or CC as SymPy computes it from the expressions: monic polynomials,
+ * and for numbers the domain's gcd (one over RR and CC) or lcm (the product over RR and CC);
+ * undefined for other domains.
+ */
+function fieldGcdLcm(a: Expr, b: Expr, gens: readonly Expr[], op: 'gcd' | 'lcm'): Expr | undefined {
+  if (gens.length === 0) {
+    if (!(isNum(a) && isNum(b)) || ![a, b].some((e) => e instanceof Float)) return undefined;
+    // SymPy RealField.gcd and lcm
+    return op === 'gcd' ? new Float(1) : mul(a, b);
+  }
+  if (!isPolynomial(a, gens) || !isPolynomial(b, gens)) return undefined;
+  const [f, g] = fieldPair(Poly.from(a, gens), Poly.from(b, gens));
+  if (f === undefined) return undefined;
+  return (op === 'gcd' ? f.gcd(g) : f.lcm(g)).asExpr();
 }
 
 /** Degree of f in gen (default: the only/first generator). */

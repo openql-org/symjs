@@ -17,7 +17,7 @@ import { toGamma } from '../simplify/gammasimp';
 import { powsimp } from '../simplify/powsimp';
 import { isNegative, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Float, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
+import { Add, ExtensionExpr, Float, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { mapBottomUp, rebuild, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
@@ -715,6 +715,12 @@ class Limiter {
  * (two-sided; throws if the one-sided limits differ). Returns an unevaluated
  * `Limit` when the limit cannot be determined.
  */
+/**
+ * The function applications depending on z rewritten in terms of tractable functions
+ * (SymPy gruntz: e.rewrite('tractable', deep=True, limitvar=z)); expm1(z) = exp(z) - 1.
+ */
+const tractable = (e: Expr, z: Sym): Expr => mapBottomUp(e, (a) => (a instanceof ExtensionExpr && a.has(z) ? (a.rewriteSelf('tractable', a.args) ?? a) : a));
+
 export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-' = '+'): Expr {
   return limitWithin(ex, z, z0x, dir, BUDGET);
 }
@@ -723,7 +729,7 @@ export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-'
 export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-', budget: number): Expr {
   // Floats are converted to exact numbers first, as in SymPy (limit(x**0.5, x, 16) = 4)
   const given = sympify(ex);
-  const e = hasFloat(given) ? nsimplify(given) : given;
+  const e = tractable(hasFloat(given) ? nsimplify(given) : given, z);
   const z0 = sympify(z0x);
   if (dir === '+-' && !(z0 instanceof Special)) {
     const l = limitWithin(e, z, z0, '-', budget);
