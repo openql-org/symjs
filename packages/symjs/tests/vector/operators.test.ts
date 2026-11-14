@@ -160,3 +160,19 @@ describe('gradient, divergence and curl (SymPy test_field_functions)', () => {
     expect(() => divergence(Derivative(add(a.x, b.y), a.x))).toThrow('Invalid argument for divergence');
   });
 });
+
+describe('LaTeX of the operators inside products (SymPy 1.14 test_latex_vector_expressions)', () => {
+  it('parenthesizes operators in products and products in operators', () => {
+    const A = CoordSys3D('A');
+    const x = symbol('x');
+    expect(latex(mul(x, Gradient(A.x)))).toBe('x \\left(\\nabla \\mathbf{{x}_{A}}\\right)');
+    expect(latex(Gradient(mul(x, A.x)))).toBe('\\nabla \\left(\\mathbf{{x}_{A}} x\\right)');
+    expect(latex(mul(x, Laplacian(A.x)))).toBe('x \\left(\\Delta \\mathbf{{x}_{A}}\\right)');
+    expect(latex(Curl(mul(3, A.x, A.j)))).toBe('\\nabla\\times \\left(\\left(3 \\mathbf{{x}_{A}}\\right)\\mathbf{\\hat{j}_{A}}\\right)');
+    expect(latex(mul(x, Divergence(mul(3, A.x, A.j))))).toBe('x \\left(\\nabla\\cdot \\left(\\left(3 \\mathbf{{x}_{A}}\\right)\\mathbf{\\hat{j}_{A}}\\right)\\right)');
+    expect(latex(mul(x, Cross(A.i, A.j)))).toBe('x \\left(\\mathbf{\\hat{i}_{A}} \\times \\mathbf{\\hat{j}_{A}}\\right)');
+    expect(latex(mul(x, Dot(A.i, A.j)))).toBe('x \\left(\\mathbf{\\hat{i}_{A}} \\cdot \\mathbf{\\hat{j}_{A}}\\right)');
+    expect(latex(Curl(Cross(A.i, A.j)))).toBe('\\nabla\\times \\left(\\mathbf{\\hat{i}_{A}} \\times \\mathbf{\\hat{j}_{A}}\\right)');
+    expect(latex(Dot(A.i, add(A.j, A.k)))).toBe('\\mathbf{\\hat{i}_{A}} \\cdot \\left(\\mathbf{\\hat{j}_{A}} + \\mathbf{\\hat{k}_{A}}\\right)');
+  });
+});

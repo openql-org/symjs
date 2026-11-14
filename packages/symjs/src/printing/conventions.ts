@@ -6,8 +6,12 @@
 /**
  * @file The conventions shared by the printers (SymPy
  * sympy.printing.conventions): how a symbol name is split into its name,
- * superscripts and subscripts.
+ * superscripts and subscripts, and whether a derivative is partial.
  */
+
+import type { Expr } from '../core/nodes';
+import { impl } from '../core/nodes';
+import { isIntegerQ } from '../core/assumptions';
 
 /**
  * SymPy `split_super_sub(text)`: the name, the superscripts and the
@@ -49,4 +53,17 @@ export function splitSuperSub(text: string): [string, string[], string[]] {
     subs.unshift(m[2]);
   }
   return [name, supers, subs];
+}
+
+/**
+ * SymPy `requires_partial(expr)`: whether a derivative is printed with the
+ * partial-derivative symbol, that is whether more than one free symbol of
+ * the expression may be a non-integer.
+ *
+ * `requiresPartial(Derivative(f(x, y), x))` is true.
+ */
+export function requiresPartial(expr: Expr): boolean {
+  let n = 0;
+  for (const s of impl.freeSymbols(expr)) if (isIntegerQ(s) !== true) n++;
+  return n > 1;
 }

@@ -1039,3 +1039,20 @@ it('matrix kinds propagate through unevaluated integrals', () => {
   expect(sj.kindOf(M)).toBe(sj.MatrixKind());
   expect(sj.kindOf(new sj.Integral([M,sj.symbol('x')]))).toBe(sj.MatrixKind());
 });
+
+describe('LaTeX settings of matrix expressions (SymPy 1.14 test_latex)', () => {
+  it('adjoint_style and mat_symbol_style', () => {
+    const X = MatrixSymbol('X', 2, 2);
+    const Ak = MatrixSymbol('A_k', 2, 2);
+    expect(latex(Adjoint(X), { adjointStyle: 'star' })).toBe('X^{\\ast}');
+    expect(latex(Adjoint(X), { adjointStyle: 'hermitian' })).toBe('X^{\\mathsf{H}}');
+    expect(latex(Adjoint(X))).toBe('X^{\\dagger}');
+    expect(latex(Adjoint(X), { adjointStyle: 'other' as 'star' })).toBe('X^{\\dagger}');
+    expect(latex(Ak, { matSymbolStyle: 'bold' })).toBe('\\mathbf{A}_{k}');
+    expect(latex(MatrixSymbol('{B}', 2, 2), { matSymbolStyle: 'bold' })).toBe('\\mathbf{{B}}');
+    expect(latex(ZeroMatrix(1, 1), { matSymbolStyle: 'bold' })).toBe('\\mathbf{0}');
+    expect(latex(OneMatrix(3, 4), { matSymbolStyle: 'bold' })).toBe('\\mathbf{1}');
+    expect(latex(Identity(1), { matSymbolStyle: 'bold' })).toBe('\\mathbf{I}');
+    expect(latex(Identity(1))).toBe('\\mathbb{I}');
+  });
+});

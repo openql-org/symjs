@@ -359,3 +359,66 @@ describe('convert_equals_signs, function exponentiation and split_symbols (SymPy
     expect(p('Pi', { transformations: 'all' })).toBe('Pi');
   });
 });
+
+describe('parse: SymPy 1.14 sympy_parser cases', () => {
+  const [x, a] = symbols('x a');
+  const f = sj.SymFunction('f');
+  it('factorial notation', () => {
+    expect(String(parse('x!'))).toBe('factorial(x)');
+    expect(String(parse('x!!'))).toBe('factorial2(x)');
+    expect(String(parse('(x + 1)! - 1'))).toBe('factorial(x + 1) - 1');
+    expect(String(parse('10!'))).toBe('3628800');
+    expect(String(parse('3!', { evaluate: false }))).toBe('factorial(3)');
+    expect(() => parse('x!!!')).toThrow(SyntaxError);
+  });
+  it('Python number literals', () => {
+    expect(String(parse('2 + 3j'))).toBe('2 + 3*I');
+    expect(String(parse('1.5J'))).toBe('1.5*I');
+    expect(String(parse('123_456'))).toBe('123456');
+    expect(String(parse('1_0.2_5'))).toBe('10.2500000000000');
+  });
+  it('comparisons and their chains', () => {
+    expect(String(parse('1 < 2', { evaluate: false }))).toBe('1 < 2');
+    expect(String(parse('1 != 2', { evaluate: false }))).toBe('Ne(1, 2)');
+    expect(String(parse('1 == 2', { evaluate: false }))).toBe('Eq(1, 2)');
+    expect(String(parse('1 < 2 <= 3', { evaluate: false }))).toBe('(1 < 2) & (2 <= 3)');
+    expect(String(parse('x == x'))).toBe('True');
+    expect(String(parse('x != x'))).toBe('False');
+    expect(String(parse('x == y'))).toBe('False');
+    expect(String(parse('1 < 2 < 3'))).toBe('True');
+    expect(String(parse('x < 2'))).toBe('x < 2');
+    expect(() => parse('x < y < 3')).toThrow(TypeError);
+  });
+  it('Python builtins', () => {
+    expect(String(parse('max(x, y)'))).toBe('Max(x, y)');
+    expect(String(parse('min(x, y)'))).toBe('Min(x, y)');
+    expect(String(parse('pow(x, y)'))).toBe('x**y');
+    expect(String(parse('pow(38, -1, 97)'))).toBe('23');
+    expect(String(parse('pow(3, 4, 5)'))).toBe('1');
+    expect(String(parse('pow(3, 1, -5)'))).toBe('-2');
+    expect(String(parse('pow(10, 1, 5)'))).toBe('0');
+    expect(() => parse('pow(x, 2, 5)')).toThrow(TypeError);
+    expect(() => parse('pow(2, 2, 0)')).toThrow(RangeError);
+  });
+  it('transformations one by one', () => {
+    const t = (...names: sj.ParseTransformation[]): sj.ParseOptions => ({ transformations: names });
+    expect(String(parse('sin x', t('implicitApplication')))).toBe('sin(x)');
+    expect(() => parse('x y', t('implicitApplication'))).toThrow(SyntaxError);
+    expect(String(parse('sin**2(x)', t('functionExponentiation')))).toBe('sin(x)**2');
+    expect(String(parse('sin^y(x)', t('functionExponentiation')))).toBe('sin(x)**y');
+    expect(String(parse('E^y(x)', t('functionExponentiation')))).toBe('exp(y(x))');
+    expect(() => parse('sin**2 x', t('functionExponentiation'))).toThrow(SyntaxError);
+    expect(String(parse('sin**2 x', t('functionExponentiation', 'implicitApplication')))).toBe('sin(x)**2');
+    expect(String(parse('x y', t('implicitMultiplication')))).toBe('x*y');
+    expect(String(parse('xy', t('splitSymbols')))).toBe('x*y');
+    expect(String(parse('sin 2x y', { transformations: 'implicit' }))).toBe('sin(2*x*y)');
+    expect(String(parse('sin x + y', { transformations: 'implicit' }))).toBe('y + sin(x)');
+  });
+  it('locals', () => {
+    expect(String(parse('foo(x)', { locals: { foo: sj.SymFunction('bar') } }))).toBe('bar(x)');
+    expect(() => parse('foo(x)', { locals: { foo: a } })).toThrow(TypeError);
+    expect(String(parse('foo + 1', { locals: { foo: a } }))).toBe('a + 1');
+    expect(() => parse('x y', { transformations: 'standard' })).toThrow(SyntaxError);
+    expect(f(x)).toBeTruthy();
+  });
+});

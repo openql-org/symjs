@@ -209,3 +209,11 @@ describe('minimalPolynomial (SymPy minimal_polynomial by composition)', () => {
     expect(() => chooseFactor([parse('x - 1'), parse('2*x - 2')], x, sj.S.One, { symbols: [], extension: [] })).toThrow(sj.NotImplementedError);
   });
 });
+
+describe('LaTeX of algebraic numbers (SymPy 1.14 test_latex_basic)', () => {
+  it('prints the value, or the polynomial in the alias', () => {
+    expect(sj.latex(new AlgebraicNumber(sqrt(2)))).toBe('\\sqrt{2}');
+    expect(sj.latex(new AlgebraicNumber(sqrt(2), [3, -7]))).toBe('-7 + 3 \\sqrt{2}');
+    expect(sj.latex(new AlgebraicNumber(sqrt(2), [3, -7], { alias: 'alpha' }))).toBe('3 \\alpha - 7');
+  });
+});

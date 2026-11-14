@@ -32,7 +32,7 @@ import { doitConcrete } from '../../concrete/summations';
 import { adjoint as adjointFn, conjugate as conjugateFn, transpose as transposeFn } from '../../functions/elementary/elementary';
 import { KroneckerDelta } from '../../functions/special/hyper';
 import { floor } from '../../functions/special/special';
-import { latex } from '../../printing/latex';
+import { latex, latexMatrixSymbol, latexSettings } from '../../printing/latex';
 import type { Key } from '../../printing/sortkey';
 import { compareKeys, sortKey } from '../../printing/sortkey';
 import { str } from '../../printing/str';
@@ -640,8 +640,9 @@ export class MatrixSymbolNode extends MatrixExpr {
   override printStr(): string {
     return this.symbolName;
   }
+  /** SymPy _print_MatrixSymbol: the symbol in the matrix symbol style. */
   override printLatex(): string {
-    return latex(new Sym(this.symbolName));
+    return latexMatrixSymbol(this.symbolName);
   }
   override diffSelf(): Expr {
     return new ZeroMatrixNode(this.rows, this.cols);
@@ -887,7 +888,7 @@ export class IdentityNode extends MatrixExpr {
     return 'I';
   }
   override printLatex(): string {
-    return '\\mathbb{I}';
+    return latexSettings().bold ? '\\mathbf{I}' : '\\mathbb{I}';
   }
   override diffSelf(): Expr {
     return new ZeroMatrixNode(this.rows, this.cols);
@@ -953,7 +954,7 @@ export class ZeroMatrixNode extends MatrixExpr {
     return '0';
   }
   override printLatex(): string {
-    return '0';
+    return latexSettings().bold ? '\\mathbf{0}' : '0';
   }
   override diffSelf(): Expr {
     return this;
@@ -1049,7 +1050,7 @@ export class OneMatrixNode extends MatrixExpr {
     return '1';
   }
   override printLatex(): string {
-    return '1';
+    return latexSettings().bold ? '\\mathbf{1}' : '1';
   }
   override diffSelf(): Expr {
     return new ZeroMatrixNode(this.rows, this.cols);
@@ -1889,7 +1890,7 @@ export class AdjointNode extends MatrixExpr {
     return PRECEDENCE.Pow;
   }
   override printLatex(print: (e: Expr) => string): string {
-    return postfixLatex(this.arg, '\\dagger', print);
+    return postfixLatex(this.arg, latexSettings().adjoint, print);
   }
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
     return adjointFn(mdiff(this.arg, x, d));

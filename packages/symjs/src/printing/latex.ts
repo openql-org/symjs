@@ -11,13 +11,17 @@ import { Add, Expr, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, In
 import { mul, pow, splitCoeff, sympify } from '../core/ops';
 import { numNeg } from '../core/num';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey } from './sortkey';
-import { PREC, declaredPrecedence, floatString, precedence as strPrecedence, startsNegative, str } from './str';
+import type { TermOrder } from './sortkey';
+import { PREC, declaredPrecedence, floatString, precedence as strPrecedence, startsNegative, withPermCyclic } from './str';
 import { BoolOp } from '../core/boolalg';
 import { Concrete } from '../core/concrete';
 import { DOTS, rangePrintForm, setArgsOrdered, setClass } from './sets';
 import { hasSymbolicBounds, isSequence, sequencePrintset } from './sequences';
 import { at } from '../core/guard';
-import { splitSuperSub } from './conventions';
+import { requiresPartial, splitSuperSub } from './conventions';
+import { precToDps, toStr } from '../numeric/mpf';
+import { isFunctionClass } from '../core/undef';
+import type { FunctionClassLike } from '../core/undef';
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -65,6 +69,18 @@ export interface LatexOptions {
   readonly disableSplitSuperSub?: boolean;
   /** Floats with all their digits (default false: trailing zeros dropped). */
   readonly fullPrec?: boolean;
+  /** Permutations in cycle notation (default true) or as a two-line matrix (SymPy perm_cyclic). */
+  readonly permCyclic?: boolean;
+  /** The superscript of an adjoint matrix: 'dagger' (default), 'star' or 'hermitian'. */
+  readonly adjointStyle?: 'dagger' | 'star' | 'hermitian';
+  /** 'bold' prints matrix symbols and the special matrices in bold (default 'plain'). */
+  readonly matSymbolStyle?: 'plain' | 'bold';
+  /** The order of the terms of sums: 'lex' (default), another monomial order ('grlex', 'rev-lex', ...) or 'none' (as stored, also the factors of products). */
+  readonly order?: TermOrder | 'none';
+  /** Floats with an exponent below this are printed in scientific notation (SymPy min). */
+  readonly min?: number;
+  /** Floats with an exponent from this on are printed in scientific notation (SymPy max). */
+  readonly max?: number;
 }
 
 interface Settings {
@@ -89,14 +105,27 @@ interface Settings {
   readonly diffOperator: string;
   readonly disableSplitSuperSub: boolean;
   readonly fullPrec: boolean;
+  readonly adjointStyle: string;
+  readonly matSymbolStyle: 'plain' | 'bold';
+  readonly min: number | undefined;
+  readonly max: number | undefined;
+  readonly order: TermOrder | 'none' | undefined;
 }
 
 const MUL_SYMBOLS: Readonly<Record<string, string>> = { ldot: ' \\,.\\, ', dot: ' \\cdot ', times: ' \\times ' };
 const IMAGINARY_UNITS: Readonly<Record<string, string>> = { i: 'i', ri: '\\mathrm{i}', ti: '\\text{i}', j: 'j', rj: '\\mathrm{j}', tj: '\\text{j}' };
 const DIFF_OPERATORS: Readonly<Record<string, string>> = { d: 'd', rd: '\\mathrm{d}', td: '\\text{d}' };
+const ADJOINT_STYLES: Readonly<Partial<Record<string, string>>> = { dagger: '\\dagger', star: '\\ast', hermitian: '\\mathsf{H}' };
 
-/** SymPy LatexPrinter.__init__: the settings with their defaults and derived values. */
+const LATEX_SETTINGS = new Set([
+  'mode', 'itex', 'foldFracPowers', 'foldFuncBrackets', 'foldShortFrac', 'invTrigStyle', 'lnNotation', 'longFracRatio', 'matDelim', 'matStr', 'mulSymbol',
+  'symbolNames', 'rootNotation', 'imaginaryUnit', 'gothicReIm', 'decimalSeparator', 'parenthesizeSuper', 'diffOperator', 'disableSplitSuperSub', 'fullPrec',
+  'permCyclic', 'adjointStyle', 'matSymbolStyle', 'order', 'min', 'max',
+]);
+
+/** SymPy LatexPrinter.__init__: the settings with their defaults and derived values (an unknown setting is a TypeError). */
 function resolveSettings(o: LatexOptions): Settings {
+  for (const k of Object.keys(o)) if (!LATEX_SETTINGS.has(k)) throw new TypeError(`Unknown setting '${k}'.`);
   const mode = o.mode ?? 'plain';
   if (!['plain', 'inline', 'equation', 'equation*'].includes(mode)) throw new RangeError("'mode' must be one of 'inline', 'plain', 'equation' or 'equation*'");
   const decimal = o.decimalSeparator ?? 'period';
@@ -129,6 +158,11 @@ function resolveSettings(o: LatexOptions): Settings {
     diffOperator: DIFF_OPERATORS[dop] ?? dop,
     disableSplitSuperSub: o.disableSplitSuperSub ?? false,
     fullPrec: o.fullPrec ?? false,
+    adjointStyle: ADJOINT_STYLES[o.adjointStyle ?? 'dagger'] ?? '\\dagger',
+    matSymbolStyle: o.matSymbolStyle ?? 'plain',
+    min: o.min,
+    max: o.max,
+    order: o.order,
   };
 }
 
@@ -202,22 +236,41 @@ export function translateSymbol(s: string): string {
   return s;
 }
 
-function symbolLatex(text: string): string {
-  if (text.includes('{')) return text;
+/** SymPy `_deal_with_super_sub`: the name translated with its superscripts and subscripts, the name in bold in the 'bold' style. */
+function symbolLatex(text: string, style: 'plain' | 'bold' = 'plain'): string {
+  if (text.includes('{')) return style === 'bold' ? `\\mathbf{${text}}` : text;
   // SymPy disable_split_super_sub: the name as it is, its _ and ^ escaped
   const [name, supers, subs] = settings.disableSplitSuperSub ? [text.replace(/_/g, '\\_').replace(/\^/g, '\\^'), [], []] : splitSuperSub(text);
   let out = translateSymbol(name);
+  if (style === 'bold') out = `\\mathbf{${out}}`;
   if (supers.length) out += `^{${supers.map(translateSymbol).join(' ')}}`;
   if (subs.length) out += `_{${subs.map(translateSymbol).join(' ')}}`;
   return out;
 }
 
+/**
+ * The LaTeX of a matrix symbol name in the matrix symbol style of the print
+ * in progress (SymPy `_print_MatrixSymbol`). @internal
+ */
+export const latexMatrixSymbol = (name: string): string => symbolLatex(name, settings.matSymbolStyle);
+
+/** The settings of the print in progress that nodes of higher layers follow. @internal */
+export const latexSettings = (): { readonly adjoint: string; readonly bold: boolean } => ({ adjoint: settings.adjointStyle, bold: settings.matSymbolStyle === 'bold' });
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** SymPy `precedence_traditional`: the LaTeX precedence a node declares, else the str precedence. */
-const precedence = (e: Expr): number => declaredPrecedence(e, 'latexPrecedence') ?? strPrecedence(e);
+/**
+ * SymPy `precedence_traditional`: integrals, sums, products, limits and
+ * derivatives bind like a product, an unevaluated expression like its
+ * argument; else the LaTeX precedence a node declares or the str precedence.
+ */
+function precedence(e: Expr): number {
+  if (e instanceof Integral || e instanceof Concrete || e instanceof Limit || e instanceof Derivative) return PREC.MUL;
+  if (e instanceof ExtensionExpr && e.name === 'UnevaluatedExpr') return precedence(at(e.args, 0));
+  return declaredPrecedence(e, 'latexPrecedence') ?? strPrecedence(e);
+}
 
 const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 const addParens = (s: string) => `\\left(${s}\\right)`;
@@ -360,6 +413,12 @@ function printNamedFunction(name: string, args: readonly Expr[], exp?: string): 
       // SymPy prints only the first argument, \eta\left(s\right) also for dirichlet_eta(s, a): the
       // second one is kept here, as the two functions differ
       return `\\eta${sup}\\left(${l.join(', ')}\\right)`;
+    case 'Mod': {
+      // SymPy _print_Mod: both arguments parenthesized strictly below a product
+      const strict = (x: Expr): string => (precedence(x) < PREC.MUL ? addParens(texOf(x)) : texOf(x));
+      const tex = `${strict(at(args, 0))} \\bmod ${strict(at(args, 1))}`;
+      return exp === undefined ? tex : `\\left(${tex}\\right)^{${exp}}`;
+    }
     case 'stieltjes': {
       const tex = args.length === 2 ? `_{${a}}\\left(${b}\\right)` : `_{${a}}`;
       return `\\gamma${tex}${sup}`;
@@ -600,7 +659,7 @@ function convertArgs(args: readonly Expr[]): string {
   args.forEach((term, i) => {
     let t = texOf(term);
     if (needsMulBrackets(term, i === 0, i === args.length - 1)) t = addParens(t);
-    if (BETWEEN_NUMBERS[0].test(last) && BETWEEN_NUMBERS[1].test(str(term))) tex += settings.mulSymbolNumbers;
+    if (BETWEEN_NUMBERS[0].test(last) && BETWEEN_NUMBERS[1].test(t)) tex += settings.mulSymbolNumbers;
     else if (tex) tex += settings.mulSymbol;
     tex += t;
     last = t;
@@ -611,7 +670,7 @@ function convertArgs(args: readonly Expr[]): string {
 function convertFactors(fs: Expr[]): string {
   if (fs.length === 0) return '1';
   if (fs.length === 1) return texOf(at(fs, 0));
-  return convertArgs(asOrderedFactors(new Mul(fs)));
+  return convertArgs(orderedFactors(new Mul(fs)));
 }
 
 const words = (t: string): number => t.split(/\s+/).filter(Boolean).length;
@@ -647,6 +706,13 @@ function printFraction(numer: Expr[], denom: Expr[]): string {
 }
 
 function printMulLike(e: Expr): string {
+  // an unevaluated product (1 first or a number after the first factor) keeps all its factors in their order
+  // (the infinities are not counted: a product keeps them among its other factors)
+  if (e instanceof Mul) {
+    const args = e.args;
+    const first = at(args, 0);
+    if ((first instanceof Rational && first.isOne) || args.slice(1).some(isNum)) return convertArgs(args);
+  }
   let expr = e;
   let tex = '';
   let includeParens = false;
@@ -664,7 +730,7 @@ function printMulLike(e: Expr): string {
   }
   const [numer, denom] = fraction(expr);
   if (denom.length === 0) {
-    tex += expr instanceof Mul ? convertArgs(asOrderedFactors(expr)) : texOf(expr);
+    tex += expr instanceof Mul ? convertArgs(orderedFactors(expr)) : texOf(expr);
   } else {
     tex += printFraction(numer, denom);
   }
@@ -691,7 +757,15 @@ function printPow(e: Pow): string {
       const base = parenthesize(b, PREC.POW);
       return `${b instanceof Sym ? parenthesizeSuper(base) : base}^{${folded}}`;
     }
-    if (x.p < 0n && b.isCommutative) return printMulLike(e);
+    if (x.p < 0n && b.isCommutative) {
+      // SymPy issues 9216 and 20252: 1^{-2} as it is, (1/q)^(-n) as a fraction over a fraction
+      if (b instanceof Rational && b.p === 1n) {
+        const n = x.q === 1n ? `${-x.p}` : `${-x.p}/${x.q}`;
+        if (b.q === 1n) return `1^{${x.p}${x.q === 1n ? '' : `/${x.q}`}}`;
+        return x.p === -1n && x.q === 1n ? `\\frac{1}{\\frac{1}{${b.q}}}` : `\\frac{1}{(\\frac{1}{${b.q}})^{${n}}}`;
+      }
+      return printMulLike(e);
+    }
   }
   if (b instanceof Fn || b instanceof UndefFn) return printPowOfFunction(b, texOf(x));
   if (b instanceof ExtensionExpr) {
@@ -707,9 +781,19 @@ function printPow(e: Pow): string {
   return `${base}^{${texOf(x)}}`;
 }
 
+/** SymPy `_as_ordered_terms` with the order setting: the terms as stored for 'none'. */
+function orderedTerms(e: Add): readonly Expr[] {
+  const order = settings.order;
+  if (order === 'none') return e.args;
+  return asOrderedTerms(e, order === 'lex' ? undefined : order);
+}
+
+/** The factors of a product in printing order (as stored for the order 'none'). */
+const orderedFactors = (e: Expr): readonly Expr[] => (settings.order === 'none' ? e.args : asOrderedFactors(e));
+
 function printAdd(e: Add): string {
   let tex = '';
-  asOrderedTerms(e).forEach((term0, i) => {
+  orderedTerms(e).forEach((term0, i) => {
     let term = term0;
     if (i > 0) {
       if (startsNegative(term)) {
@@ -718,13 +802,15 @@ function printAdd(e: Add): string {
       } else tex += ' + ';
     }
     const t = texOf(term);
-    tex += term instanceof Add ? addParens(t) : t;
+    // SymPy _needs_add_brackets
+    tex += term instanceof Add || term instanceof Rel || contains(term, isModNode) ? addParens(t) : t;
   });
   return tex;
 }
 
 function floatLatex(f: Float): string {
-  const s = floatString(f, !settings.fullPrec);
+  // SymPy min and max: the exponents printed in fixed notation
+  const s = settings.min === undefined && settings.max === undefined ? floatString(f, !settings.fullPrec) : toStr(f.mpf, precToDps(f.prec), !settings.fullPrec, settings.min, settings.max);
   const sep = (t: string): string => (settings.comma ? t.replace('.', '{,}') : t);
   const k = s.indexOf('e');
   if (k < 0) return sep(s);
@@ -739,6 +825,7 @@ function texOf(e: Expr): string {
     if (isMeijer(e)) return printMeijer(e);
     if (isSequence(e)) return printSequence(e);
     if (e.name === 'EmptySequence') return '\\text{EmptySequence}';
+    if (e.name === 'Tuple') return printTuple(e.args);
   }
   if (e instanceof ExtensionExpr || e instanceof BoolOp) return e.printLatex(texOf);
   if (e instanceof Rational) {
@@ -774,7 +861,7 @@ function texOf(e: Expr): string {
   }
   if (e instanceof UndefFn) return printPlainFunction(e.name, e.args);
   if (e instanceof Derivative) {
-    const partial = impl.freeSymbols(e.expr).size > 1;
+    const partial = requiresPartial(e.expr);
     const d = partial ? '\\partial' : settings.diffOperator;
     let tex = '';
     let dim = 0;
@@ -795,10 +882,12 @@ function texOf(e: Expr): string {
     return f instanceof Add || f instanceof Mul ? `${head}${addParens(texOf(f))}` : `${head} ${texOf(f)}`;
   }
   if (e instanceof Order) {
-    const v = e.variable;
-    const p = e.point;
-    if (!v || !p || (p instanceof Rational && p.isZero)) return `O\\left(${texOf(e.expr)}\\right)`;
-    return `O\\left(${texOf(e.expr)}; ${texOf(v)}\\rightarrow ${texOf(p)}\\right)`;
+    // SymPy _print_Order: the variables and the point when it is not 0 or there are several variables
+    const vars = e.args.slice(1, -1);
+    const p = e.args.length > 2 ? at(e.args, e.args.length - 1) : S.Zero;
+    if (vars.length <= 1 && p instanceof Rational && p.isZero) return `O\\left(${texOf(e.expr)}\\right)`;
+    const point = vars.length > 1 ? printTuple(vars.map(() => p)) : texOf(p);
+    return `O\\left(${texOf(e.expr)}; ${vars.length > 1 ? printTuple(vars) : texOf(at(vars, 0))}\\rightarrow ${point}\\right)`;
   }
   if (e instanceof Concrete) {
     // SymPy _print_Sum / _print_Product
@@ -811,23 +900,39 @@ function texOf(e: Expr): string {
         : `${op}_{\\substack{${lims.map(([k, a, b]) => `${texOf(a)} \\leq ${texOf(k)} \\leq ${texOf(b)}`).join('\\\\')}}} `;
     return head + (e.function instanceof Add ? addParens(texOf(e.function)) : texOf(e.function));
   }
-  if (e instanceof Integral) {
-    // nested integrals: outer signs first, differentials innermost first
-    const heads: string[] = [];
-    const ds: string[] = [];
-    let cur: Expr = e;
-    while (cur instanceof Integral) {
-      const lim = cur.limits;
-      heads.push(lim ? `\\int\\limits_{${texOf(lim[0])}}^{${texOf(lim[1])}}` : '\\int');
-      ds.unshift(`\\, d${texOf(cur.variable)}`);
-      cur = cur.integrand;
-    }
-    const body = precedence(cur) < PREC.MUL ? addParens(texOf(cur)) : texOf(cur);
-    return `${heads.join('')} ${body}${ds.join('')}`;
-  }
+  if (e instanceof Integral) return printIntegral(e);
   const cls = setClass(e);
   if (cls !== undefined) return printSet(e, cls);
   return e.key;
+}
+
+/**
+ * SymPy `_print_Integral`: up to four indefinite integrals as \\iint, \\iiint
+ * or \\iiiint, else one sign per variable (outermost first) with its limits;
+ * the differentials innermost first.
+ */
+function printIntegral(e: Integral): string {
+  const levels: Integral[] = [];
+  let cur: Expr = e;
+  while (cur instanceof Integral) {
+    levels.push(cur);
+    cur = cur.integrand;
+  }
+  const ds = levels.map((l) => `\\, ${settings.diffOperator}${texOf(l.variable)}`).reverse();
+  let head: string;
+  if (levels.length <= 4 && levels.every((l) => l.args.length === 2)) head = `\\i${'i'.repeat(levels.length - 1)}nt`;
+  else {
+    const limits = settings.mode !== 'inline' && !settings.itex ? '\\limits' : '';
+    head = levels
+      .map((l) => {
+        const [a, b] = [l.args[2], l.args[3]];
+        if (a === undefined) return '\\int';
+        return b === undefined ? `\\int${limits}^{${texOf(a)}}` : `\\int${limits}_{${texOf(a)}}^{${texOf(b)}}`;
+      })
+      .join('');
+  }
+  const body = precedence(cur) < PREC.MUL ? addParens(texOf(cur)) : texOf(cur);
+  return `${head} ${body}${ds.join('')}`;
 }
 
 const NAMED_SETS: Partial<Record<string, string>> = {
@@ -866,7 +971,8 @@ function printSet(e: Expr, cls: string): string {
       return `\\left\\{${shown.elements.map((t) => (t === DOTS ? '\\ldots' : texOf(t))).join(', ')}\\right\\}`;
     }
     case 'FiniteSet':
-      return `\\left\\{${[...e.args].sort((u, v) => compareKeys(sortKey(u), sortKey(v))).map(texOf).join(', ')}\\right\\}`;
+      // SymPy _print_set: the items separated by ';' with the decimal comma
+      return `\\left\\{${[...e.args].sort((u, v) => compareKeys(sortKey(u), sortKey(v))).map(texOf).join(settings.comma ? '; ' : ', ')}\\right\\}`;
     case 'ImageSet': {
       const [v, expr, base] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
       return `\\left\\{${texOf(expr)}\\; \\middle|\\; ${texOf(v)} \\in ${texOf(base)}\\right\\}`;
@@ -882,6 +988,12 @@ function printSet(e: Expr, cls: string): string {
   }
 }
 
+/** SymPy `_print_tuple`: the items separated by ',' (';' with the decimal comma), a 1-tuple with a trailing separator. */
+function printTuple(items: readonly Expr[]): string {
+  const sep = settings.comma ? ';' : ',';
+  return items.length === 1 ? `\\left( ${texOf(at(items, 0))}${sep}\\right)` : `\\left( ${items.map(texOf).join(`${sep} \\  `)}\\right)`;
+}
+
 /** SymPy `symbol_names`: the LaTeX chosen for a symbol, compared structurally; undefined when none is. */
 function symbolName(e: Sym): string | undefined {
   for (const [k, v] of settings.symbolNames) if (k.key === e.key) return v;
@@ -895,8 +1007,15 @@ export interface LatexMatrix {
   get(i: number, j: number): Expr;
 }
 
-/** What `latex` prints: expressions (numbers are sympified), matrices, lists, dicts, sets, strings, booleans and null (Python None). */
-export type LatexPrintable = Expr | number | bigint | boolean | string | null | LatexMatrix | readonly LatexPrintable[] | ReadonlyMap<LatexPrintable, LatexPrintable> | ReadonlySet<LatexPrintable>;
+/** A value of a higher layer that prints its own LaTeX (Cycle, AlgebraicNumber, ...), its expressions with the given printer. */
+export interface LatexObject {
+  toLatex(print: (e: Expr) => string): string;
+}
+
+const isLatexObject = (v: object): v is LatexObject => 'toLatex' in v && typeof v.toLatex === 'function';
+
+/** What `latex` prints: expressions (numbers are sympified), function classes, matrices, objects with their own LaTeX, lists, dicts, sets, strings, booleans and null (Python None). */
+export type LatexPrintable = Expr | number | bigint | boolean | string | null | LatexMatrix | FunctionClassLike | LatexObject | readonly LatexPrintable[] | ReadonlyMap<LatexPrintable, LatexPrintable> | ReadonlySet<LatexPrintable>;
 
 const isMatrixLike = (v: object): v is LatexMatrix => 'rows' in v && 'cols' in v && 'get' in v && typeof v.get === 'function';
 
@@ -936,6 +1055,8 @@ function printValue(v: LatexPrintable): string {
   // SymPy emptyPrinter: str() in monospace
   if (typeof v === 'string') return `\\mathtt{\\text{${latexEscape(v)}}}`;
   if (v === null) return '\\text{None}';
+  // SymPy _print_UndefinedFunction and _print_FunctionClass: the name as a function head
+  if (isFunctionClass(v)) return hprintFunction(v.functionName);
   const sep = settings.comma ? ';' : ',';
   if (Array.isArray(v)) return `\\left[ ${v.map(printValue).join(`${sep} \\  `)}\\right]`;
   if (v instanceof Map) {
@@ -945,6 +1066,7 @@ function printValue(v: LatexPrintable): string {
   }
   if (v instanceof Set) return `\\left\\{${sortedItems([...v]).map(printValue).join(`${sep} `)}\\right\\}`;
   if (isMatrixLike(v)) return printMatrix(v);
+  if (isLatexObject(v)) return v.toLatex(texOf);
   throw new TypeError(`latex: cannot print ${Object.prototype.toString.call(v)}`);
 }
 
@@ -963,7 +1085,7 @@ export function latex(expr: LatexPrintable, options?: LatexOptions): string {
   settings = options === undefined ? DEFAULT_SETTINGS : resolveSettings(options);
   depth++;
   try {
-    const tex = printValue(expr);
+    const tex = withPermCyclic(options?.permCyclic, () => printValue(expr));
     const mode = settings.mode;
     if (mode === 'plain') return tex;
     if (mode === 'inline') return `$${tex}$`;

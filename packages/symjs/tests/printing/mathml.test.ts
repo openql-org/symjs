@@ -224,3 +224,51 @@ describe('the rest of the MathML printers', () => {
     expect(mathml(sj.sin(x), { printer: 'presentation' })).toBe('<mrow><mi>sin</mi><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mrow>');
   });
 });
+
+describe('presentation MathML of named functions, matrix expressions and Indexed (SymPy 1.14 test_mathml)', () => {
+  const a = new Sym('a');
+  const b = new Sym('b');
+  const n = new Sym('n');
+  const x = new Sym('x');
+  const y = new Sym('y');
+  const z = new Sym('z');
+  const p = (e: MathMLPrintable): string => mathml(e, { printer: 'presentation' });
+  const fn = (name: string, ...args: Expr[]): Expr => new sj.AppliedFunction(name as sj.FnName, args);
+  it('orthogonal polynomials, expint, elliptic integrals, Ei and SingularityFunction', () => {
+    expect(p(fn('jacobi', n, a, b, x))).toBe('<mrow><msubsup><mo>P</mo><mi>n</mi><mrow><mo>(</mo><mi>a</mi><mo>,</mo><mi>b</mi><mo>)</mo></mrow></msubsup><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mrow>');
+    expect(p(fn('chebyshevt', n, x))).toBe('<mrow><msub><mo>T</mo><mi>n</mi></msub><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mrow>');
+    expect(p(fn('elliptic_e', x, y))).toBe('<mrow><mi>&#x1d5a4;</mi><mrow><mo>(</mo><mi>x</mi><mo>|</mo><mi>y</mi><mo>)</mo></mrow></mrow>');
+    expect(p(fn('elliptic_f', x, y))).toBe('<mrow><mi>&#x1d5a5;</mi><mrow><mo>(</mo><mi>x</mi><mo>|</mo><mi>y</mi><mo>)</mo></mrow></mrow>');
+    expect(p(fn('elliptic_pi', x, y))).toBe('<mrow><mi>&#x1d6f1;</mi><mrow><mo>(</mo><mi>x</mi><mo>|</mo><mi>y</mi><mo>)</mo></mrow></mrow>');
+    expect(p(fn('elliptic_pi', x, y, z))).toBe('<mrow><mi>&#x1d6f1;</mi><mrow><mo>(</mo><mi>x</mi><mo>;</mo><mi>y</mi><mo>|</mo><mi>z</mi><mo>)</mo></mrow></mrow>');
+    expect(p(fn('Ei', x))).toBe('<mrow><mi>Ei</mi><mrow><mo>(</mo><mi>x</mi><mo>)</mo></mrow></mrow>');
+    expect(p(fn('SingularityFunction', x, Rational.of(4n), Rational.of(5n)))).toBe('<msup><mrow><mo>&#10216;</mo><mrow><mi>x</mi><mo>-</mo><mn>4</mn></mrow><mo>&#10217;</mo></mrow><mn>5</mn></msup>');
+  });
+  it('matrix expressions', async () => {
+    const M = await import('../../src/matrices/expressions');
+    const X = M.MatrixSymbol('X', 2, 2);
+    const Y = M.MatrixSymbol('Y', 2, 2);
+    expect(p(M.Transpose(X))).toBe('<msup><mi>X</mi><mo>T</mo></msup>');
+    expect(p(M.Adjoint(M.MatAdd(X, Y)))).toBe('<msup><mrow><mo>(</mo><mrow><mi>X</mi><mo>+</mo><mi>Y</mi></mrow><mo>)</mo></mrow><mo>&#x2020;</mo></msup>');
+    expect(p(M.Inverse(X))).toBe('<msup><mi>X</mi><mn>-1</mn></msup>');
+    expect(p(M.MatPow(M.Transpose(X), 2))).toBe('<msup><mrow><mo>(</mo><msup><mi>X</mi><mo>T</mo></msup><mo>)</mo></mrow><mn>2</mn></msup>');
+    expect(p(M.MatMul(X, Y))).toBe('<mrow><mi>X</mi><mo>&InvisibleTimes;</mo><mi>Y</mi></mrow>');
+    expect(p(M.MatMul(-1, X, Y))).toBe('<mrow><mo>-</mo><mi>X</mi><mo>&InvisibleTimes;</mo><mi>Y</mi></mrow>');
+    expect(p(M.MatMul(-2, X))).toBe('<mrow><mo>-</mo><mn>2</mn><mo>&InvisibleTimes;</mo><mi>X</mi></mrow>');
+    expect(p(new M.MatMul([sj.mul(2, x), X]))).toBe('<mrow><mn>2</mn><mo>&InvisibleTimes;</mo><mi>x</mi><mo>&InvisibleTimes;</mo><mi>X</mi></mrow>');
+    expect(p(new (await import('../../src/matrices/expressions/hadamard')).HadamardProduct([X, Y]))).toBe('<mrow><mi>X</mi><mo>&#x2218;</mo><mi>Y</mi></mrow>');
+    expect(p(M.Identity(2))).toBe('<mi>&#x1D540;</mi>');
+    expect(p(M.ZeroMatrix(2, 2))).toBe('<mn>&#x1D7D8</mn>');
+    expect(p(M.OneMatrix(2, 2))).toBe('<mn>&#x1D7D9</mn>');
+    expect(p(M.matrixElement(X, x, Rational.of(0n)))).toBe('<msub><mi>X</mi><mrow><mi>x</mi><mo>,</mo><mn>0</mn></mrow></msub>');
+  });
+  it('Indexed and IndexedBase', () => {
+    const A = new sj.IndexedBase(a);
+    expect(p(A)).toBe('<mi>a</mi>');
+    expect(p(A.at(b))).toBe('<msub><mi>a</mi><mi>b</mi></msub>');
+    expect(p(A.at(b, x))).toBe('<msub><mi>a</mi><mrow><mo>(</mo><mi>b</mi><mo>,</mo><mi>x</mi><mo>)</mo></mrow></msub>');
+  });
+  it('rejects unknown settings', () => {
+    expect(() => mathml(x, { method: 'garbage' } as MathMLPrintOptions)).toThrow(TypeError);
+  });
+});

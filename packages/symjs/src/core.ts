@@ -252,7 +252,7 @@ export {
 export {
   SymFunction,
 } from './core/undef';
-export type { UndefinedFunction } from './core/undef';
+export type { UndefinedFunction, FunctionClassLike } from './core/undef';
 export {
   Eq,
   Ne,
@@ -306,7 +306,7 @@ export {
 export {
   latex,
 } from './printing/latex';
-export type { LatexOptions, LatexPrintable, LatexMatrix } from './printing/latex';
+export type { LatexOptions, LatexPrintable, LatexMatrix, LatexObject } from './printing/latex';
 export { StrPrinter, sstr, sstrrepr, printLatex, multilineLatex } from './printing/printers';
 export type { StrPrintable, MultilineLatexOptions, SstrOptions } from './printing/printers';
 export {
@@ -316,7 +316,7 @@ export {
   tokenSplittable,
 } from './parsing/parser';
 export { kernS } from './parsing/sympify';
-export type { ParseOptions } from './parsing/parser';
+export type { ParseOptions, ParseTransformation } from './parsing/parser';
 /** Create a symbol. */
 export function symbol(name: string, assumptions: Assumptions = {}): SymbolNode {
   return new SymbolNode(name, assumptions);

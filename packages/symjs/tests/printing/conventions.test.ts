@@ -23,3 +23,16 @@ describe('splitSuperSub (SymPy split_super_sub)', () => {
   ];
   for (const [text, want] of cases) it(JSON.stringify(text), () => expect(sj.splitSuperSub(text)).toEqual(want));
 });
+
+describe('requiresPartial (SymPy requires_partial)', () => {
+  it('counts the free symbols that may not be integers', () => {
+    const [x, y] = sj.symbols('x y');
+    const n = sj.symbol('n', { integer: true });
+    const f = sj.SymFunction('f');
+    // SymPy test_requires_partial
+    expect(sj.requiresPartial(sj.Derivative(sj.mul(x, y), x))).toBe(true);
+    expect(sj.requiresPartial(sj.Derivative(f(x), x))).toBe(false);
+    expect(sj.requiresPartial(sj.Derivative(f(x, y), x))).toBe(true);
+    expect(sj.requiresPartial(sj.Derivative(sj.pow(x, n), x))).toBe(false);
+  });
+});

@@ -171,3 +171,16 @@ describe('basicView (SymPy class names and args)', () => {
     expect(symbolAssumptionFacts(sj.add(x, 1))).toBeUndefined();
   });
 });
+
+describe('srepr of function classes, permutations and objects with a repr', () => {
+  it('prints them like SymPy ReprPrinter', () => {
+    expect(srepr(sj.SymFunction('f'))).toBe("Function('f')");
+    expect(srepr(sj.defineFunction('g', {}))).toBe('g');
+    const p = new sj.Permutation([0, 2, 1, 4, 3]);
+    expect(srepr(p)).toBe('Permutation(1, 2)(3, 4)');
+    expect(srepr(p, { permCyclic: false })).toBe('Permutation([0, 2, 1, 4, 3])');
+    expect(srepr([p], { permCyclic: false })).toBe('[Permutation([0, 2, 1, 4, 3])]');
+    expect(srepr(new sj.Cycle(1, 2))).toBe('Cycle(1, 2)');
+    expect(srepr(new Set<ReprPrintable>([1]))).toBe('{1}');
+  });
+});

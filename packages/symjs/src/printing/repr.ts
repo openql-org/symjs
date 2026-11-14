@@ -18,8 +18,10 @@ import { sympyArgs, sympyClassName } from '../core/compare';
 import { precToDps, toStr } from '../numeric/mpf';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 import { setArgsOrdered, setClass } from './sets';
-import { str } from './str';
+import { str, withPermCyclic } from './str';
 import { at } from '../core/guard';
+import { isFunctionClass, isUndefinedFunction } from '../core/undef';
+import type { FunctionClassLike } from '../core/undef';
 
 /**
  * A node of an expression as SymPy sees it: its class name, its arguments
@@ -229,6 +231,9 @@ export function basicView(e: Expr, printOrder = false): BasicView {
   const s = structured(e, v);
   if (s) return node(s[0], s[1], s[2]);
   if (e instanceof ExtensionExpr) {
+    // a node with its own repr (Permutation)
+    const printRepr: unknown = Reflect.get(e, 'printRepr');
+    if (typeof printRepr === 'function') return atom(e.name, String(Reflect.apply(printRepr, e, [])), false);
     const m: unknown = Reflect.get(e, 'matrix');
     if (isMatrixLike(m)) return { ...node('ImmutableDenseMatrix', []), repr: matrixRepr(m, 'ImmutableDenseMatrix', (x) => srepr(x)) };
     if (e.atomClass) return atom(e.name, `${e.name}(${pyRepr(text)})`, false);
@@ -246,8 +251,15 @@ const viewRepr = (view: BasicView): string => view.repr ?? `${view.head ?? view.
 
 const isList = (v: ReprPrintable): v is readonly ReprPrintable[] => Array.isArray(v);
 
-/** What `srepr` prints: expressions, matrices, lists, dicts, sets, strings, numbers, booleans and null (Python None). */
-export type ReprPrintable = Expr | number | bigint | boolean | string | null | ReprMatrix | readonly ReprPrintable[] | ReadonlyMap<ReprPrintable, ReprPrintable> | ReadonlySet<ReprPrintable>;
+/** A value of a higher layer with its own repr (Cycle, ...). */
+export interface ReprObject {
+  repr(): string;
+}
+
+const isReprObject = (v: object): v is ReprObject => 'repr' in v && typeof v.repr === 'function';
+
+/** What `srepr` prints: expressions, function classes, matrices, objects with their own repr, lists, dicts, sets, strings, numbers, booleans and null (Python None). */
+export type ReprPrintable = Expr | number | bigint | boolean | string | null | ReprMatrix | FunctionClassLike | ReprObject | readonly ReprPrintable[] | ReadonlyMap<ReprPrintable, ReprPrintable> | ReadonlySet<ReprPrintable>;
 
 /**
  * SymPy `srepr(expr)`: the expression as the SymPy constructor calls that
@@ -258,14 +270,28 @@ export type ReprPrintable = Expr | number | bigint | boolean | string | null | R
  * in srepr form; a JS number is a Python int (`2`), a string prints with its
  * quotes, booleans and null as `True`, `False` and `None`.
  */
-export function srepr(expr: ReprPrintable): string {
+export function srepr(expr: ReprPrintable, options: SreprOptions = {}): string {
+  return withPermCyclic(options.permCyclic, () => reprValue(expr));
+}
+
+/** The settings of {@link srepr}. */
+export interface SreprOptions {
+  /** Permutations in cycle notation (default true) or as Permutation([...]) (SymPy perm_cyclic). */
+  readonly permCyclic?: boolean;
+}
+
+function reprValue(expr: ReprPrintable): string {
   if (typeof expr === 'string') return pyRepr(expr);
   if (typeof expr === 'number' || typeof expr === 'bigint') return String(expr);
   if (typeof expr === 'boolean') return expr ? 'True' : 'False';
   if (expr === null) return 'None';
   if (expr instanceof Expr) return viewRepr(basicView(expr, true));
-  if (isList(expr)) return `[${expr.map(srepr).join(', ')}]`;
-  if (isMatrixLike(expr)) return matrixRepr(expr, 'MutableDenseMatrix', (x) => srepr(x));
-  if (expr instanceof Map) return `{${[...expr].map(([k, v]) => `${srepr(k)}: ${srepr(v)}`).join(', ')}}`;
-  return expr.size ? `{${[...expr].map(srepr).join(', ')}}` : 'set()';
+  // SymPy ReprPrinter._print_FunctionClass
+  if (isUndefinedFunction(expr)) return `Function(${pyRepr(expr.functionName)})`;
+  if (isFunctionClass(expr)) return expr.functionName;
+  if (isList(expr)) return `[${expr.map((x) => reprValue(x)).join(', ')}]`;
+  if (isMatrixLike(expr)) return matrixRepr(expr, 'MutableDenseMatrix', (x) => reprValue(x));
+  if (expr instanceof Map) return `{${[...expr].map(([k, v]) => `${reprValue(k)}: ${reprValue(v)}`).join(', ')}}`;
+  if (isReprObject(expr)) return expr.repr();
+  return expr.size ? `{${[...expr].map((x) => reprValue(x)).join(', ')}}` : 'set()';
 }

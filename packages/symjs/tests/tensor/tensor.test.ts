@@ -642,3 +642,30 @@ describe('edge cases', () => {
     expect(String(WildTensorHead('W').at(p, q).replaceIndices(new Map([[p.key, s]])))).toBe('W(s, q)');
   });
 });
+
+describe('LaTeX of tensors (SymPy 1.14 test_latex_printer_tensor)', async () => {
+  const { latex } = await import('../../src');
+  const L = TensorIndexType('L');
+  const [ti, tj, tk, tl] = tensorIndices('i j k l', L) as [TensorIndex, TensorIndex, TensorIndex, TensorIndex];
+  const [TA, TB] = tensorHeads('A B', [L]) as [TensorHead, TensorHead];
+  const TH = TensorHead('H', [L, L]);
+  const TK = TensorHead('K', [L, L, L, L]);
+  it('prints indices, tensors, products and sums', () => {
+    expect(latex(ti)).toBe('{}^{i}');
+    expect(latex(ti.neg())).toBe('{}_{i}');
+    expect(latex(TA.at(ti))).toBe('A{}^{i}');
+    expect(latex(mul(-3, TA.at(ti)))).toBe('-3A{}^{i}');
+    expect(latex(mul(-1, TA.at(ti)))).toBe('-A{}^{i}');
+    expect(latex(mul(add(symbol('x'), 1), TA.at(ti)))).toBe('\\left(x + 1\\right)A{}^{i}');
+    expect(latex(TK.at(ti, tj, tk.neg(), tl))).toBe('K{}^{ij}{}_{k}{}^{l}');
+    expect(latex(TH.at(ti, ti.neg()))).toBe('H{}^{L_{0}}{}_{L_{0}}');
+    expect(latex(add(mul(3, TB.at(ti)), TA.at(ti)))).toBe('3B{}^{i} + A{}^{i}');
+    expect(latex(sub(TB.at(ti), mul(2, TA.at(ti))))).toBe('-2A{}^{i} + B{}^{i}');
+    expect(latex(TensorHead('S', []).at())).toBe('S');
+  });
+  it('prints fixed indices of tensor elements', () => {
+    const e = TensorElement(TK.at(ti, tj, tk, tl), new Map([[ti, 3], [tk, 2]]));
+    expect(latex(e)).toBe('K{}^{i=3,j,k=2,l}');
+    expect(latex(TensorElement(TK.at(ti, tj, tk.neg(), tl.neg()), new Map([[ti, 3], [tk.neg(), 2]])))).toBe('K{}^{i=3,j}{}_{k=2,l}');
+  });
+});

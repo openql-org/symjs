@@ -18,6 +18,21 @@ export interface UndefinedFunction {
   readonly arity: readonly number[] | NoMatchResult;
 }
 
+/** A function class (SymPy `FunctionClass`): a callable that builds applications of a named function. */
+export interface FunctionClassLike {
+  (...args: never[]): unknown;
+  readonly functionName: string;
+}
+
+/** The undefined functions made by SymFunction. */
+const undefinedFunctions = new WeakSet<object>();
+
+/** Whether a value is a function class (an undefined function, a defined function, ...). */
+export const isFunctionClass = (v: unknown): v is FunctionClassLike => typeof v === 'function' && 'functionName' in v && typeof v.functionName === 'string';
+
+/** Whether a value is an undefined function made by SymFunction (SymPy `UndefinedFunction`). */
+export const isUndefinedFunction = (v: unknown): v is UndefinedFunction => typeof v === 'function' && undefinedFunctions.has(v);
+
 /** Create an undefined function, like SymPy `Function('f')`. */
 export function SymFunction(name: string, options: { nargs?: number | readonly number[] } = {}): UndefinedFunction {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new SyntaxError(`Invalid function name: ${name}`);
@@ -30,6 +45,7 @@ export function SymFunction(name: string, options: { nargs?: number | readonly n
   Object.defineProperty(f, 'functionName', { value: name });
   Object.defineProperty(f, 'arity', { value: arity });
   Object.defineProperty(f, 'name', { value: name });
+  undefinedFunctions.add(f);
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- functionName and arity were added above with Object.defineProperty (non-enumerable, read-only)
   return f as unknown as UndefinedFunction;
 }

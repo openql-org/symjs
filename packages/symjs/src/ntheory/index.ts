@@ -14,7 +14,7 @@
 export { Sieve, sieve } from './sieve';
 export { Random, rng, seed } from './random';
 export type { RandInt } from './random';
-export { FactorCache, factorCache, isMersennePrime, isGaussianPrime, MERSENNE_PRIME_EXPONENTS, mr, prothTest } from './primetest';
+export { FactorCache, factorCache, isMersennePrime, isGaussianPrime, MERSENNE_PRIME_EXPONENTS, mr, prothTest, isFermatPseudoprime, isEulerPseudoprime, isEulerJacobiPseudoprime, isExtraStrongLucasPrp } from './primetest';
 export { prime, nextprime, prevprime, primerange, randprime, primorial, cycleLength, composite, compositepi } from './generate';
 export type { IntLike } from './intutil';
 export {

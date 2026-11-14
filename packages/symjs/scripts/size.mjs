@@ -37,13 +37,16 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Dummit's quintic coefficient tables and branch selection add at most 80 KiB
 // to consumers that load radical polynomial solving.
 // The dense recursive polynomial tools (densetools) are part of the root namespace.
+// The LaTeX, MathML and str printer settings (function classes, perm_cyclic, adjoint and
+// matrix symbol styles, term order, tuples) and the parser's Python syntax (factorials,
+// comparisons, builtins, transformations one by one) add up to 5 KiB to core consumers.
 const CASES = [
-  ['core', 'Rational', 190],
-  ['core', 'parse, str', 204],
-  ['core', 'parse, diff, expand, str, latex', 204],
-  ['core', '*', 288],
+  ['core', 'Rational', 193],
+  ['core', 'parse, str', 210],
+  ['core', 'parse, diff, expand, str, latex', 210],
+  ['core', '*', 290],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
-  ['special', '*', 383],
+  ['special', '*', 385],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 970],
   // The polys entry re-exports the sparse domain matrices through a
@@ -55,17 +58,17 @@ const CASES = [
   ['calculus', 'integrate', 997],
   ['solvers', 'solve', 1055],
   ['solvers', 'dsolve', 1070],
-  ['sets', '*', 353],
+  ['sets', '*', 356],
   ['matrices', 'Matrix', 749],
-  ['printing', 'pretty', 230],
-  ['discrete', '*', 285],
-  ['strategies', '*', 203],
+  ['printing', 'pretty', 232],
+  ['discrete', '*', 288],
+  ['strategies', '*', 204],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
   ['parsing', '*', 800],
-  ['unify', '*', 228],
+  ['unify', '*', 230],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 547],
+  ['algebras', 'Quaternion', 548],
   ['holonomic', 'exprToHolonomic', 1140],
   ['geometry', '*', 1078],
   ['vector', '*', 1176],

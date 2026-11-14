@@ -50,6 +50,9 @@ import { numNeg } from '../../core/num';
 import { BoolOp } from '../../core/boolalg';
 import { Concrete } from '../../core/concrete';
 import { DictNode } from '../../core/containers';
+import { requiresPartial } from '../conventions';
+import { isFunctionClass } from '../../core/undef';
+import type { FunctionClassLike } from '../../core/undef';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from '../sortkey';
 import type { Key } from '../sortkey';
 import { PREC, floatString, precedence, str } from '../str';
@@ -102,6 +105,8 @@ export interface PrettyOptions {
   readonly useUnicodeSqrtChar?: boolean;
   /** 'bold' prints matrix symbols in a bold face (used by matrix hooks; default 'plain'). */
   readonly matSymbolStyle?: 'plain' | 'bold';
+  /** Permutations in cycle notation (default true) or as a two-row array (SymPy perm_cyclic). */
+  readonly permCyclic?: boolean;
 }
 
 /** A matrix as seen by the printer: anything with a shape and entries. */
@@ -128,6 +133,7 @@ export type Printable =
   | boolean
   | StringPict
   | MatrixLike
+  | FunctionClassLike
   | PrettyTuple
   | readonly Printable[]
   | ReadonlyMap<Printable, Printable>;
@@ -204,6 +210,7 @@ interface MeijerLike {
 }
 interface PermutationLike {
   readonly cyclicForm: readonly (readonly number[])[];
+  readonly arrayForm: readonly number[];
 }
 const isPermutationLike = (e: ExtensionExpr): e is ExtensionExpr & PermutationLike => e.name === 'Permutation' && 'cyclicForm' in e;
 const isHyperLike = (e: ExtensionExpr): e is ExtensionExpr & HyperLike => e.name === 'hyper' && 'ap' in e && 'bq' in e;
@@ -213,13 +220,6 @@ function isMatrixLike(x: unknown): x is MatrixLike {
   if (typeof x !== 'object' || x === null) return false;
   const m = x as { rows?: unknown; cols?: unknown; get?: unknown };
   return typeof m.rows === 'number' && typeof m.cols === 'number' && typeof m.get === 'function';
-}
-
-/** SymPy `requires_partial`: more than one non-integer free symbol. */
-function requiresPartial(e: Expr): boolean {
-  let n = 0;
-  for (const s of [...impl.freeSymbols(e)].filter((s) => s instanceof Sym)) if (s.assumptions.integer !== true) n++;
-  return n > 1;
 }
 
 /** Function names printed with a special name: [unicode, ascii]. */
@@ -293,6 +293,7 @@ export class PrettyPrinter {
       rootNotation: options.rootNotation ?? true,
       useUnicodeSqrtChar: options.useUnicodeSqrtChar ?? true,
       matSymbolStyle: options.matSymbolStyle ?? 'plain',
+      permCyclic: options.permCyclic ?? true,
     };
   }
 
@@ -332,6 +333,8 @@ export class PrettyPrinter {
     if (e instanceof Map) return this.printDict(e as ReadonlyMap<Printable, Printable>);
     if (isMatrixLike(e)) return this.printMatrix(e);
     if (e instanceof Expr) return this.printExpr(e);
+    // SymPy _print_FunctionClass: the name as a symbol
+    if (isFunctionClass(e)) return new PrettyForm(prettySymbol(e.functionName));
     throw new TypeError('pretty: cannot print this value');
   }
 
@@ -1212,10 +1215,20 @@ export class PrettyPrinter {
   }
 
   /**
-   * SymPy `_print_Permutation` with perm_cyclic=True (`_print_Cycle` of
-   * Cycle(p)): the cycles without the singletons, () for an identity.
+   * SymPy `_print_Permutation`: with perm_cyclic (`_print_Cycle` of
+   * Cycle(p)) the cycles without the singletons, () for an identity;
+   * otherwise the points above their images, in parentheses.
    */
   private printPermutation(e: PermutationLike): PrettyForm {
+    if (!this.settings.permCyclic) {
+      let result = new PrettyForm('');
+      e.arrayForm.forEach((image, i) => {
+        let col = PrettyForm.of(this.print(i).below(this.print(image)));
+        if (i > 0) col = PrettyForm.of(col.left(' '));
+        result = PrettyForm.of(result.right(col));
+      });
+      return PrettyForm.of(result.parens());
+    }
     if (e.cyclicForm.length === 0) return PrettyForm.of(new StringPict('').parens());
     return new PrettyForm(e.cyclicForm.map((c) => `(${c.join(' ')})`).join(''));
   }

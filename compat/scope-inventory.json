@@ -44446,7 +44446,7 @@
      "testFile": "sympy/combinatorics/tests/test_permutations.py",
      "inCorpus": true,
      "caseCount": 319,
-     "gapCount": 20,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 3,
@@ -57890,7 +57890,7 @@
      "testFile": "sympy/core/tests/test_sympify.py",
      "inCorpus": true,
      "caseCount": 120,
-     "gapCount": 35,
+     "gapCount": 24,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 19,
@@ -120312,7 +120312,7 @@
      "testFile": "sympy/ntheory/tests/test_generate.py",
      "inCorpus": true,
      "caseCount": 3517,
-     "gapCount": 4,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 53276,
@@ -120527,10 +120527,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "is_euler_jacobi_pseudoprime",
-      "is_euler_pseudoprime",
-      "is_extra_strong_lucas_prp",
-      "is_fermat_pseudoprime",
       "is_lucas_prp",
       "is_strong_lucas_prp"
      ],
@@ -120557,7 +120553,7 @@
      "testFile": "sympy/ntheory/tests/test_primetest.py",
      "inCorpus": true,
      "caseCount": 226,
-     "gapCount": 10,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 8,
@@ -122130,7 +122126,7 @@
      "testFile": "sympy/parsing/tests/test_sympy_parser.py",
      "inCorpus": true,
      "caseCount": 92,
-     "gapCount": 39,
+     "gapCount": 14,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 969,
@@ -148222,7 +148218,7 @@
   {
    "module": "sympy.printing.conventions",
    "sha256": "86f37554c644e64acc8fc14be0002ec403b4c42c2102e801156ac5434df9e406",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "printing/conventions.ts",
     "printing/latex.ts",
@@ -148230,10 +148226,8 @@
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "requires_partial"
-     ],
+     "pass": true,
+     "missingNames": [],
      "unresolvedBases": []
     },
     "doctests": {
@@ -148247,13 +148241,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.printing.tests.test_conventions",
      "testFile": "sympy/printing/tests/test_conventions.py",
      "inCorpus": true,
      "caseCount": 56,
-     "gapCount": 21,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -148531,7 +148525,7 @@
      "testFile": "sympy/printing/tests/test_latex.py",
      "inCorpus": true,
      "caseCount": 1252,
-     "gapCount": 282,
+     "gapCount": 124,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -148664,7 +148658,7 @@
      "testFile": "sympy/printing/tests/test_mathml.py",
      "inCorpus": true,
      "caseCount": 167,
-     "gapCount": 89,
+     "gapCount": 30,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 6,
@@ -148740,7 +148734,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "precedence",
       "precedence_Float",
       "precedence_FracElement",
       "precedence_Integer",
@@ -148769,7 +148762,7 @@
      "testFile": "sympy/printing/tests/test_precedence.py",
      "inCorpus": true,
      "caseCount": 28,
-     "gapCount": 28,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 4,
@@ -148888,7 +148881,7 @@
      "testFile": "sympy/printing/pretty/tests/test_pretty.py",
      "inCorpus": true,
      "caseCount": 56,
-     "gapCount": 22,
+     "gapCount": 8,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -148931,8 +148924,6 @@
      "missingNames": [
       "U",
       "annotated",
-      "center",
-      "center_accent",
       "center_pad",
       "greek_unicode",
       "hobj",
@@ -149300,7 +149291,7 @@
      "testFile": "sympy/printing/tests/test_repr.py",
      "inCorpus": true,
      "caseCount": 102,
-     "gapCount": 40,
+     "gapCount": 36,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -149411,7 +149402,7 @@
      "testFile": "sympy/printing/tests/test_str.py",
      "inCorpus": true,
      "caseCount": 87,
-     "gapCount": 38,
+     "gapCount": 27,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -188618,8 +188609,7 @@
      "missingNames": [
       "debug_decorator",
       "debugf",
-      "find_executable",
-      "ordinal"
+      "find_executable"
      ],
      "unresolvedBases": []
     },
@@ -188644,7 +188634,7 @@
      "testFile": "sympy/utilities/tests/test_misc.py",
      "inCorpus": true,
      "caseCount": 43,
-     "gapCount": 11,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,

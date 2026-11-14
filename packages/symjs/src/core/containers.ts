@@ -60,10 +60,6 @@ export class TupleNode extends ExtensionExpr {
   override printStr(print: (e: Expr) => string): string {
     return this.args.length === 1 ? `(${print(at(this.args, 0))},)` : `(${this.args.map(print).join(', ')})`;
   }
-  /** SymPy LatexPrinter._print_tuple. */
-  override printLatex(print: (e: Expr) => string): string {
-    return this.args.length === 1 ? `\\left( ${print(at(this.args, 0))},\\right)` : `\\left( ${this.args.map(print).join(', \\  ')}\\right)`;
-  }
 }
 
 /** SymPy Tuple(a, b, ...). */

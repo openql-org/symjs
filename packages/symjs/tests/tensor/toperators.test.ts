@@ -49,3 +49,14 @@ it('rebuilds with doit and reads component matrices', () => {
   const cube = new Map([[A.at(i), [x, y]], [C.at(j, k), [[x, y], [y, x]]]]);
   expect(() => PartialDerivative(A.at(i), C.at(j, k)).getMatrix(cube)).toThrow(NotImplementedError);
 });
+
+it('prints partial derivatives in LaTeX (SymPy 1.14 test_latex_printer_tensor)', async () => {
+  const { latex, add, mul, tensorIndices } = await import('../../src');
+  const L = TensorIndexType('L');
+  const [i, j, n] = tensorIndices('i j n', L) as [TensorIndex, TensorIndex, TensorIndex];
+  const A = TensorHead('A', [L]);
+  const B = TensorHead('B', [L]);
+  expect(latex(PartialDerivative(A.at(i), A.at(j)))).toBe('\\frac{\\partial}{\\partial {A{}^{j}}}{A{}^{i}}');
+  expect(latex(PartialDerivative(add(A.at(i), B.at(i)), A.at(j), A.at(n)))).toBe('\\frac{\\partial^{2}}{\\partial {A{}^{j}} \\partial {A{}^{n}}}{\\left(A{}^{i} + B{}^{i}\\right)}');
+  expect(latex(PartialDerivative(mul(3, A.at(i)), A.at(j)))).toBe('\\frac{\\partial}{\\partial {A{}^{j}}}{\\left(3A{}^{i}\\right)}');
+});

@@ -220,6 +220,18 @@ export function asInt(n: unknown, strict = true): bigint {
   throw new TypeError(`${String(n)} is not an integer`);
 }
 
+/**
+ * SymPy `ordinal(num)`: the integer with its English ordinal suffix
+ * (`ordinal(1)` is `'1st'`, `ordinal(12)` is `'12th'`, `ordinal(-1)` is
+ * `'-1st'`).
+ */
+export function ordinal(num: unknown): string {
+  const n = asInt(num);
+  const k = (n < 0n ? -n : n) % 100n;
+  const suffix = k >= 11n && k <= 13n ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' } as Partial<Record<string, string>>)[String(k % 10n)] ?? 'th';
+  return `${n}${suffix}`;
+}
+
 /** The short names of the relations (`funcName` with `short`). */
 const SHORT_NAMES: Readonly<Record<string, string>> = {
   GreaterThan: 'Ge',

@@ -15,7 +15,6 @@ import { EmptySet, FiniteSet, SetExpr, containsQ, finiteSet, union } from '../se
 export class SymObject extends Sym {
   override get printName(): string { return `Object(${JSON.stringify(this.name)})`; }
   override get sortClass(): string { return 'Object'; }
-  override get latexForm(): string { return this.name; }
   protected override computeKey(): string { return `Object(${super.computeKey()})`; }
 }
 export const categoryObject = (name: string, assumptions: Assumptions = {}): SymObject => new SymObject(name, assumptions);
@@ -51,7 +50,8 @@ export class NamedMorphismNode extends Morphism {
   protected override computeKey(): string { return `NamedMorphism(${JSON.stringify(this.name)};${this.args.map((x) => x.key).join(';')})`; }
   withArgs(args: readonly Expr[]): Expr { return new NamedMorphismNode(first(args), at(args, 1), this.name); }
   override printStr(print: (e: Expr) => string): string { return `NamedMorphism(${print(this.domain)}, ${print(this.codomain)}, ${JSON.stringify(this.name)})`; }
-  override printLatex(print: (e: Expr) => string): string { return `${this.name}:${print(this.domain)}\\rightarrow ${print(this.codomain)}`; }
+  /** SymPy _print_NamedMorphism: the name like a symbol's (f_{1}), then the arrow. */
+  override printLatex(print: (e: Expr) => string): string { return `${print(new Sym(this.name))}:${print(this.domain)}\\rightarrow ${print(this.codomain)}`; }
 }
 export const NamedMorphism = /* @__PURE__ */ callableClass(NamedMorphismNode, (domain: Expr, codomain: Expr, name: string): NamedMorphismNode => new NamedMorphismNode(domain, codomain, name));
 export type NamedMorphism = NamedMorphismNode;
@@ -62,7 +62,7 @@ export class CompositeMorphismNode extends Morphism {
   override get codomain(): Expr { return last(this.components).codomain; }
   withArgs(args: readonly Expr[]): Expr { return compositeMorphism(first(args).args.map((m) => cast(m, Morphism))); }
   flatten(name: string): NamedMorphismNode { return new NamedMorphismNode(this.domain, this.codomain, name); }
-  override printLatex(print: (e: Expr) => string): string { return `${[...this.components].reverse().map((m) => m.name).join('\\circ ')}:${print(this.domain)}\\rightarrow ${print(this.codomain)}`; }
+  override printLatex(print: (e: Expr) => string): string { return `${[...this.components].reverse().map((m) => print(new Sym(m.name))).join('\\circ ')}:${print(this.domain)}\\rightarrow ${print(this.codomain)}`; }
 }
 
 function compositeMorphism(components: readonly Morphism[]): Morphism {
@@ -96,7 +96,7 @@ export class CategoryNode extends ExtensionExpr {
   protected override computeKey(): string { return `Category(${JSON.stringify(this.name)};${this.args.map((x) => x.key).join(';')})`; }
   withArgs(args: readonly Expr[]): Expr { return new CategoryNode(this.name, cast(first(args), CategoryClass).objects, cast(at(args, 1), SetExpr)); }
   override printStr(): string { return `Category(${JSON.stringify(this.name)})`; }
-  override printLatex(): string { return `\\mathbf{${this.name}}`; }
+  override printLatex(print: (e: Expr) => string): string { return `\\mathbf{${print(new Sym(this.name))}}`; }
   hom(_a: Expr, _b: Expr): never { throw new NotImplementedError('hom-sets are not implemented in Category, as in SymPy.'); }
   allMorphisms(): never { throw new NotImplementedError('Obtaining the class of morphisms is not implemented in Category, as in SymPy.'); }
 }
@@ -154,7 +154,12 @@ export class DiagramNode extends ExtensionExpr {
     this.premises = pd; this.conclusions = cd; this.objects = objectSet;
   }
   withArgs(args: readonly Expr[]): Expr { return new DiagramNode(cast(first(args), DictNode), cast(at(args, 1), DictNode)); }
-  override printLatex(print: (e: Expr) => string): string { return print(this.premises); }
+  /** SymPy _print_Diagram: the premises, then the conclusions after an arrow; an empty diagram is the empty set. */
+  override printLatex(print: (e: Expr) => string): string {
+    if (this.premises.args.length === 0) return print(EmptySet);
+    const premises = print(this.premises);
+    return this.conclusions.args.length ? `${premises}\\Longrightarrow ${print(this.conclusions)}` : premises;
+  }
   hom(a: Expr, b: Expr): [SetExpr, SetExpr] {
     const arrows = (d: DictNode): SetExpr => finiteSet(...d.items().map(([m]) => cast(m, Morphism)).filter((m) => m.domain.equals(a) && m.codomain.equals(b)));
     return [arrows(this.premises), arrows(this.conclusions)];

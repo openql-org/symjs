@@ -148,5 +148,4 @@ function factorialMod(n: bigint, q: bigint): Expr | undefined {
 export const Mod: DefinedFunction = /* @__PURE__ */ defineFunction('Mod', {
   nargs: 2,
   eval: (p, q) => evalMod(p, q),
-  latex: ([p, q]) => `${p} \\bmod ${q}`,
 });

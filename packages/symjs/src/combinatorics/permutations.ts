@@ -24,6 +24,7 @@ import { refine } from '../core/refine';
 import { xreplace } from '../core/traverse';
 import type { Key } from '../printing/sortkey';
 import { sortKey } from '../printing/sortkey';
+import { permCyclic } from '../printing/str';
 import { add, couldExtractMinusSign, sympify } from '../core/ops';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
@@ -443,14 +444,19 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return `Permutation(${this.#af.join(',')})`;
   }
 
-  /** SymPy str(p) with perm_cyclic=True: (1 2), (3)(0 1), (). */
+  /** SymPy str(p): (1 2), (3)(0 1), () with the printer setting perm_cyclic, else Permutation([1, 0, 2]). */
   override printStr(_print: (e: Expr) => string): string {
-    return permutationStr(this);
+    return permutationStr(this, { permCyclic: permCyclic() });
   }
 
-  /** SymPy latex(p): \left( 1\; 2\right). */
+  /** SymPy latex(p): \left( 1\; 2\right) with the printer setting perm_cyclic, else a two-line pmatrix. */
   override printLatex(_print: (e: Expr) => string): string {
-    return permutationLatex(this);
+    return permutationLatex(this, { permCyclic: permCyclic() });
+  }
+
+  /** SymPy srepr(p): Permutation(1, 2) with the printer setting perm_cyclic, else Permutation([0, 2, 1]). */
+  printRepr(): string {
+    return permutationRepr(this, { permCyclic: permCyclic() });
   }
 
   // ---- forms ----------------------------------------------------------------

@@ -8,7 +8,7 @@
  *   sum     := product (('+' | '-') product)*
  *   product := unary (('*' | '/') unary)*
  *   unary   := ('-' | '+') unary | power
- *   power   := atom (('^' | '**') unary)?       (right associative)
+ *   power   := atom ('!' | '!!')* (('^' | '**') unary)?   (right associative; x! is factorial(x))
  *   atom    := number | name | name '(' args ')' | '(' sum ')' | interpolated value
  *   arg     := sum | '(' sum (',' sum)* ')'       (a tuple, for the limits of Integral, Sum, ...)
  */
@@ -25,6 +25,7 @@ import { fn } from '../functions/elementary/elementary';
 import { at, defined } from '../core/guard';
 import { piecewise, rel } from '../core/logic';
 import { SymFunction, derivative } from '../core/undef';
+import { modInverse } from '../core/numberutils';
 
 export interface ParseOptions {
   /** Predefined symbols (by name). */
@@ -41,9 +42,10 @@ export interface ParseOptions {
    * parentheses (sin x) and function exponentiation (sin**2(x) is
    * sin(x)**2); 'all' also splits unknown names into one-letter symbols
    * (xyz is x*y*z; names of Greek letters and names with an underscore are
-   * kept, as SymPy's split_symbols does).
+   * kept, as SymPy's split_symbols does). A list of transformations enables
+   * them one by one.
    */
-  transformations?: 'standard' | 'implicit' | 'all';
+  transformations?: 'standard' | 'implicit' | 'all' | readonly ParseTransformation[];
   /**
    * The names split into one-letter symbols (SymPy split_symbols_custom):
    * a predicate replacing tokenSplittable, which also enables splitting.
@@ -57,6 +59,13 @@ export interface ParseOptions {
    */
   locals?: Readonly<Record<string, ExprLike | ((...args: Expr[]) => ExprLike)>>;
 }
+
+/**
+ * The SymPy parse_expr transformations that can be enabled one by one:
+ * implicit_multiplication, implicit_application, function_exponentiation and
+ * split_symbols.
+ */
+export type ParseTransformation = 'implicitMultiplication' | 'implicitApplication' | 'functionExponentiation' | 'splitSymbols';
 
 type Token =
   | { t: 'num'; v: string; pos: number }
@@ -77,7 +86,7 @@ function repeatingDecimal(s: string): Rational {
 }
 
 function tokenize(src: string, offset: number, out: Token[]): void {
-  const re = /\s*(?:(\d*\.\d*\[\d+\])|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|[-+*/^(),&|~<>=]))/y;
+  const re = /\s*(?:(\d*\.\d*\[\d+\])|((?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?(?:[eE][+-]?\d(?:_?\d)*)?|\.\d(?:_?\d)*(?:[eE][+-]?\d(?:_?\d)*)?)(?:[jJ](?![A-Za-z0-9_]))?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|==|!=|!+|[-+*/^(),&|~<>=]))/y;
   let i = 0;
   while (i < src.length) {
     if (/^\s*$/.test(src.slice(i))) return;
@@ -259,7 +268,32 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Rational: rationalArgs,
   frac: (args) => fn('frac', [argAt(args, 0, 'frac')]),
   FallingFactorial: (args) => fn('ff', args),
+  // the Python builtins that parse_expr maps to SymPy functions (abs is above)
+  max: (args) => fn('Max', args),
+  min: (args) => fn('Min', args),
+  pow: pythonPow,
 };
+
+/** Python's builtin pow(base, exp) and pow(base, exp, mod) (of integers, a negative exponent through the modular inverse). */
+function pythonPow(args: Expr[]): Expr {
+  if (args.length === 2) return pow(argAt(args, 0, 'pow'), argAt(args, 1, 'pow'));
+  const ints = args.map((a) => {
+    if (!(a instanceof Rational && a.isInteger)) throw new TypeError('pow() 3rd argument not allowed unless all arguments are integers');
+    return a;
+  });
+  const [b0, e0, m] = [at(ints, 0), at(ints, 1), at(ints, 2)];
+  if (m.isZero) throw new RangeError('pow() 3rd argument cannot be 0');
+  let [b, e] = e0.p < 0n ? [modInverse(b0, m).p, -e0.p] : [b0.p, e0.p];
+  let r = 1n;
+  b %= m.p;
+  for (; e > 0n; e >>= 1n) {
+    if (e & 1n) r = (r * b) % m.p;
+    b = (b * b) % m.p;
+  }
+  // Python's modulo has the sign of the modulus
+  if (r !== 0n && (r < 0n) !== (m.p < 0n)) r += m.p;
+  return Rational.of(r);
+}
 
 /** A parsed call argument: an expression or a tuple (a, b, ...). */
 type Arg = Expr | readonly Expr[];
@@ -433,6 +467,10 @@ const CONSTANTS: Record<string, Expr> = {
 const isSymbolList = (s: ParseOptions['symbols']): s is readonly Sym[] => Array.isArray(s);
 
 function parseNumber(s: string): Expr {
+  // SymPy auto_number: a Python imaginary literal (3j) is the number times I
+  if (/[jJ]$/.test(s)) return mul(parseNumber(s.slice(0, -1)), S.I);
+  // Python digit separators: 123_456
+  if (s.includes('_')) return parseNumber(s.replaceAll('_', ''));
   if (/^\d+$/.test(s)) return Rational.of(BigInt(s));
   // SymPy auto_number: Float(s), with at least 15 digits or as many as written
   return float(s);
@@ -448,10 +486,15 @@ class Parser {
     else if (s) for (const [k, v] of Object.entries(s)) this.symbols.set(k, v);
     for (const [k, v] of Object.entries(opts.locals ?? {})) {
       if (typeof v === 'function') this.localFns.set(k, v);
-      else this.symbols.set(k, sympify(v));
+      else {
+        this.symbols.set(k, sympify(v));
+        this.localValues.add(k);
+      }
     }
   }
   private readonly localFns = new Map<string, (...args: Expr[]) => ExprLike>();
+  /** The names of the locals that are expressions (calling one is a TypeError, as in Python). */
+  private readonly localValues = new Set<string>();
 
   private peek(): Token {
     // the end token stops every rule, so the parser never reads past it
@@ -471,8 +514,12 @@ class Parser {
     if (t.t !== 'op' || t.v !== v) throw new SyntaxError(`Expected '${v}' at ${t.pos}`);
   }
 
-  private get implicit(): boolean {
-    return this.opts.transformations === 'implicit' || this.opts.transformations === 'all';
+  /** Is the transformation enabled ('implicit' enables all but the splitting of symbols, 'all' every one)? */
+  private enabled(t: ParseTransformation): boolean {
+    const tr = this.opts.transformations;
+    if (tr === 'all') return true;
+    if (tr === 'implicit') return t !== 'splitSymbols';
+    return tr !== undefined && tr !== 'standard' && tr.includes(t);
   }
   private get raw(): boolean {
     return this.opts.evaluate === false;
@@ -546,17 +593,30 @@ class Parser {
     return this.relation();
   }
 
-  /** a < b, a <= b, a > b, a >= b */
+  /**
+   * a < b, a <= b, a > b, a >= b, a == b and a != b; a chain a < b < c is
+   * And(a < b, b < c) as in Python. Evaluated, == and != compare the
+   * expressions structurally (Python's operators); unevaluated
+   * (evaluate=False) every comparison is a relation (Eq, Ne, Lt, ...).
+   */
   private relation(): Expr {
-    const lhs = this.sum();
-    const ops: Record<string, RelOp> = { '<': 'Lt', '<=': 'Le', '>': 'Gt', '>=': 'Ge' };
-    const t = this.peek();
-    const op = t.t === 'op' ? ops[t.v] : undefined;
-    if (op) {
+    let lhs = this.sum();
+    const ops: Record<string, RelOp> = { '<': 'Lt', '<=': 'Le', '>': 'Gt', '>=': 'Ge', '==': 'Eq', '!=': 'Ne' };
+    const rels: Expr[] = [];
+    for (let t = this.peek(); t.t === 'op' && ops[t.v] !== undefined; t = this.peek()) {
+      const op = defined(ops[t.v], 'relational operator');
       this.next();
-      return rel(op, lhs, this.sum());
+      const rhs = this.sum();
+      if (this.raw) rels.push(new Rel(op, lhs, rhs));
+      else if (op === 'Eq' || op === 'Ne') rels.push((lhs.key === rhs.key) === (op === 'Eq') ? S.true : S.false);
+      else rels.push(rel(op, lhs, rhs));
+      lhs = rhs;
     }
-    return lhs;
+    if (rels.length <= 1) return rels[0] ?? lhs;
+    if (this.raw) return new BoolOp('And', rels);
+    // Python evaluates a chain with the truth value of each comparison
+    if (rels.some((r) => !(r instanceof BoolAtom))) throw new TypeError('cannot determine truth value of Relational');
+    return and(...rels);
   }
 
   private sum(): Expr {
@@ -589,7 +649,7 @@ class Parser {
         this.next();
         const d = this.unary();
         e = this.raw ? this.mul2(e, new Pow(d, Rational.of(-1n))) : div(e, d);
-      } else if (this.implicit && this.startsFactor()) {
+      } else if (this.enabled('implicitMultiplication') && this.startsFactor()) {
         e = this.mul2(e, this.unary());
       } else return e;
     }
@@ -610,12 +670,23 @@ class Parser {
   }
 
   private power(): Expr {
-    const base = this.atom();
+    const base = this.factorials(this.atom());
     if ((this.isOp('^') && this.opts.convertXor !== false) || this.isOp('**')) {
       this.next();
       return this.pow2(base, this.unary());
     }
     return base;
+  }
+
+  /** SymPy factorial_notation: x! is factorial(x) and x!! is factorial2(x); more marks are an error. */
+  private factorials(e0: Expr): Expr {
+    let e = e0;
+    for (let t = this.peek(); t.t === 'op' && /^!+$/.test(t.v); t = this.peek()) {
+      if (t.v.length > 2) throw new SyntaxError(`Unexpected '${t.v}' at ${t.pos}`);
+      this.next();
+      e = fn(t.v.length === 1 ? 'factorial' : 'factorial2', [e], { evaluate: !this.raw });
+    }
+    return e;
   }
 
   /** A call argument: an expression, or a tuple (a, b, ...) in parentheses. */
@@ -661,23 +732,31 @@ class Parser {
         // implicit application: sin x
         const knownFn = FUNCTIONS[t.v] ?? parserHooks.constructors.get(t.v);
         // function exponentiation: sin**2(x) and sin**2 x are sin(x)**2
-        if (this.implicit && knownFn && this.isOp('**')) {
+        if (this.enabled('functionExponentiation') && knownFn && (this.isOp('**') || (this.isOp('^') && this.opts.convertXor !== false))) {
           this.next();
-          const e = this.atom();
+          // the exponent ends at the parenthesis of the argument: sin**y(x) is sin(x)**y
+          const nt = this.peek();
+          const nameOnly = nt.t === 'name' && at(this.tokens, this.i + 1).t === 'op';
+          if (nameOnly) this.next();
+          const e = nameOnly ? this.symbolOf(nt.v) : this.atom();
+          // without implicit application the argument is in parentheses
+          if (!this.isOp('(') && !this.enabled('implicitApplication')) throw new SyntaxError(`Expected '(' at ${this.peek().pos}`);
           const arg = this.isOp('(') ? this.atom() : this.power();
           return this.pow2(knownFn([arg]), e);
         }
-        if (this.implicit && knownFn && !this.isOp('(') && this.startsFactor()) return knownFn([this.power()]);
+        // the argument of an implicit application is the whole product that follows (sin 2x y is sin(2*x*y))
+        if (this.enabled('implicitApplication') && knownFn && !this.isOp('(') && this.startsFactor()) return knownFn([this.product()]);
         // split_symbols: an unknown name of several letters is a product of one-letter symbols
-        if ((this.opts.transformations === 'all' || this.opts.splitSymbols !== undefined) && !knownFn && !this.isOp('(') && (this.opts.splitSymbols ?? tokenSplittable)(t.v) && !this.symbols.has(t.v) && CONSTANTS[t.v] === undefined) {
+        if ((this.enabled('splitSymbols') || this.opts.splitSymbols !== undefined) && !knownFn && !this.isOp('(') && (this.opts.splitSymbols ?? tokenSplittable)(t.v) && !this.symbols.has(t.v) && CONSTANTS[t.v] === undefined) {
           return t.v.split('').map((c) => this.symbolOf(c)).reduce((a, b) => this.mul2(a, b));
         }
         // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))
         const tupleFn = this.localFns.has(t.v) ? undefined : TUPLE_FUNCTIONS[t.v];
-        const asSymbol = this.implicit && !knownFn && !tupleFn && !this.localFns.has(t.v) && this.isOp('(');
+        const asSymbol = this.enabled('implicitMultiplication') && !knownFn && !tupleFn && !this.localFns.has(t.v) && this.isOp('(');
         if (this.isOp('(') && !asSymbol) {
           // unknown names applied to arguments are undefined functions (like SymPy's parse_expr)
           const local = this.localFns.get(t.v);
+          if (this.localValues.has(t.v)) throw new TypeError(`'${t.v}' is an expression, not a function`);
           const f = local ? (args: Expr[]) => sympify(local(...args)) : (knownFn ?? ((args: Expr[]) => SymFunction(t.v)(...args)));
           this.next();
           const args: Arg[] = [this.arg()];
