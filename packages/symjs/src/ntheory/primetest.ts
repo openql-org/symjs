@@ -3,7 +3,8 @@
 
 /**
  * @file Primality tests (SymPy sympy.ntheory.primetest: isprime with its
- * Miller-Rabin bases and the strong BPSW test, is_mersenne_prime,
+ * Miller-Rabin bases and the strong BPSW test, the Fermat, Euler and
+ * extra strong Lucas probable prime tests, is_mersenne_prime,
  * is_gaussian_prime) and the cache of prime factors (SymPy
  * sympy.ntheory.factor_.FactorCache and factor_cache), which isprime
  * consults.
@@ -16,7 +17,7 @@ import { sympify } from '../core/ops';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch, isNoMatch } from '../core/truth';
 import type { IntLike } from './intutil';
-import { asInt, babs, bitLength, bitScan1, isSquare, jacobi, powmod, remove } from './intutil';
+import { asInt, babs, bitLength, bitScan1, gcdN, isSquare, jacobi, powmod, remove } from './intutil';
 import { bisectLeft, sieve } from './sieve';
 
 /** The exponents p of the known Mersenne primes 2**p - 1 (SymPy MERSENNE_PRIME_EXPONENTS). */
@@ -148,6 +149,90 @@ export function isStrongBpswPrp(n: bigint): boolean {
   if (n === 1n) return false;
   if (n % 2n === 0n) return n === 2n;
   return isStrongPrp(n, 2n) && isStrongSelfridgePrp(n);
+}
+
+/** The checks shared by the Fermat and Euler probable prime tests of n to the base a (gmpy is_fermat_prp, is_euler_prp). */
+function prpBase(name: string, n: bigint, a0: bigint): bigint | boolean {
+  if (a0 < 2n) throw new RangeError(`${name}() requires 'a' greater than or equal to 2`);
+  if (n < 1n) throw new RangeError(`${name}() requires 'n' be greater than 0`);
+  if (n === 1n) return false;
+  if (n % 2n === 0n) return n === 2n;
+  const a = a0 % n;
+  if (gcdN(n, a) !== 1n) throw new RangeError(`${name}() requires gcd(n,a) == 1`);
+  return a;
+}
+
+/**
+ * SymPy `is_fermat_pseudoprime(n, a)`: whether n is a prime or an odd
+ * composite coprime to a with a**(n - 1) = 1 (mod n) (a Fermat pseudoprime).
+ */
+export function isFermatPseudoprime(nIn: IntLike, aIn: IntLike): boolean {
+  const [n, a0] = [asInt(nIn), asInt(aIn)];
+  if (a0 === 1n) return n === 2n || n % 2n !== 0n;
+  const a = prpBase('is_fermat_prp', n, a0);
+  return typeof a === 'boolean' ? a : powmod(a, n - 1n, n) === 1n;
+}
+
+/**
+ * SymPy `is_euler_pseudoprime(n, a)`: whether n is a prime or an odd
+ * composite coprime to a with a**((n - 1)/2) = +-1 (mod n) (an Euler
+ * pseudoprime).
+ */
+export function isEulerPseudoprime(nIn: IntLike, aIn: IntLike): boolean {
+  const [n, a] = [asInt(nIn), asInt(aIn)];
+  if (n < 1n) throw new RangeError('n should be an integer greater than 0');
+  if (n === 1n) return false;
+  if (a === 1n) return n === 2n || n % 2n !== 0n;
+  if (n % 2n === 0n) return n === 2n;
+  if (gcdN(n, a) !== 1n) throw new RangeError('The two numbers should be relatively prime');
+  const r = powmod(a, (n - 1n) / 2n, n);
+  return r === 1n || r === n - 1n;
+}
+
+/**
+ * SymPy `is_euler_jacobi_pseudoprime(n, a)`: whether n is a prime or an
+ * odd composite coprime to a with a**((n - 1)/2) = (a/n) (mod n), the
+ * Jacobi symbol (an Euler-Jacobi pseudoprime).
+ */
+export function isEulerJacobiPseudoprime(nIn: IntLike, aIn: IntLike): boolean {
+  const [n, a0] = [asInt(nIn), asInt(aIn)];
+  if (a0 === 1n) return n === 2n || n % 2n !== 0n;
+  const a = prpBase('is_euler_prp', n, a0);
+  return typeof a === 'boolean' ? a : powmod(a, n >> 1n, n) === (BigInt(jacobi(a, n)) + n) % n;
+}
+
+/** SymPy `_lucas_extrastrong_params(n)`: [D, P, Q] with (D/n) = -1, or [0, 0, 0] when a divisor of n shows. */
+function lucasExtrastrongParams(n: bigint): [bigint, bigint, bigint] {
+  // a square n has been excluded, so some D has Jacobi symbol -1
+  for (let P = 3n; ; P++) {
+    const D = P * P - 4n;
+    const j = jacobi(D, n);
+    if (j === -1) return [D, P, 1n];
+    if (j === 0 && D % n !== 0n) return [0n, 0n, 0n];
+  }
+}
+
+/**
+ * SymPy `is_extra_strong_lucas_prp(n)`: the extra strong Lucas probable
+ * prime test (true for every prime; the composites that pass are extra
+ * strong Lucas pseudoprimes such as 989 and 3239).
+ */
+export function isExtraStrongLucasPrp(nIn: IntLike): boolean {
+  const n = asInt(nIn);
+  if (n === 2n) return true;
+  if (n < 2n || n % 2n === 0n || isSquare(n)) return false;
+  const [D, P, Q] = lucasExtrastrongParams(n);
+  if (D === 0n) return false;
+  const s = bitScan1(n + 1n);
+  const k = (n + 1n) >> BigInt(s);
+  const [U, V0] = lucasSequence(n, P, Q, k);
+  let V = V0;
+  if (U === 0n && (V === 2n || V === n - 2n)) return true;
+  for (let i = 1; i < s; i++) {
+    if (V === 0n) return true;
+    V = (V * V - 2n) % n;
+  }
+  return false;
 }
 
 const SMALL_PRIMES_TO_47 = [7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n, 41n, 43n, 47n];

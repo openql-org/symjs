@@ -15,9 +15,28 @@ import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionNa
 import { setClass } from './sets';
 import { Concrete } from '../core/concrete';
 import { at } from '../core/guard';
+import { BoolOp } from '../core/boolalg';
 
 /** SymPy precedence values. */
 export const PREC = { REL: 35, ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;
+
+/** SymPy `PRECEDENCE`: the precedence values of the str printer. */
+export const PRECEDENCE: Readonly<Record<'Lambda' | 'Xor' | 'Or' | 'And' | 'Relational' | 'Add' | 'Mul' | 'Pow' | 'Func' | 'Not' | 'Atom' | 'BitwiseOr' | 'BitwiseXor' | 'BitwiseAnd', number>> = {
+  Lambda: 1,
+  Xor: 10,
+  Or: 20,
+  And: 30,
+  Relational: PREC.REL,
+  Add: PREC.ADD,
+  Mul: PREC.MUL,
+  Pow: PREC.POW,
+  Func: PREC.FUNC,
+  Not: 100,
+  Atom: PREC.ATOM,
+  BitwiseOr: 36,
+  BitwiseXor: 37,
+  BitwiseAnd: 38,
+};
 
 export const REL_SYMBOL = { Lt: '<', Le: '<=', Gt: '>', Ge: '>=' } as const;
 
@@ -48,7 +67,7 @@ export function declaredPrecedence(e: Expr, method: 'strPrecedence' | 'latexPrec
   return typeof p === 'number' ? p : undefined;
 }
 
-/** SymPy `precedence()`. */
+/** SymPy `precedence()`: the precedence of an expression for the str printer ({@link PRECEDENCE}). */
 export function precedence(e: Expr): number {
   const declared = declaredPrecedence(e, 'strPrecedence');
   if (declared !== undefined) return declared;
@@ -65,6 +84,8 @@ export function precedence(e: Expr): number {
   if (e instanceof Fn || e instanceof Piecewise || e instanceof UndefFn) return PREC.FUNC;
   // SymPy PRECEDENCE_VALUES: Equality and Unequality bind like Mul
   if (e instanceof Rel) return e.op === 'Eq' || e.op === 'Ne' ? PREC.MUL : PREC.REL;
+  // the logic operators (Xor, Implies and Equivalent bind like Xor; ITE is not a Function in SymPy)
+  if (e instanceof BoolOp && e.op !== 'ITE') return e.op === 'And' || e.op === 'Or' || e.op === 'Not' ? PRECEDENCE[e.op] : PRECEDENCE.Xor;
   return PREC.ATOM;
 }
 
@@ -153,6 +174,23 @@ export function withFullPrec<T>(setting: boolean | 'auto', f: () => T): T {
     fullPrec = saved;
   }
 }
+
+/** The printer setting perm_cyclic of the print in progress (Permutations in cycle notation, the default). */
+let permCyclicSetting = true;
+
+/** f() printed with the printer setting perm_cyclic (undefined keeps the current one). @internal */
+export function withPermCyclic<T>(setting: boolean | undefined, f: () => T): T {
+  const saved = permCyclicSetting;
+  permCyclicSetting = setting ?? saved;
+  try {
+    return f();
+  } finally {
+    permCyclicSetting = saved;
+  }
+}
+
+/** The printer setting perm_cyclic of the print in progress. @internal */
+export const permCyclic = (): boolean => permCyclicSetting;
 
 export function str(e: Expr): string {
   printLevel++;

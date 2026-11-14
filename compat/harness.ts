@@ -1925,13 +1925,18 @@ export const ADAPTERS: Record<string, Adapter> = {
     // a tuple of SymPy transformations: the implicit ones (multiplication, application, splitting of symbols) and
     // convert_equals_signs map to the parser options
     const names = tr0 instanceof JsTuple ? tr0.items.map((f) => (f as JsFunc).name) : [];
-    const split = names.some((n) => n === 'split_symbols' || n === 'implicit_multiplication_application');
-    const implicit = names.some((n) => /^(implicit_|_split_symbols|function_exponentiation)/.test(n));
     const equals = names.includes('convert_equals_signs');
-    const tr = tr0 instanceof JsTuple ? (split ? 'all' : implicit ? 'implicit' : undefined) : tr0;
-    if (tr !== undefined && tr !== 'all' && tr !== 'implicit') throw new Unsupported('transformations');
-    const locals = kw['local_dict'] instanceof JsDict ? Object.fromEntries(kw['local_dict'].entries.map(([k, v]) => [String(k), asExpr(v)])) : undefined;
-    return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as 'all' } : {}), ...(equals ? { convertEqualsSigns: true } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { symbols: locals } : {}) });
+    const each: Readonly<Record<string, readonly sj.ParseTransformation[]>> = {
+      implicit_multiplication: ['implicitMultiplication'], implicit_application: ['implicitApplication'],
+      function_exponentiation: ['functionExponentiation'], split_symbols: ['splitSymbols'],
+      implicit_multiplication_application: ['implicitMultiplication', 'implicitApplication', 'functionExponentiation', 'splitSymbols'],
+    };
+    const chosen = [...new Set(names.flatMap((n) => each[n] ?? []))];
+    const tr = tr0 instanceof JsTuple ? (chosen.length ? chosen : undefined) : tr0;
+    if (tr !== undefined && tr !== 'all' && tr !== 'implicit' && !Array.isArray(tr)) throw new Unsupported('transformations');
+    // a function class in local_dict is a function of the parser's locals, anything else an expression
+    const locals = kw['local_dict'] instanceof JsDict ? Object.fromEntries(kw['local_dict'].entries.map(([k, v]) => [String(k), v instanceof UFnClass ? sj.SymFunction(v.name) : asExpr(v)])) : undefined;
+    return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as sj.ParseOptions['transformations'] } : {}), ...(equals ? { convertEqualsSigns: true } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { locals } : {}) });
   },
   sympify: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['rational', 'evaluate', 'convert_xor', 'locals'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -2733,10 +2738,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.fromiter': (args, kw) => (noKw(kw), new JsTuple((args[0] as JsTuple).items)),
   sstr: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'full_prec') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'full_prec' && k !== 'perm_cyclic') throw new Unsupported(`kwargs ${k}`);
+    // a Cycle prints as its str form
+    if (args[0] instanceof sj.Cycle) return args[0].toString();
     // a Python tuple prints as a SymPy Tuple
     const v = args[0] instanceof JsTuple && !args[0].isList ? sj.Tuple(...args[0].items.map(asExpr)) : asExpr(args[0]);
-    return sj.sstr(v, kw['full_prec'] === undefined ? {} : { fullPrec: kw['full_prec'] as boolean });
+    return sj.sstr(v, { ...(kw['full_prec'] === undefined ? {} : { fullPrec: kw['full_prec'] as boolean }), ...(kw['perm_cyclic'] === undefined ? {} : { permCyclic: kw['perm_cyclic'] as boolean }) });
   },
   rational_interpolate: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);
@@ -4514,16 +4521,21 @@ function asDoctest<T>(c: Case, f: () => T): T {
 
 /** A printer setting: integers as numbers, dicts as Maps, the rest as deserialized. */
 function printSetting(v: unknown): unknown {
+  // a printer setting given as Python None is the setting's default
+  if (v === null) return undefined;
   if (v instanceof sj.Rational && v.q === 1n) return Number(v.p);
   if (v instanceof JsDict) return new Map(v.entries);
   return v;
 }
-const printOptions = (kw: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), printSetting(v)]));
+// mat_delim=None prints a matrix without delimiters
+const printOptions = (kw: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), k === 'mat_delim' && v === null ? '' : printSetting(v)]));
 /** A printable argument: SymPy lists are arrays, dicts Maps, sets Sets. */
 function printable(v: unknown): unknown {
   if (v instanceof JsList || v instanceof JsTuple) return v.items.map(printable);
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [printable(k), printable(x)]));
   if (v instanceof JsSet) return new Set(v.items.map(printable));
+  if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
+  if (v instanceof JsLambda) return lambdaAsNode(v);
   return v;
 }
 /** A pretty-printable argument: SymPy tuples are PrettyTuples (printed with parentheses), lists arrays. */
@@ -4533,6 +4545,7 @@ function prettyArg(v: unknown): unknown {
   if (v instanceof JsList) return v.items.map(prettyArg);
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [prettyArg(k), prettyArg(x)]));
   if (v instanceof JsSet) return new Set(v.items.map(prettyArg));
+  if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
   return v;
 }
 ADAPTERS['TableForm'] = (args, kw) => {
@@ -4550,13 +4563,21 @@ ADAPTERS['.draw'] = (args, kw, self) => {
   return self.draw(args[0] as sj.Diagram, args[1] as categories.DiagramGrid, options);
 };
 for (const name of ['pretty', 'pprint'] as const) ADAPTERS[name] = (args, kw) => args[0] instanceof categories.DiagramGrid ? args[0].toPretty() + (name === 'pprint' ? '\n' : '') : sj[name](prettyArg(args[0]) as sj.Printable, printOptions(kw));
-ADAPTERS['latex'] = (args, kw) => sj.latex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
+// a Python tuple of expressions prints as a SymPy Tuple (SymPy _print_tuple)
+ADAPTERS['latex'] = (args, kw) => {
+  const a = args[0];
+  const tuple = a instanceof JsTuple && !a.isList && a.items.every((x) => x instanceof Expr) ? sj.Tuple(...(a.items as Expr[])) : printable(a);
+  return sj.latex(tuple as sj.LatexPrintable, printOptions(kw));
+};
 ADAPTERS['print_latex'] = (args, kw) => sj.printLatex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['multiline_latex'] = (args, kw) => {
   const [lhs, rhs, terms] = args;
   return sj.multilineLatex(lhs as Expr, rhs as Expr, { ...(terms === undefined ? {} : { termsPerLine: printSetting(terms) as number }), ...printOptions(kw) });
 };
-ADAPTERS['srepr'] = (args, kw) => (noKw(kw), sj.srepr(printable(args[0]) as sj.ReprPrintable));
+ADAPTERS['srepr'] = (args, kw) => {
+  for (const k of Object.keys(kw)) if (k !== 'perm_cyclic') throw new Unsupported(`kwargs ${k}`);
+  return sj.srepr(printable(args[0]) as sj.ReprPrintable, kw['perm_cyclic'] === undefined ? {} : { permCyclic: kw['perm_cyclic'] as boolean });
+};
 ADAPTERS['mathml'] = (args, kw) => sj.mathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
 ADAPTERS['print_mathml'] = (args, kw) => sj.printMathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
 ADAPTERS['print_tree'] = (args, kw) => sj.printTree(args[0] as Expr, printOptions(kw));
@@ -5388,4 +5409,15 @@ ADAPTERS['.get_general_solution'] = (_args, kw, self) => {
   for (const k of Object.keys(kw)) if (k !== 'simplify') throw new Unsupported(`kwargs ${k}`);
   if (!(self instanceof sj.SingleODESolver)) throw new Unsupported('get_general_solution');
   return new JsList(self.getGeneralSolution(kw['simplify'] === undefined ? {} : { simplify: Boolean(kw['simplify']) }));
+};
+// Python's nth=0 is a false flag
+ADAPTERS['primorial'] = (args, kw) => {
+  for (const k of Object.keys(kw)) if (k !== 'nth') throw new Unsupported(`kwargs ${k}`);
+  const nth = kw['nth'];
+  return sj.primorial(asExpr(args[0]), nth === undefined ? {} : { nth: !(nth === false || (nth instanceof sj.Rational && nth.isZero)) });
+};
+ADAPTERS['deconstruct'] = (args, kw) => {
+  for (const k of Object.keys(kw)) if (k !== 'variables') throw new Unsupported(`kwargs ${k}`);
+  const vs = kw['variables'];
+  return sj.usympy.deconstruct(args[0], vs instanceof JsTuple || vs instanceof JsList ? vs.items.map(asExpr) : []);
 };

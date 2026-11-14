@@ -48,6 +48,9 @@ export class BoolOp extends Expr {
     const paren = (a: Expr) => (a instanceof BoolOp && a.op !== 'Not' ? `\\left(${p(a)}\\right)` : p(a));
     if (this.op === 'Not') {
       const a = at(this.args, 0);
+      // SymPy _print_Not: a negated Implies or Equivalent with a negated arrow
+      const arrow = a instanceof BoolOp ? NEGATED_ARROWS[a.className] : undefined;
+      if (arrow !== undefined) return a.args.map(paren).join(arrow);
       return a instanceof BoolOp ? `\\neg \\left(${p(a)}\\right)` : `\\neg ${p(a)}`;
     }
     if (this.op === 'ITE') return `\\operatorname{ITE}\\left(${this.args.map(p).join(', ')}\\right)`;
@@ -73,6 +76,9 @@ export class BoolOp extends Expr {
       .join(sep);
   }
 }
+
+/** The negated arrows of Implies and Equivalent in LaTeX. */
+const NEGATED_ARROWS: Partial<Record<string, string>> = { Implies: ' \\not\\Rightarrow ', Equivalent: ' \\not\\Leftrightarrow ' };
 
 /** SymPy ordered(): node count, then default_sort_key. */
 const sortArgs = (xs: readonly Expr[]): Expr[] =>

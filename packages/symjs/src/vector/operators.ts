@@ -21,7 +21,7 @@ import { prettyHooks } from '../printing/pretty/pretty';
 import { PrettyForm } from '../printing/pretty/stringpict';
 import type { CoordSysBase} from './basisdependent';
 import { basisAdd, expressHook, vectorHooks } from './basisdependent';
-import { Cross, CrossNode, Dot, Vector, connected, VectorAddNode, VectorMulNode, coordSystems, parenMul, vectorFamily } from './vector';
+import { Cross, CrossNode, Dot, OPERATOR_PRECEDENCE, Vector, connected, VectorAddNode, VectorMulNode, coordSystems, parenMul, vectorFamily } from './vector';
 
 /** The options of the operators (SymPy keyword arguments). */
 export interface OperatorOptions {
@@ -41,6 +41,10 @@ abstract class VectorOperator extends ExtensionExpr {
   /** The operand (SymPy _expr). */
   get expr(): Expr {
     return at(this.args, 0);
+  }
+  /** SymPy PRECEDENCE_TRADITIONAL of the operators: just below a product. */
+  latexPrecedence(): number {
+    return OPERATOR_PRECEDENCE;
   }
 }
 

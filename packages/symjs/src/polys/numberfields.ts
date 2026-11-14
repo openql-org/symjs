@@ -506,6 +506,14 @@ export class AlgebraicNumber {
     return expandMul(this.asPolyExpr());
   }
 
+  /** SymPy LatexPrinter._print_AlgebraicNumber: the polynomial in the alias when there is one, else the value. */
+  toLatex(print: (e: Expr) => string): string {
+    const alias = this.alias;
+    if (alias === undefined) return print(this.asExpr());
+    const n = this.coeffList.length;
+    return print(add(...this.coeffList.map((c, i) => mul(c, pow(alias, n - 1 - i)))));
+  }
+
   /** The value as an explicit root expression (SymPy to_root). */
   toRoot(): Expr {
     return this.asExpr();

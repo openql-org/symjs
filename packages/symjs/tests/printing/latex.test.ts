@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { adjoint, exp, I, mul, pow, rational, sin, sqrt, Sym, symbol, symbols, SymFunction } from '../../src';
-import { Add, Float, Fn, Integral, Limit, Mul, Order, Pow, Rational, S } from '../../src/core/nodes';
+import { Add, Float, Fn, Integral, Limit, Mul, Order, Pow, Rational, Rel, S } from '../../src/core/nodes';
 import type { FnName } from '../../src/core/nodes';
 import { CosineTransform, FourierTransform, InverseLaplaceTransform, InverseSineTransform, LaplaceTransform, MellinTransform } from '../../src/integrals/transforms';
 import { DotProduct, MatrixSymbol } from '../../src/matrices/expressions';
@@ -745,5 +745,77 @@ describe('the settings of the LaTeX printer (SymPy latex(expr, **settings))', ()
     // SymPy 1.14 fails to pass the settings on (LatexPrinter(**settings) is a TypeError); here every term gets them
     expect(multilineLatex(x, sj.add(mul(R(1, 2), y), z), { foldShortFrac: true })).toBe('\\begin{align*}\nx = & y / 2 \\\\\n& + z \n\\end{align*}');
     expect(multilineLatex(x, sj.add(y, z), 2)).toBe('\\begin{align*}\nx = & y + z \n\\end{align*}');
+  });
+});
+
+describe('latex: SymPy 1.14 test_latex cases', () => {
+  const a = sj.symbol('a');
+  it('function classes (_print_UndefinedFunction, _print_FunctionClass)', () => {
+    expect(latex(sj.SymFunction('f'))).toBe('f');
+    expect(latex(sj.SymFunction('ab_1'))).toBe('\\operatorname{ab}_{1}');
+    expect(latex(sj.SymFunction('Alpha'))).toBe('\\mathrm{A}');
+    expect(latex(sj.defineFunction('Li', {}))).toBe('\\operatorname{Li}');
+  });
+  it('Mod and the brackets of sums', () => {
+    expect(latex(sj.Mod(sj.add(x, 1), 7))).toBe('\\left(x + 1\\right) \\bmod 7');
+    expect(latex(sj.add(sj.Mod(x, 7), 1))).toBe('\\left(x \\bmod 7\\right) + 1');
+    expect(latex(pow(sj.Mod(7, mul(2, x)), n))).toBe('\\left(7 \\bmod 2 x\\right)^{n}');
+    expect(latex(new Add([new Rel('Lt', x, y), z]))).toBe('z + \\left(x < y\\right)');
+  });
+  it('unevaluated products keep their factors', () => {
+    expect(latex(new Mul([R(5), R(-5)]))).toBe('5 \\left(-5\\right)');
+    expect(latex(new Mul([R(1), R(1, 2)]))).toBe('1 \\cdot \\frac{1}{2}');
+    expect(latex(new Mul([pow(x, 3), sj.add(mul(2, x), 1)]))).toBe('x^{3} \\left(2 x + 1\\right)');
+  });
+  it('integrals (_print_Integral)', () => {
+    expect(latex(new Integral([new Integral([mul(x, y), x]), y]))).toBe('\\iint x y\\, dx\\, dy');
+    expect(latex(new Integral([x, x, R(0)]))).toBe('\\int\\limits^{0} x\\, dx');
+    expect(latex(new Integral([new Integral([x, x, R(0), R(1)]), y]), { mode: 'inline' })).toBe('$\\int\\int_{0}^{1} x\\, dx\\, dy$');
+    expect(latex(new Integral([x, x]), { diffOperator: 'rd' })).toBe('\\int x\\, \\mathrm{d}x');
+    expect(latex(pow(new Integral([z, z]), 2))).toBe('\\left(\\int z\\, dz\\right)^{2}');
+    const five = [x, y, z, a, n].reduce<sj.Expr>((e, v) => new Integral([e, v]), x);
+    expect(latex(five)).toBe('\\int\\int\\int\\int\\int x\\, dx\\, dy\\, dz\\, da\\, dn');
+  });
+  it('limits, sums and derivatives raised to a power', () => {
+    expect(latex(pow(new Limit([f(x), x, R(0)], '+'), 2))).toBe('\\left(\\lim_{x \\to 0^+} f{\\left(x \\right)}\\right)^{2}');
+    expect(latex(pow(sj.Derivative(f(x), x), 2))).toBe('\\left(\\frac{d}{d x} f{\\left(x \\right)}\\right)^{2}');
+    expect(latex(pow(new sj.UnevaluatedExpr(pow(x, -1)), 2))).toBe('\\left(\\frac{1}{x}\\right)^{2}');
+    const nint = sj.symbol('N', { integer: true });
+    expect(latex(sj.Derivative(sj.mul(x, nint), x))).toBe('\\frac{d}{d x} N x');
+  });
+  it('powers of one and of unit fractions (issues 9216 and 20252)', () => {
+    expect(latex(new Pow(R(1), R(-1)))).toBe('1^{-1}');
+    expect(latex(new Pow(R(1), R(-3, 2)))).toBe('1^{-3/2}');
+    expect(latex(new Pow(R(1, 3), R(-2)))).toBe('\\frac{1}{(\\frac{1}{3})^{2}}');
+    expect(latex(new Pow(R(1, 3), R(-3, 2)))).toBe('\\frac{1}{(\\frac{1}{3})^{3/2}}');
+    expect(latex(new Pow(R(1, 100), R(-1)))).toBe('\\frac{1}{\\frac{1}{100}}');
+    expect(latex(new Pow(R(3), R(-2)))).toBe('\\frac{1}{9}');
+  });
+  it('orders of several variables (_print_Order)', () => {
+    expect(latex(new Order([x, x, y, R(0)]))).toBe('O\\left(x; \\left( x, \\  y\\right)\\rightarrow \\left( 0, \\  0\\right)\\right)');
+    expect(latex(new Order([x, x, S.Infinity]))).toBe('O\\left(x; x\\rightarrow \\infty\\right)');
+    expect(latex(new Order([x, x, R(0)]))).toBe('O\\left(x\\right)');
+    expect(latex(new Order([x]))).toBe('O\\left(x\\right)');
+  });
+  it('tuples, sets and floats with the decimal separator', () => {
+    expect(latex(sj.Tuple(1, 2.5), { decimalSeparator: 'comma' })).toBe('\\left( 1; \\  2{,}5\\right)');
+    expect(latex(sj.Tuple(1))).toBe('\\left( 1,\\right)');
+    expect(latex(sj.Tuple(1), { decimalSeparator: 'comma' })).toBe('\\left( 1;\\right)');
+    expect(latex(Sets.finiteSet(1, 2.5), { decimalSeparator: 'comma' })).toBe('\\left\\{1; 2{,}5\\right\\}');
+    expect(latex(new Float(10000), { min: -2, max: 2 })).toBe('1.0 \\cdot 10^{4}');
+    expect(latex(new Float(10000), { max: 6 })).toBe('10000.0');
+  });
+  it('the order of the terms', () => {
+    const e = sj.add(pow(x, 3), mul(x, x, y), mul(3, x, pow(y, 3)), pow(y, 4));
+    expect(latex(e, { order: 'lex' })).toBe('x^{3} + x^{2} y + 3 x y^{3} + y^{4}');
+    expect(latex(e, { order: 'rev-lex' })).toBe('y^{4} + 3 x y^{3} + x^{2} y + x^{3}');
+    expect(latex(new Add([pow(x, 3), new Mul([y, pow(x, 2)])]), { order: 'none' })).toBe('x^{3} + y x^{2}');
+    expect(latex(new Mul([y, pow(x, -1), x]), { order: 'none' })).toBe('\\frac{y x}{x}');
+  });
+  it('unknown settings and objects with their own LaTeX', () => {
+    expect(() => latex(x, { method: 'garbage' } as sj.LatexOptions)).toThrow(TypeError);
+    expect(latex(new sj.Cycle(1, 2))).toBe('\\left( 1\\; 2\\right)');
+    expect(latex({ toLatex: (print: (e: sj.Expr) => string) => `[${print(x)}]` })).toBe('[x]');
+    expect(latex(new sj.Permutation([1, 0, 2]), { permCyclic: false })).toBe('\\begin{pmatrix} 0 & 1 & 2 \\\\ 1 & 0 & 2 \\end{pmatrix}');
   });
 });

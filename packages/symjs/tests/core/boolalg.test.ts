@@ -78,3 +78,12 @@ describe('boolean functions', () => {
     expect(s2(Xor(x, y))).toBe('x ^ y');
   });
 });
+
+describe('LaTeX of negated implications (SymPy 1.14 test_latex_basic, test_issue_7180)', () => {
+  it('uses the negated arrows', () => {
+    const [x, y] = sj.symbols('x y');
+    expect(sj.latex(not(sj.Implies(x, not(y))))).toBe('x \\not\\Rightarrow \\neg y');
+    expect(sj.latex(not(sj.Equivalent(x, y)))).toBe('x \\not\\Leftrightarrow y');
+    expect(sj.latex(not(and(x, y)))).toBe('\\neg \\left(x \\wedge y\\right)');
+  });
+});

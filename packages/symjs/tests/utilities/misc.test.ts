@@ -113,3 +113,12 @@ describe('asInt and funcName', () => {
 it('translates a lone LaTeX symbol name using the printing convention', () => {
   expect(sj.translate('alphahatdotprime')).toBe("{\\dot{\\hat{\\alpha}}}'");
 });
+
+describe('ordinal (SymPy ordinal)', () => {
+  it('adds the English ordinal suffix', () => {
+    expect([-1, 0, 1, 2, 3, 4, 11, 12, 13, 21, 100, 101, 102, 103, 104, 111, 200].map((n) => sj.ordinal(n))).toEqual([
+      '-1st', '0th', '1st', '2nd', '3rd', '4th', '11th', '12th', '13th', '21st', '100th', '101st', '102nd', '103rd', '104th', '111th', '200th',
+    ]);
+    expect(() => sj.ordinal(1.5)).toThrow(TypeError);
+  });
+});

@@ -50,3 +50,10 @@ describe('StrPrinter, sstrrepr, printLatex and multilineLatex', () => {
     expect(sj.str(sj.Tuple(f, 1))).toBe('(0.0175, 1)');
   });
 });
+
+describe('sstr with perm_cyclic', () => {
+  it('prints permutations in array notation', () => {
+    expect(sstr(new sj.Permutation([1, 0, 2]), { permCyclic: false })).toBe('Permutation([1, 0, 2])');
+    expect(sstr(new sj.Permutation([1, 0, 2]))).toBe('(2)(0 1)');
+  });
+});

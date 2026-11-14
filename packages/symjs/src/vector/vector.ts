@@ -24,6 +24,7 @@ import type { Kind } from '../core/kind';
 import { Matrix } from '../matrices/matrix';
 import { vectorProducts } from '../matrices/linalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
+import { PREC, declaredPrecedence, precedence } from '../printing/str';
 import { prettyHooks } from '../printing/pretty/pretty';
 import { PrettyForm } from '../printing/pretty/stringpict';
 import type { PrettyPrinter } from '../printing/pretty/pretty';
@@ -403,13 +404,23 @@ export class CrossNode extends Vector {
   override printLatex(print: (e: Expr) => string): string {
     return `${parenMul(at(this.args, 0), print)} \\times ${parenMul(at(this.args, 1), print)}`;
   }
+  /** SymPy PRECEDENCE_TRADITIONAL['Cross']. */
+  latexPrecedence(): number {
+    return OPERATOR_PRECEDENCE;
+  }
 }
 
-/** SymPy LatexPrinter.parenthesize(e, PRECEDENCE['Mul']). */
+/** SymPy LatexPrinter.parenthesize(e, PRECEDENCE['Mul']): sums and products (scaled vectors among them) in parentheses. */
 export function parenMul(e: Expr, print: (e: Expr) => string): string {
   const s = print(e);
-  return e instanceof Add || e instanceof VectorAddNode ? `\\left(${s}\\right)` : s;
+  return e instanceof VectorAddNode || e instanceof VectorMulNode || latexPrecedence(e) <= PREC.MUL ? `\\left(${s}\\right)` : s;
 }
+
+/** SymPy PRECEDENCE_TRADITIONAL of Dot, Cross and the differential operators: just below a product. */
+export const OPERATOR_PRECEDENCE = PREC.MUL - 1;
+
+/** The precedence of an operand: the one a node declares for LaTeX, else the str precedence. */
+const latexPrecedence = (e: Expr): number => declaredPrecedence(e, 'latexPrecedence') ?? precedence(e);
 
 /** SymPy Cross(v1, v2). */
 export const Cross = /* @__PURE__ */ callableClass(CrossNode, (expr1In: ExprLike, expr2In: ExprLike): Expr => {
@@ -436,6 +447,10 @@ export class DotNode extends ExtensionExpr {
   }
   override printLatex(print: (e: Expr) => string): string {
     return `${parenMul(at(this.args, 0), print)} \\cdot ${parenMul(at(this.args, 1), print)}`;
+  }
+  /** SymPy PRECEDENCE_TRADITIONAL['Dot']. */
+  latexPrecedence(): number {
+    return OPERATOR_PRECEDENCE;
   }
 }
 

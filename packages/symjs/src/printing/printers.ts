@@ -11,7 +11,7 @@ import type { ExprLike } from '../core/nodes';
 import { Expr, isNum } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
 import { first } from '../core/guard';
-import { str, withFullPrec } from './str';
+import { str, withFullPrec, withPermCyclic } from './str';
 import { latex } from './latex';
 import type { LatexOptions, LatexPrintable } from './latex';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
@@ -61,6 +61,8 @@ export interface SstrOptions {
    * ('auto', the default; SymPy full_prec).
    */
   fullPrec?: boolean | 'auto';
+  /** Permutations in cycle notation (default true) or as Permutation([...]) (SymPy perm_cyclic). */
+  permCyclic?: boolean;
 }
 
 /**
@@ -69,7 +71,7 @@ export interface SstrOptions {
  * a container).
  */
 export function sstr(expr: StrPrintable, opts: SstrOptions = {}): string {
-  return withFullPrec(opts.fullPrec ?? 'auto', () => printValue(expr, (s) => s));
+  return withPermCyclic(opts.permCyclic, () => withFullPrec(opts.fullPrec ?? 'auto', () => printValue(expr, (s) => s)));
 }
 
 /** SymPy sstrrepr: like sstr, but strings are printed with their quotes (Python repr). */

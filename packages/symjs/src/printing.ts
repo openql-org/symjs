@@ -14,7 +14,7 @@ import './core';
 export { pretty, pprint, prettyPrint, pagerPrint, pprintUseUnicode, pprintTryUseUnicode, PrettyPrinter, PrettyTuple, prettyHooks, StringPict, PrettyForm } from './printing/pretty/index';
 export type { PrettyOptions, Printable, MatrixLike } from './printing/pretty/index';
 export { srepr } from './printing/repr';
-export type { ReprPrintable, ReprMatrix } from './printing/repr';
+export type { ReprPrintable, ReprMatrix, ReprObject, SreprOptions } from './printing/repr';
 // SymPy's tree() is not a top-level name; strategies.tree is the module of that name
 export { printTree, printNode, pprintNodes } from './printing/tree';
 export type { TreeOptions } from './printing/tree';
@@ -22,7 +22,8 @@ export { dotprint, dotnode, dotedges, purestr, purestrWithArgs, styleof, attrpri
 export type { DotClass, DotStyles, DotNodeOptions, DotEdgesOptions, DotprintOptions } from './printing/dot';
 export { mathml, printMathml, MathMLContentPrinter, MathMLPresentationPrinter, MathMLElement } from './printing/mathml';
 export type { MathMLOptions, MathMLPrintOptions, MathMLPrintable, MathMLMatrix } from './printing/mathml';
-export { splitSuperSub } from './printing/conventions';
-export { isSubscriptableInUnicode } from './printing/pretty/symbology';
+export { splitSuperSub, requiresPartial } from './printing/conventions';
+export { precedence, PRECEDENCE } from './printing/str';
+export { isSubscriptableInUnicode, center, centerAccent } from './printing/pretty/symbology';
 export { TableForm } from './printing/tableform';
 export type { TableFormOptions, TableData, TableEntry, TableHeading, TableColumnFormat } from './printing/tableform';

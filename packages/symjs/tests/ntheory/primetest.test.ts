@@ -192,3 +192,48 @@ it('public Miller-Rabin and Proth tests accept integer-like inputs', async () =>
     expect(prothTest(n), String(n)).toBe(prime);
   }
 });
+
+describe('Fermat, Euler and extra strong Lucas probable prime tests (SymPy 1.14 primetest)', () => {
+  it('is_fermat_pseudoprime', async () => {
+    const { isFermatPseudoprime } = await import('../../src/ntheory/primetest');
+    expect(isFermatPseudoprime(5, 1)).toBe(true);
+    expect(isFermatPseudoprime(9, 1)).toBe(true);
+    expect(isFermatPseudoprime(2, 1)).toBe(true);
+    expect(isFermatPseudoprime(4, 1)).toBe(false);
+    expect(isFermatPseudoprime(341, 2)).toBe(true);
+    expect(isFermatPseudoprime(15, 2)).toBe(false);
+    expect(isFermatPseudoprime(1, 2)).toBe(false);
+    expect(isFermatPseudoprime(4, 3)).toBe(false);
+    expect(isFermatPseudoprime(2, 3)).toBe(true);
+    expect(isFermatPseudoprime(13, 15)).toBe(true);
+    expect(() => isFermatPseudoprime(9, 3)).toThrow(RangeError);
+    expect(() => isFermatPseudoprime(9, 0)).toThrow(RangeError);
+    expect(() => isFermatPseudoprime(0, 2)).toThrow(RangeError);
+  });
+  it('is_euler_pseudoprime and is_euler_jacobi_pseudoprime', async () => {
+    const { isEulerPseudoprime, isEulerJacobiPseudoprime } = await import('../../src/ntheory/primetest');
+    // SymPy: the Euler pseudoprimes to base 2 below 1000 are 341 and 561, the Euler-Jacobi one is 561
+    const below = (t: (n: number) => boolean): number[] => Array.from({ length: 999 }, (_, i) => i + 1).filter((n) => t(n) && !isprime(n));
+    expect(below((n) => isEulerPseudoprime(n, 2))).toEqual([341, 561]);
+    expect(below((n) => isEulerJacobiPseudoprime(n, 2))).toEqual([561]);
+    expect(isEulerJacobiPseudoprime(11, 1)).toBe(true);
+    expect(isEulerJacobiPseudoprime(15, 1)).toBe(true);
+    expect(isEulerJacobiPseudoprime(2, 3)).toBe(true);
+    expect(isEulerPseudoprime(9, 1)).toBe(true);
+    expect(isEulerPseudoprime(4, 1)).toBe(false);
+    expect(isEulerPseudoprime(4, 3)).toBe(false);
+    expect(isEulerPseudoprime(2, 3)).toBe(true);
+    expect(isEulerPseudoprime(1, 3)).toBe(false);
+    expect(() => isEulerPseudoprime(0, 3)).toThrow(RangeError);
+    expect(() => isEulerPseudoprime(9, 3)).toThrow(RangeError);
+    expect(() => isEulerJacobiPseudoprime(9, 3)).toThrow(RangeError);
+  });
+  it('is_extra_strong_lucas_prp', async () => {
+    const { isExtraStrongLucasPrp } = await import('../../src/ntheory/primetest');
+    const composites = Array.from({ length: 6000 }, (_, i) => i).filter((n) => isExtraStrongLucasPrp(n) && !isprime(n));
+    expect(composites).toEqual([989, 3239, 5777]);
+    expect(isExtraStrongLucasPrp(10877)).toBe(true);
+    for (const n of [2, 3, 5, 7, 101]) expect(isExtraStrongLucasPrp(n)).toBe(true);
+    for (const n of [0, 1, 4, 9, 15, 16, 169]) expect(isExtraStrongLucasPrp(n)).toBe(false);
+  });
+});

@@ -1033,3 +1033,16 @@ it('prints symbolic tuples inside sets with multiline elements', () => {
   expect(pretty(tuple, { useUnicode: false })).toBe(' 1            \n(-, {x} \\ {0})\n x            ');
   expect(pretty(sj.finiteSet(tuple), { useUnicode: false })).toBe('  1             \n{(-, {x} \\ {0})}\n  x             ');
 });
+
+describe('function classes and permutations (SymPy 1.14 test_pretty)', () => {
+  it('prints a function class by its name', () => {
+    expect(pretty(sj.SymFunction('gamma'), { useUnicode: true })).toBe('γ');
+    expect(pretty(sj.SymFunction('f'), { useUnicode: false })).toBe('f');
+  });
+  it('prints a permutation as two rows without perm_cyclic', () => {
+    const p = new sj.Permutation([0, 2, 1, 4, 3]);
+    expect(pretty(p, { permCyclic: false, useUnicode: true })).toBe('⎛0 1 2 3 4⎞\n⎝0 2 1 4 3⎠');
+    expect(pretty(p, { permCyclic: false, useUnicode: false })).toBe('/0 1 2 3 4\\\n\\0 2 1 4 3/');
+    expect(pretty(p, { permCyclic: true })).toBe('(1 2)(3 4)');
+  });
+});

@@ -31,3 +31,18 @@ it('validates and enforces declared function arities', () => {
   expect(() => sj.SymFunction('f',{nargs:0.5})).toThrow(RangeError);
   expect(String(sj.SymFunction('z',{nargs:0})())).toBe('z()');
 });
+
+describe('function classes', () => {
+  it('tells function classes and undefined functions apart', async () => {
+    const { isFunctionClass, isUndefinedFunction } = await import('../../src/core/undef');
+    const f = sj.SymFunction('f');
+    const g = sj.defineFunction('g', {});
+    expect(isFunctionClass(f)).toBe(true);
+    expect(isFunctionClass(g)).toBe(true);
+    expect(isFunctionClass(() => 1)).toBe(false);
+    expect(isFunctionClass('f')).toBe(false);
+    expect(isUndefinedFunction(f)).toBe(true);
+    expect(isUndefinedFunction(g)).toBe(false);
+    expect(isUndefinedFunction(x)).toBe(false);
+  });
+});

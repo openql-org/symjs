@@ -10,6 +10,7 @@ import { S, Sym } from '../core/nodes';
 import type { Expr, ExprLike } from '../core/nodes';
 import { mul, pow, splitCoeff, sympify } from '../core/ops';
 import { diff } from '../calculus/diff';
+import { PREC, precedence } from '../printing/str';
 import { NDimArray, ImmutableDenseNDimArray, deriveByArray } from './ndimarray';
 import { permutedims, tensorcontraction } from './arrayop';
 import { TensExpr, Tensor, contractIndices } from './tensor';
@@ -35,6 +36,13 @@ export class PartialDerivativeNode extends TensExpr {
   }
   get expr(): Expr { return first(this.args); }
   get variables(): readonly Expr[] { return this.args.slice(1); }
+  /** SymPy LatexPrinter: \\frac{\\partial^{n}}{\\partial {A{}_{j}} ...}{expr}, the expression in parentheses below a product. */
+  override printLatex(print: (e: Expr) => string): string {
+    const body = precedence(this.expr) <= PREC.MUL ? `\\left(${print(this.expr)}\\right)` : print(this.expr);
+    const vars = this.variables;
+    if (vars.length === 1) return `\\frac{\\partial}{\\partial {${print(first(vars))}}}{${body}}`;
+    return `\\frac{\\partial^{${vars.length}}}{${vars.map((v) => `\\partial {${print(v)}}`).join(' ')}}{${body}}`;
+  }
   get coeff(): Expr { return S.One; }
   get nocoeff(): Expr { return this; }
   getIndices(): TensorIndexNode[] { return [...this.indices]; }

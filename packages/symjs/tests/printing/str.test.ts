@@ -136,3 +136,17 @@ describe('str precedence', () => {
     expect(str(new Add([x, new Ext('Foo', [y], 10)]))).toBe('x + (Foo(y))');
   });
 });
+
+describe('precedence of the logic operators (SymPy PRECEDENCE)', () => {
+  it('gives And, Or, Not and Xor-like nodes their values', async () => {
+    const { PRECEDENCE, withPermCyclic, permCyclic } = await import('../../src/printing/str');
+    expect(precedence(sj.and(x, y))).toBe(PRECEDENCE.And);
+    expect(precedence(sj.or(x, y))).toBe(PRECEDENCE.Or);
+    expect(precedence(sj.not(x))).toBe(PRECEDENCE.Not);
+    expect(precedence(sj.Xor(x, y))).toBe(PRECEDENCE.Xor);
+    expect(precedence(sj.Implies(x, y))).toBe(PRECEDENCE.Xor);
+    expect(precedence(sj.ITE(x, y, sj.symbol('z')))).toBe(PRECEDENCE.Atom);
+    expect(withPermCyclic(false, () => permCyclic())).toBe(false);
+    expect(withPermCyclic(undefined, () => permCyclic())).toBe(true);
+  });
+});

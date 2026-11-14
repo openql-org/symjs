@@ -106,7 +106,8 @@ describe('diagrams', () => {
     expect(d.premises.size).toBe(0); expect(d.conclusions.size).toBe(0);
     expect(d.objects.equals(EmptySet)).toBe(true);
     expect(d.toString()).toBe('Diagram({}, {}, EmptySet)');
-    expect(latex(d)).toBe(latex(Dict([])));
+    // SymPy _print_Diagram: an empty diagram is the empty set
+    expect(latex(d)).toBe('\\emptyset');
     expect(Diagram([f]).withArgs([Dict([[g, EmptySet]]), Dict([])]).equals(Diagram([g]))).toBe(true);
   });
   it('compares and restricts subdiagrams including properties', () => {
@@ -143,4 +144,18 @@ it('accepts symbolic property labels without string coercion', () => {
   const property = new Sym('monic');
   const d = Diagram(new Map([[f, [property]]]));
   expect(d.premises.get(f).equals(set(property))).toBe(true);
+});
+
+describe('LaTeX of categories (SymPy 1.14 test_categories)', () => {
+  it('prints names like symbols and diagrams with their conclusions', () => {
+    const A1 = new SymObject('A1'), A2 = new SymObject('A2'), A3 = new SymObject('A3');
+    const f1 = NamedMorphism(A1, A2, 'f1'), f2 = NamedMorphism(A2, A3, 'f2');
+    expect(latex(A1)).toBe('A_{1}');
+    expect(latex(f1)).toBe('f_{1}:A_{1}\\rightarrow A_{2}');
+    expect(latex(f2.compose(f1))).toBe('f_{2}\\circ f_{1}:A_{1}\\rightarrow A_{3}');
+    expect(latex(Category('K1', FiniteSet.of(A1), []))).toBe('\\mathbf{K_{1}}');
+    expect(latex(Diagram([f1]))).toBe(latex(Diagram([f1]).premises));
+    const d = Diagram([f1, f2], [f2.compose(f1)]);
+    expect(latex(d)).toBe(`${latex(d.premises)}\\Longrightarrow ${latex(d.conclusions)}`);
+  });
 });

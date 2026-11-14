@@ -9,7 +9,7 @@
  * `MathMLPresentationPrinter`), with `mathml` and `print_mathml`.
  */
 
-import { Add, BoolAtom, Constant, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, Limit, Mul, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl } from '../core/nodes';
+import { Add, BoolAtom, Constant, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, Limit, Mul, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { BoolOp } from '../core/boolalg';
 import { isNegative } from '../core/assumptions';
 import { Concrete } from '../core/concrete';
@@ -20,6 +20,7 @@ import { precToDps, toStr } from '../numeric/mpf';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey } from './sortkey';
 import { PREC, declaredPrecedence, precedence as strPrecedence, startsNegative, str } from './str';
 import { DOTS, rangePrintForm, setArgsOrdered, setClass } from './sets';
+import { requiresPartial } from './conventions';
 import { greekUnicode, splitSuperSub } from './pretty/symbology';
 
 // ---------------------------------------------------------------------------
@@ -102,7 +103,15 @@ interface Settings {
   readonly disableSplitSuperSub: boolean;
 }
 
-const resolve = (o: MathMLOptions): Settings => ({
+const MATHML_SETTINGS = new Set(['foldFracPowers', 'foldShortFrac', 'lnNotation', 'matDelim', 'matSymbolStyle', 'mulSymbol', 'mulSymbolMathmlNumbers', 'rootNotation', 'disableSplitSuperSub', 'printer']);
+
+/** SymPy MathMLPrinterBase.__init__: the settings with their defaults (an unknown setting is a TypeError). */
+function resolve(o: MathMLOptions): Settings {
+  for (const k of Object.keys(o)) if (!MATHML_SETTINGS.has(k)) throw new TypeError(`Unknown setting '${k}'.`);
+  return resolveKnown(o);
+}
+
+const resolveKnown = (o: MathMLOptions): Settings => ({
   foldFracPowers: o.foldFracPowers ?? false,
   foldShortFrac: o.foldShortFrac ?? false,
   lnNotation: o.lnNotation ?? false,
@@ -136,11 +145,6 @@ const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Consta
 function className(e: Expr): string {
   if (e instanceof BoolOp) return e.className;
   return setClass(e) ?? sympyClassName(e);
-}
-
-/** SymPy `requires_partial`: more than one free symbol that is not an integer. */
-function requiresPartial(e: Expr): boolean {
-  return [...impl.freeSymbols(e)].filter((s) => s instanceof Sym).filter((s) => s.assumptions.integer !== true).length > 1;
 }
 
 /** SymPy `fraction(expr)` (not exact): the numerator and the denominator of a product. */
@@ -306,7 +310,7 @@ class ContentPrinter {
     return ci.append(subs.length === 0 ? el('mml:msup', mname, join(supers)) : el('mml:msubsup', mname, join(subs), join(supers)));
   }
 
-  private add(e: Add): MathMLElement {
+  private add(e: Expr): MathMLElement {
     const args = asOrderedTerms(e);
     let last = this.expr(at(args, 0));
     const plusNodes: MathMLElement[] = [];
@@ -491,6 +495,10 @@ class PresentationPrinter {
     if (e instanceof Concrete) return this.sum(e);
     if (e instanceof Limit) return el('mrow', el('munder', mi('lim'), el('mrow', this.expr(e.variable), mo(this.tag(e)), this.expr(e.point))), this.expr(e.expr));
     if (e instanceof BoolOp) return this.logic(e);
+    if (e instanceof Fn || e instanceof ExtensionExpr) {
+      const named = this.namedFunction(e.name, e.args);
+      if (named) return named;
+    }
     if (e instanceof Fn || e instanceof UndefFn) return this.func(e);
     // SymPy _print_Basic, the pieces (ExprCondPair) being tuples
     if (e instanceof Piecewise) return el('mrow', mi('piecewise'), this.parenComma(e.pairs.map(([x, c]) => this.parenComma([this.expr(x), this.expr(c)]))));
@@ -504,9 +512,75 @@ class PresentationPrinter {
         return el('mrow', mo('('), v, mo('&#x21A6;'), this.expr(at(e.args, e.args.length - 1)), mo(')'));
       }
       if (e.name === 'MatrixSymbol') return this.symbol(str(e), this.s.matSymbolStyle);
+      const m = this.matrixExpr(e);
+      if (m) return m;
     }
     // SymPy _print_Basic: the lowercased class name and the arguments in parentheses
     return el('mrow', mi(this.tag(e)), this.parenComma(e.args.map((a) => this.expr(a))));
+  }
+
+  /**
+   * SymPy's printers of the matrix expressions and of Indexed (nodes of
+   * higher layers, recognized by their class name); undefined for the others.
+   */
+  private matrixExpr(e: ExtensionExpr): MathMLElement | undefined {
+    const args = e.args;
+    const a0 = (): Expr => at(args, 0);
+    // a matrix symbol as it is, anything else in parentheses (SymPy _print_Transpose, _print_MatPow, ...)
+    const base = (x: Expr): MathMLElement => (x instanceof ExtensionExpr && x.name === 'MatrixSymbol' ? this.expr(x) : el('mrow', mo('('), this.expr(x), mo(')')));
+    const joined = (xs: readonly Expr[], op: string): MathMLElement => {
+      const row = el('mrow');
+      xs.forEach((x, i) => {
+        if (i) row.append(mo(op));
+        row.append(this.parenthesize(x, precedence(e)));
+      });
+      return row;
+    };
+    switch (e.name) {
+      case 'Transpose':
+        return el('msup', base(a0()), mo('T'));
+      case 'Adjoint':
+        return el('msup', base(a0()), mo('&#x2020;'));
+      case 'Inverse':
+      case 'MatPow':
+        return el('msup', base(a0()), this.expr(at(args, 1)));
+      case 'MatAdd':
+        return this.add(e);
+      case 'MatMul': {
+        const first = a0();
+        let factors = first instanceof Mul ? [...asOrderedFactors(first), ...args.slice(1)] : [...args];
+        const lead = at(factors, 0);
+        const negative = isNum(lead) && lead.isNegative;
+        if (negative) factors = lead instanceof Rational && lead.p === -1n && lead.q === 1n ? factors.slice(1) : [impl.mul(-1, lead), ...factors.slice(1)];
+        const row = joined(factors, '&InvisibleTimes;');
+        return negative ? el('mrow', mo('-'), ...row.children) : row;
+      }
+      case 'HadamardProduct':
+        return joined(args, '&#x2218;');
+      case 'Identity':
+        return mi('&#x1D540;');
+      case 'ZeroMatrix':
+        return el('mn', '&#x1D7D8');
+      case 'OneMatrix':
+        return el('mn', '&#x1D7D9');
+      case 'MatrixElement': {
+        const parent = a0();
+        const sub = el('mrow');
+        args.slice(1).forEach((x, i) => {
+          if (i) sub.append(mo(','));
+          sub.append(this.expr(x));
+        });
+        return el('msub', this.parenthesize(parent, PREC.ATOM, true), sub);
+      }
+      case 'IndexedBase':
+        return this.expr(a0());
+      case 'Indexed': {
+        const indices = args.slice(1);
+        return el('msub', this.expr(a0()), indices.length === 1 ? this.expr(at(indices, 0)) : this.parenComma(indices.map((x) => this.expr(x))));
+      }
+      default:
+        return undefined;
+    }
   }
 
   private float(e: Float): MathMLElement {
@@ -536,7 +610,7 @@ class PresentationPrinter {
     return x;
   }
 
-  private add(e: Add): MathMLElement {
+  private add(e: Expr): MathMLElement {
     const args = asOrderedTerms(e);
     const row = el('mrow', this.expr(at(args, 0)));
     for (const arg of args.slice(1)) {
@@ -637,6 +711,45 @@ class PresentationPrinter {
     const row = el('mrow', item(at(args, 0)));
     for (const a of args.slice(1)) row.append(mo(symbol), item(a));
     return row;
+  }
+
+  /**
+   * SymPy's printers of the orthogonal polynomials, expint, the elliptic
+   * integrals, Ei and SingularityFunction (function nodes here and extension
+   * nodes in higher layers); undefined for the other names.
+   */
+  private namedFunction(name: string, args: readonly Expr[]): MathMLElement | undefined {
+    const items = (xs: readonly Expr[]): MathMLElement => this.parenComma(xs.map((a) => this.expr(a)));
+    const a0 = (): MathMLElement => this.expr(at(args, 0));
+    const letters: Partial<Record<string, readonly [string, number]>> = {
+      jacobi: ['P', 3], gegenbauer: ['C', 2], assoc_legendre: ['P', 2], assoc_laguerre: ['L', 2],
+      chebyshevt: ['T', 1], chebyshevu: ['U', 1], legendre: ['P', 1], laguerre: ['L', 1], hermite: ['H', 1], expint: ['E', 1],
+    };
+    const letter = letters[name];
+    if (letter !== undefined) {
+      // SymPy _print_jacobi, _print_chebyshevt, ...: the letter, the degree below, the parameters above in parentheses
+      const [head, k] = letter;
+      const sub = k === 1 ? el('msub', mo(head), a0()) : el('msubsup', mo(head), a0(), items(args.slice(1, k)));
+      return el('mrow', sub, items(args.slice(k)));
+    }
+    switch (name) {
+      case 'elliptic_e':
+      case 'elliptic_f':
+        return el('mrow', mi(name === 'elliptic_e' ? '&#x1d5a4;' : '&#x1d5a5;'), this.parenComma(args.map((a) => this.expr(a)), '|'));
+      case 'elliptic_pi': {
+        const row = el('mrow', mo('('), a0());
+        if (args.length === 3) row.append(mo(';'), this.expr(at(args, 1)));
+        return el('mrow', mi('&#x1d6f1;'), row.append(mo('|'), this.expr(at(args, args.length - 1)), mo(')')));
+      }
+      case 'Ei':
+        return el('mrow', mi('Ei'), items(args));
+      case 'SingularityFunction': {
+        const shift = impl.add(at(args, 0), impl.mul(-1, at(args, 1)));
+        return el('msup', el('mrow', mo('\u27e8'), this.expr(shift), mo('\u27e9')), this.expr(at(args, 2)));
+      }
+      default:
+        return undefined;
+    }
   }
 
   private func(e: Fn | UndefFn): MathMLElement {

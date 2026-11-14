@@ -233,6 +233,10 @@ export class TensorIndexNode extends ExtensionExpr {
   override printStr(): string {
     return `${this.isUp ? '' : '-'}${this.indexName}`;
   }
+  /** SymPy LatexPrinter: {}^{i} or {}_{i}. */
+  override printLatex(print: (e: Expr) => string): string {
+    return `{}${this.isUp ? '^' : '_'}{${print(first(this.args))}}`;
+  }
   /** @internal The name and type, without the variance. */
   get labelKey(): string {
     return `${this.tensorIndexType.key}:${this.indexName}`;
@@ -872,6 +876,30 @@ export class Tensor extends TensExpr {
   override printStr(print: (e: Expr) => string): string {
     return this.component.rank > 0 ? `${this.component.tensorName}(${this.indices.map(print).join(', ')})` : this.component.tensorName;
   }
+  /** SymPy LatexPrinter: the name followed by the runs of upper and lower indices (A{}^{ij}{}_{k}). */
+  override printLatex(print: (e: Expr) => string): string {
+    return tensorIndicesLatex(first(this.component.args), this.getIndices(), new ExprMap(), print);
+  }
+}
+
+/** SymPy `_printer_tensor_indices`: the name and the indices grouped by variance, with their fixed values. */
+function tensorIndicesLatex(name: Expr, indices: readonly TensorIndexNode[], indexMap: ExprMap<Expr>, print: (e: Expr) => string): string {
+  let out = print(name);
+  let lastUp: boolean | undefined;
+  let prevMapped = false;
+  for (const index of indices) {
+    const value = indexMap.get(index);
+    if ((value !== undefined || prevMapped) && lastUp === index.isUp) out += ',';
+    if (lastUp !== index.isUp) {
+      if (lastUp !== undefined) out += '}';
+      out += index.isUp ? '{}^{' : '{}_{';
+    }
+    out += print(first(index.args));
+    if (value !== undefined) out += `=${print(value)}`;
+    prevMapped = value !== undefined;
+    lastUp = index.isUp;
+  }
+  return lastUp === undefined ? out : `${out}}`;
 }
 
 /** The symmetry of a metric head: 1 antisymmetric, 0 symmetric, null none. */
@@ -1185,6 +1213,21 @@ export class TensMul extends TensExpr {
     }
     return sign + args.map((a) => (precedence(a) <= PREC.MUL ? `(${print(a)})` : print(a))).join('*');
   }
+  /** SymPy LatexPrinter: the sign and the factors side by side (-3A{}^{i}, \\left(x + 1\\right)A{}^{i}). */
+  override printLatex(print: (e: Expr) => string): string {
+    let args = [...this.args];
+    let sign = '';
+    if (couldExtractMinusSign(this.coeff)) {
+      sign = '-';
+      if (first(args).equals(-1)) args = args.slice(1);
+      else args[0] = neg(first(args));
+    }
+    return sign + args.map((a) => (precedence(a) <= PREC.MUL ? `\\left(${print(a)}\\right)` : print(a))).join('');
+  }
+  /** SymPy PRECEDENCE_VALUES: a TensMul binds like a Mul. */
+  strPrecedence(): number {
+    return PREC.MUL;
+  }
 }
 
 const sameTypes = (a: readonly TensorIndexTypeNode[], b: readonly TensorIndexTypeNode[]): boolean => a.length === b.length && a.every((t, i) => t.equals(at(b, i)));
@@ -1265,6 +1308,11 @@ export class TensAdd extends TensExpr {
   }
   override printStr(print: (e: Expr) => string): string {
     return this.args.map(print).join(' + ').replaceAll('+ -', '- ');
+  }
+  /** SymPy LatexPrinter: the terms in the order of their LaTeX text. */
+  override printLatex(print: (e: Expr) => string): string {
+    // the terms are tensors or products, which bind tighter than a sum
+    return this.args.map(print).sort().join(' + ').replaceAll('+ -', '- ');
   }
 }
 
@@ -1527,6 +1575,10 @@ export class TensorElementNode extends TensExpr {
   }
   substituteIndices(): Expr {
     return this;
+  }
+  /** SymPy LatexPrinter: the indices of the tensor with their fixed values (K{}^{i=3,j}). */
+  override printLatex(print: (e: Expr) => string): string {
+    return tensorIndicesLatex(first(this.expr.component.args), this.expr.getIndices(), new ExprMap(this.indexMap.items()), print);
   }
   extractData(repl: ExprMap<NDimArray>): [TensorIndexNode[], Expr] {
     const [retIndices, array] = this.expr.extractData(repl);
