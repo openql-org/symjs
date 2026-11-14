@@ -54875,7 +54875,7 @@
      "testFile": "sympy/core/tests/test_numbers.py",
      "inCorpus": true,
      "caseCount": 1616,
-     "gapCount": 130,
+     "gapCount": 126,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -78208,8 +78208,7 @@
       "log.is_transcendental",
       "log.is_zero",
       "log.n",
-      "log.subs",
-      "match_real_imag"
+      "log.subs"
      ],
      "unresolvedBases": []
     },
@@ -80685,7 +80684,7 @@
      "testFile": "sympy/functions/elementary/tests/test_piecewise.py",
      "inCorpus": true,
      "caseCount": 458,
-     "gapCount": 122,
+     "gapCount": 121,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -135115,7 +135114,7 @@
    "module": "sympy.polys.densetools",
    "sha256": "034675135e9e571e7bef3c3ce26f0a6604f9a3a75b0d75e89d6f13a9f2122596",
    "status": "partial",
-   "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result), and RR fraction-field elements keep the denominator as given instead of making it monic.",
+   "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result).",
    "sources": [
     "polys/densetools.ts"
    ],
@@ -135152,7 +135151,7 @@
     "limitations": {
      "pass": false,
      "hasNote": true,
-     "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result), and RR fraction-field elements keep the denominator as given instead of making it monic.",
+     "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result).",
      "capabilities": []
     }
    },
@@ -143125,8 +143124,8 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 126,
-     "gapCount": 29,
-     "timeoutCount": 2,
+     "gapCount": 28,
+     "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 1,
       "non-call-expression": 25,
@@ -146072,7 +146071,7 @@
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
      "caseCount": 1584,
-     "gapCount": 631,
+     "gapCount": 623,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -146853,7 +146852,7 @@
      "testFile": "sympy/polys/tests/test_rings.py",
      "inCorpus": true,
      "caseCount": 166,
-     "gapCount": 18,
+     "gapCount": 17,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
