@@ -538,3 +538,13 @@ it('reduces OR groups of rational inequalities in all input forms', () => {
   expect(String(Q.reduceRationalInequalities([], x))).toBe('False');
   expect(String(Q.solvePolyInequalities([[P('x**2 - 3'), '>'], [P('1 - x**2'), '>']]))).toBe('Union(Interval.open(-oo, -sqrt(3)), Interval.open(-1, 1), Interval.open(sqrt(3), oo))');
 });
+
+describe('real roots with parameters of unknown realness (SymPy _invert_real)', () => {
+  it('intersects a root with an unknown imaginary part with the reals', async () => {
+    const sj = await import('../../src');
+    const x = sj.symbol('x', { real: true });
+    const y = sj.symbol('y');
+    const a = sj.symbol('a', { real: true });
+    expect(sj.sstr(solveset(sj.sub(sj.pow(sj.add(x, y), 3), a), x, Reals))).toBe('Intersection({-y + Abs(a)**(1/3)*sign(a)}, Reals)');
+  });
+});

@@ -332,6 +332,11 @@ export interface Impl {
    * undefined for the generic rules.
    */
   arithmetic?(op: 'add' | 'sub' | 'mul' | 'pow', args: readonly Expr[]): Expr | undefined;
+  /**
+   * A comparison op(lhs, rhs) decided by the function on the left (SymPy's
+   * comparison operators of floor, ceiling and frac), or undefined.
+   */
+  relational?(op: RelOp, lhs: Expr, rhs: Expr): Expr | undefined;
   /** AccumBounds interval arithmetic (registered by core/accumbounds). */
   accumBounds?: {
     is(e: Expr): boolean;

@@ -7,13 +7,18 @@
  * here because they build on series and limits.
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Dummy, Mul, Order, Pow, Rational, S, Special } from '../core/nodes';
+import type { Expr, ExprLike, Fn, Sym } from '../core/nodes';
+import { Add, Dummy, Mul, Order, Pow, Rational, S, Special, impl } from '../core/nodes';
 import { add, mul, neg, pow, sub, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { log } from '../functions/elementary/elementary';
-import { leadterm, series } from './series';
+import { asLeadingTerm, leadingTermRules, leadterm, series } from './series';
+import { isNegative, isPositive } from '../core/assumptions';
+import { AccumBounds } from '../core/accumbounds';
+import { NotImplementedError } from '../core/errors';
+import { defined, first } from '../core/guard';
+import { fn } from '../functions/elementary/elementary';
 import { limit } from './limits';
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -87,4 +92,74 @@ export function dir(ex: ExprLike, x: Sym, cdir: ExprLike): Expr {
     if (!isZeroExpr(coeff)) break;
   }
   return mul(coeff, pow(sympify(cdir), minexp));
+}
+
+/** The value at x = 0 of an argument, or its limit from the side of cdir where it has none (nan or an interval). */
+function valueAtZero(arg: Expr, x: Sym, cdir: Expr): Expr {
+  const v = subs(arg, [[x, 0]]);
+  if (!((v instanceof Special && v.name === 'nan') || defined(impl.accumBounds, 'accumBounds').is(v))) return v;
+  return limit(arg, x, 0, isNegative(cdir) === true ? '-' : '+');
+}
+
+const isFiniteNumber = (v: Expr): boolean => !(v instanceof Special) && v.freeSymbols().size === 0;
+
+/**
+ * SymPy floor and ceiling _eval_as_leading_term: the integer value at 0, or the one next to it
+ * on the side the argument moves to when its value at 0 is an integer.
+ */
+function roundLeadingTerm(e: Fn, x: Sym, cdir: Expr): Expr | undefined {
+  const arg = first(e.args);
+  const arg0 = valueAtZero(arg, x, cdir);
+  if (!isFiniteNumber(arg0)) return undefined;
+  const r = fn(e.name, [arg0]);
+  if (r.key !== arg0.key) return r;
+  const ndir = dir(arg, x, cdir instanceof Rational && cdir.isZero ? 1 : cdir);
+  const down = isNegative(ndir) === true;
+  if (!down && isPositive(ndir) !== true) throw new NotImplementedError(`Not sure of sign of ${ndir.toString()}`);
+  if (e.name === 'floor') return down ? add(r, -1) : r;
+  return down ? r : add(r, 1);
+}
+leadingTermRules.floor = roundLeadingTerm;
+leadingTermRules.ceiling = roundLeadingTerm;
+
+/** SymPy frac._eval_as_leading_term. */
+leadingTermRules.frac = (e, x, cdir) => {
+  const arg = first(e.args);
+  const arg0 = subs(arg, [[x, 0]]);
+  if (arg0 instanceof Special) return arg0.name === 'nan' ? undefined : AccumBounds(0, 1);
+  if (arg0.freeSymbols().size > 0) return undefined;
+  const r = fn('frac', [arg0]);
+  if (!(r instanceof Rational && r.isZero)) return r;
+  if (isNegative(dir(arg, x, cdir)) === true) return S.One;
+  return asLeadingTerm(sub(arg, arg0), x, { cdir });
+};
+
+/** The infinite value (oo, -oo or zoo) an argument tends to as x -> 0 from the side of cdir, or undefined. */
+function infiniteAtZero(arg: Expr, x: Sym, cdir: Expr): Special | undefined {
+  let v = subs(arg, [[x, 0]]);
+  if (v instanceof Special && v.name === 'zoo') v = limit(arg, x, 0, isNegative(cdir) === true ? '-' : '+');
+  return v instanceof Special && v.name !== 'nan' ? v : undefined;
+}
+
+// SymPy trigonometric _eval_as_leading_term: the values accumulate on an interval at an infinite argument
+for (const [name, lo, hi] of [['sin', -1, 1], ['cos', -1, 1], ['tan', S.NegativeInfinity, S.Infinity], ['cot', S.NegativeInfinity, S.Infinity], ['sec', S.NegativeInfinity, S.Infinity], ['csc', S.NegativeInfinity, S.Infinity]] as const) {
+  leadingTermRules[name] = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : AccumBounds(lo, hi));
+}
+// SymPy hyperbolic _eval_as_leading_term: a function of an infinite argument is its own leading term
+for (const name of ['sinh', 'cosh', 'tanh', 'coth']) leadingTermRules[name] = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : e);
+// the limits at an infinite argument: atan(+-oo) = +-pi/2, atanh(+-oo) = -+I*pi/2, asec(oo) = pi/2, asech(oo) = I*pi/2
+const halfPi = mul(S.Pi, S.Half);
+leadingTermRules.atan = (e, x, cdir) => {
+  const v = infiniteAtZero(first(e.args), x, cdir);
+  return v === undefined || v.name === 'zoo' ? undefined : v.name === 'oo' ? halfPi : neg(halfPi);
+};
+leadingTermRules.atanh = (e, x, cdir) => {
+  const v = infiniteAtZero(first(e.args), x, cdir);
+  return v === undefined || v.name === 'zoo' ? undefined : mul(v.name === 'oo' ? -1 : 1, S.I, halfPi);
+};
+leadingTermRules.asec = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : halfPi);
+leadingTermRules.asech = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : mul(S.I, halfPi));
+// acot(z) = atan(1/z), acsc(z) = asin(1/z) and acsch(z) = asinh(1/z) behave like 1/z for an infinite z
+for (const name of ['acot', 'acsc', 'acsch']) {
+  leadingTermRules[name] = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : asLeadingTerm(pow(first(e.args), -1), x, { cdir }));
 }

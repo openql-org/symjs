@@ -50153,7 +50153,7 @@
      "testFile": "sympy/core/tests/test_assumptions.py",
      "inCorpus": true,
      "caseCount": 699,
-     "gapCount": 336,
+     "gapCount": 200,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 7,
@@ -51553,7 +51553,7 @@
      "testFile": "sympy/core/tests/test_exprtools.py",
      "inCorpus": true,
      "caseCount": 183,
-     "gapCount": 48,
+     "gapCount": 44,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -54887,7 +54887,7 @@
      "testFile": "sympy/core/tests/test_numbers.py",
      "inCorpus": true,
      "caseCount": 1616,
-     "gapCount": 204,
+     "gapCount": 202,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -55544,7 +55544,7 @@
      "testFile": "sympy/core/tests/test_power.py",
      "inCorpus": true,
      "caseCount": 184,
-     "gapCount": 52,
+     "gapCount": 50,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 3,
@@ -77745,7 +77745,7 @@
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
      "caseCount": 449,
-     "gapCount": 106,
+     "gapCount": 41,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -78220,8 +78220,7 @@
       "log.is_transcendental",
       "log.is_zero",
       "log.n",
-      "log.subs",
-      "match_real_imag"
+      "log.subs"
      ],
      "unresolvedBases": []
     },
@@ -78242,7 +78241,7 @@
      "testFile": "sympy/functions/elementary/tests/test_exponential.py",
      "inCorpus": true,
      "caseCount": 476,
-     "gapCount": 120,
+     "gapCount": 86,
      "timeoutCount": 3,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -79528,7 +79527,7 @@
      "testFile": "sympy/functions/elementary/tests/test_hyperbolic.py",
      "inCorpus": true,
      "caseCount": 743,
-     "gapCount": 163,
+     "gapCount": 87,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 4,
@@ -79964,7 +79963,7 @@
      "testFile": "sympy/functions/elementary/tests/test_integers.py",
      "inCorpus": true,
      "caseCount": 430,
-     "gapCount": 192,
+     "gapCount": 8,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -80445,7 +80444,7 @@
      "testFile": "sympy/functions/elementary/tests/test_miscellaneous.py",
      "inCorpus": true,
      "caseCount": 976,
-     "gapCount": 519,
+     "gapCount": 17,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -80697,7 +80696,7 @@
      "testFile": "sympy/functions/elementary/tests/test_piecewise.py",
      "inCorpus": true,
      "caseCount": 458,
-     "gapCount": 130,
+     "gapCount": 121,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -82137,7 +82136,7 @@
      "testFile": "sympy/functions/elementary/tests/test_trigonometric.py",
      "inCorpus": true,
      "caseCount": 2818,
-     "gapCount": 218,
+     "gapCount": 109,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -86404,7 +86403,7 @@
      "testFile": "sympy/functions/special/tests/test_error_functions.py",
      "inCorpus": true,
      "caseCount": 331,
-     "gapCount": 125,
+     "gapCount": 122,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 36,
@@ -87147,7 +87146,7 @@
      "testFile": "sympy/functions/special/tests/test_gamma_functions.py",
      "inCorpus": true,
      "caseCount": 291,
-     "gapCount": 91,
+     "gapCount": 86,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -143137,8 +143136,8 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 126,
-     "gapCount": 28,
-     "timeoutCount": 1,
+     "gapCount": 29,
+     "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-slow": 1,
       "non-call-expression": 25,

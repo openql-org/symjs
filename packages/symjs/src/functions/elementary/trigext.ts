@@ -13,7 +13,10 @@ import type { Expr, ExprLike, FnName } from '../../core/nodes';
 import { defined, first, pair } from '../../core/guard';
 import { Add, Float, Fn, Mul, Rational, S, Special } from '../../core/nodes';
 import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../../core/ops';
-import { asCoefficient } from '../../core/methods';
+import { asCoefficient, asIndependent } from '../../core/methods';
+import { NotImplementedError } from '../../core/errors';
+import { expandMul } from '../../simplify/expand';
+import type { Sym } from '../../core/nodes';
 import { ratMod } from '../../core/num';
 import { AccumBounds } from '../../core/accumbounds';
 import { isReal } from '../../core/assumptions';
@@ -43,6 +46,29 @@ export const acoth = (x: ExprLike): Expr => fn('acoth', [x]);
 export const asech = (x: ExprLike): Expr => fn('asech', [x]);
 export const acsch = (x: ExprLike): Expr => fn('acsch', [x]);
 export const sinc = (x: ExprLike): Expr => fn('sinc', [x]);
+
+/** The periods of the trigonometric functions in their argument. */
+const TRIG_PERIODS: Readonly<Record<string, Expr>> = { sin: mul(2, S.Pi), cos: mul(2, S.Pi), sec: mul(2, S.Pi), csc: mul(2, S.Pi), tan: S.Pi, cot: S.Pi };
+
+/**
+ * SymPy TrigonometricFunction.period(symbol): the period of a trigonometric function of
+ * a*symbol + b (0 when the argument does not depend on the symbol, which defaults to the free
+ * symbol of the argument); NotImplementedError for other arguments.
+ */
+export function period(e: Expr, symbol?: Sym): Expr {
+  const general = e instanceof Fn && e.args.length === 1 ? TRIG_PERIODS[e.name] : undefined;
+  if (general === undefined) throw new TypeError(`period: ${e.toString()} is not a trigonometric function`);
+  const f = expandMul(first(e.args));
+  const x = symbol ?? [...f.freeSymbols()][0];
+  if (x === undefined || !f.has(x)) return S.Zero;
+  if (f.key === x.key) return general;
+  if (f instanceof Mul || f instanceof Add) {
+    const [c, h] = asIndependent(f, [x], { asAdd: f instanceof Add });
+    const [g, t] = f instanceof Add ? asIndependent(h, [x], { asAdd: false }) : [c, h];
+    if (t.key === x.key) return mul(general, pow(fn('abs', [g]), -1));
+  }
+  throw new NotImplementedError('Use the periodicity function instead.');
+}
 
 const I = S.I;
 const pi = S.Pi;

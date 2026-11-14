@@ -38,3 +38,14 @@ it('queries irrationality, algebraicity, complexity, finiteness and primality', 
   expect(a.isPrime(a.I)).toBe(false);
   expect(a.isPrime(7)).toBe(true);
 });
+
+describe('isReal of the infinities (SymPy oo.is_real)', () => {
+  it('does not count oo, -oo and zoo as real numbers', async () => {
+    const sj = await import('../../src');
+    expect(sj.isReal(sj.oo)).toBe(false);
+    expect(sj.isReal(sj.S.NegativeInfinity)).toBe(false);
+    expect(sj.isReal(sj.zoo)).toBe(false);
+    expect(sj.isReal(sj.nan)).toBe('unknown');
+    expect(sj.isReal(2)).toBe(true);
+  });
+});

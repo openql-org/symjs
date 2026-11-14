@@ -751,12 +751,16 @@ export function sumIsConvergent(c: Concrete): boolean | undefined {
   // ratio test
   // SymPy simplifies the ratio with combsimp(powsimp(...)) first
   const ratio = limOo(impl.abs(combsimp(powsimp(mul(xreplace(f, [[k, add(k, 1)]]), pow(f, -1))))), k);
-  if (ratio?.freeSymbols().size === 0 && !(ratio instanceof Special)) {
+  // (an accumulation interval is not a number: SymPy requires lim_ratio.is_number)
+  if (ratio?.freeSymbols().size === 0 && !(ratio instanceof Special) && !defined(impl.accumBounds, 'accumBounds').is(ratio)) {
     const v = ratio.toNumber();
     if (v < 1) return true;
     if (v > 1) return false;
   }
   if (ratio instanceof Special && ratio.name === 'oo') return false;
+  // root test: lim |f|**(1/k) < 1 (a limit above 1 makes the terms grow, which the divergence test decides)
+  const root = limOo(pow(impl.abs(f), pow(k, -1)), k);
+  if (root?.freeSymbols().size === 0 && !(root instanceof Special) && !defined(impl.accumBounds, 'accumBounds').is(root) && root.toNumber() < 1) return true;
   // alternating series (-1)**k * g(k) with g -> 0 monotonically
   const fs = f instanceof Mul ? f.args : [f];
   const alt = fs.find((t) => t instanceof Pow && t.base instanceof Rational && t.base.p === -1n && t.base.q === 1n && t.exp.key === k.key);

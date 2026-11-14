@@ -123,6 +123,7 @@ export {
   unbranchedArgument,
   unpolarify,
   extractBranchFactor,
+  matchRealImag,
 } from './functions/elementary/complexes';
 export { Hyper, MeijerG, hyper, meijerg, appellf1, jn, yn, expandJn, KroneckerDelta, kroneckersimp } from './functions/special/hyper';
 export { lerchphi, polylog, dirichletEta, riemannXi, stieltjes } from './functions/special/zetafunctions';

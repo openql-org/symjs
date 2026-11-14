@@ -347,3 +347,15 @@ it('finds symbols by name while preserving dummy identity', () => {
   expect(() => find('x', add(x,d))).toThrow('ambiguous');
   expect(() => Reflect.apply(find, undefined, ['x', {fn:'sin'}])).toThrow(TypeError);
 });
+
+describe('relational classes in queries (SymPy Basic.has(Le))', () => {
+  it('finds relations by their SymPy class', () => {
+    const [a, b] = sj.symbols('a b');
+    const e = sj.and(sj.Le(a, b), sj.Eq(a, 1));
+    expect(sj.find(e, { type: 'Relational' })).toHaveLength(2);
+    expect(sj.find(e, { type: 'LessThan' })).toHaveLength(1);
+    expect(sj.find(e, { type: 'StrictLessThan' })).toHaveLength(0);
+    expect(sj.find(e, { type: 'Equality' })).toHaveLength(1);
+    expect(sj.find(sj.add(a, 1), { type: 'GreaterThan' })).toHaveLength(0);
+  });
+});

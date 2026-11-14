@@ -244,6 +244,7 @@ export {
   asech,
   acsch,
   sinc,
+  period,
 } from './functions/elementary/trigext';
 export {
   diff,

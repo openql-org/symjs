@@ -7,6 +7,7 @@
  */
 
 import type { Expr, ExprLike, Sym } from './nodes';
+import { Special } from './nodes';
 import { sympify } from './ops';
 import * as A from './assumptions';
 import * as M from './methods';
@@ -16,7 +17,12 @@ import { NoMatch, orNoMatch, toTruth } from './truth';
 import { ask, Q } from './refine';
 
 /** e is real (SymPy is_real): true, false or 'unknown'. */
-export const isReal = (e: ExprLike): Truth => toTruth(A.isReal(sympify(e)));
+export const isReal = (e: ExprLike): Truth => {
+  const x = sympify(e);
+  // oo, -oo and zoo are not real numbers; nan is undecided
+  if (x instanceof Special) return x.name === 'nan' ? 'unknown' : false;
+  return toTruth(A.isReal(x));
+};
 /** e is positive (SymPy is_positive). */
 export const isPositive = (e: ExprLike): Truth => toTruth(A.isPositive(sympify(e)));
 /** e is negative (SymPy is_negative). */

@@ -25,6 +25,7 @@ import { numericFns } from '../../numeric/evalf';
 import { mpFns } from '../../numeric/mpeval';
 import * as M from '../../numeric/mpfun';
 import { registerRewrite } from '../../simplify/rewrite';
+import { Ne, piecewise } from '../../core/logic';
 import { abs, conjugate, conjugateCommutes, conjugateRules, evaluators, fn, re } from '../elementary/elementary';
 import { extractBranchFactor, unpolarify } from '../elementary/complexes';
 import { cgamma, funcExpanders } from './special';
@@ -317,6 +318,15 @@ const asSpherical = (target: 'jn' | 'yn') => (args: readonly Expr[]): Expr => {
   const [nu, z] = pair(args);
   return mul(sqrt(mul(2, z, pow(S.Pi, -1))), fn(target, [add(nu, S.NegHalf), z]));
 };
+// SymPy sin, cos, tan, cot, sec and csc _eval_rewrite_as_besselj
+const besselHalf = (z: Expr, nu: Expr): Expr => fn('besselj', [nu, z]);
+const sqrtHalfPi = (z: Expr): Expr => sqrt(mul(S.Pi, z, S.Half));
+registerRewrite('sin', 'besselj', ([z]) => z && mul(sqrtHalfPi(z), besselHalf(z, S.Half)));
+registerRewrite('cos', 'besselj', ([z]) => z && piecewise([mul(sqrtHalfPi(z), besselHalf(z, neg(S.Half))), Ne(z, 0)], [1, true]));
+registerRewrite('tan', 'besselj', ([z]) => z && mul(besselHalf(z, S.Half), pow(besselHalf(z, neg(S.Half)), -1)));
+registerRewrite('cot', 'besselj', ([z]) => z && mul(besselHalf(z, neg(S.Half)), pow(besselHalf(z, S.Half), -1)));
+registerRewrite('sec', 'besselj', ([z]) => z && piecewise([pow(mul(sqrt(mul(S.Pi, z)), pow(sqrt(2), -1), besselHalf(z, neg(S.Half))), -1), Ne(z, 0)], [1, true]));
+registerRewrite('csc', 'besselj', ([z]) => z && mul(sqrt(mul(2, pow(S.Pi, -1))), pow(mul(sqrt(z), besselHalf(z, S.Half)), -1)));
 registerRewrite('besselj', 'jn', asSpherical('jn'));
 registerRewrite('bessely', 'yn', asSpherical('yn'));
 // besselj(nu, z) = csc(pi*nu)*bessely(-nu, z) - cot(pi*nu)*bessely(nu, z) and bessely in terms of besselj (nu not an integer)
