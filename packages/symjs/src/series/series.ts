@@ -13,9 +13,10 @@ import { Mul, isMulLike } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary/elementary';
+import { bernoulliNumber } from '../functions/special/special';
 import { EssentialSingularity, Expander, type PS, isE } from './puiseux';
 import { isPositive, isReal } from '../core/assumptions';
-import { at, first, getOrThrow } from '../core/guard';
+import { at, cast, first, getOrThrow } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
 
@@ -267,10 +268,24 @@ function leadtermExact(ex: ExprLike, x: Sym): [Expr, Rational] {
   return [c, l.e];
 }
 
-/** SymPy as_leading_term(x). */
-export function asLeadingTerm(ex: ExprLike, x: Sym): Expr {
-  const [c, e] = leadterm(ex, x);
-  return mul(c, pow(x, e));
+/**
+ * Leading terms of functions that depend on the side of approach (SymPy
+ * _eval_as_leading_term with cdir): the function, the variable and the
+ * direction; undefined leaves the generic expansion.
+ */
+export const leadingTermRules: Partial<Record<string, (e: Fn, x: Sym, cdir: Expr) => Expr | undefined>> = {};
+
+/**
+ * SymPy as_leading_term(x, cdir=...): the leading term as x -> 0 from the direction cdir (0 when
+ * not given: the side does not matter, or x approaches 0 from above).
+ */
+export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike } = {}): Expr {
+  const e = sympify(ex);
+  const rule = e instanceof Fn ? leadingTermRules[e.name] : undefined;
+  const special = rule?.(cast(e, Fn, 'function'), x, sympify(opts.cdir ?? 0));
+  if (special !== undefined) return special;
+  const [c, p] = leadterm(e, x);
+  return mul(c, pow(x, p));
 }
 
 /** Order of the O term in a sum, or undefined (SymPy getn). */
@@ -302,12 +317,49 @@ export function extractLeadingOrder(ex: ExprLike, x: Sym): [Expr, Expr][] {
   return terms.filter((_, i) => orders[i]?.key === minO.key).map((t) => [t, O(t, x)]);
 }
 
-/** SymPy Expr.taylor_term(n, x): the n-th term of the Maclaurin series, f^(n)(0)*x**n/n!. */
+const factorialOf = (n: number): bigint => {
+  let f = 1n;
+  for (let i = 2n; i <= BigInt(n); i++) f *= i;
+  return f;
+};
+
+/** (1/2)_k*n/(k!*k**2)*x**n/4 with k = n/2: the coefficient shared by the asec, acsc, asech and acsch series. */
+function halfRisingTerm(n: number, x: Expr): Expr {
+  const k = n / 2;
+  // (1/2)_k = 1*3*...*(2k - 1)/2**k
+  let odd = 1n;
+  for (let i = 0; i < k; i++) odd *= BigInt(2 * i + 1);
+  return mul(Rational.of(odd * BigInt(n), (1n << BigInt(k)) * factorialOf(k) * BigInt(k * k) * 4n), pow(x, n));
+}
+
+/**
+ * The n-th term of the series at 0 of functions without a Maclaurin series, in the form SymPy's
+ * taylor_term gives it (Laurent terms of cot and csc, the log term of asec, acsc, asech, acsch).
+ */
+const SERIES_TERMS: Readonly<Record<string, (n: number, x: Expr) => Expr>> = {
+  cot: (n, x) => n === 0 ? pow(x, -1) : n < 0 || n % 2 === 0 ? S.Zero
+    : mul((n + 1) % 4 === 0 ? 1 : -1, pow(2, n + 1), bernoulliNumber(n + 1), Rational.of(1n, factorialOf(n + 1)), pow(x, n)),
+  csc: (n, x) => {
+    if (n === 0) return pow(x, -1);
+    if (n < 0 || n % 2 === 0) return S.Zero;
+    const k = (n - 1) / 2 + 1;
+    return mul(k % 2 === 1 ? 1 : -1, 2, add(pow(2, 2 * k - 1), -1), bernoulliNumber(2 * k), pow(x, 2 * k - 1), Rational.of(1n, factorialOf(2 * k)));
+  },
+  asec: (n, x) => n === 0 ? mul(S.I, log(mul(2, pow(x, -1)))) : n < 0 || n % 2 === 1 ? S.Zero : mul(neg(S.I), halfRisingTerm(n, x)),
+  acsc: (n, x) => n === 0 ? add(mul(S.Pi, S.Half), mul(neg(S.I), log(2)), mul(S.I, log(x))) : n < 0 || n % 2 === 1 ? S.Zero : mul(S.I, halfRisingTerm(n, x)),
+  asech: (n, x) => n === 0 ? log(mul(2, pow(x, -1))) : n < 0 || n % 2 === 1 ? S.Zero : neg(halfRisingTerm(n, x)),
+  acsch: (n, x) => n === 0 ? log(mul(2, pow(x, -1))) : n < 0 || n % 2 === 1 ? S.Zero : mul((n / 2) % 2 === 1 ? 1 : -1, halfRisingTerm(n, x)),
+};
+
+/**
+ * SymPy Expr.taylor_term(n, x): the n-th term of the Maclaurin series, f^(n)(0)*x**n/n!; for cot,
+ * csc, asec, acsc, asech and acsch of x the n-th term of their series at 0.
+ */
 export function taylorTerm(eIn: ExprLike, n: number, x: Sym): Expr {
   const e = sympify(eIn);
-  let fact = 1n;
-  for (let i = 2n; i <= BigInt(n); i++) fact *= i;
-  return mul(subs(impl.diff(e, x, n), [[x, S.Zero]]), pow(x, n), Rational.of(1n, fact));
+  const special = e instanceof Fn && e.args.length === 1 && first(e.args).key === x.key ? SERIES_TERMS[e.name] : undefined;
+  if (special !== undefined) return special(n, x);
+  return mul(subs(impl.diff(e, x, n), [[x, S.Zero]]), pow(x, n), Rational.of(1n, factorialOf(n)));
 }
 
 /**

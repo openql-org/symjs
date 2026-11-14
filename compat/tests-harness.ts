@@ -66,7 +66,7 @@ export function runTestCase(c: TestCase): TestOutcome {
   if (c.kwargs && '_random_prec' in c.kwargs) return { status: 'unsupported', reason: 'upstream private random fixture _random_prec' };
   let observation: CaseObservation | undefined;
   // These established public names capitalize the second word after "Non".
-  const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero' };
+  const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };
   const fn = alias[c.fn];
   const outcome = runCase(fn === undefined ? c : { ...c, fn }, (event) => { observation = event; });
   const result = assertionOutcome(c, outcome, observation);

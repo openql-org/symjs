@@ -80,7 +80,7 @@ export {
   matches,
   getO,
 } from './core/public';
-export { isIrrational, isAlgebraic, isComplex, isFinite, isPrime } from './core/public';
+export { isIrrational, isAlgebraic, isComplex, isFinite, isPrime, isNonPositive, isEven, isOdd, isImaginary, isHermitian, isAntihermitian, isExtendedNegative, isExtendedPositive, isPolar } from './core/public';
 export { canonicalRelation } from './core/logic';
 export { Relational, isEq, isNeq, isGe, isLe, isGt, isLt } from './core/relational';
 export { disambiguate, uniquelyNamedSymbol } from './core/symbol';
@@ -244,6 +244,7 @@ export {
   asech,
   acsch,
   sinc,
+  period,
 } from './functions/elementary/trigext';
 export {
   diff,

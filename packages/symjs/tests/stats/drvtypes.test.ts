@@ -130,7 +130,7 @@ describe('Poisson (SymPy test_PoissonDistribution, test_Poisson)', () => {
     expect(str(call(d.computeMomentGeneratingFunction(), t))).toBe('exp(-lamda)*exp(lamda*exp(t))');
     // SymPy: Piecewise(((-lamda**(-floor(z) - 1)*lamda**(floor(z) + 1)*(floor(z) + 1)*exp(lamda)*lowergamma(floor(z) + 1, lamda)/factorial(floor(z) + 1) + exp(lamda))*exp(-lamda), z >= 0), (0, True))
     expect(str(cdf(Poisson('X', l)) as Expr)).toBe(
-      'Lambda(_x, Piecewise((-lamda**(-floor(_x) - 1)*lamda**(floor(_x) + 1)*(floor(_x) + 1)*lowergamma(floor(_x) + 1, lamda)/gamma(floor(_x) + 2) + 1, _x >= 0), (0, True)))',
+      'Lambda(_x, Piecewise((-lamda**(-floor(_x) - 1)*lamda**(floor(_x) + 1)*(floor(_x) + 1)*lowergamma(floor(_x) + 1, lamda)/factorial(floor(_x) + 1) + 1, _x >= 0), (0, True)))',
     );
     // SymPy sums the mass function up to its own summation variable: Piecewise((_x, z <= (exp(lamda) - sinh(lamda))*exp(-lamda)))
     expect(str(call(quantile(Poisson('X', l)), z))).toBe('Piecewise((_x, z <= 1 - exp(-lamda)*sinh(lamda)))');

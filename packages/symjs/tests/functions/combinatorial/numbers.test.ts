@@ -408,3 +408,82 @@ it('evaluates unitary divisor sums with symbolic powers and validates their doma
   expect(() => sj.udivisorSigma(0)).toThrow(RangeError);
   expect(() => sj.udivisorSigma(2,-1)).toThrow(RangeError);
 });
+
+describe('comparisons of floor, ceiling and frac (SymPy test_integers)', () => {
+  const y = sj.symbol('y', { real: true });
+  const x = sj.symbol('x');
+  const n = sj.symbol('n', { integer: true });
+  const b = sj.symbol('b', { real: true, integer: false });
+  const p = sj.symbol('p', { positive: true });
+  const r = sj.symbol('r', { real: true });
+  const s = (e: sj.Expr): string => sj.sstr(e);
+  const { floor, ceiling, Lt, Le, Gt, Ge, Eq, Ne, oo } = sj;
+
+  it('compares floor(y) through its argument', () => {
+    expect(s(Le(floor(y), n))).toBe('y < n + 1');
+    expect(s(Gt(floor(y), n))).toBe('y >= n + 1');
+    expect(s(Ge(floor(y), n))).toBe('y >= n');
+    expect(s(Lt(floor(y), n))).toBe('y < n');
+    expect(s(Le(floor(y), 5.5))).toBe('y < 6');
+    expect(s(Lt(floor(y), 2.9))).toBe('y < 3');
+    // an integer-valued Float: floor(y) <= 5.0 means y < 6
+    expect(s(Le(floor(y), sj.float(5)))).toBe('y < 6');
+    expect(Le(floor(y), y)).toBe(S.true);
+    expect(Gt(floor(y), y)).toBe(S.false);
+    expect(Lt(floor(b), b)).toBe(S.true);
+    expect(Ge(floor(b), b)).toBe(S.false);
+    expect(s(Lt(floor(y), y))).toBe('floor(y) < y');
+    expect(s(Ge(floor(y), y))).toBe('floor(y) >= y');
+    expect(Lt(floor(y), oo)).toBe(S.true);
+    expect(Ge(floor(y), sj.S.NegativeInfinity)).toBe(S.true);
+    expect(s(Le(floor(x), x))).toBe('floor(x) <= x');
+  });
+
+  it('compares ceiling(y) through its argument', () => {
+    expect(s(Lt(ceiling(y), n))).toBe('y <= n - 1');
+    expect(s(Ge(ceiling(y), n))).toBe('y > n - 1');
+    expect(s(Gt(ceiling(y), n))).toBe('y > n');
+    expect(s(Le(ceiling(y), n))).toBe('y <= n');
+    expect(s(Ge(ceiling(y), -3.2))).toBe('y > -4');
+    expect(Ge(ceiling(y), y)).toBe(S.true);
+    expect(Lt(ceiling(y), y)).toBe(S.false);
+    expect(Gt(ceiling(b), b)).toBe(S.true);
+    expect(Le(ceiling(b), b)).toBe(S.false);
+    expect(s(Gt(ceiling(y), y))).toBe('ceiling(y) > y');
+    expect(s(Le(ceiling(y), y))).toBe('ceiling(y) <= y');
+    expect(Le(ceiling(y), oo)).toBe(S.true);
+    expect(Gt(ceiling(y), sj.S.NegativeInfinity)).toBe(S.true);
+  });
+
+  it('bounds frac(r) by 0 and 1', () => {
+    expect(Ge(frac(r), 0)).toBe(S.true);
+    expect(Ge(frac(r), 1)).toBe(S.false);
+    expect(s(Ge(frac(r), p))).toBe('frac(r) >= p');
+    expect(Gt(frac(r), oo)).toBe(S.false);
+    expect(Gt(frac(r), -1)).toBe(S.true);
+    expect(s(Gt(frac(r), 0))).toBe('frac(r) > 0');
+    expect(Le(frac(r), -1)).toBe(S.false);
+    expect(Le(frac(r), sj.symbol('k', { integer: true, positive: true }))).toBe(S.true);
+    expect(s(Le(frac(r), 0))).toBe('frac(r) <= 0');
+    expect(Lt(frac(r), 0)).toBe(S.false);
+    expect(Lt(frac(r), 1)).toBe(S.true);
+    expect(s(Lt(frac(r), p))).toBe('frac(r) < p');
+    expect(s(Lt(frac(x), 0))).toBe('frac(x) < 0');
+  });
+
+  it('decides equalities through the other forms of floor, ceiling and frac', () => {
+    expect(Eq(floor(y), sj.sub(y, frac(y)))).toBe(S.true);
+    expect(Eq(floor(y), mul(-1, ceiling(mul(-1, y))))).toBe(S.true);
+    expect(Eq(ceiling(y), sj.add(y, frac(mul(-1, y))))).toBe(S.true);
+    expect(Ne(ceiling(y), mul(-1, floor(mul(-1, y))))).toBe(S.false);
+    expect(Eq(frac(y), sj.sub(y, floor(y)))).toBe(S.true);
+    expect(Eq(sj.sub(y, floor(y)), frac(y))).toBe(S.true);
+    expect(Eq(frac(r), sj.sqrt(2))).toBe(S.false);
+    expect(Eq(floor(y), sj.add(sj.sub(y, frac(y)), 1))).toBe(S.false);
+    expect(Eq(frac(r), -1)).toBe(S.false);
+    expect(s(Eq(frac(r), p))).toBe('Eq(frac(r), p)');
+    expect(Eq(floor(sj.Rational.of(1n, 2n)), 1)).toBe(S.false);
+    expect(s(Eq(floor(y), x))).toBe('Eq(floor(y), x)');
+    expect(s(Eq(x, sj.add(x, 1)))).toBe('False');
+  });
+});

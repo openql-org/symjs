@@ -6,7 +6,7 @@
  */
 
 import type { Expr } from './nodes';
-import { Add, Constant, ExtensionExpr, Fn, Float, Mul, Pow, Rational, S, Special, Sym, impl } from './nodes';
+import { Add, Constant, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, S, Special, Sym, impl } from './nodes';
 import { at, pair } from './guard';
 
 export type Tri = boolean | undefined;
@@ -21,12 +21,54 @@ const all = (xs: readonly Expr[], f: (e: Expr) => Tri): Tri => {
   return unknown ? undefined : true;
 };
 
+/** Max and Min are one of their arguments (SymPy MinMaxBase): a property every argument has or none has. */
+export const isMinMax = (e: Expr): e is Fn => e instanceof Fn && (e.name === 'Max' || e.name === 'Min');
+
+/** SymPy _torf: true when every value is true, false when every value is false, else unknown. */
+export function torf(xs: readonly Expr[], f: (e: Expr) => Tri): Tri {
+  const vs = xs.map(f);
+  if (vs.every((v) => v === true)) return true;
+  return vs.every((v) => v === false) ? false : undefined;
+}
+
 export function isZero(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isZero;
   if (e instanceof Special) return e.name === 'nan' ? undefined : false;
   if (e instanceof Constant) return false;
   if (e instanceof Sym) return e.assumptions.zero;
   if (e instanceof Pow && e.base instanceof Constant && e.base.name === 'E') return false;
+  // SymPy sign._eval_is_zero
+  if (e instanceof Fn && e.name === 'sign') return isZero(at(e.args, 0));
+  if (e instanceof Piecewise) return piecewiseTorf(e, isZero);
+  if (e instanceof Fn && e.args.length === 1) {
+    const a = at(e.args, 0);
+    // functions vanishing exactly at 0 (and sin at the multiples of pi, cos between them)
+    if (ZERO_AT_ZERO.has(e.name) && isZero(a) === true) return true;
+    if (e.name === 'abs' || e.name === 'asinh' || e.name === 'atanh' || e.name === 'asin' || e.name === 'atan') {
+      const z = isZero(a);
+      if (z !== undefined) return z;
+    }
+    // a/pi, distributed over the terms of a
+    const piMultiple = (): Expr => (a instanceof Add ? impl.add(...a.args.map((t) => impl.mul(t, impl.pow(S.Pi, -1)))) : impl.mul(a, impl.pow(S.Pi, -1)));
+    if (e.name === 'sin' && isIntegerQ(piMultiple()) === true) return true;
+    if (e.name === 'cos' && isIntegerQ(impl.add(piMultiple(), Rational.of(-1n, 2n))) === true) return true;
+    // SymPy log._eval_is_zero: log(a) = 0 exactly for a = 1
+    if (e.name === 'log') {
+      const d = isZero(impl.add(a, -1));
+      if (d !== undefined) return d;
+    }
+    const v = numericValue(e);
+    if (v !== undefined && Math.hypot(v.re, v.im) > 1e-8) return false;
+  }
+  // a function known to be positive or negative is not 0
+  if (e instanceof Fn && (ODD_SIGN.has(e.name) || e.name === 'cosh' || e.name === 'sech' || isMinMax(e)) && (isPositive(e) === true || isNegative(e) === true)) return false;
+  // SymPy frac._eval_is_zero: frac(x) = 0 exactly for an integer x
+  if (e instanceof Fn && e.name === 'frac') {
+    const a = at(e.args, 0);
+    const z = isZero(a);
+    const n = isIntegerQ(a);
+    return z === true || n === true ? true : z === false && n === false ? false : undefined;
+  }
   // SymPy LambertW._eval_is_zero: W_k(x) = 0 only for x = 0 on the principal branch
   if (e instanceof Fn && e.name === 'LambertW') {
     const z = isZero(at(e.args, 0));
@@ -53,15 +95,16 @@ export function isReal(e: Expr): Tri {
   if (e instanceof Sym) return e.assumptions.real;
   if (e instanceof Add) return all(e.args, isReal) ? true : undefined;
   if (e instanceof Mul) {
-    // a product of reals is real; exactly one imaginary-unit factor makes it non-real
-    let nonReal = 0;
+    // a product of reals and imaginary factors (I or imaginary symbols) is real for an even count of
+    // imaginary factors, and not real for an odd count when every factor is nonzero
+    let imaginary = 0;
     for (const a of e.args) {
       const r = isReal(a);
-      if (r === undefined) return undefined;
-      // isReal is false only for the imaginary unit
-      if (r === false) nonReal++;
+      if (r === true) continue;
+      if (!((a instanceof Constant && a.name === 'I') || (a instanceof Sym && a.assumptions.imaginary === true))) return undefined;
+      imaginary++;
     }
-    if (nonReal === 0) return true;
+    if (imaginary % 2 === 0) return true;
     return all(e.args.filter((a) => !(a instanceof Constant)), isNonZero) ? false : undefined;
   }
   if (e instanceof Pow) {
@@ -72,6 +115,8 @@ export function isReal(e: Expr): Tri {
     return undefined;
   }
   if (e instanceof ExtensionExpr) return e.isRealSelf();
+  // (oo, -oo and zoo are not real numbers, although isReal counts oo and -oo as extended reals)
+  if (e instanceof Piecewise) return piecewiseTorf(e, (x) => (x instanceof Special ? (x.name === 'nan' ? undefined : false) : isReal(x)));
   if (e instanceof Fn) {
     const a = at(e.args, 0);
     switch (e.name) {
@@ -95,17 +140,114 @@ export function isReal(e: Expr): Tri {
         return isReal(a) ? true : undefined;
       case 'log':
         return isPositive(a) ? true : undefined;
+      // SymPy coth and csch: real for a real argument away from the pole at 0
+      case 'coth':
+      case 'csch':
+        return isReal(a) === true && isNonZero(a) === true ? true : undefined;
+      // SymPy sign._eval_is_integer and _eval_is_imaginary
+      case 'sign':
+        return isReal(a) === true ? true : isImaginaryValue(a) ? false : undefined;
+      // the inverse functions on the part of the real axis where their values are finite and real
+      case 'asin':
+      case 'acos':
+        return realOn(a, [-1, 'closed'], [1, 'closed']);
+      case 'atanh':
+        return realOn(a, [-1, 'open'], [1, 'open']);
+      case 'acosh':
+        return realOn(a, [1, 'closed'], undefined);
+      case 'asech':
+        return realOn(a, [0, 'open'], [1, 'closed']);
+      case 'acoth': {
+        if (isReal(a) !== true) return undefined;
+        if (isPositive(add1(a, -1)) === true || isNegative(add1(a, 1)) === true) return true;
+        return isNegative(add1(a, -1)) === true && isPositive(add1(a, 1)) === true ? false : undefined;
+      }
       case 'LambertW':
         return lambertWReal(a, e.args[1]);
+      case 'Max':
+      case 'Min':
+        return torf(e.args, isReal);
+      // SymPy RoundFunction._eval_is_real and frac._eval_is_real
+      case 'floor':
+      case 'ceiling':
+      case 'frac':
+        return isReal(a);
       default:
-        return undefined;
+        return numericNonReal(e);
     }
   }
   return undefined;
 }
 
+const add1 = (x: Expr, c: number): Expr => impl.add(x, c);
+/** A nonzero imaginary value: I times a nonzero real, or an imaginary symbol. */
+const isImaginaryValue = (x: Expr): boolean =>
+  (x instanceof Sym && x.assumptions.imaginary === true) || (isReal(impl.mul(S.I, x)) === true && isNonZero(x) === true);
+
+/**
+ * Whether a function whose real values are those of a real argument within the bounds is real
+ * there: true inside, false for a real argument outside, else undefined.
+ */
+function realOn(a: Expr, lo: readonly [number, 'open' | 'closed'], hi: readonly [number, 'open' | 'closed'] | undefined): Tri {
+  if (isReal(a) !== true) return undefined;
+  const above = (b: readonly [number, 'open' | 'closed']): Tri => (b[1] === 'open' ? isPositive : isNonNegative)(add1(a, -b[0]));
+  const below = (b: readonly [number, 'open' | 'closed']): Tri => (b[1] === 'open' ? isNegative : isNonPositive)(add1(a, -b[0]));
+  const inLo = above(lo);
+  const inHi = hi === undefined ? true : below(hi);
+  if (inLo === true && inHi === true) return true;
+  return inLo === false || inHi === false ? false : undefined;
+}
+
+/** Functions with the sign of a real argument (SymPy sinh, tanh, coth, csch, atan and sign _eval_is_positive/_eval_is_negative). */
+const ODD_SIGN = new Set(['sinh', 'tanh', 'coth', 'csch', 'atan', 'sign']);
+const oddSign = (e: Fn, f: (x: Expr) => Tri): Tri => {
+  const a = at(e.args, 0);
+  return ODD_SIGN.has(e.name) && e.args.length === 1 && isReal(a) === true ? f(a) : undefined;
+};
+
+/**
+ * SymPy Max and Min signs: Max is positive when one argument is and negative when all are (Min
+ * the other way round); `some` names the function for which one argument decides.
+ */
+function minMaxSign(e: Fn, f: (x: Expr) => Tri, some: 'Max' | 'Min'): Tri {
+  if (!isMinMax(e)) return undefined;
+  const vs = e.args.map(f);
+  if (e.name === some) return vs.includes(true) ? true : vs.every((v) => v === false) ? false : undefined;
+  return vs.every((v) => v === true) ? true : vs.includes(false) ? false : undefined;
+}
+
+/** The value of a function of numbers, when it can be computed (undefined otherwise). */
+function numericValue(e: Fn): { re: number; im: number } | undefined {
+  if (numericValues.has(e)) return numericValues.get(e);
+  let r: { re: number; im: number } | undefined;
+  if (impl.freeSymbols(e).size === 0) {
+    try {
+      const v = impl.toComplex(e);
+      r = Number.isFinite(v.re) && Number.isFinite(v.im) ? v : undefined;
+    } catch {
+      r = undefined;
+    }
+  }
+  numericValues.set(e, r);
+  return r;
+}
+const numericValues = new WeakMap<Expr, { re: number; im: number } | undefined>();
+
+/** false for a function of numbers whose value has a clearly nonzero imaginary part, else undefined (also for polar numbers). */
+function numericNonReal(e: Fn): Tri {
+  if (isPolar(e)) return undefined;
+  const v = numericValue(e);
+  return v !== undefined && Math.abs(v.im) > 1e-8 * Math.max(1, Math.abs(v.re)) ? false : undefined;
+}
+
+/** The arguments of a Piecewise all have the property (true), none has it (false), else undefined (SymPy _eval_template_is_attr). */
+const piecewiseTorf = (e: Piecewise, f: (x: Expr) => Tri): Tri => torf(e.pairs.map(([x]) => x), f);
+
+/** Functions with f(0) = 0. */
+const ZERO_AT_ZERO = new Set(['sin', 'tan', 'sinh', 'tanh', 'asin', 'atan', 'asinh', 'atanh', 'abs', 're', 'im']);
+
 /** x <= 0 is known. */
-const isNonPositive = (x: Expr): Tri => (isNegative(x) || isZero(x) ? true : isPositive(x) === true ? false : undefined);
+const isNonPositive = (x: Expr): Tri => (isNegative(x) || isZero(x) || (x instanceof Sym && x.assumptions.nonpositive === true) ? true : isPositive(x) === true ? false : undefined);
 
 /** SymPy LambertW._eval_is_extended_real for the branch k (undefined: the principal branch). */
 function lambertWReal(x: Expr, k: Expr | undefined): Tri {
@@ -274,6 +416,7 @@ function addBoundSign(e: Add): 1 | -1 | 0.5 | -0.5 | undefined {
 }
 
 export function isPositive(e: Expr): Tri {
+  if (e instanceof Piecewise) return piecewiseTorf(e, isPositive);
   if (e instanceof Rational || e instanceof Float) return e.isPositive;
   if (e instanceof Special) return e.name === 'oo' ? true : e.name === '-oo' ? false : undefined;
   if (e instanceof Constant) return e.name === 'I' ? false : true;
@@ -304,12 +447,21 @@ export function isPositive(e: Expr): Tri {
   }
   if (e instanceof Fn) {
     if (e.name === 'abs') return isNonZero(at(e.args, 0)) ? true : undefined;
+    // SymPy ceiling._eval_is_positive
+    if (e.name === 'ceiling') return isPositive(at(e.args, 0));
+    const s = oddSign(e, isPositive) ?? minMaxSign(e, isPositive, 'Max');
+    if (s !== undefined) return s;
+    // SymPy cosh and sech of a real argument
+    if ((e.name === 'cosh' || e.name === 'sech') && isReal(at(e.args, 0)) === true) return true;
+    // SymPy acot._eval_is_positive: acot(0) = pi/2
+    if (e.name === 'acot' && isReal(at(e.args, 0)) === true) return isNonNegative(at(e.args, 0));
     return fnSign(e, 1);
   }
   return undefined;
 }
 
 export function isNegative(e: Expr): Tri {
+  if (e instanceof Piecewise) return piecewiseTorf(e, isNegative);
   if (e instanceof Rational || e instanceof Float) return e.isNegative;
   if (e instanceof Special) return e.name === '-oo' ? true : e.name === 'oo' ? false : undefined;
   if (e instanceof Constant) return false;
@@ -339,7 +491,16 @@ export function isNegative(e: Expr): Tri {
     if (isReal(b) && x instanceof Rational && x.isInteger && x.p % 2n === 0n) return false;
     return undefined;
   }
-  if (e instanceof Fn) return fnSign(e, -1);
+  if (e instanceof Fn) {
+    // SymPy floor._eval_is_negative and frac._eval_is_negative
+    if (e.name === 'floor') return isNegative(at(e.args, 0));
+    if (e.name === 'frac') return false;
+    const s = oddSign(e, isNegative) ?? minMaxSign(e, isNegative, 'Min');
+    if (s !== undefined) return s;
+    if ((e.name === 'cosh' || e.name === 'sech') && isReal(at(e.args, 0)) === true) return false;
+    if (e.name === 'acot' && isReal(at(e.args, 0)) === true) return isNegative(at(e.args, 0));
+    return fnSign(e, -1);
+  }
   return undefined;
 }
 
@@ -348,8 +509,27 @@ export function isNonNegative(e: Expr): Tri {
   if (e instanceof Sym && e.assumptions.nonnegative) return true;
   if (e instanceof Sym && e.assumptions.negative) return false;
   if (e instanceof Fn && e.name === 'abs') return true;
+  if (e instanceof Fn && isMinMax(e)) {
+    const s = minMaxSign(e, isNonNegative, 'Max');
+    if (s !== undefined) return s;
+  }
+  // SymPy sign._eval_is_nonnegative
+  if (e instanceof Fn && e.name === 'sign' && isNonNegative(at(e.args, 0)) === true) return true;
+  // SymPy floor._eval_is_nonnegative; frac(x) >= 0 for a real x
+  if (e instanceof Fn && e.name === 'floor') return isNonNegative(at(e.args, 0));
+  if (e instanceof Fn && e.name === 'frac' && isReal(at(e.args, 0)) === true) return true;
   if (e instanceof Add && (all(e.args, isNonNegative) || addBoundSign(e) === 0.5)) return true;
-  if (e instanceof Mul) return all(e.args, isNonNegative) ? true : undefined;
+  if (e instanceof Mul) {
+    if (all(e.args, isNonNegative)) return true;
+    // SymPy Mul._eval_is_extended_nonnegative: an even number of nonpositive factors, the others nonnegative
+    let nonpositive = 0;
+    for (const a of e.args) {
+      if (isNonNegative(a) === true) continue;
+      if (isNonPositive(a) !== true) return undefined;
+      nonpositive++;
+    }
+    return nonpositive % 2 === 0 ? true : undefined;
+  }
   if (e instanceof Pow && isNonNegative(e.base) && isReal(e.exp)) return true;
   if (e instanceof Pow && isReal(e.base) && e.exp instanceof Rational && e.exp.isInteger && e.exp.p % 2n === 0n) {
     return true;
@@ -374,6 +554,12 @@ export function isIntegerQ(e: Expr): Tri {
   if (e instanceof Pow) {
     if (isIntegerQ(e.base) && isIntegerQ(e.exp) && isNonNegative(e.exp)) return true;
   }
+  if (isMinMax(e)) return torf(e.args, isIntegerQ);
+  // SymPy sign._eval_is_integer
+  if (e instanceof Fn && e.name === 'sign') return isReal(at(e.args, 0)) === true ? true : isImaginaryValue(at(e.args, 0)) ? false : undefined;
+  // SymPy RoundFunction._eval_is_integer and frac._eval_is_integer
+  if (e instanceof Fn && (e.name === 'floor' || e.name === 'ceiling')) return isReal(at(e.args, 0)) === true ? true : undefined;
+  if (e instanceof Fn && e.name === 'frac') return isIntegerQ(at(e.args, 0));
   return undefined;
 }
 impl.isReal = isReal;

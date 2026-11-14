@@ -11,7 +11,7 @@
 import type { ExprLike } from '../../core/nodes';
 import { Expr } from '../../core/nodes';
 import { add, sympify } from '../../core/ops';
-import { Domain } from '../domains';
+import { Domain, type UnificationKind } from '../domains';
 
 /** SymPy ExpressionRawDomain: arbitrary expressions, not simplified. */
 export class ExpressionRawDomain extends Domain {
@@ -19,6 +19,12 @@ export class ExpressionRawDomain extends Domain {
   readonly isField = true;
   toString(): string {
     return 'EXRAW';
+  }
+  protected override get unificationKind(): UnificationKind {
+    return 'EXRAW';
+  }
+  override get hasCharacteristicZero(): boolean {
+    return true;
   }
   canon(e: Expr): Expr {
     return e;

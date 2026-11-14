@@ -105,6 +105,8 @@ describe('node classes', () => {
     // SymPy: the adjoint of a scalar is its conjugate
     expect(s(sj.adjoint(b))).toBe('conjugate(Box(x))');
     expect(s(sj.transpose(b))).toBe('Box(x)');
+    // not a function application with a Taylor series
+    expect(b.isTaylorExpandable).toBe(false);
     expect(b).toBeInstanceOf(Expr);
     expect(new BoolAtom(true).key).toBe('!true');
     expect(add(x, y)).toBeInstanceOf(Add);
@@ -240,4 +242,22 @@ it('recognizes numerical expressions, including definite integrals', () => {
     expect(e.isNumber).toBe(true);
   }
   for (const e of [x, sj.SymFunction('f')(1), sj.add(2, new sj.Integral([sj.sympify(2), x])), sj.parse('sin(x)'), sj.parse('x**2')]) expect(e.isNumber).toBe(false);
+});
+
+describe('bitwise operations of integers (SymPy Integer.__lshift__, __rshift__, __and__, __or__, __xor__)', () => {
+  const n = (v: number): Rational => Rational.of(v);
+  it('shifts and combines the bits like Python integers', () => {
+    expect([n(3).lshift(n(2)), n(-3).lshift(2), n(3).lshift(0n)].map(String)).toEqual(['12', '-12', '3']);
+    expect([n(12).rshift(2), n(-3).rshift(n(2)), n(3).rshift(2n)].map(String)).toEqual(['3', '-1', '0']);
+    expect([n(0b01010101).and(0b11011011), n(-0b01010101).and(n(0b11011011)), n(0b01010101).and(-0b11011011)].map(String)).toEqual(['81', '139', '5']);
+    expect([n(0b01010101).or(0b11011011), n(-0b01010101).or(0b11011011)].map(String)).toEqual(['223', '-5']);
+    expect([n(0b01010101).xor(0b11011011), n(0b01010101).xor(n(-0b11011011))].map(String)).toEqual(['142', '-144']);
+  });
+  it('rejects a negative shift count and operands that are not integers', () => {
+    expect(() => n(1).lshift(-1)).toThrow(RangeError);
+    expect(() => n(1).rshift(n(-1))).toThrow(RangeError);
+    expect(() => n(2).lshift(0.5)).toThrow(TypeError);
+    expect(() => Rational.of(1, 2).and(1)).toThrow(TypeError);
+    expect(() => n(2).or(Rational.of(1, 2))).toThrow(TypeError);
+  });
 });

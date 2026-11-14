@@ -8,13 +8,15 @@
  * branch rules of the exponential integrals that use them.
  */
 
-import { isIntegerQ, isPolar, isPositive } from '../../core/assumptions';
+import { isIntegerQ, isPolar, isPositive, isReal } from '../../core/assumptions';
 import { defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike, Substitution } from '../../core/nodes';
 import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, Rel, S, Special, Sym } from '../../core/nodes';
 import { BoolOp } from '../../core/boolalg';
 import { add, exp, mul, pow, sympify } from '../../core/ops';
-import { asCoefficient } from '../../core/methods';
+import { asCoefficient, asIndependent } from '../../core/methods';
+import type { NoMatchResult } from '../../core/truth';
+import { NoMatch } from '../../core/truth';
 import { rebuild, subs, xreplace } from '../../core/traverse';
 import { mpExprFns, mpFns } from '../../numeric/mpeval';
 import { numericFns } from '../../numeric/evalf';
@@ -25,6 +27,18 @@ import { Chi, Ci, Ei, Shi, Si, expint, factorial, gamma } from '../special/speci
 import { parserHooks } from '../../parsing/parser';
 
 export const expPolar = (z: ExprLike): Expr => fn('exp_polar', [z]);
+
+/**
+ * SymPy match_real_imag: [a, b] with expr = a + I*b for real a and b read off the expression as it
+ * is (without expanding it or introducing re and im), or NoMatch.
+ */
+export function matchRealImag(exprIn: ExprLike): [Expr, Expr] | NoMatchResult {
+  const expr = sympify(exprIn);
+  const [r, rest] = asIndependent(expr, [S.I], { asAdd: true });
+  if (rest instanceof Rational && rest.isZero) return isReal(r) === true ? [r, S.Zero] : NoMatch;
+  const i = asCoefficient(rest, S.I);
+  return i !== undefined && !(i instanceof Rational && i.isZero) && isReal(i) === true && isReal(r) === true ? [r, i] : NoMatch;
+}
 export const polarLift = (z: ExprLike): Expr => fn('polar_lift', [z]);
 export const periodicArgument = (z: ExprLike, period: ExprLike): Expr => fn('periodic_argument', [z, period]);
 export const principalBranch = (z: ExprLike, period: ExprLike): Expr => fn('principal_branch', [z, period]);

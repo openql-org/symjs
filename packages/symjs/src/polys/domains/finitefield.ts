@@ -10,12 +10,15 @@
  * representation (the default) it converts to an integer in (-p/2, p/2].
  */
 
-import { NotInvertible } from '../../core/errors';
+import { NotImplementedError, NotInvertible } from '../../core/errors';
 import { first } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
 import { Rational } from '../../core/nodes';
 import { sympify } from '../../core/ops';
 import { asInt, type IntLike } from '../../ntheory/intutil';
+import { isprime } from '../../ntheory/primetest';
+import { sqrtModPrimePower } from '../../ntheory/residue';
+import { NoMatch, type NoMatchResult } from '../../core/truth';
 import { CoercionFailed, Domain, groundRational } from '../domains';
 
 const pmod = (a: bigint, m: bigint): bigint => ((a % m) + m) % m;
@@ -101,7 +104,8 @@ export class ModularInteger {
 /** The finite field GF(p) for a prime p (SymPy FiniteField). */
 export class FiniteField extends Domain {
   readonly ground = 'ZZ' as const;
-  readonly isField = true;
+  /** Whether the modulus is prime (SymPy is_Field). */
+  readonly isField: boolean;
   readonly mod: bigint;
   constructor(
     mod: bigint | number,
@@ -110,12 +114,13 @@ export class FiniteField extends Domain {
     super();
     this.mod = BigInt(mod);
     if (this.mod <= 0n) throw new RangeError(`modulus must be a positive integer, got ${this.mod}`);
+    this.isField = isprime(this.mod);
   }
   toString(): string {
     return `GF(${this.mod})`;
   }
   /** The characteristic p (SymPy characteristic). */
-  characteristic(): bigint {
+  override characteristic(): bigint {
     return this.mod;
   }
   /** An integer expression reduced to the symmetric (or [0, p)) range. */
@@ -173,6 +178,14 @@ export class FiniteField extends Domain {
   }
   override rem(_a: unknown, _b: unknown): ModularInteger {
     return this.convert(0);
+  }
+  /** The square root no larger than p/2 of a quadratic residue (SymPy GF(p).exsqrt), NoMatch otherwise. */
+  override exsqrt(aIn: unknown): ModularInteger | NoMatchResult {
+    const a = this.convert(aIn);
+    if (this.mod === 2n || a.isZero) return a;
+    if (!this.isField) throw new NotImplementedError(`square roots modulo the composite ${this.mod}`);
+    const root = sqrtModPrimePower(a.val, this.mod, 1n)?.find((r) => r <= this.mod / 2n);
+    return root === undefined ? NoMatch : this.convert(root);
   }
   override equals(o: Domain): boolean {
     return o instanceof FiniteField && o.mod === this.mod && o.symmetric === this.symmetric;

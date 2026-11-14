@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
-import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal, isZero } from '../../src/core/assumptions';
+import { isIntegerQ, isMinMax, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal, isZero, torf } from '../../src/core/assumptions';
 import { at } from '../../src/core/guard';
 import { Pow, S } from '../../src/core/nodes';
 import { add, mul } from '../../src/core/ops';
@@ -229,4 +229,167 @@ describe('signs of functions of numbers (SymPy Expr._eval_is_extended_positive_n
 it('keeps a symbol explicitly known to be nonreal distinct from an unknown realness', () => {
   expect(isReal(sj.symbol('z', { real: false }))).toBe(false);
   expect(isReal(sj.symbol('z'))).toBeUndefined();
+});
+
+describe('function assumptions (SymPy test_miscellaneous, test_integers, test_complexes, test_hyperbolic)', () => {
+  const r = sj.symbol('r', { real: true });
+  const p = sj.symbol('p', { positive: true });
+  const n = sj.symbol('n', { negative: true });
+  const np = sj.symbol('np', { nonpositive: true });
+  const k = sj.symbol('k', { integer: true });
+  const i = sj.symbol('i', { imaginary: true });
+  const z = sj.symbol('z', { real: false });
+  const fn = (name: string, ...args: sj.ExprLike[]): sj.Expr => sj.fn(name as never, args.map((a) => sj.sympify(a)));
+  const raw = (name: string, ...args: sj.ExprLike[]): sj.Expr => new sj.AppliedFunction(name as never, args.map((a) => sj.sympify(a)));
+
+  it('decides Max and Min from all of their arguments', () => {
+    expect(isReal(sj.Max(r, p))).toBe(true);
+    expect(isIntegerQ(sj.Max(k, sj.symbol('m', { integer: true })))).toBe(true);
+    expect(isIntegerQ(sj.Max(k, r))).toBeUndefined();
+    // Max is positive when one argument is, negative when all are; Min the other way round
+    expect(isPositive(sj.Max(p, x))).toBe(true);
+    expect(isPositive(sj.Max(n, np))).toBe(false);
+    expect(isPositive(sj.Max(n, x))).toBeUndefined();
+    expect(isNegative(sj.Max(n, sj.symbol('m', { negative: true })))).toBe(true);
+    expect(isNegative(sj.Max(p, x))).toBe(false);
+    expect(isNegative(sj.Min(n, x))).toBe(true);
+    expect(isPositive(sj.Min(p, x))).toBeUndefined();
+    expect(isPositive(sj.Min(p, sj.symbol('q', { positive: true })))).toBe(true);
+    expect(isPositive(sj.Min(n, x))).toBe(false);
+    expect(isNonNegative(sj.Max(p, x))).toBe(true);
+    expect(isNonNegative(sj.Min(p, x))).toBeUndefined();
+    expect(isNonNegative(sj.Max(sj.symbol('nn', { nonnegative: true }), x))).toBe(true);
+    expect(isZero(sj.Max(p, sj.symbol('q', { positive: true })))).toBe(false);
+  });
+
+  it('knows the signs of hyperbolic, inverse and sign functions of real arguments', () => {
+    for (const name of ['sinh', 'tanh', 'coth', 'csch', 'atan', 'sign']) {
+      expect(isPositive(raw(name, p))).toBe(true);
+      expect(isNegative(raw(name, n))).toBe(true);
+    }
+    expect(isPositive(raw('sinh', x))).toBeUndefined();
+    expect(isPositive(raw('cosh', r))).toBe(true);
+    expect(isNegative(raw('sech', r))).toBe(false);
+    expect(isPositive(raw('cosh', x))).toBeUndefined();
+    expect(isNegative(raw('cosh', x))).toBeUndefined();
+    expect(isPositive(raw('acot', p))).toBe(true);
+    expect(isPositive(raw('acot', n))).toBe(false);
+    expect(isNegative(raw('acot', n))).toBe(true);
+    expect(isPositive(raw('acot', x))).toBeUndefined();
+    expect(isNegative(raw('acot', x))).toBeUndefined();
+    expect(isZero(raw('sinh', p))).toBe(false);
+    expect(isZero(raw('cosh', r))).toBe(false);
+  });
+
+  it('decides sign(x) from its argument', () => {
+    expect(isReal(raw('sign', r))).toBe(true);
+    expect(isReal(raw('sign', i))).toBe(false);
+    expect(isReal(raw('sign', x))).toBeUndefined();
+    expect(isReal(raw('sign', mul(S.I, p)))).toBe(false);
+    expect(isNonNegative(raw('sign', sj.symbol('nn', { nonnegative: true })))).toBe(true);
+    expect(isIntegerQ(raw('sign', r))).toBe(true);
+    expect(isIntegerQ(raw('sign', i))).toBe(false);
+    expect(isIntegerQ(raw('sign', x))).toBeUndefined();
+    expect(isZero(raw('sign', p))).toBe(false);
+    expect(isNonNegative(raw('sign', p))).toBe(true);
+    expect(isNonNegative(raw('sign', x))).toBeUndefined();
+  });
+
+  it('decides floor, ceiling and frac from their arguments', () => {
+    expect(isReal(raw('floor', r))).toBe(true);
+    expect(isIntegerQ(raw('floor', r))).toBe(true);
+    expect(isIntegerQ(raw('ceiling', x))).toBeUndefined();
+    expect(isPositive(raw('ceiling', p))).toBe(true);
+    expect(isNegative(raw('floor', n))).toBe(true);
+    expect(isNegative(raw('frac', x))).toBe(false);
+    expect(isNonNegative(raw('floor', p))).toBe(true);
+    expect(isNonNegative(raw('frac', r))).toBe(true);
+    expect(isNonNegative(raw('frac', x))).toBeUndefined();
+    expect(isIntegerQ(raw('frac', k))).toBe(true);
+    // frac(x) = 0 exactly for an integer x
+    expect(isZero(raw('frac', k))).toBe(true);
+    expect(isZero(raw('frac', sj.symbol('w', { integer: false, zero: false })))).toBe(false);
+    expect(isZero(raw('frac', x))).toBeUndefined();
+  });
+
+  it('decides the realness of the inverse functions on the real axis', () => {
+    expect(isReal(raw('asin', sj.Rational.of(1n, 2n)))).toBe(true);
+    expect(isReal(raw('acos', 2))).toBe(false);
+    expect(isReal(raw('acos', r))).toBeUndefined();
+    expect(isReal(raw('asin', x))).toBeUndefined();
+    expect(isReal(raw('atanh', sj.Rational.of(-1n, 5n)))).toBe(true);
+    expect(isReal(raw('atanh', 1))).toBe(false);
+    expect(isReal(raw('acosh', 2))).toBe(true);
+    expect(isReal(raw('acosh', sj.Rational.of(1n, 5n)))).toBe(false);
+    expect(isReal(raw('asech', sj.Rational.of(2n, 3n)))).toBe(true);
+    expect(isReal(raw('acoth', 2))).toBe(true);
+    expect(isReal(raw('acoth', -2))).toBe(true);
+    expect(isReal(raw('acoth', sj.Rational.of(1n, 2n)))).toBe(false);
+    expect(isReal(raw('acoth', r))).toBeUndefined();
+    expect(isReal(raw('acoth', x))).toBeUndefined();
+    expect(isReal(raw('coth', p))).toBe(true);
+    expect(isReal(raw('csch', r))).toBeUndefined();
+  });
+
+  it('evaluates functions of numbers that it has no rule for', () => {
+    // polylog(1, 2) = -log(-1) = -I*pi
+    expect(isReal(raw('polylog', 1, 2))).toBe(false);
+    expect(isReal(raw('polylog', 1, -1))).toBeUndefined();
+    expect(isReal(raw('polylog', 1, x))).toBeUndefined();
+    // no numeric value: Rem has no evaluator
+    expect(isReal(raw('Rem', 1, 2))).toBeUndefined();
+    expect(isZero(raw('Rem', 1, 2))).toBeUndefined();
+    expect(isZero(raw('gamma', 0))).toBeUndefined();
+    // an infinite value is no number to compare with 0
+    expect(isReal(raw('zeta', 1))).toBeUndefined();
+    expect(isZero(raw('cos', sj.Rational.of(1n, 2n)))).toBe(false);
+    // a polar number is not decided by its value
+    expect(isReal(raw('exp_polar', sj.I))).toBeUndefined();
+  });
+
+  it('knows where the elementary functions vanish', () => {
+    const zero = sj.symbol('zz', { zero: true });
+    expect(isZero(raw('sin', zero))).toBe(true);
+    expect(isZero(raw('sin', mul(k, S.Pi)))).toBe(true);
+    expect(isZero(raw('cos', add(mul(k, S.Pi), mul(S.Half, S.Pi))))).toBe(true);
+    expect(isZero(raw('asinh', p))).toBe(false);
+    expect(isZero(raw('atan', x))).toBeUndefined();
+    expect(isZero(raw('log', add(1, zero)))).toBe(true);
+    expect(isZero(raw('log', n))).toBe(false);
+    expect(isZero(raw('log', x))).toBeUndefined();
+    expect(isZero(fn('abs', p))).toBe(false);
+  });
+
+  it('decides a Piecewise from all of its expressions', () => {
+    const pw = sj.piecewise([-1, sj.Lt(x, 1)], [1, true]);
+    expect(isZero(pw)).toBe(false);
+    expect(isReal(pw)).toBe(true);
+    expect(isPositive(pw)).toBeUndefined();
+    expect(isNegative(sj.piecewise([-1, sj.Lt(x, 1)], [-2, true]))).toBe(true);
+    // oo, -oo and zoo are not real numbers; nan is undecided
+    expect(isReal(sj.piecewise([0, sj.Lt(x, 1)], [S.Infinity, true]))).toBeUndefined();
+    expect(isReal(sj.piecewise([S.ComplexInfinity, sj.Lt(x, 1)], [S.NegativeInfinity, true]))).toBe(false);
+    expect(isReal(sj.piecewise([0, sj.Lt(x, 1)], [S.NaN, true]))).toBeUndefined();
+    expect(sj.isFinite(sj.piecewise([0, sj.Lt(x, 1)], [S.Infinity, true]))).toBe('unknown');
+  });
+
+  it('counts the imaginary factors of a product', () => {
+    expect(isReal(mul(S.I, i))).toBe(true);
+    expect(isReal(mul(S.I, i, sj.symbol('j', { imaginary: true })))).toBe(false);
+    expect(isReal(mul(S.I, z))).toBeUndefined();
+    expect(isReal(mul(S.I, sj.symbol('y', { imaginary: true }), x))).toBeUndefined();
+  });
+
+  it('knows that a product with an even number of nonpositive factors is nonnegative', () => {
+    expect(isNonNegative(mul(-1, np))).toBe(true);
+    expect(isNonNegative(mul(np, np, sj.symbol('q', { nonpositive: true })))).toBeUndefined();
+    expect(isNonNegative(mul(np, x))).toBeUndefined();
+  });
+
+  it('applies torf to lists', () => {
+    expect(torf([p, x], isPositive)).toBeUndefined();
+    expect(torf([n, np], isPositive)).toBe(false);
+    expect(isMinMax(sj.Max(x, r))).toBe(true);
+    expect(isMinMax(x)).toBe(false);
+  });
 });

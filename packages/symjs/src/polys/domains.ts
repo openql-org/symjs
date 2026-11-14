@@ -22,6 +22,8 @@ import { add, mul, neg, pow, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { limitDenominator } from '../core/numberutils';
+import { NoMatch, isNoMatch, type NoMatchResult } from '../core/truth';
+import { sqrtrem } from '../ntheory/intutil';
 import { isqrt, div as mpfDiv, fromRational as mpfFromRational, toRational as mpfToRational } from '../numeric/mpf';
 import { evalfPrec } from '../numeric/evalf';
 import { str } from '../printing/str';
@@ -30,6 +32,7 @@ import { cancel, fraction, together } from '../simplify/rational';
 import { polyCoefficients } from './poly';
 import { RealElement, ComplexElement, MPContext } from './domains/mpelements';
 import { PythonMPQ } from './domains/pythonrational';
+import { GeneratorsError, UnificationFailed } from './polyerrors';
 import type { FreeModule } from './agca/modules';
 import type { ModuleImplementedIdeal } from './agca/ideals';
 import type { PolynomialRingBase } from './domains/oldpolynomialring';
@@ -41,13 +44,27 @@ export class CoercionFailed extends TypeError {}
 
 type Ground = 'ZZ' | 'QQ' | 'RR' | 'EX';
 
-const GROUND_RANK: Record<Ground, number> = { ZZ: 0, QQ: 1, RR: 2, EX: 3 };
 
 /** RR.to_rational: the float as a rational with a bounded denominator (mpmath max_denom at 53 bits). */
 const RR_MAX_DENOM = 45035996273704n;
 function floatToRational(f: Float): Rational {
   const [p, q] = mpfToRational(f.mpf);
-  return limitDenominator(Rational.of(p, q), RR_MAX_DENOM);
+  const r = Rational.of(p, q);
+  if (q <= RR_MAX_DENOM) return r;
+  // SymPy to_rational keeps the exact value when a bound of the approximation is 0 (a tiny float)
+  const [p0, q0, p1, q1] = convergents(p, q, RR_MAX_DENOM);
+  return p1 === 0n || p0 + ((RR_MAX_DENOM - q0) / q1) * p1 === 0n ? r : limitDenominator(r, RR_MAX_DENOM);
+}
+
+/** The last two continued fraction convergents p0/q0, p1/q1 of p/q with denominators at most maxDen. */
+function convergents(p: bigint, q: bigint, maxDen: bigint): [bigint, bigint, bigint, bigint] {
+  let [p0, q0, p1, q1, n, d] = [0n, 1n, 1n, 0n, p, q];
+  for (;;) {
+    const a = n / d - (n < 0n && n % d !== 0n ? 1n : 0n);
+    const q2 = q0 + a * q1;
+    if (q2 > maxDen) return [p0, q0, p1, q1];
+    [p0, q0, p1, q1, n, d] = [p1, q1, p0 + a * p1, q2, d, n - a * d];
+  }
 }
 
 /**
@@ -57,10 +74,17 @@ function floatToRational(f: Float): Rational {
  */
 export function groundToSympy(a: unknown): unknown {
   if (typeof a === 'bigint') return Rational.of(a);
+  if (a instanceof DMP || a instanceof DMF) return a.toSympy();
+  if (isPolynomialElement(a)) return a.asExpr();
   if (typeof a === 'number') return Number.isInteger(a) ? Rational.of(BigInt(a)) : sympify(a);
   if (a instanceof RealElement || a instanceof ComplexElement) return a.toSympy();
   if (a instanceof PythonMPQ) return Rational.of(a.numerator, a.denominator);
   return a;
+}
+
+/** A sparse polynomial or rational function (SymPy PolyElement, FracElement): an element of its ring or field. */
+function isPolynomialElement(a: unknown): a is { asExpr(): Expr } {
+  return typeof a === 'object' && a !== null && ('ring' in a || 'field' in a) && 'asExpr' in a && typeof a.asExpr === 'function';
 }
 
 /** A rational ground value as [p, q] (numbers, bigints, PythonMPQ, Rational, finite Float); undefined otherwise. */
@@ -123,13 +147,56 @@ export const domainHooks: {
   freeModule?: (K: Domain, rank: IntLike) => FreeModule;
   ideal?: (K: Domain, gens: readonly ExprLike[]) => ModuleImplementedIdeal;
   quotientRing?: (K: Domain, ideal: ModuleImplementedIdeal | readonly ExprLike[]) => QuotientRing;
+  compositeRing?: (K: Domain, gens: readonly Sym[]) => Domain;
+  compositeField?: (K: Domain, gens: readonly Sym[]) => Domain;
+  complexField?: (prec: number) => Domain;
 } = {};
 
-/** e is built from the generators, numbers of the ground domain, +, * and integer powers (nonnegative ones only for a ring). */
+/** Values that are not coefficients of any domain (SymPy _not_a_coeff: nan, oo, -oo and zoo). */
+function notACoefficient(a: unknown): boolean {
+  if (typeof a === 'number') return !Number.isFinite(a);
+  return a === S.NaN || a === S.Infinity || a === S.NegativeInfinity || a === S.ComplexInfinity;
+}
+
+/** The kinds of domains that SymPy unify distinguishes. @internal */
+export type UnificationKind = 'ZZ' | 'QQ' | 'RR' | 'CC' | 'ALG' | 'ZZ_I' | 'QQ_I' | 'EX' | 'EXRAW' | 'other';
+
+const isSym = (e: unknown): e is Sym => e instanceof Sym;
+
+/** The generators of both lists, the common ones in a consistent order (SymPy _unify_gens). @internal */
+export function unifyGens(fIn: readonly Expr[], gIn: readonly Expr[]): Expr[] {
+  let [f, g] = [[...fIn], [...gIn]];
+  if (f.length === g.length && f.every((a, i) => a.key === at(g, i).key)) return f;
+  const has = (list: readonly Expr[], e: Expr): boolean => list.some((a) => a.key === e.key);
+  const common = f.filter((a) => has(g, a));
+  let k = 0;
+  g = g.map((a) => (has(common, a) ? at(common, k++) : a));
+  const gens: Expr[] = [];
+  for (const c of common) {
+    const i = f.findIndex((a) => a.key === c.key);
+    gens.push(...f.slice(0, i));
+    f = f.slice(i + 1);
+    const j = g.findIndex((a) => a.key === c.key);
+    gens.push(...g.slice(0, j));
+    g = g.slice(j + 1);
+    gens.push(c);
+  }
+  return [...gens, ...f, ...g];
+}
+
+/** Is e a generator, or (in a field) the reciprocal of one (x in QQ(1/x))? */
+const isGenerator = (e: Expr, gens: readonly Expr[], ring: boolean): boolean => gens.some((g) => g.key === e.key) || (!ring && gens.some((g) => g.key === pow(e, -1).key));
+
+/**
+ * e is built from the generators, numbers of the ground domain, +, * and
+ * integer powers (nonnegative ones only for a ring); over EX any
+ * subexpression free of the generators is a coefficient.
+ */
 function isRationalIn(e: Expr, gens: readonly Sym[], ground: Ground, ring: boolean): boolean {
   if (e instanceof Rational) return ground !== 'ZZ' || e.isInteger || !ring;
   if (e instanceof Float) return ground === 'RR';
-  if (e instanceof Sym) return gens.some((g) => g.key === e.key);
+  if (isGenerator(e, gens, ring)) return true;
+  if (ground === 'EX' && !gens.some((g) => [...freeSymbols(g)].some((s) => freeSymbols(e).has(s)))) return true;
   if (e instanceof Add || e instanceof Mul) return e.args.every((a) => isRationalIn(a, gens, ground, ring));
   if (e instanceof Pow) {
     const k = e.exp;
@@ -177,6 +244,39 @@ export abstract class Domain {
     if (!(e instanceof Expr)) throw new CoercionFailed(`cannot convert ${String(a)} to ${this.toString()}`);
     return this.fromSympy(e);
   }
+  /** Is a a unit, an invertible element (SymPy is_unit)? */
+  isUnit(a: unknown): boolean {
+    if (this.isField) return !this.isZero(this.convert(a));
+    throw new NotImplementedError(`isUnit is not implemented for ${this.toString()}`);
+  }
+  /** The unit u for which u*a is the canonical associate of a (SymPy canonical_unit). */
+  canonicalUnit(a: unknown): unknown {
+    return this.convert(this.isNegative(this.convert(a)) ? -1 : 1);
+  }
+  /** The square root of a when it is a square in the domain (SymPy exsqrt), NoMatch otherwise. */
+  exsqrt(_a: unknown): unknown {
+    throw new NotImplementedError(`exsqrt is not implemented for ${this.toString()}`);
+  }
+  /** Is a a square in the domain (SymPy is_square)? */
+  isSquare(a: unknown): boolean {
+    return !isNoMatch(this.exsqrt(a));
+  }
+  /** Convert an element of the domain `base` to an element of this domain (SymPy convert_from); throws CoercionFailed. */
+  convertFrom(a: unknown, base: Domain): unknown {
+    return this.convert(a, base);
+  }
+  /** The element of a polynomial ring K0 as an element of this domain (SymPy from_PolynomialRing), NoMatch when it is not one. */
+  fromPolynomialRing(a: unknown, K0: Domain): unknown {
+    return this.convertOrNoMatch(a, K0);
+  }
+  /** The element of a fraction field K0 as an element of this domain (SymPy from_FractionField), NoMatch when it is not one. */
+  fromFractionField(a: unknown, K0: Domain): unknown {
+    return this.convertOrNoMatch(a, K0);
+  }
+  private convertOrNoMatch(a: unknown, K0: Domain): unknown {
+    try { return this.convert(a, K0); }
+    catch (error) { if (error instanceof CoercionFailed) return NoMatch; throw error; }
+  }
   /** Is a an element of the domain's type (SymPy of_type)? */
   ofType(a: unknown): boolean {
     return a instanceof Expr;
@@ -197,6 +297,10 @@ export abstract class Domain {
   get hasAssocField(): boolean {
     try { this.getField(); return true; }
     catch (error) { if (error instanceof NotImplementedError) return false; throw error; }
+  }
+  /** Whether this domain has an associated ring of which it is the field (SymPy has_assoc_Ring). */
+  get hasAssocRing(): boolean {
+    return false;
   }
   /** a > 0 (SymPy is_positive of a ground element). */
   isPositive(a: unknown): boolean {
@@ -270,13 +374,46 @@ export abstract class Domain {
   }
   /** The fraction field (SymPy get_field). */
   abstract getField(): Domain;
-  /** SymPy K[gens] (K.poly_ring). */
+  /** SymPy K[gens] (K.poly_ring): the polynomial ring in gens over this domain. */
   polyRing(...gens: Sym[]): Domain {
-    return new PolynomialRing(this.ground, [...this.symbols, ...gens]);
+    if (isGroundDomain(this) || this instanceof PolynomialRing) return new PolynomialRing(this, gens);
+    return defined(domainHooks.compositeRing, 'composite domains')(this, gens);
   }
-  /** SymPy K.frac_field(*gens). */
+  /** SymPy K.frac_field(*gens): the field of rational functions in gens over this domain. */
   fracField(...gens: Sym[]): Domain {
-    return new FractionField(this.ground, [...this.symbols, ...gens]);
+    if (isGroundDomain(this) || this instanceof SymbolicDomain) return new FractionField(this, gens);
+    return defined(domainHooks.compositeField, 'composite domains')(this, gens);
+  }
+  /** SymPy K.inject(*symbols): the polynomial ring over this domain, or this composite domain with more generators. */
+  inject(...symbols: Sym[]): Domain {
+    return this.polyRing(...symbols);
+  }
+  /** SymPy K.drop(*symbols): a simple domain has no generators to drop. */
+  drop(..._symbols: Expr[]): Domain {
+    return this;
+  }
+  /** SymPy `a in K`: whether a converts to an element of the domain. */
+  contains(a: unknown): boolean {
+    if (notACoefficient(a)) return false;
+    try { this.convert(a); return true; }
+    catch (error) { if (error instanceof CoercionFailed) return false; throw error; }
+  }
+  /** Whether the elements are exact (SymPy is_Exact): false for the floating-point domains. */
+  get isExact(): boolean {
+    return true;
+  }
+  /** The exact domain closest to this one (SymPy get_exact). */
+  getExact(): Domain {
+    return this;
+  }
+  /** Whether the domain has characteristic zero (SymPy has_CharacteristicZero). */
+  get hasCharacteristicZero(): boolean {
+    return false;
+  }
+  /** The characteristic of the domain (SymPy characteristic): 0 for a domain of characteristic zero. */
+  characteristic(): bigint {
+    if (this.hasCharacteristicZero) return 0n;
+    throw new NotImplementedError('characteristic()');
   }
   /** SymPy K.old_poly_ring(x): the univariate polynomial ring over this domain. */
   oldPolyRing(gen: Sym): GlobalPolynomialRing;
@@ -297,16 +434,88 @@ export abstract class Domain {
   quotientRing(ideal: ModuleImplementedIdeal | readonly ExprLike[]): QuotientRing {
     return defined(domainHooks.quotientRing, 'quotient rings')(this, ideal);
   }
-  /** The smallest domain containing this one and o (SymPy unify). */
-  unify(o: Domain): Domain {
-    if (this.equals(o)) return this;
-    if (this === EX || o === EX) return EX;
-    const ground: Ground = GROUND_RANK[this.ground] >= GROUND_RANK[o.ground] ? this.ground : o.ground;
-    const symbols = [...this.symbols];
-    for (const s of o.symbols) if (!symbols.some((t) => t.key === s.key)) symbols.push(s);
-    if (symbols.length === 0) return GROUNDS[ground];
-    const frac = this instanceof FractionField || o instanceof FractionField;
-    return frac ? new FractionField(ground, symbols) : new PolynomialRing(ground, symbols);
+  /** The kind of the domain in the unification rules of SymPy unify. @internal */
+  protected get unificationKind(): UnificationKind {
+    return 'other';
+  }
+  /** The precision in bits of a floating-point domain (RR, CC). @internal */
+  protected get floatPrecision(): number {
+    return 53;
+  }
+  /** The extensions an algebraic field was made from (SymPy orig_ext). @internal */
+  protected get algebraicExtensions(): readonly Expr[] {
+    return [];
+  }
+  /** The coefficient domain and generators of a composite domain (K[x], K(x)); false for a simple domain. @internal */
+  protected get compositeParts(): readonly [Domain, readonly Sym[]] | false {
+    return false;
+  }
+  /** The composite domain of the same kind over K in the generators. @internal */
+  protected recompose(_K: Domain, _gens: readonly Sym[]): Domain {
+    throw new NotImplementedError(`${this.toString()} is not a composite domain`);
+  }
+  /** The smallest domain containing this one and K1 (SymPy unify). */
+  unify(K1In: Domain): Domain {
+    let [K0, K1]: [Domain, Domain] = [this, K1In];
+    if (K0.equals(K1)) return K0;
+    if (!(K0.hasCharacteristicZero && K1.hasCharacteristicZero)) {
+      if (K0.characteristic() !== K1.characteristic()) throw new UnificationFailed(`Cannot unify ${K0.toString()} with ${K1.toString()}`);
+      return K0.unifyComposite(K1);
+    }
+    for (const kind of ['EXRAW', 'EX'] as const) {
+      if (K0.unificationKind === kind) return K0;
+      if (K1.unificationKind === kind) return K1;
+    }
+    if (K0.compositeParts !== false || K1.compositeParts !== false) return K0.unifyComposite(K1);
+    const kind = (K: Domain): UnificationKind => K.unificationKind;
+    if (kind(K1) === 'CC') [K0, K1] = [K1, K0];
+    if (kind(K0) === 'CC') {
+      if ((kind(K1) === 'CC' || kind(K1) === 'RR') && K1.floatPrecision > K0.floatPrecision) return kind(K1) === 'CC' ? K1 : defined(domainHooks.complexField, 'complex field')(K1.floatPrecision);
+      return K0;
+    }
+    if (kind(K1) === 'RR') [K0, K1] = [K1, K0];
+    if (kind(K0) === 'RR') {
+      if (kind(K1) === 'RR') return K1.floatPrecision > K0.floatPrecision ? K1 : K0;
+      if (kind(K1) === 'ZZ_I' || kind(K1) === 'QQ_I') return defined(domainHooks.complexField, 'complex field')(K0.floatPrecision);
+      return K0;
+    }
+    if (kind(K1) === 'ALG') [K0, K1] = [K1, K0];
+    if (kind(K0) === 'ALG') {
+      if (kind(K1) === 'ZZ_I') K1 = K1.getField();
+      if (kind(K1) === 'QQ_I') K1 = QQ.algebraicField(S.I);
+      return kind(K1) === 'ALG' ? QQ.algebraicField(...unifyGens(K0.algebraicExtensions, K1.algebraicExtensions)) : K0;
+    }
+    for (const k of ['QQ_I', 'ZZ_I'] as const) {
+      if (kind(K0) === k) return k === 'ZZ_I' && kind(K1) === 'QQ' ? K0.getField() : K0;
+      if (kind(K1) === k) return k === 'ZZ_I' && kind(K0) === 'QQ' ? K1.getField() : K1;
+    }
+    for (const k of ['QQ', 'ZZ'] as const) {
+      if (kind(K0) === k) return K0;
+      if (kind(K1) === k) return K1;
+    }
+    return EX;
+  }
+  /** Unify two domains of which at least one is composite (SymPy unify_composite). */
+  private unifyComposite(K1: Domain): Domain {
+    const [p0, p1] = [this.compositeParts, K1.compositeParts];
+    const [g0, s0] = p0 === false ? [this, []] : p0;
+    const [g1, s1] = p1 === false ? [K1, []] : p1;
+    let domain = g0.unify(g1);
+    const symbols = unifyGens(s0, s1);
+    // ZZ[x].unify(QQ.frac_field(x)) is ZZ.frac_field(x)
+    const mixed = p0 !== false && p1 !== false && this.isField !== K1.isField;
+    if (mixed && (!g0.isField || !g1.isField) && domain.isField && domain.hasAssocRing) domain = domain.getRing();
+    const cls = p0 !== false && (p1 === false || this.isField || !K1.isField) ? this : K1;
+    return cls.recompose(domain, symbols.map((g) => expectType(g, isSym, 'generator')));
+  }
+  /** The unified domain, failing when a composite domain has one of the symbols as a generator (SymPy unify_with_symbols). */
+  unifyWithSymbols(K1: Domain, symbols: readonly Expr[]): Domain {
+    const shares = (K: Domain): boolean => {
+      const parts = K.compositeParts;
+      return parts !== false && parts[1].some((g) => symbols.some((s) => s.key === g.key));
+    };
+    if (shares(this) || shares(K1)) throw new UnificationFailed(`Cannot unify ${this.toString()} with ${K1.toString()}, given (${symbols.map((s) => str(s)).join(', ')}) generators`);
+    return this.unify(K1);
   }
 }
 
@@ -316,6 +525,15 @@ export class IntegerRing extends Domain {
   readonly isField = false;
   toString(): string {
     return 'ZZ';
+  }
+  protected override get unificationKind(): UnificationKind {
+    return 'ZZ';
+  }
+  override get hasAssocRing(): boolean {
+    return true;
+  }
+  override get hasCharacteristicZero(): boolean {
+    return true;
   }
   canon(e: Expr): Expr {
     return e;
@@ -359,6 +577,18 @@ export class IntegerRing extends Domain {
   override rem(a: unknown, b: unknown): bigint {
     return floorDivmod(this.convert(a), this.convert(b))[1];
   }
+  /** 1 and -1 are the units of ZZ. */
+  override isUnit(a: unknown): boolean {
+    const n = this.convert(a);
+    return n === 1n || n === -1n;
+  }
+  /** The nonnegative square root of a square (SymPy ZZ.exsqrt), NoMatch otherwise. */
+  override exsqrt(aIn: unknown): bigint | NoMatchResult {
+    const a = this.convert(aIn);
+    if (a < 0n) return NoMatch;
+    const [root, rem] = sqrtrem(a);
+    return rem === 0n ? root : NoMatch;
+  }
   /** floor(log(a, b)) computed in floating point like SymPy's math.log (SymPy ZZ.log). */
   log(a: unknown, b: unknown): bigint {
     return BigInt(Math.trunc(Math.log(Number(this.convert(a))) / Math.log(Number(this.convert(b)))));
@@ -371,6 +601,15 @@ export class RationalField extends Domain {
   readonly isField = true;
   toString(): string {
     return 'QQ';
+  }
+  protected override get unificationKind(): UnificationKind {
+    return 'QQ';
+  }
+  override get hasAssocRing(): boolean {
+    return true;
+  }
+  override get hasCharacteristicZero(): boolean {
+    return true;
   }
   canon(e: Expr): Expr {
     return e;
@@ -420,6 +659,12 @@ export class RationalField extends Domain {
   override rem(_a: unknown, _b: unknown): PythonMPQ {
     return new PythonMPQ(0n);
   }
+  /** The nonnegative square root of a square (SymPy QQ.exsqrt), NoMatch otherwise. */
+  override exsqrt(aIn: unknown): PythonMPQ | NoMatchResult {
+    const a = this.convert(aIn);
+    const [p, q] = [ZZ.exsqrt(a.numerator), ZZ.exsqrt(a.denominator)];
+    return isNoMatch(p) || isNoMatch(q) ? NoMatch : new PythonMPQ(p, q);
+  }
 }
 
 /** SymPy RR: floating-point numbers with 53 bits. */
@@ -438,6 +683,17 @@ export class RealField extends Domain {
     return this.precision === 53 ? 'RR' : `RR_${this.precision}`;
   }
   override equals(other: Domain): boolean { return other instanceof RealField && other.precision === this.precision; }
+  override get isExact(): boolean { return false; }
+  /** The exact counterpart QQ (SymPy get_exact). */
+  override getExact(): Domain { return QQ; }
+  override get hasCharacteristicZero(): boolean { return true; }
+  protected override get unificationKind(): UnificationKind { return 'RR'; }
+  protected override get floatPrecision(): number { return this.precision; }
+  /** The nonnegative square root of a >= 0 (SymPy RR.exsqrt), NoMatch for a < 0. */
+  override exsqrt(aIn: unknown): Expr | NoMatchResult {
+    const a = this.convert(aIn);
+    return a instanceof Float && a.isNegative ? NoMatch : this.fromSympy(pow(this.toSympy(a), S.Half));
+  }
   canon(e: Expr): Expr {
     return e instanceof Rational ? new Float(mpfFromRational(e.p, e.q, this.precision), this.precision) : e;
   }
@@ -513,6 +769,12 @@ export class ExpressionDomain extends Domain {
   toString(): string {
     return 'EX';
   }
+  protected override get unificationKind(): UnificationKind {
+    return 'EX';
+  }
+  override get hasCharacteristicZero(): boolean {
+    return true;
+  }
   canon(e: Expr): Expr {
     return e instanceof Rational ? e : expand(cancel(e));
   }
@@ -525,8 +787,9 @@ export class ExpressionDomain extends Domain {
   override toSympy(a: unknown): Expr {
     return a instanceof Expression ? a.ex : super.toSympy(a);
   }
-  /** An element (SymPy EX.convert): the expression wrapped as an Expression. */
+  /** An element (SymPy EX.convert): the expression wrapped as an Expression; nan and the infinities are not elements. */
   override convert(a: unknown, base?: Domain): Expression {
+    if (notACoefficient(a)) throw new CoercionFailed(`${String(a)} is not in any domain`);
     return new Expression(a instanceof Expression ? a.ex : (base ?? this).toSympy(a));
   }
   override ofType(a: unknown): boolean {
@@ -537,13 +800,25 @@ export class ExpressionDomain extends Domain {
   }
 }
 
-/** Shared parts of K[a, ...] and K(a, ...). */
+/**
+ * Shared parts of K[a, ...] and K(a, ...) over a numeric ground domain or
+ * over such a domain with generators (ZZ[z][x]). Elements are expressions in
+ * all generators: `symbols` lists those of the coefficient domain first, and
+ * `gens` the generators added by this domain.
+ */
 abstract class SymbolicDomain extends Domain {
-  constructor(
-    readonly ground: Ground,
-    readonly symbols: readonly Sym[],
-  ) {
+  readonly ground: Ground;
+  override readonly symbols: readonly Sym[];
+  /** The coefficient domain (SymPy domain). */
+  readonly domain: Domain;
+  /** The generators over the coefficient domain (SymPy symbols). */
+  readonly gens: readonly Sym[];
+  constructor(coefficients: Ground | Domain, gens: readonly Sym[]) {
     super();
+    this.domain = typeof coefficients === 'string' ? GROUNDS[coefficients] : coefficients;
+    this.ground = this.domain.ground;
+    this.gens = gens;
+    this.symbols = [...this.domain.symbols, ...gens];
   }
   protected abstract readonly ring: boolean;
   protected get bracket(): [string, string] {
@@ -551,12 +826,52 @@ abstract class SymbolicDomain extends Domain {
   }
   toString(): string {
     const [l, r] = this.bracket;
-    return `${this.ground}${l}${this.symbols.map((s) => str(s)).join(',')}${r}`;
+    return `${this.domain.toString()}${l}${this.gens.map((s) => str(s)).join(',')}${r}`;
+  }
+  /** The same kind of domain over another coefficient domain (SymPy set_domain). */
+  abstract setDomain(K: Domain): Domain;
+  override get isExact(): boolean {
+    return this.domain.isExact;
+  }
+  override getExact(): Domain {
+    return this.setDomain(this.domain.getExact());
+  }
+  override get hasCharacteristicZero(): boolean {
+    return this.domain.hasCharacteristicZero;
+  }
+  override characteristic(): bigint {
+    return this.domain.characteristic();
+  }
+  override inject(...symbols: Sym[]): Domain {
+    if (symbols.some((s) => this.symbols.some((t) => t.key === s.key))) throw new GeneratorsError(`common generators in (${this.gens.map((g) => str(g)).join(', ')}) and (${symbols.map((g) => str(g)).join(', ')})`);
+    return this.recompose(this.domain, [...this.gens, ...symbols]);
+  }
+  override drop(...symbols: Expr[]): Domain {
+    const gens = this.gens.filter((g) => !symbols.some((s) => s.key === g.key));
+    const K = this.domain.drop(...symbols);
+    return gens.length ? this.recompose(K, gens) : K;
+  }
+  protected override get compositeParts(): readonly [Domain, readonly Sym[]] {
+    return [this.domain, this.gens];
+  }
+  /** The same kind of domain with other generators over K. */
+  protected abstract override recompose(K: Domain, gens: readonly Sym[]): Domain;
+  override get hasAssocRing(): boolean {
+    return true;
   }
   fromSympy(eIn: ExprLike): Expr {
-    const e = sympify(eIn);
+    const e = this.groundCoefficients(sympify(eIn));
     if (!isRationalIn(e, this.symbols, this.ground, this.ring)) throw new CoercionFailed(`cannot convert ${str(e)} to ${this.toString()}`);
     return this.canon(e);
+  }
+  /** e with its numbers converted to elements of the ground domain where they are (3.0 in ZZ, sqrt(7) in RR). */
+  private groundCoefficients(e: Expr): Expr {
+    if (e instanceof Rational || e instanceof Sym) return e;
+    if (freeSymbols(e).size === 0) return GROUNDS[this.ground].contains(e) ? GROUNDS[this.ground].fromSympy(e) : e;
+    if (e instanceof Add) return add(...e.args.map((a) => this.groundCoefficients(a)));
+    if (e instanceof Mul) return mul(...e.args.map((a) => this.groundCoefficients(a)));
+    if (e instanceof Pow) return pow(this.groundCoefficients(e.base), e.exp);
+    return e;
   }
   override isZero(a: Expr): boolean {
     return a instanceof Rational && a.isZero;
@@ -607,7 +922,39 @@ export class PolynomialRing extends SymbolicDomain {
     return new Map([...out.values()].filter(([, c]) => !(c instanceof Rational && c.isZero)).map(([m, c]) => [m, this.dom.convert(c)]));
   }
   getField(): Domain {
-    return new FractionField(this.ground, this.symbols);
+    return this.domain.fracField(...this.gens);
+  }
+  setDomain(K: Domain): Domain {
+    return K.polyRing(...this.gens);
+  }
+  /** The units are the units of the ground domain (SymPy PolynomialRing.is_unit). */
+  override isUnit(a: unknown): boolean {
+    const e = this.toSympy(this.convert(a));
+    const free = [...freeSymbols(e)];
+    return !this.symbols.some((s) => free.some((f) => f.key === s.key)) && GROUNDS[this.ground].isUnit(e);
+  }
+  /** The canonical unit of the leading coefficient (SymPy PolynomialRing.canonical_unit). */
+  override canonicalUnit(a: unknown): unknown {
+    const terms = [...this.toDict(this.convert(a))];
+    if (!terms.length) return this.convert(1);
+    // lex order with the generators of this ring before those of its coefficient domain
+    const rank = this.lexRank();
+    const key = (m: readonly number[]): number[] => rank.map((i) => at(m, i));
+    // distinct monomials differ at some position
+    const compare = (u: readonly number[], v: readonly number[]): number => {
+      const i = u.findIndex((k, j) => k !== at(v, j));
+      return at(u, i) - at(v, i);
+    };
+    const [, lc] = terms.reduce((best, t) => (compare(key(t[0]), key(best[0])) > 0 ? t : best));
+    return this.convert(GROUNDS[this.ground].canonicalUnit(lc));
+  }
+  /** The positions of the symbols in lex significance: this ring's generators, then the coefficient domain's. */
+  private lexRank(): number[] {
+    const inner = this.domain instanceof PolynomialRing ? this.domain.lexRank() : [];
+    return [...this.gens.map((_, i) => inner.length + i), ...inner];
+  }
+  protected recompose(K: Domain, gens: readonly Sym[]): Domain {
+    return K.polyRing(...gens);
   }
 }
 
@@ -622,7 +969,13 @@ export class FractionField extends SymbolicDomain {
     return this;
   }
   override getRing(): Domain {
-    return new PolynomialRing(this.ground, this.symbols);
+    return this.domain.polyRing(...this.gens);
+  }
+  setDomain(K: Domain): Domain {
+    return K.fracField(...this.gens);
+  }
+  protected recompose(K: Domain, gens: readonly Sym[]): Domain {
+    return K.fracField(...gens);
   }
 }
 
@@ -636,6 +989,11 @@ export const RR: Domain = new RealField();
 export const EX: ExpressionDomain = new ExpressionDomain();
 
 const GROUNDS: Record<Ground, Domain> = { ZZ, QQ, RR, EX };
+
+/** Is K one of the numeric ground domains ZZ, QQ, RR (53 bits) and EX? */
+function isGroundDomain(K: Domain): boolean {
+  return K.equals(GROUNDS[K.ground]);
+}
 
 // ---------------------------------------------------------------------------
 // dense univariate polynomials (SymPy DMP) and fractions of them (DMF)
@@ -1049,23 +1407,33 @@ export class OldFractionField {
   new(p: DMP | readonly Expr[]): DMF {
     return this.frac(p instanceof DMP ? p : new DMP(p, this.ring), this.ring.one);
   }
-  /** The fraction num/den with common factors cancelled (SymPy dmp_cancel). */
+  /**
+   * The fraction num/den with common factors cancelled (SymPy dmp_cancel): over QQ the
+   * denominators are cleared and the gcd is taken over ZZ, over RR over the exact rationals of the
+   * coefficients; the denominator gets a positive leading coefficient.
+   */
   frac(num: DMP, den: DMP): DMF {
     if (den.isZero) throw new RangeError('division by zero in a fraction field');
     if (num.isZero) return new DMF(num, this.ring.one, this);
     const dom = this.dom;
+    let [p, q]: [Rep, Rep] = [num.rep, den.rep];
     if (dom === RR) {
-      const exact = new OldFractionField(new GlobalPolynomialRing(QQ, this.ring.gen));
-      const r = exact.frac(new DMP(toExactRep(num.rep), exact.ring), new DMP(toExactRep(den.rep), exact.ring));
-      return new DMF(new DMP(toFloatRep(r.num.rep), this.ring), new DMP(toFloatRep(r.den.rep), this.ring), this);
+      const [f, g] = [strip(QQ, toExactRep(p)), strip(QQ, toExactRep(q))];
+      const h = repGcd(QQ, f, g);
+      [p, q] = [toFloatRep(repExquo(QQ, f, h)), toFloatRep(repExquo(QQ, g, h))];
+    } else if (dom === QQ) {
+      const denominator = (f: Rep): bigint => f.reduce((m, c) => ilcm(m, rat(c).q), 1n);
+      const [cq, cp] = [denominator(p), denominator(q)];
+      const [f, g] = [repMulGround(QQ, p, Rational.of(cq)), repMulGround(QQ, q, Rational.of(cp))];
+      const h = repGcd(ZZ, f, g);
+      const c = igcd(cp, cq);
+      [p, q] = [repMulGround(QQ, repExquo(ZZ, f, h), Rational.of(cp / c)), repMulGround(QQ, repExquo(ZZ, g, h), Rational.of(cq / c))];
+    } else {
+      const h = repGcd(dom, p, q);
+      [p, q] = [repExquo(dom, p, h), repExquo(dom, q, h)];
     }
-    const g = num.gcd(den);
-    let [p, q] = [num.exquo(g), den.exquo(g)];
-    if (dom.isField) {
-      const lc = q.LC();
-      if (!dom.isOne(lc)) [p, q] = [new DMP(p.rep.map((c) => dom.quo(c, lc)), this.ring), new DMP(q.rep.map((c) => dom.quo(c, lc)), this.ring)];
-    } else if (dom.isNegative(q.LC())) [p, q] = [p.neg(), q.neg()];
-    return new DMF(p, q, this);
+    if (dom.isNegative(first(q))) [p, q] = [repNeg(dom, p), repNeg(dom, q)];
+    return new DMF(new DMP(p, this.ring), new DMP(q, this.ring), this);
   }
   /** Convert a rational function of the generator (SymPy from_sympy); throws CoercionFailed. */
   fromSympy(eIn: ExprLike): DMF {

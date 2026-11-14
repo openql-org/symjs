@@ -269,7 +269,8 @@ function lexOrder(terms: readonly Expr[], order = 'lex'): Expr[] {
           ncpart.push(factor);
           continue;
         }
-        if (!hasFreeSymbols(factor)) {
+        // (SymPy complex(factor) evaluates with evalf: a function application that stays unevaluated, Sqrt(1), is a generator)
+        if (!hasFreeSymbols(factor) && !(factor instanceof ExtensionExpr && factor.isTaylorExpandable && impl.evalf(factor) instanceof ExtensionExpr)) {
           try {
             const v = impl.toComplex(factor);
             // avoid 0*oo = nan for real infinite factors

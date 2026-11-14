@@ -126,7 +126,15 @@ const lit = (k: string, v: boolean): string => (v ? k : `!${k}`);
  * Contradicting facts throw a RangeError (SymPy InconsistentAssumptions, a ValueError).
  */
 export function deduceAllFacts(facts: Readonly<Record<string, boolean>>): Map<string, boolean> {
-  const kb = new Map<string, boolean>();
+  return deduceFacts(new Map(), Object.entries(facts));
+}
+
+/**
+ * SymPy `FactKB.deduce_all_facts` of an existing knowledge base: adds the
+ * facts and all their consequences to kb (in place) and returns it.
+ * Contradicting facts throw a RangeError and leave kb partly updated.
+ */
+export function deduceFacts(kb: Map<string, boolean>, facts: readonly (readonly [string, boolean])[]): Map<string, boolean> {
   const tell = (k: string, v: boolean): boolean => {
     const old = kb.get(k);
     if (old === undefined) {
@@ -136,7 +144,7 @@ export function deduceAllFacts(facts: Readonly<Record<string, boolean>>): Map<st
     if (old !== v) throw new RangeError(`inconsistent assumptions: ${k}=${String(v)} contradicts ${k}=${String(old)}`);
     return false;
   };
-  let pending: [string, boolean][] = Object.entries(facts);
+  let pending: readonly (readonly [string, boolean])[] = facts;
   while (pending.length) {
     for (const [k, v] of pending) {
       if (!tell(k, v)) continue;
@@ -149,3 +157,20 @@ export function deduceAllFacts(facts: Readonly<Record<string, boolean>>): Map<st
   }
   return kb;
 }
+
+/**
+ * SymPy `_assume_rules.prereq`: for each fact, the facts whose values can
+ * determine it (those that imply it or its negation), in sorted order.
+ */
+export const FACT_PREREQUISITES: ReadonlyMap<string, readonly string[]> = /* @__PURE__ */ (() => {
+  const prereq = new Map<string, Set<string>>();
+  for (const [key, implied] of Object.entries(FULL_IMPLICATIONS)) {
+    const [a] = parse(key);
+    for (const [i] of literals(implied)) {
+      let s = prereq.get(i);
+      if (s === undefined) prereq.set(i, (s = new Set()));
+      s.add(a);
+    }
+  }
+  return new Map([...prereq].map(([k, s]) => [k, [...s].sort()]));
+})();

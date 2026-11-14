@@ -37,46 +37,51 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Dummit's quintic coefficient tables and branch selection add at most 80 KiB
 // to consumers that load radical polynomial solving.
 // The dense recursive polynomial tools (densetools) are part of the root namespace.
-// The LaTeX, MathML and str printer settings (function classes, perm_cyclic, adjoint and
-// matrix symbol styles, term order, tuples) and the parser's Python syntax (factorials,
-// comparisons, builtins, transformations one by one) add up to 5 KiB to core consumers.
+// SymPy's assumption handlers behind the public is* queries (core/exprfacts) add
+// about 22 KiB to the core namespace; Integer bitwise methods add under 1 KiB to
+// core consumers.
+// Assumption rules of functions (Max/Min, floor/ceiling/frac, sign, hyperbolic and inverse
+// functions), the comparisons of floor, ceiling and frac and the added rewrites add about
+// 5 KiB to core consumers and 10 KiB to the special namespace.
+// Complex-infinity absorption in products and the Taylor-expandable flag of extension
+// nodes add under 1 KiB to core and sets consumers.
 const CASES = [
-  ['core', 'Rational', 193],
-  ['core', 'parse, str', 210],
-  ['core', 'parse, diff, expand, str, latex', 210],
-  ['core', '*', 290],
+  ['core', 'Rational', 196],
+  ['core', 'parse, str', 211],
+  ['core', 'parse, diff, expand, str, latex', 211],
+  ['core', '*', 315],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
-  ['special', '*', 385],
+  ['special', '*', 395],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 970],
+  ['simplify', 'simplify', 981],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
-  ['polys', 'factor', 676],
+  ['polys', 'factor', 683],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 997],
-  ['solvers', 'solve', 1055],
-  ['solvers', 'dsolve', 1070],
-  ['sets', '*', 356],
-  ['matrices', 'Matrix', 749],
-  ['printing', 'pretty', 232],
-  ['discrete', '*', 288],
-  ['strategies', '*', 204],
+  ['solvers', 'solve', 1067],
+  ['solvers', 'dsolve', 1082],
+  ['sets', '*', 365],
+  ['matrices', 'Matrix', 759],
+  ['printing', 'pretty', 235],
+  ['discrete', '*', 291],
+  ['strategies', '*', 207],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
   ['parsing', '*', 800],
-  ['unify', '*', 230],
+  ['unify', '*', 235],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 548],
-  ['holonomic', 'exprToHolonomic', 1140],
+  ['algebras', 'Quaternion', 566],
+  ['holonomic', 'exprToHolonomic', 1158],
   ['geometry', '*', 1078],
   ['vector', '*', 1176],
-  ['stats', '*', 1285],
+  ['stats', '*', 1306],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1005],
+  ['plotting', '*', 1019],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
@@ -86,7 +91,7 @@ const CASES = [
   ['index', 'Rational', 195],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators and quadrature (measured 2648 KiB).
-  ['index', '*', 2660],
+  ['index', '*', 2704],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

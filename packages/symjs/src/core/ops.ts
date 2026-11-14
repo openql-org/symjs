@@ -12,7 +12,7 @@
  * - distribution of a numeric coefficient over a sum (2*(x+1) -> 2*x+2)
  */
 
-import { isIntegerQ, isNegative, isNonNegative, isPolar, isPositive, isReal } from './assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal } from './assumptions';
 import type { ComplexValue, ExprLike, Num } from './nodes';
 import {
   Add,
@@ -497,7 +497,11 @@ function mulSpecial(args: Expr[]): Expr {
     return S.NaN;
   }
   if (specials.some((e) => e.name === 'zoo')) {
-    return impl.freeSymbols(c).size === 0 ? S.ComplexInfinity : new Mul([c, S.ComplexInfinity]);
+    if (impl.freeSymbols(c).size === 0) return S.ComplexInfinity;
+    // SymPy Mul.flatten: zoo absorbs the nonzero factors whose realness is known (zoo*x**3/6 = zoo*x**3)
+    const absorbed = (f: Expr): boolean => isNonZero(f) === true && isReal(f) !== undefined;
+    const rest = mul(...flat.filter((f) => !(f instanceof Special) && !absorbed(f)));
+    return rest instanceof Rational ? S.ComplexInfinity : new Mul([...(rest instanceof Mul ? rest.args : [rest]), S.ComplexInfinity]);
   }
   let sign = specials.filter((e) => e.name === '-oo').length % 2 === 0 ? 1 : -1;
   const [k, r] = splitCoeff(c);

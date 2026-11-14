@@ -11,11 +11,11 @@
 import { DomainError } from '../../core/errors';
 import type { ExprLike } from '../../core/nodes';
 import { type Expr, Float, S } from '../../core/nodes';
-import { add, mul, sympify } from '../../core/ops';
+import { add, mul, pow, sympify } from '../../core/ops';
 import { asRealImag } from '../../core/methods';
 import { evalf } from '../../numeric/evalf';
 import { str } from '../../printing/str';
-import { CoercionFailed, Domain } from '../domains';
+import { CoercionFailed, Domain, domainHooks, type UnificationKind } from '../domains';
 import { MPContext, type ComplexElement } from './mpelements';
 import { QQ_I } from './gaussiandomains';
 
@@ -59,8 +59,20 @@ export class ComplexField extends Domain {
     throw new DomainError(`there is no ring associated with ${this.toString()}`);
   }
   /** The exact counterpart QQ_I (SymPy get_exact). */
-  getExact(): Domain {
+  override getExact(): Domain {
     return QQ_I;
+  }
+  override get isExact(): boolean {
+    return false;
+  }
+  protected override get unificationKind(): UnificationKind {
+    return 'CC';
+  }
+  protected override get floatPrecision(): number {
+    return this.precision;
+  }
+  override get hasCharacteristicZero(): boolean {
+    return true;
   }
   /** SymPy: complex floats are neither positive nor negative. */
   override isNegative(_a: unknown): boolean {
@@ -75,6 +87,13 @@ export class ComplexField extends Domain {
   override isNonpositive(_a: unknown): boolean {
     return false;
   }
+  /** The principal square root (SymPy CC.exsqrt); every complex number is a square. */
+  override exsqrt(a: unknown): Expr {
+    return this.canon(pow(this.toSympy(this.convert(a)), S.Half));
+  }
+  override isSquare(_a: unknown): boolean {
+    return true;
+  }
   override gcd(_a: unknown, _b: unknown): Expr {
     return this.canon(S.One);
   }
@@ -85,3 +104,5 @@ export class ComplexField extends Domain {
 
 /** SymPy CC (53 bits). */
 export const CC: ComplexField = new ComplexField();
+
+domainHooks.complexField = (prec) => new ComplexField(prec);

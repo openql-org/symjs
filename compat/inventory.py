@@ -449,7 +449,7 @@ NOTES = {
     'sympy.polys.numberfields.utilities': 'Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.',
     'sympy.polys.rootoftools': 'Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.',
     'sympy.polys.appellseqs': 'Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.',
-    'sympy.polys.densetools': 'All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result), and RR fraction-field elements keep the denominator as given instead of making it monic.',
+    'sympy.polys.densetools': 'All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result).',
     'sympy.polys.dispersion': 'Univariate dispersion sets via factor pairs and exact shifts; inherits the supported coefficient domains of Poly.factorList.',
     'sympy.polys.solvers': 'sympyEqsToRing, eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.',
     'sympy.polys.puiseux': 'PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain',
