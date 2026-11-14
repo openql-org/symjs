@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { add, defineFunction, fn, parse, rewrite, sub, symbol, symbols } from '../../src';
+import { add, defineFunction, fn, parse, rational, rewrite, sstr, sub, subs, symbol, symbols, toComplex } from '../../src';
 
 const [x, y, n, k] = symbols('x y n k');
 const r = symbol('r', { real: true });
@@ -191,5 +191,87 @@ describe('rewrite(..., log) of the inverse trigonometric and hyperbolic function
       ['acsc(2*y + 1)', '-I*log(sqrt(1 - 1/(2*y + 1)**2) + I/(2*y + 1))'],
     ];
     for (const [e, r] of cases) expect(String(rewrite(parse(e), 'log'))).toBe(r);
+  });
+});
+
+describe('rewrite of a power as exp (SymPy Pow._eval_rewrite_as_exp)', () => {
+  it('writes b**e as exp(e*log(b))', async () => {
+    const { I, Pow: PowNode, S: s, exp: e, pow, sqrt } = await import('../../src');
+    expect(String(rewrite(pow(x, y), 'exp'))).toBe('exp(y*log(x))');
+    expect(String(rewrite(pow(7, x), 'exp'))).toBe('exp(x*log(7))');
+    expect(String(rewrite(pow(I, I), 'exp'))).toBe('exp(-pi/2)');
+    expect(String(rewrite(P('(2 + 3*I)**x'), 'exp'))).toBe('exp(x*(log(sqrt(13)) + I*atan(3/2)))');
+    // a power of a symbol to an exponent without symbols stays a power
+    expect(String(rewrite(pow(x, 2), 'exp'))).toBe('x**2');
+    // a power of 0 or one that contains exp is kept
+    expect(String(rewrite(new PowNode(s.Zero, x), 'exp'))).toBe('0**x');
+    expect(String(rewrite(pow(e(x), y), 'exp'))).toBe('exp(x)**y');
+    expect(String(rewrite(pow(x, e(y)), 'exp'))).toBe('x**exp(y)');
+    expect(String(rewrite(sqrt(2), 'exp'))).toBe('sqrt(2)');
+  });
+});
+
+describe('rewrites between trigonometric, hyperbolic and inverse functions (SymPy _eval_rewrite_as_*)', () => {
+  const x = symbol('x');
+  /** e and its rewrite agree at a point of the domain (the value of x). */
+  const agrees = (f: string, target: string, at: number): void => {
+    const e = parse(f, { symbols: [x] });
+    const r = rewrite(e, target);
+    expect(r.has(e), `${f} -> ${target}`).toBe(false);
+    const v = (u: typeof e) => toComplex(subsNum(u, at));
+    const [a, b] = [v(e), v(r)];
+    expect(Math.hypot(a.re - b.re, a.im - b.im), `${f} -> ${target}: ${sstr(r)}`).toBeLessThan(1e-9);
+  };
+  const subsNum = (e: ReturnType<typeof parse>, at: number) => subs(e, [[x, rational(Math.round(at * 1000), 1000)]]);
+
+  it('rewrites the reciprocal trigonometric functions', () => {
+    for (const [f, targets] of [
+      ['sin(x)', ['cot', 'csc', 'sec']], ['cos(x)', ['cot', 'sec', 'csc']], ['tan(x)', ['cot', 'sec', 'csc']],
+      ['cot(x)', ['exp', 'sin', 'cos', 'sincos', 'tan', 'sec', 'csc']], ['sec(x)', ['cot', 'cos', 'sincos', 'sin', 'tan', 'csc', 'exp']],
+      ['csc(x)', ['sin', 'sincos', 'cot', 'cos', 'sec', 'tan', 'exp']], ['cot(sin(x))', ['exp']],
+    ] as const) for (const t of targets) agrees(f, t, 0.7);
+  });
+
+  it('rewrites the hyperbolic functions', () => {
+    for (const [f, targets] of [
+      ['sinh(x)', ['coth']], ['cosh(x)', ['coth']], ['tanh(x)', ['coth']], ['coth(x)', ['sinh', 'cosh', 'tanh']],
+      ['csch(x)', ['cosh', 'exp', 'tanh', 'coth']], ['sech(x)', ['sinh', 'exp', 'tanh', 'coth']], ['sinc(x)', ['sin']],
+    ] as const) for (const t of targets) agrees(f, t, 0.7);
+  });
+
+  it('rewrites the inverse trigonometric functions', () => {
+    for (const [f, targets, at] of [
+      ['asin(x)', ['acot', 'asec', 'acsc'], 0.4], ['acos(x)', ['acot', 'asec', 'acsc'], 0.4], ['atan(x)', ['acot', 'asec', 'acsc'], 0.4],
+      ['acot(x)', ['asin', 'acos', 'atan', 'asec', 'acsc'], 0.4], ['asec(x)', ['asin', 'acos', 'atan', 'acot', 'acsc'], 1.7],
+      ['acsc(x)', ['asin', 'acos', 'atan', 'acot', 'asec'], 1.7],
+    ] as const) for (const t of targets) agrees(f, t, at);
+  });
+
+  it('rewrites the inverse hyperbolic functions', () => {
+    for (const [f, targets, at] of [
+      ['asinh(x)', ['atanh', 'asin', 'acos'], 0.4], ['acosh(x)', ['asin', 'asinh', 'atanh'], 1.7], ['atanh(x)', ['asinh'], 0.4],
+      ['acoth(x)', ['atanh', 'asinh'], 1.7], ['asech(x)', ['acosh', 'asinh', 'atanh'], 0.4], ['acsch(x)', ['asinh', 'atanh'], 0.4],
+    ] as const) for (const t of targets) agrees(f, t, at);
+  });
+
+  it('writes Exp1, re, im, Abs, Max and Min in other terms', () => {
+    expect(sstr(rewrite(parse('E'), 'cos'))).toBe('sinh(1) + cosh(1)');
+    expect(sstr(rewrite(parse('E'), 'sin'))).toBe('sinh(1) + cosh(1)');
+    expect(sstr(rewrite(parse('re(x)', { symbols: [x] }), 'im'))).toBe('x - I*im(x)');
+    expect(sstr(rewrite(parse('im(x)', { symbols: [x] }), 're'))).toBe('-I*(x - re(x))');
+    const i = symbol('i', { imaginary: true });
+    expect(sstr(rewrite(parse('Abs(i)', { symbols: [i] }), 'Piecewise'))).toBe('Piecewise((I*i, I*i >= 0), (-I*i, True))');
+    expect(sstr(rewrite(parse('Abs(x)', { symbols: [x] }), 'Piecewise'))).toBe('Abs(x)');
+    const [a, b, c] = symbols('a b c');
+    expect(sstr(rewrite(parse('Max(a, b)', { symbols: [a, b] }), 'Piecewise'))).toBe('Piecewise((a, a >= b), (b, True))');
+    expect(sstr(rewrite(parse('Min(a, b, c)', { symbols: [a, b, c] }), 'Piecewise'))).toBe('Piecewise((a, (a <= b) & (a <= c)), (b, b <= c), (c, True))');
+    expect(sstr(rewrite(parse('cot(log(x))', { symbols: [x] }), 'Pow'))).toBe('-I*(x**I + x**(-I))/(-x**I + x**(-I))');
+    expect(sstr(rewrite(parse('cot(x)', { symbols: [x] }), 'Pow'))).toBe('cot(x)');
+    expect(sstr(rewrite(parse('sec(log(x))', { symbols: [x] }), 'Pow'))).toBe('1/(x**I/2 + 1/(2*x**I))');
+    expect(sstr(rewrite(parse('sec(x)', { symbols: [x] }), 'Pow'))).toBe('sec(x)');
+  });
+
+  it('rewrites trigonometric functions with Bessel functions', () => {
+    for (const f of ['sin(x)', 'cos(x)', 'tan(x)', 'cot(x)', 'sec(x)', 'csc(x)']) agrees(f, 'besselj', 0.7);
   });
 });

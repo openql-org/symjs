@@ -429,3 +429,27 @@ describe('trigonometric functions at infinities (SymPy eval)', () => {
     }
   });
 });
+
+describe('period (SymPy TrigonometricFunction.period)', () => {
+  const [x, y] = sj.symbols('x y');
+  const p = (e: string, s?: sj.Sym): string => sj.sstr(sj.period(parse(e), s));
+  it('divides the period of the function by the coefficient of the variable', () => {
+    expect(p('sin(x)')).toBe('2*pi');
+    expect(p('tan(x)')).toBe('pi');
+    expect(p('sec(x)')).toBe('2*pi');
+    expect(p('sin(2*x)')).toBe('pi');
+    expect(p('cot(4*x - 6)')).toBe('pi/4');
+    expect(p('cos(-3*x)')).toBe('2*pi/3');
+    expect(p('cos(x*y)', x)).toBe('2*pi/Abs(y)');
+    expect(p('sin(3*x*y + 2*pi)', y)).toBe('2*pi/(3*Abs(x))');
+    expect(p('cos(pi*(x/4 + 1/4))')).toBe('8');
+    expect(p('sin(x)', y)).toBe('0');
+    expect(p('sin(1)')).toBe('0');
+  });
+  it('raises for other arguments and functions', () => {
+    expect(() => sj.period(parse('sin(x**2)'), x)).toThrow(sj.NotImplementedError);
+    expect(() => sj.period(parse('sin(x**2 + 1)'), x)).toThrow(sj.NotImplementedError);
+    expect(() => sj.period(parse('exp(x)'), x)).toThrow(TypeError);
+    expect(() => sj.period(parse('besselj(1, x)'), x)).toThrow(TypeError);
+  });
+});

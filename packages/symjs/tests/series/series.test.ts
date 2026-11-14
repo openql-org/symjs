@@ -436,3 +436,37 @@ it('retains order variables and implements asymptotic containment and products',
   expect(String(sj.mul(o(x),o(x,x,1)))).toContain('*');
   expect(sj.mul(o(x),0)).toBe(sj.S.Zero);
 });
+
+describe('series terms of functions without a Maclaurin series (SymPy taylor_term)', () => {
+  const x = new Sym('x');
+  const tt = (f: string, n: number): string => sstr(sj.taylorTerm(parse(f), n, x));
+  it('gives the Laurent terms of cot and csc', () => {
+    expect(tt('cot(x)', 0)).toBe('1/x');
+    expect(tt('cot(x)', 1)).toBe('-x/3');
+    expect(tt('cot(x)', 3)).toBe('-x**3/45');
+    expect(tt('cot(x)', 2)).toBe('0');
+    expect(tt('csc(x)', 0)).toBe('1/x');
+    expect(tt('csc(x)', 2)).toBe('0');
+    expect(tt('csc(x)', 1)).toBe('x/6');
+    expect(tt('csc(x)', 3)).toBe('7*x**3/360');
+    expect(tt('csc(x)', 5)).toBe('31*x**5/15120');
+  });
+  it('gives the terms of asec, acsc, asech and acsch', () => {
+    expect(tt('asech(x)', 0)).toBe('log(2/x)');
+    expect(tt('asech(x)', 1)).toBe('0');
+    expect(tt('asech(x)', 8)).toBe('-35*x**8/1024');
+    expect(tt('acsch(x)', 0)).toBe('log(2/x)');
+    expect(tt('acsch(x)', 3)).toBe('0');
+    expect(tt('acsch(x)', 2)).toBe('x**2/4');
+    expect(tt('acsch(x)', 6)).toBe('5*x**6/96');
+    expect(tt('acsch(x)', 4)).toBe('-3*x**4/32');
+    expect(tt('asec(x)', 0)).toBe('I*log(2/x)');
+    expect(tt('asec(x)', 1)).toBe('0');
+    expect(tt('asec(x)', 6)).toBe('-5*I*x**6/96');
+    expect(tt('acsc(x)', 0)).toBe('I*log(x) + pi/2 - I*log(2)');
+    expect(tt('acsc(x)', 1)).toBe('0');
+    expect(tt('acsc(x)', 8)).toBe('35*I*x**8/1024');
+    expect(tt('sin(x)', 3)).toBe('-x**3/6');
+    expect(tt('cot(2*x)', 0)).toBe('zoo');
+  });
+});

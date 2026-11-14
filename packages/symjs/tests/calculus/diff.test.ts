@@ -108,8 +108,8 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(sj.parse('sign(x)', { symbols: [x] }), x))).toBe('Derivative(sign(x), x)');
     // floor and ceiling of another argument follow the chain rule (SymPy 1.14)
     expect(s(sj.diff(sj.parse('floor(x**2)', { symbols: [x] }), x))).toBe('2*x*Subs(Derivative(floor(_xi_1), _xi_1), _xi_1, x**2)');
-    // SymPy 1.14: 2*DiracDelta(r); DiracDelta is defined above the calculus module (integrals), so it stays unevaluated
-    expect(s(sj.diff(sj.parse('sign(r)', { symbols: [r] }), r))).toBe('Derivative(sign(r), r)');
+    // the derivative formula of sign is registered with DiracDelta (integrals/transforms/delta)
+    expect(s(sj.diff(sj.parse('sign(r)', { symbols: [r] }), r))).toBe('2*DiracDelta(r)');
     expect(s(sj.diff(sj.parse('arg(r)', { symbols: [r] }), r))).toBe('0');
     // SymPy 1.14: (re(x)*Derivative(im(x), x) - im(x)*Derivative(re(x), x))/(re(x)**2 + im(x)**2)
     expect(s(sj.diff(sj.parse('arg(x)', { symbols: [x] }), x))).toBe('Derivative(arg(x), x)');
@@ -231,5 +231,13 @@ describe('fdiff', () => {
     expect(() => sj.fdiff(P('sin(x)'), 0)).toThrow(RangeError);
     expect(() => sj.fdiff(P('sin(x)'), 1.5)).toThrow(RangeError);
     expect(() => sj.fdiff(P('x + 1'))).toThrow(TypeError);
+  });
+});
+
+describe('partial derivatives without a formula', () => {
+  it('keeps the derivative unevaluated', () => {
+    const x = new sj.Sym('x');
+    expect(sj.sstr(sj.diff(sj.sign(x), x))).toBe('Derivative(sign(x), x)');
+    expect(sj.sstr(sj.diff(sj.sign(sj.add(x, 1)), x))).toBe('Derivative(sign(x + 1), x)');
   });
 });

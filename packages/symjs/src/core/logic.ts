@@ -45,6 +45,8 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     return op === 'Eq' ? S.false : S.true;
   }
   if (!equality && [lhs, rhs].some(isSpecial('zoo'))) throw new TypeError('Invalid comparison of non-real zoo');
+  const decided = impl.relational?.(op, lhs, rhs);
+  if (decided !== undefined) return decided;
   const byCmp = (c: number): Expr => ({ Eq: c === 0, Ne: c !== 0, Lt: c < 0, Le: c <= 0, Gt: c > 0, Ge: c >= 0 }[op] ? S.true : S.false);
   // a real (finite) value against oo or -oo (SymPy: a real symbol is finite)
   for (const [inf, other, sgn] of [[rhs, lhs, -1], [lhs, rhs, 1]] as const) {
