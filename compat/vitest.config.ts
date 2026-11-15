@@ -24,7 +24,7 @@ export default defineConfig({
       onTestRunEnd() { writeTestsReport(directory, (performance.now() - start) / 1000); rmSync(directory, { recursive: true, force: true }); },
     }],
     projects: [
-      { resolve, test: { name: 'doctests-and-harness', include: ['compat/**/*.test.ts'], exclude: ['compat/tests-compat.test.ts'], testTimeout: 600_000 } },
+      { resolve, test: { name: 'doctests-and-harness', include: ['compat/**/*.test.ts'], exclude: ['compat/tests-compat.test.ts', 'compat/totests/**'], testTimeout: 600_000 } },
       ...Object.keys(corpusIndex().categories).map((category) => ({ resolve, test: {
         name: `unit-${category}`, include: ['compat/tests-compat.test.ts'], testTimeout: 600_000,
         provide: { testsCategory: category, testsResults: directory },

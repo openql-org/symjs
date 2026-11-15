@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { symbols, rootsQuintic, Poly, parseExpr, symbol } from '../packages/symjs/src';
-import { equivalent } from './equivalence';
+import { symbols, rootsQuintic, Poly, parseExpr, symbol } from '../src';
+import { equivalent } from './sympy-equivalent';
 
 describe('mathematical equivalence checks', () => {
   it.each([

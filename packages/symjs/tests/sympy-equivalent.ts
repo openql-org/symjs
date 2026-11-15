@@ -12,8 +12,8 @@
  * never equivalent: "cannot compute" is not the same capability.
  */
 
-import * as sj from '../packages/symjs/src';
-import { Expr } from '../packages/symjs/src';
+import * as sj from '../src';
+import { Expr } from '../src';
 
 type V =
   | { t: 'expr'; e: Expr }

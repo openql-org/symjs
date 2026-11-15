@@ -18,7 +18,7 @@ import * as plotting from '../packages/symjs/src/plotting';
 import * as parsing from '../packages/symjs/src/parsing';
 // Category dispatch selects diffgeom.Point; the root geometry Point keeps its name.
 const publicApi = { ...dg, ...sj, ...parsing };
-import { equivalent } from './equivalence';
+import { equivalent } from '../packages/symjs/tests/sympy-equivalent';
 import { GrowableGrid } from '../packages/symjs/src/categories/diagram_drawing';
 import { PORTS } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';

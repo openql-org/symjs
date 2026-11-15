@@ -11,6 +11,7 @@ pnpm lint                                       # oxlint --type-aware --deny-war
 pnpm test                                       # every test passes
 pnpm coverage                                   # 100% coverage (see below)
 pnpm compat                                     # SymPy doctest compatibility, writes compat/REPORT.md
+pnpm corpus:report                              # corpus tests, writes docs/compat-report.md
 pnpm build && node packages/symjs/scripts/size.mjs --check   # bundle sizes within budget
 pnpm test:package                              # built ESM/CJS, minification and consumer type resolution
 ```
@@ -67,7 +68,7 @@ pnpm test:package                              # built ESM/CJS, minification and
   (`sympy/*/tests`) are a good source of cases.
 - Results match SymPy's `str()` output. A result in another form counts as
   compatible only when it is mathematically equal (see
-  `compat/equivalence.ts`). A result left unevaluated where SymPy computes
+  `packages/symjs/tests/sympy-equivalent.ts`). A result left unevaluated where SymPy computes
   a value is a failure.
 - **Mathematical correctness wins over SymPy's output.** When SymPy is
   wrong (a wrong value, a wrong sign, a claim that fails for some admissible
@@ -206,3 +207,31 @@ stores their IDs in `timeouts` as inconclusive observations. A deadline cannot
 establish a correctness regression, and a completed result cannot resolve a
 previously unfinished assertion as a confirmed fix. Completed assertions still
 use the strict existing regression/fixed-case checks.
+
+## Corpus tests
+
+`compat/totests` converts both corpora into vitest tests of the public API,
+`packages/symjs/tests/**/<module>.corpus.test.ts`, next to the hand-written
+tests of the module the cases exercise. The converter replays each case with the
+symjs entry points traced and prints the public calls that produced the result.
+Every case becomes one of three kinds:
+
+- `it`: symjs gives SymPy's result.
+- `it.fails`: the case translates to the public API but the result differs.
+- `it.todo`: the case does not translate yet; the comment above it holds the
+  reason, the SymPy source and SymPy's result.
+
+The generated files are not edited by hand. Regenerate them after an extraction
+or an implementation change, and repeat until the type check reports no errors
+(cases whose arguments the public types reject are recorded in
+`compat/totests/type-errors.json` and written as `it.todo` by the next run):
+
+```sh
+UPDATE_CORPUS_TESTS=1 npx vitest run --config compat/totests/vitest.config.ts compat/totests/generate.test.ts
+pnpm corpus:report   # runs the corpus tests, writes docs/compat-report.md
+```
+
+`docs/compat-report.md` gives the compatibility rate per corpus and category:
+the share of cases that are `it` and pass. An `it` that fails or an `it.fails`
+that passes is listed as stale; regenerate the files when a change fixes or
+breaks a case.
