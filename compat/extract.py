@@ -679,6 +679,9 @@ def symbol_assumptions(symbol):
 
 DUMMY_IDS = {}
 
+# a Python range is written out item by item; longer ones are not serialized
+MAX_RANGE_ITEMS = 10000
+
 
 class Unsupported(Exception):
     pass
@@ -1211,6 +1214,8 @@ def ser(o):
         return {"t": "JsSet", "items": [ser(i) for i in o]}
     if isinstance(o, list):
         return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
+    if isinstance(o, range) and len(o) > MAX_RANGE_ITEMS:
+        raise Unsupported("range with more items than are written out")
     if isinstance(o, range) or type(o).__name__ in ("dict_keys", "dict_values"):
         return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
     if isinstance(o, (tuple, Tuple)):

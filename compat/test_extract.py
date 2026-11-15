@@ -352,6 +352,11 @@ class ExtractTests(unittest.TestCase):
         with self.assertRaises(extract.Unsupported):
             extract.ser(Transform(lambda x: x, lambda x: bool(x)))
 
+    def test_long_ranges_are_not_written_out(self):
+        self.assertEqual(extract.ser(range(2))["items"], [extract.ser(0), extract.ser(1)])
+        with self.assertRaises(extract.Unsupported):
+            extract.ser(range(1000000000000))
+
     def test_property_receivers_preserve_type_and_metadata(self):
         from sympy.combinatorics.partitions import Partition
         from sympy.polys.agca.extensions import FiniteExtension

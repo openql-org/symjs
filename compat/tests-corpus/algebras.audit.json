@@ -1,9 +1,4 @@
 {"omitted":[
-{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_quaternion_construction","line":29,"src":"assert q2 == Quaternion(S.Half, S.Half,\n                            S.Half, S.Half)","reason":"non-call-expression","count":1},
-{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_quaternion_construction","line":34,"src":"assert q3 == Quaternion(\n        sqrt(2)*sqrt(cos(phi) + 1)/2, 0, 0, sqrt(2 - 2*cos(phi))*sign(sin(phi))/2)","reason":"non-call-expression","count":1},
-{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_issue_25254","line":58,"src":"assert ((test - p).norm() < 1E-10)","reason":"unsupported-assertion","count":1},
-{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_product_matrices","line":77,"src":"assert R1 == R2","reason":"non-call-expression","count":1},
-{"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_rotation_matrix_homogeneous","line":319,"src":"assert R1 == R2","reason":"non-call-expression","count":1},
 {"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_quaternion_multiplication","line":343,"src":"assert Quaternion._generic_mul(S(4), S.One) == 4","reason":"private-api","count":1},
 {"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_quaternion_multiplication","line":344,"src":"assert (Quaternion._generic_mul(S(4), q1) ==\n            Quaternion(12 + 16*I, 8 + 20*I, 0, 28 + 32*I))","reason":"private-api","count":1},
 {"module":"sympy.algebras.tests.test_quaternion","category":"algebras","test":"test_issue_16318","line":370,"src":"assert (axis, angle) == q.to_axis_angle()","reason":"non-call-expression","count":1},

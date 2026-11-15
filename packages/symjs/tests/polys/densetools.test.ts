@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import { runTestCase } from '../../../../compat/tests-harness';
-import type { TestCase } from '../../../../compat/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../compat/tests-harness';
 import {
   DomainError, EX, Float, I, RR, MultivariatePolynomialError, mul, NotReversible, PythonMPQ, QQ, QQ_I, Sym, ZZ, ZZ_I, add, dmpAlgInject, dmpClearDenoms,
   dmpEval, dmpRevert, dmpShift, dmpToDict, dupClearDenoms, dupDiff, dupExtract, dupRealImag, dupRevert, dupSignVariations, pow, sqrt, str,
@@ -28,8 +26,7 @@ it('handles Gaussian integer and rational domains, including purely real coeffic
 });
 
 it('replays every measured SymPy densetools assertion', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../compat/tests-corpus/polys.json', import.meta.url), 'utf8'));
-  const failures = cases.filter((c) => c.module === 'sympy.polys.tests.test_densetools').flatMap((c) => {
+  const failures = passingModuleCases('polys', 'sympy.polys.tests.test_densetools').flatMap((c) => {
     const o = runTestCase(c);
     return o.status === 'pass' || o.status === 'equivalent' ? [] : [{ src: c.src, fn: c.fn, ...o }];
   });

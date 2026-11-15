@@ -30180,14 +30180,13 @@
      "testModule": "sympy.algebras.tests.test_quaternion",
      "testFile": "sympy/algebras/tests/test_quaternion.py",
      "inCorpus": true,
-     "caseCount": 128,
+     "caseCount": 133,
      "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
-      "non-call-expression": 5,
-      "not-executed": 1,
-      "unsupported-assertion": 1
+      "non-call-expression": 1,
+      "not-executed": 1
      },
      "incompleteTests": {
       "marked-slow": 2
@@ -37560,11 +37559,10 @@
      "testModule": "sympy.assumptions.tests.test_refine",
      "testFile": "sympy/assumptions/tests/test_refine.py",
      "inCorpus": true,
-     "caseCount": 98,
+     "caseCount": 101,
      "gapCount": 40,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 3,
       "unserializable-input": 2,
       "unsupported-assertion": 3
      },
@@ -38865,7 +38863,7 @@
   {
    "module": "sympy.assumptions.satask",
    "sha256": "3f78a9acf8ee3b2853e45c2bd215fad714ce703f7c33f6f35d2015fa95d884de",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "assumptions/satask.ts"
    ],
@@ -38886,17 +38884,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.assumptions.tests.test_satask",
      "testFile": "sympy/assumptions/tests/test_satask.py",
      "inCorpus": true,
-     "caseCount": 209,
+     "caseCount": 210,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -39374,13 +39370,12 @@
      "testModule": "sympy.calculus.tests.test_accumulationbounds",
      "testFile": "sympy/calculus/tests/test_accumulationbounds.py",
      "inCorpus": true,
-     "caseCount": 197,
+     "caseCount": 201,
      "gapCount": 57,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1,
       "not-exported-api": 4,
-      "unsupported-assertion": 18
+      "unsupported-assertion": 17
      },
      "incompleteTests": {}
     },
@@ -39491,17 +39486,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.calculus.tests.test_finite_diff",
      "testFile": "sympy/calculus/tests/test_finite_diff.py",
      "inCorpus": true,
-     "caseCount": 49,
+     "caseCount": 52,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 3
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -39614,7 +39607,6 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
-      "non-boolean-assertion": 1,
       "stateful-iterator-input": 2,
       "unsupported-assertion": 19
      },
@@ -41028,12 +41020,11 @@
      "testModule": "sympy.categories.tests.test_baseclasses",
      "testFile": "sympy/categories/tests/test_baseclasses.py",
      "inCorpus": true,
-     "caseCount": 57,
+     "caseCount": 71,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 14,
-      "not-exported-api": 2,
+      "not-exported-api": 1,
       "unsupported-assertion": 3
      },
      "incompleteTests": {}
@@ -42510,8 +42501,7 @@
      "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "marked-slow": 10,
-      "non-call-expression": 1
+      "marked-slow": 10
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -42599,16 +42589,15 @@
      "testModule": "sympy.combinatorics.tests.test_fp_groups",
      "testFile": "sympy/combinatorics/tests/test_fp_groups.py",
      "inCorpus": true,
-     "caseCount": 45,
+     "caseCount": 53,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 5,
       "non-boolean-assertion": 2,
       "non-call-expression": 1,
-      "not-exported-api": 7,
       "stateful-iterator-input": 3,
-      "unsupported-assertion": 6
+      "unsupported-assertion": 5
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -42722,14 +42711,13 @@
      "testModule": "sympy.combinatorics.tests.test_free_groups",
      "testFile": "sympy/combinatorics/tests/test_free_groups.py",
      "inCorpus": true,
-     "caseCount": 83,
-     "gapCount": 1,
+     "caseCount": 109,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
-      "non-call-expression": 15,
-      "not-exported-api": 11,
-      "unsupported-assertion": 19
+      "non-call-expression": 11,
+      "not-exported-api": 2,
+      "unsupported-assertion": 10
      },
      "incompleteTests": {}
     },
@@ -42914,12 +42902,10 @@
      "testModule": "sympy.combinatorics.tests.test_generators",
      "testFile": "sympy/combinatorics/tests/test_generators.py",
      "inCorpus": true,
-     "caseCount": 1,
+     "caseCount": 10,
      "gapCount": 1,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "stateful-iterator-input": 9
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -43070,14 +43056,13 @@
      "testModule": "sympy.combinatorics.tests.test_graycode",
      "testFile": "sympy/combinatorics/tests/test_graycode.py",
      "inCorpus": true,
-     "caseCount": 22,
+     "caseCount": 26,
      "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
-      "not-exported-api": 2,
-      "stateful-iterator-input": 5,
-      "unsupported-assertion": 1
+      "not-exported-api": 1,
+      "stateful-iterator-input": 3
      },
      "incompleteTests": {}
     },
@@ -43111,7 +43096,7 @@
   {
    "module": "sympy.combinatorics.group_constructs",
    "sha256": "20ac75dbfc9626a110ee0fa806e0167795512db08e5b22f42c6e0f42ee37052f",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "combinatorics/groupconstructs.ts"
    ],
@@ -43132,17 +43117,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.combinatorics.tests.test_group_constructs",
      "testFile": "sympy/combinatorics/tests/test_group_constructs.py",
      "inCorpus": true,
-     "caseCount": 5,
+     "caseCount": 6,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -43185,7 +43168,7 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.combinatorics.tests.test_group_numbers",
      "testFile": "sympy/combinatorics/tests/test_group_numbers.py",
@@ -43193,9 +43176,7 @@
      "caseCount": 486,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 40
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -43241,17 +43222,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.combinatorics.tests.test_homomorphisms",
      "testFile": "sympy/combinatorics/tests/test_homomorphisms.py",
      "inCorpus": true,
-     "caseCount": 25,
+     "caseCount": 28,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -43321,7 +43300,7 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
-      "not-exported-api": 4
+      "stateful-iterator-input": 4
      },
      "incompleteTests": {}
     },
@@ -43600,14 +43579,12 @@
      "testModule": "sympy.combinatorics.tests.test_partitions",
      "testFile": "sympy/combinatorics/tests/test_partitions.py",
      "inCorpus": true,
-     "caseCount": 42,
+     "caseCount": 49,
      "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
-      "non-call-expression": 25,
-      "not-exported-api": 1,
-      "unsupported-assertion": 3
+      "non-call-expression": 22
      },
      "incompleteTests": {}
     },
@@ -43682,11 +43659,11 @@
      "testModule": "sympy.combinatorics.tests.test_pc_groups",
      "testFile": "sympy/combinatorics/tests/test_pc_groups.py",
      "inCorpus": true,
-     "caseCount": 13,
+     "caseCount": 278,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 277
+      "non-call-expression": 12
      },
      "incompleteTests": {}
     },
@@ -44005,16 +43982,16 @@
      "testModule": "sympy.combinatorics.tests.test_perm_groups",
      "testFile": "sympy/combinatorics/tests/test_perm_groups.py",
      "inCorpus": true,
-     "caseCount": 277,
-     "gapCount": 4,
+     "caseCount": 361,
+     "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 6,
       "non-boolean-assertion": 2,
-      "non-call-expression": 125,
-      "not-exported-api": 449,
-      "stateful-iterator-input": 3,
-      "unsupported-assertion": 25
+      "non-call-expression": 58,
+      "not-exported-api": 2,
+      "stateful-iterator-input": 6,
+      "unsupported-assertion": 18
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -44283,15 +44260,16 @@
      "testModule": "sympy.combinatorics.tests.test_permutations",
      "testFile": "sympy/combinatorics/tests/test_permutations.py",
      "inCorpus": true,
-     "caseCount": 319,
-     "gapCount": 12,
+     "caseCount": 363,
+     "gapCount": 14,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 3,
-      "non-call-expression": 42,
-      "not-exported-api": 43,
+      "non-boolean-assertion": 1,
+      "non-call-expression": 20,
+      "not-exported-api": 16,
+      "serialization-error": 2,
       "unserializable-input": 2,
-      "unsupported-assertion": 8
+      "unsupported-assertion": 5
      },
      "incompleteTests": {}
     },
@@ -44499,8 +44477,8 @@
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 5,
-      "not-exported-api": 9,
+      "non-call-expression": 10,
+      "not-exported-api": 4,
       "stateful-iterator-input": 1
      },
      "incompleteTests": {}
@@ -44643,12 +44621,11 @@
      "testModule": "sympy.combinatorics.tests.test_prufer",
      "testFile": "sympy/combinatorics/tests/test_prufer.py",
      "inCorpus": true,
-     "caseCount": 59,
+     "caseCount": 61,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 21,
-      "unsupported-assertion": 1
+      "not-exported-api": 21
      },
      "incompleteTests": {}
     },
@@ -44896,16 +44873,13 @@
      "testModule": "sympy.combinatorics.tests.test_schur_number",
      "testFile": "sympy/combinatorics/tests/test_schur_number.py",
      "inCorpus": true,
-     "caseCount": 10,
+     "caseCount": 15,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-executed": 1,
-      "test-timeout": 7
+      "not-exported-api": 5
      },
-     "incompleteTests": {
-      "test-timeout": 1
-     }
+     "incompleteTests": {}
     },
     "limitations": {
      "pass": true,
@@ -44955,12 +44929,10 @@
      "testModule": "sympy.combinatorics.tests.test_subsets",
      "testFile": "sympy/combinatorics/tests/test_subsets.py",
      "inCorpus": true,
-     "caseCount": 17,
+     "caseCount": 19,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "stateful-iterator-input": 2,
       "unstable-result-representation": 14
      },
      "incompleteTests": {}
@@ -45038,11 +45010,11 @@
      "testModule": "sympy.combinatorics.tests.test_tensor_can",
      "testFile": "sympy/combinatorics/tests/test_tensor_can.py",
      "inCorpus": true,
-     "caseCount": 7,
-     "gapCount": 0,
+     "caseCount": 72,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 66
+      "non-call-expression": 1
      },
      "incompleteTests": {}
     },
@@ -45112,7 +45084,7 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.combinatorics.tests.test_util",
      "testFile": "sympy/combinatorics/tests/test_util.py",
@@ -45120,10 +45092,7 @@
      "caseCount": 44,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 1,
-      "not-exported-api": 9
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -45401,13 +45370,10 @@
      "testModule": "sympy.concrete.tests.test_delta",
      "testFile": "sympy/concrete/tests/test_delta.py",
      "inCorpus": true,
-     "caseCount": 185,
+     "caseCount": 187,
      "gapCount": 5,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 1,
-      "unsupported-assertion": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -45823,12 +45789,10 @@
      "testModule": "sympy.concrete.tests.test_gosper",
      "testFile": "sympy/concrete/tests/test_gosper.py",
      "inCorpus": true,
-     "caseCount": 29,
-     "gapCount": 2,
+     "caseCount": 63,
+     "gapCount": 6,
      "timeoutCount": 1,
-     "disallowedOmissions": {
-      "non-call-expression": 18
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -46024,13 +45988,12 @@
      "testModule": "sympy.concrete.tests.test_products",
      "testFile": "sympy/concrete/tests/test_products.py",
      "inCorpus": true,
-     "caseCount": 84,
-     "gapCount": 6,
+     "caseCount": 90,
+     "gapCount": 7,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 11,
-      "unsupported-assertion": 9
+      "not-exported-api": 9,
+      "unsupported-assertion": 7
      },
      "incompleteTests": {}
     },
@@ -49986,13 +49949,13 @@
      "testModule": "sympy.core.tests.test_assumptions",
      "testFile": "sympy/core/tests/test_assumptions.py",
      "inCorpus": true,
-     "caseCount": 699,
-     "gapCount": 170,
+     "caseCount": 706,
+     "gapCount": 30,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 7,
-      "not-exported-api": 2,
-      "unsupported-assertion": 10,
+      "non-call-expression": 1,
+      "not-exported-api": 5,
+      "unsupported-assertion": 6,
       "unsupported-raises": 1
      },
      "incompleteTests": {}
@@ -50365,13 +50328,13 @@
      "testModule": "sympy.core.tests.test_basic",
      "testFile": "sympy/core/tests/test_basic.py",
      "inCorpus": true,
-     "caseCount": 198,
-     "gapCount": 20,
+     "caseCount": 207,
+     "gapCount": 21,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 10,
-      "not-exported-api": 16,
-      "unserializable-input": 10,
+      "non-call-expression": 3,
+      "not-exported-api": 13,
+      "unserializable-input": 9,
       "unsupported-assertion": 1,
       "unsupported-raises": 2
      },
@@ -50673,15 +50636,15 @@
      "testModule": "sympy.core.tests.test_containers",
      "testFile": "sympy/core/tests/test_containers.py",
      "inCorpus": true,
-     "caseCount": 57,
-     "gapCount": 31,
+     "caseCount": 68,
+     "gapCount": 35,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 4,
-      "non-call-expression": 5,
-      "not-exported-api": 20,
+      "non-boolean-assertion": 1,
+      "non-call-expression": 1,
+      "not-exported-api": 17,
       "stateful-iterator-input": 7,
-      "unsupported-assertion": 16,
+      "unsupported-assertion": 17,
       "unsupported-raises": 1
      },
      "incompleteTests": {}
@@ -50884,13 +50847,15 @@
      "testModule": "sympy.core.tests.test_evalf",
      "testFile": "sympy/core/tests/test_evalf.py",
      "inCorpus": true,
-     "caseCount": 133,
-     "gapCount": 50,
+     "caseCount": 158,
+     "gapCount": 48,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 59,
-      "not-exported-api": 108,
-      "unsupported-assertion": 32
+      "non-boolean-assertion": 110,
+      "non-call-expression": 3,
+      "not-exported-api": 99,
+      "unserializable-input": 1,
+      "unsupported-assertion": 10
      },
      "incompleteTests": {}
     },
@@ -51199,17 +51164,16 @@
      "testModule": "sympy.core.tests.test_expr",
      "testFile": "sympy/core/tests/test_expr.py",
      "inCorpus": true,
-     "caseCount": 846,
-     "gapCount": 144,
+     "caseCount": 877,
+     "gapCount": 129,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
-      "non-call-expression": 640,
+      "non-call-expression": 5,
       "not-executed": 6,
-      "not-exported-api": 119,
+      "not-exported-api": 735,
       "stateful-iterator-input": 8,
-      "unserializable-input": 589,
-      "unsupported-assertion": 50
+      "unserializable-input": 1216,
+      "unsupported-assertion": 34
      },
      "incompleteTests": {}
     },
@@ -51386,15 +51350,13 @@
      "testModule": "sympy.core.tests.test_exprtools",
      "testFile": "sympy/core/tests/test_exprtools.py",
      "inCorpus": true,
-     "caseCount": 183,
-     "gapCount": 44,
+     "caseCount": 231,
+     "gapCount": 55,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 1,
-      "non-call-expression": 25,
-      "not-exported-api": 24,
-      "unserializable-input": 7,
-      "unsupported-assertion": 19
+      "not-exported-api": 1,
+      "unserializable-input": 19,
+      "unsupported-assertion": 1
      },
      "incompleteTests": {}
     },
@@ -51498,8 +51460,8 @@
      "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 14,
-      "not-exported-api": 51,
+      "non-call-expression": 2,
+      "not-exported-api": 63,
       "unserializable-input": 18,
       "unsupported-assertion": 4
      },
@@ -52176,18 +52138,18 @@
      "testModule": "sympy.core.tests.test_function",
      "testFile": "sympy/core/tests/test_function.py",
      "inCorpus": true,
-     "caseCount": 389,
-     "gapCount": 150,
+     "caseCount": 428,
+     "gapCount": 159,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 4,
-      "non-call-expression": 50,
+      "non-boolean-assertion": 2,
+      "non-call-expression": 20,
       "not-executed": 2,
-      "not-exported-api": 96,
+      "not-exported-api": 65,
       "serialization-error": 6,
       "stateful-iterator-input": 3,
-      "unserializable-input": 7,
-      "unsupported-assertion": 24,
+      "unserializable-input": 8,
+      "unsupported-assertion": 13,
       "unsupported-raises": 1
      },
      "incompleteTests": {}
@@ -52470,8 +52432,7 @@
       "non-call-expression": 2,
       "not-exported-api": 23,
       "stateful-iterator-input": 2,
-      "unserializable-input": 14,
-      "unsupported-assertion": 82
+      "unserializable-input": 15
      },
      "incompleteTests": {}
     },
@@ -54716,18 +54677,17 @@
      "testModule": "sympy.core.tests.test_numbers",
      "testFile": "sympy/core/tests/test_numbers.py",
      "inCorpus": true,
-     "caseCount": 1616,
-     "gapCount": 126,
+     "caseCount": 1992,
+     "gapCount": 155,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
-      "non-call-expression": 132,
+      "non-call-expression": 58,
       "not-executed": 3,
       "not-exported-api": 252,
-      "serialization-error": 2,
+      "serialization-error": 3,
       "stateful-iterator-input": 1,
-      "unserializable-input": 143,
-      "unsupported-assertion": 431,
+      "unserializable-input": 154,
+      "unsupported-assertion": 384,
       "unsupported-raises": 1
      },
      "incompleteTests": {}
@@ -55189,8 +55149,8 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 12,
-      "unserializable-input": 9,
-      "unsupported-assertion": 3
+      "unserializable-input": 13,
+      "unsupported-assertion": 2
      },
      "incompleteTests": {}
     },
@@ -55244,18 +55204,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.core.tests.test_parameters",
      "testFile": "sympy/core/tests/test_parameters.py",
      "inCorpus": true,
-     "caseCount": 47,
+     "caseCount": 54,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 7,
-      "not-exported-api": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -55373,16 +55330,15 @@
      "testModule": "sympy.core.tests.test_power",
      "testFile": "sympy/core/tests/test_power.py",
      "inCorpus": true,
-     "caseCount": 184,
-     "gapCount": 22,
+     "caseCount": 256,
+     "gapCount": 24,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 3,
-      "non-call-expression": 36,
-      "not-exported-api": 21,
+      "non-call-expression": 6,
+      "not-exported-api": 10,
       "stateful-iterator-input": 2,
       "unserializable-input": 1,
-      "unsupported-assertion": 31
+      "unsupported-assertion": 25
      },
      "incompleteTests": {}
     },
@@ -55455,8 +55411,7 @@
      "disallowedOmissions": {
       "non-call-expression": 4,
       "not-executed": 1,
-      "not-exported-api": 1,
-      "unsupported-assertion": 2
+      "not-exported-api": 3
      },
      "incompleteTests": {}
     },
@@ -57068,16 +57023,16 @@
      "testModule": "sympy.core.tests.test_relational",
      "testFile": "sympy/core/tests/test_relational.py",
      "inCorpus": true,
-     "caseCount": 1008,
-     "gapCount": 343,
+     "caseCount": 1063,
+     "gapCount": 354,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 25,
-      "not-executed": 12,
-      "not-exported-api": 135,
+      "non-call-expression": 8,
+      "not-executed": 14,
+      "not-exported-api": 75,
       "stateful-iterator-input": 8,
       "unserializable-input": 10,
-      "unsupported-assertion": 285
+      "unsupported-assertion": 275
      },
      "incompleteTests": {}
     },
@@ -57231,8 +57186,10 @@
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
+      "not-exported-api": 4,
       "stateful-iterator-input": 24,
-      "unsupported-assertion": 7
+      "unserializable-input": 1,
+      "unsupported-assertion": 2
      },
      "incompleteTests": {}
     },
@@ -57286,12 +57243,12 @@
      "testModule": "sympy.core.tests.test_sorting",
      "testFile": "sympy/core/tests/test_sorting.py",
      "inCorpus": true,
-     "caseCount": 0,
-     "gapCount": 0,
+     "caseCount": 3,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
-      "stateful-iterator-input": 4
+      "stateful-iterator-input": 1
      },
      "incompleteTests": {}
     },
@@ -57639,13 +57596,13 @@
      "testModule": "sympy.core.tests.test_symbol",
      "testFile": "sympy/core/tests/test_symbol.py",
      "inCorpus": true,
-     "caseCount": 114,
-     "gapCount": 24,
+     "caseCount": 167,
+     "gapCount": 44,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 10634,
-      "not-exported-api": 27,
-      "unsupported-assertion": 34
+      "non-call-expression": 10586,
+      "not-exported-api": 21,
+      "unsupported-assertion": 33
      },
      "incompleteTests": {}
     },
@@ -57719,15 +57676,14 @@
      "testModule": "sympy.core.tests.test_sympify",
      "testFile": "sympy/core/tests/test_sympify.py",
      "inCorpus": true,
-     "caseCount": 120,
-     "gapCount": 24,
+     "caseCount": 152,
+     "gapCount": 27,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 19,
-      "not-exported-api": 43,
+      "not-exported-api": 20,
       "stateful-iterator-input": 1,
-      "unserializable-input": 12,
-      "unsupported-assertion": 24
+      "unserializable-input": 25,
+      "unsupported-assertion": 9
      },
      "incompleteTests": {}
     },
@@ -57797,12 +57753,11 @@
      "testModule": "sympy.core.tests.test_traversal",
      "testFile": "sympy/core/tests/test_traversal.py",
      "inCorpus": true,
-     "caseCount": 9,
-     "gapCount": 3,
+     "caseCount": 21,
+     "gapCount": 11,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1,
-      "stateful-iterator-input": 12
+      "non-call-expression": 1
      },
      "incompleteTests": {}
     },
@@ -57969,13 +57924,12 @@
      "testModule": "sympy.crypto.tests.test_crypto",
      "testFile": "sympy/crypto/tests/test_crypto.py",
      "inCorpus": true,
-     "caseCount": 155,
+     "caseCount": 5067,
      "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 4919,
-      "stateful-iterator-input": 1,
-      "unsupported-assertion": 2
+      "non-call-expression": 6,
+      "stateful-iterator-input": 1
      },
      "incompleteTests": {}
     },
@@ -60263,14 +60217,11 @@
      "testModule": "sympy.diffgeom.tests.test_diffgeom",
      "testFile": "sympy/diffgeom/tests/test_diffgeom.py",
      "inCorpus": true,
-     "caseCount": 101,
+     "caseCount": 129,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 8,
-      "not-executed": 1,
-      "not-exported-api": 4,
-      "unsupported-assertion": 8
+      "not-executed": 1
      },
      "incompleteTests": {}
     },
@@ -60511,12 +60462,11 @@
      "testModule": "sympy.discrete.tests.test_convolutions",
      "testFile": "sympy/discrete/tests/test_convolutions.py",
      "inCorpus": true,
-     "caseCount": 121,
+     "caseCount": 128,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "stateful-iterator-input": 2,
-      "unsupported-assertion": 3
+      "stateful-iterator-input": 2
      },
      "incompleteTests": {}
     },
@@ -60576,7 +60526,6 @@
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
       "stateful-iterator-input": 2
      },
      "incompleteTests": {}
@@ -77574,14 +77523,14 @@
      "testModule": "sympy.functions.elementary.tests.test_complexes",
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
-     "caseCount": 449,
-     "gapCount": 31,
+     "caseCount": 459,
+     "gapCount": 37,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
-      "non-call-expression": 8,
-      "not-exported-api": 12,
-      "unsupported-assertion": 26
+      "non-boolean-assertion": 1,
+      "non-call-expression": 4,
+      "not-exported-api": 13,
+      "unsupported-assertion": 21
      },
      "incompleteTests": {}
     },
@@ -78070,13 +78019,13 @@
      "testModule": "sympy.functions.elementary.tests.test_exponential",
      "testFile": "sympy/functions/elementary/tests/test_exponential.py",
      "inCorpus": true,
-     "caseCount": 476,
-     "gapCount": 78,
+     "caseCount": 491,
+     "gapCount": 85,
      "timeoutCount": 3,
      "disallowedOmissions": {
-      "non-call-expression": 5,
-      "not-exported-api": 8,
-      "unsupported-assertion": 49
+      "non-call-expression": 2,
+      "not-exported-api": 10,
+      "unsupported-assertion": 36
      },
      "incompleteTests": {}
     },
@@ -79356,14 +79305,12 @@
      "testModule": "sympy.functions.elementary.tests.test_hyperbolic",
      "testFile": "sympy/functions/elementary/tests/test_hyperbolic.py",
      "inCorpus": true,
-     "caseCount": 743,
-     "gapCount": 86,
+     "caseCount": 765,
+     "gapCount": 87,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 4,
       "not-executed": 1,
-      "not-exported-api": 6,
-      "unsupported-assertion": 60
+      "unsupported-assertion": 54
      },
      "incompleteTests": {}
     },
@@ -79792,13 +79739,12 @@
      "testModule": "sympy.functions.elementary.tests.test_integers",
      "testFile": "sympy/functions/elementary/tests/test_integers.py",
      "inCorpus": true,
-     "caseCount": 430,
-     "gapCount": 8,
+     "caseCount": 451,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 4,
-      "unsupported-assertion": 29
+      "not-exported-api": 2,
+      "unsupported-assertion": 12
      },
      "incompleteTests": {}
     },
@@ -80273,13 +80219,12 @@
      "testModule": "sympy.functions.elementary.tests.test_miscellaneous",
      "testFile": "sympy/functions/elementary/tests/test_miscellaneous.py",
      "inCorpus": true,
-     "caseCount": 976,
-     "gapCount": 17,
+     "caseCount": 980,
+     "gapCount": 21,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 1,
-      "not-exported-api": 4,
-      "unsupported-assertion": 20
+      "not-exported-api": 1,
+      "unsupported-assertion": 16
      },
      "incompleteTests": {}
     },
@@ -80525,14 +80470,13 @@
      "testModule": "sympy.functions.elementary.tests.test_piecewise",
      "testFile": "sympy/functions/elementary/tests/test_piecewise.py",
      "inCorpus": true,
-     "caseCount": 458,
-     "gapCount": 121,
+     "caseCount": 493,
+     "gapCount": 137,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
-      "non-call-expression": 29,
-      "not-exported-api": 125,
-      "unsupported-assertion": 5
+      "not-exported-api": 122,
+      "unsupported-assertion": 3
      },
      "incompleteTests": {
       "marked-slow": 4
@@ -81965,17 +81909,16 @@
      "testModule": "sympy.functions.elementary.tests.test_trigonometric",
      "testFile": "sympy/functions/elementary/tests/test_trigonometric.py",
      "inCorpus": true,
-     "caseCount": 2818,
-     "gapCount": 100,
+     "caseCount": 3035,
+     "gapCount": 101,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
-      "non-boolean-assertion": 1,
-      "non-call-expression": 22,
+      "non-call-expression": 3,
       "not-executed": 4,
-      "not-exported-api": 46,
+      "not-exported-api": 42,
       "unserializable-input": 3,
-      "unsupported-assertion": 1747
+      "unsupported-assertion": 84
      },
      "incompleteTests": {
       "marked-slow": 5
@@ -83657,14 +83600,13 @@
      "testModule": "sympy.functions.special.tests.test_bessel",
      "testFile": "sympy/functions/special/tests/test_bessel.py",
      "inCorpus": true,
-     "caseCount": 358,
-     "gapCount": 125,
+     "caseCount": 370,
+     "gapCount": 129,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 9,
-      "non-call-expression": 4,
-      "not-exported-api": 34,
-      "unsupported-assertion": 35
+      "not-exported-api": 26,
+      "unsupported-assertion": 33
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -84057,12 +83999,11 @@
      "testModule": "sympy.functions.special.tests.test_bsplines",
      "testFile": "sympy/functions/special/tests/test_bsplines.py",
      "inCorpus": true,
-     "caseCount": 23,
+     "caseCount": 26,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "marked-slow": 1,
-      "non-call-expression": 3
+      "marked-slow": 1
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -84274,11 +84215,11 @@
      "testModule": "sympy.functions.special.tests.test_delta_functions",
      "testFile": "sympy/functions/special/tests/test_delta_functions.py",
      "inCorpus": true,
-     "caseCount": 82,
-     "gapCount": 17,
+     "caseCount": 89,
+     "gapCount": 21,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "unsupported-assertion": 6
+      "unsupported-assertion": 1
      },
      "incompleteTests": {}
     },
@@ -86232,12 +86173,12 @@
      "testModule": "sympy.functions.special.tests.test_error_functions",
      "testFile": "sympy/functions/special/tests/test_error_functions.py",
      "inCorpus": true,
-     "caseCount": 331,
+     "caseCount": 336,
      "gapCount": 122,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 36,
-      "unsupported-assertion": 50
+      "not-exported-api": 33,
+      "unsupported-assertion": 45
      },
      "incompleteTests": {}
     },
@@ -86975,13 +86916,12 @@
      "testModule": "sympy.functions.special.tests.test_gamma_functions",
      "testFile": "sympy/functions/special/tests/test_gamma_functions.py",
      "inCorpus": true,
-     "caseCount": 291,
-     "gapCount": 85,
+     "caseCount": 306,
+     "gapCount": 89,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 36,
-      "unsupported-assertion": 36
+      "not-exported-api": 28,
+      "unsupported-assertion": 29
      },
      "incompleteTests": {}
     },
@@ -88441,13 +88381,13 @@
      "testModule": "sympy.functions.special.tests.test_hyper",
      "testFile": "sympy/functions/special/tests/test_hyper.py",
      "inCorpus": true,
-     "caseCount": 90,
-     "gapCount": 25,
+     "caseCount": 94,
+     "gapCount": 27,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 24,
-      "not-exported-api": 2,
-      "unsupported-assertion": 11
+      "not-exported-api": 1,
+      "unsupported-assertion": 8
      },
      "incompleteTests": {
       "marked-slow": 2
@@ -90201,11 +90141,10 @@
      "testModule": "sympy.functions.special.tests.test_singularity_functions",
      "testFile": "sympy/functions/special/tests/test_singularity_functions.py",
      "inCorpus": true,
-     "caseCount": 61,
+     "caseCount": 62,
      "gapCount": 16,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1,
       "unsupported-assertion": 7
      },
      "incompleteTests": {}
@@ -91181,12 +91120,12 @@
      "testModule": "sympy.functions.special.tests.test_zeta_functions",
      "testFile": "sympy/functions/special/tests/test_zeta_functions.py",
      "inCorpus": true,
-     "caseCount": 94,
-     "gapCount": 19,
+     "caseCount": 101,
+     "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 24,
-      "unsupported-assertion": 26
+      "not-exported-api": 18,
+      "unsupported-assertion": 16
      },
      "incompleteTests": {}
     },
@@ -93684,13 +93623,12 @@
      "testModule": "sympy.geometry.tests.test_curve",
      "testFile": "sympy/geometry/tests/test_curve.py",
      "inCorpus": true,
-     "caseCount": 28,
+     "caseCount": 30,
      "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 14,
-      "non-call-expression": 2,
-      "unsupported-assertion": 1
+      "non-call-expression": 2
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -93993,13 +93931,11 @@
      "testModule": "sympy.geometry.tests.test_ellipse",
      "testFile": "sympy/geometry/tests/test_ellipse.py",
      "inCorpus": true,
-     "caseCount": 129,
-     "gapCount": 1,
+     "caseCount": 134,
+     "gapCount": 4,
      "timeoutCount": 1,
      "disallowedOmissions": {
-      "marked-slow": 148,
-      "not-exported-api": 4,
-      "unsupported-assertion": 1
+      "marked-slow": 150
      },
      "incompleteTests": {
       "marked-slow": 2
@@ -94301,11 +94237,11 @@
      "testModule": "sympy.geometry.tests.test_entity",
      "testFile": "sympy/geometry/tests/test_entity.py",
      "inCorpus": true,
-     "caseCount": 20,
+     "caseCount": 21,
      "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
+      "non-call-expression": 1,
       "unsupported-assertion": 10
      },
      "incompleteTests": {}
@@ -95965,14 +95901,13 @@
      "testModule": "sympy.geometry.tests.test_line",
      "testFile": "sympy/geometry/tests/test_line.py",
      "inCorpus": true,
-     "caseCount": 347,
+     "caseCount": 361,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
-      "non-call-expression": 9,
-      "not-exported-api": 5,
-      "unsupported-assertion": 33
+      "not-exported-api": 2,
+      "unsupported-assertion": 32
      },
      "incompleteTests": {}
     },
@@ -96202,13 +96137,10 @@
      "testModule": "sympy.geometry.tests.test_parabola",
      "testFile": "sympy/geometry/tests/test_parabola.py",
      "inCorpus": true,
-     "caseCount": 65,
-     "gapCount": 0,
+     "caseCount": 73,
+     "gapCount": 1,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 4,
-      "unsupported-assertion": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -96349,13 +96281,12 @@
      "testModule": "sympy.geometry.tests.test_plane",
      "testFile": "sympy/geometry/tests/test_plane.py",
      "inCorpus": true,
-     "caseCount": 112,
+     "caseCount": 127,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 7,
-      "not-exported-api": 2,
-      "unsupported-assertion": 11
+      "non-call-expression": 1,
+      "unsupported-assertion": 8
      },
      "incompleteTests": {}
     },
@@ -96666,13 +96597,13 @@
      "testModule": "sympy.geometry.tests.test_point",
      "testFile": "sympy/geometry/tests/test_point.py",
      "inCorpus": true,
-     "caseCount": 210,
+     "caseCount": 213,
      "gapCount": 8,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
       "stateful-iterator-input": 2,
-      "unsupported-assertion": 6
+      "unsupported-assertion": 3
      },
      "incompleteTests": {}
     },
@@ -97128,12 +97059,12 @@
      "testModule": "sympy.geometry.tests.test_polygon",
      "testFile": "sympy/geometry/tests/test_polygon.py",
      "inCorpus": true,
-     "caseCount": 82,
-     "gapCount": 1,
+     "caseCount": 88,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "marked-slow": 139,
-      "non-call-expression": 7
+      "marked-slow": 146,
+      "non-call-expression": 1
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -97253,11 +97184,11 @@
      "testModule": "sympy.geometry.tests.test_util",
      "testFile": "sympy/geometry/tests/test_util.py",
      "inCorpus": true,
-     "caseCount": 41,
+     "caseCount": 43,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 22,
+      "non-call-expression": 18,
       "unsupported-assertion": 1
      },
      "incompleteTests": {}
@@ -97373,11 +97304,11 @@
      "testModule": "sympy.holonomic.tests.test_holonomic",
      "testFile": "sympy/holonomic/tests/test_holonomic.py",
      "inCorpus": true,
-     "caseCount": 97,
-     "gapCount": 2,
+     "caseCount": 183,
+     "gapCount": 14,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 104
+      "non-call-expression": 18
      },
      "incompleteTests": {}
     },
@@ -97573,11 +97504,11 @@
      "testModule": "sympy.holonomic.tests.test_recurrence",
      "testFile": "sympy/holonomic/tests/test_recurrence.py",
      "inCorpus": true,
-     "caseCount": 5,
+     "caseCount": 7,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 11
+      "non-call-expression": 9
      },
      "incompleteTests": {}
     },
@@ -98499,14 +98430,13 @@
      "testModule": "sympy.integrals.tests.test_heurisch",
      "testFile": "sympy/integrals/tests/test_heurisch.py",
      "inCorpus": true,
-     "caseCount": 95,
+     "caseCount": 97,
      "gapCount": 15,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 5,
-      "non-call-expression": 1,
-      "not-exported-api": 2,
-      "unsupported-assertion": 5
+      "not-exported-api": 1,
+      "unsupported-assertion": 4
      },
      "incompleteTests": {
       "marked-slow": 2
@@ -98633,15 +98563,14 @@
      "testModule": "sympy.integrals.tests.test_integrals",
      "testFile": "sympy/integrals/tests/test_integrals.py",
      "inCorpus": true,
-     "caseCount": 500,
-     "gapCount": 185,
+     "caseCount": 569,
+     "gapCount": 198,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 51,
-      "non-call-expression": 38,
-      "not-exported-api": 21,
+      "not-exported-api": 15,
       "unserializable-input": 3,
-      "unsupported-assertion": 29
+      "unsupported-assertion": 16
      },
      "incompleteTests": {
       "marked-slow": 11
@@ -99642,15 +99571,14 @@
      "testModule": "sympy.integrals.tests.test_meijerint",
      "testFile": "sympy/integrals/tests/test_meijerint.py",
      "inCorpus": true,
-     "caseCount": 55,
-     "gapCount": 30,
+     "caseCount": 68,
+     "gapCount": 31,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 110,
-      "non-call-expression": 6,
+      "non-call-expression": 2,
       "not-executed": 1,
-      "not-exported-api": 16,
-      "unsupported-assertion": 10
+      "not-exported-api": 8
      },
      "incompleteTests": {
       "marked-slow": 4
@@ -99732,13 +99660,11 @@
      "testModule": "sympy.integrals.tests.test_prde",
      "testFile": "sympy/integrals/tests/test_prde.py",
      "inCorpus": true,
-     "caseCount": 13,
+     "caseCount": 16,
      "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1,
-      "not-exported-api": 5,
-      "unserializable-input": 34
+      "unserializable-input": 37
      },
      "incompleteTests": {}
     },
@@ -99927,13 +99853,12 @@
      "testModule": "sympy.integrals.tests.test_rde",
      "testFile": "sympy/integrals/tests/test_rde.py",
      "inCorpus": true,
-     "caseCount": 10,
-     "gapCount": 10,
+     "caseCount": 12,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 3,
-      "unserializable-input": 30,
-      "unsupported-assertion": 3
+      "unserializable-input": 33,
+      "unsupported-assertion": 2
      },
      "incompleteTests": {}
     },
@@ -100096,14 +100021,13 @@
      "testModule": "sympy.integrals.tests.test_risch",
      "testFile": "sympy/integrals/tests/test_risch.py",
      "inCorpus": true,
-     "caseCount": 26,
-     "gapCount": 22,
+     "caseCount": 36,
+     "gapCount": 27,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 29,
-      "not-exported-api": 6,
-      "unserializable-input": 119,
-      "unsupported-assertion": 14
+      "non-call-expression": 31,
+      "unserializable-input": 128,
+      "unsupported-assertion": 5
      },
      "incompleteTests": {}
     },
@@ -101167,14 +101091,13 @@
      "testModule": "sympy.integrals.tests.test_transforms",
      "testFile": "sympy/integrals/tests/test_transforms.py",
      "inCorpus": true,
-     "caseCount": 78,
-     "gapCount": 15,
+     "caseCount": 83,
+     "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 66,
       "non-boolean-assertion": 1,
-      "non-call-expression": 3,
-      "not-exported-api": 4
+      "not-exported-api": 2
      },
      "incompleteTests": {
       "marked-slow": 4
@@ -101404,7 +101327,7 @@
   {
    "module": "sympy.liealgebras.cartan_matrix",
    "sha256": "cabd8ba198bf1b19aef8430a805b8f38f34c60f3acc6e70b012ea84694988b65",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "liealgebras/cartanmatrix.ts"
    ],
@@ -101425,17 +101348,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.liealgebras.tests.test_cartan_matrix",
      "testFile": "sympy/liealgebras/tests/test_cartan_matrix.py",
      "inCorpus": true,
-     "caseCount": 0,
+     "caseCount": 2,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -101608,7 +101529,7 @@
   {
    "module": "sympy.liealgebras.dynkin_diagram",
    "sha256": "6731ae04634e27794f0dd243b389fc86f19bcfac0b842e66c1bf331640e6c8fc",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "liealgebras/dynkindiagram.ts"
    ],
@@ -101629,17 +101550,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.liealgebras.tests.test_dynkin_diagram",
      "testFile": "sympy/liealgebras/tests/test_dynkin_diagram.py",
      "inCorpus": true,
-     "caseCount": 0,
+     "caseCount": 2,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -101934,12 +101853,10 @@
      "testModule": "sympy.liealgebras.tests.test_type_A",
      "testFile": "sympy/liealgebras/tests/test_type_A.py",
      "inCorpus": true,
-     "caseCount": 8,
+     "caseCount": 9,
      "gapCount": 1,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -102092,12 +102009,10 @@
      "testModule": "sympy.liealgebras.tests.test_type_B",
      "testFile": "sympy/liealgebras/tests/test_type_B.py",
      "inCorpus": true,
-     "caseCount": 7,
+     "caseCount": 8,
      "gapCount": 2,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -106034,16 +105949,16 @@
      "testModule": "sympy.logic.tests.test_boolalg",
      "testFile": "sympy/logic/tests/test_boolalg.py",
      "inCorpus": true,
-     "caseCount": 515,
-     "gapCount": 161,
+     "caseCount": 7484,
+     "gapCount": 179,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 7340,
+      "non-call-expression": 15,
       "not-executed": 4,
-      "not-exported-api": 26,
-      "stateful-iterator-input": 8,
+      "not-exported-api": 9,
+      "stateful-iterator-input": 4,
       "unserializable-input": 9,
-      "unsupported-assertion": 372,
+      "unsupported-assertion": 352,
       "unsupported-raises": 2
      },
      "incompleteTests": {
@@ -106195,15 +106110,14 @@
      "testModule": "sympy.logic.tests.test_inference",
      "testFile": "sympy/logic/tests/test_inference.py",
      "inCorpus": true,
-     "caseCount": 100,
+     "caseCount": 103,
      "gapCount": 14,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 10,
       "non-call-expression": 2,
       "not-executed": 1,
       "not-exported-api": 10,
-      "stateful-iterator-input": 10,
+      "stateful-iterator-input": 17,
       "unsupported-assertion": 19,
       "upstream-skip": 6
      },
@@ -109313,15 +109227,14 @@
      "testModule": "sympy.matrices.tests.test_decompositions",
      "testFile": "sympy/matrices/tests/test_decompositions.py",
      "inCorpus": true,
-     "caseCount": 109,
+     "caseCount": 148,
      "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 20,
-      "non-call-expression": 33,
+      "non-call-expression": 2,
       "not-executed": 2,
-      "not-exported-api": 6,
-      "unsupported-assertion": 4
+      "not-exported-api": 6
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -109582,13 +109495,10 @@
      "testModule": "sympy.matrices.tests.test_determinant",
      "testFile": "sympy/matrices/tests/test_determinant.py",
      "inCorpus": true,
-     "caseCount": 150,
-     "gapCount": 12,
-     "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 15,
-      "unsupported-assertion": 23
-     },
+     "caseCount": 174,
+     "gapCount": 16,
+     "timeoutCount": 4,
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -109632,16 +109542,15 @@
      "testModule": "sympy.matrices.tests.test_eigen",
      "testFile": "sympy/matrices/tests/test_eigen.py",
      "inCorpus": true,
-     "caseCount": 306,
-     "gapCount": 4,
-     "timeoutCount": 0,
+     "caseCount": 316,
+     "gapCount": 5,
+     "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 25,
       "non-boolean-assertion": 2,
       "non-call-expression": 7,
-      "not-exported-api": 25,
-      "stateful-iterator-input": 5,
-      "unsupported-assertion": 4
+      "not-exported-api": 5,
+      "stateful-iterator-input": 5
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -111895,9 +111804,7 @@
      "caseCount": 12,
      "gapCount": 1,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -112012,13 +111919,10 @@
      "testModule": "sympy.matrices.expressions.tests.test_applyfunc",
      "testFile": "sympy/matrices/expressions/tests/test_applyfunc.py",
      "inCorpus": true,
-     "caseCount": 29,
+     "caseCount": 32,
      "gapCount": 5,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 3,
-      "not-exported-api": 8
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -112211,15 +112115,13 @@
      "testModule": "sympy.matrices.expressions.tests.test_blockmatrix",
      "testFile": "sympy/matrices/expressions/tests/test_blockmatrix.py",
      "inCorpus": true,
-     "caseCount": 100,
-     "gapCount": 19,
+     "caseCount": 112,
+     "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
-      "non-call-expression": 11,
-      "not-exported-api": 5,
-      "stateful-iterator-input": 1,
-      "unsupported-assertion": 2
+      "non-call-expression": 6,
+      "stateful-iterator-input": 1
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -112555,7 +112457,6 @@
      "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 5,
       "unsupported-assertion": 2
      },
      "incompleteTests": {}
@@ -112810,13 +112711,11 @@
      "testModule": "sympy.matrices.expressions.tests.test_diagonal",
      "testFile": "sympy/matrices/expressions/tests/test_diagonal.py",
      "inCorpus": true,
-     "caseCount": 52,
+     "caseCount": 58,
      "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 4,
-      "not-exported-api": 3,
-      "unsupported-assertion": 2
+      "non-call-expression": 2
      },
      "incompleteTests": {}
     },
@@ -114143,12 +114042,10 @@
      "testModule": "sympy.matrices.expressions.tests.test_factorizations",
      "testFile": "sympy/matrices/expressions/tests/test_factorizations.py",
      "inCorpus": true,
-     "caseCount": 7,
+     "caseCount": 14,
      "gapCount": 7,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "unsupported-assertion": 3
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -114353,7 +114250,6 @@
      "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 3,
       "unserializable-input": 1
      },
      "incompleteTests": {}
@@ -114470,14 +114366,11 @@
      "testModule": "sympy.matrices.expressions.tests.test_funcmatrix",
      "testFile": "sympy/matrices/expressions/tests/test_funcmatrix.py",
      "inCorpus": true,
-     "caseCount": 17,
-     "gapCount": 1,
+     "caseCount": 21,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 3,
-      "not-exported-api": 1,
-      "unserializable-input": 4,
-      "unsupported-assertion": 1
+      "unserializable-input": 2
      },
      "incompleteTests": {}
     },
@@ -114661,12 +114554,11 @@
      "testModule": "sympy.matrices.expressions.tests.test_hadamard",
      "testFile": "sympy/matrices/expressions/tests/test_hadamard.py",
      "inCorpus": true,
-     "caseCount": 30,
+     "caseCount": 34,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 4,
-      "not-exported-api": 6
+      "not-exported-api": 1
      },
      "incompleteTests": {}
     },
@@ -114794,9 +114686,7 @@
      "caseCount": 24,
      "gapCount": 1,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 3
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -114924,9 +114814,7 @@
      "caseCount": 31,
      "gapCount": 1,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -115057,12 +114945,11 @@
      "testModule": "sympy.matrices.expressions.tests.test_matadd",
      "testFile": "sympy/matrices/expressions/tests/test_matadd.py",
      "inCorpus": true,
-     "caseCount": 9,
-     "gapCount": 3,
+     "caseCount": 12,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 2,
-      "unsupported-assertion": 3
+      "unserializable-input": 1
      },
      "incompleteTests": {}
     },
@@ -115313,15 +115200,14 @@
      "testModule": "sympy.matrices.expressions.tests.test_matexpr",
      "testFile": "sympy/matrices/expressions/tests/test_matexpr.py",
      "inCorpus": true,
-     "caseCount": 164,
-     "gapCount": 31,
+     "caseCount": 192,
+     "gapCount": 57,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 3,
-      "non-call-expression": 16,
-      "not-exported-api": 18,
+      "non-call-expression": 12,
+      "not-exported-api": 2,
       "unserializable-input": 2,
-      "unsupported-assertion": 13
+      "unsupported-assertion": 4
      },
      "incompleteTests": {}
     },
@@ -115499,7 +115385,7 @@
      "gapCount": 17,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 3,
+      "not-exported-api": 1,
       "unserializable-input": 3
      },
      "incompleteTests": {}
@@ -115630,13 +115516,10 @@
      "testModule": "sympy.matrices.expressions.tests.test_matpow",
      "testFile": "sympy/matrices/expressions/tests/test_matpow.py",
      "inCorpus": true,
-     "caseCount": 102,
-     "gapCount": 8,
+     "caseCount": 114,
+     "gapCount": 11,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 2,
-      "unsupported-assertion": 6
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -115820,9 +115703,7 @@
      "caseCount": 39,
      "gapCount": 9,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -116491,13 +116372,10 @@
      "testModule": "sympy.matrices.expressions.tests.test_special",
      "testFile": "sympy/matrices/expressions/tests/test_special.py",
      "inCorpus": true,
-     "caseCount": 74,
+     "caseCount": 80,
      "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 6,
-      "non-call-expression": 7,
-      "not-exported-api": 7,
       "unserializable-input": 5
      },
      "incompleteTests": {}
@@ -116634,11 +116512,10 @@
      "testModule": "sympy.matrices.expressions.tests.test_trace",
      "testFile": "sympy/matrices/expressions/tests/test_trace.py",
      "inCorpus": true,
-     "caseCount": 36,
+     "caseCount": 37,
      "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 3,
       "unsupported-assertion": 1
      },
      "incompleteTests": {}
@@ -116760,13 +116637,10 @@
      "testModule": "sympy.matrices.expressions.tests.test_transpose",
      "testFile": "sympy/matrices/expressions/tests/test_transpose.py",
      "inCorpus": true,
-     "caseCount": 16,
+     "caseCount": 18,
      "gapCount": 2,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -116818,12 +116692,10 @@
      "testModule": "sympy.matrices.tests.test_graph",
      "testFile": "sympy/matrices/tests/test_graph.py",
      "inCorpus": true,
-     "caseCount": 2,
-     "gapCount": 0,
+     "caseCount": 10,
+     "gapCount": 6,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 8
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -117303,15 +117175,14 @@
      "testModule": "sympy.matrices.tests.test_immutable",
      "testFile": "sympy/matrices/tests/test_immutable.py",
      "inCorpus": true,
-     "caseCount": 17,
+     "caseCount": 27,
      "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 1,
       "non-call-expression": 2,
-      "not-exported-api": 13,
+      "not-exported-api": 8,
       "stateful-iterator-input": 1,
-      "unsupported-assertion": 17,
+      "unsupported-assertion": 12,
       "unsupported-raises": 2
      },
      "incompleteTests": {}
@@ -118110,18 +117981,18 @@
      "testModule": "sympy.matrices.tests.test_matrices",
      "testFile": "sympy/matrices/tests/test_matrices.py",
      "inCorpus": true,
-     "caseCount": 723,
-     "gapCount": 149,
+     "caseCount": 878,
+     "gapCount": 189,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 2,
       "non-boolean-assertion": 3,
-      "non-call-expression": 210,
+      "non-call-expression": 50,
       "not-executed": 11,
-      "not-exported-api": 53,
-      "stateful-iterator-input": 31,
-      "unserializable-input": 111,
-      "unsupported-assertion": 181,
+      "not-exported-api": 42,
+      "stateful-iterator-input": 35,
+      "unserializable-input": 124,
+      "unsupported-assertion": 111,
       "unsupported-raises": 1
      },
      "incompleteTests": {
@@ -118325,17 +118196,17 @@
      "testModule": "sympy.matrices.tests.test_matrixbase",
      "testFile": "sympy/matrices/tests/test_matrixbase.py",
      "inCorpus": true,
-     "caseCount": 833,
-     "gapCount": 181,
+     "caseCount": 1056,
+     "gapCount": 251,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 4,
       "non-boolean-assertion": 3,
-      "non-call-expression": 221,
-      "not-exported-api": 80,
-      "stateful-iterator-input": 7,
-      "unserializable-input": 24,
-      "unsupported-assertion": 195,
+      "non-call-expression": 50,
+      "not-exported-api": 56,
+      "stateful-iterator-input": 13,
+      "unserializable-input": 22,
+      "unsupported-assertion": 111,
       "unsupported-raises": 1
      },
      "incompleteTests": {
@@ -118585,12 +118456,10 @@
      "testModule": "sympy.matrices.tests.test_normalforms",
      "testFile": "sympy/matrices/tests/test_normalforms.py",
      "inCorpus": true,
-     "caseCount": 240,
+     "caseCount": 711,
      "gapCount": 2,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 523
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -118641,13 +118510,11 @@
      "testModule": "sympy.matrices.tests.test_reductions",
      "testFile": "sympy/matrices/tests/test_reductions.py",
      "inCorpus": true,
-     "caseCount": 93,
-     "gapCount": 37,
+     "caseCount": 102,
+     "gapCount": 43,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 3,
-      "stateful-iterator-input": 22,
-      "unsupported-assertion": 2
+      "stateful-iterator-input": 22
      },
      "incompleteTests": {}
     },
@@ -119008,11 +118875,11 @@
      "testModule": "sympy.matrices.tests.test_solvers",
      "testFile": "sympy/matrices/tests/test_solvers.py",
      "inCorpus": true,
-     "caseCount": 83,
-     "gapCount": 24,
+     "caseCount": 132,
+     "gapCount": 28,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 51
+      "non-call-expression": 2
      },
      "incompleteTests": {}
     },
@@ -119205,16 +119072,15 @@
      "testModule": "sympy.matrices.tests.test_sparse",
      "testFile": "sympy/matrices/tests/test_sparse.py",
      "inCorpus": true,
-     "caseCount": 165,
-     "gapCount": 13,
+     "caseCount": 187,
+     "gapCount": 19,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
-      "non-call-expression": 33,
+      "non-call-expression": 16,
       "not-executed": 6,
-      "not-exported-api": 10,
-      "unserializable-input": 7,
-      "unsupported-assertion": 1
+      "not-exported-api": 6,
+      "unserializable-input": 4
      },
      "incompleteTests": {}
     },
@@ -119275,20 +119141,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.tests.test_sparsetools",
      "testFile": "sympy/matrices/tests/test_sparsetools.py",
      "inCorpus": true,
-     "caseCount": 25,
+     "caseCount": 30,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 1,
-      "not-exported-api": 12,
-      "unserializable-input": 1,
-      "unsupported-assertion": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -119336,13 +119197,11 @@
      "testModule": "sympy.matrices.tests.test_subspaces",
      "testFile": "sympy/matrices/tests/test_subspaces.py",
      "inCorpus": true,
-     "caseCount": 18,
-     "gapCount": 0,
+     "caseCount": 25,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
-      "non-call-expression": 2,
-      "not-exported-api": 5,
       "stateful-iterator-input": 2
      },
      "incompleteTests": {}
@@ -119717,11 +119576,11 @@
      "testModule": "sympy.ntheory.tests.test_continued_fraction",
      "testFile": "sympy/ntheory/tests/test_continued_fraction.py",
      "inCorpus": true,
-     "caseCount": 40,
+     "caseCount": 46,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "stateful-iterator-input": 11
+      "stateful-iterator-input": 5
      },
      "incompleteTests": {}
     },
@@ -119781,7 +119640,7 @@
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1,
+      "not-exported-api": 1,
       "stateful-iterator-input": 3
      },
      "incompleteTests": {}
@@ -119838,7 +119697,7 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 10,
-      "non-call-expression": 21
+      "unstable-result-representation": 21
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -119898,13 +119757,12 @@
      "testModule": "sympy.ntheory.tests.test_egyptian_fraction",
      "testFile": "sympy/ntheory/tests/test_egyptian_fraction.py",
      "inCorpus": true,
-     "caseCount": 10,
+     "caseCount": 23,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 13,
       "not-exported-api": 1,
-      "stateful-iterator-input": 12
+      "stateful-iterator-input": 13
      },
      "incompleteTests": {}
     },
@@ -119956,18 +119814,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.ntheory.tests.test_elliptic_curve",
      "testFile": "sympy/ntheory/tests/test_elliptic_curve.py",
      "inCorpus": true,
-     "caseCount": 2,
+     "caseCount": 9,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 3,
-      "not-exported-api": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -120037,15 +119892,15 @@
      "testModule": "sympy.ntheory.tests.test_factor_",
      "testFile": "sympy/ntheory/tests/test_factor_.py",
      "inCorpus": true,
-     "caseCount": 10668,
-     "gapCount": 18,
+     "caseCount": 10676,
+     "gapCount": 21,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 76,
-      "non-call-expression": 21,
-      "not-exported-api": 4415,
+      "non-call-expression": 25,
+      "not-exported-api": 1,
       "serialization-error": 7,
-      "stateful-iterator-input": 3,
+      "stateful-iterator-input": 1,
       "unserializable-input": 5,
       "unsupported-assertion": 8
      },
@@ -120140,15 +119995,13 @@
      "testModule": "sympy.ntheory.tests.test_generate",
      "testFile": "sympy/ntheory/tests/test_generate.py",
      "inCorpus": true,
-     "caseCount": 3517,
-     "gapCount": 1,
+     "caseCount": 3570,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 53276,
-      "not-exported-api": 1140,
-      "stateful-iterator-input": 31,
-      "unsupported-assertion": 8,
-      "unsupported-raises": 2
+      "non-call-expression": 1122,
+      "stateful-iterator-input": 53261,
+      "unsupported-assertion": 20
      },
      "incompleteTests": {}
     },
@@ -120270,11 +120123,11 @@
      "testModule": "sympy.ntheory.tests.test_multinomial",
      "testFile": "sympy/ntheory/tests/test_multinomial.py",
      "inCorpus": true,
-     "caseCount": 16,
+     "caseCount": 17,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 17,
+      "non-call-expression": 16,
       "stateful-iterator-input": 4
      },
      "incompleteTests": {}
@@ -120387,7 +120240,6 @@
      "disallowedOmissions": {
       "marked-slow": 8,
       "non-call-expression": 2,
-      "not-exported-api": 31,
       "test-timeout": 41
      },
      "incompleteTests": {
@@ -120454,16 +120306,14 @@
      "testModule": "sympy.ntheory.tests.test_qs",
      "testFile": "sympy/ntheory/tests/test_qs.py",
      "inCorpus": true,
-     "caseCount": 1,
+     "caseCount": 2,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 4,
-      "non-call-expression": 12,
-      "not-exported-api": 2,
+      "non-call-expression": 9,
       "stateful-iterator-input": 2,
-      "unserializable-input": 4,
-      "unsupported-assertion": 4
+      "unserializable-input": 6
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -121954,15 +121804,13 @@
      "testModule": "sympy.parsing.tests.test_sympy_parser",
      "testFile": "sympy/parsing/tests/test_sympy_parser.py",
      "inCorpus": true,
-     "caseCount": 92,
-     "gapCount": 14,
+     "caseCount": 145,
+     "gapCount": 58,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 969,
+      "non-call-expression": 37,
       "not-executed": 1,
-      "not-exported-api": 4,
-      "unserializable-input": 9,
-      "unsupported-assertion": 40
+      "unserializable-input": 972
      },
      "incompleteTests": {}
     },
@@ -128770,12 +128618,11 @@
      "testModule": "sympy.plotting.intervalmath.tests.test_interval_membership",
      "testFile": "sympy/plotting/intervalmath/tests/test_interval_membership.py",
      "inCorpus": true,
-     "caseCount": 2,
+     "caseCount": 4,
      "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
-      "not-exported-api": 2,
       "unserializable-input": 49
      },
      "incompleteTests": {}
@@ -129577,17 +129424,16 @@
      "testModule": "sympy.plotting.tests.test_series",
      "testFile": "sympy/plotting/tests/test_series.py",
      "inCorpus": true,
-     "caseCount": 9,
-     "gapCount": 0,
+     "caseCount": 32,
+     "gapCount": 21,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 51,
-      "non-call-expression": 51,
+      "non-call-expression": 8,
       "not-executed": 1,
-      "not-exported-api": 191,
+      "not-exported-api": 218,
       "stateful-iterator-input": 8,
-      "unserializable-input": 86,
-      "unsupported-assertion": 22
+      "unserializable-input": 154,
+      "unsupported-assertion": 2
      },
      "incompleteTests": {}
     },
@@ -129710,12 +129556,11 @@
      "testModule": "sympy.plotting.tests.test_textplot",
      "testFile": "sympy/plotting/tests/test_textplot.py",
      "inCorpus": true,
-     "caseCount": 0,
+     "caseCount": 2,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 5,
-      "stateful-iterator-input": 2
+      "non-call-expression": 5
      },
      "incompleteTests": {}
     },
@@ -129769,12 +129614,11 @@
      "testModule": "sympy.plotting.tests.test_utils",
      "testFile": "sympy/plotting/tests/test_utils.py",
      "inCorpus": true,
-     "caseCount": 4,
-     "gapCount": 1,
+     "caseCount": 6,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 13,
-      "not-exported-api": 27
+      "non-call-expression": 4
      },
      "incompleteTests": {}
     },
@@ -133294,12 +133138,11 @@
      "testModule": "sympy.polys.agca.tests.test_extensions",
      "testFile": "sympy/polys/agca/tests/test_extensions.py",
      "inCorpus": true,
-     "caseCount": 93,
-     "gapCount": 10,
+     "caseCount": 100,
+     "gapCount": 17,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 4,
-      "not-exported-api": 4,
+      "non-call-expression": 1,
       "unsupported-assertion": 1
      },
      "incompleteTests": {}
@@ -133450,14 +133293,11 @@
      "testModule": "sympy.polys.agca.tests.test_homomorphisms",
      "testFile": "sympy/polys/agca/tests/test_homomorphisms.py",
      "inCorpus": true,
-     "caseCount": 41,
-     "gapCount": 11,
+     "caseCount": 52,
+     "gapCount": 13,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 3,
-      "not-exported-api": 4,
-      "unserializable-input": 2,
-      "unsupported-assertion": 2
+      "unserializable-input": 2
      },
      "incompleteTests": {}
     },
@@ -133572,11 +133412,10 @@
      "testModule": "sympy.polys.agca.tests.test_ideals",
      "testFile": "sympy/polys/agca/tests/test_ideals.py",
      "inCorpus": true,
-     "caseCount": 35,
+     "caseCount": 37,
      "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
       "not-exported-api": 24
      },
      "incompleteTests": {}
@@ -133817,14 +133656,15 @@
      "testModule": "sympy.polys.agca.tests.test_modules",
      "testFile": "sympy/polys/agca/tests/test_modules.py",
      "inCorpus": true,
-     "caseCount": 96,
-     "gapCount": 46,
+     "caseCount": 172,
+     "gapCount": 83,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 44,
-      "not-exported-api": 25,
+      "non-call-expression": 6,
+      "not-exported-api": 24,
+      "stateful-iterator-input": 4,
       "unserializable-input": 6,
-      "unsupported-assertion": 28
+      "unsupported-assertion": 8
      },
      "incompleteTests": {}
     },
@@ -134526,14 +134366,12 @@
      "testModule": "sympy.polys.tests.test_constructor",
      "testFile": "sympy/polys/tests/test_constructor.py",
      "inCorpus": true,
-     "caseCount": 55,
-     "gapCount": 24,
+     "caseCount": 59,
+     "gapCount": 26,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
-      "not-exported-api": 2,
-      "unserializable-input": 4,
-      "unsupported-assertion": 13
+      "unserializable-input": 4
      },
      "incompleteTests": {
       "marked-tooslow": 1
@@ -134700,7 +134538,7 @@
      "testFile": "sympy/polys/tests/test_densebasic.py",
      "inCorpus": true,
      "caseCount": 292,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -134817,12 +134655,10 @@
      "testModule": "sympy.polys.tests.test_densetools",
      "testFile": "sympy/polys/tests/test_densetools.py",
      "inCorpus": true,
-     "caseCount": 300,
-     "gapCount": 0,
+     "caseCount": 301,
+     "gapCount": 1,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -134970,12 +134806,11 @@
      "testModule": "sympy.polys.tests.test_distributedmodules",
      "testFile": "sympy/polys/tests/test_distributedmodules.py",
      "inCorpus": true,
-     "caseCount": 36,
-     "gapCount": 0,
+     "caseCount": 39,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 25,
-      "unsupported-assertion": 1
+      "not-exported-api": 24
      },
      "incompleteTests": {}
     },
@@ -139072,12 +138907,12 @@
      "testModule": "sympy.polys.domains.tests.test_polynomialring",
      "testFile": "sympy/polys/domains/tests/test_polynomialring.py",
      "inCorpus": true,
-     "caseCount": 19,
-     "gapCount": 11,
+     "caseCount": 22,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 16,
-      "unsupported-assertion": 8
+      "unsupported-assertion": 5
      },
      "incompleteTests": {}
     },
@@ -139325,11 +139160,10 @@
      "testModule": "sympy.polys.domains.tests.test_quotientring",
      "testFile": "sympy/polys/domains/tests/test_quotientring.py",
      "inCorpus": true,
-     "caseCount": 5,
-     "gapCount": 4,
+     "caseCount": 9,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 4,
       "unserializable-input": 13
      },
      "incompleteTests": {}
@@ -140130,13 +139964,10 @@
      "testModule": "sympy.polys.tests.test_euclidtools",
      "testFile": "sympy/polys/tests/test_euclidtools.py",
      "inCorpus": true,
-     "caseCount": 123,
-     "gapCount": 27,
+     "caseCount": 227,
+     "gapCount": 79,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 13,
-      "unsupported-assertion": 34
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -140263,15 +140094,12 @@
      "testModule": "sympy.polys.tests.test_factortools",
      "testFile": "sympy/polys/tests/test_factortools.py",
      "inCorpus": true,
-     "caseCount": 186,
-     "gapCount": 118,
+     "caseCount": 208,
+     "gapCount": 128,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 13,
       "not-exported-api": 5,
-      "stateful-iterator-input": 1,
-      "unserializable-input": 2,
-      "unsupported-assertion": 3
+      "stateful-iterator-input": 1
      },
      "incompleteTests": {}
     },
@@ -140414,14 +140242,12 @@
      "testModule": "sympy.polys.tests.test_fields",
      "testFile": "sympy/polys/tests/test_fields.py",
      "inCorpus": true,
-     "caseCount": 54,
-     "gapCount": 6,
+     "caseCount": 100,
+     "gapCount": 18,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
-      "non-call-expression": 14,
-      "not-exported-api": 23,
-      "unsupported-assertion": 18
+      "not-exported-api": 22,
+      "unsupported-assertion": 8
      },
      "incompleteTests": {}
     },
@@ -140528,13 +140354,10 @@
      "testModule": "sympy.polys.tests.test_galoistools",
      "testFile": "sympy/polys/tests/test_galoistools.py",
      "inCorpus": true,
-     "caseCount": 323,
+     "caseCount": 324,
      "gapCount": 2,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 1,
-      "not-exported-api": 27
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -140667,10 +140490,7 @@
      "caseCount": 73,
      "gapCount": 63,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 1,
-      "unsupported-assertion": 6
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {
       "marked-slow": 1
      }
@@ -140747,12 +140567,10 @@
      "testModule": "sympy.polys.tests.test_heuristicgcd",
      "testFile": "sympy/polys/tests/test_heuristicgcd.py",
      "inCorpus": true,
-     "caseCount": 9,
-     "gapCount": 9,
+     "caseCount": 34,
+     "gapCount": 18,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 10
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -140955,15 +140773,12 @@
      "testModule": "sympy.polys.matrices.tests.test_ddm",
      "testFile": "sympy/polys/matrices/tests/test_ddm.py",
      "inCorpus": true,
-     "caseCount": 51,
-     "gapCount": 0,
+     "caseCount": 169,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 11,
-      "not-executed": 1,
-      "not-exported-api": 3,
-      "unserializable-input": 1,
-      "unsupported-assertion": 13
+      "non-call-expression": 1,
+      "not-executed": 1
      },
      "incompleteTests": {}
     },
@@ -141081,11 +140896,11 @@
      "testModule": "sympy.polys.matrices.tests.test_dense",
      "testFile": "sympy/polys/matrices/tests/test_dense.py",
      "inCorpus": true,
-     "caseCount": 25,
+     "caseCount": 38,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 52
+      "non-call-expression": 39
      },
      "incompleteTests": {}
     },
@@ -141169,15 +140984,14 @@
      "testModule": "sympy.polys.matrices.tests.test_domainmatrix",
      "testFile": "sympy/polys/matrices/tests/test_domainmatrix.py",
      "inCorpus": true,
-     "caseCount": 319,
-     "gapCount": 41,
+     "caseCount": 409,
+     "gapCount": 51,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 53,
-      "not-exported-api": 7,
+      "non-call-expression": 1,
+      "not-exported-api": 6,
       "test-exception:TypeError": 2,
-      "unserializable-input": 1,
-      "unsupported-assertion": 37,
+      "unsupported-assertion": 21,
       "unsupported-raises": 1
      },
      "incompleteTests": {
@@ -141332,13 +141146,14 @@
      "testModule": "sympy.polys.matrices.tests.test_domainscalar",
      "testFile": "sympy/polys/matrices/tests/test_domainscalar.py",
      "inCorpus": true,
-     "caseCount": 22,
+     "caseCount": 34,
      "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 11,
+      "non-call-expression": 1,
       "not-exported-api": 3,
-      "unsupported-assertion": 2
+      "unserializable-input": 1,
+      "unsupported-assertion": 1
      },
      "incompleteTests": {}
     },
@@ -141375,7 +141190,7 @@
   {
    "module": "sympy.polys.matrices.eigen",
    "sha256": "82502bc6cf7fad3ac4fecb33d9f77680a093b20b92c841f0a1e40ff36b6621c3",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "polys/matrices/eigen.ts"
    ],
@@ -141396,17 +141211,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.matrices.tests.test_eigen",
      "testFile": "sympy/polys/matrices/tests/test_eigen.py",
      "inCorpus": true,
-     "caseCount": 4,
+     "caseCount": 6,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -141485,7 +141298,7 @@
   {
    "module": "sympy.polys.matrices.linsolve",
    "sha256": "a7cea39493fd8770b1657f76c64dac875580bca064079fd80f9e64d686299862",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "polys/matrices/linsolve.ts"
    ],
@@ -141506,7 +141319,7 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.matrices.tests.test_linsolve",
      "testFile": "sympy/polys/matrices/tests/test_linsolve.py",
@@ -141514,9 +141327,7 @@
      "caseCount": 4,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 11
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -141565,13 +141376,10 @@
      "testModule": "sympy.polys.matrices.tests.test_lll",
      "testFile": "sympy/polys/matrices/tests/test_lll.py",
      "inCorpus": true,
-     "caseCount": 47,
-     "gapCount": 44,
+     "caseCount": 119,
+     "gapCount": 100,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 30,
-      "not-exported-api": 20
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -141620,13 +141428,10 @@
      "testModule": "sympy.polys.matrices.tests.test_normalforms",
      "testFile": "sympy/polys/matrices/tests/test_normalforms.py",
      "inCorpus": true,
-     "caseCount": 41,
+     "caseCount": 43,
      "gapCount": 1,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 4
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -141678,14 +141483,13 @@
      "testModule": "sympy.polys.matrices.tests.test_rref",
      "testFile": "sympy/polys/matrices/tests/test_rref.py",
      "inCorpus": true,
-     "caseCount": 0,
-     "gapCount": 0,
+     "caseCount": 408,
+     "gapCount": 18,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1008,
+      "non-call-expression": 72,
       "not-executed": 1,
-      "not-exported-api": 360,
-      "unsupported-assertion": 288
+      "not-exported-api": 1152
      },
      "incompleteTests": {}
     },
@@ -141742,14 +141546,12 @@
      "testModule": "sympy.polys.matrices.tests.test_sdm",
      "testFile": "sympy/polys/matrices/tests/test_sdm.py",
      "inCorpus": true,
-     "caseCount": 654,
-     "gapCount": 626,
+     "caseCount": 736,
+     "gapCount": 630,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 19,
-      "not-exported-api": 5,
-      "unserializable-input": 1,
-      "unsupported-assertion": 7
+      "non-call-expression": 5,
+      "not-exported-api": 5
      },
      "incompleteTests": {}
     },
@@ -141876,13 +141678,10 @@
      "testModule": "sympy.polys.tests.test_modulargcd",
      "testFile": "sympy/polys/tests/test_modulargcd.py",
      "inCorpus": true,
-     "caseCount": 43,
-     "gapCount": 0,
-     "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 7,
-      "not-exported-api": 5
-     },
+     "caseCount": 68,
+     "gapCount": 5,
+     "timeoutCount": 3,
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -141949,15 +141748,13 @@
      "testModule": "sympy.polys.tests.test_monomials",
      "testFile": "sympy/polys/tests/test_monomials.py",
      "inCorpus": true,
-     "caseCount": 11,
-     "gapCount": 0,
+     "caseCount": 18,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 16,
-      "not-exported-api": 2,
+      "non-call-expression": 9,
       "stateful-iterator-input": 91,
-      "unserializable-input": 28,
-      "unsupported-assertion": 6
+      "unserializable-input": 42
      },
      "incompleteTests": {}
     },
@@ -142154,17 +141951,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.numberfields.tests.test_basis",
      "testFile": "sympy/polys/numberfields/tests/test_basis.py",
      "inCorpus": true,
-     "caseCount": 3,
+     "caseCount": 27,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 26
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -142391,13 +142186,11 @@
      "testModule": "sympy.polys.numberfields.tests.test_minpoly",
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
-     "caseCount": 126,
-     "gapCount": 28,
-     "timeoutCount": 1,
+     "caseCount": 152,
+     "gapCount": 29,
+     "timeoutCount": 2,
      "disallowedOmissions": {
-      "marked-slow": 1,
-      "non-call-expression": 25,
-      "not-exported-api": 8
+      "marked-slow": 1
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -142486,14 +142279,14 @@
      "testModule": "sympy.polys.numberfields.tests.test_modules",
      "testFile": "sympy/polys/numberfields/tests/test_modules.py",
      "inCorpus": true,
-     "caseCount": 144,
-     "gapCount": 8,
+     "caseCount": 174,
+     "gapCount": 15,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 31,
-      "not-exported-api": 7,
+      "non-call-expression": 9,
       "stateful-iterator-input": 1,
-      "unserializable-input": 7
+      "unserializable-input": 9,
+      "unsupported-assertion": 6
      },
      "incompleteTests": {}
     },
@@ -142643,13 +142436,11 @@
      "testModule": "sympy.polys.numberfields.tests.test_primes",
      "testFile": "sympy/polys/numberfields/tests/test_primes.py",
      "inCorpus": true,
-     "caseCount": 50,
-     "gapCount": 3,
+     "caseCount": 86,
+     "gapCount": 18,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 33,
-      "not-exported-api": 23,
-      "stateful-iterator-input": 6
+      "stateful-iterator-input": 23
      },
      "incompleteTests": {}
     },
@@ -142831,12 +142622,13 @@
      "testModule": "sympy.polys.numberfields.tests.test_utilities",
      "testFile": "sympy/polys/numberfields/tests/test_utilities.py",
      "inCorpus": true,
-     "caseCount": 16,
+     "caseCount": 34,
      "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 37,
-      "unserializable-input": 3
+      "non-call-expression": 1,
+      "stateful-iterator-input": 8,
+      "unserializable-input": 13
      },
      "incompleteTests": {}
     },
@@ -142937,14 +142729,13 @@
      "testModule": "sympy.polys.tests.test_orderings",
      "testFile": "sympy/polys/tests/test_orderings.py",
      "inCorpus": true,
-     "caseCount": 18,
+     "caseCount": 22,
      "gapCount": 11,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 4,
-      "not-exported-api": 9,
-      "unserializable-input": 4,
-      "unsupported-assertion": 33
+      "non-call-expression": 5,
+      "not-exported-api": 3,
+      "unserializable-input": 5
      },
      "incompleteTests": {}
     },
@@ -143604,15 +143395,14 @@
      "testModule": "sympy.polys.tests.test_polyclasses",
      "testFile": "sympy/polys/tests/test_polyclasses.py",
      "inCorpus": true,
-     "caseCount": 142,
-     "gapCount": 126,
+     "caseCount": 171,
+     "gapCount": 132,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 6,
+      "non-call-expression": 3,
       "not-exported-api": 9,
       "stateful-iterator-input": 1,
-      "unserializable-input": 55,
-      "unsupported-assertion": 23
+      "unserializable-input": 77
      },
      "incompleteTests": {}
     },
@@ -144755,15 +144545,16 @@
      "testModule": "sympy.polys.tests.test_polyroots",
      "testFile": "sympy/polys/tests/test_polyroots.py",
      "inCorpus": true,
-     "caseCount": 108,
-     "gapCount": 49,
+     "caseCount": 189,
+     "gapCount": 100,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 2,
-      "non-call-expression": 58,
-      "not-exported-api": 29,
+      "non-call-expression": 1,
+      "not-exported-api": 19,
       "stateful-iterator-input": 20,
-      "unsupported-assertion": 18
+      "unserializable-input": 1,
+      "unsupported-assertion": 11
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -145338,16 +145129,16 @@
      "testModule": "sympy.polys.tests.test_polytools",
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
-     "caseCount": 1584,
-     "gapCount": 622,
+     "caseCount": 1707,
+     "gapCount": 663,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
-      "non-call-expression": 90,
-      "not-exported-api": 48,
-      "stateful-iterator-input": 6,
-      "unserializable-input": 3,
-      "unsupported-assertion": 48
+      "non-call-expression": 7,
+      "not-exported-api": 12,
+      "stateful-iterator-input": 10,
+      "unserializable-input": 34,
+      "unsupported-assertion": 27
      },
      "incompleteTests": {
       "marked-tooslow": 1
@@ -145664,12 +145455,10 @@
      "testModule": "sympy.polys.tests.test_polyutils",
      "testFile": "sympy/polys/tests/test_polyutils.py",
      "inCorpus": true,
-     "caseCount": 43,
+     "caseCount": 44,
      "gapCount": 43,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 72
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -145729,13 +145518,11 @@
      "testModule": "sympy.polys.tests.test_puiseux",
      "testFile": "sympy/polys/tests/test_puiseux.py",
      "inCorpus": true,
-     "caseCount": 69,
-     "gapCount": 19,
+     "caseCount": 171,
+     "gapCount": 51,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 12,
-      "not-exported-api": 18,
-      "unsupported-assertion": 37
+      "non-call-expression": 3
      },
      "incompleteTests": {}
     },
@@ -145868,14 +145655,11 @@
      "testModule": "sympy.polys.tests.test_ring_series",
      "testFile": "sympy/polys/tests/test_ring_series.py",
      "inCorpus": true,
-     "caseCount": 113,
-     "gapCount": 11,
+     "caseCount": 180,
+     "gapCount": 17,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "marked-slow": 15,
-      "non-call-expression": 61,
-      "not-exported-api": 8,
-      "unsupported-assertion": 7
+      "marked-slow": 15
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -146119,15 +145903,14 @@
      "testModule": "sympy.polys.tests.test_rings",
      "testFile": "sympy/polys/tests/test_rings.py",
      "inCorpus": true,
-     "caseCount": 166,
-     "gapCount": 17,
+     "caseCount": 616,
+     "gapCount": 48,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
-      "non-call-expression": 43,
+      "non-call-expression": 3,
       "not-executed": 4,
-      "not-exported-api": 34,
-      "unsupported-assertion": 116
+      "not-exported-api": 87,
+      "unsupported-assertion": 14
      },
      "incompleteTests": {}
     },
@@ -146378,7 +146161,8 @@
      "gapCount": 304,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2
+      "non-call-expression": 3,
+      "unsupported-assertion": 2
      },
      "incompleteTests": {}
     },
@@ -146760,15 +146544,15 @@
      "testModule": "sympy.polys.tests.test_rootoftools",
      "testFile": "sympy/polys/tests/test_rootoftools.py",
      "inCorpus": true,
-     "caseCount": 131,
-     "gapCount": 45,
+     "caseCount": 148,
+     "gapCount": 50,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 56,
-      "non-call-expression": 3,
-      "not-exported-api": 37,
-      "unserializable-input": 6,
-      "unsupported-assertion": 22
+      "non-call-expression": 1,
+      "not-exported-api": 20,
+      "unserializable-input": 2,
+      "unsupported-assertion": 16
      },
      "incompleteTests": {
       "marked-slow": 2
@@ -146977,11 +146761,11 @@
      "testModule": "sympy.polys.tests.test_solvers",
      "testFile": "sympy/polys/tests/test_solvers.py",
      "inCorpus": true,
-     "caseCount": 9,
+     "caseCount": 10,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1
+      "stateful-iterator-input": 1
      },
      "incompleteTests": {}
     },
@@ -147054,8 +146838,7 @@
      "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 6,
-      "not-exported-api": 1,
+      "non-call-expression": 7,
       "stateful-iterator-input": 2
      },
      "incompleteTests": {}
@@ -147238,12 +147021,10 @@
      "testModule": "sympy.polys.tests.test_subresultants_qq_zz",
      "testFile": "sympy/polys/tests/test_subresultants_qq_zz.py",
      "inCorpus": true,
-     "caseCount": 97,
-     "gapCount": 68,
+     "caseCount": 112,
+     "gapCount": 79,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "unsupported-assertion": 9
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -147625,7 +147406,7 @@
      "disallowedOmissions": {
       "not-exported-api": 2,
       "stateful-iterator-input": 8,
-      "unsupported-assertion": 8
+      "unsupported-assertion": 6
      },
      "incompleteTests": {}
     },
@@ -147783,16 +147564,16 @@
      "testModule": "sympy.printing.tests.test_latex",
      "testFile": "sympy/printing/tests/test_latex.py",
      "inCorpus": true,
-     "caseCount": 1252,
-     "gapCount": 124,
+     "caseCount": 1264,
+     "gapCount": 129,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 2,
+      "non-call-expression": 3,
+      "not-exported-api": 1,
       "serialization-error": 4,
       "test-timeout": 2,
-      "unserializable-input": 49,
-      "unsupported-assertion": 14
+      "unserializable-input": 47,
+      "unsupported-assertion": 9
      },
      "incompleteTests": {
       "test-timeout": 1
@@ -147916,15 +147697,14 @@
      "testModule": "sympy.printing.tests.test_mathml",
      "testFile": "sympy/printing/tests/test_mathml.py",
      "inCorpus": true,
-     "caseCount": 167,
-     "gapCount": 30,
+     "caseCount": 175,
+     "gapCount": 32,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 6,
       "not-executed": 4,
-      "not-exported-api": 24,
+      "not-exported-api": 9,
       "unserializable-input": 399,
-      "unsupported-assertion": 3
+      "unsupported-assertion": 2
      },
      "incompleteTests": {}
     },
@@ -148020,13 +147800,10 @@
      "testModule": "sympy.printing.tests.test_precedence",
      "testFile": "sympy/printing/tests/test_precedence.py",
      "inCorpus": true,
-     "caseCount": 28,
-     "gapCount": 0,
+     "caseCount": 32,
+     "gapCount": 4,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 4,
-      "unsupported-assertion": 8
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -148144,9 +147921,10 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
-      "not-exported-api": 1239,
+      "not-exported-api": 1295,
       "stateful-iterator-input": 1,
-      "unsupported-assertion": 88
+      "unserializable-input": 2,
+      "unsupported-assertion": 59
      },
      "incompleteTests": {}
     },
@@ -148549,11 +148327,10 @@
      "testModule": "sympy.printing.tests.test_repr",
      "testFile": "sympy/printing/tests/test_repr.py",
      "inCorpus": true,
-     "caseCount": 102,
+     "caseCount": 103,
      "gapCount": 36,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1,
       "not-exported-api": 83,
       "reference-exception": 1,
       "unsupported-assertion": 4
@@ -148660,17 +148437,16 @@
      "testModule": "sympy.printing.tests.test_str",
      "testFile": "sympy/printing/tests/test_str.py",
      "inCorpus": true,
-     "caseCount": 87,
-     "gapCount": 27,
-     "timeoutCount": 0,
+     "caseCount": 438,
+     "gapCount": 74,
+     "timeoutCount": 1,
      "disallowedOmissions": {
-      "non-boolean-assertion": 1,
-      "non-call-expression": 1,
+      "non-call-expression": 27,
       "not-executed": 5,
-      "not-exported-api": 408,
+      "not-exported-api": 12,
       "serialization-error": 1,
-      "unserializable-input": 3,
-      "unsupported-assertion": 21
+      "unserializable-input": 54,
+      "unsupported-assertion": 5
      },
      "incompleteTests": {}
     },
@@ -148723,12 +148499,12 @@
      "testModule": "sympy.printing.tests.test_tableform",
      "testFile": "sympy/printing/tests/test_tableform.py",
      "inCorpus": true,
-     "caseCount": 2,
+     "caseCount": 6,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 14,
-      "not-exported-api": 4
+      "not-exported-api": 7,
+      "unserializable-input": 7
      },
      "incompleteTests": {}
     },
@@ -149689,11 +149465,11 @@
      "testModule": "sympy.series.tests.test_approximants",
      "testFile": "sympy/series/tests/test_approximants.py",
      "inCorpus": true,
-     "caseCount": 0,
+     "caseCount": 3,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "stateful-iterator-input": 5
+      "stateful-iterator-input": 2
      },
      "incompleteTests": {}
     },
@@ -150352,13 +150128,12 @@
      "testModule": "sympy.series.tests.test_formal",
      "testFile": "sympy/series/tests/test_formal.py",
      "inCorpus": true,
-     "caseCount": 132,
+     "caseCount": 133,
      "gapCount": 53,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
-      "non-call-expression": 8,
-      "not-exported-api": 11,
+      "non-call-expression": 7,
       "unserializable-input": 32,
       "unsupported-assertion": 1
      },
@@ -150641,7 +150416,6 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 12,
-      "not-exported-api": 2,
       "unserializable-input": 10
      },
      "incompleteTests": {}
@@ -150926,14 +150700,13 @@
      "testModule": "sympy.series.tests.test_limits",
      "testFile": "sympy/series/tests/test_limits.py",
      "inCorpus": true,
-     "caseCount": 568,
+     "caseCount": 571,
      "gapCount": 47,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1,
       "not-executed": 2,
-      "not-exported-api": 5,
-      "unsupported-assertion": 55
+      "stateful-iterator-input": 2,
+      "unsupported-assertion": 54
      },
      "incompleteTests": {}
     },
@@ -151109,12 +150882,12 @@
      "testModule": "sympy.series.tests.test_order",
      "testFile": "sympy/series/tests/test_order.py",
      "inCorpus": true,
-     "caseCount": 246,
-     "gapCount": 104,
+     "caseCount": 257,
+     "gapCount": 110,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
-      "unsupported-assertion": 11
+      "unsupported-assertion": 4
      },
      "incompleteTests": {}
     },
@@ -151170,12 +150943,10 @@
      "testModule": "sympy.series.tests.test_residues",
      "testFile": "sympy/series/tests/test_residues.py",
      "inCorpus": true,
-     "caseCount": 38,
+     "caseCount": 39,
      "gapCount": 2,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 1
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -152185,14 +151956,13 @@
      "testModule": "sympy.series.tests.test_sequences",
      "testFile": "sympy/series/tests/test_sequences.py",
      "inCorpus": true,
-     "caseCount": 92,
-     "gapCount": 5,
+     "caseCount": 111,
+     "gapCount": 7,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 12,
-      "non-call-expression": 15,
-      "not-exported-api": 14,
-      "unsupported-assertion": 4
+      "unserializable-input": 2,
+      "unsupported-assertion": 3
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -152300,11 +152070,11 @@
      "testModule": "sympy.series.tests.test_series",
      "testFile": "sympy/series/tests/test_series.py",
      "inCorpus": true,
-     "caseCount": 90,
-     "gapCount": 30,
+     "caseCount": 97,
+     "gapCount": 31,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 9,
+      "non-call-expression": 3,
       "not-exported-api": 3,
       "stateful-iterator-input": 2
      },
@@ -154691,13 +154461,11 @@
      "testModule": "sympy.sets.tests.test_conditionset",
      "testFile": "sympy/sets/tests/test_conditionset.py",
      "inCorpus": true,
-     "caseCount": 68,
-     "gapCount": 37,
+     "caseCount": 77,
+     "gapCount": 39,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 3,
-      "not-exported-api": 1,
-      "unsupported-assertion": 22
+      "unsupported-assertion": 16
      },
      "incompleteTests": {}
     },
@@ -156195,16 +155963,15 @@
      "testModule": "sympy.sets.tests.test_fancysets",
      "testFile": "sympy/sets/tests/test_fancysets.py",
      "inCorpus": true,
-     "caseCount": 538,
-     "gapCount": 130,
+     "caseCount": 769,
+     "gapCount": 167,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 3405,
-      "not-exported-api": 25,
+      "non-call-expression": 5,
+      "not-exported-api": 11,
       "stateful-iterator-input": 9,
-      "unserializable-input": 2,
-      "unsupported-assertion": 144,
-      "unsupported-raises": 21
+      "unserializable-input": 7,
+      "unsupported-assertion": 95
      },
      "incompleteTests": {}
     },
@@ -157144,12 +156911,11 @@
      "testModule": "sympy.sets.tests.test_ordinals",
      "testFile": "sympy/sets/tests/test_ordinals.py",
      "inCorpus": true,
-     "caseCount": 26,
+     "caseCount": 34,
      "gapCount": 8,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 5,
-      "unsupported-assertion": 4
+      "non-call-expression": 1
      },
      "incompleteTests": {}
     },
@@ -157338,14 +157104,12 @@
      "testModule": "sympy.sets.tests.test_powerset",
      "testFile": "sympy/sets/tests/test_powerset.py",
      "inCorpus": true,
-     "caseCount": 16,
-     "gapCount": 9,
+     "caseCount": 52,
+     "gapCount": 36,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 6,
       "stateful-iterator-input": 12,
-      "unsupported-assertion": 64
+      "unsupported-assertion": 36
      },
      "incompleteTests": {}
     },
@@ -157460,13 +157224,10 @@
      "testModule": "sympy.sets.tests.test_setexpr",
      "testFile": "sympy/sets/tests/test_setexpr.py",
      "inCorpus": true,
-     "caseCount": 152,
+     "caseCount": 154,
      "gapCount": 81,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -158910,17 +158671,17 @@
      "testModule": "sympy.sets.tests.test_sets",
      "testFile": "sympy/sets/tests/test_sets.py",
      "inCorpus": true,
-     "caseCount": 680,
-     "gapCount": 337,
+     "caseCount": 758,
+     "gapCount": 374,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 6,
-      "non-call-expression": 13,
+      "non-boolean-assertion": 2,
+      "non-call-expression": 1,
       "not-executed": 2,
-      "not-exported-api": 789,
+      "not-exported-api": 776,
       "stateful-iterator-input": 17,
-      "unserializable-input": 16,
-      "unsupported-assertion": 178
+      "unserializable-input": 14,
+      "unsupported-assertion": 138
      },
      "incompleteTests": {}
     },
@@ -159401,13 +159162,11 @@
      "testModule": "sympy.simplify.tests.test_epathtools",
      "testFile": "sympy/simplify/tests/test_epathtools.py",
      "inCorpus": true,
-     "caseCount": 37,
+     "caseCount": 45,
      "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 2,
-      "unserializable-input": 7
+      "non-call-expression": 2
      },
      "incompleteTests": {}
     },
@@ -159464,14 +159223,13 @@
      "testModule": "sympy.simplify.tests.test_fu",
      "testFile": "sympy/simplify/tests/test_fu.py",
      "inCorpus": true,
-     "caseCount": 173,
-     "gapCount": 2,
+     "caseCount": 191,
+     "gapCount": 9,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 44,
-      "not-exported-api": 32,
-      "unserializable-input": 3,
-      "unsupported-assertion": 2
+      "non-call-expression": 32,
+      "not-exported-api": 2,
+      "unsupported-assertion": 1
      },
      "incompleteTests": {}
     },
@@ -159801,14 +159559,14 @@
      "testModule": "sympy.simplify.tests.test_hyperexpand",
      "testFile": "sympy/simplify/tests/test_hyperexpand.py",
      "inCorpus": true,
-     "caseCount": 64,
+     "caseCount": 66,
      "gapCount": 21,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 102,
       "marked-tooslow": 1,
-      "not-exported-api": 72,
-      "unsupported-assertion": 3
+      "not-exported-api": 71,
+      "unsupported-assertion": 2
      },
      "incompleteTests": {
       "marked-slow": 13,
@@ -159924,16 +159682,11 @@
      "testModule": "sympy.simplify.tests.test_powsimp",
      "testFile": "sympy/simplify/tests/test_powsimp.py",
      "inCorpus": true,
-     "caseCount": 151,
-     "gapCount": 1,
+     "caseCount": 159,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
-      "non-call-expression": 2,
-      "not-exported-api": 1,
-      "stateful-iterator-input": 1,
-      "unserializable-input": 1,
-      "unsupported-assertion": 2
+      "stateful-iterator-input": 1
      },
      "incompleteTests": {}
     },
@@ -159988,13 +159741,11 @@
      "testModule": "sympy.simplify.tests.test_radsimp",
      "testFile": "sympy/simplify/tests/test_radsimp.py",
      "inCorpus": true,
-     "caseCount": 154,
-     "gapCount": 12,
+     "caseCount": 162,
+     "gapCount": 14,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 1,
-      "not-exported-api": 2,
-      "unsupported-assertion": 6
+      "unsupported-assertion": 2
      },
      "incompleteTests": {}
     },
@@ -160054,11 +159805,12 @@
      "testModule": "sympy.simplify.tests.test_ratsimp",
      "testFile": "sympy/simplify/tests/test_ratsimp.py",
      "inCorpus": true,
-     "caseCount": 8,
+     "caseCount": 13,
      "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 5
+      "non-call-expression": 4,
+      "unsupported-assertion": 1
      },
      "incompleteTests": {}
     },
@@ -160118,18 +159870,17 @@
      "testModule": "sympy.simplify.tests.test_simplify",
      "testFile": "sympy/simplify/tests/test_simplify.py",
      "inCorpus": true,
-     "caseCount": 360,
-     "gapCount": 66,
+     "caseCount": 379,
+     "gapCount": 74,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
       "non-boolean-assertion": 1,
-      "non-call-expression": 14,
-      "not-exported-api": 5,
+      "non-call-expression": 2,
       "serialization-error": 1,
       "stateful-iterator-input": 1,
       "unserializable-input": 1,
-      "unsupported-assertion": 18
+      "unsupported-assertion": 11
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -160199,7 +159950,7 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.simplify.tests.test_sqrtdenest",
      "testFile": "sympy/simplify/tests/test_sqrtdenest.py",
@@ -160207,9 +159958,7 @@
      "caseCount": 64,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 3
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -160310,15 +160059,14 @@
      "testModule": "sympy.simplify.tests.test_trigsimp",
      "testFile": "sympy/simplify/tests/test_trigsimp.py",
      "inCorpus": true,
-     "caseCount": 205,
-     "gapCount": 7,
+     "caseCount": 224,
+     "gapCount": 9,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 20,
+      "non-call-expression": 2,
       "not-exported-api": 4,
       "stateful-iterator-input": 3,
-      "unserializable-input": 2,
-      "unsupported-assertion": 8
+      "unsupported-assertion": 5
      },
      "incompleteTests": {}
     },
@@ -160695,17 +160443,16 @@
      "testModule": "sympy.solvers.diophantine.tests.test_diophantine",
      "testFile": "sympy/solvers/diophantine/tests/test_diophantine.py",
      "inCorpus": true,
-     "caseCount": 242,
-     "gapCount": 32,
-     "timeoutCount": 0,
+     "caseCount": 2323,
+     "gapCount": 54,
+     "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 4,
-      "non-boolean-assertion": 7,
-      "non-call-expression": 107,
-      "not-exported-api": 2259,
-      "stateful-iterator-input": 2080,
-      "unserializable-input": 2,
-      "unsupported-assertion": 22
+      "non-boolean-assertion": 1,
+      "non-call-expression": 95,
+      "not-exported-api": 123,
+      "stateful-iterator-input": 2096,
+      "unserializable-input": 3
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -160840,13 +160587,12 @@
      "testModule": "sympy.solvers.tests.test_inequalities",
      "testFile": "sympy/solvers/tests/test_inequalities.py",
      "inCorpus": true,
-     "caseCount": 153,
-     "gapCount": 40,
+     "caseCount": 154,
+     "gapCount": 41,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 22,
-      "unsupported-assertion": 10
+      "non-call-expression": 1,
+      "unsupported-assertion": 4
      },
      "incompleteTests": {}
     },
@@ -161035,12 +160781,11 @@
      "testModule": "sympy.solvers.ode.tests.test_lie_group",
      "testFile": "sympy/solvers/ode/tests/test_lie_group.py",
      "inCorpus": true,
-     "caseCount": 2,
-     "gapCount": 1,
+     "caseCount": 15,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 17,
-      "non-call-expression": 13
+      "non-boolean-assertion": 1
      },
      "incompleteTests": {}
     },
@@ -161165,15 +160910,15 @@
      "testModule": "sympy.solvers.ode.tests.test_ode",
      "testFile": "sympy/solvers/ode/tests/test_ode.py",
      "inCorpus": true,
-     "caseCount": 159,
-     "gapCount": 63,
+     "caseCount": 172,
+     "gapCount": 68,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-skip": 1,
       "marked-slow": 58,
-      "non-call-expression": 8,
-      "not-exported-api": 56,
-      "unsupported-assertion": 5
+      "non-call-expression": 1,
+      "not-exported-api": 7,
+      "unsupported-assertion": 3
      },
      "incompleteTests": {
       "marked-skip": 1,
@@ -161269,11 +161014,11 @@
      "testModule": "sympy.solvers.ode.tests.test_riccati",
      "testFile": "sympy/solvers/ode/tests/test_riccati.py",
      "inCorpus": true,
-     "caseCount": 41,
-     "gapCount": 36,
+     "caseCount": 50,
+     "gapCount": 45,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 37,
+      "non-call-expression": 28,
       "not-executed": 1,
       "stateful-iterator-input": 32
      },
@@ -161583,13 +161328,12 @@
      "testModule": "sympy.solvers.ode.tests.test_single",
      "testFile": "sympy/solvers/ode/tests/test_single.py",
      "inCorpus": true,
-     "caseCount": 12,
+     "caseCount": 13,
      "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "marked-slow": 15,
+      "marked-slow": 17,
       "non-boolean-assertion": 1,
-      "non-call-expression": 1,
       "not-exported-api": 6,
       "unsupported-assertion": 4
      },
@@ -161747,15 +161491,14 @@
      "testModule": "sympy.solvers.ode.tests.test_systems",
      "testFile": "sympy/solvers/ode/tests/test_systems.py",
      "inCorpus": true,
-     "caseCount": 285,
+     "caseCount": 286,
      "gapCount": 113,
      "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-slow": 104,
       "marked-tooslow": 5,
-      "non-call-expression": 11,
-      "not-executed": 9,
-      "not-exported-api": 37
+      "non-call-expression": 10,
+      "not-executed": 9
      },
      "incompleteTests": {
       "marked-slow": 12,
@@ -161818,11 +161561,10 @@
      "testModule": "sympy.solvers.tests.test_pde",
      "testFile": "sympy/solvers/tests/test_pde.py",
      "inCorpus": true,
-     "caseCount": 43,
-     "gapCount": 3,
+     "caseCount": 60,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 17,
       "not-exported-api": 1
      },
      "incompleteTests": {}
@@ -161891,13 +161633,11 @@
      "testModule": "sympy.solvers.tests.test_polysys",
      "testFile": "sympy/solvers/tests/test_polysys.py",
      "inCorpus": true,
-     "caseCount": 106,
+     "caseCount": 110,
      "gapCount": 22,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 3,
-      "not-exported-api": 104,
-      "stateful-iterator-input": 2
+      "stateful-iterator-input": 4
      },
      "incompleteTests": {}
     },
@@ -161952,14 +161692,12 @@
      "testModule": "sympy.solvers.tests.test_recurr",
      "testFile": "sympy/solvers/tests/test_recurr.py",
      "inCorpus": true,
-     "caseCount": 123,
-     "gapCount": 2,
-     "timeoutCount": 0,
+     "caseCount": 127,
+     "gapCount": 3,
+     "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 1,
-      "non-call-expression": 2,
-      "not-exported-api": 1,
-      "unsupported-assertion": 5
+      "unsupported-assertion": 4
      },
      "incompleteTests": {
       "marked-slow": 1
@@ -162016,12 +161754,11 @@
      "testModule": "sympy.solvers.tests.test_simplex",
      "testFile": "sympy/solvers/tests/test_simplex.py",
      "inCorpus": true,
-     "caseCount": 62,
+     "caseCount": 64,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 9,
-      "not-exported-api": 8
+      "non-call-expression": 7
      },
      "incompleteTests": {}
     },
@@ -162083,20 +161820,22 @@
      "testModule": "sympy.solvers.tests.test_solvers",
      "testFile": "sympy/solvers/tests/test_solvers.py",
      "inCorpus": true,
-     "caseCount": 437,
-     "gapCount": 219,
-     "timeoutCount": 1,
+     "caseCount": 474,
+     "gapCount": 239,
+     "timeoutCount": 3,
      "disallowedOmissions": {
-      "marked-slow": 215,
+      "marked-skip": 1,
+      "marked-slow": 219,
       "non-boolean-assertion": 2,
-      "non-call-expression": 24,
-      "not-executed": 2,
-      "not-exported-api": 85,
-      "stateful-iterator-input": 6,
+      "non-call-expression": 3,
+      "not-executed": 1,
+      "not-exported-api": 69,
+      "stateful-iterator-input": 10,
       "unserializable-input": 2,
-      "unsupported-assertion": 23
+      "unsupported-assertion": 17
      },
      "incompleteTests": {
+      "marked-skip": 1,
       "marked-slow": 9
      }
     },
@@ -162172,26 +161911,23 @@
      "testModule": "sympy.solvers.tests.test_solveset",
      "testFile": "sympy/solvers/tests/test_solveset.py",
      "inCorpus": true,
-     "caseCount": 568,
-     "gapCount": 264,
+     "caseCount": 610,
+     "gapCount": 277,
      "timeoutCount": 1,
      "disallowedOmissions": {
-      "marked-skip": 1,
+      "marked-skip": 3,
       "marked-slow": 2,
       "non-boolean-assertion": 5,
-      "non-call-expression": 17,
-      "not-executed": 2,
-      "not-exported-api": 290,
-      "stateful-iterator-input": 14,
-      "test-timeout": 11,
+      "non-call-expression": 11,
+      "not-exported-api": 152,
+      "stateful-iterator-input": 15,
       "unserializable-input": 2,
-      "unsupported-assertion": 49,
+      "unsupported-assertion": 38,
       "upstream-skip": 2
      },
      "incompleteTests": {
-      "marked-skip": 1,
+      "marked-skip": 2,
       "marked-slow": 1,
-      "test-timeout": 1,
       "upstream-skip": 1
      }
     },
@@ -164400,12 +164136,11 @@
      "testModule": "sympy.stats.tests.test_compound_rv",
      "testFile": "sympy/stats/tests/test_compound_rv.py",
      "inCorpus": true,
-     "caseCount": 28,
+     "caseCount": 30,
      "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 12,
-      "unsupported-assertion": 1
+      "not-exported-api": 6
      },
      "incompleteTests": {}
     },
@@ -173625,13 +173360,11 @@
      "testModule": "sympy.stats.tests.test_joint_rv",
      "testFile": "sympy/stats/tests/test_joint_rv.py",
      "inCorpus": true,
-     "caseCount": 61,
-     "gapCount": 0,
+     "caseCount": 68,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 3,
-      "non-call-expression": 4,
-      "not-exported-api": 4,
       "unsupported-assertion": 1,
       "upstream-skip": 2
      },
@@ -175173,7 +174906,6 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 1,
-      "not-exported-api": 1,
       "upstream-skip": 2
      },
      "incompleteTests": {
@@ -177354,14 +177086,12 @@
      "testModule": "sympy.stats.tests.test_rv",
      "testFile": "sympy/stats/tests/test_rv.py",
      "inCorpus": true,
-     "caseCount": 102,
-     "gapCount": 5,
+     "caseCount": 109,
+     "gapCount": 8,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 1,
-      "non-call-expression": 4,
-      "not-exported-api": 5,
-      "unsupported-assertion": 2
+      "not-exported-api": 4,
+      "unsupported-assertion": 1
      },
      "incompleteTests": {}
     },
@@ -177718,16 +177448,15 @@
      "testModule": "sympy.stats.tests.test_stochastic_process",
      "testFile": "sympy/stats/tests/test_stochastic_process.py",
      "inCorpus": true,
-     "caseCount": 279,
+     "caseCount": 299,
      "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 28,
+      "non-call-expression": 5,
       "not-executed": 1,
-      "not-exported-api": 17,
-      "stateful-iterator-input": 6,
-      "unserializable-input": 6,
-      "unsupported-assertion": 6
+      "not-exported-api": 1,
+      "stateful-iterator-input": 18,
+      "unsupported-assertion": 5
      },
      "incompleteTests": {}
     },
@@ -179731,12 +179460,11 @@
      "testModule": "sympy.stats.tests.test_symbolic_probability",
      "testFile": "sympy/stats/tests/test_symbolic_probability.py",
      "inCorpus": true,
-     "caseCount": 87,
+     "caseCount": 89,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-exported-api": 2,
-      "unsupported-assertion": 1
+      "not-exported-api": 2
      },
      "incompleteTests": {}
     },
@@ -179951,7 +179679,8 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
-      "stateful-iterator-input": 20,
+      "not-exported-api": 8,
+      "stateful-iterator-input": 12,
       "unsupported-assertion": 3
      },
      "incompleteTests": {}
@@ -180067,7 +179796,8 @@
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "stateful-iterator-input": 5
+      "not-exported-api": 2,
+      "stateful-iterator-input": 3
      },
      "incompleteTests": {}
     },
@@ -180360,13 +180090,13 @@
      "testModule": "sympy.strategies.tests.test_tree",
      "testFile": "sympy/strategies/tests/test_tree.py",
      "inCorpus": true,
-     "caseCount": 1,
-     "gapCount": 1,
+     "caseCount": 2,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 13,
       "stateful-iterator-input": 4,
-      "unserializable-input": 3,
+      "unserializable-input": 2,
       "unstable-result-representation": 1
      },
      "incompleteTests": {}
@@ -181522,12 +181252,11 @@
      "testModule": "sympy.tensor.array.tests.test_array_comprehension",
      "testFile": "sympy/tensor/array/tests/test_array_comprehension.py",
      "inCorpus": true,
-     "caseCount": 37,
+     "caseCount": 40,
      "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "not-executed": 1,
-      "not-exported-api": 6
+      "not-executed": 1
      },
      "incompleteTests": {}
     },
@@ -181655,7 +181384,7 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.tensor.array.tests.test_array_derivatives",
      "testFile": "sympy/tensor/array/tests/test_array_derivatives.py",
@@ -181663,9 +181392,7 @@
      "caseCount": 12,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 6
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -181717,12 +181444,11 @@
      "testModule": "sympy.tensor.array.tests.test_arrayop",
      "testFile": "sympy/tensor/array/tests/test_arrayop.py",
      "inCorpus": true,
-     "caseCount": 91,
+     "caseCount": 94,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 72,
-      "stateful-iterator-input": 3,
       "test-timeout": 63
      },
      "incompleteTests": {
@@ -183722,12 +183448,11 @@
      "testModule": "sympy.tensor.array.expressions.tests.test_array_expressions",
      "testFile": "sympy/tensor/array/expressions/tests/test_array_expressions.py",
      "inCorpus": true,
-     "caseCount": 77,
-     "gapCount": 19,
+     "caseCount": 110,
+     "gapCount": 27,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 79,
-      "not-exported-api": 47,
+      "non-call-expression": 3,
       "unserializable-input": 19
      },
      "incompleteTests": {}
@@ -183838,11 +183563,10 @@
      "testModule": "sympy.tensor.array.expressions.tests.test_arrayexpr_derivatives",
      "testFile": "sympy/tensor/array/expressions/tests/test_arrayexpr_derivatives.py",
      "inCorpus": true,
-     "caseCount": 1,
-     "gapCount": 0,
+     "caseCount": 7,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 6,
       "unserializable-input": 2
      },
      "incompleteTests": {}
@@ -184471,14 +184195,13 @@
      "testModule": "sympy.tensor.array.tests.test_mutable_ndim_array",
      "testFile": "sympy/tensor/array/tests/test_mutable_ndim_array.py",
      "inCorpus": true,
-     "caseCount": 141,
-     "gapCount": 0,
+     "caseCount": 187,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 34,
-      "not-exported-api": 19,
-      "test-timeout": 18,
-      "unsupported-assertion": 3
+      "non-call-expression": 14,
+      "not-exported-api": 9,
+      "test-timeout": 18
      },
      "incompleteTests": {
       "test-timeout": 1
@@ -184644,17 +184367,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.tensor.array.tests.test_ndim_array",
      "testFile": "sympy/tensor/array/tests/test_ndim_array.py",
      "inCorpus": true,
-     "caseCount": 62,
+     "caseCount": 66,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "not-exported-api": 8
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -184927,13 +184648,11 @@
      "testModule": "sympy.tensor.tests.test_functions",
      "testFile": "sympy/tensor/tests/test_functions.py",
      "inCorpus": true,
-     "caseCount": 1,
-     "gapCount": 0,
+     "caseCount": 3,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 3,
-      "not-exported-api": 1,
-      "unserializable-input": 9
+      "unserializable-input": 10
      },
      "incompleteTests": {}
     },
@@ -184981,17 +184700,15 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.tensor.tests.test_index_methods",
      "testFile": "sympy/tensor/tests/test_index_methods.py",
      "inCorpus": true,
-     "caseCount": 48,
+     "caseCount": 51,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 3
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -185245,14 +184962,13 @@
      "testModule": "sympy.tensor.tests.test_indexed",
      "testFile": "sympy/tensor/tests/test_indexed.py",
      "inCorpus": true,
-     "caseCount": 189,
-     "gapCount": 58,
+     "caseCount": 213,
+     "gapCount": 72,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 11,
-      "not-exported-api": 21,
+      "not-exported-api": 3,
       "stateful-iterator-input": 1,
-      "unsupported-assertion": 22
+      "unsupported-assertion": 9
      },
      "incompleteTests": {}
     },
@@ -186359,16 +186075,15 @@
      "testModule": "sympy.tensor.tests.test_tensor",
      "testFile": "sympy/tensor/tests/test_tensor.py",
      "inCorpus": true,
-     "caseCount": 546,
-     "gapCount": 193,
+     "caseCount": 680,
+     "gapCount": 213,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 2,
-      "non-call-expression": 96,
-      "not-exported-api": 145,
-      "stateful-iterator-input": 18,
-      "unserializable-input": 99,
-      "unsupported-assertion": 8
+      "non-boolean-assertion": 1,
+      "non-call-expression": 33,
+      "not-exported-api": 59,
+      "unserializable-input": 116,
+      "unsupported-assertion": 5
      },
      "incompleteTests": {}
     },
@@ -187029,8 +186744,8 @@
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-boolean-assertion": 1,
-      "stateful-iterator-input": 10
+      "not-exported-api": 10,
+      "stateful-iterator-input": 1
      },
      "incompleteTests": {}
     },
@@ -187427,9 +187142,8 @@
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
-      "not-exported-api": 13,
-      "unserializable-input": 2,
-      "unsupported-assertion": 1
+      "not-exported-api": 12,
+      "unserializable-input": 3
      },
      "incompleteTests": {}
     },
@@ -187501,8 +187215,7 @@
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 21094
+      "not-exported-api": 21096
      },
      "incompleteTests": {}
     },
@@ -187592,15 +187305,15 @@
      "testModule": "sympy.utilities.tests.test_iterables",
      "testFile": "sympy/utilities/tests/test_iterables.py",
      "inCorpus": true,
-     "caseCount": 109,
-     "gapCount": 0,
+     "caseCount": 252,
+     "gapCount": 13,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 130,
-      "not-exported-api": 3034,
-      "stateful-iterator-input": 152,
-      "unserializable-input": 19,
-      "unsupported-assertion": 152,
+      "non-call-expression": 137,
+      "not-exported-api": 6,
+      "stateful-iterator-input": 80,
+      "unserializable-input": 11,
+      "unsupported-assertion": 129,
       "unsupported-raises": 2
      },
      "incompleteTests": {}
@@ -187715,15 +187428,15 @@
      "testModule": "sympy.utilities.tests.test_lambdify",
      "testFile": "sympy/utilities/tests/test_lambdify.py",
      "inCorpus": true,
-     "caseCount": 9,
+     "caseCount": 17,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 57,
+      "non-call-expression": 42,
       "not-executed": 4,
-      "not-exported-api": 129,
-      "unserializable-input": 2,
-      "unsupported-assertion": 145
+      "not-exported-api": 137,
+      "unserializable-input": 1,
+      "unsupported-assertion": 42
      },
      "incompleteTests": {}
     },
@@ -190530,14 +190243,12 @@
      "testModule": "sympy.vector.tests.test_coordsysrect",
      "testFile": "sympy/vector/tests/test_coordsysrect.py",
      "inCorpus": true,
-     "caseCount": 112,
-     "gapCount": 10,
+     "caseCount": 132,
+     "gapCount": 11,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 11,
-      "not-exported-api": 6,
-      "unserializable-input": 1,
-      "unsupported-assertion": 4
+      "non-call-expression": 1,
+      "not-exported-api": 5
      },
      "incompleteTests": {}
     },
@@ -191063,14 +190774,10 @@
      "testModule": "sympy.vector.tests.test_dyadic",
      "testFile": "sympy/vector/tests/test_dyadic.py",
      "inCorpus": true,
-     "caseCount": 36,
-     "gapCount": 3,
+     "caseCount": 54,
+     "gapCount": 9,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 3,
-      "not-exported-api": 4,
-      "unsupported-assertion": 7
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -191128,11 +190835,11 @@
      "testModule": "sympy.vector.tests.test_functions",
      "testFile": "sympy/vector/tests/test_functions.py",
      "inCorpus": true,
-     "caseCount": 93,
+     "caseCount": 97,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "unsupported-assertion": 3
+      "unsupported-assertion": 1
      },
      "incompleteTests": {}
     },
@@ -193243,13 +192950,12 @@
      "testModule": "sympy.vector.tests.test_vector",
      "testFile": "sympy/vector/tests/test_vector.py",
      "inCorpus": true,
-     "caseCount": 130,
+     "caseCount": 135,
      "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
-      "non-call-expression": 5,
-      "not-exported-api": 12,
-      "unsupported-assertion": 19
+      "non-call-expression": 3,
+      "unsupported-assertion": 17
      },
      "incompleteTests": {}
     },
