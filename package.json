@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "coverage": "vitest run --coverage",
     "compat": "vitest run --coverage --reporter=dot && vitest run --config compat/vitest.config.ts",
+    "corpus:report": "vitest run --reporter=dot --reporter=./scripts/corpus-report.ts .corpus.test.ts",
     "compat:category": "vitest run --config compat/vitest.config.ts compat/category.test.ts",
     "compat:test-extract": "python3 -B -m unittest discover -s compat -p 'test_extract*.py'",
     "compat:extract-tests": "MPLBACKEND=Agg PYTHONHASHSEED=0 python3 -B compat/extract_tests.py compat/tests-corpus < /dev/null",
