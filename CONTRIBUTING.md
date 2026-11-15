@@ -128,6 +128,9 @@ symbol; ordered lists retain their order except for solution-list APIs.
   [docs/api-policy.md](docs/api-policy.md).
 - Public results are never `undefined` or `null`
   ([docs/api-policy.md](docs/api-policy.md)).
+- Every export and public class member has a TypeDoc documentation comment with
+  its SymPy counterpart in `@see` and examples from the SymPy docstring
+  ([docs/api-policy.md](docs/api-policy.md#documentation-comments)).
 - Layers and import rules are enforced by Oxlint
   ([docs/architecture.md](docs/architecture.md)): no import cycles, no
   non-null assertions, no unchecked type assertions, no generic `Error`.

@@ -96,6 +96,20 @@ Notes on the implementation:
 - `sstr` is SymPy's `sstr`: the `str` form of an expression or of a container of them, with the option `fullPrec`; it is no longer an alias of `str`.
 - `Curve` is SymPy's geometric `Curve` (`@symjs/symjs/geometry`), an expression node; `lineIntegrate` takes any curve with `functions` and `limits` (the `ParametricCurve` type of `@symjs/symjs/calculus`), so the calculus entry no longer exports a `Curve` class of its own.
 
+## Documentation comments
+
+Every export of every entry point, and every public member of an exported class, has a documentation comment. The comments are written for TypeDoc, which generates the API reference from them.
+
+- **Tags.** Only tags that TypeDoc understands are used:
+  - descriptions: the summary (the first paragraph) and `@remarks`;
+  - signatures: `@param`, `@typeParam`, `@returns`, `@throws` and `@defaultValue`;
+  - examples and references: `@example`, `@see` and `{@link}`;
+  - stability: `@deprecated`, `@experimental` and `@internal`;
+  - grouping: `@category`, and `@module` in the comment of an entry point.
+- **Signatures.** A function or method documents each parameter with `@param` and its result with `@returns`. The keys of an options object are documented on the properties of its options type. `@throws` names the errors of the API's contract (`NotImplementedError`, `NonlinearError`, ...).
+- **SymPy counterpart.** `@see` gives the full dotted path of the SymPy object that the export ports, in the form ``@see SymPy `sympy.polys.polytools.factor_list` ``. A method gives the method's path (`sympy.core.expr.Expr.as_coefficient`). An export without a SymPy counterpart has no such `@see`. A deprecated alias names its replacement in `@deprecated` with `{@link}`.
+- **Examples.** `@example` holds a fenced `ts` block. The example imports what it uses from a package entry point (`import { factorList, symbols } from '@symjs/symjs/polys';`), so it is self-contained and type-checks with TypeScript 7 `tsc` against the published declarations. An export with a SymPy counterpart carries the examples of its SymPy docstring (its cases in the doctest corpus `compat/corpus.json`), translated to the public API. The expected result is SymPy's `str()` output, written in a comment that starts with `// =>` after the expression statement it belongs to; continuation lines of a multiline result start with `//   `. Where symjs deliberately differs from SymPy's output (a mathematically corrected result, or an equivalent form accepted by the doctest comparison), the example shows symjs's result and a `@remarks` paragraph gives SymPy's.
+
 ## Entry points and tree-shaking
 
 - The package has one entry point per feature area: `core`, `special`, `simplify`, `polys`, `calculus`, `solvers`, `sets`, `matrices`; the root `@symjs/symjs` re-exports these areas. LaTeX parsing is available only from `@symjs/symjs/parsing`. Every export belongs to exactly one entry point.
