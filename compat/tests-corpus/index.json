@@ -3,45 +3,42 @@
   "categories": {
     "algebras": {
       "examined": 138,
-      "cases": 128,
+      "cases": 133,
       "reasons": {
         "marked-slow": 1,
-        "non-call-expression": 5,
+        "non-call-expression": 1,
         "not-executed": 1,
-        "private-api": 2,
-        "unsupported-assertion": 1
+        "private-api": 2
       },
       "sourceSites": 123,
       "testStatuses": {
         "completed": 18,
         "marked-slow": 2
       },
-      "seconds": 1.896,
+      "seconds": 1.463,
       "retainedModules": 0,
       "shards": [
         {
           "file": "algebras.json",
-          "cases": 128,
-          "bytes": 104409
+          "cases": 133,
+          "bytes": 123013
         }
       ],
       "auditFile": "algebras.audit.json",
-      "auditBytes": 4581,
+      "auditBytes": 3482,
       "modules": [
         "sympy.algebras.tests.test_quaternion"
       ]
     },
     "assumptions": {
       "examined": 2636,
-      "cases": 2220,
+      "cases": 2245,
       "reasons": {
         "duplicate": 316,
         "marked-slow": 2,
         "marked-xfail": 25,
-        "non-boolean-assertion": 22,
-        "non-call-expression": 4,
         "not-executed": 3,
-        "not-exported-api": 31,
+        "not-exported-api": 32,
         "unserializable-input": 6,
         "unsupported-assertion": 7
       },
@@ -51,17 +48,17 @@
         "marked-slow": 1,
         "marked-xfail": 10
       },
-      "seconds": 26.261,
+      "seconds": 29.012,
       "retainedModules": 0,
       "shards": [
         {
           "file": "assumptions.json",
-          "cases": 2220,
-          "bytes": 1068001
+          "cases": 2245,
+          "bytes": 1081762
         }
       ],
       "auditFile": "assumptions.audit.json",
-      "auditBytes": 85105,
+      "auditBytes": 79904,
       "modules": [
         "sympy.assumptions.tests.test_assumptions_2",
         "sympy.assumptions.tests.test_context",
@@ -75,36 +72,35 @@
       ]
     },
     "calculus": {
-      "examined": 617,
-      "cases": 518,
+      "examined": 619,
+      "cases": 525,
       "reasons": {
         "duplicate": 43,
         "marked-slow": 1,
         "marked-xfail": 5,
-        "non-boolean-assertion": 1,
-        "non-call-expression": 4,
         "not-executed": 2,
         "not-exported-api": 4,
+        "python-runtime-api": 1,
         "stateful-iterator-input": 2,
-        "unsupported-assertion": 37
+        "unsupported-assertion": 36
       },
-      "sourceSites": 541,
+      "sourceSites": 543,
       "testStatuses": {
         "completed": 42,
         "marked-slow": 1,
         "marked-xfail": 4
       },
-      "seconds": 9.972,
+      "seconds": 13.019,
       "retainedModules": 0,
       "shards": [
         {
           "file": "calculus.json",
-          "cases": 518,
-          "bytes": 384185
+          "cases": 525,
+          "bytes": 388159
         }
       ],
       "auditFile": "calculus.audit.json",
-      "auditBytes": 24750,
+      "auditBytes": 23727,
       "modules": [
         "sympy.calculus.tests.test_accumulationbounds",
         "sympy.calculus.tests.test_euler",
@@ -115,10 +111,11 @@
     },
     "categories": {
       "examined": 372,
-      "cases": 312,
+      "cases": 333,
       "reasons": {
-        "non-call-expression": 14,
-        "not-exported-api": 11,
+        "non-call-expression": 2,
+        "not-exported-api": 1,
+        "python-runtime-api": 1,
         "unserializable-input": 32,
         "unsupported-assertion": 3
       },
@@ -126,17 +123,17 @@
       "testStatuses": {
         "completed": 12
       },
-      "seconds": 4.69,
+      "seconds": 4.337,
       "retainedModules": 0,
       "shards": [
         {
           "file": "categories.json",
-          "cases": 312,
-          "bytes": 1123226
+          "cases": 333,
+          "bytes": 1138161
         }
       ],
       "auditFile": "categories.audit.json",
-      "auditBytes": 12987,
+      "auditBytes": 8809,
       "modules": [
         "sympy.categories.tests.test_baseclasses",
         "sympy.categories.tests.test_drawing"
@@ -150,7 +147,7 @@
       "testStatuses": {
         "completed": 10
       },
-      "seconds": 0.205,
+      "seconds": 0.222,
       "retainedModules": 0,
       "shards": [
         {
@@ -166,42 +163,40 @@
       ]
     },
     "combinatorics": {
-      "examined": 3530,
-      "cases": 1671,
+      "examined": 403796,
+      "cases": 2196,
       "reasons": {
-        "duplicate": 488,
+        "duplicate": 489,
         "marked-slow": 21,
         "marked-xfail": 6,
-        "non-boolean-assertion": 10,
-        "non-call-expression": 565,
-        "not-executed": 1,
-        "not-exported-api": 607,
-        "private-api": 18,
-        "python-runtime-api": 22,
-        "stateful-iterator-input": 23,
-        "test-timeout": 7,
+        "non-boolean-assertion": 6,
+        "non-call-expression": 138,
+        "not-exported-api": 51,
+        "private-api": 530,
+        "python-runtime-api": 400274,
+        "serialization-error": 2,
+        "stateful-iterator-input": 17,
         "unserializable-input": 14,
         "unstable-result-representation": 14,
-        "unsupported-assertion": 63
+        "unsupported-assertion": 38
       },
-      "sourceSites": 1265,
+      "sourceSites": 1274,
       "testStatuses": {
-        "completed": 168,
+        "completed": 169,
         "marked-slow": 3,
-        "marked-xfail": 3,
-        "test-timeout": 1
+        "marked-xfail": 3
       },
-      "seconds": 1.86,
-      "retainedModules": 21,
+      "seconds": 133.942,
+      "retainedModules": 0,
       "shards": [
         {
           "file": "combinatorics.json",
-          "cases": 1671,
-          "bytes": 912051
+          "cases": 2196,
+          "bytes": 1355921
         }
       ],
       "auditFile": "combinatorics.audit.json",
-      "auditBytes": 123645,
+      "auditBytes": 79520,
       "modules": [
         "sympy.combinatorics.tests.test_coset_table",
         "sympy.combinatorics.tests.test_fp_groups",
@@ -228,36 +223,38 @@
       ]
     },
     "concrete": {
-      "examined": 1095,
-      "cases": 856,
+      "examined": 1124,
+      "cases": 937,
       "reasons": {
-        "duplicate": 7,
+        "duplicate": 9,
         "marked-slow": 55,
         "marked-xfail": 4,
-        "non-call-expression": 50,
-        "not-exported-api": 71,
+        "non-call-expression": 4,
+        "not-exported-api": 54,
+        "private-api": 8,
+        "python-runtime-api": 11,
         "reference-exception": 2,
         "stateful-iterator-input": 1,
         "unserializable-input": 3,
-        "unsupported-assertion": 46
+        "unsupported-assertion": 36
       },
-      "sourceSites": 1001,
+      "sourceSites": 1026,
       "testStatuses": {
         "completed": 155,
         "marked-slow": 3,
         "marked-xfail": 2
       },
-      "seconds": 29.709,
+      "seconds": 41.265,
       "retainedModules": 0,
       "shards": [
         {
           "file": "concrete.json",
-          "cases": 856,
-          "bytes": 684557
+          "cases": 937,
+          "bytes": 771647
         }
       ],
       "auditFile": "concrete.audit.json",
-      "auditBytes": 71311,
+      "auditBytes": 61690,
       "modules": [
         "sympy.concrete.tests.test_delta",
         "sympy.concrete.tests.test_gosper",
@@ -267,27 +264,27 @@
       ]
     },
     "core": {
-      "examined": 25605,
-      "cases": 7858,
+      "examined": 26543,
+      "cases": 9337,
       "reasons": {
-        "duplicate": 579,
+        "duplicate": 320,
         "marked-skip": 11,
-        "marked-xfail": 47,
-        "non-boolean-assertion": 22,
-        "non-call-expression": 11791,
-        "not-executed": 27,
-        "not-exported-api": 2176,
-        "optional-dependency": 82,
-        "private-api": 50,
-        "python-runtime-api": 260,
-        "serialization-error": 17,
-        "stateful-iterator-input": 76,
-        "test-utility": 32,
-        "unserializable-input": 867,
-        "unsupported-assertion": 1704,
+        "marked-xfail": 48,
+        "non-boolean-assertion": 114,
+        "non-call-expression": 10716,
+        "not-executed": 30,
+        "not-exported-api": 2641,
+        "optional-dependency": 89,
+        "private-api": 233,
+        "python-runtime-api": 410,
+        "serialization-error": 18,
+        "stateful-iterator-input": 61,
+        "test-utility": 41,
+        "unserializable-input": 1539,
+        "unsupported-assertion": 929,
         "unsupported-raises": 6
       },
-      "sourceSites": 9329,
+      "sourceSites": 9529,
       "testStatuses": {
         "completed": 1960,
         "marked-skip": 71,
@@ -295,17 +292,17 @@
         "optional-dependency": 10,
         "test-exception:Failed": 1
       },
-      "seconds": 6.505,
-      "retainedModules": 40,
+      "seconds": 59.354,
+      "retainedModules": 0,
       "shards": [
         {
           "file": "core.json",
-          "cases": 7858,
-          "bytes": 3534962
+          "cases": 9337,
+          "bytes": 4185811
         }
       ],
       "auditFile": "core.audit.json",
-      "auditBytes": 986914,
+      "auditBytes": 910100,
       "modules": [
         "sympy.core.tests.test_args",
         "sympy.core.tests.test_arit",
@@ -351,57 +348,53 @@
     },
     "crypto": {
       "examined": 5078,
-      "cases": 155,
+      "cases": 5067,
       "reasons": {
-        "non-call-expression": 4919,
-        "python-runtime-api": 1,
-        "stateful-iterator-input": 1,
-        "unsupported-assertion": 2
+        "non-call-expression": 6,
+        "python-runtime-api": 4,
+        "stateful-iterator-input": 1
       },
       "sourceSites": 185,
       "testStatuses": {
         "completed": 51
       },
-      "seconds": 1.984,
+      "seconds": 3.421,
       "retainedModules": 0,
       "shards": [
         {
           "file": "crypto.json",
-          "cases": 155,
-          "bytes": 60530
+          "cases": 5067,
+          "bytes": 2082184
         }
       ],
       "auditFile": "crypto.audit.json",
-      "auditBytes": 11364,
+      "auditBytes": 7777,
       "modules": [
         "sympy.crypto.tests.test_crypto"
       ]
     },
     "diffgeom": {
-      "examined": 205,
-      "cases": 177,
+      "examined": 213,
+      "cases": 210,
       "reasons": {
-        "non-call-expression": 13,
         "not-executed": 1,
-        "not-exported-api": 4,
-        "stateful-iterator-input": 2,
-        "unsupported-assertion": 8
+        "stateful-iterator-input": 2
       },
-      "sourceSites": 205,
+      "sourceSites": 213,
       "testStatuses": {
         "completed": 24
       },
-      "seconds": 11.223,
+      "seconds": 2.726,
       "retainedModules": 0,
       "shards": [
         {
           "file": "diffgeom.json",
-          "cases": 177,
-          "bytes": 216838
+          "cases": 210,
+          "bytes": 238205
         }
       ],
       "auditFile": "diffgeom.audit.json",
-      "auditBytes": 9347,
+      "auditBytes": 3565,
       "modules": [
         "sympy.diffgeom.tests.test_class_structure",
         "sympy.diffgeom.tests.test_diffgeom",
@@ -410,28 +403,27 @@
       ]
     },
     "discrete": {
-      "examined": 198,
-      "cases": 185,
+      "examined": 202,
+      "cases": 192,
       "reasons": {
-        "non-boolean-assertion": 2,
-        "stateful-iterator-input": 8,
-        "unsupported-assertion": 3
+        "python-runtime-api": 2,
+        "stateful-iterator-input": 8
       },
-      "sourceSites": 198,
+      "sourceSites": 202,
       "testStatuses": {
         "completed": 14
       },
-      "seconds": 2.817,
+      "seconds": 1.733,
       "retainedModules": 0,
       "shards": [
         {
           "file": "discrete.json",
-          "cases": 185,
-          "bytes": 158625
+          "cases": 192,
+          "bytes": 165207
         }
       ],
       "auditFile": "discrete.audit.json",
-      "auditBytes": 5412,
+      "auditBytes": 4372,
       "modules": [
         "sympy.discrete.tests.test_convolutions",
         "sympy.discrete.tests.test_recurrences",
@@ -439,42 +431,42 @@
       ]
     },
     "functions": {
-      "examined": 23611,
-      "cases": 9853,
+      "examined": 23768,
+      "cases": 10649,
       "reasons": {
-        "duplicate": 7857,
+        "duplicate": 9464,
         "marked-slow": 104,
         "marked-xfail": 18,
-        "non-boolean-assertion": 5,
-        "non-call-expression": 230,
+        "non-boolean-assertion": 2,
+        "non-call-expression": 24,
         "not-executed": 6,
-        "not-exported-api": 2768,
+        "not-exported-api": 312,
         "optional-dependency": 1,
-        "private-api": 146,
-        "python-runtime-api": 1,
-        "stateful-iterator-input": 58,
+        "private-api": 153,
+        "python-runtime-api": 64,
+        "stateful-iterator-input": 2448,
         "test-utility": 87,
         "unserializable-input": 16,
-        "unsupported-assertion": 2461
+        "unsupported-assertion": 420
       },
-      "sourceSites": 7116,
+      "sourceSites": 7194,
       "testStatuses": {
         "completed": 542,
         "marked-slow": 14,
         "marked-xfail": 8,
         "optional-dependency": 1
       },
-      "seconds": 118.911,
+      "seconds": 119.341,
       "retainedModules": 0,
       "shards": [
         {
           "file": "functions.json",
-          "cases": 9853,
-          "bytes": 5504119
+          "cases": 10649,
+          "bytes": 5823227
         }
       ],
       "auditFile": "functions.audit.json",
-      "auditBytes": 390805,
+      "auditBytes": 339863,
       "modules": [
         "sympy.functions.combinatorial.tests.test_comb_factorials",
         "sympy.functions.combinatorial.tests.test_comb_numbers",
@@ -503,36 +495,36 @@
       ]
     },
     "geometry": {
-      "examined": 1514,
-      "cases": 1046,
+      "examined": 1534,
+      "cases": 1102,
       "reasons": {
-        "duplicate": 8,
-        "marked-slow": 301,
+        "duplicate": 10,
+        "marked-slow": 310,
         "non-boolean-assertion": 2,
-        "non-call-expression": 53,
-        "not-exported-api": 11,
-        "private-api": 13,
+        "non-call-expression": 23,
+        "not-exported-api": 2,
+        "private-api": 14,
         "python-runtime-api": 12,
         "stateful-iterator-input": 2,
-        "test-utility": 1,
-        "unsupported-assertion": 65
+        "test-utility": 3,
+        "unsupported-assertion": 54
       },
-      "sourceSites": 1410,
+      "sourceSites": 1430,
       "testStatuses": {
         "completed": 113,
         "marked-slow": 4
       },
-      "seconds": 51.936,
+      "seconds": 26.893,
       "retainedModules": 0,
       "shards": [
         {
           "file": "geometry.json",
-          "cases": 1046,
-          "bytes": 779396
+          "cases": 1102,
+          "bytes": 823199
         }
       ],
       "auditFile": "geometry.audit.json",
-      "auditBytes": 101709,
+      "auditBytes": 91168,
       "modules": [
         "sympy.geometry.tests.test_curve",
         "sympy.geometry.tests.test_ellipse",
@@ -548,46 +540,47 @@
     },
     "holonomic": {
       "examined": 217,
-      "cases": 102,
+      "cases": 190,
       "reasons": {
-        "non-call-expression": 115
+        "non-call-expression": 27
       },
       "sourceSites": 190,
       "testStatuses": {
         "completed": 32
       },
-      "seconds": 17.873,
+      "seconds": 15.138,
       "retainedModules": 0,
       "shards": [
         {
           "file": "holonomic.json",
-          "cases": 102,
-          "bytes": 103903
+          "cases": 190,
+          "bytes": 188368
         }
       ],
       "auditFile": "holonomic.audit.json",
-      "auditBytes": 19663,
+      "auditBytes": 4366,
       "modules": [
         "sympy.holonomic.tests.test_holonomic",
         "sympy.holonomic.tests.test_recurrence"
       ]
     },
     "integrals": {
-      "examined": 2444,
-      "cases": 1313,
+      "examined": 2477,
+      "cases": 1424,
       "reasons": {
         "duplicate": 63,
         "marked-slow": 607,
         "marked-tooslow": 1,
         "marked-xfail": 38,
         "non-boolean-assertion": 2,
-        "non-call-expression": 86,
+        "non-call-expression": 33,
         "not-executed": 1,
-        "not-exported-api": 70,
-        "private-api": 1,
+        "not-exported-api": 26,
+        "private-api": 11,
+        "python-runtime-api": 26,
         "test-utility": 10,
-        "unserializable-input": 188,
-        "unsupported-assertion": 64
+        "unserializable-input": 205,
+        "unsupported-assertion": 30
       },
       "sourceSites": 2261,
       "testStatuses": {
@@ -596,17 +589,17 @@
         "marked-tooslow": 1,
         "marked-xfail": 36
       },
-      "seconds": 3.962,
-      "retainedModules": 16,
+      "seconds": 179.237,
+      "retainedModules": 0,
       "shards": [
         {
           "file": "integrals.json",
-          "cases": 1313,
-          "bytes": 1160482
+          "cases": 1424,
+          "bytes": 1273649
         }
       ],
       "auditFile": "integrals.audit.json",
-      "auditBytes": 335101,
+      "auditBytes": 318200,
       "modules": [
         "sympy.integrals.tests.test_deltafunctions",
         "sympy.integrals.tests.test_failing_integrals",
@@ -629,25 +622,25 @@
     },
     "liealgebras": {
       "examined": 95,
-      "cases": 87,
+      "cases": 93,
       "reasons": {
-        "non-call-expression": 8
+        "non-call-expression": 2
       },
       "sourceSites": 95,
       "testStatuses": {
         "completed": 12
       },
-      "seconds": 0.499,
+      "seconds": 0.214,
       "retainedModules": 0,
       "shards": [
         {
           "file": "liealgebras.json",
-          "cases": 87,
-          "bytes": 59045
+          "cases": 93,
+          "bytes": 61800
         }
       ],
       "auditFile": "liealgebras.audit.json",
-      "auditBytes": 2842,
+      "auditBytes": 1736,
       "modules": [
         "sympy.liealgebras.tests.test_cartan_matrix",
         "sympy.liealgebras.tests.test_cartan_type",
@@ -664,40 +657,40 @@
       ]
     },
     "logic": {
-      "examined": 8596,
-      "cases": 662,
+      "examined": 8612,
+      "cases": 7608,
       "reasons": {
-        "duplicate": 40,
+        "duplicate": 462,
         "marked-xfail": 18,
-        "non-boolean-assertion": 10,
-        "non-call-expression": 7347,
+        "non-call-expression": 19,
         "not-executed": 6,
-        "not-exported-api": 53,
-        "python-runtime-api": 5,
-        "stateful-iterator-input": 19,
-        "unserializable-input": 26,
-        "unsupported-assertion": 394,
+        "not-exported-api": 24,
+        "private-api": 6,
+        "python-runtime-api": 17,
+        "stateful-iterator-input": 22,
+        "unserializable-input": 42,
+        "unsupported-assertion": 372,
         "unsupported-raises": 2,
         "upstream-skip": 14
       },
-      "sourceSites": 944,
+      "sourceSites": 960,
       "testStatuses": {
         "completed": 119,
         "marked-slow": 1,
         "marked-xfail": 4,
         "upstream-skip": 3
       },
-      "seconds": 8.501,
+      "seconds": 35.605,
       "retainedModules": 0,
       "shards": [
         {
           "file": "logic.json",
-          "cases": 662,
-          "bytes": 396810
+          "cases": 7608,
+          "bytes": 9048956
         }
       ],
       "auditFile": "logic.audit.json",
-      "auditBytes": 94565,
+      "auditBytes": 88539,
       "modules": [
         "sympy.logic.tests.test_boolalg",
         "sympy.logic.tests.test_dimacs",
@@ -706,42 +699,42 @@
       ]
     },
     "matrices": {
-      "examined": 7002,
-      "cases": 3930,
+      "examined": 7206,
+      "cases": 5097,
       "reasons": {
-        "duplicate": 368,
+        "duplicate": 637,
         "marked-slow": 52,
         "marked-xfail": 15,
-        "non-boolean-assertion": 26,
-        "non-call-expression": 1220,
+        "non-boolean-assertion": 10,
+        "non-call-expression": 191,
         "not-executed": 32,
-        "not-exported-api": 404,
-        "optional-dependency": 40,
-        "private-api": 21,
-        "python-runtime-api": 3,
-        "stateful-iterator-input": 73,
-        "unserializable-input": 327,
-        "unsupported-assertion": 487,
+        "not-exported-api": 150,
+        "optional-dependency": 42,
+        "private-api": 69,
+        "python-runtime-api": 193,
+        "stateful-iterator-input": 85,
+        "unserializable-input": 383,
+        "unsupported-assertion": 246,
         "unsupported-raises": 4
       },
-      "sourceSites": 4686,
+      "sourceSites": 4840,
       "testStatuses": {
         "completed": 973,
         "marked-slow": 6,
         "marked-xfail": 9,
         "optional-dependency": 12
       },
-      "seconds": 76.675,
+      "seconds": 88.146,
       "retainedModules": 0,
       "shards": [
         {
           "file": "matrices.json",
-          "cases": 3930,
-          "bytes": 6935733
+          "cases": 5097,
+          "bytes": 9172504
         }
       ],
       "auditFile": "matrices.audit.json",
-      "auditBytes": 433701,
+      "auditBytes": 331125,
       "modules": [
         "sympy.matrices.expressions.tests.test_adjoint",
         "sympy.matrices.expressions.tests.test_applyfunc",
@@ -788,42 +781,41 @@
       ]
     },
     "ntheory": {
-      "examined": 601899,
-      "cases": 44169,
+      "examined": 601996,
+      "cases": 45168,
       "reasons": {
         "duplicate": 10,
         "marked-slow": 98,
-        "non-boolean-assertion": 3104,
-        "non-call-expression": 54281,
-        "not-exported-api": 463131,
+        "non-call-expression": 1182,
+        "not-exported-api": 454042,
         "optional-dependency": 4,
-        "private-api": 6,
-        "python-runtime-api": 35499,
+        "private-api": 5637,
+        "python-runtime-api": 40914,
         "serialization-error": 7,
-        "stateful-iterator-input": 67,
+        "stateful-iterator-input": 53457,
         "test-timeout": 41,
-        "unserializable-input": 9,
-        "unsupported-assertion": 1471,
-        "unsupported-raises": 2
+        "unserializable-input": 11,
+        "unstable-result-representation": 21,
+        "unsupported-assertion": 1404
       },
-      "sourceSites": 1039,
+      "sourceSites": 1050,
       "testStatuses": {
         "completed": 81,
         "marked-slow": 4,
         "optional-dependency": 3,
         "test-timeout": 2
       },
-      "seconds": 108.992,
+      "seconds": 273.967,
       "retainedModules": 0,
       "shards": [
         {
           "file": "ntheory.json",
-          "cases": 44169,
-          "bytes": 15835330
+          "cases": 45168,
+          "bytes": 17377555
         }
       ],
       "auditFile": "ntheory.audit.json",
-      "auditBytes": 100766,
+      "auditBytes": 88439,
       "modules": [
         "sympy.ntheory.tests.test_bbp_pi",
         "sympy.ntheory.tests.test_continued_fraction",
@@ -843,38 +835,37 @@
       ]
     },
     "parsing": {
-      "examined": 2072,
-      "cases": 772,
+      "examined": 2112,
+      "cases": 868,
       "reasons": {
         "duplicate": 10,
         "marked-xfail": 3,
-        "non-call-expression": 1026,
+        "non-call-expression": 37,
         "not-executed": 1,
-        "not-exported-api": 136,
+        "not-exported-api": 132,
         "private-api": 4,
         "python-runtime-api": 12,
         "test-exception:RecursionError": 1,
-        "unserializable-input": 65,
-        "unsupported-assertion": 40,
+        "unserializable-input": 1042,
         "unsupported-raises": 2
       },
-      "sourceSites": 286,
+      "sourceSites": 294,
       "testStatuses": {
         "completed": 60,
         "marked-xfail": 3,
         "test-exception:RecursionError": 2
       },
-      "seconds": 24.57,
+      "seconds": 20.97,
       "retainedModules": 0,
       "shards": [
         {
           "file": "parsing.json",
-          "cases": 772,
-          "bytes": 235432
+          "cases": 868,
+          "bytes": 279569
         }
       ],
       "auditFile": "parsing.audit.json",
-      "auditBytes": 54771,
+      "auditBytes": 50611,
       "modules": [
         "sympy.parsing.tests.test_custom_latex",
         "sympy.parsing.tests.test_implicit_multiplication_application",
@@ -885,36 +876,38 @@
       ]
     },
     "plotting": {
-      "examined": 1139,
-      "cases": 20,
+      "examined": 1237,
+      "cases": 49,
       "reasons": {
         "marked-xfail": 2,
-        "non-boolean-assertion": 52,
-        "non-call-expression": 103,
+        "non-boolean-assertion": 1,
+        "non-call-expression": 17,
         "not-executed": 1,
-        "not-exported-api": 220,
-        "optional-dependency": 327,
-        "stateful-iterator-input": 10,
-        "unserializable-input": 366,
-        "unsupported-assertion": 38
+        "not-exported-api": 218,
+        "optional-dependency": 330,
+        "private-api": 10,
+        "python-runtime-api": 119,
+        "stateful-iterator-input": 8,
+        "unserializable-input": 471,
+        "unsupported-assertion": 11
       },
-      "sourceSites": 1033,
+      "sourceSites": 1128,
       "testStatuses": {
         "completed": 87,
         "marked-xfail": 3,
         "optional-dependency": 32
       },
-      "seconds": 5.972,
+      "seconds": 4.67,
       "retainedModules": 0,
       "shards": [
         {
           "file": "plotting.json",
-          "cases": 20,
-          "bytes": 14901
+          "cases": 49,
+          "bytes": 41322
         }
       ],
       "auditFile": "plotting.audit.json",
-      "auditBytes": 222147,
+      "auditBytes": 217109,
       "modules": [
         "sympy.plotting.intervalmath.tests.test_interval_functions",
         "sympy.plotting.intervalmath.tests.test_interval_membership",
@@ -927,26 +920,25 @@
       ]
     },
     "polys": {
-      "examined": 29644,
-      "cases": 9484,
+      "examined": 37096,
+      "cases": 12154,
       "reasons": {
-        "duplicate": 125,
+        "duplicate": 6907,
         "marked-slow": 74,
         "marked-tooslow": 2,
-        "marked-xfail": 10,
-        "non-boolean-assertion": 52,
-        "non-call-expression": 15891,
+        "marked-xfail": 11,
+        "non-call-expression": 7309,
         "not-executed": 17,
-        "not-exported-api": 1105,
-        "optional-dependency": 291,
-        "private-api": 33,
-        "python-runtime-api": 692,
+        "not-exported-api": 1852,
+        "optional-dependency": 335,
+        "private-api": 223,
+        "python-runtime-api": 7098,
         "serialization-error": 319,
-        "stateful-iterator-input": 137,
+        "stateful-iterator-input": 172,
         "test-exception:TypeError": 2,
         "test-utility": 50,
-        "unserializable-input": 350,
-        "unsupported-assertion": 1009,
+        "unserializable-input": 432,
+        "unsupported-assertion": 138,
         "unsupported-raises": 1
       },
       "sourceSites": 10731,
@@ -959,17 +951,17 @@
         "test-exception:TypeError": 1,
         "upstream-skip": 62
       },
-      "seconds": 17.549,
-      "retainedModules": 67,
+      "seconds": 141.107,
+      "retainedModules": 0,
       "shards": [
         {
           "file": "polys.json",
-          "cases": 9484,
-          "bytes": 7928355
+          "cases": 12154,
+          "bytes": 12123959
         }
       ],
       "auditFile": "polys.audit.json",
-      "auditBytes": 956239,
+      "auditBytes": 697357,
       "modules": [
         "sympy.polys.agca.tests.test_extensions",
         "sympy.polys.agca.tests.test_homomorphisms",
@@ -1042,26 +1034,25 @@
       ]
     },
     "printing": {
-      "examined": 4706,
-      "cases": 1767,
+      "examined": 4759,
+      "cases": 2147,
       "reasons": {
         "duplicate": 269,
         "marked-xfail": 8,
-        "non-boolean-assertion": 1,
-        "non-call-expression": 27,
+        "non-call-expression": 33,
         "not-executed": 9,
-        "not-exported-api": 1766,
+        "not-exported-api": 1409,
         "optional-dependency": 5,
         "private-api": 3,
-        "python-runtime-api": 237,
+        "python-runtime-api": 265,
         "reference-exception": 1,
         "serialization-error": 5,
         "stateful-iterator-input": 9,
         "test-timeout": 2,
-        "unserializable-input": 451,
-        "unsupported-assertion": 146
+        "unserializable-input": 509,
+        "unsupported-assertion": 85
       },
-      "sourceSites": 4068,
+      "sourceSites": 4121,
       "testStatuses": {
         "completed": 614,
         "marked-xfail": 5,
@@ -1069,17 +1060,17 @@
         "test-exception:NameError": 1,
         "test-timeout": 1
       },
-      "seconds": 44.058,
+      "seconds": 132.471,
       "retainedModules": 0,
       "shards": [
         {
           "file": "printing.json",
-          "cases": 1767,
-          "bytes": 991535
+          "cases": 2147,
+          "bytes": 1195320
         }
       ],
       "auditFile": "printing.audit.json",
-      "auditBytes": 673375,
+      "auditBytes": 602226,
       "modules": [
         "sympy.printing.pretty.tests.test_pretty",
         "sympy.printing.tests.test_conventions",
@@ -1094,39 +1085,40 @@
       ]
     },
     "series": {
-      "examined": 2027,
-      "cases": 1626,
+      "examined": 2035,
+      "cases": 1674,
       "reasons": {
-        "duplicate": 4,
+        "duplicate": 6,
         "marked-slow": 71,
         "marked-xfail": 22,
-        "non-call-expression": 47,
+        "non-call-expression": 23,
         "not-executed": 2,
-        "not-exported-api": 68,
+        "not-exported-api": 36,
         "private-api": 11,
-        "stateful-iterator-input": 31,
-        "unserializable-input": 42,
-        "unsupported-assertion": 99,
+        "python-runtime-api": 25,
+        "stateful-iterator-input": 27,
+        "unserializable-input": 44,
+        "unsupported-assertion": 90,
         "upstream-skip": 4
       },
-      "sourceSites": 1960,
+      "sourceSites": 1968,
       "testStatuses": {
         "completed": 470,
         "marked-slow": 5,
         "marked-xfail": 12,
         "upstream-skip": 2
       },
-      "seconds": 103.33,
+      "seconds": 122.585,
       "retainedModules": 0,
       "shards": [
         {
           "file": "series.json",
-          "cases": 1626,
-          "bytes": 1212954
+          "cases": 1674,
+          "bytes": 1249763
         }
       ],
       "auditFile": "series.audit.json",
-      "auditBytes": 133937,
+      "auditBytes": 125631,
       "modules": [
         "sympy.series.tests.test_approximants",
         "sympy.series.tests.test_aseries",
@@ -1146,38 +1138,37 @@
       ]
     },
     "sets": {
-      "examined": 6442,
-      "cases": 1494,
+      "examined": 6469,
+      "cases": 1858,
       "reasons": {
-        "duplicate": 160,
+        "duplicate": 1457,
         "marked-xfail": 21,
-        "non-boolean-assertion": 6,
-        "non-call-expression": 3425,
+        "non-boolean-assertion": 2,
+        "non-call-expression": 7,
         "not-executed": 2,
-        "not-exported-api": 828,
-        "private-api": 10,
-        "python-runtime-api": 5,
+        "not-exported-api": 787,
+        "private-api": 14,
+        "python-runtime-api": 1975,
         "stateful-iterator-input": 38,
-        "unserializable-input": 18,
-        "unsupported-assertion": 414,
-        "unsupported-raises": 21
+        "unserializable-input": 21,
+        "unsupported-assertion": 287
       },
-      "sourceSites": 1768,
+      "sourceSites": 1794,
       "testStatuses": {
         "completed": 216,
         "marked-xfail": 8
       },
-      "seconds": 6.411,
+      "seconds": 7.15,
       "retainedModules": 0,
       "shards": [
         {
           "file": "sets.json",
-          "cases": 1494,
-          "bytes": 784089
+          "cases": 1858,
+          "bytes": 969247
         }
       ],
       "auditFile": "sets.audit.json",
-      "auditBytes": 135944,
+      "auditBytes": 101606,
       "modules": [
         "sympy.sets.tests.test_conditionset",
         "sympy.sets.tests.test_contains",
@@ -1189,42 +1180,43 @@
       ]
     },
     "simplify": {
-      "examined": 2254,
-      "cases": 1402,
+      "examined": 2292,
+      "cases": 1525,
       "reasons": {
-        "duplicate": 61,
+        "duplicate": 76,
         "marked-slow": 103,
         "marked-tooslow": 1,
         "marked-xfail": 101,
-        "non-boolean-assertion": 3,
-        "non-call-expression": 218,
+        "non-boolean-assertion": 4,
+        "non-call-expression": 60,
         "not-executed": 3,
-        "not-exported-api": 155,
-        "private-api": 8,
+        "not-exported-api": 154,
+        "private-api": 58,
+        "python-runtime-api": 36,
         "serialization-error": 1,
-        "stateful-iterator-input": 82,
-        "test-utility": 58,
-        "unserializable-input": 14,
-        "unsupported-assertion": 44
+        "stateful-iterator-input": 83,
+        "test-utility": 64,
+        "unserializable-input": 1,
+        "unsupported-assertion": 22
       },
-      "sourceSites": 1852,
+      "sourceSites": 1878,
       "testStatuses": {
         "completed": 303,
         "marked-slow": 14,
         "marked-tooslow": 1,
         "marked-xfail": 17
       },
-      "seconds": 37.675,
+      "seconds": 47.942,
       "retainedModules": 0,
       "shards": [
         {
           "file": "simplify.json",
-          "cases": 1402,
-          "bytes": 1111384
+          "cases": 1525,
+          "bytes": 1207854
         }
       ],
       "auditFile": "simplify.audit.json",
-      "auditBytes": 163075,
+      "auditBytes": 146351,
       "modules": [
         "sympy.simplify.tests.test_combsimp",
         "sympy.simplify.tests.test_cse",
@@ -1244,48 +1236,46 @@
       ]
     },
     "solvers": {
-      "examined": 8472,
-      "cases": 2381,
+      "examined": 8519,
+      "cases": 4618,
       "reasons": {
-        "duplicate": 67,
-        "marked-skip": 2,
-        "marked-slow": 421,
+        "duplicate": 68,
+        "marked-skip": 5,
+        "marked-slow": 427,
         "marked-tooslow": 5,
-        "marked-xfail": 78,
-        "non-boolean-assertion": 33,
-        "non-call-expression": 253,
-        "not-executed": 14,
-        "not-exported-api": 2871,
-        "private-api": 9,
-        "python-runtime-api": 39,
-        "stateful-iterator-input": 2136,
-        "test-timeout": 11,
+        "marked-xfail": 79,
+        "non-boolean-assertion": 11,
+        "non-call-expression": 157,
+        "not-executed": 11,
+        "not-exported-api": 359,
+        "private-api": 390,
+        "python-runtime-api": 137,
+        "stateful-iterator-input": 2158,
         "test-utility": 14,
-        "unserializable-input": 7,
-        "unsupported-assertion": 129,
+        "unserializable-input": 8,
+        "unsupported-assertion": 70,
         "upstream-skip": 2
       },
-      "sourceSites": 3696,
+      "sourceSites": 3740,
       "testStatuses": {
-        "completed": 542,
-        "marked-skip": 2,
+        "completed": 543,
+        "marked-skip": 4,
         "marked-slow": 53,
         "marked-tooslow": 6,
         "marked-xfail": 31,
-        "test-timeout": 1,
         "upstream-skip": 1
       },
-      "seconds": 347.979,
+      "seconds": 393.504,
       "retainedModules": 0,
       "shards": [
         {
           "file": "solvers.json",
-          "cases": 2381,
-          "bytes": 2974966
+          "cases": 4618,
+          "bytes": 3822046
         }
       ],
       "auditFile": "solvers.audit.json",
-      "auditBytes": 446049,
+      "auditBytes": 399876,
       "modules": [
         "sympy.solvers.diophantine.tests.test_diophantine",
         "sympy.solvers.ode.tests.test_lie_group",
@@ -1307,23 +1297,23 @@
       ]
     },
     "stats": {
-      "examined": 2363,
-      "cases": 1865,
+      "examined": 2401,
+      "cases": 2025,
       "reasons": {
+        "duplicate": 29,
         "marked-slow": 46,
-        "marked-xfail": 6,
-        "non-boolean-assertion": 10,
-        "non-call-expression": 89,
+        "marked-xfail": 7,
+        "non-call-expression": 26,
         "not-executed": 4,
-        "not-exported-api": 122,
+        "not-exported-api": 63,
         "optional-dependency": 48,
-        "stateful-iterator-input": 6,
+        "python-runtime-api": 56,
+        "stateful-iterator-input": 18,
         "test-utility": 56,
-        "unserializable-input": 6,
-        "unsupported-assertion": 101,
+        "unsupported-assertion": 19,
         "upstream-skip": 4
       },
-      "sourceSites": 1582,
+      "sourceSites": 1612,
       "testStatuses": {
         "completed": 203,
         "marked-slow": 6,
@@ -1331,17 +1321,17 @@
         "optional-dependency": 10,
         "upstream-skip": 2
       },
-      "seconds": 89.046,
+      "seconds": 79.348,
       "retainedModules": 0,
       "shards": [
         {
           "file": "stats.json",
-          "cases": 1865,
-          "bytes": 1779902
+          "cases": 2025,
+          "bytes": 1953182
         }
       ],
       "auditFile": "stats.audit.json",
-      "auditBytes": 91572,
+      "auditBytes": 72810,
       "modules": [
         "sympy.stats.tests.test_compound_rv",
         "sympy.stats.tests.test_continuous_rv",
@@ -1360,12 +1350,12 @@
     },
     "strategies": {
       "examined": 105,
-      "cases": 6,
+      "cases": 7,
       "reasons": {
         "non-call-expression": 3,
-        "not-exported-api": 55,
-        "stateful-iterator-input": 31,
-        "unserializable-input": 3,
+        "not-exported-api": 65,
+        "stateful-iterator-input": 21,
+        "unserializable-input": 2,
         "unstable-result-representation": 1,
         "unsupported-assertion": 6
       },
@@ -1373,17 +1363,17 @@
       "testStatuses": {
         "completed": 50
       },
-      "seconds": 0.376,
+      "seconds": 0.159,
       "retainedModules": 0,
       "shards": [
         {
           "file": "strategies.json",
-          "cases": 6,
-          "bytes": 2779
+          "cases": 7,
+          "bytes": 3283
         }
       ],
       "auditFile": "strategies.audit.json",
-      "auditBytes": 24605,
+      "auditBytes": 24325,
       "modules": [
         "sympy.strategies.branch.tests.test_core",
         "sympy.strategies.branch.tests.test_tools",
@@ -1396,20 +1386,21 @@
       ]
     },
     "tensor": {
-      "examined": 2764,
-      "cases": 1593,
+      "examined": 2813,
+      "cases": 1953,
       "reasons": {
+        "duplicate": 18,
         "marked-xfail": 4,
-        "non-boolean-assertion": 2,
-        "non-call-expression": 411,
+        "non-boolean-assertion": 1,
+        "non-call-expression": 136,
         "not-executed": 1,
-        "not-exported-api": 370,
-        "private-api": 79,
-        "python-runtime-api": 2,
-        "stateful-iterator-input": 22,
+        "not-exported-api": 81,
+        "private-api": 257,
+        "python-runtime-api": 84,
+        "stateful-iterator-input": 1,
         "test-timeout": 97,
-        "unserializable-input": 147,
-        "unsupported-assertion": 36
+        "unserializable-input": 166,
+        "unsupported-assertion": 14
       },
       "sourceSites": 2070,
       "testStatuses": {
@@ -1417,17 +1408,17 @@
         "marked-xfail": 1,
         "test-timeout": 5
       },
-      "seconds": 4.382,
-      "retainedModules": 21,
+      "seconds": 612.118,
+      "retainedModules": 0,
       "shards": [
         {
           "file": "tensor.json",
-          "cases": 1593,
-          "bytes": 1873362
+          "cases": 1953,
+          "bytes": 2375370
         }
       ],
       "auditFile": "tensor.audit.json",
-      "auditBytes": 267912,
+      "auditBytes": 196707,
       "modules": [
         "sympy.tensor.array.expressions.tests.test_array_expressions",
         "sympy.tensor.array.expressions.tests.test_arrayexpr_derivatives",
@@ -1454,32 +1445,33 @@
       ]
     },
     "unify": {
-      "examined": 63,
-      "cases": 8,
+      "examined": 64,
+      "cases": 16,
       "reasons": {
-        "non-boolean-assertion": 4,
-        "non-call-expression": 2,
-        "not-executed": 2,
-        "not-exported-api": 3,
-        "stateful-iterator-input": 36,
-        "unserializable-input": 6,
+        "non-boolean-assertion": 1,
+        "non-call-expression": 1,
+        "not-exported-api": 28,
+        "reference-assertion-failed": 2,
+        "stateful-iterator-input": 7,
+        "unserializable-input": 7,
         "unsupported-assertion": 2
       },
-      "sourceSites": 63,
+      "sourceSites": 64,
       "testStatuses": {
-        "completed": 33
+        "completed": 33,
+        "test-exception:AssertionError": 2
       },
-      "seconds": 0.404,
+      "seconds": 0.224,
       "retainedModules": 0,
       "shards": [
         {
           "file": "unify.json",
-          "cases": 8,
-          "bytes": 2822
+          "cases": 16,
+          "bytes": 8055
         }
       ],
       "auditFile": "unify.audit.json",
-      "auditBytes": 15257,
+      "auditBytes": 13625,
       "modules": [
         "sympy.unify.tests.test_rewrite",
         "sympy.unify.tests.test_sympy",
@@ -1487,24 +1479,26 @@
       ]
     },
     "utilities": {
-      "examined": 25623,
-      "cases": 375,
+      "examined": 25656,
+      "cases": 556,
       "reasons": {
+        "duplicate": 6,
         "marked-skip": 3,
         "marked-slow": 5,
         "marked-xfail": 104,
-        "non-call-expression": 224,
+        "non-call-expression": 189,
         "not-executed": 6,
-        "not-exported-api": 24276,
-        "optional-dependency": 125,
-        "python-runtime-api": 6,
-        "stateful-iterator-input": 158,
+        "not-exported-api": 21259,
+        "optional-dependency": 134,
+        "private-api": 3,
+        "python-runtime-api": 3112,
+        "stateful-iterator-input": 85,
         "test-utility": 2,
-        "unserializable-input": 24,
-        "unsupported-assertion": 313,
+        "unserializable-input": 16,
+        "unsupported-assertion": 174,
         "unsupported-raises": 2
       },
-      "sourceSites": 1163,
+      "sourceSites": 1176,
       "testStatuses": {
         "completed": 395,
         "marked-skip": 3,
@@ -1512,17 +1506,17 @@
         "marked-xfail": 147,
         "optional-dependency": 69
       },
-      "seconds": 39.099,
+      "seconds": 39.873,
       "retainedModules": 0,
       "shards": [
         {
           "file": "utilities.json",
-          "cases": 375,
-          "bytes": 1355963
+          "cases": 556,
+          "bytes": 1465456
         }
       ],
       "auditFile": "utilities.audit.json",
-      "auditBytes": 239872,
+      "auditBytes": 195453,
       "modules": [
         "sympy.utilities.tests.test_decorator",
         "sympy.utilities.tests.test_enumerative",
@@ -1533,33 +1527,33 @@
       ]
     },
     "vector": {
-      "examined": 776,
-      "cases": 620,
+      "examined": 805,
+      "cases": 694,
       "reasons": {
         "duplicate": 8,
         "marked-xfail": 12,
-        "non-call-expression": 23,
-        "not-exported-api": 49,
-        "private-api": 13,
-        "unserializable-input": 1,
-        "unsupported-assertion": 50
+        "non-call-expression": 11,
+        "not-exported-api": 20,
+        "private-api": 14,
+        "python-runtime-api": 20,
+        "unsupported-assertion": 26
       },
-      "sourceSites": 768,
+      "sourceSites": 797,
       "testStatuses": {
         "completed": 65,
         "marked-xfail": 2
       },
-      "seconds": 31.098,
+      "seconds": 20.316,
       "retainedModules": 0,
       "shards": [
         {
           "file": "vector.json",
-          "cases": 620,
-          "bytes": 1652629
+          "cases": 694,
+          "bytes": 2099226
         }
       ],
       "auditFile": "vector.audit.json",
-      "auditBytes": 38287,
+      "auditBytes": 28350,
       "modules": [
         "sympy.vector.tests.test_coordsysrect",
         "sympy.vector.tests.test_dyadic",
@@ -2316,7 +2310,7 @@
       "reason": "XML stylesheet processing requires optional lxml."
     }
   ],
-  "timeoutSeconds": 30,
-  "jobs": 4,
-  "lastRunSeconds": 0.506
+  "timeoutSeconds": 120.0,
+  "jobs": 3,
+  "lastRunSeconds": 612.505
 }

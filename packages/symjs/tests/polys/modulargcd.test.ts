@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import { runTestCase } from '../../../../compat/tests-harness';
-import type { TestCase } from '../../../../compat/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../compat/tests-harness';
 import { PolyRing } from '../../src/polys/rings';
 import { modgcdUnivariate, modgcdBivariate, modgcdMultivariate, funcFieldModgcd } from '../../src/polys/modulargcd';
 import { QQ, ZZ } from '../../src/polys/domains';
@@ -12,8 +10,7 @@ import { parse } from '../../src/parsing/parser';
 import { DomainError } from '../../src/core/errors';
 import { first } from '../../src/core/guard';
 
-const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../compat/tests-corpus/polys.json', import.meta.url), 'utf8'));
-for (const c of cases.filter((c) => c.module === 'sympy.polys.tests.test_modulargcd')) {
+for (const c of passingModuleCases('polys', 'sympy.polys.tests.test_modulargcd')) {
   it(`${c.test}:${c.line}`, () => {
     const o = runTestCase(c);
     expect(o, c.src).toEqual({ status: 'pass' });

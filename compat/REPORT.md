@@ -19,8 +19,8 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 456 selected for e
 
 | Inventory status | Modules |
 |---|---:|
-| complete | 58 |
-| partial | 482 |
+| complete | 64 |
+| partial | 476 |
 | unimplemented | 111 |
 | unassessed | 0 |
 | excluded | 174 |
@@ -31,11 +31,11 @@ Complete means public exports and class members are present, doctest and unit-te
 |---|---:|---:|---:|---:|---:|
 | abc | 0 | 1 | 0 | 0 | 0 |
 | algebras | 0 | 2 | 0 | 0 | 0 |
-| assumptions | 7 | 21 | 0 | 0 | 0 |
+| assumptions | 8 | 20 | 0 | 0 | 0 |
 | calculus | 0 | 6 | 0 | 0 | 0 |
 | categories | 0 | 3 | 0 | 0 | 0 |
 | codegen | 1 | 0 | 0 | 0 | 16 |
-| combinatorics | 3 | 20 | 0 | 0 | 1 |
+| combinatorics | 4 | 19 | 0 | 0 | 1 |
 | concrete | 0 | 8 | 0 | 0 | 0 |
 | conftest | 0 | 0 | 0 | 0 | 1 |
 | core | 0 | 30 | 1 | 0 | 7 |
@@ -49,7 +49,7 @@ Complete means public exports and class members are present, doctest and unit-te
 | holonomic | 2 | 3 | 0 | 0 | 0 |
 | integrals | 2 | 14 | 0 | 0 | 1 |
 | interactive | 0 | 0 | 0 | 0 | 4 |
-| liealgebras | 1 | 12 | 0 | 0 | 0 |
+| liealgebras | 3 | 10 | 0 | 0 | 0 |
 | logic | 2 | 7 | 0 | 0 | 3 |
 | matrices | 1 | 45 | 0 | 0 | 0 |
 | multipledispatch | 0 | 0 | 0 | 0 | 5 |
@@ -57,7 +57,7 @@ Complete means public exports and class members are present, doctest and unit-te
 | parsing | 4 | 5 | 0 | 0 | 35 |
 | physics | 0 | 1 | 110 | 0 | 0 |
 | plotting | 0 | 11 | 0 | 0 | 24 |
-| polys | 8 | 87 | 0 | 0 | 11 |
+| polys | 10 | 85 | 0 | 0 | 11 |
 | printing | 3 | 13 | 0 | 0 | 24 |
 | release | 0 | 0 | 0 | 0 | 1 |
 | sandbox | 0 | 0 | 0 | 0 | 2 |
@@ -84,8 +84,10 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.assumptions.handlers.order`
 - `sympy.assumptions.handlers.sets`
 - `sympy.assumptions.predicates`
+- `sympy.assumptions.satask`
 - `sympy.codegen.cfunctions`
 - `sympy.combinatorics.galois`
+- `sympy.combinatorics.group_constructs`
 - `sympy.combinatorics.rewritingsystem`
 - `sympy.combinatorics.rewritingsystem_fsm`
 - `sympy.crypto`
@@ -99,6 +101,8 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.integrals.quadrature`
 - `sympy.integrals.singularityfunctions`
 - `sympy.liealgebras`
+- `sympy.liealgebras.cartan_matrix`
+- `sympy.liealgebras.dynkin_diagram`
 - `sympy.logic.algorithms`
 - `sympy.logic.algorithms.dpll`
 - `sympy.matrices.exceptions`
@@ -109,7 +113,9 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.parsing.latex.lark`
 - `sympy.parsing.latex.lark.latex_parser`
 - `sympy.polys.fglmtools`
+- `sympy.polys.matrices.eigen`
 - `sympy.polys.matrices.exceptions`
+- `sympy.polys.matrices.linsolve`
 - `sympy.polys.multivariate_resultants`
 - `sympy.polys.numberfields`
 - `sympy.polys.numberfields.galoisgroups`
@@ -197,14 +203,14 @@ Direct regression-test paths are maintained in `capabilities.json`. Tensor diffe
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
-**Fully covered (100% test coverage): 100.0% of source files (487/487), 100.0% of statements (105957/105957)**
+**Fully covered (100% test coverage): 100.0% of source files (489/489), 100.0% of statements (108085/108085)**
 
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| core | 100.0% | 1006 | 100.0% | 0 | 0 | 0 | 0 | 1006 | 100.0% (188/188) | 100.0% (137/137) |
+| core | 100.0% | 1006 | 100.0% | 0 | 0 | 0 | 0 | 1006 | 100.0% (188/188) | 100.0% (138/138) |
 | functions | 100.0% | 268 | 100.0% | 0 | 0 | 0 | 0 | 268 | 100.0% (59/59) | 100.0% (7/7) |
 | simplify | 100.0% | 331 | 99.4% | 2 | 0 | 0 | 0 | 333 | 100.0% (35/35) | 100.0% (18/18) |
-| polys | 100.0% | 1620 | 99.4% | 9 | 0 | 0 | 0 | 1629 | 100.0% (155/155) | 100.0% (81/81) |
+| polys | 100.0% | 1620 | 99.4% | 9 | 0 | 0 | 0 | 1629 | 100.0% (155/155) | 100.0% (82/82) |
 | solvers | 100.0% | 320 | 99.1% | 3 | 0 | 0 | 0 | 323 | 100.0% (29/29) | 100.0% (17/17) |
 | ode | 100.0% | 107 | 94.7% | 6 | 0 | 0 | 0 | 113 | 100.0% (5/5) | 100.0% (1/1) |
 | pde | 100.0% | 15 | 93.8% | 1 | 0 | 0 | 0 | 16 | 100.0% (6/6) | 100.0% (1/1) |
@@ -338,6 +344,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/core/defun.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/errors.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/expr.ts` | core | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/core/exprfacts.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/exprmap.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/factors.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/facts.ts` | core | 100% | 100% | 100% | 100% | yes |
@@ -548,6 +555,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/polys/domains.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/domains/algebraicfield.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/domains/complexfield.ts` | polys | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/polys/domains/compositedomain.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/domains/expressionrawdomain.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/domains/finitefield.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/domains/gaussiandomains.ts` | polys | 100% | 100% | 100% | 100% | yes |

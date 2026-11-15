@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-import { readFileSync } from 'node:fs';
 import { expect, it, vi } from 'vitest';
-import { runTestCase } from '../../../../compat/tests-harness';
-import type { TestCase } from '../../../../compat/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../compat/tests-harness';
 import * as D from '../../src/polys/densearith';
 import { EX, QQ, RR, ZZ } from '../../src/polys/domains';
 import { GF } from '../../src/polys/domains/finitefield';
@@ -14,8 +12,7 @@ import { Float, Sym } from '../../src/core/nodes';
 import { add, mul } from '../../src/core/ops';
 
 it('replays every measured SymPy densearith assertion', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../compat/tests-corpus/polys.json', import.meta.url), 'utf8'));
-  const failures = cases.filter((c) => c.module === 'sympy.polys.tests.test_densearith').flatMap((c) => {
+  const failures = passingModuleCases('polys', 'sympy.polys.tests.test_densearith').flatMap((c) => {
     const o = runTestCase(c);
     return o.status === 'pass' || o.status === 'equivalent' ? [] : [{ src: c.src, fn: c.fn, ...o }];
   });

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { fmt, runCase } from './harness';
 import type { Case, CaseObservation, Outcome } from './harness';
 
@@ -16,6 +17,14 @@ export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; ac
 
 export function testCaseKey(c: TestCase): string {
   return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c)).digest('hex').slice(0, 20)}`;
+}
+
+// The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
+export function passingModuleCases(shard: string, module: string): TestCase[] {
+  const gaps: { cases: string[] } = JSON.parse(readFileSync(new URL('./tests-known-gaps.json', import.meta.url), 'utf8'));
+  const failing = new Set(gaps.cases);
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${shard}.json`, import.meta.url), 'utf8'));
+  return cases.filter((c) => c.module === module && !failing.has(testCaseKey(c)));
 }
 
 // Python ValueError/ZeroDivisionError correspond to range violations in JS.

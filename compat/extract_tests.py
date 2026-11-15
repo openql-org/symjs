@@ -1075,6 +1075,10 @@ def compact_audits(destination, only=()):
     temporary.write_text(json.dumps(index, indent=2, ensure_ascii=True, allow_nan=False) + "\n")
     temporary.replace(path)
 
+# the deadline of one upstream test; instrumented tests run several times slower than plain ones
+TEST_SECONDS = 120
+
+
 def extract_category(category, paths, timeout, baseline):
     from sympy.printing.pretty.pretty_symbology import pretty_use_unicode
     pretty_use_unicode(False)
@@ -1106,7 +1110,7 @@ def extract_category(category, paths, timeout, baseline):
     return corpus
 
 
-def main(destination, only=(), timeout=extract.ALARM_SECONDS, jobs=1, baseline=None):
+def main(destination, only=(), timeout=TEST_SECONDS, jobs=1, baseline=None):
     if sympy.__version__ != "1.14.0":
         raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
     if os.environ.get("PYTHONHASHSEED") != "0":
@@ -1146,7 +1150,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("destination", nargs="?", default="compat/tests-corpus")
     parser.add_argument("--only", action="append", default=[], help="Category names, comma-separated or repeatable; other shards are retained")
-    parser.add_argument("--timeout", type=float, default=extract.ALARM_SECONDS)
+    parser.add_argument("--timeout", type=float, default=TEST_SECONDS)
     parser.add_argument("--jobs", type=int, default=4, help="Independent extraction processes")
     parser.add_argument("--baseline", help="Preserve all records/audits from already measured modules in a legacy corpus")
     parser.add_argument("--compact-audits", action="store_true", help="Losslessly combine repeated omission records without re-extraction")

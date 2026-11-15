@@ -173,7 +173,7 @@ case arrays (one case per line, ASCII JSON escapes, no nonfinite JSON numbers,
 at most 25 MB per shard) and an audit file containing omitted source locations
 and test execution statuses. `--only` accepts comma-separated or repeated
 category names, retains the other shards and updates the manifest. `--timeout`
-sets the upstream per-test deadline (30 seconds by default). Tests that exceed
+sets the upstream per-test deadline (120 seconds by default). Tests that exceed
 it contribute no partial observations. `--baseline <legacy-corpus.json>`
 retains existing modules' cases exactly and preserves their audit counts while
 extracting new modules, so migration does not discard machine-dependent observations.
