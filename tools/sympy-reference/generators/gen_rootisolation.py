@@ -144,5 +144,5 @@ for f in ALLROOTS:
                      'real': [str(r) for r in p.real_roots(radicals=False)]})
 
 out = {'isolate': isolate, 'counts': counts, 'intervals': intervals, 'complex_intervals': ci, 'eval_rational': evalrational, 'evalf': evalf, 'all_roots': allroots}
-path = Path(__file__).resolve().parents[1] / 'packages/symjs/tests/polys/rootisolation.references.json'
+path = Path(__file__).resolve().parents[3] / 'packages/symjs/tests/polys/rootisolation.references.json'
 path.write_text(json.dumps(out, indent=1) + '\n')

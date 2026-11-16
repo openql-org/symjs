@@ -42,5 +42,5 @@ for f, g in [(x**2 - y**2, x - y), (x**2*y**2, x*y**2), (4*x**2*y - 4*y, 6*x*y +
 R, x, y = ring('x,y', QQ, lex)
 for f, g in [(x**2 - y**2, x - y), (x**2 + 2*x*y + y**2, x**2 - y**2), (QQ(1, 2)*x**2, QQ(1, 3)*x*y)]:
     out['lcm'].append({'domain': 'QQ', 'f': str(f), 'g': str(g), 'lcm': str(groebner_lcm(f, g)), 'gcd': str(groebner_gcd(f, g))})
-path = Path(__file__).resolve().parents[1] / 'packages/symjs/tests/polys/groebnertools.references.json'
+path = Path(__file__).resolve().parents[3] / 'packages/symjs/tests/polys/groebnertools.references.json'
 path.write_text(json.dumps(out, indent=1) + '\n')

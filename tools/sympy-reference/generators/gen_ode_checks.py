@@ -4,10 +4,11 @@
 """Generate tools/sympy-corpus/ode-checks.json: representative ODEs for SymPy's dsolve
 hints with the output of the installed SymPy.
 
-Usage: python3 tools/sympy-corpus/gen-ode-checks.py
+Usage: python3 tools/sympy-reference/generators/gen_ode_checks.py
 """
 
 import json
+from pathlib import Path
 import re
 import signal
 
@@ -100,7 +101,7 @@ def main():
     for hint, eq, ics in ICS:
         r = dsolve(eq, fx, ics=ics)
         out.append({"hint": hint, "eq": tostr(eq), "ics": [[tostr(k), str(v)] for k, v in ics.items()], "expected": str(r)})
-    with open("tools/sympy-corpus/ode-checks.json", "w", encoding="utf-8") as fh:
+    with open(Path(__file__).resolve().parents[3] / "tools/sympy-corpus/ode-checks.json", "w", encoding="utf-8") as fh:
         json.dump({"sympy": sympy.__version__, "checks": out}, fh, indent=1)
         fh.write("\n")
     print(len(out), "checks")

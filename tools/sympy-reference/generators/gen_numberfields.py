@@ -211,5 +211,5 @@ utilities = {
 }
 
 out = {'fields': fields, 'nonmonic': nonmonic, 'algebraic': algebraic, 'modules': modules, 'minpolys': minpolys, 'utilities': utilities}
-path = Path(__file__).resolve().parents[1] / 'packages/symjs/tests/polys/numberfields/numberfields.references.json'
+path = Path(__file__).resolve().parents[3] / 'packages/symjs/tests/polys/numberfields/numberfields.references.json'
 path.write_text(json.dumps(out, indent=1, default=str) + '\n')

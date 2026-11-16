@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // sympy.polys.groebnertools: the F5B algorithm and its labeled polynomials, reduced bases and the
-// lcm/gcd by Groebner bases; references from SymPy 1.14.0 (scripts/gen_groebnertools.py).
+// lcm/gcd by Groebner bases; references from SymPy 1.14.0 (tools/sympy-reference/generators/gen_groebnertools.py).
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import * as sj from '../../src';

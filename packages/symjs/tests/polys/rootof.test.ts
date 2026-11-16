@@ -137,7 +137,7 @@ it('handles signed roots, decimal tolerances, default precision and exact interv
   expect(new sj.CRootOf(x, 0).evalRational().equals(0)).toBe(true);
 });
 
-// Non-real roots: references from SymPy 1.14.0 (scripts/gen_rootisolation.py).
+// Non-real roots: references from SymPy 1.14.0 (tools/sympy-reference/generators/gen_rootisolation.py).
 describe('CRootOf of non-real roots (SymPy references)', () => {
   const tol = (v: string | null) => (v === null ? undefined : v.includes('.') || v.includes('e') ? new sj.Float(Number(v)) : parse(v));
   it.each(ciRefs.eval_rational.map((c) => [c.f, c.i, c.calls, c.results] as const))('eval_rational of CRootOf(%s, %i)', (f, i, calls, results) => {

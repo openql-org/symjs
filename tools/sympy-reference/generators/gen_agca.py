@@ -31,7 +31,7 @@ references = {
     'quotient_ring': str(R.quotient_ring([x*x-y*y])),
     'quotient_ring_free': str(R.quotient_ring([x*x-y*y]).free_module(2)),
 }
-path = Path(__file__).resolve().parents[1] / 'packages/symjs/tests/polys/agca/references.json'
+path = Path(__file__).resolve().parents[3] / 'packages/symjs/tests/polys/agca/references.json'
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text(json.dumps(references, indent=2) + '\n')
 

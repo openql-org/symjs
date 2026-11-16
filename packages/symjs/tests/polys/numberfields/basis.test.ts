@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-// References from SymPy 1.14.0 (scripts/gen_numberfields.py): maximal orders, discriminants and
+// References from SymPy 1.14.0 (tools/sympy-reference/generators/gen_numberfields.py): maximal orders, discriminants and
 // nilradicals by the Round Two algorithm.
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';

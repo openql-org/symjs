@@ -448,7 +448,7 @@ describe('real root isolation (SymPy intervals / refine_root)', () => {
   });
 });
 
-// Complex root isolation: references from SymPy 1.14.0 (scripts/gen_rootisolation.py).
+// Complex root isolation: references from SymPy 1.14.0 (tools/sympy-reference/generators/gen_rootisolation.py).
 describe('complex root isolation (SymPy references)', () => {
   const coeffs = (f: string): bigint[] => P(f).allCoeffs().map((c) => (c as sj.Rational).p);
   const rect = (r: ComplexInterval): string[] => r.asTuple().flat().map(String);

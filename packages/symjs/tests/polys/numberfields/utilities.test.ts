@@ -6,7 +6,7 @@ import { extractFundamentalDiscriminant, isolate, parse, Rational, I, NotImpleme
 import { readFileSync } from 'node:fs';
 import { AlgIntPowers, coeffSearch, supplementASubspace, isRat, isInt, getNumDenom, PythonMPQ, Sym, Poly, QQ, GF, DM, DMRankError } from '../../../src';
 import refs from './utilities.references.json';
-// the helpers of the number-field modules (references from scripts/gen_numberfields.py)
+// the helpers of the number-field modules (references from tools/sympy-reference/generators/gen_numberfields.py)
 const nf = JSON.parse(readFileSync(new URL('./numberfields.references.json', import.meta.url), 'utf8')).utilities;
 it('computes powers of an algebraic integer', () => {
   const x = new Sym('x');

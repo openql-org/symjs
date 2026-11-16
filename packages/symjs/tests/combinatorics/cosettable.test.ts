@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-// Coset tables and coset enumeration; references from SymPy 1.14.0 (scripts/gen_fpgroups.py, after
+// Coset tables and coset enumeration; references from SymPy 1.14.0 (tools/sympy-reference/generators/gen_fpgroups.py, after
 // SymPy's test_coset_table.py): the tables after each scan, both strategies on the test groups of
 // Havas's and Holt's examples (with the number of cosets defined), the look-ahead of the Felsch
 // strategy, continued drafts and the modified methods.

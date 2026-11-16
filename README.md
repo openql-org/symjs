@@ -114,10 +114,12 @@ packages/
   physics-quantum/      @symjs/physics-quantum (extend module)
     src/  tests/
 tools/
-  sympy-reference/      SymPy scope inventory, public API snapshot, case extractors (Python)
+  sympy-reference/      SymPy scope inventory, public API snapshot, case extractors and the
+                        generators of expected values from SymPy (generators/, Python)
   sympy-corpus/         extracted SymPy cases, replay harness, converter to *.corpus.test.ts
+                        and the compatibility report of the corpus tests
 compat/                 doctest and unit-test compatibility ratchets and reports
-scripts/                golden test generation (SymPy), corpus compatibility report
+scripts/                checks of the built package
 ```
 
 To add an extend module, create `packages/<name>/` with its own `package.json` (`@symjs/symjs` as a peer dependency with `workspace:^`), `tsup.config.ts` (with `@symjs/symjs` as external) and `tsconfig.build.json`, and import the base module only through `@symjs/symjs`.

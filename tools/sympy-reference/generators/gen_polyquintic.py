@@ -44,9 +44,9 @@ for method in cls.body:
         rows = [values[f"{method.name}[{j}]"] for j in range(6)]
     tables.append(f"const {method.name.upper()}_TABLE: readonly (readonly Term[])[] = [\n" + ",\n".join("  " + terms(row) for row in rows) + "\n];")
 
-target = Path("packages/symjs/src/polys/polyquinticconst.ts")
+target = (Path(__file__).resolve().parents[3] / "packages/symjs/src/polys/polyquinticconst.ts")
 prefix = target.read_text().split("// BEGIN GENERATED COEFFICIENT TABLES")[0]
-target.write_text(prefix + "// BEGIN GENERATED COEFFICIENT TABLES\n// Regenerate with python3 scripts/gen_polyquintic.py (SymPy 1.14.0).\n" + "\n\n".join(tables) + "\n")
+target.write_text(prefix + "// BEGIN GENERATED COEFFICIENT TABLES\n// Regenerate with python3 tools/sympy-reference/generators/gen_polyquintic.py (SymPy 1.14.0).\n" + "\n\n".join(tables) + "\n")
 
 # Independent reference values exercise every table coefficient, including fractions.
 fixtures = []
@@ -62,4 +62,4 @@ for coefficients in [(2, 3, 5, 7), (sp.Rational(1, 2), -3, sp.Rational(5, 7), -1
         "T": list(map(str, quintic.T(2, 3))),
         "order": float(quintic.order(2, 3)), "uv": list(map(float, quintic.uv(2, 3))),
     })
-Path("packages/symjs/tests/polys/polyquinticconst-cases.json").write_text(json.dumps(fixtures, indent=2) + "\n")
+(Path(__file__).resolve().parents[3] / "packages/symjs/tests/polys/polyquinticconst-cases.json").write_text(json.dumps(fixtures, indent=2) + "\n")

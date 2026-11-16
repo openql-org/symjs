@@ -83,7 +83,7 @@ function horner(cs: readonly Expr[], t: Expr): Expr {
   return cs.reduce((value, c) => add(mul(value, t), c), S.Zero);
 }
 // BEGIN GENERATED COEFFICIENT TABLES
-// Regenerate with python3 scripts/gen_polyquintic.py (SymPy 1.14.0).
+// Regenerate with python3 tools/sympy-reference/generators/gen_polyquintic.py (SymPy 1.14.0).
 const F20_TABLE: readonly (readonly Term[])[] = [
   [[1n, 0]],
   [[8n, 1024]],

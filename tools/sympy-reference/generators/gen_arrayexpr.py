@@ -65,6 +65,6 @@ for shape in [(3,), (2, 3), (2, 3, 4)]:
     d = array_derive(a, a)
     record('derive_shape_' + '_'.join(map(str, shape)), d.as_explicit())
     record('derive_shape_repr_' + '_'.join(map(str, shape)), d)
-path = Path(__file__).resolve().parents[1] / 'packages/symjs/tests/tensor/array/expressions/references.json'
+path = Path(__file__).resolve().parents[3] / 'packages/symjs/tests/tensor/array/expressions/references.json'
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text(json.dumps(references, indent=2) + '\n')
