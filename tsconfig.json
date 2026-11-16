@@ -31,6 +31,7 @@
   "include": [
     "packages/*/src",
     "packages/*/tests",
-    "compat"
+    "compat",
+    "tools"
   ]
 }

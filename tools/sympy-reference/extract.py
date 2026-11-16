@@ -8,7 +8,7 @@ call ``f(args...)`` or method call ``obj.m(args...)``, the arguments are
 evaluated in the doctest namespace and serialized to a JSON tree. The
 expected output is ``str()`` of the result computed by the installed SymPy.
 
-Usage: PYTHONHASHSEED=0 python3 compat/extract.py compat/corpus.json
+Usage: PYTHONHASHSEED=0 python3 tools/sympy-reference/extract.py tools/sympy-corpus/corpus.json
 (the fixed hash seed keeps the order of printed sets reproducible)
 """
 

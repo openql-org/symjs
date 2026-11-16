@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Harness that replays SymPy doctest cases (compat/corpus.json) against symjs.
+ * @file Harness that replays SymPy doctest cases (tools/sympy-corpus/corpus.json) against symjs.
  *
  * Each case is a call `f(args, **kwargs)` or `obj.m(args, **kwargs)` with
  * serialized arguments and SymPy's `str()` of the result. An adapter maps the
@@ -11,19 +11,19 @@
  */
 
 import { readFileSync } from 'node:fs';
-import * as sj from '../packages/symjs/src';
+import * as sj from '../../packages/symjs/src';
 import * as dg from '@symjs/symjs/diffgeom';
-import * as categories from '../packages/symjs/src/categories';
-import * as plotting from '../packages/symjs/src/plotting';
-import * as parsing from '../packages/symjs/src/parsing';
+import * as categories from '../../packages/symjs/src/categories';
+import * as plotting from '../../packages/symjs/src/plotting';
+import * as parsing from '../../packages/symjs/src/parsing';
 // Category dispatch selects diffgeom.Point; the root geometry Point keeps its name.
 const publicApi = { ...dg, ...sj, ...parsing };
-import { equivalent } from '../packages/symjs/tests/sympy-equivalent';
-import { GrowableGrid } from '../packages/symjs/src/categories/diagram_drawing';
+import { equivalent } from '../../packages/symjs/tests/sympy-equivalent';
+import { GrowableGrid } from '../../packages/symjs/src/categories/diagram_drawing';
 import { PORTS } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
-import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src';
-import { Fn } from '../packages/symjs/src/core/nodes';
+import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../../packages/symjs/src';
+import { Fn } from '../../packages/symjs/src/core/nodes';
 
 // ---------------------------------------------------------------------------
 // Python-like containers for formatting results

@@ -6,7 +6,7 @@ import { assertionOutcome, runTestCase, testCaseKey } from './tests-harness';
 import { deserialize, runCase, counterpartFor } from './harness';
 import type { Case, Tree } from './harness';
 import * as dg from '@symjs/symjs/diffgeom';
-import * as sj from '../packages/symjs/src';
+import * as sj from '../../packages/symjs/src';
 import type { TestCase } from './tests-harness';
 
 const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'core',

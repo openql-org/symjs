@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 """Execute instrumented SymPy 1.14 base-scope unit tests, independently of doctests.
 
-PYTHONHASHSEED=0 python3 -B compat/extract_tests.py compat/tests-corpus
+PYTHONHASHSEED=0 python3 -B tools/sympy-reference/extract_tests.py tools/sympy-corpus/tests-corpus
 
 The audit counts executed assertion instances, including duplicates, plus one
 omission for each source site never reached. Test execution has a separate audit.
@@ -1148,7 +1148,7 @@ def main(destination, only=(), timeout=TEST_SECONDS, jobs=1, baseline=None):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("destination", nargs="?", default="compat/tests-corpus")
+    parser.add_argument("destination", nargs="?", default="tools/sympy-corpus/tests-corpus")
     parser.add_argument("--only", action="append", default=[], help="Category names, comma-separated or repeatable; other shards are retained")
     parser.add_argument("--timeout", type=float, default=TEST_SECONDS)
     parser.add_argument("--jobs", type=int, default=4, help="Independent extraction processes")

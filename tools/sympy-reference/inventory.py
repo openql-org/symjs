@@ -800,7 +800,7 @@ def upstream_tests():
 
 
 def load_evidence(root, corpus):
-    compat = root / 'compat'
+    corpora = root / 'tools/sympy-corpus'
     read = lambda path: json.loads(path.read_text())
     def by_module(rows):
         result = defaultdict(list)
@@ -808,35 +808,35 @@ def load_evidence(root, corpus):
             result[row['module']].append(row)
         return result
     units = {}
-    index = read(compat / 'tests-corpus/index.json')
+    index = read(corpora / 'tests-corpus/index.json')
     for category in index['categories'].values():
-        audit = read(compat / 'tests-corpus' / category['auditFile'])
+        audit = read(corpora / 'tests-corpus' / category['auditFile'])
         omitted, tests = by_module(audit['omitted']), by_module(audit['tests'])
         counts = Counter()
         for shard in category['shards']:
-            counts.update(c['module'] for c in read(compat / 'tests-corpus' / shard['file']))
+            counts.update(c['module'] for c in read(corpora / 'tests-corpus' / shard['file']))
         for module in category['modules']:
             units[module] = {'exists': True, 'caseCount': counts[module], 'omitted': omitted[module], 'tests': tests[module], 'gaps': [], 'timeouts': []}
-    for kind, ids in read(compat / 'tests-known-gaps.json').items():
+    for kind, ids in read(corpora / 'tests-known-gaps.json').items():
         for case_id in ids:
             module = case_id.split(':', 1)[0]
             if module in units:
                 units[module]['timeouts' if kind == 'timeouts' else 'gaps'].append(case_id)
     return {'doctests': by_module(corpus['cases']), 'doctestOmissions': by_module(corpus['extraction']['omitted']),
-            'doctestGaps': read(compat / 'known-gaps.json')['cases'],
-            'doctestExclusions': read(compat / 'doctest-exclusions.json'),
-            'units': units, 'upstreamTests': upstream_tests(), 'limitations': read(compat / 'capabilities.json')['areas']}
+            'doctestGaps': read(root / 'compat/known-gaps.json')['cases'],
+            'doctestExclusions': read(root / 'tools/sympy-reference/doctest-exclusions.json'),
+            'units': units, 'upstreamTests': upstream_tests(), 'limitations': read(root / 'tools/sympy-reference/capabilities.json')['areas']}
 
 
 def build_inventory(root):
     reference = Path(sympy.__file__).parent
     source = root / 'packages/symjs/src'
-    corpus = json.loads((root / 'compat/corpus.json').read_text())
+    corpus = json.loads((root / 'tools/sympy-corpus/corpus.json').read_text())
     measured = {c['module'] for c in corpus['cases']}
-    selected_ast = ast.parse((root / 'compat/extract.py').read_text())
+    selected_ast = ast.parse((root / 'tools/sympy-reference/extract.py').read_text())
     selected = next(ast.literal_eval(n.value) for n in selected_ast.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'MODULES' for t in n.targets))
     selected = set(selected)
-    api = json.loads((root / 'compat/api-members.json').read_text())
+    api = json.loads((root / 'tools/sympy-reference/api-members.json').read_text())
     evidence = load_evidence(root, corpus)
     trees = {}
     paths = {}
@@ -903,8 +903,8 @@ def build_inventory(root):
 
 
 if __name__ == '__main__':
-    root = Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parents[2]
     if sympy.__version__ != '1.14.0':
         raise SystemExit('The inventory is pinned to SymPy 1.14.0; review an upstream version change explicitly.')
-    destination = Path(sys.argv[1]) if len(sys.argv) > 1 else root / 'compat/scope-inventory.json'
+    destination = Path(sys.argv[1]) if len(sys.argv) > 1 else root / 'tools/sympy-reference/scope-inventory.json'
     destination.write_text(json.dumps(build_inventory(root), indent=1, ensure_ascii=False) + '\n')

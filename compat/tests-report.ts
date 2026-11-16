@@ -3,8 +3,8 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { refreshScopeReport } from './scope-report';
-import type { TestOutcome } from './tests-harness.js';
+import { refreshScopeReport } from '../tools/sympy-reference/scope-report';
+import type { TestOutcome } from '../tools/sympy-corpus/tests-harness.js';
 
 export interface Counts { cases: number; exact: number; equivalent: number; fail: number; unsupported: number; error: number }
 export interface Audit {
@@ -24,7 +24,7 @@ export interface CategoryResult {
 }
 export const emptyCounts = (): Counts => ({ cases: 0, exact: 0, equivalent: 0, fail: 0, unsupported: 0, error: 0 });
 export const ratio = (a: number, b: number): string => b === 0 ? '-' : `${(100 * a / b).toFixed(2)}%`;
-export const corpusIndex = (): CorpusIndex => JSON.parse(readFileSync(new URL('./tests-corpus/index.json', import.meta.url), 'utf8'));
+export const corpusIndex = (): CorpusIndex => JSON.parse(readFileSync(new URL('../tools/sympy-corpus/tests-corpus/index.json', import.meta.url), 'utf8'));
 
 export function failureKind(o: TestOutcome): string {
   if (o.status === 'fail') return o.got === 'did not raise' ? 'exception not raised' : 'wrong result';
@@ -106,6 +106,6 @@ export function writeTestsReport(directory: string, suiteSeconds: number): void 
     categories: Object.fromEntries(results.map((r) => [r.category, { ...r, failures: r.failures.length }])),
     extraction: index,
   }, null, 1) + '\n');
-  if (process.env['UPDATE_KNOWN_GAPS']) writeFileSync(new URL('./tests-known-gaps.json', import.meta.url), JSON.stringify({ cases: failing, timeouts }, null, 1) + '\n');
+  if (process.env['UPDATE_KNOWN_GAPS']) writeFileSync(new URL('../tools/sympy-corpus/tests-known-gaps.json', import.meta.url), JSON.stringify({ cases: failing, timeouts }, null, 1) + '\n');
   refreshScopeReport();
 }

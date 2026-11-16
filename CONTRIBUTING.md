@@ -75,7 +75,7 @@ pnpm test:package                              # built ESM/CJS, minification and
   value of a symbol), symjs keeps the correct result. The test states
   SymPy's answer and the counterexample in a comment. A SymPy doctest whose
   printed output is wrong is listed with its reason in `SYMPY_ERRATA` in
-  `compat/harness.ts`.
+  `tools/sympy-corpus/harness.ts`.
 - Deliberate differences from SymPy are allowed when they are documented
   the same way.
 - SymPy doctests and API names that symjs does not support yet are listed in
@@ -90,7 +90,7 @@ pnpm test:package                              # built ESM/CJS, minification and
   checks from behavior regressions, and replay the previous corpus without
   losing previously passing results. Ordinary implementation changes still
   only shrink the gap list. An adapter is not evidence of a public API:
-  review its execution route in `compat/adapter-inventory.json`, and keep
+  review its execution route in `tools/sympy-corpus/adapter-inventory.json`, and keep
   mathematical work in the library. Unreviewed adapters and translations are
   excluded from the report's verified public-call count.
 - Tests are self-contained: expected values are written in the test (or in
@@ -158,7 +158,7 @@ benchmark. Every method is tested against mpmath at the table boundaries.
 ## SymPy unit-test corpus
 
 The independent unit-test corpus covers the base package's 30 top-level SymPy
-areas, including their nested test directories. `compat/extract_tests.py`
+areas, including their nested test directories. `tools/sympy-reference/extract_tests.py`
 contains file-level scope rules for printing, parsing, categories and utilities;
 `compat/TESTS-REPORT.md` lists excluded files and technical reasons. Optional
 dependencies and unsupported test constructs appear in the extraction audit.
@@ -172,7 +172,7 @@ npx vitest run --config compat/vitest.config.ts --project unit-geometry
 UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts
 ```
 
-`compat/tests-corpus/index.json` is the manifest. Each category has one or more
+`tools/sympy-corpus/tests-corpus/index.json` is the manifest. Each category has one or more
 case arrays (one case per line, ASCII JSON escapes, no nonfinite JSON numbers,
 at most 25 MB per shard) and an audit file containing omitted source locations
 and test execution statuses. `--only` accepts comma-separated or repeated
@@ -188,7 +188,7 @@ replay to 30 seconds per core/polys case and 5 seconds elsewhere. A replay
 timeout is a measured failure. Exception class mismatches are counted
 separately under the established exception assertion convention.
 
-`compat/tests-known-gaps.json` is the independent unit-test ratchet. Existing
+`tools/sympy-corpus/tests-known-gaps.json` is the independent unit-test ratchet. Existing
 case IDs include the complete record, with its field order, and remain stable
 when records move to shards. A full run writes `compat/TESTS-REPORT.md`, the
 summary `compat/tests-report.json`, and per-category failure details in
@@ -210,28 +210,90 @@ use the strict existing regression/fixed-case checks.
 
 ## Corpus tests
 
-`compat/totests` converts both corpora into vitest tests of the public API,
-`packages/symjs/tests/**/<module>.corpus.test.ts`, next to the hand-written
-tests of the module the cases exercise. The converter replays each case with the
-symjs entry points traced and prints the public calls that produced the result.
-Every case becomes one of three kinds:
+### From SymPy to vitest
+
+Two tools connect SymPy's own examples to the symjs tests. The extractor runs
+SymPy; the converter runs symjs. They exchange only the corpus files:
+
+```
+SymPy 1.14.0 (Python)
+  │  tools/sympy-reference/extract.py        doctests in the docstrings
+  │  tools/sympy-reference/extract_tests.py  assertions of SymPy's unit tests
+  ▼
+tools/sympy-corpus/corpus.json, tests-corpus/*.json
+  │  each case: the call (function, serialized arguments), SymPy's printed result
+  │
+  │  tools/sympy-corpus/totests (pnpm corpus:generate)
+  │    1. replays the case through harness.ts with the symjs entry points traced
+  │    2. prints the public calls that produced the result as TypeScript
+  │    3. classifies the case: it / it.fails / it.todo
+  ▼
+packages/symjs/tests/**/<module>.corpus.test.ts
+  │  pnpm test, pnpm coverage: run with the hand-written tests
+  │  pnpm corpus:report: rate per corpus and category
+  ▼
+docs/compat-report.md
+```
+
+- The **extractor** (Python) needs SymPy 1.14.0 and runs only when the
+  reference changes: a new SymPy area, a fixed extraction rule, or a SymPy
+  upgrade. It records what SymPy computes; it knows nothing about symjs.
+- The **converter** (TypeScript) needs no Python. It runs after every change
+  that alters a case's outcome: an implementation change, a public API change,
+  a converter or harness change, or a new extraction. It records how the
+  symjs public API reproduces each case.
+- The **harness** (`tools/sympy-corpus/harness.ts`) is shared: it turns a
+  serialized SymPy call into a symjs call. A case without an adapter becomes
+  `it.todo` with the reason `no adapter for ...`.
+
+### Kinds of generated tests
+
+Every case becomes one test in the file of the module it exercises:
 
 - `it`: symjs gives SymPy's result.
 - `it.fails`: the case translates to the public API but the result differs.
 - `it.todo`: the case does not translate yet; the comment above it holds the
   reason, the SymPy source and SymPy's result.
 
-The generated files are not edited by hand. Regenerate them after an extraction
-or an implementation change, and repeat until the type check reports no errors
-(cases whose arguments the public types reject are recorded in
-`compat/totests/type-errors.json` and written as `it.todo` by the next run):
-
-```sh
-UPDATE_CORPUS_TESTS=1 npx vitest run --config compat/totests/vitest.config.ts compat/totests/generate.test.ts
-pnpm corpus:report   # runs the corpus tests, writes docs/compat-report.md
-```
+The generated files are not edited by hand. Cases whose code the public types
+reject are recorded in `tools/sympy-corpus/totests/type-errors.json`, and cases
+whose generated test disagrees with the replay in
+`tools/sympy-corpus/totests/unreproduced.json`; the next run writes both as
+`it.todo`. A run prints `type errors: N` and `unreproduced: N`; repeat it until
+both are 0. One run takes about ten minutes.
 
 `docs/compat-report.md` gives the compatibility rate per corpus and category:
 the share of cases that are `it` and pass. An `it` that fails or an `it.fails`
-that passes is listed as stale; regenerate the files when a change fixes or
-breaks a case.
+that passes is listed as stale.
+
+### Procedures
+
+After an implementation change that fixes or breaks cases:
+
+```sh
+pnpm corpus:report     # stale cases: an it.fails that now passes, an it that now fails
+pnpm corpus:generate   # rewrite the files; repeat until type errors and unreproduced are 0
+pnpm corpus:report     # the new rates
+```
+
+After re-extracting part of the reference (here SymPy's geometry unit tests):
+
+```sh
+pnpm compat:extract-tests --only geometry   # SymPy 1.14.0 → tools/sympy-corpus/tests-corpus/
+pnpm compat:test-extract                    # the extractor's own tests
+pnpm corpus:generate                        # repeat until type errors and unreproduced are 0
+pnpm corpus:report
+```
+
+Doctests are re-extracted with `pnpm compat:expand` (new modules) or
+`pnpm compat:refresh` (every existing example).
+
+To look at the conversion of some cases without writing files:
+
+```sh
+ONLY=sympy.geometry SHOW=5 npx vitest run --config tools/sympy-corpus/totests/vitest.config.ts tools/sympy-corpus/totests/generate.test.ts --silent=false
+```
+
+After a converter or harness change that may turn recorded cases into tests,
+`CORPUS_RECHECK_TYPES=1 pnpm corpus:generate` ignores both records and builds
+them again.

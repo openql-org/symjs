@@ -11,12 +11,12 @@
  * compared with SymPy's output like any other case.
  */
 
-import * as sj from '../packages/symjs/src';
-import { parseLatex } from '../packages/symjs/src/parsing';
-import { Expr } from '../packages/symjs/src';
+import * as sj from '../../packages/symjs/src';
+import { parseLatex } from '../../packages/symjs/src/parsing';
+import { Expr } from '../../packages/symjs/src';
 import { JsDict, JsList, JsSet, JsTuple } from './harness';
-import { DifferentialExtension } from '../packages/symjs/src/integrals/risch';
-import { partition as unifyPartition } from '../packages/symjs/src/unify/core';
+import { DifferentialExtension } from '../../packages/symjs/src/integrals/risch';
+import { partition as unifyPartition } from '../../packages/symjs/src/unify/core';
 
 const sym = (names: string, assumptions?: sj.Assumptions) => sj.symbols(names, assumptions) as sj.Sym[];
 const [x, y, z] = sym('x y z') as [sj.Sym, sj.Sym, sj.Sym];

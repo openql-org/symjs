@@ -4,9 +4,9 @@
 // The cases of one category that do not pass: CAT=<category> pnpm -s compat:category
 import { test } from 'vitest';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
-import { runCase } from './harness';
+import { runCase } from '../tools/sympy-corpus/harness';
 test.skipIf(process.env['CAT'] === undefined)('category', () => {
-  const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8'));
+  const corpus = JSON.parse(readFileSync(new URL('../tools/sympy-corpus/corpus.json', import.meta.url), 'utf8'));
   const cat = process.env['CAT'] ?? 'assumptions';
   const out: string[] = [];
   for (const c of corpus.cases.filter((x: { category: string }) => x.category === cat)) {

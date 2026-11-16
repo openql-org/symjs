@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { readFileSync } from 'node:fs';
-import { ATTRIBUTE_FUNCTIONS, JS_GLOBAL_RENAMES, PUBLIC_ALIASES, MEMBER_FUNCTIONS, MATRIX_MEMBER_ALIASES } from './harness';
+import { ATTRIBUTE_FUNCTIONS, JS_GLOBAL_RENAMES, PUBLIC_ALIASES, MEMBER_FUNCTIONS, MATRIX_MEMBER_ALIASES } from '../sympy-corpus/harness';
 
 export interface ApiExport {
   entries: string[];
@@ -57,12 +57,12 @@ export function collectApiMembers(entries: Record<string, Record<string, unknown
 /** The package manifest, including subpath-only entries, defines the denominator.
  * Vitest loads the sources through the same entry modules as the package build. */
 export async function generateApiMembers(): Promise<ApiMembers> {
-  const manifest = JSON.parse(readFileSync(new URL('../packages/symjs/package.json', import.meta.url), 'utf8')) as { exports: Record<string, unknown> };
+  const manifest = JSON.parse(readFileSync(new URL('../../packages/symjs/package.json', import.meta.url), 'utf8')) as { exports: Record<string, unknown> };
   const entries: Record<string, Record<string, unknown>> = {};
   for (const entry of Object.keys(manifest.exports).sort()) {
     if (entry === './package.json') continue;
     const name = entry === '.' ? 'index' : entry.slice(2);
-    entries[entry] = await import(/* @vite-ignore */ new URL(`../packages/symjs/src/${name}.ts`, import.meta.url).href) as Record<string, unknown>;
+    entries[entry] = await import(/* @vite-ignore */ new URL(`../../packages/symjs/src/${name}.ts`, import.meta.url).href) as Record<string, unknown>;
   }
   const api = collectApiMembers(entries);
   api.policy = { renames: JS_GLOBAL_RENAMES, aliases: PUBLIC_ALIASES, attributeFunctions: ATTRIBUTE_FUNCTIONS, memberFunctions: MEMBER_FUNCTIONS, matrixMemberAliases: MATRIX_MEMBER_ALIASES };
