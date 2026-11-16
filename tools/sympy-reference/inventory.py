@@ -431,12 +431,13 @@ CORRESPONDENCES = {
 }
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
-NOT_IMPLEMENTED = {
+EXTEND = {
     'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
 }
-# Packages whose modules are not implemented as a whole, with the plan; the
-# most specific prefix wins and a module with a counterpart stays partial.
-NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/physics-quantum (not ported yet)',
+# Packages whose modules belong to extend packages rather than the base module,
+# with the package; the most specific prefix wins and a module with a base
+# counterpart stays partial.
+EXTEND_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/physics-quantum (not ported yet)',
  'sympy.physics': 'per-field extend package (planned)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
@@ -752,11 +753,13 @@ ASSUMPTION_SPELLINGS = {'nonnegative': 'NonNegative', 'nonpositive': 'NonPositiv
 EXPR_FIELDS = frozenset({'args', 'kind'})
 
 
-def expression_function(member):
+def expression_functions(member):
+    """The mechanical camelCase name, and for an assumption query also the spelling with NonNegative."""
+    names = [camel(member)]
     if member.startswith('is_') and member[3:] in _assume_defined:
         words = member[3:].split('_')
-        return 'is' + ''.join(ASSUMPTION_SPELLINGS.get(w, w[:1].upper() + w[1:]) for w in words)
-    return camel(member)
+        names.append('is' + ''.join(ASSUMPTION_SPELLINGS.get(w, w[:1].upper() + w[1:]) for w in words))
+    return list(dict.fromkeys(names))
 
 
 def api_criterion(module, contract, api):
@@ -804,7 +807,7 @@ def api_criterion(module, contract, api):
                 if alias:
                     functions.append(alias)
             if expression and (member in EXPR_MEMBERS or 'Function' in families and member in FUNCTION_MEMBERS_OF_APPLICATIONS):
-                functions.append(expression_function(member))
+                functions.extend(expression_functions(member))
             if families.intersection(ATTRIBUTE_OWNERS.get(member, set())):
                 functions.append(policy.get('attributeFunctions', {}).get(member, camel(member)))
             # Expression arithmetic is implemented by these public functions.
@@ -962,10 +965,10 @@ def build_inventory(root):
         if (source / candidate).is_file():
             counterpart.append(candidate)
         counterpart = sorted({p for p in counterpart if (source / p).is_file()})
-        reason = None if module in NOT_IMPLEMENTED or module in CORRESPONDENCES else next((why for prefix, why in EXCLUSIONS.items() if module == prefix or module.startswith(prefix + '.')), None)
-        package = next((p for p in sorted(NOT_IMPLEMENTED_PACKAGES, key=len, reverse=True) if module == p or module.startswith(p + '.')), None)
-        status = 'excluded' if reason else 'partial' if counterpart else 'unimplemented' if module in NOT_IMPLEMENTED or package else 'unassessed'
-        note = NOTES.get(module) or NOT_IMPLEMENTED.get(module) or (NOT_IMPLEMENTED_PACKAGES[package] if package and status == 'unimplemented' else '')
+        reason = None if module in EXTEND or module in CORRESPONDENCES else next((why for prefix, why in EXCLUSIONS.items() if module == prefix or module.startswith(prefix + '.')), None)
+        package = next((p for p in sorted(EXTEND_PACKAGES, key=len, reverse=True) if module == p or module.startswith(p + '.')), None)
+        status = 'excluded' if reason else 'partial' if counterpart else 'extend' if module in EXTEND or package else 'unassessed'
+        note = NOTES.get(module) or EXTEND.get(module) or (EXTEND_PACKAGES[package] if package and status == 'extend' else '')
         completeness = evaluate_completeness(module, contract, api, evidence, examples, module in selected, NOTES.get(module)) if status == 'partial' else None
         if completeness and all(c['pass'] for c in completeness.values()):
             status = 'complete'
@@ -977,10 +980,10 @@ def build_inventory(root):
     return {'schema': 2, 'reference': {'sympy': sympy.__version__},
             'definitions': {'complete': 'All public exports and class members are present; doctest and unit-test evidence passes strict omission/gap checks; no recorded limitation. A module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests.',
                             'partial': 'A source counterpart exists, but at least one measured completeness criterion fails (see completeness).',
-                            'unimplemented': 'Inspected mathematical module without an implementation.',
+                            'extend': 'Planned for an extend package (physics), outside the base module; the note names the package.',
                             'unassessed': 'Not assessed; never treated as implemented or deliberately excluded.',
                             'excluded': 'An explicit runtime, infrastructure or project-scope exclusion, with its reason.',
-                            'note': 'For partial and unimplemented modules: what is ported, or where the module is planned (base module or an extend package).',
+                            'note': 'For partial modules what is ported; for extend modules the extend package they are planned for.',
                             'declaredPublicNames': 'Public source definitions, explicit __all__ exports and declared class methods/properties. The API criterion also checks inherited members and class attributes. Python protocols are excluded except mapped arithmetic/comparison operators.'},
             'apiExclusions': API_EXCLUSIONS, 'modules': rows}
 
