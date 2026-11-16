@@ -37590,8 +37590,8 @@
   {
    "module": "sympy.core.trace",
    "sha256": "f560bca773a904be9374799958c0caf636821bed7a7f8b99576569b5db951fdf",
-   "status": "extend",
-   "note": "deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)",
+   "status": "excluded",
+   "reason": "Deprecated by SymPy (since 1.10) as an alias of sympy.physics.quantum.trace.",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
