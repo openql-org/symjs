@@ -79,9 +79,11 @@ class CompletenessTests(unittest.TestCase):
                            'sin': {'kind': 'function', 'prototype': [], 'static': []},
                            'isPositive': {'kind': 'function', 'prototype': [], 'static': []},
                            'subs': {'kind': 'function', 'prototype': [], 'static': []}}}
-        contract = {'names': ['sin'], 'classes': {'sin': {'members': ['args', 'has', 'is_positive', 'subs', 'is_composite'], 'families': ['Basic', 'Expr']}}}
+        api['exports']['fdiff'] = {'kind': 'function', 'prototype': [], 'static': []}
+        contract = {'names': ['sin'], 'classes': {'sin': {'members': ['args', 'eval', 'fdiff', 'has', 'is_positive', 'subs', 'is_composite'], 'families': ['Basic', 'Expr', 'Function']}}}
         result = api_criterion('sympy.functions.elementary.trigonometric', contract, api)
         self.assertEqual(result['missingNames'], ['sin.is_composite'])
+        self.assertEqual(result['internalNames'], ['sin.eval'])
         del api['exports']['subs']
         self.assertEqual(api_criterion('sympy.functions.elementary.trigonometric', contract, api)['missingNames'], ['sin.is_composite', 'sin.subs'])
 
