@@ -5,6 +5,9 @@ rules hold for every change, whether it is written by a person or an agent.
 
 ## Checks every change must pass
 
+The commands use bun (`bun install` first). Tests run on vitest through `bun run test`
+or `bunx vitest`; `bun test` is bun's own test runner and is not used.
+
 ```sh
 bun run typecheck                              # tsc --noEmit, no errors
 bun run lint                                   # oxlint --type-aware --deny-warnings, no warnings

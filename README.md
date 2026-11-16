@@ -170,6 +170,8 @@ converter connect, and the procedures, are in
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the rules every change follows (100% test coverage, expected values from SymPy, mathematical correctness over SymPy's output, branches and commits).
 
+Development uses [bun](https://bun.sh/) for installing dependencies and running scripts, and Node.js for the published packages. The tests run on vitest: use `bun run test` (or `bunx vitest`), not `bun test`, which is bun's own test runner and cannot measure the branch coverage the project requires.
+
 ```sh
 bun install
 bun run test                  # vitest (all packages; extend modules use the base module from source)
