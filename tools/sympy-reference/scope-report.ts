@@ -7,7 +7,7 @@ export interface ScopeInventory {
   reference: { sympy: string };
   modules: { module: string; status: string; selectedForExtraction: boolean; hasCorpusCases: boolean }[];
 }
-const STATUSES = ['complete', 'partial', 'unimplemented', 'unassessed', 'excluded'];
+const STATUSES = ['complete', 'partial', 'unassessed', 'extend', 'excluded'];
 
 export function scopeSummary(inventory: ScopeInventory): { modules: number; statuses: Record<string, number>; completeModules: string[] } {
   return {
@@ -26,8 +26,8 @@ export function scopeLines(inventory: ScopeInventory): string[] {
     `Pinned inventory: **${summary.modules} production modules** in SymPy ${inventory.reference.sympy}. ${inventory.modules.filter((m) => m.selectedForExtraction).length} selected for extraction; ${inventory.modules.filter((m) => m.hasCorpusCases).length} have recorded calls. No whole-SymPy behavioral percentage is established.`, '',
     '| Inventory status | Modules |', '|---|---:|',
     ...Object.entries(summary.statuses).map(([status, n]) => `| ${status} | ${n} |`), '',
-    'Complete means public exports and class members are present, doctest and unit-test evidence passes strict omission and gap checks, and no limitation is recorded. A module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests. Partial means a source correspondence exists but one or more criteria fail. Per-module reasons are recorded in the inventory. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.', '',
-    '| Package | Complete | Partial | Unimplemented | Unassessed | Excluded |',
+    'Complete means public exports and class members are present, doctest and unit-test evidence passes strict omission and gap checks, and no limitation is recorded. A module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests. Partial means a source correspondence exists but one or more criteria fail. Per-module reasons are recorded in the inventory. Unassessed modules remain visible. Extend modules are planned for an extend package (physics) instead of the base module. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.', '',
+    '| Package | Complete | Partial | Unassessed | Extend | Excluded |',
     '|---|---:|---:|---:|---:|---:|',
     ...packages.map((p) => `| ${p} | ${STATUSES.map((status) => inventory.modules.filter((m) => packageOf(m.module) === p && m.status === status).length).join(' | ')} |`), '',
     '### Complete modules', '',

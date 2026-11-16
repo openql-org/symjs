@@ -15,7 +15,7 @@ it('pins the entire module universe without converting missing evidence into exc
   expect(new Set(scope.modules.map((m: { module: string }) => m.module)).size).toBe(825);
   for (const m of scope.modules) {
     expect(m.sha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(['complete', 'partial', 'unimplemented', 'unassessed', 'excluded']).toContain(m.status);
+    expect(['complete', 'partial', 'unassessed', 'extend', 'excluded']).toContain(m.status);
     if (m.status === 'partial' || m.status === 'complete') {
       expect(Object.keys(m.completeness)).toEqual(['publicApi', 'doctests', 'unitTests', 'limitations']);
       expect(Object.values(m.completeness).every((c) => (c as { pass: boolean }).pass)).toBe(m.status === 'complete');
@@ -59,7 +59,7 @@ it('reports complete modules and all statuses in each package', () => {
     { module: 'sympy.example.two', status: 'partial', selectedForExtraction: false, hasCorpusCases: false },
     { module: 'sympy.other.three', status: 'excluded', selectedForExtraction: false, hasCorpusCases: false },
   ] };
-  expect(scopeSummary(inventory)).toEqual({ modules: 3, statuses: { complete: 1, partial: 1, unimplemented: 0, unassessed: 0, excluded: 1 }, completeModules: ['sympy.example.one'] });
+  expect(scopeSummary(inventory)).toEqual({ modules: 3, statuses: { complete: 1, partial: 1, unassessed: 0, extend: 0, excluded: 1 }, completeModules: ['sympy.example.one'] });
   expect(scopeLines(inventory)).toContain('| example | 1 | 1 | 0 | 0 | 0 |');
   expect(scopeLines(inventory)).toContain('- `sympy.example.one`');
   expect(scopeLines({ ...inventory, modules: [] })).toContain('None meet all four criteria.');

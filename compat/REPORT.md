@@ -21,13 +21,13 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 456 selected for e
 |---|---:|
 | complete | 64 |
 | partial | 476 |
-| unimplemented | 111 |
 | unassessed | 0 |
+| extend | 111 |
 | excluded | 174 |
 
-Complete means public exports and class members are present, doctest and unit-test evidence passes strict omission and gap checks, and no limitation is recorded. A module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests. Partial means a source correspondence exists but one or more criteria fail. Per-module reasons are recorded in the inventory. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.
+Complete means public exports and class members are present, doctest and unit-test evidence passes strict omission and gap checks, and no limitation is recorded. A module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests. Partial means a source correspondence exists but one or more criteria fail. Per-module reasons are recorded in the inventory. Unassessed modules remain visible. Extend modules are planned for an extend package (physics) instead of the base module. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.
 
-| Package | Complete | Partial | Unimplemented | Unassessed | Excluded |
+| Package | Complete | Partial | Unassessed | Extend | Excluded |
 |---|---:|---:|---:|---:|---:|
 | abc | 0 | 1 | 0 | 0 | 0 |
 | algebras | 0 | 2 | 0 | 0 | 0 |
@@ -38,7 +38,7 @@ Complete means public exports and class members are present, doctest and unit-te
 | combinatorics | 4 | 19 | 0 | 0 | 1 |
 | concrete | 0 | 8 | 0 | 0 | 0 |
 | conftest | 0 | 0 | 0 | 0 | 1 |
-| core | 0 | 30 | 1 | 0 | 7 |
+| core | 0 | 30 | 0 | 1 | 7 |
 | crypto | 1 | 1 | 0 | 0 | 0 |
 | diffgeom | 0 | 3 | 0 | 0 | 0 |
 | discrete | 1 | 3 | 0 | 0 | 0 |
@@ -55,7 +55,7 @@ Complete means public exports and class members are present, doctest and unit-te
 | multipledispatch | 0 | 0 | 0 | 0 | 5 |
 | ntheory | 2 | 13 | 0 | 0 | 0 |
 | parsing | 4 | 5 | 0 | 0 | 35 |
-| physics | 0 | 1 | 110 | 0 | 0 |
+| physics | 0 | 1 | 0 | 110 | 0 |
 | plotting | 0 | 11 | 0 | 0 | 24 |
 | polys | 10 | 85 | 0 | 0 | 11 |
 | printing | 3 | 13 | 0 | 0 | 24 |
