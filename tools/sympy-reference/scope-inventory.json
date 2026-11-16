@@ -14741,8 +14741,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -15658,7 +15657,7 @@
   {
    "module": "sympy.abc",
    "sha256": "f9160b44a43a4993091970c800e3fd5163c3032bd81f4ccf6e9f59160d182816",
-   "status": "partial",
+   "status": "complete",
    "note": "symbols(); JavaScript has no module-level symbol namespace",
    "sources": [
     "core.ts"
@@ -15694,9 +15693,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "symbols(); JavaScript has no module-level symbol namespace",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -15777,8 +15775,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -15870,8 +15867,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -16191,8 +16187,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -16314,8 +16309,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -16425,8 +16419,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -16665,8 +16658,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -16737,9 +16729,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "CNF/EncodedCNF encoding used by satisfiable",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -16827,8 +16818,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -16893,8 +16883,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -16946,8 +16935,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -17005,8 +16993,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -17068,8 +17055,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -17121,8 +17107,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -17170,8 +17155,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -17219,8 +17203,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -17271,8 +17254,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -17325,8 +17307,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -17797,8 +17778,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -18064,8 +18044,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -19904,8 +19883,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -20394,8 +20372,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -21606,8 +21583,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -22930,8 +22906,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -22996,8 +22971,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -23207,8 +23181,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -23414,8 +23387,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -24133,8 +24105,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -24205,8 +24176,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -24266,8 +24236,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported",
+     "limitation": "allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported",
      "capabilities": []
     }
    },
@@ -24425,8 +24394,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "is_infinite/is_extended_real/is_extended_nonnegative; AssumptionsWrapper not ported",
+     "limitation": "is_infinite/is_extended_real/is_extended_nonnegative; AssumptionsWrapper not ported",
      "capabilities": []
     }
    },
@@ -24513,8 +24481,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -24670,8 +24637,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -24738,8 +24704,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -24792,8 +24757,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -24848,8 +24812,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -24913,8 +24876,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -25182,8 +25144,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -25595,18 +25556,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": false,
-     "note": "",
-     "capabilities": [
-      {
-       "area": "Category theory",
-       "remaining": [
-        "General category hom sets (also unavailable upstream)",
-        "Functors and natural transformations (outside SymPy 1.14 implementation)"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -25688,18 +25640,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": false,
-     "note": "",
-     "capabilities": [
-      {
-       "area": "Category theory",
-       "remaining": [
-        "General category hom sets (also unavailable upstream)",
-        "Functors and natural transformations (outside SymPy 1.14 implementation)"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -25914,8 +25857,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -26627,8 +26569,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -26719,8 +26660,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -26818,8 +26758,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Permutation groups",
@@ -26939,8 +26878,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27048,8 +26986,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27130,8 +27067,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27292,8 +27228,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27356,8 +27291,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27409,8 +27343,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27465,8 +27398,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27538,8 +27470,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27771,8 +27702,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -27852,8 +27782,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28019,8 +27948,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Permutation groups",
@@ -28235,8 +28163,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28393,8 +28320,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28487,8 +28413,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28550,8 +28475,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28608,8 +28532,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28702,8 +28625,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28760,8 +28682,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28843,8 +28764,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -28922,8 +28842,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -29065,8 +28984,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -29121,8 +29039,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -29263,8 +29180,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -29487,8 +29403,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -29550,8 +29465,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -29606,8 +29520,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -29714,8 +29627,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -29824,8 +29736,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -31402,8 +31313,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -31606,8 +31516,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -31638,7 +31547,7 @@
   {
    "module": "sympy.core.alphabets",
    "sha256": "bd606cd9ab4ebdf44ae977e0ea173920a881eecff4b19222549a5c09424bd0de",
-   "status": "partial",
+   "status": "complete",
    "note": "Greek letter names used by the printers",
    "sources": [
     "printing/pretty/symbology.ts"
@@ -31674,9 +31583,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "Greek letter names used by the printers",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -31740,8 +31648,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -31764,7 +31671,7 @@
   {
    "module": "sympy.core.assumptions_generated",
    "sha256": "d1324a6081d2205c907151d97481d9d7d6fbb6ab2dfec63b899c232b372f6413",
-   "status": "partial",
+   "status": "complete",
    "note": "generated fact tables of the old assumptions",
    "sources": [
     "core/assumptions.ts",
@@ -31801,9 +31708,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "generated fact tables of the old assumptions",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -31992,8 +31898,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -32194,8 +32099,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -32289,8 +32193,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -32408,8 +32311,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -32619,8 +32521,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -32805,8 +32706,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -32913,9 +32813,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "FactRules/FactKB deduction of the old assumptions",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -33390,8 +33289,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -33511,8 +33409,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -33580,8 +33477,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -33679,8 +33575,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -33786,8 +33681,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -33885,8 +33779,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -35699,8 +35592,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -36164,9 +36056,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "AssocOp.make_args as Expr.makeArgs; LatticeOp is Min/Max in functions/special/special.ts",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -36228,8 +36119,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -36325,8 +36215,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -36400,8 +36289,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37067,8 +36955,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37156,8 +37043,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37227,9 +37113,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "S registry",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37289,8 +37174,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37489,8 +37373,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37572,8 +37455,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37647,8 +37529,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37705,8 +37586,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -37822,9 +37702,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "lfsr_* take the GF(p) values and a modulus option; NonInvertibleCipherWarning (a Python warning) is not ported",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -38378,9 +38257,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "base subpath @symjs/symjs/diffgeom",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -38906,9 +38784,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -38996,7 +38873,7 @@
   {
    "module": "sympy.diffgeom.rn",
    "sha256": "92f82d87aacd256b7de24cd5a2ca59c221f9dc2face154a2a2b92d40d98ca1b4",
-   "status": "partial",
+   "status": "complete",
    "note": "base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems",
    "sources": [
     "diffgeom/rn.ts"
@@ -39032,9 +38909,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -39095,8 +38971,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -39158,8 +39033,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -39220,8 +39094,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -39276,8 +39149,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -45067,8 +44939,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -45296,8 +45167,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -45715,8 +45585,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -46656,8 +46525,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -46769,8 +46637,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -46827,8 +46694,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "migcdex, ipartfrac, fermat_coords; the cos_3..cos_257 tables are not ported",
+     "limitation": "migcdex, ipartfrac, fermat_coords; the cos_3..cos_257 tables are not ported",
      "capabilities": []
     }
    },
@@ -47274,8 +47140,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -47592,8 +47457,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -48341,8 +48205,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -48644,8 +48507,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -48995,8 +48857,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -49218,8 +49079,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -50034,8 +49894,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -50160,8 +50019,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -51053,8 +50911,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -51256,8 +51113,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -51319,9 +51175,8 @@
      }
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "Cox-de Boor B-spline bases and exact collocation interpolation on strictly increasing real coordinates.",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -51448,8 +51303,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -51647,8 +51501,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -52466,8 +52319,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -52853,8 +52705,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -54156,8 +54007,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -54473,8 +54323,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -55029,8 +54878,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -55154,8 +55002,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -55278,8 +55125,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -55418,8 +55264,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -55694,8 +55539,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -56884,8 +56728,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -57037,8 +56880,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -57236,8 +57078,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -57433,8 +57274,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -57506,8 +57346,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -58544,8 +58383,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -58724,8 +58562,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -58819,8 +58656,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -58978,8 +58814,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -59277,8 +59112,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -59402,8 +59236,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -59461,8 +59294,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -59525,8 +59357,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -59624,8 +59455,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -59680,8 +59510,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -59731,8 +59560,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -60151,8 +59979,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -60231,8 +60058,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -60295,8 +60121,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -60399,8 +60224,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -60465,8 +60289,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -60614,8 +60437,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -61119,8 +60941,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -61350,8 +61171,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -61436,8 +61256,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -61505,8 +61324,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -61563,8 +61381,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -61636,8 +61453,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -61775,8 +61591,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -61859,8 +61674,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -62377,8 +62191,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -62478,8 +62291,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -62588,8 +62400,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -62639,8 +62450,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -62791,8 +62601,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -62845,8 +62654,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -62994,8 +62802,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -63151,8 +62958,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -63311,8 +63117,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -63470,8 +63275,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -63631,8 +63435,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -63790,8 +63593,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -63948,8 +63750,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -64108,8 +63909,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -64266,8 +64066,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -64661,8 +64460,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -64732,8 +64530,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -64781,8 +64578,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -64846,8 +64642,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -64924,8 +64719,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -65905,8 +65699,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -66067,8 +65860,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -66133,8 +65925,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -66186,9 +65977,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "load; load_file reads a file (no file system in the base module)",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -67622,8 +67412,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -67959,8 +67748,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -68114,8 +67902,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -68299,8 +68086,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -68380,8 +68166,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -68437,8 +68222,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -68486,8 +68270,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -69502,8 +69285,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -69595,8 +69377,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -69686,8 +69467,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -69775,8 +69555,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -69915,8 +69694,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -70037,8 +69815,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -70158,8 +69935,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -70321,8 +70097,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -70416,8 +70191,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -71097,8 +70871,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -71241,8 +71014,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -71332,8 +71104,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -71458,8 +71229,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -71556,8 +71326,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -71655,8 +71424,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -71762,8 +71530,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -71925,8 +71692,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72075,8 +71841,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72178,8 +71943,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72300,8 +72064,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72419,8 +72182,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72510,8 +72272,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72731,8 +72492,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72842,8 +72602,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72936,8 +72695,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -72993,8 +72751,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -73420,8 +73177,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -73485,8 +73241,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -73541,8 +73296,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.",
+     "limitation": "Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.",
      "capabilities": []
     }
    },
@@ -74239,8 +73993,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -74423,8 +74176,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -74674,8 +74426,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -74732,8 +74483,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75023,8 +74773,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75102,8 +74851,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75306,8 +75054,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75376,8 +75123,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75432,8 +75178,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75484,8 +75229,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75637,8 +75381,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75762,8 +75505,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75818,8 +75560,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75881,8 +75622,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -75941,8 +75681,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76006,8 +75745,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76067,8 +75805,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76152,8 +75889,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76251,8 +75987,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76321,8 +76056,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76382,8 +76116,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76436,8 +76169,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76501,8 +76233,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76575,8 +76306,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76635,8 +76365,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -76701,8 +76430,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -77307,8 +77035,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -77488,8 +77215,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -77564,8 +77290,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -77615,8 +77340,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -77668,8 +77392,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -77807,8 +77530,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -77964,8 +77686,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -78090,8 +77811,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -79681,7 +79401,7 @@
    "module": "sympy.physics.quantum",
    "sha256": "bf359cd9dd9a5db31d646251c78b724ba1430ad8dbb65ed2a82244ee749737d0",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79737,7 +79457,7 @@
    "module": "sympy.physics.quantum.anticommutator",
    "sha256": "917afb0d6659cb44aa727c71f9011e039f265024574cbfd51c3cd0063355d032",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79754,7 +79474,7 @@
    "module": "sympy.physics.quantum.boson",
    "sha256": "367e1337dd7b4d0bf8b5d14d65d7654f57841a0eced6ec9b9d4f4ae4d23a0323",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79782,7 +79502,7 @@
    "module": "sympy.physics.quantum.cartesian",
    "sha256": "f51f550d82d5d577be1a403d4d06e3f0f56504b683d1f17a2977c7275cdee5ab",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79831,7 +79551,7 @@
    "module": "sympy.physics.quantum.cg",
    "sha256": "58aec790021115e8d040b8d1b020bbac7d0bfbed1f99702878bd497531dbdc60",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79876,7 +79596,7 @@
    "module": "sympy.physics.quantum.circuitplot",
    "sha256": "49a7103213f20e18b32a6191344b35bed5e987c951e9b327e5b549238ac98978",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79903,7 +79623,7 @@
    "module": "sympy.physics.quantum.circuitutils",
    "sha256": "9ab40d5036f03372d5d4d67512a5695f2398da63970815595bb7104e20b151a3",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79923,7 +79643,7 @@
    "module": "sympy.physics.quantum.commutator",
    "sha256": "30a93c3aac088bc2c2cf1903f1446628214cf4eb61000c52f3114d80ffe2d3d5",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79940,7 +79660,7 @@
    "module": "sympy.physics.quantum.constants",
    "sha256": "db45510130a44a9ad29c6151e5e8ef3046255b011cbf507e744dd13ea3d343d9",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79954,7 +79674,7 @@
    "module": "sympy.physics.quantum.dagger",
    "sha256": "3f9f052fc7cb15f321b6eefd8c6b06ebda043232e3bad443ad7b0bc016adfbd5",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79968,7 +79688,7 @@
    "module": "sympy.physics.quantum.density",
    "sha256": "89efcd24ef98349dcfc9d00ca778e59a10b91fc6cdde57619f64a208a639374b",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -79990,7 +79710,7 @@
    "module": "sympy.physics.quantum.fermion",
    "sha256": "d62a67dc522d509febb8b9df969a7d30dffab79c3c0a01c02512423acba41862",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -80011,2066 +79731,11 @@
   {
    "module": "sympy.physics.quantum.gate",
    "sha256": "22fefeaa14827bf027f6a689718443830afc0a536b68fe3b13be54952e5f0a84",
-   "status": "partial",
+   "status": "extend",
    "note": "extend package @symjs/physics-quantum",
    "sources": [
     "../../physics-quantum/src/gates.ts"
    ],
-   "completeness": {
-    "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "CGate",
-      "CGate.args",
-      "CGate.assumptions0",
-      "CGate.canonical_variables",
-      "CGate.conjugate",
-      "CGate.control_value",
-      "CGate.controls",
-      "CGate.decompose",
-      "CGate.default_args",
-      "CGate.equals",
-      "CGate.eval_controls",
-      "CGate.func",
-      "CGate.gate",
-      "CGate.gate_name",
-      "CGate.gate_name_latex",
-      "CGate.gate_name_plot",
-      "CGate.get_target_matrix",
-      "CGate.has",
-      "CGate.inv",
-      "CGate.inverse",
-      "CGate.is_algebraic",
-      "CGate.is_antihermitian",
-      "CGate.is_commutative",
-      "CGate.is_comparable",
-      "CGate.is_complex",
-      "CGate.is_composite",
-      "CGate.is_even",
-      "CGate.is_extended_negative",
-      "CGate.is_extended_nonnegative",
-      "CGate.is_extended_nonpositive",
-      "CGate.is_extended_nonzero",
-      "CGate.is_extended_positive",
-      "CGate.is_extended_real",
-      "CGate.is_finite",
-      "CGate.is_hermitian",
-      "CGate.is_imaginary",
-      "CGate.is_infinite",
-      "CGate.is_irrational",
-      "CGate.is_negative",
-      "CGate.is_noninteger",
-      "CGate.is_nonnegative",
-      "CGate.is_nonpositive",
-      "CGate.is_nonzero",
-      "CGate.is_number",
-      "CGate.is_odd",
-      "CGate.is_polar",
-      "CGate.is_positive",
-      "CGate.is_prime",
-      "CGate.is_rational",
-      "CGate.is_real",
-      "CGate.is_scalar",
-      "CGate.is_symbol",
-      "CGate.is_symbolic",
-      "CGate.is_transcendental",
-      "CGate.is_unitary",
-      "CGate.is_zero",
-      "CGate.label",
-      "CGate.matrix_element",
-      "CGate.min_qubits",
-      "CGate.n",
-      "CGate.nqubits",
-      "CGate.plot_gate",
-      "CGate.simplify_cgate",
-      "CGate.subs",
-      "CGate.targets",
-      "CGateS",
-      "CGateS.args",
-      "CGateS.assumptions0",
-      "CGateS.canonical_variables",
-      "CGateS.conjugate",
-      "CGateS.control_value",
-      "CGateS.controls",
-      "CGateS.decompose",
-      "CGateS.default_args",
-      "CGateS.equals",
-      "CGateS.eval_controls",
-      "CGateS.func",
-      "CGateS.gate",
-      "CGateS.gate_name",
-      "CGateS.gate_name_latex",
-      "CGateS.gate_name_plot",
-      "CGateS.get_target_matrix",
-      "CGateS.has",
-      "CGateS.inv",
-      "CGateS.inverse",
-      "CGateS.is_algebraic",
-      "CGateS.is_antihermitian",
-      "CGateS.is_commutative",
-      "CGateS.is_comparable",
-      "CGateS.is_complex",
-      "CGateS.is_composite",
-      "CGateS.is_even",
-      "CGateS.is_extended_negative",
-      "CGateS.is_extended_nonnegative",
-      "CGateS.is_extended_nonpositive",
-      "CGateS.is_extended_nonzero",
-      "CGateS.is_extended_positive",
-      "CGateS.is_extended_real",
-      "CGateS.is_finite",
-      "CGateS.is_hermitian",
-      "CGateS.is_imaginary",
-      "CGateS.is_infinite",
-      "CGateS.is_irrational",
-      "CGateS.is_negative",
-      "CGateS.is_noninteger",
-      "CGateS.is_nonnegative",
-      "CGateS.is_nonpositive",
-      "CGateS.is_nonzero",
-      "CGateS.is_number",
-      "CGateS.is_odd",
-      "CGateS.is_polar",
-      "CGateS.is_positive",
-      "CGateS.is_prime",
-      "CGateS.is_rational",
-      "CGateS.is_real",
-      "CGateS.is_scalar",
-      "CGateS.is_symbol",
-      "CGateS.is_symbolic",
-      "CGateS.is_transcendental",
-      "CGateS.is_unitary",
-      "CGateS.is_zero",
-      "CGateS.label",
-      "CGateS.matrix_element",
-      "CGateS.min_qubits",
-      "CGateS.n",
-      "CGateS.nqubits",
-      "CGateS.plot_gate",
-      "CGateS.simplify_cgate",
-      "CGateS.subs",
-      "CGateS.targets",
-      "CNOT",
-      "CNOT.args",
-      "CNOT.assumptions0",
-      "CNOT.canonical_variables",
-      "CNOT.conjugate",
-      "CNOT.control_value",
-      "CNOT.controls",
-      "CNOT.decompose",
-      "CNOT.default_args",
-      "CNOT.equals",
-      "CNOT.eval_controls",
-      "CNOT.func",
-      "CNOT.gate",
-      "CNOT.gate_name",
-      "CNOT.gate_name_latex",
-      "CNOT.gate_name_plot",
-      "CNOT.get_target_matrix",
-      "CNOT.has",
-      "CNOT.inv",
-      "CNOT.inverse",
-      "CNOT.is_algebraic",
-      "CNOT.is_antihermitian",
-      "CNOT.is_commutative",
-      "CNOT.is_comparable",
-      "CNOT.is_complex",
-      "CNOT.is_composite",
-      "CNOT.is_even",
-      "CNOT.is_extended_negative",
-      "CNOT.is_extended_nonnegative",
-      "CNOT.is_extended_nonpositive",
-      "CNOT.is_extended_nonzero",
-      "CNOT.is_extended_positive",
-      "CNOT.is_extended_real",
-      "CNOT.is_finite",
-      "CNOT.is_hermitian",
-      "CNOT.is_imaginary",
-      "CNOT.is_infinite",
-      "CNOT.is_irrational",
-      "CNOT.is_negative",
-      "CNOT.is_noninteger",
-      "CNOT.is_nonnegative",
-      "CNOT.is_nonpositive",
-      "CNOT.is_nonzero",
-      "CNOT.is_number",
-      "CNOT.is_odd",
-      "CNOT.is_polar",
-      "CNOT.is_positive",
-      "CNOT.is_prime",
-      "CNOT.is_rational",
-      "CNOT.is_real",
-      "CNOT.is_scalar",
-      "CNOT.is_symbol",
-      "CNOT.is_symbolic",
-      "CNOT.is_transcendental",
-      "CNOT.is_unitary",
-      "CNOT.is_zero",
-      "CNOT.label",
-      "CNOT.matrix_element",
-      "CNOT.min_qubits",
-      "CNOT.n",
-      "CNOT.nqubits",
-      "CNOT.plot_gate",
-      "CNOT.simplify_cgate",
-      "CNOT.subs",
-      "CNOT.targets",
-      "CNotGate",
-      "CNotGate.args",
-      "CNotGate.assumptions0",
-      "CNotGate.canonical_variables",
-      "CNotGate.conjugate",
-      "CNotGate.control_value",
-      "CNotGate.controls",
-      "CNotGate.decompose",
-      "CNotGate.default_args",
-      "CNotGate.equals",
-      "CNotGate.eval_controls",
-      "CNotGate.func",
-      "CNotGate.gate",
-      "CNotGate.gate_name",
-      "CNotGate.gate_name_latex",
-      "CNotGate.gate_name_plot",
-      "CNotGate.get_target_matrix",
-      "CNotGate.has",
-      "CNotGate.inv",
-      "CNotGate.inverse",
-      "CNotGate.is_algebraic",
-      "CNotGate.is_antihermitian",
-      "CNotGate.is_commutative",
-      "CNotGate.is_comparable",
-      "CNotGate.is_complex",
-      "CNotGate.is_composite",
-      "CNotGate.is_even",
-      "CNotGate.is_extended_negative",
-      "CNotGate.is_extended_nonnegative",
-      "CNotGate.is_extended_nonpositive",
-      "CNotGate.is_extended_nonzero",
-      "CNotGate.is_extended_positive",
-      "CNotGate.is_extended_real",
-      "CNotGate.is_finite",
-      "CNotGate.is_hermitian",
-      "CNotGate.is_imaginary",
-      "CNotGate.is_infinite",
-      "CNotGate.is_irrational",
-      "CNotGate.is_negative",
-      "CNotGate.is_noninteger",
-      "CNotGate.is_nonnegative",
-      "CNotGate.is_nonpositive",
-      "CNotGate.is_nonzero",
-      "CNotGate.is_number",
-      "CNotGate.is_odd",
-      "CNotGate.is_polar",
-      "CNotGate.is_positive",
-      "CNotGate.is_prime",
-      "CNotGate.is_rational",
-      "CNotGate.is_real",
-      "CNotGate.is_scalar",
-      "CNotGate.is_symbol",
-      "CNotGate.is_symbolic",
-      "CNotGate.is_transcendental",
-      "CNotGate.is_unitary",
-      "CNotGate.is_zero",
-      "CNotGate.label",
-      "CNotGate.matrix_element",
-      "CNotGate.min_qubits",
-      "CNotGate.n",
-      "CNotGate.nqubits",
-      "CNotGate.plot_gate",
-      "CNotGate.simplify_cgate",
-      "CNotGate.subs",
-      "CNotGate.targets",
-      "CPHASE",
-      "Gate",
-      "Gate.args",
-      "Gate.assumptions0",
-      "Gate.canonical_variables",
-      "Gate.conjugate",
-      "Gate.default_args",
-      "Gate.equals",
-      "Gate.func",
-      "Gate.gate_name",
-      "Gate.gate_name_latex",
-      "Gate.gate_name_plot",
-      "Gate.get_target_matrix",
-      "Gate.has",
-      "Gate.inv",
-      "Gate.inverse",
-      "Gate.is_algebraic",
-      "Gate.is_antihermitian",
-      "Gate.is_commutative",
-      "Gate.is_comparable",
-      "Gate.is_complex",
-      "Gate.is_composite",
-      "Gate.is_even",
-      "Gate.is_extended_negative",
-      "Gate.is_extended_nonnegative",
-      "Gate.is_extended_nonpositive",
-      "Gate.is_extended_nonzero",
-      "Gate.is_extended_positive",
-      "Gate.is_extended_real",
-      "Gate.is_finite",
-      "Gate.is_hermitian",
-      "Gate.is_imaginary",
-      "Gate.is_infinite",
-      "Gate.is_irrational",
-      "Gate.is_negative",
-      "Gate.is_noninteger",
-      "Gate.is_nonnegative",
-      "Gate.is_nonpositive",
-      "Gate.is_nonzero",
-      "Gate.is_number",
-      "Gate.is_odd",
-      "Gate.is_polar",
-      "Gate.is_positive",
-      "Gate.is_prime",
-      "Gate.is_rational",
-      "Gate.is_real",
-      "Gate.is_scalar",
-      "Gate.is_symbol",
-      "Gate.is_symbolic",
-      "Gate.is_transcendental",
-      "Gate.is_unitary",
-      "Gate.is_zero",
-      "Gate.label",
-      "Gate.matrix_element",
-      "Gate.min_qubits",
-      "Gate.n",
-      "Gate.nqubits",
-      "Gate.plot_gate",
-      "Gate.subs",
-      "Gate.targets",
-      "H.assumptions0",
-      "H.canonical_variables",
-      "H.default_args",
-      "H.func",
-      "H.gate_name",
-      "H.gate_name_latex",
-      "H.gate_name_plot",
-      "H.get_target_matrix",
-      "H.inv",
-      "H.inverse",
-      "H.is_composite",
-      "H.is_extended_nonpositive",
-      "H.is_extended_nonzero",
-      "H.is_noninteger",
-      "H.is_scalar",
-      "H.is_symbolic",
-      "H.is_transcendental",
-      "H.is_unitary",
-      "H.label",
-      "H.matrix_element",
-      "H.min_qubits",
-      "H.nqubits",
-      "H.plot_gate",
-      "H.targets",
-      "HadamardGate",
-      "HadamardGate.args",
-      "HadamardGate.assumptions0",
-      "HadamardGate.canonical_variables",
-      "HadamardGate.conjugate",
-      "HadamardGate.default_args",
-      "HadamardGate.equals",
-      "HadamardGate.func",
-      "HadamardGate.gate_name",
-      "HadamardGate.gate_name_latex",
-      "HadamardGate.gate_name_plot",
-      "HadamardGate.get_target_matrix",
-      "HadamardGate.has",
-      "HadamardGate.inv",
-      "HadamardGate.inverse",
-      "HadamardGate.is_algebraic",
-      "HadamardGate.is_antihermitian",
-      "HadamardGate.is_commutative",
-      "HadamardGate.is_comparable",
-      "HadamardGate.is_complex",
-      "HadamardGate.is_composite",
-      "HadamardGate.is_even",
-      "HadamardGate.is_extended_negative",
-      "HadamardGate.is_extended_nonnegative",
-      "HadamardGate.is_extended_nonpositive",
-      "HadamardGate.is_extended_nonzero",
-      "HadamardGate.is_extended_positive",
-      "HadamardGate.is_extended_real",
-      "HadamardGate.is_finite",
-      "HadamardGate.is_hermitian",
-      "HadamardGate.is_imaginary",
-      "HadamardGate.is_infinite",
-      "HadamardGate.is_irrational",
-      "HadamardGate.is_negative",
-      "HadamardGate.is_noninteger",
-      "HadamardGate.is_nonnegative",
-      "HadamardGate.is_nonpositive",
-      "HadamardGate.is_nonzero",
-      "HadamardGate.is_number",
-      "HadamardGate.is_odd",
-      "HadamardGate.is_polar",
-      "HadamardGate.is_positive",
-      "HadamardGate.is_prime",
-      "HadamardGate.is_rational",
-      "HadamardGate.is_real",
-      "HadamardGate.is_scalar",
-      "HadamardGate.is_symbol",
-      "HadamardGate.is_symbolic",
-      "HadamardGate.is_transcendental",
-      "HadamardGate.is_unitary",
-      "HadamardGate.is_zero",
-      "HadamardGate.label",
-      "HadamardGate.matrix_element",
-      "HadamardGate.min_qubits",
-      "HadamardGate.n",
-      "HadamardGate.nqubits",
-      "HadamardGate.plot_gate",
-      "HadamardGate.subs",
-      "HadamardGate.targets",
-      "IdentityGate",
-      "IdentityGate.args",
-      "IdentityGate.assumptions0",
-      "IdentityGate.canonical_variables",
-      "IdentityGate.conjugate",
-      "IdentityGate.default_args",
-      "IdentityGate.equals",
-      "IdentityGate.func",
-      "IdentityGate.gate_name",
-      "IdentityGate.gate_name_latex",
-      "IdentityGate.gate_name_plot",
-      "IdentityGate.get_target_matrix",
-      "IdentityGate.has",
-      "IdentityGate.inv",
-      "IdentityGate.inverse",
-      "IdentityGate.is_algebraic",
-      "IdentityGate.is_antihermitian",
-      "IdentityGate.is_commutative",
-      "IdentityGate.is_comparable",
-      "IdentityGate.is_complex",
-      "IdentityGate.is_composite",
-      "IdentityGate.is_even",
-      "IdentityGate.is_extended_negative",
-      "IdentityGate.is_extended_nonnegative",
-      "IdentityGate.is_extended_nonpositive",
-      "IdentityGate.is_extended_nonzero",
-      "IdentityGate.is_extended_positive",
-      "IdentityGate.is_extended_real",
-      "IdentityGate.is_finite",
-      "IdentityGate.is_hermitian",
-      "IdentityGate.is_imaginary",
-      "IdentityGate.is_infinite",
-      "IdentityGate.is_irrational",
-      "IdentityGate.is_negative",
-      "IdentityGate.is_noninteger",
-      "IdentityGate.is_nonnegative",
-      "IdentityGate.is_nonpositive",
-      "IdentityGate.is_nonzero",
-      "IdentityGate.is_number",
-      "IdentityGate.is_odd",
-      "IdentityGate.is_polar",
-      "IdentityGate.is_positive",
-      "IdentityGate.is_prime",
-      "IdentityGate.is_rational",
-      "IdentityGate.is_real",
-      "IdentityGate.is_scalar",
-      "IdentityGate.is_symbol",
-      "IdentityGate.is_symbolic",
-      "IdentityGate.is_transcendental",
-      "IdentityGate.is_unitary",
-      "IdentityGate.is_zero",
-      "IdentityGate.label",
-      "IdentityGate.matrix_element",
-      "IdentityGate.min_qubits",
-      "IdentityGate.n",
-      "IdentityGate.nqubits",
-      "IdentityGate.plot_gate",
-      "IdentityGate.subs",
-      "IdentityGate.targets",
-      "OneQubitGate",
-      "OneQubitGate.args",
-      "OneQubitGate.assumptions0",
-      "OneQubitGate.canonical_variables",
-      "OneQubitGate.conjugate",
-      "OneQubitGate.default_args",
-      "OneQubitGate.equals",
-      "OneQubitGate.func",
-      "OneQubitGate.gate_name",
-      "OneQubitGate.gate_name_latex",
-      "OneQubitGate.gate_name_plot",
-      "OneQubitGate.get_target_matrix",
-      "OneQubitGate.has",
-      "OneQubitGate.inv",
-      "OneQubitGate.inverse",
-      "OneQubitGate.is_algebraic",
-      "OneQubitGate.is_antihermitian",
-      "OneQubitGate.is_commutative",
-      "OneQubitGate.is_comparable",
-      "OneQubitGate.is_complex",
-      "OneQubitGate.is_composite",
-      "OneQubitGate.is_even",
-      "OneQubitGate.is_extended_negative",
-      "OneQubitGate.is_extended_nonnegative",
-      "OneQubitGate.is_extended_nonpositive",
-      "OneQubitGate.is_extended_nonzero",
-      "OneQubitGate.is_extended_positive",
-      "OneQubitGate.is_extended_real",
-      "OneQubitGate.is_finite",
-      "OneQubitGate.is_hermitian",
-      "OneQubitGate.is_imaginary",
-      "OneQubitGate.is_infinite",
-      "OneQubitGate.is_irrational",
-      "OneQubitGate.is_negative",
-      "OneQubitGate.is_noninteger",
-      "OneQubitGate.is_nonnegative",
-      "OneQubitGate.is_nonpositive",
-      "OneQubitGate.is_nonzero",
-      "OneQubitGate.is_number",
-      "OneQubitGate.is_odd",
-      "OneQubitGate.is_polar",
-      "OneQubitGate.is_positive",
-      "OneQubitGate.is_prime",
-      "OneQubitGate.is_rational",
-      "OneQubitGate.is_real",
-      "OneQubitGate.is_scalar",
-      "OneQubitGate.is_symbol",
-      "OneQubitGate.is_symbolic",
-      "OneQubitGate.is_transcendental",
-      "OneQubitGate.is_unitary",
-      "OneQubitGate.is_zero",
-      "OneQubitGate.label",
-      "OneQubitGate.matrix_element",
-      "OneQubitGate.min_qubits",
-      "OneQubitGate.n",
-      "OneQubitGate.nqubits",
-      "OneQubitGate.plot_gate",
-      "OneQubitGate.subs",
-      "OneQubitGate.targets",
-      "Phase",
-      "PhaseGate",
-      "PhaseGate.args",
-      "PhaseGate.assumptions0",
-      "PhaseGate.canonical_variables",
-      "PhaseGate.conjugate",
-      "PhaseGate.default_args",
-      "PhaseGate.equals",
-      "PhaseGate.func",
-      "PhaseGate.gate_name",
-      "PhaseGate.gate_name_latex",
-      "PhaseGate.gate_name_plot",
-      "PhaseGate.get_target_matrix",
-      "PhaseGate.has",
-      "PhaseGate.inv",
-      "PhaseGate.inverse",
-      "PhaseGate.is_algebraic",
-      "PhaseGate.is_antihermitian",
-      "PhaseGate.is_commutative",
-      "PhaseGate.is_comparable",
-      "PhaseGate.is_complex",
-      "PhaseGate.is_composite",
-      "PhaseGate.is_even",
-      "PhaseGate.is_extended_negative",
-      "PhaseGate.is_extended_nonnegative",
-      "PhaseGate.is_extended_nonpositive",
-      "PhaseGate.is_extended_nonzero",
-      "PhaseGate.is_extended_positive",
-      "PhaseGate.is_extended_real",
-      "PhaseGate.is_finite",
-      "PhaseGate.is_hermitian",
-      "PhaseGate.is_imaginary",
-      "PhaseGate.is_infinite",
-      "PhaseGate.is_irrational",
-      "PhaseGate.is_negative",
-      "PhaseGate.is_noninteger",
-      "PhaseGate.is_nonnegative",
-      "PhaseGate.is_nonpositive",
-      "PhaseGate.is_nonzero",
-      "PhaseGate.is_number",
-      "PhaseGate.is_odd",
-      "PhaseGate.is_polar",
-      "PhaseGate.is_positive",
-      "PhaseGate.is_prime",
-      "PhaseGate.is_rational",
-      "PhaseGate.is_real",
-      "PhaseGate.is_scalar",
-      "PhaseGate.is_symbol",
-      "PhaseGate.is_symbolic",
-      "PhaseGate.is_transcendental",
-      "PhaseGate.is_unitary",
-      "PhaseGate.is_zero",
-      "PhaseGate.label",
-      "PhaseGate.matrix_element",
-      "PhaseGate.min_qubits",
-      "PhaseGate.n",
-      "PhaseGate.nqubits",
-      "PhaseGate.plot_gate",
-      "PhaseGate.subs",
-      "PhaseGate.targets",
-      "SWAP",
-      "SWAP.args",
-      "SWAP.assumptions0",
-      "SWAP.canonical_variables",
-      "SWAP.conjugate",
-      "SWAP.decompose",
-      "SWAP.default_args",
-      "SWAP.equals",
-      "SWAP.func",
-      "SWAP.gate_name",
-      "SWAP.gate_name_latex",
-      "SWAP.gate_name_plot",
-      "SWAP.get_target_matrix",
-      "SWAP.has",
-      "SWAP.inv",
-      "SWAP.inverse",
-      "SWAP.is_algebraic",
-      "SWAP.is_antihermitian",
-      "SWAP.is_commutative",
-      "SWAP.is_comparable",
-      "SWAP.is_complex",
-      "SWAP.is_composite",
-      "SWAP.is_even",
-      "SWAP.is_extended_negative",
-      "SWAP.is_extended_nonnegative",
-      "SWAP.is_extended_nonpositive",
-      "SWAP.is_extended_nonzero",
-      "SWAP.is_extended_positive",
-      "SWAP.is_extended_real",
-      "SWAP.is_finite",
-      "SWAP.is_hermitian",
-      "SWAP.is_imaginary",
-      "SWAP.is_infinite",
-      "SWAP.is_irrational",
-      "SWAP.is_negative",
-      "SWAP.is_noninteger",
-      "SWAP.is_nonnegative",
-      "SWAP.is_nonpositive",
-      "SWAP.is_nonzero",
-      "SWAP.is_number",
-      "SWAP.is_odd",
-      "SWAP.is_polar",
-      "SWAP.is_positive",
-      "SWAP.is_prime",
-      "SWAP.is_rational",
-      "SWAP.is_real",
-      "SWAP.is_scalar",
-      "SWAP.is_symbol",
-      "SWAP.is_symbolic",
-      "SWAP.is_transcendental",
-      "SWAP.is_unitary",
-      "SWAP.is_zero",
-      "SWAP.label",
-      "SWAP.matrix_element",
-      "SWAP.min_qubits",
-      "SWAP.n",
-      "SWAP.nqubits",
-      "SWAP.plot_gate",
-      "SWAP.subs",
-      "SWAP.targets",
-      "SwapGate",
-      "SwapGate.args",
-      "SwapGate.assumptions0",
-      "SwapGate.canonical_variables",
-      "SwapGate.conjugate",
-      "SwapGate.decompose",
-      "SwapGate.default_args",
-      "SwapGate.equals",
-      "SwapGate.func",
-      "SwapGate.gate_name",
-      "SwapGate.gate_name_latex",
-      "SwapGate.gate_name_plot",
-      "SwapGate.get_target_matrix",
-      "SwapGate.has",
-      "SwapGate.inv",
-      "SwapGate.inverse",
-      "SwapGate.is_algebraic",
-      "SwapGate.is_antihermitian",
-      "SwapGate.is_commutative",
-      "SwapGate.is_comparable",
-      "SwapGate.is_complex",
-      "SwapGate.is_composite",
-      "SwapGate.is_even",
-      "SwapGate.is_extended_negative",
-      "SwapGate.is_extended_nonnegative",
-      "SwapGate.is_extended_nonpositive",
-      "SwapGate.is_extended_nonzero",
-      "SwapGate.is_extended_positive",
-      "SwapGate.is_extended_real",
-      "SwapGate.is_finite",
-      "SwapGate.is_hermitian",
-      "SwapGate.is_imaginary",
-      "SwapGate.is_infinite",
-      "SwapGate.is_irrational",
-      "SwapGate.is_negative",
-      "SwapGate.is_noninteger",
-      "SwapGate.is_nonnegative",
-      "SwapGate.is_nonpositive",
-      "SwapGate.is_nonzero",
-      "SwapGate.is_number",
-      "SwapGate.is_odd",
-      "SwapGate.is_polar",
-      "SwapGate.is_positive",
-      "SwapGate.is_prime",
-      "SwapGate.is_rational",
-      "SwapGate.is_real",
-      "SwapGate.is_scalar",
-      "SwapGate.is_symbol",
-      "SwapGate.is_symbolic",
-      "SwapGate.is_transcendental",
-      "SwapGate.is_unitary",
-      "SwapGate.is_zero",
-      "SwapGate.label",
-      "SwapGate.matrix_element",
-      "SwapGate.min_qubits",
-      "SwapGate.n",
-      "SwapGate.nqubits",
-      "SwapGate.plot_gate",
-      "SwapGate.subs",
-      "SwapGate.targets",
-      "T",
-      "T.args",
-      "T.assumptions0",
-      "T.canonical_variables",
-      "T.conjugate",
-      "T.default_args",
-      "T.equals",
-      "T.func",
-      "T.gate_name",
-      "T.gate_name_latex",
-      "T.gate_name_plot",
-      "T.get_target_matrix",
-      "T.has",
-      "T.inv",
-      "T.inverse",
-      "T.is_algebraic",
-      "T.is_antihermitian",
-      "T.is_commutative",
-      "T.is_comparable",
-      "T.is_complex",
-      "T.is_composite",
-      "T.is_even",
-      "T.is_extended_negative",
-      "T.is_extended_nonnegative",
-      "T.is_extended_nonpositive",
-      "T.is_extended_nonzero",
-      "T.is_extended_positive",
-      "T.is_extended_real",
-      "T.is_finite",
-      "T.is_hermitian",
-      "T.is_imaginary",
-      "T.is_infinite",
-      "T.is_irrational",
-      "T.is_negative",
-      "T.is_noninteger",
-      "T.is_nonnegative",
-      "T.is_nonpositive",
-      "T.is_nonzero",
-      "T.is_number",
-      "T.is_odd",
-      "T.is_polar",
-      "T.is_positive",
-      "T.is_prime",
-      "T.is_rational",
-      "T.is_real",
-      "T.is_scalar",
-      "T.is_symbol",
-      "T.is_symbolic",
-      "T.is_transcendental",
-      "T.is_unitary",
-      "T.is_zero",
-      "T.label",
-      "T.matrix_element",
-      "T.min_qubits",
-      "T.n",
-      "T.nqubits",
-      "T.plot_gate",
-      "T.subs",
-      "T.targets",
-      "TGate",
-      "TGate.args",
-      "TGate.assumptions0",
-      "TGate.canonical_variables",
-      "TGate.conjugate",
-      "TGate.default_args",
-      "TGate.equals",
-      "TGate.func",
-      "TGate.gate_name",
-      "TGate.gate_name_latex",
-      "TGate.gate_name_plot",
-      "TGate.get_target_matrix",
-      "TGate.has",
-      "TGate.inv",
-      "TGate.inverse",
-      "TGate.is_algebraic",
-      "TGate.is_antihermitian",
-      "TGate.is_commutative",
-      "TGate.is_comparable",
-      "TGate.is_complex",
-      "TGate.is_composite",
-      "TGate.is_even",
-      "TGate.is_extended_negative",
-      "TGate.is_extended_nonnegative",
-      "TGate.is_extended_nonpositive",
-      "TGate.is_extended_nonzero",
-      "TGate.is_extended_positive",
-      "TGate.is_extended_real",
-      "TGate.is_finite",
-      "TGate.is_hermitian",
-      "TGate.is_imaginary",
-      "TGate.is_infinite",
-      "TGate.is_irrational",
-      "TGate.is_negative",
-      "TGate.is_noninteger",
-      "TGate.is_nonnegative",
-      "TGate.is_nonpositive",
-      "TGate.is_nonzero",
-      "TGate.is_number",
-      "TGate.is_odd",
-      "TGate.is_polar",
-      "TGate.is_positive",
-      "TGate.is_prime",
-      "TGate.is_rational",
-      "TGate.is_real",
-      "TGate.is_scalar",
-      "TGate.is_symbol",
-      "TGate.is_symbolic",
-      "TGate.is_transcendental",
-      "TGate.is_unitary",
-      "TGate.is_zero",
-      "TGate.label",
-      "TGate.matrix_element",
-      "TGate.min_qubits",
-      "TGate.n",
-      "TGate.nqubits",
-      "TGate.plot_gate",
-      "TGate.subs",
-      "TGate.targets",
-      "TwoQubitGate",
-      "TwoQubitGate.args",
-      "TwoQubitGate.assumptions0",
-      "TwoQubitGate.canonical_variables",
-      "TwoQubitGate.conjugate",
-      "TwoQubitGate.default_args",
-      "TwoQubitGate.equals",
-      "TwoQubitGate.func",
-      "TwoQubitGate.gate_name",
-      "TwoQubitGate.gate_name_latex",
-      "TwoQubitGate.gate_name_plot",
-      "TwoQubitGate.get_target_matrix",
-      "TwoQubitGate.has",
-      "TwoQubitGate.inv",
-      "TwoQubitGate.inverse",
-      "TwoQubitGate.is_algebraic",
-      "TwoQubitGate.is_antihermitian",
-      "TwoQubitGate.is_commutative",
-      "TwoQubitGate.is_comparable",
-      "TwoQubitGate.is_complex",
-      "TwoQubitGate.is_composite",
-      "TwoQubitGate.is_even",
-      "TwoQubitGate.is_extended_negative",
-      "TwoQubitGate.is_extended_nonnegative",
-      "TwoQubitGate.is_extended_nonpositive",
-      "TwoQubitGate.is_extended_nonzero",
-      "TwoQubitGate.is_extended_positive",
-      "TwoQubitGate.is_extended_real",
-      "TwoQubitGate.is_finite",
-      "TwoQubitGate.is_hermitian",
-      "TwoQubitGate.is_imaginary",
-      "TwoQubitGate.is_infinite",
-      "TwoQubitGate.is_irrational",
-      "TwoQubitGate.is_negative",
-      "TwoQubitGate.is_noninteger",
-      "TwoQubitGate.is_nonnegative",
-      "TwoQubitGate.is_nonpositive",
-      "TwoQubitGate.is_nonzero",
-      "TwoQubitGate.is_number",
-      "TwoQubitGate.is_odd",
-      "TwoQubitGate.is_polar",
-      "TwoQubitGate.is_positive",
-      "TwoQubitGate.is_prime",
-      "TwoQubitGate.is_rational",
-      "TwoQubitGate.is_real",
-      "TwoQubitGate.is_scalar",
-      "TwoQubitGate.is_symbol",
-      "TwoQubitGate.is_symbolic",
-      "TwoQubitGate.is_transcendental",
-      "TwoQubitGate.is_unitary",
-      "TwoQubitGate.is_zero",
-      "TwoQubitGate.label",
-      "TwoQubitGate.matrix_element",
-      "TwoQubitGate.min_qubits",
-      "TwoQubitGate.n",
-      "TwoQubitGate.nqubits",
-      "TwoQubitGate.plot_gate",
-      "TwoQubitGate.subs",
-      "TwoQubitGate.targets",
-      "UGate",
-      "UGate.args",
-      "UGate.assumptions0",
-      "UGate.canonical_variables",
-      "UGate.conjugate",
-      "UGate.default_args",
-      "UGate.equals",
-      "UGate.func",
-      "UGate.gate_name",
-      "UGate.gate_name_latex",
-      "UGate.gate_name_plot",
-      "UGate.get_target_matrix",
-      "UGate.has",
-      "UGate.inv",
-      "UGate.inverse",
-      "UGate.is_algebraic",
-      "UGate.is_antihermitian",
-      "UGate.is_commutative",
-      "UGate.is_comparable",
-      "UGate.is_complex",
-      "UGate.is_composite",
-      "UGate.is_even",
-      "UGate.is_extended_negative",
-      "UGate.is_extended_nonnegative",
-      "UGate.is_extended_nonpositive",
-      "UGate.is_extended_nonzero",
-      "UGate.is_extended_positive",
-      "UGate.is_extended_real",
-      "UGate.is_finite",
-      "UGate.is_hermitian",
-      "UGate.is_imaginary",
-      "UGate.is_infinite",
-      "UGate.is_irrational",
-      "UGate.is_negative",
-      "UGate.is_noninteger",
-      "UGate.is_nonnegative",
-      "UGate.is_nonpositive",
-      "UGate.is_nonzero",
-      "UGate.is_number",
-      "UGate.is_odd",
-      "UGate.is_polar",
-      "UGate.is_positive",
-      "UGate.is_prime",
-      "UGate.is_rational",
-      "UGate.is_real",
-      "UGate.is_scalar",
-      "UGate.is_symbol",
-      "UGate.is_symbolic",
-      "UGate.is_transcendental",
-      "UGate.is_unitary",
-      "UGate.is_zero",
-      "UGate.label",
-      "UGate.matrix_element",
-      "UGate.min_qubits",
-      "UGate.n",
-      "UGate.nqubits",
-      "UGate.plot_gate",
-      "UGate.subs",
-      "UGate.targets",
-      "X",
-      "X.args",
-      "X.assumptions0",
-      "X.canonical_variables",
-      "X.conjugate",
-      "X.default_args",
-      "X.equals",
-      "X.func",
-      "X.gate_name",
-      "X.gate_name_latex",
-      "X.gate_name_plot",
-      "X.get_target_matrix",
-      "X.has",
-      "X.inv",
-      "X.inverse",
-      "X.is_algebraic",
-      "X.is_antihermitian",
-      "X.is_commutative",
-      "X.is_comparable",
-      "X.is_complex",
-      "X.is_composite",
-      "X.is_even",
-      "X.is_extended_negative",
-      "X.is_extended_nonnegative",
-      "X.is_extended_nonpositive",
-      "X.is_extended_nonzero",
-      "X.is_extended_positive",
-      "X.is_extended_real",
-      "X.is_finite",
-      "X.is_hermitian",
-      "X.is_imaginary",
-      "X.is_infinite",
-      "X.is_irrational",
-      "X.is_negative",
-      "X.is_noninteger",
-      "X.is_nonnegative",
-      "X.is_nonpositive",
-      "X.is_nonzero",
-      "X.is_number",
-      "X.is_odd",
-      "X.is_polar",
-      "X.is_positive",
-      "X.is_prime",
-      "X.is_rational",
-      "X.is_real",
-      "X.is_scalar",
-      "X.is_symbol",
-      "X.is_symbolic",
-      "X.is_transcendental",
-      "X.is_unitary",
-      "X.is_zero",
-      "X.label",
-      "X.matrix_element",
-      "X.min_qubits",
-      "X.n",
-      "X.nqubits",
-      "X.plot_gate",
-      "X.plot_gate_plus",
-      "X.subs",
-      "X.targets",
-      "XGate",
-      "XGate.args",
-      "XGate.assumptions0",
-      "XGate.canonical_variables",
-      "XGate.conjugate",
-      "XGate.default_args",
-      "XGate.equals",
-      "XGate.func",
-      "XGate.gate_name",
-      "XGate.gate_name_latex",
-      "XGate.gate_name_plot",
-      "XGate.get_target_matrix",
-      "XGate.has",
-      "XGate.inv",
-      "XGate.inverse",
-      "XGate.is_algebraic",
-      "XGate.is_antihermitian",
-      "XGate.is_commutative",
-      "XGate.is_comparable",
-      "XGate.is_complex",
-      "XGate.is_composite",
-      "XGate.is_even",
-      "XGate.is_extended_negative",
-      "XGate.is_extended_nonnegative",
-      "XGate.is_extended_nonpositive",
-      "XGate.is_extended_nonzero",
-      "XGate.is_extended_positive",
-      "XGate.is_extended_real",
-      "XGate.is_finite",
-      "XGate.is_hermitian",
-      "XGate.is_imaginary",
-      "XGate.is_infinite",
-      "XGate.is_irrational",
-      "XGate.is_negative",
-      "XGate.is_noninteger",
-      "XGate.is_nonnegative",
-      "XGate.is_nonpositive",
-      "XGate.is_nonzero",
-      "XGate.is_number",
-      "XGate.is_odd",
-      "XGate.is_polar",
-      "XGate.is_positive",
-      "XGate.is_prime",
-      "XGate.is_rational",
-      "XGate.is_real",
-      "XGate.is_scalar",
-      "XGate.is_symbol",
-      "XGate.is_symbolic",
-      "XGate.is_transcendental",
-      "XGate.is_unitary",
-      "XGate.is_zero",
-      "XGate.label",
-      "XGate.matrix_element",
-      "XGate.min_qubits",
-      "XGate.n",
-      "XGate.nqubits",
-      "XGate.plot_gate",
-      "XGate.plot_gate_plus",
-      "XGate.subs",
-      "XGate.targets",
-      "Y",
-      "Y.args",
-      "Y.assumptions0",
-      "Y.canonical_variables",
-      "Y.conjugate",
-      "Y.default_args",
-      "Y.equals",
-      "Y.func",
-      "Y.gate_name",
-      "Y.gate_name_latex",
-      "Y.gate_name_plot",
-      "Y.get_target_matrix",
-      "Y.has",
-      "Y.inv",
-      "Y.inverse",
-      "Y.is_algebraic",
-      "Y.is_antihermitian",
-      "Y.is_commutative",
-      "Y.is_comparable",
-      "Y.is_complex",
-      "Y.is_composite",
-      "Y.is_even",
-      "Y.is_extended_negative",
-      "Y.is_extended_nonnegative",
-      "Y.is_extended_nonpositive",
-      "Y.is_extended_nonzero",
-      "Y.is_extended_positive",
-      "Y.is_extended_real",
-      "Y.is_finite",
-      "Y.is_hermitian",
-      "Y.is_imaginary",
-      "Y.is_infinite",
-      "Y.is_irrational",
-      "Y.is_negative",
-      "Y.is_noninteger",
-      "Y.is_nonnegative",
-      "Y.is_nonpositive",
-      "Y.is_nonzero",
-      "Y.is_number",
-      "Y.is_odd",
-      "Y.is_polar",
-      "Y.is_positive",
-      "Y.is_prime",
-      "Y.is_rational",
-      "Y.is_real",
-      "Y.is_scalar",
-      "Y.is_symbol",
-      "Y.is_symbolic",
-      "Y.is_transcendental",
-      "Y.is_unitary",
-      "Y.is_zero",
-      "Y.label",
-      "Y.matrix_element",
-      "Y.min_qubits",
-      "Y.n",
-      "Y.nqubits",
-      "Y.plot_gate",
-      "Y.subs",
-      "Y.targets",
-      "YGate",
-      "YGate.args",
-      "YGate.assumptions0",
-      "YGate.canonical_variables",
-      "YGate.conjugate",
-      "YGate.default_args",
-      "YGate.equals",
-      "YGate.func",
-      "YGate.gate_name",
-      "YGate.gate_name_latex",
-      "YGate.gate_name_plot",
-      "YGate.get_target_matrix",
-      "YGate.has",
-      "YGate.inv",
-      "YGate.inverse",
-      "YGate.is_algebraic",
-      "YGate.is_antihermitian",
-      "YGate.is_commutative",
-      "YGate.is_comparable",
-      "YGate.is_complex",
-      "YGate.is_composite",
-      "YGate.is_even",
-      "YGate.is_extended_negative",
-      "YGate.is_extended_nonnegative",
-      "YGate.is_extended_nonpositive",
-      "YGate.is_extended_nonzero",
-      "YGate.is_extended_positive",
-      "YGate.is_extended_real",
-      "YGate.is_finite",
-      "YGate.is_hermitian",
-      "YGate.is_imaginary",
-      "YGate.is_infinite",
-      "YGate.is_irrational",
-      "YGate.is_negative",
-      "YGate.is_noninteger",
-      "YGate.is_nonnegative",
-      "YGate.is_nonpositive",
-      "YGate.is_nonzero",
-      "YGate.is_number",
-      "YGate.is_odd",
-      "YGate.is_polar",
-      "YGate.is_positive",
-      "YGate.is_prime",
-      "YGate.is_rational",
-      "YGate.is_real",
-      "YGate.is_scalar",
-      "YGate.is_symbol",
-      "YGate.is_symbolic",
-      "YGate.is_transcendental",
-      "YGate.is_unitary",
-      "YGate.is_zero",
-      "YGate.label",
-      "YGate.matrix_element",
-      "YGate.min_qubits",
-      "YGate.n",
-      "YGate.nqubits",
-      "YGate.plot_gate",
-      "YGate.subs",
-      "YGate.targets",
-      "Z",
-      "Z.args",
-      "Z.assumptions0",
-      "Z.canonical_variables",
-      "Z.conjugate",
-      "Z.default_args",
-      "Z.equals",
-      "Z.func",
-      "Z.gate_name",
-      "Z.gate_name_latex",
-      "Z.gate_name_plot",
-      "Z.get_target_matrix",
-      "Z.has",
-      "Z.inv",
-      "Z.inverse",
-      "Z.is_algebraic",
-      "Z.is_antihermitian",
-      "Z.is_commutative",
-      "Z.is_comparable",
-      "Z.is_complex",
-      "Z.is_composite",
-      "Z.is_even",
-      "Z.is_extended_negative",
-      "Z.is_extended_nonnegative",
-      "Z.is_extended_nonpositive",
-      "Z.is_extended_nonzero",
-      "Z.is_extended_positive",
-      "Z.is_extended_real",
-      "Z.is_finite",
-      "Z.is_hermitian",
-      "Z.is_imaginary",
-      "Z.is_infinite",
-      "Z.is_irrational",
-      "Z.is_negative",
-      "Z.is_noninteger",
-      "Z.is_nonnegative",
-      "Z.is_nonpositive",
-      "Z.is_nonzero",
-      "Z.is_number",
-      "Z.is_odd",
-      "Z.is_polar",
-      "Z.is_positive",
-      "Z.is_prime",
-      "Z.is_rational",
-      "Z.is_real",
-      "Z.is_scalar",
-      "Z.is_symbol",
-      "Z.is_symbolic",
-      "Z.is_transcendental",
-      "Z.is_unitary",
-      "Z.is_zero",
-      "Z.label",
-      "Z.matrix_element",
-      "Z.min_qubits",
-      "Z.n",
-      "Z.nqubits",
-      "Z.plot_gate",
-      "Z.subs",
-      "Z.targets",
-      "ZGate",
-      "ZGate.args",
-      "ZGate.assumptions0",
-      "ZGate.canonical_variables",
-      "ZGate.conjugate",
-      "ZGate.default_args",
-      "ZGate.equals",
-      "ZGate.func",
-      "ZGate.gate_name",
-      "ZGate.gate_name_latex",
-      "ZGate.gate_name_plot",
-      "ZGate.get_target_matrix",
-      "ZGate.has",
-      "ZGate.inv",
-      "ZGate.inverse",
-      "ZGate.is_algebraic",
-      "ZGate.is_antihermitian",
-      "ZGate.is_commutative",
-      "ZGate.is_comparable",
-      "ZGate.is_complex",
-      "ZGate.is_composite",
-      "ZGate.is_even",
-      "ZGate.is_extended_negative",
-      "ZGate.is_extended_nonnegative",
-      "ZGate.is_extended_nonpositive",
-      "ZGate.is_extended_nonzero",
-      "ZGate.is_extended_positive",
-      "ZGate.is_extended_real",
-      "ZGate.is_finite",
-      "ZGate.is_hermitian",
-      "ZGate.is_imaginary",
-      "ZGate.is_infinite",
-      "ZGate.is_irrational",
-      "ZGate.is_negative",
-      "ZGate.is_noninteger",
-      "ZGate.is_nonnegative",
-      "ZGate.is_nonpositive",
-      "ZGate.is_nonzero",
-      "ZGate.is_number",
-      "ZGate.is_odd",
-      "ZGate.is_polar",
-      "ZGate.is_positive",
-      "ZGate.is_prime",
-      "ZGate.is_rational",
-      "ZGate.is_real",
-      "ZGate.is_scalar",
-      "ZGate.is_symbol",
-      "ZGate.is_symbolic",
-      "ZGate.is_transcendental",
-      "ZGate.is_unitary",
-      "ZGate.is_zero",
-      "ZGate.label",
-      "ZGate.matrix_element",
-      "ZGate.min_qubits",
-      "ZGate.n",
-      "ZGate.nqubits",
-      "ZGate.plot_gate",
-      "ZGate.subs",
-      "ZGate.targets",
-      "gate_simp",
-      "gate_sort",
-      "random_circuit",
-      "represent_zbasis",
-      "zx_basis_transform",
-      "zy_basis_transform"
-     ],
-     "pythonSpecificNames": [
-      "CGate.__floordiv__",
-      "CGate.__rfloordiv__",
-      "CGate.__rmod__",
-      "CGate.__truediv__",
-      "CGate.fromiter",
-      "CGate.is_Add",
-      "CGate.is_AlgebraicNumber",
-      "CGate.is_Atom",
-      "CGate.is_Boolean",
-      "CGate.is_Derivative",
-      "CGate.is_Dummy",
-      "CGate.is_Equality",
-      "CGate.is_Float",
-      "CGate.is_Indexed",
-      "CGate.is_Integer",
-      "CGate.is_MatAdd",
-      "CGate.is_MatMul",
-      "CGate.is_Matrix",
-      "CGate.is_Mul",
-      "CGate.is_Not",
-      "CGate.is_NumberSymbol",
-      "CGate.is_Order",
-      "CGate.is_Piecewise",
-      "CGate.is_Point",
-      "CGate.is_Poly",
-      "CGate.is_Pow",
-      "CGate.is_Rational",
-      "CGate.is_Relational",
-      "CGate.is_Symbol",
-      "CGate.is_Vector",
-      "CGate.is_Wild",
-      "CGateS.__floordiv__",
-      "CGateS.__rfloordiv__",
-      "CGateS.__rmod__",
-      "CGateS.__truediv__",
-      "CGateS.fromiter",
-      "CGateS.is_Add",
-      "CGateS.is_AlgebraicNumber",
-      "CGateS.is_Atom",
-      "CGateS.is_Boolean",
-      "CGateS.is_Derivative",
-      "CGateS.is_Dummy",
-      "CGateS.is_Equality",
-      "CGateS.is_Float",
-      "CGateS.is_Indexed",
-      "CGateS.is_Integer",
-      "CGateS.is_MatAdd",
-      "CGateS.is_MatMul",
-      "CGateS.is_Matrix",
-      "CGateS.is_Mul",
-      "CGateS.is_Not",
-      "CGateS.is_NumberSymbol",
-      "CGateS.is_Order",
-      "CGateS.is_Piecewise",
-      "CGateS.is_Point",
-      "CGateS.is_Poly",
-      "CGateS.is_Pow",
-      "CGateS.is_Rational",
-      "CGateS.is_Relational",
-      "CGateS.is_Symbol",
-      "CGateS.is_Vector",
-      "CGateS.is_Wild",
-      "CNOT.__floordiv__",
-      "CNOT.__rfloordiv__",
-      "CNOT.__rmod__",
-      "CNOT.__truediv__",
-      "CNOT.fromiter",
-      "CNOT.is_Add",
-      "CNOT.is_AlgebraicNumber",
-      "CNOT.is_Atom",
-      "CNOT.is_Boolean",
-      "CNOT.is_Derivative",
-      "CNOT.is_Dummy",
-      "CNOT.is_Equality",
-      "CNOT.is_Float",
-      "CNOT.is_Indexed",
-      "CNOT.is_Integer",
-      "CNOT.is_MatAdd",
-      "CNOT.is_MatMul",
-      "CNOT.is_Matrix",
-      "CNOT.is_Mul",
-      "CNOT.is_Not",
-      "CNOT.is_NumberSymbol",
-      "CNOT.is_Order",
-      "CNOT.is_Piecewise",
-      "CNOT.is_Point",
-      "CNOT.is_Poly",
-      "CNOT.is_Pow",
-      "CNOT.is_Rational",
-      "CNOT.is_Relational",
-      "CNOT.is_Symbol",
-      "CNOT.is_Vector",
-      "CNOT.is_Wild",
-      "CNotGate.__floordiv__",
-      "CNotGate.__rfloordiv__",
-      "CNotGate.__rmod__",
-      "CNotGate.__truediv__",
-      "CNotGate.fromiter",
-      "CNotGate.is_Add",
-      "CNotGate.is_AlgebraicNumber",
-      "CNotGate.is_Atom",
-      "CNotGate.is_Boolean",
-      "CNotGate.is_Derivative",
-      "CNotGate.is_Dummy",
-      "CNotGate.is_Equality",
-      "CNotGate.is_Float",
-      "CNotGate.is_Indexed",
-      "CNotGate.is_Integer",
-      "CNotGate.is_MatAdd",
-      "CNotGate.is_MatMul",
-      "CNotGate.is_Matrix",
-      "CNotGate.is_Mul",
-      "CNotGate.is_Not",
-      "CNotGate.is_NumberSymbol",
-      "CNotGate.is_Order",
-      "CNotGate.is_Piecewise",
-      "CNotGate.is_Point",
-      "CNotGate.is_Poly",
-      "CNotGate.is_Pow",
-      "CNotGate.is_Rational",
-      "CNotGate.is_Relational",
-      "CNotGate.is_Symbol",
-      "CNotGate.is_Vector",
-      "CNotGate.is_Wild",
-      "Gate.__floordiv__",
-      "Gate.__rfloordiv__",
-      "Gate.__rmod__",
-      "Gate.__truediv__",
-      "Gate.fromiter",
-      "Gate.is_Add",
-      "Gate.is_AlgebraicNumber",
-      "Gate.is_Atom",
-      "Gate.is_Boolean",
-      "Gate.is_Derivative",
-      "Gate.is_Dummy",
-      "Gate.is_Equality",
-      "Gate.is_Float",
-      "Gate.is_Indexed",
-      "Gate.is_Integer",
-      "Gate.is_MatAdd",
-      "Gate.is_MatMul",
-      "Gate.is_Matrix",
-      "Gate.is_Mul",
-      "Gate.is_Not",
-      "Gate.is_NumberSymbol",
-      "Gate.is_Order",
-      "Gate.is_Piecewise",
-      "Gate.is_Point",
-      "Gate.is_Poly",
-      "Gate.is_Pow",
-      "Gate.is_Rational",
-      "Gate.is_Relational",
-      "Gate.is_Symbol",
-      "Gate.is_Vector",
-      "Gate.is_Wild",
-      "H.__floordiv__",
-      "H.__rfloordiv__",
-      "H.__rmod__",
-      "H.fromiter",
-      "H.is_AlgebraicNumber",
-      "H.is_Boolean",
-      "H.is_Derivative",
-      "H.is_Dummy",
-      "H.is_Equality",
-      "H.is_Indexed",
-      "H.is_MatAdd",
-      "H.is_MatMul",
-      "H.is_Not",
-      "H.is_NumberSymbol",
-      "H.is_Order",
-      "H.is_Piecewise",
-      "H.is_Point",
-      "H.is_Poly",
-      "H.is_Relational",
-      "H.is_Vector",
-      "H.is_Wild",
-      "HadamardGate.__floordiv__",
-      "HadamardGate.__rfloordiv__",
-      "HadamardGate.__rmod__",
-      "HadamardGate.__truediv__",
-      "HadamardGate.fromiter",
-      "HadamardGate.is_Add",
-      "HadamardGate.is_AlgebraicNumber",
-      "HadamardGate.is_Atom",
-      "HadamardGate.is_Boolean",
-      "HadamardGate.is_Derivative",
-      "HadamardGate.is_Dummy",
-      "HadamardGate.is_Equality",
-      "HadamardGate.is_Float",
-      "HadamardGate.is_Indexed",
-      "HadamardGate.is_Integer",
-      "HadamardGate.is_MatAdd",
-      "HadamardGate.is_MatMul",
-      "HadamardGate.is_Matrix",
-      "HadamardGate.is_Mul",
-      "HadamardGate.is_Not",
-      "HadamardGate.is_NumberSymbol",
-      "HadamardGate.is_Order",
-      "HadamardGate.is_Piecewise",
-      "HadamardGate.is_Point",
-      "HadamardGate.is_Poly",
-      "HadamardGate.is_Pow",
-      "HadamardGate.is_Rational",
-      "HadamardGate.is_Relational",
-      "HadamardGate.is_Symbol",
-      "HadamardGate.is_Vector",
-      "HadamardGate.is_Wild",
-      "IdentityGate.__floordiv__",
-      "IdentityGate.__rfloordiv__",
-      "IdentityGate.__rmod__",
-      "IdentityGate.__truediv__",
-      "IdentityGate.fromiter",
-      "IdentityGate.is_Add",
-      "IdentityGate.is_AlgebraicNumber",
-      "IdentityGate.is_Atom",
-      "IdentityGate.is_Boolean",
-      "IdentityGate.is_Derivative",
-      "IdentityGate.is_Dummy",
-      "IdentityGate.is_Equality",
-      "IdentityGate.is_Float",
-      "IdentityGate.is_Indexed",
-      "IdentityGate.is_Integer",
-      "IdentityGate.is_MatAdd",
-      "IdentityGate.is_MatMul",
-      "IdentityGate.is_Matrix",
-      "IdentityGate.is_Mul",
-      "IdentityGate.is_Not",
-      "IdentityGate.is_NumberSymbol",
-      "IdentityGate.is_Order",
-      "IdentityGate.is_Piecewise",
-      "IdentityGate.is_Point",
-      "IdentityGate.is_Poly",
-      "IdentityGate.is_Pow",
-      "IdentityGate.is_Rational",
-      "IdentityGate.is_Relational",
-      "IdentityGate.is_Symbol",
-      "IdentityGate.is_Vector",
-      "IdentityGate.is_Wild",
-      "OneQubitGate.__floordiv__",
-      "OneQubitGate.__rfloordiv__",
-      "OneQubitGate.__rmod__",
-      "OneQubitGate.__truediv__",
-      "OneQubitGate.fromiter",
-      "OneQubitGate.is_Add",
-      "OneQubitGate.is_AlgebraicNumber",
-      "OneQubitGate.is_Atom",
-      "OneQubitGate.is_Boolean",
-      "OneQubitGate.is_Derivative",
-      "OneQubitGate.is_Dummy",
-      "OneQubitGate.is_Equality",
-      "OneQubitGate.is_Float",
-      "OneQubitGate.is_Indexed",
-      "OneQubitGate.is_Integer",
-      "OneQubitGate.is_MatAdd",
-      "OneQubitGate.is_MatMul",
-      "OneQubitGate.is_Matrix",
-      "OneQubitGate.is_Mul",
-      "OneQubitGate.is_Not",
-      "OneQubitGate.is_NumberSymbol",
-      "OneQubitGate.is_Order",
-      "OneQubitGate.is_Piecewise",
-      "OneQubitGate.is_Point",
-      "OneQubitGate.is_Poly",
-      "OneQubitGate.is_Pow",
-      "OneQubitGate.is_Rational",
-      "OneQubitGate.is_Relational",
-      "OneQubitGate.is_Symbol",
-      "OneQubitGate.is_Vector",
-      "OneQubitGate.is_Wild",
-      "PhaseGate.__floordiv__",
-      "PhaseGate.__rfloordiv__",
-      "PhaseGate.__rmod__",
-      "PhaseGate.__truediv__",
-      "PhaseGate.fromiter",
-      "PhaseGate.is_Add",
-      "PhaseGate.is_AlgebraicNumber",
-      "PhaseGate.is_Atom",
-      "PhaseGate.is_Boolean",
-      "PhaseGate.is_Derivative",
-      "PhaseGate.is_Dummy",
-      "PhaseGate.is_Equality",
-      "PhaseGate.is_Float",
-      "PhaseGate.is_Indexed",
-      "PhaseGate.is_Integer",
-      "PhaseGate.is_MatAdd",
-      "PhaseGate.is_MatMul",
-      "PhaseGate.is_Matrix",
-      "PhaseGate.is_Mul",
-      "PhaseGate.is_Not",
-      "PhaseGate.is_NumberSymbol",
-      "PhaseGate.is_Order",
-      "PhaseGate.is_Piecewise",
-      "PhaseGate.is_Point",
-      "PhaseGate.is_Poly",
-      "PhaseGate.is_Pow",
-      "PhaseGate.is_Rational",
-      "PhaseGate.is_Relational",
-      "PhaseGate.is_Symbol",
-      "PhaseGate.is_Vector",
-      "PhaseGate.is_Wild",
-      "SWAP.__floordiv__",
-      "SWAP.__rfloordiv__",
-      "SWAP.__rmod__",
-      "SWAP.__truediv__",
-      "SWAP.fromiter",
-      "SWAP.is_Add",
-      "SWAP.is_AlgebraicNumber",
-      "SWAP.is_Atom",
-      "SWAP.is_Boolean",
-      "SWAP.is_Derivative",
-      "SWAP.is_Dummy",
-      "SWAP.is_Equality",
-      "SWAP.is_Float",
-      "SWAP.is_Indexed",
-      "SWAP.is_Integer",
-      "SWAP.is_MatAdd",
-      "SWAP.is_MatMul",
-      "SWAP.is_Matrix",
-      "SWAP.is_Mul",
-      "SWAP.is_Not",
-      "SWAP.is_NumberSymbol",
-      "SWAP.is_Order",
-      "SWAP.is_Piecewise",
-      "SWAP.is_Point",
-      "SWAP.is_Poly",
-      "SWAP.is_Pow",
-      "SWAP.is_Rational",
-      "SWAP.is_Relational",
-      "SWAP.is_Symbol",
-      "SWAP.is_Vector",
-      "SWAP.is_Wild",
-      "SwapGate.__floordiv__",
-      "SwapGate.__rfloordiv__",
-      "SwapGate.__rmod__",
-      "SwapGate.__truediv__",
-      "SwapGate.fromiter",
-      "SwapGate.is_Add",
-      "SwapGate.is_AlgebraicNumber",
-      "SwapGate.is_Atom",
-      "SwapGate.is_Boolean",
-      "SwapGate.is_Derivative",
-      "SwapGate.is_Dummy",
-      "SwapGate.is_Equality",
-      "SwapGate.is_Float",
-      "SwapGate.is_Indexed",
-      "SwapGate.is_Integer",
-      "SwapGate.is_MatAdd",
-      "SwapGate.is_MatMul",
-      "SwapGate.is_Matrix",
-      "SwapGate.is_Mul",
-      "SwapGate.is_Not",
-      "SwapGate.is_NumberSymbol",
-      "SwapGate.is_Order",
-      "SwapGate.is_Piecewise",
-      "SwapGate.is_Point",
-      "SwapGate.is_Poly",
-      "SwapGate.is_Pow",
-      "SwapGate.is_Rational",
-      "SwapGate.is_Relational",
-      "SwapGate.is_Symbol",
-      "SwapGate.is_Vector",
-      "SwapGate.is_Wild",
-      "T.__floordiv__",
-      "T.__rfloordiv__",
-      "T.__rmod__",
-      "T.__truediv__",
-      "T.fromiter",
-      "T.is_Add",
-      "T.is_AlgebraicNumber",
-      "T.is_Atom",
-      "T.is_Boolean",
-      "T.is_Derivative",
-      "T.is_Dummy",
-      "T.is_Equality",
-      "T.is_Float",
-      "T.is_Indexed",
-      "T.is_Integer",
-      "T.is_MatAdd",
-      "T.is_MatMul",
-      "T.is_Matrix",
-      "T.is_Mul",
-      "T.is_Not",
-      "T.is_NumberSymbol",
-      "T.is_Order",
-      "T.is_Piecewise",
-      "T.is_Point",
-      "T.is_Poly",
-      "T.is_Pow",
-      "T.is_Rational",
-      "T.is_Relational",
-      "T.is_Symbol",
-      "T.is_Vector",
-      "T.is_Wild",
-      "TGate.__floordiv__",
-      "TGate.__rfloordiv__",
-      "TGate.__rmod__",
-      "TGate.__truediv__",
-      "TGate.fromiter",
-      "TGate.is_Add",
-      "TGate.is_AlgebraicNumber",
-      "TGate.is_Atom",
-      "TGate.is_Boolean",
-      "TGate.is_Derivative",
-      "TGate.is_Dummy",
-      "TGate.is_Equality",
-      "TGate.is_Float",
-      "TGate.is_Indexed",
-      "TGate.is_Integer",
-      "TGate.is_MatAdd",
-      "TGate.is_MatMul",
-      "TGate.is_Matrix",
-      "TGate.is_Mul",
-      "TGate.is_Not",
-      "TGate.is_NumberSymbol",
-      "TGate.is_Order",
-      "TGate.is_Piecewise",
-      "TGate.is_Point",
-      "TGate.is_Poly",
-      "TGate.is_Pow",
-      "TGate.is_Rational",
-      "TGate.is_Relational",
-      "TGate.is_Symbol",
-      "TGate.is_Vector",
-      "TGate.is_Wild",
-      "TwoQubitGate.__floordiv__",
-      "TwoQubitGate.__rfloordiv__",
-      "TwoQubitGate.__rmod__",
-      "TwoQubitGate.__truediv__",
-      "TwoQubitGate.fromiter",
-      "TwoQubitGate.is_Add",
-      "TwoQubitGate.is_AlgebraicNumber",
-      "TwoQubitGate.is_Atom",
-      "TwoQubitGate.is_Boolean",
-      "TwoQubitGate.is_Derivative",
-      "TwoQubitGate.is_Dummy",
-      "TwoQubitGate.is_Equality",
-      "TwoQubitGate.is_Float",
-      "TwoQubitGate.is_Indexed",
-      "TwoQubitGate.is_Integer",
-      "TwoQubitGate.is_MatAdd",
-      "TwoQubitGate.is_MatMul",
-      "TwoQubitGate.is_Matrix",
-      "TwoQubitGate.is_Mul",
-      "TwoQubitGate.is_Not",
-      "TwoQubitGate.is_NumberSymbol",
-      "TwoQubitGate.is_Order",
-      "TwoQubitGate.is_Piecewise",
-      "TwoQubitGate.is_Point",
-      "TwoQubitGate.is_Poly",
-      "TwoQubitGate.is_Pow",
-      "TwoQubitGate.is_Rational",
-      "TwoQubitGate.is_Relational",
-      "TwoQubitGate.is_Symbol",
-      "TwoQubitGate.is_Vector",
-      "TwoQubitGate.is_Wild",
-      "UGate.__floordiv__",
-      "UGate.__rfloordiv__",
-      "UGate.__rmod__",
-      "UGate.__truediv__",
-      "UGate.fromiter",
-      "UGate.is_Add",
-      "UGate.is_AlgebraicNumber",
-      "UGate.is_Atom",
-      "UGate.is_Boolean",
-      "UGate.is_Derivative",
-      "UGate.is_Dummy",
-      "UGate.is_Equality",
-      "UGate.is_Float",
-      "UGate.is_Indexed",
-      "UGate.is_Integer",
-      "UGate.is_MatAdd",
-      "UGate.is_MatMul",
-      "UGate.is_Matrix",
-      "UGate.is_Mul",
-      "UGate.is_Not",
-      "UGate.is_NumberSymbol",
-      "UGate.is_Order",
-      "UGate.is_Piecewise",
-      "UGate.is_Point",
-      "UGate.is_Poly",
-      "UGate.is_Pow",
-      "UGate.is_Rational",
-      "UGate.is_Relational",
-      "UGate.is_Symbol",
-      "UGate.is_Vector",
-      "UGate.is_Wild",
-      "X.__floordiv__",
-      "X.__rfloordiv__",
-      "X.__rmod__",
-      "X.__truediv__",
-      "X.fromiter",
-      "X.is_Add",
-      "X.is_AlgebraicNumber",
-      "X.is_Atom",
-      "X.is_Boolean",
-      "X.is_Derivative",
-      "X.is_Dummy",
-      "X.is_Equality",
-      "X.is_Float",
-      "X.is_Indexed",
-      "X.is_Integer",
-      "X.is_MatAdd",
-      "X.is_MatMul",
-      "X.is_Matrix",
-      "X.is_Mul",
-      "X.is_Not",
-      "X.is_NumberSymbol",
-      "X.is_Order",
-      "X.is_Piecewise",
-      "X.is_Point",
-      "X.is_Poly",
-      "X.is_Pow",
-      "X.is_Rational",
-      "X.is_Relational",
-      "X.is_Symbol",
-      "X.is_Vector",
-      "X.is_Wild",
-      "XGate.__floordiv__",
-      "XGate.__rfloordiv__",
-      "XGate.__rmod__",
-      "XGate.__truediv__",
-      "XGate.fromiter",
-      "XGate.is_Add",
-      "XGate.is_AlgebraicNumber",
-      "XGate.is_Atom",
-      "XGate.is_Boolean",
-      "XGate.is_Derivative",
-      "XGate.is_Dummy",
-      "XGate.is_Equality",
-      "XGate.is_Float",
-      "XGate.is_Indexed",
-      "XGate.is_Integer",
-      "XGate.is_MatAdd",
-      "XGate.is_MatMul",
-      "XGate.is_Matrix",
-      "XGate.is_Mul",
-      "XGate.is_Not",
-      "XGate.is_NumberSymbol",
-      "XGate.is_Order",
-      "XGate.is_Piecewise",
-      "XGate.is_Point",
-      "XGate.is_Poly",
-      "XGate.is_Pow",
-      "XGate.is_Rational",
-      "XGate.is_Relational",
-      "XGate.is_Symbol",
-      "XGate.is_Vector",
-      "XGate.is_Wild",
-      "Y.__floordiv__",
-      "Y.__rfloordiv__",
-      "Y.__rmod__",
-      "Y.__truediv__",
-      "Y.fromiter",
-      "Y.is_Add",
-      "Y.is_AlgebraicNumber",
-      "Y.is_Atom",
-      "Y.is_Boolean",
-      "Y.is_Derivative",
-      "Y.is_Dummy",
-      "Y.is_Equality",
-      "Y.is_Float",
-      "Y.is_Indexed",
-      "Y.is_Integer",
-      "Y.is_MatAdd",
-      "Y.is_MatMul",
-      "Y.is_Matrix",
-      "Y.is_Mul",
-      "Y.is_Not",
-      "Y.is_NumberSymbol",
-      "Y.is_Order",
-      "Y.is_Piecewise",
-      "Y.is_Point",
-      "Y.is_Poly",
-      "Y.is_Pow",
-      "Y.is_Rational",
-      "Y.is_Relational",
-      "Y.is_Symbol",
-      "Y.is_Vector",
-      "Y.is_Wild",
-      "YGate.__floordiv__",
-      "YGate.__rfloordiv__",
-      "YGate.__rmod__",
-      "YGate.__truediv__",
-      "YGate.fromiter",
-      "YGate.is_Add",
-      "YGate.is_AlgebraicNumber",
-      "YGate.is_Atom",
-      "YGate.is_Boolean",
-      "YGate.is_Derivative",
-      "YGate.is_Dummy",
-      "YGate.is_Equality",
-      "YGate.is_Float",
-      "YGate.is_Indexed",
-      "YGate.is_Integer",
-      "YGate.is_MatAdd",
-      "YGate.is_MatMul",
-      "YGate.is_Matrix",
-      "YGate.is_Mul",
-      "YGate.is_Not",
-      "YGate.is_NumberSymbol",
-      "YGate.is_Order",
-      "YGate.is_Piecewise",
-      "YGate.is_Point",
-      "YGate.is_Poly",
-      "YGate.is_Pow",
-      "YGate.is_Rational",
-      "YGate.is_Relational",
-      "YGate.is_Symbol",
-      "YGate.is_Vector",
-      "YGate.is_Wild",
-      "Z.__floordiv__",
-      "Z.__rfloordiv__",
-      "Z.__rmod__",
-      "Z.__truediv__",
-      "Z.fromiter",
-      "Z.is_Add",
-      "Z.is_AlgebraicNumber",
-      "Z.is_Atom",
-      "Z.is_Boolean",
-      "Z.is_Derivative",
-      "Z.is_Dummy",
-      "Z.is_Equality",
-      "Z.is_Float",
-      "Z.is_Indexed",
-      "Z.is_Integer",
-      "Z.is_MatAdd",
-      "Z.is_MatMul",
-      "Z.is_Matrix",
-      "Z.is_Mul",
-      "Z.is_Not",
-      "Z.is_NumberSymbol",
-      "Z.is_Order",
-      "Z.is_Piecewise",
-      "Z.is_Point",
-      "Z.is_Poly",
-      "Z.is_Pow",
-      "Z.is_Rational",
-      "Z.is_Relational",
-      "Z.is_Symbol",
-      "Z.is_Vector",
-      "Z.is_Wild",
-      "ZGate.__floordiv__",
-      "ZGate.__rfloordiv__",
-      "ZGate.__rmod__",
-      "ZGate.__truediv__",
-      "ZGate.fromiter",
-      "ZGate.is_Add",
-      "ZGate.is_AlgebraicNumber",
-      "ZGate.is_Atom",
-      "ZGate.is_Boolean",
-      "ZGate.is_Derivative",
-      "ZGate.is_Dummy",
-      "ZGate.is_Equality",
-      "ZGate.is_Float",
-      "ZGate.is_Indexed",
-      "ZGate.is_Integer",
-      "ZGate.is_MatAdd",
-      "ZGate.is_MatMul",
-      "ZGate.is_Matrix",
-      "ZGate.is_Mul",
-      "ZGate.is_Not",
-      "ZGate.is_NumberSymbol",
-      "ZGate.is_Order",
-      "ZGate.is_Piecewise",
-      "ZGate.is_Point",
-      "ZGate.is_Poly",
-      "ZGate.is_Pow",
-      "ZGate.is_Rational",
-      "ZGate.is_Relational",
-      "ZGate.is_Symbol",
-      "ZGate.is_Vector",
-      "ZGate.is_Wild"
-     ],
-     "internalNames": [
-      "CGate.default_assumptions",
-      "CGate.expr_free_symbols",
-      "CGateS.default_assumptions",
-      "CGateS.expr_free_symbols",
-      "CNOT.default_assumptions",
-      "CNOT.expr_free_symbols",
-      "CNotGate.default_assumptions",
-      "CNotGate.expr_free_symbols",
-      "Gate.default_assumptions",
-      "Gate.expr_free_symbols",
-      "H.default_assumptions",
-      "H.expr_free_symbols",
-      "HadamardGate.default_assumptions",
-      "HadamardGate.expr_free_symbols",
-      "IdentityGate.default_assumptions",
-      "IdentityGate.expr_free_symbols",
-      "OneQubitGate.default_assumptions",
-      "OneQubitGate.expr_free_symbols",
-      "PhaseGate.default_assumptions",
-      "PhaseGate.expr_free_symbols",
-      "SWAP.default_assumptions",
-      "SWAP.expr_free_symbols",
-      "SwapGate.default_assumptions",
-      "SwapGate.expr_free_symbols",
-      "T.default_assumptions",
-      "T.expr_free_symbols",
-      "TGate.default_assumptions",
-      "TGate.expr_free_symbols",
-      "TwoQubitGate.default_assumptions",
-      "TwoQubitGate.expr_free_symbols",
-      "UGate.default_assumptions",
-      "UGate.expr_free_symbols",
-      "X.default_assumptions",
-      "X.expr_free_symbols",
-      "XGate.default_assumptions",
-      "XGate.expr_free_symbols",
-      "Y.default_assumptions",
-      "Y.expr_free_symbols",
-      "YGate.default_assumptions",
-      "YGate.expr_free_symbols",
-      "Z.default_assumptions",
-      "Z.expr_free_symbols",
-      "ZGate.default_assumptions",
-      "ZGate.expr_free_symbols"
-     ],
-     "unresolvedBases": []
-    },
-    "doctests": {
-     "pass": false,
-     "caseCount": 0,
-     "gapCount": 0,
-     "failingIds": [],
-     "disallowedExclusions": {},
-     "disallowedOmissions": {},
-     "unaccountedExamples": 3,
-     "notSelected": true
-    },
-    "unitTests": {
-     "pass": false,
-     "applicable": true,
-     "testModule": "sympy.physics.quantum.tests.test_gate",
-     "testFile": "sympy/physics/quantum/tests/test_gate.py",
-     "inCorpus": false,
-     "caseCount": 0,
-     "gapCount": 0,
-     "timeoutCount": 0,
-     "disallowedOmissions": {},
-     "incompleteTests": {}
-    },
-    "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "extend package @symjs/physics-quantum",
-     "capabilities": []
-    }
-   },
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 3,
@@ -82148,7 +79813,7 @@
    "module": "sympy.physics.quantum.grover",
    "sha256": "d7b282e4c251ddc09abe6cea46a8bd741e4e1533a9b188dfad366ebf4dc78ae1",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82169,7 +79834,7 @@
    "module": "sympy.physics.quantum.hilbert",
    "sha256": "aab8daf76bc5ec151e4b21ce2ca557f3e5ca70f193ed0690316aea5978d136eb",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82210,7 +79875,7 @@
    "module": "sympy.physics.quantum.identitysearch",
    "sha256": "661fe38b927461e032d807b3b1070757d5b689c5a869add9c136df8c2090989a",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82239,7 +79904,7 @@
    "module": "sympy.physics.quantum.innerproduct",
    "sha256": "34a949b9f874ebc0b731e281391246f24ef3747fef1897a8ee3947ebb3ea53b1",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82255,7 +79920,7 @@
    "module": "sympy.physics.quantum.kind",
    "sha256": "a1d272ae23d92b289ebdd76f958fa492cf220424a2d7267b244b1a2c0347a1ee",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82273,7 +79938,7 @@
    "module": "sympy.physics.quantum.matrixcache",
    "sha256": "4ba7cf9246267d7f042c139cf44493fbc5e743582da523817ddd8ac0b18a758a",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82288,7 +79953,7 @@
    "module": "sympy.physics.quantum.matrixutils",
    "sha256": "e77546794358369535780d6c35c605697d7fe3923d49569b09fa53c875031688",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82315,7 +79980,7 @@
    "module": "sympy.physics.quantum.operator",
    "sha256": "43eba252301980c3971caa0115eda85bfa89b094a30bc7ccdb8eb2cf13266740",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82344,7 +80009,7 @@
    "module": "sympy.physics.quantum.operatorordering",
    "sha256": "6f203264234a4c2785588153866371d0d81d238bb7d8ee3276875849ae96aebf",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82358,7 +80023,7 @@
    "module": "sympy.physics.quantum.operatorset",
    "sha256": "87c9e449ca50714cc23b7cde9aa2a98107c90d68816df8f7dc8273725e09dbfe",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82372,7 +80037,7 @@
    "module": "sympy.physics.quantum.pauli",
    "sha256": "973c561475eac4a5918982bdf500a8f73b951bd7955e207cbc5c9aed3beb5714",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82400,7 +80065,7 @@
    "module": "sympy.physics.quantum.piab",
    "sha256": "6636f67111a78950d5e9edf98233f8b84a48e30d02ed81902045d179aabfcfe1",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82417,7 +80082,7 @@
    "module": "sympy.physics.quantum.qapply",
    "sha256": "e6fa967bffd646f26e0fab160b63530ded6a11c4e80464c66b27bd9738ab81fe",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82433,7 +80098,7 @@
    "module": "sympy.physics.quantum.qasm",
    "sha256": "516a5c50806090ae794a6101665a66cfed4a18766f5bb74d792546f2d1ebe380",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82478,7 +80143,7 @@
    "module": "sympy.physics.quantum.qexpr",
    "sha256": "37ceec53902a15b1845e01c9a1ff81eee6b8eab93849ecac2b5e9a6d4d467d82",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82498,7 +80163,7 @@
    "module": "sympy.physics.quantum.qft",
    "sha256": "b9ae2a050026fa08bddb79514713a001e6d3b130a847dde9cfc6473d705d72eb",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82527,7 +80192,7 @@
    "module": "sympy.physics.quantum.qubit",
    "sha256": "984d3179bcfccea78a11ce31c30f7e22feed673c478e6f4a96caf65a05107153",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82561,7 +80226,7 @@
    "module": "sympy.physics.quantum.represent",
    "sha256": "74163d44b0f6d55d16b8805b8a06a08da2d25028a5a03ce2b6ff1697a7d4f5d1",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82579,7 +80244,7 @@
    "module": "sympy.physics.quantum.sho1d",
    "sha256": "66ba11fc58f19a33a60dc774166d38bd6293182a6f2da12ee0d8aea652a6ef4f",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82602,7 +80267,7 @@
    "module": "sympy.physics.quantum.shor",
    "sha256": "0d5c0fc4b00f4abf2ddc5dda5c920f7b8a395d2b90884e9ae9e03a39899d645c",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82623,7 +80288,7 @@
    "module": "sympy.physics.quantum.spin",
    "sha256": "97ad7af1f4c46440b815e68c4bc88baa8ddbe1832f5253d366fabd37c892574f",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82715,7 +80380,7 @@
    "module": "sympy.physics.quantum.state",
    "sha256": "eb5f18683180b6951eb9609562cea50ee3b7983f3bfdff0a2141945da37d2f8b",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82765,7 +80430,7 @@
    "module": "sympy.physics.quantum.tensorproduct",
    "sha256": "3efa434ae2e4bb521d215dd3d9d2b77d5bfa01d30d55c739791f27df8001dce4",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82788,7 +80453,7 @@
    "module": "sympy.physics.quantum.trace",
    "sha256": "d99a8df4812ccf72ca1d32d5f190f04cad2c3393dfc0bd29dac61eb7437b1a2b",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -82805,7 +80470,7 @@
    "module": "sympy.physics.quantum.transforms",
    "sha256": "5cb9d69b2a165bca1727c23b754205edc33116df71afbdfa1df36cb43fed9cad",
    "status": "extend",
-   "note": "extend package @symjs/physics-quantum (not ported yet)",
+   "note": "extend package @symjs/physics-quantum",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -84498,8 +82163,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -84701,8 +82365,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -84794,8 +82457,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -84874,8 +82536,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -84935,8 +82596,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -85012,8 +82672,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -85072,8 +82731,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -85130,8 +82788,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -85695,8 +83352,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -85824,8 +83480,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -85884,8 +83539,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -88762,8 +86416,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -88991,8 +86644,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Commutative algebra modules",
@@ -89184,8 +86836,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Commutative algebra modules",
@@ -89341,8 +86992,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Commutative algebra modules",
@@ -89463,8 +87113,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Commutative algebra modules",
@@ -89714,8 +87363,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Commutative algebra modules",
@@ -89864,8 +87512,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.",
+     "limitation": "Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.",
      "capabilities": [
       {
        "area": "Appell polynomial sequences",
@@ -90075,8 +87722,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -90429,8 +88075,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -90482,8 +88127,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -90603,8 +88247,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -90718,9 +88361,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result).",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -90813,8 +88455,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "Univariate dispersion sets via factor pairs and exact shifts; inherits the supported coefficient domains of Poly.factorList.",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Polynomial dispersion and linear systems",
@@ -90876,8 +88517,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -90954,8 +88594,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -91803,8 +89442,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -91957,8 +89595,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -92160,8 +89797,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -92295,8 +89931,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -92503,8 +90138,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -92644,8 +90278,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -92780,8 +90413,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -92913,8 +90545,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -93068,8 +90699,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -93254,8 +90884,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -93399,8 +91028,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -93557,8 +91185,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -93834,8 +91461,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -94134,8 +91760,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -94221,8 +91846,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -94299,9 +91923,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -94439,8 +92062,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -94851,8 +92473,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Commutative algebra modules",
@@ -95037,8 +92658,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -95292,8 +92912,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Commutative algebra modules",
@@ -95456,8 +93075,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -95611,8 +93229,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -95818,8 +93435,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -96007,8 +93623,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -96108,8 +93723,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -96243,8 +93857,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -96328,8 +93941,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -96344,7 +93956,7 @@
    "module": "sympy.polys.fields",
    "sha256": "45d48390e96cea7f3bcaf1c6d4a5c59c69e0d094b7480714025cf8b536f54591",
    "status": "partial",
-   "note": "Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.",
+   "note": "Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration remains partial.",
    "sources": [
     "polys/fields.ts"
    ],
@@ -96396,16 +94008,13 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.",
+     "limitation": "Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration remains partial.",
      "capabilities": [
       {
        "area": "Rational function fields",
        "remaining": [
-        "Composition (also unimplemented in SymPy 1.14)",
         "General nested coefficient fields and algebraic coefficient domains",
-        "Domain wrappers beyond ZZ, QQ and RR with symbol generators",
-        "Python caller-namespace injection for vfield is represented by F.gens"
+        "Domain wrappers beyond ZZ, QQ and RR with symbol generators"
        ]
       }
      ]
@@ -96507,8 +94116,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Finite-domain polynomials",
@@ -96644,8 +94252,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -96724,8 +94331,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -96780,8 +94386,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -96938,8 +94543,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97062,8 +94666,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97158,8 +94761,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97319,8 +94921,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97386,8 +94987,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97438,8 +95038,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97498,8 +95097,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97552,8 +95150,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97606,8 +95203,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97667,8 +95263,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97732,8 +95327,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97863,8 +95457,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -97940,8 +95533,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98021,8 +95613,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98088,8 +95679,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98150,8 +95740,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Number fields",
@@ -98213,8 +95802,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98230,7 +95818,7 @@
   {
    "module": "sympy.polys.numberfields.galois_resolvents",
    "sha256": "38bdeef86eac0b0bd9b81bae6103b44292fec16c6d8f115a06355086d890fd9f",
-   "status": "partial",
+   "status": "complete",
    "note": "SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_galois_resolvents.py); Resolvent and the lookup resolvents are exercised through test_galoisgroups and the doctests.",
    "sources": [
     "polys/numberfields/galoisresolvents.ts"
@@ -98266,9 +95854,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_galois_resolvents.py); Resolvent and the lookup resolvents are exercised through test_galoisgroups and the doctests.",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98331,8 +95918,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98392,8 +95978,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98489,8 +96074,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98645,8 +96229,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98673,7 +96256,7 @@
   {
    "module": "sympy.polys.numberfields.resolvent_lookup",
    "sha256": "a9f2cd28ecff5a3b57c295657f3cbc1240f8830d767a9c7d9e913d1ec8f221d8",
-   "status": "partial",
+   "status": "complete",
    "note": "SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_resolvent_lookup.py); the table is exercised through test_galoisgroups.",
    "sources": [
     "polys/numberfields/resolventlookup.ts"
@@ -98709,9 +96292,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_resolvent_lookup.py); the table is exercised through test_galoisgroups.",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -98765,8 +96347,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Number fields",
@@ -98839,8 +96420,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.",
+     "limitation": "Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.",
      "capabilities": [
       {
        "area": "Indexed roots and algebraic polynomials",
@@ -98949,8 +96529,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -99032,8 +96611,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -99108,8 +96686,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -99624,8 +97201,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -100003,8 +97579,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -100086,8 +97661,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -100169,8 +97743,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -100224,8 +97797,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -100589,8 +98161,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -100710,8 +98281,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -100793,8 +98363,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -101290,8 +98859,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Indexed roots and algebraic polynomials",
@@ -101610,8 +99178,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -101677,8 +99244,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain",
+     "limitation": "PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain",
      "capabilities": []
     }
    },
@@ -101757,8 +99323,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -101820,8 +99385,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented",
+     "limitation": "truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented",
      "capabilities": []
     }
    },
@@ -102072,8 +99636,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -102327,8 +99890,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -102580,8 +100142,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.",
+     "limitation": "Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.",
      "capabilities": [
       {
        "area": "Indexed roots and algebraic polynomials",
@@ -102794,8 +100355,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "sympyEqsToRing, eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Polynomial dispersion and linear systems",
@@ -102870,8 +100430,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -102953,8 +100512,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103058,8 +100616,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103175,8 +100732,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103327,8 +100883,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103394,8 +100949,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103449,8 +101003,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103620,8 +101173,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103751,8 +101303,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103851,8 +101402,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103910,8 +101460,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -103977,8 +101526,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -104050,8 +101598,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -104166,8 +101713,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -104263,8 +101809,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -104398,8 +101943,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -104511,8 +102055,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -104571,8 +102114,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -104657,8 +102199,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -105002,8 +102543,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -105076,8 +102616,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "richardson/shanks of SymPy are symbolic: unassessed beyond the mpmath counterparts",
+     "limitation": "richardson/shanks of SymPy are symbolic: unassessed beyond the mpmath counterparts",
      "capabilities": []
     }
    },
@@ -105133,8 +102672,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -105184,8 +102722,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -105774,8 +103311,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -106024,8 +103560,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -106129,8 +103664,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -106196,8 +103730,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -106288,8 +103821,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -106348,8 +103880,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -106441,8 +103972,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -106501,8 +104031,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -106940,8 +104469,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -107054,8 +104582,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -107138,8 +104665,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -108180,8 +105706,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -108325,8 +105850,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -108416,8 +105940,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109499,8 +107022,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109586,8 +107108,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109635,8 +107156,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109684,8 +107204,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109733,8 +107252,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109782,8 +107300,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109831,8 +107348,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109880,8 +107396,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109929,8 +107444,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -109978,8 +107492,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -110326,8 +107839,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -110467,8 +107979,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -110555,8 +108066,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -111453,8 +108963,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -111617,8 +109126,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -111663,8 +109171,7 @@
   {
    "module": "sympy.simplify._cse_diff",
    "sha256": "36ad605e7dbba35bfcdedfff49052e69c9cea21872c1adfdb9c3da4768c3e75f",
-   "status": "partial",
-   "note": "private CSE of Jacobians (forward differentiation)",
+   "status": "complete",
    "sources": [
     "simplify/csemain.ts"
    ],
@@ -111699,9 +109206,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "private CSE of Jacobians (forward differentiation)",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -111749,8 +109255,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -111823,8 +109328,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -111896,8 +109400,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -111950,8 +109453,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112015,8 +109517,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112096,8 +109597,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112361,8 +109861,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112480,8 +109979,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112541,8 +110039,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112608,8 +110105,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112682,8 +110178,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112759,8 +110254,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112779,8 +110273,7 @@
   {
    "module": "sympy.simplify.traversaltools",
    "sha256": "a67fedf58ae4fd22f55f4be5fb3551eb265ac64636e43e0cc1306fe32c270f56",
-   "status": "partial",
-   "note": "deprecated alias of use",
+   "status": "complete",
    "sources": [
     "core/traverse.ts"
    ],
@@ -112815,9 +110308,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": true,
-     "note": "deprecated alias of use",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112872,8 +110364,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -112927,8 +110418,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113028,8 +110518,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113079,8 +110568,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113134,8 +110622,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113185,8 +110672,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113272,8 +110758,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113412,8 +110897,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113475,8 +110959,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113542,8 +111025,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113611,8 +111093,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113674,8 +111155,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113751,8 +111231,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -113854,8 +111333,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -114171,8 +111649,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -114268,8 +111745,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -114339,8 +111815,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -114405,14 +111880,11 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "PDE",
        "remaining": [
-        "Higher-order PDE solving",
-        "Boundary and initial conditions",
         "Parameter specializations that change equation class"
        ]
       }
@@ -114479,8 +111951,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -114543,8 +112014,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -114604,8 +112074,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -114682,18 +112151,9 @@
      }
     },
     "limitations": {
-     "pass": false,
-     "hasNote": false,
-     "note": "",
-     "capabilities": [
-      {
-       "area": "Solution checking",
-       "remaining": [
-        "General implicit solutions",
-        "Proof of arbitrary transcendental identities"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -114776,18 +112236,9 @@
      }
     },
     "limitations": {
-     "pass": false,
-     "hasNote": false,
-     "note": "",
-     "capabilities": [
-      {
-       "area": "Nonlinear systems",
-       "remaining": [
-        "General multivariate transcendental systems",
-        "General ConditionSet solutions and completeness proofs"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -115543,8 +112994,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -115811,8 +113261,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -116183,8 +113632,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -117739,8 +115187,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -118241,8 +115688,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -118610,8 +116056,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -118704,8 +116149,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -118989,8 +116433,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -119395,8 +116838,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -119654,8 +117096,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -120039,8 +117480,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -120322,8 +117762,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -120440,8 +117879,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -120739,8 +118177,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -121256,8 +118693,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -121404,8 +118840,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -121573,8 +119008,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122040,8 +119474,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122268,8 +119701,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122512,8 +119944,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122582,8 +120013,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122660,8 +120090,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122735,8 +120164,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122798,8 +120226,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122855,8 +120282,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122913,8 +120339,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -122978,8 +120403,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123038,8 +120462,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123098,8 +120521,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123165,8 +120587,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123221,8 +120642,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123465,8 +120885,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123687,8 +121106,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123817,8 +121235,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123922,8 +121339,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -123984,8 +121400,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -124077,8 +121492,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -124492,8 +121906,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -124929,8 +122342,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125045,8 +122457,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125109,8 +122520,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125170,8 +122580,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125231,8 +122640,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125292,8 +122700,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125353,8 +122760,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125420,8 +122826,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125486,8 +122891,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125549,8 +122953,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125612,8 +123015,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": [
       {
        "area": "Array expressions",
@@ -125702,8 +123104,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -125877,8 +123278,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -125985,8 +123385,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -126086,8 +123485,7 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": true,
-     "note": "shape, NoShapeError; TensorProduct not ported",
+     "limitation": "shape, NoShapeError; TensorProduct not ported",
      "capabilities": []
     }
    },
@@ -126143,8 +123541,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -126309,8 +123706,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -126895,17 +124291,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "hasNote": false,
-     "note": "",
-     "capabilities": [
-      {
-       "area": "Abstract tensors",
-       "remaining": [
-        "Deprecated component data registry (data, set_metric) and the deprecated helpers tensorhead, tensorsymmetry and TensorType"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -127154,8 +124542,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -127403,8 +124790,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -127465,8 +124851,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -127535,8 +124920,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -127596,8 +124980,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -127659,8 +125042,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -127939,8 +125321,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -128014,8 +125395,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -128115,8 +125495,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -128239,8 +125618,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -128354,8 +125732,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -128419,8 +125796,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -129368,8 +126744,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -129744,8 +127119,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -129856,8 +127230,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -129954,8 +127327,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -130171,8 +127543,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -130236,8 +127607,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -130326,8 +127696,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -130417,8 +127786,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -130475,8 +127843,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -130650,8 +128017,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -130880,8 +128246,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -130978,8 +128343,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -131064,8 +128428,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -131153,8 +128516,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -131429,8 +128791,7 @@
     },
     "limitations": {
      "pass": true,
-     "hasNote": false,
-     "note": "",
+     "limitation": "",
      "capabilities": []
     }
    },

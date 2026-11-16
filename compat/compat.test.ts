@@ -110,7 +110,7 @@ it('computes SymPy compatibility metrics', () => {
   const results = corpus.cases.map((c) => ({ c, o: runCase(c) as Outcome, evidence: evidenceFor(c) }));
   const verifiedPass = results.filter(({ o, evidence }) => (o.status === 'pass' || o.status === 'equivalent') && (evidence === 'public-call' || evidence === 'reviewed-conversion')).length;
   const inventory: ScopeInventory = JSON.parse(readFileSync(new URL('../tools/sympy-reference/scope-inventory.json', import.meta.url), 'utf8'));
-  const capabilities = JSON.parse(readFileSync(new URL('../tools/sympy-reference/capabilities.json', import.meta.url), 'utf8')) as { areas: { area: string; status: string; tested: string[]; remaining: string[]; tests: string[] }[] };
+  const capabilities = JSON.parse(readFileSync(new URL('../tools/sympy-reference/capabilities.json', import.meta.url), 'utf8')) as { areas: { area: string; status: string; tested: string[]; remaining: string[]; outOfScope?: string[]; tests: string[] }[] };
   const evidenceCounts = Object.fromEntries(['public-call', 'reviewed-conversion', 'harness-computation', 'unreviewed-adapter', 'unreviewed-translation'].map((evidence) => [evidence, results.filter((r) => r.evidence === evidence).length]));
   const apiEvidence = corpus.api.map((a) => ({ ...a, counterpart: counterpartFor(a) ?? null, status: counterpartFor(a) ? 'present' : 'unverified-or-absent', directCases: corpus.cases.filter((c) => c.category === a.category && c.fn === a.name).length }));
   const ported = corpus.cases.filter((c) => PORTS[`${c.module}:${c.src}`]).length;
@@ -188,9 +188,9 @@ it('computes SymPy compatibility metrics', () => {
     ...Object.entries(evidenceCounts).map(([kind, n]) => `| ${kind} | ${n} |`), '',
     'Every manual adapter is listed in `adapter-inventory.json`. Remaining mathematical helpers are quarantined from the verified count until migrated into public APIs. A change to adapters must update that inventory.', '',
     '## Capability conditions', '',
-    '| Area | Status | Tested conditions | Remaining scope |', '|---|---|---|---|',
-    ...capabilities.areas.map((a) => `| ${a.area} | ${a.status} | ${a.tested.join('; ')} | ${a.remaining.join('; ')} |`), '',
-    'Direct regression-test paths are maintained in `capabilities.json`. Tensor differential operators and unsupported PDE classes remain explicit gaps.', '',
+    '| Area | Status | Tested conditions | Remaining scope | Outside SymPy 1.14\'s scope |', '|---|---|---|---|---|',
+    ...capabilities.areas.map((a) => `| ${a.area} | ${a.status} | ${a.tested.join('; ')} | ${a.remaining.join('; ')} | ${(a.outOfScope ?? []).join('; ')} |`), '',
+    'Direct regression-test paths are maintained in `capabilities.json`. Remaining items block the completeness of the listed modules; items outside SymPy 1.14\'s scope (not in SymPy, Python-specific, deprecated by SymPy or undecidable in general) do not.', '',
   );
   const base = runBaseChecks();
   const basePass = base.filter((b) => b.pass).length;

@@ -175,8 +175,8 @@ class CompletenessTests(unittest.TestCase):
         self.assertFalse(self.evaluate()['unitTests']['pass'])
 
     def test_notes_and_capabilities_block_completion(self):
-        self.assertFalse(self.evaluate(note='Known limitation')['limitations']['pass'])
-        self.assertFalse(self.evaluate(note='')['limitations']['pass'])
+        self.assertFalse(self.evaluate(limitation='Known limitation')['limitations']['pass'])
+        self.assertFalse(self.evaluate(limitation='')['limitations']['pass'])
         self.evidence['limitations'] = [{'area': 'Example', 'modules': ['sympy.example'], 'remaining': ['Missing behavior']}]
         result = self.evaluate()['limitations']
         self.assertFalse(result['pass'])

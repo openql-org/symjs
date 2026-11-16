@@ -434,11 +434,11 @@ CORRESPONDENCES = {
 # package that will hold them). Everything else without a correspondence stays unassessed.
 EXTEND = {}
 # Packages whose modules belong to extend packages rather than the base module,
-# with the package; the most specific prefix wins and a module with a base
-# counterpart stays partial.
-EXTEND_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/physics-quantum (not ported yet)',
+# with the package; the most specific prefix wins.
+EXTEND_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/physics-quantum',
  'sympy.physics': 'per-field extend package (planned)'}
-# Notes on partially implemented modules (what is ported and what is not).
+# Descriptions of partially ported modules (what is ported and how); they do
+# not block completeness.
 NOTES = {
     'sympy.polys.numberfields.galois_resolvents': 'SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_galois_resolvents.py); Resolvent and the lookup resolvents are exercised through test_galoisgroups and the doctests.',
     'sympy.polys.numberfields.resolvent_lookup': 'SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_resolvent_lookup.py); the table is exercised through test_galoisgroups.',
@@ -447,32 +447,33 @@ NOTES = {
     'sympy.diffgeom.diffgeom': 'base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves',
     'sympy.diffgeom.rn': 'base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems',
     'sympy.functions.special.bsplines': 'Cox-de Boor B-spline bases and exact collocation interpolation on strictly increasing real coordinates.',
-    'sympy.matrices.kind': 'Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.',
-    'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.',
-    'sympy.polys.numberfields.utilities': 'Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.',
-    'sympy.polys.rootoftools': 'Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.',
-    'sympy.polys.appellseqs': 'Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.',
     'sympy.polys.densetools': 'All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result).',
     'sympy.polys.dispersion': 'Univariate dispersion sets via factor pairs and exact shifts; inherits the supported coefficient domains of Poly.factorList.',
     'sympy.polys.solvers': 'sympyEqsToRing, eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.',
-    'sympy.polys.puiseux': 'PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain',
-    'sympy.polys.ring_series': 'truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented',
     'sympy.abc': 'symbols(); JavaScript has no module-level symbol namespace',
     'sympy.assumptions.cnf': 'CNF/EncodedCNF encoding used by satisfiable',
-    'sympy.assumptions.sathandlers': 'allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported',
-    'sympy.assumptions.wrapper': 'is_infinite/is_extended_real/is_extended_nonnegative; AssumptionsWrapper not ported',
     'sympy.core.alphabets': 'Greek letter names used by the printers',
     'sympy.core.assumptions_generated': 'generated fact tables of the old assumptions',
     'sympy.core.facts': 'FactRules/FactKB deduction of the old assumptions',
     'sympy.core.operations': 'AssocOp.make_args as Expr.makeArgs; LatticeOp is Min/Max in functions/special/special.ts',
     'sympy.core.singleton': 'S registry',
     'sympy.crypto.crypto': 'lfsr_* take the GF(p) values and a modulus option; NonInvertibleCipherWarning (a Python warning) is not ported',
-    'sympy.functions.elementary._trigonometric_special': 'migcdex, ipartfrac, fermat_coords; the cos_3..cos_257 tables are not ported',
     'sympy.logic.utilities.dimacs': 'load; load_file reads a file (no file system in the base module)',
-    'sympy.physics.quantum.gate': 'extend package @symjs/physics-quantum',
+}
+# What a partially ported module still lacks; a limitation blocks completeness
+# (NOTES only describe a module).
+LIMITATIONS = {
+    'sympy.assumptions.sathandlers': 'allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported',
+    'sympy.assumptions.wrapper': 'is_infinite/is_extended_real/is_extended_nonnegative; AssumptionsWrapper not ported',
+    'sympy.functions.elementary._trigonometric_special': 'migcdex, ipartfrac, fermat_coords; the cos_3..cos_257 tables are not ported',
+    'sympy.matrices.kind': 'Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.',
+    'sympy.polys.appellseqs': 'Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.',
+    'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration remains partial.',
+    'sympy.polys.numberfields.utilities': 'Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.',
+    'sympy.polys.puiseux': 'PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain',
+    'sympy.polys.ring_series': 'truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented',
+    'sympy.polys.rootoftools': 'Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.',
     'sympy.series.acceleration': 'richardson/shanks of SymPy are symbolic: unassessed beyond the mpmath counterparts',
-    'sympy.simplify._cse_diff': 'private CSE of Jacobians (forward differentiation)',
-    'sympy.simplify.traversaltools': 'deprecated alias of use',
     'sympy.tensor.functions': 'shape, NoShapeError; TensorProduct not ported',
 }
 
@@ -846,7 +847,7 @@ def test_module_for(module):
     return (package or module) + '.tests.test_' + name
 
 
-def evaluate_completeness(module, contract, api, evidence, documented_examples=0, selected=True, note=None):
+def evaluate_completeness(module, contract, api, evidence, documented_examples=0, selected=True, limitation=None):
     """Pure criteria logic; unknown omissions and absent measurements fail closed."""
     docs = evidence['doctests'].get(module, [])
     omissions = evidence['doctestOmissions'].get(module, [])
@@ -874,7 +875,7 @@ def evaluate_completeness(module, contract, api, evidence, documented_examples=0
                       'inCorpus': unit.get('exists', False), 'caseCount': unit.get('caseCount', 0),
                       'gapCount': len(gaps), 'timeoutCount': len(unit.get('timeouts', [])),
                       'disallowedOmissions': bad_units, 'incompleteTests': dict(sorted(statuses.items()))},
-        'limitations': {'pass': note is None and not limits, 'hasNote': note is not None, 'note': note or '',
+        'limitations': {'pass': limitation is None and not limits, 'limitation': limitation or '',
                        'capabilities': [{'area': a['area'], 'remaining': a['remaining']} for a in limits]},
     }
 
@@ -966,9 +967,9 @@ def build_inventory(root):
         counterpart = sorted({p for p in counterpart if (source / p).is_file()})
         reason = None if module in EXTEND or module in CORRESPONDENCES else next((why for prefix, why in EXCLUSIONS.items() if module == prefix or module.startswith(prefix + '.')), None)
         package = next((p for p in sorted(EXTEND_PACKAGES, key=len, reverse=True) if module == p or module.startswith(p + '.')), None)
-        status = 'excluded' if reason else 'partial' if counterpart else 'extend' if module in EXTEND or package else 'unassessed'
-        note = NOTES.get(module) or EXTEND.get(module) or (EXTEND_PACKAGES[package] if package and status == 'extend' else '')
-        completeness = evaluate_completeness(module, contract, api, evidence, examples, module in selected, NOTES.get(module)) if status == 'partial' else None
+        status = 'excluded' if reason else 'extend' if module in EXTEND or package else 'partial' if counterpart else 'unassessed'
+        note = NOTES.get(module) or LIMITATIONS.get(module) or EXTEND.get(module) or (EXTEND_PACKAGES[package] if package and status == 'extend' else '')
+        completeness = evaluate_completeness(module, contract, api, evidence, examples, module in selected, LIMITATIONS.get(module)) if status == 'partial' else None
         if completeness and all(c['pass'] for c in completeness.values()):
             status = 'complete'
         rows.append({'module': module, 'sha256': source_hash, 'status': status,
