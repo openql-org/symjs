@@ -31,6 +31,7 @@ API_EXCLUSIONS = {
 }
 
 EXCLUSIONS = {
+    'sympy.core.trace': 'Deprecated by SymPy (since 1.10) as an alias of sympy.physics.quantum.trace.',
     'sympy.plotting.backends': 'Rendering is done by connector packages; backend classes are not part of the base engine.',
     'sympy.plotting.pygletplot': 'Interactive OpenGL rendering is done by connector packages.',
     'sympy.plotting.experimental_lambdify': 'Python source generation is replaced by symjs numeric evaluation.',
@@ -431,9 +432,7 @@ CORRESPONDENCES = {
 }
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
-EXTEND = {
-    'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
-}
+EXTEND = {}
 # Packages whose modules belong to extend packages rather than the base module,
 # with the package; the most specific prefix wins and a module with a base
 # counterpart stays partial.
