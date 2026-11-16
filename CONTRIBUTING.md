@@ -6,21 +6,21 @@ rules hold for every change, whether it is written by a person or an agent.
 ## Checks every change must pass
 
 ```sh
-pnpm typecheck                                  # tsc --noEmit, no errors
-pnpm lint                                       # oxlint --type-aware --deny-warnings, no warnings
-pnpm test                                       # every test passes
-pnpm coverage                                   # 100% coverage (see below)
-pnpm compat                                     # SymPy doctest compatibility, writes compat/REPORT.md
-pnpm corpus:report                              # corpus tests, writes docs/compat-report.md
-pnpm build && node scripts/size.mjs --check   # bundle sizes within budget
-pnpm test:package                              # built ESM/CJS, minification and consumer type resolution
+bun run typecheck                              # tsc --noEmit, no errors
+bun run lint                                   # oxlint --type-aware --deny-warnings, no warnings
+bun run test                                   # every test passes
+bun run coverage                               # 100% coverage (see below)
+bun run compat                                 # SymPy doctest compatibility, writes compat/REPORT.md
+bun run corpus:report                          # corpus tests, writes docs/compat-report.md
+bun run build && bun scripts/size.mjs --check  # bundle sizes within budget
+bun run test:package                           # built ESM/CJS, minification and consumer type resolution
 ```
 
 ## Test coverage: 100%, no exclusions
 
 - Vitest enforces these thresholds per file; a coverage regression fails the command.
 - Every source file in `packages/*/src` must reach **100% statements,
-  branches, functions and lines** in the full test run (`pnpm coverage`).
+  branches, functions and lines** in the full test run (`bun run coverage`).
 - Coverage-ignore comments (`/* v8 ignore */`, `c8 ignore`,
   `istanbul ignore`) and excluding files from the coverage configuration
   are not allowed.
@@ -82,10 +82,10 @@ pnpm test:package                              # built ESM/CJS, minification and
 - Deliberate differences from SymPy are allowed when they are documented
   the same way.
 - SymPy doctests and API names that symjs does not support yet are listed in
-  `compat/known-gaps.json`. A change may only shrink that list: `pnpm compat`
+  `compat/known-gaps.json`. A change may only shrink that list: `bun run compat`
   fails when an unlisted case stops passing and when a listed case starts
   passing. After fixing listed cases, rewrite the list with
-  `UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts`
+  `UPDATE_KNOWN_GAPS=1 bunx vitest run --config compat/vitest.config.ts`
   and check that it only lost entries.
   Expanding the pinned reference scope or correcting an invalid measurement
   can establish a new baseline; the commit message records the old and new counts.
@@ -101,7 +101,7 @@ pnpm test:package                              # built ESM/CJS, minification and
   local paths such as a home directory or a temporary directory, which can
   contain personal information.
 
-For corpus expansion, use `pnpm compat:expand` with SymPy 1.14.0 installed.
+For corpus expansion, use `bun run compat:expand` with SymPy 1.14.0 installed.
 It retains every existing case (including duplicate documented occurrences),
 preserves anonymous Dummy names and the established external-sampler fixture,
 and fails if another existing input or result changes or disappears. Public
@@ -109,11 +109,11 @@ functions defined in a selected module are measured even if they are not
 re-exported at the top level. Multiline results remain measurable; outputs
 containing process-local object addresses are recorded as extraction omissions.
 When the extractor itself improves (a new serialization or a new omission
-rule), `pnpm compat:refresh` re-extracts every existing example in place: each
+rule), `bun run compat:refresh` re-extracts every existing example in place: each
 occurrence keeps its position and takes the current serialization, an example
 the extractor now omits is dropped only with its recorded omission reason, and
 any other disappearance still fails.
-Run `pnpm compat:test-extract` when changing the extractor. Newly revealed
+Run `bun run compat:test-extract` when changing the extractor. Newly revealed
 failures go to `compat/known-gaps.json`; a lower agreement percentage after
 adding previously unmeasured behavior is not itself an implementation
 regression.
@@ -167,12 +167,12 @@ contains file-level scope rules for printing, parsing, categories and utilities;
 dependencies and unsupported test constructs appear in the extraction audit.
 
 ```sh
-pnpm compat:extract-tests                      # SymPy 1.14.0, four isolated processes
-pnpm compat:extract-tests --only sets,geometry  # replace only these categories
-pnpm compat:extract-tests --only polys --jobs 2 # includes agca/domains/matrices/numberfields
-pnpm compat:test-extract
-npx vitest run --config compat/vitest.config.ts --project unit-geometry
-UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts
+bun run compat:extract-tests                       # SymPy 1.14.0, four isolated processes
+bun run compat:extract-tests --only sets,geometry  # replace only these categories
+bun run compat:extract-tests --only polys --jobs 2 # includes agca/domains/matrices/numberfields
+bun run compat:test-extract
+bunx vitest run --config compat/vitest.config.ts --project unit-geometry
+UPDATE_KNOWN_GAPS=1 bunx vitest run --config compat/vitest.config.ts
 ```
 
 `tools/sympy-corpus/tests-corpus/index.json` is the manifest. Each category has one or more
@@ -202,7 +202,7 @@ in existing cases. The doctest corpus and its ratchet remain independent.
 
 Repeated omission records share a `count` in category audit files. Counts retain
 every examined loop observation without repeating identical source metadata.
-`pnpm compat:extract-tests --compact-audits` losslessly repacks these audits
+`bun run compat:extract-tests --compact-audits` losslessly repacks these audits
 without changing case records or re-executing upstream tests.
 
 Replay deadlines remain in the measured totals and failure groups. The ratchet
@@ -226,14 +226,14 @@ SymPy 1.14.0 (Python)
 tools/sympy-corpus/corpus.json, tests-corpus/*.json
   │  each case: the call (function, serialized arguments), SymPy's printed result
   │
-  │  tools/sympy-corpus/totests (pnpm corpus:generate)
+  │  tools/sympy-corpus/totests (bun run corpus:generate)
   │    1. replays the case through harness.ts with the symjs entry points traced
   │    2. prints the public calls that produced the result as TypeScript
   │    3. classifies the case: it / it.fails / it.todo
   ▼
 packages/symjs/tests/**/<module>.corpus.test.ts
-  │  pnpm test, pnpm coverage: run with the hand-written tests
-  │  pnpm corpus:report: rate per corpus and category
+  │  bun run test, bun run coverage: run with the hand-written tests
+  │  bun run corpus:report: rate per corpus and category
   ▼
 docs/compat-report.md
 ```
@@ -274,29 +274,29 @@ that passes is listed as stale.
 After an implementation change that fixes or breaks cases:
 
 ```sh
-pnpm corpus:report     # stale cases: an it.fails that now passes, an it that now fails
-pnpm corpus:generate   # rewrite the files; repeat until type errors and unreproduced are 0
-pnpm corpus:report     # the new rates
+bun run corpus:report    # stale cases: an it.fails that now passes, an it that now fails
+bun run corpus:generate  # rewrite the files; repeat until type errors and unreproduced are 0
+bun run corpus:report    # the new rates
 ```
 
 After re-extracting part of the reference (here SymPy's geometry unit tests):
 
 ```sh
-pnpm compat:extract-tests --only geometry   # SymPy 1.14.0 → tools/sympy-corpus/tests-corpus/
-pnpm compat:test-extract                    # the extractor's own tests
-pnpm corpus:generate                        # repeat until type errors and unreproduced are 0
-pnpm corpus:report
+bun run compat:extract-tests --only geometry  # SymPy 1.14.0 → tools/sympy-corpus/tests-corpus/
+bun run compat:test-extract                   # the extractor's own tests
+bun run corpus:generate                       # repeat until type errors and unreproduced are 0
+bun run corpus:report
 ```
 
-Doctests are re-extracted with `pnpm compat:expand` (new modules) or
-`pnpm compat:refresh` (every existing example).
+Doctests are re-extracted with `bun run compat:expand` (new modules) or
+`bun run compat:refresh` (every existing example).
 
 To look at the conversion of some cases without writing files:
 
 ```sh
-ONLY=sympy.geometry SHOW=5 npx vitest run --config tools/sympy-corpus/totests/vitest.config.ts tools/sympy-corpus/totests/generate.test.ts --silent=false
+ONLY=sympy.geometry SHOW=5 bunx vitest run --config tools/sympy-corpus/totests/vitest.config.ts tools/sympy-corpus/totests/generate.test.ts --silent=false
 ```
 
 After a converter or harness change that may turn recorded cases into tests,
-`CORPUS_RECHECK_TYPES=1 pnpm corpus:generate` ignores both records and builds
+`CORPUS_RECHECK_TYPES=1 bun run corpus:generate` ignores both records and builds
 them again.

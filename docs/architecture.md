@@ -31,7 +31,7 @@ Extend modules (`packages/*` other than `symjs`) import the base module only
 through its public entry points (`@symjs/symjs`, `@symjs/symjs/<entry>`),
 never its source files.
 
-The rules are enforced by `pnpm lint` (`no-restricted-imports` in
+The rules are enforced by `bun run lint` (`no-restricted-imports` in
 `.oxlintrc.json`). The patterns are relative import paths, so each one is
 listed twice: `../<dir>/**` for the modules directly under `src/<area>/` and
 `../../<dir>/**` for those one level deeper (`functions/elementary/`,
@@ -63,7 +63,7 @@ radicals. `new CRootOf(...)` retains the raw node constructor for AST work.
 raises `NotImplementedError`. This does not claim complete root preprocessing.
 
 
-`pnpm lint` (Oxlint, type-aware) also enforces, for `packages/*/src`:
+`bun run lint` (Oxlint, type-aware) also enforces, for `packages/*/src`:
 
 | Rule | Purpose |
 |---|---|

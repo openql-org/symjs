@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 """Generate golden outputs from SymPy for the symjs compatibility tests.
 
-Usage: python3 tools/sympy-reference/generators/gen_golden.py packages/symjs/tests/golden/cases.json packages/symjs/tests/golden/expected.json (pnpm golden)
+Usage: python3 tools/sympy-reference/generators/gen_golden.py packages/symjs/tests/golden/cases.json packages/symjs/tests/golden/expected.json (bun run golden)
 """
 
 import json

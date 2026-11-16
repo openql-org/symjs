@@ -21,10 +21,10 @@ converter turns them into vitest tests; the pipeline and its procedures are in
 For unit-test extraction and selective replay:
 
 ```sh
-pnpm compat:extract-tests --only geometry,vector
-pnpm compat:extract-tests --only diffgeom
-pnpm compat:test-extract
-npx vitest run --config compat/vitest.config.ts --project unit-geometry
+bun run compat:extract-tests --only geometry,vector
+bun run compat:extract-tests --only diffgeom
+bun run compat:test-extract
+bunx vitest run --config compat/vitest.config.ts --project unit-geometry
 ```
 
 The unit-test extractor scans nested test directories in 31 base areas. Its
@@ -54,5 +54,5 @@ the default one of `randMatrix`, are seeded deterministically during extraction.
 
 Repeated omission records share a `count` in category audit files. Counts retain
 every examined loop observation without repeating identical source metadata.
-`pnpm compat:extract-tests --compact-audits` losslessly repacks these audits
+`bun run compat:extract-tests --compact-audits` losslessly repacks these audits
 without changing case records or re-executing upstream tests.

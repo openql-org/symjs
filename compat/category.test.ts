@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
-// The cases of one category that do not pass: CAT=<category> pnpm -s compat:category
+// The cases of one category that do not pass: CAT=<category> bun run --silent compat:category
 import { test } from 'vitest';
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { runCase } from '../tools/sympy-corpus/harness';

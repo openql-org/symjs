@@ -11,7 +11,7 @@
  * - `it` when symjs gives SymPy's result,
  * - `it.fails` when the case is written with the public API but symjs does not give SymPy's result yet,
  * - `it.todo` when the case cannot be written with the public API (yet), with its SymPy source.
- * `UPDATE_CORPUS_TESTS=1` (`pnpm corpus:generate`) writes every file, then records the cases that do
+ * `UPDATE_CORPUS_TESTS=1` (`bun run corpus:generate`) writes every file, then records the cases that do
  * not type-check (type-errors.json) and the cases whose generated test disagrees with the replay
  * (unreproduced.json); the next run writes those as `it.todo`. `CORPUS_RECHECK_TYPES=1` ignores both
  * records. Without UPDATE_CORPUS_TESTS the run only prints the tally: `ONLY=<module substring>`
@@ -384,7 +384,7 @@ it('converts the corpora', async () => {
       ranges.set(path, lines);
     }
     // cases whose arguments the public types reject are written as it.todo by the next run
-    const tsc = spawnSync('npx', ['tsc', '--noEmit', '-p', ROOT], { encoding: 'utf8', maxBuffer: 1 << 28, cwd: ROOT });
+    const tsc = spawnSync('bunx', ['tsc', '--noEmit', '-p', ROOT], { encoding: 'utf8', maxBuffer: 1 << 28, cwd: ROOT });
     const bad = new Set<string>();
     const outside: string[] = [];
     for (const m of tsc.stdout.matchAll(/^(.+?\.corpus\.test\.ts)\((\d+),\d+\): error/gm)) {
@@ -400,7 +400,7 @@ it('converts the corpora', async () => {
     console.log(`type errors: ${bad.size}`);
     // cases whose generated test disagrees with the replay (an it that fails, an it.fails that passes)
     const report = `${ROOT}node_modules/.corpus-tests.json`;
-    spawnSync('npx', ['vitest', 'run', '--reporter=json', `--outputFile=${report}`, '--includeTaskLocation', '.corpus.test.ts'], { encoding: 'utf8', maxBuffer: 1 << 28, cwd: ROOT });
+    spawnSync('bunx', ['vitest', 'run', '--reporter=json', `--outputFile=${report}`, '--includeTaskLocation', '.corpus.test.ts'], { encoding: 'utf8', maxBuffer: 1 << 28, cwd: ROOT });
     const results = JSON.parse(readFileSync(report, 'utf8')) as { testResults: { name: string; message?: string; assertionResults: { status: string; location?: { line: number } }[] }[] };
     rmSync(report);
     const stale = new Set<string>();
