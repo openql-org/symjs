@@ -6,7 +6,7 @@
 // Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { add, diff, integrate, latex, mul, pow, pretty, solve, str, symbol } from '../../src';
+import { add, diff, integrate, latex, mul, pow, pretty, solve, srepr, str, symbol } from '../../src';
 import { BaseScalar, CoordSys3D, Vector } from '../../src/vector';
 
 describe('BaseScalar', () => {
@@ -18,6 +18,7 @@ describe('BaseScalar', () => {
     expect(A.x.system).toBe(A);
     expect(A.x.index).toBe(0);
     expect(BaseScalar(1, A).key).toBe(A.y.key);
+    expect(srepr(add(pow(A.x, 2), A.y))).toBe('Add(Pow(A.x, Integer(2)), A.y)');
     expect(BaseScalar(1, A).prettyForm).toBe('x1');
     expect(BaseScalar(1, A, symbol('p'), symbol('q')).latexForm).toBe('q');
     expect(BaseScalar(0, A).key).not.toBe(BaseScalar(0, A.locateNew('A', A.i)).key);

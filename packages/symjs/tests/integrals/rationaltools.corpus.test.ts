@@ -112,7 +112,7 @@ describe("sympy/integrals/tests/test_rationaltools.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ratint(new Mul([rational(36), new Pow(new Add([rational(-2), x, new Pow(x, rational(5)), new Mul([rational(-2), new Pow(x, rational(3))]), new Mul([rational(-2), new Pow(x, rational(4))]), new Mul([rational(4), new Pow(x, rational(2))])]), rational(-1))]), x))).toBe('(12*x + 6)/(x**2 - 1) + 4*log(x - 2) - 4*log(x + 1)');
   });
-  it.fails("test_ratint:61", () => {
+  it("test_ratint:61", () => {
     const x = new Sym('x');
     expect(sympyStr(ratint(new Mul([new Pow(new Add([rational(4), new Pow(x, rational(6)), new Mul([rational(-5), new Pow(x, rational(4))]), new Mul([rational(5), new Pow(x, rational(2))])]), rational(-1)), new Add([rational(6), new Pow(x, rational(4)), new Mul([rational(-3), new Pow(x, rational(2))])])]), x))).toBe('atan(x) + atan(x**3) + atan(x**5/2 - 3*x**3/2 + x/2)');
   });
@@ -210,7 +210,7 @@ describe("sympy/integrals/tests/test_rationaltools.py", () => {
     const v1 = u;
     expect(sympyStr(integrate(new Pow(new Add([rational(1), new Pow(v1, rational(2))]), rational(-1)), v1))).toBe('atan(u)');
   });
-  it.fails("test_issue_10488:146", () => {
+  it("test_issue_10488:146", () => {
     const x = new Sym('x', { positive: true });
     const b = new Sym('b', { positive: true });
     const a = new Sym('a', { positive: true });
@@ -231,11 +231,12 @@ describe("sympy/integrals/tests/test_rationaltools.py", () => {
     const a = new Sym('a', { nonzero: true });
     expect(sympyStr(integrate(new Pow(new Add([rational(1), new Mul([new Pow(x, rational(2)), new Pow(a, rational(2))])]), rational(-1)), x))).toBe('atan(a*x)/a');
   });
-  // a function that did not come from the library
-  //   assert integrate((x**2 + 1 - k**2)/(x**2 + 1 + a0**2), x) == \
-  //           x - (a0**2 + k**2)*atan(x/sqrt(a0**2 + 1))/sqrt(a0**2 + 1)
-  //   => x - (a0**2 + k**2)*atan(x/sqrt(a0**2 + 1))/sqrt(a0**2 + 1)
-  it.todo("test_issue_6308:158");
+  it("test_issue_6308:158", () => {
+    const x = new Sym('x');
+    const a0 = new Sym('a0', { real: true });
+    const k = new Sym('k', { real: true });
+    expect(sympyStr(integrate(new Mul([new Pow(new Add([rational(1), new Pow(x, rational(2)), new Pow(a0, rational(2))]), rational(-1)), new Add([rational(1), new Pow(x, rational(2)), new Mul([rational(-1), new Pow(k, rational(2))])])]), x))).toBe('x - (a0**2 + k**2)*atan(x/sqrt(a0**2 + 1))/sqrt(a0**2 + 1)');
+  });
   it("test_issue_5907:164", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });

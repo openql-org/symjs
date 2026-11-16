@@ -3262,7 +3262,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([x, new Pow(new Add([rational(1), new Pow(x, rational(4))]), rational(-1))]), x))).toBe('atan(x**2)/2');
   });
-  it.fails("test_issue_8520:570", () => {
+  it("test_issue_8520:570", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([new Pow(x, rational(2)), new Pow(new Add([rational(25), new Pow(x, rational(6))]), rational(-1))]), x))).toBe('atan(x**3/5)/15');
   });

@@ -475,7 +475,7 @@ describe("sympy/printing/tests/test_repr.py", () => {
     }
   });
   it("test_Dummy_assumption:206", () => {
-    expect(sympyStr(new Dummy('d', { nonzero: true }))).toBe('_d');
+    expect(sympyStr(Dummy('d', { nonzero: true }))).toBe('_d');
   });
   it.fails("test_Dummy_from_Symbol:216", () => {
     const unicode = pprintUseUnicode(false);

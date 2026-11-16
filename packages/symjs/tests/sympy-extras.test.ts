@@ -83,11 +83,11 @@ describe('matrix methods', () => {
     expect(sj.getDiagBlocks(M([[1, 3, 0, 0], [y, 9, 0, 0], [0, 0, x, 0], [0, 0, 0, 0]])).map(s)).toEqual(['Matrix([[1, 3], [y, 9]])', 'Matrix([[x]])', 'Matrix([[0]])']);
     const G = M([[1, 0, 2], [0, 3, 0], [4, 0, 5]]);
     const [P, B] = sj.connectedComponentsDecomposition(G);
-    expect(P.T.mul(B).mul(P).equals(G)).toBe(true);
+    expect(P.asExplicit().T.mul(B.asExplicit()).mul(P.asExplicit()).equals(G)).toBe(true);
     const H = M([[1, 2, 0], [0, 3, 0], [4, 5, 6]]);
     for (const lower of [true, false]) {
       const [P2, B2] = sj.stronglyConnectedComponentsDecomposition(H, lower);
-      expect(P2.T.mul(B2).mul(P2).equals(H)).toBe(true);
+      expect(P2.asExplicit().T.mul(B2.asExplicit()).mul(P2.asExplicit()).equals(H)).toBe(true);
     }
     expect(s(sj.jordanCell(sj.Sym ? new sj.Sym('a') : 0, 2))).toBe('Matrix([[a, 1], [0, a]])');
     const [Pj, cells] = sj.jordanCells(M([[1, 1], [0, 1]]));

@@ -19,6 +19,8 @@ import { sign } from '../functions/special/special';
 import { str } from '../printing/str';
 import { ExprMap } from '../core/exprmap';
 import { Matrix } from './matrix';
+import { BlockDiagMatrix, BlockMatrix } from './expressions/blockmatrix';
+import { PermutationMatrix, PermutationNode } from './expressions/permutation';
 import { connectedComponents, diagonalize, jordanBlock, jordanForm, norm, qrDecomposition, stronglyConnectedComponents } from './linalg';
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -498,22 +500,23 @@ export function getDiagBlocks(M: Matrix): Matrix[] {
   return out;
 }
 
-/** The permutation matrix with P[i, p[i]] = 1 (SymPy PermutationMatrix(p).as_explicit()). */
-const permutationMatrix = (p: readonly number[]): Matrix => Matrix.fromFunction(p.length, p.length, (i, j) => (p[i] === j ? 1 : 0));
-
-/** SymPy Matrix.connected_components_decomposition: [P, B] with A = P^T B P, B block diagonal (explicit matrices). */
-export function connectedComponentsDecomposition(M: Matrix): [Matrix, Matrix] {
+/**
+ * SymPy Matrix.connected_components_decomposition: [P, B] with A = P^T B P, P the PermutationMatrix of the
+ * components and B the BlockDiagMatrix of their blocks.
+ */
+export function connectedComponentsDecomposition(M: Matrix): [PermutationMatrix, BlockDiagMatrix] {
   const blocks = connectedComponents(M);
-  const p = blocks.flat();
-  return [permutationMatrix(p), M.slice(p, p)];
+  return [PermutationMatrix(new PermutationNode(blocks.flat())), BlockDiagMatrix(...blocks.map((b) => M.slice(b, b)))];
 }
 
-/** SymPy Matrix.strongly_connected_components_decomposition(lower): [P, B], B block triangular. */
-export function stronglyConnectedComponentsDecomposition(M: Matrix, lower = true): [Matrix, Matrix] {
+/**
+ * SymPy Matrix.strongly_connected_components_decomposition(lower): [P, B] with A = P^T B P, P the
+ * PermutationMatrix of the components and B the block triangular BlockMatrix (lower or upper).
+ */
+export function stronglyConnectedComponentsDecomposition(M: Matrix, lower = true): [PermutationMatrix, BlockMatrix] {
   let blocks = stronglyConnectedComponents(M);
   if (!lower) blocks = [...blocks].reverse();
-  const p = blocks.flat();
-  return [permutationMatrix(p), M.slice(p, p)];
+  return [PermutationMatrix(new PermutationNode(blocks.flat())), BlockMatrix(blocks.map((r) => blocks.map((c) => M.slice(r, c))))];
 }
 
 /** SymPy Matrix.jordan_cell(eigenval, n): an n x n Jordan block. */

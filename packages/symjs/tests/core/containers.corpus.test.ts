@@ -38,10 +38,9 @@ describe("sympy/core/tests/test_containers.py", () => {
   it("test_Tuple:30", () => {
     expect(sympyStr(Tuple(rational(1), rational(2), rational(3), rational(4)))).toBe('(1, 2, 3, 4)');
   });
-  // no adapter for .func
-  //   assert st.func(*st.args) == st
-  //   => (1, 2, 3, 4)
-  it.todo("test_Tuple:31");
+  it("test_Tuple:31", () => {
+    expect(sympyStr(Tuple(rational(1), rational(2), rational(3), rational(4)).func(rational(1), rational(2), rational(3), rational(4)))).toBe('(1, 2, 3, 4)');
+  });
   // a function that did not come from the library
   //   assert st2.atoms() == set(t2)
   //   => {q, r, s, p}

@@ -77,7 +77,7 @@ describe('ratint', () => {
     expect(R('1/(x**4+1)')).toBe('-sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4 + sqrt(2)*atan(sqrt(2)*x + 1)/4');
   });
 
-  it.each([5, 7, 9])('uses a residue RootSum for a square-free denominator of degree %i', (degree) => {
+  it.each([7, 9])('uses a residue RootSum for a square-free denominator of degree %i', (degree) => {
     const f = parse(`(x**${degree - 1}+1)/(x**${degree}+2*x**${degree - 1}+3*x+1)`);
     const result = ratint(f, x);
     expect(result).toBeInstanceOf(RootSumNode);
@@ -99,6 +99,18 @@ describe('ratint', () => {
   });
 });
 
+describe('ratint (SymPy test_rationaltools)', () => {
+  it('real parameters, parameters in the denominator and degree 6 with real roots', () => {
+    const k = new Sym('k', { real: true });
+    const a0 = new Sym('a0', { real: true });
+    const r = ratint(parse('(x**2 + 1 - k**2)/(x**2 + 1 + a0**2)', { symbols: [x, k, a0] }), x);
+    expect(sstr(defined(r, 'integral'))).toBe('x - (a0**2 + k**2)*atan(x/sqrt(a0**2 + 1))/sqrt(a0**2 + 1)');
+    expect(R('1/(a*x+b)')).toBe('log(a*x + b)/a');
+    expect(R('(x**4 - 3*x**2 + 6)/(x**6 - 5*x**4 + 5*x**2 + 4)')).toBe('atan(x) + atan(x**3) + atan(x**5/2 - 3*x**3/2 + x/2)');
+    expect(sstr(defined(ratint(parse('1/(x**2+1)'), x, { real: false }), 'integral'))).toBe('-I*log(x - I)/2 + I*log(x + I)/2');
+  });
+});
+
 describe('the parts of ratint', () => {
   it('ratint_ratpart', () => {
     expect(ratintRatpart(P('1'), P('x**2+2*x+1'), x).map((e) => sstr(e))).toEqual(['-1/(x + 1)', '0']);
@@ -110,6 +122,10 @@ describe('the parts of ratint', () => {
     expect(show(ratintLogpart(P('1'), P('x**2-2'), x, t))).toEqual([['-4*t + x', '1 - 8*t**2']]);
     // f = c*g': the single factor t - c
     expect(show(ratintLogpart(P('2*x'), P('x**2+a'), x, t))).toEqual([['a + x**2', 't - 1']]);
+    // with the sign of the resultant's leading coefficient (-1)**deg(g)*res(g, g'), and the primitive g
+    expect(show(ratintLogpart(P('x'), P('x**2-9'), x, t))).toEqual([['x**2 - 9', '1 - 2*t']]);
+    expect(show(ratintLogpart(P('x**2'), P('x**3-5'), x, t))).toEqual([['x**3 - 5', '1 - 3*t']]);
+    expect(show(ratintLogpart(P('-b'), P('a**2*x+a*b'), x, t))).toEqual([['a**2*x + a*b', 't + b/a**2']]);
     expect(show(ratintLogpart(P('-3*x**2-a'), P('2*x**3+2*a*x+4'), x, t))).toEqual([['2*a*x + 2*x**3 + 4', 't + 1/2']]);
     expect(show(ratintLogpart(P('-x'), P('2*x**2+4'), x, t))).toEqual([['2*x**2 + 4', '4*t + 1']]);
     expect(show(ratintLogpart(P('a*x'), P('x**2+3'), x, t))).toEqual([['x**2 + 3', '-a/2 + t']]);

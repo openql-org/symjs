@@ -21,7 +21,7 @@ export { ShapeError } from '../../core/errors';
 import { at, cast, last } from '../../core/guard';
 import { LambdaNode } from '../../core/lambda';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter } from '../../core/nodes';
+import { Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
 import { isIntegerQ, isNegative, isZero } from '../../core/assumptions';
 import { and } from '../../core/boolalg';
 import { Eq } from '../../core/logic';
@@ -737,7 +737,8 @@ export class ImmutableMatrixNode extends MatrixExpr {
       const n = toInt(exp);
       return new ImmutableMatrixNode(n >= 0 ? this.matrix.pow(n) : this.matrix.inv().pow(-n));
     }
-    return new MatPowNode(this, exp);
+    const p = explicitPower(this.matrix, exp);
+    return p === undefined ? new MatPowNode(this, exp) : new ImmutableMatrixNode(p);
   }
   override doit(hints: DoitHints = {}): Expr {
     if (hints.deep === false) return this;
@@ -1635,6 +1636,11 @@ export function mergeExplicitMatMul(e: Expr): Expr {
 // ---------------------------------------------------------------------------
 
 /** SymPy MatPow(base, exp): a power of a square matrix. */
+/** SymPy Matrix.pow of an explicit matrix to a non-integer power: entrywise for a diagonal matrix, else undefined (a MatPow). */
+function explicitPower(m: Matrix, exp: Expr): Matrix | undefined {
+  return m.isDiagonal() ? m.pow(exp) : undefined;
+}
+
 export class MatPowNode extends MatrixExpr {
   constructor(base: Expr, exp: Expr, name = 'MatPow') {
     super(name, [base, exp]);
@@ -1670,8 +1676,8 @@ export class MatPowNode extends MatrixExpr {
       } else if (isInt(this.rows) && isInt(this.cols)) {
         const m = A.base.asExplicit();
         // a positive exponent was expanded above and doit turns the exponent 0 into Identity
-        const p = isInt(e) ? m.inv().pow(-toInt(e)) : undefined;
-        if (p) return p.get(toInt(i), toInt(j));
+        const p = isInt(e) ? m.inv().pow(-toInt(e)) : explicitPower(m, e);
+        if (p) return new ImmutableMatrixNode(p).at(i, j);
         return new MatrixElementNode(this, i, j);
       } else return new MatrixElementNode(this, i, j);
     }
@@ -1694,6 +1700,10 @@ export class MatPowNode extends MatrixExpr {
     if (same(exp, S.Zero)) return new IdentityNode(b.rows);
     if (same(exp, S.NegOne)) return InverseNode.create(b).doit(hints);
     return b.evalPower(exp);
+  }
+  /** SymPy MatPow.as_explicit: the power of the explicit base. */
+  override asExplicit(): Matrix {
+    return (isInt(this.exp) ? undefined : explicitPower(this.base.asExplicit(), this.exp)) ?? super.asExplicit();
   }
   override evalTranspose(): Expr {
     return new MatPowNode(this.base.transpose(), this.exp);
@@ -1847,8 +1857,8 @@ function postfixLatex(mat: MatrixExpr, sup: string, print: (e: Expr) => string):
   return s.includes('^') ? `\\left(${s}\\right)^{${sup}}` : `${s}^{${sup}}`;
 }
 
-/** SymPy Transpose(A): an unevaluated transpose. */
-export const Transpose = /* @__PURE__ */ callableClass(TransposeNode, (arg: MatArg): TransposeNode => new TransposeNode(toMatrix(arg)));
+/** SymPy Transpose(A): an unevaluated transpose (of a scalar too, which doit returns unchanged). */
+export const Transpose = /* @__PURE__ */ callableClass(TransposeNode, (arg: MatArg): TransposeNode => new TransposeNode(toExpr(arg)));
 export type Transpose = TransposeNode;
 
 /** SymPy Adjoint(A): the conjugate transpose. */
@@ -1897,8 +1907,8 @@ export class AdjointNode extends MatrixExpr {
   }
 }
 
-/** SymPy Adjoint(A): an unevaluated adjoint. */
-export const Adjoint = /* @__PURE__ */ callableClass(AdjointNode, (arg: MatArg): AdjointNode => new AdjointNode(toMatrix(arg)));
+/** SymPy Adjoint(A): an unevaluated adjoint (of a scalar too, which doit conjugates). */
+export const Adjoint = /* @__PURE__ */ callableClass(AdjointNode, (arg: MatArg): AdjointNode => new AdjointNode(toExpr(arg)));
 export type Adjoint = AdjointNode;
 
 // ---------------------------------------------------------------------------
@@ -2234,6 +2244,10 @@ export class ElementwiseApplyFunctionNode extends MatrixExpr {
   override evalTranspose(): Expr {
     return new ElementwiseApplyFunctionNode(this.function, this.expr.transpose());
   }
+  /** SymPy MatrixExpr._eval_simplify: the arguments simplified, the application kept. */
+  override simplifySelf(simplify: (e: Expr) => Expr): Expr {
+    return ElementwiseApplyFunctionNode.create(cast(simplify(this.function), LambdaNode), simplify(this.expr));
+  }
   override printStr(print: (e: Expr) => string): string {
     return `${print(this.function)}.(${print(this.expr)})`;
   }
@@ -2245,6 +2259,7 @@ export class ElementwiseApplyFunctionNode extends MatrixExpr {
 /** SymPy ElementwiseApplyFunction(function, expr). */
 export const ElementwiseApplyFunction = /* @__PURE__ */ callableClass(ElementwiseApplyFunctionNode, (f: ElementFunction, expr: MatArg): Expr => ElementwiseApplyFunctionNode.create(f, expr));
 export type ElementwiseApplyFunction = ElementwiseApplyFunctionNode;
+registerHead(ElementwiseApplyFunctionNode, ElementwiseApplyFunction);
 
 // ---------------------------------------------------------------------------
 // Constructors

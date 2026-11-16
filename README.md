@@ -1,7 +1,7 @@
 # symjs
 
 A computer algebra system (CAS) for TypeScript that aims for result compatibility with [SymPy](https://www.sympy.org/).
-It is intended as a general-purpose symbolic engine (in the spirit of Mathematica) for polynomial and symbolic computation, e.g. from [q5m.js](https://www.npmjs.com/package/@q5m/q5m).
+It is intended as a general-purpose symbolic engine (in the spirit of Mathematica) for polynomial and symbolic computation.
 
 - Results and string/LaTeX output are checked against SymPy (golden tests and SymPy's own doctests, see below)
 - **Expressions**: immutable trees with SymPy's automatic evaluation, `oo`/`zoo`/`nan`, assumptions (real, positive, nonnegative, integer), undefined functions `SymFunction('f')` (SymPy `Function('f')`) and `Derivative`

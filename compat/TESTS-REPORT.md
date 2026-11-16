@@ -2,11 +2,11 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **122721** cases: **108667 exact**, **2626 equivalent**, **11428 failing**. Agreement: **90.69%**.
+Measured **122717** cases: **108734 exact**, **2626 equivalent**, **11357 failing**. Agreement: **90.75%**.
 
-Compatibility suite wall time: **342.68 s**. Sum of category replay times: **958.76 s** (projects run in parallel).
+Compatibility suite wall time: **354.47 s**. Sum of category replay times: **982.35 s** (projects run in parallel).
 
-Extraction wall time: **612.50 s**, 3 processes, 120 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
+Extraction wall time: **66.07 s**, 4 processes, 120 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
 Synchronous replay has a 30 s deadline per core/polys case and 5 s elsewhere. Deadlines remain visible as failing/inconclusive observations and are never accepted as expected exceptions. Their IDs are stored separately in the ratchet: an unfinished assertion cannot establish or resolve a correctness regression.
 
@@ -16,39 +16,39 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 133 | 128 | 0 | 5 | 96.24% | 0.69 |
-| assumptions | 2245 | 1784 | 5 | 456 | 79.69% | 2.72 |
-| calculus | 525 | 425 | 1 | 99 | 81.14% | 2.62 |
-| categories | 333 | 327 | 0 | 6 | 98.20% | 1.47 |
-| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.66 |
-| combinatorics | 2196 | 2153 | 0 | 43 | 98.04% | 1.20 |
-| concrete | 937 | 682 | 71 | 184 | 80.36% | 17.14 |
-| core | 9337 | 7741 | 202 | 1394 | 85.07% | 99.51 |
-| crypto | 5067 | 5065 | 0 | 2 | 99.96% | 1.23 |
-| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 1.51 |
-| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.83 |
-| functions | 10649 | 7491 | 1856 | 1302 | 87.77% | 50.32 |
-| geometry | 1102 | 1061 | 6 | 35 | 96.82% | 13.98 |
-| holonomic | 190 | 176 | 0 | 14 | 92.63% | 3.47 |
-| integrals | 1424 | 920 | 49 | 455 | 68.05% | 20.76 |
-| liealgebras | 93 | 87 | 1 | 5 | 94.62% | 0.08 |
-| logic | 7608 | 7414 | 1 | 193 | 97.46% | 4.13 |
-| matrices | 5097 | 4168 | 42 | 887 | 82.60% | 100.02 |
-| ntheory | 45168 | 45140 | 0 | 28 | 99.94% | 11.52 |
-| parsing | 868 | 736 | 69 | 63 | 92.74% | 0.64 |
-| plotting | 49 | 23 | 0 | 26 | 46.94% | 0.07 |
-| polys | 12154 | 8887 | 88 | 3179 | 73.84% | 237.15 |
-| printing | 2147 | 1862 | 1 | 284 | 86.77% | 5.96 |
-| series | 1674 | 1196 | 29 | 449 | 73.18% | 15.64 |
-| sets | 1858 | 1137 | 11 | 710 | 61.79% | 2.03 |
-| simplify | 1525 | 1314 | 44 | 167 | 89.05% | 9.64 |
-| solvers | 4618 | 3654 | 82 | 882 | 80.90% | 96.55 |
-| stats | 2025 | 1923 | 42 | 60 | 97.04% | 218.62 |
+| algebras | 133 | 128 | 0 | 5 | 96.24% | 0.80 |
+| assumptions | 2245 | 1784 | 5 | 456 | 79.69% | 3.21 |
+| calculus | 525 | 425 | 1 | 99 | 81.14% | 3.28 |
+| categories | 333 | 327 | 0 | 6 | 98.20% | 1.85 |
+| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.93 |
+| combinatorics | 2196 | 2153 | 0 | 43 | 98.04% | 1.73 |
+| concrete | 937 | 681 | 71 | 185 | 80.26% | 21.08 |
+| core | 9337 | 7742 | 202 | 1393 | 85.08% | 112.54 |
+| crypto | 5067 | 5065 | 0 | 2 | 99.96% | 1.73 |
+| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 2.89 |
+| discrete | 192 | 191 | 1 | 0 | 100.00% | 1.27 |
+| functions | 10649 | 7491 | 1856 | 1302 | 87.77% | 57.72 |
+| geometry | 1102 | 1061 | 6 | 35 | 96.82% | 15.70 |
+| holonomic | 190 | 176 | 0 | 14 | 92.63% | 3.78 |
+| integrals | 1424 | 936 | 49 | 439 | 69.17% | 24.89 |
+| liealgebras | 93 | 87 | 1 | 5 | 94.62% | 0.07 |
+| logic | 7608 | 7414 | 1 | 193 | 97.46% | 3.80 |
+| matrices | 5093 | 4217 | 42 | 834 | 83.62% | 100.58 |
+| ntheory | 45168 | 45140 | 0 | 28 | 99.94% | 11.86 |
+| parsing | 868 | 736 | 69 | 63 | 92.74% | 0.61 |
+| plotting | 49 | 23 | 0 | 26 | 46.94% | 0.06 |
+| polys | 12154 | 8887 | 88 | 3179 | 73.84% | 233.65 |
+| printing | 2147 | 1863 | 1 | 283 | 86.82% | 5.93 |
+| series | 1674 | 1196 | 29 | 449 | 73.18% | 18.53 |
+| sets | 1858 | 1137 | 11 | 710 | 61.79% | 2.12 |
+| simplify | 1525 | 1314 | 44 | 167 | 89.05% | 9.25 |
+| solvers | 4618 | 3654 | 82 | 882 | 80.90% | 91.78 |
+| stats | 2025 | 1923 | 42 | 60 | 97.04% | 213.62 |
 | strategies | 7 | 5 | 0 | 2 | 71.43% | 0.01 |
-| tensor | 1953 | 1547 | 1 | 405 | 79.26% | 9.55 |
+| tensor | 1953 | 1547 | 1 | 405 | 79.26% | 7.83 |
 | unify | 16 | 10 | 0 | 6 | 62.50% | 0.03 |
-| utilities | 556 | 485 | 10 | 61 | 89.03% | 22.97 |
-| vector | 694 | 664 | 4 | 26 | 96.25% | 6.03 |
+| utilities | 556 | 485 | 10 | 61 | 89.03% | 22.63 |
+| vector | 694 | 665 | 4 | 25 | 96.40% | 6.59 |
 
 ## Extraction audit
 
@@ -73,7 +73,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | integrals | 2261 | 2477 | 1424 | 1053 | 179.24 | 0 |
 | liealgebras | 95 | 95 | 93 | 2 | 0.21 | 0 |
 | logic | 960 | 8612 | 7608 | 1004 | 35.60 | 0 |
-| matrices | 4840 | 7206 | 5097 | 2109 | 88.15 | 0 |
+| matrices | 4840 | 7206 | 5093 | 2113 | 65.39 | 0 |
 | ntheory | 1050 | 601996 | 45168 | 556828 | 273.97 | 0 |
 | parsing | 294 | 2112 | 868 | 1244 | 20.97 | 0 |
 | plotting | 1128 | 1237 | 49 | 1188 | 4.67 | 0 |
@@ -214,6 +214,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | logic | unsupported-assertion | 372 |
 | logic | unsupported-raises | 2 |
 | logic | upstream-skip | 14 |
+| matrices | deprecated-api | 4 |
 | matrices | duplicate | 637 |
 | matrices | marked-slow | 52 |
 | matrices | marked-xfail | 15 |
@@ -542,7 +543,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | concrete | exception not raised | 12 |
 | concrete | input conversion exception | 2 |
 | concrete | missing API/adapter | 30 |
-| concrete | replay timeout | 1 |
+| concrete | replay timeout | 2 |
 | concrete | result comparison exception | 3 |
 | concrete | unexpected exception | 22 |
 | concrete | wrong result | 114 |
@@ -553,7 +554,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | core | result comparison exception | 2 |
 | core | unexpected exception | 197 |
 | core | unsupported value/input type | 98 |
-| core | wrong result | 616 |
+| core | wrong result | 615 |
 | core | exception class mismatch (accepted) | 106 |
 | crypto | wrong result | 2 |
 | crypto | exception class mismatch (accepted) | 1 |
@@ -583,11 +584,11 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | integrals | exception not raised | 14 |
 | integrals | input conversion exception | 1 |
 | integrals | missing API/adapter | 78 |
-| integrals | replay timeout | 1 |
+| integrals | replay timeout | 2 |
 | integrals | result comparison exception | 1 |
-| integrals | unexpected exception | 43 |
+| integrals | unexpected exception | 39 |
 | integrals | unsupported value/input type | 5 |
-| integrals | wrong result | 312 |
+| integrals | wrong result | 299 |
 | integrals | exception class mismatch (accepted) | 6 |
 | liealgebras | wrong result | 5 |
 | liealgebras | exception class mismatch (accepted) | 0 |
@@ -597,14 +598,14 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | logic | unexpected exception | 14 |
 | logic | wrong result | 86 |
 | logic | exception class mismatch (accepted) | 35 |
-| matrices | exception not raised | 107 |
-| matrices | input conversion exception | 43 |
+| matrices | exception not raised | 106 |
+| matrices | input conversion exception | 41 |
 | matrices | missing API/adapter | 94 |
 | matrices | replay timeout | 13 |
 | matrices | result comparison exception | 5 |
-| matrices | unexpected exception | 271 |
-| matrices | unsupported value/input type | 53 |
-| matrices | wrong result | 301 |
+| matrices | unexpected exception | 244 |
+| matrices | unsupported value/input type | 52 |
+| matrices | wrong result | 279 |
 | matrices | exception class mismatch (accepted) | 118 |
 | ntheory | exception not raised | 2 |
 | ntheory | unexpected exception | 9 |
@@ -631,7 +632,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | polys | exception class mismatch (accepted) | 187 |
 | printing | exception not raised | 2 |
 | printing | input conversion exception | 17 |
-| printing | missing API/adapter | 12 |
+| printing | missing API/adapter | 11 |
 | printing | replay timeout | 1 |
 | printing | unexpected exception | 84 |
 | printing | unsupported value/input type | 32 |
@@ -694,7 +695,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | utilities | exception class mismatch (accepted) | 16 |
 | vector | missing API/adapter | 3 |
 | vector | unexpected exception | 6 |
-| vector | wrong result | 17 |
+| vector | wrong result | 16 |
 | vector | exception class mismatch (accepted) | 4 |
 
 ## Most frequent failing APIs per category
@@ -782,9 +783,9 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | holonomic | expr_to_holonomic (fail) | 1 |
 | holonomic | .rewrite (fail) | 1 |
 | holonomic | .expand (fail) | 1 |
-| integrals | integrate (fail) | 157 |
-| integrals | manualintegrate (fail) | 82 |
-| integrals | integrate (error) | 20 |
+| integrals | integrate (fail) | 156 |
+| integrals | manualintegrate (fail) | 81 |
+| integrals | integrate (error) | 19 |
 | integrals | decompose (error) | 14 |
 | integrals | risch_integrate (unsupported) | 14 |
 | integrals | heurisch (fail) | 12 |
@@ -808,11 +809,11 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | matrices | .diff (fail) | 71 |
 | matrices | simplify (error) | 60 |
 | matrices | .__getitem__ (error) | 42 |
-| matrices | .__pow__ (error) | 39 |
 | matrices | .diff (error) | 23 |
 | matrices | MutableDenseMatrix (fail) | 22 |
 | matrices | .from_index_summation (error) | 18 |
 | matrices | .is_echelon (unsupported) | 18 |
+| matrices | .__pow__ (error) | 18 |
 | matrices | .is_Identity (unsupported) | 18 |
 | matrices | MutableDenseMatrix (error) | 17 |
 | ntheory | smoothness_p (unsupported) | 10 |
@@ -934,11 +935,11 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | vector | .__or__ (fail) | 6 |
 | vector | BaseScalar (error) | 3 |
 | vector | .equals (fail) | 3 |
-| vector | srepr (fail) | 3 |
 | vector | .__call__ (unsupported) | 3 |
 | vector | .func (error) | 2 |
 | vector | .zero (fail) | 2 |
 | vector | .__and__ (fail) | 2 |
+| vector | srepr (fail) | 2 |
 | vector | directional_derivative (error) | 1 |
 | vector | Integral (fail) | 1 |
 
@@ -963,7 +964,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | integrals | 1273649 | 318200 | 1 |
 | liealgebras | 61800 | 1736 | 1 |
 | logic | 9048956 | 88539 | 1 |
-| matrices | 9172504 | 331125 | 1 |
+| matrices | 9169026 | 331934 | 1 |
 | ntheory | 17377555 | 88439 | 1 |
 | parsing | 279569 | 50611 | 1 |
 | plotting | 41322 | 217109 | 1 |

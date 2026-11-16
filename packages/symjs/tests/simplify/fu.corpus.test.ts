@@ -501,27 +501,27 @@ describe("sympy/simplify/tests/test_fu.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('cos', [new Add([x, new Mul([rational(15), pi])])]))).toBe('-cos(x)');
   });
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert verify_numerically(i, j) and i.func != j.func
   //   => sin
   it.todo("test_TR3:74");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert verify_numerically(i, j) and i.func != j.func
   //   => cos
   it.todo("test_TR3:74 (2)");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert verify_numerically(i, j) and i.func != j.func
   //   => cot
   it.todo("test_TR3:74 (3)");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert verify_numerically(i, j) and i.func != j.func
   //   => tan
   it.todo("test_TR3:74 (4)");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert verify_numerically(i, j) and i.func != j.func
   //   => sec
   it.todo("test_TR3:74 (5)");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert verify_numerically(i, j) and i.func != j.func
   //   => csc
   it.todo("test_TR3:74 (6)");

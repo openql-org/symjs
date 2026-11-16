@@ -358,14 +358,13 @@ describe("sympy/functions/special/tests/test_delta_functions.py", () => {
     const k = new Sym('k', { negative: true });
     expect(sympyStr(DiracDelta(k))).toBe('0');
   });
-  // no adapter for .func
-  //   assert DiracDelta(0).func is DiracDelta
-  //   => DiracDelta
-  it.todo("test_DiracDelta:35");
-  // no adapter for .func
-  //   assert DiracDelta(x).func is DiracDelta
-  //   => DiracDelta
-  it.todo("test_DiracDelta:36");
+  it.fails("test_DiracDelta:35", () => {
+    expect(sympyStr(DiracDelta(rational(0)).func())).toBe('DiracDelta');
+  });
+  it.fails("test_DiracDelta:36", () => {
+    const x = new Sym('x');
+    expect(sympyStr(DiracDelta(x).func())).toBe('DiracDelta');
+  });
   it.fails("test_DiracDelta:42", () => {
     const x = new Sym('x');
     expect(sympyStr(adjoint(DiracDelta(x)))).toBe('DiracDelta(x)');
@@ -740,10 +739,10 @@ describe("sympy/functions/special/tests/test_singularity_functions.py", () => {
   //   raises(ArgumentIndexError, lambda: SingularityFunction(x, 4, 5).fdiff(2))
   //   => None
   it.todo("test_fdiff:41");
-  // no adapter for .func
-  //   assert SingularityFunction(x, a, n).func == SingularityFunction
-  //   => SingularityFunction
-  it.todo("test_eval:45");
+  it.fails("test_eval:45", () => {
+    const [x, a, n] = symbols('x a n');
+    expect(sympyStr(SingularityFunction(x, a, n).func())).toBe('SingularityFunction');
+  });
   it("test_eval:46", () => {
     const [x, n] = symbols('x n');
     expect(sympyStr(unchanged(SingularityFunction, x, rational(5), n))).toBe('True');

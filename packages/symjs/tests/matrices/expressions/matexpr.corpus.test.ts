@@ -330,10 +330,9 @@ describe("sympy/matrices/expressions/tests/test_adjoint.py", () => {
   it("test_adjoint:23", () => {
     expect(sympyStr(Adjoint(Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]])).doit())).toBe('Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])');
   });
-  // an error outside the library
-  //   assert Adjoint(S(5)).doit() == S(5)
-  //   => 5
-  it.todo("test_adjoint:25");
+  it("test_adjoint:25", () => {
+    expect(sympyStr(Adjoint(rational(5)).doit())).toBe('5');
+  });
   it("test_adjoint:27", () => {
     expect(sympyStr(Adjoint(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])).doit())).toBe('Matrix([[1, 3], [2, 4]])');
   });
@@ -366,15 +365,15 @@ describe("sympy/matrices/expressions/tests/test_applyfunc.py", () => {
   //   assert expr.shape == (3, 3)
   //   => (3, 3)
   it.todo("test_applyfunc_matrix:30");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert expr.func(*expr.args) == expr
   //   => Lambda(_x, _x**2).(Matrix([
   //   [X[0, 0], X[0, 1], X[0, 2]],
   //   [X[1, 0], X[1, 1], X[1, 2]],
   //   [X[2, 0], X[2, 1], X[2, 2]]]))
   it.todo("test_applyfunc_matrix:31");
-  it.fails("test_applyfunc_matrix:32", () => {
-    expect(sympyStr(simplify(ElementwiseApplyFunction(Lambda([new Dummy('x', {}, 1000000)], new Pow(new Dummy('x', {}, 1000000), rational(2))), Matrix.of([[MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(0), rational(0)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(0), rational(1)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(0), rational(2))], [MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(1), rational(0)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(1), rational(1)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(1), rational(2))], [MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(2), rational(0)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(2), rational(1)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(2), rational(2))]]))))).toBe('Lambda(_x, _x**2).(Matrix([\n[X[0, 0], X[0, 1], X[0, 2]],\n[X[1, 0], X[1, 1], X[1, 2]],\n[X[2, 0], X[2, 1], X[2, 2]]]))');
+  it("test_applyfunc_matrix:32", () => {
+    expect(sympyMatches(simplify(ElementwiseApplyFunction(Lambda([new Dummy('x', {}, 1000000)], new Pow(new Dummy('x', {}, 1000000), rational(2))), Matrix.of([[MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(0), rational(0)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(0), rational(1)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(0), rational(2))], [MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(1), rational(0)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(1), rational(1)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(1), rational(2))], [MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(2), rational(0)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(2), rational(1)), MatrixElement(new MatrixSymbol('X', rational(3), rational(3)), rational(2), rational(2))]]))), 'Lambda(_x, _x**2).(Matrix([\n[X[0, 0], X[0, 1], X[0, 2]],\n[X[1, 0], X[1, 1], X[1, 2]],\n[X[2, 0], X[2, 1], X[2, 2]]]))')).toBe(true);
   });
   // the arguments do not type-check against the public API
   //   assert expr[0, 0] == double(Xd[0, 0])
@@ -384,7 +383,7 @@ describe("sympy/matrices/expressions/tests/test_applyfunc.py", () => {
   //   assert expr == X.applyfunc(double)
   //   => Lambda(_x, _x**2).(X)
   it.todo("test_applyfunc_matrix:38");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert expr.func(*expr.args) == expr
   //   => Lambda(_x, _x**2).(X)
   it.todo("test_applyfunc_matrix:39");
@@ -397,7 +396,7 @@ describe("sympy/matrices/expressions/tests/test_applyfunc.py", () => {
   it("test_applyfunc_matrix:44", () => {
     expect(sympyStr(dummyEq(ElementwiseApplyFunction(Lambda([new Dummy('d', {}, 1000001)], exp(new Dummy('d', {}, 1000001))), MatMul(new MatrixSymbol('X', rational(3), rational(3)), new MatrixSymbol('Y', rational(3), rational(3)))), ElementwiseApplyFunction(Lambda([new Dummy('d', {}, 1000000)], exp(new Dummy('d', {}, 1000000))), MatMul(new MatrixSymbol('X', rational(3), rational(3)), new MatrixSymbol('Y', rational(3), rational(3))))))).toBe('True');
   });
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert expr.func(*expr.args) == expr
   //   => Lambda(_d, exp(_d)).(X*Y)
   it.todo("test_applyfunc_matrix:45");
@@ -428,7 +427,7 @@ describe("sympy/matrices/expressions/tests/test_applyfunc.py", () => {
   //   assert expr.doit() == Matrix([[sin(x), sin(y)], [sin(z), sin(t)]])
   //   => Matrix([[sin(_x), sin(y)], [sin(z), sin(t)]])
   it.todo("test_applyfunc_matrix:63");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert expr.func(*expr.args) == expr
   //   => Lambda(_d, sin(_d)).(Matrix([
   //   [_x, y],
@@ -691,10 +690,9 @@ describe("sympy/matrices/expressions/tests/test_matadd.py", () => {
   //   assert MatAdd.identity != S.Zero
   //   => 0
   it.todo("test_generic_identity:41");
-  // the conversion failed: all.filter is not a function
-  //   assert Add(ZeroMatrix(2, 2), ZeroMatrix(2, 2)) == ZeroMatrix(2, 2)
-  //   => 0
-  it.todo("test_zero_matrix_add:45");
+  it("test_zero_matrix_add:45", () => {
+    expect(sympyStr(Add(ZeroMatrix(rational(2), rational(2)), ZeroMatrix(rational(2), rational(2))))).toBe('0');
+  });
   it("test_shape_error:55", () => {
     expect(() => MatAdd(new MatrixSymbol('A', rational(2), rational(3)), new MatrixSymbol('B', rational(3), rational(3)))).toThrow(ShapeError);
   });
@@ -1213,7 +1211,7 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
   it.fails("test_issue_7842:400", () => {
     expect(sympyStr(Eq(new MatrixSymbol('A', rational(3), rational(1)), new MatrixSymbol('B', rational(2), rational(1))))).toBe('False');
   });
-  // no adapter for .func
+  // an error outside the library
   //   assert Eq(A[1,0], B[1, 0]).func is Eq
   //   => <class 'sympy.core.relational.Equality'>
   it.todo("test_issue_7842:401");
@@ -1231,79 +1229,79 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
   it("test_issue_24859:429", () => {
     expect(sympyStr(doit(new Add([new Mul([MatrixElement(new MatrixSymbol('B', rational(3), rational(2)), rational(0), rational(1)), MatrixElement(new MatrixSymbol('u', rational(2), rational(3)), rational(1), rational(0))]), new Mul([MatrixElement(new MatrixSymbol('B', rational(3), rational(2)), rational(1), rational(1)), MatrixElement(new MatrixSymbol('u', rational(2), rational(3)), rational(1), rational(1))]), new Mul([MatrixElement(new MatrixSymbol('B', rational(3), rational(2)), rational(2), rational(1)), MatrixElement(new MatrixSymbol('u', rational(2), rational(3)), rational(1), rational(2))])])))).toBe('B[0, 1]*u[1, 0] + B[1, 1]*u[1, 1] + B[2, 1]*u[1, 2]');
   });
-  // the conversion failed: e.args.filter is not a function
+  // a function that did not come from the library
   //   assert Mul(x, M) == Mul(M, x) == Mx
   //   => Matrix([[x, 2*x], [3*x, 4*x]])
   it.todo("test_MatMul_postprocessor:439");
-  // the conversion failed: e.args.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert Mul(x, M) == Mul(M, x) == Mx
   //   => Matrix([[x, 2*x], [3*x, 4*x]])
   it.todo("test_MatMul_postprocessor:439 (2)");
-  // the conversion failed: e.args.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert Mul(A, M) == MatMul(A, M)
   //   => A*Matrix([
   //   [1, 2],
   //   [3, 4]])
   it.todo("test_MatMul_postprocessor:442");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Mul(M, A) == MatMul(M, A)
   //   => Matrix([
   //   [1, 2],
   //   [3, 4]])*A
   it.todo("test_MatMul_postprocessor:443");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert a == b == c == MatMul(Mx, A)
   //   => Matrix([
   //   [  x, 2*x],
   //   [3*x, 4*x]])*A
   it.todo("test_MatMul_postprocessor:448");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert a == b == c == MatMul(Mx, A)
   //   => Matrix([
   //   [  x, 2*x],
   //   [3*x, 4*x]])*A
   it.todo("test_MatMul_postprocessor:448 (2)");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert a == b == c == MatMul(Mx, A)
   //   => Matrix([
   //   [  x, 2*x],
   //   [3*x, 4*x]])*A
   it.todo("test_MatMul_postprocessor:448 (3)");
-  // the conversion failed: e.args.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert a == b == c == MatMul(A, Mx)
   //   => A*Matrix([
   //   [  x, 2*x],
   //   [3*x, 4*x]])
   it.todo("test_MatMul_postprocessor:452");
-  // the conversion failed: e.args.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert a == b == c == MatMul(A, Mx)
   //   => A*Matrix([
   //   [  x, 2*x],
   //   [3*x, 4*x]])
   it.todo("test_MatMul_postprocessor:452 (2)");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert a == b == c == MatMul(A, Mx)
   //   => A*Matrix([
   //   [  x, 2*x],
   //   [3*x, 4*x]])
   it.todo("test_MatMul_postprocessor:452 (3)");
-  // the conversion failed: e.args.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert Mul(M, M) == M**2
   //   => Matrix([[7, 10], [15, 22]])
   it.todo("test_MatMul_postprocessor:453");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Mul(A, M, M) == MatMul(A, M**2)
   //   => A*Matrix([
   //   [ 7, 10],
   //   [15, 22]])
   it.todo("test_MatMul_postprocessor:454");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Mul(M, M, A) == MatMul(M**2, A)
   //   => Matrix([
   //   [ 7, 10],
   //   [15, 22]])*A
   it.todo("test_MatMul_postprocessor:455");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Mul(M, A, M) == MatMul(M, A, M)
   //   => Matrix([
   //   [1, 2],
@@ -1311,21 +1309,21 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
   //   [1, 2],
   //   [3, 4]])
   it.todo("test_MatMul_postprocessor:456");
-  // the conversion failed: e.args.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Mul(A, x, M, M, x) == MatMul(A, Mx**2)
   //   => A*Matrix([
   //   [ 7*x**2, 10*x**2],
   //   [15*x**2, 22*x**2]])
   it.todo("test_MatMul_postprocessor:458");
-  // the conversion failed: all.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert Add(0, z) == Add(z, 0) == z
   //   => Matrix([[0, 0], [0, 0]])
   it.todo("test_MatAdd_postprocessor:476");
-  // the conversion failed: all.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert Add(0, z) == Add(z, 0) == z
   //   => Matrix([[0, 0], [0, 0]])
   it.todo("test_MatAdd_postprocessor:476 (2)");
-  // the conversion failed: all.filter is not a function
+  // a function that did not come from the library
   //   assert a == Add(z, S.Infinity)
   //   => oo + Matrix([
   //   [0, 0],
@@ -1334,7 +1332,7 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
   it("test_MatAdd_postprocessor:481", () => {
     expect(sympyMatches([oo, Matrix.of([[rational(0), rational(0)], [rational(0), rational(0)]])], '(oo, Matrix([\n[0, 0],\n[0, 0]]))', 't')).toBe(true);
   });
-  // the conversion failed: all.filter is not a function
+  // a function that did not come from the library
   //   assert a == Add(z, S.ComplexInfinity)
   //   => zoo + Matrix([
   //   [0, 0],
@@ -1346,7 +1344,7 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
   it("test_MatAdd_postprocessor:491", () => {
     expect(sympyMatches([nan, Matrix.of([[rational(0), rational(0)], [rational(0), rational(0)]])], '(nan, Matrix([\n[0, 0],\n[0, 0]]))', 't')).toBe(true);
   });
-  // the conversion failed: all.filter is not a function
+  // a function that did not come from the library
   //   assert a == Add(M, x)
   //   => x + Matrix([
   //   [1, 2],
@@ -1356,43 +1354,43 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
     const x = new Sym('x');
     expect(sympyMatches([x, Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])], '(x, Matrix([\n[1, 2],\n[3, 4]]))', 't')).toBe(true);
   });
-  // the conversion failed: all.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert Add(A, M) == Add(M, A) == A + M
   //   => Matrix([
   //   [1, 2],
   //   [3, 4]]) + A
   it.todo("test_MatAdd_postprocessor:500");
-  // the conversion failed: all.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Add(A, M) == Add(M, A) == A + M
   //   => Matrix([
   //   [1, 2],
   //   [3, 4]]) + A
   it.todo("test_MatAdd_postprocessor:500 (2)");
-  // the conversion failed: all.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert a == Add(M, x, A) == Add(M, A, x) == Add(x, A, M) == Add(A, x, M) == Add(A, M, x)
   //   => x + (Matrix([
   //   [1, 2],
   //   [3, 4]]) + A)
   it.todo("test_MatAdd_postprocessor:504");
-  // the conversion failed: all.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert a == Add(M, x, A) == Add(M, A, x) == Add(x, A, M) == Add(A, x, M) == Add(A, M, x)
   //   => x + (Matrix([
   //   [1, 2],
   //   [3, 4]]) + A)
   it.todo("test_MatAdd_postprocessor:504 (2)");
-  // the conversion failed: all.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert a == Add(M, x, A) == Add(M, A, x) == Add(x, A, M) == Add(A, x, M) == Add(A, M, x)
   //   => x + (Matrix([
   //   [1, 2],
   //   [3, 4]]) + A)
   it.todo("test_MatAdd_postprocessor:504 (3)");
-  // the conversion failed: all.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert a == Add(M, x, A) == Add(M, A, x) == Add(x, A, M) == Add(A, x, M) == Add(A, M, x)
   //   => x + (Matrix([
   //   [1, 2],
   //   [3, 4]]) + A)
   it.todo("test_MatAdd_postprocessor:504 (4)");
-  // the conversion failed: all.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert a == Add(M, x, A) == Add(M, A, x) == Add(x, A, M) == Add(A, x, M) == Add(A, M, x)
   //   => x + (Matrix([
   //   [1, 2],
@@ -1402,23 +1400,23 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
     const x = new Sym('x');
     expect(sympyMatches([x, MatAdd(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]]), new MatrixSymbol('A', rational(2), rational(2)))], '(x, Matrix([\n[1, 2],\n[3, 4]]) + A)', 't')).toBe(true);
   });
-  // the conversion failed: all.filter is not a function
+  // the arguments do not type-check against the public API
   //   assert Add(M, M) == 2*M
   //   => Matrix([[2, 4], [6, 8]])
   it.todo("test_MatAdd_postprocessor:508");
-  // the conversion failed: all.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Add(M, A, M) == Add(M, M, A) == Add(A, M, M) == A + 2*M
   //   => Matrix([
   //   [2, 4],
   //   [6, 8]]) + A
   it.todo("test_MatAdd_postprocessor:509");
-  // the conversion failed: all.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Add(M, A, M) == Add(M, M, A) == Add(A, M, M) == A + 2*M
   //   => Matrix([
   //   [2, 4],
   //   [6, 8]]) + A
   it.todo("test_MatAdd_postprocessor:509 (2)");
-  // the conversion failed: all.filter is not a function
+  // expected an expression, got Matrix([[1, 2], [3, 4]])
   //   assert Add(M, A, M) == Add(M, M, A) == Add(A, M, M) == A + 2*M
   //   => Matrix([
   //   [2, 4],
@@ -1708,14 +1706,14 @@ describe("sympy/matrices/expressions/tests/test_matmul.py", () => {
     const x = new Sym('x');
     expect(sympyStr(MatrixElement(new MatrixSymbol('A', rational(1), rational(1)), rational(0), rational(0)).mul(x))).toBe('x*A[0, 0]');
   });
-  // the conversion failed: e.args.filter is not a function
-  //   assert Mul(C, D) == MatMul(C, D)
-  //   => C*D
-  it.todo("test_construction_with_Mul:161");
-  // the conversion failed: e.args.filter is not a function
-  //   assert Mul(D, C) == MatMul(D, C)
-  //   => D*C
-  it.todo("test_construction_with_Mul:162");
+  it("test_construction_with_Mul:161", () => {
+    const n = new Sym('n', { integer: true });
+    expect(sympyStr(Mul(new MatrixSymbol('C', n, n), new MatrixSymbol('D', n, n)))).toBe('C*D');
+  });
+  it("test_construction_with_Mul:162", () => {
+    const n = new Sym('n', { integer: true });
+    expect(sympyStr(Mul(new MatrixSymbol('D', n, n), new MatrixSymbol('C', n, n)))).toBe('D*C');
+  });
   // no adapter for .identity
   //   assert MatMul.identity == GenericIdentity()
   //   => I
@@ -1778,7 +1776,7 @@ describe("sympy/matrices/expressions/tests/test_matpow.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(MatPow(new MatrixSymbol('X', rational(2), rational(2)), n).asExplicit())).toBe('Matrix([[2*(-sqrt((X[0, 0] + X[1, 1])**2 - 4*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0])/2 + X[0, 0]/2 + X[1, 1]/2)**n*X[0, 1]*X[1, 0]/((sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2) + X[0, 0] - X[1, 1])*sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)) - 2*(sqrt((X[0, 0] + X[1, 1])**2 - 4*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0])/2 + X[0, 0]/2 + X[1, 1]/2)**n*X[0, 1]*X[1, 0]/((-sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2) + X[0, 0] - X[1, 1])*sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)), -2*(-sqrt((X[0, 0] + X[1, 1])**2 - 4*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0])/2 + X[0, 0]/2 + X[1, 1]/2)**n*(sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[0, 0] - sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[1, 1] + X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 2*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[0, 1]/((sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2) + X[0, 0] - X[1, 1])*(sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[0, 0] - sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[1, 1] + X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)) - 4*(sqrt((X[0, 0] + X[1, 1])**2 - 4*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0])/2 + X[0, 0]/2 + X[1, 1]/2)**n*X[0, 1]**2*X[1, 0]/((-sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2) + X[0, 0] - X[1, 1])*(sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[0, 0] - sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[1, 1] + X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2))], [-(-sqrt((X[0, 0] + X[1, 1])**2 - 4*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0])/2 + X[0, 0]/2 + X[1, 1]/2)**n*X[1, 0]/sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2) + (sqrt((X[0, 0] + X[1, 1])**2 - 4*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0])/2 + X[0, 0]/2 + X[1, 1]/2)**n*X[1, 0]/sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2), (-sqrt((X[0, 0] + X[1, 1])**2 - 4*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0])/2 + X[0, 0]/2 + X[1, 1]/2)**n*(sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[0, 0] - sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[1, 1] + X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 2*X[0, 1]*X[1, 0] + X[1, 1]**2)/(sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[0, 0] - sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[1, 1] + X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2) + 2*(sqrt((X[0, 0] + X[1, 1])**2 - 4*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0])/2 + X[0, 0]/2 + X[1, 1]/2)**n*X[0, 1]*X[1, 0]/(sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[0, 0] - sqrt(X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)*X[1, 1] + X[0, 0]**2 - 2*X[0, 0]*X[1, 1] + 4*X[0, 1]*X[1, 0] + X[1, 1]**2)]])');
   });
-  it.fails("test_as_explicit_symbol:53", () => {
+  it("test_as_explicit_symbol:53", () => {
     expect(sympyStr(MatPow(MatMul(Transpose(new MatrixSymbol('a', rational(3), rational(1))), new MatrixSymbol('b', rational(3), rational(1))), rational(1, 2)).asExplicit())).toBe('Matrix([[sqrt(a[0, 0]*b[0, 0] + a[1, 0]*b[1, 0] + a[2, 0]*b[2, 0])]])');
   });
   // the arguments do not type-check against the public API
@@ -1810,7 +1808,7 @@ describe("sympy/matrices/expressions/tests/test_matpow.py", () => {
   it("test_as_explicit_matrix:79", () => {
     expect(sympyStr(MatPow(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]]), rational(-2)).asExplicit())).toBe('Matrix([[11/2, -5/2], [-15/4, 7/4]])');
   });
-  it.fails("test_as_explicit_matrix:82", () => {
+  it("test_as_explicit_matrix:82", () => {
     expect(sympyStr(MatPow(Matrix.of([[rational(4)]]), rational(1, 2)).asExplicit())).toBe('Matrix([[2]])');
   });
   it("test_doit_symbol:86", () => {
@@ -1856,7 +1854,7 @@ describe("sympy/matrices/expressions/tests/test_matpow.py", () => {
   it("test_doit_matrix:99", () => {
     expect(sympyStr(MatPow(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]]), rational(-2)).doit())).toBe('Matrix([[11/2, -5/2], [-15/4, 7/4]])');
   });
-  it.fails("test_doit_matrix:101", () => {
+  it("test_doit_matrix:101", () => {
     expect(sympyStr(MatPow(Matrix.of([[rational(4)]]), rational(1, 2)).doit())).toBe('Matrix([[2]])');
   });
   it("test_doit_matrix:103", () => {
@@ -1909,7 +1907,7 @@ describe("sympy/matrices/expressions/tests/test_matpow.py", () => {
     const n = new Sym('n', { integer: true });
     expect(() => MatPow(Matrix.of([[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)]]), n)).toThrow(NonSquareMatrixError);
   });
-  it.fails("test_doit_equals_pow:117", () => {
+  it("test_doit_equals_pow:117", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(MatPow(Matrix.of([[rational(1), rational(0)], [rational(0), rational(1)]]), n).doit())).toBe('Matrix([[1, 0], [0, 1]])');
   });
@@ -2145,7 +2143,7 @@ describe("sympy/matrices/expressions/tests/test_matpow.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(unchanged(MatPow, MatPow(new MatrixSymbol('C', n, n), rational(1)), rational(1)))).toBe('True');
   });
-  // a function that did not come from the library
+  // the generated test does not reproduce the replay
   //   raises(NotImplementedError, lambda: 3**(-2*C))
   //   => None
   it.todo("test_no_exponentiation:217");
@@ -2679,10 +2677,10 @@ describe("sympy/matrices/expressions/tests/test_trace.py", () => {
   it("test_trace_constant_factor:97", () => {
     expect(sympyStr(trace(MatMul(rational(2), Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]]))))).toBe('10');
   });
-  // a value without provenance ([object Object] TypeRef)
-  //   assert trace(A).rewrite(Sum) == Sum(A[i, i], (i, 0, n - 1))
-  //   => Sum(A[i, i], (i, 0, n - 1))
-  it.todo("test_trace_rewrite:101");
+  it.fails("test_trace_rewrite:101", () => {
+    const n = new Sym('n', { integer: true });
+    expect(sympyStr(rewrite(Trace(new MatrixSymbol('A', n, n)), 'Sum', { pattern: [], deep: true }))).toBe('Sum(A[i, i], (i, 0, n - 1))');
+  });
   it("test_trace_rewrite:102", () => {
     expect(sympyStr(rewrite(rational(3), 'Sum', { pattern: [], deep: true }))).toBe('3');
   });
@@ -2736,10 +2734,9 @@ describe("sympy/matrices/expressions/tests/test_transpose.py", () => {
   it("test_transpose:27", () => {
     expect(sympyStr(Transpose(Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]])).doit())).toBe('Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])');
   });
-  // an error outside the library
-  //   assert Transpose(S(5)).doit() == S(5)
-  //   => 5
-  it.todo("test_transpose:29");
+  it("test_transpose:29", () => {
+    expect(sympyStr(Transpose(rational(5)).doit())).toBe('5');
+  });
   it("test_transpose:31", () => {
     expect(sympyStr(Transpose(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])).doit())).toBe('Matrix([[1, 3], [2, 4]])');
   });

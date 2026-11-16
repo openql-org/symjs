@@ -70,7 +70,7 @@ describe("doctests of sympy.geometry.polygon", () => {
   //   M.area
   //   => -3/2
   it.todo("M.area");
-  // the case takes more than 4 seconds
+  // the arguments do not type-check against the public API
   //   p.bisectors(2)
   //   => {Point2D(0, 3): Ray2D(Point2D(0, 3), Point2D(0.23, 2.0)), Point2D(0, 0): Ray2D(Point2D(0, 0), Point2D(0.71, 0.71)), Point2D(2, 0): Ray2D(Point2D(2, 0), Point2D(1.1, 0.38)), Point2D(1, 1): Ray2D(Point2D(1, 1), Point2D(0.19, 0.42))}
   it.todo("p.bisectors(2)");

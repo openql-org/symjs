@@ -44,6 +44,11 @@ export class BaseScalarNode extends Sym {
     return this.#latex;
   }
 
+  /** SymPy srepr: the printed name (R.x), as SymPy's BaseScalar repr is its str. */
+  printRepr(): string {
+    return this.name;
+  }
+
   /** Sorted as SymPy's class BaseScalar (before the symbols). */
   override get sortClass(): string {
     return 'BaseScalar';

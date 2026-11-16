@@ -700,8 +700,9 @@
     },
     "matrices": {
       "examined": 7206,
-      "cases": 5097,
+      "cases": 5093,
       "reasons": {
+        "deprecated-api": 4,
         "duplicate": 637,
         "marked-slow": 52,
         "marked-xfail": 15,
@@ -724,17 +725,17 @@
         "marked-xfail": 9,
         "optional-dependency": 12
       },
-      "seconds": 88.146,
+      "seconds": 65.393,
       "retainedModules": 0,
       "shards": [
         {
           "file": "matrices.json",
-          "cases": 5097,
-          "bytes": 9172504
+          "cases": 5093,
+          "bytes": 9169026
         }
       ],
       "auditFile": "matrices.audit.json",
-      "auditBytes": 331125,
+      "auditBytes": 331934,
       "modules": [
         "sympy.matrices.expressions.tests.test_adjoint",
         "sympy.matrices.expressions.tests.test_applyfunc",
@@ -2310,7 +2311,7 @@
       "reason": "XML stylesheet processing requires optional lxml."
     }
   ],
-  "timeoutSeconds": 120.0,
-  "jobs": 3,
-  "lastRunSeconds": 612.505
+  "timeoutSeconds": 120,
+  "jobs": 4,
+  "lastRunSeconds": 66.071
 }

@@ -12,12 +12,12 @@ import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Dummy, Fn, S } from '../core/nodes';
 import { at } from '../core/guard';
 import { piecewise } from '../core/logic';
-import { mul, pow, sympify } from '../core/ops';
+import { div, mul, pow, sympify } from '../core/ops';
 import { mapBottomUp } from '../core/traverse';
 import { cos, sin } from '../functions/elementary/elementary';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch, orNoMatch } from '../core/truth';
-import type { Poly } from '../polys/sympoly';
+import { Poly } from '../polys/sympoly';
 import * as RT from './rationaltools';
 import * as TR from './trigonometry';
 import * as DF from './deltafunctions';
@@ -28,21 +28,27 @@ import type { HeurischOptions } from './heurisch';
 import type { SetExpr } from '../sets/sets';
 import { finiteSet } from '../sets/sets';
 /**
- * SymPy ratint(f, x): the integral of the rational function f in x; NoMatch
- * when f is not a rational function of x or the roots of the logarithmic
- * part cannot be written.
+ * SymPy ratint(f, x, real=None): the integral of the rational function f in x (f may be given as
+ * [numerator, denominator]); NoMatch when f is not a rational function of x or the roots of the
+ * logarithmic part cannot be written. With `real: false` the logarithms are not turned into real
+ * arctangents (by default they are when the other symbols are real).
  *
  * @example
  * ratint(parse('1/(x**2 + 1)'), x)  // atan(x)
+ * ratint(parse('1/(x**2 + 1)'), x, { real: false })  // -I*log(x - I)/2 + I*log(x + I)/2
  */
-export const ratint = (f: ExprLike, x: Sym): Expr | NoMatchResult => orNoMatch(RT.ratint(sympify(f), x));
+export const ratint = (f: ExprLike | readonly [ExprLike, ExprLike], x: Sym, opts: { real?: boolean } = {}): Expr | NoMatchResult =>
+  orNoMatch(RT.ratint(isPair(f) ? div(f[0], f[1]) : sympify(f), x, opts));
+
+const isPair = (f: ExprLike | readonly [ExprLike, ExprLike]): f is readonly [ExprLike, ExprLike] => Array.isArray(f);
 
 /**
  * SymPy ratint_logpart(f, g, x, t=None): the logarithmic part of the integral
  * of f/g as pairs [s, q] with integral(f/g) = sum over the roots a of q(t) of
  * a*log(s(x, a)); `t` is a new Dummy by default.
  */
-export const ratintLogpart = (f: Poly, g: Poly, x: Sym, t: Sym = new Dummy('t')): [Poly, Poly][] => RT.ratintLogpart(f, g, x, t);
+export const ratintLogpart = (f: Poly | ExprLike, g: Poly | ExprLike, x: Sym, t: Sym = new Dummy('t')): [Poly, Poly][] =>
+  RT.ratintLogpart(f instanceof Poly ? f : Poly.from(f, [x]), g instanceof Poly ? g : Poly.from(g, [x]), x, t);
 
 /**
  * SymPy log_to_real(h, q, x, t): the sum over the roots a of q of
@@ -58,7 +64,11 @@ export const logToReal = (h: Poly, q: Poly, x: Sym, t: Sym): Expr | NoMatchResul
  * @example
  * trigintegrate(parse('sin(x)**2'), x)  // x/2 - sin(x)*cos(x)/2
  */
-export const trigintegrate = (f: ExprLike, x: Sym): Expr | NoMatchResult => orNoMatch(TR.trigintegrate(rewriteSinCos(sympify(f)), x));
+export const trigintegrate = (f: ExprLike, x: Sym): Expr | NoMatchResult => {
+  const g = rewriteSinCos(sympify(f));
+  // sin(a*x)**0*cos(a*x)**0
+  return g.equals(S.One) ? x : orNoMatch(TR.trigintegrate(g, x));
+};
 
 /** tan, cot, sec and csc written with sin and cos (SymPy f.rewrite('sincos') in trigintegrate). */
 function rewriteSinCos(f: Expr): Expr {

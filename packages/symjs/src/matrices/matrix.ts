@@ -37,6 +37,11 @@ export type MatrixPosition = readonly [number, number];
 /** SymPy `value == 0` for an entry (structural: an exact or floating zero). */
 const isZeroEntry = (v: Expr): boolean => (v instanceof Rational || v instanceof Float) && v.isZero;
 const isZeroE = (e: Expr): boolean => e instanceof Rational && e.isZero;
+/** The value of an integer Rational or integer-valued Float; undefined for other expressions. */
+const integerValue = (e: Expr): number | undefined => {
+  if (e instanceof Rational) return e.q === 1n ? Number(e.p) : undefined;
+  return e instanceof Float && Number.isInteger(e.toNumber()) ? e.toNumber() : undefined;
+};
 const isIndexList = (perm: readonly (readonly [number, number])[] | readonly number[]): perm is readonly number[] => typeof perm[0] === 'number';
 const range = (a: number, b: number): number[] => Array.from({ length: Math.max(0, b - a) }, (_, i) => a + i);
 
@@ -267,23 +272,31 @@ export class Matrix {
     });
   }
 
-  /** Integer power (negative powers use the inverse). */
-  pow(n: number): Matrix {
+  /**
+   * SymPy Matrix.pow: the power by an integer (negative powers use the inverse) or, for a diagonal or
+   * 1 x 1 matrix, by any exponent (entrywise). Another matrix to a non-integer power is a RangeError
+   * (SymPy uses its Jordan form).
+   */
+  pow(n: number | ExprLike): Matrix {
     if (!this.isSquare) throw new NonSquareMatrixError('Matrix pow: matrix must be square');
-    if (!Number.isInteger(n)) throw new RangeError('Matrix pow: exponent must be an integer');
-    if (n < 0) return this.inv().pow(-n);
+    const k = typeof n === 'number' && Number.isInteger(n) ? n : integerValue(sympify(n));
+    if (k === undefined) {
+      const exp = sympify(n);
+      if (this.isDiagonal()) return Matrix.fromFunction(this.rows, this.cols, (i, j) => (i === j ? pow(this.get(i, i), exp) : S.Zero));
+      throw new RangeError('Matrix pow: exponent must be an integer');
+    }
+    if (k < 0) return this.inv().pow(-k);
     // SymPy MatrixBase.pow: a diagonal or 1x1 matrix is raised entrywise; otherwise the products
     // are simplified as they go (dotprodsimp), here by expanding each entry
-    if (n === 0) return Matrix.eye(this.rows);
-    const diagonal = this.data.every((e, idx) => Math.floor(idx / this.cols) === idx % this.cols || (e instanceof Rational && e.isZero));
-    if (diagonal) return this.map((e) => pow(e, n));
+    if (k === 0) return Matrix.eye(this.rows);
+    if (this.isDiagonal()) return this.map((x) => pow(x, k));
     let result = Matrix.eye(this.rows);
     let base: Matrix = this;
-    let k = n;
-    while (k > 0) {
-      if (k & 1) result = result.product(base, expand);
-      k >>= 1;
-      if (k > 0) base = base.product(base, expand);
+    let m = k;
+    while (m > 0) {
+      if (m & 1) result = result.product(base, expand);
+      m >>= 1;
+      if (m > 0) base = base.product(base, expand);
     }
     return result;
   }

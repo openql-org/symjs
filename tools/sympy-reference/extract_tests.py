@@ -413,6 +413,19 @@ def contains_iterator(value):
     return False
 
 
+def deprecated_matrix_input(value):
+    """A Matrix built with SymPy's deprecated forms: non-Expr entries (Poly) or a RawMatrix ``ring`` attribute."""
+    from sympy.matrices import MatrixBase
+    from sympy.polys.polytools import Poly
+    if isinstance(value, MatrixBase):
+        return getattr(value, "ring", None) is not None or any(isinstance(e, Poly) for e in value)
+    if isinstance(value, (list, tuple)):
+        return any(deprecated_matrix_input(v) for v in value)
+    if isinstance(value, dict):
+        return any(deprecated_matrix_input(v) for v in value.values())
+    return False
+
+
 def json_numbers(value):
     """Keep IEEE values JSON-safe and retain the captured arithmetic structure."""
     if isinstance(value, float) and not math.isfinite(value):
@@ -567,6 +580,8 @@ class Capture:
             # consume the iterator the real test is about to pass to its API.
             if contains_iterator((receiver, args, kwargs)):
                 return {"reason": "stateful-iterator-input"}
+            if deprecated_matrix_input((receiver, args, kwargs)):
+                return {"reason": "deprecated-api"}
             if name.startswith("."):
                 if name[1:].startswith("_") and name not in extract.OPERATOR_FNS:
                     return {"reason": "private-api"}

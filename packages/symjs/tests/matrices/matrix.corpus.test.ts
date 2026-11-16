@@ -2959,11 +2959,11 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   it.todo("test_issue_18956:821");
   // a callback parameter outside its callback
   //   assert a != My()
-  //   => <sympy.matrices.tests.test_matrixbase.test__eq__.<locals>.My object at 0x10dc5b740>
+  //   => <sympy.matrices.tests.test_matrixbase.test__eq__.<locals>.My object at 0x10fa0eff0>
   it.todo("test__eq__:833");
   // a callback parameter outside its callback
   //   assert a == My_sympy()
-  //   => <sympy.matrices.tests.test_matrixbase.test__eq__.<locals>.My_sympy object at 0x10dc5b740>
+  //   => <sympy.matrices.tests.test_matrixbase.test__eq__.<locals>.My_sympy object at 0x10fa0eff0>
   it.todo("test__eq__:837");
   // a primitive result that no library call returned
   //   assert m.shape == (3, 2) and all(type(i) is int for i in m.shape)

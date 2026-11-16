@@ -10,10 +10,10 @@
  * integrand is real (SymPy log_to_real).
  */
 
-import { isReal } from '../core/assumptions';
+import { isNegative, isReal } from '../core/assumptions';
 import { at, defined } from '../core/guard';
 import { Lambda } from '../core/lambda';
-import { asNumerDenom, atoms, primitive } from '../core/methods';
+import { asNumerDenom, atoms } from '../core/methods';
 import type { Expr } from '../core/nodes';
 import { Add, Dummy, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { NotImplementedError } from '../core/errors';
@@ -24,12 +24,17 @@ import { atan, log } from '../functions/elementary/elementary';
 import { linsolve } from '../matrices/linsys';
 import { roots, UPoly } from '../polys/poly';
 import { RootSum } from '../polys/rootsum';
-import { Poly, factorListExpr, resultant, sortGens } from '../polys/sympoly';
+import { Poly, factorListExpr, gcdList, resultant, sortGens } from '../polys/sympoly';
 import { expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 
 /** Above this degree, use the residue RootSum instead of a coefficient resultant. */
 const MAX_LOG_DEGREE = 4;
+/**
+ * The bound for rational coefficients when an irreducible factor has degree 5 or more (its roots are not
+ * found, so only the resultant gives real logarithms and arctangents); the subresultants stay small up to it.
+ */
+const MAX_RATIONAL_LOG_DEGREE = 6;
 
 /** Poly in one generator. */
 const P = (e: Expr, x: Expr): Poly => Poly.from(e, [x]);
@@ -137,9 +142,12 @@ export function ratintLogpart(f: Poly, g: Poly, x: Sym, t: Sym): [Poly, Poly][] 
   if (f.degree() === dg.degree()) {
     const c = cancel(mul(f.LC(), pow(dg.LC(), -1)));
     if (P(expand(add(f.asExpr(), mul(-1, c, dg.asExpr()))), x).isZero) {
-      // (SymPy's factor is primitive over the integers, and monic over the expressions of parameters)
+      // (SymPy's factor is primitive over the integers, with the sign of the resultant's leading
+      // coefficient (-1)**deg(g)*res(g, g'); and monic over the expressions of parameters)
       const q = P(add(t, mul(-1, c)), t);
-      return [[g, rationalPoly(f) && rationalPoly(g) ? q.primitive()[1] : q]];
+      if (!(rationalPoly(f) && rationalPoly(g))) return [[g, q]];
+      const negative = (isNegative(resultant(g.asExpr(), dg.asExpr(), x)) === true) !== (g.degree() % 2 === 1);
+      return [[g, negative ? q.primitive()[1].neg() : q.primitive()[1]]];
     }
   }
   const a = g;
@@ -198,6 +206,19 @@ export function logToAtan(f0: Poly, g0: Poly): Expr {
  * The real roots of a polynomial (SymPy _get_real_roots); NotImplementedError
  * when some are not found (SymPy None).
  */
+/**
+ * A root known to be real: real by the assumptions, or a product of such factors and radicals of sums of
+ * squares of real terms plus a positive number (sqrt(a**2 + 1) for a real a).
+ */
+function isRealRoot(r: Expr): boolean {
+  if (isReal(r) === true) return true;
+  if (r instanceof Mul) return r.args.every(isRealRoot);
+  if (!(r instanceof Pow && r.exp instanceof Rational && r.base instanceof Add)) return false;
+  const terms = r.base.args;
+  const square = (a: Expr): boolean => a instanceof Pow && a.exp instanceof Rational && a.exp.isInteger && a.exp.p % 2n === 0n && isReal(a.base) === true;
+  return terms.every((a) => square(a) || (a instanceof Rational && !a.isNegative)) && terms.some((a) => a instanceof Rational && a.isPositive);
+}
+
 function realRoots(f: Poly, x: Sym): Expr[] {
   // the roots of irreducible factors of degree 3 or more other than binomials are not written in radicals here
   // (Cardano's formulas: their signs cannot be decided); roots raises for those of degree 5 or more
@@ -208,7 +229,7 @@ function realRoots(f: Poly, x: Sym): Expr[] {
   // the other factors have all their roots in radicals, whose realness is decided (SymPy compares their
   // number with count_roots)
   const rs: Expr[] = [];
-  for (const r of roots(f.asExpr(), x)) if (isReal(r) === true && !rs.some((s) => s.key === r.key)) rs.push(r);
+  for (const r of roots(f.asExpr(), x)) if (isRealRoot(r) && !rs.some((s) => s.key === r.key)) rs.push(r);
   return rs;
 }
 
@@ -288,7 +309,7 @@ function couldExtractMinusSign(e: Expr): boolean {
  * @example
  * ratint(parse('1/(x**2 + 2*a*x + a**2)'), x)  // -1/(a + x)
  */
-export function ratint(f: Expr, x: Sym): Expr | undefined {
+export function ratint(f: Expr, x: Sym, opts: { real?: boolean } = {}): Expr | undefined {
   const [pe, qe] = asNumerDenom(f);
   let p0: Poly;
   let q0: Poly;
@@ -310,7 +331,7 @@ export function ratint(f: Expr, x: Sym): Expr | undefined {
   result = add(result, g, q2.integrate(x).asExpr());
   if (!r.isZero) {
     // Avoid the coefficient swell of resultants over rational functions in t.
-    if (Q.degree() > MAX_LOG_DEGREE) {
+    if (Q.degree() > (rationalPoly(r) && rationalPoly(Q) && hasLargeFactor(Q) ? MAX_RATIONAL_LOG_DEGREE : MAX_LOG_DEGREE)) {
       // For square-free Q, the residue at a root a is r(a)/Q'(a).
       // This exact logarithmic RootSum avoids coefficient swell in a
       // resultant over rational functions of an auxiliary variable.
@@ -322,17 +343,22 @@ export function ratint(f: Expr, x: Sym): Expr | undefined {
     }
     const t = new Dummy('t');
     const L = ratintLogpart(r, Q, x, t);
-    const real = atoms(f).every((e) => e.key === x.key || isReal(e) === true);
+    const real = opts.real ?? atoms(f).every((e) => e.key === x.key || isReal(e) === true);
     const eps: Expr[] = [];
     for (const [h0, q1] of L) {
       // the content over the coefficients: a rational number, or 1 for coefficients in t or in parameters
-      const hh = h0.asExpr().has(t) ? h0 : P(primitive(h0.asExpr())[1], x);
+      const hh = h0.asExpr().has(t) ? h0 : P(cancel(mul(h0.asExpr(), pow(gcdList(h0.coeffs()), -1))), x);
       const R = (real ? logToReal(hh, q1, x, t) : undefined) ?? rootSumRadicals(q1, t, hh);
       eps.push(R ?? RootSum(q1.asExpr(), t, Lambda(t, mul(t, log(hh.asExpr())))));
     }
     result = add(result, ...eps);
   }
   return mul(coeff, result);
+}
+
+/** An irreducible factor of degree above MAX_LOG_DEGREE. */
+function hasLargeFactor(q: Poly): boolean {
+  return factorListExpr(q.asExpr())[1].some(([g]) => P(g, defined(q.gens[0], 'generator')).degree() > MAX_LOG_DEGREE);
 }
 
 /**
@@ -377,7 +403,7 @@ function rootSumRadicals(q: Poly, t: Sym, h: Poly): Expr | undefined {
   const [scale, q1] = preprocessRoots(q, t);
   const he = h.asExpr();
   const terms: Expr[] = [];
-  for (const [ge, k] of factorListExpr(q1.asExpr())[1]) {
+  for (const [ge, k] of factorListExpr(q1.asExpr(), [t])[1]) {
     const p = P(ge, t);
     if (p.degree() > 4 || p.degree() > 2 && !rationalPoly(p)) return undefined;
     terms.push(mul(k, add(...roots(ge, t).map((r) => mul(r, log(xreplace(he, [[t, mul(scale, r)]])))))));

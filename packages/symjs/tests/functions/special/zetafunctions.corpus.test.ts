@@ -167,14 +167,14 @@ describe("sympy/functions/special/tests/test_zeta_functions.py", () => {
   it("test_zeta_eval:46", () => {
     expect(sympyStr(fn('zeta', [rational(7), rational(4)]))).toBe('-282251/279936 + zeta(7)');
   });
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert zeta(S.Half, 2).func == zeta
   //   => zeta
   it.todo("test_zeta_eval:47");
   it("test_zeta_eval:48", () => {
     expect(sympyStr(expandFunc(fn('zeta', [rational(1, 2), rational(2)])))).toBe('zeta(1/2) - 1');
   });
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert zeta(x, 3).func == zeta
   //   => zeta
   it.todo("test_zeta_eval:49");

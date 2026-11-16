@@ -33208,7 +33208,7 @@
   {
    "module": "sympy.core.rules",
    "sha256": "009b99ced998299ff25084cb641eab8598c3cba44e042b5a8dc62a3dae74b237",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "core/rules.ts"
    ],
@@ -33231,13 +33231,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.core.tests.test_rules",
      "testFile": "sympy/core/tests/test_rules.py",
      "inCorpus": true,
      "caseCount": 6,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -52353,7 +52353,7 @@
   {
    "module": "sympy.integrals.deltafunctions",
    "sha256": "cac2102dd441706fd847e6d50e8c6dfacc44554f131bbee84a033e274808d261",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "integrals/deltafunctions.ts"
    ],
@@ -52376,13 +52376,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.integrals.tests.test_deltafunctions",
      "testFile": "sympy/integrals/tests/test_deltafunctions.py",
      "inCorpus": true,
      "caseCount": 44,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -53649,7 +53649,7 @@
   {
    "module": "sympy.integrals.rationaltools",
    "sha256": "6408b3abdba74adfbfc10902200865fc569e9b36d071f05c13d037983894efcf",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "integrals/rationaltools.ts"
    ],
@@ -53672,13 +53672,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.integrals.tests.test_rationaltools",
      "testFile": "sympy/integrals/tests/test_rationaltools.py",
      "inCorpus": true,
      "caseCount": 46,
-     "gapCount": 9,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -54424,7 +54424,7 @@
   {
    "module": "sympy.integrals.trigonometry",
    "sha256": "88ea010c6143671f0f35b80bdd779911df3423cae8d16022ccdb82e0ffaef31d",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "integrals/trigonometry.ts"
    ],
@@ -54447,13 +54447,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.integrals.tests.test_trigonometry",
      "testFile": "sympy/integrals/tests/test_trigonometry.py",
      "inCorpus": true,
      "caseCount": 42,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -60908,7 +60908,7 @@
   {
    "module": "sympy.matrices.expressions.adjoint",
    "sha256": "1d5e0e2168264b67ffd7fe0f1d1850a60366289542a17d1ec879ab33a81f3798",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "matrices/expressions/matexpr.ts"
    ],
@@ -60958,13 +60958,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_adjoint",
      "testFile": "sympy/matrices/expressions/tests/test_adjoint.py",
      "inCorpus": true,
      "caseCount": 12,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -60988,7 +60988,7 @@
   {
    "module": "sympy.matrices.expressions.applyfunc",
    "sha256": "f2c7295a3669ef2ceebd436bd26c4dd372a0c93ccb45ae4d90697db3cd583e06",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "matrices/expressions/matexpr.ts"
    ],
@@ -61037,13 +61037,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_applyfunc",
      "testFile": "sympy/matrices/expressions/tests/test_applyfunc.py",
      "inCorpus": true,
      "caseCount": 32,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -61223,7 +61223,7 @@
   {
    "module": "sympy.matrices.expressions.companion",
    "sha256": "95750945b8d047a7b599d1d0749c0d2095cc5bcd1798a6ce56a36f5178c1e7b5",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "matrices/expressions/misc.ts"
    ],
@@ -61272,13 +61272,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_companion",
      "testFile": "sympy/matrices/expressions/tests/test_companion.py",
      "inCorpus": true,
      "caseCount": 18,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -63141,7 +63141,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matpow.py",
      "inCorpus": true,
      "caseCount": 114,
-     "gapCount": 11,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -63166,7 +63166,7 @@
   {
    "module": "sympy.matrices.expressions.permutation",
    "sha256": "5deef23b1f8481e0fa26ba967382fe02974dfb766257c5d2fcb40f99cd65846c",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "matrices/expressions/permutation.ts"
    ],
@@ -63239,13 +63239,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_permutation",
      "testFile": "sympy/matrices/expressions/tests/test_permutation.py",
      "inCorpus": true,
      "caseCount": 39,
-     "gapCount": 9,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -63802,7 +63802,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_transpose.py",
      "inCorpus": true,
      "caseCount": 18,
-     "gapCount": 2,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -63828,7 +63828,7 @@
   {
    "module": "sympy.matrices.graph",
    "sha256": "e1406ff5223967c5e37398cf2553a83d51900ed7dbc8e992f1fd0436b3ceb94f",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "matrices/linalg.ts",
     "matrices/more.ts"
@@ -63852,13 +63852,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.tests.test_graph",
      "testFile": "sympy/matrices/tests/test_graph.py",
      "inCorpus": true,
      "caseCount": 10,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -65072,7 +65072,7 @@
      "testFile": "sympy/matrices/tests/test_matrices.py",
      "inCorpus": true,
      "caseCount": 878,
-     "gapCount": 189,
+     "gapCount": 179,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 2,
@@ -65248,7 +65248,7 @@
      "testFile": "sympy/matrices/tests/test_matrixbase.py",
      "inCorpus": true,
      "caseCount": 1056,
-     "gapCount": 251,
+     "gapCount": 240,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 4,
@@ -65480,7 +65480,7 @@
   {
    "module": "sympy.matrices.normalforms",
    "sha256": "997d7dc2f26a4008ab4623d8f967527c47658c53a1b2dd7c2dc0d7e0cbcf33c0",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "matrices/normalforms.ts"
    ],
@@ -65503,13 +65503,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.tests.test_normalforms",
      "testFile": "sympy/matrices/tests/test_normalforms.py",
      "inCorpus": true,
-     "caseCount": 711,
-     "gapCount": 2,
+     "caseCount": 707,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -93171,7 +93171,7 @@
   {
    "module": "sympy.printing.tree",
    "sha256": "b503632d5dff73741451c7b4ebc01bcc0b828942096f8ee5ffb17f4d8c711544",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "printing/tree.ts"
    ],
@@ -93194,13 +93194,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.printing.tests.test_tree",
      "testFile": "sympy/printing/tests/test_tree.py",
      "inCorpus": true,
      "caseCount": 1,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -116146,7 +116146,7 @@
   {
    "module": "sympy.vector.operators",
    "sha256": "74d0bb98d5d96f72b15f91b28c53434cb4e4cd29d88cea2166d057b90d647991",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "vector/operators.ts"
    ],
@@ -116259,13 +116259,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.vector.tests.test_operators",
      "testFile": "sympy/vector/tests/test_operators.py",
      "inCorpus": true,
      "caseCount": 18,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
