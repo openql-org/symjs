@@ -3,7 +3,7 @@
 
 /**
  * @file Minimal complex arithmetic for numeric evaluation.
- * Values are plain `{ re, im }` objects (compatible with q5m.js `Complex`).
+ * Values are plain `{ re, im }` objects.
  */
 
 import type { ComplexValue as C } from '../core/nodes';

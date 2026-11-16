@@ -200,20 +200,20 @@ describe("sympy/integrals/tests/test_deltafunctions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(deltaintegrate(new Mul([new Add([rational(1), x]), DiracDelta(new Add([rational(4, 9), new Mul([rational(2, 3), x])]))]), x))).toBe('Heaviside(x + 2/3)/2');
   });
-  it.fails("test_deltaintegrate:71", () => {
+  it("test_deltaintegrate:71", () => {
     const [x, y] = symbols('x y');
     const b = new Sym('b', { commutative: false });
     const a = new Sym('a', { commutative: false });
     expect(sympyStr(deltaintegrate(new Mul([DiracDelta(new Add([x, new Mul([rational(-1), y])])), (SymFunction('f'))(new Add([x, new Mul([rational(-1), b])])), (SymFunction('f'))(new Add([x, new Mul([rational(-1), a])]))]), x))).toBe('Heaviside(x - y)*f(y - b)*f(y - a)');
   });
-  it.fails("test_deltaintegrate:75", () => {
+  it("test_deltaintegrate:75", () => {
     const [x, y] = symbols('x y');
     const a = new Sym('a', { commutative: false });
     const c = new Sym('c', { commutative: false });
     const b = new Sym('b', { commutative: false });
     expect(sympyStr(deltaintegrate(new Mul([DiracDelta(new Add([x, new Mul([rational(-1), y])])), (SymFunction('f'))(new Add([x, new Mul([rational(-1), a])])), (SymFunction('f'))(new Add([x, new Mul([rational(-1), c])])), (SymFunction('f'))(new Add([x, new Mul([rational(-1), b])]))]), x))).toBe('Heaviside(x - y)*f(y - a)*f(y - c)*f(y - b)');
   });
-  it.fails("test_deltaintegrate:78", () => {
+  it("test_deltaintegrate:78", () => {
     const [x, y, z] = symbols('x y z');
     const b = new Sym('b', { commutative: false });
     const a = new Sym('a', { commutative: false });

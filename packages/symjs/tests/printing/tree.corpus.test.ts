@@ -39,7 +39,7 @@ describe("doctests of sympy.printing.tree", () => {
 });
 
 describe("sympy/printing/tests/test_tree.py", () => {
-  // no adapter for tree
+  // a primitive result that no library call returned
   //   assert tree(A + B, assumptions=False) == test_str
   //   => MatAdd: A + B
   //   +-MatrixSymbol: A

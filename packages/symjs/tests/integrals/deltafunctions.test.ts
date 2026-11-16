@@ -5,7 +5,7 @@
 // deltaintegrate. Expected values are SymPy 1.14's (sympy.integrals.deltafunctions).
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, parse, symbols } from '../../src';
+import { DiracDelta, Heaviside, SymFunction, mul, parse, sub, symbols } from '../../src';
 import { deltaintegrate, integrateDeltas } from '../../src/integrals/deltafunctions';
 
 const [x, y] = symbols('x y');
@@ -16,6 +16,12 @@ const di = (q: string) => {
 };
 
 describe('deltaintegrate', () => {
+  it('keeps the order of noncommutative factors', () => {
+    const [a, b] = symbols('a b', { commutative: false });
+    const f = SymFunction('f');
+    const p = mul(DiracDelta(sub(x, y)), f(sub(x, b)), f(sub(x, a)));
+    expect(String(deltaintegrate(p, x))).toBe('Heaviside(x - y)*f(y - b)*f(y - a)');
+  });
   it('integrates DiracDelta', () => {
     expect(di('DiracDelta(x)')).toBe('Heaviside(x)');
     expect(di('DiracDelta(x**2 + x - 2)')).toBe('Heaviside(x - 1)/3 + Heaviside(x + 2)/3');

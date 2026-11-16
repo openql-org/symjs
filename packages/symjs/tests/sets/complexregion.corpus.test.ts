@@ -2715,14 +2715,12 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   it("test_issue_9980:1160", () => {
     expect(sympyStr(simplify(new CartesianComplexRegion(ProductSet(interval(rational(1), rational(5), false, false), interval(rational(1), rational(3), false, false)))))).toBe('CartesianComplexRegion(ProductSet(Interval(1, 5), Interval(1, 3)))');
   });
-  // no adapter for .func
-  //   assert c1.func(*c1.args) == c1
-  //   => CartesianComplexRegion(ProductSet(Interval(1, 2), Interval(2, 3)))
-  it.todo("test_issue_9980:1162");
-  // no adapter for .func
-  //   assert R.func(*R.args) == R
-  //   => CartesianComplexRegion(ProductSet(Interval(1, 5), Interval(1, 3)))
-  it.todo("test_issue_9980:1163");
+  it("test_issue_9980:1162", () => {
+    expect(sympyStr(new CartesianComplexRegion(ProductSet(interval(rational(1), rational(2), false, false), interval(rational(2), rational(3), false, false))).func(ProductSet(interval(rational(1), rational(2), false, false), interval(rational(2), rational(3), false, false))))).toBe('CartesianComplexRegion(ProductSet(Interval(1, 2), Interval(2, 3)))');
+  });
+  it("test_issue_9980:1163", () => {
+    expect(sympyStr(new CartesianComplexRegion(ProductSet(interval(rational(1), rational(5), false, false), interval(rational(1), rational(3), false, false))).func(ProductSet(interval(rational(1), rational(5), false, false), interval(rational(1), rational(3), false, false))))).toBe('CartesianComplexRegion(ProductSet(Interval(1, 5), Interval(1, 3)))');
+  });
   // an error outside the library
   //   assert (interval12 in S.Naturals) == False
   //   => False

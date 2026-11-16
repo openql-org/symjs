@@ -27,6 +27,9 @@ const show = (v: unknown): string => (isNoMatch(v) ? 'None' : Array.isArray(v) ?
 
 describe('rationaltools', () => {
   it('ratint', () => {
+    expect(show(ratint([1, P('x + 1')], x))).toBe('log(x + 1)');
+    expect(show(ratint(P('1/(x**2 + 1)'), x, { real: false }))).toBe('-I*log(x - I)/2 + I*log(x + I)/2');
+    expect(ratintLogpart(P('x'), P('x**2 - 9'), x, t).map(([h, q]) => `${sstr(h.asExpr())} ${sstr(q.asExpr())}`)).toEqual(['x**2 - 9 1 - 2*t']);
     expect(show(ratint(P('36/(x**5 - 2*x**4 - 2*x**3 + 4*x**2 + x - 2)'), x))).toBe('(12*x + 6)/(x**2 - 1) + 4*log(x - 2) - 4*log(x + 1)');
     expect(show(ratint(P('sin(x)'), x))).toBe('None');
   });
@@ -48,6 +51,8 @@ describe('trigintegrate', () => {
     expect(show(trigintegrate(P('tan(x)*sec(x)'), x))).toBe('1/cos(x)');
     expect(show(trigintegrate(P('sin(x)*tan(x)'), x))).toBe('-log(sin(x) - 1)/2 + log(sin(x) + 1)/2 - sin(x)');
     expect(show(trigintegrate(P('cot(x)*csc(x)'), x))).toBe('-1/sin(x)');
+    expect(show(trigintegrate(1, x))).toBe('x');
+    expect(show(trigintegrate(P('sin(x)*csc(x)'), x))).toBe('x');
   });
   it('gives None for other integrands', () => {
     expect(show(trigintegrate(P('log(x)*sin(x)'), x))).toBe('None');

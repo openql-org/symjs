@@ -108,6 +108,7 @@
  "sympy.matrices.expressions.tests.test_indexing:test_matrix_expression_to_indices:203 #cb6f24961687848bab36",
  "sympy.matrices.expressions.tests.test_inverse:test_inverse_non_invertible:48 #f1e88982e212597219bd",
  "sympy.matrices.expressions.tests.test_inverse:test_inverse_non_invertible:49 #24da9eb91a45c6d82d8a",
+ "sympy.matrices.expressions.tests.test_matpow:test_no_exponentiation:217 #3085d8a7de3a8a2d5b7a",
  "sympy.matrices.expressions.tests.test_special:test_generic_identity:84 #f470c24bdc76760e83fc",
  "sympy.matrices.expressions.tests.test_special:test_generic_identity:85 #4290de2c10f10b3aa3e5",
  "sympy.matrices.expressions.tests.test_special:test_generic_identity:86 #cbfbca88c4820c433e5d",

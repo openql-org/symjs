@@ -302,6 +302,23 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertEqual(corpus['extraction']['testStatuses'], {'completed': 1})
         self.assertEqual(corpus['extraction']['reasons'], {'stateful-iterator-input': 2})
 
+    def test_deprecated_matrix_inputs_are_omitted(self):
+        corpus = self.extract('''
+            from sympy.testing.pytest import warns_deprecated_sympy
+            from sympy.matrices.normalforms import invariant_factors
+            def test_deprecated():
+                x = Symbol('x')
+                with warns_deprecated_sympy():
+                    m = Matrix([[Poly(x), Poly(1, x)]])
+                assert invariant_factors(m, domain=QQ[x]) == (1,)
+                n = Matrix([[2, 4]])
+                setattr(n, 'ring', ZZ)
+                assert invariant_factors(n) == (2,)
+                assert invariant_factors(Matrix([[2, 4]])) == (2,)
+        ''')
+        self.assertEqual(corpus['extraction']['reasons'], {'deprecated-api': 2})
+        self.assertEqual([c['fn'] for c in corpus['cases']], ['invariant_factors'])
+
     def test_nonfinite_inputs_are_valid_json_and_warnings_keep_their_call_site(self):
         corpus = self.extract('''
             from sympy.testing.pytest import warns_deprecated_sympy

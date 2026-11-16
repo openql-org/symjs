@@ -908,10 +908,10 @@ describe("doctests of sympy.core.expr", () => {
 });
 
 describe("sympy/core/tests/test_expr.py", () => {
-  // no adapter for .func
-  //   assert Lt(x + I, x + I + 2).func == Lt
-  //   => <class 'sympy.core.relational.StrictLessThan'>
-  it.todo("test_relational:385");
+  it.fails("test_relational:385", () => {
+    const x = new Sym('x');
+    expect(sympyStr(rel('Lt', new Add([I, x]), new Add([rational(2), I, x])).func())).toBe('<class \'sympy.core.relational.StrictLessThan\'>');
+  });
   it("test_relational_assumptions:393", () => {
     const m1 = new Sym('m1', { nonnegative: false });
     expect(sympyStr(Lt(m1, 0))).toBe('m1 < 0');

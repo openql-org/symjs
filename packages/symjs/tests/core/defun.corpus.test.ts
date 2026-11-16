@@ -1314,7 +1314,7 @@ describe("sympy/core/tests/test_function.py", () => {
   //   assert a != 0
   //   => 0
   it.todo("test_suppressed_evaluation:496");
-  // no adapter for .func
+  // a function that did not come from the library
   //   assert a.func is sin
   //   => sin
   it.todo("test_suppressed_evaluation:497");

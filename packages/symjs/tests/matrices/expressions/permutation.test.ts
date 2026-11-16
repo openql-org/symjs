@@ -48,9 +48,9 @@ describe('permutation', () => {
     expect(s(P.pow(2))).toBe('PermutationMatrix((0 2 1))');
     expect(s(P.mul(P))).toBe('PermutationMatrix((0 2 1))');
     expect(s(det(P))).toBe('1');
-    expect(s(det(PermutationMatrix([1, 0])))).toBe('-1');
-    expect(s(PermutationMatrix([0, 1, 2]).doit())).toBe('I');
-    expect(s(PermutationMatrix([1, 0, 3, 2]).rewriteAsBlockDiagMatrix())).toBe('Matrix([[PermutationMatrix((0 1)), 0], [0, PermutationMatrix((0 1))]])');
+    expect(s(det(PermutationMatrix(new PermutationNode([1, 0]))))).toBe('-1');
+    expect(s(PermutationMatrix(new PermutationNode([0, 1, 2])).doit())).toBe('I');
+    expect(s(PermutationMatrix(new PermutationNode([1, 0, 3, 2])).rewriteAsBlockDiagMatrix())).toBe('Matrix([[PermutationMatrix((0 1)), 0], [0, PermutationMatrix((0 1))]])');
   });
 });
 
@@ -65,13 +65,14 @@ describe('more SymPy cases', () => {
     expect(s(p)).toBe('(0 1 2)');
     expect(s(PermutationNode.from([1, 0, 2]))).toBe('(2)(0 1)');
     expect(s(PermutationNode.from([0, 1, 2]))).toBe('(2)');
-    expect(L(PermutationMatrix([1, 0, 2]))).toBe('P_{\\left( 0\\; 1\\right)\\left( 2\\right)}');
+    expect(L(PermutationMatrix(new PermutationNode([1, 0, 2])))).toBe('P_{\\left( 0\\; 1\\right)\\left( 2\\right)}');
   });
 });
 
 describe('Permutation argument', () => {
   it('validation, the empty permutation and resize', () => {
     expect(() => PermutationNode.from([0, 0, 1])).toThrow(RangeError);
+    expect(() => PermutationMatrix([0, 1, 2] as never)).toThrow("0,1,2 must be a SymPy Permutation instance.");
     expect(s(PermutationNode.from([]))).toBe('()');
     expect(s(p.resize(5))).toBe('(4)(0 1 2)');
     expect(s(PermutationNode.from([1, 0, 2, 3]).resize(2))).toBe('(0 1)');
@@ -86,18 +87,19 @@ describe('PermutationMatrix', () => {
     // SymPy gives 0, from KroneckerDelta(AppliedPermutation((0 1 2), i), j), which is wrong for i = 0, j = 1
     expect(s(P.at(i, j))).toBe('PermutationMatrix((0 1 2))[i, j]');
     expect(s(P.at(1, j))).toBe('KroneckerDelta(2, j)');
+    expect(s(P.at(i, 1))).toBe('KroneckerDelta(0, i)');
   });
   it('powers, adjoints and products', () => {
     // SymPy raises TypeError (Cannot convert symbols to int)
     expect(s(P.pow(k))).toBe('PermutationMatrix((0 1 2))**k');
     expect(s(M(MatPow(P, -2)).doit())).toBe('PermutationMatrix((0 1 2))');
-    expect(latex(PermutationMatrix([]))).toBe('P_{\\left( \\right)}');
+    expect(latex(PermutationMatrix(new PermutationNode([])))).toBe('P_{\\left( \\right)}');
     expect(s(P.adjoint())).toBe('PermutationMatrix((0 2 1))');
     expect(s(M(Adjoint(P)).doit())).toBe('PermutationMatrix((0 2 1))');
     expect(s(M(MatMul(P, PermutationMatrix(q))).doit())).toBe('PermutationMatrix((1 2))');
   });
   it('rewrite(BlockDiagMatrix)', () => {
-    const bd = (a: number[]): string => s(PermutationMatrix(a).rewriteAsBlockDiagMatrix());
+    const bd = (a: number[]): string => s(PermutationMatrix(new PermutationNode(a)).rewriteAsBlockDiagMatrix());
     expect(bd([2, 0, 1, 3])).toBe('Matrix([[PermutationMatrix((0 2 1)), 0], [0, PermutationMatrix((0))]])');
     expect(bd([3, 2, 1, 0])).toBe('Matrix([[PermutationMatrix((0 3)(1 2))]])');
     expect(bd([1, 2, 3, 0, 4])).toBe('Matrix([[PermutationMatrix((0 1 2 3)), 0], [0, PermutationMatrix((0))]])');

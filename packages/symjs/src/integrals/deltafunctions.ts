@@ -38,7 +38,9 @@ function linearRoot(arg: Expr, x: Sym): [Expr, Expr] {
  * rest, or (without one) expands its DiracDelta factors.
  */
 export function changeMul(node: Expr, x: Sym): [Expr | undefined, Expr | undefined] {
-  const sorted = ordered(node instanceof Mul ? node.args : [node]);
+  // the commutative factors sorted (to collapse the same delta every time); the others keep their order
+  const factors = node instanceof Mul ? node.args : [node];
+  const sorted = [...ordered(factors.filter((a) => a.isCommutative)), ...factors.filter((a) => !a.isCommutative)];
   let dirac: Expr | undefined;
   const rest: Expr[] = [];
   for (const a0 of sorted) {

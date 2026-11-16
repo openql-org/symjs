@@ -7,6 +7,8 @@
  * function, usable as a generic transformation rule (for example by `xreplace`-like traversals).
  */
 
+import { NoMatch, type NoMatchResult } from './truth';
+
 /**
  * An immutable mapping whose value at a key is computed by `transform` (SymPy Transform). When a
  * `filter` is given, only the keys it accepts are in the mapping. SymPy's `key in t` is `t.has(key)`
@@ -29,8 +31,14 @@ export class Transform<K, V> {
     return this.transform(key);
   }
 
-  /** SymPy `t.get(key, default)`: the transformed key, or the default for a key outside the mapping. */
-  get<D>(key: K, defaultValue: D): V | D {
-    return this.has(key) ? this.transform(key) : defaultValue;
+  /**
+   * SymPy `t.get(key, default)`: the transformed key, or the default for a key outside the mapping
+   * (NoMatch when no default is given, SymPy None).
+   */
+  get(key: K): V | NoMatchResult;
+  get<D>(key: K, defaultValue: D): V | D;
+  get<D>(key: K, ...rest: [] | [D]): V | D | NoMatchResult {
+    if (this.has(key)) return this.transform(key);
+    return rest.length === 0 ? NoMatch : rest[0];
   }
 }

@@ -45,53 +45,55 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // 5 KiB to core consumers and 10 KiB to the special namespace.
 // Complex-infinity absorption in products and the Taylor-expandable flag of extension
 // nodes add under 1 KiB to core and sets consumers.
+// Non-integer powers of explicit matrices, Poly arguments in unchanged and symbol classes with their own
+// srepr add up to 6 KiB to core consumers.
 const CASES = [
-  ['core', 'Rational', 199],
-  ['core', 'parse, str', 215],
-  ['core', 'parse, diff, expand, str, latex', 215],
-  ['core', '*', 320],
+  ['core', 'Rational', 202],
+  ['core', 'parse, str', 219],
+  ['core', 'parse, diff, expand, str, latex', 219],
+  ['core', '*', 324],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
-  ['special', '*', 399],
+  ['special', '*', 403],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 986],
+  ['simplify', 'simplify', 992],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
-  ['polys', 'factor', 688],
+  ['polys', 'factor', 693],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 997],
-  ['solvers', 'solve', 1072],
-  ['solvers', 'dsolve', 1087],
-  ['sets', '*', 367],
-  ['matrices', 'Matrix', 764],
-  ['printing', 'pretty', 238],
-  ['discrete', '*', 294],
-  ['strategies', '*', 210],
+  ['solvers', 'solve', 1078],
+  ['solvers', 'dsolve', 1093],
+  ['sets', '*', 371],
+  ['matrices', 'Matrix', 768],
+  ['printing', 'pretty', 241],
+  ['discrete', '*', 299],
+  ['strategies', '*', 214],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
   ['parsing', '*', 800],
-  ['unify', '*', 237],
+  ['unify', '*', 241],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 571],
-  ['holonomic', 'exprToHolonomic', 1163],
+  ['algebras', 'Quaternion', 575],
+  ['holonomic', 'exprToHolonomic', 1169],
   ['geometry', '*', 1078],
   ['vector', '*', 1176],
-  ['stats', '*', 1312],
+  ['stats', '*', 1318],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1024],
+  ['plotting', '*', 1029],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
   ['codegen', '*', 435],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
-  ['index', 'Rational', 199],
+  ['index', 'Rational', 202],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators and quadrature (measured 2648 KiB).
-  ['index', '*', 2715],
+  ['index', '*', 2723],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

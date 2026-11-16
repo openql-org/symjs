@@ -33,23 +33,21 @@ describe("doctests of sympy.vector.coordsysrect", () => {
 });
 
 describe("sympy/vector/tests/test_coordsysrect.py", () => {
-  // no adapter for .func
+  // an error outside the library
   //   assert A.x.func(*A.x.args) == A.x
   //   => A.x
   it.todo("test_func_args:27");
-  // no adapter for .func
+  // a result object that did not come from the library
   //   assert expr.func(*expr.args) == expr
   //   => 3*A.x + 4*A.y
   it.todo("test_func_args:29");
-  // no adapter for .func
-  //   assert A.i.func(*A.i.args) == A.i
-  //   => A.i
-  it.todo("test_func_args:30");
-  // no adapter for .func
-  //   assert v.func(*v.args) == v
-  //   => A.x*A.i + A.y*A.j + A.z*A.k
-  it.todo("test_func_args:32");
-  // no adapter for .func
+  it("test_func_args:30", () => {
+    expect(sympyStr(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 0))).toBe('A.i');
+  });
+  it("test_func_args:32", () => {
+    expect(sympyStr(VectorAdd(VectorMul(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 0)), VectorMul(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 1), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 1)), VectorMul(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 2), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 2))).func(VectorMul(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 0)), VectorMul(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 1), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 1)), VectorMul(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 2), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 2))))).toBe('A.x*A.i + A.y*A.j + A.z*A.k');
+  });
+  // the arguments do not type-check against the public API
   //   assert A.origin.func(*A.origin.args) == A.origin
   //   => A.origin
   it.todo("test_func_args:33");

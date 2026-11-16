@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { expect, it } from 'vitest';
-import { unchanged, cos, pi, Piecewise, Sym, S, Gt, SymFunction, Basic } from '../../src';
+import { CompanionMatrix, Poly, unchanged, cos, pi, Piecewise, Sym, S, Gt, SymFunction, Basic } from '../../src';
 it('recognizes unevaluated construction and normalized piecewise pairs', () => {
   const x = new Sym('x');
   expect(unchanged(cos, 1)).toBe(true);
   expect(unchanged(cos, pi)).toBe(false);
   expect(unchanged(Piecewise, [x, Gt(x, 1)] as const, [0, true] as const)).toBe(true);
   expect(unchanged(Basic, 1n)).toBe(true);
+  expect(unchanged(CompanionMatrix, Poly.fromList([1, 2, 3], [x]))).toBe(true);
   const f = SymFunction('f');
   expect(unchanged(f, 2)).toBe(true);
   const changed = Object.defineProperty(() => f(S.One), 'name', { value: 'f' });

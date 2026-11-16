@@ -221,6 +221,9 @@ export function basicView(e: Expr, printOrder = false): BasicView {
   if (e instanceof Sym) {
     // SymPy _print_WildFunction: only the name
     if (e instanceof WildFunction) return atom('WildFunction', `WildFunction(${pyRepr(e.name)})`);
+    // a symbol class with its own repr (SymPy BaseScalar prints as R.x)
+    const printRepr: unknown = Reflect.get(e, 'printRepr');
+    if (typeof printRepr === 'function') return atom(e.sortClass, String(Reflect.apply(printRepr, e, [])));
     const cls = e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol';
     return atom(cls, symbolRepr(e, cls));
   }

@@ -57,7 +57,7 @@ describe("sympy/core/tests/test_rules.py", () => {
   it("test_Transform:13", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  // a callback parameter outside its callback
+  // the arguments do not type-check against the public API
   //   assert add1.get(2) is None
   //   => None
   it.todo("test_Transform:14");

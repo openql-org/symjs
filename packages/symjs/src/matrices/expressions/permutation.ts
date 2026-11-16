@@ -173,8 +173,10 @@ export class PermutationMatrixNode extends MatrixExpr {
     return this.isIdentity ? new IdentityNode(this.rows) : this;
   }
   override entry(i: Expr, j: Expr): Expr {
-    if (!isInt(i)) return new MatrixElementNode(this, i, j);
-    return KroneckerDelta(this.perm.apply(toInt(i)), j);
+    if (isInt(i)) return KroneckerDelta(this.perm.apply(toInt(i)), j);
+    // P[i, j] = delta(perm(i), j) = delta(i, perm^-1(j))
+    if (isInt(j)) return KroneckerDelta(i, this.perm.inverse().apply(toInt(j)));
+    return new MatrixElementNode(this, i, j);
   }
   override evalPower(exp: Expr): Expr {
     if (!isInt(exp)) return super.evalPower(exp);
@@ -259,8 +261,14 @@ export class PermutationMatrixNode extends MatrixExpr {
   }
 }
 
-/** SymPy PermutationMatrix(perm). */
-export const PermutationMatrix = /* @__PURE__ */ callableClass(PermutationMatrixNode, (perm: PermutationLike): PermutationMatrixNode => new PermutationMatrixNode(PermutationNode.from(perm)));
+/**
+ * SymPy PermutationMatrix(perm): perm is a permutation object; an array is a RangeError (SymPy ValueError),
+ * as it could be read in array form or as a cycle.
+ */
+export const PermutationMatrix = /* @__PURE__ */ callableClass(PermutationMatrixNode, (perm: PermutationNode | { readonly arrayForm: readonly number[] }): PermutationMatrixNode => {
+  if (Array.isArray(perm)) throw new RangeError(`${String(perm)} must be a SymPy Permutation instance.`);
+  return new PermutationMatrixNode(PermutationNode.from(perm));
+});
 export type PermutationMatrix = PermutationMatrixNode;
 
 /** SymPy MatrixPermute(mat, perm, axis): the rows (axis 0) or columns (axis 1) of a matrix permuted. */

@@ -106,6 +106,13 @@ describe('arithmetic', () => {
     expect(() => Matrix.row(1, 2, 3).pow(2)).toThrow(RangeError);
     // non-integer powers are not supported (SymPy computes them from the Jordan form)
     expect(() => M.pow(0.5)).toThrow(RangeError);
+    const [n] = symbols('n');
+    expect(s(Matrix.diag(2, 3).pow(n))).toBe('Matrix([[2**n, 0], [0, 3**n]])');
+    expect(s(Matrix.of([[4]]).pow(Rational.of(1, 2)))).toBe('Matrix([[2]])');
+    expect(s(M.pow(Rational.of(1)))).toBe(s(M));
+    expect(s(M.pow(Rational.of(2)))).toBe(s(M.pow(2)));
+    expect(s(M.pow(parse('2.0')))).toBe(s(M.pow(2)));
+    expect(() => M.pow(n)).toThrow('exponent must be an integer');
   });
 
   it('products keep their entries unexpanded, powers expand them (SymPy dotprodsimp)', () => {

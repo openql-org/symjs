@@ -5412,15 +5412,15 @@ describe("sympy/stats/tests/test_finite_rv.py", () => {
     const robSol = new Sym('robSol');
     expect(sympyStr(variance(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 3602879701896397n, exp: -53n }, 53), new Float({ man: 3602879701896397n, exp: -56n }, 53)])]))))).toBe('58.2075641409515');
   });
-  // the case takes more than 4 seconds
-  //   assert skewness(robSol.subs({k: x, delta: y, c: z})) == smoment(robSol.subs({k: x, delta: y, c: z}), 3)
-  //   => 2.59115673341485
-  it.todo("test_robust_soliton:442 (24)");
-  // the case takes more than 4 seconds
-  //   assert kurtosis(robSol.subs({k: x, delta: y, c: z})) == smoment(robSol.subs({k: x, delta: y, c: z}), 4)
-  //   => 9.43121041896836
-  it.todo("test_robust_soliton:443 (24)");
-  // the case takes more than 4 seconds
+  it("test_robust_soliton:442 (24)", () => {
+    const robSol = new Sym('robSol');
+    expect(sympyStr(skewness(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 3602879701896397n, exp: -53n }, 53), new Float({ man: 3602879701896397n, exp: -56n }, 53)])]))))).toBe('2.59115673341485');
+  });
+  it("test_robust_soliton:443 (24)", () => {
+    const robSol = new Sym('robSol');
+    expect(sympyStr(kurtosis(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 3602879701896397n, exp: -53n }, 53), new Float({ man: 3602879701896397n, exp: -56n }, 53)])]))))).toBe('9.43121041896836');
+  });
+  // the replay exceeds its deadline
   //   assert E(robSol.subs({k: x, delta: y, c: z})) == moment(robSol.subs({k: x, delta: y, c: z}), 1)
   //   => 4.66608632783355
   it.todo("test_robust_soliton:440 (25)");
@@ -5456,10 +5456,10 @@ describe("sympy/stats/tests/test_finite_rv.py", () => {
     const robSol = new Sym('robSol');
     expect(sympyStr(expectation(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 5404319552844595n, exp: -53n }, 53), new Float({ man: 3602879701896397n, exp: -56n }, 53)])]))))).toBe('5.56043297835673');
   });
-  // the case takes more than 4 seconds
-  //   assert variance(robSol.subs({k: x, delta: y, c: z})) == cmoment(robSol.subs({k: x, delta: y, c: z}), 2)
-  //   => 55.3234136025383
-  it.todo("test_robust_soliton:441 (27)");
+  it("test_robust_soliton:441 (27)", () => {
+    const robSol = new Sym('robSol');
+    expect(sympyStr(variance(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 5404319552844595n, exp: -53n }, 53), new Float({ man: 3602879701896397n, exp: -56n }, 53)])]))))).toBe('55.3234136025383');
+  });
   // the replay exceeds its deadline
   //   assert skewness(robSol.subs({k: x, delta: y, c: z})) == smoment(robSol.subs({k: x, delta: y, c: z}), 3)
   //   => 2.87906162867525

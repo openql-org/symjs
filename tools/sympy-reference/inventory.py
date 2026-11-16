@@ -512,6 +512,7 @@ DOCTEST_EXCLUSIONS = frozenset({
 UNIT_OMISSIONS = frozenset({
     'duplicate', 'marked-xfail', 'test-utility', 'python-runtime-api', 'private-api', 'optional-dependency',
     'python-object-representation',  # str()/repr() of a Python object that is not a SymPy value
+    'deprecated-api',  # input built with a form SymPy deprecates (Poly entries or a ring attribute on a Matrix)
 })
 
 # Qualified names disambiguate exports with different meanings in different

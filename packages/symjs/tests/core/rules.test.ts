@@ -3,7 +3,7 @@
 
 // Tests of src/core/rules.ts; the cases of SymPy 1.14's Transform docstring.
 import { describe, expect, it } from 'vitest';
-import { Transform, add, symbols, type Expr } from '../../src';
+import { NoMatch, Transform, add, symbols, type Expr } from '../../src';
 
 const [x] = symbols('x') as [Expr];
 
@@ -22,6 +22,7 @@ describe('Transform', () => {
     );
     expect(add1Odd.has(2)).toBe(false);
     expect(add1Odd.get(2, 0)).toBe(0);
+    expect(add1Odd.get(2)).toBe(NoMatch);
     expect(add1Odd.has(3)).toBe(true);
     expect(String(add1Odd.at(3))).toBe('4');
     expect(String(add1Odd.get(3, 0))).toBe('4');

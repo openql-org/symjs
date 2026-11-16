@@ -4589,6 +4589,8 @@ ADAPTERS['srepr'] = (args, kw) => {
 ADAPTERS['mathml'] = (args, kw) => sj.mathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
 ADAPTERS['print_mathml'] = (args, kw) => sj.printMathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
 ADAPTERS['print_tree'] = (args, kw) => sj.printTree(args[0] as Expr, printOptions(kw));
+// sympy.printing.tree.tree is the text print_tree prints, without its final newline
+ADAPTERS['tree'] = (args, kw) => sj.printTree(args[0] as Expr, printOptions(kw)).slice(0, -1);
 ADAPTERS['dotprint'] = (args, kw) => sj.dotprint(args[0] as Expr, printOptions(kw));
 
 // Matrix.print_nonzero prints the pattern; symjs printNonzero returns it
@@ -5004,6 +5006,11 @@ function autoAdapter(c: Case): Adapter | undefined {
         if (typeof (head as { functionName?: unknown }).functionName === 'string') return head;
         if (self instanceof sj.AppliedFunction) return new FnClass(self.name);
       }
+      // expr.func(*expr.args): a Lambda argument stays the same Lambda node (SymPy passes the arg itself)
+      if (name === 'func' && args.length > 0 && self instanceof sj.Expr) {
+        const head = self.func as (...a: unknown[]) => unknown;
+        return fromJs(head(...args.map((a) => (a instanceof JsLambda ? sj.Lambda(a.vars, a.body) : conv(a)))));
+      }
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
       if (name === 'name' && typeof self === 'function' && 'predicateName' in self) return new Sym(String(self.predicateName));
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);
@@ -5270,7 +5277,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     const isMatExpr = (x: unknown) => x instanceof sj.MatrixExpr || x instanceof sj.MatScalar;
     // DomainMatrix, DDM and SDM methods (and their classes' static methods) share names with Matrix and Poly adapters
     const isDomainMatrix = (x: unknown) => x instanceof sj.DomainMatrix || x instanceof sj.DDM || x instanceof sj.SDM || (x instanceof TypeRef && ['DomainMatrix', 'DDM', 'SDM'].includes(x.name));
-    const auto0 = isMatExpr(self) || args.some(isMatExpr) || isDomainMatrix(self) || self instanceof sj.NDimArray || self instanceof sj.Indexed ? autoAdapter(c) : undefined;
+    // (rewrite targets are SymPy classes, which only the rewrite adapter names)
+    const auto0 = (c.fn !== '.rewrite' && (isMatExpr(self) || args.some(isMatExpr))) || isDomainMatrix(self) || self instanceof sj.NDimArray || self instanceof sj.Indexed ? autoAdapter(c) : undefined;
     try {
       v = call(auto0 ?? adapter);
     } catch (e) {

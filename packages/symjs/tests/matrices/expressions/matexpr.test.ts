@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../../src';
 import { adjoint, conjugate, cos, diff, Dummy, Eq, exp, type Expr, I as ImagUnit, Lambda, latex, Matrix, matrixExp, mul, Rational, S, sin, sstr, symbol, symbols, SymFunction as UFunction, transpose } from '../../../src';
-import { Adjoint, det, Determinant, ElementwiseApplyFunction, GenericIdentity, GenericZeroMatrix, HadamardProduct, Identity, ImmutableMatrix, Inverse, isMataddValid, isMatmulValid, isSquare, MatAdd, MatMul, MatPow, MatrixElement, MatrixExpr, MatrixSlice, MatrixSymbol, matrixSymbols, MatScalar, mergeExplicitMatAdd, mergeExplicitMatMul, OneMatrix, per, Permanent, PermutationMatrix, ShapeError, Str, Trace, trace, Transpose, ZeroMatrix } from '../../../src/matrices/expressions';
+import { Adjoint, det, Determinant, ElementwiseApplyFunction, GenericIdentity, GenericZeroMatrix, HadamardProduct, Identity, ImmutableMatrix, Inverse, isMataddValid, isMatmulValid, isSquare, MatAdd, MatMul, MatPow, MatrixElement, MatrixExpr, MatrixSlice, MatrixSymbol, matrixSymbols, MatScalar, mergeExplicitMatAdd, mergeExplicitMatMul, OneMatrix, per, Permanent, PermutationMatrix, PermutationNode, ShapeError, Str, Trace, trace, Transpose, ZeroMatrix } from '../../../src/matrices/expressions';
 import { doit } from '../../../src/calculus/doit';
 import { MatMulNode, MatrixElementNode, MatrixSliceNode, negate, TraceNode, transposeOf } from '../../../src/matrices/expressions/matexpr';
 import { rebuild } from '../../../src/core/traverse';
@@ -505,7 +505,9 @@ describe('construction', () => {
   it('validates dimensions and arguments', () => {
     expect(() => MatrixSymbol('A', symbol('q', { negative: true }), 2)).toThrow('The dimension specification q should be a nonnegative integer.');
     expect(() => MatrixSymbol('A', 1.5, 2)).toThrow('should be a nonnegative integer');
-    expect(() => Transpose(2)).toThrow('2 is not a matrix');
+    expect(s(Transpose(2).doit())).toBe('2');
+    expect(() => isMataddValid(2, 3)).toThrow('2 is not a matrix');
+    expect(s(Adjoint(ImagUnit).doit())).toBe('-I');
     expect(() => MatAdd(A, MatrixSymbol('C', 2, 4))).toThrow('Matrices have mismatching shape: (3, 4)');
     expect(() => MatPow(2, 2)).toThrow('MatPow base should be a matrix');
     expect(() => Inverse(2)).toThrow('mat should be a matrix');
@@ -592,7 +594,7 @@ describe('MatMul', () => {
     expect(s(M(MatMul(Mi, 2)).doit())).toBe('Matrix([[2, 4], [6, 8]])');
     expect(s(M(MatMul(2, 3, Mi)).doit())).toBe('Matrix([[6, 12], [18, 24]])');
     expect(s(M(MatMul(2, Mi)).doit())).toBe('Matrix([[2, 4], [6, 8]])');
-    expect(s(M(MatMul(PermutationMatrix([1, 0, 2]), PermutationMatrix([0, 2, 1]))).doit())).toBe('PermutationMatrix((0 2 1))');
+    expect(s(M(MatMul(PermutationMatrix(new PermutationNode([1, 0, 2])), PermutationMatrix(new PermutationNode([0, 2, 1])))).doit())).toBe('PermutationMatrix((0 2 1))');
   });
 });
 
@@ -935,7 +937,7 @@ describe('matrix expressions', () => {
     for (const t of sl.sortArgs()) expect(rebuild(t, t.args).key).toBe(t.key);
     const B = cast(sj.BlockMatrix([[X, X], [X, X]]), MatrixExpr);
     for (const t of B.sortArgs()) expect(rebuild(t, t.args).key).toBe(t.key);
-    const P = sj.PermutationMatrix([1, 0, 2]);
+    const P = sj.PermutationMatrix(new PermutationNode([1, 0, 2]));
     expect(rebuild(P, P.args).key).toBe(P.key);
     const p = P.args[0];
     if (p === undefined) throw new Error('no argument');
@@ -959,6 +961,21 @@ describe('Expr methods of matrix expressions (SymPy MatrixExpr derives from Expr
   const C = MatrixSymbol('C', 2, 2);
   const [x, n] = symbols('x n');
   const show = (r: unknown): string => (Array.isArray(r) ? `[${r.map(show).join(', ')}]` : r instanceof Map ? `{${[...r].map(([k, v]) => `${show(k)}: ${show(v)}`).join(', ')}}` : String(r));
+  it('powers of explicit matrices by non-integer exponents (SymPy Matrix.pow)', () => {
+    const half = Rational.of(1, 2);
+    expect(s(MatPow(ImmutableMatrix([[4]]), half).doit())).toBe('Matrix([[2]])');
+    expect(s(MatPow(ImmutableMatrix([[1, 2], [3, 4]]), n).doit())).toBe('Matrix([[1, 2], [3, 4]])**n');
+    expect(String(MatPow(ImmutableMatrix([[4, 0], [0, 9]]), half).asExplicit())).toBe('Matrix([[2, 0], [0, 3]])');
+    expect(String(MatPow(ImmutableMatrix([[1, 2], [3, 4]]), 2).asExplicit())).toBe('Matrix([[7, 10], [15, 22]])');
+    expect(String(MatPow(A, n).asExplicit())).toBe('Matrix([[(A**n)[0, 0], (A**n)[0, 1]], [(A**n)[1, 0], (A**n)[1, 1]]])');
+    const c = MatrixSymbol('c', 1, 2);
+    expect(String(M(MatMul(MatPow(ImmutableMatrix([[4]]), half), c)).asExplicit())).toBe('Matrix([[2*c[0, 0], 2*c[0, 1]]])');
+  });
+  it('ElementwiseApplyFunction keeps its application under simplify and rebuilds from func', () => {
+    const e = ElementwiseApplyFunction(Lambda(x, sj.pow(x, 2)), ImmutableMatrix([[x, 1]]));
+    expect(s(sj.simplify(e))).toBe(s(e));
+    expect(s(sj.func(e)(...e.args))).toBe(s(e));
+  });
   it('core arithmetic builds MatAdd, MatMul and MatPow (SymPy constructor postprocessors)', () => {
     expect(sj.add(A, B)).toBeInstanceOf(MatrixExpr);
     expect(s(sj.add(A, B))).toBe('A + B');

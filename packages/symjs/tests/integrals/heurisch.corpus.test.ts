@@ -354,7 +354,7 @@ describe("sympy/integrals/tests/test_heurisch.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(heurischWrapper(new Mul([new Pow(new Add([x, y]), rational(-1)), new Pow(new Add([y, new Mul([rational(-1), x])]), rational(-1))]), x))).toBe('Piecewise((-log(x - y)/(2*y) + log(x + y)/(2*y), Ne(y, 0)), (1/x, True))');
   });
-  // the arguments do not type-check against the public API
+  // the replay exceeds its deadline
   //   assert heurisch_wrapper(f, x) == x*sqrt(-x**2/(x**2 - y**2)) \
   //       - y**2*sqrt(-x**2/(x**2 - y**2))/x
   //   => x*sqrt(-x**2/(x**2 - y**2)) - y**2*sqrt(-x**2/(x**2 - y**2))/x

@@ -222,7 +222,7 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
     const [z, k, x] = symbols('z k x');
     expect(sympyStr(hyper([fn('polar_lift', [z])], [fn('polar_lift', [k])], fn('polar_lift', [x]), { evaluate: true }))).toBe('hyper((z,), (k,), x)');
   });
-  // no adapter for .func
+  // the conversion failed: index 0 out of range (length 0)
   //   assert hyper((1, 2), (1,), z, evaluate=False).func is hyper
   //   => hyper
   it.todo("test_hyper:70");
@@ -491,7 +491,7 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
     const [a, b1, c, y, x] = symbols('a b1 c y x');
     expect(sympyStr(fn('appellf1', [a, b1, b1, c, y, x]))).toBe('appellf1(a, b1, b1, c, x, y)');
   });
-  // no adapter for .func
+  // a function that did not come from the library
   //   assert f.func is appellf1
   //   => appellf1
   it.todo("test_appellf1:379");

@@ -49,8 +49,9 @@ describe("sympy/matrices/expressions/tests/test_companion.py", () => {
     const [x, y] = symbols('x y');
     expect(() => CompanionMatrix(Poly.from(new Mul([x, y]), [x, y], { domain: 'ZZ', pure: false }))).toThrow(RangeError);
   });
-  it.fails("test_creation:16", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('True');
+  it("test_creation:16", () => {
+    const x = new Sym('x');
+    expect(sympyStr(unchanged(CompanionMatrix, Poly.from(new Add([rational(3), new Pow(x, rational(2)), new Mul([rational(2), x])]), [x], { domain: 'ZZ', pure: false })))).toBe('True');
   });
   it("test_shape:22", () => {
     const [c0, x] = symbols('c0 x');

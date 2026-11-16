@@ -4,7 +4,7 @@
 /**
  * @file Symbolic quantum gates and states.
  *
- * Basis ordering follows q5m.js: for n qubits the basis state is
+ * Basis ordering: for n qubits the basis state is
  * |q_{n-1} ... q_1 q_0⟩, i.e. qubit 0 is the least significant bit and the
  * rightmost factor of a Kronecker product.
  */
