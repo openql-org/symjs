@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { expect, it } from 'vitest';
-import { passingModuleCases, runTestCase } from '../../../../compat/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import {
   DomainError, EX, Float, I, RR, MultivariatePolynomialError, mul, NotReversible, PythonMPQ, QQ, QQ_I, Sym, ZZ, ZZ_I, add, dmpAlgInject, dmpClearDenoms,
   dmpEval, dmpRevert, dmpShift, dmpToDict, dupClearDenoms, dupDiff, dupExtract, dupRealImag, dupRevert, dupSignVariations, pow, sqrt, str,

@@ -5,7 +5,7 @@ import { expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { ADAPTERS, JsList, JsTuple, deserialize, matches, runCase, solvesDsolveCase } from './harness';
 import type { Case } from './harness';
-import * as sj from '../packages/symjs/src';
+import * as sj from '../../packages/symjs/src';
 
 const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')) as { cases: Case[] };
 

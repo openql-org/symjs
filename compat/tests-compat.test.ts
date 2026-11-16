@@ -6,9 +6,9 @@ import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 import { createContext, Script } from 'node:vm';
 import { expect, inject, it } from 'vitest';
-import { runTestCase, testCaseKey } from './tests-harness';
+import { runTestCase, testCaseKey } from '../tools/sympy-corpus/tests-harness';
 import { corpusIndex, emptyCounts, failureKind, ratchetDifferences, replayDeadlineMs } from './tests-report';
-import type { TestCase, TestOutcome } from './tests-harness';
+import type { TestCase, TestOutcome } from '../tools/sympy-corpus/tests-harness';
 import type { CategoryResult, TestGaps } from './tests-report';
 
 declare module 'vitest' {
@@ -30,7 +30,7 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
   const script = new Script('runTestCase(current)');
   const deadline = replayDeadlineMs(category);
   for (const shard of audit.shards) {
-    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${shard.file}`, import.meta.url), 'utf8'));
+    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`../tools/sympy-corpus/tests-corpus/${shard.file}`, import.meta.url), 'utf8'));
     expect(cases.length).toBe(shard.cases);
     for (const c of cases) {
       if (c.category !== category) throw new TypeError(`Wrong category in ${shard.file}`);
@@ -65,7 +65,7 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
   writeFileSync(new URL(`./tests-results/${category}.jsonl`, import.meta.url), result.failures.map((r) => JSON.stringify(r)).join('\n') + '\n');
   expect(ids.size).toBe(audit.cases);
   expect(audit.examined).toBe(ids.size + Object.values(audit.reasons).reduce((a, b) => a + b, 0));
-  const gaps: TestGaps = JSON.parse(readFileSync(new URL('./tests-known-gaps.json', import.meta.url), 'utf8'));
+  const gaps: TestGaps = JSON.parse(readFileSync(new URL('../tools/sympy-corpus/tests-known-gaps.json', import.meta.url), 'utf8'));
   const known = { ...gaps, cases: gaps.cases.filter((id) => id.startsWith(`sympy.${category}.`)) };
   const failing = result.failures.map((f) => f.id);
   const timeouts = result.failures.filter((f) => f.outcome.status === 'error' && f.outcome.reason.startsWith('Replay deadline')).map((f) => f.id);

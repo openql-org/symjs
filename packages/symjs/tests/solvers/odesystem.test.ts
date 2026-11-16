@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { add, checkodesol, diff, Dummy, dsolve, Eq, Integral, neg, NotImplementedError, parse, sstr, symbols, SymFunction as Fn, cancel, Rel, UndefFn, xreplace, sub, Rational } from '../../src';
 import type { Expr } from '../../src/core/nodes';
-import { constantCount, solvesOdeSystem } from '../../../../compat/ode-checks';
+import { constantCount, solvesOdeSystem } from '../../../../tools/sympy-corpus/ode-checks';
 import { at, cast } from '../../src/core/guard';
 
 const [t] = symbols('t');

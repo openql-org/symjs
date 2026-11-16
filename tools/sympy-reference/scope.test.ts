@@ -3,8 +3,8 @@
 import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { expect, it } from 'vitest';
-import { counterpartFor, hasCounterpart, type Case } from './harness';
-import { adapterInventory, evidenceFor, REVIEWED_ADAPTERS } from './adapter-audit';
+import { counterpartFor, hasCounterpart, type Case } from '../sympy-corpus/harness';
+import { adapterInventory, evidenceFor, REVIEWED_ADAPTERS } from '../sympy-corpus/adapter-audit';
 import { collectApiMembers, generateApiMembers, formatApiMembers } from './api-members';
 import { scopeLines, scopeSummary } from './scope-report';
 const read = (file: string) => JSON.parse(readFileSync(new URL(file, import.meta.url), 'utf8'));
@@ -21,7 +21,7 @@ it('pins the entire module universe without converting missing evidence into exc
       expect(Object.values(m.completeness).every((c) => (c as { pass: boolean }).pass)).toBe(m.status === 'complete');
     }
     if (m.status === 'excluded') expect(m.reason.length).toBeGreaterThan(0);
-    for (const source of m.sources) expect(existsSync(new URL('../packages/symjs/src/' + source, import.meta.url))).toBe(true);
+    for (const source of m.sources) expect(existsSync(new URL('../../packages/symjs/src/' + source, import.meta.url))).toBe(true);
   }
   for (const module of ['sympy.categories.baseclasses', 'sympy.solvers.pde', 'sympy.tensor.tensor', 'sympy.combinatorics.perm_groups', 'sympy.polys.numberfields.subfield']) {
     expect(scope.modules.find((m: { module: string }) => m.module === module).status).toBe('partial');
@@ -51,7 +51,7 @@ it('inspects inherited, static and accessor members without invoking getters', (
   expect(collectApiMembers(Object.fromEntries(Object.entries(entries).reverse()))).toEqual(api);
 });
 it('enforces all completeness criteria, including negative and missing-evidence cases', () => {
-  execFileSync('python3', ['-B', '-m', 'unittest', 'discover', '-s', 'compat', '-p', 'test_inventory.py'], { cwd: new URL('..', import.meta.url), stdio: 'pipe' });
+  execFileSync('python3', ['-B', '-m', 'unittest', 'discover', '-s', 'tools/sympy-reference', '-p', 'test_inventory.py'], { cwd: new URL('../..', import.meta.url), stdio: 'pipe' });
 }, 300_000);
 it('reports complete modules and all statuses in each package', () => {
   const inventory = { reference: { sympy: '1.14.0' }, modules: [
@@ -77,16 +77,16 @@ it('requires actual exported counterparts, including the concrete method owner',
 });
 it('lists every adapter and counts unaudited computations separately', () => {
   const inventory = adapterInventory();
-  const file = new URL('./adapter-inventory.json', import.meta.url);
+  const file = new URL('../sympy-corpus/adapter-inventory.json', import.meta.url);
   if (process.env['UPDATE_ADAPTER_INVENTORY']) writeFileSync(file, JSON.stringify(inventory, null, 1) + '\n');
-  expect(read('./adapter-inventory.json')).toEqual(inventory);
+  expect(read('../sympy-corpus/adapter-inventory.json')).toEqual(inventory);
   expect(evidenceFor({ module: '', src: '', fn: 'nonlinsolve' } as Case)).toBe('reviewed-conversion');
   expect(evidenceFor({ module: '', src: '', fn: 'solve' } as Case)).toBe('harness-computation');
   expect(evidenceFor({ module: '', src: '', fn: 'N' } as Case)).toBe('unreviewed-adapter');
   expect(evidenceFor({ module: '', src: '', fn: 'primitive_element' } as Case)).toBe('public-call');
 });
 it('accounts for every examined doctest and maintains condition-based test links', () => {
-  const corpus = read('./corpus.json');
+  const corpus = read('../sympy-corpus/corpus.json');
   const omitted = Object.values(corpus.extraction.reasons).reduce((a: number, b) => a + Number(b), 0);
   expect(corpus.extraction.examined).toBe(corpus.cases.length + omitted);
   // The detailed list contains output-bearing examples; reason counts also
@@ -96,6 +96,6 @@ it('accounts for every examined doctest and maintains condition-based test links
   for (const c of corpus.cases) expect(modules.has(c.module)).toBe(true);
   for (const area of read('./capabilities.json').areas) {
     expect(area.tested.length).toBeGreaterThan(0); expect(area.remaining.length).toBeGreaterThan(0);
-    for (const test of area.tests) expect(existsSync(new URL('../' + test, import.meta.url))).toBe(true);
+    for (const test of area.tests) expect(existsSync(new URL('../../' + test, import.meta.url))).toBe(true);
   }
 });

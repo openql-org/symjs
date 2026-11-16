@@ -98,7 +98,7 @@ These options implement the custom grammar examples without loading grammar file
 using a parser-generator runtime. `debug` receives the syntax tree as a callback.
 `parseExpr` remains in `core`; `parseMathematica` remains in `simplify`.
 
-Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [compat/capabilities.json](compat/capabilities.json).
+Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [tools/sympy-reference/capabilities.json](tools/sympy-reference/capabilities.json).
 
 Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point, or from the root, whose bundled named imports include the entry points of the names used), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; the measured sizes and budgets are printed by `node packages/symjs/scripts/size.mjs`.
 
@@ -113,8 +113,11 @@ packages/
     tests/              unit tests mirroring src/ (tests/<path>/<name>.test.ts for src/<path>/<name>.ts), cross-cutting tests and SymPy golden tests at the top
   physics-quantum/      @symjs/physics-quantum (extend module)
     src/  tests/
-compat/                 SymPy doctest compatibility measurement of the base module
-scripts/                golden test generation (SymPy)
+tools/
+  sympy-reference/      SymPy scope inventory, public API snapshot, case extractors (Python)
+  sympy-corpus/         extracted SymPy cases, replay harness, converter to *.corpus.test.ts
+compat/                 doctest and unit-test compatibility ratchets and reports
+scripts/                golden test generation (SymPy), corpus compatibility report
 ```
 
 To add an extend module, create `packages/<name>/` with its own `package.json` (`@symjs/symjs` as a peer dependency with `workspace:^`), `tsup.config.ts` (with `@symjs/symjs` as external) and `tsconfig.build.json`, and import the base module only through `@symjs/symjs`.
@@ -123,11 +126,11 @@ To add an extend module, create `packages/<name>/` with its own `package.json` (
 
 Compatibility has separate measurements; none is a whole-SymPy completion percentage:
 
-- The pinned [scope inventory](compat/scope-inventory.json) lists **all 825 production modules of SymPy 1.14.0**, including complete, partial, unimplemented, unassessed and explicitly excluded modules. Complete modules have every public export and class member, passing doctest and unit-test evidence with only explicitly allowed omissions, and no recorded limitation (a module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests); partial modules list the criteria that fail.
+- The pinned [scope inventory](tools/sympy-reference/scope-inventory.json) lists **all 825 production modules of SymPy 1.14.0**, including complete, partial, unimplemented, unassessed and explicitly excluded modules. Complete modules have every public export and class member, passing doctest and unit-test evidence with only explicitly allowed omissions, and no recorded limitation (a module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests); partial modules list the criteria that fail.
 - **Corpus result agreement** measures extracted examples. The [extraction audit](compat/REPORT.md#extraction-audit) records omitted examples and their reasons.
 - **Verified public-call results** count automatic public API calls and reviewed conversion adapters. Mathematical computations remaining in the harness and unreviewed translations are reported separately, even when their results match.
 - **API presence** requires an actual exported function or member, with its concrete path recorded. It does not establish behavior or completeness. An adapter alone no longer counts as an API.
-- [Capability conditions](compat/capabilities.json) link direct public-API tests to their mathematical conditions and remaining limitations.
+- [Capability conditions](tools/sympy-reference/capabilities.json) link direct public-API tests to their mathematical conditions and remaining limitations.
 - Unit coverage must reach 100% of statements, branches, functions and lines. This is a code-test metric, not SymPy compatibility.
 
 The current counts are generated in [compat/REPORT.md](compat/REPORT.md).
@@ -140,10 +143,17 @@ repeated doctest source lines with different inputs remain distinct.
 ```sh
 pnpm compat           # run the tests with coverage and the corpus, write compat/REPORT.md
 UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts   # rewrite compat/known-gaps.json
-pnpm compat:extract   # regenerate compat/corpus.json from the installed SymPy
+pnpm compat:extract   # regenerate tools/sympy-corpus/corpus.json from the installed SymPy
 ```
 
 See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest-impact gaps.
+
+The extracted cases also run as vitest tests of the public API
+(`packages/symjs/tests/**/*.corpus.test.ts`): `pnpm corpus:generate` converts
+the corpora and `pnpm corpus:report` writes the rates per corpus and category to
+[docs/compat-report.md](docs/compat-report.md). How the extractor and the
+converter connect, and the procedures, are in
+[CONTRIBUTING.md](CONTRIBUTING.md#corpus-tests).
 
 ## API design
 
@@ -209,7 +219,7 @@ accepts `locals` with values and functions by name.
 See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable gaps:
 
 - `simplify` is a lighter heuristic than SymPy's; results can differ in form
-- `factor` over general algebraic extensions remains limited; number-field presentation constraints are recorded in `compat/capabilities.json`.
+- `factor` over general algebraic extensions remains limited; number-field presentation constraints are recorded in `tools/sympy-reference/capabilities.json`.
 - Definite integration splits at polynomial singularities using one-sided limits; when their locations cannot be resolved, the integral is left unevaluated.
 - Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet); `hyper` and `meijerg` are available as functions but are not used to integrate or to evaluate in closed form
 - ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, homogeneous coefficients, linear coefficients, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear and first order (constant coefficients in closed form, 2x2 variable coefficients in terms of a particular solution like SymPy) or triangular (solved one function at a time); individual supported hints are recorded in the ODE checks

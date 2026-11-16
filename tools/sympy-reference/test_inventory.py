@@ -193,8 +193,8 @@ class Widget(Base, ABC):
         self.assertFalse(api_criterion(self.module, contract, self.api)['pass'])
 
     def test_committed_inventory_is_reproducible(self):
-        root = Path(__file__).resolve().parent.parent
-        expected = json.loads((root / 'compat/scope-inventory.json').read_text())
+        root = Path(__file__).resolve().parents[2]
+        expected = json.loads((root / 'tools/sympy-reference/scope-inventory.json').read_text())
         self.assertEqual(build_inventory(root), expected)
         modules = {m['module'] for m in expected['modules']}
         for area in self.evidence_from_repository(root)['areas']:
@@ -203,7 +203,7 @@ class Widget(Base, ABC):
 
     @staticmethod
     def evidence_from_repository(root):
-        return json.loads((root / 'compat/capabilities.json').read_text())
+        return json.loads((root / 'tools/sympy-reference/capabilities.json').read_text())
 
 
 if __name__ == '__main__':

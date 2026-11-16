@@ -52,20 +52,20 @@ The policy is enforced by:
 
 Renamed exports keep their old name as a `@deprecated` alias during 0.x; exports classified as internal are likewise deprecated during 0.x and removed from the entry points in 1.0. The public API is recorded in [packages/symjs/api-report.md](../packages/symjs/api-report.md) (every export of every entry point with its kind and level, from the `@experimental` and `@deprecated` JSDoc tags), generated and checked by `tests/api-report.test.ts`; changes to it are reviewed with every change.
 
-The scope inventory uses [compat/api-members.json](../compat/api-members.json),
-generated from every package entry point by `compat/api-members.ts`. It records
+The scope inventory uses [tools/sympy-reference/api-members.json](../tools/sympy-reference/api-members.json),
+generated from every package entry point by `tools/sympy-reference/api-members.ts`. It records
 exports, inherited prototype members, accessors and static members without
 constructing objects or invoking getters. Regenerate it with
-`UPDATE_API_MEMBERS=1 npx vitest run compat/scope.test.ts -t 'generates a deterministic'`,
-then run `python3 compat/inventory.py`. The scope tests check both artifacts for
+`UPDATE_API_MEMBERS=1 npx vitest run tools/sympy-reference/scope.test.ts -t 'generates a deterministic'`,
+then run `python3 tools/sympy-reference/inventory.py`. The scope tests check both artifacts for
 staleness. The harness's `PUBLIC_ALIASES`, `MEMBER_FUNCTIONS`,
 `MATRIX_MEMBER_ALIASES` and `ATTRIBUTE_FUNCTIONS` tables specify the documented
 function-first counterparts for expression and matrix methods and attributes;
 an unrelated export with the same name does not establish a class member.
 Python protocol hooks are excluded from the inventory contract except for
 arithmetic and comparison operators mapped by the harness. Doctest and unit-test
-omission allowlists are explicit in `compat/inventory.py`; unrecognized reasons
-prevent a module from being complete. `compat/capabilities.json` associates each
+omission allowlists are explicit in `tools/sympy-reference/inventory.py`; unrecognized reasons
+prevent a module from being complete. `tools/sympy-reference/capabilities.json` associates each
 remaining limitation with explicit module names or package prefixes.
 
 Notes on the implementation:
@@ -108,7 +108,7 @@ Every export of every entry point, and every public member of an exported class,
   - grouping: `@category`, and `@module` in the comment of an entry point.
 - **Signatures.** A function or method documents each parameter with `@param` and its result with `@returns`. The keys of an options object are documented on the properties of its options type. `@throws` names the errors of the API's contract (`NotImplementedError`, `NonlinearError`, ...).
 - **SymPy counterpart.** `@see` gives the full dotted path of the SymPy object that the export ports, in the form ``@see SymPy `sympy.polys.polytools.factor_list` ``. A method gives the method's path (`sympy.core.expr.Expr.as_coefficient`). An export without a SymPy counterpart has no such `@see`. A deprecated alias names its replacement in `@deprecated` with `{@link}`.
-- **Examples.** `@example` holds a fenced `ts` block. The example imports what it uses from a package entry point (`import { factorList, symbols } from '@symjs/symjs/polys';`), so it is self-contained and type-checks with TypeScript 7 `tsc` against the published declarations. An export with a SymPy counterpart carries the examples of its SymPy docstring (its cases in the doctest corpus `compat/corpus.json`), translated to the public API. The expected result is SymPy's `str()` output, written in a comment that starts with `// =>` after the expression statement it belongs to; continuation lines of a multiline result start with `//   `. Where symjs deliberately differs from SymPy's output (a mathematically corrected result, or an equivalent form accepted by the doctest comparison), the example shows symjs's result and a `@remarks` paragraph gives SymPy's.
+- **Examples.** `@example` holds a fenced `ts` block. The example imports what it uses from a package entry point (`import { factorList, symbols } from '@symjs/symjs/polys';`), so it is self-contained and type-checks with TypeScript 7 `tsc` against the published declarations. An export with a SymPy counterpart carries the examples of its SymPy docstring (its cases in the doctest corpus `tools/sympy-corpus/corpus.json`), translated to the public API. The expected result is SymPy's `str()` output, written in a comment that starts with `// =>` after the expression statement it belongs to; continuation lines of a multiline result start with `//   `. Where symjs deliberately differs from SymPy's output (a mathematically corrected result, or an equivalent form accepted by the doctest comparison), the example shows symjs's result and a `@remarks` paragraph gives SymPy's.
 
 ## Entry points and tree-shaking
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { expect, it } from 'vitest';
-import { passingModuleCases, runTestCase } from '../../../../compat/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import { PolyRing } from '../../src/polys/rings';
 import { modgcdUnivariate, modgcdBivariate, modgcdMultivariate, funcFieldModgcd } from '../../src/polys/modulargcd';
 import { QQ, ZZ } from '../../src/polys/domains';
