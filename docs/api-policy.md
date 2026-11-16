@@ -13,7 +13,8 @@ Status: implemented.
 7. **Failures behave like SymPy:** an error where SymPy raises, an unevaluated object where SymPy returns one (`Integral`, `ConditionSet`, ...).
 8. **Mathematical correctness wins** where SymPy's output is wrong; such cases are documented.
 9. **Results are never `undefined` or `null`** (see below).
-10. **One definition per name.** A name means the same function or class in every entry point that exports it. Where SymPy has one name in two modules (`is_palindromic` of an integer in `ntheory` and of a sequence in `utilities.iterables`, `connected_components` of a graph and the `Matrix` method), the one function accepts both forms. `factorint` is exported by `ntheory` and the root entry only (the core entry keeps the deprecated `factorInt`).
+10. **Python-specific names have no counterpart.** Operator and protocol dunders (`__floordiv__`, `__rmod__`, `__eq__`, ...) correspond to public functions (`Mod`, `Eq`, `And`, ...), since JavaScript has no operator overloading, and class type flags (`is_Add`, `is_Matrix`, ...) to `instanceof`. A module whose only missing names are Python-specific is complete; the scope inventory lists those names as `pythonSpecificNames`. Assumption queries (`is_integer`, `is_positive`, ...) and the other SymPy members are not Python-specific.
+11. **One definition per name.** A name means the same function or class in every entry point that exports it. Where SymPy has one name in two modules (`is_palindromic` of an integer in `ntheory` and of a sequence in `utilities.iterables`, `connected_components` of a graph and the `Matrix` method), the one function accepts both forms. `factorint` is exported by `ntheory` and the root entry only (the core entry keeps the deprecated `factorInt`).
 
 SymPy's `sympy.sets.setexpr.SetExpr` is exported as `SetExpression`, the pointwise set-arithmetic wrapper. `SetExpr` remains the base class of sets; these are distinct types with distinct names.
 

@@ -690,6 +690,19 @@ def export_exists(api, path):
     return member in row['static']
 
 
+# Python-specific names do not block completeness. They stay listed as
+# pythonSpecificNames: operator and protocol dunders (JavaScript has no operator
+# overloading; the operations are public functions), class type flags such as
+# is_Add (instanceof in JavaScript), and the reviewed names of PYTHON_SPECIFIC
+# with their reason.
+PYTHON_SPECIFIC = {}
+
+
+def python_specific(name):
+    member = name.rsplit('.', 1)[-1]
+    return bool(re.fullmatch(r'__\w+__', member) or re.fullmatch(r'is_[A-Z]\w*', member)) or member in PYTHON_SPECIFIC
+
+
 def api_criterion(module, contract, api):
     policy = api.get('policy', {})
     missing = []
@@ -738,7 +751,9 @@ def api_criterion(module, contract, api):
             if not any(export_exists(api, path) and api['exports'].get(path.split('.')[0], {}).get('kind') == 'function' for path in functions):
                 missing.append(name + '.' + member)
     unresolved = contract.get('unresolvedBases', [])
-    return {'pass': not missing and not unresolved, 'missingNames': sorted(missing), 'unresolvedBases': unresolved}
+    specific = sorted(n for n in missing if python_specific(n))
+    blocking = sorted(n for n in missing if not python_specific(n))
+    return {'pass': not blocking and not unresolved, 'missingNames': blocking, 'pythonSpecificNames': specific, 'unresolvedBases': unresolved}
 
 
 def disallowed_omissions(rows, allowed):

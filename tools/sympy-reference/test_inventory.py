@@ -53,6 +53,17 @@ class CompletenessTests(unittest.TestCase):
         self.assertFalse(result['pass'])
         self.assertEqual(result['missingNames'], ['Widget.size', 'get_widget'])
 
+    def test_python_specific_names_are_listed_without_blocking(self):
+        self.contract['classes']['Widget']['members'] += ['__floordiv__', 'is_Widget']
+        result = self.evaluate()['publicApi']
+        self.assertTrue(result['pass'])
+        self.assertEqual(result['missingNames'], [])
+        self.assertEqual(result['pythonSpecificNames'], ['Widget.__floordiv__', 'Widget.is_Widget'])
+        self.contract['classes']['Widget']['members'].append('is_widget')
+        result = self.evaluate()['publicApi']
+        self.assertFalse(result['pass'])
+        self.assertEqual(result['missingNames'], ['Widget.is_widget'])
+
     def test_function_form_requires_documented_owner_and_real_export(self):
         self.api['policy'] = {'attributeFunctions': {'canonical': 'canonicalRelation'}}
         self.contract['classes']['Widget'] = {'members': ['canonical'], 'families': ['Relational']}
