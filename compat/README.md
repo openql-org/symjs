@@ -14,6 +14,6 @@ successes.
 Run all compatibility checks with:
 
 ```sh
-npx vitest run --config compat/vitest.config.ts
-npx vitest run --config compat/vitest.config.ts --project unit-geometry
+bunx vitest run --config compat/vitest.config.ts
+bunx vitest run --config compat/vitest.config.ts --project unit-geometry
 ```

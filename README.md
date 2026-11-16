@@ -33,7 +33,7 @@ roots(parse('x**2 + x + 1'), x);             // Map { -1/2 - sqrt(3)*I/2 => 1, -
 
 ## Packages: base and extend modules
 
-symjs is a pnpm monorepo. The general-purpose CAS is the **base module**; functionality for a specific application domain is published as separate **extend module** packages, so applications install only what they use:
+symjs is a bun workspace monorepo. The general-purpose CAS is the **base module**; functionality for a specific application domain is published as separate **extend module** packages, so applications install only what they use:
 
 | Package | Directory | Contents |
 |---|---|---|
@@ -100,7 +100,7 @@ using a parser-generator runtime. `debug` receives the syntax tree as a callback
 
 Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [tools/sympy-reference/capabilities.json](tools/sympy-reference/capabilities.json).
 
-Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point, or from the root, whose bundled named imports include the entry points of the names used), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; the measured sizes and budgets are printed by `node scripts/size.mjs`.
+Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point, or from the root, whose bundled named imports include the entry points of the names used), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `bun scripts/side-effects.mjs`, checked by the tests). `bun scripts/size.mjs --check` (after `bun run build`) measures the minified bundle of typical imports against size budgets; the measured sizes and budgets are printed by `bun scripts/size.mjs`.
 
 ### Repository layout
 
@@ -143,16 +143,16 @@ scope must shrink the gap list. Cases include an input/output digest so that
 repeated doctest source lines with different inputs remain distinct.
 
 ```sh
-pnpm compat           # run the tests with coverage and the corpus, write compat/REPORT.md
-UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts   # rewrite compat/known-gaps.json
-pnpm compat:extract   # regenerate tools/sympy-corpus/corpus.json from the installed SymPy
+bun run compat                                                        # run the tests with coverage and the corpus, write compat/REPORT.md
+UPDATE_KNOWN_GAPS=1 bunx vitest run --config compat/vitest.config.ts  # rewrite compat/known-gaps.json
+bun run compat:extract                                                # regenerate tools/sympy-corpus/corpus.json from the installed SymPy
 ```
 
 See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest-impact gaps.
 
 The extracted cases also run as vitest tests of the public API
-(`packages/symjs/tests/**/*.corpus.test.ts`): `pnpm corpus:generate` converts
-the corpora and `pnpm corpus:report` writes the rates per corpus and category to
+(`packages/symjs/tests/**/*.corpus.test.ts`): `bun run corpus:generate` converts
+the corpora and `bun run corpus:report` writes the rates per corpus and category to
 [docs/compat-report.md](docs/compat-report.md). How the extractor and the
 converter connect, and the procedures, are in
 [CONTRIBUTING.md](CONTRIBUTING.md#corpus-tests).
@@ -171,14 +171,14 @@ converter connect, and the procedures, are in
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the rules every change follows (100% test coverage, expected values from SymPy, mathematical correctness over SymPy's output, branches and commits).
 
 ```sh
-pnpm install
-pnpm test        # vitest (all packages; extend modules use the base module from source)
-pnpm typecheck   # tsc --noEmit
-pnpm lint        # oxlint with type-aware rules (see docs/api-policy.md)
-pnpm build       # every package: ESM/CJS and matching .d.ts/.d.cts declaration graphs
-pnpm test:package # built packages, all entry points, minification, NodeNext/Bundler consumers
-node scripts/size.mjs --check   # bundle sizes of typical imports against budgets
-pnpm golden      # regenerate the SymPy expectations of the golden tests
+bun install
+bun run test                  # vitest (all packages; extend modules use the base module from source)
+bun run typecheck             # tsc --noEmit
+bun run lint                  # oxlint with type-aware rules (see docs/api-policy.md)
+bun run build                 # every package: ESM/CJS and matching .d.ts/.d.cts declaration graphs
+bun run test:package          # built packages, all entry points, minification, NodeNext/Bundler consumers
+bun scripts/size.mjs --check  # bundle sizes of typical imports against budgets
+bun run golden                # regenerate the SymPy expectations of the golden tests
 ```
 
 ## Custom expression nodes in extend modules

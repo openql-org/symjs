@@ -4,8 +4,14 @@
   "type": "module",
   "license": "MIT",
   "description": "Monorepo of symjs: the base module @symjs/symjs and extend modules",
+  "workspaces": [
+    "packages/*"
+  ],
+  "trustedDependencies": [
+    "esbuild"
+  ],
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "bun run --filter @symjs/symjs build && bun run --filter @symjs/mathjs --filter @symjs/physics-quantum build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
@@ -21,7 +27,7 @@
     "compat:extract": "MPLBACKEND=Agg PYTHONHASHSEED=0 python3 tools/sympy-reference/extract.py tools/sympy-corpus/corpus.json < /dev/null",
     "golden": "python3 tools/sympy-reference/generators/gen_golden.py packages/symjs/tests/golden/cases.json packages/symjs/tests/golden/expected.json",
     "lint": "oxlint --type-aware --deny-warnings packages",
-    "test:package": "pnpm build && node scripts/check-package.mjs"
+    "test:package": "bun run build && bun scripts/check-package.mjs"
   },
   "engines": {
     "node": ">=18"
@@ -34,6 +40,5 @@
     "tsup": "^9.0.0",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5"
-  },
-  "packageManager": "pnpm@11.10.0+sha512.0b7f8b98060031904c017e3a41eb187a16d40eeb829b95c4f8cb03681761fc4ab53dd219115b9b447f4dce1a05a214764461e7d3703392a9f32f9511ce8c86c8"
+  }
 }

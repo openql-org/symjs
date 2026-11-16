@@ -6,9 +6,9 @@
  * package (dist/): minified ESM bundles made with esbuild, which honours the
  * `sideEffects` field of package.json.
  *
- *   pnpm build && node scripts/size.mjs           print the table
- *   node scripts/size.mjs --check                 also fail when a budget is exceeded
- *   node scripts/size.mjs --json                  machine-readable output
+ *   bun run build && bun scripts/size.mjs  print the table
+ *   bun scripts/size.mjs --check           also fail when a budget is exceeded
+ *   bun scripts/size.mjs --json            machine-readable output
  */
 
 import { createRequire } from 'node:module';

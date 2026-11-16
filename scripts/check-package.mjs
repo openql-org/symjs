@@ -97,9 +97,10 @@ try {
     ${assertions}
     ${entries.map((e) => `require(${JSON.stringify(e)});`).join('\n')}
   `;
+  // the published packages target Node (engines), so the consumers run under node
   for (const [file, text] of [['consumer.mjs', esm], ['consumer.cjs', cjs]]) {
     writeFileSync(join(dir, file), text);
-    execFileSync(process.execPath, [file], { cwd: dir, stdio: 'pipe' });
+    execFileSync('node', [file], { cwd: dir, stdio: 'pipe' });
   }
   // The subpath must initialize its engines without importing the root entry.
   const standaloneChecks = `
@@ -119,16 +120,16 @@ try {
     ['diffgeom.cjs', "const assert = require('node:assert/strict'); const dg = require('@symjs/symjs/diffgeom');"],
   ]) {
     writeFileSync(join(dir, file), imports + standaloneChecks);
-    execFileSync(process.execPath, [file], { cwd: dir, stdio: 'pipe' });
+    execFileSync('node', [file], { cwd: dir, stdio: 'pipe' });
   }
   // Bundlers are free to rename classes: test both ordinary and minified output.
   for (const minify of [false, true]) {
     const outfile = join(dir, `bundle-${minify}.mjs`);
     await esbuild.build({ entryPoints: [join(dir, 'consumer.mjs')], outfile, bundle: true, minify, platform: 'node', format: 'esm', logLevel: 'silent' });
-    execFileSync(process.execPath, [outfile], { cwd: dir, stdio: 'pipe' });
+    execFileSync('node', [outfile], { cwd: dir, stdio: 'pipe' });
     const standalone = join(dir, `diffgeom-bundle-${minify}.mjs`);
     await esbuild.build({ entryPoints: [join(dir, 'diffgeom.mjs')], outfile: standalone, bundle: true, minify, platform: 'node', format: 'esm', logLevel: 'silent' });
-    execFileSync(process.execPath, [standalone], { cwd: dir, stdio: 'pipe' });
+    execFileSync('node', [standalone], { cwd: dir, stdio: 'pipe' });
   }
   const types = `import { symbols, diff, Dummy, dummyEq } from '@symjs/symjs';
     import { gates } from '@symjs/physics-quantum';

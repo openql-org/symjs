@@ -16,8 +16,8 @@
  * modules (`index.ts` of a directory) through which an entry point reaches
  * optional engines that register themselves on load.
  *
- *   node scripts/side-effects.mjs          update package.json
- *   node scripts/side-effects.mjs --check  fail when package.json is stale
+ *   bun scripts/side-effects.mjs          update package.json
+ *   bun scripts/side-effects.mjs --check  fail when package.json is stale
  *
  * Top-level code is recognised by formatting: a statement starting at column
  * 0 that is not a declaration, an import or an export.
@@ -60,7 +60,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const field = sideEffectsField();
   if (process.argv.includes('--check')) {
     if (JSON.stringify(pkg.sideEffects) !== JSON.stringify(field)) {
-      console.error('package.json sideEffects is stale: run node scripts/side-effects.mjs');
+      console.error('package.json sideEffects is stale: run bun scripts/side-effects.mjs');
       process.exit(1);
     }
   } else {
