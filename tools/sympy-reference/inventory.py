@@ -12,11 +12,14 @@ from collections import Counter, defaultdict
 from functools import cache
 import doctest
 import hashlib
+import importlib
+import inspect
 import json
 import re
 from pathlib import Path
 import sys
 import sympy
+from sympy.core.assumptions import _assume_defined
 
 # preview_diagram requires an external TeX installation and image viewer.
 API_EXCLUSIONS = {
@@ -695,7 +698,17 @@ def export_exists(api, path):
 # overloading; the operations are public functions), class type flags such as
 # is_Add (instanceof in JavaScript), and the reviewed names of PYTHON_SPECIFIC
 # with their reason.
-PYTHON_SPECIFIC = {}
+PYTHON_SPECIFIC = {
+    'fromiter': 'builds an object from a Python iterable; JavaScript passes an array',
+}
+# SymPy's deprecated and internal names do not block completeness either. They
+# stay listed as internalNames: members whose defining class deprecates them
+# (sympy_deprecation_warning or @deprecated) and the reviewed names of
+# SYMPY_INTERNAL with their reason.
+SYMPY_INTERNAL = {
+    'default_assumptions': 'the knowledge base the assumption system stores the class facts in',
+    'class_key': 'the class order behind sort_key',
+}
 
 
 def python_specific(name):
@@ -703,8 +716,49 @@ def python_specific(name):
     return bool(re.fullmatch(r'__\w+__', member) or re.fullmatch(r'is_[A-Z]\w*', member)) or member in PYTHON_SPECIFIC
 
 
+@cache
+def deprecated_member(module, owner, member):
+    try:
+        cls = getattr(importlib.import_module(module), owner)
+    except (ImportError, AttributeError):
+        return False
+    for base in getattr(cls, '__mro__', ()):
+        if member in vars(base):
+            value = vars(base)[member]
+            function = getattr(value, 'fget', None) or getattr(value, '__func__', None) or value
+            try:
+                source = inspect.getsource(function)
+            except (TypeError, OSError):
+                return False
+            return 'deprecation_warning' in source or '@deprecated' in source
+    return False
+
+
+def sympy_internal(module, name):
+    if '.' not in name:
+        return False
+    owner, member = name.rsplit('.', 1)
+    return member in SYMPY_INTERNAL or deprecated_member(module, owner, member)
+
+
+# Members of SymPy's Expr (and Basic) that symjs provides as functions of an
+# expression: subs(e, ...), atoms(e), isPositive(e) for e.is_positive, ...
+EXPR_MEMBERS = frozenset(n for n in dir(sympy.Expr) if not n.startswith('_'))
+ASSUMPTION_SPELLINGS = {'nonnegative': 'NonNegative', 'nonpositive': 'NonPositive', 'nonzero': 'NonZero'}
+# Instance fields declared on symjs's Expr (core/nodes.ts); prototype inspection does not see them.
+EXPR_FIELDS = frozenset({'args', 'kind'})
+
+
+def expression_function(member):
+    if member.startswith('is_') and member[3:] in _assume_defined:
+        words = member[3:].split('_')
+        return 'is' + ''.join(ASSUMPTION_SPELLINGS.get(w, w[:1].upper() + w[1:]) for w in words)
+    return camel(member)
+
+
 def api_criterion(module, contract, api):
     policy = api.get('policy', {})
+    expr_prototype = set(api['exports'].get('Expr', {}).get('prototype', []))
     missing = []
     for name in contract['names']:
         qualified = QUALIFIED_RENAMES.get(module + '.' + name)
@@ -712,6 +766,9 @@ def api_criterion(module, contract, api):
             qualified = 'intpoly.' + camel(name)
         canonical = qualified or policy.get('renames', {}).get(name) or (name if name in contract['classes'] else camel(name))
         candidates = [canonical] if qualified else [canonical, policy.get('aliases', {}).get(name, canonical)]
+        if not qualified and canonical == name and camel(name) != name:
+            # function classes keep SymPy's snake_case name in SymPy (assoc_laguerre) and are camelCase in symjs
+            candidates.append(camel(name))
         counterpart = next((path for path in candidates if export_exists(api, path)), None)
         if counterpart is None:
             missing.append(name)
@@ -719,8 +776,12 @@ def api_criterion(module, contract, api):
         if info is None:
             continue
         row = api['exports'].get((counterpart or canonical).split('.')[0], {})
-        present = set(row.get('prototype', [])) | set(row.get('static', []))
+        prototype = set(row.get('prototype', []))
         families = set(info['families'])
+        # a factory function builds an Expr node; an Expr subclass has the fields of Expr
+        factory = row.get('kind') == 'function' and not prototype and 'Basic' in families
+        expression = factory or bool(expr_prototype) and expr_prototype <= prototype
+        present = (prototype | expr_prototype if factory else prototype) | set(row.get('static', [])) | (EXPR_FIELDS if expression else set())
         if 'MatrixBase' in families:
             families.add('Matrix')
         free_members = {member for family in families for member in policy.get('memberFunctions', {}).get(family, [])}
@@ -739,6 +800,8 @@ def api_criterion(module, contract, api):
                 alias = policy.get('matrixMemberAliases', {}).get(camel(member))
                 if alias:
                     functions.append(alias)
+            if expression and member in EXPR_MEMBERS:
+                functions.append(expression_function(member))
             if families.intersection(ATTRIBUTE_OWNERS.get(member, set())):
                 functions.append(policy.get('attributeFunctions', {}).get(member, camel(member)))
             # Expression arithmetic is implemented by these public functions.
@@ -752,8 +815,10 @@ def api_criterion(module, contract, api):
                 missing.append(name + '.' + member)
     unresolved = contract.get('unresolvedBases', [])
     specific = sorted(n for n in missing if python_specific(n))
-    blocking = sorted(n for n in missing if not python_specific(n))
-    return {'pass': not blocking and not unresolved, 'missingNames': blocking, 'pythonSpecificNames': specific, 'unresolvedBases': unresolved}
+    internal = sorted(n for n in missing if not python_specific(n) and sympy_internal(module, n))
+    blocking = sorted(set(missing) - set(specific) - set(internal))
+    return {'pass': not blocking and not unresolved, 'missingNames': blocking, 'pythonSpecificNames': specific,
+            'internalNames': internal, 'unresolvedBases': unresolved}
 
 
 def disallowed_omissions(rows, allowed):
