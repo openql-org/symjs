@@ -8,11 +8,11 @@
  */
 
 import type { Expr, ExprLike } from './nodes';
-import { Dummy, ExtensionExpr, Float, Sym, UndefFn } from './nodes';
+import { Dummy, ExtensionExpr, Float, Sym, UndefFn, registerHeadResolver } from './nodes';
 import { add, mul, sympify } from './ops';
 import { derivative } from './undef';
 import { SubsNode } from './subsnode';
-import { at } from './guard';
+import { at, defined } from './guard';
 import type { NoMatchResult } from './truth';
 import { NoMatch } from './truth';
 
@@ -102,6 +102,10 @@ export class DefinedFunctionCall extends ExtensionExpr {
   }
 }
 
+/** The function defineFunction made for a definition: the head of its applications. */
+const definedHeads = new WeakMap<FunctionDefinition, (...args: ExprLike[]) => Expr>();
+registerHeadResolver(DefinedFunctionCall, (e) => defined(definedHeads.get(e.definition), 'the function of defineFunction'));
+
 function applyDefined(name: string, def: FunctionDefinition, args: readonly Expr[]): Expr {
   if (def.eval) {
     const v = def.eval(...args);
@@ -135,6 +139,7 @@ export function defineFunction(name: string, def: FunctionDefinition = {}): Defi
   Object.defineProperty(f, 'functionName', { value: name });
   Object.defineProperty(f, 'name', { value: name });
   Object.defineProperty(f, 'isApplied', { value: (e: Expr) => e instanceof DefinedFunctionCall && e.name === name && e.definition === def });
+  definedHeads.set(def, f);
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the members of DefinedFunction were added above with Object.defineProperty (non-enumerable, read-only)
   return f as unknown as DefinedFunction;
 }

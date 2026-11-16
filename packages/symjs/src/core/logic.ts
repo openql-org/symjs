@@ -7,7 +7,7 @@
 
 import { Special } from './nodes';
 import type { Expr, ExprLike, RelOp } from './nodes';
-import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, impl, isNum } from './nodes';
+import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, impl, isNum, registerHeadResolver } from './nodes';
 import { numCmp } from './num';
 import { add, couldExtractMinusSign, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
@@ -110,6 +110,9 @@ export const Lt = (a: ExprLike, b: ExprLike): Expr => rel('Lt', a, b);
 export const Le = (a: ExprLike, b: ExprLike): Expr => rel('Le', a, b);
 export const Gt = (a: ExprLike, b: ExprLike): Expr => rel('Gt', a, b);
 export const Ge = (a: ExprLike, b: ExprLike): Expr => rel('Ge', a, b);
+
+const relationHeads = { Eq, Ne, Lt, Le, Gt, Ge } as const;
+registerHeadResolver(Rel, (e) => relationHeads[e.op]);
 
 /** SymPy is_number: an expression without symbols (pi/2, sqrt(2)). */
 const isNumber = (e: Expr): boolean => e.freeSymbols().size === 0;

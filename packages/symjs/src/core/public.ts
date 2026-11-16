@@ -7,7 +7,10 @@
  */
 
 import type { Expr, ExprLike, Sym } from './nodes';
-import { sympify } from './ops';
+import { mul, pow, sub, sympify } from './ops';
+import { E, I, headName } from './nodes';
+import type { Head } from './nodes';
+import { SINGULARITIES } from './singularities';
 import * as M from './methods';
 import { match as matchImpl } from './match';
 import type { NoMatchResult, Truth } from './truth';
@@ -24,9 +27,9 @@ export const isPositive = (e: ExprLike): Truth => factTruth(e, 'positive');
 /** e is negative (SymPy is_negative). */
 export const isNegative = (e: ExprLike): Truth => factTruth(e, 'negative');
 /** e is nonnegative (SymPy is_nonnegative). */
-export const isNonNegative = (e: ExprLike): Truth => factTruth(e, 'nonnegative');
+export const isNonnegative = (e: ExprLike): Truth => factTruth(e, 'nonnegative');
 /** e is nonzero (SymPy is_nonzero). */
-export const isNonZero = (e: ExprLike): Truth => factTruth(e, 'nonzero');
+export const isNonzero = (e: ExprLike): Truth => factTruth(e, 'nonzero');
 /** e is zero (SymPy is_zero). */
 export const isZero = (e: ExprLike): Truth => factTruth(e, 'zero');
 /** e is an integer (SymPy is_integer). */
@@ -42,7 +45,7 @@ export const isFinite = (e: ExprLike): Truth => factTruth(e, 'finite');
 /** e is a prime integer (SymPy is_prime). */
 export const isPrime = (e: ExprLike): Truth => factTruth(e, 'prime');
 /** e is nonpositive (SymPy is_nonpositive). */
-export const isNonPositive = (e: ExprLike): Truth => factTruth(e, 'nonpositive');
+export const isNonpositive = (e: ExprLike): Truth => factTruth(e, 'nonpositive');
 /** e is an even integer (SymPy is_even). */
 export const isEven = (e: ExprLike): Truth => factTruth(e, 'even');
 /** e is an odd integer (SymPy is_odd). */
@@ -59,6 +62,49 @@ export const isExtendedNegative = (e: ExprLike): Truth => factTruth(e, 'extended
 export const isExtendedPositive = (e: ExprLike): Truth => factTruth(e, 'extended_positive');
 /** e is a point of the Riemann surface of the logarithm (SymPy is_polar). */
 export const isPolar = (e: ExprLike): Truth => factTruth(e, 'polar');
+/** e is composite: a positive integer with a divisor other than 1 and itself (SymPy is_composite). */
+export const isComposite = (e: ExprLike): Truth => factTruth(e, 'composite');
+/** e is real or infinite and not positive (SymPy is_extended_nonpositive). */
+export const isExtendedNonpositive = (e: ExprLike): Truth => factTruth(e, 'extended_nonpositive');
+/** e is real or infinite and not zero (SymPy is_extended_nonzero). */
+export const isExtendedNonzero = (e: ExprLike): Truth => factTruth(e, 'extended_nonzero');
+/** e is a real number that is not an integer (SymPy is_noninteger). */
+export const isNoninteger = (e: ExprLike): Truth => factTruth(e, 'noninteger');
+/** e is a transcendental number (SymPy is_transcendental). */
+export const isTranscendental = (e: ExprLike): Truth => factTruth(e, 'transcendental');
+/** e commutes under multiplication (SymPy is_commutative). */
+export const isCommutative = (e: ExprLike): Truth => factTruth(e, 'commutative');
+
+/** A finite singular point of the table: an integer, I, -I or -1/E. */
+function singularPoint(p: string): Expr {
+  const sign = p.startsWith('-') ? -1 : 1;
+  const body = sign < 0 ? p.slice(1) : p;
+  const value = body === 'I' ? I : body === '1/E' ? pow(E, -1) : sympify(Number(body));
+  return sign < 0 ? mul(-1, value) : value;
+}
+
+/**
+ * SymPy `f.is_singular(a)`: whether `a` is an essential singularity or a branch point of the
+ * function `f` (`sin`, `log`, ... or its name), or the function is not holomorphic anywhere
+ * (`Abs`, `re`); 'unknown' for a function without recorded singularities.
+ */
+export function isSingular(f: Head | string, aIn: ExprLike): Truth {
+  const name = typeof f === 'string' ? f : headName(f);
+  // symjs names the absolute value abs (SymPy class Abs)
+  const points = name === undefined ? undefined : SINGULARITIES[name === 'abs' ? 'Abs' : name];
+  if (points === undefined) return 'unknown';
+  if (typeof points === 'boolean') return points;
+  const a = sympify(aIn);
+  // SymPy fuzzy_or: true when one is true, false when all are false
+  let unknown = false;
+  for (const p of points) {
+    const t = p === 'zoo' ? factTruth(a, 'infinite') : factTruth(sub(a, singularPoint(p)), 'zero');
+    if (t === true) return true;
+    if (t === 'unknown') unknown = true;
+  }
+  return unknown ? 'unknown' : false;
+}
+
 
 /**
  * SymPy Expr.match: the values of the Wilds making pattern equal to expr,

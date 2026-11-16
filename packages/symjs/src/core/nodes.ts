@@ -16,6 +16,7 @@
 import { InvariantError, NotImplementedError, NotLoadedError } from './errors';
 import type { Kind } from './kind';
 import { at } from './guard';
+import { classOf } from './callable';
 import { gcd } from './numbers';
 import { deduceAllFacts } from './facts';
 import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
@@ -319,6 +320,8 @@ export interface Impl {
   equalsZero?(e: Expr): true | undefined;
   /** SymPy radsimp (registered by simplify/sqrtdenest). */
   radsimp?(e: Expr): Expr;
+  /** A node of the same type with new arguments, re-canonicalized (registered by core/traverse). */
+  rebuild: (e: Expr, args: readonly Expr[]) => Expr;
   /** A named function applied with automatic evaluation (registered by functions/elementary). */
   fn?(name: FnName, args: readonly Expr[]): Expr;
   /** expand with only the mul hint (registered by simplify/expand). */
@@ -415,6 +418,82 @@ export function registerFromiter(cls: abstract new (...args: never[]) => Expr, b
   fromiterBuilders.set(cls, build);
 }
 
+/**
+ * The head of an expression (SymPy `func`): a callable that builds the expression from its
+ * arguments, `e.func(...e.args)` equals `e`.
+ */
+export type Head = (...args: ExprLike[]) => Expr;
+
+/** The public constructors of node classes (registered by the modules exporting them). */
+const classHeads = new Map<unknown, Head>();
+/** The public functions of applied function names (`sin`, `log`, ...). */
+const functionHeads = new Map<string, Head>();
+/** Heads that depend on the node (a relation's operator, an undefined function's name). */
+const headResolvers = new Map<unknown, (e: Expr) => Head>();
+/** Heads made for classes without a registered public constructor, one per class. */
+const derivedHeads = new Map<unknown, Map<string, Head>>();
+
+/**
+ * Registers the public constructor of a node class as the head of its instances. An atom's head is
+ * its class (`Sym`), whose call takes a name rather than arguments, as SymPy's Symbol.func does.
+ */
+export function registerHead(cls: abstract new (...args: never[]) => Expr, head: Head | ((...args: never[]) => Expr)): void {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- an atom has no arguments, so its head is never called with arguments it does not take
+  classHeads.set(cls, head as Head);
+}
+
+/** Registers a head that depends on the node, for the instances of a class. */
+export function registerHeadResolver<T extends Expr>(cls: abstract new (...args: never[]) => T, resolve: (e: T) => Head | ((...args: never[]) => Expr)): void {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the resolver of a class is only called with the instances of that class (headOf looks it up by the node's class); a head whose parameters differ from the node's arguments (Sum's [k, a, b] limits) is documented where it is registered
+  headResolvers.set(cls, resolve as (e: Expr) => Head);
+}
+
+/**
+ * Registers the public functions of applied function names, `[['sin', sin], ...]`, so that
+ * `func(sin(x))` is `sin`.
+ */
+export function registerFunctionHeads(heads: readonly (readonly [string, Head])[]): void {
+  for (const [name, f] of heads) functionHeads.set(name, f);
+}
+
+/** The SymPy name of a function head (`sin`, a function of defineFunction or SymFunction), if it has one. */
+export function headName(head: (...args: never[]) => unknown): string | undefined {
+  const own: unknown = Reflect.get(head, 'functionName');
+  if (typeof own === 'string') return own;
+  for (const [name, f] of functionHeads) if (f === head) return name;
+  return undefined;
+}
+
+/** What distinguishes heads within a class: the function name, relation operator, limit direction, ... */
+function headDiscriminator(e: Expr): string {
+  return ['name', 'op', 'dir', 'kind2'].map((field) => {
+    const v: unknown = Reflect.get(e, field);
+    return typeof v === 'string' ? v : '';
+  }).join('\u0000');
+}
+
+function headOf(e: Expr): Head {
+  if (e instanceof Fn) {
+    const registered = functionHeads.get(e.name);
+    if (registered !== undefined) return registered;
+  }
+  for (let cls: unknown = e.constructor; typeof cls === 'function'; cls = Object.getPrototypeOf(cls)) {
+    const resolve = headResolvers.get(cls);
+    if (resolve !== undefined) return resolve(e);
+    const registered = classHeads.get(cls);
+    if (registered !== undefined) return registered;
+  }
+  // no public constructor registered: rebuild like this node (one head per class and discriminator)
+  const byClass = derivedHeads.get(e.constructor) ?? new Map<string, Head>();
+  derivedHeads.set(e.constructor, byClass);
+  const discriminator = headDiscriminator(e);
+  const derived = byClass.get(discriminator);
+  if (derived !== undefined) return derived;
+  const head: Head = (...args) => impl.rebuild(e, args.map((a) => impl.sympify(a)));
+  byClass.set(discriminator, head);
+  return head;
+}
+
 /** An item of fromiter's argument: an expression, or a number sympified. */
 function fromiterItem(v: unknown): Expr {
   if (v instanceof Expr) return v;
@@ -430,7 +509,7 @@ export abstract class Expr {
    * NotImplementedError (SymPy's bare `Expr(x, y)` has no JavaScript counterpart).
    */
   static fromiter(this: abstract new (...args: never[]) => Expr, args: Iterable<unknown>): Expr {
-    const build = fromiterBuilders.get(this);
+    const build = fromiterBuilders.get(classOf(this));
     if (build === undefined) throw new NotImplementedError(`${this.name}.fromiter is not supported`);
     return build([...args].map(fromiterItem));
   }
@@ -457,6 +536,15 @@ export abstract class Expr {
   equals(other: ExprLike): boolean {
     const o = impl.sympify(other);
     return this === o || this.key === o.key;
+  }
+
+  /**
+   * SymPy `func`: the head of the expression, the public constructor or function that builds it
+   * from its arguments (`func(sin(x)) === sin`, `func(x + y) === Add`, `e.func(...e.args)` equals
+   * `e`). An atom (a symbol, a number) has no arguments to rebuild it from, as in SymPy.
+   */
+  get func(): Head {
+    return headOf(this);
   }
 
   get isNumber(): boolean {

@@ -13,7 +13,7 @@
 import { NotImplementedError } from '../../core/errors';
 import { at } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
-import { isNum } from '../../core/nodes';
+import { isNum, registerFunctionHeads } from '../../core/nodes';
 import { isZero } from '../../core/assumptions';
 import { add, couldExtractMinusSign, mul, neg, sqrt } from '../../core/ops';
 import { fnPartials } from '../../calculus/diff';
@@ -55,3 +55,10 @@ export const mathieuc = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mat
 export const mathieusprime = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieusprime', [a, q, z]);
 /** SymPy mathieucprime(a, q, z): the derivative of the Mathieu cosine function. */
 export const mathieucprime = (a: ExprLike, q: ExprLike, z: ExprLike): Expr => fn('mathieucprime', [a, q, z]);
+
+registerFunctionHeads([
+  ['mathieus', mathieus],
+  ['mathieuc', mathieuc],
+  ['mathieusprime', mathieusprime],
+  ['mathieucprime', mathieucprime],
+]);

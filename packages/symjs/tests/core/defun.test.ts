@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { runInNewContext } from 'node:vm';
+import * as sj from '../../src';
 import {
   type Expr,
   NoMatch,
@@ -80,5 +81,14 @@ describe('arity', () => {
     expect(arity(defineFunction('g4', { eval: (a) => a }))).toBe(1);
     // SymPy Function.eval(*args): no fixed count
     expect(arity(defineFunction('g5'))).toBe(NoMatch);
+  });
+});
+
+describe('func of a defined function', () => {
+  it('is the function defineFunction made', () => {
+    const f = sj.defineFunction('fhead', { nargs: 1 });
+    const [x] = sj.symbols('x');
+    expect(sj.func(f(x))).toBe(f);
+    expect(sj.func(sj.Mod(x, 3))).toBe(sj.Mod);
   });
 });

@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { describe, expect, it } from 'vitest';
+import * as sj from '../../src';
 import {
   And,
   CBooleanFunction,
@@ -520,5 +521,14 @@ describe('series, leading terms and limits', () => {
     expect(s(taylorTerm(expm1(x), 3, x))).toBe('x**3/6');
     expect(s(taylorTerm(log2(x), 3, x))).toBe('zoo*x**3');
     expect(s(taylorTerm(Cbrt(xp1), 3, x))).toBe('5*x**3/81');
+  });
+});
+
+describe('func of the C math functions', () => {
+  it('is the function class, which rebuilds the application', () => {
+    const [x] = sj.symbols('x');
+    const e = sj.expm1(x);
+    expect(sj.func(e)).toBe(sj.expm1);
+    expect(sj.str(sj.func(e)(...e.args))).toBe('expm1(x)');
   });
 });

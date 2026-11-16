@@ -11,7 +11,7 @@
 
 import type { Expr, ExprLike, FnName } from '../../core/nodes';
 import { defined, first, pair } from '../../core/guard';
-import { Add, Float, Fn, Mul, Rational, S, Special } from '../../core/nodes';
+import { Add, Float, Fn, Mul, Rational, S, Special, registerFunctionHeads } from '../../core/nodes';
 import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../../core/ops';
 import { asCoefficient, asIndependent } from '../../core/methods';
 import { NotImplementedError } from '../../core/errors';
@@ -755,3 +755,22 @@ forEachEntry(SPECS, (name, spec) => {
   };
   if (spec.conjugate) conjugateCommutes.add(name);
 });
+
+registerFunctionHeads([
+  ['cot', cot],
+  ['sec', sec],
+  ['csc', csc],
+  ['acot', acot],
+  ['asec', asec],
+  ['acsc', acsc],
+  ['coth', coth],
+  ['sech', sech],
+  ['csch', csch],
+  ['asinh', asinh],
+  ['acosh', acosh],
+  ['atanh', atanh],
+  ['acoth', acoth],
+  ['asech', asech],
+  ['acsch', acsch],
+  ['sinc', sinc],
+]);

@@ -678,3 +678,17 @@ it('has_free sees differentiation variables but respects an outer binding', () =
   expect(sj.hasFree(d.add(1), b)).toBe(true);
   expect(sj.hasFree(new sj.Integral([d, b, sj.S.Zero, sj.S.One]), b)).toBe(false);
 });
+
+describe('canonicalVariables, assumptions0 and isScalar (SymPy 1.14)', () => {
+  it('give SymPy canonical_variables, assumptions0 and is_scalar', async () => {
+    const sj = await import('../../src');
+    const [x, y] = sj.symbols('x y');
+    const show = (m: Map<sj.Expr, sj.Sym>) => [...m].map(([k, v]) => `${sj.str(k)}: ${v.name}`);
+    expect(show(sj.canonicalVariables(sj.Lambda(x, sj.add(x, y))))).toEqual(['x: _0']);
+    expect(show(sj.canonicalVariables(sj.Lambda(x, sj.add(x, sj.Sym('_0')))))).toEqual(['x: _1']);
+    expect(show(sj.canonicalVariables(new sj.Integral([x, x])))).toEqual([]);
+    expect([...sj.assumptions0(sj.Sym('x', { real: true }))].sort(([a], [b]) => a.localeCompare(b))).toEqual([['commutative', true], ['complex', true], ['extended_real', true], ['finite', true], ['hermitian', true], ['imaginary', false], ['infinite', false], ['real', true]]);
+    expect(sj.assumptions0(sj.add(x, 1)).size).toBe(0);
+    expect([sj.isScalar(x), sj.isScalar(sj.MatrixSymbol('A', 2, 2))]).toEqual([true, false]);
+  });
+});

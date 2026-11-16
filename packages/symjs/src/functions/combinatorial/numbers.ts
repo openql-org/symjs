@@ -12,7 +12,7 @@
 import { at, defined, first, last } from '../../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../../core/assumptions';
 import type { ExprLike, FnName } from '../../core/nodes';
-import { Dummy, Expr, Fn, Pow, Rational, S, Special, impl } from '../../core/nodes';
+import { Dummy, Expr, Fn, Pow, Rational, S, Special, impl, registerFunctionHeads } from '../../core/nodes';
 import { AccumBounds } from '../../core/accumbounds';
 import { Product } from '../../core/concrete';
 import { add, mul, pow, sympify } from '../../core/ops';
@@ -897,3 +897,23 @@ export function stirling(nIn: IntLike, kIn: IntLike, d?: IntLike, opts: { kind?:
   }
   return at(row, k) * (opts.signed === true && (n - k) % 2 === 1 ? -1n : 1n);
 }
+
+registerFunctionHeads([
+  ['bernoulli', bernoulli],
+  ['euler', euler],
+  ['genocchi', genocchi],
+  ['fibonacci', fibonacci],
+  ['lucas', lucas],
+  ['tribonacci', tribonacci],
+  ['partition', partition],
+  ['totient', totientFn],
+  ['reduced_totient', reducedTotient],
+  ['mobius', mobius],
+  ['divisor_sigma', divisorSigma],
+  ['udivisor_sigma', udivisorSigma],
+  ['primenu', primenu],
+  ['primeomega', primeomega],
+  ['primepi', primepiFn],
+  ['multigamma', multigamma],
+  ['frac', frac],
+]);

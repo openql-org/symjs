@@ -27,8 +27,7 @@ import {
   S,
   Special,
   Sym,
-  isNum,
-} from '../../core/nodes';
+  isNum, registerFunctionHeads } from '../../core/nodes';
 import { numAdd, numMul } from '../../core/num';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
@@ -1629,3 +1628,47 @@ function splitAddInt(e: Expr): [bigint, Expr] {
 
 impl.expandFunc = expandFunc;
 impl.sign = sign;
+
+registerFunctionHeads([
+  ['factorial', factorial],
+  ['factorial2', factorial2],
+  ['binomial', binomial],
+  ['ff', ff],
+  ['rf', rf],
+  ['subfactorial', subfactorial],
+  ['catalan', catalan],
+  ['gamma', gamma],
+  ['loggamma', loggamma],
+  ['polygamma', polygamma],
+  ['lowergamma', lowergamma],
+  ['uppergamma', uppergamma],
+  ['beta', beta],
+  ['betainc', betainc],
+  ['betainc_regularized', betaincRegularized],
+  ['zeta', zeta],
+  ['erf', erf],
+  ['erfc', erfc],
+  ['erfi', erfi],
+  ['erf2', erf2],
+  ['erfinv', erfinv],
+  ['erfcinv', erfcinv],
+  ['erf2inv', erf2inv],
+  ['Ei', Ei],
+  ['LambertW', LambertW],
+  ['li', li],
+  ['Li', Li],
+  ['Si', Si],
+  ['Ci', Ci],
+  ['Shi', Shi],
+  ['Chi', Chi],
+  ['expint', expint],
+  ['fresnels', fresnels],
+  ['fresnelc', fresnelc],
+  ['sign', sign],
+  ['floor', floor],
+  ['Rem', Rem],
+  ['ceiling', ceiling],
+  ['atan2', atan2],
+  ['Min', Min],
+  ['Max', Max],
+]);

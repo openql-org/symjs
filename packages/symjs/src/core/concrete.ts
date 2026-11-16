@@ -6,7 +6,7 @@
  */
 
 import type { ExprLike, Sym } from './nodes';
-import { Expr, impl } from './nodes';
+import { Expr, impl, registerHeadResolver } from './nodes';
 import { add, mul, pow, sub, sympify } from './ops';
 import { at } from './guard';
 import { ReorderError } from './errors';
@@ -124,3 +124,7 @@ export function Sum(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
 export function Product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
   return new Concrete('Product', [sympify(f), ...limits.flatMap(([k, a, b]) => [k, sympify(a), sympify(b)])]);
 }
+
+// func(Sum(...)) is Sum; the arguments of the node are flat (f, k, a, b, ...), so rebuild(e, args)
+// rebuilds it rather than func(e)(...e.args)
+registerHeadResolver(Concrete, (e) => (e.kind2 === 'Product' ? Product : Sum));

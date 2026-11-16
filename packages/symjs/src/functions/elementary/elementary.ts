@@ -27,8 +27,7 @@ import {
   impl,
   isNum,
   ExtensionExpr,
-  Sym,
-} from '../../core/nodes';
+  Sym, registerFunctionHeads } from '../../core/nodes';
 import { numAbs, numNeg, ratMod } from '../../core/num';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../../core/ops';
 
@@ -862,3 +861,20 @@ impl.fn = (name, args) => fn(name, args);
 impl.abs = abs;
 impl.cos = (e) => cos(e);
 impl.sin = (e) => sin(e);
+
+registerFunctionHeads([
+  ['sin', sin],
+  ['cos', cos],
+  ['tan', tan],
+  ['asin', asin],
+  ['acos', acos],
+  ['atan', atan],
+  ['sinh', sinh],
+  ['cosh', cosh],
+  ['tanh', tanh],
+  ['abs', abs],
+  ['re', re],
+  ['im', im],
+  ['arg', arg],
+  ['log', log],
+]);
