@@ -12,7 +12,7 @@ pnpm test                                       # every test passes
 pnpm coverage                                   # 100% coverage (see below)
 pnpm compat                                     # SymPy doctest compatibility, writes compat/REPORT.md
 pnpm corpus:report                              # corpus tests, writes docs/compat-report.md
-pnpm build && node packages/symjs/scripts/size.mjs --check   # bundle sizes within budget
+pnpm build && node scripts/size.mjs --check   # bundle sizes within budget
 pnpm test:package                              # built ESM/CJS, minification and consumer type resolution
 ```
 

@@ -320,7 +320,7 @@
   ],
   "scripts": {
     "build": "tsup && tsc -p tsconfig.build.json && node ../../scripts/declarations.mjs dist",
-    "side-effects": "node scripts/side-effects.mjs"
+    "side-effects": "node ../../scripts/side-effects.mjs"
   },
   "engines": {
     "node": ">=18"

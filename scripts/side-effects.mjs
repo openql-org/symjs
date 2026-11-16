@@ -27,7 +27,7 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
+const root = fileURLToPath(new URL('../packages/symjs/', import.meta.url));
 const src = join(root, 'src');
 const DECL = /^(import |export |const |let |var |function\*? |async function |class |abstract class |type |interface |enum |declare |[\s/*})\]@]|$)/;
 

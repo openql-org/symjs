@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import * as sj from '../src/core';
 // @ts-expect-error untyped build script
-import { sideEffectsField } from '../scripts/side-effects.mjs';
+import { sideEffectsField } from '../../../scripts/side-effects.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const src = join(root, 'src');
