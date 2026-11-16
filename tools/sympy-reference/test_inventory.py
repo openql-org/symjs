@@ -64,6 +64,27 @@ class CompletenessTests(unittest.TestCase):
         self.assertFalse(result['pass'])
         self.assertEqual(result['missingNames'], ['Widget.is_widget'])
 
+    def test_deprecated_and_internal_sympy_names_are_listed_without_blocking(self):
+        contract = {'names': ['Expr'], 'classes': {'Expr': {'members': ['expr_free_symbols', 'class_key', 'fromiter', 'subs'], 'families': ['Expr']}}}
+        api = {'exports': {'Expr': {'kind': 'function', 'prototype': ['subs'], 'static': []}}}
+        result = api_criterion('sympy.core.expr', contract, api)
+        self.assertTrue(result['pass'])
+        self.assertEqual(result['internalNames'], ['Expr.class_key', 'Expr.expr_free_symbols'])
+        self.assertEqual(result['pythonSpecificNames'], ['Expr.fromiter'])
+        contract['classes']['Expr']['members'].append('canonical_variables')
+        self.assertEqual(api_criterion('sympy.core.expr', contract, api)['missingNames'], ['Expr.canonical_variables'])
+
+    def test_expression_members_are_provided_by_expr_and_its_functions(self):
+        api = {'exports': {'Expr': {'kind': 'function', 'prototype': ['has'], 'static': []},
+                           'sin': {'kind': 'function', 'prototype': [], 'static': []},
+                           'isPositive': {'kind': 'function', 'prototype': [], 'static': []},
+                           'subs': {'kind': 'function', 'prototype': [], 'static': []}}}
+        contract = {'names': ['sin'], 'classes': {'sin': {'members': ['args', 'has', 'is_positive', 'subs', 'is_composite'], 'families': ['Basic', 'Expr']}}}
+        result = api_criterion('sympy.functions.elementary.trigonometric', contract, api)
+        self.assertEqual(result['missingNames'], ['sin.is_composite'])
+        del api['exports']['subs']
+        self.assertEqual(api_criterion('sympy.functions.elementary.trigonometric', contract, api)['missingNames'], ['sin.is_composite', 'sin.subs'])
+
     def test_function_form_requires_documented_owner_and_real_export(self):
         self.api['policy'] = {'attributeFunctions': {'canonical': 'canonicalRelation'}}
         self.contract['classes']['Widget'] = {'members': ['canonical'], 'families': ['Relational']}
@@ -77,10 +98,12 @@ class CompletenessTests(unittest.TestCase):
         api = {'exports': {'Sym': {'prototype': [], 'static': []}, 'Legacy': {'prototype': [], 'static': []}},
                'policy': {'renames': {'Symbol': 'Sym'}, 'aliases': {'old_name': 'Legacy'}}}
         self.assertTrue(api_criterion(self.module, {'names': ['Symbol', 'old_name'], 'classes': {}}, api)['pass'])
+        # a snake_case SymPy class is a function class: its counterpart is the camelCase function
         self.contract['names'] = ['lower_case']
         self.contract['classes'] = {'lower_case': {'members': [], 'families': []}}
-        self.api['exports']['lowerCase'] = {'prototype': [], 'static': []}
         self.assertEqual(self.evaluate()['publicApi']['missingNames'], ['lower_case'])
+        self.api['exports']['lowerCase'] = {'prototype': [], 'static': []}
+        self.assertEqual(self.evaluate()['publicApi']['missingNames'], [])
         # A geometric Point is not evidence of the ECM Point's API.
         self.assertFalse(api_criterion('sympy.ntheory.ecm', {'names': ['Point'], 'classes': {}}, {'exports': {'Point': {}}})['pass'])
 
