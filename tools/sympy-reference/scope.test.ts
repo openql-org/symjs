@@ -95,7 +95,9 @@ it('accounts for every examined doctest and maintains condition-based test links
   const modules = new Set(read('./scope-inventory.json').modules.map((m: { module: string }) => m.module));
   for (const c of corpus.cases) expect(modules.has(c.module)).toBe(true);
   for (const area of read('./capabilities.json').areas) {
-    expect(area.tested.length).toBeGreaterThan(0); expect(area.remaining.length).toBeGreaterThan(0);
+    expect(area.tested.length).toBeGreaterThan(0);
+    // an area is complete exactly when nothing within SymPy 1.14's scope remains
+    expect(area.status === 'complete').toBe(area.remaining.length === 0);
     for (const test of area.tests) expect(existsSync(new URL('../../' + test, import.meta.url))).toBe(true);
   }
 });
