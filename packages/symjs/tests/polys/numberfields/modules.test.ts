@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-// References from SymPy 1.14.0 (scripts/gen_numberfields.py): power bases, submodules and their
+// References from SymPy 1.14.0 (tools/sympy-reference/generators/gen_numberfields.py): power bases, submodules and their
 // elements (arithmetic, representation, reduction), module homomorphisms and find_min_poly.
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';

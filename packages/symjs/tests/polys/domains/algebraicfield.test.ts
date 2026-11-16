@@ -58,7 +58,7 @@ describe('AlgebraicField', () => {
   });
 });
 
-// maximal orders, integral bases, discriminants and prime ideals (references from scripts/gen_numberfields.py)
+// maximal orders, integral bases, discriminants and prime ideals (references from tools/sympy-reference/generators/gen_numberfields.py)
 describe('AlgebraicField number-field methods', () => {
   const nf = JSON.parse(readFileSync(new URL('../numberfields/numberfields.references.json', import.meta.url), 'utf8')).algebraic;
   const x = new Sym('x'), theta = new Sym('theta'), zeta = new Sym('zeta');

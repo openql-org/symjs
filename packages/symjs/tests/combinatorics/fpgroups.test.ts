@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Finitely presented groups (after SymPy 1.14 test_fp_groups.py; expected values from SymPy, see
-// scripts/gen_fpgroups.py): subgroup presentations, orders, subgroups with their injections, the
+// tools/sympy-reference/generators/gen_fpgroups.py): subgroup presentations, orders, subgroups with their injections, the
 // permutation group methods, simplification, low index subgroups, and the subgroups of free groups.
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';

@@ -65,7 +65,10 @@ pnpm test:package                              # built ESM/CJS, minification and
 - The reference is SymPy 1.14.0 (and mpmath 1.3.0 for `numeric/`).
   Expected values in tests are obtained by running SymPy or mpmath, never
   by copying what symjs currently prints. SymPy's own test suites
-  (`sympy/*/tests`) are a good source of cases.
+  (`sympy/*/tests`) are a good source of cases. Scripts that compute
+  expected values with SymPy live in `tools/sympy-reference/generators/`
+  (`gen_<name>.py`, writing `*.references.json` next to the tests); add a
+  new one there rather than elsewhere.
 - Results match SymPy's `str()` output. A result in another form counts as
   compatible only when it is mathematically equal (see
   `packages/symjs/tests/sympy-equivalent.ts`). A result left unevaluated where SymPy computes

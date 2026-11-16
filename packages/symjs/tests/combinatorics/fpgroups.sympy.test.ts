@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-// References from SymPy 1.14.0 (scripts/gen_fpgroups.py): words of a free group, finitely presented
+// References from SymPy 1.14.0 (tools/sympy-reference/generators/gen_fpgroups.py): words of a free group, finitely presented
 // groups (orders, coset tables by both strategies, coset representatives, Reidemeister-Schreier and
 // simplified presentations, low index subgroups, rewriting systems), subgroups, homomorphisms,
 // presentations of permutation groups and polycyclic collectors.

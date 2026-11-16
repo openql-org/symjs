@@ -83,6 +83,6 @@ export default class CorpusReport implements Reporter {
     ];
     for (const [corpus, rows] of tallies) lines.push('', `## ${corpus[0]?.toUpperCase() ?? ''}${corpus.slice(1)}`, '', ...table(rows));
     if (stale.length > 0) lines.push('', '## Stale cases', '', ...stale.map((s) => `- ${s}`));
-    writeFileSync(new URL('../docs/compat-report.md', import.meta.url), lines.join('\n') + '\n');
+    writeFileSync(new URL('../../docs/compat-report.md', import.meta.url), lines.join('\n') + '\n');
   }
 }

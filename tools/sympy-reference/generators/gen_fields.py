@@ -79,5 +79,5 @@ for name, exprs in [('list', [x/2, (x+1)/(y-1)]), ('constant', s.Rational(1, 2))
     record('inferred_'+name+'_field', K)
     record('inferred_'+name, values)
 
-path = Path('packages/symjs/tests/polys/fields.references.json')
+path = (Path(__file__).resolve().parents[3] / 'packages/symjs/tests/polys/fields.references.json')
 path.write_text(json.dumps(references, indent=2)+'\n')

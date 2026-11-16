@@ -60,7 +60,7 @@ def main():
     for expr in ['0', '1', '5*x**(1/2)+7/y', '(x+y)**2', '(1+x)**3', 'x**(-2)', 'x**(-1/3)', 'x**(1/3)+x**(2/7)', '3*x**2-4*y**3']:
         p = element(r, expr)
         puiseux.append(dict(expr=expr, expected=str(p), asExpr=str(p.as_expr()), dx=str(p.diff(x)), dy=str(p.diff(y))))
-    path = Path(__file__).resolve().parents[1] / 'packages/symjs/tests/polys/ringseries.references.json'
+    path = Path(__file__).resolve().parents[3] / 'packages/symjs/tests/polys/ringseries.references.json'
     x = symbols[0]
     fractional_root = str(s.series((8*x+x**2+x**3)**s.Rational(1,3), x, 0, 5).removeO())
     path.write_text(json.dumps(dict(sympy=s.__version__, series=cases, puiseux=puiseux, fractionalRoot=fractional_root), indent=2) + '\n')

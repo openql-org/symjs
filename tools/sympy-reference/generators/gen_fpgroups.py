@@ -248,5 +248,5 @@ fp_extra = {
 }
 
 out = {'low_index': low_index, 'fp_extra': fp_extra, 'cosets': cosets, 'words': words, 'groups': groups, 'subgroups': subgroups, 'homomorphisms': homs, 'presentations': pres, 'pc': pc}
-path = Path(__file__).resolve().parents[1] / 'packages/symjs/tests/combinatorics/fpgroups.references.json'
+path = Path(__file__).resolve().parents[3] / 'packages/symjs/tests/combinatorics/fpgroups.references.json'
 path.write_text(json.dumps(out, indent=1) + '\n')
