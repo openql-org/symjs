@@ -708,6 +708,7 @@ PYTHON_SPECIFIC = {
 SYMPY_INTERNAL = {
     'default_assumptions': 'the knowledge base the assumption system stores the class facts in',
     'class_key': 'the class order behind sort_key',
+    'eval': 'the evaluation hook a Function subclass overrides; symjs takes it as defineFunction(name, { eval })',
 }
 
 
@@ -744,6 +745,8 @@ def sympy_internal(module, name):
 # Members of SymPy's Expr (and Basic) that symjs provides as functions of an
 # expression: subs(e, ...), atoms(e), isPositive(e) for e.is_positive, ...
 EXPR_MEMBERS = frozenset(n for n in dir(sympy.Expr) if not n.startswith('_'))
+# Members a SymPy Function application adds (fdiff(e, argindex), ...).
+FUNCTION_MEMBERS_OF_APPLICATIONS = frozenset(n for n in dir(sympy.Function) if not n.startswith('_')) - EXPR_MEMBERS
 ASSUMPTION_SPELLINGS = {'nonnegative': 'NonNegative', 'nonpositive': 'NonPositive', 'nonzero': 'NonZero'}
 # Instance fields declared on symjs's Expr (core/nodes.ts); prototype inspection does not see them.
 EXPR_FIELDS = frozenset({'args', 'kind'})
@@ -800,7 +803,7 @@ def api_criterion(module, contract, api):
                 alias = policy.get('matrixMemberAliases', {}).get(camel(member))
                 if alias:
                     functions.append(alias)
-            if expression and member in EXPR_MEMBERS:
+            if expression and (member in EXPR_MEMBERS or 'Function' in families and member in FUNCTION_MEMBERS_OF_APPLICATIONS):
                 functions.append(expression_function(member))
             if families.intersection(ATTRIBUTE_OWNERS.get(member, set())):
                 functions.append(policy.get('attributeFunctions', {}).get(member, camel(member)))
