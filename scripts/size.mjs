@@ -16,8 +16,8 @@ import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 
-const root = fileURLToPath(new URL('..', import.meta.url));
-const require = createRequire(import.meta.url);
+const root = fileURLToPath(new URL('../packages/symjs/', import.meta.url));
+const require = createRequire(new URL('../packages/symjs/package.json', import.meta.url));
 const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 
 /**

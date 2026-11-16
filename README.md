@@ -100,7 +100,7 @@ using a parser-generator runtime. `debug` receives the syntax tree as a callback
 
 Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [tools/sympy-reference/capabilities.json](tools/sympy-reference/capabilities.json).
 
-Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point, or from the root, whose bundled named imports include the entry points of the names used), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; the measured sizes and budgets are printed by `node packages/symjs/scripts/size.mjs`.
+Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point, or from the root, whose bundled named imports include the entry points of the names used), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; the measured sizes and budgets are printed by `node scripts/size.mjs`.
 
 ### Repository layout
 
@@ -119,7 +119,7 @@ tools/
   sympy-corpus/         extracted SymPy cases, replay harness, converter to *.corpus.test.ts
                         and the compatibility report of the corpus tests
 compat/                 doctest and unit-test compatibility ratchets and reports
-scripts/                checks of the built package
+scripts/                package build steps and checks (declarations, bundle sizes, side effects, built files)
 ```
 
 To add an extend module, create `packages/<name>/` with its own `package.json` (`@symjs/symjs` as a peer dependency with `workspace:^`), `tsup.config.ts` (with `@symjs/symjs` as external) and `tsconfig.build.json`, and import the base module only through `@symjs/symjs`.
@@ -177,7 +177,7 @@ pnpm typecheck   # tsc --noEmit
 pnpm lint        # oxlint with type-aware rules (see docs/api-policy.md)
 pnpm build       # every package: ESM/CJS and matching .d.ts/.d.cts declaration graphs
 pnpm test:package # built packages, all entry points, minification, NodeNext/Bundler consumers
-node packages/symjs/scripts/size.mjs --check   # bundle sizes of typical imports against budgets
+node scripts/size.mjs --check   # bundle sizes of typical imports against budgets
 pnpm golden      # regenerate the SymPy expectations of the golden tests
 ```
 
