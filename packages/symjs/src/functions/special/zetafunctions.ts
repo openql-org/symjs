@@ -11,7 +11,7 @@
  */
 
 import type { Expr, ExprLike } from '../../core/nodes';
-import { Float, Fn, Pow, Rational, S, Special, Sym } from '../../core/nodes';
+import { Float, Fn, Pow, Rational, S, Special, Sym, registerFunctionHeads } from '../../core/nodes';
 import { at, pair } from '../../core/guard';
 import { isIntegerQ, isNegative, isPositive, isZero } from '../../core/assumptions';
 import { add, exp, mul, neg, pow, sqrt } from '../../core/ops';
@@ -343,3 +343,11 @@ evaluators.stieltjes = (n, ...rest) => {
 };
 
 for (const name of ['polylog', 'lerchphi', 'dirichlet_eta', 'stieltjes'] as const) numericFns[name] = (args) => mpNumeric(name, args);
+
+registerFunctionHeads([
+  ['lerchphi', lerchphi],
+  ['polylog', polylog],
+  ['dirichlet_eta', dirichletEta],
+  ['riemann_xi', riemannXi],
+  ['stieltjes', stieltjes],
+]);

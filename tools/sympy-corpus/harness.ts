@@ -173,6 +173,14 @@ export class FnClass {
   constructor(readonly name: string) {}
 }
 
+/** The SymPy classes of the public constructors that are heads (SymPy expr.func), by their printed path. */
+const HEAD_CLASSES = new Map<unknown, string>([
+  [sj.Add, 'core.add.Add'], [sj.Mul, 'core.mul.Mul'], [sj.Pow, 'core.power.Pow'], [sj.Sym, 'core.symbol.Symbol'], [sj.Dummy, 'core.symbol.Dummy'],
+  [sj.Sum, 'concrete.summations.Sum'], [sj.Product, 'concrete.products.Product'],
+  [sj.Eq, 'core.relational.Equality'], [sj.Ne, 'core.relational.Unequality'], [sj.Lt, 'core.relational.StrictLessThan'],
+  [sj.Le, 'core.relational.LessThan'], [sj.Gt, 'core.relational.StrictGreaterThan'], [sj.Ge, 'core.relational.GreaterThan'],
+]);
+
 /** A SymPy class object such as `Mul` or `Symbol`. */
 export class TypeRef {
   constructor(readonly name: string) {}
@@ -4988,6 +4996,14 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
       if (name === 'arguments' && self instanceof sj.AppliedPredicate) return new JsTuple(self.arguments);
       if (name === 'func' && self instanceof sj.CRootOf) return new TypeRef('polys.rootoftools.ComplexRootOf');
+      // SymPy expr.func read as a value: the class or function, printed as SymPy prints it
+      if (name === 'func' && args.length === 0 && self instanceof sj.Expr) {
+        const head = self.func;
+        const cls = HEAD_CLASSES.get(head);
+        if (cls !== undefined) return new TypeRef(cls);
+        if (typeof (head as { functionName?: unknown }).functionName === 'string') return head;
+        if (self instanceof sj.AppliedFunction) return new FnClass(self.name);
+      }
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
       if (name === 'name' && typeof self === 'function' && 'predicateName' in self) return new Sym(String(self.predicateName));
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);

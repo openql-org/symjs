@@ -15,7 +15,7 @@
 import { at, defined, first, pair } from '../../core/guard';
 import { isIntegerQ, isNegative, isPositive, isZero } from '../../core/assumptions';
 import type { ComplexValue as C, Expr, ExprLike } from '../../core/nodes';
-import { Dummy, Float, Rational, S, Special, Sym } from '../../core/nodes';
+import { Dummy, Float, Rational, S, Special, Sym, registerFunctionHeads } from '../../core/nodes';
 import { Sum } from '../../core/concrete';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sqrt, sympify } from '../../core/ops';
 import { derivative } from '../../core/undef';
@@ -476,3 +476,16 @@ for (const name of ['jacobi', 'gegenbauer', 'chebyshevt', 'chebyshevu', 'legendr
     return { re: MF.toNumber(r), im: MF.toNumber(i) };
   };
 }
+
+registerFunctionHeads([
+  ['jacobi', jacobi],
+  ['gegenbauer', gegenbauer],
+  ['chebyshevt', chebyshevt],
+  ['chebyshevu', chebyshevu],
+  ['legendre', legendre],
+  ['assoc_legendre', assocLegendre],
+  ['hermite', hermite],
+  ['hermite_prob', hermiteProb],
+  ['laguerre', laguerre],
+  ['assoc_laguerre', assocLaguerre],
+]);

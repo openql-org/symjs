@@ -11,7 +11,7 @@
  */
 
 import type { Expr, ExprLike, FnName } from '../../core/nodes';
-import { Fn, Rational, S, Special } from '../../core/nodes';
+import { Fn, Rational, S, Special, registerFunctionHeads } from '../../core/nodes';
 import { at, first, pair } from '../../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal, isZero } from '../../core/assumptions';
 import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../../core/ops';
@@ -212,3 +212,8 @@ registerRewrite('elliptic_e', 'hyper', (args) => (args.length === 1 ? mul(S.Pi, 
 registerRewrite('elliptic_e', 'meijerg', (args) => (args.length === 1 ? mul(R(-1, 4), meijerg([S.Half, R(3, 2)], [], [0], [0], neg(at(args, 0)))) : undefined));
 
 for (const name of ['elliptic_k', 'elliptic_e', 'elliptic_f', 'elliptic_pi'] as const) numericFns[name] = (args) => mpNumeric(name, args);
+
+registerFunctionHeads([
+  ['elliptic_k', ellipticK],
+  ['elliptic_f', ellipticF],
+]);

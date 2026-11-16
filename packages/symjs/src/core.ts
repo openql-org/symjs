@@ -13,11 +13,12 @@
  */
 
 import type { Assumptions, Expr as ExprNode, ExprLike as ExprLikeT } from './core/nodes';
-import { Derivative as DerivativeNode, Piecewise as PiecewiseNode, Sym as SymbolNode } from './core/nodes';
+import { Add as AddNode, Expr as ExprClass, Derivative as DerivativeNode, Dummy as DummyNode, Mul as MulNode, Piecewise as PiecewiseNode, Pow as PowNode, Sym as SymbolNode, registerHead } from './core/nodes';
+import type { Head } from './core/nodes';
 import { expandSymbolNames as expandNames } from './core/numberutils';
 import { derivative as derivativeFn } from './core/undef';
 import { piecewise as piecewiseFn } from './core/logic';
-import { sympify as sympifyFn } from './core/ops';
+import { add as addFn, mul as mulFn, pow as powFn, sympify as sympifyFn } from './core/ops';
 import { callableClass } from './core/callable';
 import { Subs as subsFn, SubsNode } from './core/subsnode';
 import { Lambda as lambdaFn, LambdaNode } from './core/lambda';
@@ -27,14 +28,9 @@ export {
   Expr,
   Rational,
   Float,
-  Sym,
   Wild,
   WildFunction,
-  Dummy,
   Constant as NumberSymbol,
-  Add,
-  Mul,
-  Pow,
   Fn as AppliedFunction,
   BoolAtom as BooleanAtom,
   Rel,
@@ -68,8 +64,6 @@ export {
   isReal,
   isPositive,
   isNegative,
-  isNonNegative,
-  isNonZero,
   isZero,
   isIntegerValued,
   match,
@@ -80,7 +74,8 @@ export {
   matches,
   getO,
 } from './core/public';
-export { isIrrational, isAlgebraic, isComplex, isFinite, isPrime, isNonPositive, isEven, isOdd, isImaginary, isHermitian, isAntihermitian, isExtendedNegative, isExtendedPositive, isPolar } from './core/public';
+export { isIrrational, isAlgebraic, isComplex, isFinite, isPrime, isEven, isOdd, isImaginary, isHermitian, isAntihermitian, isExtendedNegative, isExtendedPositive, isPolar } from './core/public';
+export { isNonnegative, isNonpositive, isNonzero, isComposite, isExtendedNonpositive, isExtendedNonzero, isNoninteger, isTranscendental, isCommutative, isSingular } from './core/public';
 export { canonicalRelation } from './core/logic';
 export { Relational, isEq, isNeq, isGe, isLe, isGt, isLt } from './core/relational';
 export { disambiguate, uniquelyNamedSymbol } from './core/symbol';
@@ -172,6 +167,9 @@ export {
   isAlgebraicExpr,
   dummyEq,
   asDummy,
+  assumptions0,
+  canonicalVariables,
+  isScalar,
   asExpr,
   copy,
   removeO,
@@ -411,6 +409,64 @@ export type Subs = SubsNode;
 
 /** SymPy `Lambda(variables, expr)`: an anonymous function (`.call(...)` applies it). Also the node class. */
 export const Lambda = /* @__PURE__ */ callableClass(LambdaNode, lambdaFn);
+
+/** The options of SymPy's Add, Mul and Pow: `{ evaluate: false }` keeps the node as it is built. */
+export interface EvaluateOptions {
+  evaluate?: boolean;
+}
+
+const isEvaluateOptions = (v: unknown): v is EvaluateOptions => typeof v === 'object' && v !== null && !(v instanceof ExprClass);
+
+/** The arguments and whether to evaluate: a trailing options object is taken off. */
+function evaluateArgs(args: readonly (ExprLikeT | EvaluateOptions)[]): [ExprNode[], boolean] {
+  const last = args[args.length - 1];
+  const options = isEvaluateOptions(last) ? last : undefined;
+  const xs = (options === undefined ? args : args.slice(0, -1)).map((a) => {
+    if (isEvaluateOptions(a)) throw new TypeError('the options object must be the last argument');
+    return sympifyFn(a);
+  });
+  return [xs, options?.evaluate !== false];
+}
+
+/** SymPy Add: `Add(x, y)` is x + y with automatic evaluation, `Add(x, x, { evaluate: false })` stays a sum; `func(x + y) === Add`. */
+export const Add = /* @__PURE__ */ callableClass(AddNode, (...args: (ExprLikeT | EvaluateOptions)[]): ExprNode => {
+  const [xs, evaluate] = evaluateArgs(args);
+  return evaluate ? addFn(...xs) : new AddNode(xs);
+});
+export type Add = AddNode;
+/** SymPy Mul: `Mul(x, y)` is x*y with automatic evaluation, `{ evaluate: false }` keeps the product; `func(x*y) === Mul`. */
+export const Mul = /* @__PURE__ */ callableClass(MulNode, (...args: (ExprLikeT | EvaluateOptions)[]): ExprNode => {
+  const [xs, evaluate] = evaluateArgs(args);
+  return evaluate ? mulFn(...xs) : new MulNode(xs);
+});
+export type Mul = MulNode;
+/** SymPy Pow: `Pow(x, 2)` is x**2 with automatic evaluation, `{ evaluate: false }` keeps the power; `func(x**2) === Pow`. */
+export const Pow = /* @__PURE__ */ callableClass(PowNode, (base: ExprLikeT, exp: ExprLikeT, options: EvaluateOptions = {}): ExprNode =>
+  options.evaluate === false ? new PowNode(sympifyFn(base), sympifyFn(exp)) : powFn(base, exp));
+export type Pow = PowNode;
+/** SymPy Symbol: `Sym('x', { positive: true })`, or with `new`; `func(x) === Sym`. */
+export const Sym = /* @__PURE__ */ callableClass(SymbolNode, (name: string, assumptions: Assumptions = {}): SymbolNode => new SymbolNode(name, assumptions));
+export type Sym = SymbolNode;
+/** SymPy Dummy: a symbol unique to its creation, `Dummy('x')` or with `new`; `func(d) === Dummy`. */
+export const Dummy = /* @__PURE__ */ callableClass(DummyNode, (name?: string, assumptions: Assumptions = {}): DummyNode => new DummyNode(name, assumptions));
+export type Dummy = DummyNode;
+registerHead(AddNode, Add);
+registerHead(MulNode, Mul);
+registerHead(PowNode, Pow);
+registerHead(SymbolNode, Sym);
+registerHead(DummyNode, Dummy);
+
+/**
+ * SymPy `func`: the head of an expression, the public constructor or function that builds it from
+ * its arguments. `func(sin(x)) === sin`, `func(x + y) === Add`, and `func(e)(...e.args)` equals `e`
+ * for an expression with arguments; an atom (a symbol, a number) is not rebuilt from its arguments,
+ * as in SymPy. `Sum` and `Product` take their limits as `[k, a, b]` arrays while their nodes hold
+ * them flat: `rebuild(e, args)` rebuilds those.
+ */
+export function func(e: ExprLikeT): Head {
+  return sympifyFn(e).func;
+}
+export type { Head };
 export type Lambda = LambdaNode;
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
@@ -450,7 +506,6 @@ import { rationalFromFloat as _rationalFromFloat_ } from './core/numberutils';
 import { rationalFromString as _rationalFromString_ } from './core/numberutils';
 import { expandSymbolNames as _expandSymbolNames_ } from './core/numberutils';
 import { factorInt as _factorInt_ } from './core/numbers';
-import { Sym as _Sym_ } from './core/nodes';
 import { SymNumber as _SymNumber_ } from './core/classes';
 import { SymFunction as _SymFunction_ } from './core/undef';
 import { BoolOp as _BoolOp_ } from './core/boolalg';
@@ -594,13 +649,24 @@ export const or = _or_;
 /** @deprecated Use `Not`. */
 export const not = _not_;
 
+import { isNonnegative as _isNonnegative_, isNonpositive as _isNonpositive_, isNonzero as _isNonzero_ } from './core/public';
+
+/** @deprecated Use `isNonnegative` (SymPy is_nonnegative converted mechanically); removed in 1.0. */
+export const isNonNegative = _isNonnegative_;
+
+/** @deprecated Use `isNonpositive` (SymPy is_nonpositive converted mechanically); removed in 1.0. */
+export const isNonPositive = _isNonpositive_;
+
+/** @deprecated Use `isNonzero` (SymPy is_nonzero converted mechanically); removed in 1.0. */
+export const isNonZero = _isNonzero_;
+
 // SymPy names that are JavaScript globals (this module does not use the globals)
 
 /** @deprecated Use `Sym` (`Symbol` shadows the JavaScript global); removed in 1.0. */
-export const Symbol = _Sym_;
+export const Symbol = Sym;
 
 /** @deprecated Use `Sym` (`Symbol` shadows the JavaScript global); removed in 1.0. */
-export type Symbol = _Sym_;
+export type Symbol = SymbolNode;
 
 /** @deprecated Use `SymNumber` (`Number` shadows the JavaScript global); removed in 1.0. */
 export const Number = _SymNumber_;

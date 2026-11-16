@@ -70,3 +70,13 @@ describe('ExprWithIntLimits methods', () => {
     expect(sum(sj.mul(x!, y!), [x!, 1, n!], [y!, 2, 1]).hasEmptySequence).toBe(true);
   });
 });
+
+describe('Sum and Product heads', () => {
+  const [k, n] = sj.symbols('k n');
+  it('are Sum and Product; rebuild rebuilds the node from its flat arguments', () => {
+    const p = sj.Product(k, [k, 1, n]);
+    expect(sj.func(p)).toBe(sj.Product);
+    expect(sj.func(sj.Sum(k, [k, 1, n]))).toBe(sj.Sum);
+    expect(sj.str(sj.rebuild(p, [...p.args]))).toBe(sj.str(p));
+  });
+});

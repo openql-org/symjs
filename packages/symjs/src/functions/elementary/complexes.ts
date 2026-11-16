@@ -11,7 +11,7 @@
 import { isIntegerQ, isPolar, isPositive, isReal } from '../../core/assumptions';
 import { defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike, Substitution } from '../../core/nodes';
-import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, Rel, S, Special, Sym } from '../../core/nodes';
+import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, registerFunctionHeads } from '../../core/nodes';
 import { BoolOp } from '../../core/boolalg';
 import { add, exp, mul, pow, sympify } from '../../core/ops';
 import { asCoefficient, asIndependent } from '../../core/methods';
@@ -461,3 +461,10 @@ export function polarify(ex: ExprLike, opts: { subs?: boolean; lift?: boolean } 
   const reps = syms.map((s) => [s, new Dummy(s.name, { ...s.assumptions, polar: true })] as [Expr, Expr]);
   return [xreplace(eq, reps), reps.map(([s, d]) => [d, s] as [Expr, Expr])];
 }
+
+registerFunctionHeads([
+  ['exp_polar', expPolar],
+  ['polar_lift', polarLift],
+  ['periodic_argument', periodicArgument],
+  ['principal_branch', principalBranch],
+]);

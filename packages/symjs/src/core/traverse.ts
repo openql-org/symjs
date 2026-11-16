@@ -54,6 +54,8 @@ export function rebuild(e: Expr, args?: readonly Expr[]): Expr {
   return e;
 }
 
+impl.rebuild = (e, args) => rebuild(e, args);
+
 /** Apply f bottom-up to every node. */
 export function mapBottomUp(e: Expr, f: (e: Expr) => Expr): Expr {
   if (e.args.length === 0) return f(e);

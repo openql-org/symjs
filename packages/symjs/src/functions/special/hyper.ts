@@ -9,7 +9,7 @@
 import { NotImplementedError } from '../../core/errors';
 import { at, cast, defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
-import { ExtensionExpr, Fn, Mul, Rational, Rel, S, Special, Sym, asRational } from '../../core/nodes';
+import { ExtensionExpr, Fn, Mul, Rational, Rel, S, Special, Sym, asRational, registerFunctionHeads } from '../../core/nodes';
 import { rebuild } from '../../core/traverse';
 import { isIntegerQ, isNonZero, isPositive, isZero } from '../../core/assumptions';
 import { compareKeys, sortKey } from '../../printing/sortkey';
@@ -521,3 +521,10 @@ numericFns.appellf1 = (args) => {
   const v = mpAppellF1(args.map((z) => [F.fromNumber(z.re), F.fromNumber(z.im)]), 53);
   return cx(F.toNumber(v[0]), F.toNumber(v[1]));
 };
+
+registerFunctionHeads([
+  ['jn', jn],
+  ['yn', yn],
+  ['KroneckerDelta', KroneckerDelta],
+  ['appellf1', appellf1],
+]);

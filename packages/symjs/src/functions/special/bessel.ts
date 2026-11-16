@@ -15,7 +15,7 @@ import { at, defined, first, pair } from '../../core/guard';
 import '../../numeric/mpspecialfns';
 import { isIntegerQ, isNegative, isPositive, isReal, isZero as isZeroQ } from '../../core/assumptions';
 import type { ComplexValue as C, Expr, ExprLike } from '../../core/nodes';
-import { Fn, Mul, Rational, S, Special, Sym, Dummy } from '../../core/nodes';
+import { Fn, Mul, Rational, S, Special, Sym, Dummy, registerFunctionHeads } from '../../core/nodes';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sqrt } from '../../core/ops';
@@ -416,3 +416,17 @@ export const hankel1 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel1', [nu, z
 export const hankel2 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel2', [nu, z]);
 /** SymPy marcumq(m, a, b): the generalized Marcum Q-function. */
 export const marcumq = (m: ExprLike, a: ExprLike, b: ExprLike): Expr => fn('marcumq', [m, a, b]);
+
+registerFunctionHeads([
+  ['besselj', besselj],
+  ['bessely', bessely],
+  ['besseli', besseli],
+  ['besselk', besselk],
+  ['airyai', airyai],
+  ['airybi', airybi],
+  ['airyaiprime', airyaiprime],
+  ['airybiprime', airybiprime],
+  ['hankel1', hankel1],
+  ['hankel2', hankel2],
+  ['marcumq', marcumq],
+]);

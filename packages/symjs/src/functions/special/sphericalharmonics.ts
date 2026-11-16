@@ -13,7 +13,7 @@ import { NotImplementedError } from '../../core/errors';
 import { at } from '../../core/guard';
 import { isNegative, isPositive, isZero } from '../../core/assumptions';
 import type { ComplexValue, Expr, ExprLike } from '../../core/nodes';
-import { S } from '../../core/nodes';
+import { S, registerFunctionHeads } from '../../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sqrt } from '../../core/ops';
 import { xreplace } from '../../core/traverse';
 import { fnPartials } from '../../calculus/diff';
@@ -102,3 +102,8 @@ export const Ynm = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): E
 export const YnmC = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): Expr => conjugate(Ynm(n, m, theta, phi));
 /** SymPy Znm(n, m, theta, phi): the real spherical harmonic. */
 export const Znm = (n: ExprLike, m: ExprLike, theta: ExprLike, phi: ExprLike): Expr => fn('Znm', [n, m, theta, phi]);
+
+registerFunctionHeads([
+  ['Ynm', Ynm],
+  ['Znm', Znm],
+]);

@@ -62,3 +62,37 @@ describe('isReal of the infinities (SymPy oo.is_real)', () => {
     expect(sj.isReal(2)).toBe(true);
   });
 });
+
+describe('the remaining assumption queries (SymPy 1.14)', () => {
+  it('ask the facts of the old assumptions', async () => {
+    const sj = await import('../../src');
+    const [x] = sj.symbols('x');
+    expect([sj.isComposite(4), sj.isComposite(5), sj.isComposite(x)]).toEqual([true, false, 'unknown']);
+    expect(sj.isExtendedNonpositive(sj.mul(-1, sj.oo))).toBe(true);
+    expect(sj.isExtendedNonzero(sj.oo)).toBe(true);
+    expect(sj.isNoninteger(sj.Rational.of(1, 2))).toBe(true);
+    expect([sj.isTranscendental(sj.pi), sj.isTranscendental(2)]).toEqual([true, false]);
+    expect(sj.isCommutative(x)).toBe(true);
+    // the mechanical names, and the old spellings as deprecated aliases
+    expect([sj.isNonnegative(0), sj.isNonpositive(1), sj.isNonzero(0)]).toEqual([true, false, false]);
+    expect(sj.isNonNegative).toBe(sj.isNonnegative);
+    expect(sj.isNonPositive).toBe(sj.isNonpositive);
+    expect(sj.isNonZero).toBe(sj.isNonzero);
+  });
+  it('isSingular gives the essential singularities and branch points of a function', async () => {
+    const sj = await import('../../src');
+    const [x] = sj.symbols('x');
+    expect([sj.isSingular(sj.log, 0), sj.isSingular(sj.log, 1)]).toEqual([true, false]);
+    expect([sj.isSingular(sj.sin, sj.zoo), sj.isSingular(sj.sin, x)]).toEqual([true, 'unknown']);
+    expect(sj.isSingular(sj.acot, sj.I)).toBe(true);
+    expect(sj.isSingular(sj.acot, sj.mul(-1, sj.I))).toBe(true);
+    // SymPy 1.14 gives None here (it cannot tell -1/E - (-1/E) is zero); -1/E is the branch point of LambertW
+    expect(sj.isSingular(sj.LambertW, sj.mul(-1, sj.pow(sj.E, -1)))).toBe(true);
+    expect(sj.isSingular(sj.Abs, x)).toBe(true);
+    expect(sj.isSingular(sj.zeta, 0)).toBe('unknown');
+    expect(sj.isSingular('exp', sj.oo)).toBe(true);
+    expect(sj.isSingular(sj.exp, 1)).toBe(false);
+    expect(sj.isSingular((...ys: Parameters<typeof sj.add>) => sj.add(...ys, 1), 0)).toBe('unknown');
+    expect(sj.isSingular(sj.Mod, 0)).toBe('unknown');
+  });
+});

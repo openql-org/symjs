@@ -15,7 +15,7 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, ExtensionExpr, Float, Fn, Pow, Rational, Rel, S, UndefFn, impl } from '../core/nodes';
+import { Add, ExtensionExpr, Float, Fn, Pow, Rational, Rel, S, UndefFn, impl, registerHead } from '../core/nodes';
 import { NotLoadedError } from '../core/errors';
 import { basicCompare } from '../core/compare';
 import type { SetExpr } from '../sets/sets';
@@ -117,10 +117,6 @@ abstract class CFunctionBase extends ExtensionExpr {
   }
   withArgs(args: readonly Expr[]): Expr {
     return apply(this.name, args);
-  }
-  /** SymPy func: the function class. */
-  get func(): unknown {
-    return registered(this.name).cls;
   }
   override kindSelf(): Kind | undefined {
     return this.rules.boolean ? BooleanKind : undefined;
@@ -443,6 +439,7 @@ function defineClass(name: string, rules: Rules): CFunctionClass & CBooleanFunct
   }
   const cls = callableClass(Node, (...args: ExprLike[]): Expr => apply(name, args));
   entry.cls = cls;
+  registerHead(Node, cls);
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the class members were added above with Object.defineProperties
   return cls as unknown as CFunctionClass & CBooleanFunctionClass;
 }

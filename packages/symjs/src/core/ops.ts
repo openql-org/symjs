@@ -25,6 +25,7 @@ import {
   isMulLike,
   Mul,
   registerFromiter,
+  registerFunctionHeads,
   Pow,
   Rational,
   Rel,
@@ -1198,6 +1199,7 @@ impl.sympify = sympify;
 registerFromiter(Add, (args) => add(...args));
 registerFromiter(Mul, (args) => mul(...args));
 registerFromiter(Pow, (args) => pow(at(args, 0), at(args, 1)));
+registerFunctionHeads([['exp', exp]]);
 impl.add = add;
 impl.mul = mul;
 impl.div = div;

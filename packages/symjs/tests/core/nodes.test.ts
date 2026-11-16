@@ -261,3 +261,49 @@ describe('bitwise operations of integers (SymPy Integer.__lshift__, __rshift__, 
     expect(() => n(2).or(Rational.of(1, 2))).toThrow(TypeError);
   });
 });
+
+describe('func (SymPy Basic.func)', () => {
+  const [x, y] = sj.symbols('x y');
+  it('is the public constructor of the node and rebuilds it from its arguments', () => {
+    const s = sj.add(x, y);
+    expect(sj.func(s)).toBe(sj.Add);
+    expect(s.func).toBe(sj.Add);
+    expect(sj.func(sj.mul(2, x, y))).toBe(sj.Mul);
+    expect(sj.func(sj.pow(x, 3))).toBe(sj.Pow);
+    for (const e of [s, sj.mul(2, x, y), sj.pow(x, 3), sj.sin(x), sj.log(x), sj.Eq(x, y)]) {
+      expect(sj.str(e.func(...e.args))).toBe(sj.str(e));
+    }
+    // the constructors evaluate, as SymPy's do: Add(x, x) is 2*x
+    expect(sj.str(sj.Add(x, x))).toBe('2*x');
+    expect(sj.str(sj.Mul(x, x))).toBe('x**2');
+    expect(sj.str(sj.Pow(2, 3))).toBe('8');
+    expect(sj.str(sj.Add(x, x, { evaluate: false }))).toBe('x + x');
+    expect(sj.str(sj.Mul(x, x, { evaluate: false }))).toBe('x*x');
+    expect(sj.str(sj.Pow(x, 1, { evaluate: false }))).toBe('x**1');
+    expect(() => sj.Add(x, { evaluate: false }, x)).toThrow(TypeError);
+  });
+  it('is the class of an atom, as in SymPy', () => {
+    expect(sj.func(x)).toBe(sj.Sym);
+    const d = sj.Dummy('d');
+    expect(d.func).toBe(sj.Dummy);
+    expect(sj.isPositive(sj.Sym('z', { positive: true }))).toBe(true);
+    expect(new sj.Sym('z') instanceof sj.Sym).toBe(true);
+  });
+  it('is the public function of an applied function', () => {
+    expect(sj.func(sj.sin(x))).toBe(sj.sin);
+    expect(sj.func(sj.log(x))).toBe(sj.log);
+    expect(sj.func(sj.cos(x))).not.toBe(sj.func(sj.sin(x)));
+    expect(sj.func(sj.Eq(x, y))).toBe(sj.Eq);
+    expect(sj.func(sj.Lt(x, y))).toBe(sj.Lt);
+  });
+  it('rebuilds a node without a registered constructor like the node', () => {
+    const t = sj.Tuple(x, y);
+    const head = sj.func(t);
+    expect(sj.func(sj.Tuple(1, 2))).toBe(head);
+    expect(sj.str(head(1, 2))).toBe('(1, 2)');
+    // an applied function without a registered public function keeps its name
+    const g = sj.fn('conjugate', [x]);
+    expect(sj.str(sj.func(g)(y))).toBe('conjugate(y)');
+    expect(sj.func(sj.fn('conjugate', [y]))).toBe(sj.func(g));
+  });
+});

@@ -19,8 +19,8 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 456 selected for e
 
 | Inventory status | Modules |
 |---|---:|
-| complete | 72 |
-| partial | 467 |
+| complete | 81 |
+| partial | 458 |
 | unassessed | 0 |
 | extend | 111 |
 | excluded | 175 |
@@ -30,9 +30,9 @@ Complete means public exports and class members are present, doctest and unit-te
 | Package | Complete | Partial | Unassessed | Extend | Excluded |
 |---|---:|---:|---:|---:|---:|
 | abc | 1 | 0 | 0 | 0 | 0 |
-| algebras | 0 | 2 | 0 | 0 | 0 |
+| algebras | 1 | 1 | 0 | 0 | 0 |
 | assumptions | 8 | 20 | 0 | 0 | 0 |
-| calculus | 0 | 6 | 0 | 0 | 0 |
+| calculus | 1 | 5 | 0 | 0 | 0 |
 | categories | 0 | 3 | 0 | 0 | 0 |
 | codegen | 1 | 0 | 0 | 0 | 16 |
 | combinatorics | 4 | 19 | 0 | 0 | 1 |
@@ -43,7 +43,7 @@ Complete means public exports and class members are present, doctest and unit-te
 | diffgeom | 1 | 2 | 0 | 0 | 0 |
 | discrete | 1 | 3 | 0 | 0 | 0 |
 | external | 0 | 0 | 0 | 0 | 5 |
-| functions | 3 | 25 | 0 | 0 | 0 |
+| functions | 4 | 24 | 0 | 0 | 0 |
 | galgebra | 0 | 0 | 0 | 0 | 1 |
 | geometry | 1 | 10 | 0 | 0 | 0 |
 | holonomic | 2 | 3 | 0 | 0 | 0 |
@@ -61,23 +61,24 @@ Complete means public exports and class members are present, doctest and unit-te
 | printing | 3 | 13 | 0 | 0 | 24 |
 | release | 0 | 0 | 0 | 0 | 1 |
 | sandbox | 0 | 0 | 0 | 0 | 2 |
-| series | 1 | 14 | 0 | 0 | 0 |
+| series | 2 | 13 | 0 | 0 | 0 |
 | sets | 9 | 8 | 0 | 0 | 0 |
 | simplify | 4 | 12 | 0 | 0 | 1 |
 | solvers | 3 | 19 | 0 | 0 | 0 |
-| stats | 0 | 20 | 0 | 0 | 4 |
+| stats | 1 | 19 | 0 | 0 | 4 |
 | strategies | 0 | 11 | 0 | 0 | 0 |
 | sympy | 0 | 1 | 0 | 0 | 0 |
-| tensor | 0 | 26 | 0 | 0 | 0 |
+| tensor | 1 | 25 | 0 | 0 | 0 |
 | testing | 0 | 0 | 0 | 0 | 8 |
 | this | 0 | 0 | 0 | 0 | 1 |
 | unify | 1 | 3 | 0 | 0 | 0 |
 | utilities | 0 | 7 | 0 | 0 | 19 |
-| vector | 0 | 15 | 0 | 0 | 0 |
+| vector | 3 | 12 | 0 | 0 | 0 |
 
 ### Complete modules
 
 - `sympy.abc`
+- `sympy.algebras`
 - `sympy.assumptions.ask_generated`
 - `sympy.assumptions.facts`
 - `sympy.assumptions.handlers.calculus`
@@ -86,6 +87,7 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.assumptions.handlers.sets`
 - `sympy.assumptions.predicates`
 - `sympy.assumptions.satask`
+- `sympy.calculus`
 - `sympy.codegen.cfunctions`
 - `sympy.combinatorics.galois`
 - `sympy.combinatorics.group_constructs`
@@ -99,6 +101,7 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.functions.combinatorial`
 - `sympy.functions.elementary`
 - `sympy.functions.special`
+- `sympy.functions.special.spherical_harmonics`
 - `sympy.geometry.exceptions`
 - `sympy.holonomic`
 - `sympy.holonomic.numerical`
@@ -132,6 +135,7 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.printing.defaults`
 - `sympy.printing.pretty`
 - `sympy.series.kauers`
+- `sympy.series.series_class`
 - `sympy.sets.handlers`
 - `sympy.sets.handlers.add`
 - `sympy.sets.handlers.comparison`
@@ -148,7 +152,12 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.solvers`
 - `sympy.solvers.decompogen`
 - `sympy.solvers.diophantine`
+- `sympy.stats.random_matrix_models`
+- `sympy.tensor.toperators`
 - `sympy.unify`
+- `sympy.vector.deloperator`
+- `sympy.vector.parametricregion`
+- `sympy.vector.point`
 
 ## Extraction audit
 
@@ -211,40 +220,42 @@ Direct regression-test paths are maintained in `capabilities.json`. Remaining it
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
+**Fully covered (100% test coverage): 100.0% of source files (490/490), 100.0% of statements (108206/108206)**
+
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| core | 100.0% | 1006 | 100.0% | 0 | 0 | 0 | 0 | 1006 | 100.0% (188/188) | - |
-| functions | 100.0% | 268 | 100.0% | 0 | 0 | 0 | 0 | 268 | 100.0% (59/59) | - |
-| simplify | 100.0% | 331 | 99.4% | 2 | 0 | 0 | 0 | 333 | 100.0% (35/35) | - |
-| polys | 100.0% | 1620 | 99.4% | 9 | 0 | 0 | 0 | 1629 | 100.0% (155/155) | - |
-| solvers | 100.0% | 320 | 99.1% | 3 | 0 | 0 | 0 | 323 | 100.0% (29/29) | - |
-| ode | 100.0% | 107 | 94.7% | 6 | 0 | 0 | 0 | 113 | 100.0% (5/5) | - |
-| pde | 100.0% | 15 | 93.8% | 1 | 0 | 0 | 0 | 16 | 100.0% (6/6) | - |
-| calculus | 100.0% | 590 | 99.0% | 6 | 0 | 0 | 0 | 596 | 100.0% (68/68) | - |
-| matrices | 100.0% | 1094 | 100.0% | 0 | 0 | 0 | 0 | 1094 | 100.0% (353/353) | - |
-| special | 100.0% | 755 | 99.2% | 6 | 0 | 0 | 0 | 761 | 100.0% (118/118) | - |
+| core | 100.0% | 1006 | 100.0% | 0 | 0 | 0 | 0 | 1006 | 100.0% (188/188) | 100.0% (139/139) |
+| functions | 100.0% | 268 | 100.0% | 0 | 0 | 0 | 0 | 268 | 100.0% (59/59) | 100.0% (7/7) |
+| simplify | 100.0% | 331 | 99.4% | 2 | 0 | 0 | 0 | 333 | 100.0% (35/35) | 100.0% (18/18) |
+| polys | 100.0% | 1620 | 99.4% | 9 | 0 | 0 | 0 | 1629 | 100.0% (155/155) | 100.0% (82/82) |
+| solvers | 100.0% | 320 | 99.1% | 3 | 0 | 0 | 0 | 323 | 100.0% (29/29) | 100.0% (17/17) |
+| ode | 100.0% | 107 | 94.7% | 6 | 0 | 0 | 0 | 113 | 100.0% (5/5) | 100.0% (1/1) |
+| pde | 100.0% | 15 | 93.8% | 1 | 0 | 0 | 0 | 16 | 100.0% (6/6) | 100.0% (1/1) |
+| calculus | 100.0% | 590 | 99.0% | 6 | 0 | 0 | 0 | 596 | 100.0% (68/68) | 100.0% (41/41) |
+| matrices | 100.0% | 1094 | 100.0% | 0 | 0 | 0 | 0 | 1094 | 100.0% (353/353) | 100.0% (23/23) |
+| special | 100.0% | 755 | 99.2% | 6 | 0 | 0 | 0 | 761 | 100.0% (118/118) | 100.0% (12/12) |
 | logic | 100.0% | 210 | 100.0% | 0 | 0 | 0 | 0 | 210 | 100.0% (19/19) | - |
-| tensor | 100.0% | 280 | 100.0% | 0 | 0 | 0 | 0 | 280 | 100.0% (67/67) | - |
+| tensor | 100.0% | 280 | 100.0% | 0 | 0 | 0 | 0 | 280 | 100.0% (67/67) | 100.0% (18/18) |
 | ntheory | 100.0% | 232 | 100.0% | 0 | 0 | 0 | 0 | 232 | 100.0% (53/53) | - |
 | assumptions | 100.0% | 219 | 99.5% | 1 | 0 | 0 | 0 | 220 | 100.0% (9/9) | - |
 | utilities | 100.0% | 99 | 99.0% | 1 | 0 | 0 | 0 | 100 | 100.0% (23/23) | - |
-| combinatorics | 100.0% | 603 | 99.8% | 1 | 0 | 0 | 0 | 604 | 100.0% (101/101) | - |
+| combinatorics | 100.0% | 603 | 99.8% | 1 | 0 | 0 | 0 | 604 | 100.0% (101/101) | 100.0% (22/22) |
 | sets | 100.0% | 174 | 99.4% | 1 | 0 | 0 | 0 | 175 | 100.0% (27/27) | - |
 | printing | 100.0% | 74 | 100.0% | 0 | 0 | 0 | 0 | 74 | 100.0% (18/18) | - |
-| discrete | 100.0% | 58 | 100.0% | 0 | 0 | 0 | 0 | 58 | 100.0% (11/11) | - |
-| algebras | 100.0% | 64 | 100.0% | 0 | 0 | 0 | 0 | 64 | 100.0% (1/1) | - |
+| discrete | 100.0% | 58 | 100.0% | 0 | 0 | 0 | 0 | 58 | 100.0% (11/11) | 100.0% (4/4) |
+| algebras | 100.0% | 64 | 100.0% | 0 | 0 | 0 | 0 | 64 | 100.0% (1/1) | 100.0% (1/1) |
 | holonomic | 100.0% | 38 | 100.0% | 0 | 0 | 0 | 0 | 38 | - (0/0) | - |
-| strategies | 100.0% | 8 | 100.0% | 0 | 0 | 0 | 0 | 8 | - (0/0) | - |
-| unify | 100.0% | 2 | 100.0% | 0 | 0 | 0 | 0 | 2 | - (0/0) | - |
-| geometry | 100.0% | 530 | 99.8% | 1 | 0 | 0 | 0 | 531 | 100.0% (30/30) | - |
-| vector | 100.0% | 165 | 99.4% | 1 | 0 | 0 | 0 | 166 | 100.0% (43/43) | - |
-| stats | 100.0% | 439 | 98.0% | 9 | 0 | 0 | 0 | 448 | 100.0% (153/153) | - |
-| categories | 100.0% | 55 | 100.0% | 0 | 0 | 0 | 0 | 55 | 100.0% (10/10) | - |
-| crypto | 100.0% | 80 | 100.0% | 0 | 0 | 0 | 0 | 80 | 100.0% (56/56) | - |
-| liealgebras | 100.0% | 43 | 100.0% | 0 | 0 | 0 | 0 | 43 | 100.0% (1/1) | - |
-| diffgeom | 100.0% | 96 | 98.0% | 2 | 0 | 0 | 0 | 98 | 100.0% (24/24) | - |
-| parsing | 100.0% | 26 | 89.7% | 3 | 0 | 0 | 0 | 29 | 100.0% (1/1) | - |
-| plotting | 100.0% | 3 | 100.0% | 0 | 0 | 0 | 0 | 3 | 100.0% (4/4) | - |
+| strategies | 100.0% | 8 | 100.0% | 0 | 0 | 0 | 0 | 8 | - (0/0) | 100.0% (11/11) |
+| unify | 100.0% | 2 | 100.0% | 0 | 0 | 0 | 0 | 2 | - (0/0) | 100.0% (4/4) |
+| geometry | 100.0% | 530 | 99.8% | 1 | 0 | 0 | 0 | 531 | 100.0% (30/30) | 100.0% (11/11) |
+| vector | 100.0% | 165 | 99.4% | 1 | 0 | 0 | 0 | 166 | 100.0% (43/43) | 100.0% (14/14) |
+| stats | 100.0% | 439 | 98.0% | 9 | 0 | 0 | 0 | 448 | 100.0% (153/153) | 100.0% (19/19) |
+| categories | 100.0% | 55 | 100.0% | 0 | 0 | 0 | 0 | 55 | 100.0% (10/10) | 100.0% (3/3) |
+| crypto | 100.0% | 80 | 100.0% | 0 | 0 | 0 | 0 | 80 | 100.0% (56/56) | 100.0% (2/2) |
+| liealgebras | 100.0% | 43 | 100.0% | 0 | 0 | 0 | 0 | 43 | 100.0% (1/1) | 100.0% (14/14) |
+| diffgeom | 100.0% | 96 | 98.0% | 2 | 0 | 0 | 0 | 98 | 100.0% (24/24) | 100.0% (2/2) |
+| parsing | 100.0% | 26 | 89.7% | 3 | 0 | 0 | 0 | 29 | 100.0% (1/1) | 100.0% (12/12) |
+| plotting | 100.0% | 3 | 100.0% | 0 | 0 | 0 | 0 | 3 | 100.0% (4/4) | 100.0% (10/10) |
 
 ## Test coverage by source file
 
@@ -371,6 +382,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/core/refine.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/relational.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/rules.ts` | core | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/core/singularities.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/subsnode.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/symbol.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/sympify.ts` | core | 100% | 100% | 100% | 100% | yes |

@@ -1101,6 +1101,40 @@ function canonicalBound(xIn: Expr): Expr {
   return xreplaceM(x, masks.map(([s, d]) => [d, s]));
 }
 
+/**
+ * SymPy `canonical_variables`: each variable bound by the expression (an integral, a sum, a
+ * lambda) mapped to the symbols `_0`, `_1`, ... that do not clash with its free symbols; empty for
+ * an expression that binds nothing.
+ */
+export function canonicalVariables(eIn: ExprLike): Map<Expr, Sym> {
+  const e = sympify(eIn);
+  const bound = boundSymbols(e);
+  const names = new Set([...freeSymbols(e)].filter((s): s is Sym => s instanceof Sym && !bound.some((b) => b.key === s.key)).map((s) => s.name));
+  const reps = new Map<Expr, Sym>();
+  let i = 0;
+  for (const b of bound) {
+    let name = `_${i++}`;
+    while (names.has(name)) name = `_${i++}`;
+    reps.set(b, new Sym(name));
+  }
+  return reps;
+}
+
+/**
+ * SymPy `assumptions0`: the assumptions a symbol was created with and those they imply (a Map
+ * from the fact name to its value); empty for any other expression.
+ */
+export function assumptions0(eIn: ExprLike): Map<string, boolean> {
+  const e = sympify(eIn);
+  return e instanceof Sym ? e.assumptions0 : new Map();
+}
+
+/** SymPy `is_scalar`: true for an ordinary expression, false for a matrix expression or tensor. */
+export function isScalar(eIn: ExprLike): boolean {
+  const e = sympify(eIn);
+  return e instanceof ExtensionExpr ? e.isScalar : true;
+}
+
 /** SymPy `Expr.as_expr(*gens)`: the expression itself (Poly.asExpr converts a polynomial). */
 export function asExpr(e: ExprLike, ..._gens: readonly Expr[]): Expr {
   return sympify(e);

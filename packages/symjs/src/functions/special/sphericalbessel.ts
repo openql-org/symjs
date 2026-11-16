@@ -14,7 +14,7 @@ import { NotImplementedError } from '../../core/errors';
 import { defined, first, pair } from '../../core/guard';
 import { isIntegerQ } from '../../core/assumptions';
 import type { Expr, ExprLike } from '../../core/nodes';
-import { Float, Rational, S } from '../../core/nodes';
+import { Float, Rational, S, registerFunctionHeads } from '../../core/nodes';
 import { add, mul, pow, sqrt, sympify } from '../../core/ops';
 import { fnPartials } from '../../calculus/diff';
 import { c as cx, cadd, cmul } from '../../numeric/complex';
@@ -238,3 +238,8 @@ function smallInt(x: ExprLike): number {
   if (!isInt(e)) throw new TypeError(`an integer is required, got ${e.toString()}`);
   return Number(e.p);
 }
+
+registerFunctionHeads([
+  ['hn1', hn1],
+  ['hn2', hn2],
+]);
