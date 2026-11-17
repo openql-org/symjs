@@ -170,7 +170,7 @@ converter connect, and the procedures, are in
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the rules every change follows (100% test coverage, expected values from SymPy, mathematical correctness over SymPy's output, branches and commits).
 
-Development uses [bun](https://bun.sh/) for installing dependencies and running scripts, and Node.js for the published packages. The tests run on vitest: use `bun run test` (or `bunx vitest`), not `bun test`, which is bun's own test runner and cannot measure the branch coverage the project requires.
+Development uses [bun](https://bun.sh/) for installing dependencies and running scripts, and Node.js for the published packages. [pnpm](https://pnpm.io/) works as well: the workspace is also declared in `pnpm-workspace.yaml`, `pnpm-lock.yaml` pins the same versions as `bun.lock`, and the scripts call no package manager. The tests run on vitest: use `bun run test` (or `bunx vitest`), not `bun test`, which is bun's own test runner and cannot measure the branch coverage the project requires.
 
 ```sh
 bun install
@@ -181,6 +181,19 @@ bun run build                 # every package: ESM/CJS and matching .d.ts/.d.cts
 bun run test:package          # built packages, all entry points, minification, NodeNext/Bundler consumers
 bun scripts/size.mjs --check  # bundle sizes of typical imports against budgets
 bun run golden                # regenerate the SymPy expectations of the golden tests
+```
+
+With pnpm, the same commands are:
+
+```sh
+pnpm install
+pnpm run test                 # or pnpm exec vitest
+pnpm run typecheck
+pnpm run lint
+pnpm run build
+pnpm run test:package
+node scripts/size.mjs --check
+pnpm run golden
 ```
 
 ## Custom expression nodes in extend modules

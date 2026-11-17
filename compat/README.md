@@ -17,3 +17,6 @@ Run all compatibility checks with:
 bunx vitest run --config compat/vitest.config.ts
 bunx vitest run --config compat/vitest.config.ts --project unit-geometry
 ```
+
+With pnpm, `bunx` becomes `pnpm exec` and `bun run` becomes `pnpm run`
+(see [CONTRIBUTING.md](../CONTRIBUTING.md)).
