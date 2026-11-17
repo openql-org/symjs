@@ -8,6 +8,22 @@ rules hold for every change, whether it is written by a person or an agent.
 The commands use bun (`bun install` first). Tests run on vitest through `bun run test`
 or `bunx vitest`; `bun test` is bun's own test runner and is not used.
 
+pnpm can be used instead (`pnpm install` first). Every command in this document
+then reads as follows:
+
+| bun | pnpm |
+| --- | --- |
+| `bun install` | `pnpm install` |
+| `bun run <script>` | `pnpm run <script>` |
+| `bunx vitest ...`, `bunx tsc ...` | `pnpm exec vitest ...`, `pnpm exec tsc ...` |
+| `bun scripts/<file>.mjs` | `node scripts/<file>.mjs` |
+
+The package scripts call `node` and the tools in `node_modules/.bin`, never a
+package manager, so both run them alike. A dependency change updates both
+`bun.lock` and `pnpm-lock.yaml` (`bun install` and `pnpm install`), and a new
+workspace package matches the `workspaces` field of `package.json` (bun) and
+`pnpm-workspace.yaml` (pnpm).
+
 ```sh
 bun run typecheck                              # tsc --noEmit, no errors
 bun run lint                                   # oxlint --type-aware --deny-warnings, no warnings
@@ -17,6 +33,19 @@ bun run compat                                 # SymPy doctest compatibility, wr
 bun run corpus:report                          # corpus tests, writes docs/compat-report.md
 bun run build && bun scripts/size.mjs --check  # bundle sizes within budget
 bun run test:package                           # built ESM/CJS, minification and consumer type resolution
+```
+
+With pnpm:
+
+```sh
+pnpm run typecheck
+pnpm run lint
+pnpm run test
+pnpm run coverage
+pnpm run compat
+pnpm run corpus:report
+pnpm run build && node scripts/size.mjs --check
+pnpm run test:package
 ```
 
 ## Test coverage: 100%, no exclusions

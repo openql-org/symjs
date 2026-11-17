@@ -27,6 +27,9 @@ bun run compat:test-extract
 bunx vitest run --config compat/vitest.config.ts --project unit-geometry
 ```
 
+With pnpm, `bunx` becomes `pnpm exec` and `bun run` becomes `pnpm run`
+(see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
+
 The unit-test extractor scans nested test directories in 31 base areas. Its
 `FILE_SCOPE`, `EXCLUDED_AREAS` and `MIXED_DEFAULTS` tables define inclusion and
 technical exclusions; the report lists every excluded file. Categories are
