@@ -2586,7 +2586,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   expand_trig: exprFn(sj.expand_trig),
   expand_complex: exprFn(sj.expand_complex),
-  simplify: exprFn(sj.simplify),
+  simplify: (args, kw) => {
+    noKw(kw);
+    if (args.length !== 1) throw new Unsupported('arity');
+    return args[0] instanceof Matrix ? args[0].simplify() : sj.simplify(asExpr(args[0]));
+  },
   factor: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus', 'domain', 'fraction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 1) throw new Unsupported('arity');
@@ -2699,6 +2703,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const f = args[0];
     const callback = f instanceof JsLambda ? (e: Expr) => asExpr(f.call(e)) : (f instanceof JsFunc || f instanceof FnClass) && typeof (sj as unknown as Record<string,unknown>)[f.name] === 'function' ? (sj as unknown as Record<string,(e:Expr)=>Expr>)[f.name] : undefined;
     if (self instanceof sj.MatrixExpr && callback) return self.applyfunc(callback);
+    if (self instanceof Matrix && callback) return self.map(callback);
     if (!(self instanceof Matrix) || !(f instanceof JsLambda)) throw new Unsupported('applyfunc');
     return self.map((e) => f.call(e));
   },
@@ -4310,23 +4315,33 @@ Object.assign(ADAPTERS, {
     return new JsTuple([lu, new JsList(swaps.map((s) => new JsList(s.map((k) => sj.Rational.of(k)))))]);
   }),
   '.LUdecompositionFF': matrixMethod((m) => new JsTuple(sj.LUdecompositionFF(m))),
-  '.lll': matrixMethod((m) => sj.lll(m)),
-  '.lll_transform': matrixMethod((m) => new JsTuple(sj.lllTransform(m))),
+  '.lll': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'delta') throw new Unsupported(`kwargs ${k}`);
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    const delta = kw['delta'] ?? args[0];
+    return sj.lll(self, delta === undefined ? undefined : asExpr(delta));
+  },
+  '.lll_transform': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'delta') throw new Unsupported(`kwargs ${k}`);
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    const delta = kw['delta'] ?? args[0];
+    return new JsTuple(sj.lllTransform(self, delta === undefined ? undefined : asExpr(delta)));
+  },
   '.elementary_row_op': (args, kw, self) =>
     sj.elementaryRowOp(self as Matrix, {
       op: (kw['op'] ?? args[0] ?? 'n->kn') as sj.ElementaryOp['op'],
-      ...(kw['row'] !== undefined ? { index: intArg(kw['row']) } : {}),
-      ...(kw['k'] !== undefined ? { k: asExpr(kw['k']) } : {}),
-      ...(kw['row1'] !== undefined ? { index1: intArg(kw['row1']) } : {}),
-      ...(kw['row2'] !== undefined ? { index2: intArg(kw['row2']) } : {}),
+      ...((kw['row'] ?? args[1]) !== undefined ? { index: intArg(kw['row'] ?? args[1]) } : {}),
+      ...((kw['k'] ?? args[2]) !== undefined ? { k: asExpr(kw['k'] ?? args[2]) } : {}),
+      ...((kw['row1'] ?? args[3]) !== undefined ? { index1: intArg(kw['row1'] ?? args[3]) } : {}),
+      ...((kw['row2'] ?? args[4]) !== undefined ? { index2: intArg(kw['row2'] ?? args[4]) } : {}),
     }),
   '.elementary_col_op': (args, kw, self) =>
     sj.elementaryColOp(self as Matrix, {
       op: (kw['op'] ?? args[0] ?? 'n->kn') as sj.ElementaryOp['op'],
-      ...(kw['col'] !== undefined ? { index: intArg(kw['col']) } : {}),
-      ...(kw['k'] !== undefined ? { k: asExpr(kw['k']) } : {}),
-      ...(kw['col1'] !== undefined ? { index1: intArg(kw['col1']) } : {}),
-      ...(kw['col2'] !== undefined ? { index2: intArg(kw['col2']) } : {}),
+      ...((kw['col'] ?? args[1]) !== undefined ? { index: intArg(kw['col'] ?? args[1]) } : {}),
+      ...((kw['k'] ?? args[2]) !== undefined ? { k: asExpr(kw['k'] ?? args[2]) } : {}),
+      ...((kw['col1'] ?? args[3]) !== undefined ? { index1: intArg(kw['col1'] ?? args[3]) } : {}),
+      ...((kw['col2'] ?? args[4]) !== undefined ? { index2: intArg(kw['col2'] ?? args[4]) } : {}),
     }),
   '.permuteFwd': matrixMethod((m, [p]) => sj.permuteFwd(m, (p as JsList).items.map((i) => (i instanceof JsList || i instanceof JsTuple ? (i.items.map(intArg) as [number, number]) : intArg(i))) as never)),
   '.permuteBkwd': matrixMethod((m, [p]) => sj.permuteBkwd(m, (p as JsList).items.map((i) => (i instanceof JsList || i instanceof JsTuple ? (i.items.map(intArg) as [number, number]) : intArg(i))) as never)),
@@ -4708,7 +4723,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__add__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
   '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
-  '.__mul__': (a, [b]) => (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
+  '.__mul__': (a, [b]) => (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
   '.__truediv__': (a, [b]) => (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, ['div', 'truediv', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => callMethod(a, ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
@@ -4953,6 +4968,18 @@ function autoAdapter(c: Case): Adapter | undefined {
     const opts = { ...(kw['m'] === undefined ? {} : { m: intArg(kw['m']) }), power: flag(kw['power']) };
     return fromJs(flag(kw['visual']) ? sj.smoothnessP(asExpr(args[0]), { ...opts, visual: true }) : sj.smoothnessP(asExpr(args[0]), opts));
   };
+  if (c.fn === '.extract_slice' && c.module.startsWith('sympy.polys.matrices.')) return (args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.DomainMatrix || self instanceof sj.DDM || self instanceof sj.SDM)) throw new Unsupported('expected a domain matrix');
+    const indices = (v: unknown, n: number): number[] => {
+      if (!(v instanceof sj.Slice)) throw new Unsupported('expected a slice');
+      const [start, stop, step] = v.indices(n);
+      return Array.from({ length: Math.max(0, Math.ceil((stop - start) / step)) }, (_, k) => start + k * step);
+    };
+    return fromJs(self.extract(indices(args[0], self.shape[0]), indices(args[1], self.shape[1])));
+  };
+  if (c.fn === '.is_MatMul') return (_args, kw, self) => (noKw(kw), self instanceof sj.MatMul);
+  if (c.fn === '.is_MatAdd') return (_args, kw, self) => (noKw(kw), self instanceof sj.MatAdd);
   // SymPy's class flag is_Relational is an instance test of the relation class
   if (c.fn === '.is_Relational') return (_args, kw, self) => (noKw(kw), self instanceof sj.Rel);
   if (c.fn === '.kind') return (_args, kw, self) => (noKw(kw), sj.kindOf(asExpr(self)));
@@ -5199,6 +5226,7 @@ function pickResult(value: unknown, index: number): unknown {
 
 /** The items of a result that Python iterates (a list, tuple, matrix or other iterable). */
 function resultItems(value: unknown, post: string): readonly unknown[] {
+  if (value instanceof Matrix) return value.data;
   if (value instanceof JsTuple || value instanceof JsList) return value.items;
   if (isIterableResult(value) && typeof value !== 'string') return [...value];
   throw new TypeError(`${post}: call result is not iterable`);

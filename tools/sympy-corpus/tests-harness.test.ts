@@ -210,3 +210,33 @@ it('keeps differential-geometry and Euclidean Point dispatch distinct', () => {
     }).status,
   ).toBe('pass');
 });
+
+it('adapts explicit and domain matrix arithmetic, slices and iteration', () => {
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1' });
+  const matrix: Tree = { t: 'Matrix', rows: [[integer(1), integer(2)], [integer(3), integer(4)]], shape: [2, 2] };
+  const domainMatrix = (cls: string): Tree => ({ ...matrix, t: 'DomainMatrix', cls, domain: { t: 'Domain', name: 'ZZ' }, fmt: cls === 'SDM' ? 'sparse' : 'dense' });
+  const c = { ...base, module: 'sympy.polys.matrices.tests.test_xxm', category: 'polys', kwargs: {} };
+  for (const cls of ['DDM', 'SDM']) {
+    const self = domainMatrix(cls);
+    if (cls === 'DDM') expect(runTestCase({ ...c, fn: '.__mul__', self, args: [self], raises: 'TypeError', expected: 'None' }).status).toBe('pass');
+    expect(runTestCase({ ...c, fn: cls === 'DDM' ? '.matmul' : '.__mul__', self, args: [self], expected: cls === 'DDM' ? '[[7, 10], [15, 22]]' : '{0: {0: 7, 1: 10}, 1: {0: 15, 1: 22}}' })).toEqual({ status: 'pass' });
+    const slice: Tree = { t: 'Slice', start: { t: 'Js', v: null }, stop: integer(1), step: { t: 'Js', v: null } };
+    expect(runTestCase({ ...c, fn: '.extract_slice', self, args: [slice, slice], expected: cls === 'DDM' ? '[[1]]' : '{0: {0: 1}}' })).toEqual({ status: 'pass' });
+    const reverse: Tree = { t: 'Slice', start: { t: 'Js', v: null }, stop: { t: 'Js', v: null }, step: integer(-1) };
+    expect(runTestCase({ ...c, fn: '.extract_slice', self, args: [reverse, reverse], expected: cls === 'DDM' ? '[[4, 3], [2, 1]]' : '{0: {0: 4, 1: 3}, 1: {0: 2, 1: 1}}' })).toEqual({ status: 'pass' });
+  }
+  expect(runTestCase({ ...c, fn: '.__pow__', self: matrix, args: [integer(2)], expected: 'Matrix([[7, 10], [15, 22]])' })).toEqual({ status: 'pass' });
+  for (const [post, expected] of [['list', '[1, 2, 3, 4]'], ['tuple', '(1, 2, 3, 4)'], ['len', '4']] as const) {
+    expect(runTestCase({ ...c, fn: 'simplify', args: [matrix], post, expected })).toEqual({ status: 'pass' });
+  }
+  expect(runTestCase({ ...c, fn: '.elementary_row_op', self: matrix, args: [{ t: 'Str', v: 'n->kn' }, integer(0), integer(2)], expected: 'Matrix([[2, 4], [3, 4]])' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.elementary_col_op', self: matrix, args: [{ t: 'Str', v: 'n->kn' }, integer(1), integer(2)], expected: 'Matrix([[1, 4], [3, 8]])' })).toEqual({ status: 'pass' });
+  const symbol: Tree = { t: 'MatrixSymbol', name: 'A', rows: integer(2), cols: integer(2) };
+  for (const [fn, cls] of [['.is_MatMul', 'MatMul'], ['.is_MatAdd', 'MatAdd']] as const) {
+    expect(runTestCase({ ...c, fn, args: [], self: { t: 'MatExpr', cls, args: [symbol, symbol] }, expected: 'True' })).toEqual({ status: 'pass' });
+    expect(runTestCase({ ...c, fn, args: [], self: symbol, expected: 'False' })).toEqual({ status: 'pass' });
+  }
+  for (const fn of ['.lll', '.lll_transform']) {
+    expect(runTestCase({ ...c, fn, self: matrix, args: [], kwargs: { delta: integer(1) }, raises: 'ValueError', expected: 'None' }).status).toBe('pass');
+  }
+});

@@ -15,6 +15,7 @@ import type { ExprLike } from '../../core/nodes';
 import { Expr } from '../../core/nodes';
 import { stronglyConnectedComponents } from '../../utilities/iterables';
 import type { Domain } from '../domains';
+import { ExpressionRawDomain } from '../domains/expressionrawdomain';
 import type { Shape, Slice } from './ddm';
 import { DDM, ddmHooks, sliceIndices } from './ddm';
 import { convertFrom, elemEq, elemRepr, elemStr, exquo, inv, isExact } from './domainops';
@@ -248,6 +249,11 @@ export class SDM {
     const [m, n] = this.shape;
     const [n2, o] = B.shape;
     if (n !== n2) throw new DMShapeError();
+    // Raw expressions can have nonzero products with zero, such as 0*oo = nan.
+    if (this.domain instanceof ExpressionRawDomain && [this, B].some((a) =>
+      a.iterValues().some((e) => !this.domain.isZero(this.domain.mul(this.domain.zero, e))))) {
+      return this.toDdm().matmul(B.toDdm()).toSdm();
+    }
     return new SDM(sdmMatmul(this.data, B.data, this.domain), [m, o], this.domain);
   }
   /** Multiplication by a domain element on the right. */
