@@ -94,7 +94,7 @@ describe("sympy/tensor/array/expressions/tests/test_arrayexpr_derivatives.py", (
     const k = new Sym('k');
     expect(sympyStr(arrayDerive(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('X', k, k), new MatrixSymbol('B', k, k)), new MatrixSymbol('X', k, k)))).toBe('PermuteDims(ArrayTensorProduct(I, I, A, B), (7)(1 2 4)(3 5))');
   });
-  it.fails("test_arrayexpr_derivatives1:37", () => {
+  it("test_arrayexpr_derivatives1:37", () => {
     const k = new Sym('k');
     expect(sympyStr(arrayDerive(new ArrayContraction(new MatrixSymbol('X', k, k), [0, 1]), new MatrixSymbol('X', k, k)))).toBe('ArrayContraction(ArrayTensorProduct(I, I), (1, 3))');
   });
@@ -466,7 +466,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayTensorProduct(Identity(k), Identity(rational(1))), [0, 2, 1, 3])))).toBe('I');
   });
-  it.fails("test_convert_array_to_hadamard_products:518", () => {
+  it("test_convert_array_to_hadamard_products:518", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [0, 2], [1, 3])))).toBe('HadamardProduct(M, N)');
   });
@@ -518,11 +518,11 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new MatrixSymbol('A', k, k), [0, 1])))).toBe('ArrayDiagonal(A, (0, 1))');
   });
-  it.fails("test_convert_array_to_hadamard_products:584", () => {
+  it("test_convert_array_to_hadamard_products:584", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k), new MatrixSymbol('P', k, k)), [0, 2, 4], [1, 3, 5])))).toBe('HadamardProduct(M, N, P)');
   });
-  it.fails("test_convert_array_to_hadamard_products:587", () => {
+  it("test_convert_array_to_hadamard_products:587", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k), new MatrixSymbol('P', k, k)), [0, 3, 4], [1, 2, 5])))).toBe('HadamardProduct(M, P, N.T)');
   });
@@ -748,7 +748,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_matrix_to_array.py",
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(new Mul([rational(3), new Pow(Trace(new MatrixSymbol('M', k, k)), rational(2))])))).toBe('ArrayContraction(ArrayTensorProduct(3, M, M), (0, 1), (2, 3))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:95", () => {
+  it("test_arrayexpr_convert_matrix_to_array:95", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(HadamardProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k))))).toBe('ArrayDiagonal(ArrayTensorProduct(M, N), (0, 2), (1, 3))');
   });

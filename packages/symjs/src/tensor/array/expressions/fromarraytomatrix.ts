@@ -2,14 +2,40 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Ported from SymPy 1.14.0 (tensor/array/expressions/from_array_to_matrix.py),
 // Copyright (c) 2006-2023 SymPy Development Team, BSD 3-Clause (see LICENSE).
-import type { Expr } from '../../../core/nodes';
+import { Mul, Pow, S, type Expr } from '../../../core/nodes';
 import { at, getOrThrow, first } from '../../../core/guard';
+import { HadamardPower, hadamardProduct } from '../../../matrices/expressions/hadamard';
 import { mul } from '../../../core/ops';
-import { MatAdd, MatMulNode, MatrixExpr, Trace, Transpose } from '../../../matrices/expressions/matexpr';
-import { ArrayExpr, ArraySymbol, ArrayAdd, ArrayContraction, ArrayTensorProduct, PermuteDims, factorBlocks, getRank, remainingAxes } from './arrayexpressions';
+import { ElementwiseApplyFunction, MatAdd, MatMulNode, MatrixExpr, Trace, Transpose } from '../../../matrices/expressions/matexpr';
+import { ArrayExpr, ArraySymbol, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayElementwiseApplyFunc, ArrayTensorProduct, PermuteDims, factorBlocks, getRank, remainingAxes } from './arrayexpressions';
 
 /** Recognize matrix chains and traces in pairwise tensor contractions. */
 export function convertArrayToMatrix(expr: Expr): Expr {
+  if (expr instanceof ArrayElementwiseApplyFunc) {
+    const inner = convertArrayToMatrix(expr.expr);
+    if (!(inner instanceof MatrixExpr)) return new ArrayElementwiseApplyFunc(expr.function, inner);
+    if (inner.rows.key !== '1' || inner.cols.key !== '1') {
+      const variable = first(expr.function.variables), body = expr.function.expr;
+      const factors = body instanceof Mul ? body.args : [body];
+      const dependent = factors.filter((factor) => factor.has(variable));
+      let exponent: Expr | undefined;
+      if (dependent.length === 0) exponent = S.Zero;
+      else if (dependent.length === 1) {
+        const power = first(dependent);
+        if (power.key === variable.key) exponent = S.One;
+        else if (power instanceof Pow && power.base.key === variable.key && !power.exp.has(variable)) exponent = power.exp;
+      }
+      if (exponent !== undefined) return new MatMulNode([mul(...factors.filter((factor) => !factor.has(variable))), HadamardPower(inner, exponent)]).doit();
+    }
+    return ElementwiseApplyFunction(expr.function, inner);
+  }
+  if (expr instanceof ArrayDiagonal && expr.expr instanceof ArrayTensorProduct && expr.diagonalIndices.length === 2 && expr.shape.length === 2) {
+    const product = expr.expr, groups = expr.diagonalIndices;
+    const blocks = factorBlocks(product);
+    if (product.args.every((a) => a instanceof MatrixExpr) && blocks.every((block) => groups.every((g) => block.filter((axis) => g.includes(axis)).length === 1))) {
+      return hadamardProduct(...product.args.map((arg, i) => at(groups, 0).includes(first(at(blocks, i))) ? arg : Transpose(arg).doit()));
+    }
+  }
   if (expr instanceof ArrayAdd) {
     const args = expr.args.map(convertArrayToMatrix);
     if (args.some((a) => a instanceof ArrayExpr && !(a instanceof ArraySymbol))) return new ArrayAdd(...args);

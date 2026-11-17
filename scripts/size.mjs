@@ -92,8 +92,9 @@ const CASES = [
   // of the names used (measured 177 KiB, the core entry; was 1312).
   ['index', 'Rational', 202],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
-  // resolvents, PolyMatrix, multivariate resultants, tensor operators and quadrature (measured 2648 KiB).
-  ['index', '*', 2723],
+  // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions
+  // and quadrature (measured 2725 KiB).
+  ['index', '*', 2728],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

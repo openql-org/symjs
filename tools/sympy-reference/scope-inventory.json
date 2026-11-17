@@ -34214,7 +34214,6 @@
       "TensorProduct.__floordiv__",
       "TensorProduct.__rfloordiv__",
       "TensorProduct.__rmod__",
-      "TensorProduct.fromiter",
       "TensorProduct.is_AlgebraicNumber",
       "TensorProduct.is_Boolean",
       "TensorProduct.is_Derivative",
@@ -34619,7 +34618,6 @@
       "TensorProduct.__floordiv__",
       "TensorProduct.__rfloordiv__",
       "TensorProduct.__rmod__",
-      "TensorProduct.fromiter",
       "TensorProduct.is_AlgebraicNumber",
       "TensorProduct.is_Boolean",
       "TensorProduct.is_Derivative",
@@ -64352,7 +64350,6 @@
    "module": "sympy.matrices.kind",
    "sha256": "109c43743e20160bd57c2de545ec7e6dcce17068f00618257f584f0e4d96cd71",
    "status": "partial",
-   "note": "Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.",
    "sources": [
     "matrices/kind.ts"
    ],
@@ -64393,8 +64390,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -110727,21 +110724,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111066,7 +111051,7 @@
      "testFile": "sympy/tensor/array/expressions/tests/test_array_expressions.py",
      "inCorpus": true,
      "caseCount": 110,
-     "gapCount": 27,
+     "gapCount": 23,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -111075,21 +111060,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111182,7 +111155,7 @@
      "testFile": "sympy/tensor/array/expressions/tests/test_arrayexpr_derivatives.py",
      "inCorpus": true,
      "caseCount": 7,
-     "gapCount": 4,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 2
@@ -111190,21 +111163,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111218,7 +111179,7 @@
   {
    "module": "sympy.tensor.array.expressions.conv_array_to_indexed",
    "sha256": "048c2542bed1282f1b64dde647c2020b94d8382f6e6ac61c57465cd5534a9a21",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromarraytoindexed.ts"
    ],
@@ -111253,21 +111214,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111278,7 +111227,7 @@
   {
    "module": "sympy.tensor.array.expressions.conv_array_to_matrix",
    "sha256": "f39619053648e28f5d26d2832575ee83f94954b1bc753ff6d804fb97b0caa321",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromarraytomatrix.ts"
    ],
@@ -111313,21 +111262,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111338,7 +111275,7 @@
   {
    "module": "sympy.tensor.array.expressions.conv_indexed_to_array",
    "sha256": "1325b9d93a65071231db99940ef23fe53cdcf0b0fa327a7a5cd5bdc08c3da47e",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromindexedtoarray.ts"
    ],
@@ -111373,21 +111310,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111398,7 +111323,7 @@
   {
    "module": "sympy.tensor.array.expressions.conv_matrix_to_array",
    "sha256": "5d8caab7436c412ae0369124afcc5319e52147b65878d9635457d5105d4aeef0",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/frommatrixtoarray.ts"
    ],
@@ -111433,21 +111358,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111458,7 +111371,7 @@
   {
    "module": "sympy.tensor.array.expressions.from_array_to_indexed",
    "sha256": "dd821cb00cd6556411258412f74b8fbd297674ced9a8b57faadec4f7eb98536f",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromarraytoindexed.ts"
    ],
@@ -111493,21 +111406,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111559,21 +111460,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111589,7 +111478,7 @@
   {
    "module": "sympy.tensor.array.expressions.from_indexed_to_array",
    "sha256": "45470a7a69abc2e2b944546bd7d6123d53023a465f2c05a56db079eaef168b48",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromindexedtoarray.ts"
    ],
@@ -111624,21 +111513,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111651,7 +111528,7 @@
   {
    "module": "sympy.tensor.array.expressions.from_matrix_to_array",
    "sha256": "c8863546ea45f7e1555778d92eca96c59d5c928135f87910c8cf1c4089b8fc6b",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/frommatrixtoarray.ts"
    ],
@@ -111686,21 +111563,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111713,7 +111578,7 @@
   {
    "module": "sympy.tensor.array.expressions.utils",
    "sha256": "467e7c6e81c7504a01645b629c3a6bb8b585064341c2091543873d9bb3729b5a",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/utils.ts"
    ],
@@ -111748,21 +111613,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -112134,22 +111987,17 @@
    "module": "sympy.tensor.functions",
    "sha256": "14d6763341c655a01227fd4090fbb5bc5e4d1cd2e605728bb23d10e7028c5fdd",
    "status": "partial",
-   "note": "shape, NoShapeError; TensorProduct not ported",
    "sources": [
     "tensor/functions.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "TensorProduct.rank",
-      "TensorProduct.shape"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [
       "TensorProduct.__floordiv__",
       "TensorProduct.__rfloordiv__",
       "TensorProduct.__rmod__",
-      "TensorProduct.fromiter",
       "TensorProduct.is_AlgebraicNumber",
       "TensorProduct.is_Boolean",
       "TensorProduct.is_Derivative",
@@ -112193,7 +112041,7 @@
      "testFile": "sympy/tensor/tests/test_functions.py",
      "inCorpus": true,
      "caseCount": 3,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 10
@@ -112201,8 +112049,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "shape, NoShapeError; TensorProduct not ported",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },

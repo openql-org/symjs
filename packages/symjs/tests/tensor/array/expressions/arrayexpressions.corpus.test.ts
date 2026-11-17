@@ -302,7 +302,7 @@ describe("sympy/tensor/array/expressions/tests/test_array_expressions.py", () =>
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_array_expressions_no_canonicalization:649", () => {
+  it("test_array_expressions_no_canonicalization:649", () => {
     const k = new Sym('k');
     expect(sympyStr(doit(new ArrayContraction(new PermuteDims(new ArraySymbol('M', [k, k]), [1, 0]), [0, 1])))).toBe('ArrayContraction(M, (0, 1))');
   });
@@ -315,11 +315,11 @@ describe("sympy/tensor/array/expressions/tests/test_array_expressions.py", () =>
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_array_expressions_no_canonicalization:655", () => {
+  it("test_array_expressions_no_canonicalization:655", () => {
     const k = new Sym('k');
     expect(sympyStr(doit(new ArrayDiagonal(new ArrayDiagonal(new ArrayTensorProduct(new ArraySymbol('M', [k, k]), new ArraySymbol('N', [k, k]), new ArraySymbol('P', [k, k])), [0, 2]), [0, 1])))).toBe('ArrayDiagonal(ArrayTensorProduct(M, N, P), (0, 2), (1, 3))');
   });
-  it.fails("test_array_expressions_no_canonicalization:658", () => {
+  it("test_array_expressions_no_canonicalization:658", () => {
     const k = new Sym('k');
     expect(sympyStr(doit(new ArrayDiagonal(new ArrayDiagonal(new ArrayDiagonal(new ArrayTensorProduct(new ArraySymbol('M', [k, k]), new ArraySymbol('N', [k, k]), new ArraySymbol('P', [k, k])), [0, 1]), [0, 1]), [0, 1])))).toBe('ArrayDiagonal(ArrayTensorProduct(M, N, P), (0, 1), (2, 3), (4, 5))');
   });
@@ -345,7 +345,7 @@ describe("sympy/tensor/array/expressions/tests/test_array_expressions.py", () =>
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_array_expressions_no_canonicalization:667", () => {
+  it("test_array_expressions_no_canonicalization:667", () => {
     const k = new Sym('k');
     expect(sympyStr(doit(new ArrayDiagonal(new PermuteDims(new ArraySymbol('M', [k, k]), [1, 0]), [0, 1])))).toBe('ArrayDiagonal(M, (0, 1))');
   });

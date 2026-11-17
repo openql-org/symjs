@@ -4,7 +4,7 @@ from pathlib import Path
 import sympy as s
 from sympy.tensor.array.expressions import (ArraySymbol, ArrayTensorProduct as TP,
     ArrayContraction as C, ArrayDiagonal as D, ArrayAdd, PermuteDims as P,
-    Reshape, ZeroArray, array_derive, convert_matrix_to_array,
+    Reshape, ZeroArray, ArrayElementwiseApplyFunc, array_derive, convert_matrix_to_array,
     convert_array_to_matrix, convert_indexed_to_array)
 
 assert s.__version__ == '1.14.0'
@@ -65,6 +65,17 @@ for shape in [(3,), (2, 3), (2, 3, 4)]:
     d = array_derive(a, a)
     record('derive_shape_' + '_'.join(map(str, shape)), d.as_explicit())
     record('derive_shape_repr_' + '_'.join(map(str, shape)), d)
+X = s.MatrixSymbol('X', 1, 1)
+from sympy.matrices.expressions.applyfunc import ElementwiseApplyFunction
+record('derive_inverse_explicit', array_derive(s.Inverse(X), X).as_explicit())
+record('derive_inverse_2x2_numeric', array_derive(s.Inverse(M), M).as_explicit().subs({M[0,0]:2, M[0,1]:1, M[1,0]:3, M[1,1]:4}))
+record('derive_elementwise_explicit', array_derive(ElementwiseApplyFunction(s.sin, X), X).as_explicit())
+record('fixed_index_entry', convert_indexed_to_array(A[0,j]))
+record('large_matrix_power_back', convert_array_to_matrix(convert_matrix_to_array(M**101)))
+for name, body in [('power', i**3), ('scaled_power', 2*i**3), ('identity', i), ('constant', s.Integer(3))]:
+    record('elementwise_' + name + '_back', convert_array_to_matrix(ArrayElementwiseApplyFunc(s.Lambda(i, body), M)))
+Q = ArraySymbol('Q', (2, 2, 2))
+record('permuted_nested_diagonal_doit', P(D(P(Q, [1, 2, 0]), (0, 2)), [1, 0]).doit())
 path = Path(__file__).resolve().parents[3] / 'packages/symjs/tests/tensor/array/expressions/references.json'
 path.parent.mkdir(parents=True, exist_ok=True)
 path.write_text(json.dumps(references, indent=2) + '\n')

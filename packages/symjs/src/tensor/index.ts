@@ -166,7 +166,7 @@ export {
 export type { ArrayReplacements, CommGroup, Commutation, TensorIndexTypeOptions, TensorManagerClass } from './tensor';
 export { bsgsDirectProduct, canonicalFree, doubleCosetCanRep, dummySgs, gensProducts, getSymmetricGroupSgs, permAfDirectProduct, tensorGens } from './tensorcan';
 export type { CanonComponent, PermLike } from './tensorcan';
-export { shape, NoShapeError } from './functions';
+export { shape, NoShapeError, TensorProduct, TensorProductNode } from './functions';
 export type { Dimension } from './functions';
 export { ArrayExpr, ArraySymbol, ArrayElement, ArrayTensorProduct, ArrayContraction, ArrayDiagonal, ArrayAdd, ArrayElementwiseApplyFunc, PermuteDims, Reshape, OneArray, ZeroArray, getShape, getRank } from './array/expressions/arrayexpressions';
 export type { ArrayShape, ArrayAxes } from './array/expressions/arrayexpressions';
