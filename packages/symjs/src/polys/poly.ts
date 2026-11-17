@@ -147,10 +147,26 @@ export class UPoly {
   }
 
   gcd(o: UPoly): UPoly {
-    let a: UPoly = this;
-    let b: UPoly = o;
-    while (!b.isZero) [a, b] = [b, a.divmod(b)[1]];
-    return a.monic();
+    const primitive = (coeffs: bigint[]): bigint[] => {
+      while (coeffs.at(-1) === 0n) coeffs.pop();
+      const content = coeffs.reduce((g, c) => gcdBig(g, c), 0n);
+      return coeffs.map((c) => c / content);
+    };
+    const integers = (f: UPoly): bigint[] => {
+      const denominator = f.coeffs.reduce((d, c) => lcm(d, c.q), 1n);
+      return primitive(f.coeffs.map((c) => c.p * (denominator / c.q)));
+    };
+    let a = integers(this), b = integers(o);
+    // Primitive pseudo-remainders avoid the denominator growth of rational division.
+    while (b.length) {
+      let r = a;
+      while (r.length >= b.length) {
+        const shift = r.length - b.length, leading = last(r), divisor = last(b);
+        r = primitive(r.map((c, i) => divisor * c - leading * (b[i - shift] ?? 0n)));
+      }
+      [a, b] = [b, r];
+    }
+    return new UPoly(a.map((c) => Rational.of(c))).monic();
   }
 
   derivative(): UPoly {

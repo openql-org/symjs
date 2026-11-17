@@ -26303,8 +26303,8 @@
      "testFile": "sympy/concrete/tests/test_gosper.py",
      "inCorpus": true,
      "caseCount": 63,
-     "gapCount": 6,
-     "timeoutCount": 1,
+     "gapCount": 5,
+     "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
     },
@@ -84765,7 +84765,7 @@
      "testFile": "sympy/polys/tests/test_euclidtools.py",
      "inCorpus": true,
      "caseCount": 227,
-     "gapCount": 79,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -84896,7 +84896,7 @@
      "testFile": "sympy/polys/tests/test_factortools.py",
      "inCorpus": true,
      "caseCount": 208,
-     "gapCount": 128,
+     "gapCount": 101,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 5,
@@ -85346,10 +85346,8 @@
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "heugcd"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [],
      "internalNames": [],
      "unresolvedBases": []
@@ -85373,7 +85371,7 @@
      "testFile": "sympy/polys/tests/test_heuristicgcd.py",
      "inCorpus": true,
      "caseCount": 34,
-     "gapCount": 18,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -90921,7 +90919,7 @@
      "testFile": "sympy/polys/tests/test_rootisolation.py",
      "inCorpus": true,
      "caseCount": 306,
-     "gapCount": 304,
+     "gapCount": 23,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -91513,7 +91511,7 @@
      "testFile": "sympy/polys/tests/test_sqfreetools.py",
      "inCorpus": true,
      "caseCount": 66,
-     "gapCount": 13,
+     "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}

@@ -1258,9 +1258,10 @@ export class Poly {
   }
   /** Number of real roots in [a, b] (Sturm's theorem). */
   countRoots(a?: ExprLike, b?: ExprLike): number {
+    const x = this.univariate();
+    if (this.degree() <= 0) return 0;
     // over RR the roots of the exact polynomial are counted (SymPy count_roots() over RR gives 2 for x**2 - 2.0)
     if (this.domain === 'RR') return this.toExact().countRoots(a, b);
-    const x = this.univariate();
     const seq = this.sqfPartQQ().sturm();
     const signChanges = (v: Expr | 'inf' | '-inf'): number => {
       const vals = seq.map((p) => {

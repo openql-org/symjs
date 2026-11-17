@@ -464,6 +464,18 @@ describe('complex root isolation (SymPy references)', () => {
     expect(isolateComplexRootsSqf([3n])).toEqual([]);
     expect(countComplexRoots([Q('1/2'), Q('0'), Q('1/2')])).toBe(2);
   });
+  it('excludes selected edges and corners when counting boundary roots', () => {
+    const f = coeffs('x**5 - x');
+    const a: [sj.Rational, sj.Rational] = [Q('-1'), Q('0')];
+    const b: [sj.Rational, sj.Rational] = [Q('1'), Q('1')];
+    const cases: [string[], number][] = [
+      [['S'], 3], [['N'], 3], [['S', 'N'], 2], [['E'], 4], [['W'], 4], [['E', 'W'], 4],
+      [['N', 'S', 'E', 'W'], 2], [['SW'], 3], [['SE'], 3], [['SW', 'SE'], 2],
+      [['SW', 'SE', 'S'], 1], [['SW', 'SE', 'S', 'N'], 0], [['NE', 'NW'], 4],
+    ];
+    for (const [exclude, expected] of cases) expect(countComplexRoots(f, a, b, exclude)).toBe(expected);
+    expect(countComplexRoots(f, [Q('0'), Q('0')], b, true)).toBe(1);
+  });
   it.each(ciRefs.counts.map((c) => [String(c[0]), c] as const))('counts the roots of %s in a rectangle', (_, c) => {
     {
       if (c.length === 6) {
