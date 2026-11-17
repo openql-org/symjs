@@ -35,6 +35,10 @@ export class JsIterator {
 export class JsList {
   constructor(readonly items: readonly unknown[]) {}
 }
+/** A Python slice whose symbolic bounds are passed to MatrixSlice unchanged. */
+class JsSymbolicSlice {
+  constructor(readonly parts: readonly [Expr | null, Expr | null, Expr | null]) {}
+}
 export class JsTuple {
   constructor(
     readonly items: readonly unknown[],
@@ -648,6 +652,10 @@ export function deserialize(tree: Tree): unknown {
       if (tree['evaluate'] !== sj.globalParameters.evaluate) throw new Unsupported('non-default global parameters');
       return sj.globalParameters;
     case 'Slice': {
+      const parts = ['start', 'stop', 'step'].map((name) => deserialize(tree[name] as Tree));
+      if (parts.some((v) => v instanceof Expr && !(v instanceof sj.Rational))) {
+        return new JsSymbolicSlice(parts.map((v) => v === null ? null : asExpr(v)) as [Expr | null, Expr | null, Expr | null]);
+      }
       const part = (name: string): number | undefined => {
         const value = deserialize(tree[name] as Tree);
         return value === null ? undefined : Number(value);
@@ -2494,11 +2502,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_leading_term': (args, kw, self) => (noKw(kw), sj.asLeadingTerm(asExpr(self), asSym(args[0]))),
   '.getn': exprMethod((e) => none(sj.getn(e))),
   '.nseries': (args, kw, self) => {
-    for (const k of Object.keys(kw)) if (k !== 'logx') throw new Unsupported(`kwargs ${k}`);
-    const x = asSym(args[0]);
-    const x0 = args[1] === undefined ? 0 : asExpr(args[1]);
-    const n = args[2] === undefined ? 6 : intArg(args[2]);
-    return sj.series(asExpr(self), x, x0, n, '+', kw['logx'] === undefined ? {} : { logx: asExpr(kw['logx']) });
+    for (const k of Object.keys(kw)) if (!['x', 'x0', 'n', 'dir', 'logx', 'cdir'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const x = asSym(args[0] ?? kw['x']);
+    const x0 = asExpr(args[1] ?? kw['x0'] ?? 0);
+    const n = intArg(args[2] ?? kw['n'] ?? 6);
+    const cdir = intArg(args[5] ?? kw['cdir'] ?? 0);
+    const direction = cdir === 0 ? (args[3] ?? kw['dir'] ?? '+') as '+' | '-' : cdir < 0 ? '-' : '+';
+    const logx = args[4] ?? kw['logx'];
+    return sj.series(asExpr(self), x, x0, n, direction, logx === undefined ? {} : { logx: asExpr(logx) });
   },
   root: (args, kw) => (noKw(kw), sj.root(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 0 : asExpr(args[2]))),
   cbrt: exprFn(sj.cbrt),
@@ -3294,13 +3305,16 @@ export const ADAPTERS: Record<string, Adapter> = {
   series: (args, kw) => {
     const x0 = kw['x0'] ?? args[2] ?? 0;
     const n = kw['n'] ?? args[3] ?? 6;
-    const dir = (kw['dir'] ?? args[4] ?? '+') as '+' | '-';
-    for (const k of Object.keys(kw)) if (!['x0', 'n', 'dir'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const cdir = intArg(kw['cdir'] ?? args[6] ?? 0);
+    const dir = cdir === 0 ? (kw['dir'] ?? args[4] ?? '+') as '+' | '-' : cdir < 0 ? '-' : '+';
+    for (const k of Object.keys(kw)) if (!['x', 'x0', 'n', 'dir', 'cdir', 'logx'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const e = asExpr(args[0]);
     const syms = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
-    const x = args[1] ? asSym(args[1]) : syms.length === 1 ? syms[0]! : undefined;
+    const variable = args[1] ?? kw['x'];
+    const x = variable ? asSym(variable) : syms.length === 1 ? syms[0]! : undefined;
     if (!x) throw new Unsupported('series variable');
-    return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p), dir);
+    const logx = kw['logx'] ?? args[5];
+    return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p), dir, logx === undefined ? {} : { logx: asExpr(logx) });
   },
   O: (args, kw) => (noKw(kw), orderNode(asExpr(args[0]), args.slice(1))),
   Sum: (args, kw) => (noKw(kw), concreteNode('Sum', [asExpr(args[0]), ...args.slice(1)])),
@@ -4543,6 +4557,7 @@ function printable(v: unknown): unknown {
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [printable(k), printable(x)]));
   if (v instanceof JsSet) return new Set(v.items.map(printable));
   if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
+  if (v instanceof FnClass) return sj.SymFunction(v.name);
   if (v instanceof JsLambda) return lambdaAsNode(v);
   return v;
 }
@@ -4563,6 +4578,11 @@ ADAPTERS['TableForm'] = (args, kw) => {
   return new sj.TableForm(data, options);
 };
 ADAPTERS['DiagramGrid'] = (args, kw) => (noKw(kw), new categories.DiagramGrid(args[0] as sj.Diagram));
+ADAPTERS['ArrowStringDescription'] = (args, kw) => {
+  noKw(kw);
+  const [unit, curving, amount, loopStart, loopEnd, horizontal, vertical, position, label] = args;
+  return new categories.ArrowStringDescription(String(unit), String(curving), amount === null ? sj.NoMatch : intArg(amount), String(loopStart), String(loopEnd), String(horizontal), String(vertical), String(position), String(label));
+};
 ADAPTERS['.draw'] = (args, kw, self) => {
   if (!(self instanceof categories.XypicDiagramDrawer)) return unsupportedOp('draw');
   const masked = kw['masked'] instanceof JsTuple ? kw['masked'].items : Array.isArray(kw['masked']) ? kw['masked'] : [];
@@ -4744,6 +4764,17 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
+    if (a instanceof sj.FreeGroup) {
+      if (i instanceof sj.Slice) {
+        const [start, stop, step] = i.toString().split(':').map((part) => part === '' ? undefined : Number(part));
+        if (step !== undefined && step !== 1) {
+          const [from, to, stride] = i.indices(a.length);
+          return new sj.FreeGroup(Array.from({ length: Math.max(0, Math.ceil((to - from) / stride)) }, (_, k) => definedOr(a.symbols[from + k * stride], 'free-group symbol')));
+        }
+        return a.slice(start ?? 0, stop ?? a.length);
+      }
+      return a.getItem(Number(i));
+    }
     if (a instanceof sj.SeriesBase) {
       if (i instanceof sj.Slice) {
         const [start, stop, step] = i.toString().split(':').map((part) => part === '' ? undefined : Number(part));
@@ -4765,9 +4796,9 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
       return r instanceof sj.Slice || c instanceof sj.Slice ? a.extract(positions(r, a.rows), positions(c, a.cols)) : a.get(Number(r), Number(c));
     }
     const index = i instanceof JsTuple ? i.items : Array.isArray(i) && (a instanceof Matrix || a instanceof sj.MatrixExpr || a instanceof sj.NDimArray || a instanceof sj.IndexedBase || a instanceof sj.ArraySymbol || a instanceof categories.DiagramGrid) ? i : [i];
-    if (index.some((j) => j instanceof sj.Slice)) {
+    if (index.some((j) => j instanceof sj.Slice || j instanceof JsSymbolicSlice)) {
       if (a instanceof sj.MatrixExpr) {
-        const spec = (v: unknown): sj.SliceSpec => v instanceof sj.Slice ? v.toString().split(':').map((p) => p === '' ? null : Number(p)) as [number | null, number | null, number | null] : asExpr(v);
+        const spec = (v: unknown): sj.SliceSpec => v === undefined ? [] : v instanceof JsSymbolicSlice ? v.parts : v instanceof sj.Slice ? v.toString().split(':').map((p) => p === '' ? null : Number(p)) as [number | null, number | null, number | null] : asExpr(v);
         return sj.MatrixSlice(a, spec(index[0]), spec(index[1]));
       }
       if (a instanceof Matrix) {
@@ -4802,7 +4833,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return callMethod(a, a instanceof sj.Transform ? ['at'] : ['getitem', 'get', 'at'], index)?.value ?? unsupportedOp('[]');
   },
   // K(a): an element of a domain or a finite extension
-  '.__call__': (a, args) => (typeof a === 'function' ? (a as (...x: unknown[]) => unknown)(...args) : a instanceof sj.Domain || a instanceof sj.FiniteExtension ? callMethod(a, ['new'], args.map((x) => x instanceof JsFFElement ? plain(x) : x))?.value : (callMethod(a, ['call', 'apply'], args)?.value ?? unsupportedOp('()'))),
+  '.__call__': (a, args) => (typeof a === 'function' ? (a as (...x: unknown[]) => unknown)(...args) : a instanceof sj.Domain || a instanceof sj.FiniteExtension ? callMethod(a, ['new'], args.map((x) => x instanceof JsFFElement ? plain(x) : x))?.value : (callMethod(a, a instanceof sj.Curve || a instanceof sj.TensorHead ? ['at'] : ['call', 'apply'], args)?.value ?? unsupportedOp('()'))),
 };
 function unsupportedOp(op: string): never {
   throw new Unsupported(`no adapter for the operator ${op}`);
@@ -4929,6 +4960,12 @@ function intpolyAdapter(c: Case): Adapter | undefined {
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.category === 'series' && c.fn === '.function') return (_args, kw, self) => {
+    noKw(kw);
+    if (self instanceof sj.FormalPowerSeries || self instanceof sj.FourierSeries) return self.fn;
+    throw new Unsupported('no adapter for .function');
+  };
+  if (c.fn === 'AccumulationBounds') return ADAPTERS['AccumBounds'];
   if (c.fn === 'xypic_draw_diagram') return (args, kw) => categories.xypicDrawDiagram(args[0] as sj.Diagram, Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), toJs(v, true)])));
   if (c.module.startsWith('sympy.plotting.intervalmath.') && ['And', 'Or', 'intervalMembership'].includes(c.fn)) {
     // Python's None is the third truth value of interval membership
@@ -4943,7 +4980,8 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.category === 'plotting') {
     const f = (plotting as unknown as Record<string, (...args: unknown[]) => unknown>)[camel(c.fn)];
     if (f) return (args, kw) => {
-      const value = f(...placeArgs(f, args, kw, (x) => toJs(x, true)));
+      const a = placeArgs(f, args, kw, (x) => toJs(x, true));
+      const value = /^class[\s{]/.test(Function.prototype.toString.call(f)) ? Reflect.construct(f, a) : f(...a);
       if (c.fn === 'check_arguments') return new JsList((value as unknown[][]).map((row) => new JsTuple(row.map((v) => Array.isArray(v) ? new JsTuple(v) : v))));
       return fromJs(value);
     };

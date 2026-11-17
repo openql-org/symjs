@@ -167,3 +167,4 @@ export type { QuadratureRule } from './integrals/quadrature';
 export type { HyperSeriesResult } from './series/formal';
 
 export { SeriesBase } from './series/series_class';
+export { gruntz } from './series/gruntz';

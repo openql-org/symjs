@@ -3540,7 +3540,6 @@
       "gff_list",
       "glsl_code",
       "ground_roots",
-      "gruntz",
       "half_gcdex",
       "harmonic.harmonic_cache",
       "hyper.ap",
@@ -21733,7 +21732,7 @@
      "testFile": "sympy/calculus/tests/test_accumulationbounds.py",
      "inCorpus": true,
      "caseCount": 201,
-     "gapCount": 57,
+     "gapCount": 54,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 4,
@@ -23805,7 +23804,7 @@
      "testFile": "sympy/combinatorics/tests/test_free_groups.py",
      "inCorpus": true,
      "caseCount": 109,
-     "gapCount": 4,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 11,
@@ -41982,7 +41981,7 @@
      "testFile": "sympy/functions/elementary/tests/test_hyperbolic.py",
      "inCorpus": true,
      "caseCount": 765,
-     "gapCount": 87,
+     "gapCount": 86,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 1,
@@ -42254,7 +42253,7 @@
      "testFile": "sympy/functions/elementary/tests/test_integers.py",
      "inCorpus": true,
      "caseCount": 451,
-     "gapCount": 8,
+     "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
@@ -45477,7 +45476,7 @@
      "testFile": "sympy/functions/special/tests/test_error_functions.py",
      "inCorpus": true,
      "caseCount": 336,
-     "gapCount": 122,
+     "gapCount": 121,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 33,
@@ -45783,7 +45782,7 @@
      "testFile": "sympy/functions/special/tests/test_gamma_functions.py",
      "inCorpus": true,
      "caseCount": 306,
-     "gapCount": 87,
+     "gapCount": 86,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 28,
@@ -49476,7 +49475,7 @@
      "testFile": "sympy/geometry/tests/test_curve.py",
      "inCorpus": true,
      "caseCount": 30,
-     "gapCount": 3,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 14,
@@ -74428,7 +74427,7 @@
      "testFile": "sympy/plotting/tests/test_series.py",
      "inCorpus": true,
      "caseCount": 32,
-     "gapCount": 21,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 8,
@@ -92165,7 +92164,7 @@
      "testFile": "sympy/printing/tests/test_latex.py",
      "inCorpus": true,
      "caseCount": 1264,
-     "gapCount": 129,
+     "gapCount": 122,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -93049,7 +93048,7 @@
      "testFile": "sympy/printing/tests/test_str.py",
      "inCorpus": true,
      "caseCount": 438,
-     "gapCount": 74,
+     "gapCount": 62,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "non-call-expression": 27,
@@ -93312,8 +93311,7 @@
       "SeqPer.periodical",
       "SeqPer.start",
       "SeqPer.stop",
-      "SeqPer.variables",
-      "gruntz"
+      "SeqPer.variables"
      ],
      "pythonSpecificNames": [
       "Limit.__floordiv__",
@@ -94238,7 +94236,7 @@
      "testFile": "sympy/series/tests/test_formal.py",
      "inCorpus": true,
      "caseCount": 133,
-     "gapCount": 53,
+     "gapCount": 38,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -94483,7 +94481,7 @@
      "testFile": "sympy/series/tests/test_fourier.py",
      "inCorpus": true,
      "caseCount": 42,
-     "gapCount": 11,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 12,
@@ -94552,7 +94550,6 @@
       "SubsSet.meets",
       "SubsSet.union",
       "build_expression_tree",
-      "gruntz",
       "limitinf",
       "moveup",
       "moveup2",
@@ -94582,7 +94579,7 @@
      "testFile": "sympy/series/tests/test_gruntz.py",
      "inCorpus": true,
      "caseCount": 102,
-     "gapCount": 89,
+     "gapCount": 53,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 30,
@@ -101279,8 +101276,8 @@
      "testFile": "sympy/solvers/diophantine/tests/test_diophantine.py",
      "inCorpus": true,
      "caseCount": 2323,
-     "gapCount": 54,
-     "timeoutCount": 1,
+     "gapCount": 53,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 4,
       "non-boolean-assertion": 1,
@@ -112876,7 +112873,7 @@
      "testFile": "sympy/tensor/tests/test_tensor.py",
      "inCorpus": true,
      "caseCount": 680,
-     "gapCount": 208,
+     "gapCount": 196,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,

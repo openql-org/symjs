@@ -2285,6 +2285,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "ArrowStringDescription",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": "Atom",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."

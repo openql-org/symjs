@@ -1968,6 +1968,7 @@
   "groupHomomorphism": {"entries":[".","./combinatorics"],"kind":"function","prototype":[],"static":[]},
   "groupIsomorphism": {"entries":[".","./combinatorics"],"kind":"function","prototype":[],"static":[]},
   "groupsCount": {"entries":[".","./combinatorics"],"kind":"function","prototype":[],"static":[]},
+  "gruntz": {"entries":[".","./calculus"],"kind":"function","prototype":[],"static":[]},
   "guess": {"entries":[".","./calculus"],"kind":"function","prototype":[],"static":[]},
   "guessGeneratingFunction": {"entries":[".","./calculus"],"kind":"function","prototype":[],"static":[]},
   "guessGeneratingFunctionRational": {"entries":[".","./calculus"],"kind":"function","prototype":[],"static":[]},
