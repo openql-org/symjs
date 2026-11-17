@@ -78399,7 +78399,7 @@
      "testFile": "sympy/polys/agca/tests/test_modules.py",
      "inCorpus": true,
      "caseCount": 172,
-     "gapCount": 83,
+     "gapCount": 82,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 6,
@@ -87014,7 +87014,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 29,
+     "gapCount": 28,
      "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-slow": 1
@@ -87565,7 +87565,7 @@
      "testFile": "sympy/polys/tests/test_orderings.py",
      "inCorpus": true,
      "caseCount": 22,
-     "gapCount": 11,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -89882,7 +89882,7 @@
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
      "caseCount": 1707,
-     "gapCount": 663,
+     "gapCount": 476,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -90210,7 +90210,7 @@
      "testFile": "sympy/polys/tests/test_polyutils.py",
      "inCorpus": true,
      "caseCount": 44,
-     "gapCount": 43,
+     "gapCount": 15,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}

@@ -21,7 +21,7 @@ import { hypersimp } from '../simplify/public';
 import { limit } from '../series/limits';
 import { linsolve } from '../solvers/public';
 
-const field = (e: Expr, n: Sym): Poly => Poly.from(e, [n], { domain: 'QQ' });
+const field = (e: Expr, n: Sym): Poly => Poly.from(e, [n], { field: true });
 
 /**
  * SymPy gosper_normal: polynomials A, B, C with f/g = Z*A/B*C(n + 1)/C(n),

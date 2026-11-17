@@ -4576,15 +4576,15 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])]), [x, y], { domain: 'ZZ', pure: false }).pdiv(Poly.from(new Add([x, new Mul([rational(-1), y])]), [x, y], { domain: 'ZZ', pure: false })))).toBe('(Poly(x + y, x, y, domain=\'ZZ\'), Poly(0, x, y, domain=\'ZZ\'))');
   });
-  it.fails("test_pdiv:1764", () => {
+  it("test_pdiv:1764", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])]), [x, y], { domain: 'ZZ', pure: false }).prem(Poly.from(new Add([x, new Mul([rational(-1), y])]), [x, y], { domain: 'ZZ', pure: false })))).toBe('Poly(0, x, y, domain=\'ZZ\')');
   });
-  it.fails("test_pdiv:1765", () => {
+  it("test_pdiv:1765", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])]), [x, y], { domain: 'ZZ', pure: false }).pquo(Poly.from(new Add([x, new Mul([rational(-1), y])]), [x, y], { domain: 'ZZ', pure: false })))).toBe('Poly(x + y, x, y, domain=\'ZZ\')');
   });
-  it.fails("test_pdiv:1766", () => {
+  it("test_pdiv:1766", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])]), [x, y], { domain: 'ZZ', pure: false }).pexquo(Poly.from(new Add([x, new Mul([rational(-1), y])]), [x, y], { domain: 'ZZ', pure: false })))).toBe('Poly(x + y, x, y, domain=\'ZZ\')');
   });
@@ -4663,7 +4663,7 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const v2 = sortGens([at(v1.gens, 0), at(v1.gens, 1)]);
     expect(sympyStr(Poly.from(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])]), [x, y], { domain: 'ZZ', pure: false }).asExpr(), [at(v2, 0), at(v2, 1)]).pdiv(Poly.from(v1.asExpr(), [at(v2, 0), at(v2, 1)])))).toBe('(Poly(x + y, x, y, domain=\'ZZ\'), Poly(0, x, y, domain=\'ZZ\'))');
   });
-  it.fails("test_pdiv:1784", () => {
+  it("test_pdiv:1784", () => {
     const [x, y] = symbols('x y');
     const v1 = Poly.from(new Add([x, new Mul([rational(-1), y])]), [x, y], { domain: 'ZZ', pure: false });
     const v2 = sortGens([at(v1.gens, 0), at(v1.gens, 1)]);
@@ -4673,7 +4673,7 @@ describe("sympy/polys/tests/test_polytools.py", () => {
   //   assert pquo(F, G) == Q
   //   => Poly(x + y, x, y, domain='ZZ')
   it.todo("test_pdiv:1785");
-  it.fails("test_pdiv:1786", () => {
+  it("test_pdiv:1786", () => {
     const [x, y] = symbols('x y');
     const v1 = Poly.from(new Add([x, new Mul([rational(-1), y])]), [x, y], { domain: 'ZZ', pure: false });
     const v2 = sortGens([at(v1.gens, 0), at(v1.gens, 1)]);

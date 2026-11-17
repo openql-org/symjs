@@ -47,3 +47,14 @@ describe('gosper_term and gosper_sum', () => {
     expect(s(gosperSum(P('k/2**k'), [k!, 0, sj.S.Infinity]))).toBe('2');
   });
 });
+
+
+it('normalizes with symbolic coefficient parameters', () => {
+  const variable = new sj.Sym('n');
+  const parameter = new sj.Sym('a');
+  const f = sj.add(variable, parameter);
+  const [a, b, c] = gosperNormal(f, 1, variable);
+  expect(a.asExpr().equals(f)).toBe(true);
+  expect(b.asExpr().equals(1)).toBe(true);
+  expect(c.asExpr().equals(1)).toBe(true);
+});
