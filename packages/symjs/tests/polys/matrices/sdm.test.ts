@@ -5,10 +5,11 @@
 // (dicts compared after sorting, as their order is an implementation detail).
 
 import { describe, expect, it } from 'vitest';
-import { Float, Rational } from '../../../src/core';
+import { Float, Rational, S as Scalars } from '../../../src/core';
 import type { Domain } from '../../../src/polys/domains';
 import { QQ, RR, ZZ } from '../../../src/polys/domains';
 import { SDM, sdmBerk } from '../../../src/polys/matrices/sdm';
+import { EXRAW } from '../../../src/polys/domains/expressionrawdomain';
 import { DDM } from '../../../src/polys/matrices/ddm';
 import { DMBadInputError, DMDomainError, DMShapeError } from '../../../src/polys/matrices/exceptions';
 
@@ -179,4 +180,17 @@ it('copy preserves explicit empty rows and does not alias the original', () => {
   b.data.get(1)?.set(0, q(3));
   expect(a.toString()).toBe('{0: {1: 2}, 1: {}}');
   expect(b.getitem(1, 0).equals(q(3))).toBe(true);
+});
+
+it('preserves zero times infinity in sparse raw-expression products', () => {
+  const raw = (rows: Rational[][]) => SDM.fromList(rows, [rows.length, rows[0]?.length ?? 0], EXRAW);
+  expect(String(raw([[q(1), q(0)]]).matmul(raw([[q(2), q(0)], [q(0), q(3)]])))).toBe('{0: {0: 2}}');
+  const mixed = SDM.fromList([[Scalars.Infinity, q(1)], [q(0), q(1)]], [2, 2], EXRAW);
+  expect(String(SDM.eye(2, EXRAW).matmul(mixed))).toBe('{0: {0: oo, 1: 1}, 1: {0: nan, 1: 1}}');
+  const infiniteColumn = SDM.fromList([[Scalars.Infinity], [Scalars.Infinity]], [2, 1], EXRAW);
+  expect(String(raw([[q(1), q(-1)]]).matmul(infiniteColumn))).toBe('{0: {0: nan}}');
+  const inf = SDM.fromList([[Scalars.Infinity, q(0)]], [1, 2], EXRAW);
+  expect(String(inf.matmul(SDM.zeros([2, 2], EXRAW)))).toBe('{0: {0: nan, 1: nan}}');
+  expect(String(SDM.zeros([1, 1], EXRAW).matmul(SDM.fromList([[Scalars.Infinity]], [1, 1], EXRAW)))).toBe('{0: {0: nan}}');
+  expect(String(SDM.zeros([0, 1], EXRAW).matmul(SDM.zeros([1, 0], EXRAW)))).toBe('{}');
 });

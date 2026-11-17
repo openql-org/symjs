@@ -59633,7 +59633,7 @@
      "testFile": "sympy/matrices/tests/test_decompositions.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 20,
+     "gapCount": 15,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 20,
@@ -59952,7 +59952,7 @@
      "testFile": "sympy/matrices/tests/test_eigen.py",
      "inCorpus": true,
      "caseCount": 316,
-     "gapCount": 5,
+     "gapCount": 4,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -61160,7 +61160,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_blockmatrix.py",
      "inCorpus": true,
      "caseCount": 112,
-     "gapCount": 20,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -65072,7 +65072,7 @@
      "testFile": "sympy/matrices/tests/test_matrices.py",
      "inCorpus": true,
      "caseCount": 878,
-     "gapCount": 179,
+     "gapCount": 149,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 2,
@@ -65248,7 +65248,7 @@
      "testFile": "sympy/matrices/tests/test_matrixbase.py",
      "inCorpus": true,
      "caseCount": 1056,
-     "gapCount": 240,
+     "gapCount": 196,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 4,
@@ -65564,7 +65564,7 @@
      "testFile": "sympy/matrices/tests/test_reductions.py",
      "inCorpus": true,
      "caseCount": 102,
-     "gapCount": 43,
+     "gapCount": 36,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 22
@@ -65932,7 +65932,7 @@
      "testFile": "sympy/matrices/tests/test_solvers.py",
      "inCorpus": true,
      "caseCount": 132,
-     "gapCount": 28,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2
@@ -85580,7 +85580,7 @@
      "testFile": "sympy/polys/matrices/tests/test_ddm.py",
      "inCorpus": true,
      "caseCount": 169,
-     "gapCount": 10,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -86364,7 +86364,7 @@
      "testFile": "sympy/polys/matrices/tests/test_sdm.py",
      "inCorpus": true,
      "caseCount": 736,
-     "gapCount": 630,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -100696,7 +100696,7 @@
      "testFile": "sympy/simplify/tests/test_simplify.py",
      "inCorpus": true,
      "caseCount": 379,
-     "gapCount": 74,
+     "gapCount": 71,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -101277,8 +101277,8 @@
      "testFile": "sympy/solvers/diophantine/tests/test_diophantine.py",
      "inCorpus": true,
      "caseCount": 2323,
-     "gapCount": 54,
-     "timeoutCount": 1,
+     "gapCount": 53,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 4,
       "non-boolean-assertion": 1,
