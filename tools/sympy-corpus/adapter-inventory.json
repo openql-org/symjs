@@ -700,6 +700,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": ".epsilon_eq",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": ".eq",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -1085,6 +1090,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": ".inverse",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": ".inverse_ADJ",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -1136,6 +1146,11 @@
  },
  {
   "name": ".irregular",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": ".is_Order",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -3280,6 +3295,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "eval_sum_residue",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": "exp",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -3861,6 +3881,11 @@
  },
  {
   "name": "multiline_latex",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "nD",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -4521,6 +4546,11 @@
  },
  {
   "name": "terms_gcd",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "test_derivative_numerically",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },

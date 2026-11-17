@@ -302,8 +302,10 @@ describe('func (SymPy Basic.func)', () => {
     expect(sj.func(sj.Tuple(1, 2))).toBe(head);
     expect(sj.str(head(1, 2))).toBe('(1, 2)');
     // an applied function without a registered public function keeps its name
-    const g = sj.fn('conjugate', [x]);
-    expect(sj.str(sj.func(g)(y))).toBe('conjugate(y)');
-    expect(sj.func(sj.fn('conjugate', [y]))).toBe(sj.func(g));
+    const A = sj.symbol('A', { commutative: false });
+    const B = sj.symbol('B', { commutative: false });
+    const g = sj.adjoint(A);
+    expect(sj.str(sj.func(g)(B))).toBe('adjoint(B)');
+    expect(sj.func(sj.adjoint(B))).toBe(sj.func(g));
   });
 });

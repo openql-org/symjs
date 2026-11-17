@@ -13,6 +13,24 @@ const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'cor
   test: 'test_fixture', line: 1, src: 'assert Integer(1) == 1', fn: 'Integer',
   args: [{ t: 'Rational', p: '1', q: '1' }], kwargs: {}, expected: '1', op: '==' };
 
+it('adapts function inverses, numerical derivatives, residue limits and derangement keywords', () => {
+  const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const fn = (name: string, args: Tree[] = [x]) => ({ t: 'Fn', name, args });
+  expect(runTestCase({ ...base, fn: '.inverse', self: fn('exp'), args: [], expected: 'log' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: '.inverse', self: fn('erf'), args: [], expected: 'erfinv' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'test_derivative_numerically', args: [fn('sin'), x], expected: 'True' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'nD', args: [], kwargs: { n: integer(4) }, expected: '9' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'nD', args: [], kwargs: { m: { t: 'Tuple', items: [integer(2), integer(2)], list: true } }, expected: '1' })).toEqual({ status: 'pass' });
+  const limits = { t: 'Tuple', items: [x, integer(0), integer(5)] };
+  expect(runTestCase({ ...base, fn: 'eval_sum_residue', args: [x, limits], expected: 'None' })).toEqual({ status: 'pass' });
+  for (const [name, expected] of [['digamma', 'polygamma(0, x)'], ['trigamma', 'polygamma(1, x)']] as const) {
+    expect(String(deserialize(fn(name)))).toBe(expected);
+  }
+  expect(String(deserialize(fn('LeviCivita', [integer(1), integer(2), integer(3)])))).toBe('1');
+  expect(runTestCase({ ...base, fn: '.epsilon_eq', self: integer(1), args: [integer(1)], expected: 'True' })).toEqual({ status: 'pass' });
+});
+
 it('replays series indices and slices with the SeriesBase offset semantics', () => {
   const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
   const x = { t: 'Symbol', name: 'x', assume: {} };

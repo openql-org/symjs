@@ -13,6 +13,12 @@ import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
 
 const Pplain = parse;
+it('exposes residue summation with an explicit no-match result', () => {
+  const k = sj.symbol('k');
+  expect(String(sj.evalSumResidue(parse('1/(k**2 + 1)'), [k, sj.oo.neg(), sj.oo]))).toBe('pi/tanh(pi)');
+  expect(sj.evalSumResidue(parse('sin(k)'), [k, 0, sj.oo])).toBeInstanceOf(NoMatchResult);
+  expect(sj.evalSumResidue(k, [k, 0, 5])).toBeInstanceOf(NoMatchResult);
+});
 it('retains telescoping boundaries and formal Euler-Maclaurin endpoints', () => {
   const [k, a, b] = sj.symbols('k a b');
   expect(String(sj.telescopicDirect(k!.pow(-1), k!.add(2).pow(-1).neg(), 2, [k!, a!, b!]))).toBe('-1/(b + 2) - 1/(b + 1) + 1/(a + 1) + 1/a');

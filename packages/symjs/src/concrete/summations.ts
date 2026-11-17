@@ -35,6 +35,15 @@ const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 export { Sum, Product } from '../core/concrete';
 import { Sum, Product } from '../core/concrete';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
+import { NoMatch, orNoMatch } from '../core/truth';
+import type { NoMatchResult } from '../core/truth';
+
+/** Evaluate an infinite rational sum by residues, or return NoMatch. */
+export function evalSumResidue(f: ExprLike, [k, a, b]: readonly [Sym, ExprLike, ExprLike]): Expr | NoMatchResult {
+  const upper = sympify(b);
+  if (!isOo(upper)) return NoMatch;
+  return orNoMatch(evalSumResidueImpl(sympify(f), k, sympify(a), upper));
+}
 
 /** S_p(n) = sum_{k=1}^{n} k^p (Faulhaber, with B_1 = +1/2). */
 function powerSum(p: number, n: Expr): Expr {
@@ -85,7 +94,7 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | und
   // sums from a finite a to oo and over all integers, so it leaves Sum(1/(k**2 + 1), (k, -oo, 0)) unevaluated
   if (isNegOo(a) && !isOo(b)) return sumOne(xreplace(f, [[k, mul(-1, k)]]), k, mul(-1, b), S.Infinity, true);
   if (isOo(b) && !mirrored) {
-    const r = evalSumResidue(f, k, a, b);
+    const r = evalSumResidueImpl(f, k, a, b);
     if (r) return r;
   }
   const ef = expand(f);
@@ -388,7 +397,7 @@ function directSum(f: Expr, k: Sym, a: Expr, len: bigint): Expr {
  * times (-1)**k) over infinite ranges via residues of f*cot(pi*z) (or
  * f*csc(pi*z)). Only simple poles are handled.
  */
-function evalSumResidue(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
+function evalSumResidueImpl(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   if ([...freeSymbols(f)].some((s) => s.key !== k.key)) return undefined;
   // the callers pass b = oo (a sum from -oo to b is mirrored first)
   if (!(isInt(a) || isNegOo(a))) return undefined;
@@ -467,7 +476,7 @@ function evalSumResidue(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     pd = defined(polyCoefficients(dd, k), 'shifted denominator coefficients');
     if (!isEven()) return undefined;
     const g = alternating ? mul(pow(-1, k), pow(-1, shift), nn, pow(dd, -1)) : mul(nn, pow(dd, -1));
-    return evalSumResidue(g, k, add(a, mul(-1, shift)), b);
+    return evalSumResidueImpl(g, k, add(a, mul(-1, shift)), b);
   }
   const ps = poles();
   if (!ps) return undefined;
