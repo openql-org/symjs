@@ -497,7 +497,7 @@ type Edge = Iso<Indices>;
  * polynomials over QQ, with the indices of the polynomials each root belongs
  * to (SymPy dup_isolate_real_roots_list with basis=True).
  */
-function isolateRealRootsList(polys: QP[], opts: IsolateOptions & { strict?: boolean }): Edge[] {
+export function isolateRealRootsList(polys: QP[], opts: IsolateOptions & { strict?: boolean }): Edge[] {
   const zeros = zeroInside(opts.inf, opts.sup);
   const zeroIndices: Indices = new Map();
   const factors = new Map<string, [P, Indices]>();
@@ -662,11 +662,11 @@ function intervalsToQuadrants(intervals0: Edge[], f1: QP, f2: QP, s: Q, t: Q): s
   return Q;
 }
 
-/** Rules of the traversal of the four edges (SymPy _traverse_quadrants; exclude is True or None). */
-function traverseQuadrants(QQ: readonly string[][], exclude: boolean): [number, number][] {
-  const edges = exclude ? [1, 1, 0, 0] : [0, 0, 0, 0];
+/** Rules of the traversal of the four edges (SymPy _traverse_quadrants). */
+function traverseQuadrants(QQ: readonly string[][], exclude: boolean | readonly string[]): [number, number][] {
+  const edges = exclude === true ? [1, 1, 0, 0] : ['S', 'E', 'N', 'W'].map((name) => Number(typeof exclude !== 'boolean' && exclude.includes(name)));
   // the corner between edge j and edge i = j + 1
-  const corners = exclude ? [1, 1, 0, 1] : [0, 0, 0, 0];
+  const corners = exclude === true ? [1, 1, 0, 1] : ['SE', 'NE', 'NW', 'SW'].map((name) => Number(typeof exclude !== 'boolean' && exclude.includes(name)));
   const rules: [number, number][] = [];
   QQ.forEach((Q0, i) => {
     if (!Q0.length) return;
@@ -819,7 +819,7 @@ const bisect = (r: Rect, f1: Biv, f2: Biv): [Rect, Rect] =>
   qlt(qsub(r.b[1], r.a[1]), qsub(r.b[0], r.a[0])) ? verticalBisection(r, f1, f2) : horizontalBisection(r, f1, f2);
 
 /** The rectangle [inf, sup] with its edges: intervals, quadrant sequences and polynomials. */
-function edgeRect(f1: Biv, f2: Biv, [u, v]: [Q, Q], [s, t]: [Q, Q], exclude: boolean): Rect {
+function edgeRect(f1: Biv, f2: Biv, [u, v]: [Q, Q], [s, t]: [Q, Q], exclude: boolean | readonly string[]): Rect {
   const F1: Four<QP> = [atY(f1, v), atX(f1, s), atY(f1, t), atX(f1, u)];
   const F2: Four<QP> = [atY(f2, v), atX(f2, s), atY(f2, t), atX(f2, u)];
   const I: Four<Edge[]> = [
@@ -851,11 +851,11 @@ function rootBound(f: QP): Q {
  * The number of roots of f in the rectangle [inf, sup] (corners as
  * [re, im]); roots on the boundary count (SymPy dup_count_complex_roots).
  */
-export function countComplexRoots(f0: readonly (bigint | Q)[], inf?: [Q, Q], sup?: [Q, Q]): number {
+export function countComplexRoots(f0: readonly (bigint | Q)[], inf?: [Q, Q], sup?: [Q, Q], exclude: boolean | readonly string[] = false): number {
   const f = toQQ(f0);
   const B = rootBound(f);
   const [f1, f2] = realImag(f);
-  return edgeRect(f1, f2, inf ?? [qneg(B), qneg(B)], sup ?? [B, B], false).N;
+  return edgeRect(f1, f2, inf ?? [qneg(B), qneg(B)], sup ?? [B, B], exclude).N;
 }
 
 /** An isolating rectangle of a non-real root (SymPy ComplexInterval); conj selects the conjugate root below the real axis. */

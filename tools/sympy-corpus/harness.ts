@@ -4929,6 +4929,51 @@ function intpolyAdapter(c: Case): Adapter | undefined {
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.self?.t === 'PolyRing' && c.fn === '.dup_isolate_real_roots_list') return (args, kw, self) => {
+    const ring = self as sj.PolyRing;
+    if (!['ZZ', 'QQ'].includes(String(ring.domain))) throw new sj.DomainError('root isolation requires ZZ or QQ');
+    const rational = (v: unknown): sj.Rational => v instanceof sj.PythonMPQ ? sj.Rational.of(v.numerator, v.denominator) : asExpr(v) as sj.Rational;
+    const optional = (v: unknown): sj.Rational | undefined => v === undefined || v === null ? undefined : rational(v);
+    const polys = (args[0] as JsList | JsTuple).items.map((v) => sj.Poly.from(v instanceof sj.PolyElement ? v.asExpr() : asExpr(v), [...ring.symbols]).allCoeffs().map(rational));
+    const roots = sj.isolateRealRootsList(polys, { eps: optional(kw['eps']), inf: optional(kw['inf']), sup: optional(kw['sup']), fast: kw['fast'] === true, strict: kw['strict'] === true });
+    return fromJs(kw['basis'] === true ? roots : roots.map(([iv, indices]) => [iv, indices]));
+  };
+  if (c.fn === 'heugcd') return (args, kw) => {
+    noKw(kw);
+    const f = args[0] as sj.PolyElement;
+    return fromJs(f.ring.dmpZzHeuGcd(f, args[1] as sj.PolyElement));
+  };
+  if (c.self?.t === 'PolyRing' && ['.dup_isolate_real_roots_sqf', '.dup_isolate_real_roots', '.dup_refine_real_root', '.dup_count_real_roots', '.dup_count_complex_roots'].includes(c.fn)) return (args, kw, self) => {
+    const ring = self as sj.PolyRing;
+    if (!['ZZ', 'QQ'].includes(String(ring.domain))) throw new sj.DomainError('root isolation requires ZZ or QQ');
+    const f = args[0] instanceof sj.PolyElement ? args[0].asExpr() : asExpr(args[0]);
+    const p = sj.Poly.from(f, [...ring.symbols], { domain: String(ring.domain) });
+    const rational = (v: unknown): sj.Rational => v instanceof sj.PythonMPQ ? sj.Rational.of(v.numerator, v.denominator) : asExpr(v) as sj.Rational;
+    const optional = (v: unknown): sj.Rational | undefined => v === undefined || v === null ? undefined : rational(v);
+    if (c.fn === '.dup_count_complex_roots') {
+      const corner = (v: unknown): [sj.Rational, sj.Rational] | undefined => v === undefined || v === null ? undefined : (v as JsTuple).items.map(rational) as [sj.Rational, sj.Rational];
+      const exclude = kw['exclude'];
+      return sj.countComplexRoots(p.allCoeffs().map(rational), corner(args[1] ?? kw['inf']), corner(args[2] ?? kw['sup']), exclude instanceof JsList || exclude instanceof JsTuple ? exclude.items.map(String) : exclude === true);
+    }
+    if (c.fn === '.dup_count_real_roots') return p.countRoots(optional(args[1] ?? kw['inf']), optional(args[2] ?? kw['sup']));
+    if (c.fn === '.dup_refine_real_root') {
+      const coefficients = p.clearDenoms(true)[1].allCoeffs().map((v) => rational(v).p);
+      return fromJs(sj.refineRealRoot(coefficients, rational(args[1]), rational(args[2]), {
+        eps: optional(kw['eps']), steps: kw['steps'] === undefined ? undefined : intArg(kw['steps']),
+        disjoint: optional(kw['disjoint']), fast: kw['fast'] === true,
+      }));
+    }
+    const opts = { eps: optional(kw['eps']), inf: optional(kw['inf']), sup: optional(kw['sup']), fast: kw['fast'] === true };
+    if (kw['basis'] === true) return fromJs(sj.isolateRealRootsList([p.allCoeffs().map(rational)], opts).map(([iv, indices, basis]) => {
+      const multiplicity = indices.get(0);
+      if (multiplicity === undefined) throw new TypeError('missing polynomial index in root isolation');
+      return [iv, multiplicity, basis];
+    }));
+    const integers = (poly: sj.Poly): bigint[] => poly.clearDenoms(true)[1].allCoeffs().map((v) => rational(v).p);
+    if (c.fn === '.dup_isolate_real_roots_sqf') return fromJs(sj.isolateRealRootsSqf(integers(p), opts));
+    const factors = new sj.UPoly(p.allCoeffs().map(rational).reverse()).squareFree();
+    return fromJs(sj.isolateRealRoots(factors.map(([factor, k]) => [integers(sj.Poly.fromList([...factor.coeffs].reverse(), [...ring.symbols])), k]), opts.eps, opts));
+  };
   if (c.fn === 'xypic_draw_diagram') return (args, kw) => categories.xypicDrawDiagram(args[0] as sj.Diagram, Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), toJs(v, true)])));
   if (c.module.startsWith('sympy.plotting.intervalmath.') && ['And', 'Or', 'intervalMembership'].includes(c.fn)) {
     // Python's None is the third truth value of interval membership
@@ -5040,7 +5085,20 @@ function autoAdapter(c: Case): Adapter | undefined {
         if (self instanceof sj.AppliedPredicate && name === 'function') return m;
         // a getter returning a function class (SymPy expr.func): the attribute value, not a call
         if (args.length === 0 && typeof (m as { functionName?: unknown }).functionName === 'string') return m;
-        const result = (m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv));
+        const method = m as (...a: unknown[]) => unknown;
+        const placed = placeArgs(method, args, kw, conv);
+        // Python IPolys accepts ground constants where a polynomial is expected.
+        if (self instanceof sj.PolyRing && /^(dup|dmp)[A-Z]/.test(name)) {
+          const names = paramNames(method);
+          for (let i = 0; i < placed.length; i++) {
+            if (/^(f|g|h)$/.test(names[i] ?? '')) {
+              const value = placed[i];
+              if (value instanceof sj.PythonMPQ) placed[i] = self.groundNew(sj.Rational.of(value.numerator, value.denominator));
+              else if (value instanceof sj.Expr || typeof value === 'number' || typeof value === 'bigint') placed[i] = self.fromExpr(value);
+            }
+          }
+        }
+        const result = method.call(thisArg, ...placed);
         // AGCA uses expression coefficients publicly. SymPy prints these as
         // dense DMP objects inside its relation containers; only convert the
         // representation here, using the public sparse-to-dense conversion.
@@ -5090,6 +5148,7 @@ export const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
   Catalan: 'S.Catalan', EulerGamma: 'S.EulerGamma', GoldenRatio: 'S.GoldenRatio', TribonacciConstant: 'S.TribonacciConstant',
   Integer: 'Rational.of', Equality: 'Eq', Unequality: 'Ne', GreaterThan: 'Ge', LessThan: 'Le', StrictGreaterThan: 'Gt', StrictLessThan: 'Lt',
   N: 'evalf', ln: 'log', minpoly: 'minimalPolynomial', poly: 'Poly.from',
+  heugcd: 'IPolys.prototype.dmpZzHeuGcd',
   zeros: 'Matrix.zeros', ones: 'Matrix.ones', eye: 'Matrix.eye', diag: 'Matrix.diag',
   true: 'S.true', false: 'S.false', FallingFactorial: 'ff', RisingFactorial: 'rf',
 };

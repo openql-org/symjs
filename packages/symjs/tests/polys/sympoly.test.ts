@@ -536,6 +536,8 @@ describe('norms, denominators, ground roots and root counting', () => {
     expect(show(P('x**2 - a**2', x).groundRoots())).toBe('[[a, 1], [-a, 1]]');
   });
   it('countRoots bounds', () => {
+    expect(P('0', x).countRoots()).toBe(0);
+    expect(P('7', x).countRoots()).toBe(0);
     // SymPy converts the bounds to QQ: count_roots(1.0, 2.0) -> 1, count_roots(-2, 3/2) -> 2
     expect(P('x**2 - 2', x).countRoots(1.0, 2.0)).toBe(1);
     expect(P('x**2 - 2', x).countRoots(-2, parse('3/2'))).toBe(2);
