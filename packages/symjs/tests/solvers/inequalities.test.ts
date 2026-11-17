@@ -548,3 +548,8 @@ describe('real roots with parameters of unknown realness (SymPy _invert_real)', 
     expect(sj.sstr(solveset(sj.sub(sj.pow(sj.add(x, y), 3), a), x, Reals))).toBe('Intersection({-y + Abs(a)**(1/3)*sign(a)}, Reals)');
   });
 });
+
+it('rejects increasing behavior on a translated interval of positive width', () => {
+  const a = new Sym('a', { real: true });
+  expect(Q.isIncreasing(mul(-1, xr), interval(a, add(a, 1)), xr)).toBe(false);
+});

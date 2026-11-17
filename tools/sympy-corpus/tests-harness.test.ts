@@ -210,3 +210,34 @@ it('keeps differential-geometry and Euclidean Point dispatch distinct', () => {
     }).status,
   ).toBe('pass');
 });
+
+it('adapts Boolean attributes and rejects Python Boolean arithmetic', () => {
+  const symbol = { t: 'Symbol', name: 'x', assume: {} };
+  const truth = { t: 'Js', v: true };
+  expect(runTestCase({ ...base, category: 'logic', fn: '.is_Boolean', self: truth, args: [], expected: 'True', op: 'is' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'logic', fn: '.is_Boolean', self: symbol, args: [], expected: 'False', op: 'is' })).toEqual({ status: 'pass' });
+  for (const fn of ['.__add__', '.__sub__', '.__mul__', '.__truediv__', '.__pow__', '.__mod__']) {
+    expect(runTestCase({ ...base, category: 'logic', fn, self: truth, args: [symbol], raises: 'TypeError', expected: 'None', op: 'is' })).toEqual({ status: 'pass' });
+    expect(runTestCase({ ...base, category: 'logic', fn, self: symbol, args: [truth], raises: 'TypeError', expected: 'None', op: 'is' })).toEqual({ status: 'pass' });
+  }
+});
+
+it('uses set cardinality and ordinal integer calling conventions', () => {
+  const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const set = { t: 'FiniteSet', items: [integer(1), integer(2)] };
+  expect(runTestCase({ ...base, category: 'sets', fn: 'PowerSet', args: [set], post: 'len', expected: '4' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: 'Range', args: [integer(0), integer(10), integer(3)], post: 'len', expected: '4' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: '.issubset', self: set, args: [set], expected: 'True' })).toEqual({ status: 'pass' });
+  const omega = { t: 'Ordinal', terms: [{ t: 'OmegaPower', exp: { t: 'Ordinal', terms: [{ t: 'OmegaPower', exp: { t: 'Ordinal', terms: [] }, mult: '1' }] }, mult: '1' }] };
+  expect(runTestCase({ ...base, category: 'sets', fn: '.__add__', self: omega, args: [integer(1)], expected: 'w + 1' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: '.__mul__', self: integer(2), args: [omega], expected: 'w' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: '.__eq__', self: omega, args: [{ t: 'Symbol', name: 'x', assume: {} }], expected: 'False' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: '.__eq__', self: { t: 'OmegaPower', exp: omega, mult: '1' }, args: [{ t: 'Js', v: null }], expected: 'False' })).toEqual({ status: 'pass' });
+});
+
+it('passes Python booleans to symbolic Boolean operators', () => {
+  const symbol = { t: 'Symbol', name: 'x', assume: {} };
+  for (const [fn, expected] of [['.__and__', 'x'], ['.__or__', 'True'], ['.__xor__', '~x'], ['.__lshift__', 'True']] as const) {
+    expect(runTestCase({ ...base, category: 'logic', fn, self: { t: 'Js', v: true }, args: [symbol], expected })).toEqual({ status: 'pass' });
+  }
+});

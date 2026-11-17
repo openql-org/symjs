@@ -47,6 +47,7 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // nodes add under 1 KiB to core and sets consumers.
 // Non-integer powers of explicit matrices, Poly arguments in unchanged and symbol classes with their own
 // srepr add up to 6 KiB to core consumers.
+// Set finiteness and iterability queries contribute approximately 1 KiB to feature consumers.
 const CASES = [
   ['core', 'Rational', 202],
   ['core', 'parse, str', 219],
@@ -76,14 +77,14 @@ const CASES = [
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 575],
-  ['holonomic', 'exprToHolonomic', 1169],
+  ['holonomic', 'exprToHolonomic', 1170],
   ['geometry', '*', 1078],
   ['vector', '*', 1176],
-  ['stats', '*', 1318],
+  ['stats', '*', 1319],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1029],
+  ['plotting', '*', 1030],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).

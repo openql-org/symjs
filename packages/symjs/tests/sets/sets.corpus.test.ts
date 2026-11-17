@@ -2503,10 +2503,10 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it.fails("test_is_subset:775", () => {
     expect(sympyStr(isSubset(Range.of(rational(6), rational(0), rational(-2)), finiteSet(rational(2), rational(4), rational(6))))).toBe('True');
   });
-  it.fails("test_is_subset:776", () => {
+  it("test_is_subset:776", () => {
     expect(sympyStr(isSubset(Range.of(rational(1), oo, rational(1)), finiteSet(rational(1), rational(2))))).toBe('False');
   });
-  it.fails("test_is_subset:777", () => {
+  it("test_is_subset:777", () => {
     expect(sympyStr(isSubset(Range.of(S.NegativeInfinity, rational(1), rational(1)), finiteSet(rational(1))))).toBe('False');
   });
   it("test_is_subset:778", () => {
@@ -2549,10 +2549,10 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_is_superset:797", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_superset:798", () => {
+  it("test_is_superset:798", () => {
     expect(sympyStr(isSubset(interval(rational(0), rational(2), false, false), finiteSet(rational(1))))).toBe('False');
   });
-  it.fails("test_is_superset:799", () => {
+  it("test_is_superset:799", () => {
     expect(sympyStr(isSubset(interval(rational(0), rational(2), true, true), finiteSet(rational(1), rational(2))))).toBe('False');
   });
   it.fails("test_is_superset:800", () => {
@@ -2561,7 +2561,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it.fails("test_is_superset:803", () => {
     expect(sympyStr(isSubset(Union(interval(rational(0), rational(1), false, false), interval(rational(2), rational(5), false, false)), interval(rational(3), rational(4), false, false)))).toBe('False');
   });
-  it.fails("test_is_superset:805", () => {
+  it("test_is_superset:805", () => {
     expect(sympyStr(isSubset(interval(rational(0), rational(5), false, false), finiteSet(rational(1), rational(2), rational(3), rational(4))))).toBe('False');
   });
   it("test_is_superset:806", () => {
@@ -2651,7 +2651,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const x = new Sym('x');
     expect(sympyStr(contains(interval(rational(0), rational(1), true, true), x))).toBe('(0 < x) & (x < 1)');
   });
-  it.fails("test_interval_symbolic:893", () => {
+  it("test_interval_symbolic:893", () => {
     const x = new Sym('x');
     const c = new Sym('c', { real: false });
     expect(sympyStr(contains(interval(x, new Add([rational(1), x]), false, false), c))).toBe('False');
