@@ -812,3 +812,13 @@ it('differentiates explicit arrays by symbolic array entries', async () => {
   expect(s(deriveByArray(entries, entries))).toBe('[[1, 0], [0, 1]]');
   expect(() => deriveByArray(x, [array])).toThrow('cannot derive by this array');
 });
+
+it('classifies heterogeneous explicit matrix kinds without deprecated entries', async () => {
+  const { Matrix, ImmutableMatrix, MatrixKind, Integral, symbol } = await import('../../src');
+  const x = symbol('x'), nc = symbol('nc', { commutative: false });
+  for (const [matrix, expected] of [[Matrix.of([[1, x]]), NumberKind], [Matrix.of([[nc]]), UndefinedKind], [Matrix.of([[1, nc]]), UndefinedKind], [Matrix.of([]), NumberKind]] as const) {
+    expect(kindOf(matrix)).toBe(MatrixKind(expected));
+    expect(kindOf(ImmutableMatrix(matrix))).toBe(MatrixKind(expected));
+    expect(kindOf(new Integral([ImmutableMatrix(matrix), x]))).toBe(MatrixKind(expected));
+  }
+});

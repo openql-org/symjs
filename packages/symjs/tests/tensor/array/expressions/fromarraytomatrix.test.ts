@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import { ArraySymbol, ArrayTensorProduct as TP, ArrayContraction as C, ArrayAdd, PermuteDims as P, MatrixSymbol, Rational, SymArray, str, expand, sub, convertArrayToMatrix, convertMatrixToArray } from '../../../../src/index';
+import { type Expr, ArraySymbol, ArrayTensorProduct as TP, ArrayContraction as C, ArrayAdd, ArrayDiagonal, ArrayElementwiseApplyFunc, sin, mul, pow, add, PermuteDims as P, MatrixSymbol, Rational, SymArray, str, expand, sub, convertArrayToMatrix, convertMatrixToArray } from '../../../../src/index';
 import { at, cast } from '../../../../src/core/guard';
 import { explicitArray } from '../../../../src/tensor/array/expressions/arrayexpressions';
+const refs: Record<string, string> = JSON.parse(readFileSync(new URL('./references.json', import.meta.url), 'utf8'));
 const M = MatrixSymbol('M', 2, 2), N = MatrixSymbol('N', 2, 2), A = new ArraySymbol('A', [2, 2]);
 it('recognizes both orientations and closed cycles of matrix chains', () => {
   for (const [axes, answer] of [ [[1, 2], 'M*N'], [[0, 2], 'M.T*N'], [[1, 3], 'M*N.T'], [[0, 3], 'M.T*N.T'] ] as const) {
@@ -45,4 +47,25 @@ it('retains array expressions when they are not matrix chains', () => {
   expect(str(convertArrayToMatrix(new TP(M, N)))).toBe('ArrayTensorProduct(M, N)');
   const scalarSum = new ArrayAdd(new C(A, [0, 1]), new C(A, [0, 1]));
   expect(str(convertArrayToMatrix(scalarSum))).toBe(str(scalarSum));
+});
+
+it('recognizes transposed Hadamard factors and preserves nonmatrix elementwise arrays', () => {
+  expect(str(convertArrayToMatrix(new ArrayDiagonal(new TP(M, N), [0, 3], [1, 2])))).toBe('HadamardProduct(M, N.T)');
+  const separate = new ArrayDiagonal(new TP(M, N), [0, 1], [2, 3]);
+  expect(convertArrayToMatrix(separate)).toBe(separate);
+  const elementwise = new ArrayElementwiseApplyFunc(sin, A);
+  expect(str(convertArrayToMatrix(elementwise))).toBe(str(elementwise));
+});
+
+it('recognizes elementwise powers with scalar coefficients', () => {
+  expect(str(convertArrayToMatrix(new ArrayElementwiseApplyFunc((x) => pow(x, 3), M)))).toBe(refs['elementwise_power_back']);
+  expect(str(convertArrayToMatrix(new ArrayElementwiseApplyFunc((x) => mul(2, pow(x, 3)), M)))).toBe(refs['elementwise_scaled_power_back']);
+  expect(str(convertArrayToMatrix(new ArrayElementwiseApplyFunc((x) => x, M)))).toBe(refs['elementwise_identity_back']);
+  expect(str(convertArrayToMatrix(new ArrayElementwiseApplyFunc(() => Rational.of(3), M)))).toBe(refs['elementwise_constant_back']);
+  const row = MatrixSymbol('R', 1, 2), single = MatrixSymbol('X', 1, 1);
+  expect(str(convertArrayToMatrix(new ArrayElementwiseApplyFunc((x) => pow(x, 3), row)))).toBe('HadamardPower(R, 3)');
+  expect(str(convertArrayToMatrix(new ArrayElementwiseApplyFunc((x) => pow(x, 3), single)))).toBe('X**3');
+  for (const func of [(x: Expr) => pow(x, x), (x: Expr) => pow(sin(x), 2), (x: Expr) => add(x, pow(x, 2)), (x: Expr) => mul(x, sin(x))]) {
+    expect(str(convertArrayToMatrix(new ArrayElementwiseApplyFunc(func, M)))).toContain('Lambda');
+  }
 });

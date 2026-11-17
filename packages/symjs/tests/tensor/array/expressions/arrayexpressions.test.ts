@@ -152,8 +152,40 @@ it('constructs constant-one and elementwise arrays, including scalar shapes', as
 });
 
 it('recognizes shapes on derivatives and IndexedBase objects', async () => {
-  const { ArrayDerivative, IndexedBase } = await import('../../../../src');
+  const { ArrayDerivative, IndexedBase, TensorProduct } = await import('../../../../src');
   expect(getShape(ArrayDerivative(M, N)).map(String)).toEqual(['2', '2', '2', '2']);
   expect(getShape(new IndexedBase('X', { shape: [2, 3] })).map(String)).toEqual(['2', '3']);
   expect(getShape(new IndexedBase('X'))).toEqual([]);
+  expect(getShape(TensorProduct([1, 2], M)).map(String)).toEqual(['2', '2', '2']);
+});
+
+it('normalizes nested diagonals and diagonals of permutations', () => {
+  const A = new ArraySymbol('Q', [2, 2, 2, 2]);
+  const nested = new D(new D(A, [0, 2]), [0, 2]);
+  expect(str(explicitArray(nested.doit()))).toBe(str(nested.asExplicit()));
+  const permuted = new D(new P(A, [3, 2, 1, 0]), [0, 2]);
+  expect(str(explicitArray(permuted.doit()))).toBe(str(permuted.asExplicit()));
+  const bare = new D(A, [0, 1]);
+  expect(bare.doit()).toBe(bare);
+  expect(new D(A).doit()).toBe(A);
+});
+
+it('contracts permuted diagonals while preserving the remaining axes', () => {
+  const A = new ArraySymbol('R', [2, 2, 2, 2, 2, 2]);
+  const expr = new C(new P(new D(A, [0, 3]), [2, 4, 0, 3, 1]), [0, 3]);
+  expect(str(explicitArray(expr.doit()))).toBe(str(expr.asExplicit()));
+  const nested = new D(new D(new D(A, [0, 1]), [0, 1]), [0, 1]);
+  expect(str(explicitArray(nested.doit()))).toBe(str(nested.asExplicit()));
+
+});
+
+it('normalizes diagonals beneath outer permutations', () => {
+  const Q = new ArraySymbol('Q', [2, 2, 2]);
+  const inner = new D(new P(Q, [1, 2, 0]), [0, 2]);
+  const expr = new P(inner, [1, 0]);
+  expect(str(expr.doit())).toBe(refs['permuted_nested_diagonal_doit']);
+  expect(str(explicitArray(expr.doit()))).toBe(str(expr.asExplicit()));
+  const stable = new P(new D(Q, [0, 1]), [1, 0]);
+  expect(stable.doit()).toBe(stable);
+  expect(str(new P(inner, [0, 1]).doit())).toBe('ArrayDiagonal(Q, (0, 1))');
 });

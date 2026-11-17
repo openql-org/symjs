@@ -2,15 +2,26 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Ported from SymPy 1.14.0 (tensor/array/expressions/from_indexed_to_array.py),
 // Copyright (c) 2006-2023 SymPy Development Team, BSD 3-Clause (see LICENSE).
-import { Add, Mul, Sym, type Expr } from '../../../core/nodes';
+import { Add, Fn, Mul, Rational, Sym, type Expr } from '../../../core/nodes';
+import { ArrayComprehensionNode } from '../../comprehension';
 import { Concrete } from '../../../core/concrete';
+import { rebuild } from '../../../core/traverse';
 import { add } from '../../../core/ops';
 import { at, first } from '../../../core/guard';
 import { NotImplementedError } from '../../../core/errors';
 import { MatrixElementNode } from '../../../matrices/expressions/matexpr';
-import { ArrayElement, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayTensorProduct, PermuteDims, getShape, remainingAxes } from './arrayexpressions';
+import { ArrayElement, ArrayElementwiseApplyFunc, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayTensorProduct, PermuteDims, getShape, remainingAxes } from './arrayexpressions';
 
 interface IndexedResult { expression: Expr; indices: readonly Expr[] }
+type IndexRange = readonly [Expr, Expr, Expr];
+function inferRanges(expr: Expr, ranges: Map<string, IndexRange>): void {
+  if (expr instanceof ArrayElement || expr instanceof MatrixElementNode) {
+    const shape = getShape(expr.parent);
+    expr.indices.forEach((i, k) => { if (i instanceof Sym && k < shape.length) ranges.set(i.key, [i, Rational.of(0), add(at(shape, k), -1)]); });
+    return;
+  }
+  expr.args.forEach((arg) => inferRanges(arg, ranges));
+}
 function repeatedIndices(result: IndexedResult): IndexedResult {
   const groups = new Map<string, number[]>();
   result.indices.forEach((i, k) => { const group = groups.get(i.key); if (group) group.push(k); else groups.set(i.key, [k]); });
@@ -24,26 +35,31 @@ function align(result: IndexedResult, requested: readonly Expr[]): IndexedResult
   return { expression: permutation.every((v, i) => v === i) ? result.expression : new PermuteDims(result.expression, permutation).doit(), indices: order };
 }
 const hasIndexed = (expr: Expr): boolean => expr instanceof ArrayElement || expr instanceof MatrixElementNode || expr.args.some(hasIndexed);
-const bareIndex = (expr: Expr, index: Expr): boolean => expr instanceof ArrayElement || expr instanceof MatrixElementNode ? false : expr.key === index.key || expr.args.some((a) => bareIndex(a, index));
-function parseIndexed(expr: Expr): IndexedResult {
+const hasShiftedIndices = (expr: Expr): boolean => expr instanceof ArrayElement || expr instanceof MatrixElementNode
+  ? expr.indices.some((i) => !(i instanceof Sym || i instanceof Rational && i.isInteger))
+  : expr.args.some(hasShiftedIndices);
+function parseIndexed(expr: Expr, ranges: readonly IndexRange[] = []): IndexedResult {
+  if (!hasIndexed(expr)) {
+    const dependent = ranges.filter(([v]) => expr.has(v));
+    return dependent.length ? { expression: new ArrayComprehensionNode(expr, ...dependent).doit(), indices: dependent.map(([v]) => v) } : { expression: expr, indices: [] };
+  }
   if (expr instanceof ArrayElement || expr instanceof MatrixElementNode) {
     if (getShape(expr.parent).length !== expr.indices.length) throw new NotImplementedError('array conversion requires a shaped parent');
-    if (expr.indices.some((i) => !(i instanceof Sym))) throw new NotImplementedError('fixed or shifted indices require array slicing');
     return { expression: expr.parent, indices: expr.indices };
   }
   if (expr instanceof Mul) {
-    const parts = expr.args.map(parseIndexed);
+    const parts = expr.args.map((a) => parseIndexed(a, ranges));
     return { expression: new ArrayTensorProduct(...parts.map((r) => r.expression)).doit(), indices: parts.flatMap((r) => [...r.indices]) };
   }
   if (expr instanceof Add) {
-    const parts = expr.args.map((a) => repeatedIndices(parseIndexed(a))), target = first(parts).indices;
+    const parts = expr.args.map((a) => repeatedIndices(parseIndexed(a, ranges))), target = first(parts).indices;
     if (parts.some((r) => r.indices.length !== target.length || r.indices.some((i) => !target.some((j) => i.key === j.key)))) throw new RangeError('addends must have the same free indices');
     return { expression: new ArrayAdd(...parts.map((r) => align(r, target).expression)), indices: target };
   }
   if (expr instanceof Concrete && expr.kind2 === 'Sum') {
-    if (!hasIndexed(expr.function)) return { expression: expr, indices: [] };
-    if (expr.limits.some(([v]) => bareIndex(expr.function, v))) throw new NotImplementedError('index-dependent scalar weights require explicit array entries');
-    let result = repeatedIndices(parseIndexed(expr.function));
+    const local = new Map(ranges.map((range) => [first(range).key, range]));
+    for (const limit of expr.limits) local.set(first(limit).key, limit);
+    let result = repeatedIndices(parseIndexed(expr.function, [...local.values()]));
     for (const [variable, lower, upper] of expr.limits) {
       const axis = result.indices.findIndex((i) => i.key === variable.key);
       if (axis < 0) throw new RangeError('summation index is not present in the array entries');
@@ -52,12 +68,20 @@ function parseIndexed(expr: Expr): IndexedResult {
     }
     return result;
   }
-  if (hasIndexed(expr)) throw new NotImplementedError('unsupported operation on indexed array entries');
-  return { expression: expr, indices: [] };
+  if (expr instanceof Fn && expr.args.length === 1) {
+    const inner = parseIndexed(first(expr.args), ranges);
+    return { expression: new ArrayElementwiseApplyFunc((x) => rebuild(expr, [x]), inner.expression), indices: inner.indices };
+  }
+  throw new NotImplementedError('unsupported operation on indexed array entries');
 }
 
 /** Turn explicit sums and repeated indices into contractions and diagonals. */
 export function convertIndexedToArray(expr: Expr, firstIndices: readonly Expr[] = []): Expr {
   if (new Set(firstIndices.map((i) => i.key)).size !== firstIndices.length) throw new RangeError('free indices cannot be repeated');
-  return align(repeatedIndices(parseIndexed(expr)), firstIndices).expression;
+  if (hasShiftedIndices(expr)) return expr;
+  const ranges = new Map<string, IndexRange>();
+  inferRanges(expr, ranges);
+  const result = repeatedIndices(parseIndexed(expr, [...ranges.values()]));
+  if (result.indices.some((i) => i instanceof Rational)) return new ArrayElement(result.expression, result.indices);
+  return align(result, firstIndices).expression;
 }
