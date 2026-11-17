@@ -876,5 +876,6 @@ registerFunctionHeads([
   ['re', re],
   ['im', im],
   ['arg', arg],
+  ['conjugate', conjugate],
   ['log', log],
 ]);

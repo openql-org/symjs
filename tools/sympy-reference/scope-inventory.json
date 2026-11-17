@@ -26506,7 +26506,6 @@
       "eval_sum",
       "eval_sum_direct",
       "eval_sum_hyper",
-      "eval_sum_residue",
       "eval_sum_symbolic",
       "telescopic"
      ],
@@ -32564,7 +32563,6 @@
      "pass": false,
      "missingNames": [
       "random_complex_number",
-      "test_derivative_numerically",
       "verify_numerically"
      ],
      "pythonSpecificNames": [],
@@ -33612,7 +33610,7 @@
      "testFile": "sympy/core/tests/test_sympify.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 27,
+     "gapCount": 23,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 20,
@@ -41075,7 +41073,7 @@
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
      "caseCount": 459,
-     "gapCount": 31,
+     "gapCount": 30,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -41353,7 +41351,7 @@
      "testFile": "sympy/functions/elementary/tests/test_exponential.py",
      "inCorpus": true,
      "caseCount": 491,
-     "gapCount": 78,
+     "gapCount": 73,
      "timeoutCount": 3,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -41982,7 +41980,7 @@
      "testFile": "sympy/functions/elementary/tests/test_hyperbolic.py",
      "inCorpus": true,
      "caseCount": 765,
-     "gapCount": 87,
+     "gapCount": 78,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 1,
@@ -43457,7 +43455,7 @@
      "testFile": "sympy/functions/elementary/tests/test_trigonometric.py",
      "inCorpus": true,
      "caseCount": 3035,
-     "gapCount": 100,
+     "gapCount": 94,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -44327,7 +44325,7 @@
      "testFile": "sympy/functions/special/tests/test_bessel.py",
      "inCorpus": true,
      "caseCount": 370,
-     "gapCount": 129,
+     "gapCount": 119,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 9,
@@ -44830,7 +44828,7 @@
      "testFile": "sympy/functions/special/tests/test_elliptic_integrals.py",
      "inCorpus": true,
      "caseCount": 78,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 8
@@ -45477,7 +45475,7 @@
      "testFile": "sympy/functions/special/tests/test_error_functions.py",
      "inCorpus": true,
      "caseCount": 336,
-     "gapCount": 122,
+     "gapCount": 111,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 33,
@@ -45783,7 +45781,7 @@
      "testFile": "sympy/functions/special/tests/test_gamma_functions.py",
      "inCorpus": true,
      "caseCount": 306,
-     "gapCount": 87,
+     "gapCount": 75,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 28,
@@ -48092,7 +48090,7 @@
      "testFile": "sympy/functions/special/tests/test_tensor_functions.py",
      "inCorpus": true,
      "caseCount": 101,
-     "gapCount": 15,
+     "gapCount": 14,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 13
@@ -48305,7 +48303,7 @@
      "testFile": "sympy/functions/special/tests/test_zeta_functions.py",
      "inCorpus": true,
      "caseCount": 101,
-     "gapCount": 18,
+     "gapCount": 13,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 18,
@@ -91135,7 +91133,7 @@
      "testFile": "sympy/polys/tests/test_rootoftools.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 50,
+     "gapCount": 48,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 56,
@@ -92165,7 +92163,7 @@
      "testFile": "sympy/printing/tests/test_latex.py",
      "inCorpus": true,
      "caseCount": 1264,
-     "gapCount": 129,
+     "gapCount": 128,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -102479,7 +102477,7 @@
      "testFile": "sympy/solvers/tests/test_polysys.py",
      "inCorpus": true,
      "caseCount": 110,
-     "gapCount": 22,
+     "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 4

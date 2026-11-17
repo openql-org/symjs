@@ -23,7 +23,7 @@ import { GrowableGrid } from '../../packages/symjs/src/categories/diagram_drawin
 import { PORTS } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../../packages/symjs/src';
-import { Fn } from '../../packages/symjs/src/core/nodes';
+import { Fn, headName } from '../../packages/symjs/src/core/nodes';
 
 // ---------------------------------------------------------------------------
 // Python-like containers for formatting results
@@ -509,6 +509,9 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   FallingFactorial: (args) => sj.fn('ff', args),
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
+  digamma: (args) => sj.digamma(asExpr(args[0])),
+  trigamma: (args) => sj.trigamma(asExpr(args[0])),
+  LeviCivita: (args) => sj.LeviCivita(...args),
   log: (args) => sj.log(args[0]!, args[1]),
   LambertW: (args) => sj.LambertW(args[0]!, args[1]),
   ...Object.fromEntries((['besselj', 'bessely', 'besseli', 'besselk', 'airyai', 'airybi', 'airyaiprime', 'airybiprime'] as const).map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
@@ -1888,6 +1891,35 @@ export const ADAPTERS: Record<string, Adapter> = {
   legendre_symbol: (args, kw) => (noKw(kw), sj.Rational.of(sj.legendreSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p))),
   motzkin: (args, kw) => (noKw(kw), sj.Rational.of(sj.motzkin(Number((args[0] as sj.Rational).p)))),
   andre: (args, kw) => (noKw(kw), sj.Rational.of(sj.andre(Number((args[0] as sj.Rational).p)))),
+  nD: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['i', 'brute', 'n', 'm'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const opts = Object.fromEntries(Object.entries(kw).filter(([k]) => k !== 'i').map(([k, v]) => [k, toJs(v, true)]));
+    if (args[1] !== undefined) opts['brute'] = intArg(args[1]) !== 0;
+    const items = args[0] ?? kw['i'];
+    return sj.nD(items === undefined ? undefined : toJs(items, true) as Parameters<typeof sj.nD>[0], opts);
+  },
+  eval_sum_residue: (args, kw) => {
+    noKw(kw);
+    const [k, a, b] = (args[1] as JsTuple).items;
+    return none(sj.evalSumResidue(asExpr(args[0]), [asSym(k), asExpr(a), asExpr(b)]));
+  },
+  test_derivative_numerically: (args, kw) => {
+    const names = ['tol', 'a', 'b', 'c', 'd'];
+    for (const k of Object.keys(kw)) if (!names.includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const options = names.map((name, i) => args[i + 2] ?? kw[name]);
+    return sj.testDerivativeNumerically(asExpr(args[0]), asSym(args[1]), ...options.map((v) => v === undefined ? undefined : asExpr(v).toNumber()));
+  },
+  '.inverse': (args, kw, self) => {
+    noKw(kw);
+    if (self instanceof Fn || self instanceof sj.Pow && self.base.equals(sj.E)) {
+      const name = headName(sj.inverse(self, args.length ? intArg(args[0]) : 1));
+      if (name === undefined) throw new Unsupported('unnamed inverse function');
+      return new FnClass(name);
+    }
+    return callMethod(self, ['inverse', 'inv'], args)?.value ?? unsupportedOp('.inverse');
+  },
+  '.is_Order': (_args, kw, self) => (noKw(kw), self instanceof sj.Order),
+  '.epsilon_eq': (args, kw, self) => (noKw(kw), none(sj.epsilonEq(asExpr(self), asExpr(args[0]), args[1] === undefined ? 1e-15 : asExpr(args[1])))),
   PurePoly: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
     return sj.Poly.from(asExpr(args[0]), args.slice(1).map(asExpr), { pure: true, ...(kw['domain'] ? { domain: String(kw['domain']) } : {}) });
@@ -2491,14 +2523,23 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.could_extract_minus_sign': exprMethod((e) => sj.couldExtractMinusSign(e)),
   '.as_ordered_factors': exprMethod((e) => new JsList(sj.orderedFactors ? sj.orderedFactors(e) : [e])),
   '.leadterm': (args, kw, self) => (noKw(kw), new JsTuple(sj.leadterm(asExpr(self), asSym(args[0])))),
-  '.as_leading_term': (args, kw, self) => (noKw(kw), sj.asLeadingTerm(asExpr(self), asSym(args[0]))),
+  '.as_leading_term': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'cdir' && k !== 'logx') throw new Unsupported(`kwargs ${k}`);
+    if (kw['logx'] !== undefined && kw['logx'] !== null) throw new Unsupported('as_leading_term logx');
+    return sj.asLeadingTerm(asExpr(self), asSym(args[0]), kw['cdir'] === undefined ? {} : { cdir: asExpr(kw['cdir']) });
+  },
   '.getn': exprMethod((e) => none(sj.getn(e))),
   '.nseries': (args, kw, self) => {
-    for (const k of Object.keys(kw)) if (k !== 'logx') throw new Unsupported(`kwargs ${k}`);
-    const x = asSym(args[0]);
-    const x0 = args[1] === undefined ? 0 : asExpr(args[1]);
-    const n = args[2] === undefined ? 6 : intArg(args[2]);
-    return sj.series(asExpr(self), x, x0, n, '+', kw['logx'] === undefined ? {} : { logx: asExpr(kw['logx']) });
+    for (const k of Object.keys(kw)) if (!['x', 'x0', 'n', 'logx', 'cdir'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const x = asSym(args[0] ?? kw['x']);
+    const x0 = args[1] ?? kw['x0'] ?? 0;
+    const n = args[2] ?? kw['n'];
+    const logx = args[3] ?? kw['logx'];
+    const cdir = args[4] ?? kw['cdir'];
+    const direction = cdir === undefined || cdir === null || asExpr(cdir).equals(0) || asExpr(cdir).equals(1) ? '+' : asExpr(cdir).equals(-1) ? '-' : undefined;
+    if (direction === undefined) throw new Unsupported('nseries complex approach direction');
+    return sj.series(asExpr(self), x, asExpr(x0), n === undefined ? 6 : intArg(n), direction,
+      logx === undefined || logx === null ? {} : { logx: asExpr(logx) });
   },
   root: (args, kw) => (noKw(kw), sj.root(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 0 : asExpr(args[2]))),
   cbrt: exprFn(sj.cbrt),

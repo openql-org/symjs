@@ -24,6 +24,9 @@ import { Subs as subsFn, SubsNode } from './core/subsnode';
 import { Lambda as lambdaFn, LambdaNode } from './core/lambda';
 export { Id } from './core/lambda';
 
+export { inverse } from './core/inverse';
+export { epsilonEq } from './numeric/comparison';
+
 export {
   Expr,
   Rational,

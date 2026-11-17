@@ -13,6 +13,11 @@ import { abs, AccumBounds, add, adjoint, arg, conjugate, cos, cosh, exp, Float, 
 import { forEachEntry } from '../../../src/functions/elementary/elementary';
 
 const x = new Sym('x');
+it('rebuilds an unevaluated conjugate with its public function head', () => {
+  const e = conjugate(x);
+  expect(e.func).toBe(conjugate);
+  expect(e.func(...e.args).equals(e)).toBe(true);
+});
 const r = new Sym('r', { real: true });
 const A = new Sym('A', { commutative: false });
 const B = new Sym('B', { commutative: false });
