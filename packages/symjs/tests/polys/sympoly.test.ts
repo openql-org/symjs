@@ -1158,3 +1158,49 @@ describe('gcd and lcm over fields are monic (SymPy dmp_ff_prs_gcd, dmp_ff_lcm)',
     expect(str(sj.Poly.from(parse('I*x + 1'), [new Sym('x')], { domain: 'CC' }).asExpr())).toBe('1.0*I*x + 1.0');
   });
 });
+
+
+describe('explicit rational coefficient domains', () => {
+  it('rejects coefficients outside the requested ground domain', () => {
+    for (const domain of ['ZZ', 'QQ']) {
+      expect(() => Poly.from(E('x + y'), [x], { domain })).toThrow(sj.CoercionFailed);
+      expect(() => Poly.from(E('sqrt(2)*x + 1'), [x], { domain })).toThrow(sj.CoercionFailed);
+      expect(Poly.from(E('2*x + 1'), [x], { domain }).domain).toBe(domain);
+      expect(Poly.from(0, [x], { domain }).isZero).toBe(true);
+    }
+    expect(() => Poly.from(E('x/2 + 1'), [x], { domain: 'ZZ' })).toThrow(sj.CoercionFailed);
+    expect(String(Poly.from(E('x/2 + 1'), [x], { domain: 'QQ', pure: true }))).toBe("PurePoly(1/2*x + 1, x, domain='QQ')");
+  });
+});
+
+
+it('pseudo-divides in the first generator over the remaining polynomial variables', () => {
+  const f = Poly.from(E('x**2 + x*y + 1'), [x, y]);
+  const g = Poly.from(E('2*x + y'), [x, y]);
+  const [q, r] = f.pdiv(g);
+  expect(String(q.asExpr())).toBe('2*x + y');
+  expect(String(r.asExpr())).toBe('4 - y**2');
+  expect(q.domain).toBe('ZZ');
+  expect(r.domain).toBe('ZZ');
+  expect(q.mul(g).add(r).equals(f.mulGround(4))).toBe(true);
+  expect(() => f.pexquo(g)).toThrow(sj.ExactQuotientFailed);
+  expect(f.mul(g).pexquo(g).equals(f.mulGround(8))).toBe(true);
+  expect(() => f.prem(Poly.from(0, [x, y]))).toThrow(RangeError);
+});
+
+
+it('preserves coefficient fields during extended Euclid and Sturm sequences', () => {
+  const f = Poly.from(E('x**2 - 2'), [x], { domain: 'QQ<sqrt(2)>' });
+  const g = Poly.from(E('x - sqrt(2)'), [x], { domain: 'QQ<sqrt(2)>' });
+  const [s, t, h] = f.gcdex(g);
+  expect(s.mul(f).add(t.mul(g)).equals(h)).toBe(true);
+  const p = Poly.from(E('x**2 + 2*sqrt(2)*x + 1'), [x], { domain: 'QQ<sqrt(2)>' });
+  expect(p.countRoots()).toBe(2);
+  const mixed = Poly.from(E('x/2 + 1'), [x]);
+  const [m, n, k] = mixed.gcdex(Poly.from(x, [x]));
+  expect(m.mul(mixed).add(n.mul(Poly.from(x, [x]))).equals(k)).toBe(true);
+  const a = Poly.from(E('x + y'), [x]);
+  const b = Poly.from(E('x - y'), [x]);
+  const [u, v, d] = a.gcdex(b);
+  expect(u.mul(a).add(v.mul(b)).equals(d)).toBe(true);
+});

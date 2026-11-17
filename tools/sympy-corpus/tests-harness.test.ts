@@ -210,3 +210,27 @@ it('keeps differential-geometry and Euclidean Point dispatch distinct', () => {
     }).status,
   ).toBe('pass');
 });
+
+
+it('adapts polynomial construction, dense representations and return type options', () => {
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1' });
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const y: Tree = { t: 'Symbol', name: 'y', assume: {} };
+  const tuple = (...items: Tree[]): Tree => ({ t: 'Tuple', items });
+  const expr: Tree = { t: 'Add', args: [x, integer(1)], evaluate: false };
+  const poly: Tree = { t: 'Poly', expr, gens: [x], domain: 'ZZ', pure: false };
+  const c = { ...base, category: 'polys', module: 'sympy.polys.tests.test_polytools' };
+  expect(runTestCase({ ...c, fn: '.rep', self: poly, args: [], expected: 'DMP_Python([1, 1], ZZ)' })).toEqual({ status: 'pass' });
+  const modulus = '9007199254740997';
+  expect(runTestCase({ ...c, fn: '.rep', self: { ...poly, domain: `GF(${modulus})` }, args: [], expected: `DMP_Python([SymmetricModularIntegerMod${modulus}(1), SymmetricModularIntegerMod${modulus}(1)], GF(${modulus}))` })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.get_domain', self: poly, args: [], expected: 'ZZ' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.from_poly', self: { t: 'Type', name: 'Poly' }, args: [poly], expected: "Poly(x + 1, x, domain='ZZ')" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.from_poly', self: { t: 'Type', name: 'Poly' }, args: [poly], kwargs: { gens: y }, expected: "Poly(x + 1, y, domain='ZZ[x]')" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: 'dict_from_expr', args: [expr], kwargs: { gens: tuple(x, y) }, expected: '({(1, 0): 1, (0, 0): 1}, (x, y))' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: 'compose', args: [expr, expr, tuple(x)], kwargs: { polys: { t: 'Js', v: true } }, expected: "Poly(x + 2, x, domain='ZZ')" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: 'compose', args: [poly, poly], kwargs: { polys: { t: 'Js', v: false } }, expected: 'x + 2' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: 'cofactors', args: [poly, poly], expected: "(Poly(x + 1, x, domain='ZZ'), Poly(1, x, domain='ZZ'), Poly(1, x, domain='ZZ'))" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.__call__', self: { t: 'MonomialOrder', name: 'grevlex' }, args: [tuple(integer(1), integer(2), integer(3))], expected: '(6, (-3, -2, -1))' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.__call__', self: { t: 'MonomialOrder', name: 'grevlex' }, args: [integer(1)], expected: 'unused' }).status).toBe('unsupported');
+  expect(runTestCase({ ...c, fn: '.__call__', self: poly, args: [integer(2)], expected: '3' })).toEqual({ status: 'pass' });
+});
