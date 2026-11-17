@@ -121,8 +121,11 @@ export class JsPred {
         return e instanceof sj.Derivative;
       case 'is_Function':
         return e instanceof sj.Fn || e instanceof sj.UndefFn;
-      default:
+      default: {
+        const predicate = this.attr.startsWith('is_') ? sj.Q[this.attr.slice(3)] : undefined;
+        if (predicate !== undefined) return sj.ask(predicate(e)) === true;
         throw new Unsupported(`predicate ${this.attr}`);
+      }
     }
   }
 }
@@ -872,7 +875,7 @@ export function deserialize(tree: Tree): unknown {
       const op = REL_OPS[tree['op'] as string];
       if (!op) throw new Unsupported(`relation ${tree['op']}`);
       const [a, b] = (tree['args'] as Tree[]).map((x) => deserialize(x) as Expr);
-      return sj.rel(op, a!, b!);
+      return sj.Relational(asExpr(a), asExpr(b), { Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' }[op], { evaluate: false });
     }
     case 'Fn': {
       // a factorial too large to evaluate was built with evaluate=False in SymPy
@@ -1548,6 +1551,13 @@ function diffArgs(e: Expr, rest: unknown[]): Expr {
   }
   let out = e;
   for (let i = 0; i < rest.length; i++) {
+    const spec = rest[i];
+    if (spec instanceof JsTuple || spec instanceof JsList) {
+      if (spec.items.length !== 2) throw new TypeError('diff requires a (variable, order) pair');
+      if (rest[i + 1] instanceof sj.Rational) throw new TypeError('diff variable-order pair cannot be followed by a number');
+      out = sj.diff(out, asExpr(spec.items[0]), intArg(spec.items[1]));
+      continue;
+    }
     const v = asExpr(rest[i]);
     const n = rest[i + 1];
     if (n instanceof sj.Rational && n.isInteger) {
@@ -1698,6 +1708,12 @@ function polynomialGenerators(options: unknown): Sym[] {
   const gens = options.entries.find(([key]) => key === 'gens')?.[1];
   if (!(gens instanceof JsTuple)) throw new Unsupported('polynomial generators');
   return gens.items.map(asSym);
+}
+
+/** Python relation constructors use a keyword to preserve an unevaluated comparison. */
+function relationArgs(args: unknown[], kw: Record<string, unknown>, op: string): Expr {
+  for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
+  return sj.Relational(asExpr(args[0]), asExpr(args[1]), op, { evaluate: kw['evaluate'] !== false });
 }
 
 export const ADAPTERS: Record<string, Adapter> = {
@@ -1857,8 +1873,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new sj.Wild(String(args[0]), { exclude: ex });
   },
   WildFunction: (args, kw) => (noKw(kw), new sj.WildFunction(String(args[0]))),
-  Equality: (args, kw) => (noKw(kw), sj.Eq(asExpr(args[0]), asExpr(args[1]))),
-  Unequality: (args, kw) => (noKw(kw), sj.Ne(asExpr(args[0]), asExpr(args[1]))),
+  Equality: (args, kw) => relationArgs(args, kw, '=='),
+  Unequality: (args, kw) => relationArgs(args, kw, '!='),
   Lambda: (args, kw) => {
     noKw(kw);
     const vs = args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
@@ -2527,10 +2543,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (kw['evaluate'] === false) return new sj.Rel('Eq', asExpr(args[0]), asExpr(args[1] ?? 0));
     return sj.Eq(asExpr(args[0]), asExpr(args[1] ?? 0));
   },
-  StrictGreaterThan: (args, kw) => (noKw(kw), sj.Gt(asExpr(args[0]), asExpr(args[1]))),
-  GreaterThan: (args, kw) => (noKw(kw), sj.Ge(asExpr(args[0]), asExpr(args[1]))),
-  StrictLessThan: (args, kw) => (noKw(kw), sj.Lt(asExpr(args[0]), asExpr(args[1]))),
-  LessThan: (args, kw) => (noKw(kw), sj.Le(asExpr(args[0]), asExpr(args[1]))),
+  StrictGreaterThan: (args, kw) => relationArgs(args, kw, '>'),
+  GreaterThan: (args, kw) => relationArgs(args, kw, '>='),
+  StrictLessThan: (args, kw) => relationArgs(args, kw, '<'),
+  LessThan: (args, kw) => relationArgs(args, kw, '<='),
   Ne: (args, kw) => (noKw(kw), sj.Ne(asExpr(args[0]), asExpr(args[1]))),
   Lt: (args, kw) => (noKw(kw), sj.Lt(asExpr(args[0]), asExpr(args[1]))),
   Le: (args, kw) => (noKw(kw), sj.Le(asExpr(args[0]), asExpr(args[1]))),
@@ -4831,7 +4847,7 @@ function unsupportedOp(op: string): never {
 }
 
 /** SymPy attributes whose symjs function has another name (docs/api-policy.md). */
-export const ATTRIBUTE_FUNCTIONS: Readonly<Record<string, string>> = { is_integer: 'isIntegerQ', is_Function: 'isFn', is_Number: 'isNum', canonical: 'canonicalRelation' };
+export const ATTRIBUTE_FUNCTIONS: Readonly<Record<string, string>> = { is_integer: 'isIntegerQ', is_Function: 'isFn', is_Number: 'isNum', canonical: 'canonicalRelation', reversedsign: 'reversedSign' };
 const OPERATOR_METHODS: Readonly<Record<string, string>> = { '.__str__': 'toString', '.__add__': 'add', '.__sub__': 'sub', '.__mul__': 'mul', '.__pow__': 'pow', '.__floordiv__': 'floordiv', '.__mod__': 'mod' };
 /** DomainMatrix functions whose integer arguments are sizes, exponents or indices. */
 const DOMAIN_MATRIX_INT_FUNCTIONS = new Set(['.eye', '.zeros', '.ones', '.pow', '.getitem', '.from_list_sympy', '.from_dict_sympy', 'sdm_berk']);
@@ -5055,7 +5071,9 @@ function autoAdapter(c: Case): Adapter | undefined {
   const conv = (x: unknown): unknown => {
     // the evaluating constructors of the arithmetic classes (Python calls the class: Pow(b, e))
     const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow };
-    if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[camel(x.name)];
+    if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[REL_OPS[x.name] ?? camel(x.name)];
+    const headName = String(c.args?.[0]?.['name']);
+    if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);
     if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
     // The dense tools keep GF(p) coefficients as field elements: a zero-order derivative returns them unchanged.
     const fieldElements = (v: unknown): unknown => v instanceof JsFFElement ? plain(v) : v instanceof JsList ? new JsList(v.items.map(fieldElements)) : v instanceof JsTuple ? new JsTuple(v.items.map(fieldElements)) : v;
