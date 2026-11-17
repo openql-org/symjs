@@ -1946,13 +1946,13 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   it("test_Range_is_iterable:564", () => {
     expect(sympyStr(Range.of(rational(-100), rational(100), rational(1)).isIterable)).toBe('True');
   });
-  it.fails("test_Range_is_iterable:565", () => {
+  it("test_Range_is_iterable:565", () => {
     expect(sympyStr(Range.of(rational(2), oo, rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:566", () => {
+  it("test_Range_is_iterable:566", () => {
     expect(sympyStr(Range.of(S.NegativeInfinity, rational(50), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:567", () => {
+  it("test_Range_is_iterable:567", () => {
     expect(sympyStr(Range.of(S.NegativeInfinity, oo, rational(1)).isIterable)).toBe('False');
   });
   it("test_Range_is_iterable:568", () => {
@@ -1971,73 +1971,73 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(Range.of(n, new Add([rational(49), n]), rational(1)).isIterable)).toBe('True');
   });
-  it.fails("test_Range_is_iterable:576", () => {
+  it("test_Range_is_iterable:576", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(Range.of(n, rational(0), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:577", () => {
+  it("test_Range_is_iterable:577", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(Range.of(rational(-3), new Add([rational(7), n]), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:578", () => {
+  it("test_Range_is_iterable:578", () => {
     const p = new Sym('p', { integer: true, positive: true });
     expect(sympyStr(Range.of(rational(-3), new Add([rational(7), p]), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:579", () => {
+  it("test_Range_is_iterable:579", () => {
     const n = new Sym('n', { integer: true });
     const m = new Sym('m', { integer: true });
     expect(sympyStr(Range.of(n, m, rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:580", () => {
+  it("test_Range_is_iterable:580", () => {
     const m = new Sym('m', { integer: true });
     const n = new Sym('n', { integer: true });
     expect(sympyStr(Range.of(new Add([m, n]), new Add([m, new Mul([rational(-1), n])]), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:581", () => {
+  it("test_Range_is_iterable:581", () => {
     const n = new Sym('n', { integer: true });
     const m = new Sym('m', { integer: true });
     expect(sympyStr(Range.of(n, new Add([m, new Mul([rational(2), n])]), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:582", () => {
+  it("test_Range_is_iterable:582", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(Range.of(n, oo, rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:583", () => {
+  it("test_Range_is_iterable:583", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(Range.of(S.NegativeInfinity, n, rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:585", () => {
+  it("test_Range_is_iterable:585", () => {
     const x = new Sym('x');
     expect(sympyStr(Range.of(x, new Add([rational(49), x]), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:586", () => {
+  it("test_Range_is_iterable:586", () => {
     const x = new Sym('x');
     expect(sympyStr(Range.of(x, rational(0), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:587", () => {
+  it("test_Range_is_iterable:587", () => {
     const x = new Sym('x');
     expect(sympyStr(Range.of(rational(-3), new Add([rational(7), x]), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:588", () => {
+  it("test_Range_is_iterable:588", () => {
     const x = new Sym('x');
     const m = new Sym('m', { integer: true });
     expect(sympyStr(Range.of(x, m, rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:589", () => {
+  it("test_Range_is_iterable:589", () => {
     const x = new Sym('x');
     const m = new Sym('m', { integer: true });
     expect(sympyStr(Range.of(new Add([x, m]), new Add([m, new Mul([rational(-1), x])]), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:590", () => {
+  it("test_Range_is_iterable:590", () => {
     const x = new Sym('x');
     const m = new Sym('m', { integer: true });
     expect(sympyStr(Range.of(x, new Add([m, new Mul([rational(2), x])]), rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:591", () => {
+  it("test_Range_is_iterable:591", () => {
     const x = new Sym('x');
     expect(sympyStr(Range.of(x, oo, rational(1)).isIterable)).toBe('False');
   });
-  it.fails("test_Range_is_iterable:592", () => {
+  it("test_Range_is_iterable:592", () => {
     const x = new Sym('x');
     expect(sympyStr(Range.of(S.NegativeInfinity, x, rational(1)).isIterable)).toBe('False');
   });

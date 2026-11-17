@@ -665,7 +665,7 @@ describe('ConditionSet and imageset evaluation', () => {
     expect([X(im('-2*n'), I(0, sj.oo)), X(im('2*n'), I(sj.S.NegativeInfinity, 0))].map(String)).toEqual(['ImageSet(Lambda(n, 2*n), Range(0, oo, 1))', 'ImageSet(Lambda(n, 2*n), Range(-oo, 1, 1))']);
     expect(String(X(new Sets.ImageSet(nn, p('-2*n'), Sets.Integers), I(0, sj.oo)))).toBe('ImageSet(Lambda(n, -2*n), Range(-oo, 1, 1))');
     expect(String(X(Sets.imageSet(p('2*x'), x, Sets.Integers), I(0, 1)))).toBe('Intersection(ImageSet(Lambda(2*x, x), Integers), Interval(0, 1))');
-    expect([Sets.isSubset(Sets.Rationals, Sets.Complexes), Sets.isSubset(Sets.Rationals, Sets.Integers)]).toEqual([true, undefined]);
+    expect([Sets.isSubset(Sets.Rationals, Sets.Complexes), Sets.isSubset(Sets.Rationals, Sets.Integers)]).toEqual([true, false]);
     expect([sj.xreplace(R(0, 5), [[sj.S.Zero, sj.S.One]]), sj.xreplace(sj.ConditionSet.of(x, p('x < y'), Sets.Integers), [[yy, 2]])].map(String)).toEqual(['Range(1, 5, 1)', 'ConditionSet(x, x < 2, Integers)']);
   });
 });
@@ -980,4 +980,91 @@ it('intersects nested complex regions using containment of their parameter sets'
   expect(String(sj.Intersection(full, c))).toContain('Intersection');
   const far = new sj.PolarComplexRegion(sj.ProductSet(sj.Interval.of(2, 3), sj.Interval.of(0, sj.pi)));
   expect(String(sj.Intersection(half, far))).toContain('Intersection');
+});
+
+it('decides finite cardinality without treating symbolic intervals as nonempty', () => {
+  expect(new Sets.SetOp('Union', []).isFiniteSet).toBe(true);
+  expect(Sets.EmptySet.isFiniteSet).toBe(true);
+  for (const set of [Sets.Reals, Sets.Rationals, Sets.Integers, Sets.Naturals, Sets.Naturals0, Sets.Complexes, Sets.UniversalSet]) expect(set.isFiniteSet).toBe(false);
+  expect(F(x, y).isFiniteSet).toBe(true);
+  expect(I(0, 1).isFiniteSet).toBe(false);
+  expect(I(x, y).isFiniteSet).toBe('unknown');
+  expect(new Sets.Interval(sj.S.One, sj.S.One, false, false).isFiniteSet).toBe(true);
+  expect(new Sets.Interval(sj.S.One, sj.S.Zero, false, false).isFiniteSet).toBe(true);
+  expect(Sets.imageSet(x, sj.sin(x), Sets.Integers).isFiniteSet).toBe('unknown');
+  expect(Sets.productSet(F(1), F(2)).isFiniteSet).toBe(true);
+  expect(new Sets.ProductSetNode([Sets.EmptySet, Sets.Reals]).isFiniteSet).toBe(true);
+  expect(Sets.productSet(F(1), I(0, 1)).isFiniteSet).toBe(false);
+  expect(Sets.productSet(F(1), I(x, y)).isFiniteSet).toBe('unknown');
+  expect(Sets.productSet(Sets.Reals, I(x, y)).isFiniteSet).toBe('unknown');
+  expect(Sets.productSet(I(x, y), Sets.Reals).isFiniteSet).toBe('unknown');
+  expect(Sets.PowerSet(F(x)).isFiniteSet).toBe(true);
+  expect(Sets.PowerSet(Sets.Reals).isFiniteSet).toBe(false);
+  expect(Sets.PowerSet(I(x, y)).isFiniteSet).toBe('unknown');
+  expect(Sets.DisjointUnion(F(x), Sets.EmptySet).isFiniteSet).toBe(true);
+  expect(Sets.DisjointUnion(I(0, 1), F(x)).isFiniteSet).toBe(false);
+  expect(Sets.DisjointUnion(I(x, y), F(x)).isFiniteSet).toBe('unknown');
+  expect(new Sets.SetOp('Union', [F(x), F(y)]).isFiniteSet).toBe(true);
+  expect(new Sets.SetOp('Union', [F(x), I(0, 1)]).isFiniteSet).toBe(false);
+  expect(new Sets.SetOp('Union', [F(x), I(x, y)]).isFiniteSet).toBe('unknown');
+  expect(new Sets.SetOp('Intersection', [I(x, y), F(1)]).isFiniteSet).toBe(true);
+  expect(new Sets.SetOp('Intersection', [I(x, y), I(0, 1)]).isFiniteSet).toBe('unknown');
+  expect(new Sets.SetOp('Complement', [F(x), I(x, y)]).isFiniteSet).toBe(true);
+  expect(new Sets.SetOp('Complement', [I(0, 1), F(x)]).isFiniteSet).toBe(false);
+  expect(new Sets.SetOp('Complement', [I(x, y), F(x)]).isFiniteSet).toBe('unknown');
+  expect(new Sets.SetOp('Complement', [I(0, 1), I(x, y)]).isFiniteSet).toBe('unknown');
+});
+
+it('rejects containers in numeric domains and orders the standard number sets', () => {
+  const numberSets = [Sets.Naturals, Sets.Naturals0, Sets.Integers, Sets.Rationals, Sets.Reals, Sets.Complexes];
+  for (const set of [...numberSets, I(0, 2)]) {
+    for (const value of [F(1), sj.S.true]) expect(Sets.containsQ(set, value)).toBe(false);
+    expect(Sets.containsQ(set, sj.Tuple(1, 2))).toBe(set === Sets.Complexes);
+  }
+  expect(Sets.containsQ(I(0, 2), sj.I)).toBe(false);
+  expect(Sets.containsQ(I(x, y), sj.symbol('nr', { real: false }))).toBe(false);
+  for (const [i, a] of numberSets.entries()) {
+    for (const [j, b] of numberSets.entries()) expect(Sets.isSubset(a, b)).toBe(i <= j);
+    expect(Sets.isSubset(a, F(1, 2))).toBe(false);
+  }
+  expect(Sets.isSubset(I(0, 2), F(1))).toBe(false);
+  expect(Sets.PowerSet(Sets.EmptySet).length).toBe(1);
+  expect(Sets.PowerSet(F(1, 2, 3, 4)).length).toBe(16);
+  expect(() => Sets.PowerSet(Sets.Integers).length).toThrow(TypeError);
+  expect(() => Sets.PowerSet(I(x, y)).length).toThrow(TypeError);
+});
+
+it('recognizes Cartesian coordinates in the complex plane', () => {
+  expect(Sets.containsQ(Sets.Complexes, sj.Tuple(1, 2))).toBe(true);
+  expect(Sets.containsQ(Sets.Complexes, sj.Tuple(sj.I, 2))).toBe(false);
+  expect(Sets.containsQ(Sets.Complexes, sj.Tuple(1, x))).toBeUndefined();
+  expect(() => Sets.containsQ(Sets.Complexes, sj.Tuple(1))).toThrow(RangeError);
+});
+
+it('reports iterability from range bounds and the component sets', () => {
+  const n = sj.symbol('n', { integer: true });
+  expect(Sets.Range.of(-100, 100).isIterable).toBe(true);
+  expect(Sets.Range.of(n, sj.add(n, 49)).isIterable).toBe(true);
+  expect(Sets.Range.of(n, 0).isIterable).toBe(false);
+  expect(Sets.Range.of(2, sj.oo).isIterable).toBe(false);
+  expect(Sets.Range.of(sj.S.NegativeInfinity, 50).isIterable).toBe(false);
+  expect(Sets.Range.of(x, sj.add(x, 49)).isIterable).toBe(false);
+  expect(new Sets.Range(sj.S.Zero, sj.S.One, sj.Rational.of(2n)).isIterable).toBe(false);
+  expect(new Sets.Range(sj.S.One, sj.S.Zero, sj.S.One).isIterable).toBe(false);
+  expect(Sets.imageSet(x, sj.sin(x), Sets.Integers).isIterable).toBe(true);
+  expect(Sets.imageSet(x, sj.sin(x), Sets.Reals).isIterable).toBe(false);
+  expect(Sets.DisjointUnion(Sets.EmptySet, F(1)).isIterable).toBe(true);
+  expect(Sets.DisjointUnion(Sets.EmptySet, Sets.EmptySet).isIterable).toBe(false);
+  expect(Sets.DisjointUnion(F(1), Sets.Reals).isIterable).toBe(false);
+});
+
+it('keeps product finiteness uncertain when a finite factor may be empty', () => {
+  const conditional = Sets.intersection(F(1), I(x, y));
+  expect(conditional.isFiniteSet).toBe(true);
+  expect(Sets.productSet(Sets.Reals, conditional).isFiniteSet).toBe('unknown');
+  expect(Sets.productSet(Sets.Reals, Sets.PowerSet(I(x, y))).isFiniteSet).toBe(false);
+  expect(Sets.productSet(Sets.Reals, Sets.Range.of(0, 3)).isFiniteSet).toBe(false);
+  const n = sj.symbol('n', { integer: true });
+  expect(Sets.productSet(Sets.Reals, Sets.Range.of(n, 0)).isFiniteSet).toBe('unknown');
+  expect(new Sets.ProductSetNode([Sets.Reals, new Sets.FiniteSet([])]).isFiniteSet).toBe(true);
 });

@@ -877,7 +877,7 @@ export function deserialize(tree: Tree): unknown {
     case 'Rel': {
       const op = REL_OPS[tree['op'] as string];
       if (!op) throw new Unsupported(`relation ${tree['op']}`);
-      const [a, b] = (tree['args'] as Tree[]).map((x) => deserialize(x) as Expr);
+      const [a, b] = (tree['args'] as Tree[]).map((x) => asExpr(deserialize(x)));
       return sj.Relational(asExpr(a), asExpr(b), { Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' }[op], { evaluate: false });
     }
     case 'Fn': {
@@ -1252,7 +1252,7 @@ export function deserialize(tree: Tree): unknown {
       return kb;
     }
     case 'Logic': {
-      const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as Expr);
+      const xs = (tree['args'] as Tree[]).map((x) => asExpr(deserialize(x)));
       switch (tree['op']) {
         case 'Not':
           return sj.not(xs[0]!);
@@ -2085,6 +2085,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.contains': (args, kw, self) => (noKw(kw), self instanceof sj.GroebnerBasis ? self.contains(asExpr(args[0])) : sj.contains(asSet(self), asExpr(args[0]))),
   '.intersect': (args, kw, self) => (noKw(kw), sj.intersection(asSet(self), asSet(args[0]))),
   '.union': (args, kw, self) => (noKw(kw), sj.union(asSet(self), asSet(args[0]))),
+  '.issubset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(self), asSet(args[0])))),
+  '.is_Boolean': (_args, kw, self) => (noKw(kw), typeof self === 'boolean' || self instanceof sj.BoolAtom || self instanceof sj.BoolOp || self instanceof sj.LogicGate),
   '.is_subset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(self), asSet(args[0])))),
   // SymPy defines these by is_subset and intersect
   '.is_superset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(args[0]), asSet(self)))),
@@ -4746,6 +4748,8 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
   if (a instanceof Map && b instanceof Map) return a.size === b.size && [...a].every(([k, x]) => [...b].some(([l, y]) => pyEquals(k, l) && pyEquals(x, y)));
   if (a instanceof sj.GeometryEntity && b instanceof sj.GeometryEntity) return a.key === b.key;
   if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => pyEquals(v, b[i]));
+  if (a instanceof sj.OrdinalNode && !(b instanceof sj.OrdinalNode) && typeof b !== 'number' && typeof b !== 'bigint') return false;
+  if (a instanceof sj.OmegaPowerNode && !(b instanceof sj.OmegaPowerNode) && typeof b !== 'number' && typeof b !== 'bigint') return false;
   if (a instanceof Expr && !isScalar(b)) return false;
   const r = callMethod(a, ['equals', 'eq'], [b]);
   if (r !== undefined) return r.value === true || (r.value instanceof Expr && String(r.value) === 'True');
@@ -4764,7 +4768,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__add__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
   '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
-  '.__mul__': (a, [b]) => (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
+  '.__mul__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
   '.__truediv__': (a, [b]) => (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, ['div', 'truediv', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => callMethod(a, ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
@@ -4772,11 +4776,11 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__matmul__': (a, [b]) => callMethod(a, ['matmul', 'mul'], [b])?.value ?? unsupportedOp('@'),
   '.__neg__': (a) => callMethod(a, ['neg'], [])?.value ?? (isScalar(a) ? sj.neg(a) : unsupportedOp('-')),
   '.__invert__': (a) => callMethod(a, ['invert', 'inv', 'inverse'], [])?.value ?? (a instanceof Expr || typeof a === 'boolean' ? sj.Not(a) : unsupportedOp('~')),
-  '.__and__': (a, [b]) => callMethod(a, ['and', 'intersect', 'dot'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.And(a, b) : unsupportedOp('&')),
-  '.__or__': (a, [b]) => callMethod(a, ['or', 'union'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Or(a, b) : unsupportedOp('|')),
-  '.__xor__': (a, [b]) => callMethod(a, ['xor', 'cross', 'symmetricDifference'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Xor(a, b) : unsupportedOp('^')),
+  '.__and__': (a, [b]) => callMethod(a, ['and', 'intersect', 'dot'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.And(a, b) : unsupportedOp('&')),
+  '.__or__': (a, [b]) => callMethod(a, ['or', 'union'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Or(a, b) : unsupportedOp('|')),
+  '.__xor__': (a, [b]) => callMethod(a, ['xor', 'cross', 'symmetricDifference'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Xor(a, b) : unsupportedOp('^')),
   '.__rshift__': (a, [b]) => callMethod(a, ['rshift'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Implies(a, b) : unsupportedOp('>>')),
-  '.__lshift__': (a, [b]) => callMethod(a, ['lshift'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Implies(b, a) : unsupportedOp('<<')),
+  '.__lshift__': (a, [b]) => callMethod(a, ['lshift'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Implies(b, a) : unsupportedOp('<<')),
   '.__eq__': (a, [b]) => pyEquals(a, b),
   '.__ne__': (a, [b]) => !pyEquals(a, b),
   '.__lt__': (a, [b]) => callMethod(a, ['lt'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Lt(a, b) : unsupportedOp('<')),
@@ -5142,7 +5146,14 @@ function autoAdapter(c: Case): Adapter | undefined {
   const reflectedName = reflectedNames[c.fn];
   const reflected = reflectedName === undefined ? undefined : DUNDER[reflectedName];
   if (reflected !== undefined && c.self?.t === 'Rational' && c.self['py'] === true) return (args, _kw, self) => fromJs(reflected(plain(conv(args[0])), [self]));
-  if (dunder !== undefined) return (args, _kw, self0) => fromJs(dunder(plain(self0 instanceof JsDomain ? (self0.domain ?? self0) : self0), args.map((a) => a instanceof JsFFElement ? plain(a) : plain(conv(a)))));
+  if (dunder !== undefined) return (args, _kw, self0) => {
+    const arithmetic = ['.__add__', '.__sub__', '.__mul__', '.__truediv__', '.__pow__', '.__mod__', '.__neg__'];
+    if (arithmetic.includes(c.fn) && [self0, ...args].some((v) => typeof v === 'boolean' || v instanceof sj.BoolAtom)) {
+      throw new TypeError('Boolean atoms do not support arithmetic');
+    }
+    const ordinal = self0 instanceof sj.OrdinalNode || self0 instanceof sj.OmegaPowerNode;
+    return fromJs(dunder(plain(self0 instanceof JsDomain ? (self0.domain ?? self0) : self0), args.map((a) => ordinal && a instanceof sj.Rational && a.q === 1n ? a.p : a instanceof JsFFElement ? plain(a) : plain(conv(a)))));
+  }
   if (c.fn.startsWith('.')) {
     const name = OPERATOR_METHODS[c.fn] ?? camel(c.fn.slice(1));
     return (args, kw, self0) => {
@@ -5413,6 +5424,9 @@ function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets
   if (post === 'str') return typeof value === 'string' ? value : fmt(withBrackets(value, brackets));
   if (post === 'repr') return fmtItem(withBrackets(value, brackets));
   if (post === 'len') {
+    if (value instanceof sj.Range) return value.size;
+    if (value instanceof sj.FiniteSet) return value.args.length;
+    if (value === sj.EmptySet) return 0;
     if (typeof value === 'string') return value.length;
     if (value instanceof Map || value instanceof Set) return value.size;
     if (value instanceof JsDict) return value.entries.length;
