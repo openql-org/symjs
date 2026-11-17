@@ -25039,7 +25039,7 @@
      "testFile": "sympy/combinatorics/tests/test_permutations.py",
      "inCorpus": true,
      "caseCount": 363,
-     "gapCount": 14,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -28551,7 +28551,7 @@
      "testFile": "sympy/core/tests/test_containers.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 34,
+     "gapCount": 31,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -28947,7 +28947,7 @@
      "testFile": "sympy/core/tests/test_expr.py",
      "inCorpus": true,
      "caseCount": 877,
-     "gapCount": 129,
+     "gapCount": 127,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -29659,7 +29659,7 @@
      "testFile": "sympy/core/tests/test_function.py",
      "inCorpus": true,
      "caseCount": 428,
-     "gapCount": 159,
+     "gapCount": 158,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -33142,7 +33142,7 @@
      "testFile": "sympy/core/tests/test_relational.py",
      "inCorpus": true,
      "caseCount": 1063,
-     "gapCount": 329,
+     "gapCount": 207,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 8,
@@ -33531,7 +33531,7 @@
      "testFile": "sympy/core/tests/test_symbol.py",
      "inCorpus": true,
      "caseCount": 167,
-     "gapCount": 44,
+     "gapCount": 18,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 10586,
@@ -91135,7 +91135,7 @@
      "testFile": "sympy/polys/tests/test_rootoftools.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 50,
+     "gapCount": 47,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 56,
@@ -99485,7 +99485,7 @@
      "testFile": "sympy/sets/tests/test_sets.py",
      "inCorpus": true,
      "caseCount": 758,
-     "gapCount": 374,
+     "gapCount": 372,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -101279,8 +101279,8 @@
      "testFile": "sympy/solvers/diophantine/tests/test_diophantine.py",
      "inCorpus": true,
      "caseCount": 2323,
-     "gapCount": 54,
-     "timeoutCount": 1,
+     "gapCount": 53,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 4,
       "non-boolean-assertion": 1,

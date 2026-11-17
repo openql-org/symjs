@@ -232,7 +232,7 @@ Direct regression-test paths are maintained in `capabilities.json`. Remaining it
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
-**Fully covered (100% test coverage): 100.0% of source files (490/490), 100.0% of statements (108252/108252)**
+**Fully covered (100% test coverage): 100.0% of source files (490/490), 100.0% of statements (108262/108262)**
 
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|

@@ -77,7 +77,7 @@ export {
 export { isIrrational, isAlgebraic, isComplex, isFinite, isPrime, isEven, isOdd, isImaginary, isHermitian, isAntihermitian, isExtendedNegative, isExtendedPositive, isPolar } from './core/public';
 export { isNonnegative, isNonpositive, isNonzero, isComposite, isExtendedNonpositive, isExtendedNonzero, isNoninteger, isTranscendental, isCommutative, isSingular } from './core/public';
 export { canonicalRelation } from './core/logic';
-export { Relational, isEq, isNeq, isGe, isLe, isGt, isLt } from './core/relational';
+export { Relational, isEq, isNeq, isGe, isLe, isGt, isLt, reversed, reversedSign, negated } from './core/relational';
 export { disambiguate, uniquelyNamedSymbol } from './core/symbol';
 export type { UniqueSymbolOptions } from './core/symbol';
 export { unchanged } from './core/expr';
