@@ -13,6 +13,14 @@ import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
 
 const Pplain = parse;
+it('keeps empty, unsupported reversed and Hurwitz series distinct', () => {
+  const [x, y] = sj.symbols('x y');
+  const t = sj.symbol('t', { positive: true });
+  expect(() => sj.summation(1)).toThrow(RangeError);
+  expect(sj.summation(x.mul(y), [x, sj.S.NegativeInfinity, sj.oo], [y, 1, 0])).toBe(sj.S.Zero);
+  expect(String(sj.summation(sj.sin(x.pow(2)), [x, sj.oo, 0]))).toBe('Sum(sin(x**2), (x, oo, 0))');
+  expect(String(sj.summation(x.add(sj.I).pow(t.add(1).neg()), [x, 0, sj.oo]))).toBe('zeta(t + 1, I)');
+});
 it('exposes residue summation with an explicit no-match result', () => {
   const k = sj.symbol('k');
   expect(String(sj.evalSumResidue(parse('1/(k**2 + 1)'), [k, sj.oo.neg(), sj.oo]))).toBe('pi/tanh(pi)');
@@ -247,7 +255,7 @@ describe("summations: results equal SymPy 1.14", () => {
     ["summation(P('1/(k*(k**2+1))'), [k, 1, oo])", () => summation(Pplain('1/(k*(k**2+1))'), [k, 1, oo]), "Sum(1/(k*(k**2 + 1)), (k, 1, oo))"],
     ["summation(P('2**k'), [k, P('-oo'), 0])", () => summation(Pplain('2**k'), [k, Pplain('-oo'), 0]), "2"],
     ["summation(P('x**k'), [k, P('-oo'), oo])", () => summation(Pplain('x**k'), [k, Pplain('-oo'), oo]), "Sum(x**k, (k, -oo, oo))"],
-    ["summation(P('1/(k**2+1)**2'), [k, P('-oo'), oo])", () => summation(Pplain('1/(k**2+1)**2'), [k, Pplain('-oo'), oo]), "Sum((k**2 + 1)**(-2), (k, -oo, oo))"],
+    ["summation(P('1/(k**2+1)**2'), [k, P('-oo'), oo])", () => summation(Pplain('1/(k**2+1)**2'), [k, Pplain('-oo'), oo]), "-pi*(-1/(2*tanh(pi)) - pi*(1 - tanh(pi)**2)/(2*tanh(pi)**2))"],
     ["summation(P('1/(k**4-1)'), [k, P('-oo'), oo])", () => summation(Pplain('1/(k**4-1)'), [k, Pplain('-oo'), oo]), "Sum(1/(k**4 - 1), (k, -oo, oo))"],
     ["product(P('k*sin(k)'), [k, 1, 3])", () => product(Pplain('k*sin(k)'), [k, 1, 3]), "6*sin(1)*sin(2)*sin(3)"],
     ["product(P('x**k'), [k, 1, n])", () => product(Pplain('x**k'), [k, 1, n]), "x**(n**2/2 + n/2)"],
@@ -453,8 +461,7 @@ describe('results equal SymPy 1.14', () => {
 describe('results that differ from SymPy 1.14', () => {
   // [call, symjs result, SymPy 1.14 result]
   const cases: [string, () => unknown, string, string][] = [
-    // double poles are not summed by residues (SymPy gives a long closed form)
-    ["sj.summation(P('1/(k**2+1)**2'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**2+1)**2'), [k, 0, sj.oo]), "Sum((k**2 + 1)**(-2), (k, 0, oo))", "1/2 - pi*(-1/(2*tanh(pi)) - I*(-I*pi/tanh(pi) + I*pi*tanh(pi))/(4*tanh(pi)) + I*(-I*pi*tanh(pi) + I*pi/tanh(pi))/(4*tanh(pi)))/2"],
+    ["sj.summation(P('1/(k**2+1)**2'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**2+1)**2'), [k, 0, sj.oo]), "1/2 - pi*(-1/(2*tanh(pi)) - pi*(1 - tanh(pi)**2)/(2*tanh(pi)**2))/2", "1/2 - pi*(-1/(2*tanh(pi)) - I*(-I*pi/tanh(pi) + I*pi*tanh(pi))/(4*tanh(pi)) + I*(-I*pi*tanh(pi) + I*pi/tanh(pi))/(4*tanh(pi)))/2"],
     // integer poles that are not consecutive (SymPy's value divides by 105 - 105*exp_polar(0) = 0)
     ["sj.summation(P('1/((k**2-1)*(k**2-9))'), [k, 5, sj.oo])", () => sj.summation(P('1/((k**2-1)*(k**2-9))'), [k, 5, sj.oo]), "Sum(1/((k**2 - 9)*(k**2 - 1)), (k, 5, oo))", "(90 - 118*exp_polar(0))/(288*(105 - 105*exp_polar(0))) + 7*(5*exp_polar(0) + 15)/(1440*(105 - 105*exp_polar(0)))"],
     // a pole inside the range (the term at k = 1 is zoo)

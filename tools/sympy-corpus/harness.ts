@@ -623,7 +623,9 @@ const concreteDoit = (e: Expr): Expr => (e instanceof sj.Concrete ? sj.doitConcr
 function concreteNode(kind: 'Sum' | 'Product', args: unknown[]): Expr {
   const [f, ...lims] = args;
   const ls = lims.map((l) => {
-    if (!(l instanceof JsTuple) || l.items.length !== 3) throw new Unsupported('limits');
+    if (!(l instanceof JsTuple)) throw new RangeError('Invalid discrete limit');
+    if (l.items.length === 2) return [asExpr(l.items[0]), asExpr(l.items[1])] as const;
+    if (l.items.length !== 3) throw new RangeError('A discrete limit needs two bounds');
     return l.items as [Sym, Expr, Expr];
   });
   return kind === 'Sum' ? sj.Sum(f as Expr, ...ls) : sj.Product(f as Expr, ...ls);
@@ -6511,6 +6513,16 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'sympy.liealgebras.tests.test_type_B:assert c.lie_algebra() == "so(6)"': 'so(7)',
   // D_n = so(2n) has n(2n-1) generators; D_4 has dimension 28.
   'sympy.liealgebras.tests.test_type_D:assert c.basis() == 6': '28',
+  // Karr reversal is Sum(f, (k, a, b)) = -Sum(f, (k, b + 1, a - 1)).
+  // For example, the reversed geometric series is -sum(2**(-k), k >= 0) = -2.
+  "sympy.concrete.tests.test_sums_products:assert Sum(1/(x**2 + 1), (x, oo, 0)).doit(deep=False) == Rational(-1, 2) + pi / (2 * tanh(pi))": "-pi/(2*tanh(pi)) + 1/2",
+  "sympy.concrete.tests.test_sums_products:assert Sum(c**x/factorial(x), (x, oo, 0)).doit(deep=False).simplify() == exp(c) - 1": "1 - exp(c)",
+  "sympy.concrete.tests.test_sums_products:assert Sum((-1)**x/x, (x, oo,0)).doit() == -log(2)": "log(2)",
+  "sympy.concrete.tests.test_sums_products:assert Sum((1/2)**x,(x, oo, -1)).doit() == S(2)": "-2.00000000000000",
+  "sympy.concrete.tests.test_sums_products:assert Sum(1/x, (x, oo, 0)).doit() == oo": "-oo",
+  "sympy.concrete.tests.test_sums_products:assert Sum((-1)**x/(2*x+1), (x, oo, -1)).doit() == pi/4": "-pi/4",
+  "sympy.concrete.tests.test_sums_products:assert Sum((((-1)**x) * c**(2*x+1)) / factorial(2*x+1), (x, oo, -1)).doit() == sin(c)": "-sin(c)",
+  "sympy.concrete.tests.test_sums_products:assert Sum(1/x**n, (x, oo, 0)).doit() \\\n        == Piecewise((zeta(n), n > 1), (Sum(x**(-n), (x, oo, 0)), True))": "-Piecewise((zeta(n), n > 1), (Sum(x**(-n), (x, 1, oo)), True))",
   // SymPy mixes Poly.gens=(y,x) with Options.gens=(x,y). Neither published
   // result solves the original pair; these tuples satisfy both equations.
   'sympy.solvers.polysys:solve_biquadratic(a, b, NewOption)': [

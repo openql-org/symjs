@@ -176,16 +176,22 @@ function d(e: Expr, x: Expr): Expr {
     // a derivative that stays unevaluated (Derivative(floor(x*y), y)) gets x appended
     return inner.key === e.key ? derivative(e, [[x, 1]]) : d(inner, x);
   }
-  if (e instanceof Concrete && e.kind2 === 'Sum') {
-    // SymPy Sum._eval_derivative: the sum of the derivatives when the limits do not depend on x
+  if (e instanceof Concrete) {
+    // SymPy Sum/Product._eval_derivative: peel the outermost limit.
+    if (x instanceof Sym && ![...e.freeSymbols()].some((s) => s.key === x.key)) return S.Zero;
     const limits = e.limits;
-    if (limits.every(([k, a, b]) => k.key !== x.key && !dependsOn(a, x) && !dependsOn(b, x))) return new Concrete('Sum', [d(e.function, x), ...e.args.slice(1)]);
-    throw new NotImplementedError('diff: derivative of a sum whose limits depend on the variable is not supported');
+    const [i, a, b] = last(limits);
+    if ([a, b].some((bound) => [...bound.freeSymbols()].some((s) => s.key === x.key))) return derivative(e, [[x, 1]]);
+    const f = limits.length === 1 ? e.function : new Concrete(e.kind2, [e.function, ...limits.slice(0, -1).flat()]);
+    const df = d(f, x);
+    if (e.kind2 === 'Sum') return new Concrete('Sum', [df, i, a, b]);
+    const h = new Dummy();
+    const before = new Concrete('Product', [f, i, a, add(h, -1)]);
+    const after = new Concrete('Product', [f, i, add(h, 1), b]);
+    return new Concrete('Sum', [mul(before, after, xreplace(df, [[i, h]])), h, a, b]);
   }
   if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));
   if (e instanceof Integral) return diffIntegral(e, x);
-  // SymPy Product._eval_derivative gives a Sum of products of the factors
-  if (e instanceof Concrete) throw new NotImplementedError('diff: derivative of a product is not supported');
   // relations, limits and other objects without a derivative rule stay unevaluated (SymPy Derivative(x < 1, x))
   return derivative(e, [[x, 1]]);
 }

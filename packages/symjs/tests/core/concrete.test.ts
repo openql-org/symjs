@@ -6,11 +6,43 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
-import { Concrete } from '../../src/core/concrete';
+import { Concrete, concreteHooks } from '../../src/core/concrete';
 
 const [a, b, c, d, e, f, x, y, z, u, v, n] = sj.symbols('a b c d e f x y z u v n') as sj.Sym[];
 const s = (q: sj.Expr): string => sj.str(q);
 const sum = (fn: sj.ExprLike, ...l: [sj.Sym, sj.ExprLike, sj.ExprLike][]): Concrete => sj.Sum(fn, ...l) as Concrete;
+
+it('validates definite limits and accepts differentiable bound expressions', () => {
+  const k = sj.symbol('k');
+  expect(() => sj.Sum(1)).toThrow(RangeError);
+  expect(() => sj.Product(1)).toThrow(RangeError);
+  expect(() => sj.Sum(1, [sj.S.One, 0, 3])).toThrow('Invalid limit variable');
+  const f = sj.SymFunction('f')(k);
+  const derivative = new sj.Derivative([f, k, sj.S.One]);
+  const indexed = new sj.IndexedBase('A').at(k);
+  for (const variable of [f, derivative, indexed]) {
+    expect(sj.Sum(variable, [variable, 1, 2])).toBeInstanceOf(Concrete);
+  }
+  const process = concreteHooks.processLimit;
+  delete concreteHooks.processLimit;
+  try {
+    expect(() => sj.Sum(k, [k, k])).toThrow('Set limits require the calculus module');
+  } finally {
+    concreteHooks.processLimit = process;
+  }
+});
+
+it('removes each bound variable from inner limits and preserves independent factors', () => {
+  const [x, y, z] = sj.symbols('x y z');
+  for (const ctor of [sj.Sum, sj.Product]) {
+    expect([...sj.freeSymbols(ctor(x.mul(y), [x, 1, 2]))]).toEqual([y]);
+    expect([...ctor(x, [x, 1, y], [y, 1, 2]).freeSymbols()]).toEqual([]);
+    expect([...ctor(x, [x, 1, y], [y, 1, y]).freeSymbols()]).toEqual([y]);
+    const f = sj.SymFunction('f')(x);
+    expect([...ctor(f.mul(z), [f, 1, y]).freeSymbols()].map(String).sort()).toEqual(['y', 'z']);
+  }
+  expect(sum(x, [x, sj.oo, sj.oo]).hasEmptySequence).toBe(false);
+});
 
 it('recognizes numerical sums and products by their free symbols', () => {
   const k = sj.symbol('k'), n = sj.symbol('n');

@@ -24,12 +24,27 @@ import {
   str,
   symbols,
 } from '../../src';
-import { NotImplementedError } from '../../src/core/errors';
 import { orderUnreduced } from '../../src/calculus/diff';
 import { cast } from '../../src/core/guard';
 import { Integral, Order } from '../../src/core/nodes';
+import { ExtensionExpr } from '../../src/core/nodes';
 
 const [x, y, k, n, h] = symbols('x y k n h');
+
+it('differentiates nested discrete limits and retains matrix derivatives', () => {
+  const a = sj.symbol('a');
+  const nested = sj.Sum(x.mul(y), [x, 1, 3], [a, 2, 5]);
+  expect(String(sj.doit(diff(nested, y)))).toBe('24');
+  expect(String(diff(new Integral([x, x, sj.S.Zero, sj.S.One]), x))).toBe('0');
+  const A = sj.MatrixSymbol('A', 2, 2);
+  expect(diff(A, A)).toBeInstanceOf(sj.Derivative);
+  expect(diff(A, A, 0)).toBe(A);
+  class Unknown extends ExtensionExpr {
+    constructor(args: readonly sj.Expr[]) { super('Unknown', args); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new Unknown(args); }
+  }
+  expect(() => diff(new Unknown([x]), x)).toThrow(sj.NotImplementedError);
+});
 
 const r = sj.symbol('r', { real: true });
 const f = sj.SymFunction('f');
@@ -93,7 +108,7 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(sj.diff(f(x), x), y))).toBe('0');
     expect(s(sj.diff(sj.diff(f(x), x), x))).toBe('Derivative(f(x), (x, 2))');
     expect(s(sj.diff(sj.Sum(sj.mul(sj.pow(x, k), y), [k, 0, n]), y))).toBe('Sum(x**k, (k, 0, n))');
-    expect(() => sj.diff(sj.Sum(sj.pow(x, k), [k, 0, n]), n)).toThrow(sj.NotImplementedError);
+    expect(s(sj.diff(sj.Sum(sj.pow(x, k), [k, 0, n]), n))).toBe('Derivative(Sum(x**k, (k, 0, n)), n)');
     expect(s(sj.diff(sj.Piecewise([sj.pow(x, 2), sj.Gt(x, 0)], [x, true]), x))).toBe('Piecewise((2*x, x > 0), (1, True))');
     expect(s(sj.diff(x, x, 0))).toBe('x');
     expect(s(sj.diff(f(sj.add(x, 1)), x))).toBe('Subs(Derivative(f(_xi_1), _xi_1), _xi_1, x + 1)');
@@ -165,7 +180,7 @@ describe('diff', () => {
     expect(s2(diff(Lt(x, 1), x))).toBe('Derivative(x < 1, x)');
     expect(s2(diff(new Limit([mul(sin(mul(x, y)), pow(y, -1)), y, rational(0)], '+'), x))).toBe("Derivative(Limit(sin(x*y)/y, y, 0, dir='+'), x)");
     // SymPy: Sum(_h*Product(k*x, (k, 1, _h - 1))*Product(k*x, (k, _h + 1, n)), (_h, 1, n))
-    expect(() => diff(Product(mul(x, k), [k, 1, n]), x)).toThrow(NotImplementedError);
+    expect(sj.doit(diff(Product(mul(x, k), [k, 1, 3]), x)).toString()).toBe('18*x**2');
     expect(() => diff(x, x, -1)).toThrow(RangeError);
     expect(() => diff(x, x, 1.5)).toThrow(RangeError);
   });

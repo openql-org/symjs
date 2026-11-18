@@ -5,10 +5,10 @@
  * @file The unevaluated Sum / Product node.
  */
 
-import type { ExprLike, Sym } from './nodes';
-import { Expr, impl, registerHeadResolver } from './nodes';
+import type { ExprLike } from './nodes';
+import { Derivative, Dummy, Expr, ExtensionExpr, Sym, UndefFn, impl, registerHeadResolver } from './nodes';
 import { add, mul, pow, sub, sympify } from './ops';
-import { at } from './guard';
+import { at, getOrThrow } from './guard';
 import { ReorderError } from './errors';
 import type { Truth } from './truth';
 import { isZero } from './assumptions';
@@ -28,6 +28,21 @@ export class Concrete extends Expr {
   }
   override get isNumber(): boolean {
     return this.freeSymbols().size === 0;
+  }
+  /** ExprWithLimits.free_symbols: each outer variable binds the preceding limits too. */
+  override freeSymbols(): Set<Expr> {
+    const replacements = new Map<string, readonly [Expr, Expr]>();
+    for (const [k] of this.limits) {
+      const syms = impl.freeSymbols(k);
+      replacements.set(k.key, [k, syms.size === 1 && [...syms].some((s) => s.key === k.key) ? k : new Dummy()]);
+    }
+    const f = impl.xreplace(this.function, [...replacements.values()]);
+    const free = new Map([...impl.freeSymbols(f)].map((s) => [s.key, s]));
+    for (const [k, a, b] of this.limits) {
+      free.delete(getOrThrow(replacements, k.key)[1].key);
+      for (const s of [...impl.freeSymbols(a), ...impl.freeSymbols(b)]) free.set(s.key, s);
+    }
+    return new Set(free.values());
   }
   get limits(): [Expr, Expr, Expr][] {
     const out: [Expr, Expr, Expr][] = [];
@@ -106,6 +121,7 @@ export class Concrete extends Expr {
   get hasEmptySequence(): Truth {
     let unknown = false;
     for (const [, a, b] of this.limits) {
+      if (a.key === b.key) continue;
       const d = sub(sub(a, b), 1);
       const zero = isZero(d);
       if (zero === undefined) unknown = true;
@@ -115,14 +131,38 @@ export class Concrete extends Expr {
   }
 }
 
-/** Unevaluated Sum(f, (k, a, b), ...). */
-export function Sum(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
-  return new Concrete('Sum', [sympify(f), ...limits.flatMap(([k, a, b]) => [k, sympify(a), sympify(b)])]);
+type ConcreteLimit = readonly [Expr, ExprLike, ExprLike] | readonly [Expr, Expr];
+
+/** Set-valued limit processing supplied by concrete/exprwithlimits. @internal */
+export const concreteHooks: { processLimit?: (f: Expr, k: Expr, domain: Expr) => readonly [Expr, Expr, Expr] } = {};
+
+function withProcessedLimits(kind: 'Sum' | 'Product', fIn: ExprLike, limits: readonly ConcreteLimit[]): Expr {
+  if (limits.length === 0) throw new RangeError(`${kind} requires a definite limit`);
+  let f = sympify(fIn);
+  const args: Expr[] = [];
+  for (const limit of limits) {
+    const k = limit[0];
+    if (!(k instanceof Sym || k instanceof UndefFn || k instanceof Derivative || (k instanceof ExtensionExpr && k.name === 'Indexed'))) throw new RangeError('Invalid limit variable');
+    if (limit.length === 2) {
+      if (concreteHooks.processLimit === undefined) throw new TypeError('Set limits require the calculus module');
+      const [term, lower, upper] = concreteHooks.processLimit(f, k, limit[1]);
+      f = term;
+      args.push(k, lower, upper);
+    } else {
+      args.push(k, sympify(limit[1]), sympify(limit[2]));
+    }
+  }
+  return new Concrete(kind, [f, ...args]);
 }
 
-/** Unevaluated Product(f, (k, a, b), ...). */
-export function Product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
-  return new Concrete('Product', [sympify(f), ...limits.flatMap(([k, a, b]) => [k, sympify(a), sympify(b)])]);
+/** Unevaluated Sum(f, (k, a, b), ...) or Sum(f, (k, Range)). */
+export function Sum(f: ExprLike, ...limits: ConcreteLimit[]): Expr {
+  return withProcessedLimits('Sum', f, limits);
+}
+
+/** Unevaluated Product(f, (k, a, b), ...) or Product(f, (k, Range)). */
+export function Product(f: ExprLike, ...limits: ConcreteLimit[]): Expr {
+  return withProcessedLimits('Product', f, limits);
 }
 
 // func(Sum(...)) is Sum; the arguments of the node are flat (f, k, a, b, ...), so rebuild(e, args)
