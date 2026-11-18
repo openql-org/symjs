@@ -241,3 +241,22 @@ describe('partial derivatives without a formula', () => {
     expect(sj.sstr(sj.diff(sj.sign(sj.add(x, 1)), x))).toBe('Derivative(sign(x + 1), x)');
   });
 });
+
+it('validates differentiation variables before evaluating a derivative', () => {
+  for (const v of [rational(2), rational(1, 2), sin(x), mul(x, y), pow(x, 2), sj.add(x, 1), Derivative(sj.cos(x), x), Derivative(f(f(x)), x)]) {
+    expect(() => diff(f(x), v)).toThrow(RangeError);
+    expect(diff(f(x), v, 0)).toEqual(f(x));
+  }
+  const fx = f(x);
+  expect(String(diff(pow(fx, 2), fx))).toBe('2*f(x)');
+  const df = Derivative(fx, x);
+  expect(String(diff(pow(df, 2), df))).toBe('2*Derivative(f(x), x)');
+});
+
+it('keeps derivatives with respect to matrix variables formal', () => {
+  const A = new sj.MatrixSymbol('A', 2, 2);
+  expect(String(diff(sj.Determinant(A), A.at(0, 0)))).toBe('Derivative(Determinant(A), A[0, 0])');
+  expect(String(diff(A, A))).toBe('Derivative(A, A)');
+  expect(String(diff(x, A))).toBe('0');
+  expect(String(diff(new Integral([x, x, rational(0), rational(1)]), x))).toBe('0');
+});

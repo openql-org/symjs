@@ -254,8 +254,39 @@ function commutativeMatches(p: Add | Mul, e: Expr, d: Dict, old: boolean): Dict 
   return undefined;
 }
 
+/** Match ordered noncommutative factors; a wildcard consumes a nonempty interval. */
+function noncommutativeMatches(p: Mul, e: Expr, d: Dict, old: boolean): Dict | undefined {
+  const split = (a: Expr): [Expr, Expr[]] => {
+    const factors = a instanceof Mul ? a.args : [a];
+    return [mul(...factors.filter((f) => f.isCommutative)), factors.filter((f) => !f.isCommutative).flatMap((f) =>
+      f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && f.exp.isPositive ? Array.from({ length: Number(f.exp.p) }, () => f.base) : [f])];
+  };
+  const [pc, nodes] = split(p);
+  const [ec, targets] = split(e);
+  const initial = matchesImpl(pc, ec, d, old);
+  if (!initial) return undefined;
+  const visit = (i: number, j: number, bindings: Dict): Dict | undefined => {
+    if (i === nodes.length) return j === targets.length ? bindings : undefined;
+    const node = at(nodes, i);
+    const end = node instanceof Wild ? targets.length - (nodes.length - i - 1) : j + 1;
+    for (let k = j + 1; k <= end && k <= targets.length; k++) {
+      const next = matchesImpl(applyD(node, bindings), mul(...targets.slice(j, k)), bindings, old);
+      if (next) {
+        const result = visit(i + 1, k, next);
+        if (result) return result;
+      }
+    }
+    return undefined;
+  };
+  return visit(0, 0, initial);
+}
+
 function matchesImpl(p: Expr, e: Expr, d: Dict, old: boolean): Dict | undefined {
   if (p instanceof Wild) return wildMatches(p, e, d);
+  if (p instanceof Mul) {
+    if (p.isCommutative !== e.isCommutative) return undefined;
+    if (!p.isCommutative) return noncommutativeMatches(p, e, d, old);
+  }
   if (p instanceof Add || p instanceof Mul) return commutativeMatches(p, e, d, old);
   if (p instanceof Pow && !isExpPow(p)) return powMatches(p, e, d, old);
   if (p.args.length === 0) return p.key === e.key ? copy(d) : undefined;

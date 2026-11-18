@@ -46,3 +46,12 @@ describe('function classes', () => {
     expect(isUndefinedFunction(x)).toBe(false);
   });
 });
+
+it('rejects empty arities and invalid derivative orders and removes zero counts', () => {
+  expect(() => sj.SymFunction('f', { nargs: [] })).toThrow(RangeError);
+  const f = sj.SymFunction('f')(x);
+  expect(sj.derivative(f, [[x, 0]])).toBe(f);
+  expect(() => sj.derivative(f, [[x, -1]])).toThrow(RangeError);
+  expect(() => sj.derivative(f, [[x, 0.5]])).toThrow(RangeError);
+  expect(String(sj.derivative(sj.derivative(f, [[x, 1]]), [[x, 0], [x, 1]]))).toBe('Derivative(f(x), (x, 2))');
+});
