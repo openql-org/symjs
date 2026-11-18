@@ -5478,6 +5478,10 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
+    if (a instanceof sj.Range && i instanceof sj.Slice) {
+      const [start, stop, step] = i.toString().split(':').map((part) => part === '' ? undefined : Number(part));
+      return a.slice(start, stop, step);
+    }
     if (a instanceof sj.ArrayExpr) {
       const index = i instanceof JsTuple ? i.items : Array.isArray(i) ? i : [i];
       return a.at(...index.map(asExpr));

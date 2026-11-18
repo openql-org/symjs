@@ -125,7 +125,9 @@ class NamedSet extends SetExpr {
   override get isFiniteSet(): boolean { return this.name === 'EmptySet'; }
   override get isIterable(): boolean { return ['EmptySet', 'Integers', 'Naturals', 'Naturals0'].includes(this.name); }
   override get boundary(): SetExpr {
-    if (this.name === 'Reals' || this.name === 'EmptySet') return EmptySet;
+    if (this.name === 'Reals' || this.name === 'EmptySet' || this.name === 'UniversalSet') return EmptySet;
+    if (this.name === 'Rationals') return Reals;
+    if (['Integers', 'Naturals', 'Naturals0'].includes(this.name)) return this;
     throw new NotImplementedError(`boundary of ${this.name}`);
   }
   override get measure(): Expr {
@@ -338,6 +340,7 @@ const extPositive = (n: Expr): boolean => isPositive(n) === true || infSign(n) =
  * known when the assumptions tell.
  */
 export class Range extends SetExpr {
+  override get boundary(): SetExpr { return this; }
   override get isIterable(): boolean {
     const n = this.count();
     return n instanceof Rational && n.isInteger && !n.isNegative && this.args.every((a) => isIntegerQ(a) === true);
@@ -419,6 +422,66 @@ export class Range extends SetExpr {
     if (rel) return rv;
     if (isNonNegative(val) === false || isPositive(add(n, neg(val))) === false) throw new RangeError('Range index out of range');
     throw new RangeError(INVALID_SYMBOLIC);
+  }
+  /** A slice of the range, with omitted bounds interpreted as in SymPy Range. */
+  slice(start?: number, stop?: number, step = 1): Range {
+    for (const value of [start, stop, step]) if (value !== undefined && !Number.isSafeInteger(value)) throw new TypeError('slice indices must be integers');
+    if (step === 0) throw new RangeError('slice step cannot be zero');
+    const size = this.size;
+    const stride = mul(step, this.step);
+    const empty = (): Range => new Range(S.Zero, S.Zero, S.One);
+    const make = (a: Expr, b: Expr): Range => cast(range(a, b, stride), Range);
+    if (size instanceof Rational) {
+      const n = size.p;
+      const lower = step < 0 ? -1n : 0n;
+      const upper = step < 0 ? n - 1n : n;
+      const clip = (v: number | undefined, fallback: bigint): bigint => {
+        if (v === undefined) return fallback;
+        const index = BigInt(v);
+        const position = index < 0n ? index + n : index;
+        return position < lower ? lower : position > upper ? upper : position;
+      };
+      const a = clip(start, step < 0 ? upper : lower);
+      const b = clip(stop, step < 0 ? lower : upper);
+      const distance = step > 0 ? b - a : a - b;
+      if (distance <= 0n) return empty();
+      const magnitude = BigInt(Math.abs(step));
+      const count = (distance + magnitude - 1n) / magnitude;
+      const endpoint = a + count * BigInt(step);
+      return make(add(this.start, mul(Rational.of(a), this.step)), add(this.start, mul(Rational.of(endpoint), this.step)));
+    }
+    const infinite = 'cannot slice from the end with an infinite value';
+    const ambiguous = 'cannot unambiguously re-stride from the end with an infinite value';
+    if (isInf(this.start) && isInf(this.stop)) throw new RangeError('slicing not possible on range with infinite start');
+    if (isInf(this.stop)) return this.reversed.slice(stop === undefined ? undefined : -stop + 1, start === undefined ? undefined : -start, step).reversed;
+    if (start === undefined) {
+      if (stop === undefined) {
+        if (step < 0) return make(this.at(-1), this.start);
+        if (step > 1) throw new RangeError(ambiguous);
+        return this;
+      }
+      if (stop < 0) return make(step < 0 ? this.at(-1) : this.start, this.at(stop));
+      if (stop === 0 && step > 0) return empty();
+      throw new RangeError(infinite);
+    }
+    if (start < 0) {
+      if (stop === undefined) return make(this.at(start), step < 0 ? this.start : this.stop);
+      if (stop < 0) return make(this.at(start), this.at(stop));
+      if (stop === 0 && step > 0) return empty();
+      throw new RangeError(infinite);
+    }
+    if (start === 0) {
+      if (stop === undefined) {
+        if (step < 0) throw new RangeError(infinite);
+        if (step > 1) throw new RangeError(ambiguous);
+        return this;
+      }
+      if (stop < 0) {
+        if (step > 1) throw new RangeError(ambiguous);
+        return step === 1 ? make(this.start, this.at(stop)) : empty();
+      }
+    }
+    throw new RangeError(infinite);
   }
   /** (stop - start)/step. */
   count(): Expr {
@@ -707,6 +770,14 @@ function setFunction(v: Expr, expr: Expr, base: SetExpr): SetExpr | undefined {
   const standard: readonly SetExpr[] = [Integers, Naturals, Naturals0, Reals, Rationals, Complexes];
   const nonEmpty = standard.includes(base) || (base instanceof Interval && cmpReal(base.start, base.end) === -1);
   if (nonEmpty && v instanceof Sym && ![...expr.freeSymbols()].some((u) => u.key === v.key)) return finiteSet(expr);
+  if ((base === Naturals || base === Naturals0) && v instanceof Sym) {
+    const coefficients = polyCoefficients(expr, v);
+    const slope = coefficients?.get(1);
+    if (coefficients && [...coefficients.keys()].every((degree) => degree <= 1) && slope instanceof Rational && slope.isInteger && !slope.isZero) {
+      const offset = coefficients.get(0) ?? S.Zero;
+      if (isIntegerQ(offset) === true) return range(add(offset, base === Naturals ? slope : S.Zero), slope.isPositive ? S.Infinity : S.NegativeInfinity, slope);
+    }
+  }
   if (base === Integers && v instanceof Sym) return integersImage(v, expr);
   if (base === Reals && v instanceof Sym) return intervalImage(v, expr, new Interval(S.NegativeInfinity, S.Infinity, true, true));
   if (base instanceof Interval && v instanceof Sym) return intervalImage(v, expr, base);
@@ -1252,6 +1323,7 @@ export function contains(s: SetExpr, x: Expr): Expr {
   if (v !== undefined) return v ? S.true : S.false;
   if (s === Reals || s instanceof Interval) return asRelational(s, x);
   if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(a, x)));
+  if (s instanceof ConditionSet) return and(contains(s.base, x), xreplace(s.condition, [[s.variable, x]]));
   if (s instanceof Range) {
     // a condition on the symbols of the Range (SymPy Range._contains)
     const c = rangeContains(s, x);
@@ -1282,9 +1354,19 @@ export function union(...sets0: SetExpr[]): SetExpr {
   const sets = sets0.flatMap((s) => (s instanceof SetOp && s.op === 'Union' ? s.args : [s])).filter((s) => s !== EmptySet);
   if (!sets.length) return EmptySet;
   if (sets.includes(UniversalSet)) return UniversalSet;
+  // Coordinate unions commute with either complex-region parametrization.
+  const region = sets.find((s) => s.className === 'CartesianComplexRegion' || s.className === 'PolarComplexRegion');
+  if (region) {
+    const compatible = sets.filter((s) => s.className === region.className || (region.className === 'CartesianComplexRegion' && isSubset(s, Reals) === true));
+    if (compatible.length > 1) {
+      const coordinates = compatible.map((s) => s.className === region.className ? cast(at(s.args, 0), SetExpr) : productSet(s, finiteSet(0)));
+      const merged = cast(region.withArgs([union(...coordinates)]), SetExpr);
+      return union(merged, ...sets.filter((s) => !compatible.includes(s)));
+    }
+  }
   // the rationals contain the integers and the naturals (SymPy union_sets)
   if (sets.includes(Rationals) && sets.every((s) => s === Rationals || s === Integers || s === Naturals || s === Naturals0)) return Rationals;
-  if (sets.some((s) => s === Reals) && sets.every((s) => s === Reals || s instanceof Interval || (s instanceof FiniteSet && s.args.every((a) => containsQ(Reals, a) === true)))) return Reals;
+  if (sets.some((s) => s === Reals) && sets.every((s) => s === Reals || s === Rationals || s === Integers || s === Naturals || s === Naturals0 || s instanceof Interval || (s instanceof FiniteSet && s.args.every((a) => containsQ(Reals, a) === true)))) return Reals;
   let ivs: Interval[] = [];
   const points: Expr[] = [];
   const others: SetExpr[] = [];
@@ -1412,6 +1494,9 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
   if (a === EmptySet || b === EmptySet) return EmptySet;
   if (a === UniversalSet) return b;
   if (b === UniversalSet) return a;
+  if (a.key === b.key) return a;
+  if (a instanceof ConditionSet) return conditionSet(a.variable, a.condition, intersection(a.base, b));
+  if (b instanceof ConditionSet) return conditionSet(b.variable, b.condition, intersection(a, b.base));
   const fo: [FiniteSet, SetExpr] | undefined = a instanceof FiniteSet ? [a, b] : b instanceof FiniteSet ? [b, a] : undefined;
   if (fo !== undefined) {
     const [f, o] = fo;
@@ -1422,6 +1507,7 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
       if (c === true) keep.push(x);
       else if (c === undefined) unknown.push(x);
     }
+    if (o instanceof FiniteSet && o.args.every((x) => f.args.some((y) => x.key === y.key))) return o;
     // like SymPy, the elements known to be in o stay in the unevaluated intersection
     if (unknown.length) return new SetOp('Intersection', sortSets([finiteSet(...keep, ...unknown), o]));
     return finiteSet(...keep);
@@ -1434,7 +1520,7 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
     if (r) return r;
   }
   if ((a === Reals && (b === Integers || b === Naturals || b === Naturals0)) || (b === Reals && (a === Integers || a === Naturals || a === Naturals0))) return a === Reals ? b : a;
-  if (a === Reals && (b instanceof Interval || b === Reals)) return b;
+  if (a === Reals && b instanceof Interval) return b;
   if (b === Reals && a instanceof Interval) return a;
   const special = intersectSpecial(a, b) ?? intersectSpecial(b, a);
   if (special) return special;
@@ -1459,6 +1545,33 @@ function intersectSpecial(a: SetExpr, b: SetExpr): SetExpr | undefined {
     const left = cast(at(a.args, 0), SetExpr), right = cast(at(b.args, 0), SetExpr);
     if (isSubset(left, right) === true) return a;
     if (isSubset(right, left) === true) return b;
+    if (a.className === 'CartesianComplexRegion') {
+      const coordinates = intersection(left, right);
+      return coordinates === EmptySet ? EmptySet : cast(a.withArgs([coordinates]), SetExpr);
+    }
+    // A positive-radius polar coordinate has a unique normalized angle.
+    // Zero belongs to every angle, so preserve it even for disjoint sectors.
+    const coordinates = intersection(left, right);
+    const origin = containsQ(a, S.Zero) === true && containsQ(b, S.Zero) === true;
+    return union(coordinates === EmptySet ? EmptySet : cast(a.withArgs([coordinates]), SetExpr), origin ? finiteSet(0) : EmptySet);
+  }
+  if ((a.className === 'CartesianComplexRegion' || a.className === 'PolarComplexRegion') && isSubset(b, Reals) === true) {
+    const coordinates = cast(at(a.args, 0), SetExpr);
+    const parts = coordinates instanceof SetOp && coordinates.op === 'Union' ? coordinates.args : [coordinates];
+    const realParts: SetExpr[] = [];
+    for (const part of parts) {
+      const p = cast(part, ProductSetNode);
+      const radius = at(p.args, 0), angle = at(p.args, 1);
+      if (containsQ(angle, S.Zero) === true) realParts.push(radius);
+      if (a.className === 'PolarComplexRegion') {
+        if (containsQ(angle, S.Pi) === true) {
+          const variable = new Sym('x', { real: true });
+          realParts.push(imageSet(variable, neg(variable), radius));
+        }
+        if (containsQ(radius, S.Zero) === true) realParts.push(finiteSet(0));
+      }
+    }
+    return intersection(union(...realParts), b);
   }
   const integral = (s: SetExpr): boolean => s === Integers || s === Naturals || s === Naturals0 || s instanceof Range;
   if (a === Rationals && (integral(b) || b === Rationals)) return b;
@@ -1483,7 +1596,7 @@ function roundInt(e: Expr, up: boolean): Expr | undefined {
 
 /** SymPy intersection_sets(Range, Integers / Reals / Naturals / Interval / Range). */
 function intersectRange(r: Range, o: SetExpr): SetExpr | undefined {
-  if (o === Integers || o === Reals || o === Rationals) return r;
+  if (o === Integers || o === Reals || o === Rationals || o === Complexes) return r;
   // (SymPy does not intersect a symbolic Range with an interval or a Range)
   if (hasSymbol(r)) return undefined;
   if (o === Naturals || o === Naturals0) return intersectRange(r, new Interval(o === Naturals ? S.One : S.Zero, S.Infinity, false, true));
@@ -1725,6 +1838,7 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
   if (s instanceof SetOp && s.op === 'Union') return or(...s.args.map((a) => asRelational(a, x)));
   if (s instanceof SetOp && s.op === 'Intersection') return and(...s.args.map((a) => asRelational(a, x)));
   if (s instanceof ProductSetNode && x instanceof TupleNode && s.args.length === x.args.length) return and(...s.args.map((a, i) => asRelational(a, at(x.args, i))));
+  if (s instanceof ConditionSet) return and(contains(s.base, x), xreplace(s.condition, [[s.variable, x]]));
   if (s instanceof SetOp && s.op === 'Complement') return and(asRelational(at(s.args, 0), x), not(asRelational(at(s.args, 1), x)));
   if (s instanceof Range) return rangeAsRelational(s, x);
   throw new NotImplementedError('as_relational: unsupported set');
