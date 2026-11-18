@@ -14,6 +14,7 @@ import { NotInvertible } from '../core/errors';
 import { at, first } from '../core/guard';
 import { CoercionFailed, QQ, groundRational } from './domains';
 import type { Domain } from './domains';
+import { UnificationFailed } from './polyerrors';
 import { PythonMPQ } from './domains/pythonrational';
 
 type QP = PythonMPQ[];
@@ -87,12 +88,25 @@ export class ANP {
     }
     return strip([QQ.convert(o)]);
   }
+  get isOne(): boolean {
+    return this.rep.length === 1 && this.LC().equals(1);
+  }
   get isZero(): boolean {
     return this.rep.length === 0;
   }
   /** The coefficients, highest first (SymPy to_list). */
   toList(): PythonMPQ[] {
     return [...this.rep];
+  }
+  /** The defining polynomial coefficients (SymPy mod_to_list). */
+  modToList(): PythonMPQ[] {
+    return [...this.mod];
+  }
+  /** Representations over a common ground domain (SymPy unify). */
+  unify(o: ANP): [Domain, (rep: QP) => ANP, QP, QP, QP] {
+    if (this.mod.length !== o.mod.length || this.mod.some((c, i) => !c.equals(o.mod[i]))) throw new UnificationFailed('cannot unify algebraic numbers of different fields');
+    const dom = this.dom.unify(o.dom);
+    return [dom, (rep) => new ANP(rep, this.mod, dom), [...this.rep], [...o.rep], [...this.mod]];
   }
   /** The leading coefficient (SymPy LC). */
   LC(): PythonMPQ {
@@ -114,6 +128,19 @@ export class ANP {
   div(o: unknown): ANP {
     return this.per(polyMul(this.rep, polyInvert(this.repOf(o), this.mod)));
   }
+  /** The field quotient (SymPy quo). */
+  quo(o: unknown): ANP {
+    return this.div(o);
+  }
+  /** The field remainder; division by a zero divisor is undefined. */
+  rem(o: unknown): ANP {
+    this.div(o);
+    return this.per([]);
+  }
+  /** The field quotient and zero remainder (SymPy div). */
+  divmod(o: unknown): [ANP, ANP] {
+    return [this.div(o), this.per([])];
+  }
   /** this**n (a negative n inverts). */
   pow(n: number): ANP {
     let [r, b] = [this.per([ONE]), n < 0 ? this.per(polyInvert(this.rep, this.mod)) : this];
@@ -125,7 +152,7 @@ export class ANP {
   }
   equals(o: unknown): boolean {
     if (!(o instanceof ANP)) return this.rep.length <= 1 && groundRational(o) !== undefined && this.LC().equals(QQ.convert(o));
-    return o.rep.length === this.rep.length && o.rep.every((c, i) => c.equals(this.rep[i])) && o.mod.length === this.mod.length;
+    return o.rep.length === this.rep.length && o.rep.every((c, i) => c.equals(this.rep[i])) && o.mod.length === this.mod.length && o.mod.every((c, i) => c.equals(this.mod[i]));
   }
   /** SymPy repr(a), which is also its str. */
   toString(): string {
