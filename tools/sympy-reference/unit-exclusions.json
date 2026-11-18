@@ -1,4 +1,7 @@
 {
+  "sympy.core.tests.test_arit:test_issue_3531:1641: assert sympify(1)/MightyNumeric((1, 2)) == \"something\"": "Python test class sympy.core.tests.test_arit.test_issue_3531.<locals>.MightyNumeric requires Python method execution",
+  "sympy.core.tests.test_basic:test_equality:96: assert b == bar": "Python test class sympy.core.tests.test_basic.test_equality.<locals>.Bar requires Python method execution",
+  "sympy.core.tests.test_containers:test_Tuple_concatenation:65: assert Tuple(1, 2) + Tuple2(3, 4) == Tuple(1, 2, 1, 2, 3, 4)": "Python test class sympy.core.tests.test_containers.test_Tuple_concatenation.<locals>.Tuple2 requires Python method execution",
   "sympy.core.tests.test_function:test_diff_wrt_intlike:786: assert cos(x).diff(x, Two()) == -cos(x)": "Python test class sympy.core.tests.test_function.test_diff_wrt_intlike.<locals>.Two requires Python method execution",
   "sympy.core.tests.test_function:test_eval_sympified:1435: assert F(1) is S.One": "Python test class sympy.core.tests.test_function.test_eval_sympified.<locals>.F requires Python method execution",
   "sympy.core.tests.test_function:test_eval_sympified:1444: raises(SympifyError, lambda: F2(0))": "Python test class sympy.core.tests.test_function.test_eval_sympified.<locals>.F2 requires Python method execution",
