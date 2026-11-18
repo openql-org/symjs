@@ -64,6 +64,10 @@ import {
 import * as F from './mpf';
 import { dpsToPrec } from './mpf';
 import { type Mpc, type MpPart, MpSpecialValue, evalAdaptive, fromMpc } from './mpeval';
+import { asRealImag } from '../core/methods';
+import { fn } from '../functions/elementary/elementary';
+import { fromInt } from './mpf';
+import type { Mpf } from './mpf';
 
 /** SymPy is_comparable: a real numerical value whose evalf(2) has precision. */
 export function isComparable(ex: ExprLike): boolean {
@@ -443,3 +447,33 @@ impl.evalf = evalf;
 impl.isComparable = isComparable;
 
 impl.toComplex = toComplex;
+
+export type EvalfResult = readonly [Mpf, Mpf, number, number];
+
+/** Relative accuracy in bits, using SymPy's maximum-norm error estimate. */
+export function complexAccuracy(result: EvalfResult | Expr): number {
+  if (result === S.ComplexInfinity) return Infinity;
+  if (result instanceof Expr) throw new TypeError('expected an evalf result');
+  const [re, im, reAccuracy, imAccuracy] = result;
+  if (im.man === 0n) return re.man === 0n ? Infinity : reAccuracy;
+  if (re.man === 0n) return imAccuracy;
+  const size = (x: Mpf): number => Number(x.exp) + (x.man < 0n ? -x.man : x.man).toString(2).length;
+  const reSize = size(re), imSize = size(im);
+  return Math.max(reSize, imSize) - Math.max(reSize - reAccuracy, imSize - imAccuracy);
+}
+
+/** Exact floor/ceiling of the real and imaginary parts; unresolved parts signal failure. */
+export function getIntegerPart(expr: Expr, direction: 1 | -1, options: ReadonlyMap<string, unknown> = new Map(), returnInts = false): readonly [bigint, bigint] | readonly [Mpf | NoMatchResult, Mpf | NoMatchResult, number | NoMatchResult, number | NoMatchResult] {
+  if (expr === S.ComplexInfinity) throw new RangeError('Cannot get integer part of Complex Infinity');
+  if (options.size !== 0) throw new RangeError('unsupported integer-part options');
+  const round = (part: Expr): bigint => {
+    const value = fn(direction === 1 ? 'ceiling' : 'floor', [part]);
+    if (!(value instanceof Rational) || value.q !== 1n) throw new RangeError('Cannot determine exact integer part');
+    return value.p;
+  };
+  const [real, imag] = asRealImag(expr);
+  const re = round(real), im = round(imag);
+  if (returnInts) return [re, im];
+  const mpf = (man: bigint): Mpf | NoMatchResult => man === 0n ? NoMatch : fromInt(man);
+  return [mpf(re), mpf(im), re === 0n ? NoMatch : Infinity, im === 0n ? NoMatch : Infinity];
+}

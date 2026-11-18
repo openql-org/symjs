@@ -7,8 +7,10 @@
  * range syntax of symbols().
  */
 
-import { Rational, impl } from './nodes';
+import { type Constant, Float, Rational, impl } from './nodes';
 import { at, pair } from './guard';
+import { NoMatch } from './truth';
+import type { NoMatchResult } from './truth';
 
 /** Exact rational value of a double (SymPy Rational(0.2) = 3602879701896397/18014398509481984). */
 export function rationalFromFloat(v: number): Rational {
@@ -146,6 +148,7 @@ const babs = (n: bigint): bigint => (n < 0n ? -n : n);
 
 /** Greatest common divisor of integers (SymPy igcd). */
 export function igcd(...xs: bigint[]): bigint {
+  if (xs.some((x) => typeof x !== 'bigint')) throw new RangeError('igcd: expected integers');
   let g = 0n;
   for (let x of xs) {
     x = babs(x);
@@ -186,17 +189,27 @@ export function igcdex(aIn: bigint, bIn: bigint): [bigint, bigint, bigint] {
 }
 
 /** SymPy isqrt: floor(sqrt(n)) of a nonnegative integer. */
-export function isqrt(n: bigint): bigint {
+export function isqrt(value: bigint | Rational | Float): bigint {
+  let n: bigint;
+  if (value instanceof Rational) {
+    if (value.p < 0n) throw new RangeError('n must be nonnegative');
+    n = value.p / value.q;
+  } else if (value instanceof Float) {
+    if (value.mpf.man < 0n) throw new RangeError('n must be nonnegative');
+    n = value.mpf.exp >= 0n ? value.mpf.man << value.mpf.exp : value.mpf.man >> -value.mpf.exp;
+  } else n = value;
   if (n < 0n) throw new RangeError('n must be nonnegative');
   return integerNthroot(n, 2)[0];
 }
 
 /** (floor(y**(1/n)), exact) for nonnegative integers (SymPy integer_nthroot). */
-export function integerNthroot(y: bigint, n: number): [bigint, boolean] {
+export function integerNthroot(y: bigint, n: number | bigint): [bigint, boolean] {
+  if (!(n > 0) || typeof n === 'number' && !Number.isInteger(n)) throw new RangeError('integer_nthroot: n must be positive');
   if (y < 0n) throw new RangeError('integer_nthroot: y must be nonnegative');
   if (y < 2n) return [y, true];
+  if (n >= y.toString(2).length) return [1n, false];
   const N = BigInt(n);
-  let x = 1n << BigInt(Math.ceil(y.toString(2).length / n) + 1);
+  let x = 1n << BigInt(Math.ceil(y.toString(2).length / Number(n)) + 1);
   for (;;) {
     const z = ((N - 1n) * x + y / x ** (N - 1n)) / N;
     if (z >= x) break;
@@ -272,4 +285,64 @@ export function limitDenominator(r: Rational, maxDen: bigint): Rational {
   const d1 = dist(b1);
   const d2 = dist(b2);
   return d2.p * d1.q <= d1.p * d2.q ? b2 : b1;
+}
+
+/** Whether a literal number has no fractional part, without symbolic inference. */
+export function intValued(value: unknown): boolean {
+  if (typeof value === 'bigint') return true;
+  if (typeof value === 'number') return Number.isInteger(value);
+  if (value instanceof Rational) return value.q === 1n;
+  if (value instanceof Float) return value.mpf.man === 0n || value.mpf.exp >= 0n;
+  return false;
+}
+
+/** Greatest common divisor using Lehmer's leading-digit quotient batches. */
+export function igcdLehmer(aIn: bigint, bIn: bigint): bigint {
+  let a = babs(aIn), b = babs(bIn);
+  if (a < b) [a, b] = [b, a];
+  while (a.toString(2).length > 60 && b !== 0n) {
+    const shift = BigInt(a.toString(2).length - 60);
+    let x = a >> shift, y = b >> shift;
+    let A = 1n, B = 0n, C = 0n, D = 1n;
+    for (;;) {
+      if (y + C <= 0n) break;
+      let q = (x + A) / (y + C);
+      let remainder = x - q * y;
+      const nextB = B - q * D;
+      if (remainder + nextB < 0n) break;
+      [x, y] = [y, remainder];
+      [A, B, C, D] = [C, D, A - q * C, nextB];
+      if (y + D <= 0n) break;
+      q = (x + B) / (y + D);
+      remainder = x - q * y;
+      const nextA = A - q * C;
+      if (remainder + nextA < 0n) break;
+      [x, y] = [y, remainder];
+      [A, B, C, D] = [C, D, nextA, B - q * D];
+    }
+    if (B === 0n) [a, b] = [b, a % b];
+    else [a, b] = [A * a + B * b, C * a + D * b];
+  }
+  return igcd(a, b);
+}
+
+/** Proven enclosing intervals for SymPy's real number symbols. */
+export function approximationInterval(value: Constant, numberClass: 'Integer' | 'Rational' = 'Integer'): readonly [Rational, Rational] | NoMatchResult {
+  if (numberClass === 'Rational') {
+    switch (value.name) {
+      case 'pi': return [Rational.of(223, 71), Rational.of(22, 7)];
+      case 'EulerGamma': return [Rational.of(1, 2), Rational.of(3, 5)];
+      case 'Catalan': return [Rational.of(9, 10), Rational.of(1)];
+      default: return NoMatch;
+    }
+  }
+  switch (value.name) {
+    case 'pi': return [Rational.of(3), Rational.of(4)];
+    case 'E': return [Rational.of(2), Rational.of(3)];
+    case 'GoldenRatio':
+    case 'TribonacciConstant': return [Rational.of(1), Rational.of(2)];
+    case 'EulerGamma':
+    case 'Catalan': return [Rational.of(0), Rational.of(1)];
+    default: return NoMatch;
+  }
 }

@@ -5,7 +5,7 @@
 
 import { afterEach, describe, expect, it } from 'vitest';
 import * as sj from '../../src';
-import { add, exp, I, mul, sqrt, symbol, symbols } from '../../src';
+import { add, complexAccuracy, exp, getIntegerPart, I, mul, NoMatch, Rational, S, sqrt, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 import { impl } from '../../src/core/nodes';
 import * as C from '../../src/numeric/mpconst';
@@ -280,4 +280,32 @@ it('encodes and decodes scaled zeros with their sign and magnitude', () => {
   expect(sj.scaledZero(-20, -1)).toEqual([[[1], 1, -20, 1], -1]);
   expect(() => sj.scaledZero(1.5)).toThrow(RangeError);
   expect(() => sj.scaledZero(1, 0)).toThrow(RangeError);
+});
+
+const zero = { man: 0n, exp: 0n };
+const two = { man: 1n, exp: 1n };
+const ten = { man: 5n, exp: 1n };
+
+describe('evalf helpers', () => {
+  it('combines absolute errors in the maximum norm', () => {
+    expect(complexAccuracy(S.ComplexInfinity)).toBe(Infinity);
+    expect(() => complexAccuracy(S.One)).toThrow(TypeError);
+    expect(complexAccuracy([zero, zero, 0, 0])).toBe(Infinity);
+    expect(complexAccuracy([two, zero, 35, 0])).toBe(35);
+    expect(complexAccuracy([zero, two, 0, 35])).toBe(35);
+    expect(complexAccuracy([two, ten, 35, 100])).toBe(37);
+    expect(complexAccuracy([two, { man: -125n, exp: 3n }, 35, 100])).toBe(43);
+    expect(complexAccuracy([two, ten, 100, 35])).toBe(35);
+  });
+  it('computes exact componentwise integer parts', () => {
+    expect(() => getIntegerPart(S.ComplexInfinity, 1)).toThrow(RangeError);
+    expect(() => getIntegerPart(S.One, 1, new Map([['subs', 1]]))).toThrow(RangeError);
+    expect(() => getIntegerPart(parse('x'), 1)).toThrow(RangeError);
+    expect(getIntegerPart(Rational.of(1, 2), -1, new Map(), true)).toEqual([0n, 0n]);
+    expect(getIntegerPart(Rational.of(1, 2), 1, new Map(), true)).toEqual([1n, 0n]);
+    expect(getIntegerPart(Rational.of(-1, 2), -1, new Map(), true)).toEqual([-1n, 0n]);
+    expect(getIntegerPart(Rational.of(-1, 2), 1, new Map(), true)).toEqual([0n, 0n]);
+    expect(getIntegerPart(parse('3/2 + 5*I/2'), -1)).toEqual([{ man: 1n, exp: 0n }, { man: 1n, exp: 1n }, Infinity, Infinity]);
+    expect(getIntegerPart(S.Zero, 1)).toEqual([NoMatch, NoMatch, NoMatch, NoMatch]);
+  });
 });

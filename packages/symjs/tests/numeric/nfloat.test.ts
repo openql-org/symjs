@@ -213,3 +213,16 @@ describe('nsimplify', () => {
     expect(sstr(evalf(nsimplify(px, { rationalConversion: 'exact' }), 100))).toBe(sstr(px));
   });
 });
+
+it('comp compares complex norms, decimal strings, and rejects symbolic numbers', () => {
+  expect(comp(evalf(p('sqrt(2)'), 2), '1.4')).toBe(true);
+  expect(comp(evalf(p('sqrt(2)'), 2), '1.5')).toBe(false);
+  expect(() => comp(p('x'), '1')).toThrow(RangeError);
+  expect(() => comp(p('x'), 1)).toThrow(RangeError);
+  expect(() => comp(1, p('y'))).toThrow(RangeError);
+  expect(comp(p('sqrt(2) + I*sqrt(3)'), p('1.4 + 1.7*I'), 0.1)).toBe(true);
+  expect(comp(p('sqrt(2) + I*sqrt(3)'), p('1.62 + 1.836*I'), 0.1)).toBe(false);
+  expect(comp(p('2+I'), p('2.0+sqrt(2)'))).toBe(false);
+  expect(comp(p('2.0+sqrt(2)'), p('2+I'))).toBe(false);
+  expect(comp(p('I*1.0'), p('I*1.0'))).toBe(true);
+});

@@ -231,6 +231,7 @@ export function fmt(v: unknown): string {
   if (v instanceof Map) return fmt(new JsDict([...v]));
   if (Array.isArray(v)) return fmt(new JsTuple(v));
   if (v instanceof Set) return fmt(new JsSet([...v]));
+  if (v === Infinity) return 'inf';
   if (v === -Infinity) return '-oo';
   if (typeof v === 'boolean') return v ? 'True' : 'False';
   if (v === null || v === undefined) return 'None';
@@ -1640,6 +1641,13 @@ function idxList(v: unknown): (number | boolean)[] {
   return v.items.map((x) => (typeof x === 'boolean' ? x : Number((x as sj.Rational).p)));
 }
 
+function integerBigArg(v: unknown): bigint {
+  if (v instanceof sj.Rational && v.q === 1n) return v.p;
+  if (typeof v === 'bigint') return v;
+  if (typeof v === 'number' && Number.isInteger(v)) return BigInt(v);
+  throw new RangeError('expected an integer');
+}
+
 function intArg(v: unknown): number {
   if (v instanceof sj.Rational && v.isInteger) return Number(v.p);
   if (typeof v === 'number' && Number.isInteger(v)) return v;
@@ -1798,10 +1806,13 @@ export const ADAPTERS: Record<string, Adapter> = {
     let num = args[0];
     if (num instanceof JsTuple) {
       // an mpf tuple (sign, mantissa, exponent[, bitcount]) at the given decimal precision
-      const [sg, man, ex] = num.items.map((x) => (x as sj.Rational).p);
+      const [sign, mantissa, exponent] = num.items;
+      const sg = integerBigArg(sign);
+      const man = typeof mantissa === 'string' ? BigInt('0x' + mantissa.replace(/^0x/i, '').replace(/L$/, '')) : integerBigArg(mantissa);
+      const ex = integerBigArg(exponent);
       const d = args[1] ?? kw['dps'];
       const prec = d === undefined ? 53 : sj.dpsToPrec(intArg(d));
-      return new sj.Float({ man: sg ? -man! : man!, exp: ex! }, prec);
+      return new sj.Float({ man: sg ? -man : man, exp: ex }, prec);
     }
     const d = args[1] ?? kw['dps'];
     const dps = d === undefined ? undefined : typeof d === 'string' ? (d as '') : intArg(d);
@@ -1885,7 +1896,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   integer_log: (args, kw) => {
     noKw(kw);
-    const [e, t] = sj.integerLog((asExpr(args[0]) as sj.Rational).p, (asExpr(args[1]) as sj.Rational).p);
+    const [e, t] = sj.integerLog(integerBigArg(args[0]), integerBigArg(args[1]));
     return new JsTuple([sj.Rational.of(e), t]);
   },
   Symbol: (args, kw) => {
@@ -2542,13 +2553,44 @@ export const ADAPTERS: Record<string, Adapter> = {
     const n = Number(((kw['n'] ?? args[1] ?? sj.Rational.of(0)) as sj.Rational).p);
     return new JsTuple(sj.eulerMaclaurin(self as sj.Concrete, m, n));
   },
-  igcd: (args, kw) => (noKw(kw), sj.Rational.of(sj.igcd(...args.map((a) => (a as sj.Rational).p)))),
+  '.from_coprime_ints': (args, kw) => (noKw(kw), sj.Rational.of(integerBigArg(args[0]), integerBigArg(args[1]))),
+  '.approximation_interval': (args, kw, self) => {
+    noKw(kw);
+    const result = sj.approximationInterval(self as sj.NumberSymbol, (args[0] as TypeRef).name as 'Integer' | 'Rational');
+    return sj.isNoMatch(result) ? null : new JsTuple([...result]);
+  },
+  complex_accuracy: (args, kw) => {
+    noKw(kw);
+    const result = args[0];
+    if (result instanceof Expr) return sj.complexAccuracy(result);
+    const [re, im, ra, ia] = (result as JsTuple).items;
+    const mpf = (v: unknown) => {
+      if (!(v instanceof JsTuple)) return { man: 0n, exp: 0n };
+      const [sign, man, exp] = v.items;
+      return { man: (intArg(sign) ? -1n : 1n) * integerBigArg(man), exp: integerBigArg(exp) };
+    };
+    return sj.complexAccuracy([mpf(re), mpf(im), ra === null ? Infinity : intArg(ra), ia === null ? Infinity : intArg(ia)]);
+  },
+  get_integer_part: (args, kw) => {
+    noKw(kw);
+    const direction = intArg(args[1]);
+    if (direction !== 1 && direction !== -1) throw new RangeError('integer-part direction');
+    const options = new Map((args[2] as JsDict).entries.map(([k, v]) => [String(k), v]));
+    return new JsTuple([...sj.getIntegerPart(asExpr(args[0]), direction, options, args[3] === true)]);
+  },
+  igcd: (args, kw) => {
+    noKw(kw);
+    if (args.length < 2) throw new TypeError('igcd requires at least two arguments');
+    return sj.igcd(...args.map(integerBigArg));
+  },
+  igcd_lehmer: (args, kw) => (noKw(kw), sj.igcdLehmer(integerBigArg(args[0]), integerBigArg(args[1]))),
+  int_valued: (args, kw) => (noKw(kw), sj.intValued(args[0])),
   igcdex: (args, kw) => (noKw(kw), sj.igcdex((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
-  isqrt: (args, kw) => (noKw(kw), sj.isqrt((args[0] as sj.Rational).p)),
+  isqrt: (args, kw) => (noKw(kw), sj.isqrt(args[0] as sj.Rational)),
   ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),
   integer_nthroot: (args, kw) => {
     noKw(kw);
-    const [r, ok] = sj.integerNthroot((args[0] as sj.Rational).p, intArg(args[1]));
+    const [r, ok] = sj.integerNthroot(integerBigArg(args[0]), integerBigArg(args[1]));
     return new JsTuple([sj.Rational.of(r), ok]);
   },
   trailing: (args, kw) => (noKw(kw), sj.trailing((args[0] as sj.Rational).p)),
@@ -2566,7 +2608,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   comp: (args, kw) => {
     noKw(kw);
     const tol = args[2] === undefined ? undefined : args[2] === '' ? ('' as const) : asExpr(args[2]).toNumber();
-    return sj.comp(asExpr(args[0]), asExpr(args[1]), tol);
+    return sj.comp(asExpr(args[0]), typeof args[1] === 'string' ? args[1] : asExpr(args[1]), tol);
   },
   var: (args, kw) => ADAPTERS['symbols']!(args, kw),
   '.limit_denominator': (args, kw, self) => (noKw(kw), sj.limitDenominator(self as sj.Rational, (args[0] as sj.Rational).p)),
@@ -4930,10 +4972,22 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__lshift__': (a, [b]) => callMethod(a, ['lshift'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Implies(b, a) : unsupportedOp('<<')),
   '.__eq__': (a, [b]) => pyEquals(a, b),
   '.__ne__': (a, [b]) => !pyEquals(a, b),
-  '.__lt__': (a, [b]) => callMethod(a, ['lt'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Lt(a, b) : unsupportedOp('<')),
-  '.__le__': (a, [b]) => callMethod(a, ['le'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Le(a, b) : unsupportedOp('<=')),
-  '.__gt__': (a, [b]) => callMethod(a, ['gt'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Gt(a, b) : unsupportedOp('>')),
-  '.__ge__': (a, [b]) => callMethod(a, ['ge'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Ge(a, b) : unsupportedOp('>=')),
+  '.__lt__': (a, [b]) => {
+    if (a === null || b === null) throw new TypeError('cannot order None');
+    return callMethod(a, ['lt'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Lt(a, b) : unsupportedOp('<'));
+  },
+  '.__le__': (a, [b]) => {
+    if (a === null || b === null) throw new TypeError('cannot order None');
+    return callMethod(a, ['le'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Le(a, b) : unsupportedOp('<='));
+  },
+  '.__gt__': (a, [b]) => {
+    if (a === null || b === null) throw new TypeError('cannot order None');
+    return callMethod(a, ['gt'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Gt(a, b) : unsupportedOp('>'));
+  },
+  '.__ge__': (a, [b]) => {
+    if (a === null || b === null) throw new TypeError('cannot order None');
+    return callMethod(a, ['ge'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Ge(a, b) : unsupportedOp('>='));
+  },
   '.__contains__': (a, [b]) => {
     if (a instanceof sj.SetExpr && !(a instanceof sj.MatrixSet)) {
       const result = sj.contains(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : expressionContainer(b));
