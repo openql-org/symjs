@@ -480,7 +480,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '<=', { evaluate: false })]], x, false)), 'Interval(-1.00000000000000, 1.00000000000000)', [x], { fn: 'reduce_rational_inequalities', input: '[[x**2 <= 1.0]]' })).toBe(true);
   });
-  it.fails("test_reduce_poly_inequalities_real_interval:78", () => {
+  it("test_reduce_poly_inequalities_real_interval:78", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '<', { evaluate: false })]], x, false))).toBe('Interval.open(-1.00000000000000, 1.00000000000000)');
   });
@@ -488,11 +488,11 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '>=', { evaluate: false })]], x, false)), 'Union(Interval(-oo, -1.00000000000000), Interval(1.00000000000000, oo))', [x], { fn: 'reduce_rational_inequalities', input: '[[x**2 >= 1.0]]' })).toBe(true);
   });
-  it.fails("test_reduce_poly_inequalities_real_interval:83", () => {
+  it("test_reduce_poly_inequalities_real_interval:83", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '>', { evaluate: false })]], x, false))).toBe('Union(Interval.open(-oo, -1.00000000000000), Interval.open(1.00000000000000, oo))');
   });
-  it.fails("test_reduce_poly_inequalities_real_interval:87", () => {
+  it("test_reduce_poly_inequalities_real_interval:87", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '!=', { evaluate: false })]], x, false))).toBe('Union(Interval.open(-oo, -1.00000000000000), Interval.open(-1.00000000000000, 1.00000000000000), Interval.open(1.00000000000000, oo))');
   });

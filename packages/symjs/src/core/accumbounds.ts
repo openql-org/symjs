@@ -10,7 +10,7 @@
 
 import type { Expr, ExprLike } from './nodes';
 import { Add, ExtensionExpr, Mul, Pow, Rational, S, Special, impl } from './nodes';
-import { isReal } from './assumptions';
+import { isNegative, isNonNegative, isReal } from './assumptions';
 import { add, mul, pow, sympify } from './ops';
 import { callableClass } from './callable';
 import { NotLoadedError } from './errors';
@@ -20,7 +20,7 @@ const isInf = (e: Expr): boolean => e instanceof Special && e.name === 'oo';
 const isNegInf = (e: Expr): boolean => e instanceof Special && e.name === '-oo';
 /** Numeric value of a real bound (+-Infinity for +-oo). */
 const val = (e: Expr): number => (isInf(e) ? Infinity : isNegInf(e) ? -Infinity : e.toNumber());
-const lt = (a: Expr, b: Expr): boolean => val(a) < val(b);
+const lt = (a: Expr, b: Expr): boolean => isNegative(add(a, mul(-1, b))) === true;
 const minOf = (xs: Expr[]): Expr => xs.reduce((m, x) => (lt(x, m) ? x : m));
 const maxOf = (xs: Expr[]): Expr => xs.reduce((m, x) => (lt(m, x) ? x : m));
 /** a*b with 0*oo = 0 (the product of interval bounds). */
@@ -59,7 +59,11 @@ export class AccumBoundsNode extends ExtensionExpr {
   get mid(): Expr {
     return mul(add(this.min, this.max), Rational.of(1n, 2n));
   }
-  /** A real interval is its own conjugate and adjoint (SymPy conjugate(AccumBounds(1, 2))). */
+  /** Every accumulation bound is extended real. */
+  override isRealSelf(): boolean {
+    return true;
+  }
+  /** A real interval is its own conjugate and adjoint. */
   override conjugateSelf(): Expr {
     return this;
   }
@@ -71,7 +75,9 @@ export class AccumBoundsNode extends ExtensionExpr {
   }
   /** x lies in the interval (SymPy `x in AccumBounds(...)`). */
   contains(x: ExprLike): boolean {
-    const v = val(sympify(x));
+    const e = sympify(x);
+    if (isReal(e) !== true && !isInf(e) && !isNegInf(e)) throw new TypeError('Input must be a real number');
+    const v = val(e);
     // AccumBounds identifies the two ends of the extended real line: either
     // infinity is an accumulation value when the interval is unbounded.
     if (Math.abs(v) === Infinity) return isNegInf(this.min) || isInf(this.max);
@@ -99,7 +105,7 @@ export class AccumBoundsNode extends ExtensionExpr {
 export function accumBounds(minIn: ExprLike, maxIn: ExprLike): Expr {
   const lo = sympify(minIn);
   const hi = sympify(maxIn);
-  if (lo.freeSymbols().size || hi.freeSymbols().size) throw new TypeError('AccumBounds: the bounds must be real numbers');
+  if ((isReal(lo) !== true && !isInf(lo) && !isNegInf(lo)) || (isReal(hi) !== true && !isInf(hi) && !isNegInf(hi))) throw new TypeError('AccumBounds: the bounds must be real numbers');
   if (lt(hi, lo)) throw new RangeError('AccumBounds: the lower bound must not exceed the upper bound');
   if (lo.key === hi.key) return lo;
   return new AccumBoundsNode(lo, hi);
@@ -112,7 +118,8 @@ export const AccumBounds = /* @__PURE__ */ callableClass(AccumBoundsNode, accumB
 
 /** The sum of intervals and a number; a non-real number stays beside them (SymPy AccumBounds(1, 2) + I). */
 function abAdd(abs: readonly Expr[], c: Expr): Expr {
-  if (isReal(c) !== true) return new Add([c, ...abs]);
+  if (isReal(c) !== true && !isInf(c) && !isNegInf(c)) return new Add([c, ...abs]);
+  if ((isInf(c) && abs.some((a) => isNegInf(asAB(a).min))) || (isNegInf(c) && abs.some((a) => isInf(asAB(a).max)))) return accumBounds(S.NegativeInfinity, S.Infinity);
   const lo = add(c, ...abs.map((a) => asAB(a).min));
   const hi = add(c, ...abs.map((a) => asAB(a).max));
   return accumBounds(lo, hi);
@@ -134,8 +141,9 @@ function abMul(abs: readonly Expr[], c: Expr): Expr {
 /** An interval raised to a number. */
 function abPow(a: AccumBoundsNode, e: Expr): Expr {
   if (e instanceof AccumBoundsNode) {
-    if (val(a.min) <= 0) return new Pow(a, e);
-    const endpoints = [pow(a.min, e.min), pow(a.min, e.max), pow(a.max, e.min), pow(a.max, e.max)];
+    if (val(a.min) < 0 || (val(a.min) === 0 && val(e.min) < 0)) return new Pow(a, e);
+    const powers = [abPow(a, e.min), abPow(a, e.max)];
+    const endpoints = powers.flatMap((p) => p instanceof AccumBoundsNode ? [p.min, p.max] : [p]);
     return accumBounds(minOf(endpoints), maxOf(endpoints));
   }
   // SymPy AccumBounds.__pow__: [a, b]**-oo = (1/[a, b])**oo
@@ -171,8 +179,8 @@ function abPow(a: AccumBoundsNode, e: Expr): Expr {
     return n === -1n ? inv : abPow(asAB(inv), Rational.of(-n));
   }
   // a fractional power of a nonnegative interval is monotone; 0**e = oo for e < 0
-  if (val(a.min) >= 0 && v > 0) return accumBounds(pow(a.min, e), pow(a.max, e));
-  if (val(a.min) >= 0 && v < 0) return accumBounds(pow(a.max, e), val(a.min) === 0 ? S.Infinity : pow(a.min, e));
+  if (isNonNegative(a.min) === true && v > 0) return accumBounds(pow(a.min, e), pow(a.max, e));
+  if (isNonNegative(a.min) === true && v < 0) return accumBounds(pow(a.max, e), val(a.min) === 0 ? S.Infinity : pow(a.min, e));
   // SymPy leaves a fractional power of an interval containing negative numbers unevaluated
   return new Pow(a, e);
 }

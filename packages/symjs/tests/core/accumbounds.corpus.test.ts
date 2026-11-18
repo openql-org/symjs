@@ -121,7 +121,7 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
   //   assert B(1, 2).mid == Rational(3, 2)
   //   => 3/2
   it.todo("test_AccumBounds:20");
-  it.fails("test_AccumBounds:21", () => {
+  it("test_AccumBounds:21", () => {
     expect(sympyStr(isReal(AccumBounds(rational(1), rational(3))))).toBe('True');
   });
   it("test_AccumBounds:25", () => {
@@ -157,19 +157,19 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
     const x = new Sym('x');
     expect(sympyStr(AccumBounds(rational(1), rational(2)).sub(x))).toBe('-x + AccumBounds(1, 2)');
   });
-  it.fails("test_AccumBounds:39", () => {
+  it("test_AccumBounds:39", () => {
     expect(sympyStr(AccumBounds(S.NegativeInfinity, rational(1)).add(oo))).toBe('AccumBounds(-oo, oo)');
   });
-  it.fails("test_AccumBounds:41", () => {
+  it("test_AccumBounds:41", () => {
     expect(sympyStr(AccumBounds(rational(1), oo).sub(oo))).toBe('AccumBounds(-oo, oo)');
   });
-  it.fails("test_AccumBounds:45", () => {
+  it("test_AccumBounds:45", () => {
     expect(sympyStr(AccumBounds(rational(1), oo).sub(oo))).toBe('AccumBounds(-oo, oo)');
   });
-  it.fails("test_AccumBounds:46", () => {
+  it("test_AccumBounds:46", () => {
     expect(sympyStr(AccumBounds(S.NegativeInfinity, rational(1)).sub(S.NegativeInfinity))).toBe('AccumBounds(-oo, oo)');
   });
-  it.fails("test_AccumBounds:47", () => {
+  it("test_AccumBounds:47", () => {
     expect(sympyStr(oo.sub(AccumBounds(rational(1), oo)))).toBe('AccumBounds(-oo, oo)');
   });
   it("test_AccumBounds:50", () => {
@@ -188,7 +188,7 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
   it("test_AccumBounds:60", () => {
     expect(() => AccumBounds(rational(1), rational(-1))).toThrow(RangeError);
   });
-  it.fails("test_AccumBounds:62", () => {
+  it("test_AccumBounds:62", () => {
     const r = new Sym('r', { real: true });
     expect(() => AccumBounds(r, new Add([rational(-1), r]))).toThrow(RangeError);
   });
@@ -537,10 +537,10 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
   it("test_AccumBounds_exponent:235", () => {
     expect(sympyStr(rational(2).pow(AccumBounds(rational(-2), rational(2))))).toBe('AccumBounds(1/4, 4)');
   });
-  it.fails("test_AccumBounds_exponent:239", () => {
+  it("test_AccumBounds_exponent:239", () => {
     expect(sympyStr(AccumBounds(rational(0), rational(1)).pow(AccumBounds(rational(1, 2), rational(1))))).toBe('AccumBounds(0, 1)');
   });
-  it.fails("test_AccumBounds_exponent:240", () => {
+  it("test_AccumBounds_exponent:240", () => {
     expect(sympyStr(AccumBounds(rational(0), rational(1)).pow(AccumBounds(rational(0), rational(1))))).toBe('AccumBounds(0, 1)');
   });
   it("test_AccumBounds_exponent:243", () => {
@@ -552,22 +552,22 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
   it("test_AccumBounds_exponent:247", () => {
     expect(sympyStr(unchanged(pow, AccumBounds(rational(-1), rational(1)), AccumBounds(rational(1), rational(2))))).toBe('True');
   });
-  it.fails("test_AccumBounds_exponent:248", () => {
+  it("test_AccumBounds_exponent:248", () => {
     expect(sympyStr(AccumBounds(rational(0), rational(1, 2)).pow(AccumBounds(rational(1), oo)))).toBe('AccumBounds(0, 1/2)');
   });
-  it.fails("test_AccumBounds_exponent:249", () => {
+  it("test_AccumBounds_exponent:249", () => {
     expect(sympyStr(AccumBounds(rational(0), rational(1)).pow(AccumBounds(rational(1), oo)))).toBe('AccumBounds(0, oo)');
   });
-  it.fails("test_AccumBounds_exponent:250", () => {
+  it("test_AccumBounds_exponent:250", () => {
     expect(sympyStr(AccumBounds(rational(0), rational(2)).pow(AccumBounds(rational(1), oo)))).toBe('AccumBounds(0, oo)');
   });
-  it.fails("test_AccumBounds_exponent:251", () => {
+  it("test_AccumBounds_exponent:251", () => {
     expect(sympyStr(AccumBounds(rational(0), oo).pow(AccumBounds(rational(1), oo)))).toBe('AccumBounds(0, oo)');
   });
-  it.fails("test_AccumBounds_exponent:252", () => {
+  it("test_AccumBounds_exponent:252", () => {
     expect(sympyStr(AccumBounds(rational(1, 2), rational(1)).pow(AccumBounds(rational(1), oo)))).toBe('AccumBounds(0, oo)');
   });
-  it.fails("test_AccumBounds_exponent:253", () => {
+  it("test_AccumBounds_exponent:253", () => {
     expect(sympyStr(AccumBounds(rational(1, 2), rational(1)).pow(AccumBounds(S.NegativeInfinity, rational(-1))))).toBe('AccumBounds(0, oo)');
   });
   it("test_AccumBounds_exponent:254", () => {
@@ -591,7 +591,7 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
   it("test_AccumBounds_exponent:260", () => {
     expect(sympyStr(AccumBounds(rational(1, 2), oo).pow(AccumBounds(S.NegativeInfinity, oo)))).toBe('AccumBounds(0, oo)');
   });
-  it.fails("test_AccumBounds_exponent:261", () => {
+  it("test_AccumBounds_exponent:261", () => {
     expect(sympyStr(AccumBounds(rational(1), rational(2)).pow(AccumBounds(rational(1), oo)))).toBe('AccumBounds(0, oo)');
   });
   it.fails("test_AccumBounds_exponent:262", () => {
@@ -600,7 +600,7 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
   it.fails("test_AccumBounds_exponent:263", () => {
     expect(sympyStr(simplify(nan))).toBe('AccumBounds(0, oo)');
   });
-  it.fails("test_AccumBounds_exponent:264", () => {
+  it("test_AccumBounds_exponent:264", () => {
     expect(sympyStr(AccumBounds(rational(1), oo).pow(AccumBounds(rational(1), oo)))).toBe('AccumBounds(0, oo)');
   });
   it.fails("test_AccumBounds_exponent:265", () => {

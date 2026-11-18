@@ -189,7 +189,7 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(functionRange(new Add([x, y, new Mul([rational(-1), new Pow(x, rational(2))]), new Mul([x, new Add([rational(-1), x])])]), x, Reals))).toBe('{y}');
   });
-  it.fails("test_function_range:53", () => {
+  it("test_function_range:53", () => {
     const x = new Sym('x');
     expect(sympyStr(functionRange(fn('sin', [x]), x, Union(interval(rational(-5), rational(-3), false, false), finiteSet(rational(4)))))).toBe('Union({sin(4)}, Interval(-sin(3), 1))');
   });
@@ -355,7 +355,7 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(continuousDomain(frac(new Pow(x, rational(2))), x, interval(rational(-2), rational(-1), false, false)))).toBe('Union(Interval.open(-2, -sqrt(3)), Interval.open(-sqrt(2), -1), Interval.open(-sqrt(3), -sqrt(2)))');
   });
-  it.fails("test_continuous_domain:129", () => {
+  it("test_continuous_domain:129", () => {
     const x = new Sym('x');
     expect(sympyStr(continuousDomain(frac(x), x, Reals))).toBe('Complement(Reals, Integers)');
   });
@@ -383,15 +383,15 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(notEmptyIn(intersection(interval(rational(2), rational(4), false, false), finiteSet(x, new Add([x, new Pow(x, rational(2))]))), x))).toBe('Union(Interval(1, -1/2 + sqrt(17)/2), Interval(2, 4), Interval(-sqrt(17)/2 - 1/2, -2))');
   });
-  it.fails("test_not_empty_in:160", () => {
+  it("test_not_empty_in:160", () => {
     const x = new Sym('x');
     expect(sympyStr(notEmptyIn(intersection(Reals, finiteSet(new Mul([x, new Pow(new Add([rational(-1), x]), rational(-1))]))), x))).toBe('Union(Interval.open(-oo, 1), Interval.open(1, oo))');
   });
-  it.fails("test_not_empty_in:162", () => {
+  it("test_not_empty_in:162", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(notEmptyIn(intersection(Reals, finiteSet(new Mul([a, new Pow(new Add([rational(-1), a]), rational(-1))]))), a))).toBe('Union(Interval.open(-oo, 1), Interval.open(1, oo))');
   });
-  it.fails("test_not_empty_in:164", () => {
+  it("test_not_empty_in:164", () => {
     const x = new Sym('x');
     expect(sympyStr(notEmptyIn(intersection(Reals, finiteSet(new Mul([new Pow(new Add([rational(-1), x]), rational(-1)), new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(-3), x])])]))), x))).toBe('Union(Interval.open(-oo, 1), Interval.open(1, oo))');
   });
@@ -403,15 +403,15 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(notEmptyIn(intersection(interval(rational(2), rational(3), false, false), finiteSet(new Mul([x, new Pow(new Add([rational(-1), x]), rational(-1))]))), x))).toBe('Interval(3/2, 2)');
   });
-  it.fails("test_not_empty_in:170", () => {
+  it("test_not_empty_in:170", () => {
     const x = new Sym('x');
     expect(sympyStr(notEmptyIn(intersection(Reals, finiteSet(new Mul([x, new Pow(new Add([rational(-1), new Pow(x, rational(2))]), rational(-1))]))), x))).toBe('Union(Interval.open(-oo, -1), Interval.open(-1, 1), Interval.open(1, oo))');
   });
-  it.fails("test_not_empty_in:172", () => {
+  it("test_not_empty_in:172", () => {
     const x = new Sym('x');
     expect(sympyStr(notEmptyIn(intersection(Union(interval(rational(1), rational(3), true, true), interval(rational(4), rational(5), false, false)), finiteSet(x, new Pow(x, rational(2)))), x))).toBe('Union(Interval.open(1, 3), Interval(4, 5), Interval.open(-sqrt(3), -1), Interval(-sqrt(5), -2))');
   });
-  it.fails("test_not_empty_in:176", () => {
+  it("test_not_empty_in:176", () => {
     const x = new Sym('x');
     expect(sympyStr(notEmptyIn(EmptySet, x))).toBe('EmptySet');
   });
@@ -504,19 +504,19 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(periodicity(new Mul([rational(2), new Pow(fn('tan', [x]), rational(2))]), x))).toBe('pi');
   });
-  it.fails("test_periodicity:205", () => {
+  it("test_periodicity:205", () => {
     const x = new Sym('x');
     expect(sympyStr(periodicity(fn('sin', [Mod(x, rational(4))]), x))).toBe('4');
   });
-  it.fails("test_periodicity:206", () => {
+  it("test_periodicity:206", () => {
     const x = new Sym('x');
     expect(sympyStr(periodicity(Mod(fn('sin', [x]), rational(4)), x))).toBe('2*pi');
   });
-  it.fails("test_periodicity:207", () => {
+  it("test_periodicity:207", () => {
     const x = new Sym('x');
     expect(sympyStr(periodicity(fn('tan', [Mod(new Add([rational(2), new Mul([rational(3), x])]), rational(4))]), x))).toBe('4/3');
   });
-  it.fails("test_periodicity:208", () => {
+  it("test_periodicity:208", () => {
     const x = new Sym('x');
     expect(sympyStr(periodicity(Mod(new Add([x, new Mul([new Pow(rational(2), rational(1, 2)), new Add([rational(1), x])])]), rational(3)), x))).toBe('3/(1 + sqrt(2))');
   });
@@ -524,7 +524,7 @@ describe("sympy/calculus/tests/test_util.py", () => {
   //   assert periodicity((x**2+1) % x, x) is None
   //   => None
   it.todo("test_periodicity:209");
-  it.fails("test_periodicity:210", () => {
+  it("test_periodicity:210", () => {
     const x = new Sym('x');
     expect(sympyStr(periodicity(fn('sin', [fn('re', [x])]), x))).toBe('2*pi');
   });
@@ -849,11 +849,11 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(maximum(y, x, Reals))).toBe('y');
   });
-  it.fails("test_maximum:336", () => {
+  it("test_maximum:336", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(maximum(abs(new Add([a, new Pow(a, rational(3))])), a, interval(rational(0), rational(2), false, false)))).toBe('10');
   });
-  it.fails("test_maximum:337", () => {
+  it("test_maximum:337", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(maximum(abs(new Add([new Mul([rational(24), a]), new Mul([rational(60), new Pow(a, rational(3))])])), a, interval(rational(0), rational(2), false, false)))).toBe('528');
   });
@@ -865,15 +865,15 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(maximum(new Mul([x, new Pow(new Add([rational(1), new Pow(x, rational(2))]), rational(-1, 2))]), x, Reals))).toBe('1');
   });
-  it.fails("test_maximum:341", () => {
+  it("test_maximum:341", () => {
     const x = new Sym('x');
     expect(() => maximum(fn('sin', [x]), x, EmptySet)).toThrow(RangeError);
   });
-  it.fails("test_maximum:342", () => {
+  it("test_maximum:342", () => {
     const x = new Sym('x');
     expect(() => maximum(log(fn('cos', [x])), x, EmptySet)).toThrow(RangeError);
   });
-  it.fails("test_maximum:343", () => {
+  it("test_maximum:343", () => {
     const [x, y] = symbols('x y');
     expect(() => maximum(new Pow(new Add([rational(1), new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(-1)), x, EmptySet)).toThrow(RangeError);
   });
@@ -928,15 +928,15 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(minimum(new Mul([x, new Pow(new Add([rational(1), new Pow(x, rational(2))]), rational(-1, 2))]), x, Reals))).toBe('-1');
   });
-  it.fails("test_minimum:368", () => {
+  it("test_minimum:368", () => {
     const x = new Sym('x');
     expect(() => minimum(fn('sin', [x]), x, EmptySet)).toThrow(RangeError);
   });
-  it.fails("test_minimum:369", () => {
+  it("test_minimum:369", () => {
     const x = new Sym('x');
     expect(() => minimum(log(fn('cos', [x])), x, EmptySet)).toThrow(RangeError);
   });
-  it.fails("test_minimum:370", () => {
+  it("test_minimum:370", () => {
     const [x, y] = symbols('x y');
     expect(() => minimum(new Pow(new Add([rational(1), new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(-1)), x, EmptySet)).toThrow(RangeError);
   });

@@ -19,7 +19,7 @@ import { ordered } from '../core/match';
 import { rebuild } from '../core/traverse';
 import { couldExtractMinusSign } from '../core/ops';
 import { NotImplementedError } from '../core/errors';
-import { AppliedPredicate } from '../core/refine';
+import { AppliedPredicate, registerRefineHandler } from '../core/refine';
 import { parserHooks } from '../parsing/parser';
 
 /** An argument of the boolean constructors: an expression or a JavaScript boolean. */
@@ -226,6 +226,10 @@ export function notFn(x: BoolLike): Expr {
 export function xorFn(xs: readonly BoolLike[], removeTrue = true): Expr {
   const argset = new Map<string, Expr>();
   const toggle = (a: Expr): void => {
+    if (isOp(a, 'Xor')) {
+      a.args.forEach(toggle);
+      return;
+    }
     if (argset.has(a.key)) argset.delete(a.key);
     else argset.set(a.key, a);
   };
@@ -382,6 +386,10 @@ export function binarySymbols(e: Expr): Map<string, Expr> {
       if (e.lhs instanceof Sym) out.set(e.lhs.key, e.lhs);
       else if (e.rhs instanceof Sym) out.set(e.rhs.key, e.rhs);
     }
+  } else if (e instanceof AppliedPredicate && e.predicate === 'is_true') {
+    return binarySymbols(e.arg);
+  } else if (e instanceof AppliedPredicate && (e.predicate === 'eq' || e.predicate === 'ne')) {
+    return binarySymbols(new Rel(e.predicate === 'eq' ? 'Eq' : 'Ne', at(e.args, 0), at(e.args, 1)));
   } else if (isBooleanFunction(e)) {
     for (const a of e.args) {
       if (isBooleanFunction(a) || a instanceof Sym || (a instanceof Rel && (a.op === 'Eq' || a.op === 'Ne'))) {
@@ -569,4 +577,19 @@ parserHooks.constructors.set('Nor', (args) => Nor(...args));
 parserHooks.constructors.set('ITE', (args) => {
   if (args.length < 3) throw new SyntaxError('ITE() takes at least 3 arguments');
   return ITE(at(args, 0), at(args, 1), at(args, 2));
+});
+
+// SymPy Boolean._eval_refine: a proposition or its complement may be assumed directly.
+registerRefineHandler((expr, assumptions) => {
+  if (!(expr instanceof Rel)) return expr;
+  const facts = typeof assumptions === 'boolean' ? [] : assumptions instanceof Expr ? conjuncts(assumptions) : assumptions.flatMap(conjuncts);
+  const key = relCanonical(expr).key;
+  const negatedKey = relCanonical(relNegated(expr)).key;
+  for (const fact of facts) {
+    if (!(fact instanceof Rel)) continue;
+    const canonical = relCanonical(fact).key;
+    if (canonical === key) return S.true;
+    if (canonical === negatedKey) return S.false;
+  }
+  return expr;
 });

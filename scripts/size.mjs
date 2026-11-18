@@ -59,11 +59,13 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Native field PRS, Trager factorization and certified intervals add about
 // 24 KiB to the root namespace. Automatic algebraic-atom classification also
 // links the assumption engine, adding up to 72 KiB to polynomial consumers.
+// Symbolic accumulation-bound validation and ordering add less than 1 KiB to
+// core consumers; Boolean refinement and calculus domain handling add 2 KiB at the root.
 const CASES = [
-  ['core', 'Rational', 202],
+  ['core', 'Rational', 203],
   ['core', 'parse, str', 222],
   ['core', 'parse, diff, expand, str, latex', 222],
-  ['core', '*', 330],
+  ['core', '*', 331],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 408],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
@@ -80,8 +82,8 @@ const CASES = [
   ['solvers', 'dsolve', 1155],
   ['sets', '*', 378],
   ['matrices', 'Matrix', 836],
-  ['printing', 'pretty', 241],
-  ['discrete', '*', 299],
+  ['printing', 'pretty', 242],
+  ['discrete', '*', 300],
   ['strategies', '*', 214],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
   ['parsing', '*', 855],
@@ -98,16 +100,16 @@ const CASES = [
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
   ['plotting', '*', 1092],
   ['crypto', '*', 367],
-  ['liealgebras', '*', 345],
+  ['liealgebras', '*', 346],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
   ['codegen', '*', 435],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
-  ['index', 'Rational', 202],
+  ['index', 'Rational', 203],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2789],
+  ['index', '*', 2791],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];
