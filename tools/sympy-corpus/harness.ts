@@ -368,6 +368,36 @@ const unMPQ = (s: string): string => s.replace(MPQ_RE, (_m, p: string, q: string
 // Ignore spacing at delimiters, preserving quoted strings and symbol names.
 const normalizeLayout = (s: string): string => s.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|[^'"]+/g,
   (part) => /^["']/.test(part) ? part : part.replace(/\s*([()[\]{},])\s*/g, '$1'));
+/** Compare traces by their exact diagonal sums when scalar factors move into a matrix. */
+function matchesExplicitTrace(value: Expr, expected: string): boolean {
+  try {
+    const locals: Record<string, Expr | ((...args: Expr[]) => Expr)> = {
+      Trace: (matrix) => sj.Trace(definedOr(matrix, 'trace matrix')),
+      Determinant: (matrix) => sj.Determinant(definedOr(matrix, 'determinant matrix')),
+    };
+    const symbols: sj.MatrixSymbol[] = [];
+    for (const term of sj.preorderTraversal(value)) {
+      if (term instanceof Sym) locals[term.name] = term;
+      if (term instanceof sj.MatrixSymbol) symbols.push(term);
+    }
+    for (const symbol of symbols) locals[symbol.symbolName] = symbol;
+    let index = 0;
+    const source = expected.replace(/\bMatrix\((\[\s*(?:\[[^\[\]]*\]\s*,?\s*)+\])\)/g, (_, printed: string) => {
+      const rows = topLevelItems(printed).map((row) => topLevelItems(row).map((entry) => sj.parse(entry, { locals })));
+      let name = `__traceMatrix${index++}`;
+      while (Object.hasOwn(locals, name)) name = `__traceMatrix${index++}`;
+      locals[name] = sj.ImmutableMatrix(Matrix.of(rows));
+      return name;
+    });
+    const expand = (expression: Expr): Expr => sj.expandMul(
+      sj.mapBottomUp(expression, (term) => term instanceof sj.Trace ? term.asExplicit() : term),
+    );
+    return expand(value).equals(expand(sj.parse(source, { locals })));
+  } catch {
+    return false;
+  }
+}
+
 export function matches(v: unknown, expectedIn: string): boolean {
   const got = fmt(v);
   if (expectedIn.includes('MPQ(') && got !== expectedIn) return matches0(v, unMPQ(expectedIn), unMPQ(got));
@@ -755,13 +785,6 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Limit: (args) => new sj.Limit(args as Expr[]),
   Order: ([e, ...rest]) => orderNode(e!, rest),
 };
-
-const OP_STR: Record<string, sj.RelOp> = { '<': 'Lt', '>': 'Gt', '<=': 'Le', '>=': 'Ge', '==': 'Eq', '!=': 'Ne' };
-function reduceAbs(e: Expr, op: string, x: Sym): Expr {
-  const r = OP_STR[op];
-  if (!r) throw new Unsupported(`relation ${op}`);
-  return sj.solveUnivariateInequality(sj.rel(r, e, S.Zero), x);
-}
 
 function integralNode(args: unknown[]): Expr {
   // several limits: nested integrals, innermost first
@@ -2034,6 +2057,19 @@ function relationArgs(args: unknown[], kw: Record<string, unknown>, op: string):
   return sj.Relational(asExpr(args[0]), asExpr(args[1]), op, { evaluate: kw['evaluate'] !== false });
 }
 
+/** Matrix stacking is a class method on explicit matrices and an instance method on domain matrices. */
+function stackMatrices(method: 'hstack' | 'vstack', args: unknown[], kw: Record<string, unknown>, self: unknown): unknown {
+  noKw(kw);
+  const domainReceiver = self instanceof sj.DomainMatrix || self instanceof sj.DDM || self instanceof sj.SDM;
+  const [first, ...rest] = domainReceiver ? [self, ...args] : args;
+  if (first === undefined) return Matrix.zeros(0, 0);
+  if (first instanceof sj.DomainMatrix) return first[method](...rest as sj.DomainMatrix[]);
+  if (first instanceof sj.DDM) return first[method](...rest as sj.DDM[]);
+  if (first instanceof sj.SDM) return first[method](...rest as sj.SDM[]);
+  if (first instanceof Matrix) return first[method](...rest as Matrix[]);
+  throw new Unsupported(`${method} matrix type`);
+}
+
 export const ADAPTERS: Record<string, Adapter> = {
   checkodesol: (args, kw) => {
     const [ode, sol] = args;
@@ -2608,11 +2644,23 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), expressionContainer(args[0]))),
   solveset: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
-    const dom = (kw['domain'] ?? args[2]) as sj.SetExpr | undefined;
+    for (const k of Object.keys(kw)) if (!['symbol', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const domain = kw['domain'] ?? args[2];
     const f = asExpr(args[0]);
-    const x = args[1] ? asSym(args[1]) : (sj.freeSymbols(f).values().next().value as Sym);
-    return sj.solveset(f, x, dom ?? sj.Complexes);
+    const symbol = kw['symbol'] ?? args[1];
+    return sj.solveset(f, symbol === undefined ? undefined : asExpr(symbol), domain === undefined ? sj.Complexes : asSet(domain));
+  },
+  solveset_real: (args, kw) => (noKw(kw), sj.solvesetReal(asExpr(args[0]), asExpr(args[1]))),
+  solveset_complex: (args, kw) => (noKw(kw), sj.solvesetComplex(asExpr(args[0]), asExpr(args[1]))),
+  linear_coeffs: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'dict') throw new Unsupported(`kwargs ${k}`);
+    const symbols = args.slice(1).map(asSym);
+    const coefficients = sj.linearCoeffs(asExpr(args[0]), ...symbols);
+    if (!kw['dict']) return new JsList(coefficients);
+    return new JsDict([...symbols, S.One].flatMap((symbol, i) => {
+      const coefficient = definedOr(coefficients[i], 'linear coefficient');
+      return coefficient.equals(S.Zero) ? [] : [[symbol, coefficient]];
+    }));
   },
   solve_univariate_inequality: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['relational', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -2632,17 +2680,17 @@ export const ADAPTERS: Record<string, Adapter> = {
     );
     return sj.solveRationalInequalities(groups);
   },
-  reduce_abs_inequality: (args, kw) => (noKw(kw), reduceAbs(asExpr(args[0]), args[1] as string, asSym(args[2]))),
+  reduce_abs_inequality: (args, kw) => (noKw(kw), sj.reduceAbsInequality(asExpr(args[0]), args[1] as string, asSym(args[2]))),
   reduce_abs_inequalities: (args, kw) => {
     noKw(kw);
     const x = asSym(args[1]);
-    return sj.and(...(args[0] as JsTuple).items.map((it) => reduceAbs(asExpr((it as JsTuple).items[0]), (it as JsTuple).items[1] as string, x)));
+    return sj.and(...(args[0] as JsTuple).items.map((it) => sj.reduceAbsInequality(asExpr((it as JsTuple).items[0]), (it as JsTuple).items[1] as string, x)));
   },
   reduce_inequalities: (args, kw) => {
     noKw(kw);
     const a = args[0];
     const ineqs = a instanceof JsList || a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)];
-    const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : [];
+    const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : args[1] === undefined ? [] : [asSym(args[1])];
     return sj.reduceInequalities(ineqs, syms);
   },
   periodicity: (args, kw) => (noKw(kw), none(sj.periodicity(asExpr(args[0]), asSym(args[1])))),
@@ -3675,9 +3723,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   solve_poly_system: (args, kw) => polySystemSolutions(args, kw),
   solve_triangulated: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'extension' && k !== 'domain') throw new Unsupported(`kwargs ${k}`);
     // without extension only rational solutions are reported, with it all of them as CRootOf (SymPy)
-    const sols = polySystemSolutions(args, {}, !kw['extension']) as JsList;
+    const sols = polySystemSolutions(args, {}, !kw['extension'] && kw['domain'] === undefined) as JsList;
     if (!kw['extension']) return sols;
     const x0 = asSym(args[1]);
     const asRoot = (v: unknown): unknown => {
@@ -3836,8 +3884,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (!(self instanceof TypeRef)) throw new Unsupported('diag on instance');
     return ADAPTERS['diag']!([...args, self], kw);
   },
-  '.hstack': (args, kw) => (noKw(kw), args.length === 0 ? Matrix.zeros(0, 0) : (args[0] as Matrix).hstack(...(args.slice(1) as Matrix[]))),
-  '.vstack': (args, kw) => (noKw(kw), args.length === 0 ? Matrix.zeros(0, 0) : (args[0] as Matrix).vstack(...(args.slice(1) as Matrix[]))),
+  '.hstack': (args, kw, self) => stackMatrices('hstack', args, kw, self),
+  '.vstack': (args, kw, self) => stackMatrices('vstack', args, kw, self),
   '.jordan_block': (args, kw, self) => {
     if (!(self instanceof TypeRef)) throw new Unsupported('jordan_block');
     for (const k of Object.keys(kw)) if (!['size', 'eigenvalue', 'eigenval', 'band'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -7142,7 +7190,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // DomainMatrix, DDM and SDM methods (and their classes' static methods) share names with Matrix and Poly adapters
     const isDomainMatrix = (x: unknown) => x instanceof sj.DomainMatrix || x instanceof sj.DDM || x instanceof sj.SDM || (x instanceof TypeRef && ['DomainMatrix', 'DDM', 'SDM'].includes(x.name));
     // (rewrite targets are SymPy classes, which only the rewrite adapter names)
-    const auto0 = (c.fn !== '.rewrite' && !['ask', 'refine'].includes(c.fn) && (isMatExpr(self) || args.some(isMatExpr))) || self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') || isDomainMatrix(self) || self instanceof sj.NDimArray || (self instanceof sj.Indexed && c.fn !== '.is_constant') ? autoAdapter(c) : undefined;
+    const matrixAuto = !['ask', 'refine', '.rewrite'].includes(c.fn) && !(c.fn === '.applyfunc' && self instanceof sj.MatrixExpr) && (isMatExpr(self) || args.some(isMatExpr));
+    const auto0 = matrixAuto || self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') || isDomainMatrix(self) || self instanceof sj.NDimArray || (self instanceof sj.Indexed && c.fn !== '.is_constant') ? autoAdapter(c) : undefined;
     try {
       v = call(auto0 ?? adapter);
     } catch (e) {
@@ -7207,6 +7256,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     };
     const input = self !== undefined ? fmtOrUndefined(self) : args.length ? fmtOrUndefined(args[0]) : undefined;
     if (equivalent(got, c.expected, [...syms.values()], { fn: c.fn, input })) return { status: 'equivalent', got };
+    if (c.fn === '.doit' && v instanceof Expr && got.includes('Trace(') && c.expected.includes('Trace(Matrix([')
+        && matchesExplicitTrace(v, c.expected)) return { status: 'equivalent', got };
     // dsolve: a solution in another form that satisfies the equations with as many constants (SymPy checkodesol);
     // this also accepts a correct solution where SymPy's printed one is wrong
     if (['dsolve', 'dsolve_system'].includes(c.fn) && solvesDsolveCase(args[0], v) && constantCount(got) === constantCount(c.expected)) return { status: 'equivalent', got };
@@ -7224,6 +7275,12 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // The simultaneous equations f - 2 and f - 4 require distinct values of f.
+  "sympy.solvers.tests.test_solveset:assert substitution([h - 1, k - 1, f - 2, f - 4, -2 * k],\n                        [h, k, f]) == {(1, 1, f)}": "EmptySet",
+  // The constant equation 1 = 0 is inconsistent for every tuple.
+  "sympy.solvers.tests.test_solveset:assert substitution([x + y + z, S.One, S.One, S.One], [x, y, z]) == \\\n                        {(-y - z, y, z)}": "EmptySet",
+  // The last equation forces d = ±I, and the first three fix a = d and b = c = -d.
+  "sympy.solvers.tests.test_solveset:assert substitution([a - d, b + d, c + d, d**2 + 1], [a, b, c, d]) == \\\n                        {(d, -d, -d, d)}": "{(-I, I, I, -I), (I, -I, -I, I)}",
   // y' = sin(x*y) implies y'(0) = 0. The upstream quadratic has derivative
   // sin(4) - 4*(1 + sin(4))*cos(4) at zero (about -0.121). Its Taylor
   // remainder is cubic at the initial point x = 2.

@@ -57,7 +57,7 @@ export function factorSystemPoly(polys: readonly Poly[]): Poly[][] {
   if (!polys.length) return [[]];
   const p = first(polys);
   if (polys.some((q) => q.domain !== p.domain || q.gens.map((g) => g.key).join() !== p.gens.map((g) => g.key).join())) throw new TypeError('factorSystemPoly: polynomials must have the same generators and domain');
-  return factorSystemCond(polys.map((q) => q.asExpr()), p.gens).map((s) => s.map((e) => Poly.from(e, p.gens, { domain: p.domain })));
+  return factorSystemCond(polys.map((q) => q.asExpr()), p.gens, { domain: p.domain }).map((s) => s.map((e) => Poly.from(e, p.gens, { domain: p.domain })));
 }
 
 /** Solve polynomial objects in the specified generator order. */
