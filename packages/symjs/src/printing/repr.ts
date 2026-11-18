@@ -266,8 +266,13 @@ export interface ReprObject {
 
 const isReprObject = (v: object): v is ReprObject => 'repr' in v && typeof v.repr === 'function';
 
+/** A native tuple, distinguished from a symbolic Tuple expression and a mutable list. */
+interface ReprTuple {
+  readonly tupleItems: readonly ReprPrintable[];
+}
+
 /** What `srepr` prints: expressions, function classes, matrices, objects with their own repr, lists, dicts, sets, strings, numbers, booleans and null (Python None). */
-export type ReprPrintable = Expr | number | bigint | boolean | string | null | ReprMatrix | FunctionClassLike | ReprObject | readonly ReprPrintable[] | ReadonlyMap<ReprPrintable, ReprPrintable> | ReadonlySet<ReprPrintable>;
+export type ReprPrintable = ReprTuple | Expr | number | bigint | boolean | string | null | ReprMatrix | FunctionClassLike | ReprObject | readonly ReprPrintable[] | ReadonlyMap<ReprPrintable, ReprPrintable> | ReadonlySet<ReprPrintable>;
 
 let reprOrder: SreprOptions['order'];
 
@@ -308,6 +313,10 @@ function reprValue(expr: ReprPrintable): string {
   // SymPy ReprPrinter._print_FunctionClass
   if (isUndefinedFunction(expr)) return `Function(${pyRepr(expr.functionName)})`;
   if (isFunctionClass(expr)) return expr.functionName;
+  if ('tupleItems' in expr) {
+    const items = expr.tupleItems;
+    return `(${items.map(reprValue).join(', ')}${items.length === 1 ? ',' : ''})`;
+  }
   if (isList(expr)) return `[${expr.map((x) => reprValue(x)).join(', ')}]`;
   if (isMatrixLike(expr)) return matrixRepr(expr, 'MutableDenseMatrix', (x) => reprValue(x));
   if (expr instanceof Map) return `{${[...expr].map(([k, v]) => `${reprValue(k)}: ${reprValue(v)}`).join(', ')}}`;

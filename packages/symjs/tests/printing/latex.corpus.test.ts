@@ -5410,7 +5410,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set_operators_parenthesis:1224", () => {
+  it("test_set_operators_parenthesis:1224", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
@@ -5446,7 +5446,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set_operators_parenthesis:1243", () => {
+  it("test_set_operators_parenthesis:1243", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
@@ -5482,7 +5482,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set_operators_parenthesis:1263", () => {
+  it("test_set_operators_parenthesis:1263", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
@@ -6076,7 +6076,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_LeviCivita:1499", () => {
+  it("test_latex_LeviCivita:1499", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
@@ -6085,7 +6085,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_LeviCivita:1501", () => {
+  it("test_latex_LeviCivita:1501", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
@@ -6094,7 +6094,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_LeviCivita:1502", () => {
+  it("test_latex_LeviCivita:1502", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
@@ -6103,7 +6103,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_LeviCivita:1503", () => {
+  it("test_latex_LeviCivita:1503", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
@@ -10476,7 +10476,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_symbolic_probability:2888", () => {
+  it("test_latex_symbolic_probability:2888", () => {
     const [X, mu] = symbols('X mu');
     const sigma = new Sym('sigma', { positive: true });
     const unicode = pprintUseUnicode(false);
@@ -10486,7 +10486,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_symbolic_probability:2889", () => {
+  it("test_latex_symbolic_probability:2889", () => {
     const [X, mu] = symbols('X mu');
     const sigma = new Sym('sigma', { positive: true });
     const unicode = pprintUseUnicode(false);
@@ -10496,7 +10496,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_symbolic_probability:2890", () => {
+  it("test_latex_symbolic_probability:2890", () => {
     const [X, mu] = symbols('X mu');
     const sigma = new Sym('sigma', { positive: true });
     const unicode = pprintUseUnicode(false);
@@ -10506,7 +10506,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_symbolic_probability:2892", () => {
+  it("test_latex_symbolic_probability:2892", () => {
     const [X, mu, Y] = symbols('X mu Y');
     const sigma = new Sym('sigma', { positive: true });
     const unicode = pprintUseUnicode(false);

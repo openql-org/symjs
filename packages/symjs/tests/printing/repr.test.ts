@@ -197,3 +197,9 @@ it('respects repr term ordering and rejects unknown settings', () => {
   expect(srepr(sj.CoordSys3D('C').baseScalars()[0])).toBe('C.x');
   expect(srepr(sum)).toBe("Add(Pow(Symbol('x'), Integer(2)), Integer(1))");
 });
+
+it('distinguishes native tuples from lists and symbolic Tuple nodes', () => {
+  expect(srepr({ tupleItems: [] })).toBe('()');
+  expect(srepr({ tupleItems: [x] })).toBe("(Symbol('x'),)");
+  expect(srepr({ tupleItems: [x, { tupleItems: [y, 1] }] })).toBe("(Symbol('x'), (Symbol('y'), 1))");
+});

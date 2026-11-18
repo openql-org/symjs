@@ -20,7 +20,7 @@ import { hasSymbolicBounds, isSequence, sequencePrintset } from './sequences';
 import { at } from '../core/guard';
 import { requiresPartial, splitSuperSub } from './conventions';
 import { precToDps, toStr } from '../numeric/mpf';
-import { isFunctionClass } from '../core/undef';
+import { isFunctionClass, isUndefinedFunction } from '../core/undef';
 import type { FunctionClassLike } from '../core/undef';
 
 // ---------------------------------------------------------------------------
@@ -773,6 +773,7 @@ function printPow(e: Pow): string {
     if (named !== undefined) return named;
     if (isMeijer(b)) return printMeijer(b, texOf(x));
     // SymPy _print_hyper: the braced form raised to the power
+    if (b.name === 'LeviCivita') return `${addParens(texOf(b))}^{${texOf(x)}}`;
     if (b.name === 'hyper') return `{${texOf(b)}}^{${texOf(x)}}`;
   }
   let base = parenthesize(b, PREC.POW);
@@ -820,10 +821,14 @@ function floatLatex(f: Float): string {
 
 function texOf(e: Expr): string {
   if (e instanceof ExtensionExpr) {
+    if (e.name === 'LeviCivita') return `\\varepsilon_{${e.args.map(texOf).join(e.args.every((a) => a instanceof Sym) ? ' ' : ', ')}}`;
     const named = printNamedFunction(e.name, e.args);
     if (named !== undefined) return named;
     if (isMeijer(e)) return printMeijer(e);
     if (isSequence(e)) return printSequence(e);
+    if (e.name === 'Expectation') return `\\operatorname{E}\\left[${texOf(at(e.args, 0))}\\right]`;
+    if (e.name === 'Probability' || e.name === 'Variance') return `\\operatorname{${e.name === 'Probability' ? 'P' : 'Var'}}\\left(${texOf(at(e.args, 0))}\\right)`;
+    if (e.name === 'Covariance') return `\\operatorname{Cov}\\left(${e.args.map(texOf).join(', ')}\\right)`;
     if (e.name === 'EmptySequence') return '\\text{EmptySequence}';
     if (e.name === 'Tuple') return printTuple(e.args);
   }
@@ -955,7 +960,7 @@ function printSet(e: Expr, cls: string): string {
   if (op !== undefined) {
     // set operations bind looser than any argument but another set operation
     const args = cls === 'Complement' || cls === 'SymmetricDifference' ? e.args : setArgsOrdered(e.args);
-    return args.map((a) => (SET_OPERATORS[String(setClass(a))] !== undefined ? addParens(texOf(a)) : texOf(a))).join(op);
+    return args.map((a) => ((SET_OPERATORS[String(setClass(a))] !== undefined || setClass(a) === 'ProductSet') ? addParens(texOf(a)) : texOf(a))).join(op);
   }
   switch (cls) {
     case 'Interval': {
@@ -1063,7 +1068,10 @@ function printValue(v: LatexPrintable): string {
   if (typeof v === 'string') return `\\mathtt{\\text{${latexEscape(v)}}}`;
   if (v === null) return '\\text{None}';
   // SymPy _print_UndefinedFunction and _print_FunctionClass: the name as a function head
-  if (isFunctionClass(v)) return hprintFunction(v.functionName);
+  if (isFunctionClass(v)) {
+    const special: Readonly<Record<string, string>> = { KroneckerDelta: '\\delta', gamma: '\\Gamma', lowergamma: '\\gamma', beta: '\\operatorname{B}', DiracDelta: '\\delta', Chi: '\\operatorname{Chi}' };
+    return (!isUndefinedFunction(v) && special[v.functionName]) || hprintFunction(v.functionName);
+  }
   const sep = settings.comma ? ';' : ',';
   if (Array.isArray(v)) return `\\left[ ${v.map(printValue).join(`${sep} \\  `)}\\right]`;
   if (v instanceof Map) {

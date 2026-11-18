@@ -10,14 +10,21 @@
 import type { ExprLike } from '../core/nodes';
 import { Expr, isNum } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
-import { first } from '../core/guard';
+import { at, first } from '../core/guard';
 import { str, withFullPrec, withPermCyclic } from './str';
 import { latex } from './latex';
 import type { LatexOptions, LatexPrintable } from './latex';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 
-/** A value the str printers accept: an expression, a number, a string, or a list, tuple, set or dict of them. */
-export type StrPrintable = ExprLike | string | boolean | null | readonly StrPrintable[] | ReadonlySet<StrPrintable> | ReadonlyMap<StrPrintable, StrPrintable>;
+/** A matrix supplied by a higher layer, with entries printed by the str printer. */
+interface StrMatrix {
+  readonly rows: number;
+  readonly cols: number;
+  get(i: number, j: number): Expr;
+}
+
+/** A value the str printers accept, including matrices and native containers. */
+export type StrPrintable = StrMatrix | ExprLike | string | boolean | null | readonly StrPrintable[] | ReadonlySet<StrPrintable> | ReadonlyMap<StrPrintable, StrPrintable>;
 
 /** Python's repr of a string ('abc', or "it's" when it contains a single quote). */
 function reprString(s: string): string {
@@ -29,12 +36,21 @@ const isExprLike = (x: StrPrintable): x is ExprLike => x instanceof Expr || type
 const isMap = (x: StrPrintable): x is ReadonlyMap<StrPrintable, StrPrintable> => x instanceof Map;
 const isSet = (x: StrPrintable): x is ReadonlySet<StrPrintable> => x instanceof Set;
 
+const isMatrix = (v: object): v is StrMatrix => 'rows' in v && 'cols' in v && 'get' in v && typeof v.get === 'function';
+
 function printValue(v: StrPrintable, strings: (s: string) => string): string {
   const go = (x: StrPrintable): string => printValue(x, strings);
   if (isExprLike(v)) return str(sympify(v));
   if (v === null) return 'None';
   if (typeof v === 'boolean') return v ? 'True' : 'False';
   if (typeof v === 'string') return strings(v);
+  if (isMatrix(v)) {
+    if (v.rows === 0 || v.cols === 0) return `Matrix(${v.rows}, ${v.cols}, [])`;
+    const rows = Array.from({ length: v.rows }, (_, i) => Array.from({ length: v.cols }, (_, j) => go(v.get(i, j))));
+    const widths = Array.from({ length: v.cols }, (_, j) => Math.max(...rows.map((r) => at(r, j).length)));
+    const lines = rows.map((r) => `[${r.map((s, j) => s.padStart(at(widths, j))).join(', ')}]`);
+    return `Matrix([${v.rows === 1 ? '' : '\n'}${lines.join(',\n')}])`;
+  }
   if (isMap(v)) return `{${[...v].map(([k, x]) => `${go(k)}: ${go(x)}`).join(', ')}}`;
   if (isSet(v)) return v.size ? `{${[...v].map(go).join(', ')}}` : 'set()';
   return `[${v.map(go).join(', ')}]`;
@@ -49,6 +65,10 @@ export class StrPrinter {
   constructor(readonly settings: Readonly<Record<string, unknown>> = {}) {}
   /** The str form of expr (SymPy StrPrinter.doprint). */
   doprint(expr: StrPrintable): string {
+    return sstr(expr, this.settings);
+  }
+  /** SymPy's fallback printer for strings, expressions and scalar values. */
+  emptyPrinter(expr: StrPrintable): string {
     return printValue(expr, (s) => s);
   }
 }
@@ -71,6 +91,7 @@ export interface SstrOptions {
  * a container).
  */
 export function sstr(expr: StrPrintable, opts: SstrOptions = {}): string {
+  for (const key of Object.keys(opts)) if (!['fullPrec', 'permCyclic', 'order', 'sympyIntegers', 'abbrev', 'min', 'max', 'dps'].includes(key)) throw new TypeError(`Unknown setting '${key}'.`);
   return withPermCyclic(opts.permCyclic, () => withFullPrec(opts.fullPrec ?? 'auto', () => printValue(expr, (s) => s)));
 }
 
