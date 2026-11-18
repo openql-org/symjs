@@ -679,3 +679,5 @@ export function piecewiseFold(e: Expr): Expr {
   }
   return piecewise(...pairs);
 }
+
+impl.piecewiseFold = piecewiseFold;

@@ -7,19 +7,20 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Derivative, Integral, Fn, Order, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
+import { Add, Derivative, Integral, Fn, Order, Piecewise, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul, isMulLike } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
-import { log, sin } from '../functions/elementary/elementary';
+import { infiniteForm, log, sin } from '../functions/elementary/elementary';
 import { bernoulliNumber } from '../functions/special/special';
 import { EssentialSingularity, Expander, type PS, isE } from './puiseux';
-import { isPositive, isReal } from '../core/assumptions';
+import { isNegative, isPositive, isReal } from '../core/assumptions';
 import { at, cast, first, getOrThrow } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
 import { asIndependent } from '../core/methods';
+import { AccumBounds, AccumBoundsNode } from '../core/accumbounds';
 
 /** Array.isArray does not narrow a readonly array union. */
 const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => Array.isArray(v);
@@ -135,10 +136,10 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
  * Series at +oo or -oo (SymPy series(f, x, oo, n)): x = sign/t with t -> 0+,
  * the expansion in t written back in x, with O(x**(-n), (x, oo)).
  */
-function seriesAtInfinity(e: Expr, x: Sym, sign: 1 | -1, n: number): Expr {
+function seriesAtInfinity(e: Expr, x: Sym, ray: Expr, point: Expr, n: number): Expr {
   const t = new Sym('_t_inf', { positive: true });
-  const st = series(subs(e, [[x, mul(sign, pow(t, -1))]]), t, 0, n);
-  const back = (u: Expr) => subs(u, [[t, mul(sign, pow(x, -1))]]);
+  const st = series(subs(e, [[x, mul(ray, pow(t, -1))]]), t, 0, n);
+  const back = (u: Expr) => subs(u, [[t, mul(ray, pow(x, -1))]]);
   const terms = st instanceof Add ? st.args : [st];
   const out: Expr[] = [];
   let order: Expr | undefined;
@@ -147,7 +148,8 @@ function seriesAtInfinity(e: Expr, x: Sym, sign: 1 | -1, n: number): Expr {
       // the Order of a series in t is O(t**k) (O(t) or O(1) for k = 1 or 0); at -oo it is written in -1/x (SymPy)
       const lead = first(u.args);
       const k = lead instanceof Pow ? lead.exp : lead.key === t.key ? S.One : S.Zero;
-      order = new Order([pow(mul(sign, pow(x, -1)), k), x, sign === 1 ? S.Infinity : S.NegativeInfinity]);
+      const remainder = point instanceof Special ? mul(ray, pow(x, -1)) : pow(x, -1);
+      order = new Order([pow(remainder, k), x, point]);
     } else out.push(back(u));
   }
   if (!order) return add(...out);
@@ -184,7 +186,13 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   // x**c with symbolic c is its own expansion at 0
   if (atZero && e instanceof Pow && e.base.key === x.key && !(e.exp instanceof Rational) && !e.exp.has(x)) return e;
   const x0 = sympify(x0x);
-  if (x0 instanceof Special && (x0.name === 'oo' || x0.name === '-oo')) return seriesAtInfinity(e, x, x0.name === 'oo' ? 1 : -1, n);
+  if (x0 === S.Infinity || x0 === S.NegativeInfinity) {
+    return seriesAtInfinity(e, x, x0 === S.Infinity ? S.One : S.NegOne, x0, n);
+  }
+  const form = infiniteForm(x0);
+  if (form?.kind === 'I' && form.a === 0) {
+    return seriesAtInfinity(e, x, mul(form.t, S.I), x0, n);
+  }
   // at zoo SymPy substitutes x = sign(zoo)/x: only a Laurent polynomial in x comes back as it is
   // (series(x, x, zoo) = x); other expansions there are not defined
   if (x0 instanceof Special && x0.name === 'zoo' && isLaurentPolynomial(e, x)) return e;
@@ -196,7 +204,7 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   const shifted = subs(e, [[x, dir === '-' ? add(x0, mul(-1, t)) : add(x0, t)]]);
   if (n < 0) throw new RangeError('series: the order n must be nonnegative');
   // the expansion variable is positive (SymPy series): oo*x is oo there
-  if (!shifted.has(t)) return shifted;
+  if (!shifted.has(t)) return n === 0 && e instanceof Fn && e.name === 'arg' ? new Order([S.One]) : shifted;
   // (expanded to at least the order 1 and then truncated: series(sin(x), x, 0, 0) = O(1))
   let ps: PS;
   try {
@@ -314,23 +322,85 @@ function leadtermExact(ex: ExprLike, x: Sym): [Expr, Rational] {
  */
 export const leadingTermRules: Partial<Record<string, (e: Fn, x: Sym, cdir: Expr) => Expr | undefined>> = {};
 
+/** Evaluate expressions with oscillating factors by their accumulation ranges. */
+function oscillatingLeadingTerm(e: Expr, x: Sym, cdir: Expr): Expr | undefined {
+  if (e instanceof Fn && e.name === 'log') {
+    const range = oscillatingLeadingTerm(first(e.args), x, cdir);
+    return range === undefined ? undefined : log(range);
+  }
+  if (e instanceof Fn) {
+    if (!['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(e.name)) return undefined;
+    const value = leadingTermRules[e.name]?.(e, x, cdir);
+    return value instanceof AccumBoundsNode ? value : undefined;
+  }
+  if (e instanceof Pow && isE(e.base)) {
+    const range = oscillatingLeadingTerm(e.exp, x, cdir);
+    return range === undefined ? undefined : exp(range);
+  }
+  if (e instanceof Pow) {
+    if (e.exp.has(x)) return undefined;
+    const range = oscillatingLeadingTerm(e.base, x, cdir);
+    return range === undefined ? undefined : pow(range, e.exp);
+  }
+  if (e instanceof Add || e instanceof Mul) {
+    const values = e.args.map((term) => oscillatingLeadingTerm(term, x, cdir));
+    if (values.includes(S.NaN)) return S.NaN;
+    const ranges = values.filter((value): value is Expr => value !== undefined);
+    if (ranges.length !== 1) return undefined;
+    const range = first(ranges);
+    const other = e.args.filter((_, i) => values[i] === undefined);
+    if (e instanceof Add) return other.some((term) => term.has(x)) ? undefined : add(range, ...other);
+    const remaining = mul(...other);
+    if (!remaining.has(x)) return mul(range, remaining);
+    if (!(range instanceof AccumBoundsNode)) return mul(range, asLeadingTerm(remaining, x, { cdir }));
+    const factor = asLeadingTerm(remaining, x, { cdir });
+    if (subs(factor, [[x, S.Zero]]) !== S.Zero) return undefined;
+    const ray = new Sym('_oscillation', { positive: true });
+    const sign = isPositive(subs(factor, [[x, mul(cdir, ray)]]));
+    if (sign === undefined) return undefined;
+    const oriented = sign ? range : mul(-1, range);
+    if (!(oriented instanceof AccumBoundsNode)) return oriented;
+    const lo = oriented.min === S.NegativeInfinity ? oriented.min : S.Zero;
+    const hi = oriented.max === S.Infinity ? oriented.max : S.Zero;
+    return lo === hi ? lo : AccumBounds(lo, hi);
+  }
+  return undefined;
+}
+
 /**
  * SymPy as_leading_term(x, cdir=...): the leading term as x -> 0 from the direction cdir (0 when
  * not given: the side does not matter, or x approaches 0 from above).
  */
 export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike; logx?: ExprLike } = {}): Expr {
   const e = sympify(ex);
+  if (e instanceof Fn && e.name === 'arg' && e.has(x)) {
+    const ray = sympify(opts.cdir ?? 1);
+    const t = new Sym('_arg', { positive: true });
+    const u = first(e.args);
+    const directed = subs(u, [[x, mul(ray.equals(S.Zero) ? S.One : ray, t)]]);
+    if (isPositive(directed) === true) return S.Zero;
+    if (isNegative(directed) === true) return S.Pi;
+    throw new NotImplementedError(`cannot expand ${String(e)} around 0`);
+  }
+  if (e instanceof Piecewise) {
+    const branch = e.pairs.find(([, condition]) => subs(condition, [[x, S.Zero]]) === S.true);
+    if (branch) return asLeadingTerm(branch[0], x, opts);
+  }
   if ((e instanceof Derivative || e instanceof Integral) && impl.doit) {
     const evaluated = impl.doit(e);
     if (evaluated.key !== e.key) return asLeadingTerm(evaluated, x, opts);
   }
   const rule = e instanceof Fn ? leadingTermRules[e.name] : undefined;
   const special = rule?.(cast(e, Fn, 'function'), x, sympify(opts.cdir ?? 0));
+  const ray = sympify(opts.cdir ?? 1);
+  const range = (e instanceof Pow && isE(e.base) || e instanceof Fn && e.name === 'log') && e.has(x)
+    ? oscillatingLeadingTerm(e, x, ray === S.Zero ? S.One : ray)
+    : undefined;
   let result: Expr;
   if (special !== undefined) result = special;
+  else if (range !== undefined) result = range;
   else if (e instanceof Mul) result = mul(...e.args.map((a) => asLeadingTerm(a, x, opts)));
   else {
-    const ray = sympify(opts.cdir ?? 1);
     if (ray instanceof Rational && (ray.isZero || ray.key === S.One.key)) {
       const [c, p] = leadterm(e, x);
       result = mul(c, pow(x, p));

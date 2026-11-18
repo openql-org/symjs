@@ -22,6 +22,19 @@ describe('Order upstream regressions', () => {
   });
 });
 
+it('propagates accumulation bounds through exponential leading terms', () => {
+  const x = symbol('x');
+  expect(sstr(sj.asLeadingTerm(parse('exp(x*log(cos(1/x) + 2))'), x))).toBe('1');
+  expect(sstr(sj.asLeadingTerm(parse('exp(x*log(sin(1/x)**2))'), x))).toBe('AccumBounds(0, 1)');
+  expect(sj.asLeadingTerm(parse('log(cos(1/x) - 2)'), x)).toBe(sj.S.NaN);
+});
+
+it('expands logarithms along the positive imaginary ray at infinity', () => {
+  const x = symbol('x');
+  expect(sstr(series(parse('log(1 + x)'), x, sj.mul(sj.S.Infinity, sj.S.I), 2)))
+    .toBe('1/x + I*pi/2 - log(I/x) + O(x**(-2), (x, oo*I))');
+});
+
 // Series, orders and leading terms (series/series.ts, series/more.ts, series/puiseux.ts). Expected values are the str() forms printed by SymPy 1.14
 // (p is a positive, q a negative and r a real symbol).
 

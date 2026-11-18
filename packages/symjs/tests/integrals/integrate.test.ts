@@ -230,7 +230,6 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), x), "Integral(Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2/2, x < 1), (Integral(gamma(x), (x, 1, x)) + 1/2, True))"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(sj.Piecewise([P('x'), P('x > 1')], [P('1'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('x > 1')], [P('1'), true]), x), "Integral(Piecewise((x, x > 1), (1, True)), x)", "Piecewise((x, x <= 1), (x**2/2 + 1/2, True))"],
     // not implemented in symjs (SymPy's result shown)
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x)", () => sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x), "Integral(Piecewise((2*x, x < 1), (2*gamma(x), True)), x)", "Piecewise((x**2, x < 1), (2*Integral(gamma(x), x) - 2*Integral(gamma(x), (x, 1)) + 1, True))"],
@@ -470,6 +469,11 @@ describe('definite integrals of Piecewise conditions and delta functions (sympy.
   const oo = sj.S.Infinity;
   const noo = sj.S.NegativeInfinity;
   const PW = (...p: [Expr, Expr | boolean][]): Expr => sj.piecewise(...p);
+  it('joins the antiderivatives continuously across a lower branch bound', () => {
+    const value = integrate(PW([x, sj.Gt(x, 1)], [sj.S.One, true]), x);
+    expect(sstr(value)).toBe('Piecewise((x, x <= 1), (x**2/2 + 1/2, True))');
+    expect(value.subs(x, 1).equals(sj.S.One)).toBe(true);
+  });
   it('conditions decided on the interval', () => {
     expect(sstr(integrate(PW([sj.S.One, sj.Gt(x, 0)], [sj.S.Zero, true]), x, [2, 1]))).toBe('-1');
     expect(sstr(integrate(PW([x, sj.Gt(x, -1)], [sj.S.Zero, true]), x, [0, 1]))).toBe('1/2');
@@ -479,8 +483,7 @@ describe('definite integrals of Piecewise conditions and delta functions (sympy.
     expect(sstr(integrate(PW([x, sj.Eq(x, sj.S.Half)], [sj.S.One, true]), x, [0, 1]))).toBe('1');
     const real = new Sym('x', { real: true });
     expect(sstr(integrate(PW([sj.mul(real, sj.exp(sj.mul(-1, sj.pow(real, 2)))), sj.and(sj.Gt(real, noo), sj.Lt(real, oo))], [sj.S.Zero, true]), real, [noo, oo]))).toBe('0');
-    // SymPy: 1 - Min(1, Max(0, a))
-    expect(sstr(integrate(PW([sj.S.One, sj.Lt(a, x)], [sj.S.Zero, true]), x, [0, 1]))).toBe('Integral(Piecewise((1, a < x), (0, True)), (x, 0, 1))');
+    expect(sstr(integrate(PW([sj.S.One, sj.Lt(a, x)], [sj.S.Zero, true]), x, [0, 1]))).toBe('1 - Min(1, Max(0, a))');
   });
   it('a product with a Piecewise factor', () => {
     expect(sstr(integrate(sj.mul(x, PW([sj.S.One, sj.Lt(x, sj.S.Half)], [sj.Rational.of(2), true])), x, [0, 1]))).toBe('7/8');

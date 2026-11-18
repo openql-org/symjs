@@ -116,10 +116,13 @@ function d(e: Expr, x: Expr): Expr {
     }
     const u = first(e.args);
     if (e.name === 'conjugate' || e.name === 're' || e.name === 'im') {
-      // linear, but not holomorphic: the derivative is taken inside only for a real variable (SymPy keeps Derivative(conjugate(x), x))
-      if (isReal(x) !== true) return derivative(e, [[x, 1]]);
+      const imaginary = (a: Expr): boolean => a instanceof Sym && a.assumptions.imaginary === true;
+      const realAxis = isReal(x) === true || e.name !== 'conjugate' && isReal(u) === true;
+      if (!realAxis && !imaginary(x) && (e.name === 'conjugate' || !imaginary(u))) return derivative(e, [[x, 1]]);
       const du = d(u, x);
-      return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+      if (realAxis) return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+      if (e.name === 'conjugate') return mul(-1, conjugate(du));
+      return mul(-1, S.I, e.name === 're' ? fnIm(du) : fnRe(du));
     }
     const du = d(u, x);
     // SymPy Abs._eval_derivative: sign(conjugate(u))*u' for a real or imaginary u, otherwise
@@ -302,6 +305,7 @@ export function fdiff(f: ExprLike, argindex = 1): Expr {
   if (!Number.isInteger(argindex) || argindex < 1 || argindex > e.args.length) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
   const i = argindex - 1;
   const a = at(e.args, i);
+  if (e instanceof Fn && e.name === 'abs') return fn('sign', [a]);
   const xi = new Dummy(`xi_${argindex}`);
   const dg = diff(rebuild(e, e.args.map((b, j) => (j === i ? xi : b))), xi);
   const unevaluated = (x: Expr): boolean => ((x instanceof Derivative || x instanceof SubsNode) && x.has(xi)) || x.args.some(unevaluated);

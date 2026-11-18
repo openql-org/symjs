@@ -14,6 +14,11 @@ const [x, y] = symbols('x y');
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
 const Qs = (s: string, syms: Sym[]) => parse(s, { symbols: syms, locals: { Heaviside, DiracDelta } });
 const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(String).join(', ')}]` : String(v));
+
+it('factors integer logarithms when requested and cancels common log bases', () => {
+  expect(sstr(expandLog(P('log(12)'), { factor: true }))).toBe('log(3) + 2*log(2)');
+  expect(sstr(expandLog(P('log(21)/log(7)')))).toBe('log(3)/log(7) + 1');
+});
 type Assume = NonNullable<Parameters<typeof symbol>[1]>;
 const PPolar = (s: string, a: Record<string, Assume> = {}): Expr =>
   parse(s, { locals: { exp_polar: expPolar }, symbols: Object.entries(a).map(([k, v]) => symbol(k, v)) });

@@ -357,6 +357,7 @@ export interface Impl {
   rebuildSet?: (e: Expr, args: readonly Expr[]) => Expr;
   /** SymPy Set._eval_subs: a set that binds a variable (ImageSet, ConditionSet) substituted, or undefined for the generic rule. */
   subsSet?: (e: Expr, old: Expr, nw: Expr, subs: (x: Expr) => Expr) => Expr | undefined;
+  piecewiseFold?: (e: Expr) => Expr;
   /** SymPy factor (set by the polys module). */
   factor?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */
@@ -373,7 +374,7 @@ export interface Impl {
   /** SymPy is_hypergeometric (registered by the simplify entry point). */
   isHypergeometric?(e: Expr, k: Expr): boolean;
   limit(e: Expr, z: Sym, z0: ExprLike, dir?: '+' | '-' | '+-'): Expr;
-  series(e: Expr, x: Sym, x0?: ExprLike, n?: number): Expr;
+  series(e: Expr, x: Sym, x0?: ExprLike, n?: number, dir?: '+' | '-', opts?: { logx?: Expr }): Expr;
 }
 
 /** An implementation provided by a feature area that has not been imported. */

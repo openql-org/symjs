@@ -119,6 +119,13 @@ describe('ordering relations decided like SymPy (is_lt, is_le, is_gt, is_ge)', (
 });
 
 describe('Piecewise conditions made canonical and collapsed (SymPy Piecewise.eval, _piecewise_collapse_arguments)', () => {
+  it('keeps unevaluated conditions after dropping false and unreachable branches', () => {
+    const unevaluated = new sj.Rel('Eq', sj.S.One, x);
+    const expr = piecewise([1, unevaluated], [0, false], [2, true], [3, true], { evaluate: false });
+    expect(s(expr)).toBe('Piecewise((1, Eq(1, x)), (2, True))');
+    expect(piecewise([x, 1])).toBe(x);
+    expect(() => piecewise([x, 2])).toThrow(TypeError);
+  });
   const [x, y] = [new sj.Sym('x'), new sj.Sym('y')];
   const a = new sj.Sym('a', { positive: true });
   const s = (e: Expr): string => sj.str(e);

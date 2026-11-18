@@ -703,9 +703,8 @@ describe('functions at a number with an infinite part', () => {
   it.each(cases)('%s = %s', (src, want) => {
     expect(String(parse(src))).toBe(want);
   });
-  it('atan(zoo) stays unevaluated', () => {
-    // SymPy atan(zoo) = AccumBounds(-pi/2, pi/2)
-    expect(String(parse('atan(zoo)'))).toBe('atan(zoo)');
+  it('gives an accumulation range for atan at complex infinity', () => {
+    expect(String(parse('atan(zoo)'))).toBe('AccumBounds(-pi/2, pi/2)');
   });
 });
 

@@ -19,7 +19,7 @@ import { expandMul } from '../../simplify/expand';
 import type { Sym } from '../../core/nodes';
 import { ratMod } from '../../core/num';
 import { AccumBounds } from '../../core/accumbounds';
-import { isReal } from '../../core/assumptions';
+import { isIntegerQ, isReal } from '../../core/assumptions';
 import { mapBottomUp } from '../../core/traverse';
 import { fnPartials } from '../../calculus/diff';
 import { numericFns } from '../../numeric/evalf';
@@ -28,7 +28,7 @@ import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
 import type { Mpc } from '../../numeric/mpfun';
 import type { Evaluator } from './elementary';
-import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, log, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
+import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, im, log, re, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
 
 export const cot = (x: ExprLike): Expr => fn('cot', [x]);
 export const sec = (x: ExprLike): Expr => fn('sec', [x]);
@@ -108,7 +108,7 @@ function peeloffIpi(arg: Expr): [Expr, Rational] {
       const fl = twice.p >= 0n ? twice.p / twice.q : -((-twice.p + twice.q - 1n) / twice.q);
       const m2 = Rational.of(fl, 2n);
       if (m2.isZero) return [arg, m2];
-      return [add(arg, neg(mul(m2, ipi))), m2];
+      return [add(...arg.args.filter((term) => term !== a), mul(add(K, neg(m2)), ipi)), m2];
     }
   }
   return [arg, Rational.of(0n)];
@@ -403,6 +403,8 @@ const evalCot: Evaluator = (x) => {
   if (couldExtractMinusSign(x)) return neg(cot(neg(x)));
   const c = iCoeff(x);
   if (c !== undefined) return neg(mul(I, coth(c)));
+  const multiple = asCoefficient(x, pi);
+  if (multiple !== undefined && isIntegerQ(multiple) === true) return S.ComplexInfinity;
   const pc = piCoeffOnly(x);
   if (pc !== undefined) {
     if (pc.isInteger) return S.ComplexInfinity;
@@ -551,6 +553,21 @@ function lookup(table: () => [Expr, Expr][], x: Expr): Expr | undefined {
 /** I*AccumBounds(-pi/2, pi/2), the value of atanh and asech at zoo (an unevaluated product: the bounds are not real). */
 const iHalfPiBounds = (): Expr => new Mul([I, AccumBounds(neg(div(pi, 2)), div(pi, 2))]);
 
+/** Reduce a known numeric argument by integer multiples of the vertical period. */
+function inverseHyperbolicBranch(arg: Expr, reflect: boolean): Expr | undefined {
+  if (arg.freeSymbols().size > 0) return undefined;
+  if (isReal(arg) === true) return arg;
+  const real = re(arg);
+  const imaginary = im(arg);
+  if (isReal(real) !== true || isReal(imaginary) !== true) return undefined;
+  const value = imaginary.toNumber();
+  if (!Number.isFinite(value)) return undefined;
+  const k = Math.floor(value / Math.PI + 0.5);
+  if (!Number.isSafeInteger(k)) return undefined;
+  const reduced = add(real, mul(I, add(imaginary, mul(-k, pi))));
+  return reflect && k % 2 !== 0 ? neg(reduced) : reduced;
+}
+
 const evalAsinh: Evaluator = (x) => {
   if (isNan(x)) return S.NaN;
   if (isOo(x) || isNegOo(x) || isZoo(x)) return x;
@@ -561,6 +578,7 @@ const evalAsinh: Evaluator = (x) => {
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, asin(c));
   if (couldExtractMinusSign(x)) return neg(asinh(neg(x)));
+  if (isFn(x, 'sinh')) return inverseHyperbolicBranch(first(x.args), true);
   return undefined;
 };
 
@@ -588,10 +606,7 @@ const evalAtanh: Evaluator = (x) => {
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, atan(c));
   if (couldExtractMinusSign(x)) return neg(atanh(neg(x)));
-  if (isFn(x, 'tanh')) {
-    const t = first(x.args);
-    return t.freeSymbols().size === 0 && t.kind !== 'Fn' ? t : undefined;
-  }
+  if (isFn(x, 'tanh')) return inverseHyperbolicBranch(first(x.args), false);
   return undefined;
 };
 
