@@ -291,7 +291,7 @@ describe("doctests of sympy.functions.elementary.trigonometric", () => {
   it("sinc(x).series()", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(fn('sinc', [v1]), v1, sympify(0), 6, '+'))).toBe('1 - x**2/6 + x**4/120 + O(x**6)');
+    expect(sympyStr(series(fn('sinc', [v1]), v1, sympify(0), 6, '+', {}))).toBe('1 - x**2/6 + x**4/120 + O(x**6)');
   });
   it("sinc(x).rewrite(jn)", () => {
     const x = new Sym('x');
@@ -1667,7 +1667,7 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
   it.todo("test_log_series:540");
   it.fails("test_log_series:542", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(log(new Add([rational(1), x])), x, new Mul([S.NegativeInfinity, I]), 4, '+'))).toBe('1/(3*x**3) - 1/(2*x**2) + 1/x - I*pi/2 - log(-I/x) + O(x**(-4), (x, -oo*I))');
+    expect(sympyStr(series(log(new Add([rational(1), x])), x, new Mul([S.NegativeInfinity, I]), 4, '+', {}))).toBe('1/(3*x**3) - 1/(2*x**2) + 1/x - I*pi/2 - log(-I/x) + O(x**(-4), (x, -oo*I))');
   });
   // the replay exceeds its deadline
   //   assert expr2.series(x, x0=I*oo, n=4) == 1/(4*x**2) + I*pi/2 + log(2) - \
@@ -2353,7 +2353,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   it.todo("test_sinh:92");
   it("test_sinh_series:97", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('sinh', [x]), x, rational(0), 10, '+'))).toBe('x + x**3/6 + x**5/120 + x**7/5040 + x**9/362880 + O(x**10)');
+    expect(sympyStr(series(fn('sinh', [x]), x, rational(0), 10, '+', {}))).toBe('x + x**3/6 + x**5/120 + x**7/5040 + x**9/362880 + O(x**10)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: sinh(x).fdiff(2))
@@ -2496,7 +2496,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_cosh_series:181", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cosh', [x]), x, rational(0), 10, '+'))).toBe('1 + x**2/2 + x**4/24 + x**6/720 + x**8/40320 + O(x**10)');
+    expect(sympyStr(series(fn('cosh', [x]), x, rational(0), 10, '+', {}))).toBe('1 + x**2/2 + x**4/24 + x**6/720 + x**8/40320 + O(x**10)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: cosh(x).fdiff(2))
@@ -2633,7 +2633,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_tanh_series:264", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('tanh', [x]), x, rational(0), 10, '+'))).toBe('x - x**3/3 + 2*x**5/15 - 17*x**7/315 + 62*x**9/2835 + O(x**10)');
+    expect(sympyStr(series(fn('tanh', [x]), x, rational(0), 10, '+', {}))).toBe('x - x**3/3 + 2*x**5/15 - 17*x**7/315 + 62*x**9/2835 + O(x**10)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: tanh(x).fdiff(2))
@@ -2787,7 +2787,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_coth_series:351", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('coth', [x]), x, rational(0), 8, '+'))).toBe('1/x + x/3 - x**3/45 + 2*x**5/945 - x**7/4725 + O(x**8)');
+    expect(sympyStr(series(fn('coth', [x]), x, rational(0), 8, '+', {}))).toBe('1/x + x/3 - x**3/45 + 2*x**5/945 - x**7/4725 + O(x**8)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: coth(x).fdiff(2))
@@ -2881,7 +2881,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_csch_series:423", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('csch', [x]), x, rational(0), 10, '+'))).toBe('1/x - x/6 + 7*x**3/360 - 31*x**5/15120 + 127*x**7/604800 - 73*x**9/3421440 + O(x**10)');
+    expect(sympyStr(series(fn('csch', [x]), x, rational(0), 10, '+', {}))).toBe('1/x - x/6 + 7*x**3/360 - 31*x**5/15120 + 127*x**7/604800 - 73*x**9/3421440 + O(x**10)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: csch(x).fdiff(2))
@@ -2982,7 +2982,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_sech_series:493", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('sech', [x]), x, rational(0), 10, '+'))).toBe('1 - x**2/2 + 5*x**4/24 - 61*x**6/720 + 277*x**8/8064 + O(x**10)');
+    expect(sympyStr(series(fn('sech', [x]), x, rational(0), 10, '+', {}))).toBe('1 - x**2/2 + 5*x**4/24 - 61*x**6/720 + 277*x**8/8064 + O(x**10)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: sech(x).fdiff(2))
@@ -3167,7 +3167,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_asinh_series:596", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('asinh', [x]), x, rational(0), 8, '+'))).toBe('x - x**3/6 + 3*x**5/40 - 5*x**7/112 + O(x**8)');
+    expect(sympyStr(series(fn('asinh', [x]), x, rational(0), 8, '+', {}))).toBe('x - x**3/6 + 3*x**5/40 - 5*x**7/112 + O(x**8)');
   });
   it("test_asinh_series:599", () => {
     const x = new Sym('x');
@@ -3410,7 +3410,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_acosh_series:736", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acosh', [x]), x, rational(0), 8, '+'))).toBe('I*pi/2 - I*x - I*x**3/6 - 3*I*x**5/40 - 5*I*x**7/112 + O(x**8)');
+    expect(sympyStr(series(fn('acosh', [x]), x, rational(0), 8, '+', {}))).toBe('I*pi/2 - I*x - I*x**3/6 - 3*I*x**5/40 - 5*I*x**7/112 + O(x**8)');
   });
   it("test_acosh_series:739", () => {
     const x = new Sym('x');
@@ -3861,7 +3861,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_acsch_series:998", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acsch', [x]), x, rational(0), 9, '+'))).toBe('log(2) - log(x) + x**2/4 - 3*x**4/32 + 5*x**6/96 - 35*x**8/1024 + O(x**9)');
+    expect(sympyStr(series(fn('acsch', [x]), x, rational(0), 9, '+', {}))).toBe('log(2) - log(x) + x**2/4 - 3*x**4/32 + 5*x**6/96 - 35*x**8/1024 + O(x**9)');
   });
   it("test_acsch_series:1001", () => {
     const x = new Sym('x');
@@ -4081,7 +4081,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_atanh_series:1140", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('atanh', [x]), x, rational(0), 10, '+'))).toBe('x + x**3/3 + x**5/5 + x**7/7 + x**9/9 + O(x**10)');
+    expect(sympyStr(series(fn('atanh', [x]), x, rational(0), 10, '+', {}))).toBe('x + x**3/3 + x**5/5 + x**7/7 + x**9/9 + O(x**10)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: atanh(x).fdiff(2))
@@ -4247,7 +4247,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_acoth_series:1253", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acoth', [x]), x, rational(0), 10, '+'))).toBe('-I*pi/2 + x + x**3/3 + x**5/5 + x**7/7 + x**9/9 + O(x**10)');
+    expect(sympyStr(series(fn('acoth', [x]), x, rational(0), 10, '+', {}))).toBe('-I*pi/2 + x + x**3/3 + x**5/5 + x**7/7 + x**9/9 + O(x**10)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: acoth(x).fdiff(2))
@@ -4917,7 +4917,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   });
   it("test_issue_25175:1553", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Add([new Mul([rational(-1), fn('acosh', [new Add([rational(5, 3), new Mul([rational(-8, 3), new Pow(new Add([rational(4), x]), rational(-1))])])])]), new Mul([rational(-2), log(new Mul([new Pow(new Add([rational(4, 3), new Mul([rational(1, 3), x])]), rational(1, 2)), new Pow(new Add([new Pow(x, rational(1, 2)), new Pow(new Add([rational(3), x]), rational(1, 2))]), rational(2)), new Pow(new Add([new Pow(x, rational(1, 2)), new Mul([rational(2), new Pow(new Add([rational(3), x]), rational(1, 2))])]), rational(-1))]))]), new Mul([rational(2), fn('acosh', [new Add([rational(1), new Mul([rational(2, 3), x])])])])]), x, sympify(0), 6, '+'))).toBe('O(x**6)');
+    expect(sympyStr(series(new Add([new Mul([rational(-1), fn('acosh', [new Add([rational(5, 3), new Mul([rational(-8, 3), new Pow(new Add([rational(4), x]), rational(-1))])])])]), new Mul([rational(-2), log(new Mul([new Pow(new Add([rational(4, 3), new Mul([rational(1, 3), x])]), rational(1, 2)), new Pow(new Add([new Pow(x, rational(1, 2)), new Pow(new Add([rational(3), x]), rational(1, 2))]), rational(2)), new Pow(new Add([new Pow(x, rational(1, 2)), new Mul([rational(2), new Pow(new Add([rational(3), x]), rational(1, 2))])]), rational(-1))]))]), new Mul([rational(2), fn('acosh', [new Add([rational(1), new Mul([rational(2, 3), x])])])])]), x, sympify(0), 6, '+', {}))).toBe('O(x**6)');
   });
 });
 
@@ -4936,7 +4936,7 @@ describe("sympy/functions/elementary/tests/test_interface.py", () => {
   it.todo("test_function_series2:53");
   it("test_function_series3:82", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('tanh', [x]), x, rational(0), 6, '+'))).toBe('x - x**3/3 + 2*x**5/15 + O(x**6)');
+    expect(sympyStr(series(fn('tanh', [x]), x, rational(0), 6, '+', {}))).toBe('x - x**3/3 + 2*x**5/15 + O(x**6)');
   });
 });
 
@@ -9953,7 +9953,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_sin_series:189", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('sin', [x]), x, rational(0), 9, '+'))).toBe('x - x**3/6 + x**5/120 - x**7/5040 + O(x**9)');
+    expect(sympyStr(series(fn('sin', [x]), x, rational(0), 9, '+', {}))).toBe('x - x**3/6 + x**5/120 - x**7/5040 + O(x**9)');
   });
   it("test_sin_rewrite:194", () => {
     const x = new Sym('x');
@@ -10598,7 +10598,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_cos_series:416", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cos', [x]), x, rational(0), 9, '+'))).toBe('1 - x**2/2 + x**4/24 - x**6/720 + x**8/40320 + O(x**9)');
+    expect(sympyStr(series(fn('cos', [x]), x, rational(0), 9, '+', {}))).toBe('1 - x**2/2 + x**4/24 - x**6/720 + x**8/40320 + O(x**9)');
   });
   it("test_cos_rewrite:421", () => {
     const x = new Sym('x');
@@ -10975,7 +10975,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_tan_series:588", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('tan', [x]), x, rational(0), 9, '+'))).toBe('x + x**3/3 + 2*x**5/15 + 17*x**7/315 + O(x**9)');
+    expect(sympyStr(series(fn('tan', [x]), x, rational(0), 9, '+', {}))).toBe('x + x**3/3 + 2*x**5/15 + 17*x**7/315 + O(x**9)');
   });
   it("test_tan_rewrite:594", () => {
     const x = new Sym('x');
@@ -11304,15 +11304,15 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_cot_series:759", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cot', [x]), x, rational(0), 9, '+'))).toBe('1/x - x/3 - x**3/45 - 2*x**5/945 - x**7/4725 + O(x**9)');
+    expect(sympyStr(series(fn('cot', [x]), x, rational(0), 9, '+', {}))).toBe('1/x - x/3 - x**3/45 - 2*x**5/945 - x**7/4725 + O(x**9)');
   });
   it("test_cot_series:762", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cot', [new Add([new Pow(x, rational(4)), new Pow(x, rational(5))])]), x, rational(0), 1, '+'))).toBe('x**(-4) - 1/x**3 + x**(-2) - 1/x + 1 + O(x)');
+    expect(sympyStr(series(fn('cot', [new Add([new Pow(x, rational(4)), new Pow(x, rational(5))])]), x, rational(0), 1, '+', {}))).toBe('x**(-4) - 1/x**3 + x**(-2) - 1/x + 1 + O(x)');
   });
   it("test_cot_series:764", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cot', [new Mul([pi, new Add([rational(1), new Mul([rational(-1), x])])])]), x, rational(0), 3, '+'))).toBe('-1/(pi*x) + pi*x/3 + O(x**3)');
+    expect(sympyStr(series(fn('cot', [new Mul([pi, new Add([rational(1), new Mul([rational(-1), x])])])]), x, rational(0), 3, '+', {}))).toBe('-1/(pi*x) + pi*x/3 + O(x**3)');
   });
   it("test_cot_series:765", () => {
     const x = new Sym('x');
@@ -11500,7 +11500,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   it("test_sinc:881", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(fn('sinc', [v1]), v1, sympify(0), 6, '+'))).toBe('1 - x**2/6 + x**4/120 + O(x**6)');
+    expect(sympyStr(series(fn('sinc', [v1]), v1, sympify(0), 6, '+', {}))).toBe('1 - x**2/6 + x**4/120 + O(x**6)');
   });
   it("test_sinc:883", () => {
     const x = new Sym('x');
@@ -11702,7 +11702,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_asin_series:948", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('asin', [x]), x, rational(0), 9, '+'))).toBe('x + x**3/6 + 3*x**5/40 + 5*x**7/112 + O(x**9)');
+    expect(sympyStr(series(fn('asin', [x]), x, rational(0), 9, '+', {}))).toBe('x + x**3/6 + 3*x**5/40 + 5*x**7/112 + O(x**9)');
   });
   it("test_asin_series:951", () => {
     const x = new Sym('x');
@@ -12278,11 +12278,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_acos_series:1051", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acos', [x]), x, rational(0), 8, '+'))).toBe('pi/2 - x - x**3/6 - 3*x**5/40 - 5*x**7/112 + O(x**8)');
+    expect(sympyStr(series(fn('acos', [x]), x, rational(0), 8, '+', {}))).toBe('pi/2 - x - x**3/6 - 3*x**5/40 - 5*x**7/112 + O(x**8)');
   });
   it("test_acos_series:1053", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acos', [x]), x, rational(0), 8, '+'))).toBe('pi/2 - x - x**3/6 - 3*x**5/40 - 5*x**7/112 + O(x**8)');
+    expect(sympyStr(series(fn('acos', [x]), x, rational(0), 8, '+', {}))).toBe('pi/2 - x - x**3/6 - 3*x**5/40 - 5*x**7/112 + O(x**8)');
   });
   it("test_acos_series:1055", () => {
     const x = new Sym('x');
@@ -13851,16 +13851,16 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_sec:1699", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(series(fn('sec', [x]), x, rational(0), 6, '+'))).toBe('1 + x**2/2 + 5*x**4/24 + O(x**6)');
+    expect(sympyStr(series(fn('sec', [x]), x, rational(0), 6, '+', {}))).toBe('1 + x**2/2 + 5*x**4/24 + O(x**6)');
   });
   it("test_sec:1702", () => {
     const x = new Sym('x', { real: true });
     const v1 = x;
-    expect(sympyStr(series(new Pow(fn('sec', [v1]), rational(1, 2)), v1, sympify(0), 6, '+'))).toBe('1 + x**2/4 + 7*x**4/96 + O(x**6)');
+    expect(sympyStr(series(new Pow(fn('sec', [v1]), rational(1, 2)), v1, sympify(0), 6, '+', {}))).toBe('1 + x**2/4 + 7*x**4/96 + O(x**6)');
   });
   it("test_sec:1705", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(series(new Pow(fn('sec', [x]), rational(1, 2)), x, new Mul([rational(3, 2), pi]), 4, '+'))).toBe('1/sqrt(x - 3*pi/2) + (x - 3*pi/2)**(3/2)/12 + (x - 3*pi/2)**(7/2)/160 + O((x - 3*pi/2)**4, (x, 3*pi/2))');
+    expect(sympyStr(series(new Pow(fn('sec', [x]), rational(1, 2)), x, new Mul([rational(3, 2), pi]), 4, '+', {}))).toBe('1/sqrt(x - 3*pi/2) + (x - 3*pi/2)**(3/2)/12 + (x - 3*pi/2)**(7/2)/160 + O((x - 3*pi/2)**4, (x, 3*pi/2))');
   });
   it("test_sec:1709", () => {
     const x = new Sym('x', { real: true });
@@ -14023,11 +14023,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_csc:1791", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(series(fn('csc', [x]), x, new Mul([rational(1, 2), pi]), 6, '+'))).toBe('1 + (x - pi/2)**2/2 + 5*(x - pi/2)**4/24 + O((x - pi/2)**6, (x, pi/2))');
+    expect(sympyStr(series(fn('csc', [x]), x, new Mul([rational(1, 2), pi]), 6, '+', {}))).toBe('1 + (x - pi/2)**2/2 + 5*(x - pi/2)**4/24 + O((x - pi/2)**6, (x, pi/2))');
   });
   it("test_csc:1793", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(series(fn('csc', [x]), x, rational(0), 6, '+'))).toBe('1/x + x/6 + 7*x**3/360 + 31*x**5/15120 + O(x**6)');
+    expect(sympyStr(series(fn('csc', [x]), x, rational(0), 6, '+', {}))).toBe('1/x + x/6 + 7*x**3/360 + 31*x**5/15120 + O(x**6)');
   });
   it("test_csc:1796", () => {
     const x = new Sym('x', { real: true });
@@ -14239,7 +14239,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it.fails("test_asec_series:1872", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('asec', [x]), x, rational(0), 9, '+'))).toBe('I*log(2) - I*log(x) - I*x**2/4 - 3*I*x**4/32 - 5*I*x**6/96 - 35*I*x**8/1024 + O(x**9)');
+    expect(sympyStr(series(fn('asec', [x]), x, rational(0), 9, '+', {}))).toBe('I*log(2) - I*log(x) - I*x**2/4 - 3*I*x**4/32 - 5*I*x**6/96 - 35*I*x**8/1024 + O(x**9)');
   });
   it("test_asec_series:1876", () => {
     const x = new Sym('x');
@@ -14425,7 +14425,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it.fails("test_acsc_series:1954", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acsc', [x]), x, rational(0), 9, '+'))).toBe('-I*log(2) + pi/2 + I*log(x) + I*x**2/4 + 3*I*x**4/32 + 5*I*x**6/96 + 35*I*x**8/1024 + O(x**9)');
+    expect(sympyStr(series(fn('acsc', [x]), x, rational(0), 9, '+', {}))).toBe('-I*log(2) + pi/2 + I*log(x) + I*x**2/4 + 3*I*x**4/32 + 5*I*x**6/96 + 35*I*x**8/1024 + O(x**9)');
   });
   it("test_acsc_series:1958", () => {
     const x = new Sym('x');
@@ -14787,34 +14787,34 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it.fails("test_issue_23843:2227", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('atan', [new Add([I, x])]), x, oo, 6, '+'))).toBe('-16/(5*x**5) - 2*I/x**4 + 4/(3*x**3) + I/x**2 - 1/x + pi/2 + O(x**(-6), (x, oo))');
+    expect(sympyStr(series(fn('atan', [new Add([I, x])]), x, oo, 6, '+', {}))).toBe('-16/(5*x**5) - 2*I/x**4 + 4/(3*x**3) + I/x**2 - 1/x + pi/2 + O(x**(-6), (x, oo))');
   });
   it.fails("test_issue_23843:2228", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('atan', [new Add([I, x])]), x, S.NegativeInfinity, 6, '+'))).toBe('-16/(5*x**5) - 2*I/x**4 + 4/(3*x**3) + I/x**2 - 1/x - pi/2 + O(x**(-6), (x, -oo))');
+    expect(sympyStr(series(fn('atan', [new Add([I, x])]), x, S.NegativeInfinity, 6, '+', {}))).toBe('-16/(5*x**5) - 2*I/x**4 + 4/(3*x**3) + I/x**2 - 1/x - pi/2 + O(x**(-6), (x, -oo))');
   });
   it.fails("test_issue_23843:2229", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('atan', [new Add([x, new Mul([rational(-1), I])])]), x, oo, 6, '+'))).toBe('-16/(5*x**5) + 2*I/x**4 + 4/(3*x**3) - I/x**2 - 1/x + pi/2 + O(x**(-6), (x, oo))');
+    expect(sympyStr(series(fn('atan', [new Add([x, new Mul([rational(-1), I])])]), x, oo, 6, '+', {}))).toBe('-16/(5*x**5) + 2*I/x**4 + 4/(3*x**3) - I/x**2 - 1/x + pi/2 + O(x**(-6), (x, oo))');
   });
   it.fails("test_issue_23843:2230", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('atan', [new Add([x, new Mul([rational(-1), I])])]), x, S.NegativeInfinity, 6, '+'))).toBe('-16/(5*x**5) + 2*I/x**4 + 4/(3*x**3) - I/x**2 - 1/x - pi/2 + O(x**(-6), (x, -oo))');
+    expect(sympyStr(series(fn('atan', [new Add([x, new Mul([rational(-1), I])])]), x, S.NegativeInfinity, 6, '+', {}))).toBe('-16/(5*x**5) + 2*I/x**4 + 4/(3*x**3) - I/x**2 - 1/x - pi/2 + O(x**(-6), (x, -oo))');
   });
   it.fails("test_issue_23843:2233", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acot', [new Add([I, x])]), x, oo, 6, '+'))).toBe('16/(5*x**5) + 2*I/x**4 - 4/(3*x**3) - I/x**2 + 1/x + O(x**(-6), (x, oo))');
+    expect(sympyStr(series(fn('acot', [new Add([I, x])]), x, oo, 6, '+', {}))).toBe('16/(5*x**5) + 2*I/x**4 - 4/(3*x**3) - I/x**2 + 1/x + O(x**(-6), (x, oo))');
   });
   it.fails("test_issue_23843:2234", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acot', [new Add([I, x])]), x, S.NegativeInfinity, 6, '+'))).toBe('16/(5*x**5) + 2*I/x**4 - 4/(3*x**3) - I/x**2 + 1/x + O(x**(-6), (x, -oo))');
+    expect(sympyStr(series(fn('acot', [new Add([I, x])]), x, S.NegativeInfinity, 6, '+', {}))).toBe('16/(5*x**5) + 2*I/x**4 - 4/(3*x**3) - I/x**2 + 1/x + O(x**(-6), (x, -oo))');
   });
   it.fails("test_issue_23843:2235", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acot', [new Add([x, new Mul([rational(-1), I])])]), x, oo, 6, '+'))).toBe('16/(5*x**5) - 2*I/x**4 - 4/(3*x**3) + I/x**2 + 1/x + O(x**(-6), (x, oo))');
+    expect(sympyStr(series(fn('acot', [new Add([x, new Mul([rational(-1), I])])]), x, oo, 6, '+', {}))).toBe('16/(5*x**5) - 2*I/x**4 - 4/(3*x**3) + I/x**2 + 1/x + O(x**(-6), (x, oo))');
   });
   it.fails("test_issue_23843:2236", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('acot', [new Add([x, new Mul([rational(-1), I])])]), x, S.NegativeInfinity, 6, '+'))).toBe('16/(5*x**5) - 2*I/x**4 - 4/(3*x**3) + I/x**2 + 1/x + O(x**(-6), (x, -oo))');
+    expect(sympyStr(series(fn('acot', [new Add([x, new Mul([rational(-1), I])])]), x, S.NegativeInfinity, 6, '+', {}))).toBe('16/(5*x**5) - 2*I/x**4 - 4/(3*x**3) + I/x**2 + 1/x + O(x**(-6), (x, -oo))');
   });
 });

@@ -846,46 +846,46 @@ describe("doctests of sympy.core.expr", () => {
   it("cos(x).series()", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(fn('cos', [v1]), v1, sympify(0), 6, '+'))).toBe('1 - x**2/2 + x**4/24 + O(x**6)');
+    expect(sympyStr(series(fn('cos', [v1]), v1, sympify(0), 6, '+', {}))).toBe('1 - x**2/2 + x**4/24 + O(x**6)');
   });
   it("cos(x).series(n=4)", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(fn('cos', [v1]), v1, sympify(0), 4, '+'))).toBe('1 - x**2/2 + O(x**4)');
+    expect(sympyStr(series(fn('cos', [v1]), v1, sympify(0), 4, '+', {}))).toBe('1 - x**2/2 + O(x**4)');
   });
   it("cos(x).series(x, x0=1, n=2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cos', [x]), x, rational(1), 2, '+'))).toBe('cos(1) - (x - 1)*sin(1) + O((x - 1)**2, (x, 1))');
+    expect(sympyStr(series(fn('cos', [x]), x, rational(1), 2, '+', {}))).toBe('cos(1) - (x - 1)*sin(1) + O((x - 1)**2, (x, 1))');
   });
   it("e.series(y, n=2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(fn('cos', [add(x, exp(y))]), y, sympify(0), 2, '+'))).toBe('cos(x + 1) - y*sin(x + 1) + O(y**2)');
+    expect(sympyStr(series(fn('cos', [add(x, exp(y))]), y, sympify(0), 2, '+', {}))).toBe('cos(x + 1) - y*sin(x + 1) + O(y**2)');
   });
   it("e.series(x, n=2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(fn('cos', [add(x, exp(y))]), x, sympify(0), 2, '+'))).toBe('cos(exp(y)) - x*sin(exp(y)) + O(x**2)');
+    expect(sympyStr(series(fn('cos', [add(x, exp(y))]), x, sympify(0), 2, '+', {}))).toBe('cos(exp(y)) - x*sin(exp(y)) + O(x**2)');
   });
   it("abs(x).series(dir=\"+\")", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(abs(v1), v1, sympify(0), 6, '+'))).toBe('x');
+    expect(sympyStr(series(abs(v1), v1, sympify(0), 6, '+', {}))).toBe('x');
   });
   it("abs(x).series(dir=\"-\")", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(abs(v1), v1, sympify(0), 6, '-'))).toBe('-x');
+    expect(sympyStr(series(abs(v1), v1, sympify(0), 6, '-', {}))).toBe('-x');
   });
   it("f.series(x, 2, 6, \"+\")", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('tan', [x]), x, rational(2), 6, '+'))).toBe('tan(2) + (1 + tan(2)**2)*(x - 2) + (x - 2)**2*(tan(2)**3 + tan(2)) + (x - 2)**3*(1/3 + 4*tan(2)**2/3 + tan(2)**4) + (x - 2)**4*(tan(2)**5 + 5*tan(2)**3/3 + 2*tan(2)/3) + (x - 2)**5*(2/15 + 17*tan(2)**2/15 + 2*tan(2)**4 + tan(2)**6) + O((x - 2)**6, (x, 2))');
+    expect(sympyStr(series(fn('tan', [x]), x, rational(2), 6, '+', {}))).toBe('tan(2) + (1 + tan(2)**2)*(x - 2) + (x - 2)**2*(tan(2)**3 + tan(2)) + (x - 2)**3*(1/3 + 4*tan(2)**2/3 + tan(2)**4) + (x - 2)**4*(tan(2)**5 + 5*tan(2)**3/3 + 2*tan(2)/3) + (x - 2)**5*(2/15 + 17*tan(2)**2/15 + 2*tan(2)**4 + tan(2)**6) + O((x - 2)**6, (x, 2))');
   });
   it("f.series(x, 2, 3, \"-\")", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('tan', [x]), x, rational(2), 3, '-'))).toBe('tan(2) + (2 - x)*(-tan(2)**2 - 1) + (2 - x)**2*(tan(2)**3 + tan(2)) + O((x - 2)**3, (x, 2))');
+    expect(sympyStr(series(fn('tan', [x]), x, rational(2), 3, '-', {}))).toBe('tan(2) + (2 - x)*(-tan(2)**2 - 1) + (2 - x)**2*(tan(2)**3 + tan(2)) + O((x - 2)**3, (x, 2))');
   });
   it("(1/x).series(x, n=8)", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(pow(x, -1), x, sympify(0), 8, '+'))).toBe('1/x');
+    expect(sympyStr(series(pow(x, -1), x, sympify(0), 8, '+', {}))).toBe('1/x');
   });
   it("x*(1/x)", () => {
     const x = new Sym('x');
@@ -1030,31 +1030,31 @@ describe("sympy/core/tests/test_expr.py", () => {
   it.todo("test_basic_nostr:442 (5)");
   it("test_series_expansion_for_uniform_order:446", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(new Add([x, y, new Pow(x, rational(-1))]), x, rational(0), 0, '+'))).toBe('1/x + O(1)');
+    expect(sympyStr(series(new Add([x, y, new Pow(x, rational(-1))]), x, rational(0), 0, '+', {}))).toBe('1/x + O(1)');
   });
   it("test_series_expansion_for_uniform_order:447", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(new Add([x, y, new Pow(x, rational(-1))]), x, rational(0), 1, '+'))).toBe('1/x + y + O(x)');
+    expect(sympyStr(series(new Add([x, y, new Pow(x, rational(-1))]), x, rational(0), 1, '+', {}))).toBe('1/x + y + O(x)');
   });
   it("test_series_expansion_for_uniform_order:448", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Add([rational(1), x, new Pow(x, rational(-1))]), x, rational(0), 0, '+'))).toBe('1/x + O(1)');
+    expect(sympyStr(series(new Add([rational(1), x, new Pow(x, rational(-1))]), x, rational(0), 0, '+', {}))).toBe('1/x + O(1)');
   });
   it("test_series_expansion_for_uniform_order:449", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Add([rational(1), x, new Pow(x, rational(-1))]), x, rational(0), 1, '+'))).toBe('1/x + 1 + O(x)');
+    expect(sympyStr(series(new Add([rational(1), x, new Pow(x, rational(-1))]), x, rational(0), 1, '+', {}))).toBe('1/x + 1 + O(x)');
   });
   it("test_series_expansion_for_uniform_order:450", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Add([x, new Pow(x, rational(-1))]), x, rational(0), 0, '+'))).toBe('1/x + O(1)');
+    expect(sympyStr(series(new Add([x, new Pow(x, rational(-1))]), x, rational(0), 0, '+', {}))).toBe('1/x + O(1)');
   });
   it("test_series_expansion_for_uniform_order:451", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(new Add([x, y, new Pow(x, rational(-1)), new Mul([x, y])]), x, rational(0), 0, '+'))).toBe('1/x + O(1)');
+    expect(sympyStr(series(new Add([x, y, new Pow(x, rational(-1)), new Mul([x, y])]), x, rational(0), 0, '+', {}))).toBe('1/x + O(1)');
   });
   it("test_series_expansion_for_uniform_order:452", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(new Add([x, y, new Pow(x, rational(-1)), new Mul([x, y])]), x, rational(0), 1, '+'))).toBe('1/x + y + O(x)');
+    expect(sympyStr(series(new Add([x, y, new Pow(x, rational(-1)), new Mul([x, y])]), x, rational(0), 1, '+', {}))).toBe('1/x + y + O(x)');
   });
   it.fails("test_leadterm:456", () => {
     const x = new Sym('x');
@@ -4494,7 +4494,7 @@ describe("sympy/core/tests/test_expr.py", () => {
   });
   it.fails("test_expr:2233", () => {
     const x = new Sym('x');
-    expect(() => series(fn('tan', [x]), x, rational(2), NaN, '+')).toThrow(TypeError);
+    expect(() => series(fn('tan', [x]), x, rational(2), NaN, '+', {})).toThrow(TypeError);
   });
   // a primitive result that no library call returned
   //   assert x.equals(y) is False

@@ -1948,7 +1948,7 @@ describe("sympy/series/tests/test_order.py", () => {
   });
   it("test_issue_9351:446", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(exp(x), x, rational(10), 1, '+'))).toBe('exp(10) + O(x - 10, (x, 10))');
+    expect(sympyStr(series(exp(x), x, rational(10), 1, '+', {}))).toBe('exp(10) + O(x - 10, (x, 10))');
   });
   it("test_issue_9192:450", () => {
     expect(sympyStr(O(rational(1)).mul(O(rational(1))))).toBe('O(1)');

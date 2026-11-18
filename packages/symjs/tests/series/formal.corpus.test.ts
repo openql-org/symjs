@@ -264,10 +264,10 @@ describe("sympy/series/tests/test_formal.py", () => {
   //   assert fps(log(1 + x), hyper=False, rational=False) == log(1 + x)
   //   => log(x + 1)
   it.todo("test_fps:165");
-  // no adapter for .function
-  //   assert f.function == x**2 + x + 1
-  //   => x**2 + x + 1
-  it.todo("test_fps:169");
+  it("test_fps:169", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Add([rational(1), x, new Pow(x, rational(2))]))).toBe('x**2 + x + 1');
+  });
   it("test_fps:170", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([rational(1), x, new Pow(x, rational(2))]), x, rational(0), '+').getItem(0))).toBe('1');
@@ -284,10 +284,10 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([rational(1), x, new Pow(x, rational(2))]), x, rational(0), '+').polynomial())).toBe('x**2 + x + 1');
   });
-  // no adapter for .function
-  //   assert f.function == log(1 + x)
-  //   => log(x + 1)
-  it.todo("test_fps:177");
+  it("test_fps:177", () => {
+    const x = new Sym('x');
+    expect(sympyStr(log(new Add([rational(1), x])))).toBe('log(x + 1)');
+  });
   it.fails("test_fps:178", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(fps(log(new Add([rational(1), x])), x, rational(0), '+').subs(x, y))).toBe('FormalPowerSeries(log(x + 1), x, 0, 1, (SeqFormula(-1/((-1)**_k*_k), (_k, 1, oo)), SeqFormula(x**_k, (_k, 0, oo)), 0))');
@@ -478,26 +478,26 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Mul([x, exp(x), fn('sin', [new Mul([rational(2), x])])]), x, rational(0), '+').truncate())).toBe('2*x**2 + 2*x**3 - x**4/3 - x**5 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fsum.function == sin(x) + cos(x)
-  //   => sin(x) + cos(x)
-  it.todo("test_fps__operations:449");
+  it("test_fps__operations:449", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Add([fn('cos', [x]), fn('sin', [x])]))).toBe('sin(x) + cos(x)');
+  });
   it("test_fps__operations:450", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([fn('cos', [x]), fn('sin', [x])]), x, rational(0), '+').truncate())).toBe('1 + x - x**2/2 - x**3/6 + x**4/24 + x**5/120 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fsum.function == sin(x) + 1
-  //   => sin(x) + 1
-  it.todo("test_fps__operations:454");
+  it("test_fps__operations:454", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Add([rational(1), fn('sin', [x])]))).toBe('sin(x) + 1');
+  });
   it("test_fps__operations:455", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([rational(1), fn('sin', [x])]), x, rational(0), '+').truncate())).toBe('1 + x - x**3/6 + x**5/120 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fsum.function == cos(x) + 1
-  //   => cos(x) + 1
-  it.todo("test_fps__operations:458");
+  it("test_fps__operations:458", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Add([rational(1), fn('cos', [x])]))).toBe('cos(x) + 1');
+  });
   it("test_fps__operations:459", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([rational(1), fn('cos', [x])]), x, rational(0), '+').truncate())).toBe('2 - x**2/2 + x**4/24 + O(x**6)');
@@ -510,26 +510,26 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([rational(1), new Mul([rational(-1, 2), new Pow(x, rational(2))]), new Mul([rational(1, 24), new Pow(x, rational(4))]), O(new Pow(x, rational(6)), x, rational(0))]).neg())).toBe('-1 + x**2/2 - x**4/24 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fsub.function == sin(x) - cos(x)
-  //   => sin(x) - cos(x)
-  it.todo("test_fps__operations:467");
+  it("test_fps__operations:467", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Add([new Mul([rational(-1), fn('cos', [x])]), fn('sin', [x])]))).toBe('sin(x) - cos(x)');
+  });
   it("test_fps__operations:468", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([new Mul([rational(-1), fn('cos', [x])]), fn('sin', [x])]), x, rational(0), '+').truncate())).toBe('-1 + x + x**2/2 - x**3/6 - x**4/24 + x**5/120 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fsub.function == sin(x) - 1
-  //   => sin(x) - 1
-  it.todo("test_fps__operations:472");
+  it("test_fps__operations:472", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Add([rational(-1), fn('sin', [x])]))).toBe('sin(x) - 1');
+  });
   it("test_fps__operations:473", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([rational(-1), fn('sin', [x])]), x, rational(0), '+').truncate())).toBe('-1 + x - x**3/6 + x**5/120 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fsub.function == -cos(x) + 1
-  //   => 1 - cos(x)
-  it.todo("test_fps__operations:476");
+  it("test_fps__operations:476", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Add([rational(1), new Mul([rational(-1), fn('cos', [x])])]))).toBe('1 - cos(x)');
+  });
   it("test_fps__operations:477", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([rational(1), new Mul([rational(-1), fn('cos', [x])])]), x, rational(0), '+').truncate())).toBe('x**2/2 - x**4/24 + O(x**6)');
@@ -542,18 +542,18 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(() => str(fps(fn('sin', [x]), x, rational(0), '+'))).toThrow(RangeError);
   });
-  // no adapter for .function
-  //   assert fm.function == 3*sin(x)
-  //   => 3*sin(x)
-  it.todo("test_fps__operations:484");
+  it("test_fps__operations:484", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Mul([rational(3), fn('sin', [x])]))).toBe('3*sin(x)');
+  });
   it("test_fps__operations:485", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Mul([rational(3), fn('sin', [x])]), x, rational(0), '+').truncate())).toBe('3*x - x**3/2 + x**5/40 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fm.function == 3*cos(x)
-  //   => 3*cos(x)
-  it.todo("test_fps__operations:489");
+  it("test_fps__operations:489", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Mul([rational(3), fn('cos', [x])]))).toBe('3*cos(x)');
+  });
   it("test_fps__operations:490", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Mul([rational(3), fn('cos', [x])]), x, rational(0), '+').truncate())).toBe('3 - 3*x**2/2 + x**4/8 + O(x**6)');
@@ -566,26 +566,26 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('sin', [x]), x, rational(0), '+').mul(x))).toBe('x*FormalPowerSeries(sin(x), x, 0, 1, (SeqFormula(Piecewise(((-1/4)**(_k/2 - 1/2)/(RisingFactorial(3/2, _k/2 - 1/2)*factorial(_k/2 - 1/2)), Eq(Mod(_k, 2), 1)), (0, True)), (_k, 2, oo)), SeqFormula(x**_k, (_k, 0, oo)), x))');
   });
-  // no adapter for .function
-  //   assert fd.function == cos(x)
-  //   => cos(x)
-  it.todo("test_fps__operations:496");
+  it("test_fps__operations:496", () => {
+    const x = new Sym('x');
+    expect(sympyStr(fn('cos', [x]))).toBe('cos(x)');
+  });
   it("test_fps__operations:497", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('cos', [x]), x, rational(0), '+').truncate())).toBe('1 - x**2/2 + x**4/24 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fd.function == -sin(x)
-  //   => -sin(x)
-  it.todo("test_fps__operations:500");
+  it("test_fps__operations:500", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Mul([rational(-1), fn('sin', [x])]))).toBe('-sin(x)');
+  });
   it("test_fps__operations:501", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Mul([rational(-1), fn('sin', [x])]), x, rational(0), '+').truncate())).toBe('-x + x**3/6 - x**5/120 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fd.function == -cos(x)
-  //   => -cos(x)
-  it.todo("test_fps__operations:504");
+  it("test_fps__operations:504", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Mul([rational(-1), fn('cos', [x])]))).toBe('-cos(x)');
+  });
   it("test_fps__operations:505", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Mul([rational(-1), fn('cos', [x])]), x, rational(0), '+').truncate())).toBe('-1 + x**2/2 - x**4/24 + O(x**6)');
@@ -602,18 +602,18 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('sin', [x]), x, rational(0), '+').integrate(x, [rational(0), rational(1)]))).toBe('1 - cos(1)');
   });
-  // no adapter for .function
-  //   assert fi.function == -cos(x)
-  //   => -cos(x)
-  it.todo("test_fps__operations:519");
+  it("test_fps__operations:519", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Mul([rational(-1), fn('cos', [x])]))).toBe('-cos(x)');
+  });
   it("test_fps__operations:520", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Mul([rational(-1), fn('cos', [x])]), x, rational(0), '+').truncate())).toBe('-1 + x**2/2 - x**4/24 + O(x**6)');
   });
-  // no adapter for .function
-  //   assert fi.function == sin(x)
-  //   => sin(x)
-  it.todo("test_fps__operations:523");
+  it("test_fps__operations:523", () => {
+    const x = new Sym('x');
+    expect(sympyStr(fn('sin', [x]))).toBe('sin(x)');
+  });
   it("test_fps__operations:524", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('sin', [x]), x, rational(0), '+').truncate())).toBe('x - x**3/6 + x**5/120 + O(x**6)');

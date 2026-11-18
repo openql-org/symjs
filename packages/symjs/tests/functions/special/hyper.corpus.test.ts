@@ -477,7 +477,7 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
   });
   it("test_limits:365", () => {
     const k = new Sym('k');
-    expect(sympyStr(series(hyper([rational(1)], [rational(4, 3), rational(5, 3)], new Pow(k, rational(2))), k, sympify(0), 6, '+'))).toBe('1 + 9*k**2/20 + 81*k**4/1120 + O(k**6)');
+    expect(sympyStr(series(hyper([rational(1)], [rational(4, 3), rational(5, 3)], new Pow(k, rational(2))), k, sympify(0), 6, '+', {}))).toBe('1 + 9*k**2/20 + 81*k**4/1120 + O(k**6)');
   });
   it("test_limits:369", () => {
     const x = new Sym('x');

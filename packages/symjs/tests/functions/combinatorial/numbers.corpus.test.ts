@@ -1885,7 +1885,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_factorials.py", () => {
   it.todo("test_factorial_diff:297");
   it("test_factorial_series:303", () => {
     const n = new Sym('n', { integer: true });
-    expect(sympyStr(series(fn('factorial', [n]), n, rational(0), 3, '+'))).toBe('1 - EulerGamma*n + n**2*(EulerGamma**2/2 + pi**2/12) + O(n**3)');
+    expect(sympyStr(series(fn('factorial', [n]), n, rational(0), 3, '+', {}))).toBe('1 - EulerGamma*n + n**2*(EulerGamma**2/2 + pi**2/12) + O(n**3)');
   });
   it("test_factorial_rewrite:311", () => {
     const n = new Sym('n', { integer: true });
@@ -3141,7 +3141,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   it.fails("test_harmonic_calculus:363", () => {
     const x = new Sym('x');
     const y = new Sym('y', { positive: true });
-    expect(sympyStr(series(fn('harmonic', [x]), x, y, 2, '+'))).toBe('harmonic(y) + (x - y)*zeta(2, y + 1) + O((x - y)**2, (x, y))');
+    expect(sympyStr(series(fn('harmonic', [x]), x, y, 2, '+', {}))).toBe('harmonic(y) + (x - y)*zeta(2, y + 1) + O((x - y)**2, (x, y))');
   });
   it.fails("test_harmonic_calculus:365", () => {
     const x = new Sym('x');

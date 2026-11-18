@@ -59,8 +59,9 @@ const CASES = [
   ['simplify', 'simplify', 995],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
-  // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
-  ['polys', 'factor', 693],
+  // simplify late-bound, so factor loads neither; the finite-domain Poly
+  // methods and the polynomial-ring extensions add to it (measured 694 KiB).
+  ['polys', 'factor', 697],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 997],

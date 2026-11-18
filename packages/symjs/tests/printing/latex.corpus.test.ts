@@ -4219,10 +4219,14 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(mygamma) == r"\operatorname{mygamma}"
-  //   => \operatorname{mygamma}
-  it.todo("test_function_subclass_different_name:811");
+  it("test_function_subclass_different_name:811", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('mygamma'), {}))).toBe('\\operatorname{mygamma}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   // function mygamma
   //   assert latex(mygamma(x)) == r"\operatorname{mygamma}{\left(x \right)}"
   //   => \operatorname{mygamma}{\left(x \right)}
@@ -8488,30 +8492,54 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(sin) == r'\sin'
-  //   => \sin
-  it.todo("test_builtins_without_args:2254");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(cos) == r'\cos'
-  //   => \cos
-  it.todo("test_builtins_without_args:2255");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(tan) == r'\tan'
-  //   => \tan
-  it.todo("test_builtins_without_args:2256");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(log) == r'\log'
-  //   => \log
-  it.todo("test_builtins_without_args:2257");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(Ei) == r'\operatorname{Ei}'
-  //   => \operatorname{Ei}
-  it.todo("test_builtins_without_args:2258");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(zeta) == r'\zeta'
-  //   => \zeta
-  it.todo("test_builtins_without_args:2259");
+  it("test_builtins_without_args:2254", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('sin'), {}))).toBe('\\sin');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_builtins_without_args:2255", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('cos'), {}))).toBe('\\cos');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_builtins_without_args:2256", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('tan'), {}))).toBe('\\tan');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_builtins_without_args:2257", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('log'), {}))).toBe('\\log');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_builtins_without_args:2258", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('Ei'), {}))).toBe('\\operatorname{Ei}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_builtins_without_args:2259", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('zeta'), {}))).toBe('\\zeta');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_latex_greek_functions:2266", () => {
     const unicode = pprintUseUnicode(false);
     try {
@@ -9682,30 +9710,54 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(Chi) == r'\operatorname{Chi}'
-  //   => \operatorname{Chi}
-  it.todo("test_builtin_no_args:2439");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(beta) == r'\operatorname{B}'
-  //   => \operatorname{B}
-  it.todo("test_builtin_no_args:2440");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(gamma) == r'\Gamma'
-  //   => \Gamma
-  it.todo("test_builtin_no_args:2441");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(KroneckerDelta) == r'\delta'
-  //   => \delta
-  it.todo("test_builtin_no_args:2442");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(DiracDelta) == r'\delta'
-  //   => \delta
-  it.todo("test_builtin_no_args:2443");
-  // a value without provenance ([object Object] FnClass)
-  //   assert latex(lowergamma) == r'\gamma'
-  //   => \gamma
-  it.todo("test_builtin_no_args:2444");
+  it.fails("test_builtin_no_args:2439", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('Chi'), {}))).toBe('\\operatorname{Chi}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_builtin_no_args:2440", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('beta'), {}))).toBe('\\operatorname{B}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_builtin_no_args:2441", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('gamma'), {}))).toBe('\\Gamma');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_builtin_no_args:2442", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('KroneckerDelta'), {}))).toBe('\\delta');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_builtin_no_args:2443", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('DiracDelta'), {}))).toBe('\\delta');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_builtin_no_args:2444", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(SymFunction('lowergamma'), {}))).toBe('\\gamma');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_issue_6853:2449", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);

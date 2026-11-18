@@ -59,10 +59,14 @@ describe("sympy/printing/tests/test_repr.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a value without provenance ([object Object] FnClass)
-  //   assert srepr(expr, **kwargs) == string
-  //   => sin
-  it.todo("test_Function:49 (4)");
+  it.fails("test_Function:49 (4)", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(srepr(SymFunction('sin'), {}))).toBe('sin');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_Heaviside:49", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);

@@ -339,18 +339,18 @@ describe("sympy/combinatorics/tests/test_free_groups.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new FreeGroup([x, y, z]))).not.toBe('<free group on the generators (x, y)>');
   });
-  // no adapter for the operator []
-  //   assert F[0:] == FreeGroup("x, y, z")
-  //   => <free group on the generators (x, y, z)>
-  it.todo("test_FreeGroup__getitem__:65");
-  // no adapter for the operator []
-  //   assert F[1:] == FreeGroup("y, z")
-  //   => <free group on the generators (y, z)>
-  it.todo("test_FreeGroup__getitem__:66");
-  // no adapter for the operator []
-  //   assert F[2:] == FreeGroup("z")
-  //   => <free group on the generators (z,)>
-  it.todo("test_FreeGroup__getitem__:67");
+  it("test_FreeGroup__getitem__:65", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(new FreeGroup([x, y, z]).slice(0, 3))).toBe('<free group on the generators (x, y, z)>');
+  });
+  it("test_FreeGroup__getitem__:66", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(new FreeGroup([x, y, z]).slice(1, 3))).toBe('<free group on the generators (y, z)>');
+  });
+  it("test_FreeGroup__getitem__:67", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(new FreeGroup([x, y, z]).slice(2, 3))).toBe('<free group on the generators (z,)>');
+  });
   it("test_FreeGroupElm_copy:79", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new FreeGroup([x, y, z]).dtype([[x, 1], [y, 1]]).mul(new FreeGroup([x, y, z]).dtype([[z, 3]])))).toBe('x*y*z**3');

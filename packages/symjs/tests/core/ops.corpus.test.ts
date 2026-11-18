@@ -1133,35 +1133,35 @@ describe("sympy/core/tests/test_power.py", () => {
   });
   it("test_issue_6068:348", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(fn('sin', [x]), rational(1, 2)), x, rational(0), 7, '+'))).toBe('sqrt(x) - x**(5/2)/12 + x**(9/2)/1440 - x**(13/2)/24192 + O(x**7)');
+    expect(sympyStr(series(new Pow(fn('sin', [x]), rational(1, 2)), x, rational(0), 7, '+', {}))).toBe('sqrt(x) - x**(5/2)/12 + x**(9/2)/1440 - x**(13/2)/24192 + O(x**7)');
   });
   it("test_issue_6068:351", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(fn('sin', [x]), rational(1, 2)), x, rational(0), 9, '+'))).toBe('sqrt(x) - x**(5/2)/12 + x**(9/2)/1440 - x**(13/2)/24192 - 67*x**(17/2)/29030400 + O(x**9)');
+    expect(sympyStr(series(new Pow(fn('sin', [x]), rational(1, 2)), x, rational(0), 9, '+', {}))).toBe('sqrt(x) - x**(5/2)/12 + x**(9/2)/1440 - x**(13/2)/24192 - 67*x**(17/2)/29030400 + O(x**9)');
   });
   it("test_issue_6068:354", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(fn('sin', [new Pow(x, rational(3))]), rational(1, 2)), x, rational(0), 19, '+'))).toBe('x**(3/2) - x**(15/2)/12 + x**(27/2)/1440 + O(x**19)');
+    expect(sympyStr(series(new Pow(fn('sin', [new Pow(x, rational(3))]), rational(1, 2)), x, rational(0), 19, '+', {}))).toBe('x**(3/2) - x**(15/2)/12 + x**(27/2)/1440 + O(x**19)');
   });
   it("test_issue_6068:356", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(fn('sin', [new Pow(x, rational(3))]), rational(1, 2)), x, rational(0), 20, '+'))).toBe('x**(3/2) - x**(15/2)/12 + x**(27/2)/1440 - x**(39/2)/24192 + O(x**20)');
+    expect(sympyStr(series(new Pow(fn('sin', [new Pow(x, rational(3))]), rational(1, 2)), x, rational(0), 20, '+', {}))).toBe('x**(3/2) - x**(15/2)/12 + x**(27/2)/1440 - x**(39/2)/24192 + O(x**20)');
   });
   it("test_issue_6782:362", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(fn('sin', [new Pow(x, rational(3))]), rational(1, 2)), x, rational(0), 7, '+'))).toBe('x**(3/2) + O(x**7)');
+    expect(sympyStr(series(new Pow(fn('sin', [new Pow(x, rational(3))]), rational(1, 2)), x, rational(0), 7, '+', {}))).toBe('x**(3/2) + O(x**7)');
   });
   it("test_issue_6782:363", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(fn('sin', [new Pow(x, rational(4))]), rational(1, 2)), x, rational(0), 3, '+'))).toBe('x**2 + O(x**3)');
+    expect(sympyStr(series(new Pow(fn('sin', [new Pow(x, rational(4))]), rational(1, 2)), x, rational(0), 3, '+', {}))).toBe('x**2 + O(x**3)');
   });
   it("test_issue_6653:367", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(new Add([rational(1), fn('sin', [new Pow(x, rational(2))])]), rational(-1, 2)), x, rational(0), 3, '+'))).toBe('1 - x**2/2 + O(x**3)');
+    expect(sympyStr(series(new Pow(new Add([rational(1), fn('sin', [new Pow(x, rational(2))])]), rational(-1, 2)), x, rational(0), 3, '+', {}))).toBe('1 - x**2/2 + O(x**3)');
   });
   it("test_issue_6429:372", () => {
     const [x, c] = symbols('x c');
-    expect(sympyStr(series(new Pow(new Add([x, new Pow(c, rational(2))]), new Float({ man: 1n, exp: -1n }, 53)), x, rational(0), 1, '+'))).toBe('(c**2)**0.5 + O(x)');
+    expect(sympyStr(series(new Pow(new Add([x, new Pow(c, rational(2))]), new Float({ man: 1n, exp: -1n }, 53)), x, rational(0), 1, '+', {}))).toBe('(c**2)**0.5 + O(x)');
   });
   it("test_issue_6429:373", () => {
     const [x, c] = symbols('x c');

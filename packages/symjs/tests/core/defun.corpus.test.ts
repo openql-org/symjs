@@ -120,11 +120,11 @@ describe("doctests of sympy.core.function", () => {
   });
   it("atan2(x, y).series(x, n=2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(fn('atan2', [x, y]), x, sympify(0), 2, '+'))).toBe('atan2(0, y) + x/y + O(x**2)');
+    expect(sympyStr(series(fn('atan2', [x, y]), x, sympify(0), 2, '+', {}))).toBe('atan2(0, y) + x/y + O(x**2)');
   });
   it("atan2(x, y).series(y, n=2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(fn('atan2', [x, y]), y, sympify(0), 2, '+'))).toBe('-y/x + atan2(x, 0) + O(y**2)');
+    expect(sympyStr(series(fn('atan2', [x, y]), y, sympify(0), 2, '+', {}))).toBe('-y/x + atan2(x, 0) + O(y**2)');
   });
   it("Function('f').nargs", () => {
     expect(sympyStr(nargs(SymFunction('f', {})))).toBe('Naturals0');
@@ -2221,7 +2221,7 @@ describe("sympy/core/tests/test_function.py", () => {
   });
   it("test_issue_10503:1411", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Mul([fn('cos', [new Pow(x, rational(6))]), exp(new Pow(x, rational(3)))]), x, rational(0), 14, '+'))).toBe('1 + x**3 + x**6/2 + x**9/6 - 11*x**12/24 + O(x**14)');
+    expect(sympyStr(series(new Mul([fn('cos', [new Pow(x, rational(6))]), exp(new Pow(x, rational(3)))]), x, rational(0), 14, '+', {}))).toBe('1 + x**3 + x**6/2 + x**9/6 - 11*x**12/24 + O(x**14)');
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Derivative(f, t))

@@ -376,25 +376,22 @@ describe("sympy/tensor/tests/test_tensor.py", () => {
   //   raises(ValueError, lambda: tensor_indices(3, Lorentz))
   //   => None
   it.todo("test_indices:473");
-  // no adapter for the operator ()
-  //   raises(ValueError, lambda: A(a,b,c))
-  //   => None
-  it.todo("test_indices:474");
-  // no adapter for the operator ()
-  //   assert A('a', 'b') == A(TensorIndex('a', Lorentz),
-  //                               TensorIndex('b', Lorentz))
-  //   => A(a, b)
-  it.todo("test_indices:477");
-  // no adapter for the operator ()
-  //   assert A('a', '-b') == A(TensorIndex('a', Lorentz),
-  //                                TensorIndex('b', Lorentz, is_up=False))
-  //   => A(a, -b)
-  it.todo("test_indices:479");
-  // no adapter for the operator ()
-  //   assert A('a', TensorIndex('b', Lorentz)) == A(TensorIndex('a', Lorentz),
-  //                                                     TensorIndex('b', Lorentz))
-  //   => A(a, b)
-  it.todo("test_indices:481");
+  it("test_indices:474", () => {
+    const dim_L = new Sym('dim_L');
+    expect(() => TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 1)).at(TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true), TensorIndex('b', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true), TensorIndex('c', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true))).toThrow(RangeError);
+  });
+  it("test_indices:477", () => {
+    const dim_L = new Sym('dim_L');
+    expect(sympyStr(TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 0)).at('a', 'b'))).toBe('A(a, b)');
+  });
+  it("test_indices:479", () => {
+    const dim_L = new Sym('dim_L');
+    expect(sympyStr(TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 0)).at('a', '-b'))).toBe('A(a, -b)');
+  });
+  it("test_indices:481", () => {
+    const dim_L = new Sym('dim_L');
+    expect(sympyStr(TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 0)).at('a', TensorIndex('b', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)))).toBe('A(a, b)');
+  });
   it("test_TensorSymmetry:485", () => {
     expect(sympyStr(TensorSymmetry.fullySymmetric(2))).toBe('TensorSymmetry((0,), ((3)(0 1),))');
   });
@@ -656,14 +653,14 @@ describe("sympy/tensor/tests/test_tensor.py", () => {
     const dim_L = new Sym('dim_L');
     expect(sympyStr(doit(add(mul(0, new Tensor(TensorHead('p', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)])), new Tensor(TensorHead('p', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)]))))).toBe('p(a)');
   });
-  // no adapter for the operator ()
-  //   assert p(i) != A(a, b)
-  //   => A(a, b)
-  it.todo("test_special_eq_ne:637");
-  // no adapter for the operator ()
-  //   assert A(a, -a) != A(a, b)
-  //   => A(a, b)
-  it.todo("test_special_eq_ne:638");
+  it("test_special_eq_ne:637", () => {
+    const dim_L = new Sym('dim_L');
+    expect(sympyStr(TensorHead('p', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)).at(TensorIndex('i', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)))).not.toBe('A(a, b)');
+  });
+  it("test_special_eq_ne:638", () => {
+    const dim_L = new Sym('dim_L');
+    expect(sympyStr(TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 1)).at(TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true), TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), false)))).not.toBe('A(a, b)');
+  });
   it("test_special_eq_ne:639", () => {
     const dim_L = new Sym('dim_L');
     expect(sympyStr(rational(0).mul(add(new Tensor(TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 1)), [TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true), TensorIndex('b', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)]), new Tensor(TensorHead('B', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 1)), [TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true), TensorIndex('b', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)]))))).toBe('0');
@@ -747,10 +744,15 @@ describe("sympy/tensor/tests/test_tensor.py", () => {
     const dim_L = new Sym('dim_L');
     expect(sympyStr([TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 1))])).toBe('[A(Lorentz,Lorentz)]');
   });
-  // no adapter for the operator ()
-  //   assert str(ts) == 'A(a, b)'
-  //   => A(a, b)
-  it.todo("test_mul:706");
+  it("test_mul:706", () => {
+    const dim_L = new Sym('dim_L');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(TensorHead('A', [TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(2, 1)).at(TensorIndex('a', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true), TensorIndex('b', TensorIndexType('Lorentz', { dim: dim_L, dummyName: 'L' }), true)))).toBe('A(a, b)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   // no adapter for .index_types
   //   assert ts.index_types == [Lorentz, Lorentz]
   //   => [Lorentz, Lorentz]
@@ -777,10 +779,14 @@ describe("sympy/tensor/tests/test_tensor.py", () => {
   it("test_mul:717", () => {
     expect(sympyStr(tensorMul())).toBe('1');
   });
-  // no adapter for the operator ()
-  //   assert str(C()) == 'C'
-  //   => C
-  it.todo("test_mul:721");
+  it("test_mul:721", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(TensorHead('C', [], new TensorSymmetry(0, 0)).at())).toBe('C');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   // no adapter for .from_data
   //   assert str(t) == '1'
   //   => 1
@@ -1105,11 +1111,11 @@ describe("sympy/tensor/tests/test_tensor.py", () => {
   //   assert tsymmetry.func(*tsymmetry.args) == tsymmetry
   //   => TensorSymmetry((0, 3, 4), ((0 1)(6 7), (7)(3 4), (7)(4 5)))
   it.todo("test_hash:1254");
-  // no adapter for the operator ()
+  // the conversion failed: pyItems: [object Object] is not iterable
   //   assert list(A(i1)) == [E, px, py, pz]
   //   => [E, px, py, pz]
   it.todo("test_valued_tensor_iter:1331");
-  // no adapter for the operator ()
+  // the conversion failed: pyItems: [object Object] is not iterable
   //   assert list(BA(i1, i2)) == list_BA
   //   => [[1, 2, 3, 4], [5, 6, 7, 8], [9, 0, -1, -2], [-3, -4, -5, -6]]
   it.todo("test_valued_tensor_iter:1332");
@@ -2517,22 +2523,22 @@ describe("sympy/tensor/tests/test_tensor.py", () => {
     const v1 = new Tensor(TensorHead('B', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), true)]);
     expect(sympyStr([at(add(mul(2, new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), true)])), mul((SymFunction('F'))(x), new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), true)])), v1).args, 0), v1], 't')).toBe('(2*A(i), F(x)*A(i), B(i))');
   });
-  // no adapter for the operator ()
-  //   assert A(i0) == A(Symbol("i0"))
-  //   => A(i0)
-  it.todo("test_tensor_alternative_construction:1884");
-  // no adapter for the operator ()
-  //   assert A(-i0) == A(-Symbol("i0"))
-  //   => A(-i0)
-  it.todo("test_tensor_alternative_construction:1885");
-  // no adapter for the operator ()
-  //   raises(TypeError, lambda: A(x+y))
-  //   => None
-  it.todo("test_tensor_alternative_construction:1886");
-  // no adapter for the operator ()
-  //   raises(ValueError, lambda: A(2*x))
-  //   => None
-  it.todo("test_tensor_alternative_construction:1887");
+  it("test_tensor_alternative_construction:1884", () => {
+    const dim_L = new Sym('dim_L');
+    expect(sympyStr(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)).at(TensorIndex('i0', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), true)))).toBe('A(i0)');
+  });
+  it("test_tensor_alternative_construction:1885", () => {
+    const dim_L = new Sym('dim_L');
+    expect(sympyStr(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)).at(TensorIndex('i0', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)))).toBe('A(-i0)');
+  });
+  it("test_tensor_alternative_construction:1886", () => {
+    const [dim_L, x, y] = symbols('dim_L x y');
+    expect(() => TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)).at(new Add([x, y]))).toThrow(TypeError);
+  });
+  it.fails("test_tensor_alternative_construction:1887", () => {
+    const [dim_L, x] = symbols('dim_L x');
+    expect(() => TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)).at(new Mul([rational(2), x]))).toThrow(RangeError);
+  });
   // the arguments do not type-check against the public API
   //   assert expr.replace_with_arrays(repl) == Array([[1, -2], [3, -4]])
   //   => [[1, -2], [3, -4]]

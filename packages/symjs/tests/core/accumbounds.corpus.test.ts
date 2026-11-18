@@ -181,18 +181,17 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
   it("test_AccumBounds:52", () => {
     expect(sympyStr(rational(1).div(AccumBounds(rational(-1), rational(1))))).toBe('AccumBounds(-oo, oo)');
   });
-  // no adapter for AccumulationBounds
-  //   raises(ValueError, lambda: B(0, c))
-  //   => None
-  it.todo("test_AccumBounds:59");
-  // no adapter for AccumulationBounds
-  //   raises(ValueError, lambda: B(1, -1))
-  //   => None
-  it.todo("test_AccumBounds:60");
-  // no adapter for AccumulationBounds
-  //   raises(ValueError, lambda: B(r, r - 1))
-  //   => None
-  it.todo("test_AccumBounds:62");
+  it.fails("test_AccumBounds:59", () => {
+    const c = new Sym('c');
+    expect(() => AccumBounds(rational(0), c)).toThrow(RangeError);
+  });
+  it("test_AccumBounds:60", () => {
+    expect(() => AccumBounds(rational(1), rational(-1))).toThrow(RangeError);
+  });
+  it.fails("test_AccumBounds:62", () => {
+    const r = new Sym('r', { real: true });
+    expect(() => AccumBounds(r, new Add([rational(-1), r]))).toThrow(RangeError);
+  });
   it("test_AccumBounds_mul:66", () => {
     expect(sympyStr(AccumBounds(rational(1), rational(2)).mul(rational(2)))).toBe('AccumBounds(2, 4)');
   });
