@@ -649,3 +649,15 @@ it('drops the indicator only when the entire delta range is summed', async () =>
   expect(String(summation(d, [k, 1, 5]))).toContain('Piecewise');
   expect(String(summation(d, [k, 0, 4]))).toContain('Piecewise');
 });
+
+it('evaluates the summand with the signs its limits give the summation variable (SymPy 1.14)', () => {
+  const n = new Sym('n', { integer: true }), m = new Sym('m'), f = sj.SymFunction('f');
+  const inner = Sum(sj.KroneckerDelta(m, n), [m, 0, oo]);
+  expect(String(doit(Sum(sj.mul(f(n), inner), [n, 1, oo])))).toBe('Sum(f(n), (n, 1, oo))');
+  expect(String(doit(Sum(sj.mul(f(n), sj.piecewise([2, sj.Ge(n, 0)], [5, true])), [n, 1, oo])))).toBe('Sum(2*f(n), (n, 1, oo))');
+  // a condition the limits do not decide stays (SymPy folds it: Sum(Piecewise((f(n), n >= 3), (0, True)), (n, 1, oo)))
+  expect(String(doit(Sum(sj.mul(f(n), sj.piecewise([1, sj.Ge(n, 3)], [0, true])), [n, 1, oo])))).toBe('Sum(f(n)*Piecewise((1, n >= 3), (0, True)), (n, 1, oo))');
+  // a constant factor with a factored denominator is taken out of a geometric sum
+  const [i, k] = sj.symbols('i k');
+  expect(String(sj.simplify(sj.sub(doit(Sum(parse('2**(-i)/(a - b)'), [i, 0, k])), parse('(2 - 2**(-k))/(a - b)'))))).toBe('0');
+});

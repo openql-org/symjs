@@ -185,7 +185,9 @@ export function unifyGens(fIn: readonly Expr[], gIn: readonly Expr[]): Expr[] {
 }
 
 /** Is e a generator, or (in a field) the reciprocal of one (x in QQ(1/x))? */
-const isGenerator = (e: Expr, gens: readonly Expr[], ring: boolean): boolean => gens.some((g) => g.key === e.key) || (!ring && gens.some((g) => g.key === pow(e, -1).key));
+// (a domain read back from its name, QQ[l], has plain symbols: they stand for the symbol of that name with any assumptions)
+const sameGenerator = (g: Expr, e: Expr): boolean => g.key === e.key || (g instanceof Sym && e instanceof Sym && g.name === str(e) && Object.keys(g.assumptions).length === 0);
+const isGenerator = (e: Expr, gens: readonly Expr[], ring: boolean): boolean => gens.some((g) => sameGenerator(g, e)) || (!ring && gens.some((g) => sameGenerator(g, pow(e, -1))));
 
 /**
  * e is built from the generators, numbers of the ground domain, +, * and
