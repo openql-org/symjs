@@ -445,6 +445,11 @@ describe('limits with a small budget of nested limit computations', () => {
     expect(sj.limit(P('sin(x)*acos(2+I*x)/(x**2*sin(1/x))'), x, 0)).toBeInstanceOf(sj.Limit);
   });
   it('combines bounded powers and unbounded oscillations with their offsets', () => {
+    expect(lim('-x**2+x*sin(x)', 'x', 'oo')).toBe('-oo');
+    expect(lim('x**2+x*sin(x)+x*cos(x)', 'x', 'oo')).toBe('oo');
+    expect(lim('x*sin(x)+x', 'x', 'oo')).toBe('AccumBounds(0, oo)');
+    expect(sj.limit(P('x*tan(x)+x'), x, sj.oo)).toBeInstanceOf(sj.Limit);
+    expect(sj.limit(P('tan(x)*factorial(x)/factorial(x-1)+x'), x, sj.oo)).toBeInstanceOf(sj.Limit);
     // SymPy: exp(log(2)*AccumBounds(-1, 1)); monotonicity of exp gives [1/2, 2].
     expect(lim('2**sin(x)', 'x', 'oo')).toBe('AccumBounds(1/2, 2)');
     // SymPy incorrectly gives oo for x+tan(x): it has a zero in each interval

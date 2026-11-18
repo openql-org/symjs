@@ -10,9 +10,17 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../../src';
 import { abs, AccumBounds, add, adjoint, arg, conjugate, cos, cosh, exp, Float, fn, hyper, I, mul, parse, pi, pow, rational, re, S, sin, Sym, symbol, transpose } from '../../../src';
-import { forEachEntry } from '../../../src/functions/elementary/elementary';
+import { evaluators, forEachEntry } from '../../../src/functions/elementary/elementary';
 
 const x = new Sym('x');
+it('evaluates undefined trigonometric values and nested principal arguments', () => {
+  expect(evaluators.sin?.(S.ComplexInfinity)).toBe(S.NaN);
+  expect(arg(new sj.Fn('arg', [new sj.Fn('arg', [new sj.Fn('arg', [x])])]))).toBe(S.NaN);
+  expect(arg(new sj.Fn('arg', [new sj.Fn('arg', [rational(2)])]))).toBe(S.NaN);
+  expect(arg(new sj.Fn('arg', [x])).toString()).toBe('arg(arg(x))');
+  expect(arg(sj.sqrt(2).sub(1))).toBe(S.Zero);
+  expect(arg(parse('besselj(0, 1)'))).toBe(S.Zero);
+});
 it('rebuilds an unevaluated conjugate with its public function head', () => {
   const e = conjugate(x);
   expect(e.func).toBe(conjugate);
@@ -186,6 +194,9 @@ const ELEM_CASES: Case[] = [
   ["s", "log(zoo)", "zoo"],
   ["s", "log(I)", "I*pi/2"],
   ["s", "log(-I)", "-I*pi/2"],
+  ["s", "log(sqrt(3)*I)", "log(sqrt(3)) + I*pi/2"],
+  ["s", "log(-sqrt(3)*I)", "log(sqrt(3)) - I*pi/2"],
+  ["s", "log(x*I)", "log(I*x)"],
   ["s", "log(1 + I)", "log(sqrt(2)) + I*pi/4"],
   ["s", "log(2 - 3*I)", "log(2 - 3*I)"],
   ["s", "log(1/8)", "-log(8)"],

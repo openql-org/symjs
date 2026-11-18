@@ -1640,7 +1640,7 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(new Add([new Mul([rational(2), x]), new Mul([new Pow(x, rational(2)), new Add([rational(3), new Mul([rational(-1), I])])])])), x, { cdir: rational(1) }))).toBe('log(x) + log(2)');
   });
-  it.fails("test_log_leading_term:502", () => {
+  it("test_log_leading_term:502", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(new Add([new Mul([rational(2), x]), new Mul([new Pow(x, rational(2)), new Add([rational(3), new Mul([rational(-1), I])])])])), x, { cdir: rational(-1) }))).toBe('log(x) + log(2) - 2*I*pi');
   });
@@ -1740,16 +1740,16 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
   it("test_log_AccumBounds:592", () => {
     expect(sympyStr(log(AccumBounds(rational(1), E)))).toBe('AccumBounds(0, 1)');
   });
-  it.fails("test_log_AccumBounds:593", () => {
+  it("test_log_AccumBounds:593", () => {
     expect(sympyStr(log(AccumBounds(rational(0), E)))).toBe('AccumBounds(-oo, 1)');
   });
-  it.fails("test_log_AccumBounds:594", () => {
+  it("test_log_AccumBounds:594", () => {
     expect(sympyStr(log(AccumBounds(rational(-1), E)))).toBe('nan');
   });
-  it.fails("test_log_AccumBounds:595", () => {
+  it("test_log_AccumBounds:595", () => {
     expect(sympyStr(log(AccumBounds(rational(0), oo)))).toBe('AccumBounds(-oo, oo)');
   });
-  it.fails("test_log_AccumBounds:596", () => {
+  it("test_log_AccumBounds:596", () => {
     expect(sympyStr(log(AccumBounds(S.NegativeInfinity, rational(0))))).toBe('nan');
   });
   it.fails("test_log_AccumBounds:597", () => {
@@ -1882,11 +1882,11 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
   it.fails("test_log_taylor_term:663", () => {
     expect(sympyStr(evalf(zoo, 20))).toBe('x');
   });
-  it.fails("test_log_taylor_term:664", () => {
+  it("test_log_taylor_term:664", () => {
     const x = new Sym('x');
     expect(sympyStr(taylorTerm(log(x), 1, x))).toBe('-x**2/2');
   });
-  it.fails("test_log_taylor_term:665", () => {
+  it("test_log_taylor_term:665", () => {
     const x = new Sym('x');
     expect(sympyStr(taylorTerm(log(x), 4, x))).toBe('x**5/5');
   });
@@ -3125,19 +3125,19 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [x]), x, { cdir: rational(1) }))).toBe('x');
   });
-  it.fails("test_asinh_leading_term:580", () => {
+  it("test_asinh_leading_term:580", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Add([I, x])]), x, { cdir: rational(1) }))).toBe('I*pi/2');
   });
-  it.fails("test_asinh_leading_term:581", () => {
+  it("test_asinh_leading_term:581", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Add([x, new Mul([rational(-1), I])])]), x, { cdir: rational(1) }))).toBe('-I*pi/2');
   });
-  it.fails("test_asinh_leading_term:582", () => {
+  it("test_asinh_leading_term:582", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Pow(x, rational(-1))]), x, { cdir: rational(1) }))).toBe('-log(x) + log(2)');
   });
-  it.fails("test_asinh_leading_term:583", () => {
+  it("test_asinh_leading_term:583", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Pow(x, rational(-1))]), x, { cdir: rational(-1) }))).toBe('log(x) - log(2) - I*pi');
   });
@@ -3145,11 +3145,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Add([x, new Mul([rational(2), I])])]), x, { cdir: rational(1) }))).toBe('I*asin(2)');
   });
-  it.fails("test_asinh_leading_term:586", () => {
+  it("test_asinh_leading_term:586", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Add([x, new Mul([rational(2), I])])]), x, { cdir: rational(-1) }))).toBe('-I*asin(2) + I*pi');
   });
-  it.fails("test_asinh_leading_term:587", () => {
+  it("test_asinh_leading_term:587", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Add([x, new Mul([rational(-2), I])])]), x, { cdir: rational(1) }))).toBe('-I*pi + I*asin(2)');
   });
@@ -3157,11 +3157,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Add([x, new Mul([rational(-2), I])])]), x, { cdir: rational(-1) }))).toBe('-I*asin(2)');
   });
-  it.fails("test_asinh_leading_term:590", () => {
+  it("test_asinh_leading_term:590", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Add([new Mul([rational(-1), new Pow(x, rational(2))]), new Mul([rational(2), I]), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('log(2 - sqrt(3)) + I*pi/2');
   });
-  it.fails("test_asinh_leading_term:591", () => {
+  it("test_asinh_leading_term:591", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asinh', [new Add([new Mul([rational(-1), new Pow(x, rational(2))]), new Mul([rational(2), I]), new Mul([I, x])])]), x, { cdir: rational(-1) }))).toBe('log(2 - sqrt(3)) + I*pi/2');
   });
@@ -3368,11 +3368,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Add([rational(-1), x])]), x, {}))).toBe('I*pi');
   });
-  it.fails("test_acosh_leading_term:720", () => {
+  it("test_acosh_leading_term:720", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Pow(x, rational(-1))]), x, { cdir: rational(1) }))).toBe('-log(x) + log(2)');
   });
-  it.fails("test_acosh_leading_term:721", () => {
+  it("test_acosh_leading_term:721", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Pow(x, rational(-1))]), x, { cdir: rational(-1) }))).toBe('-log(x) + log(2) + 2*I*pi');
   });
@@ -3380,11 +3380,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Add([rational(-2), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('acosh(-2)');
   });
-  it.fails("test_acosh_leading_term:724", () => {
+  it("test_acosh_leading_term:724", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Add([rational(-2), new Mul([rational(-1), I, x])])]), x, { cdir: rational(1) }))).toBe('-2*I*pi + acosh(-2)');
   });
-  it.fails("test_acosh_leading_term:725", () => {
+  it("test_acosh_leading_term:725", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Add([rational(1, 3), new Pow(x, rational(2)), new Mul([rational(-1), I, x])])]), x, { cdir: rational(1) }))).toBe('-acosh(1/3)');
   });
@@ -3392,7 +3392,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Add([rational(1, 3), new Pow(x, rational(2)), new Mul([rational(-1), I, x])])]), x, { cdir: rational(-1) }))).toBe('acosh(1/3)');
   });
-  it.fails("test_acosh_leading_term:727", () => {
+  it("test_acosh_leading_term:727", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Pow(new Add([rational(-3), new Mul([I, x])]), rational(-1))]), x, { cdir: rational(1) }))).toBe('-acosh(-1/3)');
   });
@@ -3400,11 +3400,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Pow(new Add([rational(-3), new Mul([I, x])]), rational(-1))]), x, { cdir: rational(-1) }))).toBe('acosh(-1/3)');
   });
-  it.fails("test_acosh_leading_term:730", () => {
+  it("test_acosh_leading_term:730", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Add([rational(-2), x, new Mul([rational(-1), I, new Pow(x, rational(2))])])]), x, { cdir: rational(1) }))).toBe('log(sqrt(3) + 2) - I*pi');
   });
-  it.fails("test_acosh_leading_term:731", () => {
+  it("test_acosh_leading_term:731", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acosh', [new Add([rational(-2), x, new Mul([rational(-1), I, new Pow(x, rational(2))])])]), x, { cdir: rational(-1) }))).toBe('log(sqrt(3) + 2) - I*pi');
   });
@@ -3566,11 +3566,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [x]), x, { cdir: rational(1) }))).toBe('-log(x) + log(2)');
   });
-  it.fails("test_asech_leading_term:841", () => {
+  it("test_asech_leading_term:841", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [x]), x, { cdir: rational(-1) }))).toBe('-log(x) + log(2) + 2*I*pi');
   });
-  it.fails("test_asech_leading_term:842", () => {
+  it("test_asech_leading_term:842", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [new Add([rational(1), x])]), x, { cdir: rational(1) }))).toBe('sqrt(2)*I*sqrt(x)');
   });
@@ -3578,11 +3578,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [new Pow(x, rational(-1))]), x, { cdir: rational(1) }))).toBe('I*pi/2');
   });
-  it.fails("test_asech_leading_term:845", () => {
+  it("test_asech_leading_term:845", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [new Add([rational(-1), x])]), x, { cdir: rational(1) }))).toBe('I*pi');
   });
-  it.fails("test_asech_leading_term:846", () => {
+  it("test_asech_leading_term:846", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [new Add([rational(3), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('-asech(3)');
   });
@@ -3590,7 +3590,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [new Add([rational(3), new Mul([rational(-1), I, x])])]), x, { cdir: rational(1) }))).toBe('asech(3)');
   });
-  it.fails("test_asech_leading_term:848", () => {
+  it("test_asech_leading_term:848", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [new Add([rational(-3), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('-asech(-3)');
   });
@@ -3598,7 +3598,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [new Add([rational(-3), new Mul([rational(-1), I, x])])]), x, { cdir: rational(1) }))).toBe('asech(-3)');
   });
-  it.fails("test_asech_leading_term:850", () => {
+  it("test_asech_leading_term:850", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asech', [new Add([rational(-1, 3), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('-2*I*pi + asech(-1/3)');
   });
@@ -3819,11 +3819,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsch', [new Pow(x, rational(-1))]), x, {}))).toBe('x');
   });
-  it.fails("test_acsch_leading_term:982", () => {
+  it("test_acsch_leading_term:982", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsch', [new Add([I, x])]), x, {}))).toBe('-I*pi/2');
   });
-  it.fails("test_acsch_leading_term:983", () => {
+  it("test_acsch_leading_term:983", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsch', [new Add([x, new Mul([rational(-1), I])])]), x, {}))).toBe('I*pi/2');
   });
@@ -3831,11 +3831,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsch', [x]), x, { cdir: rational(1) }))).toBe('-log(x) + log(2)');
   });
-  it.fails("test_acsch_leading_term:986", () => {
+  it("test_acsch_leading_term:986", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsch', [x]), x, { cdir: rational(-1) }))).toBe('log(x) - log(2) - I*pi');
   });
-  it.fails("test_acsch_leading_term:987", () => {
+  it("test_acsch_leading_term:987", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsch', [new Add([x, new Mul([rational(1, 2), I])])]), x, { cdir: rational(1) }))).toBe('-I*pi - acsch(I/2)');
   });
@@ -3847,7 +3847,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsch', [new Add([x, new Mul([rational(-1, 2), I])])]), x, { cdir: rational(1) }))).toBe('-acsch(I/2)');
   });
-  it.fails("test_acsch_leading_term:990", () => {
+  it("test_acsch_leading_term:990", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsch', [new Add([x, new Mul([rational(-1, 2), I])])]), x, { cdir: rational(-1) }))).toBe('acsch(I/2) + I*pi');
   });
@@ -4031,19 +4031,19 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [x]), x, {}))).toBe('x');
   });
-  it.fails("test_atanh_leading_term:1122", () => {
+  it("test_atanh_leading_term:1122", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [new Add([rational(1), x])]), x, { cdir: rational(1) }))).toBe('-log(x)/2 + log(2)/2 - I*pi/2');
   });
-  it.fails("test_atanh_leading_term:1123", () => {
+  it("test_atanh_leading_term:1123", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [new Add([rational(1), x])]), x, { cdir: rational(-1) }))).toBe('-log(x)/2 + log(2)/2 + I*pi/2');
   });
-  it.fails("test_atanh_leading_term:1124", () => {
+  it("test_atanh_leading_term:1124", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [new Add([rational(-1), x])]), x, { cdir: rational(1) }))).toBe('log(x)/2 - log(2)/2');
   });
-  it.fails("test_atanh_leading_term:1125", () => {
+  it("test_atanh_leading_term:1125", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [new Add([rational(-1), x])]), x, { cdir: rational(-1) }))).toBe('log(x)/2 - log(2)/2');
   });
@@ -4055,7 +4055,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [new Pow(x, rational(-1))]), x, { cdir: rational(-1) }))).toBe('I*pi/2');
   });
-  it.fails("test_atanh_leading_term:1129", () => {
+  it("test_atanh_leading_term:1129", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [new Add([rational(2), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('atanh(2) + I*pi');
   });
@@ -4067,15 +4067,15 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [new Add([rational(-2), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('-atanh(2)');
   });
-  it.fails("test_atanh_leading_term:1132", () => {
+  it("test_atanh_leading_term:1132", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('atanh', [new Add([rational(2), new Mul([I, x])])])]), x, { cdir: rational(1) }))).toBe('-I*pi - atanh(2)');
   });
-  it.fails("test_atanh_leading_term:1134", () => {
+  it("test_atanh_leading_term:1134", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('atanh', [new Add([rational(2), new Mul([rational(-1), x]), new Mul([I, new Pow(x, rational(2))])])])]), x, { cdir: rational(1) }))).toBe('-log(3)/2 - I*pi/2');
   });
-  it.fails("test_atanh_leading_term:1135", () => {
+  it("test_atanh_leading_term:1135", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('atanh', [new Add([rational(2), new Mul([rational(-1), x]), new Mul([I, new Pow(x, rational(2))])])])]), x, { cdir: rational(-1) }))).toBe('-log(3)/2 - I*pi/2');
   });
@@ -4197,23 +4197,23 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rewrite(fn('acoth', [x]), 'asinh', { pattern: [], deep: true }))).toBe('x*sqrt(x**(-2))*asinh(sqrt(1/(x**2 - 1))) + I*pi*(sqrt((x - 1)/x)*sqrt(x/(x - 1)) - sqrt(x/(x + 1))*sqrt(1 + 1/x))/2');
   });
-  it.fails("test_acoth_leading_term:1235", () => {
+  it("test_acoth_leading_term:1235", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acoth', [new Add([rational(1), x])]), x, { cdir: rational(1) }))).toBe('-log(x)/2 + log(2)/2');
   });
-  it.fails("test_acoth_leading_term:1236", () => {
+  it("test_acoth_leading_term:1236", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acoth', [new Add([rational(1), x])]), x, { cdir: rational(-1) }))).toBe('-log(x)/2 + log(2)/2');
   });
-  it.fails("test_acoth_leading_term:1237", () => {
+  it("test_acoth_leading_term:1237", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acoth', [new Add([rational(-1), x])]), x, { cdir: rational(1) }))).toBe('log(x)/2 - log(2)/2 + I*pi/2');
   });
-  it.fails("test_acoth_leading_term:1238", () => {
+  it("test_acoth_leading_term:1238", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acoth', [new Add([rational(-1), x])]), x, { cdir: rational(-1) }))).toBe('log(x)/2 - log(2)/2 - I*pi/2');
   });
-  it.fails("test_acoth_leading_term:1240", () => {
+  it("test_acoth_leading_term:1240", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acoth', [x]), x, { cdir: rational(-1) }))).toBe('I*pi/2');
   });
@@ -4225,11 +4225,11 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acoth', [new Add([new Float({ man: 1n, exp: -1n }, 53), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('0.549306144334055 - 1.5707963267949*I');
   });
-  it.fails("test_acoth_leading_term:1243", () => {
+  it("test_acoth_leading_term:1243", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('acoth', [new Add([new Float({ man: -1n, exp: -1n }, 53), new Mul([I, x])])])]), x, { cdir: rational(1) }))).toBe('0.549306144334055 - 1.5707963267949*I + I*pi');
   });
-  it.fails("test_acoth_leading_term:1244", () => {
+  it("test_acoth_leading_term:1244", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acoth', [new Add([new Float({ man: -1n, exp: -1n }, 53), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('-0.549306144334055 - I*pi + 1.5707963267949*I');
   });
@@ -4867,7 +4867,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isPositive(fn('coth', [p])))).toBe('True');
   });
-  it.fails("test_issue_25847:1525", () => {
+  it("test_issue_25847:1525", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atanh', [new Mul([new Pow(x, rational(-1)), fn('sin', [x])])]), x, {}))).toBe('atanh(sin(x)/x)');
   });
@@ -4891,7 +4891,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(() => asLeadingTerm(fn('acosh', [exp(new Pow(x, rational(-1)))]), x, {})).toThrow(PoleError);
   });
-  it.fails("test_issue_25847:1537", () => {
+  it("test_issue_25847:1537", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acoth', [new Mul([new Pow(x, rational(-1)), fn('sin', [x])])]), x, {}))).toBe('acoth(sin(x)/x)');
   });
@@ -11716,23 +11716,23 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asin', [x]), x, {}))).toBe('x');
   });
-  it.fails("test_asin_leading_term:958", () => {
+  it("test_asin_leading_term:958", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asin', [new Add([rational(1), x])]), x, {}))).toBe('pi/2');
   });
-  it.fails("test_asin_leading_term:959", () => {
+  it("test_asin_leading_term:959", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asin', [new Add([rational(-1), x])]), x, {}))).toBe('-pi/2');
   });
-  it.fails("test_asin_leading_term:960", () => {
+  it("test_asin_leading_term:960", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asin', [new Pow(x, rational(-1))]), x, { cdir: rational(1) }))).toBe('I*log(x) + pi/2 - I*log(2)');
   });
-  it.fails("test_asin_leading_term:961", () => {
+  it("test_asin_leading_term:961", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asin', [new Pow(x, rational(-1))]), x, { cdir: rational(-1) }))).toBe('-I*log(x) - 3*pi/2 + I*log(2)');
   });
-  it.fails("test_asin_leading_term:963", () => {
+  it("test_asin_leading_term:963", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asin', [new Add([rational(2), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('pi - asin(2)');
   });
@@ -11744,15 +11744,15 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asin', [new Add([rational(-2), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('-asin(2)');
   });
-  it.fails("test_asin_leading_term:966", () => {
+  it("test_asin_leading_term:966", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('asin', [new Add([rational(2), new Mul([I, x])])])]), x, { cdir: rational(1) }))).toBe('-pi + asin(2)');
   });
-  it.fails("test_asin_leading_term:968", () => {
+  it("test_asin_leading_term:968", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('asin', [new Add([rational(2), new Mul([rational(-1), x]), new Mul([I, new Pow(x, rational(2))])])])]), x, { cdir: rational(1) }))).toBe('-pi/2 + I*log(2 - sqrt(3))');
   });
-  it.fails("test_asin_leading_term:969", () => {
+  it("test_asin_leading_term:969", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('asin', [new Add([rational(2), new Mul([rational(-1), x]), new Mul([I, new Pow(x, rational(2))])])])]), x, { cdir: rational(-1) }))).toBe('-pi/2 + I*log(2 - sqrt(3))');
   });
@@ -12236,23 +12236,23 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [x]), x, {}))).toBe('pi/2');
   });
-  it.fails("test_acos_leading_term:1036", () => {
+  it("test_acos_leading_term:1036", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Add([rational(1), x])]), x, {}))).toBe('sqrt(2)*sqrt(-x)');
   });
-  it.fails("test_acos_leading_term:1037", () => {
+  it("test_acos_leading_term:1037", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Add([rational(-1), x])]), x, {}))).toBe('pi');
   });
-  it.fails("test_acos_leading_term:1038", () => {
+  it("test_acos_leading_term:1038", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Pow(x, rational(-1))]), x, { cdir: rational(1) }))).toBe('-I*log(x) + I*log(2)');
   });
-  it.fails("test_acos_leading_term:1039", () => {
+  it("test_acos_leading_term:1039", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Pow(x, rational(-1))]), x, { cdir: rational(-1) }))).toBe('I*log(x) + 2*pi - I*log(2)');
   });
-  it.fails("test_acos_leading_term:1041", () => {
+  it("test_acos_leading_term:1041", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Add([rational(2), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('-acos(2)');
   });
@@ -12264,15 +12264,15 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Add([rational(-2), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('acos(-2)');
   });
-  it.fails("test_acos_leading_term:1044", () => {
+  it("test_acos_leading_term:1044", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Add([rational(-2), new Mul([rational(-1), I, x])])]), x, { cdir: rational(1) }))).toBe('2*pi - acos(-2)');
   });
-  it.fails("test_acos_leading_term:1046", () => {
+  it("test_acos_leading_term:1046", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Add([rational(-2), x, new Mul([rational(-1), I, new Pow(x, rational(2))])])]), x, { cdir: rational(1) }))).toBe('pi + I*log(sqrt(3) + 2)');
   });
-  it.fails("test_acos_leading_term:1047", () => {
+  it("test_acos_leading_term:1047", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acos', [new Add([rational(-2), x, new Mul([rational(-1), I, new Pow(x, rational(2))])])]), x, { cdir: rational(-1) }))).toBe('pi + I*log(sqrt(3) + 2)');
   });
@@ -12921,19 +12921,19 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Pow(x, rational(-1))]), x, { cdir: rational(-1) }))).toBe('-pi/2');
   });
-  it.fails("test_atan_leading_term:1154", () => {
+  it("test_atan_leading_term:1154", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Add([I, x])]), x, { cdir: rational(1) }))).toBe('-I*log(x)/2 + pi/4 + I*log(2)/2');
   });
-  it.fails("test_atan_leading_term:1155", () => {
+  it("test_atan_leading_term:1155", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Add([I, x])]), x, { cdir: rational(-1) }))).toBe('-I*log(x)/2 - 3*pi/4 + I*log(2)/2');
   });
-  it.fails("test_atan_leading_term:1156", () => {
+  it("test_atan_leading_term:1156", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Add([x, new Mul([rational(-1), I])])]), x, { cdir: rational(1) }))).toBe('I*log(x)/2 + pi/4 - I*log(2)/2');
   });
-  it.fails("test_atan_leading_term:1157", () => {
+  it("test_atan_leading_term:1157", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Add([x, new Mul([rational(-1), I])])]), x, { cdir: rational(-1) }))).toBe('I*log(x)/2 + pi/4 - I*log(2)/2');
   });
@@ -12941,11 +12941,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Add([x, new Mul([rational(2), I])])]), x, { cdir: rational(1) }))).toBe('I*atanh(2)');
   });
-  it.fails("test_atan_leading_term:1160", () => {
+  it("test_atan_leading_term:1160", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Add([x, new Mul([rational(2), I])])]), x, { cdir: rational(-1) }))).toBe('-pi + I*atanh(2)');
   });
-  it.fails("test_atan_leading_term:1161", () => {
+  it("test_atan_leading_term:1161", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Add([x, new Mul([rational(-2), I])])]), x, { cdir: rational(1) }))).toBe('pi - I*atanh(2)');
   });
@@ -12953,11 +12953,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('atan', [new Add([x, new Mul([rational(-2), I])])]), x, { cdir: rational(-1) }))).toBe('-I*atanh(2)');
   });
-  it.fails("test_atan_leading_term:1164", () => {
+  it("test_atan_leading_term:1164", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('atan', [new Add([new Pow(x, rational(2)), new Mul([rational(-2), I]), new Mul([I, x])])])]), x, { cdir: rational(1) }))).toBe('-pi/2 + I*log(3)/2');
   });
-  it.fails("test_atan_leading_term:1165", () => {
+  it("test_atan_leading_term:1165", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('atan', [new Add([new Pow(x, rational(2)), new Mul([rational(-2), I]), new Mul([I, x])])])]), x, { cdir: rational(-1) }))).toBe('-pi/2 + I*log(3)/2');
   });
@@ -13223,19 +13223,19 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [new Pow(x, rational(-1))]), x, {}))).toBe('x');
   });
-  it.fails("test_acot_leading_term:1300", () => {
+  it("test_acot_leading_term:1300", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [new Add([I, x])]), x, { cdir: rational(1) }))).toBe('I*log(x)/2 + pi/4 - I*log(2)/2');
   });
-  it.fails("test_acot_leading_term:1301", () => {
+  it("test_acot_leading_term:1301", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [new Add([I, x])]), x, { cdir: rational(-1) }))).toBe('I*log(x)/2 + pi/4 - I*log(2)/2');
   });
-  it.fails("test_acot_leading_term:1302", () => {
+  it("test_acot_leading_term:1302", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [new Add([x, new Mul([rational(-1), I])])]), x, { cdir: rational(1) }))).toBe('-I*log(x)/2 + pi/4 + I*log(2)/2');
   });
-  it.fails("test_acot_leading_term:1303", () => {
+  it("test_acot_leading_term:1303", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [new Add([x, new Mul([rational(-1), I])])]), x, { cdir: rational(-1) }))).toBe('-I*log(x)/2 - 3*pi/4 + I*log(2)/2');
   });
@@ -13243,11 +13243,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [x]), x, { cdir: rational(1) }))).toBe('pi/2');
   });
-  it.fails("test_acot_leading_term:1306", () => {
+  it("test_acot_leading_term:1306", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [x]), x, { cdir: rational(-1) }))).toBe('-pi/2');
   });
-  it.fails("test_acot_leading_term:1307", () => {
+  it("test_acot_leading_term:1307", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [new Add([x, new Mul([rational(1, 2), I])])]), x, { cdir: rational(1) }))).toBe('pi - I*acoth(1/2)');
   });
@@ -13259,7 +13259,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [new Add([x, new Mul([rational(-1, 2), I])])]), x, { cdir: rational(1) }))).toBe('I*acoth(1/2)');
   });
-  it.fails("test_acot_leading_term:1310", () => {
+  it("test_acot_leading_term:1310", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acot', [new Add([x, new Mul([rational(-1, 2), I])])]), x, { cdir: rational(-1) }))).toBe('-pi + I*acoth(1/2)');
   });
@@ -14197,19 +14197,19 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asec', [new Pow(x, rational(-1))]), x, {}))).toBe('pi/2');
   });
-  it.fails("test_asec_leading_term:1857", () => {
+  it("test_asec_leading_term:1857", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asec', [new Add([rational(1), x])]), x, {}))).toBe('sqrt(2)*sqrt(x)');
   });
-  it.fails("test_asec_leading_term:1858", () => {
+  it("test_asec_leading_term:1858", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asec', [new Add([rational(-1), x])]), x, {}))).toBe('pi');
   });
-  it.fails("test_asec_leading_term:1860", () => {
+  it("test_asec_leading_term:1860", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asec', [x]), x, { cdir: rational(1) }))).toBe('-I*log(x) + I*log(2)');
   });
-  it.fails("test_asec_leading_term:1861", () => {
+  it("test_asec_leading_term:1861", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asec', [x]), x, { cdir: rational(-1) }))).toBe('I*log(x) + 2*pi - I*log(2)');
   });
@@ -14217,7 +14217,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asec', [new Add([new Float({ man: 1n, exp: -1n }, 53), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('1.31695789692482*I');
   });
-  it.fails("test_asec_leading_term:1863", () => {
+  it("test_asec_leading_term:1863", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('asec', [new Add([new Float({ man: 1n, exp: -1n }, 53), new Mul([rational(-1), I, x])])]), x, { cdir: rational(1) }))).toBe('-1.31695789692482*I');
   });
@@ -14237,7 +14237,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(asLeadingTerm(fn('asec', [new Add([rational(-1, 2), x, new Mul([rational(-1), I, new Pow(x, rational(2))])])]), x, { cdir: rational(-1) })), 'pi + I*log(2 - sqrt(3))', [x], { fn: '.as_leading_term', input: 'asec(-I*x**2 + x - 1/2)' })).toBe(true);
   });
-  it.fails("test_asec_series:1872", () => {
+  it("test_asec_series:1872", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('asec', [x]), x, rational(0), 9, '+', {}))).toBe('I*log(2) - I*log(x) - I*x**2/4 - 3*I*x**4/32 - 5*I*x**6/96 - 35*I*x**8/1024 + O(x**9)');
   });
@@ -14383,19 +14383,19 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsc', [new Pow(x, rational(-1))]), x, {}))).toBe('x');
   });
-  it.fails("test_acsc_leading_term:1939", () => {
+  it("test_acsc_leading_term:1939", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsc', [new Add([rational(1), x])]), x, {}))).toBe('pi/2');
   });
-  it.fails("test_acsc_leading_term:1940", () => {
+  it("test_acsc_leading_term:1940", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsc', [new Add([rational(-1), x])]), x, {}))).toBe('-pi/2');
   });
-  it.fails("test_acsc_leading_term:1942", () => {
+  it("test_acsc_leading_term:1942", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsc', [x]), x, { cdir: rational(1) }))).toBe('I*log(x) + pi/2 - I*log(2)');
   });
-  it.fails("test_acsc_leading_term:1943", () => {
+  it("test_acsc_leading_term:1943", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsc', [x]), x, { cdir: rational(-1) }))).toBe('-I*log(x) - 3*pi/2 + I*log(2)');
   });
@@ -14403,11 +14403,11 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsc', [new Add([new Float({ man: 1n, exp: -1n }, 53), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('1.5707963267949 - 1.31695789692482*I');
   });
-  it.fails("test_acsc_leading_term:1945", () => {
+  it("test_acsc_leading_term:1945", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('acsc', [new Add([new Float({ man: -1n, exp: -1n }, 53), new Mul([I, x])])])]), x, { cdir: rational(1) }))).toBe('-1.5707963267949 + pi + 1.31695789692482*I');
   });
-  it.fails("test_acsc_leading_term:1946", () => {
+  it("test_acsc_leading_term:1946", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('acsc', [new Add([new Float({ man: -1n, exp: -1n }, 53), new Mul([I, x])])]), x, { cdir: rational(1) }))).toBe('-pi + 1.5707963267949 - 1.31695789692482*I');
   });
@@ -14423,7 +14423,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(asLeadingTerm(new Mul([rational(-1), fn('acsc', [new Add([rational(1, 2), new Mul([rational(-1), x]), new Mul([I, new Pow(x, rational(2))])])])]), x, { cdir: rational(-1) })), '-pi/2 + I*log(sqrt(3) + 2)', [x], { fn: '.as_leading_term', input: '-acsc(I*x**2 - x + 1/2)' })).toBe(true);
   });
-  it.fails("test_acsc_series:1954", () => {
+  it("test_acsc_series:1954", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('acsc', [x]), x, rational(0), 9, '+', {}))).toBe('-I*log(2) + pi/2 + I*log(x) + I*x**2/4 + 3*I*x**4/32 + 5*I*x**6/96 + 35*I*x**8/1024 + O(x**9)');
   });
@@ -14785,35 +14785,35 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(() => asLeadingTerm(fn('acsc', [exp(new Pow(x, rational(-1)))]), x, {})).toThrow(PoleError);
   });
-  it.fails("test_issue_23843:2227", () => {
+  it("test_issue_23843:2227", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('atan', [new Add([I, x])]), x, oo, 6, '+', {}))).toBe('-16/(5*x**5) - 2*I/x**4 + 4/(3*x**3) + I/x**2 - 1/x + pi/2 + O(x**(-6), (x, oo))');
   });
-  it.fails("test_issue_23843:2228", () => {
+  it("test_issue_23843:2228", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('atan', [new Add([I, x])]), x, S.NegativeInfinity, 6, '+', {}))).toBe('-16/(5*x**5) - 2*I/x**4 + 4/(3*x**3) + I/x**2 - 1/x - pi/2 + O(x**(-6), (x, -oo))');
   });
-  it.fails("test_issue_23843:2229", () => {
+  it("test_issue_23843:2229", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('atan', [new Add([x, new Mul([rational(-1), I])])]), x, oo, 6, '+', {}))).toBe('-16/(5*x**5) + 2*I/x**4 + 4/(3*x**3) - I/x**2 - 1/x + pi/2 + O(x**(-6), (x, oo))');
   });
-  it.fails("test_issue_23843:2230", () => {
+  it("test_issue_23843:2230", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('atan', [new Add([x, new Mul([rational(-1), I])])]), x, S.NegativeInfinity, 6, '+', {}))).toBe('-16/(5*x**5) + 2*I/x**4 + 4/(3*x**3) - I/x**2 - 1/x - pi/2 + O(x**(-6), (x, -oo))');
   });
-  it.fails("test_issue_23843:2233", () => {
+  it("test_issue_23843:2233", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('acot', [new Add([I, x])]), x, oo, 6, '+', {}))).toBe('16/(5*x**5) + 2*I/x**4 - 4/(3*x**3) - I/x**2 + 1/x + O(x**(-6), (x, oo))');
   });
-  it.fails("test_issue_23843:2234", () => {
+  it("test_issue_23843:2234", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('acot', [new Add([I, x])]), x, S.NegativeInfinity, 6, '+', {}))).toBe('16/(5*x**5) + 2*I/x**4 - 4/(3*x**3) - I/x**2 + 1/x + O(x**(-6), (x, -oo))');
   });
-  it.fails("test_issue_23843:2235", () => {
+  it("test_issue_23843:2235", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('acot', [new Add([x, new Mul([rational(-1), I])])]), x, oo, 6, '+', {}))).toBe('16/(5*x**5) - 2*I/x**4 - 4/(3*x**3) + I/x**2 + 1/x + O(x**(-6), (x, oo))');
   });
-  it.fails("test_issue_23843:2236", () => {
+  it("test_issue_23843:2236", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('acot', [new Add([x, new Mul([rational(-1), I])])]), x, S.NegativeInfinity, 6, '+', {}))).toBe('16/(5*x**5) - 2*I/x**4 - 4/(3*x**3) + I/x**2 + 1/x + O(x**(-6), (x, -oo))');
   });

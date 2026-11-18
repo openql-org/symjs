@@ -319,6 +319,11 @@ const evalLog: Evaluator = (x, ...more) => {
   if (isI(rest) && c instanceof Rational) {
     return c.isNegative ? add(mul(S.NegHalf, S.I, S.Pi), log(numNeg(c))) : add(mul(S.Half, S.I, S.Pi), log(c));
   }
+  if (x instanceof Mul && x.args.some(isI)) {
+    const coefficient = mul(...x.args.filter((a) => !isI(a)));
+    if (isPositive(coefficient) === true) return add(log(coefficient), mul(S.Half, S.I, S.Pi));
+    if (isNegative(coefficient) === true) return add(log(neg(coefficient)), mul(S.NegHalf, S.I, S.Pi));
+  }
   // a + b*I whose argument is a rational multiple of pi
   if (x instanceof Add && x.freeSymbols().size === 0 && !isReal(x) && !x.args.some((a) => a instanceof Float)) {
     const t = arg(x);

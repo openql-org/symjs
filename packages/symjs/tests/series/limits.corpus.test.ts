@@ -2043,7 +2043,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([rational(1, 30), new Pow(rational(30), rational(1, 2)), fn('atan', [new Mul([rational(1, 6), new Pow(rational(30), rational(1, 2)), fn('tan', [new Mul([rational(1, 2), x])])])])]), x, new Mul([rational(-1), pi]), '+'))).toBe('-sqrt(30)*pi/60');
   });
-  it.fails("test_issue_22220:1265", () => {
+  it("test_issue_22220:1265", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([rational(1, 60), I, new Pow(rational(30), rational(1, 2)), new Add([new Mul([rational(-1), log(new Add([new Mul([new Pow(rational(2), rational(1, 2)), fn('tan', [new Mul([rational(1, 2), x])])]), new Mul([rational(-2, 5), I, new Pow(rational(15), rational(1, 2))])]))]), log(new Add([new Mul([new Pow(rational(2), rational(1, 2)), fn('tan', [new Mul([rational(1, 2), x])])]), new Mul([rational(2, 5), I, new Pow(rational(15), rational(1, 2))])]))])]), x, new Mul([rational(-1), pi]), '+'))).toBe('-sqrt(30)*pi/30');
   });
