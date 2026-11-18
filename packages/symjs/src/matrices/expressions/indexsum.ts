@@ -123,13 +123,17 @@ export function fromIndexSummation(exprIn: ExprLike, firstIndex?: Expr, lastInde
   if (body instanceof Add) {
     const terms = body.args.map((t) => {
       const ls = limits.filter(([v]) => t.has(v));
-      const r = convertProduct(t, ls, firstIndex, lastIndex);
+      const r = limits.length === 0 ? fromIndexSummation(t, firstIndex, lastIndex) : convertProduct(t, ls, firstIndex, lastIndex);
       // a term free of a summation index is summed upper - lower + 1 times (SymPy drops the factor)
       const n = mul(...limits.filter(([v]) => !t.has(v)).map(([, lo, hi]) => add(hi, mul(-1, lo), 1)));
       return r instanceof MatrixExpr ? prod(n, [r]) : mul(n, r);
     });
     if (terms.every((t) => t instanceof MatrixExpr)) return MatAddNode.create(terms).doit();
     return add(...terms);
+  }
+  if (limits.length === 0 && body instanceof Mul && body.args.filter((a) => a instanceof Concrete && a.kind2 === 'Sum').length === 1) {
+    const factors = body.args.map((a) => a instanceof Concrete && a.kind2 === 'Sum' ? fromIndexSummation(a, firstIndex, lastIndex) : a);
+    return factors.some((a) => a instanceof MatrixExpr) ? prod(S.One, factors) : mul(...factors);
   }
   return convertProduct(body, limits, firstIndex, lastIndex);
 }

@@ -15,6 +15,7 @@ import type { DoitHints, EntryContext, MatArg } from './matexpr';
 import {
   ImmutableMatrixNode,
   MatrixExpr,
+  MatAddNode,
   OneMatrixNode,
   ZeroMatrixNode,
   doitArg,
@@ -69,6 +70,10 @@ export class HadamardProductNode extends MatrixExpr {
       expr = new HadamardProductNode([new ImmutableMatrixNode(m), ...remainder]);
     }
     return canonicalize(expr);
+  }
+  override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
+    const terms = this.args.flatMap((a, i) => a.has(x) ? [hadamardProduct(...this.args.map((b, j) => i === j ? d(b, x) : b))] : []);
+    return terms.length ? MatAddNode.create(terms).doit() : new ZeroMatrixNode(...this.shape);
   }
   override strPrecedence(): number {
     return PRECEDENCE.Mul;

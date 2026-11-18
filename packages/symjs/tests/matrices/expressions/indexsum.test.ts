@@ -7,7 +7,7 @@
 // 1.14 results.
 
 import { describe, expect, it } from 'vitest';
-import { type Expr, mul, sstr, Sum, symbol, symbols } from '../../../src';
+import { type Expr, add, mul, sstr, Sum, symbol, symbols } from '../../../src';
 import { fromIndexSummation, MatrixSymbol } from '../../../src/matrices/expressions';
 
 const s = (e: unknown): string => sstr(e as Expr);
@@ -85,4 +85,15 @@ it('matches the requested first index by symbolic value', async () => {
   const entries = Sum(mul(A.at(row, inner), B.at(inner, column)), [inner, 0, 2]);
   expect(s(fromIndexSummation(entries, copy))).toBe('A*B');
   expect(s(fromIndexSummation(entries, new Sym('k', { integer: true })))).toBe('B.T*A.T');
+});
+
+it('reconstructs sums of independently contracted matrix products', () => {
+  const [r, c, inner] = symbols('r c inner', { integer: true });
+  const A = MatrixSymbol('A', 3, 3), B = MatrixSymbol('B', 3, 3), C = MatrixSymbol('C', 3, 3);
+  const ab = Sum(mul(A.at(r, inner), B.at(inner, c)), [inner, 0, 2]);
+  const ac = Sum(mul(A.at(r, inner), C.at(inner, c)), [inner, 0, 2]);
+  expect(s(fromIndexSummation(mul(ab, ac)))).toBe(s(mul(ab, ac)));
+  expect(s(fromIndexSummation(add(ab, ac), r))).toBe('A*B + A*C');
+  expect(s(fromIndexSummation(add(mul(2, ab), mul(3, ac)), r))).toBe('2*A*B + 3*A*C');
+  expect(s(fromIndexSummation(mul(2, Sum(A.at(inner, inner), [inner, 0, 2]))))).toBe('2*Trace(A)');
 });

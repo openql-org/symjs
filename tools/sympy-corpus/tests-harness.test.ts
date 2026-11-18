@@ -562,3 +562,12 @@ it('translates Matrix equalities and solver strategy flags through the public so
   expect(selected).toHaveLength(7);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
+
+it('translates matrix classmethods, explicit conversion, deletion and set validation', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) =>
+    (c.test === 'test_hstack' || c.test === 'test_vstack' || c.test === 'test_row_col_del' || c.test === 'test_dense_conversion') ||
+    c.fn === 'MatrixSet' || c.test === 'test_issue_13774');
+  expect(selected.length).toBeGreaterThan(20);
+  for (const c of selected) expect(runTestCase(c).status, c.src).toBe('pass');
+});
