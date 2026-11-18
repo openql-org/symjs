@@ -77623,7 +77623,7 @@
   {
    "module": "sympy.polys.agca",
    "sha256": "7da8695a81bfd0b828a8e5c19c30494b5e898f57c4d7f54a1bb79d337a99d871",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "polys/agca/extensions.ts",
     "polys/agca/homomorphisms.ts",
@@ -77661,20 +77661,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Commutative algebra modules",
-       "remaining": [
-        "Fractional representatives in localized polynomial rings",
-        "Generator coordinates and quotient rings over local monomial orders",
-        "Fraction fields over general coefficient domains",
-        "Modules over non-field coefficient domains",
-        "General free resolutions and homological algebra"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -77853,20 +77842,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Commutative algebra modules",
-       "remaining": [
-        "Fractional representatives in localized polynomial rings",
-        "Generator coordinates and quotient rings over local monomial orders",
-        "Fraction fields over general coefficient domains",
-        "Modules over non-field coefficient domains",
-        "General free resolutions and homological algebra"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -78009,20 +77987,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Commutative algebra modules",
-       "remaining": [
-        "Fractional representatives in localized polynomial rings",
-        "Generator coordinates and quotient rings over local monomial orders",
-        "Fraction fields over general coefficient domains",
-        "Modules over non-field coefficient domains",
-        "General free resolutions and homological algebra"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -78130,20 +78097,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Commutative algebra modules",
-       "remaining": [
-        "Fractional representatives in localized polynomial rings",
-        "Generator coordinates and quotient rings over local monomial orders",
-        "Fraction fields over general coefficient domains",
-        "Modules over non-field coefficient domains",
-        "General free resolutions and homological algebra"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -78380,20 +78336,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Commutative algebra modules",
-       "remaining": [
-        "Fractional representatives in localized polynomial rings",
-        "Generator coordinates and quotient rings over local monomial orders",
-        "Fraction fields over general coefficient domains",
-        "Modules over non-field coefficient domains",
-        "General free resolutions and homological algebra"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -83490,20 +83435,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Commutative algebra modules",
-       "remaining": [
-        "Fractional representatives in localized polynomial rings",
-        "Generator coordinates and quotient rings over local monomial orders",
-        "Fraction fields over general coefficient domains",
-        "Modules over non-field coefficient domains",
-        "General free resolutions and homological algebra"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -83666,7 +83600,7 @@
      "testFile": "sympy/polys/domains/tests/test_polynomialring.py",
      "inCorpus": true,
      "caseCount": 22,
-     "gapCount": 12,
+     "gapCount": 11,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 16,
@@ -83929,20 +83863,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Commutative algebra modules",
-       "remaining": [
-        "Fractional representatives in localized polynomial rings",
-        "Generator coordinates and quotient rings over local monomial orders",
-        "Fraction fields over general coefficient domains",
-        "Modules over non-field coefficient domains",
-        "General free resolutions and homological algebra"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,

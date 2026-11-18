@@ -366,7 +366,7 @@ describe("sympy/polys/agca/tests/test_modules.py", () => {
   it("test_FreeModule:57", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_FreeModule:58", () => {
+  it("test_FreeModule:58", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolynomialRingBase(QQ, [x], 'ilex').freeModule(2).contains([2, y]))).toBe('False');
   });

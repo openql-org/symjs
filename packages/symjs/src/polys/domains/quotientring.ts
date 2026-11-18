@@ -18,7 +18,6 @@ export class QuotientRing extends Domain {
   constructor(readonly ring: Domain, ideal: ModuleImplementedIdeal | readonly ExprLike[]) {
     super();
     const context = polynomialModuleContext(ring);
-    if (!context.order.isGlobal) throw new NotImplementedError('quotient rings with local orders require local-unit normal forms');
     this.baseIdeal = ideal instanceof ModuleImplementedIdeal ? ideal : ring.ideal(...ideal);
     if (!ring.equals(this.baseIdeal.ring)) throw new RangeError('ideal must belong to the base ring');
     this.ground = ring.ground;
