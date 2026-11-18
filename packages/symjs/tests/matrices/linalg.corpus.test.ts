@@ -3443,7 +3443,7 @@ describe("sympy/matrices/tests/test_matrices.py", () => {
   it("test_multiplication_inf_zero:262", () => {
     expect(sympyStr(Matrix.of([[oo, rational(0)], [rational(0), oo]]).pow(2))).toBe('Matrix([[oo, 0], [0, oo]])');
   });
-  it.fails("test_multiplication_inf_zero:265", () => {
+  it("test_multiplication_inf_zero:265", () => {
     expect(sympyStr(Matrix.of([[oo, oo], [rational(0), rational(0)]]).pow(2))).toBe('Matrix([[nan, nan], [nan, nan]])');
   });
   it("test_multiplication_inf_zero:287", () => {
@@ -3992,7 +3992,7 @@ describe("sympy/matrices/tests/test_matrices.py", () => {
   //           Matrix([cos(a) + I*sin(a)])
   //   => Matrix([[I*sin(a) + cos(a)]])
   it.todo("test_expand:925");
-  it.fails("test_expand:928", () => {
+  it("test_expand:928", () => {
     expect(sympyStr(matrixExp(Matrix.of([[rational(0), rational(1), rational(2)], [rational(0), rational(0), rational(-1)], [rational(0), rational(0), rational(0)]])))).toBe('Matrix([[1, 1, 3/2], [0, 1, -1], [0, 0, 1]])');
   });
   it("test_refine:938", () => {
@@ -4007,16 +4007,16 @@ describe("sympy/matrices/tests/test_matrices.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(Matrix.of([[new Pow(abs(x), rational(2)), new Pow(new Pow(x, rational(2)), rational(1, 2))], [new Mul([new Pow(new Pow(x, rational(2)), rational(1, 2)), new Pow(abs(y), rational(2))]), new Mul([new Pow(new Pow(y, rational(2)), rational(1, 2)), new Pow(abs(x), rational(2))])]]), And(Q.negative(x), Q.negative(y))))).toBe('Matrix([[x**2, -x], [-x*y**2, -x**2*y]])');
   });
-  it.fails("test_random:949", () => {
+  it("test_random:949", () => {
     expect(sympyStr(randMatrix(3, 3, { seed: 3, symmetric: false }))).toBe('Matrix([[30, 75, 69], [16, 47, 77], [60, 80, 74]])');
   });
-  it.fails("test_random:953", () => {
+  it("test_random:953", () => {
     expect(sympyStr(randMatrix(3, undefined, { seed: 4, symmetric: true }))).toBe('Matrix([[30, 38, 13], [38, 92, 50], [13, 50, 61]])');
   });
   it("test_random:957", () => {
     expect(sympyStr(Matrix.of([[rational(30), rational(38), rational(13)], [rational(38), rational(92), rational(50)], [rational(13), rational(50), rational(61)]]))).toBe('Matrix([[30, 38, 13], [38, 92, 50], [13, 50, 61]])');
   });
-  it.fails("test_random:960", () => {
+  it("test_random:960", () => {
     expect(sympyStr(randMatrix(3, undefined, { seed: 4, symmetric: true }))).toBe('Matrix([[30, 38, 13], [38, 92, 50], [13, 50, 61]])');
   });
   it("test_inverse:978", () => {
@@ -4982,7 +4982,7 @@ describe("sympy/matrices/tests/test_matrices.py", () => {
   it.fails("test_errors:1939", () => {
     expect(() => dot(Matrix.of([[rational(1)], [rational(2)]]), Matrix.col(rational(1), rational(2), rational(3)), false, 'maths')).toThrow(ShapeError);
   });
-  it.fails("test_errors:1940", () => {
+  it("test_errors:1940", () => {
     expect(() => matrixExp(Matrix.of([[rational(1)], [rational(2)], [rational(3)]]))).toThrow(NonSquareMatrixError);
   });
   it("test_errors:1941", () => {
@@ -7151,11 +7151,11 @@ describe("sympy/matrices/tests/test_solvers.py", () => {
   it("test_gauss_jordan_solve:496", () => {
     expect(sympyStr(at(gaussJordanSolve(Matrix.of([[rational(1), rational(2), rational(3), rational(4)], [rational(5), rational(6), rational(7), rational(8)], [rational(2), rational(4), rational(6), rational(8)]]), Matrix.of([[rational(0)], [rational(1)], [rational(0)]])), 1))).toBe('Matrix([[tau0], [tau1]])');
   });
-  it.fails("test_gauss_jordan_solve:503", () => {
+  it("test_gauss_jordan_solve:503", () => {
     const tau1 = new Sym('tau1');
     expect(sympyStr(at(gaussJordanSolve(Matrix.of([[rational(0), rational(1), rational(0), rational(0), rational(0)], [rational(0), rational(0), rational(0), rational(1), rational(0)]]), Matrix.of([[rational(0)], [tau1]])), 1))).toBe('Matrix([[_tau0], [_tau1], [_tau2]])');
   });
-  it.fails("test_gauss_jordan_solve:504", () => {
+  it("test_gauss_jordan_solve:504", () => {
     const tau1 = new Sym('tau1');
     expect(sympyStr(at(gaussJordanSolve(Matrix.of([[rational(0), rational(1), rational(0), rational(0), rational(0)], [rational(0), rational(0), rational(0), rational(1), rational(0)]]), Matrix.of([[rational(0)], [tau1]])), 0))).toBe('Matrix([[_tau0], [0], [_tau1], [tau1], [_tau2]])');
   });

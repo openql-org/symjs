@@ -38,7 +38,7 @@ const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 
 export { Sum, Product } from '../core/concrete';
 import { Sum, Product } from '../core/concrete';
-import { at, cast, defined, first, getOrThrow } from '../core/guard';
+import { at, cast, defined, first, getOrThrow, pair } from '../core/guard';
 import { NoMatch, orNoMatch } from '../core/truth';
 import type { NoMatchResult } from '../core/truth';
 
@@ -217,6 +217,10 @@ function deltaSum(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   const value = linearRoot(add(at(delta.args, 0), mul(-1, at(delta.args, 1))), k);
   if (value === undefined) return undefined;
   const rest = mul(...factors.filter((t) => t !== delta));
+  const range = delta.args[2];
+  if (range && isNonNegative(add(at(range.args, 0), mul(-1, a))) === true && isNonNegative(add(b, mul(-1, at(range.args, 1)))) === true) {
+    return xreplace(rest, [[k, value]]);
+  }
   // (SymPy's value < oo for an infinite range holds: the value is finite)
   const cond = isOo(b) ? Le(a, value) : and(Le(a, value), Le(value, b));
   return piecewise([xreplace(rest, [[k, value]]), cond], [S.Zero, true]);
@@ -346,9 +350,13 @@ const hasNonFinite = (e: Expr): boolean => e instanceof Special || e.args.some(h
 function evalSumHyper(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   const oldSum = Sum(f, [k, a, b]);
   if (!isOo(b)) {
-    const res1 = sumHyperFrom(f, k, a);
-    const res2 = sumHyperFrom(f, k, add(b, 1));
-    if (res1 === undefined || res2 === undefined) return undefined;
+    const tails: [Expr, Expr][] = [];
+    for (const start of [a, add(b, 1)]) {
+      const tail = sumHyperFrom(f, k, start);
+      if (tail === undefined) return undefined;
+      tails.push(tail);
+    }
+    const [res1, res2] = pair(tails);
     const cond = and(res1[1], res2[1]);
     if (cond === S.false) return undefined;
     return piecewise([add(res1[0], mul(-1, res2[0])), cond], [oldSum, true]);
