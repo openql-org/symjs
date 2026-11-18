@@ -205,16 +205,16 @@ describe("sympy/polys/tests/test_pythonrational.py", () => {
   //   => None
   it.todo("test_PythonRational__truediv__:114");
   it("test_PythonRational__pow__:117", () => {
-    expect(sympyStr(rational(1).pow(rational(10)))).toBe('1');
+    expect(sympyStr(rational(1).pow(Rational.of(10n, 1n, { gcd: 1n })))).toBe('1');
   });
   it("test_PythonRational__pow__:118", () => {
-    expect(sympyStr(rational(2).pow(rational(10)))).toBe('1024');
+    expect(sympyStr(rational(2).pow(Rational.of(10n, 1n, { gcd: 1n })))).toBe('1024');
   });
   it("test_PythonRational__pow__:120", () => {
-    expect(sympyStr(rational(1).pow(rational(-10)))).toBe('1');
+    expect(sympyStr(rational(1).pow(Rational.of(-10n, 1n, { gcd: 1n })))).toBe('1');
   });
   it("test_PythonRational__pow__:121", () => {
-    expect(sympyStr(rational(2).pow(rational(-10)))).toBe('1/1024');
+    expect(sympyStr(rational(2).pow(Rational.of(-10n, 1n, { gcd: 1n })))).toBe('1/1024');
   });
   it("test_PythonRational__eq__:124", () => {
     expect(sympyStr(rational(1, 2).equals(rational(1, 2)))).toBe('True');

@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { BaseCovarDerivativeOp, BaseScalarField, BaseVectorField, Commutator, CoordSystem, CoordinateSymbol, CovarDerivativeOp, Differential, LieDerivative, Manifold, Patch, Point, R2, R2Origin, R2P, R2R, TensorProduct, WedgeProduct, contravariantOrder, covariantOrder, intcurveDiffequ, intcurveSeries, metricToChristoffel1st, metricToChristoffel2nd, metricToRicciComponents, metricToRiemannComponents, twoformToMatrix, vectorsInBasis } from '../../src/diffgeom';
-import { Add, AppliedUndef, Array, E, Matrix, Mul, NotImplementedError, Pow, Sym, add, expand, fn, isReal, mul, pi, pow, pprintUseUnicode, rational, rcall, simplify, slice, symbols } from '../../src';
+import { Add, AppliedUndef, Array, E, Matrix, Mul, NotImplementedError, Pow, Rational, Sym, add, expand, fn, isReal, mul, pi, pow, pprintUseUnicode, rcall, simplify, slice, symbols } from '../../src';
 import { at, sympyMatches, sympyStr, text } from '../sympy-str';
 import { equivalent } from '../sympy-equivalent';
 
@@ -14,22 +14,22 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(metricToChristoffel2nd(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('[[[0, 0], [0, 0]], [[0, 0], [0, 0]]]');
   });
   it("cvd(fx)", () => {
-    expect(sympyStr(rcall(new BaseCovarDerivativeOp(R2R, 0, Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), new BaseScalarField(R2R, 0)))).toBe('1');
+    expect(sympyStr(rcall(new BaseCovarDerivativeOp(R2R, 0, Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2])), new BaseScalarField(R2R, 0)))).toBe('1');
   });
   it("cvd(fx*e_x)", () => {
-    expect(sympyStr(rcall(new BaseCovarDerivativeOp(R2R, 0, Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0))))).toBe('e_x');
+    expect(sympyStr(rcall(new BaseCovarDerivativeOp(R2R, 0, Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2])), mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0))))).toBe('e_x');
   });
   it("fx(point)", () => {
-    expect(sympyStr(rcall(new BaseScalarField(R2R, 0), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [rational(0)]]))))).toBe('rho');
+    expect(sympyStr(rcall(new BaseScalarField(R2R, 0), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [Rational.of(0n, 1n, { gcd: 1n })]]))))).toBe('rho');
   });
   it("fy(point)", () => {
-    expect(sympyStr(rcall(new BaseScalarField(R2R, 1), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [rational(0)]]))))).toBe('0');
+    expect(sympyStr(rcall(new BaseScalarField(R2R, 1), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [Rational.of(0n, 1n, { gcd: 1n })]]))))).toBe('0');
   });
   it("(fx**2+fy**2).rcall(point)", () => {
-    expect(sympyStr(rcall(add(pow(new BaseScalarField(R2R, 0), 2), pow(new BaseScalarField(R2R, 1), 2)), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [rational(0)]]))))).toBe('rho**2');
+    expect(sympyStr(rcall(add(pow(new BaseScalarField(R2R, 0), Rational.of(2n, 1n, { gcd: 1n })), pow(new BaseScalarField(R2R, 1), Rational.of(2n, 1n, { gcd: 1n }))), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [Rational.of(0n, 1n, { gcd: 1n })]]))))).toBe('rho**2');
   });
   it("fg.rcall(point)", () => {
-    expect(sympyStr(rcall(new AppliedUndef('g', [add(mul(-1, pi), new BaseScalarField(R2R, 1))]), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [rational(0)]]))))).toBe('g(-pi)');
+    expect(sympyStr(rcall(new AppliedUndef('g', [add(mul(Rational.of(-1n, 1n, { gcd: 1n }), pi), new BaseScalarField(R2R, 1))]), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [Rational.of(0n, 1n, { gcd: 1n })]]))))).toBe('g(-pi)');
   });
   // diffgeom export pprint
   //   pprint(v(s_field))
@@ -58,81 +58,81 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).dim)).toBe('2');
+    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).dim)).toBe('2');
   });
   it("Car2D.symbols", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr([at(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).symbols, 0), at(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).symbols, 1)], 't')).toBe('(x, y)');
+    expect(sympyStr([at(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).symbols, 0), at(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).symbols, 1)], 't')).toBe('(x, y)');
   });
   it("Car2D.transformation(Pol)", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyMatches(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).transformation(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]]))), 'Lambda((x, y), Matrix([\n[sqrt(x**2 + y**2)],\n[      atan2(y, x)]]))')).toBe(true);
+    expect(sympyMatches(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).transformation(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]]))), 'Lambda((x, y), Matrix([\n[sqrt(x**2 + y**2)],\n[      atan2(y, x)]]))')).toBe(true);
   });
   it("Car2D.transform(Pol)", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).transform(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]]))))).toBe('Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])');
+    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).transform(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]]))))).toBe('Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])');
   });
   it("Car2D.transform(Pol, [1, 2])", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).transform(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), [rational(1), rational(2)]))).toBe('Matrix([[sqrt(5)], [atan(2)]])');
+    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).transform(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })]))).toBe('Matrix([[sqrt(5)], [atan(2)]])');
   });
   it("Pol.jacobian(Car2D)", () => {
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
-    expect(sympyStr(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).jacobian(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]]))))).toBe('Matrix([[cos(theta), -r*sin(theta)], [sin(theta), r*cos(theta)]])');
+    expect(sympyStr(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).jacobian(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]]))))).toBe('Matrix([[cos(theta), -r*sin(theta)], [sin(theta), r*cos(theta)]])');
   });
   it("Pol.jacobian(Car2D, [1, pi/2])", () => {
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
-    expect(sympyStr(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).jacobian(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), [rational(1), mul(rational(1, 2), pi)]))).toBe('Matrix([[0, -1], [1, 0]])');
+    expect(sympyStr(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).jacobian(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), [Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 2n, { gcd: 1n }), pi)]))).toBe('Matrix([[0, -1], [1, 0]])');
   });
   it("Car2D.jacobian_determinant(Pol)", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(equivalent(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).jacobianDeterminant(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])))), '1/sqrt(x**2 + y**2)', [x, y, r, theta], { fn: '.jacobian_determinant', input: 'Car2D' })).toBe(true);
+    expect(equivalent(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).jacobianDeterminant(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])))), '1/sqrt(x**2 + y**2)', [x, y, r, theta], { fn: '.jacobian_determinant', input: 'Car2D' })).toBe(true);
   });
   it("Car2D.jacobian_determinant(Pol, [1,0])", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).jacobianDeterminant(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), [rational(1), rational(0)]))).toBe('1');
+    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).jacobianDeterminant(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]))).toBe('1');
   });
   it("R2_p.jacobian(R2_r)", () => {
     expect(sympyStr(R2P.jacobian(R2R))).toBe('Matrix([[cos(theta), -rho*sin(theta)], [sin(theta), rho*cos(theta)]])');
   });
   it("R2_p.jacobian(R2_r, [1, 0])", () => {
-    expect(sympyStr(R2P.jacobian(R2R, [rational(1), rational(0)]))).toBe('Matrix([[1, 0], [0, 1]])');
+    expect(sympyStr(R2P.jacobian(R2R, [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]))).toBe('Matrix([[1, 0], [0, 1]])');
   });
   it("R2_r.jacobian_determinant(R2_p)", () => {
     expect(equivalent(sympyStr(R2R.jacobianDeterminant(R2P)), '1/sqrt(x**2 + y**2)', [], { fn: '.jacobian_determinant', input: 'rectangular' })).toBe(true);
   });
   it("R2_r.jacobian_determinant(R2_p, [1, 0])", () => {
-    expect(sympyStr(R2R.jacobianDeterminant(R2P, [rational(1), rational(0)]))).toBe('1');
+    expect(sympyStr(R2R.jacobianDeterminant(R2P, [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]))).toBe('1');
   });
   it("R2_r.transform(R2_p)", () => {
     expect(sympyStr(R2R.transform(R2P))).toBe('Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])');
   });
   it("R2_r.transform(R2_p, [0, 1])", () => {
-    expect(sympyStr(R2R.transform(R2P, [rational(0), rational(1)]))).toBe('Matrix([[1], [pi/2]])');
+    expect(sympyStr(R2R.transform(R2P, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })]))).toBe('Matrix([[1], [pi/2]])');
   });
   it("R2_r.transformation(R2_p)", () => {
     expect(sympyMatches(R2R.transformation(R2P), 'Lambda((x, y), Matrix([\n[sqrt(x**2 + y**2)],\n[      atan2(y, x)]]))')).toBe(true);
@@ -144,7 +144,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     const theta = new Sym('theta', { nonnegative: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(new CoordinateSymbol(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), 0).name)).toBe('x');
+      expect(text(new CoordinateSymbol(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), 0).name)).toBe('x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -154,44 +154,44 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])).equals(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]]))))).toBe('True');
+    expect(sympyStr(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])).equals(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]]))))).toBe('True');
   });
   it("x.index", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(new CoordinateSymbol(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), 0).index)).toBe('0');
+    expect(sympyStr(new CoordinateSymbol(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), 0).index)).toBe('0');
   });
   it("x.is_real", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(isReal(new CoordinateSymbol(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), 0)))).toBe('True');
+    expect(sympyStr(isReal(new CoordinateSymbol(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), 0)))).toBe('True');
   });
   it("x.rewrite(Pol)", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(new CoordinateSymbol(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), 0).rewrite(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]]))))).toBe('r*cos(theta)');
+    expect(sympyStr(new CoordinateSymbol(new CoordSystem('Car2D', new Patch('P', new Manifold('M', 2)), [x, y], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), 0).rewrite(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]]))))).toBe('r*cos(theta)');
   });
   it("sqrt(x**2 + y**2).rewrite(Pol).simplify()", () => {
     const r = new Sym('r', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
-    expect(sympyStr(simplify(pow(add(mul(pow(new CoordinateSymbol(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), 0), 2), pow(fn('cos', [new CoordinateSymbol(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), 1)]), 2)), mul(pow(new CoordinateSymbol(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), 0), 2), pow(fn('sin', [new CoordinateSymbol(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta])), mul(r, fn('sin', [theta]))]]]])), 1)]), 2))), rational(1, 2))))).toBe('r');
+    expect(sympyStr(simplify(pow(add(mul(pow(new CoordinateSymbol(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), 0), Rational.of(2n, 1n, { gcd: 1n })), pow(fn('cos', [new CoordinateSymbol(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), 1)], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n }))), mul(pow(new CoordinateSymbol(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), 0), Rational.of(2n, 1n, { gcd: 1n })), pow(fn('sin', [new CoordinateSymbol(new CoordSystem('Pol', new Patch('P', new Manifold('M', 2)), [r, theta], new Map([[['Car2D', 'Pol'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]], [['Pol', 'Car2D'], [[r, theta], [mul(r, fn('cos', [theta], { evaluate: false })), mul(r, fn('sin', [theta], { evaluate: false }))]]]])), 1)], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n })))), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('r');
   });
   it("ch (2)", () => {
     expect(sympyStr(metricToChristoffel2nd(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('[[[0, 0], [0, 0]], [[0, 0], [0, 0]]]');
   });
   it("cvd(fx) (2)", () => {
-    expect(sympyStr(rcall(new CovarDerivativeOp(mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)), Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), new BaseScalarField(R2R, 0)))).toBe('x');
+    expect(sympyStr(rcall(new CovarDerivativeOp(mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)), Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2])), new BaseScalarField(R2R, 0)))).toBe('x');
   });
   it("cvd(fx*e_x) (2)", () => {
-    expect(sympyStr(rcall(new CovarDerivativeOp(mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)), Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0))))).toBe('x*e_x');
+    expect(sympyStr(rcall(new CovarDerivativeOp(mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)), Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2])), mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0))))).toBe('x*e_x');
   });
   it("dg", () => {
     expect(sympyStr(Differential(new AppliedUndef('g', [new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)])))).toBe('d(g(x, y))');
@@ -248,10 +248,10 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(R2.equals(R2))).toBe('True');
   });
   it("p.coords()", () => {
-    expect(sympyStr(new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [mul(rational(3, 4), pi)]])).coords())).toBe('Matrix([[rho], [3*pi/4]])');
+    expect(sympyStr(new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [mul(Rational.of(3n, 4n, { gcd: 1n }), pi)]])).coords())).toBe('Matrix([[rho], [3*pi/4]])');
   });
   it("p.coords(R2_r)", () => {
-    expect(sympyStr(new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [mul(rational(3, 4), pi)]])).coords(R2R))).toBe('Matrix([[-sqrt(2)*rho/2], [sqrt(2)*rho/2]])');
+    expect(sympyStr(new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [mul(Rational.of(3n, 4n, { gcd: 1n }), pi)]])).coords(R2R))).toBe('Matrix([[-sqrt(2)*rho/2], [sqrt(2)*rho/2]])');
   });
   it("TensorProduct(dx, dy)(e_x, e_y)", () => {
     expect(sympyStr(rcall(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1))), new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)))).toBe('1');
@@ -263,7 +263,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(rcall(TensorProduct(Differential(new BaseScalarField(R2R, 0)), mul(new BaseScalarField(R2R, 0), Differential(new BaseScalarField(R2R, 1)))), mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)), new BaseVectorField(R2R, 1)))).toBe('x**2');
   });
   it("TensorProduct(e_x, e_y)(fx**2, fy**2)", () => {
-    expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)), pow(new BaseScalarField(R2R, 0), 2), pow(new BaseScalarField(R2R, 1), 2)))).toBe('4*x*y');
+    expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)), pow(new BaseScalarField(R2R, 0), Rational.of(2n, 1n, { gcd: 1n })), pow(new BaseScalarField(R2R, 1), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('4*x*y');
   });
   it("TensorProduct(e_y, dx)(fy)", () => {
     expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 1), Differential(new BaseScalarField(R2R, 0))), new BaseScalarField(R2R, 1)))).toBe('dx');
@@ -272,10 +272,10 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(rcall(TensorProduct(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1))), Differential(new BaseScalarField(R2R, 0))), new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1), new BaseVectorField(R2R, 0)))).toBe('1');
   });
   it("metric.rcall(e_y, None)", () => {
-    expect(sympyStr(rcall(add(mul(3, TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1)))), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0)))), new BaseVectorField(R2R, 1), null))).toBe('3*dy');
+    expect(sympyStr(rcall(add(mul(Rational.of(3n, 1n, { gcd: 1n }), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1)))), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0)))), new BaseVectorField(R2R, 1), null))).toBe('3*dy');
   });
   it("metric.rcall(e_y)", () => {
-    expect(sympyStr(rcall(add(mul(3, TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1)))), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0)))), new BaseVectorField(R2R, 1)))).toBe('3*dy');
+    expect(sympyStr(rcall(add(mul(Rational.of(3n, 1n, { gcd: 1n }), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1)))), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0)))), new BaseVectorField(R2R, 1)))).toBe('3*dy');
   });
   it("WedgeProduct(dx, dy)(e_x, e_y)", () => {
     expect(sympyStr(rcall(WedgeProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1))), new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)))).toBe('1');
@@ -298,7 +298,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
   });
   it("contravariant_order(a*R2.x + 2)", () => {
     const a = new Sym('a');
-    expect(sympyStr(contravariantOrder(add(2, mul(a, new BaseScalarField(R2R, 0)))))).toBe('0');
+    expect(sympyStr(contravariantOrder(add(Rational.of(2n, 1n, { gcd: 1n }), mul(a, new BaseScalarField(R2R, 0)))))).toBe('0');
   });
   it("contravariant_order(a*R2.x*R2.e_y + R2.e_x)", () => {
     const a = new Sym('a');
@@ -310,7 +310,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
   });
   it("covariant_order(a*R2.x + 2)", () => {
     const a = new Sym('a');
-    expect(sympyStr(covariantOrder(add(2, mul(a, new BaseScalarField(R2R, 0)))))).toBe('0');
+    expect(sympyStr(covariantOrder(add(Rational.of(2n, 1n, { gcd: 1n }), mul(a, new BaseScalarField(R2R, 0)))))).toBe('0');
   });
   it("covariant_order(a*R2.x*R2.dy + R2.dx)", () => {
     const a = new Sym('a');
@@ -342,22 +342,22 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
   });
   it("series[1]", () => {
     const t = new Sym('t');
-    expect(sympyStr(Matrix.of([[t], [rational(0)]]))).toBe('Matrix([[t], [0]])');
+    expect(sympyStr(Matrix.of([[t], [Rational.of(0n, 1n, { gcd: 1n })]]))).toBe('Matrix([[t], [0]])');
   });
   it("series[2]", () => {
-    expect(sympyStr(Matrix.of([[rational(0)], [rational(0)]]))).toBe('Matrix([[0], [0]])');
+    expect(sympyStr(Matrix.of([[Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(0n, 1n, { gcd: 1n })]]))).toBe('Matrix([[0], [0]])');
   });
   it("series[0] (2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Matrix.of([[pow(add(pow(x, 2), pow(y, 2)), rational(1, 2))], [fn('atan2', [y, x])]]))).toBe('Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])');
+    expect(sympyStr(Matrix.of([[pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n }))], [fn('atan2', [y, x])]]))).toBe('Matrix([[sqrt(x**2 + y**2)], [atan2(y, x)]])');
   });
   it("series[1] (2)", () => {
     const [t, x, y] = symbols('t x y');
-    expect(sympyStr(Matrix.of([[mul(t, x, pow(add(pow(x, 2), pow(y, 2)), rational(-1, 2)))], [mul(-1, t, y, pow(add(pow(x, 2), pow(y, 2)), -1))]]))).toBe('Matrix([[t*x/sqrt(x**2 + y**2)], [-t*y/(x**2 + y**2)]])');
+    expect(sympyStr(Matrix.of([[mul(t, x, pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(-1n, 2n, { gcd: 1n })))], [mul(Rational.of(-1n, 1n, { gcd: 1n }), t, y, pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(-1n, 1n, { gcd: 1n })))]]))).toBe('Matrix([[t*x/sqrt(x**2 + y**2)], [-t*y/(x**2 + y**2)]])');
   });
   it("series[2] (2)", () => {
     const [t, x, y] = symbols('t x y');
-    expect(sympyStr(Matrix.of([[mul(rational(1, 2), pow(t, 2), add(pow(add(pow(x, 2), pow(y, 2)), rational(-1, 2)), mul(-1, pow(x, 2), pow(add(pow(x, 2), pow(y, 2)), rational(-3, 2)))))], [mul(x, y, pow(t, 2), pow(add(pow(x, 2), pow(y, 2)), -2))]]))).toBe('Matrix([[t**2*(-x**2/(x**2 + y**2)**(3/2) + 1/sqrt(x**2 + y**2))/2], [t**2*x*y/(x**2 + y**2)**2]])');
+    expect(sympyStr(Matrix.of([[mul(Rational.of(1n, 2n, { gcd: 1n }), pow(t, Rational.of(2n, 1n, { gcd: 1n })), add(pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(-1n, 2n, { gcd: 1n })), mul(Rational.of(-1n, 1n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(-3n, 2n, { gcd: 1n })))))], [mul(x, y, pow(t, Rational.of(2n, 1n, { gcd: 1n })), pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(-2n, 1n, { gcd: 1n })))]]))).toBe('Matrix([[t**2*(-x**2/(x**2 + y**2)**(3/2) + 1/sqrt(x**2 + y**2))/2], [t**2*x*y/(x**2 + y**2)**2]])');
   });
   it("metric_to_Christoffel_1st(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))", () => {
     expect(sympyStr(metricToChristoffel1st(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('[[[0, 0], [0, 0]], [[0, 0], [0, 0]]]');
@@ -375,7 +375,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(metricToRicciComponents(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('[[0, 0], [0, 0]]');
   });
   it("metric_to_Ricci_components(non_trivial_metric)", () => {
-    expect(sympyStr(metricToRicciComponents(add(mul(pow(new BaseScalarField(R2P, 0), 2), TensorProduct(Differential(new BaseScalarField(R2P, 1)), Differential(new BaseScalarField(R2P, 1)))), mul(new Pow(E, mul(2, new BaseScalarField(R2P, 0))), TensorProduct(Differential(new BaseScalarField(R2P, 0)), Differential(new BaseScalarField(R2P, 0)))))))).toBe('[[1/rho, 0], [0, exp(-2*rho)*rho]]');
+    expect(sympyStr(metricToRicciComponents(add(mul(pow(new BaseScalarField(R2P, 0), Rational.of(2n, 1n, { gcd: 1n })), TensorProduct(Differential(new BaseScalarField(R2P, 1)), Differential(new BaseScalarField(R2P, 1)))), mul(new Pow(E, mul(Rational.of(2n, 1n, { gcd: 1n }), new BaseScalarField(R2P, 0))), TensorProduct(Differential(new BaseScalarField(R2P, 0)), Differential(new BaseScalarField(R2P, 0)))))))).toBe('[[1/rho, 0], [0, exp(-2*rho)*rho]]');
   });
   it("metric_to_Riemann_components(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))", () => {
     expect(sympyStr(metricToRiemannComponents(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('[[[[0, 0], [0, 0]], [[0, 0], [0, 0]]], [[[0, 0], [0, 0]], [[0, 0], [0, 0]]]]');
@@ -385,14 +385,14 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     const theta = new Sym('theta', { nonnegative: true });
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
-    expect(sympyStr(Array([rational(0), rational(0), rational(0), rational(0), rational(0), mul(new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(-2, new BaseScalarField(R2P, 0)))), mul(-1, new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(-2, new BaseScalarField(R2P, 0)))), rational(0), rational(0), mul(-1, pow(new BaseScalarField(R2P, 0), -1)), pow(new BaseScalarField(R2P, 0), -1), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2, 2]).get(0, slice(), slice(), slice()))).toBe('[[[0, 0], [0, 0]], [[0, exp(-2*rho)*rho], [-exp(-2*rho)*rho, 0]]]');
+    expect(sympyStr(Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), mul(new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta], { evaluate: false })), mul(rho, fn('sin', [theta], { evaluate: false }))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(Rational.of(-2n, 1n, { gcd: 1n }), new BaseScalarField(R2P, 0)))), mul(Rational.of(-1n, 1n, { gcd: 1n }), new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta], { evaluate: false })), mul(rho, fn('sin', [theta], { evaluate: false }))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(Rational.of(-2n, 1n, { gcd: 1n }), new BaseScalarField(R2P, 0)))), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), mul(Rational.of(-1n, 1n, { gcd: 1n }), pow(new BaseScalarField(R2P, 0), Rational.of(-1n, 1n, { gcd: 1n }))), pow(new BaseScalarField(R2P, 0), Rational.of(-1n, 1n, { gcd: 1n })), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2, 2]).get(0, slice(), slice(), slice()))).toBe('[[[0, 0], [0, 0]], [[0, exp(-2*rho)*rho], [-exp(-2*rho)*rho, 0]]]');
   });
   it("riemann[1, :, :, :]", () => {
     const rho = new Sym('rho', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
-    expect(sympyStr(Array([rational(0), rational(0), rational(0), rational(0), rational(0), mul(new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(-2, new BaseScalarField(R2P, 0)))), mul(-1, new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(-2, new BaseScalarField(R2P, 0)))), rational(0), rational(0), mul(-1, pow(new BaseScalarField(R2P, 0), -1)), pow(new BaseScalarField(R2P, 0), -1), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2, 2]).get(1, slice(), slice(), slice()))).toBe('[[[0, -1/rho], [1/rho, 0]], [[0, 0], [0, 0]]]');
+    expect(sympyStr(Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), mul(new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta], { evaluate: false })), mul(rho, fn('sin', [theta], { evaluate: false }))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(Rational.of(-2n, 1n, { gcd: 1n }), new BaseScalarField(R2P, 0)))), mul(Rational.of(-1n, 1n, { gcd: 1n }), new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta], { evaluate: false })), mul(rho, fn('sin', [theta], { evaluate: false }))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(Rational.of(-2n, 1n, { gcd: 1n }), new BaseScalarField(R2P, 0)))), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), mul(Rational.of(-1n, 1n, { gcd: 1n }), pow(new BaseScalarField(R2P, 0), Rational.of(-1n, 1n, { gcd: 1n }))), pow(new BaseScalarField(R2P, 0), Rational.of(-1n, 1n, { gcd: 1n })), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2, 2]).get(1, slice(), slice(), slice()))).toBe('[[[0, -1/rho], [1/rho, 0]], [[0, 0], [0, 0]]]');
   });
   it("twoform_to_matrix(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))", () => {
     expect(sympyStr(twoformToMatrix(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('Matrix([[1, 0], [0, 1]])');
@@ -401,7 +401,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(twoformToMatrix(add(mul(new BaseScalarField(R2R, 0), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0)))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('Matrix([[x, 0], [0, 1]])');
   });
   it("twoform_to_matrix(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy) - TP(R2.dx, R2.dy)/2)", () => {
-    expect(sympyStr(twoformToMatrix(add(mul(rational(-1, 2), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1)))), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('Matrix([[1, 0], [-1/2, 1]])');
+    expect(sympyStr(twoformToMatrix(add(mul(Rational.of(-1n, 2n, { gcd: 1n }), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1)))), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('Matrix([[1, 0], [-1/2, 1]])');
   });
   it("vectors_in_basis(R2_r.e_x, R2_p)", () => {
     expect(sympyStr(vectorsInBasis(new BaseVectorField(R2R, 0), R2P))).toBe('-y*e_theta/(x**2 + y**2) + x*e_rho/sqrt(x**2 + y**2)');
@@ -414,69 +414,69 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
 describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
   it("test_coordsys_transform:24", () => {
     const [r, s, p, q] = symbols('r s p q');
-    expect(sympyStr(new CoordSystem('second', R2Origin, [r, s], new Map([[['first', 'second'], [[p, q], [q, new Mul([rational(-1), p])]]]])).transform(new CoordSystem('first', R2Origin, [p, q], new Map([[['first', 'second'], [[p, q], [q, new Mul([rational(-1), p])]]]]))))).toBe('Matrix([[-s], [r]])');
+    expect(sympyStr(new CoordSystem('second', R2Origin, [r, s], new Map([[['first', 'second'], [[p, q], [q, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), p])]]]])).transform(new CoordSystem('first', R2Origin, [p, q], new Map([[['first', 'second'], [[p, q], [q, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), p])]]]]))))).toBe('Matrix([[-s], [r]])');
   });
   it("test_coordsys_transform:32", () => {
     const b = new Sym('b', { positive: true });
     const a = new Sym('a', { positive: true });
-    expect(() => new CoordSystem('second', R2Origin, [b], new Map([[['first', 'second'], [[a], [new Mul([rational(-1), a])]]]])).transform(new CoordSystem('first', R2Origin, [a], new Map([[['first', 'second'], [[a], [new Mul([rational(-1), a])]]]])))).toThrow(NotImplementedError);
+    expect(() => new CoordSystem('second', R2Origin, [b], new Map([[['first', 'second'], [[a], [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), a])]]]])).transform(new CoordSystem('first', R2Origin, [a], new Map([[['first', 'second'], [[a], [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), a])]]]])))).toThrow(NotImplementedError);
   });
   it("test_coordsys_transform:41", () => {
     const [d, c] = symbols('d c');
-    expect(() => new CoordSystem('second', R2Origin, [d], new Map([[['first', 'second'], [[c], [new Pow(c, rational(2))]]]])).transform(new CoordSystem('first', R2Origin, [c], new Map([[['first', 'second'], [[c], [new Pow(c, rational(2))]]]])))).toThrow(RangeError);
+    expect(() => new CoordSystem('second', R2Origin, [d], new Map([[['first', 'second'], [[c], [new Pow(c, Rational.of(2n, 1n, { gcd: 1n }))]]]])).transform(new CoordSystem('first', R2Origin, [c], new Map([[['first', 'second'], [[c], [new Pow(c, Rational.of(2n, 1n, { gcd: 1n }))]]]])))).toThrow(RangeError);
   });
   it("test_coordsys_transform:54", () => {
     const [c, d, a, b] = symbols('c d a b');
-    expect(sympyStr(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Mul([rational(3), b])]]], [['C2', 'C3'], [[c, d], [new Mul([rational(3), c]), new Mul([rational(2), d])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Mul([rational(3), b])]]], [['C2', 'C3'], [[c, d], [new Mul([rational(3), c]), new Mul([rational(2), d])]]]]))))).toBe('Matrix([[c/2], [d/3]])');
+    expect(sympyStr(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])]]], [['C2', 'C3'], [[c, d], [new Mul([Rational.of(3n, 1n, { gcd: 1n }), c]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), d])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])]]], [['C2', 'C3'], [[c, d], [new Mul([Rational.of(3n, 1n, { gcd: 1n }), c]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), d])]]]]))))).toBe('Matrix([[c/2], [d/3]])');
   });
   it("test_coordsys_transform:55", () => {
     const [a, b, c, d, e, f] = symbols('a b c d e f');
-    expect(sympyStr(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Mul([rational(3), b])]]], [['C2', 'C3'], [[c, d], [new Mul([rational(3), c]), new Mul([rational(2), d])]]]])).transform(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Mul([rational(3), b])]]], [['C2', 'C3'], [[c, d], [new Mul([rational(3), c]), new Mul([rational(2), d])]]]]))))).toBe('Matrix([[6*a], [6*b]])');
+    expect(sympyStr(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])]]], [['C2', 'C3'], [[c, d], [new Mul([Rational.of(3n, 1n, { gcd: 1n }), c]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), d])]]]])).transform(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])]]], [['C2', 'C3'], [[c, d], [new Mul([Rational.of(3n, 1n, { gcd: 1n }), c]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), d])]]]]))))).toBe('Matrix([[6*a], [6*b]])');
   });
   it("test_coordsys_transform:56", () => {
     const [e, f, a, b, c, d] = symbols('e f a b c d');
-    expect(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Mul([rational(3), b])]]], [['C2', 'C3'], [[c, d], [new Mul([rational(3), c]), new Mul([rational(2), d])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Mul([rational(3), b])]]], [['C2', 'C3'], [[c, d], [new Mul([rational(3), c]), new Mul([rational(2), d])]]]]))))).toBe('Matrix([[e/6], [f/6]])');
+    expect(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])]]], [['C2', 'C3'], [[c, d], [new Mul([Rational.of(3n, 1n, { gcd: 1n }), c]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), d])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])]]], [['C2', 'C3'], [[c, d], [new Mul([Rational.of(3n, 1n, { gcd: 1n }), c]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), d])]]]]))))).toBe('Matrix([[e/6], [f/6]])');
   });
   it("test_coordsys_transform:57", () => {
     const [e, f, a, b, c, d] = symbols('e f a b c d');
-    expect(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Mul([rational(3), b])]]], [['C2', 'C3'], [[c, d], [new Mul([rational(3), c]), new Mul([rational(2), d])]]]])).transform(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Mul([rational(3), b])]]], [['C2', 'C3'], [[c, d], [new Mul([rational(3), c]), new Mul([rational(2), d])]]]]))))).toBe('Matrix([[e/3], [f/2]])');
+    expect(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])]]], [['C2', 'C3'], [[c, d], [new Mul([Rational.of(3n, 1n, { gcd: 1n }), c]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), d])]]]])).transform(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])]]], [['C2', 'C3'], [[c, d], [new Mul([Rational.of(3n, 1n, { gcd: 1n }), c]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), d])]]]]))))).toBe('Matrix([[e/3], [f/2]])');
   });
   it("test_coordsys_transform:68", () => {
     const [c, d, a, b, e, f] = symbols('c d a b e f');
-    expect(equivalent(sympyStr(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])))), 'Matrix([[c/2], [d/3 - 1/3]])', [c, d, a, b, e, f], { fn: '.transform', input: 'C2' })).toBe(true);
+    expect(equivalent(sympyStr(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])))), 'Matrix([[c/2], [d/3 - 1/3]])', [c, d, a, b, e, f], { fn: '.transform', input: 'C2' })).toBe(true);
   });
   it("test_coordsys_transform:69", () => {
     const [a, b, e, f] = symbols('a b e f');
-    expect(equivalent(sympyStr(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])).transform(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])))), 'Matrix([[-2*a - 2], [3*b/2 + 1/2]])', [a, b, e, f], { fn: '.transform', input: 'C1' })).toBe(true);
+    expect(equivalent(sympyStr(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])).transform(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])))), 'Matrix([[-2*a - 2], [3*b/2 + 1/2]])', [a, b, e, f], { fn: '.transform', input: 'C1' })).toBe(true);
   });
   it("test_coordsys_transform:70", () => {
     const [e, f, a, b] = symbols('e f a b');
-    expect(equivalent(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])))), 'Matrix([[-e/2 - 1], [2*f/3 - 1/3]])', [e, f, a, b], { fn: '.transform', input: 'C3' })).toBe(true);
+    expect(equivalent(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])))), 'Matrix([[-e/2 - 1], [2*f/3 - 1/3]])', [e, f, a, b], { fn: '.transform', input: 'C3' })).toBe(true);
   });
   it("test_coordsys_transform:71", () => {
     const [e, f, a, b, c, d] = symbols('e f a b c d');
-    expect(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])).transform(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]]))))).toBe('Matrix([[-e - 2], [2*f]])');
+    expect(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])).transform(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]]))))).toBe('Matrix([[-e - 2], [2*f]])');
   });
   it("test_coordsys_transform:83", () => {
     const [c, d, a, b, e, f] = symbols('c d a b e f');
-    expect(equivalent(sympyStr(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])))), 'Matrix([[c/2], [d/3 - 1/3]])', [c, d, a, b, e, f], { fn: '.transform', input: 'C2' })).toBe(true);
+    expect(equivalent(sympyStr(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])))), 'Matrix([[c/2], [d/3 - 1/3]])', [c, d, a, b, e, f], { fn: '.transform', input: 'C2' })).toBe(true);
   });
   it("test_coordsys_transform:84", () => {
     const [a, b, e, f] = symbols('a b e f');
-    expect(equivalent(sympyStr(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])).transform(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])))), 'Matrix([[-2*a - 2], [3*b/2 + 1/2]])', [a, b, e, f], { fn: '.transform', input: 'C1' })).toBe(true);
+    expect(equivalent(sympyStr(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])).transform(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])))), 'Matrix([[-2*a - 2], [3*b/2 + 1/2]])', [a, b, e, f], { fn: '.transform', input: 'C1' })).toBe(true);
   });
   it("test_coordsys_transform:85", () => {
     const [e, f, a, b] = symbols('e f a b');
-    expect(equivalent(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])))), 'Matrix([[-e/2 - 1], [2*f/3 - 1/3]])', [e, f, a, b], { fn: '.transform', input: 'C3' })).toBe(true);
+    expect(equivalent(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])).transform(new CoordSystem('C1', R2Origin, [a, b], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])))), 'Matrix([[-e/2 - 1], [2*f/3 - 1/3]])', [e, f, a, b], { fn: '.transform', input: 'C3' })).toBe(true);
   });
   it("test_coordsys_transform:86", () => {
     const [e, f, a, b, c, d] = symbols('e f a b c d');
-    expect(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]])).transform(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([rational(2), a]), new Add([rational(1), new Mul([rational(3), b])])]]], [['C3', 'C2'], [[e, f], [new Add([rational(-2), new Mul([rational(-1), e])]), new Mul([rational(2), f])]]]]))))).toBe('Matrix([[-e - 2], [2*f]])');
+    expect(sympyStr(new CoordSystem('C3', R2Origin, [e, f], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]])).transform(new CoordSystem('C2', R2Origin, [c, d], new Map([[['C1', 'C2'], [[a, b], [new Mul([Rational.of(2n, 1n, { gcd: 1n }), a]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), b])])]]], [['C3', 'C2'], [[e, f], [new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), e])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), f])]]]]))))).toBe('Matrix([[-e - 2], [2*f]])');
   });
   it("test_R2:95", () => {
     const x0 = new Sym('x0', { real: true });
     const y0 = new Sym('y0', { real: true });
-    expect(sympyStr(rcall(new Add([new Pow(new BaseScalarField(R2P, 0), rational(2)), new Mul([rational(-1), new Pow(new BaseScalarField(R2R, 0), rational(2))]), new Mul([rational(-1), new Pow(new BaseScalarField(R2R, 1), rational(2))])]), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('0');
+    expect(sympyStr(rcall(new Add([new Pow(new BaseScalarField(R2P, 0), Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(new BaseScalarField(R2R, 0), Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(new BaseScalarField(R2R, 1), Rational.of(2n, 1n, { gcd: 1n }))])]), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('0');
   });
   // diffgeom export trigsimp
   //   assert trigsimp( (R2.r**2 - R2.x**2 - R2.y**2).rcall(point_p) ) == 0
@@ -571,7 +571,7 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
     expect(sympyStr(rcall(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1))), new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)))).toBe('1');
   });
   it("test_products:169 (2)", () => {
-    expect(sympyStr(rational(1).mul(rational(1)))).toBe('1');
+    expect(sympyStr(Rational.of(1n, 1n, { gcd: 1n }).mul(Rational.of(1n, 1n, { gcd: 1n })))).toBe('1');
   });
   it("test_products:171", () => {
     expect(sympyStr(rcall(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1))), null, new BaseVectorField(R2R, 1)))).toBe('dx');
@@ -589,7 +589,7 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
     expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)), new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)))).toBe('1');
   });
   it("test_products:175 (2)", () => {
-    expect(sympyStr(rational(1).mul(rational(1)))).toBe('1');
+    expect(sympyStr(Rational.of(1n, 1n, { gcd: 1n }).mul(Rational.of(1n, 1n, { gcd: 1n })))).toBe('1');
   });
   it("test_products:177", () => {
     expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)), null, new BaseScalarField(R2R, 1)))).toBe('e_x');
@@ -607,7 +607,7 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
     expect(sympyStr(rcall(TensorProduct(Differential(new BaseScalarField(R2R, 0)), new BaseVectorField(R2R, 1)), new BaseVectorField(R2R, 0), new BaseScalarField(R2R, 1)))).toBe('1');
   });
   it("test_products:181 (2)", () => {
-    expect(sympyStr(rational(1).mul(rational(1)))).toBe('1');
+    expect(sympyStr(Rational.of(1n, 1n, { gcd: 1n }).mul(Rational.of(1n, 1n, { gcd: 1n })))).toBe('1');
   });
   it("test_products:183", () => {
     expect(sympyStr(rcall(TensorProduct(Differential(new BaseScalarField(R2R, 0)), new BaseVectorField(R2R, 1)), null, new BaseScalarField(R2R, 1)))).toBe('dx');
@@ -625,7 +625,7 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
     expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 0), Differential(new BaseScalarField(R2R, 1))), new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 1)))).toBe('1');
   });
   it("test_products:187 (2)", () => {
-    expect(sympyStr(rational(1).mul(rational(1)))).toBe('1');
+    expect(sympyStr(Rational.of(1n, 1n, { gcd: 1n }).mul(Rational.of(1n, 1n, { gcd: 1n })))).toBe('1');
   });
   it("test_products:189", () => {
     expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 0), Differential(new BaseScalarField(R2R, 1))), null, new BaseVectorField(R2R, 1)))).toBe('e_x');
@@ -637,7 +637,7 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
     expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 0), Differential(new BaseScalarField(R2R, 1))), new BaseScalarField(R2R, 0)))).toBe('dy');
   });
   it("test_products:192", () => {
-    expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 1), new BaseVectorField(R2R, 0)), new Add([new Pow(new BaseScalarField(R2R, 0), rational(2)), new Pow(new BaseScalarField(R2R, 1), rational(2))]), new Add([new Pow(new BaseScalarField(R2R, 0), rational(2)), new Pow(new BaseScalarField(R2R, 1), rational(2))])))).toBe('4*x*y');
+    expect(sympyStr(rcall(TensorProduct(new BaseVectorField(R2R, 1), new BaseVectorField(R2R, 0)), new Add([new Pow(new BaseScalarField(R2R, 0), Rational.of(2n, 1n, { gcd: 1n })), new Pow(new BaseScalarField(R2R, 1), Rational.of(2n, 1n, { gcd: 1n }))]), new Add([new Pow(new BaseScalarField(R2R, 0), Rational.of(2n, 1n, { gcd: 1n })), new Pow(new BaseScalarField(R2R, 1), Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('4*x*y');
   });
   it("test_products:194", () => {
     expect(sympyStr(rcall(WedgeProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1))), new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)))).toBe('1');
@@ -673,16 +673,16 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
     expect(sympyStr(rcall(LieDerivative(new BaseVectorField(R2R, 0), TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1)))), new BaseVectorField(R2R, 0), new BaseVectorField(R2R, 1)))).toBe('0');
   });
   it("test_covar_deriv:212", () => {
-    expect(sympyStr(rcall(new BaseCovarDerivativeOp(R2R, 0, Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), new BaseScalarField(R2R, 0)))).toBe('1');
+    expect(sympyStr(rcall(new BaseCovarDerivativeOp(R2R, 0, Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2])), new BaseScalarField(R2R, 0)))).toBe('1');
   });
   it("test_covar_deriv:214", () => {
-    expect(sympyStr(rcall(new BaseCovarDerivativeOp(R2R, 0, Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), new Mul([new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)])))).toBe('e_x');
+    expect(sympyStr(rcall(new BaseCovarDerivativeOp(R2R, 0, Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2])), new Mul([new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)])))).toBe('e_x');
   });
   it("test_covar_deriv:216", () => {
-    expect(sympyStr(rcall(new CovarDerivativeOp(new Mul([new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)]), Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), new BaseScalarField(R2R, 0)))).toBe('x');
+    expect(sympyStr(rcall(new CovarDerivativeOp(new Mul([new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)]), Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2])), new BaseScalarField(R2R, 0)))).toBe('x');
   });
   it("test_covar_deriv:217", () => {
-    expect(sympyStr(rcall(new CovarDerivativeOp(new Mul([new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)]), Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), new Mul([new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)])))).toBe('x*e_x');
+    expect(sympyStr(rcall(new CovarDerivativeOp(new Mul([new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)]), Array([Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [2, 2, 2])), new Mul([new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)])))).toBe('x*e_x');
   });
   // a result object that did not come from the library
   //   assert str(equations) == '[f_1(t) + Derivative(f_0(t), t), -f_0(t) + Derivative(f_1(t), t)]'
@@ -738,7 +738,7 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
     expect(() => covariantOrder(new Add([Differential(new BaseScalarField(R2P, 0)), TensorProduct(Differential(new BaseScalarField(R2P, 0)), Differential(new BaseScalarField(R2P, 0)))]))).toThrow(RangeError);
   });
   it("test_helpers_and_coordinate_dependent:265", () => {
-    expect(() => covariantOrder(new Pow(Differential(new BaseScalarField(R2P, 0)), rational(4)))).toThrow(RangeError);
+    expect(() => covariantOrder(new Pow(Differential(new BaseScalarField(R2P, 0)), Rational.of(4n, 1n, { gcd: 1n })))).toThrow(RangeError);
   });
   it("test_helpers_and_coordinate_dependent:266", () => {
     expect(() => covariantOrder(new Mul([Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1))]))).toThrow(RangeError);
@@ -802,19 +802,19 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
   });
   it("test_correct_arguments:300", () => {
     const a = new Sym('a');
-    expect(() => intcurveSeries(Differential(new BaseScalarField(R2R, 0)), a, new Point(R2R, Matrix.of([[rational(1)], [rational(2)]])), 6, { coeffs: false })).toThrow(RangeError);
+    expect(() => intcurveSeries(Differential(new BaseScalarField(R2R, 0)), a, new Point(R2R, Matrix.of([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n })]])), 6, { coeffs: false })).toThrow(RangeError);
   });
   it("test_correct_arguments:301", () => {
     const a = new Sym('a');
-    expect(() => intcurveSeries(new BaseScalarField(R2R, 0), a, new Point(R2R, Matrix.of([[rational(1)], [rational(2)]])), 6, { coeffs: false })).toThrow(RangeError);
+    expect(() => intcurveSeries(new BaseScalarField(R2R, 0), a, new Point(R2R, Matrix.of([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n })]])), 6, { coeffs: false })).toThrow(RangeError);
   });
   it("test_correct_arguments:303", () => {
     const a = new Sym('a');
-    expect(() => intcurveDiffequ(Differential(new BaseScalarField(R2R, 0)), a, new Point(R2R, Matrix.of([[rational(1)], [rational(2)]])))).toThrow(RangeError);
+    expect(() => intcurveDiffequ(Differential(new BaseScalarField(R2R, 0)), a, new Point(R2R, Matrix.of([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n })]])))).toThrow(RangeError);
   });
   it("test_correct_arguments:304", () => {
     const a = new Sym('a');
-    expect(() => intcurveDiffequ(new BaseScalarField(R2R, 0), a, new Point(R2R, Matrix.of([[rational(1)], [rational(2)]])))).toThrow(RangeError);
+    expect(() => intcurveDiffequ(new BaseScalarField(R2R, 0), a, new Point(R2R, Matrix.of([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n })]])))).toThrow(RangeError);
   });
   it("test_correct_arguments:306", () => {
     expect(() => contravariantOrder(new Add([new BaseVectorField(R2R, 0), Differential(new BaseScalarField(R2R, 0))]))).toThrow(RangeError);
@@ -845,13 +845,13 @@ describe("sympy/diffgeom/tests/test_diffgeom.py", () => {
   //   => e_x*e_y
   it.todo("test_simplify:319");
   it("test_simplify:320", () => {
-    expect(sympyStr(new Mul([new Add([rational(1), new Mul([rational(-1), new BaseScalarField(R2R, 0)])]), Differential(new BaseScalarField(R2R, 0))]).div(new Pow(new Add([rational(1), new Mul([rational(-1), new BaseScalarField(R2R, 0)])]), rational(2))))).toBe('dx/(1 - x)');
+    expect(sympyStr(new Mul([new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new BaseScalarField(R2R, 0)])]), Differential(new BaseScalarField(R2R, 0))]).div(new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new BaseScalarField(R2R, 0)])]), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('dx/(1 - x)');
   });
   it("test_issue_17917:326", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const rho = new Sym('rho', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
-    expect(sympyStr(expand(new Add([new Mul([rational(-1), new Add([new Pow(new BaseScalarField(R2R, 0), rational(2)), new Pow(new BaseScalarField(R2R, 1), rational(2))]), new BaseVectorField(R2R, 0)]), new Mul([rational(-2), new Pow(new BaseScalarField(R2R, 1), rational(2)), new BaseVectorField(R2R, 0)]), new Mul([rational(2), new Pow(new BaseScalarField(R2R, 0), rational(2)), new BaseVectorField(R2R, 0)]), new Mul([rational(-1), new BaseScalarField(R2R, 0), new BaseScalarField(new CoordSystem('rectangular', new Patch('origin', new Manifold('R^2', 2)), [x, y], new Map([[['polar', 'rectangular'], [[rho, theta], [new Mul([rho, fn('cos', [theta])]), new Mul([rho, fn('sin', [theta])])]]], [['rectangular', 'polar'], [[x, y], [new Pow(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(1, 2)), fn('atan2', [y, x])]]]])), 1), new BaseVectorField(R2R, 1)])]), {}))).toBe('x**2*e_x - x*y*e_y - 3*y**2*e_x');
+    expect(sympyStr(expand(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Add([new Pow(new BaseScalarField(R2R, 0), Rational.of(2n, 1n, { gcd: 1n })), new Pow(new BaseScalarField(R2R, 1), Rational.of(2n, 1n, { gcd: 1n }))]), new BaseVectorField(R2R, 0)]), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(new BaseScalarField(R2R, 1), Rational.of(2n, 1n, { gcd: 1n })), new BaseVectorField(R2R, 0)]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(new BaseScalarField(R2R, 0), Rational.of(2n, 1n, { gcd: 1n })), new BaseVectorField(R2R, 0)]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new BaseScalarField(R2R, 0), new BaseScalarField(new CoordSystem('rectangular', new Patch('origin', new Manifold('R^2', 2)), [x, y], new Map([[['polar', 'rectangular'], [[rho, theta], [new Mul([rho, fn('cos', [theta], { evaluate: false })]), new Mul([rho, fn('sin', [theta], { evaluate: false })])]]], [['rectangular', 'polar'], [[x, y], [new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(1n, 2n, { gcd: 1n })), fn('atan2', [y, x])]]]])), 1), new BaseVectorField(R2R, 1)])]), {}))).toBe('x**2*e_x - x*y*e_y - 3*y**2*e_x');
   });
 });

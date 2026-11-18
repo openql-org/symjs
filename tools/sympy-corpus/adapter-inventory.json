@@ -825,6 +825,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": ".expr_free_symbols",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": ".exquo",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -956,6 +961,11 @@
  },
  {
   "name": ".flat",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": ".flatten",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -1350,6 +1360,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": ".is_infinite",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": ".is_left_unbounded",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -1386,6 +1401,11 @@
  },
  {
   "name": ".is_proper_superset",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": ".is_rational",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -1601,6 +1621,11 @@
  },
  {
   "name": ".ltrim",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": ".make_args",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -2640,6 +2665,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "FactRules",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": "FallingFactorial",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -3070,6 +3100,11 @@
   "note": "TableForm; convert nested collection cells to their Python text representation"
  },
  {
+  "name": "Term",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": "Tr",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -3245,6 +3280,16 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "as_Basic",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "as_mpmath",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": "asec",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -3271,6 +3316,11 @@
  },
  {
   "name": "assemble_partfrac_list",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "assumptions",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -3391,6 +3441,11 @@
  },
  {
   "name": "ceiling",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "check_assumptions",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -3795,6 +3850,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "evalf",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": "exp",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -3906,6 +3966,11 @@
  },
  {
   "name": "factorial2",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "failing_assumptions",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -4516,6 +4581,11 @@
  },
  {
   "name": "motzkin",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "mpf_norm",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },

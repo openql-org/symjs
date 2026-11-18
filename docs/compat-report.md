@@ -7,7 +7,7 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 
 | Category | Rate | Pass | Fails | Todo | Stale |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| abc | 100.00% | 3 | 0 | 0 | 0 |
+| abc | 0.00% | 0 | 0 | 3 | 0 |
 | algebras | 93.75% | 60 | 0 | 4 | 0 |
 | assumptions | 87.73% | 193 | 0 | 27 | 0 |
 | calculus | 91.45% | 107 | 0 | 10 | 0 |
@@ -15,7 +15,7 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | codegen | 88.89% | 16 | 0 | 2 | 0 |
 | combinatorics | 71.45% | 433 | 3 | 170 | 0 |
 | concrete | 64.91% | 111 | 0 | 60 | 0 |
-| core | 84.71% | 859 | 0 | 155 | 0 |
+| core | 83.53% | 847 | 0 | 167 | 0 |
 | crypto | 77.50% | 62 | 0 | 18 | 0 |
 | diffgeom | 89.80% | 88 | 0 | 10 | 0 |
 | discrete | 81.03% | 47 | 0 | 11 | 0 |
@@ -29,7 +29,7 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | ntheory | 62.93% | 146 | 0 | 86 | 0 |
 | parsing | 86.21% | 25 | 0 | 4 | 0 |
 | plotting | 33.33% | 1 | 0 | 2 | 0 |
-| polys | 79.27% | 1312 | 0 | 343 | 0 |
+| polys | 79.34% | 1313 | 0 | 342 | 0 |
 | printing | 72.00% | 54 | 0 | 21 | 0 |
 | series | 76.11% | 86 | 0 | 27 | 0 |
 | sets | 89.14% | 156 | 0 | 19 | 0 |
@@ -40,8 +40,8 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | tensor | 81.49% | 229 | 0 | 52 | 0 |
 | unify | 0.00% | 0 | 0 | 2 | 0 |
 | utilities | 44.12% | 45 | 1 | 56 | 0 |
-| vector | 79.52% | 132 | 0 | 34 | 0 |
-| **all** | **81.79%** | 7915 | 5 | 1757 | 0 |
+| vector | 41.57% | 69 | 0 | 97 | 0 |
+| **all** | **81.00%** | 7838 | 5 | 1834 | 0 |
 
 ## Unit tests
 
@@ -49,35 +49,35 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | --- | ---: | ---: | ---: | ---: | ---: |
 | algebras | 93.98% | 125 | 0 | 8 | 0 |
 | assumptions | 97.46% | 2188 | 28 | 29 | 0 |
-| calculus | 83.62% | 439 | 25 | 61 | 0 |
+| calculus | 84.76% | 445 | 22 | 58 | 0 |
 | categories | 64.56% | 215 | 0 | 118 | 0 |
 | codegen | 85.92% | 61 | 0 | 10 | 0 |
 | combinatorics | 80.10% | 1759 | 1 | 436 | 0 |
-| concrete | 73.00% | 684 | 41 | 212 | 0 |
-| core | 86.29% | 8057 | 219 | 1061 | 0 |
+| concrete | 73.21% | 686 | 39 | 212 | 0 |
+| core | 88.00% | 8217 | 34 | 1086 | 0 |
 | crypto | 99.29% | 5031 | 1 | 35 | 0 |
 | diffgeom | 89.52% | 188 | 0 | 22 | 0 |
 | discrete | 80.21% | 154 | 0 | 38 | 0 |
 | functions | 95.34% | 10153 | 41 | 455 | 0 |
 | geometry | 85.39% | 941 | 6 | 155 | 0 |
 | holonomic | 86.84% | 165 | 0 | 25 | 0 |
-| integrals | 70.65% | 1006 | 39 | 379 | 0 |
+| integrals | 70.72% | 1007 | 38 | 379 | 0 |
 | liealgebras | 68.82% | 64 | 0 | 29 | 0 |
 | logic | 97.28% | 7401 | 40 | 167 | 0 |
 | matrices | 83.66% | 4261 | 53 | 779 | 0 |
 | ntheory | 99.47% | 44928 | 8 | 232 | 0 |
-| parsing | 89.63% | 778 | 21 | 69 | 0 |
+| parsing | 90.67% | 787 | 12 | 69 | 0 |
 | plotting | 71.43% | 35 | 0 | 14 | 0 |
 | polys | 59.47% | 7228 | 172 | 4754 | 0 |
-| printing | 89.38% | 1919 | 12 | 216 | 0 |
-| series | 83.81% | 1403 | 36 | 235 | 0 |
+| printing | 87.24% | 1873 | 12 | 262 | 0 |
+| series | 83.87% | 1404 | 36 | 234 | 0 |
 | sets | 86.01% | 1598 | 13 | 247 | 0 |
-| simplify | 87.34% | 1332 | 0 | 193 | 0 |
+| simplify | 87.28% | 1331 | 0 | 194 | 0 |
 | solvers | 30.49% | 1408 | 57 | 3153 | 0 |
-| stats | 96.49% | 1954 | 2 | 69 | 0 |
+| stats | 96.54% | 1955 | 1 | 69 | 0 |
 | strategies | 100.00% | 7 | 0 | 0 | 0 |
 | tensor | 75.27% | 1470 | 13 | 470 | 0 |
 | unify | 62.50% | 10 | 4 | 2 | 0 |
-| utilities | 57.55% | 320 | 22 | 214 | 0 |
-| vector | 80.12% | 556 | 8 | 130 | 0 |
-| **all** | **87.88%** | 107838 | 862 | 14017 | 0 |
+| utilities | 57.55% | 320 | 21 | 215 | 0 |
+| vector | 26.51% | 184 | 2 | 508 | 0 |
+| **all** | **87.68%** | 107599 | 654 | 14464 | 0 |

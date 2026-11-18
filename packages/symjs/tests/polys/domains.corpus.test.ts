@@ -30,19 +30,19 @@ describe("doctests of sympy.polys.domains.domain", () => {
   it.todo("p.domain");
   it("Poly(x**2 + y/2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Poly.fromExpr(add(pow(x, 2), mul(rational(1, 2), y)), [], {}))).toBe('Poly(x**2 + 1/2*y, x, y, domain=\'QQ\')');
+    expect(sympyStr(Poly.fromExpr(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), mul(Rational.of(1n, 2n, { gcd: 1n }), y)), [], {}))).toBe('Poly(x**2 + 1/2*y, x, y, domain=\'QQ\')');
   });
   it("ZZ(2)", () => {
-    expect(sympyStr(ZZ['new'](rational(2)))).toBe('2');
+    expect(sympyStr(ZZ['new'](Rational.of(2n, 1n, { gcd: 1n })))).toBe('2');
   });
   it("QQ(1, 2)", () => {
-    expect(sympyStr(QQ['new'](rational(1), rational(2)))).toBe('1/2');
+    expect(sympyStr(QQ['new'](Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))).toBe('1/2');
   });
   it("QQ(1, 2) / QQ(2, 3)", () => {
     expect(sympyStr(rational(1, 2).div(rational(2, 3)))).toBe('3/4');
   });
   it("ZZ.gcd(ZZ(4), ZZ(2))", () => {
-    expect(sympyStr(ZZ.gcd(rational(4), rational(2)))).toBe('2');
+    expect(sympyStr(ZZ.gcd(Rational.of(4n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))).toBe('2');
   });
   it("QQ.gcd(QQ(2,7), QQ(5,3))", () => {
     expect(sympyStr(QQ.gcd(new PythonMPQ(2n, 7n), new PythonMPQ(5n, 3n)))).toBe('1/21');
@@ -55,7 +55,7 @@ describe("doctests of sympy.polys.domains.domain", () => {
   });
   it("K.to_sympy(p_domain) == p_expr", () => {
     const x = new Sym('x');
-    expect(sympyStr(add(1, pow(x, 2)).equals(add(1, pow(x, 2))))).toBe('True');
+    expect(sympyStr(add(Rational.of(1n, 1n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n }))).equals(add(Rational.of(1n, 1n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))))).toBe('True');
   });
   it("ZZ.unify(QQ)", () => {
     expect(sympyStr(ZZ.unify(QQ))).toBe('QQ');
@@ -86,19 +86,19 @@ describe("doctests of sympy.polys.domains.domain", () => {
   });
   it("K.ext.minpoly == f", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(-2, pow(new Dummy('x', {}, 1000000), 2)), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }).eq(Poly.from(add(-2, pow(x, 2)), [x], { domain: 'ZZ', pure: false })))).toBe('True');
+    expect(sympyStr(Poly.from(add(Rational.of(-2n, 1n, { gcd: 1n }), pow(new Dummy('x', {}, 1000000), Rational.of(2n, 1n, { gcd: 1n }))), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }).eq(Poly.from(add(Rational.of(-2n, 1n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n }))), [x], { domain: 'ZZ', pure: false })))).toBe('True');
   });
   it("L.ext.minpoly == g", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(-1, mul(-6, new Dummy('x', {}, 1000000)), mul(8, pow(new Dummy('x', {}, 1000000), 3))), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }).eq(Poly.from(add(-1, mul(-6, x), mul(8, pow(x, 3))), [x], { domain: 'ZZ', pure: false })))).toBe('True');
+    expect(sympyStr(Poly.from(add(Rational.of(-1n, 1n, { gcd: 1n }), mul(Rational.of(-6n, 1n, { gcd: 1n }), new Dummy('x', {}, 1000000)), mul(Rational.of(8n, 1n, { gcd: 1n }), pow(new Dummy('x', {}, 1000000), Rational.of(3n, 1n, { gcd: 1n })))), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }).eq(Poly.from(add(Rational.of(-1n, 1n, { gcd: 1n }), mul(Rational.of(-6n, 1n, { gcd: 1n }), x), mul(Rational.of(8n, 1n, { gcd: 1n }), pow(x, Rational.of(3n, 1n, { gcd: 1n })))), [x], { domain: 'ZZ', pure: false })))).toBe('True');
   });
   it("L.to_sympy(L([1, 1, 1]))", () => {
     const alpha = new Sym('alpha');
-    expect(sympyStr(new AlgebraicField(QQ, new AlgebraicNumber(alpha, [1, 0], { minpoly: Poly.from(add(-1, mul(-6, new Dummy('x', {}, 1000000)), mul(8, pow(new Dummy('x', {}, 1000000), 3))), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }), alias: 'alpha' })).toSympy(new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(8n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-6n, 1n), new PythonMPQ(-1n, 1n)], QQ)))).toBe('alpha**2 + alpha + 1');
+    expect(sympyStr(new AlgebraicField(QQ, new AlgebraicNumber(alpha, [1, 0], { minpoly: Poly.from(add(Rational.of(-1n, 1n, { gcd: 1n }), mul(Rational.of(-6n, 1n, { gcd: 1n }), new Dummy('x', {}, 1000000)), mul(Rational.of(8n, 1n, { gcd: 1n }), pow(new Dummy('x', {}, 1000000), Rational.of(3n, 1n, { gcd: 1n })))), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }), alias: 'alpha' })).toSympy(new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(8n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-6n, 1n), new PythonMPQ(-1n, 1n)], QQ)))).toBe('alpha**2 + alpha + 1');
   });
   it("K.to_sympy(K([-1, 1]))", () => {
     const zeta = new Sym('zeta');
-    expect(sympyStr(new AlgebraicField(QQ, new AlgebraicNumber(zeta, [1, 0], { minpoly: Poly.from(add(1, pow(new Dummy('x', {}, 1000001), 2), pow(new Dummy('x', {}, 1000001), 3), pow(new Dummy('x', {}, 1000001), 4), new Dummy('x', {}, 1000001)), [new Dummy('x', {}, 1000001)], { domain: 'QQ', pure: true }), alias: 'zeta' })).toSympy(new ANP([new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], QQ)))).toBe('1 - zeta');
+    expect(sympyStr(new AlgebraicField(QQ, new AlgebraicNumber(zeta, [1, 0], { minpoly: Poly.from(add(Rational.of(1n, 1n, { gcd: 1n }), pow(new Dummy('x', {}, 1000001), Rational.of(2n, 1n, { gcd: 1n })), pow(new Dummy('x', {}, 1000001), Rational.of(3n, 1n, { gcd: 1n })), pow(new Dummy('x', {}, 1000001), Rational.of(4n, 1n, { gcd: 1n })), new Dummy('x', {}, 1000001)), [new Dummy('x', {}, 1000001)], { domain: 'QQ', pure: true }), alias: 'zeta' })).toSympy(new ANP([new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], QQ)))).toBe('1 - zeta');
   });
   // the arguments do not type-check against the public API
   //   print(latex(a))
@@ -113,7 +113,7 @@ describe("doctests of sympy.polys.domains.domain", () => {
     expect(sympyMatches([at(v1, 0), at(v1, 1)], '(MPQ(5,2), MPQ(0,1))')).toBe(true);
   });
   it("ZZ.exquo(ZZ(4), ZZ(2))", () => {
-    expect(sympyStr(ZZ.exquo(rational(4), rational(2)))).toBe('2');
+    expect(sympyStr(ZZ.exquo(Rational.of(4n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))).toBe('2');
   });
   it("QQ.exquo(QQ(5), QQ(2))", () => {
     expect(sympyStr(QQ.exquo(new PythonMPQ(5n, 1n), new PythonMPQ(2n, 1n)))).toBe('5/2');
@@ -126,41 +126,41 @@ describe("doctests of sympy.polys.domains.domain", () => {
   });
   it("K.from_sympy(p_expr) == p_domain", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(1, mul(rational(1, 3), pow(x, 2))), [])).equals(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(1, mul(rational(1, 3), pow(x, 2))), []))))).toBe('True');
+    expect(sympyStr(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))), [])).equals(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))), []))))).toBe('True');
   });
   it("K.to_sympy(p_domain) == p_expr (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(add(1, mul(rational(1, 3), pow(x, 2))).equals(add(1, mul(rational(1, 3), pow(x, 2)))))).toBe('True');
+    expect(sympyStr(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))).equals(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n }))))))).toBe('True');
   });
   it("K.from_sympy(K.to_sympy(p_domain)) == p_domain", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(1, mul(rational(1, 3), pow(x, 2))), [])).equals(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(1, mul(rational(1, 3), pow(x, 2))), []))))).toBe('True');
+    expect(sympyStr(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))), [])).equals(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))), []))))).toBe('True');
   });
   it("K.to_sympy(K.from_sympy(p_expr)) == p_expr", () => {
     const x = new Sym('x');
-    expect(sympyStr(add(1, mul(rational(1, 3), pow(x, 2))).equals(add(1, mul(rational(1, 3), pow(x, 2)))))).toBe('True');
+    expect(sympyStr(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))).equals(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n }))))))).toBe('True');
   });
   it("K.from_sympy(x**2/3 + 1)", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(QQ.polyRing(x).fromSympy(add(1, mul(rational(1, 3), pow(x, 2))))), '1/3*x**2 + 1', [x], { fn: '.from_sympy' })).toBe(true);
+    expect(equivalent(sympyStr(QQ.polyRing(x).fromSympy(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))))), '1/3*x**2 + 1', [x], { fn: '.from_sympy' })).toBe(true);
   });
   it("p", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Poly.fromExpr(add(y, pow(x, 2)), [], {}))).toBe('Poly(x**2 + y, x, y, domain=\'ZZ\')');
+    expect(sympyStr(Poly.fromExpr(add(y, pow(x, Rational.of(2n, 1n, { gcd: 1n }))), [], {}))).toBe('Poly(x**2 + y, x, y, domain=\'ZZ\')');
   });
   it("p_domain            # domain element", () => {
     const x = new Sym('x');
-    expect(sympyStr(ZZ.polyRing(x).fromSympy(add(1, pow(x, 2))))).toBe('x**2 + 1');
+    expect(sympyStr(ZZ.polyRing(x).fromSympy(add(Rational.of(1n, 1n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))))).toBe('x**2 + 1');
   });
   it("q_domain", () => {
-    expect(sympyStr(QQ['new'](rational(2)))).toBe('2');
+    expect(sympyStr(QQ['new'](Rational.of(2n, 1n, { gcd: 1n })))).toBe('2');
   });
   it("q_expr", () => {
     expect(sympyStr(QQ.toSympy(new PythonMPQ(2n, 1n)))).toBe('2');
   });
   it("p_expr", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.polyRing(x).toSympy(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(1, mul(rational(1, 3), pow(x, 2))), [])).asExpr()))).toBe('x**2/3 + 1');
+    expect(sympyStr(QQ.polyRing(x).toSympy(new PolyRing([x], QQ, 'lex').fromExpr(xreplace(add(Rational.of(1n, 1n, { gcd: 1n }), mul(Rational.of(1n, 3n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))), [])).asExpr()))).toBe('x**2/3 + 1');
   });
   // text that is not a string
   //   print(a)
@@ -171,30 +171,30 @@ describe("doctests of sympy.polys.domains.domain", () => {
 describe("doctests of sympy.polys.domains.domainelement", () => {
   it("p.parent()", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(xreplace(add(pow(x, 2), pow(y, 2)), [])).parent())).toBe('ZZ[x,y]');
+    expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(xreplace(add(pow(x, Rational.of(2n, 1n, { gcd: 1n })), pow(y, Rational.of(2n, 1n, { gcd: 1n }))), [])).parent())).toBe('ZZ[x,y]');
   });
 });
 
 describe("doctests of sympy.polys.domains.ring", () => {
   it("QQ.old_poly_ring(x).free_module(2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').freeModule(rational(2)))).toBe('QQ[x]**2');
+    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').freeModule(Rational.of(2n, 1n, { gcd: 1n })))).toBe('QQ[x]**2');
   });
   it("QQ.old_poly_ring(x).ideal(x**2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').ideal(pow(x, 2)))).toBe('<x**2>');
+    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').ideal(pow(x, Rational.of(2n, 1n, { gcd: 1n }))))).toBe('<x**2>');
   });
   it("QQ.old_poly_ring(x).quotient_ring(QQ.old_poly_ring(x).ideal(x**2))", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').quotientRing(new PolynomialRingBase(QQ, [x], 'grevlex').ideal(pow(x, 2))))).toBe('QQ[x]/<x**2>');
+    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').quotientRing(new PolynomialRingBase(QQ, [x], 'grevlex').ideal(pow(x, Rational.of(2n, 1n, { gcd: 1n })))))).toBe('QQ[x]/<x**2>');
   });
   it("QQ.old_poly_ring(x).quotient_ring([x**2])", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').quotientRing([pow(x, 2)]))).toBe('QQ[x]/<x**2>');
+    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').quotientRing([pow(x, Rational.of(2n, 1n, { gcd: 1n }))]))).toBe('QQ[x]/<x**2>');
   });
   it("QQ.old_poly_ring(x)/[x**2]", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').quotientRing([pow(x, 2)]))).toBe('QQ[x]/<x**2>');
+    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').quotientRing([pow(x, Rational.of(2n, 1n, { gcd: 1n }))]))).toBe('QQ[x]/<x**2>');
   });
 });
 
@@ -203,7 +203,7 @@ describe("doctests of sympy.polys.domains.field", () => {
     expect(sympyStr(QQ.gcd(new PythonMPQ(2n, 3n), new PythonMPQ(4n, 9n)))).toBe('2/9');
   });
   it("gcd(S(2)/3, S(4)/9)", () => {
-    expect(sympyStr(gcd(rational(2, 3), rational(4, 9), {}))).toBe('2/9');
+    expect(sympyStr(gcd(Rational.of(2n, 3n, { gcd: 1n }), Rational.of(4n, 9n, { gcd: 1n }), {}))).toBe('2/9');
   });
   // a result object that did not come from the library
   //   primitive(2*x/3 + S(4)/9)
@@ -213,39 +213,39 @@ describe("doctests of sympy.polys.domains.field", () => {
     expect(sympyStr(QQ.lcm(new PythonMPQ(2n, 3n), new PythonMPQ(4n, 9n)))).toBe('4/3');
   });
   it("lcm(S(2)/3, S(4)/9)", () => {
-    expect(sympyStr(lcm(rational(2, 3), rational(4, 9), {}))).toBe('4/3');
+    expect(sympyStr(lcm(Rational.of(2n, 3n, { gcd: 1n }), Rational.of(4n, 9n, { gcd: 1n }), {}))).toBe('4/3');
   });
 });
 
 describe("doctests of sympy.polys.domains.integerring", () => {
   it("ZZ.algebraic_field(sqrt(2))", () => {
-    expect(sympyStr(ZZ.algebraicField(pow(2, rational(1, 2))))).toBe('QQ<sqrt(2)>');
+    expect(sympyStr(ZZ.algebraicField(pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('QQ<sqrt(2)>');
   });
   it("ZZ.get_field()", () => {
     expect(sympyStr(ZZ.getField())).toBe('QQ');
   });
   it("ZZ.log(ZZ(8), ZZ(2))", () => {
-    expect(sympyStr(ZZ.log(rational(8), rational(2)))).toBe('3');
+    expect(sympyStr(ZZ.log(Rational.of(8n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))).toBe('3');
   });
   it("ZZ.log(ZZ(9), ZZ(2))", () => {
-    expect(sympyStr(ZZ.log(rational(9), rational(2)))).toBe('3');
+    expect(sympyStr(ZZ.log(Rational.of(9n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })))).toBe('3');
   });
 });
 
 describe("doctests of sympy.polys.domains.rationalfield", () => {
   it("QQ.algebraic_field(sqrt(2))", () => {
-    expect(sympyStr(QQ.algebraicField(pow(2, rational(1, 2))))).toBe('QQ<sqrt(2)>');
+    expect(sympyStr(QQ.algebraicField(pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('QQ<sqrt(2)>');
   });
 });
 
 describe("doctests of sympy.polys.domains.old_polynomialring", () => {
   it("F == DMP([ZZ(1), ZZ(1)], ZZ)", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMP([rational(1), rational(1)], ZZ.oldPolyRing(_x)).equals(new DMP([rational(1), rational(1)], ZZ.oldPolyRing(_x))))).toBe('True');
+    expect(sympyStr(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).equals(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x))))).toBe('True');
   });
   it("QQ.old_poly_ring(x).free_module(2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').freeModule(rational(2)))).toBe('QQ[x]**2');
+    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').freeModule(Rational.of(2n, 1n, { gcd: 1n })))).toBe('QQ[x]**2');
   });
 });
 
@@ -254,19 +254,19 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
     expect(sympyStr(ZZ)).toBe('ZZ');
   });
   it("test_DMP___init__:18", () => {
-    expect(sympyStr(new DMPJs([[rational(1), rational(2)], [rational(3)]], ZZ, 1).lev)).toBe('1');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(3n, 1n, { gcd: 1n })]], ZZ, 1).lev)).toBe('1');
   });
   it("test_DMP___init__:23", () => {
     expect(sympyStr(ZZ)).toBe('ZZ');
   });
   it("test_DMP___init__:24", () => {
-    expect(sympyStr(new DMPJs([[rational(1), rational(2)], [rational(3)]], ZZ, 1).lev)).toBe('1');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(3n, 1n, { gcd: 1n })]], ZZ, 1).lev)).toBe('1');
   });
   it("test_DMP___init__:29", () => {
     expect(sympyStr(ZZ)).toBe('ZZ');
   });
   it("test_DMP___init__:30", () => {
-    expect(sympyStr(new DMPJs([[rational(1), rational(0)], [rational(2)]], ZZ, 1).lev)).toBe('1');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n })]], ZZ, 1).lev)).toBe('1');
   });
   // a primitive result that no library call returned
   //   assert f.rep == [1, 2, 3]
@@ -309,142 +309,142 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_DMP_properties:72", () => {
-    expect(sympyStr(new DMPJs([[rational(1)]], ZZ, 1).isOne)).toBe('True');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })]], ZZ, 1).isOne)).toBe('True');
   });
   it("test_DMP_properties:73", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_DMP_properties:75", () => {
-    expect(sympyStr(new DMPJs([[rational(1)]], ZZ, 1).isGround)).toBe('True');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })]], ZZ, 1).isGround)).toBe('True');
   });
   it("test_DMP_properties:76", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_DMP_properties:78", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0)]], ZZ, 1).isSqf)).toBe('True');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).isSqf)).toBe('True');
   });
   it("test_DMP_properties:79", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_DMP_properties:81", () => {
-    expect(sympyStr(new DMPJs([[rational(1), rational(2)], [rational(3)]], ZZ, 1).isMonic)).toBe('True');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(3n, 1n, { gcd: 1n })]], ZZ, 1).isMonic)).toBe('True');
   });
   it("test_DMP_properties:82", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_DMP_properties:84", () => {
-    expect(sympyStr(new DMPJs([[rational(1), rational(2)], [rational(3)]], ZZ, 1).isPrimitive)).toBe('True');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(3n, 1n, { gcd: 1n })]], ZZ, 1).isPrimitive)).toBe('True');
   });
   it("test_DMP_properties:85", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_DMP_arithmetics:91", () => {
-    expect(sympyStr(new DMPJs([[rational(2)], [rational(2), rational(0)]], ZZ, 1).mulGround(2))).toBe('DMP_Python([[4], [4, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).mulGround(2))).toBe('DMP_Python([[4], [4, 0]], ZZ)');
   });
   it("test_DMP_arithmetics:92", () => {
-    expect(sympyStr(new DMPJs([[rational(2)], [rational(2), rational(0)]], ZZ, 1).quoGround(2))).toBe('DMP_Python([[1], [1, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).quoGround(2))).toBe('DMP_Python([[1], [1, 0]], ZZ)');
   });
   it("test_DMP_arithmetics:94", () => {
-    expect(() => new DMPJs([[rational(2)], [rational(2), rational(0)]], ZZ, 1).exquoGround(3)).toThrow(ExactQuotientFailed);
+    expect(() => new DMPJs([[Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).exquoGround(3)).toThrow(ExactQuotientFailed);
   });
   it("test_DMP_arithmetics:99", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).abs())).toBe('DMP_Python([[5]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).abs())).toBe('DMP_Python([[5]], ZZ)');
   });
   it("test_DMP_arithmetics:102", () => {
-    expect(sympyStr(new DMPJs([[rational(5)]], ZZ, 1).neg())).toBe('DMP_Python([[-5]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1).neg())).toBe('DMP_Python([[-5]], ZZ)');
   });
   it("test_DMP_arithmetics:103", () => {
-    expect(sympyStr(new DMPJs([[rational(5)]], ZZ, 1).neg())).toBe('DMP_Python([[-5]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1).neg())).toBe('DMP_Python([[-5]], ZZ)');
   });
   it("test_DMP_arithmetics:107", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).add(new DMPJs([[rational(5)]], ZZ, 1)))).toBe('DMP_Python([[]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).add(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[]], ZZ)');
   });
   it("test_DMP_arithmetics:108", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).add(new DMPJs([[rational(5)]], ZZ, 1)))).toBe('DMP_Python([[]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).add(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[]], ZZ)');
   });
   it("test_DMP_arithmetics:109", () => {
-    expect(sympyStr(new DMPJs([[rational(5)]], ZZ, 1).add(new DMPJs([[rational(-5)]], ZZ, 1)))).toBe('DMP_Python([[]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1).add(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[]], ZZ)');
   });
   it("test_DMP_arithmetics:110", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).add(5))).toBe('DMP_Python([[]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).add(5))).toBe('DMP_Python([[]], ZZ)');
   });
   it("test_DMP_arithmetics:111", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).add(rational(5)))).toBe('DMP_Python([[]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).add(Rational.of(5n, 1n, { gcd: 1n })))).toBe('DMP_Python([[]], ZZ)');
   });
   it("test_DMP_arithmetics:115", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).sub(new DMPJs([[rational(5)]], ZZ, 1)))).toBe('DMP_Python([[-10]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).sub(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[-10]], ZZ)');
   });
   it("test_DMP_arithmetics:116", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).sub(new DMPJs([[rational(5)]], ZZ, 1)))).toBe('DMP_Python([[-10]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).sub(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[-10]], ZZ)');
   });
   it("test_DMP_arithmetics:117", () => {
-    expect(sympyStr(new DMPJs([[rational(5)]], ZZ, 1).sub(new DMPJs([[rational(-5)]], ZZ, 1)))).toBe('DMP_Python([[10]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1).sub(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[10]], ZZ)');
   });
   it("test_DMP_arithmetics:118", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).sub(5))).toBe('DMP_Python([[-10]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).sub(5))).toBe('DMP_Python([[-10]], ZZ)');
   });
   it("test_DMP_arithmetics:119", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).neg().add(rational(5)))).toBe('DMP_Python([[10]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).neg().add(Rational.of(5n, 1n, { gcd: 1n })))).toBe('DMP_Python([[10]], ZZ)');
   });
   it("test_DMP_arithmetics:123", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).mul(new DMPJs([[rational(5)]], ZZ, 1)))).toBe('DMP_Python([[-25]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).mul(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[-25]], ZZ)');
   });
   it("test_DMP_arithmetics:124", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).mul(new DMPJs([[rational(5)]], ZZ, 1)))).toBe('DMP_Python([[-25]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).mul(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[-25]], ZZ)');
   });
   it("test_DMP_arithmetics:125", () => {
-    expect(sympyStr(new DMPJs([[rational(5)]], ZZ, 1).mul(new DMPJs([[rational(-5)]], ZZ, 1)))).toBe('DMP_Python([[-25]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1).mul(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[-25]], ZZ)');
   });
   it("test_DMP_arithmetics:126", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).mul(5))).toBe('DMP_Python([[-25]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).mul(5))).toBe('DMP_Python([[-25]], ZZ)');
   });
   it("test_DMP_arithmetics:127", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).mul(rational(5)))).toBe('DMP_Python([[-25]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).mul(Rational.of(5n, 1n, { gcd: 1n })))).toBe('DMP_Python([[-25]], ZZ)');
   });
   it("test_DMP_arithmetics:131", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).sqr())).toBe('DMP_Python([[25]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).sqr())).toBe('DMP_Python([[25]], ZZ)');
   });
   it("test_DMP_arithmetics:132", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).pow(2))).toBe('DMP_Python([[25]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).pow(2))).toBe('DMP_Python([[25]], ZZ)');
   });
   it("test_DMP_arithmetics:133", () => {
-    expect(sympyStr(new DMPJs([[rational(-5)]], ZZ, 1).pow(2))).toBe('DMP_Python([[25]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-5n, 1n, { gcd: 1n })]], ZZ, 1).pow(2))).toBe('DMP_Python([[25]], ZZ)');
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: f.pow('x'))
   //   => None
   it.todo("test_DMP_arithmetics:135");
   it("test_DMP_arithmetics:143", () => {
-    const v1 = new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).pdiv(new DMPJs([[rational(2)], [rational(-2), rational(0)]], ZZ, 1));
+    const v1 = new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).pdiv(new DMPJs([[Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1));
     expect(sympyMatches([at(v1, 0), at(v1, 1)], '(DMP_Python([[2], [2, 0]], ZZ), DMP_Python([[8, 0, 0]], ZZ))')).toBe(true);
   });
   it("test_DMP_arithmetics:144", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).pquo(new DMPJs([[rational(2)], [rational(-2), rational(0)]], ZZ, 1)))).toBe('DMP_Python([[2], [2, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).pquo(new DMPJs([[Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[2], [2, 0]], ZZ)');
   });
   it("test_DMP_arithmetics:145", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).prem(new DMPJs([[rational(2)], [rational(-2), rational(0)]], ZZ, 1)))).toBe('DMP_Python([[8, 0, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).prem(new DMPJs([[Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[8, 0, 0]], ZZ)');
   });
   it("test_DMP_arithmetics:147", () => {
-    expect(() => new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).pexquo(new DMPJs([[rational(2)], [rational(-2), rational(0)]], ZZ, 1))).toThrow(ExactQuotientFailed);
+    expect(() => new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).pexquo(new DMPJs([[Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1))).toThrow(ExactQuotientFailed);
   });
   it("test_DMP_arithmetics:155", () => {
-    const v1 = new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).div(new DMPJs([[rational(1)], [rational(-1), rational(0)]], ZZ, 1));
+    const v1 = new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).div(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1));
     expect(sympyMatches([at(v1, 0), at(v1, 1)], '(DMP_Python([[1], [1, 0]], ZZ), DMP_Python([[2, 0, 0]], ZZ))')).toBe(true);
   });
   it("test_DMP_arithmetics:156", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).quo(new DMPJs([[rational(1)], [rational(-1), rational(0)]], ZZ, 1)))).toBe('DMP_Python([[1], [1, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).quo(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[1], [1, 0]], ZZ)');
   });
   it("test_DMP_arithmetics:157", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).rem(new DMPJs([[rational(1)], [rational(-1), rational(0)]], ZZ, 1)))).toBe('DMP_Python([[2, 0, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).rem(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[2, 0, 0]], ZZ)');
   });
   it("test_DMP_arithmetics:160", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).quo(new DMPJs([[rational(1)], [rational(-1), rational(0)]], ZZ, 1)))).toBe('DMP_Python([[1], [1, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).quo(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[1], [1, 0]], ZZ)');
   });
   it("test_DMP_arithmetics:161", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).rem(new DMPJs([[rational(1)], [rational(-1), rational(0)]], ZZ, 1)))).toBe('DMP_Python([[2, 0, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).rem(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[2, 0, 0]], ZZ)');
   });
   it("test_DMP_arithmetics:163", () => {
-    expect(() => new DMPJs([[rational(1)], [], [rational(1), rational(0), rational(0)]], ZZ, 1).exquo(new DMPJs([[rational(1)], [rational(-1), rational(0)]], ZZ, 1))).toThrow(ExactQuotientFailed);
+    expect(() => new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).exquo(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1))).toThrow(ExactQuotientFailed);
   });
   // the arguments do not type-check against the public API
   //   assert f.div(g) == (q, r)
@@ -452,105 +452,105 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
   it.todo("test_DMP_arithmetics:174");
   it("test_DMP_arithmetics:175", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).quo(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([], ZZ)');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).quo(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([], ZZ)');
   });
   it("test_DMP_arithmetics:176", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).rem(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([1, 0, -1], ZZ)');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).rem(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([1, 0, -1], ZZ)');
   });
   it("test_DMP_arithmetics:179", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).quo(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([], ZZ)');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).quo(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([], ZZ)');
   });
   it("test_DMP_arithmetics:180", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).rem(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([1, 0, -1], ZZ)');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).rem(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([1, 0, -1], ZZ)');
   });
   it("test_DMP_arithmetics:182", () => {
     const _x = new Sym('_x');
-    expect(() => new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).exquo(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0))).toThrow(ExactQuotientFailed);
+    expect(() => new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).exquo(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0))).toThrow(ExactQuotientFailed);
   });
   it("test_DMP_arithmetics:184", () => {
     const _x = new Sym('_x');
-    const v1 = new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).pdiv(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0));
+    const v1 = new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).pdiv(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0));
     expect(sympyMatches([at(v1, 0), at(v1, 1)], '(DMP_Python([2, 2], ZZ), DMP_Python([], ZZ))')).toBe(true);
   });
   it("test_DMP_arithmetics:185", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).pquo(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([2, 2], ZZ)');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).pquo(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([2, 2], ZZ)');
   });
   it("test_DMP_arithmetics:186", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).prem(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([], ZZ)');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).prem(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([], ZZ)');
   });
   it("test_DMP_arithmetics:187", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(-1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).pexquo(new DMPJs([at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(2), rational(-2)], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([2, 2], ZZ)');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).pexquo(new DMPJs([at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(2n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1)], ZZ, 0)))).toBe('DMP_Python([2, 2], ZZ)');
   });
   it("test_DMP_functionality:195", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).degree())).toBe('2');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).degree())).toBe('2');
   });
   // a primitive result that no library call returned
   //   assert f.degree_list() == (2, 2)
   //   => (2, 2)
   it.todo("test_DMP_functionality:196");
   it("test_DMP_functionality:197", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).totalDegree())).toBe('2');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).totalDegree())).toBe('2');
   });
   it("test_DMP_functionality:199", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).LC())).toBe('1');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).LC())).toBe('1');
   });
   it("test_DMP_functionality:200", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).TC())).toBe('0');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).TC())).toBe('0');
   });
   it("test_DMP_functionality:201", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).nth(1, 1))).toBe('2');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).nth(1, 1))).toBe('2');
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: f.nth(0, 'x'))
   //   => None
   it.todo("test_DMP_functionality:203");
   it("test_DMP_functionality:205", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).maxNorm())).toBe('2');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).maxNorm())).toBe('2');
   });
   it("test_DMP_functionality:206", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).l1Norm())).toBe('4');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).l1Norm())).toBe('4');
   });
   it("test_DMP_functionality:210", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).diff(1, 0))).toBe('DMP_Python([[2], [2, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).diff(1, 0))).toBe('DMP_Python([[2], [2, 0]], ZZ)');
   });
   it("test_DMP_functionality:211", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).diff(1, 1))).toBe('DMP_Python([[2], [2, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).diff(1, 1))).toBe('DMP_Python([[2], [2, 0]], ZZ)');
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: f.diff(m='x', j=0))
   //   => None
   it.todo("test_DMP_functionality:213");
   it("test_DMP_functionality:218", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).eval(1, 0))).toBe('DMP_Python([1, 2, 1], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).eval(1, 0))).toBe('DMP_Python([1, 2, 1], ZZ)');
   });
   it("test_DMP_functionality:219", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).eval(1, 1))).toBe('DMP_Python([1, 2, 1], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).eval(1, 1))).toBe('DMP_Python([1, 2, 1], ZZ)');
   });
   it("test_DMP_functionality:221", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(2), rational(1)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(2), rational(1)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(2), rational(1)], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).eval(1))).toBe('4');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2)], ZZ, 0).eval(1))).toBe('4');
   });
   it("test_DMP_functionality:223", () => {
-    const v1 = new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).cofactors(new DMPJs([[rational(1)], [rational(1), rational(0)]], ZZ, 1));
+    const v1 = new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).cofactors(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1));
     expect(sympyMatches([at(v1, 0), at(v1, 1), at(v1, 2)], '(DMP_Python([[1], [1, 0]], ZZ), DMP_Python([[1], [1, 0]], ZZ), DMP_Python([[1]], ZZ))')).toBe(true);
   });
   it("test_DMP_functionality:224", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).gcd(new DMPJs([[rational(1)], [rational(1), rational(0)]], ZZ, 1)))).toBe('DMP_Python([[1], [1, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).gcd(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[1], [1, 0]], ZZ)');
   });
   it("test_DMP_functionality:225", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2), rational(0)], [rational(1), rational(0), rational(0)]], ZZ, 1).lcm(new DMPJs([[rational(1)], [rational(1), rational(0)]], ZZ, 1)))).toBe('DMP_Python([[1], [2, 0], [1, 0, 0]], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).lcm(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1)))).toBe('DMP_Python([[1], [2, 0], [1, 0, 0]], ZZ)');
   });
   it("test_DMP_functionality:230", () => {
     expect(sympyStr(new DMPJs([[new PythonMPQ(45n, 1n), new PythonMPQ(30n, 1n), new PythonMPQ(5n, 1n)]], QQ, 1).monic())).toBe('DMP_Python([[MPQ(1,1), MPQ(2,3), MPQ(1,9)]], QQ)');
   });
   it("test_DMP_functionality:232", () => {
-    expect(sympyStr(new DMPJs([[rational(4)], [rational(8), rational(0)], [rational(4), rational(0), rational(0)]], ZZ, 1).content())).toBe('4');
+    expect(sympyStr(new DMPJs([[Rational.of(4n, 1n, { gcd: 1n })], [Rational.of(8n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(4n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).content())).toBe('4');
   });
   // a primitive result that no library call returned
   //   assert (4*f).primitive() == (ZZ(4), f)
@@ -580,22 +580,22 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
   //   => (MPQ(7,1), MPQ(3,1), DMP_Python([MPQ(1,1), MPQ(3,1)], QQ), DMP_Python([MPQ(1,1), MPQ(7,1)], QQ))
   it.todo("test_DMP_functionality:242");
   it("test_DMP_functionality:251", () => {
-    expect(sympyStr(new DMPJs([[rational(1)], [rational(2)], [rational(3)], [rational(4)], [rational(5)], [rational(6)]], ZZ, 1).trunc(3))).toBe('DMP_Python([[1], [-1], [], [1], [-1], []], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(2n, 1n, { gcd: 1n })], [Rational.of(3n, 1n, { gcd: 1n })], [Rational.of(4n, 1n, { gcd: 1n })], [Rational.of(5n, 1n, { gcd: 1n })], [Rational.of(6n, 1n, { gcd: 1n })]], ZZ, 1).trunc(3))).toBe('DMP_Python([[1], [-1], [], [1], [-1], []], ZZ)');
   });
   it("test_DMP_functionality:255", () => {
-    expect(sympyStr(new DMPJs([[[rational(-1), rational(0)], [], [], [], [], [], [], [], []], [[rational(-1), rational(0), rational(0), rational(0)], [], [], [], [], []], [[rational(-1), rational(0), rational(0)], [], [], [], [rational(-5)], [], [], [], [], [], [], [], []], [[rational(-1), rational(0), rational(0), rational(0), rational(0)], [], [rational(1), rational(0), rational(3), rational(0)], [], [rational(-5), rational(0), rational(0)], [rational(-1), rational(0), rational(0), rational(0)], [], [], [], []], [[rational(1), rational(0), rational(3), rational(0), rational(0), rational(0)], [], [], [rational(-1), rational(0), rational(0), rational(0), rational(0), rational(0)], []], [[rational(1), rational(0), rational(3), rational(0), rational(0)], [], [], [rational(-1), rational(0), rational(0), rational(0), rational(0)], [rational(5), rational(0), rational(15)], [], [], [rational(-5), rational(0), rational(0)], [], [], [], []], [[rational(1), rational(0), rational(3), rational(0), rational(0), rational(0), rational(0)], [], [], [rational(-1), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [rational(5), rational(0), rational(15), rational(0), rational(0)], [rational(1), rational(0), rational(3), rational(0), rational(0), rational(0)], [], [rational(-5), rational(0), rational(0), rational(0), rational(0)], []], [[rational(1), rational(0), rational(3), rational(0), rational(0), rational(0), rational(0), rational(0)]], [[rational(1), rational(0), rational(3), rational(0), rational(0), rational(0), rational(0)], [], [], [], [rational(5), rational(0), rational(15), rational(0), rational(0)], [], [], []], [[rational(1), rational(0), rational(3), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [], [], [], [rational(5), rational(0), rational(15), rational(0), rational(0), rational(0), rational(0)]]], ZZ, 2).sqfPart())).toBe('DMP_Python([[[1, 0], [], [], [], [], [], [], [], []], [[1, 0, 0, 0], [], [], [], [], []], [[1, 0, 0], [], [], [], [5], [], [], [], [], [], [], [], []], [[1, 0, 0, 0, 0], [], [-1, 0, -3, 0], [], [5, 0, 0], [1, 0, 0, 0], [], [], [], []], [[-1, 0, -3, 0, 0, 0], [], [], [1, 0, 0, 0, 0, 0], []], [[-1, 0, -3, 0, 0], [], [], [1, 0, 0, 0, 0], [-5, 0, -15], [], [], [5, 0, 0], [], [], [], []], [[-1, 0, -3, 0, 0, 0, 0], [], [], [1, 0, 0, 0, 0, 0, 0], [-5, 0, -15, 0, 0], [-1, 0, -3, 0, 0, 0], [], [5, 0, 0, 0, 0], []], [[-1, 0, -3, 0, 0, 0, 0, 0]], [[-1, 0, -3, 0, 0, 0, 0], [], [], [], [-5, 0, -15, 0, 0], [], [], []], [[-1, 0, -3, 0, 0, 0, 0, 0, 0], [], [], [], [-5, 0, -15, 0, 0, 0, 0]]], ZZ)');
+    expect(sympyStr(new DMPJs([[[Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [], [], [], [], [], []], [[Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [], [], []], [[Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [], [Rational.of(-5n, 1n, { gcd: 1n })], [], [], [], [], [], [], [], []], [[Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [Rational.of(-5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [], []], [[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], []], [[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(15n, 1n, { gcd: 1n })], [], [], [Rational.of(-5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [], []], [[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(15n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [Rational.of(-5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], []], [[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], [[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [], [Rational.of(5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(15n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], []], [[Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], [], [], [], [Rational.of(5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(15n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]]], ZZ, 2).sqfPart())).toBe('DMP_Python([[[1, 0], [], [], [], [], [], [], [], []], [[1, 0, 0, 0], [], [], [], [], []], [[1, 0, 0], [], [], [], [5], [], [], [], [], [], [], [], []], [[1, 0, 0, 0, 0], [], [-1, 0, -3, 0], [], [5, 0, 0], [1, 0, 0, 0], [], [], [], []], [[-1, 0, -3, 0, 0, 0], [], [], [1, 0, 0, 0, 0, 0], []], [[-1, 0, -3, 0, 0], [], [], [1, 0, 0, 0, 0], [-5, 0, -15], [], [], [5, 0, 0], [], [], [], []], [[-1, 0, -3, 0, 0, 0, 0], [], [], [1, 0, 0, 0, 0, 0, 0], [-5, 0, -15, 0, 0], [-1, 0, -3, 0, 0, 0], [], [5, 0, 0, 0, 0], []], [[-1, 0, -3, 0, 0, 0, 0, 0]], [[-1, 0, -3, 0, 0, 0, 0], [], [], [], [-5, 0, -15, 0, 0], [], [], []], [[-1, 0, -3, 0, 0, 0, 0, 0, 0], [], [], [], [-5, 0, -15, 0, 0, 0, 0]]], ZZ)');
   });
   // a primitive result that no library call returned
   //   assert f.sqf_list() == (ZZ(-1), [(-f, 1)])
   //   => (-1, [(DMP_Python([[[1, 0], [], [], [], [], [], [], [], []], [[1, 0, 0, 0], [], [], [], [], []], [[1, 0, 0], [], [], [], [5], [], [], [], [], [], [], [], []], [[1, 0, 0, 0, 0], [], [-1, 0, -3, 0], [], [5, 0, 0], [1, 0, 0, 0], [], [], [], []], [[-1, 0, -3, 0, 0, 0], [], [], [1, 0, 0, 0, 0, 0], []], [[-1, 0, -3, 0, 0], [], [], [1, 0, 0, 0, 0], [-5, 0, -15], [], [], [5, 0, 0], [], [], [], []], [[-1, 0, -3, 0, 0, 0, 0], [], [], [1, 0, 0, 0, 0, 0, 0], [-5, 0, -15, 0, 0], [-1, 0, -3, 0, 0, 0], [], [5, 0, 0, 0, 0], []], [[-1, 0, -3, 0, 0, 0, 0, 0]], [[-1, 0, -3, 0, 0, 0, 0], [], [], [], [-5, 0, -15, 0, 0], [], [], []], [[-1, 0, -3, 0, 0, 0, 0, 0, 0], [], [], [], [-5, 0, -15, 0, 0, 0, 0]]], ZZ), 1)])
   it.todo("test_DMP_functionality:256");
   it("test_DMP_functionality:264", () => {
-    const v1 = new DMPJs([[rational(-1)], [], [], [rational(5)]], ZZ, 1);
-    const v2 = v1.subresultants(new DMPJs([[rational(3), rational(1)], [], []], ZZ, 1));
+    const v1 = new DMPJs([[Rational.of(-1n, 1n, { gcd: 1n })], [], [], [Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1);
+    const v2 = v1.subresultants(new DMPJs([[Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], [], []], ZZ, 1));
     expect(sympyStr([v1, at(v2, 1), at(v2, 2)])).toBe('[DMP_Python([[-1], [], [], [5]], ZZ), DMP_Python([[3, 1], [], []], ZZ), DMP_Python([[45, 30, 5]], ZZ)]');
   });
   it("test_DMP_functionality:265", () => {
-    expect(sympyStr(new DMPJs([[rational(-1)], [], [], [rational(5)]], ZZ, 1).resultant(new DMPJs([[rational(3), rational(1)], [], []], ZZ, 1)))).toBe('DMP_Python([675, 675, 225, 25], ZZ)');
+    expect(sympyStr(new DMPJs([[Rational.of(-1n, 1n, { gcd: 1n })], [], [], [Rational.of(5n, 1n, { gcd: 1n })]], ZZ, 1).resultant(new DMPJs([[Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], [], []], ZZ, 1)))).toBe('DMP_Python([675, 675, 225, 25], ZZ)');
   });
   // the arguments do not type-check against the public API
   //   assert f.discriminant() == -11664
@@ -626,11 +626,11 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
   });
   it("test_DMP_functionality:294", () => {
     const _x = new Sym('_x');
-    expect(sympyStr(new DMPJs([at(new DMP([rational(1), rational(0), rational(0), rational(-2), rational(9)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(0), rational(-2), rational(9)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(0), rational(-2), rational(9)], ZZ.oldPolyRing(_x)).rep, 2), at(new DMP([rational(1), rational(0), rational(0), rational(-2), rational(9)], ZZ.oldPolyRing(_x)).rep, 3), at(new DMP([rational(1), rational(0), rational(0), rational(-2), rational(9)], ZZ.oldPolyRing(_x)).rep, 4)], ZZ, 0).compose(new DMPJs([at(new DMP([rational(1), rational(0), rational(5), rational(0)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(5), rational(0)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(5), rational(0)], ZZ.oldPolyRing(_x)).rep, 2), at(new DMP([rational(1), rational(0), rational(5), rational(0)], ZZ.oldPolyRing(_x)).rep, 3)], ZZ, 0)))).toBe('DMP_Python([1, 0, 20, 0, 150, 0, 500, 0, 625, -2, 0, -10, 9], ZZ)');
+    expect(sympyStr(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 3), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 4)], ZZ, 0).compose(new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 3)], ZZ, 0)))).toBe('DMP_Python([1, 0, 20, 0, 150, 0, 500, 0, 625, -2, 0, -10, 9], ZZ)');
   });
   it("test_DMP_functionality:295", () => {
     const _x = new Sym('_x');
-    const v1 = new DMPJs([at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 2), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 3), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 4), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 5), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 6), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 7), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 8), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 9), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 10), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 11), at(new DMP([rational(1), rational(0), rational(20), rational(0), rational(150), rational(0), rational(500), rational(0), rational(625), rational(-2), rational(0), rational(-10), rational(9)], ZZ.oldPolyRing(_x)).rep, 12)], ZZ, 0).decompose();
+    const v1 = new DMPJs([at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 0), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 1), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 2), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 3), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 4), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 5), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 6), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 7), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 8), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 9), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 10), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 11), at(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(20n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(150n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(500n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(625n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).rep, 12)], ZZ, 0).decompose();
     expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('[DMP_Python([1, 0, 0, -2, 9], ZZ), DMP_Python([1, 0, 5, 0], ZZ)]');
   });
   it("test_DMP_functionality:299", () => {
@@ -644,7 +644,7 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
   //   => ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 24, 25], DMP_Python([1, 0], ZZ))
   it.todo("test_DMP_exclude:308");
   it("test_DMP_exclude:309", () => {
-    expect(sympyMatches([[], at(new DMPJs([[rational(1)], [rational(1), rational(0)]], ZZ, 1).exclude(), 1)], '([], DMP_Python([[1], [1, 0]], ZZ))')).toBe(true);
+    expect(sympyMatches([[], at(new DMPJs([[Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })]], ZZ, 1).exclude(), 1)], '([], DMP_Python([[1], [1, 0]], ZZ))')).toBe(true);
   });
   // the arguments do not type-check against the public API
   //   raises(ValueError, lambda: DMF(([1], [[1]]), ZZ))
@@ -805,10 +805,10 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
     expect(sympyStr(new ANP([], [1, 0, 0, -2], QQ))).toBe('ANP([], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
   });
   it("test_ANP_arithmetics:564", () => {
-    expect(() => new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).divmod(new ANP([], [rational(1), rational(0), rational(0), rational(-2)], QQ))).toThrow(NotInvertible);
+    expect(() => new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).divmod(new ANP([], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], QQ))).toThrow(NotInvertible);
   });
   it("test_ANP_arithmetics:565", () => {
-    expect(() => new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).rem(new ANP([], [rational(1), rational(0), rational(0), rational(-2)], QQ))).toThrow(NotInvertible);
+    expect(() => new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).rem(new ANP([], [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n })], QQ))).toThrow(NotInvertible);
   });
   it("test_ANP_arithmetics:571", () => {
     expect(sympyStr(at(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).divmod(new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(2n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ)), 0))).toBe('ANP([MPQ(11,10), MPQ(-1,5), MPQ(-3,5)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
@@ -844,167 +844,167 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(RR.polyRing(x).unify(ZZ.fracField(y)))).toBe('RR(x,y)');
   });
   it("test_Domain_unify_algebraic:292", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).unify(QQ.algebraicField(new Pow(rational(7), rational(1, 2)))))).toBe('QQ<sqrt(5) + sqrt(7)>');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).unify(QQ.algebraicField(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(5) + sqrt(7)>');
   });
   it("test_Domain_unify_algebraic:294", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).unify(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).polyRing(x, y)))).toBe('QQ<sqrt(5)>[x,y]');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).unify(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).polyRing(x, y)))).toBe('QQ<sqrt(5)>[x,y]');
   });
   it("test_Domain_unify_algebraic:295", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).polyRing(x, y).unify(QQ.algebraicField(new Pow(rational(5), rational(1, 2)))))).toBe('QQ<sqrt(5)>[x,y]');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).polyRing(x, y).unify(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(5)>[x,y]');
   });
   it("test_Domain_unify_algebraic:297", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).unify(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).fracField(x, y)))).toBe('QQ<sqrt(5)>(x,y)');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).unify(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).fracField(x, y)))).toBe('QQ<sqrt(5)>(x,y)');
   });
   it("test_Domain_unify_algebraic:298", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).fracField(x, y).unify(QQ.algebraicField(new Pow(rational(5), rational(1, 2)))))).toBe('QQ<sqrt(5)>(x,y)');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).fracField(x, y).unify(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(5)>(x,y)');
   });
   it("test_Domain_unify_algebraic:300", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).unify(QQ.algebraicField(new Pow(rational(7), rational(1, 2))).polyRing(x, y)))).toBe('QQ<sqrt(5) + sqrt(7)>[x,y]');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).unify(QQ.algebraicField(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).polyRing(x, y)))).toBe('QQ<sqrt(5) + sqrt(7)>[x,y]');
   });
   it("test_Domain_unify_algebraic:301", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).polyRing(x, y).unify(QQ.algebraicField(new Pow(rational(7), rational(1, 2)))))).toBe('QQ<sqrt(5) + sqrt(7)>[x,y]');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).polyRing(x, y).unify(QQ.algebraicField(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(5) + sqrt(7)>[x,y]');
   });
   it("test_Domain_unify_algebraic:303", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).unify(QQ.algebraicField(new Pow(rational(7), rational(1, 2))).fracField(x, y)))).toBe('QQ<sqrt(5) + sqrt(7)>(x,y)');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).unify(QQ.algebraicField(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).fracField(x, y)))).toBe('QQ<sqrt(5) + sqrt(7)>(x,y)');
   });
   it("test_Domain_unify_algebraic:304", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(5), rational(1, 2))).fracField(x, y).unify(QQ.algebraicField(new Pow(rational(7), rational(1, 2)))))).toBe('QQ<sqrt(5) + sqrt(7)>(x,y)');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).fracField(x, y).unify(QQ.algebraicField(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(5) + sqrt(7)>(x,y)');
   });
   it("test_Domain_unify_FiniteExtension:312", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:313", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ', pure: false }))))).toBe('QQ[x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ', pure: false }))))).toBe('QQ[x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:314", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false }))))).toBe('ZZ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false }))))).toBe('ZZ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:315", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ[y]', pure: false }))))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ[y]', pure: false }))))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:317", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false })).unify(ZZ))).toBe('ZZ[x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false })).unify(ZZ))).toBe('ZZ[x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:318", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false })).unify(QQ))).toBe('QQ[x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false })).unify(QQ))).toBe('QQ[x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:319", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ', pure: false })).unify(ZZ))).toBe('QQ[x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ', pure: false })).unify(ZZ))).toBe('QQ[x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:320", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ', pure: false })).unify(QQ))).toBe('QQ[x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ', pure: false })).unify(QQ))).toBe('QQ[x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:322", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false })).unify(ZZ.polyRing(y)))).toBe('ZZ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false })).unify(ZZ.polyRing(y)))).toBe('ZZ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:323", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false })).unify(QQ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false })).unify(QQ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:324", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ', pure: false })).unify(ZZ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ', pure: false })).unify(ZZ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:325", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ', pure: false })).unify(QQ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ', pure: false })).unify(QQ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:327", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ))).toBe('ZZ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ))).toBe('ZZ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:328", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(QQ))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(QQ))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:329", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(ZZ))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(ZZ))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:330", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(QQ))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(QQ))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:332", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(y)))).toBe('ZZ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(y)))).toBe('ZZ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:333", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(QQ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(QQ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:334", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(ZZ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(ZZ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:335", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(QQ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'QQ[y]', pure: false })).unify(QQ.polyRing(y)))).toBe('QQ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:338", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ))).toBe('ZZ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ))).toBe('ZZ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:339", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(x)))).toBe('ZZ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(x)))).toBe('ZZ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:340", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(y)))).toBe('ZZ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(y)))).toBe('ZZ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:341", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(x, y)))).toBe('ZZ[y][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(x, y)))).toBe('ZZ[y][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:344", () => {
     const [x, z] = symbols('x z');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(z)))).toBe('ZZ[y,z][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(z)))).toBe('ZZ[y,z][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:345", () => {
     const [x, z] = symbols('x z');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(x, z)))).toBe('ZZ[y,z][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(x, z)))).toBe('ZZ[y,z][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:346", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(y, z)))).toBe('ZZ[y,z][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(y, z)))).toBe('ZZ[y,z][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:347", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(x, y, z)))).toBe('ZZ[y,z][x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).unify(ZZ.polyRing(x, y, z)))).toBe('ZZ[y,z][x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:352", () => {
     const x = new Sym('x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:353", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(y, rational(2))]), []), [y], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(y, rational(2))]), []), [y], { domain: 'ZZ', pure: false }))))).toBe('ZZ[y]/(y**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), []), [y], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), []), [y], { domain: 'ZZ', pure: false }))))).toBe('ZZ[y]/(y**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:354", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(y, rational(2))]), []), [y], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)[y]/(y**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), []), [y], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)[y]/(y**2 - 2)');
   });
   it("test_Domain_unify_FiniteExtension:355", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(y, rational(2))]), []), [y], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([rational(-2), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)[y]/(y**2 - 2)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), []), [y], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)[y]/(y**2 - 2)');
   });
   it("test_Domain_unify_with_symbols:358", () => {
     const [x, y, z] = symbols('x y z');
@@ -1015,152 +1015,152 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(() => ZZ.unifyWithSymbols(ZZ.polyRing(x, y), [y, z])).toThrow(UnificationFailed);
   });
   it("test_Domain__contains__:362", () => {
-    expect(sympyStr(EX.contains(rational(0)))).toBe('True');
+    expect(sympyStr(EX.contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:363", () => {
-    expect(sympyStr(ZZ.contains(rational(0)))).toBe('True');
+    expect(sympyStr(ZZ.contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:364", () => {
-    expect(sympyStr(QQ.contains(rational(0)))).toBe('True');
+    expect(sympyStr(QQ.contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:365", () => {
-    expect(sympyStr(RR.contains(rational(0)))).toBe('True');
+    expect(sympyStr(RR.contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:366", () => {
-    expect(sympyStr(CC.contains(rational(0)))).toBe('True');
+    expect(sympyStr(CC.contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:367", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).contains(rational(0)))).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:368", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(ZZ.polyRing(x, y).contains(rational(0)))).toBe('True');
+    expect(sympyStr(ZZ.polyRing(x, y).contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:369", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.polyRing(x, y).contains(rational(0)))).toBe('True');
+    expect(sympyStr(QQ.polyRing(x, y).contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:370", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(rational(0)))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:372", () => {
-    expect(sympyStr(EX.contains(rational(-7)))).toBe('True');
+    expect(sympyStr(EX.contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:373", () => {
-    expect(sympyStr(ZZ.contains(rational(-7)))).toBe('True');
+    expect(sympyStr(ZZ.contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:374", () => {
-    expect(sympyStr(QQ.contains(rational(-7)))).toBe('True');
+    expect(sympyStr(QQ.contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:375", () => {
-    expect(sympyStr(RR.contains(rational(-7)))).toBe('True');
+    expect(sympyStr(RR.contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:376", () => {
-    expect(sympyStr(CC.contains(rational(-7)))).toBe('True');
+    expect(sympyStr(CC.contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:377", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).contains(rational(-7)))).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:378", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(ZZ.polyRing(x, y).contains(rational(-7)))).toBe('True');
+    expect(sympyStr(ZZ.polyRing(x, y).contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:379", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.polyRing(x, y).contains(rational(-7)))).toBe('True');
+    expect(sympyStr(QQ.polyRing(x, y).contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:380", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(rational(-7)))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(Rational.of(-7n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:382", () => {
-    expect(sympyStr(EX.contains(rational(17)))).toBe('True');
+    expect(sympyStr(EX.contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:383", () => {
-    expect(sympyStr(ZZ.contains(rational(17)))).toBe('True');
+    expect(sympyStr(ZZ.contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:384", () => {
-    expect(sympyStr(QQ.contains(rational(17)))).toBe('True');
+    expect(sympyStr(QQ.contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:385", () => {
-    expect(sympyStr(RR.contains(rational(17)))).toBe('True');
+    expect(sympyStr(RR.contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:386", () => {
-    expect(sympyStr(CC.contains(rational(17)))).toBe('True');
+    expect(sympyStr(CC.contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:387", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).contains(rational(17)))).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:388", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(ZZ.polyRing(x, y).contains(rational(17)))).toBe('True');
+    expect(sympyStr(ZZ.polyRing(x, y).contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:389", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.polyRing(x, y).contains(rational(17)))).toBe('True');
+    expect(sympyStr(QQ.polyRing(x, y).contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:390", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(rational(17)))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(Rational.of(17n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:392", () => {
-    expect(sympyStr(EX.contains(rational(-1, 7)))).toBe('True');
+    expect(sympyStr(EX.contains(Rational.of(-1n, 7n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:393", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_Domain__contains__:394", () => {
-    expect(sympyStr(QQ.contains(rational(-1, 7)))).toBe('True');
+    expect(sympyStr(QQ.contains(Rational.of(-1n, 7n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:395", () => {
-    expect(sympyStr(RR.contains(rational(-1, 7)))).toBe('True');
+    expect(sympyStr(RR.contains(Rational.of(-1n, 7n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:396", () => {
-    expect(sympyStr(CC.contains(rational(-1, 7)))).toBe('True');
+    expect(sympyStr(CC.contains(Rational.of(-1n, 7n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:397", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).contains(rational(-1, 7)))).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).contains(Rational.of(-1n, 7n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:398", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_Domain__contains__:399", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.polyRing(x, y).contains(rational(-1, 7)))).toBe('True');
+    expect(sympyStr(QQ.polyRing(x, y).contains(Rational.of(-1n, 7n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:400", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(rational(-1, 7)))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(Rational.of(-1n, 7n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:402", () => {
-    expect(sympyStr(EX.contains(rational(3, 5)))).toBe('True');
+    expect(sympyStr(EX.contains(Rational.of(3n, 5n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:403", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_Domain__contains__:404", () => {
-    expect(sympyStr(QQ.contains(rational(3, 5)))).toBe('True');
+    expect(sympyStr(QQ.contains(Rational.of(3n, 5n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:405", () => {
-    expect(sympyStr(RR.contains(rational(3, 5)))).toBe('True');
+    expect(sympyStr(RR.contains(Rational.of(3n, 5n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:406", () => {
-    expect(sympyStr(CC.contains(rational(3, 5)))).toBe('True');
+    expect(sympyStr(CC.contains(Rational.of(3n, 5n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:407", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).contains(rational(3, 5)))).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).contains(Rational.of(3n, 5n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:408", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_Domain__contains__:409", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.polyRing(x, y).contains(rational(3, 5)))).toBe('True');
+    expect(sympyStr(QQ.polyRing(x, y).contains(Rational.of(3n, 5n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:410", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(rational(3, 5)))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(Rational.of(3n, 5n, { gcd: 1n })))).toBe('True');
   });
   it("test_Domain__contains__:412", () => {
     expect(sympyStr(EX.contains(new Float(3)))).toBe('True');
@@ -1178,7 +1178,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(CC.contains(new Float(3)))).toBe('True');
   });
   it("test_Domain__contains__:417", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).contains(new Float(3)))).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).contains(new Float(3)))).toBe('True');
   });
   it("test_Domain__contains__:418", () => {
     const [x, y] = symbols('x y');
@@ -1208,7 +1208,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(CC.contains(new Float(3.14)))).toBe('True');
   });
   it("test_Domain__contains__:427", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).contains(new Float(3.14)))).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).contains(new Float(3.14)))).toBe('True');
   });
   it("test_Domain__contains__:428", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1246,7 +1246,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_Domain__contains__:442", () => {
-    expect(sympyStr(EX.contains(new Pow(rational(7), rational(1, 2))))).toBe('True');
+    expect(sympyStr(EX.contains(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('True');
   });
   it("test_Domain__contains__:443", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1255,10 +1255,10 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_Domain__contains__:445", () => {
-    expect(sympyStr(RR.contains(new Pow(rational(7), rational(1, 2))))).toBe('True');
+    expect(sympyStr(RR.contains(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('True');
   });
   it("test_Domain__contains__:446", () => {
-    expect(sympyStr(CC.contains(new Pow(rational(7), rational(1, 2))))).toBe('True');
+    expect(sympyStr(CC.contains(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('True');
   });
   it("test_Domain__contains__:447", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1271,10 +1271,10 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_Domain__contains__:450", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(new Pow(rational(7), rational(1, 2))))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(new Pow(Rational.of(7n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('True');
   });
   it("test_Domain__contains__:452", () => {
-    expect(sympyStr(EX.contains(new Add([rational(1), new Mul([rational(2), new Pow(rational(3), rational(1, 2))])])))).toBe('True');
+    expect(sympyStr(EX.contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])])))).toBe('True');
   });
   it("test_Domain__contains__:453", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1283,13 +1283,13 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_Domain__contains__:455", () => {
-    expect(sympyStr(RR.contains(new Add([rational(1), new Mul([rational(2), new Pow(rational(3), rational(1, 2))])])))).toBe('True');
+    expect(sympyStr(RR.contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])])))).toBe('True');
   });
   it("test_Domain__contains__:456", () => {
-    expect(sympyStr(CC.contains(new Add([rational(1), new Mul([rational(2), new Pow(rational(3), rational(1, 2))])])))).toBe('True');
+    expect(sympyStr(CC.contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])])))).toBe('True');
   });
   it("test_Domain__contains__:457", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).contains(new Add([rational(1), new Mul([rational(2), new Pow(rational(3), rational(1, 2))])])))).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])])))).toBe('True');
   });
   it("test_Domain__contains__:458", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1299,10 +1299,10 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_Domain__contains__:460", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(new Add([rational(1), new Mul([rational(2), new Pow(rational(3), rational(1, 2))])])))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])])))).toBe('True');
   });
   it("test_Domain__contains__:462", () => {
-    expect(sympyStr(EX.contains(fn('sin', [rational(1)])))).toBe('True');
+    expect(sympyStr(EX.contains(fn('sin', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false })))).toBe('True');
   });
   it("test_Domain__contains__:463", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1311,10 +1311,10 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_Domain__contains__:465", () => {
-    expect(sympyStr(RR.contains(fn('sin', [rational(1)])))).toBe('True');
+    expect(sympyStr(RR.contains(fn('sin', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false })))).toBe('True');
   });
   it("test_Domain__contains__:466", () => {
-    expect(sympyStr(CC.contains(fn('sin', [rational(1)])))).toBe('True');
+    expect(sympyStr(CC.contains(fn('sin', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false })))).toBe('True');
   });
   it("test_Domain__contains__:467", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1327,11 +1327,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_Domain__contains__:470", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(fn('sin', [rational(1)])))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(fn('sin', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false })))).toBe('True');
   });
   it("test_Domain__contains__:472", () => {
     const x = new Sym('x');
-    expect(sympyStr(EX.contains(new Add([rational(1), new Pow(x, rational(2))])))).toBe('True');
+    expect(sympyStr(EX.contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:473", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1350,31 +1350,31 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_Domain__contains__:478", () => {
     const x = new Sym('x');
-    expect(sympyStr(ZZ.polyRing(x).contains(new Add([rational(1), new Pow(x, rational(2))])))).toBe('True');
+    expect(sympyStr(ZZ.polyRing(x).contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:479", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.polyRing(x).contains(new Add([rational(1), new Pow(x, rational(2))])))).toBe('True');
+    expect(sympyStr(QQ.polyRing(x).contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:480", () => {
     const x = new Sym('x');
-    expect(sympyStr(RR.polyRing(x).contains(new Add([rational(1), new Pow(x, rational(2))])))).toBe('True');
+    expect(sympyStr(RR.polyRing(x).contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:481", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(ZZ.polyRing(x, y).contains(new Add([rational(1), new Pow(x, rational(2))])))).toBe('True');
+    expect(sympyStr(ZZ.polyRing(x, y).contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:482", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.polyRing(x, y).contains(new Add([rational(1), new Pow(x, rational(2))])))).toBe('True');
+    expect(sympyStr(QQ.polyRing(x, y).contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:483", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(new Add([rational(1), new Pow(x, rational(2))])))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:485", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(EX.contains(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])))).toBe('True');
+    expect(sympyStr(EX.contains(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:486", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1402,15 +1402,15 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_Domain__contains__:494", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(ZZ.polyRing(x, y).contains(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])))).toBe('True');
+    expect(sympyStr(ZZ.polyRing(x, y).contains(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:495", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(QQ.polyRing(x, y).contains(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])))).toBe('True');
+    expect(sympyStr(QQ.polyRing(x, y).contains(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:496", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(RR.polyRing(x, y).contains(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])))).toBe('True');
+    expect(sympyStr(RR.polyRing(x, y).contains(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])))).toBe('True');
   });
   it("test_Domain__contains__:498", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1421,7 +1421,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_issue_14433:502");
   it("test_issue_14433:503", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.fracField(x).contains(new Pow(x, rational(-1))))).toBe('True');
+    expect(sympyStr(QQ.fracField(x).contains(new Pow(x, Rational.of(-1n, 1n, { gcd: 1n }))))).toBe('True');
   });
   // the arguments do not type-check against the public API
   //   assert ((x**2 + y**2) in QQ.frac_field(1/x, 1/y)) is True
@@ -1457,7 +1457,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(EX.isField)).toBe('True');
   });
   it("test_Domain_is_field:517", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).isField)).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).isField)).toBe('True');
   });
   it("test_Domain_is_field:518", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -1558,7 +1558,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(RR.getRing())).toBe('RR');
   });
   it("test_Domain_get_ring:553", () => {
-    expect(() => QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).getRing()).toThrow(DomainError);
+    expect(() => QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).getRing()).toThrow(DomainError);
   });
   it("test_Domain_get_field:557", () => {
     expect(sympyStr(EX.hasAssocField)).toBe('True');
@@ -1573,7 +1573,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(RR.hasAssocField)).toBe('True');
   });
   it("test_Domain_get_field:561", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).hasAssocField)).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).hasAssocField)).toBe('True');
   });
   it("test_Domain_get_field:562", () => {
     const x = new Sym('x');
@@ -1604,7 +1604,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(RR.getField())).toBe('RR');
   });
   it("test_Domain_get_field:571", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).getField())).toBe('QQ<sqrt(2) + sqrt(3)>');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).getField())).toBe('QQ<sqrt(2) + sqrt(3)>');
   });
   it("test_Domain_get_field:572", () => {
     const x = new Sym('x');
@@ -1712,11 +1712,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (4)");
   it("test_Domain_set_domain:586 (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(GF(5, true), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(GF(5, true), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (4)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(GF(5, true), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(GF(5, true), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2000,11 +2000,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (16)");
   it("test_Domain_set_domain:586 (16)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(ZZ, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(ZZ, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (16)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(ZZ, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(ZZ, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2288,11 +2288,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (28)");
   it("test_Domain_set_domain:586 (28)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (28)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2504,11 +2504,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (37)");
   it("test_Domain_set_domain:586 (37)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(GF(5, true)))).toBe('GF(5)[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(GF(5, true)))).toBe('GF(5)[x]');
   });
   it("test_Domain_set_domain:587 (37)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(GF(5, true)))).toBe('GF(5)[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(GF(5, true)))).toBe('GF(5)[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2528,11 +2528,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (38)");
   it("test_Domain_set_domain:586 (38)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(ZZ))).toBe('ZZ[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(ZZ))).toBe('ZZ[x]');
   });
   it("test_Domain_set_domain:587 (38)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(ZZ))).toBe('ZZ[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(ZZ))).toBe('ZZ[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2552,11 +2552,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (39)");
   it("test_Domain_set_domain:586 (39)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(QQ))).toBe('QQ[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(QQ))).toBe('QQ[x]');
   });
   it("test_Domain_set_domain:587 (39)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(QQ))).toBe('QQ[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(QQ))).toBe('QQ[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2576,11 +2576,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (40)");
   it("test_Domain_set_domain:586 (40)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (40)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2600,11 +2600,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (41)");
   it("test_Domain_set_domain:586 (41)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(RR))).toBe('RR[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(RR))).toBe('RR[x]');
   });
   it("test_Domain_set_domain:587 (41)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(RR))).toBe('RR[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(RR))).toBe('RR[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2624,11 +2624,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (42)");
   it("test_Domain_set_domain:586 (42)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(CC))).toBe('CC[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(CC))).toBe('CC[x]');
   });
   it("test_Domain_set_domain:587 (42)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(CC))).toBe('CC[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(CC))).toBe('CC[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2648,11 +2648,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (43)");
   it("test_Domain_set_domain:586 (43)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(EX))).toBe('EX[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(EX))).toBe('EX[x]');
   });
   it("test_Domain_set_domain:587 (43)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(EX))).toBe('EX[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(EX))).toBe('EX[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2672,11 +2672,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (44)");
   it("test_Domain_set_domain:586 (44)", () => {
     const [x, z] = symbols('x z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(ZZ.polyRing(z)))).toBe('ZZ[z][x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(ZZ.polyRing(z)))).toBe('ZZ[z][x]');
   });
   it("test_Domain_set_domain:587 (44)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(ZZ.polyRing(z)))).toBe('ZZ[z][x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(ZZ.polyRing(z)))).toBe('ZZ[z][x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2696,11 +2696,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (45)");
   it("test_Domain_set_domain:586 (45)", () => {
     const [x, z] = symbols('x z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(QQ.polyRing(z)))).toBe('QQ[z][x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(QQ.polyRing(z)))).toBe('QQ[z][x]');
   });
   it("test_Domain_set_domain:587 (45)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(QQ.polyRing(z)))).toBe('QQ[z][x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(QQ.polyRing(z)))).toBe('QQ[z][x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2720,11 +2720,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (46)");
   it("test_Domain_set_domain:586 (46)", () => {
     const [x, z] = symbols('x z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(RR.polyRing(z)))).toBe('RR[z][x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(RR.polyRing(z)))).toBe('RR[z][x]');
   });
   it("test_Domain_set_domain:587 (46)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(RR.polyRing(z)))).toBe('RR[z][x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(RR.polyRing(z)))).toBe('RR[z][x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2744,11 +2744,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (47)");
   it("test_Domain_set_domain:586 (47)", () => {
     const [x, z] = symbols('x z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(CC.polyRing(z)))).toBe('CC[z][x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(CC.polyRing(z)))).toBe('CC[z][x]');
   });
   it("test_Domain_set_domain:587 (47)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(CC.polyRing(z)))).toBe('CC[z][x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(CC.polyRing(z)))).toBe('CC[z][x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2768,11 +2768,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (48)");
   it("test_Domain_set_domain:586 (48)", () => {
     const [x, z] = symbols('x z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').setDomain(EX.polyRing(z)))).toBe('EX[z][x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').setDomain(EX.polyRing(z)))).toBe('EX[z][x]');
   });
   it("test_Domain_set_domain:587 (48)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x, y], 'grevlex').setDomain(EX.polyRing(z)))).toBe('EX[z][x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x, y], 'grevlex').setDomain(EX.polyRing(z)))).toBe('EX[z][x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -2864,11 +2864,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (52)");
   it("test_Domain_set_domain:586 (52)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(RR, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(RR, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (52)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(RR, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(RR, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -3152,11 +3152,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (64)");
   it("test_Domain_set_domain:586 (64)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(CC, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(CC, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (64)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(CC, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(CC, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -3440,11 +3440,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (76)");
   it("test_Domain_set_domain:586 (76)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(EX, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(EX, [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (76)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(EX, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(EX, [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -3728,11 +3728,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (88)");
   it("test_Domain_set_domain:586 (88)", () => {
     const [z, x] = symbols('z x');
-    expect(sympyStr(new PolynomialRingBase(ZZ.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(ZZ.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (88)", () => {
     const [z, x, y] = symbols('z x y');
-    expect(sympyStr(new PolynomialRingBase(ZZ.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(ZZ.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -4016,11 +4016,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (100)");
   it("test_Domain_set_domain:586 (100)", () => {
     const [z, x] = symbols('z x');
-    expect(sympyStr(new PolynomialRingBase(QQ.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(QQ.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (100)", () => {
     const [z, x, y] = symbols('z x y');
-    expect(sympyStr(new PolynomialRingBase(QQ.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(QQ.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -4304,11 +4304,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (112)");
   it("test_Domain_set_domain:586 (112)", () => {
     const [z, x] = symbols('z x');
-    expect(sympyStr(new PolynomialRingBase(RR.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(RR.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (112)", () => {
     const [z, x, y] = symbols('z x y');
-    expect(sympyStr(new PolynomialRingBase(RR.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(RR.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -4592,11 +4592,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (124)");
   it("test_Domain_set_domain:586 (124)", () => {
     const [z, x] = symbols('z x');
-    expect(sympyStr(new PolynomialRingBase(CC.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(CC.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (124)", () => {
     const [z, x, y] = symbols('z x y');
-    expect(sympyStr(new PolynomialRingBase(CC.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(CC.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -4880,11 +4880,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it.todo("test_Domain_set_domain:585 (136)");
   it("test_Domain_set_domain:586 (136)", () => {
     const [z, x] = symbols('z x');
-    expect(sympyStr(new PolynomialRingBase(EX.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
+    expect(sympyStr(new PolynomialRingBase(EX.polyRing(z), [x], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x]');
   });
   it("test_Domain_set_domain:587 (136)", () => {
     const [z, x, y] = symbols('z x y');
-    expect(sympyStr(new PolynomialRingBase(EX.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
+    expect(sympyStr(new PolynomialRingBase(EX.polyRing(z), [x, y], 'grevlex').setDomain(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('QQ<sqrt(2) + sqrt(3)>[x,y]');
   });
   // the arguments do not type-check against the public API
   //   assert D1[x].set_domain(D2) == D2[x]
@@ -5124,19 +5124,19 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').isExact)).toBe('True');
   });
   it("test_Domain_is_Exact:598 (13)", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).isExact)).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).isExact)).toBe('True');
   });
   it("test_Domain_is_Exact:598 (14)", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).polyRing(x).isExact)).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).polyRing(x).isExact)).toBe('True');
   });
   it("test_Domain_is_Exact:598 (15)", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).fracField(x).isExact)).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).fracField(x).isExact)).toBe('True');
   });
   it("test_Domain_is_Exact:598 (16)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').isExact)).toBe('True');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').isExact)).toBe('True');
   });
   it("test_Domain_is_Exact:598 (17)", () => {
     expect(sympyStr(EX.isExact)).toBe('True');
@@ -5193,7 +5193,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(CC.getExact())).toBe('QQ_I');
   });
   it("test_Domain_get_exact:609", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).getExact())).toBe('QQ<sqrt(2) + sqrt(3)>');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).getExact())).toBe('QQ<sqrt(2) + sqrt(3)>');
   });
   it("test_Domain_get_exact:610", () => {
     const x = new Sym('x');
@@ -5493,34 +5493,34 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(new PolynomialRingBase(QQ_I, [x], 'grevlex').characteristic())).toBe('0');
   });
   it("test_Domain_characteristic:651 (17)", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).hasCharacteristicZero)).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).hasCharacteristicZero)).toBe('True');
   });
   it("test_Domain_characteristic:652 (17)", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).characteristic())).toBe('0');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).characteristic())).toBe('0');
   });
   it("test_Domain_characteristic:651 (18)", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).polyRing(x).hasCharacteristicZero)).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).polyRing(x).hasCharacteristicZero)).toBe('True');
   });
   it("test_Domain_characteristic:652 (18)", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).polyRing(x).characteristic())).toBe('0');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).polyRing(x).characteristic())).toBe('0');
   });
   it("test_Domain_characteristic:651 (19)", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).fracField(x).hasCharacteristicZero)).toBe('True');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).fracField(x).hasCharacteristicZero)).toBe('True');
   });
   it("test_Domain_characteristic:652 (19)", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).fracField(x).characteristic())).toBe('0');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).fracField(x).characteristic())).toBe('0');
   });
   it("test_Domain_characteristic:651 (20)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').hasCharacteristicZero)).toBe('True');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').hasCharacteristicZero)).toBe('True');
   });
   it("test_Domain_characteristic:652 (20)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [x], 'grevlex').characteristic())).toBe('0');
+    expect(sympyStr(new PolynomialRingBase(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [x], 'grevlex').characteristic())).toBe('0');
   });
   it("test_Domain_is_unit:665", () => {
     const x = new Sym('x');
@@ -5533,7 +5533,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_Domain_is_unit:667", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], QQ, 'lex');
-    expect(sympyStr(QQ.fracField(x).isUnit(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)))))).toBe('True');
+    expect(sympyStr(QQ.fracField(x).isUnit(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })))))).toBe('True');
   });
   it("test_Domain_convert:674", () => {
     const y = new Sym('y');
@@ -5665,131 +5665,131 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_Domain_convert:674 (17)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:674 (18)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:674 (19)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:674 (20)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:674 (21)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:674 (22)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:676 (17)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:676 (18)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:676 (19)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:676 (20)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:676 (21)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:676 (22)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:674 (23)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:674 (24)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:676 (23)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:676 (24)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2)> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2)> with lex order');
   });
   it("test_Domain_convert:674 (25)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (26)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (27)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (28)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (29)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (30)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (25)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (26)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (27)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (28)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (29)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (30)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (31)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (32)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (31)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (32)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (33)", () => {
     const y = new Sym('y');
@@ -6049,206 +6049,206 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_Domain_convert:674 (65)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (66)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (67)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (68)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (69)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (70)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (65)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (66)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (67)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (68)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (69)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (70)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (71)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (72)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (71)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:676 (72)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), new Pow(rational(2), rational(1, 2))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2) + sqrt(3)> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2) + sqrt(3)> with lex order');
   });
   it("test_Domain_convert:674 (73)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:674 (74)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:674 (75)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:674 (76)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:674 (77)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:674 (78)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:676 (73)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:676 (74)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in y over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:676 (75)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:676 (76)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in z over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:676 (77)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:676 (78)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:674 (79)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:674 (80)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:676 (79)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:676 (80)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(2), rational(1, 2)), I), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2) + I> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(2) + I> with lex order');
   });
   it("test_Domain_convert:674 (81)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:674 (82)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new PolyRing([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in y over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:674 (83)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:674 (84)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new PolyRing([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in z over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:674 (85)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:674 (86)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new PolyRing([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in y, z over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:676 (81)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Rational function field in y over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in y over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:676 (82)", () => {
     const y = new Sym('y');
-    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Rational function field in y over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new FracField([y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in y over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:676 (83)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Rational function field in z over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in z over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:676 (84)", () => {
     const z = new Sym('z');
-    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Rational function field in z over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new FracField([z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in z over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:676 (85)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:676 (86)", () => {
     const [y, z] = symbols('y z');
-    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new FracField([y, z], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in y, z over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:674 (87)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:674 (88)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new PolyRing([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Polynomial ring in z, y over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:676 (87)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:676 (88)", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(rational(3), rational(1, 2)), I), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(3) + I> with lex order');
+    expect(sympyStr(new FracField([z, y], QQ.algebraicField(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), I), 'lex'))).toBe('Rational function field in z, y over QQ<sqrt(3) + I> with lex order');
   });
   it("test_Domain_convert:708", () => {
     expect(sympyStr(QQ.convert(new Float(1e-51)))).toBe('1684996666696915/1684996666696914987166688442938726917102321526408785780068975640576');
   });
   it("test_Domain_convert:711", () => {
     const x = new Sym('x');
-    expect(sympyStr(ZZ.convert(new PolyRing([x], ZZ, 'lex').fromExpr(xreplace(rational(0), []))))).toBe('0');
+    expect(sympyStr(ZZ.convert(new PolyRing([x], ZZ, 'lex').fromExpr(xreplace(Rational.of(0n, 1n, { gcd: 1n }), []))))).toBe('0');
   });
   it("test_Domain_convert:712", () => {
     const x = new Sym('x');
-    expect(sympyStr(ZZ.convert(new PolyRing([x], ZZ, 'lex').fromExpr(xreplace(rational(0), [])), ZZ.polyRing(x)))).toBe('0');
+    expect(sympyStr(ZZ.convert(new PolyRing([x], ZZ, 'lex').fromExpr(xreplace(Rational.of(0n, 1n, { gcd: 1n }), [])), ZZ.polyRing(x)))).toBe('0');
   });
   // the arguments do not type-check against the public API
   //   assert CC.convert(ZZ_I(1, 2)) == CC(1, 2)
@@ -6267,12 +6267,12 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_Domain_convert:728", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], QQ, 'lex');
-    expect(sympyStr(QQ.fracField(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))), QQ.fracField(x)))).toBe('x');
+    expect(sympyStr(QQ.fracField(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), QQ.fracField(x)))).toBe('x');
   });
   it("test_Domain_convert:728 (2)", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], ZZ, 'lex');
-    expect(sympyStr(QQ.fracField(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))), ZZ.fracField(x)))).toBe('x');
+    expect(sympyStr(QQ.fracField(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), ZZ.fracField(x)))).toBe('x');
   });
   it("test_Domain_convert:728 (3)", () => {
     const x = new Sym('x');
@@ -6285,12 +6285,12 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_Domain_convert:728 (5)", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], QQ, 'lex');
-    expect(sympyStr(ZZ.fracField(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))), QQ.fracField(x)))).toBe('x');
+    expect(sympyStr(ZZ.fracField(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), QQ.fracField(x)))).toBe('x');
   });
   it("test_Domain_convert:728 (6)", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], ZZ, 'lex');
-    expect(sympyStr(ZZ.fracField(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))), ZZ.fracField(x)))).toBe('x');
+    expect(sympyStr(ZZ.fracField(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), ZZ.fracField(x)))).toBe('x');
   });
   it("test_Domain_convert:728 (7)", () => {
     const x = new Sym('x');
@@ -6303,12 +6303,12 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_Domain_convert:728 (9)", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], QQ, 'lex');
-    expect(sympyStr(QQ.polyRing(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))), QQ.fracField(x)))).toBe('x');
+    expect(sympyStr(QQ.polyRing(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), QQ.fracField(x)))).toBe('x');
   });
   it("test_Domain_convert:728 (10)", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], ZZ, 'lex');
-    expect(sympyStr(QQ.polyRing(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))), ZZ.fracField(x)))).toBe('x');
+    expect(sympyStr(QQ.polyRing(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), ZZ.fracField(x)))).toBe('x');
   });
   it("test_Domain_convert:728 (11)", () => {
     const x = new Sym('x');
@@ -6321,12 +6321,12 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_Domain_convert:728 (13)", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], QQ, 'lex');
-    expect(sympyStr(ZZ.polyRing(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))), QQ.fracField(x)))).toBe('x');
+    expect(sympyStr(ZZ.polyRing(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), QQ.fracField(x)))).toBe('x');
   });
   it("test_Domain_convert:728 (14)", () => {
     const x = new Sym('x');
     const v1 = new FracField([x], ZZ, 'lex');
-    expect(sympyStr(ZZ.polyRing(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))), ZZ.fracField(x)))).toBe('x');
+    expect(sympyStr(ZZ.polyRing(x).convertFrom(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), ZZ.fracField(x)))).toBe('x');
   });
   it("test_Domain_convert:728 (15)", () => {
     const x = new Sym('x');
@@ -6341,52 +6341,52 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(ZZ.fracField(x).convertFrom(new PythonMPQ(1n, 2n), QQ))).toBe('1/2');
   });
   it("test_EX_convert:750", () => {
-    expect(sympyStr(EX.convertFrom(rational(3), ZZ))).toBe('EX(3)');
+    expect(sympyStr(EX.convertFrom(Rational.of(3n, 1n, { gcd: 1n }), ZZ))).toBe('EX(3)');
   });
   it("test_EX_convert:751", () => {
-    expect(sympyStr(ZZ.convertFrom(new Expression(rational(3)), EX))).toBe('3');
+    expect(sympyStr(ZZ.convertFrom(new Expression(Rational.of(3n, 1n, { gcd: 1n })), EX))).toBe('3');
   });
   it("test_EX_convert:750 (2)", () => {
-    expect(sympyStr(EXRAW.convertFrom(rational(3), ZZ))).toBe('3');
+    expect(sympyStr(EXRAW.convertFrom(Rational.of(3n, 1n, { gcd: 1n }), ZZ))).toBe('3');
   });
   it("test_EX_convert:751 (2)", () => {
-    expect(sympyStr(ZZ.convertFrom(rational(3), EXRAW))).toBe('3');
+    expect(sympyStr(ZZ.convertFrom(Rational.of(3n, 1n, { gcd: 1n }), EXRAW))).toBe('3');
   });
   it("test_EX_convert:750 (3)", () => {
     expect(sympyStr(EX.convertFrom(new PythonMPQ(1n, 2n), QQ))).toBe('EX(1/2)');
   });
   it("test_EX_convert:751 (3)", () => {
-    expect(sympyStr(QQ.convertFrom(new Expression(rational(1, 2)), EX))).toBe('1/2');
+    expect(sympyStr(QQ.convertFrom(new Expression(Rational.of(1n, 2n, { gcd: 1n })), EX))).toBe('1/2');
   });
   it("test_EX_convert:750 (4)", () => {
     expect(sympyStr(EXRAW.convertFrom(new PythonMPQ(1n, 2n), QQ))).toBe('1/2');
   });
   it("test_EX_convert:751 (4)", () => {
-    expect(sympyStr(QQ.convertFrom(rational(1, 2), EXRAW))).toBe('1/2');
+    expect(sympyStr(QQ.convertFrom(Rational.of(1n, 2n, { gcd: 1n }), EXRAW))).toBe('1/2');
   });
   it("test_EX_convert:750 (5)", () => {
-    expect(sympyStr(EX.convertFrom(ZZ_I['new'](rational(1), rational(2)), ZZ_I))).toBe('EX(1 + 2*I)');
+    expect(sympyStr(EX.convertFrom(ZZ_I['new'](Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })), ZZ_I))).toBe('EX(1 + 2*I)');
   });
   it("test_EX_convert:751 (5)", () => {
-    expect(sympyStr(ZZ_I.convertFrom(new Expression(new Add([rational(1), new Mul([rational(2), I])])), EX))).toBe('1 + 2*I');
+    expect(sympyStr(ZZ_I.convertFrom(new Expression(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), I])])), EX))).toBe('1 + 2*I');
   });
   it("test_EX_convert:750 (6)", () => {
-    expect(sympyStr(EXRAW.convertFrom(ZZ_I['new'](rational(1), rational(2)), ZZ_I))).toBe('1 + 2*I');
+    expect(sympyStr(EXRAW.convertFrom(ZZ_I['new'](Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })), ZZ_I))).toBe('1 + 2*I');
   });
   it("test_EX_convert:751 (6)", () => {
-    expect(sympyStr(ZZ_I.convertFrom(new Add([rational(1), new Mul([rational(2), I])]), EXRAW))).toBe('1 + 2*I');
+    expect(sympyStr(ZZ_I.convertFrom(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), I])]), EXRAW))).toBe('1 + 2*I');
   });
   it("test_EX_convert:750 (7)", () => {
     expect(sympyStr(EX.convertFrom(QQ_I['new'](new PythonMPQ(1n, 1n), new PythonMPQ(2n, 1n)), QQ_I))).toBe('EX(1 + 2*I)');
   });
   it("test_EX_convert:751 (7)", () => {
-    expect(sympyStr(QQ_I.convertFrom(new Expression(new Add([rational(1), new Mul([rational(2), I])])), EX))).toBe('1 + 2*I');
+    expect(sympyStr(QQ_I.convertFrom(new Expression(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), I])])), EX))).toBe('1 + 2*I');
   });
   it("test_EX_convert:750 (8)", () => {
     expect(sympyStr(EXRAW.convertFrom(QQ_I['new'](new PythonMPQ(1n, 1n), new PythonMPQ(2n, 1n)), QQ_I))).toBe('1 + 2*I');
   });
   it("test_EX_convert:751 (8)", () => {
-    expect(sympyStr(QQ_I.convertFrom(new Add([rational(1), new Mul([rational(2), I])]), EXRAW))).toBe('1 + 2*I');
+    expect(sympyStr(QQ_I.convertFrom(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), I])]), EXRAW))).toBe('1 + 2*I');
   });
   it("test_EX_convert:751 (9)", () => {
     expect(equivalent(sympyStr(RR.convertFrom(new Expression(new Float({ man: 3n, exp: 0n }, 53)), EX)), '3.0', [], { fn: '.convert_from' })).toBe(true);
@@ -6401,40 +6401,40 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(equivalent(sympyStr(CC.convertFrom(new Add([new Float({ man: 1n, exp: 0n }, 53), new Mul([new Float({ man: 1n, exp: 1n }, 53), I])]), EXRAW)), '(1.0 + 2.0j)', [], { fn: '.convert_from' })).toBe(true);
   });
   it("test_EX_convert:750 (9)", () => {
-    expect(sympyStr(EX.convertFrom(new Expression(rational(3)), EX))).toBe('EX(3)');
+    expect(sympyStr(EX.convertFrom(new Expression(Rational.of(3n, 1n, { gcd: 1n })), EX))).toBe('EX(3)');
   });
   it("test_EX_convert:751 (13)", () => {
-    expect(sympyStr(EX.convertFrom(new Expression(rational(3)), EX))).toBe('EX(3)');
+    expect(sympyStr(EX.convertFrom(new Expression(Rational.of(3n, 1n, { gcd: 1n })), EX))).toBe('EX(3)');
   });
   it("test_EX_convert:750 (10)", () => {
-    expect(sympyStr(EXRAW.convertFrom(new Expression(rational(3)), EX))).toBe('3');
+    expect(sympyStr(EXRAW.convertFrom(new Expression(Rational.of(3n, 1n, { gcd: 1n })), EX))).toBe('3');
   });
   it("test_EX_convert:751 (14)", () => {
-    expect(sympyStr(EX.convertFrom(rational(3), EXRAW))).toBe('EX(3)');
+    expect(sympyStr(EX.convertFrom(Rational.of(3n, 1n, { gcd: 1n }), EXRAW))).toBe('EX(3)');
   });
   it("test_EX_convert:750 (11)", () => {
-    expect(sympyStr(EX.convertFrom(rational(3), EXRAW))).toBe('EX(3)');
+    expect(sympyStr(EX.convertFrom(Rational.of(3n, 1n, { gcd: 1n }), EXRAW))).toBe('EX(3)');
   });
   it("test_EX_convert:751 (15)", () => {
-    expect(sympyStr(EXRAW.convertFrom(new Expression(rational(3)), EX))).toBe('3');
+    expect(sympyStr(EXRAW.convertFrom(new Expression(Rational.of(3n, 1n, { gcd: 1n })), EX))).toBe('3');
   });
   it("test_EX_convert:750 (12)", () => {
-    expect(sympyStr(EXRAW.convertFrom(rational(3), EXRAW))).toBe('3');
+    expect(sympyStr(EXRAW.convertFrom(Rational.of(3n, 1n, { gcd: 1n }), EXRAW))).toBe('3');
   });
   it("test_EX_convert:751 (16)", () => {
-    expect(sympyStr(EXRAW.convertFrom(rational(3), EXRAW))).toBe('3');
+    expect(sympyStr(EXRAW.convertFrom(Rational.of(3n, 1n, { gcd: 1n }), EXRAW))).toBe('3');
   });
   it("test_EX_convert:750 (13)", () => {
-    expect(sympyStr(EX.convertFrom(new ANP([new PythonMPQ(1n, 2n), new PythonMPQ(0n, 1n), new PythonMPQ(-9n, 2n), new PythonMPQ(0n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-10n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ), QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('EX(sqrt(2))');
+    expect(sympyStr(EX.convertFrom(new ANP([new PythonMPQ(1n, 2n), new PythonMPQ(0n, 1n), new PythonMPQ(-9n, 2n), new PythonMPQ(0n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-10n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ), QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('EX(sqrt(2))');
   });
   it("test_EX_convert:751 (17)", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).convertFrom(new Expression(new Pow(rational(2), rational(1, 2))), EX))).toBe('ANP([MPQ(1,2), MPQ(0,1), MPQ(-9,2), MPQ(0,1)], [MPQ(1,1), MPQ(0,1), MPQ(-10,1), MPQ(0,1), MPQ(1,1)], QQ)');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).convertFrom(new Expression(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), EX))).toBe('ANP([MPQ(1,2), MPQ(0,1), MPQ(-9,2), MPQ(0,1)], [MPQ(1,1), MPQ(0,1), MPQ(-10,1), MPQ(0,1), MPQ(1,1)], QQ)');
   });
   it("test_EX_convert:750 (14)", () => {
-    expect(sympyStr(EXRAW.convertFrom(new ANP([new PythonMPQ(1n, 2n), new PythonMPQ(0n, 1n), new PythonMPQ(-9n, 2n), new PythonMPQ(0n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-10n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ), QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2)))))).toBe('sqrt(2)');
+    expect(sympyStr(EXRAW.convertFrom(new ANP([new PythonMPQ(1n, 2n), new PythonMPQ(0n, 1n), new PythonMPQ(-9n, 2n), new PythonMPQ(0n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-10n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ), QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })))))).toBe('sqrt(2)');
   });
   it("test_EX_convert:751 (18)", () => {
-    expect(sympyStr(QQ.algebraicField(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))).convertFrom(new Pow(rational(2), rational(1, 2)), EXRAW))).toBe('ANP([MPQ(1,2), MPQ(0,1), MPQ(-9,2), MPQ(0,1)], [MPQ(1,1), MPQ(0,1), MPQ(-10,1), MPQ(0,1), MPQ(1,1)], QQ)');
+    expect(sympyStr(QQ.algebraicField(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))).convertFrom(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), EXRAW))).toBe('ANP([MPQ(1,2), MPQ(0,1), MPQ(-9,2), MPQ(0,1)], [MPQ(1,1), MPQ(0,1), MPQ(-10,1), MPQ(0,1), MPQ(1,1)], QQ)');
   });
   it("test_GlobalPolynomialRing_convert:757", () => {
     const x = new Sym('x');
@@ -6468,7 +6468,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_FractionField_convert:785", () => {
     const x = new Sym('x');
-    expect(sympyStr(QQ.fracField(x).convert(rational(2), ZZ))).toBe('2');
+    expect(sympyStr(QQ.fracField(x).convert(Rational.of(2n, 1n, { gcd: 1n }), ZZ))).toBe('2');
   });
   it("test_inject:789", () => {
     const [x, y, z] = symbols('x y z');
@@ -6524,14 +6524,14 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_drop:807", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([rational(-1), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).drop(y))).toBe('ZZ[x]/(x**2 - 1)');
+    expect(sympyStr(new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).drop(y))).toBe('ZZ[x]/(x**2 - 1)');
   });
   it("test_drop:808", () => {
     const x = new Sym('x');
-    expect(() => new FiniteExtension(Poly.from(xreplace(new Add([rational(-1), new Pow(x, rational(2))]), []), [x], { domain: 'ZZ[y]', pure: false })).drop(x)).toThrow(GeneratorsError);
+    expect(() => new FiniteExtension(Poly.from(xreplace(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), []), [x], { domain: 'ZZ[y]', pure: false })).drop(x)).toThrow(GeneratorsError);
   });
   it("test_Domain_map:818", () => {
-    expect(pyLen([[ZZ.convert(rational(1)), ZZ.convert(rational(2)), ZZ.convert(rational(3)), ZZ.convert(rational(4))]])).toBe(1);
+    expect(pyLen([[ZZ.convert(Rational.of(1n, 1n, { gcd: 1n })), ZZ.convert(Rational.of(2n, 1n, { gcd: 1n })), ZZ.convert(Rational.of(3n, 1n, { gcd: 1n })), ZZ.convert(Rational.of(4n, 1n, { gcd: 1n }))]])).toBe(1);
   });
   it("test_Domain___eq__:822", () => {
     const [x, y] = symbols('x y');
@@ -6639,7 +6639,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_PolynomialRing_from_FractionField:893", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ, 'lex');
-    expect(sympyStr(ZZ.polyRing(x, y).fromFractionField(v1['new'](v1.ring.fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])), v1.ring.fromExpr(rational(1))), ZZ.fracField(x, y)))).toBe('x**2 + y**2');
+    expect(sympyStr(ZZ.polyRing(x, y).fromFractionField(v1['new'](v1.ring.fromExpr(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), ZZ.fracField(x, y)))).toBe('x**2 + y**2');
   });
   // the arguments do not type-check against the public API
   //   assert R.to_domain().from_FractionField(f, F.to_domain()) is None
@@ -6648,20 +6648,20 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_PolynomialRing_from_FractionField:903", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    expect(equivalent(sympyStr(QQ.polyRing(x, y).fromFractionField(v1['new'](v1.ring.fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])), v1.ring.fromExpr(rational(4))), QQ.fracField(x, y))), '1/4*x**2 + 1/4*y**2', [x, y], { fn: '.from_FractionField' })).toBe(true);
+    expect(equivalent(sympyStr(QQ.polyRing(x, y).fromFractionField(v1['new'](v1.ring.fromExpr(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])), v1.ring.fromExpr(Rational.of(4n, 1n, { gcd: 1n }))), QQ.fracField(x, y))), '1/4*x**2 + 1/4*y**2', [x, y], { fn: '.from_FractionField' })).toBe(true);
   });
   it("test_PolynomialRing_from_FractionField:904", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(QQ.polyRing(x, y).fromFractionField(v1['new'](v1.ring.fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])), v1.ring.fromExpr(rational(1))), QQ.fracField(x, y)))).toBe('x**2 + y**2');
+    expect(sympyStr(QQ.polyRing(x, y).fromFractionField(v1['new'](v1.ring.fromExpr(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n }))), QQ.fracField(x, y)))).toBe('x**2 + y**2');
   });
   it("test_FractionField_from_PolynomialRing:914", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(ZZ.fracField(x, y).fromPolynomialRing(new PolyRing([x, y], QQ, 'lex').fromExpr(xreplace(new Add([new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(5), new Pow(y, rational(2))])]), [])), QQ.polyRing(x, y)))).toBe('3*x**2 + 5*y**2');
+    expect(sympyStr(ZZ.fracField(x, y).fromPolynomialRing(new PolyRing([x, y], QQ, 'lex').fromExpr(xreplace(new Add([new Mul([Rational.of(3n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(5n, 1n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])]), [])), QQ.polyRing(x, y)))).toBe('3*x**2 + 5*y**2');
   });
   it("test_FractionField_from_PolynomialRing:915", () => {
     const [x, y] = symbols('x y');
-    expect(equivalent(sympyStr(ZZ.fracField(x, y).fromPolynomialRing(new PolyRing([x, y], QQ, 'lex').fromExpr(xreplace(new Add([new Mul([rational(1, 3), new Pow(x, rational(2))]), new Mul([rational(1, 5), new Pow(y, rational(2))])]), [])), QQ.polyRing(x, y))), '(5*x**2 + 3*y**2)/15', [x, y], { fn: '.from_PolynomialRing' })).toBe(true);
+    expect(equivalent(sympyStr(ZZ.fracField(x, y).fromPolynomialRing(new PolyRing([x, y], QQ, 'lex').fromExpr(xreplace(new Add([new Mul([Rational.of(1n, 3n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(1n, 5n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))])]), [])), QQ.polyRing(x, y))), '(5*x**2 + 3*y**2)/15', [x, y], { fn: '.from_PolynomialRing' })).toBe(true);
   });
   it("test_FF_of_type:921", () => {
     expect(sympyStr(GF(3, true).ofType(GF(3n, true)['new'](1n)))).toBe('True');
@@ -6683,13 +6683,13 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(RR.convert(new Float({ man: 0n, exp: 0n }, 53)))).toBe('0.0');
   });
   it("test_RealField_from_sympy:933", () => {
-    expect(equivalent(sympyStr(RR.convert(rational(1))), '1.0', [], { fn: '.convert' })).toBe(true);
+    expect(equivalent(sympyStr(RR.convert(Rational.of(1n, 1n, { gcd: 1n }))), '1.0', [], { fn: '.convert' })).toBe(true);
   });
   it("test_RealField_from_sympy:934", () => {
     expect(equivalent(sympyStr(RR.convert(new Float({ man: 1n, exp: 0n }, 53))), '1.0', [], { fn: '.convert' })).toBe(true);
   });
   it("test_RealField_from_sympy:935", () => {
-    expect(sympyStr(RR.convert(fn('sin', [rational(1)])))).toBe('0.841470984807897');
+    expect(sympyStr(RR.convert(fn('sin', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false })))).toBe('0.841470984807897');
   });
   it("test_not_in_any_domain:945", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -6930,26 +6930,26 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(() => EX.convert(S.NegativeInfinity)).toThrow(CoercionFailed);
   });
   it("test_EX_EXRAW:1255", () => {
-    expect(sympyStr(EX['new'](rational(1)))).toBe('EX(1)');
+    expect(sympyStr(EX['new'](Rational.of(1n, 1n, { gcd: 1n })))).toBe('EX(1)');
   });
   it("test_EX_EXRAW:1260", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new Expression(new Mul([new Pow(x, rational(-1)), new Add([x, new Mul([x, y])])])).mul(rational(2)))).toBe('EX(2*y + 2)');
+    expect(sympyStr(new Expression(new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), new Add([x, new Mul([x, y])])])).mul(Rational.of(2n, 1n, { gcd: 1n })))).toBe('EX(2*y + 2)');
   });
   it("test_EX_EXRAW:1260 (2)", () => {
     const y = new Sym('y');
-    expect(sympyStr(EX['new'](new Add([rational(2), new Mul([rational(2), y])])))).not.toBe('2*(x*y + x)/x');
+    expect(sympyStr(EX['new'](new Add([Rational.of(2n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), y])])))).not.toBe('2*(x*y + x)/x');
   });
   it("test_EX_EXRAW:1261", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(rational(2).mul(new Mul([new Pow(x, rational(-1)), new Add([x, new Mul([x, y])])])))).toBe('2*(x*y + x)/x');
+    expect(sympyStr(Rational.of(2n, 1n, { gcd: 1n }).mul(new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), new Add([x, new Mul([x, y])])])))).toBe('2*(x*y + x)/x');
   });
   it("test_EX_EXRAW:1261 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(rational(2).mul(new Mul([new Pow(x, rational(-1)), new Add([x, new Mul([x, y])])])))).not.toBe('y + 1');
+    expect(sympyStr(Rational.of(2n, 1n, { gcd: 1n }).mul(new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), new Add([x, new Mul([x, y])])])))).not.toBe('y + 1');
   });
   it("test_EX_EXRAW:1264", () => {
-    expect(sympyStr(EX.convertFrom(rational(1), EXRAW))).toBe('EX(1)');
+    expect(sympyStr(EX.convertFrom(Rational.of(1n, 1n, { gcd: 1n }), EXRAW))).toBe('EX(1)');
   });
   // the arguments do not type-check against the public API
   //   raises(CoercionFailed, lambda: EXRAW.from_sympy([]))
@@ -6965,10 +6965,10 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(EX.unify(EXRAW))).toBe('EXRAW');
   });
   it("test_canonical_unit:1284", () => {
-    expect(sympyStr(ZZ.canonicalUnit(rational(2)))).toBe('1');
+    expect(sympyStr(ZZ.canonicalUnit(Rational.of(2n, 1n, { gcd: 1n })))).toBe('1');
   });
   it("test_canonical_unit:1285", () => {
-    expect(sympyStr(ZZ.canonicalUnit(rational(-2)))).toBe('-1');
+    expect(sympyStr(ZZ.canonicalUnit(Rational.of(-2n, 1n, { gcd: 1n })))).toBe('-1');
   });
   it("test_canonical_unit:1284 (2)", () => {
     expect(sympyStr(QQ.canonicalUnit(new PythonMPQ(2n, 1n)))).toBe('1');
@@ -6977,16 +6977,16 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     expect(sympyStr(QQ.canonicalUnit(new PythonMPQ(-2n, 1n)))).toBe('-1');
   });
   it("test_canonical_unit:1289", () => {
-    expect(sympyStr(ZZ_I.canonicalUnit(ZZ_I['new'](rational(2), rational(0))))).toBe('1');
+    expect(sympyStr(ZZ_I.canonicalUnit(ZZ_I['new'](Rational.of(2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }))))).toBe('1');
   });
   it("test_canonical_unit:1290", () => {
-    expect(sympyStr(ZZ_I.canonicalUnit(ZZ_I['new'](rational(0), rational(2))))).toBe('-I');
+    expect(sympyStr(ZZ_I.canonicalUnit(ZZ_I['new'](Rational.of(0n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('-I');
   });
   it("test_canonical_unit:1291", () => {
-    expect(sympyStr(ZZ_I.canonicalUnit(ZZ_I['new'](rational(-2), rational(0))))).toBe('-1');
+    expect(sympyStr(ZZ_I.canonicalUnit(ZZ_I['new'](Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }))))).toBe('-1');
   });
   it("test_canonical_unit:1292", () => {
-    expect(sympyStr(ZZ_I.canonicalUnit(ZZ_I['new'](rational(0), rational(-2))))).toBe('I');
+    expect(sympyStr(ZZ_I.canonicalUnit(ZZ_I['new'](Rational.of(0n, 1n, { gcd: 1n }), Rational.of(-2n, 1n, { gcd: 1n }))))).toBe('I');
   });
   it("test_canonical_unit:1289 (2)", () => {
     expect(sympyStr(QQ_I.canonicalUnit(QQ_I['new'](new PythonMPQ(2n, 1n), new PythonMPQ(0n, 1n))))).toBe('1');
@@ -7002,11 +7002,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   });
   it("test_canonical_unit:1295", () => {
     const x = new Sym('x');
-    expect(sympyStr(ZZ.polyRing(x).canonicalUnit(new PolyRing([x], ZZ, 'lex').fromExpr(xreplace(new Add([rational(1), x]), []))))).toBe('1');
+    expect(sympyStr(ZZ.polyRing(x).canonicalUnit(new PolyRing([x], ZZ, 'lex').fromExpr(xreplace(new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), []))))).toBe('1');
   });
   it("test_canonical_unit:1296", () => {
     const x = new Sym('x');
-    expect(sympyStr(ZZ.polyRing(x).canonicalUnit(new PolyRing([x], ZZ, 'lex').fromExpr(xreplace(new Add([rational(1), new Mul([rational(-1), x])]), []))))).toBe('-1');
+    expect(sympyStr(ZZ.polyRing(x).canonicalUnit(new PolyRing([x], ZZ, 'lex').fromExpr(xreplace(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])]), []))))).toBe('-1');
   });
   it("test_canonical_unit:1299", () => {
     const x = new Sym('x');
@@ -7015,18 +7015,18 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_canonical_unit:1303", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ_I, 'lex');
-    const v2 = v1['new'](v1.ring.fromExpr(I), v1.ring.fromExpr(rational(1)));
+    const v2 = v1['new'](v1.ring.fromExpr(I), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
     const v3 = v2.field.fieldNew(v2);
     const v4 = new FracField([x, y], ZZ_I, 'lex');
-    expect(equivalent(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(I), v4.ring.fromExpr(rational(1)))))), '(1 + 0*I)/(1 + 0*I)', [x, y], { fn: '.__truediv__', input: '(0 + 1*I)' })).toBe(true);
+    expect(equivalent(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(I), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })))))), '(1 + 0*I)/(1 + 0*I)', [x, y], { fn: '.__truediv__', input: '(0 + 1*I)' })).toBe(true);
   });
   it("test_canonical_unit:1304", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ_I, 'lex');
-    const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), I])), v1.ring.fromExpr(rational(1)));
+    const v2 = v1['new'](v1.ring.fromExpr(new Add([Rational.of(1n, 1n, { gcd: 1n }), I])), v1.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })));
     const v3 = v2.field.fieldNew(v2);
     const v4 = new FracField([x, y], ZZ_I, 'lex');
-    expect(equivalent(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(-1), I])), v4.ring.fromExpr(rational(1)))))), '(0 + -1*I)/(1 + 0*I)', [x, y], { fn: '.__truediv__', input: '(1 + 1*I)' })).toBe(true);
+    expect(equivalent(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([Rational.of(-1n, 1n, { gcd: 1n }), I])), v4.ring.fromExpr(Rational.of(1n, 1n, { gcd: 1n })))))), '(0 + -1*I)/(1 + 0*I)', [x, y], { fn: '.__truediv__', input: '(1 + 1*I)' })).toBe(true);
   });
   // the arguments do not type-check against the public API
   //   assert K.from_sympy(exp(3)) == eK ** 3
@@ -7037,7 +7037,7 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   //   => E**3
   it.todo("test_exponential_domain:1339");
   it("test_AlgebraicField_alias:1345", () => {
-    expect(sympyStr(new AlgebraicNumber(new Pow(rational(2), rational(1, 2)), [rational(1), rational(0)], {}).alias)).toBe('None');
+    expect(sympyStr(new AlgebraicNumber(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], {}).alias)).toBe('None');
   });
   it("test_AlgebraicField_alias:1350", () => {
     const alpha = new Sym('alpha');
@@ -7058,11 +7058,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     }
   });
   it("test_AlgebraicField_alias:1358", () => {
-    expect(sympyStr(new AlgebraicNumber(add(new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))), [rational(1), rational(0)], {}).alias)).toBe('None');
+    expect(sympyStr(new AlgebraicNumber(add(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))), [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], {}).alias)).toBe('None');
   });
   it("test_AlgebraicField_alias:1363", () => {
     const alpha = new Sym('alpha');
-    expect(sympyStr(new AlgebraicNumber(add(new Pow(rational(3), rational(1, 2)), new AlgebraicNumber(new Pow(rational(2), rational(1, 2)), [rational(1), rational(0)], { alias: alpha }).asExpr()), [rational(1), rational(0)], {}).alias)).toBe('None');
+    expect(sympyStr(new AlgebraicNumber(add(new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new AlgebraicNumber(new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], { alias: alpha }).asExpr()), [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], {}).alias)).toBe('None');
   });
   it("test_AlgebraicField_alias:1367", () => {
     const theta = new Sym('theta');
@@ -7074,10 +7074,10 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     }
   });
   it("test_exsqrt:1376", () => {
-    expect(sympyStr(ZZ.isSquare(rational(4)))).toBe('True');
+    expect(sympyStr(ZZ.isSquare(Rational.of(4n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_exsqrt:1377", () => {
-    expect(sympyStr(ZZ.exsqrt(rational(4)))).toBe('2');
+    expect(sympyStr(ZZ.exsqrt(Rational.of(4n, 1n, { gcd: 1n })))).toBe('2');
   });
   it("test_exsqrt:1378", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -7087,10 +7087,10 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   //   => None
   it.todo("test_exsqrt:1379");
   it("test_exsqrt:1380", () => {
-    expect(sympyStr(ZZ.isSquare(rational(0)))).toBe('True');
+    expect(sympyStr(ZZ.isSquare(Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_exsqrt:1381", () => {
-    expect(sympyStr(ZZ.exsqrt(rational(0)))).toBe('0');
+    expect(sympyStr(ZZ.exsqrt(Rational.of(0n, 1n, { gcd: 1n })))).toBe('0');
   });
   it("test_exsqrt:1382", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -7257,21 +7257,21 @@ describe("sympy/polys/domains/tests/test_polynomialring.py", () => {
   it("test_units:90", () => {
     const [x, _x] = symbols('x _x');
     const v1 = new PolynomialRingBase(ZZ, [x], 'grevlex');
-    expect(sympyStr(v1.isUnit(subs(new DMP([rational(1)], ZZ.oldPolyRing(_x)).toSympy(), [[_x, at(v1.symbols, 0)]])))).toBe('True');
+    expect(sympyStr(v1.isUnit(subs(new DMP([Rational.of(1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).toSympy(), [[_x, at(v1.symbols, 0)]])))).toBe('True');
   });
   it("test_units:91", () => {
     const [x, _x] = symbols('x _x');
     const v1 = new PolynomialRingBase(ZZ, [x], 'grevlex');
-    expect(sympyStr(v1.isUnit(subs(new DMP([rational(2)], ZZ.oldPolyRing(_x)).toSympy(), [[_x, at(v1.symbols, 0)]])))).toBe('False');
+    expect(sympyStr(v1.isUnit(subs(new DMP([Rational.of(2n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).toSympy(), [[_x, at(v1.symbols, 0)]])))).toBe('False');
   });
   it("test_units:92", () => {
     const [x, _x] = symbols('x _x');
     const v1 = new PolynomialRingBase(ZZ, [x], 'grevlex');
-    expect(sympyStr(v1.isUnit(subs(new DMP([rational(1), rational(0)], ZZ.oldPolyRing(_x)).toSympy(), [[_x, at(v1.symbols, 0)]])))).toBe('False');
+    expect(sympyStr(v1.isUnit(subs(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).toSympy(), [[_x, at(v1.symbols, 0)]])))).toBe('False');
   });
   it("test_units:93", () => {
     const [x, _x] = symbols('x _x');
     const v1 = new PolynomialRingBase(ZZ, [x], 'grevlex');
-    expect(sympyStr(v1.isUnit(subs(new DMP([rational(1), rational(1)], ZZ.oldPolyRing(_x)).toSympy(), [[_x, at(v1.symbols, 0)]])))).toBe('False');
+    expect(sympyStr(v1.isUnit(subs(new DMP([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], ZZ.oldPolyRing(_x)).toSympy(), [[_x, at(v1.symbols, 0)]])))).toBe('False');
   });
 });
