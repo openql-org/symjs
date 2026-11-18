@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { Add, Float, Rational, S, WildFunction } from '../../src/core/nodes';
-import { asOrderedTerms, compareKeys, sortKey } from '../../src/printing/sortkey';
+import { asOrderedTerms, classKey, compareKeys, sortKey } from '../../src/printing/sortkey';
 import { str } from '../../src/printing/str';
 
 const [x, y] = sj.symbols('x y');
@@ -168,4 +168,16 @@ it('uses the exponential sort priority and orders a single factor', () => {
   const x = sj.symbol('x');
   expect(sj.classKey(sj.exp(x))).toEqual([4, 10, 'exp']);
   expect(sj.asOrderedFactors(x)).toEqual([x]);
+});
+
+it('orders Piecewise, Max, Min and integral transforms by their SymPy class keys', () => {
+  const [x, y] = sj.symbols('x y');
+  const p = sj.piecewise([x, sj.Gt(x, 0)], [0, true]);
+  expect(classKey(p)).toEqual([4, 0, 'Piecewise']);
+  expect(classKey(sj.Max(x, y))).toEqual([5, 0, 'Max']);
+  expect(classKey(sj.Min(x, y))).toEqual([5, 0, 'Min']);
+  expect(classKey(new sj.LaplaceTransform(sj.SymFunction('f')(x), x, y))).toEqual([4, 0, 'LaplaceTransform']);
+  expect(String(sj.mul(sj.gamma(x), p, y))).toBe('y*Piecewise((x, x > 0), (0, True))*gamma(x)');
+  expect(String(sj.mul(p, sj.sin(x), sj.Max(x, y), sj.gamma(y)))).toBe('Piecewise((x, x > 0), (0, True))*sin(x)*gamma(y)*Max(x, y)');
+  expect(String(sj.add(p, sj.gamma(x), sj.Max(x, y), sj.sin(x)))).toBe('Piecewise((x, x > 0), (0, True)) + sin(x) + gamma(x) + Max(x, y)');
 });

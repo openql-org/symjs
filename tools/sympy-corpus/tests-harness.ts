@@ -4,9 +4,9 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Expr } from '../../packages/symjs/src/core/nodes';
-import { BasisDependent } from '../../packages/symjs/src/vector/basisdependent';
 import { deserialize, fmt, matchesSympyErratum, pyEquals, runCase } from './harness';
 import type { Case, CaseObservation, Outcome, Tree } from './harness';
+import { Dyadic, Vector } from '../../packages/symjs/src';
 
 export interface TestCase extends Case {
   test: string;
@@ -76,7 +76,7 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
     // Python != compares numbers by value (Float(1.0) == 1) and other expressions by structure: a
     // mathematically equal but different expression satisfies it
     // a zero vector or dyadic prints as 0 and is not the number 0
-    if (outcome.status === 'pass' && c.expected === '0' && observation && 'value' in observation && observation.value instanceof BasisDependent) return { status: 'pass' };
+    if (outcome.status === 'pass' && c.expected === '0' && observation && 'value' in observation && (observation.value instanceof Vector || observation.value instanceof Dyadic)) return { status: 'pass' };
     if (outcome.status === 'pass') return { status: 'fail', got: c.expected };
     if (outcome.status === 'equivalent') {
       const numeric = (v: string | undefined): boolean => v !== undefined && /^-?\d+(\.\d*)?(e[-+]?\d+)?$/.test(v);

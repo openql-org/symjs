@@ -699,7 +699,7 @@ describe('laplace: program rules', () => {
     const cases: [string, string][] = [
       // SymPy prints the same terms in the order 2*LaplaceTransform(sqrt(t)*f(t), t, s) + LaplaceTransform(f(t), t, s)
       // - Derivative(LaplaceTransform(f(t), t, s), s) (the str printer's term order is not laplace's)
-      ['f(t)*(sqrt(t)+1)**2', '(-Derivative(LaplaceTransform(f(t), t, s), s) + 2*LaplaceTransform(sqrt(t)*f(t), t, s) + LaplaceTransform(f(t), t, s), -oo, True)'],
+      ['f(t)*(sqrt(t)+1)**2', '(2*LaplaceTransform(sqrt(t)*f(t), t, s) + LaplaceTransform(f(t), t, s) - Derivative(LaplaceTransform(f(t), t, s), s), -oo, True)'],
       // SymPy's match picks the factor exp(t**2), which is not exp(a*t), and gives
       // (LaplaceTransform(f(t)*exp(t)*exp(t**2), t, s), -oo, True); symjs takes exp(t) and shifts s
       ['f(t)*exp(t*(t+1))', '(LaplaceTransform(f(t)*exp(t**2), t, s - 1), -oo, True)'],
@@ -711,7 +711,7 @@ describe('laplace: program rules', () => {
   it('expansion of a logarithm of a positive variable', () => {
     const tp = symbol('t', { positive: true });
     // SymPy prints the second term as LaplaceTransform(f(t), t, s)*log(2) (the str printer's factor order)
-    expect(show(laplaceTransform(parse('f(t)*log(2*t)', { symbols: [tp] }), tp, s))).toBe('(LaplaceTransform(f(t)*log(t), t, s) + log(2)*LaplaceTransform(f(t), t, s), -oo, True)');
+    expect(show(laplaceTransform(parse('f(t)*log(2*t)', { symbols: [tp] }), tp, s))).toBe('(LaplaceTransform(f(t)*log(t), t, s) + LaplaceTransform(f(t), t, s)*log(2), -oo, True)');
   });
   it('a symbolic power of t', () => {
     // SymPy: ((-1)**n*Derivative(LaplaceTransform(besselk(1, t), t, s), (s, n)), -oo, True); symjs's

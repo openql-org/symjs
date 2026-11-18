@@ -793,9 +793,9 @@ it('retains denominator and radical checks in larger elimination systems', () =>
 });
 
 it('keeps indexed roots of the numerator when the denominator is nonzero', () => {
-  const numerator = parse('y**7+y+1');
   const equations = [parse('x-y'), parse('(y**7+y+1)/(y+2)')];
-  const roots = Array.from({ length: 7 }, (_, index) => new CRootOf(numerator, index));
+  // (SymPy names the variable of the indexed roots x, whatever the unknown)
+  const roots = Array.from({ length: 7 }, (_, index) => new CRootOf(parse('x**7+x+1'), index));
   expect(solveSystem(equations, [x, y]).map(show)).toEqual(roots.map((root) => show([root, root])));
 });
 
