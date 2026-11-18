@@ -4,13 +4,46 @@
 // Tests of src/series/limits.ts.
 // Limits. Expected values are those of SymPy 1.14.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { Sym, limit, parse, DiracDelta, Heaviside, symbol, oo } from '../../src';
+import * as derivatives from '../../src/calculus/diff';
+import * as gruntz from '../../src/series/gruntz';
 import { limitWithin } from '../../src/series/limits';
+import { Expander } from '../../src/series/puiseux';
+import * as rational from '../../src/simplify/rational';
 import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
 import { NotImplementedError } from '../../src/core/errors';
+
+it('preserves a parameter-dependent harmonic limit at infinity', () => {
+  const x0 = new Sym('x');
+  const m = new Sym('m');
+  expect(limit(sj.harmonic(x0, m), x0, oo, '-')).toEqual(sj.harmonic(oo, m));
+  expect(limit(sj.harmonic(x0, 2), x0, oo, '-')).toEqual(sj.zeta(2));
+  expect(limit(sj.harmonic(x0, x0), x0, oo, '-')).toEqual(sj.S.One);
+});
+
+it('retries an indeterminate product after rational simplification when earlier methods are unavailable', () => {
+  const x = new Sym('x');
+  const quotient = sj.mul(sj.add(x, sj.pow(x, 2)), sj.pow(x, -1));
+  const unavailable = () => { throw new NotImplementedError('test method unavailable'); };
+  const series = vi.spyOn(Expander.prototype, 'leading').mockImplementation(unavailable);
+  const derivative = vi.spyOn(derivatives, 'diff').mockImplementation(unavailable);
+  const asymptotic = vi.spyOn(gruntz, 'gruntz').mockImplementation(unavailable);
+  const simplify = vi.spyOn(rational, 'ratsimp');
+  try {
+    expect(limit(quotient, x, 0).equals(sj.S.One)).toBe(true);
+    expect(simplify).toHaveBeenCalled();
+    simplify.mockReturnValueOnce(sj.SymFunction('unknown')(x));
+    expect(limit(quotient, x, 0)).toBeInstanceOf(sj.Limit);
+  } finally {
+    series.mockRestore();
+    derivative.mockRestore();
+    asymptotic.mockRestore();
+    simplify.mockRestore();
+  }
+});
 
 // Limits that reach the branches of series/limits.ts. Expected values are the str() forms
 // printed by SymPy 1.14 (p is a positive, q a negative and r a real symbol; f and g are functions).
@@ -481,11 +514,13 @@ describe('limits with a small budget of nested limit computations', () => {
     expect(String(limitWithin(P('sin(x)*sin(1/x)'), x, 0, '+', 1000))).toBe('0');
   });
 
-  it("does not apply L'Hopital's rule deeper than 30 nested limits (SymPy 1.14: 0)", () => {
-    let e = 'x*Ci(x)';
-    for (let i = 0; i < 31; i++) e = `sin(${e})`;
-    expect(String(sj.limit(P(e), x, 0))).toBe(`Limit(${P(e).toString()}, x, 0, dir='+')`);
+  it("uses series inside deep limits and keeps the L'Hopital depth cap", () => {
+    const nested = (term: string): Expr => P('sin('.repeat(31) + term + ')'.repeat(31));
+    expect(String(sj.limit(nested('x*Ci(x)'), x, 0))).toBe('0');
     expect(String(sj.limit(P('x*Ci(x)'), x, 0))).toBe('0');
+    const li = nested('x*li(x+1)');
+    expect(String(sj.limit(li, x, 0))).toBe(`Limit(${li}, x, 0, dir='+')`);
+    expect(String(sj.limit(P('x*li(x+1)'), x, 0))).toBe('0');
   });
 });
 
@@ -883,4 +918,30 @@ describe('extension nodes in limits', () => {
     expect(limit(new Opaque([x]), x, 0).toString()).toBe("Limit(Opaque(x), x, 0, dir='+')");
     expect(limit(sj.mul(sj.expm1(x), sj.pow(x, -1)), x, 0).toString()).toBe('1');
   });
+});
+
+it('uses the approach direction for modular jumps and piecewise conditions', async () => {
+  const s = await import('../../src');
+  const x = new s.Sym('x'), b = new s.Sym('b', { negative: true });
+  expect(s.limit(s.Mod(x, b), x, b, '+')).toEqual(b);
+  expect(s.limit(s.Mod(x, b), x, b, '-')).toBe(s.S.Zero);
+  expect(() => s.limit(s.Mod(x, new s.Sym('a')), x, new s.Sym('a'))).toThrow(s.NotImplementedError);
+  expect(s.isUnsolved(s.heuristics(s.sin(x), x, s.S.Zero, '+'))).toBe(true);
+  expect(String(s.heuristics(s.parse('sin(1/x)+atan(x)'), x, s.S.Zero, '+'))).toBe('AccumBounds(-1, 1)');
+  expect(s.limit(s.add(x, new s.Sym('z', { zero: true })), x, 0)).toBe(s.S.Zero);
+  const f = s.piecewise([1, s.Lt(x, 0)], [2, true]);
+  expect(s.limit(f, x, s.oo)).toEqual(s.rational(2));
+  expect(s.limit(f, x, s.S.NegativeInfinity).equals(1)).toBe(true);
+  expect(s.limit(f, x, 0, '-').equals(1)).toBe(true);
+});
+
+it('handles modular limits away from jumps and cancellation of complex powers', () => {
+  expect(String(limit(sj.Mod(x,3),x,1))).toBe('1');
+  expect(String(limit(P('x**a/(x+1)**a'),x,sj.oo))).toBe('1');
+});
+
+it('compares complete gamma growth and logarithmic powers', () => {
+  expect(String(limit(P('uppergamma(x,2)/gamma(x)'), x, oo))).toBe('1');
+  expect(String(limit(P('27**(1+log(x)/log(3))/x**3'), x, oo))).toBe('27');
+  expect(String(limit(P('8**(log(x)/log(2))/x**3'), x, oo))).toBe('1');
 });

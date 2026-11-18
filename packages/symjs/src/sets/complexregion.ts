@@ -58,23 +58,8 @@ export abstract class ComplexRegionNode extends SetExpr {
   get bInterval(): SetExpr {
     return union(...this.psets.map((p) => at(p.args, 1)));
   }
-  /** Area of a rectangular product, or of an annular sector in polar coordinates. */
-  get measure(): Expr {
-    if (!(this.sets instanceof ProductSetNode)) throw new NotImplementedError('Measure of a union of complex regions');
-    const [a, b] = this.sets.args;
-    if (a instanceof FiniteSet || b instanceof FiniteSet) return S.Zero;
-    if (!(a instanceof Interval && b instanceof Interval)) throw new NotImplementedError('Complex region measure needs interval factors');
-    const width = add(b.end, mul(-1, b.start));
-    if (!this.polar) return mul(add(a.end, mul(-1, a.start)), width);
-    if (cmpReal(a.start, S.Zero) !== 0 && cmpReal(a.start, S.Zero) !== 1) throw new NotImplementedError('Polar area needs a nonnegative radius');
-    // A wider angular interval traces the same points again, so its area
-    // saturates at one full turn, even for a directly constructed region.
-    const angularSpan = cmpReal(width, TWO_PI());
-    if (angularSpan === undefined) throw new NotImplementedError('Polar area needs a decidable angular span');
-    // SymPy 1.14 multiplies the coordinate lengths and omits the polar
-    // Jacobian r. An annulus 2 <= r <= 5 has area 21*pi, not 6*pi.
-    return mul(Rational.of(1n, 2n), add(pow(a.end, 2), mul(-1, pow(a.start, 2))), angularSpan === 1 ? TWO_PI() : width);
-  }
+  /** Measure of the coordinate sets (SymPy ComplexRegion._measure). */
+  override get measure(): Expr { return this.sets.measure; }
   protected computeKey(): string {
     return `${this.className}(${this.sets.key})`;
   }
@@ -124,6 +109,9 @@ export class CartesianComplexRegion extends ComplexRegionNode {
 
 /** A region in polar form: {r*(cos(theta) + I*sin(theta)) : (r, theta) in sets} (SymPy PolarComplexRegion). */
 export class PolarComplexRegion extends ComplexRegionNode {
+  constructor(sets: SetExpr) {
+    super(union(...productsOf(sets).map((p) => productSet(at(p.args, 0), normalizeThetaSet(at(p.args, 1))))));
+  }
   get className(): string {
     return 'PolarComplexRegion';
   }
@@ -148,7 +136,8 @@ export function normalizeThetaSet(theta: SetExpr): SetExpr {
   if (theta instanceof Interval) {
     const len = add(theta.end, mul(-1, theta.start));
     const c = cmpReal(len, TWO_PI());
-    if (c !== undefined && c >= 0) {
+    if (c === undefined) throw new TypeError('Cannot determine whether the angular interval spans a full turn');
+    if (c >= 0) {
       if (c === 0 && theta.leftOpen && theta.rightOpen) {
         const k = piCoeff(theta.start);
         if (!k) throw new NotImplementedError('Normalizing theta without pi as coefficient is not yet implemented');
@@ -185,7 +174,8 @@ export function normalizeThetaSet(theta: SetExpr): SetExpr {
  * rectangular form is the finite set of its points.
  */
 export function complexRegion(sets: SetExpr, polar = false): SetExpr {
-  if (polar) return new PolarComplexRegion(union(...productsOf(sets).map((p) => productSet(at(p.args, 0), normalizeThetaSet(at(p.args, 1))))));
+  if (typeof polar !== 'boolean') throw new RangeError('polar must be a boolean');
+  if (polar) return new PolarComplexRegion(sets);
   if (sets instanceof ProductSetNode && sets.args.length === 2 && sets.args.every((a) => a === Reals)) return Complexes;
   if (sets instanceof ProductSetNode && sets.args.length === 2 && sets.args.every((a) => a instanceof FiniteSet)) {
     const [xs, ys] = [at(sets.args, 0), at(sets.args, 1)];

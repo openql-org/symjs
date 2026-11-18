@@ -605,6 +605,13 @@ class Capture:
             extract.DUMMY_IDS.clear()
             record = {"fn": name, "args": [extract.ser(a) for a in args],
                       "kwargs": {k: extract.ser(v) for k, v in kwargs.items()}}
+            owner = getattr(function, "__self__", None)
+            if not name.startswith(".") and isinstance(owner, sympy.MatrixBase):
+                record["boundMatrix"] = extract.ser(owner)
+            if name == "classof":
+                for arg, tree in zip(args, record["args"]):
+                    if tree["t"] == "Matrix":
+                        tree["matrixClass"] = type(arg).__name__
             if name.startswith("."):
                 record["self"] = extract.ser(receiver)
             state = extract.tensor_state((receiver, args, kwargs))
@@ -1160,7 +1167,7 @@ def without_replay_state(value):
     """The original assertion identity, independent of replay-only state."""
     if isinstance(value, dict):
         return {k: without_replay_state(v) for k, v in value.items()
-                if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree")}
+                if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree", "matrixClass", "boundMatrix")}
     if isinstance(value, list):
         return [without_replay_state(v) for v in value]
     return value

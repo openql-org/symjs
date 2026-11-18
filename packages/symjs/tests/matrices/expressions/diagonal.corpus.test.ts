@@ -205,10 +205,10 @@ describe("sympy/matrices/expressions/tests/test_diagonal.py", () => {
   it("test_DiagMatrix:104", () => {
     expect(sympyStr(MatrixSymbol('a', rational(1), rational(1)))).toBe('a');
   });
-  it.fails("test_DiagMatrix:105", () => {
+  it("test_DiagMatrix:105", () => {
     expect(sympyStr(diagonalizeVector(Identity(rational(3))))).toBe('I');
   });
-  it.fails("test_DiagMatrix:106", () => {
+  it("test_DiagMatrix:106", () => {
     expect(sympyStr(DiagMatrix(Identity(rational(3))).doit())).toBe('I');
   });
   it("test_DiagMatrix:110", () => {

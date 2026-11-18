@@ -625,3 +625,30 @@ describe('random indexed and random matrix symbols, matrix domains (SymPy sympy/
     expect(sj.str(sj.Covariance(X, Y, c))).toBe('CrossCovarianceMatrix(X, Y, x > 0)');
   });
 });
+
+describe('arguments that carry the probability space (SymPy 1.14)', () => {
+  it('a random matrix symbol has the arguments (symbol, n, m, pspace)', async () => {
+    const { GaussianUnitaryEnsemble } = await import('../../src/stats');
+    const { RandomMatrixSymbol } = await import('../../src/stats/rv');
+    const G = GaussianUnitaryEnsemble('U', 2) as InstanceType<typeof RandomMatrixSymbol>;
+    expect(G.args.length).toBe(4);
+    expect(str(G.args[3] as Expr)).toBe('RandomMatrixPSpace(U, GaussianUnitaryEnsembleModel(U, 2))');
+    expect((G.withArgs(G.args) as InstanceType<typeof RandomMatrixSymbol>).pspace.key).toBe(G.pspace.key);
+    expect(G.withArgs(G.args.slice(0, 3)).args.length).toBe(4);
+  });
+  it('variables are dependent through a random parameter', async () => {
+    const { Beta, Normal, Poisson } = await import('../../src/stats');
+    const { pspaceIndependent } = await import('../../src/stats/rv');
+    const rate = Beta('r', 2, 3);
+    const Y = Poisson('y', rate);
+    expect(pspaceIndependent(Y, rate)).toBe(false);
+    expect(pspaceIndependent(Y, Normal('n', 0, 1))).toBe(true);
+  });
+  it('a continuous domain takes its variables as any collection', () => {
+    const x = new Sym('x'), y = new Sym('y');
+    const N = new SingleContinuousDomain([x, Interval.of(0, 1)]);
+    expect(str(N.computeExpectation(add(x, 1), new Set([x])))).toBe('Integral(x + 1, (x, 0, 1))');
+    expect(str(N.computeExpectation(add(x, 1)))).toBe('Integral(x + 1, (x, 0, 1))');
+    expect(() => N.computeExpectation(add(x, 1), new Set([x, y]))).toThrow(RangeError);
+  });
+});

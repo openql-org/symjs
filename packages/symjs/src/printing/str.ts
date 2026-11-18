@@ -7,7 +7,7 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isAddLike, isNum } from '../core/nodes';
 import { mul, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { floatToString } from '../numeric/mpf';
@@ -150,11 +150,11 @@ function printAdd(e: Add): string {
   for (const term of asOrderedTerms(e)) {
     let t = str(term);
     let sign = '+';
-    if (t.startsWith('-')) {
+    if (t.startsWith('-') && !isAddLike(term)) {
       sign = '-';
       t = t.slice(1);
     }
-    parts.push(sign, precedence(term) < PREC.ADD ? `(${t})` : t);
+    parts.push(sign, precedence(term) < PREC.ADD || isAddLike(term) ? `(${t})` : t);
   }
   const first = parts.shift();
   return (first === '-' ? '-' : '') + parts.join(' ');

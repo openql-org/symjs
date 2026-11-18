@@ -8,6 +8,7 @@ import * as sj from '../../src';
 import { add, complexAccuracy, exp, getIntegerPart, I, mul, NoMatch, Rational, S, sqrt, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 import { impl } from '../../src/core/nodes';
+import { numericExtensions } from '../../src/numeric/evalf';
 import * as C from '../../src/numeric/mpconst';
 import { sha256, SYMPY_1000 } from './mpconst.ref';
 
@@ -17,6 +18,44 @@ const { parse, sstr, evalf } = sj;
 const p = (s: string) => parse(s);
 const f = sj.SymFunction('f');
 const P = (s: string): sj.Expr => sj.parse(s, { symbols: { x, y }, functions: { f } } as never);
+
+it('evaluates closed definite integrals before converting to Float', () => {
+  const exact = new sj.Integral([sj.pow(x, 2), x, S.Zero, S.One]);
+  const residue = sj.piecewise([1, sj.Eq(sj.Mod(x, 2), 1)], [2, sj.Lt(x, 10)], [0, true]);
+  const periodic = new sj.Integral([residue, x, S.Zero, Rational.of(5)]);
+  expect(String(evalf(exact))).toBe('0.333333333333333');
+  expect(String(evalf(periodic))).toBe('10.0000000000000');
+  for (const integral of [new sj.Integral([x, x]), new sj.Integral([x, x, S.Zero, y]), new sj.Integral([f(x), x, S.Zero, S.One])]) {
+    expect(evalf(integral)).toBeInstanceOf(sj.Integral);
+  }
+  const saved = { ...impl };
+  try {
+    delete impl.doit;
+    expect(evalf(exact)).toBeInstanceOf(sj.Integral);
+  } finally {
+    Object.assign(impl, saved);
+  }
+});
+
+it('compiles registered numerical extensions and evaluates their substituted parts', () => {
+  class Double extends sj.ExtensionExpr {
+    constructor(readonly value: Expr) { super('Double', [value]); }
+    withArgs(args: readonly Expr[]): Expr { return new Double(args[0] ?? S.Zero); }
+    override evalfSelf(evalArg: (expr: Expr) => Expr): Expr { return evalArg(mul(2, this.value)); }
+  }
+  numericExtensions['Double'] = ([value]) => ({
+    re: 2 * (value?.re ?? 0),
+    im: 2 * (value?.im ?? 0),
+  });
+  try {
+    const expression = new Double(x);
+    expect(sj.lambdify(expression, [x])(3)).toEqual({ re: 6, im: 0 });
+    expect(sstr(evalf(expression))).toBe('2.0*x');
+    expect(sstr(evalf(expression, 15, { subs: { x: 3 } }))).toBe('6.00000000000000');
+  } finally {
+    delete numericExtensions['Double'];
+  }
+});
 
 afterEach(() => C.clearConstantCache());
 

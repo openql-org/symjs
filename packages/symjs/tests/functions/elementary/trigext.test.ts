@@ -13,6 +13,14 @@ import { mul, parse, S, tan } from '../../../src';
 // ---- table harness: each case is [kind, SymPy source, str() of the SymPy 1.14 result or [re, im]] ----
 type Case = [kind: string, src: string, expected: string | [number, number]];
 const x = new sj.Sym('x');
+it('reduces unevaluated inverse compositions by exact multiples of pi', () => {
+  expect(sj.sstr(sj.expandMul(sj.asinh(sj.fn('sinh', [parse('2 + 6*I')], { evaluate: false }))))).toBe('2 - 2*I*pi + 6*I');
+  expect(String(sj.asinh(sj.fn('sinh', [S.ComplexInfinity], { evaluate: false })))).toBe('asinh(sinh(zoo))');
+  expect(String(sj.atanh(sj.fn('tanh', [mul(S.Infinity, S.I)], { evaluate: false })))).toBe('atanh(tanh(oo*I))');
+  const value = sj.add(2, mul(10n ** 30n, S.I));
+  const expected = sj.parse('2 - 318309886183790671537767526745*I*pi + 1000000000000000000000000000000*I');
+  expect(sj.expandMul(sj.atanh(sj.fn('tanh', [value], { evaluate: false }))).equals(expected)).toBe(true);
+});
 it('evaluates acos on imaginary arguments and logs of negative constants', () => {
   for (const [source, expected] of [
     ['acos(I)', 'pi/2 - I*log(1 + sqrt(2))'],
@@ -21,6 +29,16 @@ it('evaluates acos on imaginary arguments and logs of negative constants', () =>
     ['log(-1-sqrt(2))', 'log(1 + sqrt(2)) + I*pi'],
     ['log(-x-1)', 'log(-x - 1)'],
   ] as const) expect(String(sj.parse(source))).toBe(expected);
+});
+it('recognizes the exact binary scale of floating-point cotangent arguments', () => {
+  const e = new sj.Sym('e', { even: true });
+  const n = new sj.Sym('n', { integer: true });
+  const angle = (scale: number, factor: sj.Expr) => mul(new sj.Float(scale), S.Pi, factor);
+  expect(sj.cot(angle(4.5, e))).toBe(S.ComplexInfinity);
+  expect(sj.cot(angle(4, n))).toBe(S.ComplexInfinity);
+  expect(String(sj.cot(angle(4.5, n)))).toBe('cot(pi*n/2)');
+  expect(String(sj.cot(angle(4.5, x)))).toBe('cot(9*pi*x/2)');
+  expect(String(sj.cot(angle(4.375, x)))).toBe('cot(4.375*pi*x)');
 });
 const locals = {
   p: new sj.Sym('p', { positive: true }),
@@ -331,6 +349,7 @@ const TRIG_CASES: Case[] = [
   ["s", "acsc(zoo)", "0"],
   ["s", "acsc(nan)", "nan"],
   ["s", "asech(nan)", "nan"],
+  ["s", "asech(0)", "oo"],
   ["s", "asech(-1)", "I*pi"],
   ["s", "asech(oo)", "I*pi/2"],
   ["s", "asech(-oo)", "I*pi/2"],
@@ -338,6 +357,7 @@ const TRIG_CASES: Case[] = [
   ["s", "asech(2)", "I*pi/3"],
   ["s", "asech(1/2)", "asech(1/2)"],
   ["s", "acsch(nan)", "nan"],
+  ["s", "acsch(0)", "zoo"],
   ["s", "acsch(oo)", "0"],
   ["s", "acsch(-oo)", "0"],
   ["s", "acsch(-1)", "-log(1 + sqrt(2))"],

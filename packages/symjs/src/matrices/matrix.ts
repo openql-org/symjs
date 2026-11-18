@@ -5,13 +5,14 @@
  * @file Immutable matrices with symbolic entries.
  */
 
-import { at, cast, defined, first } from '../core/guard';
+import { at, defined, first } from '../core/guard';
 import { NonInvertibleMatrixError, NonSquareMatrixError, ShapeError } from '../core/errors';
 import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
 import { Expr, Float, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
 import { asRealImag, atoms } from '../core/methods';
+import { ExprMap } from '../core/exprmap';
 import { replace, type Query, type Replacement } from '../core/match';
 import type { Truth } from '../core/truth';
 import { toTruth, truthAnd } from '../core/truth';
@@ -45,7 +46,15 @@ const integerValue = (e: Expr): number | undefined => {
 const isIndexList = (perm: readonly (readonly [number, number])[] | readonly number[]): perm is readonly number[] => typeof perm[0] === 'number';
 const range = (a: number, b: number): number[] => Array.from({ length: Math.max(0, b - a) }, (_, i) => a + i);
 
+/** SymPy classof: choose the matrix result class by its coercion priority. */
+export function classof(a: { readonly classPriority: number }, b: { readonly classPriority: number }): Function {
+  if (typeof a.classPriority !== 'number' || typeof b.classPriority !== 'number') throw new TypeError('Incompatible matrix classes');
+  return a.classPriority > b.classPriority ? a.constructor : b.constructor;
+}
+
 export class Matrix {
+  get classPriority(): number { return 8; }
+
   #rows: number;
   #cols: number;
   /** Row-major entries. */
@@ -272,9 +281,7 @@ export class Matrix {
       const terms: Expr[] = [];
       for (let k = 0; k < this.cols; k++) {
         const a = this.get(i, k);
-        if (a instanceof Rational && a.isZero) continue;
         const b = o.get(k, j);
-        if (b instanceof Rational && b.isZero) continue;
         terms.push(mul(a, b));
       }
       return simp(add(...terms));
@@ -297,14 +304,12 @@ export class Matrix {
     // SymPy MatrixBase.pow: a diagonal or 1x1 matrix is raised entrywise; otherwise the products
     // are simplified as they go (dotprodsimp), here by expanding each entry
     if (k === 0) return Matrix.eye(this.rows);
+    if (k === 1) return this;
     if (this.isDiagonal()) return this.map((x) => pow(x, k));
-    let result = Matrix.eye(this.rows);
-    let base: Matrix = this;
-    let m = k;
-    while (m > 0) {
-      if (m & 1) result = result.product(base, expand);
-      m >>= 1;
-      if (m > 0) base = base.product(base, expand);
+    let result: Matrix = this;
+    for (const bit of k.toString(2).slice(1)) {
+      result = result.product(result, expand);
+      if (bit === '1') result = result.product(this, expand);
     }
     return result;
   }
@@ -362,6 +367,16 @@ export class Matrix {
   /** Anticommutator {A, B} = AB + BA. */
   anticommutator(o: Matrix): Matrix {
     return this.mul(o).add(o.mul(this));
+  }
+
+  /** Join a block on the right. A matrix with no columns accepts the block's row count. */
+  rowJoin(other: Matrix): Matrix {
+    return this.cols === 0 ? other : this.hstack(other);
+  }
+
+  /** Join a block below. A matrix with no rows accepts the block's column count. */
+  colJoin(other: Matrix): Matrix {
+    return this.rows === 0 ? other : this.vstack(other);
   }
 
   /** Stack horizontally. */
@@ -739,7 +754,7 @@ export class Matrix {
   isAntiSymmetric(simplifyEntries = true): Truth {
     if (!this.isSquare) return false;
     const sums = this.add(this.transpose()).data;
-    if (simplifyEntries) return sums.every((e) => isZeroE(simplify(e)));
+    if (simplifyEntries) return truthAnd(...sums.map((e) => toTruth(isZero(simplify(e)))));
     if (sums.every(isZeroE)) return true;
     return sums.some((e) => isNum(e) && !isZeroE(e)) ? false : 'unknown';
   }
@@ -804,9 +819,17 @@ export class Matrix {
     return this.map((e) => xreplace(e, rule));
   }
   /** SymPy replace(query, value): the entries with matching subexpressions replaced. */
-  replace(query: Query, value: Replacement, opts: Omit<NonNullable<Parameters<typeof replace>[3]>, 'map'> = {}): Matrix {
-    // (without the map option replace gives the expression only)
-    return this.map((e) => cast(replace(e, query, value, opts), Expr));
+  replace(query: Query, value: Replacement, opts: NonNullable<Parameters<typeof replace>[3]> & { map: true }): [Matrix, Map<Expr, Expr>];
+  replace(query: Query, value: Replacement, opts?: Omit<NonNullable<Parameters<typeof replace>[3]>, 'map'>): Matrix;
+  replace(query: Query, value: Replacement, opts: NonNullable<Parameters<typeof replace>[3]> = {}): Matrix | [Matrix, Map<Expr, Expr>] {
+    const changes = new ExprMap<Expr>();
+    const matrix = this.map((e) => {
+      const result = replace(e, query, value, opts);
+      if (result instanceof Expr) return result;
+      for (const [from, to] of result[1]) changes.set(from, to);
+      return result[0];
+    });
+    return opts.map ? [matrix, changes] : matrix;
   }
 
   // ---- printing ------------------------------------------------------------------

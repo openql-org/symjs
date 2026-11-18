@@ -46,6 +46,18 @@ const f = SymFunction('f');
 const s = (e: unknown): string => (e instanceof Expr ? str(e) : 'None');
 const pairStr = (p: readonly unknown[]): string => `(${p.map(s).join(', ')})`;
 
+it('allows integer-order J and I at zero and rejects the logarithmic Y and K branches', () => {
+  expect(isMeromorphic(sj.besselj(2, x), x, 0)).toBe(true);
+  expect(isMeromorphic(sj.besseli(2, x), x, 0)).toBe(true);
+  expect(isMeromorphic(sj.bessely(2, x), x, 0)).toBe(false);
+  expect(isMeromorphic(sj.besselk(2, x), x, 0)).toBe(false);
+  expect(isMeromorphic(sj.besselk(2, x), x, 1)).toBe(true);
+  expect(isMeromorphic(sj.besselj(x, x), x, 1)).toBe(false);
+  expect(isMeromorphic(sj.besselj(1, x), x, sj.oo)).toBe(false);
+  expect(isMeromorphic(sj.besselj(2, log(x)), x, 0)).toBe('unknown');
+  expect(isMeromorphic(sj.bessely(2, add(x, y)), x, 0)).toBe('unknown');
+});
+
 describe('keepCoeff and argsCnc', () => {
   it('_keep_coeff', () => {
     expect(String(sj.keepCoeff(E('x + 1'), E('2')))).toBe('2*(x + 1)');
@@ -753,4 +765,45 @@ it('optionally includes nonrational numeric coefficients in asCoeffMul', () => {
   expect(sj.asCoeffMul(sj.mul(new Float(1.1), x), [], false).map(String)).toEqual(['1.10000000000000', 'x']);
   expect(sj.asCoeffMul(x, [], false).map(String)).toEqual(['1', 'x']);
   expect(sj.asCoeffMul(sj.mul(x, y), [], false).map(String)).toEqual(['1', 'x,y']);
+});
+
+describe('Piecewise series and meromorphic branches', () => {
+  const [x, y] = sj.symbols('x y', { real: true });
+  const p = sj.piecewise([sj.sqrt(sj.sub(1, x)), sj.Gt(x, 0)], [1, true]);
+
+  it('tests meromorphicity at interior points and leaves boundary points undecided', () => {
+    expect(sj.isMeromorphic(p, x, -1)).toBe(true);
+    expect(sj.isMeromorphic(p, x, 1)).toBe(false);
+    expect(sj.isMeromorphic(p, x, 2)).toBe(true);
+    expect(sj.isMeromorphic(p, x, 0)).toBe('unknown');
+    expect(sj.isMeromorphic(p, x, sj.I)).toBe('unknown');
+    expect(sj.isMeromorphic(p, x, y)).toBe('unknown');
+    expect(sj.isMeromorphic(sj.piecewise([x, sj.Gt(x, 0)]), x, -1)).toBe('unknown');
+    expect(sj.isMeromorphic(sj.piecewise([x, sj.Gt(x, 0)], [2, sj.Gt(y, 0)]), x, -1)).toBe('unknown');
+  });
+
+  it('expands each branch separately at the origin', () => {
+    const branches = sj.piecewise([sj.sin(x), sj.Lt(x, 0)], [sj.cos(x), sj.Gt(x, 0)]);
+    expect(sj.sstr(sj.nseries(branches, x, 0, 2))).toBe('Piecewise((x + O(x**2), x < 0), (1 + O(x**2), x > 0))');
+    expect(sj.sstr(sj.nseries(branches, x, 1, 1))).toBe('cos(1) + O(x - 1, (x, 1))');
+  });
+
+  it('passes a logarithm placeholder through explicit and inferred expansion variables', () => {
+    const branches = sj.piecewise([sj.log(x), sj.Gt(x, 0)], [sj.cos(x), true]);
+    const expected = 'Piecewise((y, x > 0), (1 + O(x**2), True))';
+    expect(sj.sstr(sj.nseries(branches, x, 0, 2, '+', { logx: y }))).toBe(expected);
+    expect(sj.sstr(sj.nseries(branches, x, 0, 2, undefined, { logx: y }))).toBe(expected);
+    expect(sj.sstr(sj.nseries(branches, undefined, 0, 2, { logx: y }))).toBe(expected);
+    expect(sj.sstr(sj.nseries(sj.sqrt(x), x, 0, 2, '-'))).toBe('I*sqrt(-x)');
+  });
+});
+
+it('checks a varying second argument for meromorphicity', () => {
+  expect(sj.isMeromorphic(sj.atan2(y, x), x, 0)).toBe(false);
+});
+
+it('passes directions to the local expansion', () => {
+  const step = sj.SingularityFunction(x, 0, 0);
+  expect(sj.nseries(step, x, 0, 6, { cdir: 1 })).toBe(sj.S.One);
+  expect(sj.nseries(step, x, 0, 6, { cdir: -1 })).toBe(sj.S.Zero);
 });

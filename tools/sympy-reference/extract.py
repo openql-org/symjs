@@ -1088,7 +1088,11 @@ def _ser(o):
                                  "relators": [ser(r) for r in getattr(o, "_reidemeister_relators", [])],
                                  "hasRelators": hasattr(o, "_reidemeister_relators"),
                                  "P": [[None if v is None else ser(v) for v in row] for row in o.P]}}
-                   if hasattr(o, "_schreier_free_group") else {})}
+                   if hasattr(o, "_schreier_free_group") else
+                   # the modified coset table (modified_define, modified_scan, ...): words in the subgroup generators
+                   {"modified": {"P": [[None if v is None else ser(v) for v in row] for row in o.P],
+                                 "pP": [[int(k), ser(v)] for k, v in sorted(o.p_p.items())]}}
+                   if any(v is not None for row in o.P for v in row) or o.p_p else {})}
     if isinstance(o, _Collector):
         return {"t": "Collector", "pcgs": [ser(g) for g in o.pcgs], "series": [ser(g) for g in o.pc_series],
                 "relativeOrder": [int(r) for r in o.relative_order]}

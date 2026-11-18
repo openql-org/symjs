@@ -6,9 +6,10 @@
 // Coverage of sets/sets.ts. Each case gives the SymPy 1.14 expression and its str(); where symjs
 // differs, the comment gives SymPy's answer and the reason.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import * as Sets from '../../src/sets/sets';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import rangeSlices from './range-slices.json';
 import { impl } from '../../src/core/nodes';
 import { cast } from '../../src/core/guard';
@@ -1268,4 +1269,194 @@ it('slices ranges with exact bounds beyond machine integer precision', () => {
   expect(range.slice().stop.key).toBe(end.key);
   expect(String(range.slice(-2))).toBe('Range(999999999999999999999999999998, 1000000000000000000000000000000, 1)');
   expect(String(range.slice(undefined, undefined, -1).start)).toBe('999999999999999999999999999999');
+});
+
+it('replays the upstream set assertions through the public API', () => {
+  for (const mod of ['test_sets', 'test_fancysets', 'test_conditionset', 'test_contains', 'test_powerset', 'test_setexpr']) {
+    for (const c of passingModuleCases('sets', `sympy.sets.tests.${mod}`)) {
+      expect(['pass', 'equivalent'], c.src).toContain(runTestCase(c).status);
+    }
+  }
+});
+
+it('converts interval endpoints at the requested binary precision', () => {
+  const bounds = (a: sj.ExprLike, b: sj.ExprLike) => cast(I(a, b), sj.Interval);
+  const [e, pi] = bounds(sj.E, sj.pi).toMpi(112);
+  expect(pi).toBeInstanceOf(sj.Float);
+  expect(cast(e, sj.Float).prec).toBe(112);
+  expect(bounds(new sj.Float(0.25), sj.oo).toMpi().map(String)).toEqual(['0.250000000000000', 'oo']);
+  expect(() => bounds(x, 3).toMpi()).toThrow(TypeError);
+  expect(() => bounds(1, 2).toMpi(0)).toThrow(RangeError);
+  expect(() => bounds(1, 2).toMpi(1.5)).toThrow(RangeError);
+});
+
+it('iterates Cartesian powers, number sets and images in domain order', () => {
+  expect(F(2, 3).pow(0).key).toBe(F(sj.Tuple()).key);
+  expect([...cast(F(2, 3).pow(2), sj.ProductSetNode)].map(String)).toEqual(['(2, 2)', '(3, 2)', '(2, 3)', '(3, 3)']);
+  expect(() => F(2).pow(sj.rational(1, 2))).toThrow(RangeError);
+  const take = (s: Iterable<sj.Expr>, count: number) => {
+    const it = s[Symbol.iterator]();
+    return Array.from({length: count}, () => String(it.next().value));
+  };
+  expect([...sj.EmptySet.elements()]).toEqual([]);
+  expect(take(sj.Naturals.elements(), 3)).toEqual(['1', '2', '3']);
+  expect(take(sj.Naturals0.elements(), 3)).toEqual(['0', '1', '2']);
+  expect(take(sj.Integers.elements(), 5)).toEqual(['0', '1', '-1', '2', '-2']);
+  expect(take(sj.Rationals.elements(), 20).slice(-5)).toEqual(['1/4', '4', '-1/4', '-4', '3/4']);
+  expect(take(cast(sj.Range.of(1, sj.oo, 2), sj.Range), 3)).toEqual(['1', '3', '5']);
+  expect(() => [...cast(sj.Range.of(sj.S.NegativeInfinity, 0), sj.Range)]).toThrow(RangeError);
+  expect(() => [...new sj.ImageSet(x, x, I(0, 1))]).toThrow(TypeError);
+  expect(() => [...sj.Reals.elements()]).toThrow(TypeError);
+  expect([...new sj.ImageSet(x, sj.pow(x, 2), F(-1, 1))].map(String)).toEqual(['1']);
+  expect([...new sj.SetOp('Intersection', [F(0, 3), I(1, 4)])].map(String)).toEqual(['3']);
+  expect([...new sj.SetOp('Complement', [F(0, 3), I(1, 4)])].map(String)).toEqual(['0']);
+  expect(() => [...new sj.SetOp('Intersection', [I(0, 1), sj.Reals])]).toThrow(TypeError);
+  const product = sj.ProductSet(F(1, 2), F(3, 4));
+  expect(product.isIterable).toBe(true);
+  expect(sj.ProductSet(I(0, 1), F(1)).isIterable).toBe(false);
+  expect(sj.DisjointUnion(product, sj.PowerSet(F(1))).length).toBe(6);
+  expect(sj.PowerSet(sj.Range.of(4)).length).toBe(16);
+  expect(cast(sj.ProductSet(sj.DisjointUnion(F(1), F(2)), F(3)), sj.ProductSetNode).length).toBe(2);
+  expect(() => sj.DisjointUnion(sj.Reals).length).toThrow(TypeError);
+});
+
+it('preserves tuple signatures and reconstructs multivariate image domains', () => {
+  const add = sj.Lambda([x, y], sj.add(x, y));
+  const image = cast(sj.ImageSet.of(add, sj.Integers, sj.Naturals), sj.ImageSet);
+  expect(image.doit()).toBe(image);
+  expect(image.baseSets).toEqual([sj.Integers, sj.Naturals]);
+  expect(sj.xreplace(image, [[sj.Naturals, sj.Naturals0]])).toBeInstanceOf(sj.ImageSet);
+  const tuple = sj.Tuple(x, y);
+  const pairs = F(sj.Tuple(2, 4), sj.Tuple(3, 6));
+  expect(String(sj.imageset(tuple, sj.add(x, y), pairs))).toBe('{6, 9}');
+  expect(() => Reflect.apply(sj.ImageSet.of, sj.ImageSet, [x, sj.Reals])).toThrow(RangeError);
+  expect(() => Reflect.apply(sj.ImageSet.of, sj.ImageSet, [sj.Lambda(x, x), 1])).toThrow(TypeError);
+  expect(() => Reflect.apply(Sets.conditionSet, undefined, [x, sj.Lt(x, 1), x])).toThrow(TypeError);
+  expect(Sets.conditionSet(tuple, sj.Gt(x, y), F(2, 3))).toBe(sj.EmptySet);
+  expect(Sets.conditionSet(x, sj.Gt(y, x), F(y))).toBeInstanceOf(sj.ConditionSet);
+  expect(String(sj.imageset(x, sj.pow(x, 2), sj.Range.of(3)))).toContain('ImageSet');
+});
+
+it('distinguishes incomplete families of subsets and retains symbolic set equalities', () => {
+  for (const f of [F(sj.EmptySet, F(1, 2)), F(sj.EmptySet, F(1), F(2), F(3, 4))]) {
+    expect(sj.rewrite(f, 'PowerSet').key).toBe(f.key);
+  }
+  const a = F(1, 2);
+  for (const n of [new sj.Float(1), sj.S.One]) {
+    expect(sj.Eq(a, n)).toBe(sj.S.false);
+    expect(sj.Ne(n, a)).toBe(sj.S.true);
+  }
+  expect(sj.Eq(x, a)).toBeInstanceOf(sj.Rel);
+  expect(String(new sj.SetOp('Intersection', [a, sj.Reals]).printStr(String))).toContain('Intersection');
+  expect(Sets.intersection(new sj.SetOp('Intersection', [a, sj.Reals]), F(2, 3)).key).toBe(F(2).key);
+});
+
+it('respects piecewise boundaries when taking interval images', () => {
+  const domain = I(-1, 1);
+  const image = (c: sj.Expr) => sj.imageset(x, new sj.Piecewise([sj.S.Zero, c, sj.S.One, sj.S.true]), domain);
+  for (const c of [sj.Lt, sj.Le, sj.Gt, sj.Ge, sj.Eq, sj.Ne]) {
+    expect(image(c(x, 0)).key).toBe(F(0, 1).key);
+  }
+  expect(image(sj.Gt(sj.add(y, x), 0)) instanceof sj.ImageSet).toBe(true);
+  expect(sj.imageset(x, sj.mul(y, sj.pow(x, -1)), domain) instanceof sj.ImageSet).toBe(true);
+  expect(sj.imageset(x, sj.mul(sj.I, sj.pow(sj.add(x, 2), -1)), domain) instanceof sj.ImageSet).toBe(true);
+});
+
+it('handles set-valued images, poles and polar coordinates', () => {
+  const raw = (expr: sj.Expr) => new sj.ImageSet(x, expr, sj.Reals);
+  expect(sj.containsQ(raw(F(x)), F(1))).toBe('unknown');
+  expect(sj.containsQ(raw(x), F(1))).toBe(false);
+  expect(sj.containsQ(raw(sj.parse('(x**2-1)/(x-1)')), sj.rational(2))).toBe(false);
+  const pair = sj.Tuple(x, y);
+  const cartesian = sj.Tuple(sj.mul(x, sj.cos(y)), sj.mul(x, sj.sin(y)));
+  const polar = new sj.ImageSet(pair, cartesian, I(0, 1), I(0, sj.pi));
+  expect(sj.containsQ(polar, sj.Tuple(0, 0))).toBe(true);
+  expect(sj.containsQ(polar, sj.Tuple(r, 0))).toBe('unknown');
+  expect(sj.containsQ(polar, sj.Tuple(sj.symbol('p', { positive: true }), 0))).toBe('unknown');
+  expect(C(F(sj.MatrixSymbol('A', 2, 2)), 1)).toBe(sj.S.false);
+  expect(String(new sj.SetOp('Union', [F(1), sj.Reals]).printStr(String))).toContain('Union');
+  expect(String(new sj.ImageSet(x, x, sj.Naturals)[Symbol.iterator]().next().value)).toBe('1');
+});
+
+it('keeps unresolved integer image intersections symbolic', () => {
+  const image = (expr: string, base: Sets.SetExpr = sj.Integers) => new sj.ImageSet(x, sj.parse(expr), base);
+  const squares = image('x**2');
+  const negative = image('-x**2');
+  for (const a of [image('x**2', sj.Naturals), image('2*x**2'), image('x**3'),
+    image('(2*x+1)**2'), image('(x+1/2)**2'), image('(x**2+1)**2'), image('2*x')]) {
+    expect(sj.Intersection(a, negative) instanceof sj.SetOp).toBe(true);
+  }
+  expect(sj.Intersection(image('x**2+1'), negative)).toBe(sj.EmptySet);
+  expect(sj.Intersection(squares, image('200000000-x**2')) instanceof sj.SetOp).toBe(true);
+  for (const expr of ['sin(x)*I', '(x**5-x+1)*I', '(x**2+1)/(x+1)', '(x**2+1)/(y*x)']) {
+    expect(sj.Intersection(image(expr), expr.endsWith(')') ? sj.Integers : I(-1, 1)) instanceof sj.SetOp).toBe(true);
+  }
+  const param = sj.symbol('a', { real: true });
+  expect(sj.Intersection(new sj.ImageSet(x, sj.mul(sj.I, sj.add(x, param)), sj.Integers), sj.Reals) instanceof sj.SetOp).toBe(true);
+  expect(sj.Intersection(new sj.ImageSet(x, sj.add(param, sj.mul(sj.I, sj.add(x, sj.pow(x, 2)))), sj.Integers), sj.Reals) instanceof sj.ImageSet).toBe(true);
+  expect(sj.Intersection(image('log(x)'), I(0, sj.oo)) instanceof sj.SetOp).toBe(true);
+  expect(Sets.isSubset(sj.ProductSet(F(1), F(2)), F(sj.Tuple(2, 1)))).not.toBe(true);
+  expect(String(Sets.asRelational(new sj.SetOp('Union', [I(r, 2), I(0, 3)]), x))).toContain('|');
+});
+
+it('preserves parameter domains when substituting bound symbols', () => {
+  const image = new sj.ImageSet(sj.Tuple(x, y), sj.add(x, y), F(x), sj.Naturals);
+  const result = cast(image.subs([[x, sj.S.One]]), sj.ImageSet);
+  expect(result.lamda.key).toBe(image.lamda.key);
+  expect(result.baseSets.map(String)).toEqual(['{1}', 'Naturals']);
+});
+
+it('propagates evaluation errors from condition predicates', () => {
+  const condition = new sj.ConditionSet(x, sj.Gt(x, 1), sj.Integers);
+  const substitution = vi.spyOn(impl, 'xreplace').mockImplementationOnce(() => { throw new RangeError('predicate domain'); });
+  try {
+    expect(() => condition.membership(sj.S.One)).toThrow('predicate domain');
+  } finally {
+    substitution.mockRestore();
+  }
+});
+
+it('renames each component of nested condition-set signatures without capture', () => {
+  const u = sj.symbol('u'), v = sj.symbol('v');
+  const outer = sj.Tuple(x, y), inner = sj.Tuple(u, v);
+  const plane = sj.ProductSet(sj.Reals, sj.Reals);
+  const restricted = Sets.conditionSet(inner, sj.Lt(u, v), plane);
+  const merged = cast(Sets.conditionSet(outer, sj.Gt(x, 0), restricted), sj.ConditionSet);
+  expect(merged.condition.key).toBe(sj.And(sj.Lt(x, y), sj.Gt(x, 0)).key);
+  expect(merged.subs([[y, sj.S.Zero]]).key).toBe(merged.key);
+  expect(Sets.asRelational(merged, x)).toBe(sj.S.false);
+  expect(Sets.asRelational(merged, sj.Tuple(1, 2))).toBe(sj.S.true);
+  const dependent = Sets.conditionSet(inner, sj.Lt(u, x), plane);
+  const renamed = cast(Sets.conditionSet(outer, sj.Gt(y, 0), dependent), sj.ConditionSet);
+  expect(renamed.sym.key).toBe(inner.key);
+  expect(renamed.condition.key).toBe(sj.And(sj.Lt(u, x), sj.Gt(v, 0)).key);
+});
+
+describe('membership decided by assumptions (SymPy Interval._contains, FiniteSet._contains)', () => {
+  const l = new sj.Sym('l', { positive: true }), n = new sj.Sym('n', { negative: true }), r = new sj.Sym('r', { real: true }), x = new sj.Sym('x');
+  const oo = sj.oo;
+  it('places a signed symbol in an interval', () => {
+    expect(Sets.containsQ(sj.Interval.of(0, oo), l)).toBe(true);
+    expect(Sets.containsQ(sj.Interval.open(0, 1), n)).toBe(false);
+    expect(Sets.containsQ(sj.Interval.of(sj.mul(-1, oo), 0), n)).toBe(true);
+    expect(Sets.containsQ(sj.Interval.of(0, 5), sj.mul(-1, l))).toBe(false);
+    expect(Sets.containsQ(sj.Interval.open(0, 5), sj.mul(-1, l))).toBe(false);
+    // SymPy: l <= 1
+    expect(Sets.containsQ(sj.Interval.of(0, 1), l)).toBe(undefined);
+  });
+  it('compares with symbolic ends', () => {
+    expect(Sets.containsQ(sj.Interval.of(l, sj.mul(2, l)), l)).toBe(true);
+    expect(Sets.containsQ(sj.Interval.open(l, sj.mul(2, l)), l)).toBe(false);
+  });
+  it('needs a real element for an unbounded end', () => {
+    expect(Sets.containsQ(new sj.Interval(sj.S.NegativeInfinity, oo, true, true), r)).toBe(true);
+    // SymPy: (-oo < x) & (x <= 3)
+    expect(Sets.containsQ(sj.Interval.of(sj.mul(-1, oo), 3), x)).toBe(undefined);
+  });
+  it('separates the elements of a finite set by their evaluated equality', () => {
+    expect(Sets.containsQ(sj.finiteSet(l), sj.mul(-1, l))).toBe(false);
+    // SymPy: Eq(x, -l)
+    expect(Sets.containsQ(sj.finiteSet(l, x), sj.mul(-1, l))).toBe(undefined);
+    expect(String(sj.complement(sj.finiteSet(l), sj.finiteSet(sj.mul(-1, l))))).toBe('{l}');
+  });
 });
