@@ -406,7 +406,7 @@ describe("sympy/solvers/ode/tests/test_systems.py", () => {
   //   assert checksysodesol(eqs2, sol2) == (True, [0, 0])
   //   => (True, [0, 0])
   it.todo("test_sysode_linear_neq_order1_type1:536");
-  it.fails("test_sysode_linear_neq_order1_type1:542", () => {
+  it("test_sysode_linear_neq_order1_type1:542", () => {
     const [t, a] = symbols('t a');
     expect(sympyStr(dsolve([Relational(derivative((SymFunction('x'))(t), [[t, 1]]), new Mul([a, (SymFunction('x'))(t)]), '==', { evaluate: false }), Relational(derivative((SymFunction('y'))(t), [[t, 1]]), new Mul([a, (SymFunction('y'))(t)]), '==', { evaluate: false })]))).toBe('[Eq(x(t), C1*exp(a*t)), Eq(y(t), C2*exp(a*t))]');
   });
@@ -414,7 +414,7 @@ describe("sympy/solvers/ode/tests/test_systems.py", () => {
   //   assert checksysodesol(eqs3, sol3) == (True, [0, 0])
   //   => (True, [0, 0])
   it.todo("test_sysode_linear_neq_order1_type1:543");
-  it.fails("test_sysode_linear_neq_order1_type1:551", () => {
+  it("test_sysode_linear_neq_order1_type1:551", () => {
     const [t, a, b] = symbols('t a b');
     expect(sympyStr(dsolve([Relational(derivative((SymFunction('x'))(t), [[t, 1]]), new Mul([a, (SymFunction('x'))(t)]), '==', { evaluate: false }), Relational(derivative((SymFunction('y'))(t), [[t, 1]]), new Mul([b, (SymFunction('y'))(t)]), '==', { evaluate: false })]))).toBe('[Eq(x(t), C1*exp(a*t)), Eq(y(t), C2*exp(b*t))]');
   });
@@ -1311,7 +1311,7 @@ describe("sympy/solvers/ode/tests/test_systems.py", () => {
   //           dsolve(eqs)
   //   => None
   it.todo("test_dsolve:2313");
-  it.fails("test_second_order_type2_slow1:2345", () => {
+  it("test_second_order_type2_slow1:2345", () => {
     const t = new Sym('t');
     expect(sympyStr(dsolve([Relational(derivative((SymFunction('x'))(t), [[t, 2]]), new Mul([t, new Add([new Mul([rational(2), (SymFunction('x'))(t)]), (SymFunction('y'))(t)])]), '==', { evaluate: false }), Relational(derivative((SymFunction('y'))(t), [[t, 2]]), new Mul([t, new Add([new Mul([rational(-1), (SymFunction('x'))(t)]), new Mul([rational(2), (SymFunction('y'))(t)])])]), '==', { evaluate: false })]))).toBe('[Eq(x(t), I*C1*airyai(t*(2 - I)**(1/3)) + I*C2*airybi(t*(2 - I)**(1/3)) - I*C3*airyai(t*(2 + I)**(1/3)) - I*C4*airybi(t*(2 + I)**(1/3))), Eq(y(t), C1*airyai(t*(2 - I)**(1/3)) + C2*airybi(t*(2 - I)**(1/3)) + C3*airyai(t*(2 + I)**(1/3)) + C4*airybi(t*(2 + I)**(1/3)))]');
   });

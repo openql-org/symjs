@@ -17,6 +17,7 @@ import { separatevars } from '../simplify/separatevars';
  * or undefined when eq is not homogeneous in the symbols.
  */
 export function homogeneousOrder(eqIn: ExprLike, ...symbols: Expr[]): Expr | undefined {
+  if (!symbols.length) throw new RangeError('homogeneousOrder requires at least one symbol');
   let eq = sympify(eqIn);
   const hasDeriv = (e: Expr): boolean => e instanceof Derivative || e.args.some(hasDeriv);
   if (hasDeriv(eq)) return undefined;

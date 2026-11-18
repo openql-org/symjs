@@ -7,10 +7,13 @@
  * general solution is post-processed by odesimp.
  */
 
-import { isReal } from '../core/assumptions';
+import { NotImplementedError } from '../core/errors';
+import { isPositive, isReal } from '../core/assumptions';
 import type { ExprLike } from '../core/nodes';
 import { Add, Derivative, Dummy, Expr, Fn, Integral, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
+import { SubsNode } from '../core/subsnode';
+import { Unsolved } from '../core/truth';
 import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols, some, subs, xreplace } from '../core/traverse';
@@ -34,7 +37,7 @@ import { cancel, fraction, together } from '../simplify/rational';
 import { separatevars } from '../simplify/separatevars';
 import { simplify } from '../simplify/simplify';
 import { trigsimp } from '../simplify/trigsimp';
-import { odesimp } from './odesimp';
+import { odeSolSimplicity, odesimp } from './odesimp';
 import { linsolve, solve } from './solve';
 import { homogeneousOrder } from './homogeneous';
 import { odeLieGroup } from './liegroup';
@@ -69,6 +72,8 @@ export interface OdeProblem {
   order: number;
   /** User-given infinitesimals for the lie_group hint (dsolve's xi and eta). */
   infs?: { xi: ExprLike; eta: ExprLike };
+  holdIntegrals?: boolean;
+  series?: { point: Expr; value: Expr; terms: number };
 }
 
 /** d^k f/dx^k (f itself for k = 0). */
@@ -159,6 +164,9 @@ let matching = false;
  */
 const atFunction = (e: Expr, y: Sym, fx: Expr): Expr => (some(e, (u) => u instanceof Integral && u.variable.key === y.key) ? subs(e, [[y, fx]]) : xreplace(e, [[y, fx]]));
 
+/** Keep an antiderivative in an explicitly requested integral hint. */
+const primitive = (p: OdeProblem, e: Expr, x: Sym): Expr => p.holdIntegrals ? new Integral([e, x]) : integrate(e, x);
+
 const separable: Solver = (p) => {
   if (p.order !== 1) return undefined;
   const parts = firstOrderParts(expand(p.eq), p);
@@ -170,9 +178,9 @@ const separable: Solver = (p) => {
   if (!m1 || !m2) return undefined;
   // the dict form has an entry for each symbol and the coefficient
   const g = (m: Map<Sym | 'coeff', Expr>, k: Sym | 'coeff') => getOrThrow(m, k);
-  const ly = integrate(mul(g(m2, 'coeff'), g(m2, y), pow(g(m1, y), -1)), y);
+  const ly = primitive(p, mul(g(m2, 'coeff'), g(m2, y), pow(g(m1, y), -1)), y);
   const lhs = atFunction(ly, y, p.fx);
-  const rhs = add(integrate(mul(-1, g(m1, 'coeff'), g(m1, p.x), pow(g(m2, p.x), -1)), p.x), C(1));
+  const rhs = add(primitive(p, mul(-1, g(m1, 'coeff'), g(m1, p.x), pow(g(m2, p.x), -1)), p.x), C(1));
   return [Eq(lhs, rhs)];
 };
 
@@ -205,6 +213,13 @@ const separableReduced: Solver = (p) => {
   const m = reducedSeparableMatch(p);
   if (!m) return undefined;
   const { n, h, y } = m;
+  if (matching) {
+    const [a,b] = defined(firstOrderParts(expand(p.eq), p), 'first-order coefficients');
+    const [num, den] = fraction(cancel(mul(p.x,a,pow(mul(p.fx,b),-1))));
+    const pattern = mul(pow(p.x,n),p.fx);
+    const reduced = mul(subs(expand(num), [[pattern,y]]), pow(subs(expand(den), [[pattern,y]]),-1));
+    if (!reduced.has(y) || [...reduced.freeSymbols()].some((v) => !v.equals(y))) return undefined;
+  }
   const primitive = integrate(cancel(pow(mul(y, add(n, mul(-1, h))), -1)), y);
   return [Eq(atFunction(primitive, y, mul(pow(p.x, n), p.fx)), add(log(p.x), C(1)))];
 };
@@ -232,7 +247,7 @@ const firstExact: Solver = (p) => {
   if (p.order !== 1) return undefined;
   const parts = firstOrderParts(expand(p.eq), p);
   if (!parts) return undefined;
-  let [m, n] = parts;
+  let m = cancel(parts[0]), n = cancel(parts[1]);
   const y = new Dummy('y');
   m = xreplace(m, [[p.fx, y]]);
   n = xreplace(n, [[p.fx, y]]);
@@ -247,8 +262,9 @@ const firstExact: Solver = (p) => {
     m = mul(m, factorE);
     n = mul(n, factorE);
   }
-  const Fx = integrate(m, p.x);
-  const F = add(Fx, integrate(add(n, mul(-1, diff(Fx, y))), y));
+  const Fx = primitive(p, m, p.x);
+  const F = add(Fx, primitive(p, add(n, mul(-1, diff(Fx, y))), y));
+  if (p.holdIntegrals) return [Eq(new SubsNode([F, y, p.fx]), C(1))];
   return [Eq(atFunction(F, y, p.fx), C(1))];
 };
 
@@ -257,8 +273,7 @@ function linearFirst(p: OdeProblem): [Expr, Expr] | undefined {
   const parts = firstOrderParts(expand(p.eq), p);
   if (!parts) return undefined;
   const [A, B] = parts;
-  if (B.has(p.fx)) return undefined;
-  const a = expand(mul(A, pow(B, -1)));
+  const a = expand(B.has(p.fx) ? cancel(mul(A, pow(B, -1))) : mul(A, pow(B, -1)));
   const pc = polyCoefficients(a, p.fx);
   if (!pc || Math.max(...pc.keys()) > 1) return undefined;
   const P = cancel(pc.get(1) ?? S.Zero);
@@ -272,8 +287,8 @@ const firstLinear: Solver = (p) => {
   const pq = linearFirst(p);
   if (!pq) return undefined;
   const [P, Q] = pq;
-  const IP = integrate(P, p.x);
-  return [Eq(p.fx, mul(add(C(1), integrate(mul(Q, exp(IP)), p.x)), exp(mul(-1, IP))))];
+  const IP = isZero(P) ? S.Zero : primitive(p, P, p.x);
+  return [Eq(p.fx, mul(add(C(1), primitive(p, mul(Q, exp(IP)), p.x)), exp(mul(-1, IP))))];
 };
 
 const bernoulli: Solver = (p) => {
@@ -281,8 +296,7 @@ const bernoulli: Solver = (p) => {
   const parts = firstOrderParts(expand(p.eq), p);
   if (!parts) return undefined;
   const [A, B] = parts;
-  if (B.has(p.fx)) return undefined;
-  const a = expand(mul(A, pow(B, -1)));
+  const a = expand(B.has(p.fx) ? cancel(mul(A, pow(B, -1))) : mul(A, pow(B, -1)));
   // P*f - Q*f**n
   let P: Expr = S.Zero;
   let Q: Expr = S.Zero;
@@ -302,11 +316,11 @@ const bernoulli: Solver = (p) => {
     } else return undefined;
   }
   if (n === undefined || isZero(n)) return undefined;
-  const IP = integrate(P, p.x);
+  const IP = isZero(P) ? S.Zero : primitive(p, P, p.x);
   return [
     Eq(
       pow(p.fx, add(1, mul(-1, n))),
-      mul(add(C(1), mul(-1, add(n, -1), integrate(mul(Q, exp(mul(-1, n, IP)), exp(IP)), p.x))), exp(mul(-1, add(1, mul(-1, n)), IP))),
+      mul(add(C(1), mul(-1, add(n, -1), primitive(p, mul(Q, exp(mul(-1, n, IP)), exp(IP)), p.x))), exp(mul(-1, add(1, mul(-1, n)), IP))),
     ),
   ];
 };
@@ -366,7 +380,7 @@ const nthAlgebraicOneOrder: Solver = (p) => {
   if (!rs.length) return undefined;
   return rs.map((r) => {
     let g = r;
-    for (let i = 0; i < n; i++) g = add(integrate(g, p.x), C(n - i));
+    for (let i = 0; i < n; i++) g = add(isZero(g) ? S.Zero : primitive(p, g, p.x), C(n - i));
     return Eq(p.fx, g);
   });
 };
@@ -461,7 +475,11 @@ function simplifiedSol(sol: Expr, p: OdeProblem, terms: Term[]): Expr {
 
 function constantCoeffMatch(p: OdeProblem): Map<number, Expr> | undefined {
   if (p.order < 1) return undefined;
-  const r = linearCoefficients(p.eq, p);
+  let r = linearCoefficients(p.eq, p);
+  if (!r && p.eq instanceof Add) {
+    const parts = firstOrderParts(expand(p.eq), p);
+    if (parts?.[1].has(p.fx)) r = linearCoefficients(add(D(p, 1), cancel(mul(parts[0], pow(parts[1], -1)))), p);
+  }
   if (!r) return undefined;
   // the remaining term (key -1) is free of f and its derivatives by construction
   for (const [k, c] of r) if (k >= 0 && (c.has(p.x) || c.has(p.fx))) return undefined;
@@ -553,14 +571,14 @@ function subFuncDoit(e: Expr, p: OdeProblem, g: Expr): Expr {
 const undeterminedCoefficients: Solver = (p) => {
   const r = constantCoeffMatch(p);
   if (!r || isZero(getOrThrow(r, -1))) return undefined;
-  const homog = add(p.eq, mul(-1, getOrThrow(r, -1)));
+  const homog = add(...Array.from({ length: p.order + 1 }, (_, k) => mul(getOrThrow(r, k), D(p, k))));
   const trial = trialSet(getOrThrow(r, -1), p.x, (t) => isZero(expand(subFuncDoit(homog, p, t))));
   if (!trial) return undefined;
   // roots() finds all the roots of the characteristic polynomial or throws, so there are p.order solutions
   const [gensols, terms] = constCharacteristicSols(r, p);
   const cs = trial.map((_, i) => new Dummy(`a${i}`));
   const trialfunc = add(...trial.map((t, i) => mul(at(cs, i), t)));
-  const eqs = expand(subFuncDoit(p.eq, p, trialfunc));
+  const eqs = expand(add(subFuncDoit(homog, p, trialfunc), getOrThrow(r, -1)));
   const byTerm = new Map<string, Expr[]>();
   for (const t of addTerms(eqs)) {
     // with the single symbol x the dict form exists and has the entries x and coeff
@@ -767,8 +785,8 @@ const almostLinear: Solver = (p) => {
   const de = firstOrderDE(p, y);
   if (!de) return undefined;
   // f' occurs (the order is 1), so its coefficient a is not zero
-  const [d, a] = de;
-  const terms = addTerms(d);
+  const a = cancel(de[1]);
+  const terms = addTerms(de[0]).map((e) => cancel(e));
   const c = add(...terms.filter((t) => !t.has(y)));
   const b = add(...terms.filter((t) => t.has(y)));
   const db = diff(b, y);
@@ -798,22 +816,24 @@ const firstPowerSeries: Solver = (p) => {
   if (!de || isZero(de[1])) return undefined;
   const x = p.x;
   const h = cancel(mul(-1, de[0], pow(de[1], -1)));
-  const C1 = C(1);
+  const { point, value: C1, terms } = p.series ?? { point: S.Zero, value: C(1), terms: SERIES_TERMS };
+  const dx = add(x, mul(-1, point));
   if (isZero(h)) return [Eq(p.fx, C1)];
-  const at0 = (e: Expr): Expr => xreplace(e, [[x, S.Zero], [y, C1]]);
+  const at0 = (e: Expr): Expr => xreplace(e, [[x, point], [y, C1]]);
   const bad = (u: Expr): boolean => u instanceof Special || u.args.some(bad);
   let series: Expr = C1;
   let F = h;
   let fact = 1n;
-  for (let k = 1; k < SERIES_TERMS; k++) {
+  for (let k = 1; k < terms; k++) {
     if (k > 1) F = add(diff(F, x), mul(diff(F, y), h));
     fact *= BigInt(k);
     const c = at0(F);
     // h or its first derivative not finite at x = 0: the hint does not match (SymPy classify_ode)
     if (bad(c)) return k <= 2 ? undefined : [Eq(p.fx, S.Infinity)];
-    series = add(series, mul(c, pow(x, k), Rational.of(1n, fact)));
+    series = add(series, mul(factorTerms(mul(c, Rational.of(1n, fact))), pow(dx, k)));
   }
-  return [Eq(p.fx, add(series, new Order([pow(x, SERIES_TERMS)])))];
+  const remainder = new Order(isZero(point) ? [pow(x, terms)] : [pow(dx, terms), x, point]);
+  return [Eq(p.fx, add(series, remainder))];
 };
 
 /**
@@ -896,7 +916,7 @@ const secondPowerSeriesRegular: Solver = (p) => {
   const rs = ms.filter((v): v is Rational => v instanceof Rational).sort((a, b) => b.value - a.value);
   const m1 = first(rs);
   const nTerms = (m: Rational) => Math.trunc(terms - m.value - 1);
-  const ser = (m: Rational, c: Expr, cs: Expr[]) => mul(pow(x, m), add(c, ...cs.map((v, i) => mul(v, pow(x, i + 1)))));
+  const ser = (m: Rational, c: Expr, cs: Expr[]) => mul(c, pow(x, m), add(1, ...cs.map((v, i) => mul(factor(cancel(mul(v, pow(c, -1)))), pow(x, i + 1)))));
   // SymPy: Eq(f(x), Order(terms)), which is O(1)
   if (nTerms(m1) <= 0) return [Eq(p.fx, new Order([S.One]))];
   const N = Math.max(...rs.map(nTerms));
@@ -942,7 +962,7 @@ const liouville: Solver = (p) => {
       kk = add(kk, c1);
     } else return undefined;
   }
-  if (isZero(dd) || isZero(ee)) return undefined;
+  if (isZero(dd)) return undefined;
   const y = new Dummy('y');
   const g = xreplace(simplify(mul(ee, pow(dd, -1))), [[p.fx, y]]);
   const h = xreplace(simplify(mul(kk, pow(dd, -1))), [[p.fx, y]]);
@@ -1131,6 +1151,10 @@ function homogeneousSolution(p: OdeProblem, m: { d: Expr; e: Expr; y: Dummy }, d
   const u1 = new Dummy('u1');
   const integrand = dep ? cancel(subs(mul(-1, e, pow(add(d, mul(u1, e)), -1)), [[x, 1], [y, u1]])) : simplify(subs(mul(-1, d, pow(add(e, mul(u1, d)), -1)), [[x, u1], [y, 1]]));
   if (integrand instanceof Special) return undefined;
+  if (p.holdIntegrals && !isZero(integrand)) {
+    const arg = dep ? mul(p.fx, pow(x, -1)) : mul(x, pow(p.fx, -1));
+    return Eq(log(dep ? x : p.fx), add(C(1), new Integral([integrand, u1, arg])));
+  }
   const I = integrate(integrand, u1);
   if (some(I, (t) => t instanceof Integral)) return undefined;
   const lhs = dep ? log(x) : log(p.fx);
@@ -1233,7 +1257,7 @@ const autonomousConserved: Solver = (p) => {
   const coefficients = polyCoefficients(xreplace(p.eq, [[D(p, 2), acceleration], [p.fx, u]]), acceleration);
   if (coefficients === undefined || Math.max(...coefficients.keys()) !== 1) return undefined;
   const force = cancel(mul(-1, coefficients.get(0) ?? S.Zero, pow(getOrThrow(coefficients, 1), -1)));
-  if (force.has(p.x)) return undefined;
+  if ((matching && isZero(force)) || force.has(p.x)) return undefined;
   if (matching) return [];
   const energy = add(C(1), expandMul(mul(2, integrate(force, u))));
   const quadrature = new Integral([pow(energy, Rational.of(-1, 2)), u, p.fx]);
@@ -1297,13 +1321,12 @@ const MATCHERS = new Map<string, (p: OdeProblem) => boolean>([
 ]);
 
 /** The hints with a solver here that match the equation (solver order). */
-function solverHints(eqIn: ExprLike, fx: UndefFn): string[] {
-  const eq = toZeroForm(sympify(eqIn));
-  const p: OdeProblem = { eq, fx, x: independentVariable(fx), order: orderOf(eq, fx) };
+function solverHints(original: OdeProblem, preprocessed: OdeProblem): string[] {
   matching = true;
   try {
     return HINTS.filter(([h, s]) => {
       try {
+        const p = h.startsWith('nth_linear_constant_coeff') ? original : preprocessed;
         const m = MATCHERS.get(h);
         if (m) return m(p);
         return s(p) !== undefined;
@@ -1321,23 +1344,47 @@ function toZeroForm(e: Expr): Expr {
 }
 
 /** Solve with the first matching hint (no solution: []); the solutions are post-processed with odesimp. */
-export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string, infs?: { xi: ExprLike; eta: ExprLike }): Expr[] {
+export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string, infs?: { xi: ExprLike; eta: ExprLike }, series?: OdeProblem['series']): Expr[] {
   const eq = toZeroForm(eqIn);
-  const p: OdeProblem = { eq, fx, x: independentVariable(fx), order: orderOf(eq, fx), ...(infs ? { infs } : {}) };
+  const p: OdeProblem = { eq, fx, x: independentVariable(fx), order: orderOf(eq, fx), ...(infs ? { infs } : {}), ...(series ? { series } : {}) };
   if (p.order === 0) return [];
+  if (hint === 'best') {
+    let best: Expr[] = [];
+    let score = Infinity;
+    for (const [h] of HINTS) {
+      const solutions = dsolveRaw(eq, fx, h, infs);
+      if (!solutions.length) continue;
+      const rank = odeSolSimplicity(solutions.length === 1 ? first(solutions) : solutions, fx);
+      const value = typeof rank === 'number' ? rank : Infinity;
+      if (!best.length || value < score) { best = solutions; score = value; }
+      if (score === -2) break;
+    }
+    return best;
+  }
+  const base = hint?.replace(/_Integral$/, '') ?? 'default';
+  p.holdIntegrals = hint?.endsWith('_Integral') === true;
+  if (base === '1st_homogeneous_coeff_subs_indep_div_dep' || base === '1st_homogeneous_coeff_subs_dep_div_indep') {
+    const match = deMatch(p);
+    if (!match || !sameHomogeneousOrder(match.d, match.e, p.x, match.y)) return [];
+    const sol = homogeneousSolution(p, match, base.endsWith('subs_dep_div_indep'));
+    if (!sol) return [];
+    return p.holdIntegrals && some(sol, (e) => e instanceof Integral) ? [sol] : odesimp(eq, sol, fx, base);
+  }
+  if (p.holdIntegrals && !['separable', '1st_exact', '1st_linear', 'Bernoulli', 'nth_algebraic'].includes(base)) return [];
   for (const [h, s] of HINTS) {
-    if (hint && hint !== 'default' && h !== hint) continue;
+    if (base !== 'default' && h !== base) continue;
     if ((!hint || hint === 'default') && h === '1st_power_series') continue;
     let raw: Expr[] | undefined;
     try {
       raw = s(p);
+      if (raw === undefined && base === 'Bernoulli') raw = firstLinear(p);
     } catch {
       raw = undefined;
     }
     if (!raw) continue;
     // like SymPy, a failure of odesimp is not caught
     const out: Expr[] = [];
-    if (PRESIMPLIFIED.has(h)) out.push(...raw);
+    if (p.holdIntegrals || PRESIMPLIFIED.has(h) || (series && !isZero(series.point) && h === '1st_power_series')) out.push(...raw);
     else for (const r of raw) out.push(...odesimp(eq, r, fx, h));
     return out;
   }
@@ -1411,7 +1458,7 @@ function classifyExtra(p: OdeProblem): Set<string> {
   if (de) {
     const [d, e] = de;
     // Bernoulli: f' + P*f - Q*f**n (linear equations included)
-    const rest = expandMul(mul(d, pow(e, -1)));
+    const rest = expandMul(cancel(mul(d, pow(e, -1))));
     const exps = new Set<string>();
     let bern = !isZeroE(e);
     for (const t of addTerms(rest)) {
@@ -1461,8 +1508,42 @@ function classifyExtra(p: OdeProblem): Set<string> {
 export function classifyOde(eqIn: ExprLike, fx: UndefFn): string[] {
   const eq = toZeroForm(sympify(eqIn));
   const p: OdeProblem = { eq, fx, x: independentVariable(fx), order: orderOf(eq, fx) };
-  const matched = new Set(solverHints(eq, fx).filter((h) => h !== 'factorable'));
-  for (const h of classifyExtra(p)) matched.add(h);
+  const preprocessed = eq instanceof Pow && isPositive(eq.exp) === true ? eq.base : eq;
+  const reduced = { ...p, eq: preprocessed };
+  const matched = new Set(solverHints(p, reduced).filter((h) => h !== 'factorable'));
+  for (const h of classifyExtra(reduced)) matched.add(h);
+  if (!preprocessed.equals(eq)) matched.add('factorable');
   for (const h of [...matched]) if (ALL_HINTS.includes(`${h}_Integral`)) matched.add(`${h}_Integral`);
   return ALL_HINTS.filter((h) => matched.has(h));
+}
+
+/** SymPy's all meta-hint evaluates each classified method and identifies the simplest family. */
+export function allOdeHints(eq: Expr, fx: UndefFn): Map<string, Expr | Expr[] | string | number | typeof Unsolved> {
+  const hints = classifyOde(eq, fx);
+  const results = new Map<string, Expr | Expr[] | string | number | typeof Unsolved>();
+  let best: Expr | Expr[] | typeof Unsolved = Unsolved;
+  let bestHint = '';
+  let score = Infinity;
+  for (const hint of hints) {
+    const solutions = dsolveRaw(eq, fx, hint);
+    if (!solutions.length) {
+      results.set(hint, Unsolved);
+      continue;
+    }
+    const value = solutions.length === 1 ? first(solutions) : solutions;
+    results.set(hint, value);
+    const rank = odeSolSimplicity(value, fx, false);
+    const numeric = typeof rank === 'number' ? rank : Infinity;
+    if (!bestHint || numeric < score) {
+      best = value;
+      bestHint = hint;
+      score = numeric;
+    }
+  }
+  if (!bestHint) throw new NotImplementedError('dsolve: no matching methods returned a solution');
+  results.set('best', best);
+  results.set('best_hint', bestHint);
+  results.set('default', first(hints));
+  results.set('order', orderOf(eq, fx));
+  return results;
 }

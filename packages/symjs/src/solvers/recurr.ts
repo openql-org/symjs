@@ -315,6 +315,17 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
     result = simplify(add(...inhomogeneous));
   }
   const Z = new Dummy('Z');
+  if (r > 0 && coeffs.every((c) => c instanceof Rational)) {
+    const characteristic = add(...coeffs.map((c, i) => mul(c, pow(Z, i))));
+    const bases = distinctRoots(characteristic, Z);
+    // Distinct nonzero characteristic roots have a nonsingular Vandermonde
+    // determinant, so no symbolic Casoratian or product is needed.
+    if (bases.length === r && bases.every((base) => !isZeroE(base))) {
+      const powers = bases.map((base) => pow(simplify(base), n)).sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
+      const constants = powers.map((_, i) => new Sym(`C${i}`));
+      return [add(result, ...powers.map((v, i) => mul(at(constants, i), v))), constants];
+    }
+  }
   const p0 = at(coeffs, 0);
   const qr = subs(at(coeffs, r), n, add(n, -r + 1));
   const pRoots = distinctRoots(p0, n);
@@ -390,6 +401,10 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
   if (f instanceof Rel) f = add(f.lhs, mul(-1, f.rhs));
   if (!(y instanceof UndefFn) || !(y.args[0] instanceof Sym)) throw new TypeError('rsolve: y(n) expected');
   const n = y.args[0];
+  for (const [key] of init ?? []) {
+    const k = sympify(key);
+    if (k instanceof UndefFn && (k.name !== y.name || k.args.length !== 1)) throw new RangeError('initial condition refers to a different sequence');
+  }
   const hPart = new Map<number, Expr[]>();
   const iPart: Expr[] = [];
   const e = expand(f);
