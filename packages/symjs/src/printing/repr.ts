@@ -16,7 +16,8 @@ import { BoolOp } from '../core/boolalg';
 import { Concrete } from '../core/concrete';
 import { sympyArgs, sympyClassName } from '../core/compare';
 import { precToDps, toStr } from '../numeric/mpf';
-import { asOrderedFactors, asOrderedTerms } from './sortkey';
+import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey } from './sortkey';
+import type { TermOrder } from './sortkey';
 import { setArgsOrdered, setClass } from './sets';
 import { str, withPermCyclic } from './str';
 import { at } from '../core/guard';
@@ -227,8 +228,11 @@ export function basicView(e: Expr, printOrder = false): BasicView {
     const cls = e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol';
     return atom(cls, symbolRepr(e, cls));
   }
-  if (e instanceof Add && printOrder) return node('Add', asOrderedTerms(e).map(v));
-  if (e instanceof Mul && printOrder) return node('Mul', splitNegativeOne(asOrderedFactors(e)).map(v));
+  if (e instanceof Add && printOrder) {
+    const terms = reprOrder === 'none' ? e.args : reprOrder === 'old' ? [...e.args].sort((a, b) => compareKeys(sortKey(a), sortKey(b))) : asOrderedTerms(e, reprOrder);
+    return node('Add', terms.map(v));
+  }
+  if (e instanceof Mul && printOrder) return node('Mul', (reprOrder === 'none' || reprOrder === 'old' ? e.args : splitNegativeOne(asOrderedFactors(e))).map(v));
   if (e instanceof Rel || e instanceof BoolOp) return node(e instanceof Rel ? sympyClassName(e) : e.className, e.args.map(v), false);
   if (e instanceof UndefFn) return { ...node(e.name, e.args.map(v)), head: `Function(${pyRepr(e.name)})` };
   const s = structured(e, v);
@@ -264,6 +268,8 @@ const isReprObject = (v: object): v is ReprObject => 'repr' in v && typeof v.rep
 /** What `srepr` prints: expressions, function classes, matrices, objects with their own repr, lists, dicts, sets, strings, numbers, booleans and null (Python None). */
 export type ReprPrintable = Expr | number | bigint | boolean | string | null | ReprMatrix | FunctionClassLike | ReprObject | readonly ReprPrintable[] | ReadonlyMap<ReprPrintable, ReprPrintable> | ReadonlySet<ReprPrintable>;
 
+let reprOrder: SreprOptions['order'];
+
 /**
  * SymPy `srepr(expr)`: the expression as the SymPy constructor calls that
  * rebuild it (`eval(srepr(expr)) == expr` in Python):
@@ -274,11 +280,20 @@ export type ReprPrintable = Expr | number | bigint | boolean | string | null | R
  * quotes, booleans and null as `True`, `False` and `None`.
  */
 export function srepr(expr: ReprPrintable, options: SreprOptions = {}): string {
-  return withPermCyclic(options.permCyclic, () => reprValue(expr));
+  for (const key of Object.keys(options)) if (key !== 'permCyclic' && key !== 'order') throw new TypeError(`Unknown setting '${key}'.`);
+  const saved = reprOrder;
+  reprOrder = options.order;
+  try {
+    return withPermCyclic(options.permCyclic, () => reprValue(expr));
+  } finally {
+    reprOrder = saved;
+  }
 }
 
 /** The settings of {@link srepr}. */
 export interface SreprOptions {
+  /** Term ordering; 'none' preserves argument order and 'old' uses legacy ordering. */
+  readonly order?: TermOrder | 'none' | 'old';
   /** Permutations in cycle notation (default true) or as Permutation([...]) (SymPy perm_cyclic). */
   readonly permCyclic?: boolean;
 }

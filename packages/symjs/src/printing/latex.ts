@@ -1012,10 +1012,17 @@ export interface LatexObject {
   toLatex(print: (e: Expr) => string): string;
 }
 
+/** An algebraic object with a canonical expression representation (polynomial and field elements). */
+interface LatexExpression {
+  asExpr(): Expr;
+}
+const isLatexExpression = (v: object): v is LatexExpression => 'asExpr' in v && typeof v.asExpr === 'function';
+const isFractionElement = (v: object): v is { readonly numer: LatexExpression; readonly denom: LatexExpression } => 'numer' in v && 'denom' in v && typeof v.numer === 'object' && v.numer !== null && isLatexExpression(v.numer) && typeof v.denom === 'object' && v.denom !== null && isLatexExpression(v.denom);
+
 const isLatexObject = (v: object): v is LatexObject => 'toLatex' in v && typeof v.toLatex === 'function';
 
 /** What `latex` prints: expressions (numbers are sympified), function classes, matrices, objects with their own LaTeX, lists, dicts, sets, strings, booleans and null (Python None). */
-export type LatexPrintable = Expr | number | bigint | boolean | string | null | LatexMatrix | FunctionClassLike | LatexObject | readonly LatexPrintable[] | ReadonlyMap<LatexPrintable, LatexPrintable> | ReadonlySet<LatexPrintable>;
+export type LatexPrintable = Expr | number | bigint | boolean | string | null | LatexMatrix | FunctionClassLike | LatexObject | LatexExpression | readonly LatexPrintable[] | ReadonlyMap<LatexPrintable, LatexPrintable> | ReadonlySet<LatexPrintable>;
 
 const isMatrixLike = (v: object): v is LatexMatrix => 'rows' in v && 'cols' in v && 'get' in v && typeof v.get === 'function';
 
@@ -1067,6 +1074,12 @@ function printValue(v: LatexPrintable): string {
   if (v instanceof Set) return `\\left\\{${sortedItems([...v]).map(printValue).join(`${sep} `)}\\right\\}`;
   if (isMatrixLike(v)) return printMatrix(v);
   if (isLatexObject(v)) return v.toLatex(texOf);
+  if (isFractionElement(v)) {
+    const denom = v.denom.asExpr();
+    if (denom instanceof Rational && denom.isOne) return texOf(v.numer.asExpr());
+    return `\\frac{${texOf(v.numer.asExpr())}}{${texOf(denom)}}`;
+  }
+  if (isLatexExpression(v)) return texOf(v.asExpr());
   throw new TypeError(`latex: cannot print ${Object.prototype.toString.call(v)}`);
 }
 
