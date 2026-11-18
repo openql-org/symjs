@@ -18,6 +18,7 @@ import { ExtensionExpr, Rational, Sym, asRational } from '../core/nodes';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
 import { factorint, multiplicity, primefactors } from '../ntheory/factor';
+import { isprime } from '../ntheory/primetest';
 import { rng } from '../ntheory/random';
 import { Cycle, Permutation, afCommutesWith, afInvert, afNew, afPow, afRmul, afRmuln, permutationStr } from './permutations';
 import type { FpGroup } from './fpgroups';
@@ -1319,6 +1320,61 @@ export class PermutationGroupNode extends ExtensionExpr {
   /** SymPy is_polycyclic: a finite group is polycyclic exactly when it is solvable. */
   get isPolycyclic(): boolean {
     return this.isSolvable;
+  }
+
+  /** A Sylow p-subgroup, grown through p-extensions in its normalizer. */
+  sylowSubgroup(p: number | bigint): PermutationGroupNode {
+    if (!isprime(p)) throw new RangeError('p must be a prime');
+    const prime = BigInt(p), order = this.order();
+    let target = 1n;
+    for (let rest = order; rest % prime === 0n; rest /= prime) target *= prime;
+    if (target === order) return this;
+    let subgroup = new PermutationGroupNode([this.identity]);
+    if (target === 1n) return subgroup;
+    if (this.isAltSym()) {
+      // SymPy's p-adic partition and iterated wreath-product construction.
+      // At each level, a cyclic block shift conjugates the smaller Sylow
+      // subgroup onto the other blocks of the partition.
+      const radix = Number(prime), generators: Permutation[] = [];
+      let largest = 1;
+      while (largest * radix <= this.degree) largest *= radix;
+      let start = 0;
+      for (let block = largest; block >= radix; block /= radix) {
+        while (start + block <= this.degree) {
+          for (let width = radix; width <= block; width *= radix) {
+            const image = range(this.degree);
+            for (let j = 0; j < width; j++) image[start + j] = start + (j + width / radix) % width;
+            generators.push(afNew(image));
+          }
+          start += block;
+        }
+      }
+      if (prime === 2n && this.generators.every((g) => g.isEven)) {
+        // The even subgroup has index two. Schreier representatives 1,t,
+        // with t a transposition, give its generators without enumeration.
+        const t = defined(generators.find((g) => !g.isEven), 'odd Sylow generator');
+        const even = generators.flatMap((g) => g.isEven
+          ? [g, t.mul(g).mul(t)]
+          : [g.mul(t), t.mul(g)]);
+        return new PermutationGroupNode(even);
+      }
+      return new PermutationGroupNode(generators);
+    }
+    // Every proper subgroup of a finite p-group is strictly contained in
+    // its normalizer. A p-element of that normalizer extends the subgroup.
+    while (subgroup.order() < target) {
+      for (const g of this.generateSchreierSims()) {
+        let coprime = g.order().p;
+        while (coprime % prime === 0n) coprime /= prime;
+        const h = g.pow(coprime);
+        if (subgroup.contains(h)) continue;
+        const inverse = h.inverse();
+        if (!subgroup.generators.every((s) => subgroup.contains(inverse.mul(s).mul(h)))) continue;
+        subgroup = new PermutationGroupNode([...subgroup.generators, h]);
+        break;
+      }
+    }
+    return subgroup;
   }
 
   /** SymPy presentation(eliminate_gens): a finite presentation of the group, as an FpGroup on x_0, x_1, ... (one per generator). */

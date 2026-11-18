@@ -29,3 +29,23 @@ it('uses local assumptions for integer and parity queries without mutating symbo
   expect(new sj.AssumptionsWrapper(3).isOdd).toBe(true);
   expect(sj.ask(Q.integer(symbol))).toBe('unknown');
 });
+
+it('matches all supported wrapper properties against SymPy 1.14', async () => {
+  const { default: reference } = await import('./wrapper.references.json');
+  const symbol = new sj.Sym('wrapped');
+  for (const { assumption, facts } of reference) {
+    const predicate = sj.Q[assumption]!;
+    const wrapped = new sj.AssumptionsWrapper(symbol, predicate(symbol));
+    for (const [property, expected] of Object.entries(facts)) {
+      // A potentially zero real scalar is not provably non-antihermitian.
+      const corrected = property === 'isAntihermitian' && ['even', 'rational'].includes(assumption);
+      expect(Reflect.get(wrapped, property), `${assumption}: ${property}`).toBe(corrected ? 'unknown' : expected);
+      expect(Reflect.get(new sj.AssumptionsWrapper(symbol), property), property).toBe(property === 'isCommutative' ? true : 'unknown');
+    }
+  }
+});
+
+it('retains zero as an antihermitian counterexample under even and rational assumptions', () => {
+  expect(new sj.AssumptionsWrapper(0, Q.even(0)).isAntihermitian).toBe(true);
+  expect(new sj.AssumptionsWrapper(0, Q.rational(0)).isAntihermitian).toBe(true);
+});

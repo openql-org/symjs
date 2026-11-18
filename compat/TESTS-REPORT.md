@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **122717** cases: **108734 exact**, **2626 equivalent**, **11357 failing**. Agreement: **90.75%**.
+Measured **122717** cases: **108747 exact**, **2626 equivalent**, **11344 failing**. Agreement: **90.76%**.
 
-Compatibility suite wall time: **324.37 s**. Sum of category replay times: **901.94 s** (projects run in parallel).
+Compatibility suite wall time: **1316.61 s**. Sum of category replay times: **970.19 s** (projects run in parallel).
 
 Extraction wall time: **66.07 s**, 4 processes, 120 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
@@ -16,39 +16,39 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 133 | 128 | 0 | 5 | 96.24% | 0.60 |
-| assumptions | 2245 | 1784 | 5 | 456 | 79.69% | 2.59 |
-| calculus | 525 | 425 | 1 | 99 | 81.14% | 2.60 |
-| categories | 333 | 327 | 0 | 6 | 98.20% | 1.44 |
-| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.60 |
-| combinatorics | 2196 | 2153 | 0 | 43 | 98.04% | 1.21 |
-| concrete | 937 | 682 | 71 | 184 | 80.36% | 16.64 |
-| core | 9337 | 7742 | 202 | 1393 | 85.08% | 89.59 |
-| crypto | 5067 | 5065 | 0 | 2 | 99.96% | 1.02 |
-| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 1.41 |
-| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.81 |
-| functions | 10649 | 7491 | 1856 | 1302 | 87.77% | 49.27 |
-| geometry | 1102 | 1061 | 6 | 35 | 96.82% | 12.91 |
-| holonomic | 190 | 176 | 0 | 14 | 92.63% | 3.05 |
-| integrals | 1424 | 936 | 49 | 439 | 69.17% | 19.40 |
-| liealgebras | 93 | 87 | 1 | 5 | 94.62% | 0.06 |
-| logic | 7608 | 7414 | 1 | 193 | 97.46% | 3.89 |
-| matrices | 5093 | 4217 | 42 | 834 | 83.62% | 94.75 |
-| ntheory | 45168 | 45140 | 0 | 28 | 99.94% | 11.42 |
-| parsing | 868 | 736 | 69 | 63 | 92.74% | 0.58 |
+| algebras | 133 | 128 | 0 | 5 | 96.24% | 0.55 |
+| assumptions | 2245 | 1789 | 5 | 451 | 79.91% | 1.29 |
+| calculus | 525 | 425 | 1 | 99 | 81.14% | 2.42 |
+| categories | 333 | 327 | 0 | 6 | 98.20% | 1.32 |
+| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.52 |
+| combinatorics | 2196 | 2153 | 0 | 43 | 98.04% | 0.97 |
+| concrete | 937 | 682 | 71 | 184 | 80.36% | 15.00 |
+| core | 9337 | 7742 | 202 | 1393 | 85.08% | 89.85 |
+| crypto | 5067 | 5065 | 0 | 2 | 99.96% | 0.77 |
+| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 1.14 |
+| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.64 |
+| functions | 10649 | 7491 | 1856 | 1302 | 87.77% | 45.57 |
+| geometry | 1102 | 1061 | 6 | 35 | 96.82% | 14.46 |
+| holonomic | 190 | 176 | 0 | 14 | 92.63% | 3.61 |
+| integrals | 1424 | 936 | 49 | 439 | 69.17% | 22.03 |
+| liealgebras | 93 | 87 | 1 | 5 | 94.62% | 0.07 |
+| logic | 7608 | 7414 | 1 | 193 | 97.46% | 5.95 |
+| matrices | 5093 | 4217 | 42 | 834 | 83.62% | 96.14 |
+| ntheory | 45168 | 45140 | 0 | 28 | 99.94% | 13.36 |
+| parsing | 868 | 736 | 69 | 63 | 92.74% | 0.71 |
 | plotting | 49 | 23 | 0 | 26 | 46.94% | 0.07 |
-| polys | 12154 | 8887 | 88 | 3179 | 73.84% | 227.67 |
-| printing | 2147 | 1863 | 1 | 283 | 86.82% | 5.88 |
-| series | 1674 | 1196 | 29 | 449 | 73.18% | 13.34 |
-| sets | 1858 | 1137 | 11 | 710 | 61.79% | 1.76 |
-| simplify | 1525 | 1314 | 44 | 167 | 89.05% | 8.31 |
-| solvers | 4618 | 3654 | 82 | 882 | 80.90% | 88.51 |
-| stats | 2025 | 1922 | 42 | 61 | 96.99% | 208.64 |
+| polys | 12154 | 8887 | 88 | 3179 | 73.84% | 226.83 |
+| printing | 2147 | 1863 | 1 | 283 | 86.82% | 6.16 |
+| series | 1674 | 1196 | 29 | 449 | 73.18% | 16.68 |
+| sets | 1858 | 1137 | 11 | 710 | 61.79% | 2.02 |
+| simplify | 1525 | 1314 | 44 | 167 | 89.05% | 9.53 |
+| solvers | 4618 | 3654 | 82 | 882 | 80.90% | 93.09 |
+| stats | 2025 | 1930 | 42 | 53 | 97.38% | 263.39 |
 | strategies | 7 | 5 | 0 | 2 | 71.43% | 0.01 |
-| tensor | 1953 | 1547 | 1 | 405 | 79.26% | 7.61 |
+| tensor | 1953 | 1547 | 1 | 405 | 79.26% | 8.84 |
 | unify | 16 | 10 | 0 | 6 | 62.50% | 0.03 |
-| utilities | 556 | 485 | 10 | 61 | 89.03% | 21.08 |
-| vector | 694 | 665 | 4 | 25 | 96.40% | 5.19 |
+| utilities | 556 | 485 | 10 | 61 | 89.03% | 21.71 |
+| vector | 694 | 665 | 4 | 25 | 96.40% | 5.48 |
 
 ## Extraction audit
 
@@ -520,9 +520,9 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | algebras | exception class mismatch (accepted) | 0 |
 | assumptions | input conversion exception | 11 |
 | assumptions | missing API/adapter | 40 |
-| assumptions | unexpected exception | 3 |
+| assumptions | unexpected exception | 2 |
 | assumptions | unsupported value/input type | 10 |
-| assumptions | wrong result | 392 |
+| assumptions | wrong result | 388 |
 | assumptions | exception class mismatch (accepted) | 1 |
 | calculus | exception not raised | 14 |
 | calculus | input conversion exception | 11 |
@@ -670,7 +670,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | stats | exception not raised | 3 |
 | stats | input conversion exception | 5 |
 | stats | missing API/adapter | 4 |
-| stats | replay timeout | 17 |
+| stats | replay timeout | 9 |
 | stats | unexpected exception | 6 |
 | stats | unsupported value/input type | 4 |
 | stats | wrong result | 22 |
@@ -706,14 +706,13 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | algebras | .__add__ (fail) | 1 |
 | algebras | .pow (error) | 1 |
 | algebras | trigsimp (error) | 1 |
-| assumptions | ask (fail) | 352 |
+| assumptions | ask (fail) | 348 |
 | assumptions | refine (fail) | 40 |
 | assumptions | lra_satask (unsupported) | 39 |
 | assumptions | ask (error) | 12 |
 | assumptions | ask (unsupported) | 10 |
 | assumptions | pretty (error) | 1 |
 | assumptions | .handler (unsupported) | 1 |
-| assumptions | .is_positive (error) | 1 |
 | calculus | .__pow__ (fail) | 17 |
 | calculus | .__truediv__ (fail) | 10 |
 | calculus | periodicity (fail) | 9 |
@@ -900,15 +899,15 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | solvers | solveset_complex (unsupported) | 24 |
 | solvers | matrix_exp (fail) | 18 |
 | stats | .dummy_eq (fail) | 8 |
-| stats | skewness (error) | 7 |
-| stats | kurtosis (error) | 6 |
 | stats | .__getitem__ (unsupported) | 4 |
+| stats | skewness (error) | 4 |
+| stats | kurtosis (error) | 4 |
 | stats | .doit (error) | 4 |
 | stats | median (fail) | 3 |
-| stats | variance (error) | 3 |
 | stats | probability (fail) | 2 |
 | stats | variance (fail) | 2 |
 | stats | .__call__ (error) | 2 |
+| stats | .foo (unsupported) | 2 |
 | strategies | treeapply (unsupported) | 2 |
 | tensor | .__getitem__ (unsupported) | 106 |
 | tensor | convert_array_to_matrix (fail) | 45 |
@@ -1174,3 +1173,5 @@ Case shards contain one JSON case per line, with ASCII escapes and finite JSON n
 | utilities/tests/test_xxe.py | XML stylesheet processing requires optional lxml. |
 
 Accepted exception class mismatches: **782**. Their case IDs and classes are retained in tests-report.json.
+
+The aggregate includes isolated single-worker polynomial, statistics and assumptions replays after the full two-worker run. Statistics used the supported 10-second per-case deadline on its final replay; all corpus assertions and comparisons are unchanged. The reported wall time includes the replay attempts.

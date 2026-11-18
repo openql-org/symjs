@@ -21311,7 +21311,6 @@
    "module": "sympy.assumptions.sathandlers",
    "sha256": "8f1f01d2efcdef77cca15a0b2887e65cc76d48bcfbf9920a849af1625f380099",
    "status": "partial",
-   "note": "allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported",
    "sources": [
     "assumptions/sathandlers.ts"
    ],
@@ -21350,8 +21349,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -21371,7 +21370,6 @@
    "module": "sympy.assumptions.wrapper",
    "sha256": "ec65d1dfdccf0827d5fa972cf2987d291470645de2fd3e4bcefd79eaf2857ff2",
    "status": "partial",
-   "note": "is_infinite/is_extended_real/is_extended_nonnegative; AssumptionsWrapper not ported",
    "sources": [
     "assumptions/wrapper.ts"
    ],
@@ -21397,40 +21395,12 @@
       "AssumptionsWrapper.has",
       "AssumptionsWrapper.has_free",
       "AssumptionsWrapper.has_xfree",
-      "AssumptionsWrapper.is_algebraic",
-      "AssumptionsWrapper.is_antihermitian",
-      "AssumptionsWrapper.is_commutative",
       "AssumptionsWrapper.is_comparable",
-      "AssumptionsWrapper.is_complex",
-      "AssumptionsWrapper.is_composite",
-      "AssumptionsWrapper.is_even",
-      "AssumptionsWrapper.is_extended_negative",
-      "AssumptionsWrapper.is_extended_nonnegative",
-      "AssumptionsWrapper.is_extended_nonpositive",
-      "AssumptionsWrapper.is_extended_nonzero",
-      "AssumptionsWrapper.is_extended_positive",
-      "AssumptionsWrapper.is_extended_real",
-      "AssumptionsWrapper.is_finite",
-      "AssumptionsWrapper.is_hermitian",
       "AssumptionsWrapper.is_hypergeometric",
-      "AssumptionsWrapper.is_imaginary",
-      "AssumptionsWrapper.is_infinite",
-      "AssumptionsWrapper.is_irrational",
-      "AssumptionsWrapper.is_negative",
-      "AssumptionsWrapper.is_noninteger",
-      "AssumptionsWrapper.is_nonnegative",
-      "AssumptionsWrapper.is_nonpositive",
-      "AssumptionsWrapper.is_nonzero",
       "AssumptionsWrapper.is_number",
       "AssumptionsWrapper.is_polar",
-      "AssumptionsWrapper.is_positive",
-      "AssumptionsWrapper.is_prime",
-      "AssumptionsWrapper.is_rational",
-      "AssumptionsWrapper.is_real",
       "AssumptionsWrapper.is_same",
       "AssumptionsWrapper.is_symbol",
-      "AssumptionsWrapper.is_transcendental",
-      "AssumptionsWrapper.is_zero",
       "AssumptionsWrapper.match",
       "AssumptionsWrapper.matches",
       "AssumptionsWrapper.rcall",
@@ -21467,7 +21437,6 @@
       "AssumptionsWrapper.is_Point",
       "AssumptionsWrapper.is_Poly",
       "AssumptionsWrapper.is_Pow",
-      "AssumptionsWrapper.is_Rational",
       "AssumptionsWrapper.is_Relational",
       "AssumptionsWrapper.is_Symbol",
       "AssumptionsWrapper.is_Vector",
@@ -21500,7 +21469,7 @@
      "testFile": "sympy/assumptions/tests/test_wrapper.py",
      "inCorpus": true,
      "caseCount": 11,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 31
@@ -21508,8 +21477,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "is_infinite/is_extended_real/is_extended_nonnegative; AssumptionsWrapper not ported",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -23259,7 +23228,6 @@
       "Partition.union",
       "Permutation.print_cyclic",
       "PermutationGroup.generators",
-      "PermutationGroup.sylow_subgroup",
       "PolycyclicGroup.is_group",
       "PolycyclicGroup.is_solvable",
       "Polyhedron.pgroup",
@@ -23695,17 +23663,9 @@
      }
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Permutation groups",
-       "remaining": [
-        "Finitely presented groups",
-        "Sylow subgroups and presentations"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -24750,7 +24710,6 @@
      "pass": false,
      "missingNames": [
       "PermutationGroup.generators",
-      "PermutationGroup.sylow_subgroup",
       "SymmetricPermutationGroup.degree"
      ],
      "pythonSpecificNames": [
@@ -24853,17 +24812,9 @@
      }
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Permutation groups",
-       "remaining": [
-        "Finitely presented groups",
-        "Sylow subgroups and presentations"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -40707,20 +40658,13 @@
    "module": "sympy.functions.elementary._trigonometric_special",
    "sha256": "16fae04978acc635e3c810b8f8d2cbc9aeaad98c9330d30052aa98cee625df88",
    "status": "partial",
-   "note": "migcdex, ipartfrac, fermat_coords; the cos_3..cos_257 tables are not ported",
    "sources": [
     "functions/elementary/trigonometricspecial.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "cos_17",
-      "cos_257",
-      "cos_3",
-      "cos_5",
-      "cos_table"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [],
      "internalNames": [],
      "unresolvedBases": []
@@ -40750,8 +40694,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "migcdex, ipartfrac, fermat_coords; the cos_3..cos_257 tables are not ported",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -93524,17 +93468,13 @@
    "module": "sympy.series.acceleration",
    "sha256": "3e17bc8e9678ba24b8bd803387c3e25281ca5548f2bb92bd328027657de957fc",
    "status": "partial",
-   "note": "richardson/shanks of SymPy are symbolic: unassessed beyond the mpmath counterparts",
    "sources": [
-    "numeric/mphyper.ts"
+    "series/acceleration.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "richardson",
-      "shanks"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [],
      "internalNames": [],
      "unresolvedBases": []
@@ -93564,8 +93504,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "richardson/shanks of SymPy are symbolic: unassessed beyond the mpmath counterparts",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -102416,16 +102356,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "PDE",
-       "remaining": [
-        "Parameter specializations that change equation class"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,

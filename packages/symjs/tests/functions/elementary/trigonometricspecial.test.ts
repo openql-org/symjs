@@ -24,3 +24,15 @@ describe('Fermat prime helpers', () => {
     expect(sj.fermatCoords(1)).toBe(sj.NoMatch);
   });
 });
+
+it('ports the lazy Fermat-prime radical table from SymPy 1.14', async () => {
+  const { cos3, cos5, cos17, cos257, cosTable, toComplex } = await import('../../../src');
+  const table = cosTable();
+  expect([...table.keys()]).toEqual([3, 5, 17, 257]);
+  expect([...table.values()]).toEqual([cos3, cos5, cos17, cos257]);
+  for (const [n, cosine] of table) {
+    const e = cosine();
+    expect(toComplex(e).re).toBeCloseTo(Math.cos(Math.PI / n), 13);
+    expect(e.has(sj.pi)).toBe(false);
+  }
+});

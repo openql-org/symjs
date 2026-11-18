@@ -691,3 +691,18 @@ describe('ask on functions (SymPy test_miscellaneous, test_complexes, test_expon
 });
 
 const mul2 = (...xs: sj.ExprLike[]): sj.Expr => sj.mul(...xs);
+
+it('uses SymPy scalar Hermitian and antihermitian predicate handlers with local facts', async () => {
+  const { Sym, Q, ask } = await import('../../src');
+  const x = new Sym('local');
+  expect(ask(Q.hermitian(x), Q.imaginary(x))).toBe(false);
+  expect(ask(Q.antihermitian(x), Q.even(x))).toBe('unknown');
+  expect(ask(Q.antihermitian(x), Q.rational(x))).toBe('unknown');
+  expect(ask(Q.antihermitian(x), Q.zero(x))).toBe(true);
+});
+
+it('does not reject an unconstrained noncommutative Hermitian operator', () => {
+  const operator = sj.symbol('operator', { commutative: false });
+  expect(sj.ask(sj.Q.hermitian(operator))).toBe('unknown');
+  expect(sj.ask(sj.Q.hermitian(operator), sj.Q.hermitian(operator))).toBe(true);
+});
