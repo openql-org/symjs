@@ -47,7 +47,7 @@ it('compares values using three-valued logic and explicit assumptions', () => {
 });
 
 it('normalizes linear relations without cancelling unknown symbolic signs', async () => {
-  const { simplify, add, mul, pow, sin, relationalEquals } = await import('../../src');
+  const { simplify, add, mul, pow, sin, finiteSet, relationalEquals } = await import('../../src');
   const y = new Sym('y');
   for (const op of ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'] as const) {
     expect(simplify(new Rel(op, add(mul(2, x), -1), x)).key).toBe(new Rel(op, x, S.One).key);
@@ -61,6 +61,8 @@ it('normalizes linear relations without cancelling unknown symbolic signs', asyn
   expect(simplify(new Rel('Eq', S.One, S.One))).toBe(S.true);
   expect(simplify(new Rel('Eq', add(x, S.One), x))).toBe(S.false);
   expect(simplify(new Rel('Eq', S.true, x))).toBeInstanceOf(Rel);
+  const setEquation = new Rel('Eq', finiteSet(1), finiteSet(x));
+  expect(simplify(setEquation).key).toBe(setEquation.key);
   const eq = new Rel('Eq', x, S.One);
   expect(relationalEquals(eq, x)).toBe('unknown');
   expect(relationalEquals(eq, eq)).toBe(true);

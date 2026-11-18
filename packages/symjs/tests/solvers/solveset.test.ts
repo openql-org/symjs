@@ -36,6 +36,11 @@ it('solves finite, parametric and inconsistent algebraic systems', () => {
   expect(nonlinsolve([add(x, y), add(x, y, -1)], [x, y])).toEqual([]);
   expect(nonlinsolve([add(x, y, -1)], [x, y]).length).toBe(1);
 });
+it('includes the complex solutions of a polynomial system with real unknowns', () => {
+  const [a, b] = symbols('a b', { real: true });
+  const eqs = [add(pow(a, 2), mul(-2, pow(b, 2)), -2), add(mul(a, b), -2)];
+  expect(nonlinsolve(eqs, [a, b]).map(String).sort()).toEqual(['-2,-1', '-sqrt(2)*I,sqrt(2)*I', '2,1', 'sqrt(2)*I,-sqrt(2)*I']);
+});
 it('extends assignments, excludes poles and preserves requested column order', () => {
   const known = [new Map([[y, S.One]])];
   expect(substitution([add(x, y)], [x], known, [y], [], [x, y]).map(String)).toEqual(['-1,1']);

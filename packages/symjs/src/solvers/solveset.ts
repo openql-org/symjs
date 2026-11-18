@@ -208,7 +208,8 @@ export function nonlinsolve(system: readonly ExprLike[], symbols: readonly Sym[]
       }
     }
   }
-  return finiteNonlinsolve(eqs, symbols);
+  // Solve over the complex domain even when an unknown has a real assumption.
+  return finiteNonlinsolve(eqs, symbols, { check: false });
 }
 
 /** SymPy substitution: extend known assignments by solving the remaining system. */

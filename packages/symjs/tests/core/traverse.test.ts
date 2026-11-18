@@ -337,6 +337,15 @@ it('honors extension substitution hooks and symbols with inner free symbols', ()
   expect(sj.subs(derivative, [[x, 2]])).toBeInstanceOf(sj.Subs);
 });
 
+it('checks for variable capture only when substitution changes the differentiated expression', () => {
+  const f = sj.SymFunction('f');
+  const single = sj.derivative(f(x), [[x, 1]]);
+  const multiple = sj.derivative(f(x, y), [[x, 1]]);
+  const point = y.add(x);
+  expect(sj.subs(single, [[y, point]])).toBe(single);
+  expect(sj.subs(multiple, [[y, point]])).toBeInstanceOf(sj.Subs);
+});
+
 it('substitutes only unbound arguments of an extension binder', () => {
   class Binder extends ExtensionExpr {
     constructor(args: readonly sj.Expr[]) { super('Binder', args); }

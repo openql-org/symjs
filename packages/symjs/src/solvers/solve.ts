@@ -893,6 +893,10 @@ function replaceTarget(e: Expr, target: Expr, t: Expr): Expr {
   const go = (x: Expr): Expr => {
     if (x.key === target.key) return t;
     if (x.kind === 'Derivative') return x;
+    if (x instanceof Pow && target instanceof Pow && x.base.key === target.base.key) {
+      const replaced = subs(x, [[target, t]]);
+      if (replaced.key !== x.key) return replaced;
+    }
     // a sum target matches the terms of a sum up to the numeric term (SymPy Add._eval_subs: (x - 1).subs(x + 1, t) = t - 2)
     if (target instanceof Add && x instanceof Add) {
       const tTerms = target.args.filter((a) => !(a instanceof Rational));

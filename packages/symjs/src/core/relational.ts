@@ -65,6 +65,7 @@ export const isLt = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = tru
 export function simplifyRelation(relation: Rel, simplify: (e: Expr) => Expr): Expr {
   const r = rel(relation.op, simplify(relation.lhs), simplify(relation.rhs));
   if (!(r instanceof Rel)) return r;
+  if (r.args.some((a) => a.kind === 'Set')) return r;
   const canonical = canonicalRelation(r);
   if (r.args.some((a) => a instanceof BoolAtom)) return canonical;
   const difference = impl.expand(add(r.lhs, mul(-1, r.rhs)));
