@@ -61,11 +61,13 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // add less than 1 KiB to consumers of the shared core.
 // Ordered product matching and differentiation and Lambda signature validation
 // contribute less than 2 KiB to consumers of the shared core.
+// Lehmer GCD, exact rational roots and evalf helpers add up to 4 KiB to
+// namespace imports; complex comparisons add under 1 KiB to numeric consumers.
 const CASES = [
   ['core', 'Rational', 204],
   ['core', 'parse, str', 221],
   ['core', 'parse, diff, expand, str, latex', 221],
-  ['core', '*', 330],
+  ['core', '*', 334],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 408],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
@@ -79,7 +81,7 @@ const CASES = [
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 1047],
   ['solvers', 'solve', 1134],
-  ['solvers', 'dsolve', 1149],
+  ['solvers', 'dsolve', 1150],
   ['sets', '*', 376],
   ['matrices', 'Matrix', 833],
   ['printing', 'pretty', 243],
@@ -92,7 +94,7 @@ const CASES = [
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 647],
   ['holonomic', 'exprToHolonomic', 1229],
-  ['geometry', '*', 1114],
+  ['geometry', '*', 1115],
   ['vector', '*', 1208],
   ['stats', '*', 1380],
   // Diagram layout, pretty grids and Xy-pic text generation.
@@ -109,7 +111,7 @@ const CASES = [
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2781],
+  ['index', '*', 2784],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

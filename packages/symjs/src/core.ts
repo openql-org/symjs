@@ -359,6 +359,9 @@ export {
   integerLog,
   igcd,
   igcdex,
+  igcdLehmer,
+  intValued,
+  approximationInterval,
   ilcm,
   integerNthroot,
   isqrt,
@@ -676,3 +679,6 @@ export const Number = _SymNumber_;
 
 /** @deprecated Use `SymFunction` (`Function` shadows the JavaScript global); removed in 1.0. */
 export const Function = _SymFunction_;
+
+export { complexAccuracy, getIntegerPart } from './numeric/evalf';
+export type { EvalfResult } from './numeric/evalf';

@@ -170,3 +170,44 @@ describe('igcdex / isqrt', () => {
     expect(() => sj.isqrt(-1n)).toThrow(RangeError);
   });
 });
+
+describe('literal values, rational square roots and enclosing intervals', () => {
+  it('tests literal integrality without rounding to a double', () => {
+    for (const value of [2n, 2, R(2), new sj.Float(0), new sj.Float(4)]) expect(sj.intValued(value)).toBe(true);
+    for (const value of [NaN, Infinity, 1.5, R(1, 2), new sj.Float(1.5), sj.pi, sj.Symbol('n', { integer: true })]) expect(sj.intValued(value)).toBe(false);
+    expect(() => Reflect.apply(sj.igcd, undefined, [R(1)])).toThrow(RangeError);
+  });
+  it('takes the integer square root of the entire fraction', () => {
+    expect(sj.isqrt(R(9007199523176447n, 2n))).toBe(67108864n);
+    expect(sj.isqrt(R(1n, 10n ** 1000n))).toBe(0n);
+    expect(sj.isqrt(R(10n ** 1100n - 1n, 10n ** 1000n))).toBe(10n ** 50n - 1n);
+    expect(sj.isqrt(new sj.Float(9))).toBe(3n);
+    expect(sj.isqrt(new sj.Float(8.9))).toBe(2n);
+    expect(() => sj.isqrt(R(-1, 100))).toThrow(RangeError);
+    expect(() => sj.isqrt(new sj.Float(-0.1))).toThrow(RangeError);
+    expect(sj.integerNthroot(3n, 10n ** 1000n)).toEqual([1n, false]);
+    expect(sj.integerNthroot(27n, 3n)).toEqual([3n, true]);
+    expect(sj.integerNthroot(0n, 100)).toEqual([0n, true]);
+    for (const degree of [0, -1, 1.5, NaN, Infinity]) expect(() => sj.integerNthroot(3n, degree)).toThrow(RangeError);
+  });
+  it('encloses each real number symbol with proven rational bounds', () => {
+    for (const [name, interval] of [['pi', '3,4'], ['E', '2,3'], ['GoldenRatio', '1,2'], ['TribonacciConstant', '1,2'], ['EulerGamma', '0,1'], ['Catalan', '0,1']] as const) {
+      expect(String(sj.approximationInterval(new sj.NumberSymbol(name)))).toBe(interval);
+    }
+    for (const [name, interval] of [['pi', '223/71,22/7'], ['EulerGamma', '1/2,3/5'], ['Catalan', '9/10,1']] as const) {
+      expect(String(sj.approximationInterval(new sj.NumberSymbol(name), 'Rational'))).toBe(interval);
+    }
+    expect(sj.approximationInterval(sj.E, 'Rational')).toBe(sj.NoMatch);
+    expect(sj.approximationInterval(new sj.NumberSymbol('I'))).toBe(sj.NoMatch);
+  });
+  it('uses Lehmer batches for large inputs and Euclid for the remainder', () => {
+    const fib = (n: number) => {
+      let a = 0n, b = 1n;
+      for (let i = 0; i < n; i++) [a, b] = [b, a + b];
+      return a;
+    };
+    for (const [a, b] of [[0n, 0n], [0n, -8n], [-12n, 18n], [2n ** 100n, 1n], [((2n ** 58n + 1n) * 2n) << 40n, (2n ** 58n) << 40n], [fib(500), fib(499)], [fib(500), fib(400)], [2n ** 100n, 2n ** 80n], [10n ** 100n, 10n ** 50n + 1n]]) {
+      if (a !== undefined && b !== undefined) expect(sj.igcdLehmer(a, b)).toBe(sj.igcd(a, b));
+    }
+  });
+});
