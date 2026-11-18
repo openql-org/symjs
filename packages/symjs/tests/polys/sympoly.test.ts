@@ -310,6 +310,15 @@ describe('generators and domains', () => {
     expect(P('x*y + x**2', x, y).homogeneousOrder()).toBe(2);
     for (const g of [y, 1, -2]) expect(String(P('y**2 + y*z**2', x, y, z).ltrim(g))).toBe("Poly(y**2 + y*z**2, y, z, domain='ZZ')");
     expect(String(P('x**2 + y', x, y).reorder(y, x))).toBe("Poly(y + x**2, y, x, domain='ZZ')");
+    expect(String(P('x + y + z', x, y, z).reorder({ wrt: z }))).toBe("Poly(z + x + y, z, x, y, domain='ZZ')");
+    expect(String(P('x + y + z', x, y, z).reorder({ wrt: [y, new Sym('w')] }))).toBe("Poly(y + x + z, y, x, z, domain='ZZ')");
+    // SymPy PolynomialError: the generators can only be permuted; a left generator must not occur
+    expect(() => P('x + y', x, y).reorder(x, z)).toThrow(sj.PolynomialError);
+    expect(() => P('x + y', x, y).reorder(x)).toThrow(sj.PolynomialError);
+    expect(() => P('x + y', x, y).reorder(x, x)).toThrow(sj.PolynomialError);
+    expect(() => P('x*y**2 + y**2', x, y).ltrim(y)).toThrow(sj.PolynomialError);
+    expect(() => P('x*y - x', x, y).ltrim(-1)).toThrow(sj.PolynomialError);
+    for (const g of [2, -3, z]) expect(() => P('x*y', x, y).ltrim(g)).toThrow(sj.PolynomialError);
     expect(String(P('x**2 + 1', x).replace(x, y))).toBe("Poly(y**2 + 1, y, domain='ZZ')");
   });
   it('termsGcd, deflate, toRing, toExact, retract, trunc, clearDenoms', () => {

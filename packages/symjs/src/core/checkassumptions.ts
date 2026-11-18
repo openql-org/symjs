@@ -83,6 +83,14 @@ function factsOf(e: Expr): Map<string, boolean> {
       const v: Truth = p === undefined ? (isPolar(e) ? true : 'unknown') : ask(p(e));
       if (v !== 'unknown') given[k] = v;
     }
+    // SymPy Add._eval_is_hermitian/_eval_is_antihermitian: the fuzzy group of the terms' core facts
+    if (e instanceof Add) {
+      for (const k of ['hermitian', 'antihermitian']) {
+        delete given[k];
+        const r = fuzzyGroup(e.args.map((a) => coreHermitian(a, k)));
+        if (r !== undefined) given[k] = r;
+      }
+    }
     // SymPy Add._eval_is_extended_real: exactly one term that is not extended real makes the sum not extended real
     if (given['extended_real'] === undefined && e instanceof Add) {
       const r = fuzzyGroup(e.args.map((a) => factsOf(a).get('extended_real')));
@@ -97,6 +105,16 @@ function factsOf(e: Expr): Map<string, boolean> {
   }
   facts.set(e, rv);
   return rv;
+}
+
+/**
+ * The core `is_hermitian`/`is_antihermitian` of a term: symbols and sums carry
+ * their own value, other terms only the positive fact (the core rules derive no
+ * negative one for them).
+ */
+function coreHermitian(e: Expr, name: string): boolean | undefined {
+  const v = factsOf(e).get(name);
+  return e instanceof Sym || e instanceof Add || v === true ? v : undefined;
 }
 
 /** The value of one fact of an expression (`expr.is_<name>`); 'unknown' for SymPy's None and for a name that is not a fact. */

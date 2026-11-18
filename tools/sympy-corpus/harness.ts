@@ -4042,7 +4042,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.homogeneous_order': polyM((p) => none(p.homogeneousOrder())),
   '.homogenize': polyM((p, a) => p.homogenize(asExpr(a[0]))),
   '.ltrim': polyM((p, a) => p.ltrim(a[0] instanceof sj.Rational ? Number(a[0].p) : asExpr(a[0]))),
-  '.reorder': polyM((p, a) => p.reorder(...a.map(asExpr))),
+  '.reorder': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'wrt') throw new Unsupported(`kwargs ${k}`);
+    const p = asPoly(self);
+    return kw['wrt'] === undefined ? p.reorder(...args.map(asExpr)) : p.reorder({ wrt: asExpr(kw['wrt']) });
+  },
   '.pdiv': polyM((p, a) => new JsTuple(p.pdiv(a[0] as sj.Poly))),
   '.pexquo': polyM((p, a) => p.pexquo(a[0] as sj.Poly)),
   '.shift': polyM((p, a) => p.shift(asExpr(a[0]))),

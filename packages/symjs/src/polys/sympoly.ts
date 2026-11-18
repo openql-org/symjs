@@ -1175,11 +1175,26 @@ export class Poly {
   /** Drop the generators to the left of gen. */
   ltrim(gen: Expr | number): Poly {
     let i = typeof gen === 'number' ? gen : this.gens.findIndex((g) => g.key === gen.key);
-    if (i < 0) i += this.gens.length;
+    if (typeof gen === 'number' && i < 0) i += this.gens.length;
+    if (i < 0 || i >= this.gens.length) throw new PolynomialError(`${String(gen)} is not a valid generator level`);
+    if (this.termList.some((t) => t.monom.slice(0, i).some((e) => e !== 0))) throw new PolynomialError('Cannot left trim');
     return this.like(this.asExpr(),this.gens.slice(i));
   }
-  reorder(...gens: Expr[]): Poly {
+  /** Reorder the generators; with `{ wrt }` the given generators come first and the rest follow the default order. */
+  reorder(...gens: Expr[]): Poly;
+  reorder(options: { wrt: Expr | readonly Expr[] }): Poly;
+  reorder(...args: (Expr | { wrt: Expr | readonly Expr[] })[]): Poly {
+    const [only] = args;
+    const gens = args.length === 1 && only !== undefined && !(only instanceof Expr) ? this.gensWrt(only.wrt) : args.filter((a): a is Expr => a instanceof Expr);
+    const keys = new Set(this.gens.map((g) => g.key));
+    if (gens.length !== this.gens.length || new Set(gens.map((g) => g.key)).size !== keys.size || gens.some((g) => !keys.has(g.key))) {
+      throw new PolynomialError('generators list can differ only up to order of elements');
+    }
     return this.like(this.asExpr(),gens);
+  }
+  private gensWrt(wrt: Expr | readonly Expr[]): Expr[] {
+    const first = (wrt instanceof Expr ? [wrt] : [...wrt]).filter((w) => this.gens.some((g) => g.key === w.key));
+    return [...first, ...sortGens(this.gens.filter((g) => !first.some((w) => w.key === g.key)))];
   }
   replace(x: Expr, y?: Expr): Poly {
     const source=y===undefined?this.gen:x,target=y??x;
