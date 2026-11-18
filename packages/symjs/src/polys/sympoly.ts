@@ -914,8 +914,14 @@ export class Poly {
   }
 
   diff(x?: Expr): Poly {
-    if (this.finiteModulus !== undefined || this.algebraicField !== undefined) return this.like(diff(this.asExpr(), x ?? first(this.gens)));
-    return Poly.from(diff(this.asExpr(), x ?? first(this.gens)), this.gens);
+    // a generator need not be a symbol (Poly(pi*x, pi)): differentiate formally through a dummy symbol
+    const g = x ?? first(this.gens);
+    const d = g instanceof Sym ? diff(this.asExpr(), g) : (() => {
+      const t = new Dummy('t');
+      return xreplace(diff(xreplace(this.asExpr(), [[g, t]]), t), [[t, g]]);
+    })();
+    if (this.finiteModulus !== undefined || this.algebraicField !== undefined) return this.like(d);
+    return Poly.from(d, this.gens);
   }
   /** The antiderivative in a generator (SymPy Poly.integrate), term by term. */
   integrate(x?: Expr): Poly {

@@ -75,14 +75,15 @@ export class IndexedBase extends ExtensionExpr {
   override get func(): Head {
     return indexedBaseFromArgs;
   }
-  readonly label: Sym;
+  readonly label: Sym | Expr;
   readonly #assumptionSymbol: Sym;
-  constructor(name: string | Sym, options: Assumptions & { readonly shape?: readonly ExprLike[] } = {}) {
+  constructor(name: string | Sym | Expr, options: Assumptions & { readonly shape?: readonly ExprLike[] } = {}) {
     const { shape, ...assumptions } = options;
     const label = typeof name === 'string' ? new Sym(name, assumptions) : name;
     super('IndexedBase', [label, ...(shape === undefined ? [] : [new TupleNode(shape.map(sympify))])]);
     this.label = label;
-    this.#assumptionSymbol = new Sym(label.name, { ...label.assumptions, ...assumptions });
+    // a label that is an expression (IndexedBase(a/b)) has no name: its assumptions live on a fixed placeholder
+    this.#assumptionSymbol = label instanceof Sym ? new Sym(label.name, { ...label.assumptions, ...assumptions }) : new Sym('IndexedBase_label', assumptions);
   }
   get assumptions0(): Map<string, boolean> {
     return this.#assumptionSymbol.assumptions0;
@@ -100,7 +101,7 @@ export class IndexedBase extends ExtensionExpr {
     return this.args.length === 1 ? NoMatch : cast(at(this.args, 1), TupleNode).args;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new IndexedBase(cast(at(args, 0), Sym), { ...this.#assumptionSymbol.assumptions, ...(args.length === 1 ? {} : { shape: cast(at(args, 1), TupleNode).args }) });
+    return new IndexedBase(at(args, 0), { ...this.#assumptionSymbol.assumptions, ...(args.length === 1 ? {} : { shape: cast(at(args, 1), TupleNode).args }) });
   }
   equals(other: unknown): boolean {
     return other instanceof IndexedBase && this.key === other.key;

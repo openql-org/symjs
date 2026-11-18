@@ -248,7 +248,8 @@ export function basicView(e: Expr, printOrder = false): BasicView {
   const set = setClass(e);
   // SymPy keeps the sets of a union or an intersection sorted (by their infimum)
   if (set !== undefined) return e.args.length === 0 ? atom(set, set, false) : node(set, (set === 'Union' || set === 'Intersection' ? setArgsOrdered(e.args) : e.args).map(v), false);
-  if (e instanceof ExtensionExpr) return node(e.name, e.args.map(v), !['Tuple', 'Dict', 'Basic', 'Atom'].includes(e.name));
+  // SymPy prints pargs where a class defines them (Heaviside without its default value at 0)
+  if (e instanceof ExtensionExpr) return node(e.name, printedArgs(e).map(v), !['Tuple', 'Dict', 'Basic', 'Atom'].includes(e.name));
   // Add, Mul, Pow, exp and the functions
   return node(sympyClassName(e), sympyArgs(e).map(v));
 }
@@ -312,4 +313,10 @@ function reprValue(expr: ReprPrintable): string {
   if (expr instanceof Map) return `{${[...expr].map(([k, v]) => `${reprValue(k)}: ${reprValue(v)}`).join(', ')}}`;
   if (isReprObject(expr)) return expr.repr();
   return expr.size ? `{${[...expr].map((x) => reprValue(x)).join(', ')}}` : 'set()';
+}
+
+/** The arguments SymPy prints: pargs where the class defines them, else args. */
+function printedArgs(e: ExtensionExpr): readonly Expr[] {
+  const pargs: unknown = 'pargs' in e ? e.pargs : undefined;
+  return Array.isArray(pargs) && pargs.every((a): a is Expr => a instanceof Expr) ? pargs : e.args;
 }

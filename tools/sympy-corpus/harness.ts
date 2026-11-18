@@ -141,7 +141,9 @@ export class JsLambda {
     readonly vars: Expr[],
     readonly body: Expr,
   ) {}
-  call(...xs: Expr[]): Expr {
+  call(...xs: unknown[]): Expr {
+    // domain elements (the entries of a DDM in applyfunc) are not expressions: substitute them directly
+    if (!xs.every((x) => x instanceof Expr || x instanceof JsTuple || x instanceof JsList)) return sj.xreplace(this.body, this.vars.map((v, i) => [v, sj.sympify(xs[i] as never)] as [Expr, Expr]));
     return sj.Lambda(this.vars.map(expressionContainer), expressionContainer(this.body)).call(...xs.map(expressionContainer));
   }
   /** Python arithmetic on primitive callback arguments (not symbolic sympification). */
