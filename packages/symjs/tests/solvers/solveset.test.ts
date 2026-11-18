@@ -114,7 +114,7 @@ it('inverts functions over real and complex domains', () => {
 
 it('handles unions and non-real periodic representatives', () => {
   expect(sj.solvify(sin(x),x,sj.Reals).toString()).toBe('0,pi');
-  expect(sj.solvify(sin(x),x,sj.Integers)).toEqual([S.Zero]);
+  expect((sj.solvify(sin(x),x,sj.Integers) as sj.Expr[]).map(String)).toEqual(['0']);
   expect(sj.solvify(add(exp(mul(S.I,x)),-2),x,sj.Complexes)).toBe(sj.NoMatch);
 });
 

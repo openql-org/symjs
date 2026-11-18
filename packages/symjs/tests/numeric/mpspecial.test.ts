@@ -128,8 +128,7 @@ describe('arbitrary-precision special functions (evalf at 30 digits)', () => {
     expect(() => evalf(p('erf2inv(0, 2)'))).toThrow(EvalfValueError);
     // SymPy returns erfcinv(x) unchanged
     expect(ev('erfcinv(x)', { x: p('I/2') })).toBe('erfcinv(x)');
-    // not implemented: polygamma of a non-integer order (SymPy 0.830124827353940)
-    expect(ev('polygamma(x, 2)', { x: p('1/2') })).toMatch(/^polygamma\(/);
+    expect(ev('polygamma(x, 2)', { x: p('1/2') })).toBe('0.830124827353940');
   });
 });
 

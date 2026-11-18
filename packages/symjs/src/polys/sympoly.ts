@@ -981,7 +981,10 @@ export class Poly {
     const K = this.algebraicField;
     if(K)return this.like(this.fieldPoly(K).monic().asExpr(this.gens));
     const lc = this.LC();
-    const dom = this.domain === 'ZZ' ? 'QQ' : this.domain;
+    // SymPy to_field: ZZ becomes QQ and a polynomial ring K[a] its fraction field K(a)
+    // (the domain object keeps its symbols; a domain known only by name is rebuilt from that name)
+    const ring = /^(ZZ|QQ)\[(.+)\]$/.exec(this.domain);
+    const dom = this.domain === 'ZZ' ? 'QQ' : ring ? this.coefficientDomain?.getField() ?? `${ring[1]}(${ring[2]})` : this.domain;
     return Poly.from(mul(this.asExpr(), pow(lc, -1)), this.gens, { domain: dom });
   }
   /** [content, primitive part] over the integers. */
@@ -3096,7 +3099,8 @@ export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: bo
   if (!e.isCommutative) return factorNc(e);
   if (e instanceof Add && opts.domain === undefined && opts.extension === undefined && (e.has(S.I) || e.args.some((t) => (t instanceof Mul ? t.args : [t]).some((a) => a instanceof Float)))) {
     const p = Poly.from(e, opts.gens);
-    if (p.domain === 'RR' && p.gens.length) return factorInexactReal(p);
+    // (generators that are functions, such as sin(x), are factored symbolically below)
+    if (p.domain === 'RR' && p.gens.length && p.gens.every((g) => g instanceof Sym)) return factorInexactReal(p);
     if (p.domain === 'ZZ_I' && p.isUnivariate && p.degree() > 1) return factorGaussianInteger(p);
   }
   return symbolicFactor(e, opts.fraction !== false);

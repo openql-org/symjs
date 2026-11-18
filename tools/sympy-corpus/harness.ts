@@ -4558,8 +4558,17 @@ export const ADAPTERS: Record<string, Adapter> = {
     const d = sj.simplify(sj.sub(asExpr(self), asExpr(args[0])));
     if (d instanceof sj.Rational && d.isZero) return true;
     if (d.isNumber) return false;
-    // SymPy Expr.equals: a difference that is not constant is not identically zero
-    return sj.isConstant(d) === false ? false : null;
+    // SymPy Expr.equals: a difference shown numerically not to be constant (is_constant with failing_number) is not
+    // identically zero; one that cannot be told apart from a constant leaves the answer open
+    const free = [...sj.freeSymbols(d)].filter((v): v is Sym => v instanceof Sym);
+    if (free.length === 0) return null;
+    const sample = (shift: number): number | undefined => {
+      const value = sj.evalf(sj.subs(d, free.map((v, i) => [v, sj.Rational.of(BigInt(3 + 2 * i + shift), 7n)])), 15);
+      return value instanceof sj.Float || value instanceof sj.Rational ? value.toNumber() : undefined;
+    };
+    const [first, second] = [sample(0), sample(1)];
+    if (first === undefined || second === undefined || !Number.isFinite(first) || !Number.isFinite(second)) return null;
+    return Math.abs(first - second) > 1e-9 * Math.max(1, Math.abs(first), Math.abs(second)) ? false : null;
   },
   '.getO': (_a, kw, self) => {
     noKw(kw);

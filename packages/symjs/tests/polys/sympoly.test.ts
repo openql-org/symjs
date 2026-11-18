@@ -1844,3 +1844,14 @@ it('retains supplied finite extensions in scalar operations and division', () =>
   const ring = new sj.FiniteExtension(Poly.from(parse('x**2 - 2'), [x], { domain: sj.ZZ })).toDomain();
   expect(Poly.from(y, [y], { domain: ring }).div(Poly.from(y, [y]))[0].isOne).toBe(true);
 });
+
+it('makes a polynomial monic over the field of its coefficient ring (SymPy to_field)', () => {
+  const [x] = symbols('x');
+  expect(String(sj.Poly.from(parse('a*x + 1'), [x], { domain: 'ZZ[a]' }).monic())).toBe("Poly(x + 1/a, x, domain='ZZ(a)')");
+  expect(String(sj.Poly.from(parse('2*x + 4'), [x]).monic())).toBe("Poly(x + 2, x, domain='QQ')");
+  // a symbol with assumptions is the generator of the domain of that name
+  const l = new Sym('l', { positive: true });
+  expect(String(sj.integrate(sj.pow(add(pow(x, 2), pow(l, 2)), -1), x, [0, sj.oo]))).toBe('pi/(2*l)');
+  // inexact coefficients with a function as generator are left to the symbolic factorization
+  expect(String(sj.factor(parse('1.5*sin(x)**2 - 1.5')))).toBe('1.5*sin(x)**2 - 1.5');
+});

@@ -272,7 +272,7 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1]), "Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1))", "Piecewise((Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1)), a < 1), (-Integral(Piecewise((1, x*y < 0), (2, True)), (x, 1, a)), True))"],
     // the limit at oo is left for a symbolic y (SymPy uses the Mellin transform)
-    ["sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo])", () => sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo]), "Limit(Piecewise(((-x/y - 1/y**2)*exp(-x*y), Ne(y, 0)), (x**2/2, True)), x, oo, dir='-') - Piecewise((-1/y**2, Ne(y, 0)), (0, True))", "Piecewise((y**(-2), Abs(arg(y)) < pi/2), (Integral(x*exp(-x*y), (x, 0, oo)), True))"],
+    ["sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo])", () => sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo]), "Piecewise((y**(-2), Abs(arg(y)) < pi/2), (Integral(x*exp(-x*y), (x, 0, oo)), True))", "Piecewise((y**(-2), Abs(arg(y)) < pi/2), (Integral(x*exp(-x*y), (x, 0, oo)), True))"],
     // the integral diverges: the antiderivative -x**2*cos(x) + 2*x*sin(x) + 2*cos(x) oscillates with unbounded
     // amplitude, so its values at oo fill AccumBounds(-oo, oo) (SymPy's oo*sign(AccumBounds(-1, 1)) - 2 is the
     // same set written unevaluated)
@@ -893,4 +893,8 @@ it('keeps the given Piecewise integrand in an integral that stays unevaluated (S
   const f = sj.SymFunction('f');
   const p = sj.piecewise([1, sj.Eq(f(x), 1)], [2, sj.Lt(x, 10)], [0, true]);
   expect(sstr(integrate(p, x, [0, 5]))).toBe('Integral(Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True)), (x, 0, 5))');
+});
+
+it('integrates through the Meijer G-functions when an endpoint limit of the antiderivative is not found', () => {
+  expect(sstr(integrate(parse('(besselj(1, x)/x)**2'), new Sym('x'), [0, sj.oo]))).toBe('4/(3*pi)');
 });

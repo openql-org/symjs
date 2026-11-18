@@ -65,7 +65,7 @@ it('validates nested signatures and substitutes arguments simultaneously', () =>
   const nested = sj.Lambda([sj.Tuple(x, sj.Tuple(y))], sj.add(x, y));
   expect(nested.variables).toEqual([x, y]);
   expect([...nested.freeSymbols()]).toEqual([]);
-  expect(String(nested)).toBe('Lambda((x, (y,)), x + y)');
+  expect(String(nested)).toBe('Lambda(((x, (y,)),), x + y)');
   expect(String(nested.call(sj.Tuple(2, sj.Tuple(3))))).toBe('5');
   expect(() => nested.call(1)).toThrow(TypeError);
   expect(() => nested.call(sj.Tuple(1))).toThrow(TypeError);

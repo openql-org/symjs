@@ -1512,6 +1512,8 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     try {
       const lower = endpoint(at(bounds, i - 1), '+');
       const upper = endpoint(at(bounds, i), '-');
+      // an endpoint whose limit is not found: the integral as without an antiderivative (the Meijer G-functions)
+      if ([lower, upper].some((v) => some(v, (e) => e.kind === 'Limit'))) return definiteWithoutAntiderivative(f, x, a, b, opts);
       if (isInfinity(upper) && rootIsReal(lower) === true) parts.push(upper);
       else if (isInfinity(lower) && rootIsReal(upper) === true) parts.push(mul(-1, lower));
       else parts.push(add(upper, mul(-1, lower)));
