@@ -762,3 +762,13 @@ it('decides rational, prime and finite facts of powers', () => {
   expect(ask(Q.finite(sj.pow(u, v)), And(Q.zero(u), Q.negative(v), Q.finite(v)))).toBe(false);
   expect(ask(Q.finite(sj.pow(v, w)), And(Q.finite(v), Q.finite(w)))).toBe('unknown');
 });
+
+it('an infinite base gives a finite power for a negative exponent and an infinite one for a positive exponent', () => {
+  // symbols with their own assumptions and names no other test uses (ask caches by expression)
+  const base = new sj.Sym('infinite_power_base', { infinite: true });
+  const exponent = new sj.Sym('negative_power_exponent', { negative: true });
+  expect(sj.ask(sj.Q.finite(sj.pow(base, exponent)))).toBe(true);
+  // and with a positive exponent an infinite power
+  const positive = new sj.Sym('positive_power_exponent', { positive: true });
+  expect(sj.ask(sj.Q.finite(sj.pow(base, positive)))).toBe(false);
+});

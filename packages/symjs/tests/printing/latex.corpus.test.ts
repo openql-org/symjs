@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { BaseScalarField, CoordSystem, Differential, Manifold, Patch, R2R, WedgeProduct } from '../../src/diffgeom';
-import { AccumBounds, Add, Adjoint, AlgebraicNumber, And, Array, ArrayElement, ArraySymbol, BlockMatrix, CRootOf, CartesianComplexRegion, Category, Complement, Complexes, CompositeMorphism, ConditionSet, ConditionalFiniteDomain, Contains, CoordSys3D, CovarianceNode, Cross, Curl, Cycle, DFT, Determinant, Diagram, Dict, DiracDelta, Divergence, Dot, DotProduct, Dummy, E, ElementwiseApplyFunction, EmptySet, Equivalent, ExpectationNode, Float, Gradient, HadamardPower, HadamardProduct, Heaviside, I, IDFT, Identity, IdentityMorphism, Idx, ImageSet, ImmutableSparseNDimArray, Implies, IndexedBase, Integers, Integral, KroneckerDelta, KroneckerProduct, Lambda, LambertW, LaplaceTransform, Laplacian, LeviCivita, Limit, MatAdd, MatMul, MatPow, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mod, Mul, MutableDenseNDimArray, MutableSparseNDimArray, NamedMorphism, Naturals, Naturals0, NormalDistribution, Not, O, OneMatrix, Or, PartialDerivative, Perm, PermutationMatrix, PolarComplexRegion, Pow, PowerSet, ProbabilityNode, Product, ProductContinuousDomain, ProductSet, Quaternion, RandomSymbol, Range, Rationals, Reals, Relational, RootSumNode, S, SeqAdd, SeqFormula, SeqMul, SeqPer, SetExpression, SingleContinuousDomain, SingleContinuousPSpace, SingleFiniteDomain, SingularityFunction, Str, Subs, Sum, Sym, SymFunction, SymObject, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Trace, Transpose, Tuple, UnevaluatedExpr, Union, UniversalSet, VarianceNode, VectorAdd, VectorMul, Wild, Xor, ZeroMatrix, abs, add, derivative, exp, finiteSet, fn, fourierSeries, fps, frac, hyper, intersection, interval, jn, latex, log, meijerg, mul, multilineLatex, oo, pi, piecewise, pow, pprintUseUnicode, rational, symbols, sympifyMatrix, translate, yn } from '../../src';
+import { AccumBounds, Add, Adjoint, AlgebraicNumber, And, Array, ArrayElement, ArraySymbol, BlockMatrix, CRootOf, CartesianComplexRegion, Category, Complexes, CompositeMorphism, ConditionSet, ConditionalFiniteDomain, Contains, CoordSys3D, CovarianceNode, Cross, Curl, Cycle, DFT, Determinant, Diagram, Dict, DiracDelta, Divergence, Dot, DotProduct, Dummy, E, ElementwiseApplyFunction, EmptySet, Equivalent, ExpectationNode, Float, Gradient, HadamardPower, HadamardProduct, Heaviside, I, IDFT, Identity, IdentityMorphism, Idx, ImageSet, ImmutableSparseNDimArray, Implies, IndexedBase, Integers, Integral, KroneckerDelta, KroneckerProduct, Lambda, LambertW, LaplaceTransform, Laplacian, LeviCivita, Limit, MatAdd, MatMul, MatPow, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mod, Mul, MutableDenseNDimArray, MutableSparseNDimArray, NamedMorphism, Naturals, Naturals0, NormalDistribution, Not, O, OneMatrix, Or, PartialDerivative, Perm, PermutationMatrix, PolarComplexRegion, Pow, PowerSet, ProbabilityNode, Product, ProductContinuousDomain, ProductSet, Quaternion, RandomSymbol, Range, Rationals, Reals, Relational, RootSumNode, S, SeqAdd, SeqFormula, SeqMul, SeqPer, SetExpression, SetOp, SingleContinuousDomain, SingleContinuousPSpace, SingleFiniteDomain, SingularityFunction, Str, Subs, Sum, Sym, SymFunction, SymObject, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Trace, Transpose, Tuple, UnevaluatedExpr, UniversalSet, VarianceNode, VectorAdd, VectorMul, Wild, Xor, ZeroMatrix, abs, add, derivative, exp, finiteSet, fn, fourierSeries, fps, frac, hyper, interval, jn, latex, log, meijerg, mul, multilineLatex, oo, pi, piecewise, pow, pprintUseUnicode, rational, symbols, sympifyMatrix, translate, yn } from '../../src';
 import { at, pyStr, text } from '../sympy-str';
 
 describe("doctests of sympy.printing.latex", () => {
@@ -4239,14 +4239,10 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it("test_function_subclass_different_name:811", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('mygamma'), {}))).toBe('\\operatorname{mygamma}');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(mygamma) == r"\operatorname{mygamma}"
+  //   => \operatorname{mygamma}
+  it.todo("test_function_subclass_different_name:811");
   // function mygamma
   //   assert latex(mygamma(x)) == r"\operatorname{mygamma}{\left(x \right)}"
   //   => \operatorname{mygamma}{\left(x \right)}
@@ -5309,7 +5305,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_union:1145", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Union(interval(rational(0), rational(1), false, false), interval(rational(2), rational(3), false, false)), {}))).toBe('\\left[0, 1\\right] \\cup \\left[2, 3\\right]');
+      expect(text(latex(new SetOp('Union', [interval(rational(0), rational(1), false, false), interval(rational(2), rational(3), false, false)]), {}))).toBe('\\left[0, 1\\right] \\cup \\left[2, 3\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5317,7 +5313,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_union:1147", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Union(finiteSet(rational(1), rational(2)), interval(rational(3), rational(4), false, false)), {}))).toBe('\\left\\{1, 2\\right\\} \\cup \\left[3, 4\\right]');
+      expect(text(latex(new SetOp('Union', [finiteSet(rational(1), rational(2)), interval(rational(3), rational(4), false, false)]), {}))).toBe('\\left\\{1, 2\\right\\} \\cup \\left[3, 4\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5326,7 +5322,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(intersection(interval(rational(0), rational(1), false, false), interval(x, y, false, false)), {}))).toBe('\\left[0, 1\\right] \\cap \\left[x, y\\right]');
+      expect(text(latex(new SetOp('Intersection', [interval(rational(0), rational(1), false, false), interval(x, y, false, false)]), {}))).toBe('\\left[0, 1\\right] \\cap \\left[x, y\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5334,7 +5330,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_Complement:1163", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Complement(Reals, Naturals), {}))).toBe('\\mathbb{R} \\setminus \\mathbb{N}');
+      expect(text(latex(new SetOp('Complement', [Reals, Naturals]), {}))).toBe('\\mathbb{R} \\setminus \\mathbb{N}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5387,20 +5383,20 @@ describe("sympy/printing/tests/test_latex.py", () => {
   //   assert latex(Ordinal(OmegaPower(2, 1), OmegaPower(1, 2))) == r'\omega^{2} + 2 \omega'
   //   => \omega^{2} + 2 \omega
   it.todo("test_latex_ordinals:1188");
-  it.fails("test_set_operators_parenthesis:1210", () => {
+  it("test_set_operators_parenthesis:1210", () => {
     const [a, c, d] = symbols('a c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(intersection(finiteSet(a), Union(finiteSet(c), finiteSet(d))), {}))).toBe('\\left\\{a\\right\\} \\cap \\left(\\left\\{c\\right\\} \\cup \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Intersection', [finiteSet(a), new SetOp('Union', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left\\{a\\right\\} \\cap \\left(\\left\\{c\\right\\} \\cup \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set_operators_parenthesis:1213", () => {
+  it("test_set_operators_parenthesis:1213", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(intersection(Union(finiteSet(a), finiteSet(b)), Union(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\cup \\left\\{b\\right\\}\\right) \\cap \\left(\\left\\{c\\right\\} \\cup \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Intersection', [new SetOp('Union', [finiteSet(a), finiteSet(b)]), new SetOp('Union', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left(\\left\\{a\\right\\} \\cup \\left\\{b\\right\\}\\right) \\cap \\left(\\left\\{c\\right\\} \\cup \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5409,7 +5405,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(intersection(Complement(finiteSet(a), finiteSet(b)), Complement(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\setminus \\left\\{b\\right\\}\\right) \\cap \\left(\\left\\{c\\right\\} \\setminus \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Intersection', [new SetOp('Complement', [finiteSet(a), finiteSet(b)]), new SetOp('Complement', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left(\\left\\{a\\right\\} \\setminus \\left\\{b\\right\\}\\right) \\cap \\left(\\left\\{c\\right\\} \\setminus \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5418,7 +5414,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(intersection(ProductSet(finiteSet(a), finiteSet(b)), ProductSet(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\times \\left\\{b\\right\\}\\right) \\cap \\left(\\left\\{c\\right\\} \\times \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Intersection', [ProductSet(finiteSet(a), finiteSet(b)), ProductSet(finiteSet(c), finiteSet(d))]), {}))).toBe('\\left(\\left\\{a\\right\\} \\times \\left\\{b\\right\\}\\right) \\cap \\left(\\left\\{c\\right\\} \\times \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5427,7 +5423,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, c, d] = symbols('a c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Union(finiteSet(a), intersection(finiteSet(c), finiteSet(d))), {}))).toBe('\\left\\{a\\right\\} \\cup \\left(\\left\\{c\\right\\} \\cap \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Union', [finiteSet(a), new SetOp('Intersection', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left\\{a\\right\\} \\cup \\left(\\left\\{c\\right\\} \\cap \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5436,7 +5432,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Union(intersection(finiteSet(a), finiteSet(b)), intersection(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\cap \\left\\{b\\right\\}\\right) \\cup \\left(\\left\\{c\\right\\} \\cap \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Union', [new SetOp('Intersection', [finiteSet(a), finiteSet(b)]), new SetOp('Intersection', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left(\\left\\{a\\right\\} \\cap \\left\\{b\\right\\}\\right) \\cup \\left(\\left\\{c\\right\\} \\cap \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5445,7 +5441,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Union(Complement(finiteSet(a), finiteSet(b)), Complement(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\setminus \\left\\{b\\right\\}\\right) \\cup \\left(\\left\\{c\\right\\} \\setminus \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Union', [new SetOp('Complement', [finiteSet(a), finiteSet(b)]), new SetOp('Complement', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left(\\left\\{a\\right\\} \\setminus \\left\\{b\\right\\}\\right) \\cup \\left(\\left\\{c\\right\\} \\setminus \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5454,7 +5450,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Union(ProductSet(finiteSet(a), finiteSet(b)), ProductSet(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\times \\left\\{b\\right\\}\\right) \\cup \\left(\\left\\{c\\right\\} \\times \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Union', [ProductSet(finiteSet(a), finiteSet(b)), ProductSet(finiteSet(c), finiteSet(d))]), {}))).toBe('\\left(\\left\\{a\\right\\} \\times \\left\\{b\\right\\}\\right) \\cup \\left(\\left\\{c\\right\\} \\times \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5463,16 +5459,16 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, c, d] = symbols('a c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Complement(finiteSet(a), Complement(finiteSet(c), finiteSet(d))), {}))).toBe('\\left\\{a\\right\\} \\setminus \\left(\\left\\{c\\right\\} \\setminus \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Complement', [finiteSet(a), new SetOp('Complement', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left\\{a\\right\\} \\setminus \\left(\\left\\{c\\right\\} \\setminus \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set_operators_parenthesis:1251", () => {
+  it("test_set_operators_parenthesis:1251", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Complement(Union(finiteSet(a), finiteSet(b)), Union(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\cup \\left\\{b\\right\\}\\right) \\setminus \\left(\\left\\{c\\right\\} \\cup \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Complement', [new SetOp('Union', [finiteSet(a), finiteSet(b)]), new SetOp('Union', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left(\\left\\{a\\right\\} \\cup \\left\\{b\\right\\}\\right) \\setminus \\left(\\left\\{c\\right\\} \\cup \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5481,7 +5477,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Complement(intersection(finiteSet(a), finiteSet(b)), intersection(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\cap \\left\\{b\\right\\}\\right) \\setminus \\left(\\left\\{c\\right\\} \\cap \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Complement', [new SetOp('Intersection', [finiteSet(a), finiteSet(b)]), new SetOp('Intersection', [finiteSet(c), finiteSet(d)])]), {}))).toBe('\\left(\\left\\{a\\right\\} \\cap \\left\\{b\\right\\}\\right) \\setminus \\left(\\left\\{c\\right\\} \\cap \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5490,7 +5486,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Complement(ProductSet(finiteSet(a), finiteSet(b)), ProductSet(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\times \\left\\{b\\right\\}\\right) \\setminus \\left(\\left\\{c\\right\\} \\times \\left\\{d\\right\\}\\right)');
+      expect(text(latex(new SetOp('Complement', [ProductSet(finiteSet(a), finiteSet(b)), ProductSet(finiteSet(c), finiteSet(d))]), {}))).toBe('\\left(\\left\\{a\\right\\} \\times \\left\\{b\\right\\}\\right) \\setminus \\left(\\left\\{c\\right\\} \\times \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5504,11 +5500,11 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set_operators_parenthesis:1292", () => {
+  it("test_set_operators_parenthesis:1292", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(ProductSet(Union(finiteSet(a), finiteSet(b)), Union(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\cup \\left\\{b\\right\\}\\right) \\times \\left(\\left\\{c\\right\\} \\cup \\left\\{d\\right\\}\\right)');
+      expect(text(latex(ProductSet(new SetOp('Union', [finiteSet(a), finiteSet(b)]), new SetOp('Union', [finiteSet(c), finiteSet(d)])), {}))).toBe('\\left(\\left\\{a\\right\\} \\cup \\left\\{b\\right\\}\\right) \\times \\left(\\left\\{c\\right\\} \\cup \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5517,7 +5513,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(ProductSet(intersection(finiteSet(a), finiteSet(b)), intersection(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\cap \\left\\{b\\right\\}\\right) \\times \\left(\\left\\{c\\right\\} \\cap \\left\\{d\\right\\}\\right)');
+      expect(text(latex(ProductSet(new SetOp('Intersection', [finiteSet(a), finiteSet(b)]), new SetOp('Intersection', [finiteSet(c), finiteSet(d)])), {}))).toBe('\\left(\\left\\{a\\right\\} \\cap \\left\\{b\\right\\}\\right) \\times \\left(\\left\\{c\\right\\} \\cap \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5526,7 +5522,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [a, b, c, d] = symbols('a b c d');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(ProductSet(Complement(finiteSet(a), finiteSet(b)), Complement(finiteSet(c), finiteSet(d))), {}))).toBe('\\left(\\left\\{a\\right\\} \\setminus \\left\\{b\\right\\}\\right) \\times \\left(\\left\\{c\\right\\} \\setminus \\left\\{d\\right\\}\\right)');
+      expect(text(latex(ProductSet(new SetOp('Complement', [finiteSet(a), finiteSet(b)]), new SetOp('Complement', [finiteSet(c), finiteSet(d)])), {}))).toBe('\\left(\\left\\{a\\right\\} \\setminus \\left\\{b\\right\\}\\right) \\times \\left(\\left\\{c\\right\\} \\setminus \\left\\{d\\right\\}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -8512,54 +8508,30 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it("test_builtins_without_args:2254", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('sin'), {}))).toBe('\\sin');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it("test_builtins_without_args:2255", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('cos'), {}))).toBe('\\cos');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it("test_builtins_without_args:2256", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('tan'), {}))).toBe('\\tan');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it("test_builtins_without_args:2257", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('log'), {}))).toBe('\\log');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it("test_builtins_without_args:2258", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('Ei'), {}))).toBe('\\operatorname{Ei}');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it("test_builtins_without_args:2259", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('zeta'), {}))).toBe('\\zeta');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(sin) == r'\sin'
+  //   => \sin
+  it.todo("test_builtins_without_args:2254");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(cos) == r'\cos'
+  //   => \cos
+  it.todo("test_builtins_without_args:2255");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(tan) == r'\tan'
+  //   => \tan
+  it.todo("test_builtins_without_args:2256");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(log) == r'\log'
+  //   => \log
+  it.todo("test_builtins_without_args:2257");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(Ei) == r'\operatorname{Ei}'
+  //   => \operatorname{Ei}
+  it.todo("test_builtins_without_args:2258");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(zeta) == r'\zeta'
+  //   => \zeta
+  it.todo("test_builtins_without_args:2259");
   it("test_latex_greek_functions:2266", () => {
     const unicode = pprintUseUnicode(false);
     try {
@@ -9730,54 +9702,30 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_builtin_no_args:2439", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('Chi'), {}))).toBe('\\operatorname{Chi}');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it.fails("test_builtin_no_args:2440", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('beta'), {}))).toBe('\\operatorname{B}');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it.fails("test_builtin_no_args:2441", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('gamma'), {}))).toBe('\\Gamma');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it.fails("test_builtin_no_args:2442", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('KroneckerDelta'), {}))).toBe('\\delta');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it.fails("test_builtin_no_args:2443", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('DiracDelta'), {}))).toBe('\\delta');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
-  it.fails("test_builtin_no_args:2444", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(SymFunction('lowergamma'), {}))).toBe('\\gamma');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(Chi) == r'\operatorname{Chi}'
+  //   => \operatorname{Chi}
+  it.todo("test_builtin_no_args:2439");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(beta) == r'\operatorname{B}'
+  //   => \operatorname{B}
+  it.todo("test_builtin_no_args:2440");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(gamma) == r'\Gamma'
+  //   => \Gamma
+  it.todo("test_builtin_no_args:2441");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(KroneckerDelta) == r'\delta'
+  //   => \delta
+  it.todo("test_builtin_no_args:2442");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(DiracDelta) == r'\delta'
+  //   => \delta
+  it.todo("test_builtin_no_args:2443");
+  // a value without provenance ([object Object] FnClass)
+  //   assert latex(lowergamma) == r'\gamma'
+  //   => \gamma
+  it.todo("test_builtin_no_args:2444");
   it("test_issue_6853:2449", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
@@ -10519,13 +10467,15 @@ describe("sympy/printing/tests/test_latex.py", () => {
   //   raises(ValueError, lambda: multiline_latex(f, expr, environment="foo"))
   //   => None
   it.todo("test_multiline_latex:2871");
-  // a value without provenance ([object Object] JsTuple)
-  //   assert latex(sol) == \
-  //           r'\left\{\left( x, \  a\right)\; \middle|\; \left( x, \  a\right) \in ' \
-  //           r'\mathbb{C}^{2} \wedge \sin{\left(a x \right)} = 0 \wedge ' \
-  //           r'\cos{\left(a x \right)} = 0 \right\}'
-  //   => \left\{\left( x, \  a\right)\; \middle|\; \left( x, \  a\right) \in \mathbb{C}^{2} \wedge \sin{\left(a x \right)} = 0 \wedge \cos{\left(a x \right)} = 0 \right\}
-  it.todo("test_issue_15353:2878");
+  it("test_issue_15353:2878", () => {
+    const [x, a] = symbols('x a');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new ConditionSet(Tuple(x, a), And(Relational(fn('sin', [new Mul([a, x])]), rational(0), '==', { evaluate: false }), Relational(fn('cos', [new Mul([a, x])]), rational(0), '==', { evaluate: false })), ProductSet(Complexes, Complexes)), {}))).toBe('\\left\\{\\left( x, \\  a\\right)\\; \\middle|\\; \\left( x, \\  a\\right) \\in \\mathbb{C}^{2} \\wedge \\sin{\\left(a x \\right)} = 0 \\wedge \\cos{\\left(a x \\right)} = 0 \\right\\}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it.fails("test_latex_symbolic_probability:2888", () => {
     const [X, mu] = symbols('X mu');
     const sigma = new Sym('sigma', { positive: true });

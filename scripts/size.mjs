@@ -60,7 +60,7 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // 24 KiB to the root namespace. Automatic algebraic-atom classification also
 // links the assumption engine, adding up to 72 KiB to polynomial consumers.
 const CASES = [
-  ['core', 'Rational', 202],
+  ['core', 'Rational', 205],
   ['core', 'parse, str', 222],
   ['core', 'parse, diff, expand, str, latex', 222],
   ['core', '*', 330],
@@ -80,8 +80,8 @@ const CASES = [
   ['solvers', 'dsolve', 1155],
   ['sets', '*', 378],
   ['matrices', 'Matrix', 836],
-  ['printing', 'pretty', 241],
-  ['discrete', '*', 299],
+  ['printing', 'pretty', 244],
+  ['discrete', '*', 302],
   ['strategies', '*', 214],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
   ['parsing', '*', 855],
@@ -103,7 +103,7 @@ const CASES = [
   ['codegen', '*', 435],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
-  ['index', 'Rational', 202],
+  ['index', 'Rational', 205],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).

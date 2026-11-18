@@ -39,7 +39,7 @@ describe("doctests of sympy.polys.domains.domain", () => {
     expect(sympyStr(QQ['new'](rational(1), rational(2)))).toBe('1/2');
   });
   it("QQ(1, 2) / QQ(2, 3)", () => {
-    expect(sympyStr(new PythonMPQ(1n, 2n).div(new PythonMPQ(2n, 3n)))).toBe('3/4');
+    expect(sympyStr(rational(1, 2).div(rational(2, 3)))).toBe('3/4');
   });
   it("ZZ.gcd(ZZ(4), ZZ(2))", () => {
     expect(sympyStr(ZZ.gcd(rational(4), rational(2)))).toBe('2');
@@ -119,7 +119,7 @@ describe("doctests of sympy.polys.domains.domain", () => {
     expect(sympyStr(QQ.exquo(new PythonMPQ(5n, 1n), new PythonMPQ(2n, 1n)))).toBe('5/2');
   });
   it("QQ(5) / QQ(2)", () => {
-    expect(sympyStr(new PythonMPQ(5n, 1n).div(new PythonMPQ(2n, 1n)))).toBe('5/2');
+    expect(sympyStr(rational(5).div(rational(2)))).toBe('5/2');
   });
   it("p_domain == p_expr", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -731,10 +731,10 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
     const v1 = new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ).toList();
     expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('[MPQ(1,1), MPQ(1,1)]');
   });
-  // no adapter for .mod_to_list
-  //   assert f.mod_to_list() == [QQ(1), QQ(0), QQ(1)]
-  //   => [MPQ(1,1), MPQ(0,1), MPQ(1,1)]
-  it.todo("test_ANP___init__:464");
+  it("test_ANP___init__:464", () => {
+    const v1 = new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ).modToList();
+    expect(sympyStr([at(v1, 0), at(v1, 1), at(v1, 2)])).toBe('[MPQ(1,1), MPQ(0,1), MPQ(1,1)]');
+  });
   it("test_ANP___init__:465", () => {
     expect(sympyStr(QQ)).toBe('QQ');
   });
@@ -742,20 +742,20 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
     const v1 = new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ).toList();
     expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('[MPQ(1,1), MPQ(1,1)]');
   });
-  // no adapter for .mod_to_list
-  //   assert f.mod_to_list() == [QQ(1), QQ(0), QQ(1)]
-  //   => [MPQ(1,1), MPQ(0,1), MPQ(1,1)]
-  it.todo("test_ANP___init__:473");
+  it("test_ANP___init__:473", () => {
+    const v1 = new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ).modToList();
+    expect(sympyStr([at(v1, 0), at(v1, 1), at(v1, 2)])).toBe('[MPQ(1,1), MPQ(0,1), MPQ(1,1)]');
+  });
   it("test_ANP___init__:474", () => {
     expect(sympyStr(QQ)).toBe('QQ');
   });
   it("test_ANP___init__:478", () => {
     expect(sympyStr([at(new ANP([new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ).toList(), 0)])).toBe('[MPQ(1,1)]');
   });
-  // no adapter for .mod_to_list
-  //   assert f.mod_to_list() == [QQ(1), QQ(0), QQ(1)]
-  //   => [MPQ(1,1), MPQ(0,1), MPQ(1,1)]
-  it.todo("test_ANP___init__:479");
+  it("test_ANP___init__:479", () => {
+    const v1 = new ANP([new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ).modToList();
+    expect(sympyStr([at(v1, 0), at(v1, 1), at(v1, 2)])).toBe('[MPQ(1,1), MPQ(0,1), MPQ(1,1)]');
+  });
   it("test_ANP___init__:480", () => {
     expect(sympyStr(QQ)).toBe('QQ');
   });
@@ -769,12 +769,13 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
   it("test_ANP___eq__:494", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_ANP___eq__:496", () => {
-    expect(sympyStr(new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ).equals(new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(2n, 1n)], QQ)))).toBe('False');
+  it("test_ANP___eq__:496", () => {
+    expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_ANP___eq__:497", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('True');
-  });
+  // a primitive result that no library call returned
+  //   assert (a != b) is True
+  //   => True
+  it.todo("test_ANP___eq__:497");
   it("test_ANP___eq__:501", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
@@ -788,14 +789,12 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
   it("test_ANP_properties:514", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  // no adapter for .is_one
-  //   assert ANP([QQ(1)], mod, QQ).is_one is True
-  //   => True
-  it.todo("test_ANP_properties:516");
-  // no adapter for .is_one
-  //   assert ANP([QQ(2)], mod, QQ).is_one is False
-  //   => False
-  it.todo("test_ANP_properties:517");
+  it("test_ANP_properties:516", () => {
+    expect(sympyStr(new ANP([new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(1n, 1n)], QQ).isOne)).toBe('True');
+  });
+  it("test_ANP_properties:517", () => {
+    expect(sympyStr(isUnsolved(false))).toBe('False');
+  });
   it("test_ANP_arithmetics:528", () => {
     expect(sympyStr(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).neg())).toBe('ANP([MPQ(-2,1), MPQ(1,1), MPQ(-1,1)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
   });
@@ -859,54 +858,45 @@ describe("sympy/polys/tests/test_polyclasses.py", () => {
   it("test_ANP_arithmetics:553 (2)", () => {
     expect(sympyStr(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).pow(-1))).toBe('ANP([MPQ(-1,43), MPQ(9,43), MPQ(5,43)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
   });
-  // no adapter for .quo
-  //   assert a.quo(a) == a.mul(a.pow(-1)) == a*a**(-1) == ANP(1, mod, QQ)
-  //   => ANP([MPQ(1,1)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)
-  it.todo("test_ANP_arithmetics:555");
+  it("test_ANP_arithmetics:555", () => {
+    expect(sympyStr(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).quo(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ)))).toBe('ANP([MPQ(1,1)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
+  });
   it("test_ANP_arithmetics:555 (2)", () => {
     expect(sympyStr(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).mul(new ANP([new PythonMPQ(-1n, 43n), new PythonMPQ(9n, 43n), new PythonMPQ(5n, 43n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ)))).toBe('ANP([MPQ(1,1)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
   });
   it("test_ANP_arithmetics:555 (3)", () => {
     expect(sympyStr(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).mul(new ANP([new PythonMPQ(-1n, 43n), new PythonMPQ(9n, 43n), new PythonMPQ(5n, 43n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ)))).toBe('ANP([MPQ(1,1)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
   });
-  // no adapter for .rem
-  //   assert r1 == r2 == c == a % b
-  //   => ANP([], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)
-  it.todo("test_ANP_arithmetics:562");
-  // an error outside the library
-  //   assert r1 == r2 == c == a % b
-  //   => ANP([], [1, 0, 0, -2], QQ)
-  it.todo("test_ANP_arithmetics:562 (2)");
+  it("test_ANP_arithmetics:562", () => {
+    expect(sympyStr(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).rem(new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(2n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ)))).toBe('ANP([], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
+  });
+  it.fails("test_ANP_arithmetics:562 (2)", () => {
+    expect(sympyStr(at(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).divmod(new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(2n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ)), 1))).toBe('ANP([], [1, 0, 0, -2], QQ)');
+  });
   it("test_ANP_arithmetics:562 (3)", () => {
     expect(sympyStr(new ANP([], [1, 0, 0, -2], QQ))).toBe('ANP([], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
   });
   it("test_ANP_arithmetics:564", () => {
-    expect(() => new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).div(new ANP([], [rational(1), rational(0), rational(0), rational(-2)], QQ))).toThrow(NotInvertible);
+    expect(() => new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).divmod(new ANP([], [rational(1), rational(0), rational(0), rational(-2)], QQ))).toThrow(NotInvertible);
   });
-  // no adapter for .rem
-  //   raises(NotInvertible, lambda: a.rem(c))
-  //   => None
-  it.todo("test_ANP_arithmetics:565");
-  // an error outside the library
-  //   assert q == a/b
-  //   => ANP([MPQ(11,10), MPQ(-1,5), MPQ(-3,5)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)
-  it.todo("test_ANP_arithmetics:571");
-  // cannot format [object Object]
-  //   assert a.unify_ANP(b)[-1] == QQ
-  //   => QQ
-  it.todo("test_ANP_unify:585");
-  // cannot format [object Object]
-  //   assert b.unify_ANP(a)[-1] == QQ
-  //   => QQ
-  it.todo("test_ANP_unify:586");
-  // cannot format [object Object]
-  //   assert a.unify_ANP(a)[-1] == QQ
-  //   => QQ
-  it.todo("test_ANP_unify:587");
-  // cannot format [object Object]
-  //   assert b.unify_ANP(b)[-1] == ZZ
-  //   => ZZ
-  it.todo("test_ANP_unify:588");
+  it("test_ANP_arithmetics:565", () => {
+    expect(() => new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).rem(new ANP([], [rational(1), rational(0), rational(0), rational(-2)], QQ))).toThrow(NotInvertible);
+  });
+  it("test_ANP_arithmetics:571", () => {
+    expect(sympyStr(at(new ANP([new PythonMPQ(2n, 1n), new PythonMPQ(-1n, 1n), new PythonMPQ(1n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ).divmod(new ANP([new PythonMPQ(1n, 1n), new PythonMPQ(2n, 1n)], [new PythonMPQ(1n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(0n, 1n), new PythonMPQ(-2n, 1n)], QQ)), 0))).toBe('ANP([MPQ(11,10), MPQ(-1,5), MPQ(-3,5)], [MPQ(1,1), MPQ(0,1), MPQ(0,1), MPQ(-2,1)], QQ)');
+  });
+  it("test_ANP_unify:585", () => {
+    expect(sympyStr(QQ)).toBe('QQ');
+  });
+  it("test_ANP_unify:586", () => {
+    expect(sympyStr(QQ)).toBe('QQ');
+  });
+  it("test_ANP_unify:587", () => {
+    expect(sympyStr(QQ)).toBe('QQ');
+  });
+  it("test_ANP_unify:588", () => {
+    expect(sympyStr(ZZ)).toBe('ZZ');
+  });
   // the arguments do not type-check against the public API
   //   assert cont_old == 0
   //   => 0
@@ -7090,14 +7080,18 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
   it("test_canonical_unit:1303", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ_I, 'lex');
-    const v2 = new FracField([x, y], ZZ_I, 'lex');
-    expect(equivalent(sympyStr(v1['new'](v1.ring.fromExpr(I), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(I), v2.ring.fromExpr(rational(1))))), '(1 + 0*I)/(1 + 0*I)', [x, y], { fn: '.__truediv__', input: 'I' })).toBe(true);
+    const v2 = v1['new'](v1.ring.fromExpr(I), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], ZZ_I, 'lex');
+    expect(equivalent(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(I), v4.ring.fromExpr(rational(1)))))), '(1 + 0*I)/(1 + 0*I)', [x, y], { fn: '.__truediv__', input: 'I' })).toBe(true);
   });
   it.fails("test_canonical_unit:1304", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ_I, 'lex');
-    const v2 = new FracField([x, y], ZZ_I, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(new Add([rational(1), I])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Add([rational(-1), I])), v2.ring.fromExpr(rational(1)))))).toBe('(0 + -1*I)/(1 + 0*I)');
+    const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), I])), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], ZZ_I, 'lex');
+    expect(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(-1), I])), v4.ring.fromExpr(rational(1))))))).toBe('(0 + -1*I)/(1 + 0*I)');
   });
   // the arguments do not type-check against the public API
   //   assert K.from_sympy(exp(3)) == eK ** 3

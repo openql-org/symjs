@@ -1181,7 +1181,7 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
   });
   it("test_MatrixElement_with_values:338", () => {
     const [x, y, z, w] = symbols('x y z w');
-    expect(() => Matrix.of([[x, y], [z, w]]).get(NaN, -1)).toThrow(RangeError);
+    expect(() => Matrix.of([[x, y], [z, w]]).get(NaN, 1)).toThrow(RangeError);
   });
   it("test_MatrixElement_with_values:339", () => {
     const [x, y, z, w] = symbols('x y z w');
@@ -1189,7 +1189,7 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
   });
   it("test_MatrixElement_with_values:340", () => {
     const [x, y, z, w] = symbols('x y z w');
-    expect(() => Matrix.of([[x, y], [z, w]]).get(-1, NaN)).toThrow(RangeError);
+    expect(() => Matrix.of([[x, y], [z, w]]).get(1, NaN)).toThrow(RangeError);
   });
   it("test_inv:345", () => {
     expect(sympyStr(new MatrixSymbol('B', rational(3), rational(3)).inv())).toBe('B**(-1)');
@@ -2800,16 +2800,16 @@ describe("sympy/matrices/tests/test_immutable.py", () => {
     expect(sympyStr(new MutableSparseMatrix(3, 3, [[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).get(2, 2))).toBe('9');
   });
   it("test_slicing:34", () => {
-    expect(sympyStr(Matrix.of([[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).slice([1], [0, 1, 2]))).toBe('Matrix([[4, 5, 6]])');
+    expect(sympyStr(Matrix.of([[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).extract([1], [0, 1, 2]))).toBe('Matrix([[4, 5, 6]])');
   });
   it("test_slicing:35", () => {
-    expect(sympyStr(Matrix.of([[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).slice([0, 1], [0, 1]))).toBe('Matrix([[1, 2], [4, 5]])');
+    expect(sympyStr(Matrix.of([[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).extract([0, 1], [0, 1]))).toBe('Matrix([[1, 2], [4, 5]])');
   });
   it("test_slicing:36", () => {
-    expect(sympyStr(new MutableSparseMatrix(3, 3, [[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).slice([1], [0, 1, 2]))).toBe('Matrix([[4, 5, 6]])');
+    expect(sympyStr(new MutableSparseMatrix(3, 3, [[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).extract([1], [0, 1, 2]))).toBe('Matrix([[4, 5, 6]])');
   });
   it("test_slicing:37", () => {
-    expect(sympyStr(new MutableSparseMatrix(3, 3, [[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).slice([0, 1], [0, 1]))).toBe('Matrix([[1, 2], [4, 5]])');
+    expect(sympyStr(new MutableSparseMatrix(3, 3, [[rational(1), rational(2), rational(3)], [rational(4), rational(5), rational(6)], [rational(7), rational(8), rational(9)]]).extract([0, 1], [0, 1]))).toBe('Matrix([[1, 2], [4, 5]])');
   });
   it("test_subs:44", () => {
     const x = new Sym('x');

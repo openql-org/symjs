@@ -454,7 +454,7 @@ describe("sympy/simplify/tests/test_cse_diff.py", () => {
   });
   it("test_issue_4564:196", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z]))]]).slice([0], [0]))).toBe('Matrix([[exp(x + y + z)]])');
+    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z]))]]).extract([0], [0]))).toBe('Matrix([[exp(x + y + z)]])');
   });
   it("test_issue_4564:193 (2)", () => {
     const [x, y, z] = symbols('x y z');
@@ -466,11 +466,11 @@ describe("sympy/simplify/tests/test_cse_diff.py", () => {
   });
   it("test_issue_4564:196 (2)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z])), exp(new Add([x, y, z]))]]).slice([0], [0]))).toBe('Matrix([[exp(x + y + z)]])');
+    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z])), exp(new Add([x, y, z]))]]).extract([0], [0]))).toBe('Matrix([[exp(x + y + z)]])');
   });
   it("test_issue_4564:196 (3)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z])), exp(new Add([x, y, z]))]]).slice([0], [1]))).toBe('Matrix([[exp(x + y + z)]])');
+    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z])), exp(new Add([x, y, z]))]]).extract([0], [1]))).toBe('Matrix([[exp(x + y + z)]])');
   });
   it("test_issue_4564:193 (3)", () => {
     const [x, y, z] = symbols('x y z');
@@ -482,7 +482,7 @@ describe("sympy/simplify/tests/test_cse_diff.py", () => {
   });
   it("test_issue_4564:196 (4)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z]))], [exp(new Add([x, y, z]))]]).slice([0, 1], [0]))).toBe('Matrix([[exp(x + y + z)], [exp(x + y + z)]])');
+    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z]))], [exp(new Add([x, y, z]))]]).extract([0, 1], [0]))).toBe('Matrix([[exp(x + y + z)], [exp(x + y + z)]])');
   });
   it("test_issue_4564:193 (4)", () => {
     const [x, y, z] = symbols('x y z');
@@ -494,11 +494,11 @@ describe("sympy/simplify/tests/test_cse_diff.py", () => {
   });
   it("test_issue_4564:196 (5)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z])), exp(new Add([x, y, z]))], [exp(new Add([x, y, z])), exp(new Add([x, y, z]))]]).slice([0, 1], [0]))).toBe('Matrix([[exp(x + y + z)], [exp(x + y + z)]])');
+    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z])), exp(new Add([x, y, z]))], [exp(new Add([x, y, z])), exp(new Add([x, y, z]))]]).extract([0, 1], [0]))).toBe('Matrix([[exp(x + y + z)], [exp(x + y + z)]])');
   });
   it("test_issue_4564:196 (6)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z])), exp(new Add([x, y, z]))], [exp(new Add([x, y, z])), exp(new Add([x, y, z]))]]).slice([0, 1], [1]))).toBe('Matrix([[exp(x + y + z)], [exp(x + y + z)]])');
+    expect(sympyStr(Matrix.of([[exp(new Add([x, y, z])), exp(new Add([x, y, z]))], [exp(new Add([x, y, z])), exp(new Add([x, y, z]))]]).extract([0, 1], [1]))).toBe('Matrix([[exp(x + y + z)], [exp(x + y + z)]])');
   });
 });
 

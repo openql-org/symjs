@@ -135,10 +135,10 @@ describe("doctests of sympy.simplify.fu", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(TR12i(mul(pow(add(-1, mul(fn('tan', [a]), fn('tan', [b]))), -1), add(mul(-1, fn('tan', [a])), mul(-1, fn('tan', [b]))))))).toBe('tan(a + b)');
   });
-  // an equivalent form that the declared symbols do not confirm
-  //   TR12i(eq.expand())
-  //   => -3*tan(a + b)*tan(a + c)/(2*(tan(a) + tan(b) - 1))
-  it.todo("TR12i(eq.expand())");
+  it("TR12i(eq.expand())", () => {
+    const [a, b, c] = symbols('a b c');
+    expect(sympyStr(TR12i(add(mul(-3, pow(add(-2, mul(-2, pow(fn('tan', [a]), 2), pow(fn('tan', [b]), 2)), mul(2, fn('tan', [a]), fn('tan', [c])), mul(4, fn('tan', [a]), fn('tan', [b])), mul(-4, pow(fn('tan', [a]), 2), fn('tan', [b]), fn('tan', [c])), mul(2, pow(fn('tan', [a]), 3), pow(fn('tan', [b]), 2), fn('tan', [c]))), -1), pow(fn('tan', [a]), 2)), mul(-3, pow(add(-2, mul(-2, pow(fn('tan', [a]), 2), pow(fn('tan', [b]), 2)), mul(2, fn('tan', [a]), fn('tan', [c])), mul(4, fn('tan', [a]), fn('tan', [b])), mul(-4, pow(fn('tan', [a]), 2), fn('tan', [b]), fn('tan', [c])), mul(2, pow(fn('tan', [a]), 3), pow(fn('tan', [b]), 2), fn('tan', [c]))), -1), fn('tan', [a]), fn('tan', [b])), mul(-3, pow(add(-2, mul(-2, pow(fn('tan', [a]), 2), pow(fn('tan', [b]), 2)), mul(2, fn('tan', [a]), fn('tan', [c])), mul(4, fn('tan', [a]), fn('tan', [b])), mul(-4, pow(fn('tan', [a]), 2), fn('tan', [b]), fn('tan', [c])), mul(2, pow(fn('tan', [a]), 3), pow(fn('tan', [b]), 2), fn('tan', [c]))), -1), fn('tan', [a]), fn('tan', [c])), mul(-3, pow(add(-2, mul(-2, pow(fn('tan', [a]), 2), pow(fn('tan', [b]), 2)), mul(2, fn('tan', [a]), fn('tan', [c])), mul(4, fn('tan', [a]), fn('tan', [b])), mul(-4, pow(fn('tan', [a]), 2), fn('tan', [b]), fn('tan', [c])), mul(2, pow(fn('tan', [a]), 3), pow(fn('tan', [b]), 2), fn('tan', [c]))), -1), fn('tan', [b]), fn('tan', [c])))))).toBe('-3*tan(a + b)*tan(a + c)/(2*(tan(a)*tan(b) - 1))');
+  });
   it("TR13(tan(3)*tan(2))", () => {
     expect(sympyStr(TR13(mul(fn('tan', [rational(2)]), fn('tan', [rational(3)]))))).toBe('-tan(2)/tan(5) - tan(3)/tan(5) + 1');
   });

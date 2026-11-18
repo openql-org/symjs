@@ -1439,34 +1439,34 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
   it.fails("test_sympy_parser:60 (26)", () => {
     expect(sympyStr(parse('Q.even(x)', {}))).toBe('Q.even(x)');
   });
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda:
   //           parse_expr('x', standard_transformations))
   //   => None
   it.todo("test_sympy_parser:62");
-  // a function that did not come from the library
+  // the generated test does not reproduce the replay
   //   raises(TypeError, lambda:
   //           parse_expr('x', transformations=lambda x,y: 1))
   //   => None
   it.todo("test_sympy_parser:64");
-  // a function that did not come from the library
+  // the generated test does not reproduce the replay
   //   raises(TypeError, lambda:
   //           parse_expr('x', transformations=(lambda x,y: 1,)))
   //   => None
   it.todo("test_sympy_parser:66");
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda: parse_expr('x', transformations=((),)))
   //   => None
   it.todo("test_sympy_parser:68");
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda: parse_expr('x', {}, [], []))
   //   => None
   it.todo("test_sympy_parser:69");
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda: parse_expr('x', [], [], {}))
   //   => None
   it.todo("test_sympy_parser:70");
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda: parse_expr('x', [], [], {}))
   //   => None
   it.todo("test_sympy_parser:71");
@@ -1518,18 +1518,16 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
   it("test_local_dict_symbol_to_fcn:136", () => {
     expect(sympyStr(parse('foo(x)', { locals: { foo: SymFunction('bar') } }))).toBe('bar(x)');
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: parse_expr('foo(x)', local_dict=d))
-  //   => None
-  it.todo("test_local_dict_symbol_to_fcn:138");
-  // a value without provenance ([object Object] TypeRef)
-  //   assert parse_expr(text, global_dict=global_dict) == result
-  //   => Q & S
-  it.todo("test_global_dict:149");
-  // a value without provenance ([object Object] TypeRef)
-  //   assert obj == Symbol(name)
-  //   => __builtins__
-  it.todo("test_no_globals:170");
+  it("test_local_dict_symbol_to_fcn:138", () => {
+    const baz = new Sym('baz');
+    expect(() => parse('foo(x)', { locals: { foo: baz } })).toThrow(TypeError);
+  });
+  it("test_global_dict:149", () => {
+    expect(sympyStr(parse('Q & S', {}))).toBe('Q & S');
+  });
+  it("test_no_globals:170", () => {
+    expect(sympyStr(parse('__builtins__', {}))).toBe('__builtins__');
+  });
   // the error class TokenError is not public
   //   raises(TokenError, lambda: parse_expr('(()'))
   //   => None
@@ -1821,10 +1819,14 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a function that did not come from the library
-  //   assert str(parse_expr('ln(0)', evaluate=False)) == 'log(0)'
-  //   => log(0)
-  it.todo("test_function_evaluate_false:207");
+  it("test_function_evaluate_false:207", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(parse('ln(0)', { evaluate: false }))).toBe('log(0)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_function_evaluate_false:208", () => {
     const unicode = pprintUseUnicode(false);
     try {
@@ -1987,11 +1989,12 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a function that did not come from the library
+  // the generated test does not reproduce the replay
   //   raises(ValueError, lambda: parse_expr('x', {'': 1}))
   //   => None
   it.todo("test_issue_22822:369");
-  it.fails("test_issue_22822:371", () => {
-    expect(sympyStr(parse('some_parameter is None', {}))).toBe('True');
-  });
+  // the arguments do not type-check against the public API
+  //   assert parse_expr('some_parameter is None', data) is True
+  //   => True
+  it.todo("test_issue_22822:371");
 });

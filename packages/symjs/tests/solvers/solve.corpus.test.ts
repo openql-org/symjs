@@ -1461,7 +1461,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   //   assert len(solve(eqs, sym, manual=True, minimal=True)) == 2
   //   => 2
   it.todo("test_issue_5335:1028");
-  // a result object that did not come from the library
+  // the case takes more than 4 seconds
   //   assert len(solve(eqs, sym)) == 2
   //   => 2
   it.todo("test_issue_5335:1029");
