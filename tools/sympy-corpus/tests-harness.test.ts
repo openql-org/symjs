@@ -14,6 +14,20 @@ const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'cor
   test: 'test_fixture', line: 1, src: 'assert Integer(1) == 1', fn: 'Integer',
   args: [{ t: 'Rational', p: '1', q: '1' }], kwargs: {}, expected: '1', op: '==' };
 
+it('preserves extrema calls and distribution arguments when translating Python attributes', () => {
+  const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const fn = (name: string, args: Tree[]) => ({ t: 'Fn', name, args });
+  for (const name of ['Min', 'Max']) {
+    expect(runTestCase({ ...base, fn: name, args: [integer(1), integer(3)], kwargs: { evaluate: { t: 'Js', v: false } }, expected: `${name}(1, 3)` })).toEqual({ status: 'pass' });
+    expect(runTestCase({ ...base, fn: '.args', args: [], self: fn(name, [integer(1), integer(3)]), expected: '(1, 3)' })).toEqual({ status: 'pass' });
+  }
+  expect(runTestCase({ ...base, fn: '.args', args: [], self: fn('Heaviside', [x]), expected: '(x, 1/2)' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: '.pargs', args: [], self: fn('Heaviside', [x]), expected: '(x,)' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: '.pargs', args: [], self: fn('Heaviside', [x, integer(0)]), expected: '(x, 0)' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: '.is_Function', args: [], self: fn('Heaviside', [x]), expected: 'True' })).toEqual({ status: 'pass' });
+});
+
 it('adapts function inverses, numerical derivatives, residue limits and derangement keywords', () => {
   const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
   const x = { t: 'Symbol', name: 'x', assume: {} };

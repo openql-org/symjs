@@ -940,6 +940,9 @@ export function deserialize(tree: Tree): unknown {
         const a = deserialize((tree['args'] as Tree[])[0]!);
         if (a instanceof sj.Rational && a.q === 1n && a.p > 100000n) return new Fn('factorial', [a]);
       }
+      if (tree['name'] === 'Min' || tree['name'] === 'Max') {
+        return sj.fn(tree['name'], (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))), { evaluate: false });
+      }
       const f = FUNCTIONS[tree['name'] as string];
       if (!f) throw new Unsupported(`function ${tree['name']}`);
       return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
@@ -2291,24 +2294,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   isprime: (args, kw) => (noKw(kw), sj.isprime(asExpr(args[0]))),
   jacobi_symbol: (args, kw) => (noKw(kw), sj.jacobiSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
   kronecker_symbol: (args, kw) => (noKw(kw), sj.kroneckerSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
+  '.is_Function': (_args, kw, self) => (noKw(kw), self instanceof sj.Fn || self instanceof sj.UndefFn || self instanceof sj.DefinedFunctionCall),
   '.piecewise_integrate': (args, kw, self) => (noKw(kw), sj.piecewiseIntegrate(self as sj.Piecewise, asSym(args[0]))),
   '.as_expr_set_pairs': (args, kw, self) =>
     (noKw(kw), new JsList(sj.asExprSetPairs(asExpr(self), (args[0] as sj.SetExpr | undefined) ?? sj.Reals).map(([e, st]) => new JsTuple([e, st])))),
   piecewise_fold: (args, kw) => {
     noKw(kw);
-    const e = asExpr(args[0]);
-    const fold = (x: Expr): Expr => {
-      const a = x.args.map(fold);
-      const y = a.every((v, i) => v === x.args[i]) ? x : sj.rebuild(x, a);
-      if ((y instanceof sj.Add || y instanceof sj.Mul) && y.args.filter((t) => t instanceof sj.Piecewise).length === 1) {
-        const pw = y.args.find((t) => t instanceof sj.Piecewise) as sj.Piecewise;
-        const others = y.args.filter((t) => t !== pw);
-        const op = y instanceof sj.Add ? sj.add : sj.mul;
-        return sj.piecewise(...pw.pairs.map(([v, c]) => [op(...others, v), c] as const));
-      }
-      return y;
-    };
-    return fold(e);
+    return sj.piecewiseFold(asExpr(args[0]));
   },
   invert: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'integer_power') throw new Unsupported(`kwargs ${k}`);
@@ -2710,6 +2702,10 @@ export const ADAPTERS: Record<string, Adapter> = {
       }) as Adapter,
     ]),
   ),
+  ...Object.fromEntries((['Min', 'Max'] as const).map((name) => [name, ((args, kw) => {
+    for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
+    return sj.fn(name, args.flatMap((a) => a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)]), { evaluate: kw['evaluate'] !== false });
+  }) as Adapter])),
   totient: (args, kw) => (noKw(kw), sj.totient(args[0] instanceof JsDict ? new Map(args[0].entries.map(([p, k]) => [asExpr(p), asExpr(k)])) : args[0] instanceof Map ? args[0] : asExpr(args[0]))),
   reduced_totient: (args, kw) => (noKw(kw), sj.reducedTotient(args[0] instanceof JsDict ? new Map(args[0].entries.map(([p, k]) => [asExpr(p), asExpr(k)])) : args[0] instanceof Map ? args[0] : asExpr(args[0]))),
   ff: (args, kw) => polyFactorial(args, kw, -1),
@@ -5795,7 +5791,7 @@ function autoAdapter(c: Case): Adapter | undefined {
         const opts = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), conv(v)]));
         return fromJs(g(self, ...args.map(conv), ...(Object.keys(opts).length ? [opts] : [])));
       }
-      if (name === 'args' && Array.isArray(m)) return new JsTuple(m);
+      if ((name === 'args' || name === 'pargs') && Array.isArray(m)) return new JsTuple(m);
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);
     };

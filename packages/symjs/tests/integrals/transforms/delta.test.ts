@@ -5,13 +5,32 @@
 // Heaviside, DiracDelta and SingularityFunction. Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { I, S, Sym, diff, DiracDelta, Heaviside, SingularityFunction, evalf, expand, isHeaviside, isSimple, isSingularityFunction, latex, parse, rewrite, subs, symbols } from '../../../src';
+import { I, S, Sym, adjoint, conjugate, fdiff, diff, DiracDelta, Heaviside, SingularityFunction, evalf, expand, isHeaviside, isSimple, isSingularityFunction, latex, parse, rewrite, subs, symbols } from '../../../src';
 import { canonicalCondition } from '../../../src/integrals/transforms/delta';
 import { sign as sjSign, sstr } from '../../../src';
 
 const half = S.Half;
 
 describe('Heaviside and DiracDelta', () => {
+  it('stores the step value and preserves real distributions under conjugation', () => {
+    const x = new Sym('x');
+    for (const d of [Heaviside(x), Heaviside(x, 0), DiracDelta(x), DiracDelta(x, 1)]) {
+      expect(conjugate(d)).toBe(d);
+      expect(adjoint(d)).toBe(d);
+    }
+    expect(() => fdiff(Heaviside(x), 2)).toThrow(RangeError);
+    expect(() => fdiff(DiracDelta(x, 1), 2)).toThrow(RangeError);
+    expect(String(DiracDelta(parse('-2*x')))).toBe('DiracDelta(2*x)');
+    expect(String(DiracDelta(S.NegativeInfinity.mul(x)))).toBe('DiracDelta(oo*x)');
+    expect(Heaviside(x).args).toEqual([x, S.Half]);
+    expect(Heaviside(x, 0).args).toEqual([x, S.Zero]);
+    expect(String(Heaviside(x))).toBe('Heaviside(x)');
+    expect(String(Heaviside(x, 0))).toBe('Heaviside(x, 0)');
+    for (const f of [Heaviside, DiracDelta]) {
+      expect(() => f(I)).toThrow(RangeError);
+      expect(() => f(parse('2 + 3*I'))).toThrow(RangeError);
+    }
+  });
   it('evaluate like SymPy', () => {
     const x = new Sym('x');
     expect(String(Heaviside(0))).toBe('1/2');
