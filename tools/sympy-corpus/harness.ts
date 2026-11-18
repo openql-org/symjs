@@ -1513,10 +1513,12 @@ const polyFn =
   };
 /** SymPy solve_poly_system / solve_triangulated (Gröbner basis, solutions sorted by default_sort_key). */
 function polySystemSolutions(args: unknown[], kw: Record<string, unknown>, rationalOnly = false): unknown {
-  noKw(kw);
-  const eqs = (args[0] as JsList | JsTuple).items.map(asExpr);
-  const syms = args.slice(1).map(asSym);
-  return new JsList(sj.solvePolySystem(eqs, syms, { rationalOnly }).map((t) => new JsTuple(t)));
+  for (const k of Object.keys(kw)) if (!['strict', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+  const eqs = (args[0] as JsList | JsTuple).items.map(asExprOrPoly);
+  const explicit = (args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items : args.slice(1)).map(asSym);
+  const syms = explicit.length ? explicit : sj.sortGens(args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.flatMap((v) => v instanceof sj.Poly ? [...v.gens] : [...sj.freeSymbols(asExpr(v))]) : []).map(asSym).filter((v, i, all) => all.findIndex((w) => w.key === v.key) === i);
+  const result = sj.solvePolySystem(eqs, syms, { rationalOnly, strict: kw['strict'] === true });
+  return new JsList(result.map((t) => new JsTuple(t)));
 }
 /** ff/rf of a Poly: product of the polynomial shifted by -i (ff) or +i (rf). */
 function polyFactorial(args: unknown[], kw: Record<string, unknown>, dir: 1 | -1): unknown {
@@ -1806,10 +1808,21 @@ export const ADAPTERS: Record<string, Adapter> = {
     const m = sj.matchRealImag(asExpr(args[0]));
     return new JsTuple(sj.isNoMatch(m) ? [null, null] : m);
   },
+  denoms: (args, kw) => (noKw(kw), new JsSet([...sj.denoms(asExpr(args[0]), ...(args[1] instanceof JsTuple || args[1] instanceof JsList || args[1] instanceof JsSet ? args[1].items : args.slice(1)).map(asSym))])),
+  det_perm: (args, kw) => (noKw(kw), sj.detPerm(args[0] as Matrix)),
+  det_minor: (args, kw) => (noKw(kw), sj.detMinor(args[0] as Matrix)),
+  checkpdesol: (args, kw) => {
+    noKw(kw);
+    const check = (v: unknown) => new JsTuple(sj.checkpdesol(asExpr(args[0]), asExpr(v), args[2] === undefined ? undefined : asExpr(args[2])));
+    return args[1] instanceof JsTuple || args[1] instanceof JsList ? new JsList(args[1].items.map(check)) : check(args[1]);
+  },
   invert_complex: (args, kw) => (noKw(kw), new JsTuple(sj.invertComplex(asExpr(args[0]), asExpr(args[1]), asSym(args[2])))),
   invert_real: (args, kw) => (noKw(kw), new JsTuple(sj.invertReal(asExpr(args[0]), asExpr(args[1]), asSym(args[2])))),
   solve_decomposition: (args, kw) => (noKw(kw), sj.solveDecomposition(asExpr(args[0]), asSym(args[1]), args[2] as sj.SetExpr)),
-  solve_generic: (args, kw) => (noKw(kw), new JsList(sj.solveGeneric((args[0] as JsTuple).items as sj.Poly[], polynomialGenerators(args[1])).map((row) => new JsTuple(row)))),
+  solve_generic: (args, kw) => {
+    const gens = polynomialGenerators(args[1]);
+    return polySystemSolutions([args[0], new JsTuple(gens)], kw);
+  },
   solve_biquadratic: (args, kw) => (noKw(kw), new JsList(sj.solveBiquadratic(args[0] as sj.Poly, args[1] as sj.Poly, polynomialGenerators(args[2])).map((row) => new JsTuple(row)))),
   finite_diff_weights: (args, kw) => (noKw(kw), fromJs(sj.finiteDiffWeights(intArg(args[0]), (args[1] as JsTuple).items.map(asExpr), args[2] === undefined ? 1 : asExpr(args[2])))),
   constantsimp: (args, kw) => (noKw(kw), sj.constantsimp(asExpr(args[0]), [...(args[1] as JsSet).items].map(asSym))),
@@ -2323,10 +2336,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     throw new Unsupported('invert');
   },
   factor_system: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (!['extension', 'gaussian', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const eqs = (args[0] as JsList).items.map(asExpr);
     const gens = args[1] === undefined ? [] : (args[1] as JsList).items.map(asExpr);
-    return new JsList(sj.factorSystem(eqs, gens).map((s) => new JsList(s)));
+    return new JsList(sj.factorSystem(eqs, gens, { ...(kw['extension'] === undefined ? {} : { extension: kw['extension'] === true ? true : asExpr(kw['extension']) }), ...(kw['gaussian'] === undefined ? {} : { gaussian: kw['gaussian'] === true }), ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }) }).map((s) => new JsList(s)));
   },
   is_zero_dimensional: (args, kw) => {
     noKw(kw);
@@ -2346,7 +2359,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.keys': (_args, kw, self) => {
     noKw(kw);
     if (!(self instanceof JsDict)) throw new Unsupported('dictionary keys');
-    return { toString: () => `dict_keys(${fmt(new JsList(self.entries.map(([key]) => key)))})` };
+    return { [Symbol.iterator]: () => self.entries.map(([key]) => key)[Symbol.iterator](), toString: () => `dict_keys(${fmt(new JsList(self.entries.map(([key]) => key)))})` };
   },
   _linsolve: (args, kw) => {
     noKw(kw);
@@ -3074,7 +3087,20 @@ export const ADAPTERS: Record<string, Adapter> = {
     return kw['multiple'] === true ? new JsList(roots) : rootsDict(roots);
   },
   solve: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['check', 'cubics', 'set', 'implicit'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const requested = args[1] instanceof JsTuple || args[1] instanceof JsList || args[1] instanceof JsSet ? args[1].items : args.slice(1);
+    if (new Set(requested.map((v) => asExpr(v).key)).size !== requested.length) throw new RangeError('solve: duplicate symbols');
+    if (kw['dict'] === true) {
+      const { dict: _dict, ...rest } = kw;
+      const result = ADAPTERS['solve']!(args, rest);
+      if (result instanceof JsDict) return new JsList([result]);
+      if (result instanceof JsList && result.items.every((v) => v instanceof JsDict)) return result;
+      const target = args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items[0] : args[1];
+      const symbols = target === undefined ? allSymbols([sj.asEquation(asExprOrPoly(args[0]))]) : [asExpr(target)];
+      if (result instanceof JsList && result.items.every((v) => v instanceof JsTuple)) return new JsList(result.items.map((v) => new JsDict((v as JsTuple).items.map((e, i) => [asExpr(requested[i]), e] as const).filter(([v, e]) => !(e instanceof Expr) || v.key !== e.key))));
+      if (result instanceof JsList && symbols.length === 1) return new JsList(result.items.map((v) => new JsDict([[symbols[0]!, v]])));
+      throw new Unsupported('solve dict form');
+    }
+    for (const k of Object.keys(kw)) if (!['check', 'cubics', 'set', 'implicit', 'dict'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (kw['implicit'] === true && args.length === 2 && args[1] instanceof Sym) {
       // implicit=True: occurrences of x inside other functions are treated as constants
       const x = args[1];
@@ -3090,17 +3116,20 @@ export const ADAPTERS: Record<string, Adapter> = {
       return new JsList(sj.solve(e0, x).map((v) => sj.xreplace(v, reps)));
     }
     if (kw['set'] === true) {
-      // set=True: ([symbols], {(solution,), ...}) for one equation in one unknown
-      if (args.length !== 2 || args[0] instanceof JsTuple || args[0] instanceof JsList) throw new Unsupported('solve set form');
-      const t = asExpr(args[1]);
-      const d = t instanceof Sym ? t : new sj.Dummy('_t');
-      const e = t instanceof Sym ? asExpr(args[0]) : sj.subs(asExpr(args[0]), [[t, d]]);
-      const sols = sj.solve(e, d);
-      return new JsTuple([new JsList([t]), new JsSet(sols.map((v) => new JsTuple([v])))]);
+      const { set: _set, ...rest } = kw;
+      const result = ADAPTERS['solve']!(args, rest);
+      const inputs = args[0] instanceof JsTuple || args[0] instanceof JsList ? args[0].items : [args[0]];
+      const variables = requested.length ? [...requested].map(asExpr) : allSymbols(inputs.map(asExprOrPoly));
+      if (args[1] instanceof JsSet) variables.sort((a, b) => sj.compareKeys(sj.sortKey(a), sj.sortKey(b)));
+      const rows = result instanceof JsDict ? [result] : result instanceof JsList ? result.items : [];
+      const symbols = !requested.length && rows[0] instanceof JsDict ? rows[0].entries.map(([k]) => asExpr(k)) : variables;
+      const tuples = rows.map((row) => row instanceof JsTuple ? row : row instanceof JsDict ? new JsTuple(symbols.map((v) => row.entries.find(([k]) => k instanceof Expr && k.key === v.key)?.[1] ?? v)) : new JsTuple([row]));
+      return new JsTuple([new JsList(inputs.some((v) => v === false || v instanceof sj.BoolAtom && !v.value) ? [] : symbols), new JsSet(tuples)]);
     }
     const check = kw['check'] === undefined ? undefined : Boolean(kw['check']);
     const cubics = kw['cubics'] === false ? false : undefined;
-    const first = args[0];
+    const first = args[0] instanceof Matrix ? new JsTuple([...args[0].data]) : args[0] instanceof JsList || args[0] instanceof JsTuple || args[0] instanceof JsSet ? new JsTuple(args[0].items.flatMap((v) => v instanceof Matrix ? [...v.data] : [v])) : args[0];
+    if (first instanceof JsTuple && first.items.some((v) => v === false || v instanceof sj.BoolAtom && !v.value)) return new JsList([]);
     // systems of inequalities in one symbol
     if (first instanceof JsTuple && first.items.length && first.items.every((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne')) {
       const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
@@ -3109,7 +3138,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     // equations mixed with inequalities in one symbol (SymPy _solve_system with inequalities)
     if ((first instanceof JsTuple || first instanceof JsList) && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne') && first.items.some((i) => !(i instanceof sj.Rel) || i.op === 'Eq')) {
       const isEq = (i: unknown) => !(i instanceof sj.Rel) || i.op === 'Eq';
-      const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
+      const syms = requested.length ? requested.map(asSym) : allSymbols(first.items.map(asExpr));
       const eqs = first.items.filter(isEq).map(asExpr);
       if (syms.length !== 1 || eqs.length !== 1) throw new Unsupported('mixed system');
       const sols = sj.solve(eqs[0]!, syms[0]!);
@@ -3118,23 +3147,28 @@ export const ADAPTERS: Record<string, Adapter> = {
       return sj.And(ineq, sj.Eq(syms[0]!, sols[0]!));
     }
     // systems of equations
-    if (first instanceof JsTuple) {
+    if (first instanceof JsTuple || first instanceof JsList) {
       // unknowns that are not symbols (x + 2, x*y) are solved for as dummies, like SymPy
-      const targets = (args[1] instanceof JsTuple || args[1] instanceof JsSet ? args[1].items : args.slice(1)).map(asExpr);
-      const syms = targets.map((t, i) => (t instanceof Sym ? t : new sj.Dummy(`_t${i}`)));
-      const reps = targets.map((t, i) => [t, syms[i]!] as [Expr, Expr]).filter(([t]) => !(t instanceof Sym));
-      const back = (v: Expr) => targets[syms.indexOf(v as Sym)] ?? v;
+      const targets = (args[1] instanceof JsTuple || args[1] instanceof JsList || args[1] instanceof JsSet ? args[1].items : args.slice(1)).map(asExpr);
+      const syms = targets;
+      const back = (v: Expr) => v;
       // like SymPy, equations free of the requested symbols are dropped
-      const eqs = first.items.map((e) => (reps.length ? sj.subs(asExpr(e), reps) : asExpr(e))).filter((e) => !syms.length || syms.some((s) => e.has(s)));
+      if (!first.items.length || first.items.some((v) => v === false || v instanceof sj.BoolAtom && !v.value)) return new JsList([]);
+      const eqs = first.items.filter((v) => v !== true && !(v instanceof sj.BoolAtom)).map((e) => sj.asEquation(asExprOrPoly(e))).filter((e) => !syms.length || syms.some((s) => e.has(s)));
       const vars = syms.length ? syms : allSymbols(eqs);
-      if (isLinearSystem(eqs, vars)) {
+      if (!eqs.length || !vars.length) return new JsList([]);
+      if (vars.every((v) => v instanceof Sym) && isLinearSystem(eqs, vars)) {
         const s = sj.linsolve(eqs, vars);
         if (!Array.isArray(s)) return new JsList([]);
         // underdetermined: SymPy lists only the solved (pivot) symbols
-        return new JsDict(vars.map((v, i) => [back(v), s[i]!] as const).filter(([v, e]) => v.key !== e.key));
+        return new JsDict(vars.map((v, i) => [back(v), back(s[i]!)] as const).filter(([v, e]) => v.key !== e.key));
       }
-      const sols = sj.nonlinsolve(eqs, vars);
-      return new JsList(sols.map((t) => new JsDict(vars.map((v, i) => [back(v), t[i]!] as const))));
+      const sols = sj.solveSystem(eqs, vars, { check });
+      const dummySymbols = vars.map((_, i) => new sj.Dummy(`linear${i}`));
+      const replacements = vars.map((v, i): [Expr, Expr] => [v, dummySymbols[i]!]);
+      if (sols.length === 1 && isLinearSystem(eqs.map((e) => sj.xreplace(e, replacements)), dummySymbols)) return new JsDict(vars.map((v, i) => [v, sols[0]![i]!] as const).filter(([v, e]) => v.key !== e.key));
+      if (targets.length && !(args[1] instanceof JsSet)) return new JsList(sols.map((t) => new JsTuple(t.map(back))));
+      return new JsList(sols.map((t) => new JsDict(vars.map((v, i) => [back(v), back(t[i]!)] as const).filter(([v, e]) => v.key !== e.key))));
     }
     if (first instanceof JsList && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq')) {
       const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
@@ -3154,12 +3188,24 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') {
       return sj.reduceInequalities([e], args[1] instanceof Sym ? [args[1]] : []);
     }
-    if (args[1] instanceof JsTuple) {
+    if (args[1] instanceof JsSet) {
+      const targets = args[1].items.map(asExpr);
+      if (targets.length === 1) return new JsList(sj.solve(e, targets[0]!));
+      const target = targets.find((v) => e.has(v));
+      return target ? new JsList(sj.solve(e, target).map((v) => new JsDict([[target, v]]))) : new JsList([]);
+    }
+    if (args[1] instanceof JsTuple || args[1] instanceof JsList) {
       // a single equation in several unknowns with other free symbols: undetermined coefficients
-      const coeffs = args[1].items.map(asSym);
+      const coeffs = args[1].items.map(asExpr);
+      if (coeffs.length === 1) return new JsList(sj.solve(e, coeffs[0]!));
+
       const others = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym).filter((s) => !coeffs.some((c) => c.key === s.key));
-      if (!others.length) throw new Unsupported('solve for several symbols');
-      const sols = sj.solveUndeterminedCoeffs(e, coeffs, others as Sym[]);
+      if (!others.length) {
+        const target = coeffs.find((v) => e.has(v));
+        if (!target) return new JsList([]);
+        return new JsList(sj.solve(e, target).map((v) => new JsTuple(coeffs.map((c) => c.key === target.key ? v : c))));
+      }
+      const sols = sj.solveUndeterminedCoeffs(e, coeffs);
       if (sols.length !== 1) throw new Unsupported('solve for several symbols');
       return new JsDict(coeffs.map((c, i) => [c, sols[0]![i]!] as const));
     }
@@ -3193,16 +3239,20 @@ export const ADAPTERS: Record<string, Adapter> = {
             ? syms[0]!
             : undefined;
     if (args.length === 1 && syms.length === 0) return new JsList([]);
-    if (!x || args.length > 2) throw new Unsupported('solve form');
+    if (!x) throw new Unsupported('solve form');
+    if (args.length > 2) {
+      const targets = args.slice(1).map(asExpr);
+      return new JsList(sj.solve(e, x, { check, cubics }).map((v) => new JsTuple(targets.map((t) => t.key === x.key ? v : t))));
+    }
     return new JsList(sj.solve(e, x, { ...(check === undefined ? {} : { check }), ...(cubics === false ? { cubics } : {}) }));
   },
   checksol: (args, kw) => {
-    noKw(kw);
-    const e = asExpr(args[0]);
+    for (const k of Object.keys(kw)) if (k !== 'numerical') throw new Unsupported(`kwargs ${k}`);
+    const e = args[0] instanceof JsTuple || args[0] instanceof JsList ? args[0].items.map(asExprOrPoly) : asExprOrPoly(args[0]);
     let reps: [Expr, Expr][];
     if (args[1] instanceof JsDict) reps = args[1].entries.map(([k, v]) => [asExpr(k), asExpr(v)]);
     else reps = [[asExpr(args[1]), asExpr(args[2])]];
-    return none(sj.checksol(e, new Map(reps)));
+    return none(sj.checksol(e, new Map(reps), { numerical: kw['numerical'] !== false }));
   },
   linsolve: (args, kw) => {
     noKw(kw);
@@ -3292,10 +3342,18 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   solve_linear: (args, kw) => {
     const opts: { symbols?: Sym[]; exclude?: Sym[] } = {};
-    if (kw['symbols']) opts.symbols = (kw['symbols'] as JsTuple).items.map(asSym);
+    if (kw['symbols']) {
+      const symbols = asExprList(kw['symbols']);
+      if (!symbols.every((s) => s instanceof Sym)) throw new RangeError('solve_linear: symbols must be symbols');
+      opts.symbols = symbols;
+    }
     if (kw['exclude']) opts.exclude = (kw['exclude'] as JsTuple).items.map(asSym);
-    if (args.length > 1) opts.symbols = args.slice(1).map(asSym);
-    return new JsTuple(sj.solveLinear(asExpr(args[0]), opts));
+    if (args[2] !== undefined) opts.symbols = asExprList(args[2]).map(asSym);
+    if (args[3] !== undefined) opts.exclude = asExprList(args[3]).map(asSym);
+    const lhs = asExpr(args[0]);
+    const rhs = args[1] === undefined ? sj.S.Zero : asExpr(args[1]);
+    if (lhs instanceof sj.Rel && !rhs.equals(sj.S.Zero)) throw new RangeError('solve_linear: a nonzero right hand side is incompatible with Eq');
+    return new JsTuple(sj.solveLinear(sj.add(sj.asEquation(lhs), sj.mul(-1, rhs)), opts));
   },
   solve_linear_system_LU: (args, kw) => ADAPTERS['solve_linear_system']!([args[0], ...(args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items : args.slice(1))], kw),
   solve_linear_system: (args, kw) => {
@@ -3307,18 +3365,34 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   solve_undetermined_coeffs: (args, kw) => {
     const dict = Boolean(kw['dict']);
-    for (const k of Object.keys(kw)) if (k !== 'dict') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['dict', 'set'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const coeffs = (args[1] as JsTuple).items.map(asSym);
-    const syms = args[2] === undefined ? [] : args[2] instanceof JsTuple ? args[2].items.map(asSym) : [asSym(args[2])];
+    const syms = args[2] === undefined ? [] : args[2] instanceof JsTuple || args[2] instanceof JsList ? args[2].items.map(asSym) : args.slice(2).map(asSym);
     const sols = sj.solveUndeterminedCoeffs(asExpr(args[0]), coeffs, syms);
-    const dicts = sols.map((t) => new JsDict(coeffs.map((v, i) => [v, t[i]!] as const)));
+    const dicts = sols.map((t) => new JsDict(coeffs.map((v, i) => [v, t[i]!] as const).filter(([v, e]) => v.key !== e.key)));
+    if (kw['set'] === true) return new JsTuple([new JsList(sols.length ? coeffs : []), new JsSet(sols.map((t) => new JsTuple(t)))]);
     if (dict) return new JsList(dicts);
     return dicts.length === 1 ? dicts[0] : new JsList(dicts);
   },
   nsolve: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['prec', 'solver', 'verify'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['prec', 'solver', 'verify', 'dict'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (args.length < 2 || args.length > 3) throw new TypeError('nsolve expects two or three arguments');
     const opts = kw['prec'] === undefined ? {} : { prec: Number((kw['prec'] as sj.Rational).p) };
-    if (args[0] instanceof JsTuple && args[1] instanceof JsTuple && args[2] instanceof JsTuple) return sj.nsolve(args[0].items.map(asExpr), args[1].items.map(asSym), args[2].items.map(asExpr), opts);
+    const sequence = (v: unknown): readonly unknown[] | undefined => v instanceof JsTuple || v instanceof JsList ? v.items : v instanceof Matrix ? [...v.data] : undefined;
+    const equations = sequence(args[0]);
+    const variables = sequence(args[1]);
+    const initial = sequence(args[2]);
+    if (equations && variables && initial) {
+      const syms = variables.map(asSym);
+      const result = sj.nsolve(equations.map(asExpr), syms, initial.map(asExpr), opts);
+      return kw['dict'] === true ? new JsList([new JsDict(syms.map((v, i) => [v, result.get(i, 0)]))]) : result;
+    }
+    if (kw['dict'] === true) {
+      const { dict: _dict, ...rest } = kw;
+      const result = ADAPTERS['nsolve']!(args, rest);
+      const variable = args.length === 3 ? asSym(args[1]) : allSymbols([asExpr(args[0])])[0]!;
+      return new JsList([new JsDict([[variable, result]])]);
+    }
     const e = asExpr(args[0]);
     const last = args[args.length - 1];
     if (last instanceof JsTuple && last.items.length === 2) {

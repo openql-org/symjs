@@ -366,15 +366,15 @@ describe("sympy/solvers/tests/test_polysys.py", () => {
   //       ]
   //   => [[x - 1, z - 3], [y - 2]]
   it.todo("test_factor_system:239");
-  it.fails("test_factor_system:244", () => {
+  it("test_factor_system:244", () => {
     const x = new Sym('x');
     expect(sympyStr(factorSystem([new Add([rational(-1), new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))]), x]))).toBe('[[x, sin(x)**2 + cos(x)**2 - 1]]');
   });
-  it.fails("test_factor_system:248", () => {
+  it("test_factor_system:248", () => {
     const x = new Sym('x');
     expect(sympyStr(factorSystem([new Add([rational(-1), new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))])]))).toBe('[[sin(x)**2 + cos(x)**2 - 1]]');
   });
-  it.fails("test_factor_system:252", () => {
+  it("test_factor_system:252", () => {
     const x = new Sym('x');
     expect(sympyStr(factorSystem([new Add([new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))])]))).toBe('[[sin(x)**2 + cos(x)**2]]');
   });
@@ -417,15 +417,15 @@ describe("sympy/solvers/tests/test_polysys.py", () => {
   //   assert factor_system([x**2 - 2], [x]) == [[x**2 - 2]]
   //   => [[x**2 - 2]]
   it.todo("test_factor_system:280");
-  it.fails("test_factor_system:282", () => {
+  it("test_factor_system:282", () => {
     const x = new Sym('x');
     expect(sympyStr(factorSystem([new Add([new Pow(fn('cos', [x]), rational(2)), new Mul([rational(-1), new Pow(fn('sin', [x]), rational(2))])]), new Add([rational(-1), new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))])]))).toBe('[[sin(x)**2 + cos(x)**2 - 1, sin(x) + cos(x)], [sin(x)**2 + cos(x)**2 - 1, -sin(x) + cos(x)]]');
   });
-  it.fails("test_factor_system:287", () => {
+  it("test_factor_system:287", () => {
     const x = new Sym('x');
     expect(sympyStr(factorSystem([new Add([rational(-1), new Pow(new Add([fn('cos', [x]), fn('sin', [x])]), rational(2))]), new Add([new Pow(fn('cos', [x]), rational(2)), new Mul([rational(-1), new Pow(fn('sin', [x]), rational(2))]), new Mul([rational(-1), fn('cos', [new Mul([rational(2), x])])])])]))).toBe('[[sin(x)**2 - cos(x)**2 + cos(2*x), sin(x) + cos(x) + 1], [sin(x)**2 - cos(x)**2 + cos(2*x), sin(x) + cos(x) - 1]]');
   });
-  it.fails("test_factor_system:292", () => {
+  it("test_factor_system:292", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(factorSystem([new Add([rational(-1), new Mul([new Add([fn('cos', [x]), fn('sin', [x])]), exp(y)])]), new Add([rational(-1), new Mul([new Add([new Mul([rational(-1), fn('sin', [x])]), fn('cos', [x])]), exp(y)])])]))).toBe('[[exp(y)*sin(x) + exp(y)*cos(x) - 1, -exp(y)*sin(x) + exp(y)*cos(x) - 1]]');
   });
