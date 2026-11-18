@@ -276,7 +276,7 @@ describe("doctests of sympy.geometry.polygon", () => {
     expect(sympyStr(Triangle(Point2D(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(4n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(4n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), { evaluate: false })))).toBe('Triangle(Point2D(0, 0), Point2D(4, 0), Point2D(4, 3))');
   });
   it("Triangle(sss=(3, 4, 5))", () => {
-    expect(sympyStr(Triangle({ sss: [3, 4, 5] }))).toBe('Triangle(Point2D(0, 0), Point2D(3, 0), Point2D(3, 4))');
+    expect(sympyStr(Triangle({ sss: [Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n })] }))).toBe('Triangle(Point2D(0, 0), Point2D(3, 0), Point2D(3, 4))');
   });
   it("Triangle(asa=(30, 1, 30))", () => {
     expect(sympyStr(Triangle({ asa: [30, 1, 30] }))).toBe('Triangle(Point2D(0, 0), Point2D(1, 0), Point2D(1/2, sqrt(3)/6))');
@@ -409,7 +409,7 @@ describe("sympy/geometry/tests/test_polygon.py", () => {
     expect(sympyStr(Polygon(Point2D(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(0n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n }), { evaluate: false }), Point2D(Rational.of(1n, 2n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }), { evaluate: false })).encloses(Point2D(Rational.of(3n, 4n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }), { evaluate: false })))).toBe('True');
   });
   it("test_triangle_kwargs:386", () => {
-    expect(sympyStr(Triangle({ sss: [3, 4, 5] }))).toBe('Triangle(Point2D(0, 0), Point2D(3, 0), Point2D(3, 4))');
+    expect(sympyStr(Triangle({ sss: [Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n }), Rational.of(5n, 1n, { gcd: 1n })] }))).toBe('Triangle(Point2D(0, 0), Point2D(3, 0), Point2D(3, 4))');
   });
   it("test_triangle_kwargs:388", () => {
     expect(sympyStr(Triangle({ asa: [30, 2, 30] }))).toBe('Triangle(Point2D(0, 0), Point2D(2, 0), Point2D(1, sqrt(3)/3))');
@@ -417,9 +417,10 @@ describe("sympy/geometry/tests/test_polygon.py", () => {
   it("test_triangle_kwargs:390", () => {
     expect(sympyStr(Triangle({ sas: [1, 45, 2] }))).toBe('Triangle(Point2D(0, 0), Point2D(2, 0), Point2D(sqrt(2)/2, sqrt(2)/2))');
   });
-  it.fails("test_triangle_kwargs:392", () => {
-    expect(sympyStr(Triangle({ sss: [1, 2, 5] }))).toBe('None');
-  });
+  // a primitive result that no library call returned
+  //   assert Triangle(sss=(1, 2, 5)) is None
+  //   => None
+  it.todo("test_triangle_kwargs:392");
   it("test_triangle_kwargs:393", () => {
     expect(sympyStr(deg(pi))).toBe('180');
   });

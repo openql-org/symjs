@@ -5128,7 +5128,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_FormalPowerSeries:1108", () => {
+  it("test_latex_FormalPowerSeries:1108", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -5498,7 +5498,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_ImageSet:1333", () => {
+  it("test_latex_ImageSet:1333", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {

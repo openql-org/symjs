@@ -377,12 +377,9 @@
     "sympy.utilities.tests.test_wester:test_Y4:2929 #e5977d5b0c120c2c0263"
   ],
   "timeouts": [
-    "sympy.geometry.tests.test_ellipse:test_issue_15797_equals:566 #6da1ca06f845bcb8947f",
-    "sympy.matrices.tests.test_matrices:test_issue_17247_expression_blowup_28:697 #e640662ef6b32190eac1",
     "sympy.matrices.tests.test_matrices:test_issue_17247_expression_blowup_6:459 #d84d93864615483348ea",
     "sympy.matrices.tests.test_matrices:test_issue_17247_expression_blowup_8:469 #b60e235e2b2e815cabc2",
     "sympy.matrices.tests.test_matrices:test_issue_18531:736 #6123b89063d14d5512ca",
-    "sympy.matrices.tests.test_matrixbase:test_issue_17247_expression_blowup_28:1452 #6dce2bc7c52f44670226",
     "sympy.matrices.tests.test_matrixbase:test_issue_17247_expression_blowup_6:1193 #f3af547ee4076b530725",
     "sympy.matrices.tests.test_matrixbase:test_issue_17247_expression_blowup_8:1205 #597da6eeda3176de2bfe",
     "sympy.matrices.tests.test_matrixbase:test_issue_18531:1491 #c9db76641f054a8511ea"

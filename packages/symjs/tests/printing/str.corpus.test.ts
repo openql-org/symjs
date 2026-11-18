@@ -1400,7 +1400,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Poly:420", () => {
+  it("test_Poly:420", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -3071,7 +3071,7 @@ describe("sympy/printing/tests/test_str.py", () => {
   //   assert str(t) == 'Tr(A*B)'
   //   => Tr(A*B)
   it.todo("test_Tr:990");
-  it.fails("test_issue_6387:994", () => {
+  it("test_issue_6387:994", () => {
     const z = new Sym('z');
     const unicode = pprintUseUnicode(false);
     try {

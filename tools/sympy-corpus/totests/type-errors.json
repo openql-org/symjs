@@ -1404,6 +1404,7 @@
  "sympy.geometry.tests.test_ellipse:test_is_tangent:484 #8a7dbcae6619e556c565",
  "sympy.geometry.tests.test_ellipse:test_is_tangent:488 #dae46c4c3a5c4ac846ef",
  "sympy.geometry.tests.test_ellipse:test_is_tangent:489 #bb72fc7c3e558a02e704",
+ "sympy.geometry.tests.test_ellipse:test_issue_15797_equals:566 #6da1ca06f845bcb8947f",
  "sympy.geometry.tests.test_ellipse:test_parameter_value:495 #19c408eb3ab68ad9e30c",
  "sympy.geometry.tests.test_ellipse:test_reflect:432 #2fc84d25d2da0fc1448e",
  "sympy.geometry.tests.test_ellipse:test_reflect:434 #f252f35f41460d9a3238",

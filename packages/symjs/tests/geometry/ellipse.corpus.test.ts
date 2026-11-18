@@ -699,7 +699,7 @@ describe("sympy/geometry/tests/test_ellipse.py", () => {
   it("test_issue_15259:558", () => {
     expect(sympyStr(Circle([1, 2], 0))).toBe('Point2D(1, 2)');
   });
-  // the replay exceeds its deadline
+  // the arguments do not type-check against the public API
   //   assert c.is_tangent(c.tangent_lines(A)[0]) == True
   //   => True
   it.todo("test_issue_15797_equals:566");

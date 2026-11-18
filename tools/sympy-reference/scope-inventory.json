@@ -40173,7 +40173,7 @@
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
      "caseCount": 459,
-     "gapCount": 5,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -41652,7 +41652,7 @@
      "testFile": "sympy/functions/elementary/tests/test_miscellaneous.py",
      "inCorpus": true,
      "caseCount": 980,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 1,
@@ -48437,7 +48437,7 @@
      "testFile": "sympy/geometry/tests/test_curve.py",
      "inCorpus": true,
      "caseCount": 30,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 14,
@@ -48618,8 +48618,8 @@
      "testFile": "sympy/geometry/tests/test_ellipse.py",
      "inCorpus": true,
      "caseCount": 134,
-     "gapCount": 1,
-     "timeoutCount": 1,
+     "gapCount": 0,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 150
      },
@@ -50197,7 +50197,7 @@
      "testFile": "sympy/geometry/tests/test_point.py",
      "inCorpus": true,
      "caseCount": 213,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -50467,7 +50467,7 @@
      "testFile": "sympy/geometry/tests/test_polygon.py",
      "inCorpus": true,
      "caseCount": 88,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 146,
@@ -63815,7 +63815,7 @@
      "inCorpus": true,
      "caseCount": 878,
      "gapCount": 10,
-     "timeoutCount": 4,
+     "timeoutCount": 3,
      "disallowedOmissions": {
       "marked-slow": 2,
       "non-boolean-assertion": 3,
@@ -63988,7 +63988,7 @@
      "inCorpus": true,
      "caseCount": 1056,
      "gapCount": 11,
-     "timeoutCount": 4,
+     "timeoutCount": 3,
      "disallowedOmissions": {
       "marked-slow": 4,
       "non-boolean-assertion": 3,
@@ -90536,7 +90536,7 @@
      "testFile": "sympy/printing/tests/test_latex.py",
      "inCorpus": true,
      "caseCount": 1264,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -91309,7 +91309,7 @@
      "testFile": "sympy/printing/tests/test_repr.py",
      "inCorpus": true,
      "caseCount": 103,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 83,
@@ -91419,7 +91419,7 @@
      "testFile": "sympy/printing/tests/test_str.py",
      "inCorpus": true,
      "caseCount": 438,
-     "gapCount": 9,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 27,

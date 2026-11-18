@@ -6616,23 +6616,23 @@ describe("sympy/functions/elementary/tests/test_miscellaneous.py", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr([Rational.of(0n, 1n, { gcd: 1n }), p], 't')).toBe('(0, p)');
   });
-  it.fails("test_minmax_no_evaluate:499", () => {
-    expect(sympyStr(fn('Max', [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })], { evaluate: true }))).not.toBe('3');
+  it("test_minmax_no_evaluate:499", () => {
+    expect(sympyStr(fn('Max', [Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })], { evaluate: false }))).not.toBe('3');
   });
   it("test_minmax_no_evaluate:500", () => {
     expect(sympyStr([Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })], 't')).toBe('(1, 3)');
   });
-  it.fails("test_minmax_no_evaluate:501", () => {
+  it("test_minmax_no_evaluate:501", () => {
     const p = new Sym('p', { positive: true });
-    expect(sympyStr(fn('Max', [Rational.of(0n, 1n, { gcd: 1n }), p], { evaluate: true }))).not.toBe('p');
+    expect(sympyStr(fn('Max', [Rational.of(0n, 1n, { gcd: 1n }), p], { evaluate: false }))).not.toBe('p');
   });
   it("test_minmax_no_evaluate:502", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr([Rational.of(0n, 1n, { gcd: 1n }), p], 't')).toBe('(0, p)');
   });
-  it.fails("test_minmax_no_evaluate:503", () => {
+  it("test_minmax_no_evaluate:503", () => {
     const p = new Sym('p', { positive: true });
-    expect(sympyStr(fn('Min', [Rational.of(0n, 1n, { gcd: 1n }), p], { evaluate: true }))).not.toBe('0');
+    expect(sympyStr(fn('Min', [Rational.of(0n, 1n, { gcd: 1n }), p], { evaluate: false }))).not.toBe('0');
   });
   it("test_minmax_no_evaluate:504", () => {
     const p = new Sym('p', { positive: true });
