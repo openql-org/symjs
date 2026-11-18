@@ -803,16 +803,7 @@
     "sympy.utilities.tests.test_wester:test_V4:2347 #b8c794ea687242a94dd7",
     "sympy.utilities.tests.test_wester:test_X21:2864 #b18f914e8e8c355b231c",
     "sympy.utilities.tests.test_wester:test_X6:2693 #7d2a0e0ca506c6311b2a",
-    "sympy.utilities.tests.test_wester:test_Y4:2929 #e5977d5b0c120c2c0263",
-    "sympy.vector.tests.test_coordsysrect:test_coordinate_vars:121 #587735f6a3aa6f1c8fdc",
-    "sympy.vector.tests.test_coordsysrect:test_coordinate_vars:124 #7b52c4adbb6a7e588a21",
-    "sympy.vector.tests.test_coordsysrect:test_coordinate_vars:127 #2fd1468eb4494f4cfc31",
-    "sympy.vector.tests.test_dyadic:test_dyadic:16 #53944c58f994c130d12f",
-    "sympy.vector.tests.test_dyadic:test_dyadic_srepr:134 #87bf0d083e806f6c4799",
-    "sympy.vector.tests.test_field_functions:test_del_operator:94 #e2b170f12f9cf95ec289",
-    "sympy.vector.tests.test_vector:test_srepr:331 #e1354393666019195706",
-    "sympy.vector.tests.test_vector:test_vector:119 #2bbf796f930029059d96",
-    "sympy.vector.tests.test_vector:test_vector_diff_integrate:317 #ac5aaf78bcd50677333a"
+    "sympy.utilities.tests.test_wester:test_Y4:2929 #e5977d5b0c120c2c0263"
   ],
   "timeouts": [
     "sympy.geometry.tests.test_ellipse:test_issue_15797_equals:566 #6da1ca06f845bcb8947f",

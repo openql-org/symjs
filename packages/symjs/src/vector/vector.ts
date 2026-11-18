@@ -228,6 +228,10 @@ export class BaseVectorNode extends Vector implements ScaledBase {
     this.#pretty = prettyStr ?? `x${index}`;
     this.latexForm = latexStr ?? `x_${index}`;
   }
+  /** SymPy srepr: the base vector as an attribute of its system. */
+  printRepr(repr: (e: Expr) => string): string {
+    return `${repr(this.system)}.${at(this.system.vectorNames, this.index)}`;
+  }
   withArgs(): Expr {
     return this;
   }

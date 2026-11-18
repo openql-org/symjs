@@ -1759,7 +1759,9 @@ function deserializeVector(tree: Tree): unknown {
     if (tr.t === 'Str') return sj.CoordSys3D(tree['name'] as string, { ...names, transformation: tr['v'] as string });
     const t = deserialize(tr);
     if (t instanceof JsTuple && t.items[0] instanceof Matrix) {
-      return sj.CoordSys3D(tree['name'] as string, { ...names, rotationMatrix: t.items[0], location: parent ? (t.items[1] as Expr) : undefined });
+      // SymPy keeps a factored entry such as (2*cos(q) + 1)/3 only until the system is rebuilt (xreplace, simplify),
+      // which evaluates it again: the entries are taken in that evaluated form
+      return sj.CoordSys3D(tree['name'] as string, { ...names, rotationMatrix: t.items[0].map((entry) => sj.rebuild(entry)), location: parent ? (t.items[1] as Expr) : undefined });
     }
     const transformation = lambdaAsNode(t);
     if (!(transformation instanceof sj.Lambda)) throw new Unsupported('coordinate transformation');
