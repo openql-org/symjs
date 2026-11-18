@@ -31,6 +31,11 @@ export {
 
 export {
   solve,
+  solveForSymbols,
+  solveComplexComponents,
+  solveRelation,
+  solveVariables,
+  isLinearSolveSystem,
   nonlinsolve as solveSystem,
   denoms,
   unrad,
@@ -44,6 +49,7 @@ export {
   invQuick,
   solveLinearSystemLU,
 } from './solvers/solve';
+export type { SolveOptions } from './solvers/solve';
 export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvesetComplex, solveDecomposition, solvify, invertComplex, invertReal } from './solvers/solveset';
 export { dsolveSystem, canonicalOdes, linodesolveType, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
 export {
@@ -67,6 +73,9 @@ export {
   diopTernaryQuadraticNormal,
   sqfNormal,
   squareFactor,
+  reconstruct,
+  checkParam,
+  partition as diopPartition,
   ldescent,
   descent,
   gaussianReduce,

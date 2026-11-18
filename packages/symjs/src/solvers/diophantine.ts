@@ -542,7 +542,7 @@ export class BinaryQuadratic extends DiophantineEquationType {
           const x0 = mul(num, Rational.of(1n, 4n * A * r));
           const y0 = mul(sub(s0, t0), Rational.of(1n, 2n * r));
           if (s0 instanceof Sym || t0 instanceof Sym) {
-            const ans = checkParam(x0, y0, parameters ?? null);
+            const ans = checkParam(x0, y0, 4n * A * r, parameters ?? null);
             result.update(...ans);
           } else if (isInt(x0) && isInt(y0) && isSolutionQuad(v, coeff, x0, y0)) {
             result.add([x0, y0]);
@@ -1584,11 +1584,12 @@ export function findDN(eq: ExprLike): [Rational, Rational] | NoMatchResult {
  * The parametric solutions x, y in t made integral (SymPy check_param):
  * empty when no residue of t modulo a makes both integers.
  */
-function checkParam(x: Expr, y: Expr, params: readonly Expr[] | null): DiophantineSolutionSet {
-  if (isConst(x) && !isInt(x)) return new DiophantineSolutionSet([x, y], params ?? []);
+export function checkParam(x: Expr, y: Expr, modulus: ExprLike | bigint, params: readonly Expr[] | null): DiophantineSolutionSet {
+  if ((isConst(x) && !isInt(x)) || (isConst(y) && !isInt(y))) return new DiophantineSolutionSet([x, y], params ?? []);
   const m = new Sym('m', { integer: true });
   const n = new Sym('n', { integer: true });
-  // the denominators of x and y divide 4*A*r: SymPy's test that some residue modulo it makes both integral always passes
+  const [content] = asContentPrimitive(add(mul(m, x), mul(n, y)));
+  if (asBig(modulus) % content.q !== 0n) return new DiophantineSolutionSet([x, y], params ?? []);
   // clear_coefficients(m*x + b, R)[1] -> (R - b)/m
   const eq = sub(clearCoefficients(x, m), clearCoefficients(y, n));
   return classify(asContentPrimitive(eq)[1]).solve({ parameters: params });
@@ -1762,10 +1763,12 @@ export function squareFactor(a: ExprLike | bigint | ReadonlyMap<bigint | number,
 }
 
 /** SymPy reconstruct(A, B, z): z multiplied by the primes of gcd(A, B), which must be square-free. */
-function reconstruct(A: bigint, B: bigint, zIn: bigint): bigint {
-  let z = zIn;
-  // A and B are square-free
-  for (const p of factorint(igcd(A, B)).keys()) z *= p;
+export function reconstruct(A: ExprLike | bigint, B: ExprLike | bigint, zIn: ExprLike | bigint): bigint {
+  let z = asBig(zIn);
+  for (const [prime, exponent] of factorint(igcd(asBig(A), asBig(B)))) {
+    if (exponent !== 1n) throw new RangeError('A and B must be square-free');
+    z *= prime;
+  }
   return z;
 }
 
@@ -1944,8 +1947,8 @@ export function diopGeneralSumOfEvenPowers(eq: ExprLike, limit = 1): Expr[][] | 
 }
 
 /** The partitions of n into k parts, padded with leading zeros when `zeros` (SymPy partition). */
-function* partition(n: number, k: number, zeros: boolean): Generator<bigint[], void, undefined> {
-  if (!zeros) {
+export function* partition(n: number, k?: number, zeros = false): Generator<bigint[], void, undefined> {
+  if (!zeros || k === undefined) {
     for (const i of orderedPartitions(n, k)) yield i.map(BigInt);
     return;
   }
