@@ -6,14 +6,270 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Assumptions } from '../../src/core/nodes';
-import { detQuick, diff, type Expr, invQuick, Matrix, nonlinsolve, solveLinearSystemLU, NotImplementedError, nsolve, parse, solve, solveLinear, solveUndeterminedCoeffs, sstr, Sym, symbols, SymFunction, CRootOf, Poly, evalf, toComplex } from '../../src';
+import { checksol, detQuick, diff, type Expr, invQuick, isLinearSolveSystem, isNoMatch, Matrix, nonlinsolve, solveLinearSystemLU, NotImplementedError, nsolve, parse, solve, solveComplexComponents, solveForSymbols, solveLinear, solveRelation, solveSystem, solveUndeterminedCoeffs, solveVariables, sstr, Sym, symbols, SymFunction, CRootOf, Poly, evalf, toComplex, unrad } from '../../src';
 import { xreplace } from '../../src/core/traverse';
 import { invertEquation, nonlinsolve as nonlinsolveCoordinates } from '../../src/solvers/solve';
 import { at } from '../../src/core/guard';
-import { Piecewise, Rel, S } from '../../src/core/nodes';
+import { Fn, Piecewise, Pow, Rel, S } from '../../src/core/nodes';
 
 const [x, y] = symbols('x y');
 const show = (r: readonly Expr[]): string => `[${r.map(String).join(', ')}]`;
+const showMaps = (rows: readonly Map<Expr, Expr>[]) => rows.map((row) => Object.fromEntries([...row].map(([key, value]) => [String(key), String(value)])));
+
+it('solves implicit targets, zero bases and coupled radicals', () => {
+  expect(show(solve(parse('x**2+x-3'), x, { implicit: true }))).toBe('[3 - x**2]');
+  expect(show(solve(parse('x*f(x)+f(x)+2'), x, { implicit: true }))).toBe('[-(f(x) + 2)/f(x)]');
+  expect(show(solve(parse('x**x'), x))).toBe('[]');
+  expect(show(solve(parse('0**(x-2)-1'), x))).toBe('[2]');
+  expect(show(solve(parse('f(x+1)-f(2*x-1)'), x))).toBe('[2]');
+  expect(show(solve(parse('sqrt(x+1)+sqrt(x+6)-5'), x))).toBe('[3]');
+  expect(isNoMatch(unrad(parse('-8*x**2/(9*(x**2-1)**(4/3)) + 4/(3*(x**2-1)**(1/3))')))).toBe(true);
+  expect(isNoMatch(unrad(parse('x**2-1')))).toBe(true);
+});
+
+it('reduces mixed trigonometric, hyperbolic and logarithmic generators', () => {
+  expect(solve(parse('sin(x)+tan(x)'), x)).toHaveLength(4);
+  expect(solve(parse('sin(x)+sec(x)'), x)).toHaveLength(4);
+  expect(solve(parse('cos(x)**2+sin(x)'), x)).toHaveLength(4);
+  expect(solve(parse('2*cos(x)**3-sin(x)**3'), x)).toHaveLength(3);
+  expect(solve(parse('sin(300*x)+sin(600*x)'), x)).toHaveLength(3);
+  expect(solve(parse('tanh(x-1)*tanh(x+1)+1'), x)).toHaveLength(4);
+  expect(solve(parse('tanh(x-3)*tanh(x+3)-1'), x)).toHaveLength(0);
+  expect(show(solve(parse('sinh(x)+tanh(x)'), x))).toBe('[0, I*pi]');
+  for (const equation of ['coth(x)+sinh(x)-29/12', 'sech(x)+sinh(x)-31/20', 'csch(x)+cosh(x)-31/12']) {
+    expect(solve(parse(equation), x).map(String)).toContain('log(2)');
+  }
+  expect(show(solve(parse('atan2(x,2)-pi/3'), x))).toBe('[2*sqrt(3)]');
+  expect(show(solve(parse('(3*x + log(x))**2 - 6*x - 2*log(x) + 1'), x))).toBe('[LambertW(3*E)/3]');
+  const index = new Sym('y', { integer: true });
+  expect(solve(parse('2*x**y-4*(x+1)**y').subs(y, index), index)).toHaveLength(1);
+});
+
+it('solves for inferred variables and real and imaginary components', () => {
+  const factors = showMaps(solveForSymbols(parse('z**2*(x**2-y**2)'), [...parse('x+y+z').freeSymbols()]));
+  expect(factors).toHaveLength(3);
+  expect(factors).toEqual(expect.arrayContaining([{ z: '0' }, { x: '-y' }, { x: 'y' }]));
+  const real = new Sym('x', { real: true }), imaginary = new Sym('y', { imaginary: true });
+  const split = parse('x+y+3+2*I').subs(new Map([[x, real], [y, imaginary]]));
+  expect(showMaps(solveForSymbols(split, [real, imaginary]))).toEqual([{ x: '-3', y: '-2*I' }]);
+  const independent = [parse('f(1)-2'), parse('x+2')];
+  expect(solveVariables(independent).map(String)).toEqual(['x', 'f(1)']);
+  expect(isLinearSolveSystem(independent, solveVariables(independent))).toBe(true);
+  expect(isLinearSolveSystem([parse('x**2-2')], [x])).toBe(false);
+  const components = solveComplexComponents([parse('re(x)-1'), parse('im(x)-2')], x);
+  if (!Array.isArray(components)) throw new TypeError('expected complex components');
+  expect(showMaps(components)).toEqual([{ x: '1 + 2*I', 're(x)': '1', 'im(x)': '2' }]);
+  expect(solveComplexComponents([parse('sqrt(re(x)**2+im(x)**2)-3')], x)).toHaveLength(1);
+  expect(isNoMatch(solveComplexComponents([parse('x-2')], x))).toBe(true);
+});
+
+it('checks a numerical Lambert W residual and finite real inequalities', () => {
+  const expression = parse('exp(LambertW(log(x))*exp(LambertW(log(x)))) - x');
+  expect(checksol(expression, x, 2)).toBe(true);
+  expect(checksol(expression, x, 2, { numerical: false })).toBe('unknown');
+  expect(checksol(parse('exp(x)+sin(x)-1'), new Map())).toBe('unknown');
+  expect(checksol(parse('f(x)-1'), x, 2)).toBe('unknown');
+  const above = new Rel('Gt', parse('exp(2*x+2)*(exp(x)+x**2+2)/(exp(x)+2)**2'), S.Zero);
+  expect(String(solveRelation(above))).toBe('(-oo < x) & (x < oo)');
+  expect(String(solveRelation(new Rel('Ne', S.One, x), x))).toContain('Ne(x, 1)');
+  expect(isNoMatch(solveRelation(new Rel('Gt', x, y), x))).toBe(true);
+  expect(isNoMatch(solveRelation(new Rel('Eq', x, S.Zero)))).toBe(true);
+});
+
+it('validates rationalized systems and preserves compact exact algebraic solutions', () => {
+  expect(solveSystem([parse('0.5*x+y-1'), parse('y-0.25')], [x, y], { rational: true }).map(show)).toEqual(['[3/2, 1/4]']);
+  const equations = [parse('327600995*x**2 - 37869137*x + 1809975124*y**2 - 9998905626'), parse('895613949*x**2 - 273830224*x*y + 530506983*y**2 - 10000000000')];
+  const rows = solveSystem(equations, [y, x], { check: false });
+  expect(rows).toHaveLength(4);
+  expect(rows.every((row) => row[1] instanceof CRootOf)).toBe(true);
+  expect(isNoMatch(solveUndeterminedCoeffs(parse('sin(y*x)-sin(2*x)'), [y], [x], { strict: true }))).toBe(true);
+  expect(solveUndeterminedCoeffs(parse('(x-2)*sqrt(2)+y*(x-2)'), [x], [y]).map(show)).toEqual(['[2]']);
+});
+
+it('checks imaginary candidates and retains raw denominators only for unchecked radical elimination', () => {
+  const a = new Sym('x', { imaginary: true }), b = new Sym('y', { imaginary: true });
+  expect(show(solve(parse('abs(x)-3').subs(x, a), a))).toBe('[-3*I, 3*I]');
+  expect(solve(parse('sqrt(x**2+y**2)-3').subs(new Map([[x, a], [y, b]])), a)).toEqual([]);
+  const equation = parse('sqrt((1+1/x)**2+1)-sqrt(5)');
+  expect(solve(equation, x, { check: false, simplify: false }).some((root) => root.equals(S.Zero))).toBe(true);
+  expect(solve(equation, x).some((root) => root.equals(S.Zero))).toBe(false);
+  expect(show(solve(parse('(x-1)**x-1'), x))).toBe('[0, 2]');
+  expect(show(solve(parse('x**3 - 8*y**6 + 48*y**5 - 120*y**4 + 160*y**3 - 120*y**2 + 48*y - 8'), x))).toContain('2*(y - 1)**2');
+  expect(() => solveForSymbols(parse('exp(x)+sin(x)+exp(y)+sin(y)'), [x, y])).toThrow(NotImplementedError);
+  expect(solveForSymbols(parse('1/(x**2-y**2)'), [x, y])).toEqual([]);
+  expect(solveForSymbols(parse('1/(1/x-y+exp(y))'), [x, y])).toEqual([]);
+});
+
+it('separates factors and leaves shared coordinates available in a system', () => {
+  const z = new Sym('z');
+  const rows = solveSystem([parse('x**2+z-4'), parse('y-z-2')], [z, y, x]);
+  expect(rows).toHaveLength(2);
+  expect(rows.every((row) => at(row, 0).equals(z) && String(at(row, 1)) === 'z + 2')).toBe(true);
+  const real = new Sym('x', { real: true });
+  const absolute = [parse('abs(4*x-7)-5'), parse('abs(8*x-3)-1')].map((e) => e.subs(x, real));
+  expect(solveSystem(absolute, [real], { manual: true, check: false }).map(show)).toEqual(['[1/2]', '[3]']);
+  const product = [parse('x*(x**2+y**2-z)'), parse('y*(x**2+y**2-z)')];
+  expect(solveSystem(product, [x, y, z])).toHaveLength(2);
+  expect(solveSystem([parse('sin(x)*sin(y)')], [x, y]).map(show)).toEqual(['[0, y]', '[pi, y]', '[x, 0]', '[x, pi]']);
+  expect(isLinearSolveSystem([parse('exp(x)-exp(-x)-tanh(x)*(exp(x)+exp(-x))+x-5')], [x])).toBe(true);
+});
+
+it('retains unchecked branches from singular elimination and inconsistent linear constraints', () => {
+  const rational = [parse('y*(x+y-1)'), parse('1/y+(y-1)/(x*y)')];
+  expect(solveSystem(rational, [x, y], { check: false }).map(show)).toEqual(['[x, 0]', '[1 - y, y]']);
+  const inconsistent = [parse('x+y-1'), parse('x+y-2')];
+  expect(solveSystem(inconsistent, [x, y], { manual: true, check: false }).map(show)).toEqual(['[1 - y, y]']);
+  expect(solveSystem(inconsistent, [x, y], { manual: true })).toEqual([]);
+});
+
+it('checks that a parametric branch satisfies every equation identically', () => {
+  const unknowns = symbols('a b c d f g k');
+  const equations = [
+    '-k*a+b+5*f/6+2*c/9+5*d/6+4*a/3', '-k*f+4*f/3+d/2', '-k*d+f/6+d',
+    '13*b/18+13*c/18+13*a/18', '-k*c+b/2+20*c/9+a', '-k*b+b+c/18+a/6',
+    '5*b/3+c/3+a', '2*b/3+2*c+4*a/3', '-g',
+  ].map((source) => parse(source));
+  const solutions = solveSystem(equations, unknowns);
+  expect(solutions).toHaveLength(3);
+  expect(solutions.map(show)).toEqual(expect.arrayContaining([
+    '[0, 0, 0, 0, 0, 0, k]',
+    '[0, 0, 0, d, -d, 0, 5/6]',
+    '[-2*c, c, c, 0, 0, 0, 13/18]',
+  ]));
+  const sample = new Map<Expr, number>([[parse('c'), 1], [parse('d'), 1], [parse('f'), -1], [parse('k'), 1]]);
+  const manual = solveSystem(equations, unknowns, { manual: true }).map((row) => show(row.map((value) => value.subs(sample))));
+  expect(manual).toHaveLength(3);
+  expect(manual).toEqual(expect.arrayContaining([
+    '[0, 0, 0, 0, 0, 0, 1]',
+    '[0, 0, 0, 1, -1, 0, 5/6]',
+    '[-2, 1, 1, 0, 0, 0, 13/18]',
+  ]));
+});
+
+it('leaves unsupported relations and complex decompositions for the general solver', () => {
+  const real = new Sym('x', { real: true });
+  expect(isNoMatch(solveRelation(new Rel('Lt', real, S.One), real))).toBe(true);
+  expect(isNoMatch(solveRelation(new Rel('Gt', S.One, S.Zero)))).toBe(true);
+  expect(isNoMatch(solveComplexComponents([parse('x+re(x)+im(x)-3')], x))).toBe(true);
+  expect(solveVariables([parse('x+y-1')]).map(String)).toEqual(['x', 'y']);
+  const value = parse('f(x)');
+  expect(showMaps(solveForSymbols(value.add(x).sub(2), [value]))).toEqual([{ 'f(x)': '2 - x' }]);
+  expect(solve(parse('x**5+x**3+1').subs(x, real), real)).toHaveLength(1);
+  expect(() => solve(parse('x**7+x+y'), x)).toThrow(NotImplementedError);
+});
+
+it('uses ordinary exact roots when the coefficients do not require indexed back-substitution', () => {
+  const rows = solveSystem([parse('x**2+y**2-5'), parse('x**2-y**2-1')], [x, y], { check: false });
+  expect(rows).toHaveLength(4);
+  expect(rows.every((row) => row.every((root) => !(root instanceof CRootOf)))).toBe(true);
+  expect(solve(parse('1/(1/x-y+exp(y))'))).toEqual([]);
+  expect(solveUndeterminedCoeffs(parse('sin(x*y)-sin(2*x)'), [y], [x])).toEqual([]);
+});
+
+it('inverts positive symbolic bases, factored powers, and nested exponentials', () => {
+  const a = new Sym('a', { positive: true });
+  expect(show(solve(parse('a**x-2').subs(new Sym('a'), a), x))).toBe('[log(2)/log(a)]');
+  expect(show(solve(parse('3**x-2'), x))).toBe('[log(2)/log(3)]');
+  expect(show(solve(parse('x**y-x'), x))).toBe('[1]');
+  expect(show(solve(parse('a*(x+1)**y-(x+1)**y-2'), x))).toBe('[(2/(a - 1))**(1/y) - 1]');
+  expect(show(solve(parse('(7**x)**x+pi'), x))).toBe('[-sqrt(log(pi) + I*pi)/sqrt(log(7)), sqrt(log(pi) + I*pi)/sqrt(log(7))]');
+  expect(solve(parse('(2**x)**y'), x)).toEqual([]);
+  expect(() => solve(parse('((x+1)**x)**x-2'), x)).toThrow(NotImplementedError);
+  expect(() => solve(parse('((-2)**x)**x-2'), x)).toThrow(NotImplementedError);
+  const roots = solve(parse('x**3+y+z'), x);
+  expect(roots).toHaveLength(3);
+  expect(roots.some((root) => root.equals(parse('(-y-z)**(1/3)')))).toBe(true);
+  const trigonometric = solve(parse('a*sin(x)**2-sin(x)**2-2'), x).map((root) => root.subs(parse('a'), 5).toComplex().re);
+  expect(trigonometric.some((root) => Math.abs(root - Math.PI / 4) < 1e-12)).toBe(true);
+});
+
+it('takes logarithms of exponential ratios and reduces powers using Lambert W', () => {
+  const k = new Sym('y', { integer: true });
+  const ratio = solve(parse('2**y-4*x**y').subs(y, k), k);
+  expect(at(ratio, 0).subs(x, 4).toComplex().re).toBeCloseTo(-2, 12);
+  const roots = solve(parse('x**3-3**x'), x).map((root) => root.toComplex().re).sort((a, b) => a - b);
+  expect(at(roots, 0)).toBeCloseTo(2.478052680288, 10);
+  expect(at(roots, 1)).toBeCloseTo(3, 10);
+  expect(show(solve(parse('exp(x**2)-exp(x)'), x))).toBe('[0, 1]');
+  expect(() => solve(parse('exp(x**x)+exp(x**(x+1))'), x)).toThrow(NotImplementedError);
+  expect(() => solve(parse('x**2-2**(x**3+x)'), x)).toThrow(NotImplementedError);
+});
+
+it('rejects unsupported atan2 inversions and coupled radical forms', () => {
+  expect(() => solve(parse('atan2(x,-1)-pi/2'), x)).toThrow(NotImplementedError);
+  expect(() => solve(parse('atan2(x,x+1)-pi/4'), x)).toThrow(NotImplementedError);
+  expect(() => solveForSymbols(new Fn('atan2', [x]), [x])).toThrow('index');
+  expect(() => solve(parse('sqrt(x)+sqrt(x+1)+exp(x)'), x)).toThrow(NotImplementedError);
+  expect(() => solve(parse('sqrt(x)*sqrt(x+1)+sqrt(x+1)+sqrt(x+2)-4'), x)).toThrow(NotImplementedError);
+  expect(show(solve(parse('sqrt(x)+x-6'), x, { check: false, simplify: false }))).toBe('[4, 9]');
+  expect(show(solve(parse('sqrt(x)-2'), x, { check: false, simplify: false }))).toBe('[4]');
+  const result = solve(parse('sqrt(x)+sqrt(x+1/y)-3'), x, { check: false, simplify: false });
+  expect(String(at(result, 0).subs(y, 1))).toBe('16/9');
+  const nonpolynomial = solve(parse('sqrt((1+1/(exp(x)+1))**2+1)-sqrt(5)'), x, { check: false, simplify: false });
+  expect(nonpolynomial.map(String)).toContain('log(4/3) + I*pi');
+});
+
+it('applies the tangent substitution to symbolic amplitudes and mixed degrees', () => {
+  expect(show(solve(parse('sin(x)+cos(x)+1'), x))).toBe('[-pi/2]');
+  const roots = solve(parse('a*sin(x)+y*cos(x)'), x);
+  expect(roots).toHaveLength(2);
+  expect(roots.map((root) => String(root.subs(parse('a'), 1).subs(y, 1)))).toEqual([
+    '2*atan(1 - sqrt(2))', '2*atan(1 + sqrt(2))',
+  ]);
+  expect(solve(parse('sin(x)*(sin(x)+1)+cos(x)'), x).map(String)).toContain('-pi/2');
+  expect(() => solve(parse('sin(x)**2+cos(x)**2-1'), x)).toThrow(NotImplementedError);
+});
+
+it('falls back from indexed elimination for incompatible bases and reducible eliminants', () => {
+  const z = new Sym('z');
+  const impossible = [parse('1000001*x**2+y**2-1'), parse('1000001*x**2+y**2-2')];
+  expect(solveSystem(impossible, [x, y], { check: false })).toEqual([]);
+  const reducible = [parse('1000001*x**2+x*y+y**2-1'), parse('1000001*x**2+x*y+y**2+x-1')];
+  expect(solveSystem(reducible, [x, y], { check: false }).map(show)).toEqual(['[0, -1]', '[0, 1]']);
+  const quadratic = [parse('1000001*x**2+y**2-2'), parse('x**2+y**2-1')];
+  expect(solveSystem(quadratic, [x, y], { check: false })).toHaveLength(4);
+  const inconsistent = [parse('1000001*x**2+y**2-1'), parse('x**2+y**2-1'), parse('x**2*y**2+z'), z];
+  expect(solveSystem(inconsistent, [x, y, z], { check: false }).map(show)).toEqual(['[0, -1, 0]', '[0, 1, 0]']);
+  const indexed = [parse('1000001*x**2+y**4+y+1'), parse('1000001*x**2+y**4+y+x+1')];
+  const rows = solveSystem(indexed, [x, y], { check: false });
+  expect(rows).toHaveLength(4);
+  expect(rows.every((row) => at(row, 0).equals(S.Zero) && at(row, 1) instanceof CRootOf)).toBe(true);
+  const overdetermined = [parse('x**2+y**2-5'), parse('x**2-y**2-1'), parse('x**2+2*y**2-7')];
+  expect(solveSystem(overdetermined, [x, y], { check: false }).map(show)).toEqual([
+    '[-sqrt(3), -sqrt(2)]', '[-sqrt(3), sqrt(2)]', '[sqrt(3), -sqrt(2)]', '[sqrt(3), sqrt(2)]',
+  ]);
+});
+
+it('validates and back-substitutes partial solutions of nonlinear systems', () => {
+  const z = new Sym('z');
+  expect(solveSystem([parse('z-x**2'), parse('x**2*y**2+1')], [x, y, z], { check: false }).map(show)).toEqual([
+    '[-I/y, y, -1/y**2]', '[I/y, y, -1/y**2]',
+  ]);
+  expect(solveSystem([parse('x+y**2+z-1'), parse('y-z-2')], [x, y, z]).map(show)).toEqual(['[-z**2 - 5*z - 3, z + 2, z]']);
+  expect(solveSystem([parse('sin(x)+y+z-1'), parse('y-z-2')], [x, y, z]).map(show)).toEqual(['[x, 3/2 - sin(x)/2, -sin(x)/2 - 1/2]']);
+  expect(() => solveSystem([parse('2*(log(x)+log(y)+exp(x*y))')], [x, y])).toThrow(NotImplementedError);
+  expect(solveSystem([parse('log(x)+y'), parse('x*y-y')], [x, y]).map(show)).toEqual(['[1, 0]']);
+  expect(solveSystem([parse('x*y'), parse('log(x)+y')], [x, y]).map(show)).toEqual(['[1, 0]']);
+  expect(solveSystem([parse('x+oo'), parse('x*y-1')], [x, y])).toEqual([]);
+  expect(solveSystem([parse('x-y'), parse('y**7+y+1')], [x, y])).toHaveLength(7);
+});
+
+it('certifies positive powers and falls back for equations with a vanishing complex component', () => {
+  const real = new Sym('x', { real: true });
+  const positive = parse('exp(2*x+2)*(exp(x)+x**2+2)/(exp(x)+2)**2').subs(x, real);
+  expect(solveRelation(new Rel('Gt', new Pow(positive, parse('1/3')), S.Zero), real)).toBe(S.true);
+  expect(showMaps(solveForSymbols(parse('I*(x+1)').subs(x, real), [real]))).toEqual([{ x: '-1' }]);
+  expect(solveForSymbols(parse('exp(x)'), [x])).toEqual([]);
+});
+
+it('checks bound limits and expression targets when isolating coefficients', () => {
+  expect(solveLinear(parse('0**x-1')).map(String)).toEqual(['0**x - 1', '1']);
+  expect(solveLinear(parse('x+Integral(x,(x,0,y))'), { symbols: [x] }).map(String)).toEqual(['x', '-Integral(x, (x, 0, y))']);
+  const [numerator, denominator] = solveLinear(parse('Integral(y,(y,0,x))+1'), { symbols: [x] });
+  expect(String(numerator.div(denominator).subs(x, 2))).toBe('3');
+  const target = parse('f(y)');
+  expect(isNoMatch(solveUndeterminedCoeffs(parse('sin(x*f(y))-sin(2*x)'), [target], [x], { strict: true }))).toBe(true);
+});
 it('solves Piecewise branches with their ordered domains', () => {
   expect(show(solve(parse('x-Piecewise((1, y > 0), (0, True))'), x))).toBe('[Piecewise((1, y > 0), (0, True))]');
   expect(show(solve(new Piecewise([x, S.false, x.add(-1), S.true, x, new Rel('Lt', x, S.Zero)]), x))).toBe('[1]');
@@ -345,8 +601,7 @@ describe('solve', () => {
     expect(() => sol('x + exp(x**2)')).toThrow(NotImplementedError);
   });
   it('equations out of reach', () => {
-    // SymPy: [] (no formula for a symbolic quintic)
-    expect(() => sol('x**5 + y*x + 1')).toThrow(NotImplementedError);
+    expect(sol('x**5 + y*x + 1')).toBe('[]');
     // 42 nested exponentials exceed the recursion depth
     const tower = (n: number, f: string, x0: string) => Array.from({ length: n }).reduce<string>((e) => `${f}(${e})`, x0);
     expect(() => sol(`${tower(42, 'exp', 'x')} - 2`)).toThrow(NotImplementedError);
@@ -535,6 +790,25 @@ it('retains denominator and radical checks in larger elimination systems', () =>
   expect(nonlinsolve([parse('sqrt(x)'), parse('y - 1'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[0, 1, 1]']);
   expect(nonlinsolve([parse('y - sin(sqrt(x))'), parse('x - 4'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[4, sin(2), 1]']);
   expect(nonlinsolve([parse('x**(1/7) - y'), parse('x - 1'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[1, 1, 1]']);
+});
+
+it('keeps indexed roots of the numerator when the denominator is nonzero', () => {
+  const numerator = parse('y**7+y+1');
+  const equations = [parse('x-y'), parse('(y**7+y+1)/(y+2)')];
+  const roots = Array.from({ length: 7 }, (_, index) => new CRootOf(numerator, index));
+  expect(solveSystem(equations, [x, y]).map(show)).toEqual(roots.map((root) => show([root, root])));
+});
+
+it('keeps requested free parameters after polynomial elimination', () => {
+  // SymPy 1.14: test_issue_21022.
+  const equations = ['k-16', 'p-8', 'y**2+z**2-x**2', 'd-x+p', 'd**2+k**2-y**2', 'z**2-p**2-k**2', 'abc-efg'].map((equation) => parse(equation));
+  const variables = symbols('abc d efg k p x y z');
+  expect(solveSystem(equations, variables).map(show).sort()).toEqual([
+    '[efg, 32, efg, 16, 8, 40, -16*sqrt(5), -8*sqrt(5)]',
+    '[efg, 32, efg, 16, 8, 40, -16*sqrt(5), 8*sqrt(5)]',
+    '[efg, 32, efg, 16, 8, 40, 16*sqrt(5), -8*sqrt(5)]',
+    '[efg, 32, efg, 16, 8, 40, 16*sqrt(5), 8*sqrt(5)]',
+  ]);
 });
 
 describe('detQuick, invQuick and solveLinearSystemLU (SymPy solvers.py)', () => {
@@ -729,17 +1003,20 @@ it('solves unevaluated-free equations without optional calculus evaluation', asy
 
 it('inverts positive constant bases with nonlinear exponents', () => {
   expect(show(solve(parse('4**(2*x**2+2*x)-8'), x))).toBe('[-3/2, 1/2]');
-  expect(show(solve(parse('4*3**(5*x+2)-7'), x))).toBe('[log((7/36)**(1/(5*log(3))))]');
+  const equation = parse('4*3**(5*x+2)-7');
+  const roots = solve(equation, x);
+  expect(roots).toHaveLength(5);
+  for (const root of roots) expect(Math.hypot(...Object.values(equation.subs(x, root).toComplex()))).toBeLessThan(1e-12);
   expect(solve(parse('2**x'), x)).toEqual([]);
 });
 
 it('takes logarithms of two positive exponential terms', () => {
-  expect(show(solve(parse('4**(x/2)-2**(x/3)'), x))).toBe('[0]');
+  expect(show(solve(parse('4**(x/2)-2**(x/3)'), x))).toBe('[0, 3*I*pi/log(2)]');
   expect(show(solve(parse('5**(x/2)-2**(x/3)'), x))).toBe('[0]');
   const solutions = solve(parse('5**(x/2)-2**(3/x)'), x);
   expect(solutions).toHaveLength(2);
   for (const value of solutions) expect(Math.abs(value.toComplex().re)).toBeCloseTo(Math.sqrt(6 * Math.log(2) / Math.log(5)), 12);
-  expect(() => solve(parse('2**x+x'), x)).toThrow(NotImplementedError);
+  expect(show(solve(parse('2**x+x'), x))).toBe('[-LambertW(log(2))/log(2)]');
   expect(() => solve(parse('5**(x/2) + 2**(x/3)'), x)).toThrow(NotImplementedError);
 });
 
@@ -754,8 +1031,13 @@ it('keeps free coordinates in monic positive-dimensional systems', () => {
   }
 });
 
-it('retains unsupported parameter-dependent leading coefficients explicitly', () => {
-  expect(() => nonlinsolve([parse('x**2*y**2+1')], [x, y])).toThrow('only zero-dimensional systems are supported');
+it('solves parameter-dependent leading coefficients on the nonvanishing branch', () => {
+  const equations = [parse('x**2*y**2+1')];
+  expect(solveSystem(equations, [x, y]).map((row) => row.map(String))).toEqual([['-I/y', 'y'], ['I/y', 'y']]);
+  expect(nonlinsolve(equations, [x, y]).map((row) => row.map(String))).toEqual([
+    ['-I/y', 'Complement({y}, {0})'],
+    ['I/y', 'Complement({y}, {0})'],
+  ]);
 });
 
 it('inverts reciprocal trigonometric and hyperbolic functions', () => {
