@@ -336,129 +336,129 @@ describe("sympy/tensor/tests/test_indexed.py", () => {
   it("test_Idx_fixed_bounds:75", () => {
     expect(sympyStr(rational(5))).toBe('5');
   });
-  it.fails("test_Idx_inequalities:86", () => {
+  it("test_Idx_inequalities:86", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Le(Idx(i14, [rational(1), rational(4)]), 5))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:87", () => {
+  it("test_Idx_inequalities:87", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Lt(Idx(i14, [rational(1), rational(4)]), 5))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:88", () => {
+  it("test_Idx_inequalities:88", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Ge(Idx(i14, [rational(1), rational(4)]), 5))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:89", () => {
+  it("test_Idx_inequalities:89", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Gt(Idx(i14, [rational(1), rational(4)]), 5))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:91", () => {
+  it("test_Idx_inequalities:91", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Le(Idx(i14, [rational(1), rational(4)]), 5))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:92", () => {
+  it("test_Idx_inequalities:92", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Lt(Idx(i14, [rational(1), rational(4)]), 5))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:93", () => {
+  it("test_Idx_inequalities:93", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Ge(Idx(i14, [rational(1), rational(4)]), 5))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:94", () => {
+  it("test_Idx_inequalities:94", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Gt(Idx(i14, [rational(1), rational(4)]), 5))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:96", () => {
+  it("test_Idx_inequalities:96", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Relational(Idx(i14, [rational(1), rational(4)]), rational(5), '<=', { evaluate: true }))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:97", () => {
+  it("test_Idx_inequalities:97", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Relational(Idx(i14, [rational(1), rational(4)]), rational(5), '<', { evaluate: true }))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:98", () => {
+  it("test_Idx_inequalities:98", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Relational(Idx(i14, [rational(1), rational(4)]), rational(5), '>=', { evaluate: true }))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:99", () => {
+  it("test_Idx_inequalities:99", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Relational(Idx(i14, [rational(1), rational(4)]), rational(5), '>', { evaluate: true }))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:101", () => {
+  it("test_Idx_inequalities:101", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Le(Idx(i14, [rational(1), rational(4)]), 4))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:104", () => {
+  it("test_Idx_inequalities:104", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Gt(Idx(i14, [rational(1), rational(4)]), 4))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:107", () => {
+  it("test_Idx_inequalities:107", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Lt(Idx(i14, [rational(1), rational(4)]), 1))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:108", () => {
+  it("test_Idx_inequalities:108", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Ge(Idx(i14, [rational(1), rational(4)]), 1))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:111", () => {
+  it("test_Idx_inequalities:111", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Le(Idx(i14, [rational(1), rational(4)]), 0))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:112", () => {
+  it("test_Idx_inequalities:112", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Lt(Idx(i14, [rational(1), rational(4)]), 0))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:113", () => {
+  it("test_Idx_inequalities:113", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Ge(Idx(i14, [rational(1), rational(4)]), 0))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:114", () => {
+  it("test_Idx_inequalities:114", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Gt(Idx(i14, [rational(1), rational(4)]), 0))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:123", () => {
+  it("test_Idx_inequalities:123", () => {
     const i14 = new Sym('i14', { integer: true });
     const i79 = new Sym('i79', { integer: true });
     expect(sympyStr(Lt(Idx(i14, [rational(1), rational(4)]), Idx(i79, [rational(7), rational(9)])))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:124", () => {
+  it("test_Idx_inequalities:124", () => {
     const i14 = new Sym('i14', { integer: true });
     const i79 = new Sym('i79', { integer: true });
     expect(sympyStr(Le(Idx(i14, [rational(1), rational(4)]), Idx(i79, [rational(7), rational(9)])))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:125", () => {
+  it("test_Idx_inequalities:125", () => {
     const i14 = new Sym('i14', { integer: true });
     const i79 = new Sym('i79', { integer: true });
     expect(sympyStr(Gt(Idx(i14, [rational(1), rational(4)]), Idx(i79, [rational(7), rational(9)])))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:126", () => {
+  it("test_Idx_inequalities:126", () => {
     const i14 = new Sym('i14', { integer: true });
     const i79 = new Sym('i79', { integer: true });
     expect(sympyStr(Ge(Idx(i14, [rational(1), rational(4)]), Idx(i79, [rational(7), rational(9)])))).toBe('False');
   });
-  it.fails("test_Idx_inequalities:128", () => {
+  it("test_Idx_inequalities:128", () => {
     const i14 = new Sym('i14', { integer: true });
     const i46 = new Sym('i46', { integer: true });
     expect(sympyStr(Le(Idx(i14, [rational(1), rational(4)]), Idx(i46, [rational(4), rational(6)])))).toBe('True');
   });
-  it.fails("test_Idx_inequalities:131", () => {
+  it("test_Idx_inequalities:131", () => {
     const i14 = new Sym('i14', { integer: true });
     const i46 = new Sym('i46', { integer: true });
     expect(sympyStr(Gt(Idx(i14, [rational(1), rational(4)]), Idx(i46, [rational(4), rational(6)])))).toBe('False');
   });
-  it.fails("test_Idx_inequalities_current_fails:150", () => {
+  it("test_Idx_inequalities_current_fails:150", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Ge(5, Idx(i14, [rational(1), rational(4)])))).toBe('True');
   });
-  it.fails("test_Idx_inequalities_current_fails:151", () => {
+  it("test_Idx_inequalities_current_fails:151", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Gt(5, Idx(i14, [rational(1), rational(4)])))).toBe('True');
   });
-  it.fails("test_Idx_inequalities_current_fails:152", () => {
+  it("test_Idx_inequalities_current_fails:152", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Le(5, Idx(i14, [rational(1), rational(4)])))).toBe('False');
   });
-  it.fails("test_Idx_inequalities_current_fails:153", () => {
+  it("test_Idx_inequalities_current_fails:153", () => {
     const i14 = new Sym('i14', { integer: true });
     expect(sympyStr(Lt(5, Idx(i14, [rational(1), rational(4)])))).toBe('False');
   });
@@ -656,11 +656,11 @@ describe("sympy/tensor/tests/test_indexed.py", () => {
     const i = new Sym('i', { integer: true });
     expect(sympyStr(new IndexedBase(a, {}).at(i))).not.toBe('a[i]');
   });
-  it.fails("test_IndexedBase_assumptions_inheritance:238", () => {
+  it("test_IndexedBase_assumptions_inheritance:238", () => {
     const I = new Sym('I', { integer: true });
     expect(sympyStr(isIntegerValued(new IndexedBase(I, {})))).toBe('True');
   });
-  it.fails("test_IndexedBase_assumptions_inheritance:239", () => {
+  it("test_IndexedBase_assumptions_inheritance:239", () => {
     const I = new Sym('I', { integer: true });
     expect(sympyStr(isIntegerValued(new IndexedBase(I, {})))).toBe('True');
   });
@@ -956,7 +956,7 @@ describe("sympy/tensor/tests/test_indexed.py", () => {
     const n = new Sym('n', { integer: true, finite: true });
     expect(sympyStr(new IndexedBase(h, {}).at(m).diff(new IndexedBase(h, {}).at(n)))).toBe('KroneckerDelta(m, n)');
   });
-  it.fails("test_differentiation:394", () => {
+  it("test_differentiation:394", () => {
     const [a, h] = symbols('a h');
     const m = new Sym('m', { integer: true, finite: true });
     const n = new Sym('n', { integer: true, finite: true });
@@ -968,7 +968,7 @@ describe("sympy/tensor/tests/test_indexed.py", () => {
     const n = new Sym('n', { integer: true, finite: true });
     expect(sympyStr(doit(Sum(new Mul([a, KroneckerDelta(m, n)]), [m, S.NegativeInfinity, oo])))).toBe('a');
   });
-  it.fails("test_differentiation:396", () => {
+  it("test_differentiation:396", () => {
     const [a, h] = symbols('a h');
     const m = new Sym('m', { integer: true, finite: true });
     const n = new Sym('n', { integer: true, finite: true });

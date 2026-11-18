@@ -1540,6 +1540,12 @@ export class TensorElementNode extends TensExpr {
   get expr(): Tensor {
     return cast(first(this.args), Tensor);
   }
+  get free(): Free[] {
+    return IndexStructure.fromIndices(this.freeIndices).free;
+  }
+  get dum(): Dum[] {
+    return IndexStructure.fromIndices(this.freeIndices).dum;
+  }
   get indexMap(): DictNode {
     return cast(at(this.args, 1), DictNode);
   }

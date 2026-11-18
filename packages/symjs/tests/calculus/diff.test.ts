@@ -241,3 +241,32 @@ describe('partial derivatives without a formula', () => {
     expect(sj.sstr(sj.diff(sj.sign(sj.add(x, 1)), x))).toBe('Derivative(sign(x + 1), x)');
   });
 });
+
+it('keeps indexed derivative deltas inside summation bounds', () => {
+  const a = new sj.IndexedBase('A');
+  const i = new sj.Idx('i'), j = new sj.Idx('j');
+  const expr = sj.Sum(sj.mul(2, a.at(i)), [i, sj.S.NegativeInfinity, sj.oo]);
+  expect(String(sj.diff(expr, a.at(j)))).toBe('Sum(2*KroneckerDelta(i, j), (i, -oo, oo))');
+  const dependent = sj.Sum(a.at(i), [i, 0, a.at(j)]);
+  expect(() => sj.diff(dependent, a.at(j))).toThrow(NotImplementedError);
+});
+
+it('retains nonscalar differentiation and rejects unsupported scalar derivatives', () => {
+  const X = sj.MatrixSymbol('X', 2, 2);
+  expect(sj.diff(X, X)).toBeInstanceOf(sj.Derivative);
+  expect(sj.diff(X, X, 0)).toBe(X);
+  expect(sj.diff(x, X)).toBe(sj.S.Zero);
+  expect(() => sj.diff(sj.Tuple(x), x)).toThrow(NotImplementedError);
+  const inner = new sj.Integral([x, x]);
+  expect(String(sj.diff(new sj.Integral([inner, x, y]), y))).toBe('Integral(x, (x, y))');
+});
+
+it('differentiates indefinite integrals and special functions with constant parameters', () => {
+  expect(sj.diff(new sj.Integral([x, x]), x)).toBe(x);
+  expect(sj.diff(new sj.Integral([x, x, sj.S.Zero, sj.S.One]), x)).toBe(sj.S.Zero);
+  expect(String(sj.diff(sj.besselj(0, x), x))).toBe('-besselj(1, x)');
+  const a = new sj.IndexedBase('Bound');
+  const i = new sj.Idx('i'), j = new sj.Idx('j');
+  expect(() => sj.diff(sj.Sum(a.at(i), [i, a.at(i), 3]), a.at(j))).toThrow(NotImplementedError);
+  expect(() => sj.diff(sj.Sum(a.at(i), [i, 0, a.at(i)]), a.at(j))).toThrow(NotImplementedError);
+});

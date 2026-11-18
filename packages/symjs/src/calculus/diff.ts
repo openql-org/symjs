@@ -241,6 +241,10 @@ function indexedTerms(e: Expr, base: Expr, out = new Map<string, Indexed>()): Ma
  * the A[k] in e.
  */
 function diffIndexed(e: Expr, x: Indexed): Expr {
+  if (e instanceof Concrete && e.kind2 === 'Sum') {
+    if (e.limits.some(([, a, b]) => indexedTerms(a, x.base).size > 0 || indexedTerms(b, x.base).size > 0)) throw new NotImplementedError('diff: derivative of a sum whose limits depend on the variable is not supported');
+    return new Concrete('Sum', [diffIndexed(e.function, x), ...e.args.slice(1)]);
+  }
   const terms: Expr[] = [];
   for (const t of indexedTerms(e, x.base).values()) {
     if (t.indices.length !== x.indices.length) throw new RangeError(`diff: different number of indices: d(${t.toString()})/d(${x.toString()})`);
