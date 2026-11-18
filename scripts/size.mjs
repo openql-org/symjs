@@ -91,8 +91,10 @@ const CASES = [
   ['algebras', 'Quaternion', 650],
   ['holonomic', 'exprToHolonomic', 1234],
   ['geometry', '*', 1120],
-  ['vector', '*', 1212],
-  ['stats', '*', 1385],
+  // Solver validation, coefficient inference and algebraic-system factoring
+  // add under 1 KiB to these consumers.
+  ['vector', '*', 1213],
+  ['stats', '*', 1386],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
@@ -108,7 +110,8 @@ const CASES = [
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Real exponential inversion and functional decomposition contribute about 3 KiB.
-  ['index', '*', 2792],
+  // Finite solver exports and the extended solver algorithms add under 3 KiB.
+  ['index', '*', 2795],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

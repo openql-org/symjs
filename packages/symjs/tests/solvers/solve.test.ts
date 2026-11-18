@@ -614,3 +614,100 @@ describe('unrad', () => {
     expect(String(e.subs([[cov[0]!, sj.S.One]]))).toBe('0');
   });
 });
+
+it('checks every equation and preserves inconclusive checks', async () => {
+  const { checksol, S, Float, Relational } = await import('../../src');
+  const assignments = new Map([[x, S.One]]);
+  expect(checksol([parse('x - 1'), parse('x**2 - 1')], assignments)).toBe(true);
+  expect(checksol([parse('x - 1'), parse('x**2 - 2')], x, 1)).toBe(false);
+  expect(checksol([SymFunction('f')(x), parse('x - 1')], assignments)).toBe('unknown');
+  expect(() => checksol([], assignments)).toThrow(RangeError);
+  expect(checksol(S.true, assignments)).toBe(true);
+  expect(checksol(S.false, assignments)).toBe(false);
+  expect(checksol(new Float(0), assignments)).toBe(true);
+  expect(checksol(new Float(0.5), assignments)).toBe(false);
+  expect(checksol(parse('x + 1e-10'), x, 0)).toBe(true);
+  expect(checksol(parse('x + 0.5'), x, 0)).toBe(false);
+  expect(checksol(Relational(x, 2, '<', { evaluate: false }), new Map())).toBe('unknown');
+  expect(checksol(Relational(x, S.false, '!=', { evaluate: false }), new Map([[x, S.true]]))).toBe(true);
+  expect(checksol(Relational(x, S.true, '==', { evaluate: false }), new Map([[x, S.false]]))).toBe(false);
+  expect(checksol(y, assignments)).toBe(false);
+});
+it('inverts elementary and error functions and expands binomials', () => {
+  for (const [source, expected] of [
+    ['asin(x)-y', '[sin(y)]'], ['acos(x)-y', '[cos(y)]'], ['atan(x)-y', '[tan(y)]'],
+    ['erf(x)-y', '[erfinv(y)]'], ['erfinv(x)-y', '[erf(y)]'],
+    ['erfc(x)-y', '[erfcinv(y)]'], ['erfcinv(x)-y', '[erfc(y)]'],
+    ['conjugate(x)-3+I', '[3 + I]'], ['LambertW(2*x)-y', '[y*exp(y)/2]'],
+    ['Abs(x)', '[0]'], ['binomial(x,2)-3', '[-2, 3]'],
+  ] as const) expect(show(solve(parse(source), x))).toBe(expected);
+  expect(() => solve(parse('Abs(x)-y'), x)).toThrow(NotImplementedError);
+  expect(() => Reflect.apply(nsolve, undefined, [x, x, 0, 2])).toThrow(TypeError);
+  expect(() => Reflect.apply(nsolve, undefined, [x, x, 0, null])).toThrow(TypeError);
+});
+it('solves nested and nonlinear absolute values over the reals', () => {
+  const real = new Sym('x', { real: true });
+  for (const [source, expected] of [
+    ['Abs(x+3)-2*Abs(x-3)', '[1, 9]'],
+    ['2*Abs(x)-Abs(x-1)', '[-1, 1/3]'],
+    ['Abs(x**2-2*x)-4', '[1 - sqrt(5), 1 + sqrt(5)]'],
+    ['Abs(Abs(x**2-1)-x)-x', '[1, -1 + sqrt(2), 1 + sqrt(2)]'],
+  ] as const) expect(show(solve(xreplace(parse(source), [[x, real]]), real))).toBe(expected);
+});
+it('checks evaluated inequalities and retains symbolic coordinates in finite systems', async () => {
+  const { checksol, Relational, S, solveSystem } = await import('../../src');
+  expect(checksol(Relational(x, 2, '<', { evaluate: false }), x, 1)).toBe(true);
+  expect(checksol(Relational(x, 2, '<', { evaluate: false }), x, 3)).toBe(false);
+  expect(checksol(Relational(x, S.false, '!=', { evaluate: false }), new Map([[x, S.false]]))).toBe(false);
+  expect(solveSystem([parse('x-y-z'),parse('y**2-2')], [x,y]).map((r) => r.map(String))).toEqual([
+    ['z - sqrt(2)', '-sqrt(2)'], ['z + sqrt(2)', 'sqrt(2)'],
+  ]);
+  expect(String(nsolve(parse('Integral(x*y, (x,0,5))'), y, 2))).toBe('0');
+  expect(solveLinear(parse('x+Derivative(2*x,x)')).map(String)).toEqual(['x','-2']);
+  expect(solveLinear(parse('x+Integral(x,y)-2'), { symbols: [x] }).map(String)).toEqual(['x','2/(y + 1)']);
+});
+it('supports coefficient inference, expression targets, and numeric checking flags', async () => {
+  const { checksol, S, solveSystem, detPerm, detMinor } = await import('../../src');
+  const [a,b,c,u,v] = symbols('a b c u v');
+  expect(checksol(parse('x+1e-10'), x, 0, { numerical: false })).toBe(false);
+  expect(checksol(parse('x+1e-10'), new Map([[x,S.Zero]]), { numerical: false })).toBe(false);
+  expect(checksol(parse('x*0.0'), x, 1, { numerical: false })).toBe(true);
+  expect(checksol([parse('x+1e-10')], x, 0, { numerical: false })).toBe(false);
+  const f = SymFunction('f')(x), g = SymFunction('g')(x);
+  expect(show(solve(parse('f(x)+Derivative(f(x),x)'), f))).toBe('[-Derivative(f(x), x)]');
+  expect(solveSystem([parse('f(x)-3*Derivative(f(x),x)'),parse('f(x)**2-y+4')], [f,y]).map((r) => r.map(String))).toEqual([['3*Derivative(f(x), x)','9*Derivative(f(x), x)**2 + 4']]);
+  expect(solveUndeterminedCoeffs(parse('(a+b)*x+b-c'),[a,b]).map((r) => r.map(String))).toEqual([['-c','c']]);
+  expect(solveUndeterminedCoeffs(parse('a*x+a-2'),[a])).toEqual([]);
+  expect(solveUndeterminedCoeffs(S.Zero,[a])).toEqual([]);
+  expect(solveUndeterminedCoeffs(parse('f(x)+g(x)*x-2'),[f,g], [x]).map((r) => r.map(String))).toEqual([['2','0']]);
+  expect(solveUndeterminedCoeffs(parse('a*u**v+b*u**v/v+c-3-2*u**v/v-u**v'),[a,b,c],[u,v]).map((r) => r.map(String))).toEqual([['1','2','3']]);
+  const matrix=Matrix.of([[x,1],[2,y]]);
+  expect(String(detPerm(matrix))).toBe('x*y - 2');
+  expect(String(detMinor(matrix))).toBe('x*y - 2');
+});
+it('keeps denominator and assumption restrictions in finite solutions', async () => {
+  const { checksol, S, Eq, add, pow, solveSystem } = await import('../../src');
+  const [a,b] = symbols('a b');
+  expect(solveUndeterminedCoeffs(parse('a*x+b-x-2'),[a,b]).map((r) => r.map(String))).toEqual([['1','2']]);
+  expect(() => Reflect.apply(checksol, undefined, [x,x,{}])).toThrow();
+  const reciprocal = pow(x, -1);
+  expect(solve(Eq(add(x,reciprocal),reciprocal),x)).toEqual([]);
+  const positive = new Sym('p',{ positive: true });
+  expect(solveSystem([add(positive,1)], [positive])).toEqual([]);
+  expect(solveSystem([add(positive,1)], [positive],{check:false}).map((r) => r.map(String))).toEqual([['-1']]);
+  expect(solveSystem([add(pow(positive,2),-1)], [positive]).map((r) => r.map(String))).toEqual([['1']]);
+  expect(solveSystem([add(pow(positive,2),-1)], [positive],{check:false}).map((r) => r.map(String))).toEqual([['-1'],['1']]);
+  expect(checksol(S.Zero, new Map())).toBe(true);
+});
+
+it('solves unevaluated-free equations without optional calculus evaluation', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const evaluate = Object.getOwnPropertyDescriptor(impl, 'doit');
+  try {
+    impl.doit = undefined;
+    expect(String(nsolve(x, x, 2))).toBe('0');
+    expect(solveLinear(parse('x + Integral(1,y)')).map(String)).toEqual(['x','-Integral(1, y)']);
+  } finally {
+    if (evaluate) Object.defineProperty(impl, 'doit', evaluate);
+  }
+});

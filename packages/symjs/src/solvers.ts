@@ -31,12 +31,15 @@ export {
 
 export {
   solve,
+  nonlinsolve as solveSystem,
   denoms,
   unrad,
   checksol,
   solveLinear,
   solveUndeterminedCoeffs,
   nsolve,
+  detPerm,
+  detMinor,
   detQuick,
   invQuick,
   solveLinearSystemLU,

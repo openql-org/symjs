@@ -214,3 +214,16 @@ it('preserves polynomial generators and coefficient domains while factoring syst
   expect(() => sj.factorSystemPoly([sj.Poly.from(x,[x]), sj.Poly.from(y,[y])])).toThrow(TypeError);
   expect(() => sj.factorSystemPoly([sj.Poly.from(x,[x]), sj.Poly.from(x,[x],{domain:'QQ'})])).toThrow(TypeError);
 });
+it('omits unsolvable factors unless strict completeness is requested', async () => {
+  const { UnsolvableFactorError } = await import('../../src');
+  expect(solvePolySystem(P(['x**5-x+1']), [x])).toEqual([]);
+  expect(show(solvePolySystem(P(['(x-1)*(x**5-x+1)', 'y**2-1']), [x, y]))).toBe('[[1, -1], [1, 1]]');
+  expect(() => solvePolySystem(P(['x**5-x+1']), [x], { strict: true })).toThrow(UnsolvableFactorError);
+  expect(show(solvePolySystem(P(['x**2-1']), [x], { strict: true }))).toBe('[[-1], [1]]');
+});
+it('factors systems over algebraic fields and independent function generators', () => {
+  expect(show(factorSystem(P(['x**2+1','y**2+1']), [], { gaussian: true }))).toBe('[[x + I, y + I], [x + I, y - I], [x - I, y + I], [x - I, y - I]]');
+  expect(show(factorSystem(P(['x**2-2']), [], { extension: parse('sqrt(2)') }))).toBe('[[x + sqrt(2)], [x - sqrt(2)]]');
+  expect(show(factorSystemCond(P(['x**2+1']), [], { domain: 'QQ_I' }))).toBe('[[x + I], [x - I]]');
+  expect(show(factorSystem(P(['sin(x)**2+cos(x)**2-1', 'x'])))).toBe('[[x, sin(x)**2 + cos(x)**2 - 1]]');
+});

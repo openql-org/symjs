@@ -129,7 +129,8 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
     let E: Expr = S.Zero;
     for (let i = 0; i <= r; i++) E = add(E, mul(at(coeffs, i), subs(y, n, add(n, i))));
     // the coefficients are polynomials (lt above), so E - f is a polynomial in n linear in the constants
-    const sols = solveUndeterminedCoeffs(add(E, mul(-1, f)), C, [n]);
+    const equation = expand(add(E, mul(-1, f)));
+    const sols = isZeroE(equation) ? [C] : solveUndeterminedCoeffs(equation, C, [n]);
     if (!sols.length) return undefined;
     const sol = at(sols, 0);
     _C = C;
