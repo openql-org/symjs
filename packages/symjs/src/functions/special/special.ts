@@ -1638,15 +1638,16 @@ export function expandFunc(e: Expr): Expr {
     if (y instanceof Fn) {
       if (y.name === 'binomial') {
         const [n, k] = pair(y.args);
+        if (isNum(n)) return fnN('binomial', n, k);
         const difference = add(n, neg(k));
-        // At negative integer n, a negative lower index is zero by definition.
-        // Only exchange the two lower indices when this cannot introduce a pole.
-        const symmetric = isNonNegative(n) === true || isIntegerQ(n) === false;
-        const order = isInt(k) || !symmetric ? k : difference;
+        // Symbolic expansion uses the complementary index when it is an explicit integer.
+        const order = isInt(difference) ? difference : k;
         if (isInt(order)) {
+          if (order.isZero) return S.One;
           if (order.isNegative) return S.Zero;
           return mul(...Array.from({ length: Number(order.p) }, (_, i) => add(n, -i)), R(1n, factorialBig(order.p)));
         }
+        return fnN('binomial', n, k);
       }
       if (y.name === 'harmonic' && y.args.length === 1) {
         const n = first(y.args);

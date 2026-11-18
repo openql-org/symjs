@@ -7073,17 +7073,8 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   // For m = 0 both factorial products are 1, and for m = 1 both are pi.
   'sympy.functions.combinatorial.tests.test_comb_factorials:assert rf(pi, m).is_integer is False': 'None',
   'sympy.functions.combinatorial.tests.test_comb_factorials:assert ff(pi, m).is_integer is False': 'None',
-  // n = -1 gives binomial(-1, -1-j) = 0, whereas binomial(-1, j) = (-1)**j.
-  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(n, n - 1)) == n': 'binomial(n, n - 1)',
-  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(n, n - 2)) == n*(n - 1)/2': 'binomial(n, n - 2)',
-  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(n, n - 3)) == n*(n - 2)*(n - 1)/6': 'binomial(n, n - 3)',
   // x = nt = 1/2 gives binomial(1/2, 1/2) = 1.
   'sympy.functions.combinatorial.tests.test_comb_factorials:assert binomial(x, nt).is_integer is False': 'None',
-  // x = -2, -1, -2, and sqrt(2)*I respectively give upper index -1 and lower index -2 or -3.
-  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(x + 1, x)) == x + 1': 'binomial(x + 1, x)',
-  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(x, x - 1)) == x': 'binomial(x, x - 1)',
-  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(x + 1, x - 1)) == x*(x + 1)/2': 'binomial(x + 1, x - 1)',
-  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(x**2 + 1, x**2)) == x**2 + 1': 'binomial(x**2 + 1, x**2)',
   // a product of symmetric matrices is symmetric only when they commute: X*Z is not known to be symmetric
   'ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z))': 'None',
   'sympy.assumptions.tests.test_matrices:assert ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z)) is True': 'None',
