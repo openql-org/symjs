@@ -1260,7 +1260,7 @@ export class Poly {
     if(y===undefined && this.isMultivariate)throw new PolynomialError('replace requires a source generator for multivariate polynomials');
     if(!this.gens.some((g)=>g.key===source.key))return this;
     if(source.key===target.key)return this;
-    if(this.gens.some((g)=>g.key===target.key))throw new PolynomialError('replacement generator already occurs');
+    if(this.gens.some((g)=>g.key===target.key)||[...freeSymbols(this.asExpr())].some((s)=>s.key===target.key))throw new PolynomialError('replacement generator already occurs');
     const gens=this.gens.map((g)=>g.key===source.key?target:g);
     return this.like(add(...this.termList.map((t)=>mul(t.coeff,...t.monom.map((e,i)=>pow(at(gens,i),e))))),gens);
   }
@@ -1356,14 +1356,19 @@ export class Poly {
   }
   /** q**n * f(p/q). */
   transform(p: Poly, q: Poly): Poly {
+    if (!this.isUnivariate || !p.isUnivariate || !q.isUnivariate || p.gen.key !== this.gen.key || q.gen.key !== this.gen.key) {
+      throw new RangeError('univariate polynomials with a common generator expected');
+    }
+    const [pu, qu] = p.unify(q);
+    const [fu, common] = this.unify(pu);
     const n = this.degree();
     const e = add(
-      ...this.termList.map((t) => {
+      ...fu.termList.map((t) => {
         const k = first(t.monom);
-        return mul(t.coeff, pow(p.asExpr(), k), pow(q.asExpr(), n - k));
+        return mul(t.coeff, pow(common.asExpr(), k), pow(qu.asExpr(), n - k));
       }),
     );
-    return this.like(expand(e));
+    return fu.like(expand(e));
   }
   /** Reduce the coefficients modulo p into the symmetric range. */
   trunc(pIn: ExprLike): Poly {

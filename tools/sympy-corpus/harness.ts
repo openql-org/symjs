@@ -368,6 +368,14 @@ function matches0(v: unknown, expected: string, got: string): boolean {
 
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (normalizeLayout(got) === normalizeLayout(expected)) return true;
+  if (v instanceof sj.Poly && v.pure && expected.startsWith('Poly(')) {
+    const generator = /, ([A-Za-z_]\w*), domain=/.exec(expected)?.[1];
+    const domain = /domain='([^']+)'/.exec(expected)?.[1];
+    if (generator !== undefined && domain !== undefined) {
+      const x = new Sym(generator);
+      return matches(sj.Poly.from(sj.xreplace(v.asExpr(), [[v.gen, x]]), [x], { domain }), expected);
+    }
+  }
   // SymPy Monomial equality accepts its exponent tuple, independently of its printed generators.
   if (v instanceof sj.Monomial && expected.startsWith('(')) return matches(new JsTuple([...v.exponents]), expected);
   if (v instanceof JsTuple && v.items.some((item) => item instanceof sj.Monomial) && expected.startsWith('(')) {
@@ -3238,6 +3246,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     const roots = sj.roots(e, x, { multiple: true, skipQuintic: true, quintics: kw['quintics'] === true });
     return kw['multiple'] === true ? new JsList(roots) : rootsDict(roots);
   },
+  jacobi_poly: (args, kw) => sj.jacobiPoly(intArg(args[0]), asExpr(args[1]), asExpr(args[2]), args[3] === undefined ? undefined : asExpr(args[3]), { polys: kw['polys'] === true }),
+  gegenbauer_poly: (args, kw) => sj.gegenbauerPoly(intArg(args[0]), asExpr(args[1]), args[2] === undefined ? undefined : asExpr(args[2]), { polys: kw['polys'] === true }),
+  hermite_poly: (args, kw) => sj.hermitePoly(intArg(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), { polys: kw['polys'] === true }),
+  hermite_prob_poly: (args, kw) => sj.hermiteProbPoly(intArg(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), { polys: kw['polys'] === true }),
+  legendre_poly: (args, kw) => sj.legendrePoly(intArg(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), { polys: kw['polys'] === true }),
+  laguerre_poly: (args, kw) => sj.laguerrePoly(intArg(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), args[2] === undefined ? undefined : asExpr(args[2]), { polys: kw['polys'] === true }),
   solve: (args, kw) => {
     if ('quick' in kw && kw['particular'] !== true) throw new RangeError('solve: quick requires particular=True');
     if (kw['particular'] === true && !(args[0] instanceof Matrix || args[0] instanceof JsList || args[0] instanceof JsTuple || args[0] instanceof JsSet)) throw new RangeError('solve: particular requires a system');
@@ -4457,6 +4471,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const m = args[0];
     if (m instanceof JsTuple) return p.coeffMonomial(m.items.map((x) => Number((x as sj.Rational).p)));
     const mono = sj.Poly.from(asExpr(m), p.gens);
+    if (mono.length() !== 1 || !mono.LC().equals(1)) throw new RangeError('expected a monomial');
     return p.coeffMonomial(mono.monoms()[0]!);
   },
   '.eval': (args, kw, self) => {
@@ -5436,7 +5451,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
   '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? (isScalar(a) && b instanceof sj.DMPJs ? b.neg().add(a) : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
   '.__mul__': (a, [b]) => (b instanceof sj.Point && isScalar(a) ? b.mul(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : Array.isArray(a) || Array.isArray(b) || a instanceof JsTuple || a instanceof JsList || b instanceof JsTuple || b instanceof JsList ? pythonTypeError('cannot multiply a sequence by a non-integer') : unsupportedOp('*')),
-  '.__truediv__': (a, [b]) => a instanceof sj.Factors ? a.quo(b as sj.Factors | Expr) : (a instanceof Matrix && isScalar(b) ? a.scale(sj.pow(b, -1)) : undefined) ?? (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['exquo'] : ['truediv', 'div', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
+  '.__truediv__': (a, [b]) => a instanceof sj.Poly && b instanceof sj.Poly ? sj.cancel(sj.mul(a.asExpr(), sj.pow(b.asExpr(), -1))) : a instanceof sj.Factors ? a.quo(b as sj.Factors | Expr) : (a instanceof Matrix && isScalar(b) ? a.scale(sj.pow(b, -1)) : undefined) ?? (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['exquo'] : ['truediv', 'div', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => (a instanceof sj.Poly ? a.quo(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['quo'] : ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
   '.__mod__': (a, [b]) => a instanceof sj.Factors ? a.rem(b as sj.Factors | Expr) : (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.ANP || a instanceof sj.DMPJs ? ['rem'] : ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
@@ -5882,6 +5897,12 @@ function autoAdapter(c: Case): Adapter | undefined {
     for (const k of Object.keys(kw)) if (!['auto', 'quadratic', 'x'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     return sj.RootSum(p.asExpr(), kw['x'] === undefined ? x : asSym(kw['x']), lam);
   };
+  if (['roots_linear', 'roots_cubic', 'roots_quartic'].includes(c.fn)) return (args, kw) => {
+    for (const key of Object.keys(kw)) if (key !== 'trig') throw new Unsupported(`kwargs ${key}`);
+    const p = args[0] as sj.Poly;
+    if (!(p instanceof sj.Poly)) throw new TypeError('a polynomial expected');
+    return new JsList(sj.roots(p.asExpr(), asSym(p.gen), { multiple: true, skipQuintic: true }));
+  };
   if (c.self?.t === 'PolyRing' && c.fn === '.dup_isolate_real_roots_list') return (args, kw, self) => {
     const ring = self as sj.PolyRing;
     if (!['ZZ', 'QQ'].includes(String(ring.domain))) throw new sj.DomainError('root isolation requires ZZ or QQ');
@@ -5896,7 +5917,7 @@ function autoAdapter(c: Case): Adapter | undefined {
     const f = args[0] as sj.PolyElement;
     return fromJs(f.ring.dmpZzHeuGcd(f, args[1] as sj.PolyElement));
   };
-  if (c.self?.t === 'PolyRing' && ['.dup_isolate_complex_roots_sqf', '.dup_isolate_real_roots_sqf', '.dup_isolate_real_roots', '.dup_refine_real_root', '.dup_count_real_roots', '.dup_count_complex_roots'].includes(c.fn)) return (args, kw, self) => {
+  if (c.self?.t === 'PolyRing' && ['.dup_isolate_all_roots_sqf', '.dup_isolate_all_roots', '.dup_isolate_complex_roots_sqf', '.dup_isolate_real_roots_sqf', '.dup_isolate_real_roots', '.dup_refine_real_root', '.dup_count_real_roots', '.dup_count_complex_roots'].includes(c.fn)) return (args, kw, self) => {
     const ring = self as sj.PolyRing;
     if (!['ZZ', 'QQ'].includes(String(ring.domain))) throw new sj.DomainError('root isolation requires ZZ or QQ');
     const f = args[0] instanceof sj.PolyElement ? args[0].asExpr() : asExpr(args[0]);
@@ -5917,6 +5938,13 @@ function autoAdapter(c: Case): Adapter | undefined {
       }));
     }
     const opts = { eps: optional(kw['eps']), inf: optional(kw['inf']), sup: optional(kw['sup']), fast: kw['fast'] === true };
+    if (c.fn === '.dup_isolate_all_roots_sqf' || c.fn === '.dup_isolate_all_roots') {
+      const [real, complex] = p.intervals(opts.eps, { all: true, ...opts });
+      const rectangle = ([lower, upper]: [Expr, Expr]): [[Expr, Expr], [Expr, Expr]] => [sj.asRealImag(lower), sj.asRealImag(upper)];
+      const rectangles = complex.map(([interval, multiplicity]) => [rectangle(interval), multiplicity] as const);
+      if (c.fn === '.dup_isolate_all_roots') return fromJs([real, rectangles]);
+      return fromJs([real.map(([interval]) => interval), rectangles.map(([interval]) => interval)]);
+    }
     if (c.fn === '.dup_isolate_complex_roots_sqf') return fromJs(sj.isolateComplexRootsSqf(p.allCoeffs().map(rational), opts).map((interval) => interval.asTuple()));
     if (kw['basis'] === true) return fromJs(sj.isolateRealRootsList([p.allCoeffs().map(rational)], opts).map(([iv, indices, basis]) => {
       const multiplicity = indices.get(0);
@@ -6119,6 +6147,22 @@ function autoAdapter(c: Case): Adapter | undefined {
     const unary = ['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinc', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch'];
     const nargs = unary.includes(self.name) ? [1] : self.name === 'atan2' ? [2] : undefined;
     return sj.nargs(sj.SymFunction(self.name, { nargs }));
+  };
+  if (c.fn === '.__getitem__' && c.self?.t === 'Groebner') return (args, kw, self) => {
+    noKw(kw);
+    const basis = self as sj.GroebnerBasis;
+    const values: unknown[] = c.expected.includes('Poly(')
+      ? basis.exprs.map((e) => sj.Poly.from(e, basis.gens, { domain: basis.domain }))
+      : [...basis.exprs];
+    const i = args[0];
+    if (i instanceof sj.Slice) {
+      const [start, stop, step] = i.indices(values.length);
+      return new JsList(Array.from({ length: Math.max(0, Math.ceil((stop - start) / step)) }, (_, k) => values[start + k * step]));
+    }
+    const index = Number(i);
+    const normalized = index < 0 ? values.length + index : index;
+    if (!Number.isInteger(normalized) || normalized < 0 || normalized >= values.length) throw new RangeError('index out of range');
+    return values[normalized];
   };
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {

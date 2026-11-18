@@ -281,6 +281,10 @@ describe('calculus, evaluation and substitution', () => {
   it('compose, transform, shift, revert, discriminant, resultant', () => {
     expect(String(P('x**2 + x', x).compose(P('x - 1', x)))).toBe("Poly(x**2 - x, x, domain='ZZ')");
     expect(String(P('x**2 - 2*x + 1', x).transform(P('x + 1', x), P('x - 1', x)))).toBe("Poly(4, x, domain='ZZ')");
+    expect(String(P('x**2 - x/2 + 1', x).transform(P('x + 1', x), P('x - 1/2', x)))).toBe("Poly(3/2*x**2 + 3/4*x + 3/2, x, domain='QQ')");
+    expect(() => P('x + y', x, y).transform(P('x + 1', x), P('x - 1', x))).toThrow(RangeError);
+    expect(() => P('x + 1', x).transform(P('y + 1', y), P('x - 1', x))).toThrow(RangeError);
+    expect(() => P('x + 1', x).transform(P('x + 1', x), P('y - 1', y))).toThrow(RangeError);
     expect(String(P('1 + x + x**2', x).revert(4))).toBe("Poly(x**3 - x + 1, x, domain='ZZ')");
     expect(String(P('x**2 + 3*x + 1', x).discriminant())).toBe('5');
     expect(String(P('x**3 + a*x + b', x).discriminant())).toBe('-4*a**3 - 27*b**2');
@@ -320,6 +324,10 @@ describe('generators and domains', () => {
     expect(() => P('x*y - x', x, y).ltrim(-1)).toThrow(sj.PolynomialError);
     for (const g of [2, -3, z]) expect(() => P('x*y', x, y).ltrim(g)).toThrow(sj.PolynomialError);
     expect(String(P('x**2 + 1', x).replace(x, y))).toBe("Poly(y**2 + 1, y, domain='ZZ')");
+    expect(() => P('x + y', x).replace(x, y)).toThrow(sj.PolynomialError);
+  });
+  it('orders equally sized factors by their generator count', () => {
+    expect(sj.factorList(parse('(x + 1)*(y*z + 1)'))[1]).toHaveLength(2);
   });
   it('termsGcd, deflate, toRing, toExact, retract, trunc, clearDenoms', () => {
     expect(show(P('x**6*y**2 + x**3*y', x, y).termsGcd())).toBe("[[3, 1], Poly(x**3*y + 1, x, y, domain='ZZ')]");
