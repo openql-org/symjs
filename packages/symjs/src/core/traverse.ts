@@ -15,7 +15,7 @@ import { Add, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Integral, Limit
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { isIntegerQ, isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
-import { BoolOp, and } from './boolalg';
+import { BoolOp, and, not, or } from './boolalg';
 import { at, cast, defined, first } from './guard';
 
 const isSubsMap = (s: Substitution): s is ReadonlyMap<Expr, ExprLike> => s instanceof Map;
@@ -46,7 +46,7 @@ export function rebuild(e: Expr, args?: readonly Expr[]): Expr {
   if (e instanceof Integral) return new Integral(args);
   if (e instanceof Limit) return new Limit(args, e.dir);
   if (e instanceof Order) return new Order(args);
-  if (e instanceof UndefFn) return new UndefFn(e.name, args);
+  if (e instanceof UndefFn) return new UndefFn(e.name, args, e.givenFacts);
   if (e instanceof Concrete) return new Concrete(e.kind2, args);
   // SymPy keeps a rebuilt derivative unevaluated: Derivative(f(x), x).subs(f(x), x**2) = Derivative(x**2, x)
   if (e instanceof Derivative) return e.withArgs(args);
@@ -232,6 +232,16 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
     if (quotient !== 0n) return mul(pow(nw, Rational.of(quotient)), pow(e.base, add(...rest)));
     return e;
   }
+  // A real logarithm in an exponential pattern identifies the corresponding power.
+  if (e instanceof Pow && old instanceof Pow && old.base.equals(S.E) && !e.base.equals(S.E)) {
+    const factors = old.exp instanceof Mul ? old.exp.args : [old.exp];
+    const logarithm = factors.find((term) => term instanceof Fn && term.name === 'log');
+    if (logarithm instanceof Fn && logarithm.args.length === 1 && isPositive(at(logarithm.args, 0)) === true) {
+      const power = new Pow(at(logarithm.args, 0), mul(...factors.filter((term) => term !== logarithm)));
+      const value = evalSubs(e, power, nw);
+      if (value !== undefined) return value;
+    }
+  }
   // SymPy issue 10829: (4**x).subs(2**x, y) -> y**2, for log(4, 2) a number
   if (e instanceof Pow && old instanceof Pow && e.exp.key === old.exp.key) {
     const k = intLog(e.base, old.base);
@@ -349,20 +359,23 @@ function subsNcRun(e: Mul, old: Mul, nw: Expr): Expr | undefined {
 }
 
 /** The factors of a commutative product as base -> rational exponent (SymPy Mul._eval_subs breakup). */
-function breakup(e: Mul): Map<string, { base: Expr; exp: Rational }> {
-  const out = new Map<string, { base: Expr; exp: Rational }>();
+function breakup(e: Mul): Map<string, { base: Expr; exp: Rational; split?: Pow }> {
+  const out = new Map<string, { base: Expr; exp: Rational; split?: Pow }>();
   for (const a of e.args) {
     let [b, x]: [Expr, Expr] = a instanceof Pow ? [a.base, a.exp] : [a, Rational.of(1n)];
     let co = ratOf(x);
+    let split: Pow | undefined;
     if (!co) {
       // b**(2*y): base b**y, exponent 2
       const c = x instanceof Mul ? ratOf(first(x.args)) : undefined;
       co = c ?? Rational.of(1n);
-      b = pow(b, mul(x, pow(co, -1)));
+      const symbolicPower = pow(b, mul(x, pow(co, -1)));
+      if (symbolicPower instanceof Pow && symbolicPower.base.equals(b)) split = symbolicPower;
+      b = symbolicPower;
     }
     x = co;
     const cur = out.get(b.key);
-    out.set(b.key, { base: b, exp: cur ? asRational(add(cur.exp, x)) : co });
+    out.set(b.key, { base: b, exp: cur ? asRational(add(cur.exp, x)) : co, split: cur === undefined || cur.split !== undefined ? split : undefined });
   }
   return out;
 }
@@ -410,9 +423,11 @@ function subsMul(e: Mul, old: Mul, nw: Expr): Expr | undefined {
   }
   k *= direction;
   const rest: Expr[] = [residual];
-  for (const [key, { base, exp }] of c) {
+  for (const [key, { base, exp, split }] of c) {
     const o = oldC.get(key);
-    rest.push(subsOne(pow(base, o ? add(exp, mul(-k, o.exp)) : exp), old, nw));
+    const exponent = o ? add(exp, mul(-k, o.exp)) : exp;
+    const remaining = split === undefined ? pow(base, exponent) : pow(split.base, mul(split.exp, exponent));
+    rest.push(subsOne(remaining, old, nw));
   }
   return mul(pow(nw, k), ...rest);
 }
@@ -524,6 +539,15 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
 }
 
+/** SymPy _nodes, including the order stored in a derivative's variable tuple. */
+function substitutionSize(e: Expr): number {
+  if (e instanceof Derivative) {
+    return substitutionSize(e.expr) + e.variableOrders.reduce((total, [, order]) =>
+      total + (order instanceof Rational ? order.toNumber() : substitutionSize(order)), 0);
+  }
+  return 1 + e.args.reduce((total, arg) => total + substitutionSize(arg), 0);
+}
+
 /**
  * Substitution like SymPy `subs`: pairs are applied in order (unless
  * `simultaneous`), and sums, products and powers are matched algebraically,
@@ -534,7 +558,7 @@ export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } 
   if (!Array.isArray(s)) {
     // unordered mapping (SymPy dict): more complex keys first, then by sort key
     pairs = [...pairs].sort((a, b) => {
-      const d = countOps(b[0]) - countOps(a[0]);
+      const d = substitutionSize(b[0]) - substitutionSize(a[0]);
       return d !== 0 ? d : compareKeys(sortKey(a[0]), sortKey(b[0]));
     });
   }
@@ -672,7 +696,31 @@ export function preorderTraversal(node: ExprLike, keys: boolean | ((e: Expr) => 
  * boolean connectives are not folded (their arguments are).
  */
 export function piecewiseFold(e: Expr): Expr {
-  if (e.isAtom || e instanceof Piecewise) return e;
+  if (e.isAtom) return e;
+  if (e instanceof Piecewise) {
+    const pairs: (readonly [Expr, Expr])[] = [];
+    let changed = false;
+    const original = e.pairs;
+    for (const [index, [value, condition]] of original.entries()) {
+      const folded = piecewiseFold(value);
+      let c = condition;
+      if (condition instanceof BoolOp ? condition.op === 'ITE' : condition instanceof ExtensionExpr && condition.name === 'ITE') {
+        const test = at(condition.args, 0), whenTrue = at(condition.args, 1), whenFalse = at(condition.args, 2);
+        c = and(or(not(test), whenTrue), or(test, whenFalse));
+      }
+      if (folded instanceof Piecewise) {
+        const inner = folded.pairs;
+        for (const [v, branch] of inner) pairs.push([v, and(c, branch)]);
+        // An undefined inner value cannot fall through to a later outer branch.
+        if (index + 1 < original.length && !inner.some(([, test]) => test === S.true)) pairs.push([S.NaN, c]);
+        changed = true;
+      } else {
+        pairs.push([folded, c]);
+        changed ||= folded !== value || c !== condition;
+      }
+    }
+    return changed ? piecewise(...pairs) : e;
+  }
   const args = e.args.map(piecewiseFold);
   const i = args.findIndex((a) => a instanceof Piecewise);
   if (i < 0 || e instanceof ExtensionExpr || e instanceof BoolOp) return args.some((a, j) => a !== e.args[j]) ? rebuild(e, args) : e;
@@ -692,3 +740,5 @@ export function piecewiseFold(e: Expr): Expr {
   }
   return piecewise(...pairs);
 }
+
+impl.piecewiseFold = piecewiseFold;

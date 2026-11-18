@@ -68,3 +68,28 @@ it('merges and cancels symbolic orders while preserving their free symbols', () 
   expect(() => sj.derivative(f, [[x, -1]])).toThrow(RangeError);
   expect(sj.derivative(f, [[x, sj.symbol('z', { zero: true })]])).toBe(f);
 });
+
+it('compares undefined function classes by their assumptions and arities', () => {
+  const f = sj.SymFunction('f');
+  const real = sj.SymFunction('f', { assumptions: { real: true } });
+  const h = sj.SymFunction('f', { nargs: [1, 2], assumptions: { real: true } });
+  expect(f.equals(sj.SymFunction('f', { assumptions: {} }))).toBe(true);
+  expect(f.equals(false)).toBe(false);
+  expect(f.equals(real)).toBe(false);
+  expect(real.equals(h)).toBe(false);
+  expect(h.equals(sj.SymFunction('f', { nargs: [2, 1], assumptions: { real: true } }))).toBe(true);
+  expect(h.equals(sj.SymFunction('f', { nargs: 2, assumptions: { real: true } }))).toBe(false);
+  expect(h.equals(sj.SymFunction('f', { nargs: [1, 3], assumptions: { real: true } }))).toBe(false);
+  expect(sj.isReal(real(x))).toBe(true);
+  expect(sj.subs(real(x), [[x, 0]]).equals(real(0))).toBe(true);
+  expect(sj.SymFunction('g', { assumptions: { commutative: false } })(x).isCommutative).toBe(false);
+});
+
+it('keeps symbolic function heads in substitutions', async () => {
+  const { FunctionHead } = await import('../../src/core/undef');
+  const head = new FunctionHead('f', (...args) => sj.add(...args), [1, 2]);
+  expect(head.withArgs()).toBe(head);
+  expect(head.key).toBe(new FunctionHead('f').key);
+  expect(String(head)).toBe('f');
+  expect(head.apply?.(x)).toBe(x);
+});

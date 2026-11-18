@@ -1123,3 +1123,26 @@ it('recognizes factorials and exact values of unevaluated elementary calls', () 
   expect(fact(new sj.Fn('sec', [sj.mul(S.Half, S.Pi)]), 'finite')).toBe(false);
   expect(fact(new sj.Fn('csc', [S.Zero]), 'finite')).toBe(false);
 });
+
+it('recognizes exact constants in unevaluated exponentials and trigonometric calls', () => {
+  const logThree = new sj.Fn('log', [Rational.of(3)]);
+  expect(fact(new Pow(S.E, logThree), 'rational')).toBe(true);
+  expect(fact(new Pow(S.E, new sj.Fn('log', [sj.symbol('x')])), 'rational')).toBeUndefined();
+  expect(fact(sj.expPolar(0), 'rational')).toBe(true);
+  expect(fact(sj.expPolar(sj.symbol('x')), 'rational')).toBeUndefined();
+  expect(fact(new sj.Fn('cos', [new sj.Fn('asin', [S.NegOne])]), 'zero')).toBe(true);
+});
+
+it('proves zeros of real radicals through exact algebraic identities', () => {
+  const radical = sj.sqrt(3);
+  const e = sj.add(sj.sqrt(sj.add(1, radical)), sj.sqrt(sj.add(3, sj.mul(3, radical))), sj.neg(sj.sqrt(sj.add(10, sj.mul(6, radical)))));
+  expect(fact(e, 'zero')).toBe(true);
+  expect(fact(e, 'positive')).toBe(false);
+  expect(fact(sj.parse('1 + sqrt(5)'), 'zero')).toBe(false);
+  expect(fact(new sj.Add([sj.neg(sj.mul(2, sj.I)), new sj.Pow(sj.add(1, sj.I), sj.S.Two)]), 'zero')).toBeUndefined();
+});
+
+it('certifies exact algebraic cancellation before reporting an extended sign', () => {
+  const e = sj.parse('-3-sqrt(5)+(-sqrt(10)/2-sqrt(2)/2)**2');
+  expect(fact(e, 'extended_positive')).toBe(false);
+});

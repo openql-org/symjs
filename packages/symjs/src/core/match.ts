@@ -78,7 +78,14 @@ function basicMatches(p: Expr, e: Expr, d: Dict, old: boolean): Dict | undefined
     const a = at(p.args, i);
     const b = at(e.args, i);
     if (a.key === b.key) continue;
-    out = matchesImpl(applyD(a, out), b, out, old);
+    let pattern: Expr;
+    try {
+      pattern = applyD(a, out);
+    } catch (error) {
+      if (error instanceof TypeError && a instanceof Rel) return undefined;
+      throw error;
+    }
+    out = matchesImpl(pattern, b, out, old);
     if (!out) return undefined;
   }
   return out;
@@ -115,6 +122,14 @@ function asPowersDict(e: Expr): Map<string, [Expr, Expr]> {
 }
 
 function mulCombineInverse(lhsIn: Expr, rhsIn: Expr): Expr {
+  if (lhsIn instanceof Mul && rhsIn instanceof Mul) {
+    const left = lhsIn.args.find((factor) => factor === S.Infinity || factor === S.NegativeInfinity);
+    const right = rhsIn.args.find((factor) => factor === S.Infinity || factor === S.NegativeInfinity);
+    if (left !== undefined && right !== undefined) {
+      const numerator = mul(left === right ? 1 : -1, ...lhsIn.args.filter((factor) => factor !== left));
+      return mulCombineInverse(numerator, mul(...rhsIn.args.filter((factor) => factor !== right)));
+    }
+  }
   let lhs = lhsIn;
   let rhs = rhsIn;
   if (lhs.key === rhs.key) return S.One;
@@ -193,7 +208,7 @@ function commutativeMatches(p: Add | Mul, e: Expr, d: Dict, old: boolean): Dict 
       for (const s of exact.freeSymbols()) if (![...free].some((f) => f.key === s.key)) return undefined;
     }
     const newexpr = isAdd ? addCombineInverse(e, exact) : mulCombineInverse(e, exact);
-    if (!old && (e instanceof Add || e instanceof Mul)) {
+    if (!old && (e instanceof Add || e instanceof Mul) && (isAdd || !exact.equals(S.NegOne))) {
       if (countOps(newexpr) > countOps(e)) return undefined;
     }
     return matchesImpl(newRaw(isAdd, wild), newexpr, d, old);
@@ -284,6 +299,7 @@ function noncommutativeMatches(p: Mul, e: Expr, d: Dict, old: boolean): Dict | u
 
 function matchesImpl(p: Expr, e: Expr, d: Dict, old: boolean): Dict | undefined {
   if (p instanceof Wild) return wildMatches(p, e, d);
+  if (e instanceof ExtensionExpr && e.name === 'Tuple' && (p instanceof Add || p instanceof Mul || p instanceof Pow)) return undefined;
   if (p instanceof Mul) {
     if (p.isCommutative !== e.isCommutative) return undefined;
     if (!p.isCommutative) return noncommutativeMatches(p, e, d, old);
@@ -527,7 +543,7 @@ export function find(exprIn: ExprLike | string, query: Query): Expr[] | Sym {
   const out = new Map<string, Expr>();
   const go = (e: Expr) => {
     if (q(e)) out.set(e.key, e);
-    e.args.forEach(go);
+    (e instanceof ExtensionExpr ? e.searchArgs() : e.args).forEach(go);
   };
   go(expr);
   return [...out.values()];

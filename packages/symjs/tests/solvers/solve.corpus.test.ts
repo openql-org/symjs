@@ -594,7 +594,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   //           [{a: (-b**2*x + 3*x**3 + 12*x**2 + 4*x + 16)/(x**2*(x + 4))}]
   //   => [{a: (-b**2*x + 3*x**3 + 12*x**2 + 4*x + 16)/(x**2*(x + 4))}]
   it.todo("test_solve_args:174");
-  it.fails("test_solve_args:177", () => {
+  it("test_solve_args:177", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(solve(new Pow(new Add([new Pow(x, rational(-1)), new Mul([rational(-1), y]), exp(y)]), rational(-1))))).toBe('[]');
   });
@@ -805,12 +805,12 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v2 = solve(new Add([rational(-6), x, new Pow(x, rational(5)), new Mul([rational(-6), new Pow(x, rational(2))]), new Mul([rational(-6), new Pow(v1, rational(3))])]), v1, {});
     expect(equivalent(sympyStr([at(v2, 0), at(v2, 1), at(v2, 2), at(v2, 3), at(v2, 4)]), '[CRootOf(x**5 - 6*x**3 - 6*x**2 + x - 6, 0), CRootOf(x**5 - 6*x**3 - 6*x**2 + x - 6, 1), CRootOf(x**5 - 6*x**3 - 6*x**2 + x - 6, 2), CRootOf(x**5 - 6*x**3 - 6*x**2 + x - 6, 3), CRootOf(x**5 - 6*x**3 - 6*x**2 + x - 6, 4)]', [x], { fn: 'solve', input: 'x**5 - 6*x**3 - 6*x**2 + x - 6' })).toBe(true);
   });
-  it.fails("test_quintics_3:334", () => {
+  it("test_quintics_3:334", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([new Pow(x, rational(3)), new Pow(v1, rational(5)), new Mul([rational(-1), new Pow(rational(2), rational(1, 3))])]), v1, {}))).toBe('[]');
   });
-  it.fails("test_quintics_3:334 (2)", () => {
+  it("test_quintics_3:334 (2)", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([new Pow(rational(2), rational(1, 3)), new Mul([rational(-1), new Pow(x, rational(3))]), new Mul([rational(-1), new Pow(v1, rational(5))])]), v1, {}))).toBe('[]');
@@ -859,7 +859,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   it("test_issue_21004:377", () => {
     expect(sympyStr([])).toBe('[]');
   });
-  it.fails("test_issue_24650:383", () => {
+  it("test_issue_24650:383", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(Relational(piecewise([x, Or(Relational(x, rational(0), '==', { evaluate: false }), Relational(v1, rational(1), '>', { evaluate: false }))]), rational(0), '==', { evaluate: false }), v1, {}))).toBe('[0]');
@@ -1307,7 +1307,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   it("test_issue_4793:867", () => {
     expect(sympyStr([])).toBe('[]');
   });
-  it.fails("test_issue_4793:868", () => {
+  it("test_issue_4793:868", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(solve(new Add([new Pow(x, new Mul([y, z])), new Mul([rational(-1), x])]), x, {}))).toBe('[1]');
   });
@@ -1359,7 +1359,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(solve(new Add([rational(-2), new Mul([exp(new Mul([x, new Pow(y, rational(-1))])), exp(new Mul([rational(-1), z, new Pow(y, rational(-1))]))])]), y, {}))).toBe('[(x - z)/log(2)]');
   });
-  it.fails("test_PR1964:915", () => {
+  it("test_PR1964:915", () => {
     const p = new Sym('p', { positive: true });
     const v1 = p;
     expect(sympyStr(solve(new Pow(new Add([rational(1), new Pow(p, rational(-1))]), new Add([rational(1), v1])), v1, {}))).toBe('[]');
@@ -1406,7 +1406,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const [a, x] = symbols('a x');
     expect(sympyStr([at(solve(new Mul([new Add([rational(1), new Pow(a, rational(2))]), new Add([fn('cos', [new Mul([a, x])]), fn('sin', [new Mul([a, x])])])]), x, {}), 0)])).toBe('[-pi/(4*a)]');
   });
-  it.fails("test_issue_4671_4463_4467:968", () => {
+  it("test_issue_4671_4463_4467:968", () => {
     const [a, x] = symbols('a x');
     expect(sympyStr(solve(new Add([rational(3), new Mul([rational(-1), fn('cosh', [new Mul([a, x])])]), new Mul([rational(-1), fn('sinh', [new Mul([a, x])])])]), x, {}))).toBe('[log(3)/a]');
   });
@@ -1566,7 +1566,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const [a, x] = symbols('a x');
     expect(sympyStr([at(solve(new Add([new Mul([rational(-1), a, x]), new Mul([rational(2), x, log(x)])]), x, {}), 0)])).toBe('[exp(a/2)]');
   });
-  it.fails("test_issue_4463:1468", () => {
+  it("test_issue_4463:1468", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Pow(x, v1), v1, {}))).toBe('[]');
@@ -1576,7 +1576,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v1 = x;
     expect(sympyStr([at(solve(new Add([rational(-2), new Pow(x, v1)]), v1, {}), 0)])).toBe('[exp(LambertW(log(2)))]');
   });
-  it.fails("test_issue_4463:1470", () => {
+  it("test_issue_4463:1470", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Pow(new Mul([new Add([rational(-3), x]), new Add([rational(-2), x])]), new Mul([new Add([rational(-4), x]), new Add([rational(-3), v1])])), v1, {}))).toBe('[2]');
@@ -1668,7 +1668,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v1 = solveLinear(new Add([x, new Integral([x, x, y]), (SymFunction('f'))(x)]), { symbols: [x] });
     expect(sympyStr([at(v1, 0), at(v1, 1)], 't')).toBe('(x + f(x) + Integral(x, (x, y)), 1)');
   });
-  it.fails("test_issue_5901:1628", () => {
+  it("test_issue_5901:1628", () => {
     const [x, y] = symbols('x y');
     const v1 = x;
     expect(sympyStr([v1, at(solveLinear(new Add([v1, new Integral([x, x, y]), (SymFunction('f'))(y)]), { symbols: [x] }), 1)], 't')).toBe('(x, -f(y) - Integral(x, (x, y)))');
@@ -1748,22 +1748,22 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v1 = x;
     expect(sympyStr([at(solve(new Add([rational(-1), new Pow(v1, rational(2))]), v1, {}), 0)])).toBe('[1]');
   });
-  it.fails("test_issue_6056:1693", () => {
+  it("test_issue_6056:1693", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([rational(-1), new Mul([fn('tanh', [new Add([rational(-3), x])]), fn('tanh', [new Add([rational(3), v1])])])]), v1, {}))).toBe('[]');
   });
-  it.fails("test_issue_6056:1694", () => {
+  it("test_issue_6056:1694", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([rational(1), new Mul([fn('tanh', [new Add([rational(1), x])]), fn('tanh', [new Add([rational(-1), v1])])])]), v1, {}))).toBe('[-3*I*pi/4, -I*pi/4, I*pi/4, 3*I*pi/4]');
   });
-  it.fails("test_issue_6056:1696", () => {
+  it("test_issue_6056:1696", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Pow(new Add([rational(1), new Mul([fn('tanh', [new Add([rational(-3), x])]), fn('tanh', [new Add([rational(3), v1])])])]), rational(2)), v1, {}))).toBe('[-3*I*pi/4, -I*pi/4, I*pi/4, 3*I*pi/4]');
   });
-  it.fails("test_issue_5673:1702", () => {
+  it("test_issue_5673:1702", () => {
     const x = new Sym('x');
     expect(sympyStr(checksol(new Add([new Mul([rational(-1), x]), exp(new Mul([LambertW(log(x)), exp(LambertW(log(x)))]))]), new Map([[x, rational(2)]])))).toBe('True');
   });
@@ -1844,7 +1844,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   //   assert solve(eqs, x, manual=True, check=False) == [(S.Half,), (S(3),)]
   //   => [(1/2,), (3,)]
   it.todo("test_overdetermined:1815");
-  it.fails("test_issue_6605:1820", () => {
+  it("test_issue_6605:1820", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([new Pow(rational(4), new Mul([rational(1, 2), x])), new Mul([rational(-1), new Pow(rational(2), new Mul([rational(1, 3), v1]))])]), v1, {}))).toBe('[0, 3*I*pi/log(2)]');
@@ -1928,7 +1928,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v1 = x;
     expect(sympyStr(solve(new Add([rational(-3), new Pow(new Add([new Pow(fn('im', [x]), rational(2)), new Pow(fn('re', [v1]), rational(2))]), rational(1, 2))]), v1, {}))).toBe('[{re(x): (x**2 + 9)/(2*x), im(x): -I*(x - 3)*(x + 3)/(2*x)}]');
   });
-  it.fails("test_issues_6819_6820_6821_6248_8692_25777_25779:1889", () => {
+  it("test_issues_6819_6820_6821_6248_8692_25777_25779:1889", () => {
     const i = new Sym('i', { imaginary: true });
     const v1 = i;
     expect(sympyStr(solve(new Add([rational(-3), abs(v1)]), v1, {}))).toBe('[-3*I, 3*I]');
@@ -1961,7 +1961,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   //   assert solve(x + y + 3 + 2*I) == {x: -3, y: -2*I}
   //   => {x: -3, y: -2*I}
   it.todo("test_issues_6819_6820_6821_6248_8692_25777_25779:1904");
-  it.fails("test_issues_6819_6820_6821_6248_8692_25777_25779:1908", () => {
+  it("test_issues_6819_6820_6821_6248_8692_25777_25779:1908", () => {
     const x = new Sym('x', { real: true });
     const v1 = x;
     expect(sympyStr(solve(new Add([new Mul([rational(-1), (SymFunction('f'))(new Add([rational(-1), new Mul([rational(2), x])]))]), (SymFunction('f'))(new Add([rational(1), v1]))]), v1, {}))).toBe('[2]');
@@ -1971,7 +1971,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v1 = x;
     expect(sympyStr([at(solve(new Add([new Mul([rational(-1), log(new Add([rational(-1), new Mul([rational(2), x])]))]), log(new Add([rational(1), v1]))]), v1, {}), 0)])).toBe('[2]');
   });
-  it.fails("test_issues_6819_6820_6821_6248_8692_25777_25779:1912", () => {
+  it("test_issues_6819_6820_6821_6248_8692_25777_25779:1912", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([new Pow(rational(2), x), new Pow(rational(4), v1)]), v1, {}))).toBe('[I*pi/log(2)]');
@@ -2004,17 +2004,17 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const [tau_1, tau_2] = symbols('tau_1 tau_2');
     expect(sympyStr(simplify(new Mul([tau_1, tau_2, new Pow(new Add([tau_1, tau_2]), rational(-1))])))).toBe('tau_1*tau_2/(tau_1 + tau_2)');
   });
-  it.fails("test_lambert_multivariate:1955", () => {
+  it("test_lambert_multivariate:1955", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([rational(1), new Pow(new Add([new Mul([rational(3), x]), log(x)]), rational(2)), new Mul([rational(-6), x]), new Mul([rational(-2), log(x)])]), v1, {}))).toBe('[LambertW(3*E)/3]');
   });
-  it.fails("test_lambert_multivariate:1956", () => {
+  it("test_lambert_multivariate:1956", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([rational(3), new Pow(new Add([rational(-1), new Pow(new Add([new Mul([rational(3), x]), log(x)]), rational(2))]), rational(2)), new Mul([rational(-2), new Pow(new Add([new Mul([rational(3), x]), log(x)]), rational(2))])]), v1, {}))).toBe('[LambertW(3*exp(-sqrt(2)))/3, LambertW(3*exp(sqrt(2)))/3]');
   });
-  it.fails("test_lambert_multivariate:1958", () => {
+  it("test_lambert_multivariate:1958", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([rational(-2), new Pow(new Add([new Mul([rational(3), x]), log(x)]), rational(2)), new Mul([rational(-6), x]), new Mul([rational(-2), log(x)])]), v1, {}))).toBe('[LambertW(3*exp(1 - sqrt(3)))/3, LambertW(3*exp(1 + sqrt(3)))/3]');
@@ -2036,7 +2036,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(solve(new Add([new Mul([rational(-1), y]), LambertW(new Mul([rational(2), x]))]), x, {}))).toBe('[y*exp(y)/2]');
   });
-  it.fails("test_rewrite_trig:2070", () => {
+  it("test_rewrite_trig:2070", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([fn('sin', [x]), fn('tan', [v1])]), v1, {}))).toBe('[0, -pi, pi, 2*pi]');
@@ -2046,7 +2046,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v1 = x;
     expect(sympyStr(solve(new Add([fn('sec', [x]), fn('sin', [v1])]), v1, {}))).toBe('[-2*atan(-1/2 + sqrt(2)*sqrt(1 - sqrt(3)*I)/2 + sqrt(3)*I/2), 2*atan(1/2 - sqrt(2)*sqrt(1 + sqrt(3)*I)/2 + sqrt(3)*I/2), 2*atan(1/2 + sqrt(2)*sqrt(1 + sqrt(3)*I)/2 + sqrt(3)*I/2), 2*atan(1/2 - sqrt(3)*I/2 + sqrt(2)*sqrt(1 - sqrt(3)*I)/2)]');
   });
-  it.fails("test_rewrite_trig:2076", () => {
+  it("test_rewrite_trig:2076", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([fn('sinh', [x]), fn('tanh', [v1])]), v1, {}))).toBe('[0, I*pi]');
@@ -2059,12 +2059,12 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   //   assert solve(eq, x, force=True) == [-sqrt(y*(y - exp(z))), sqrt(y*(y - exp(z)))]
   //   => [-sqrt(y*(y - exp(z))), sqrt(y*(y - exp(z)))]
   it.todo("test_uselogcombine:2095");
-  it.fails("test_uselogcombine:2102", () => {
+  it("test_uselogcombine:2102", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([new Mul([rational(-1), log(2)]), log(new Add([rational(1), new Mul([rational(-1), fn('tanh', [x])])])), log(new Add([rational(1), exp(new Mul([rational(2), v1]))]))]), v1, {}))).toBe('[]');
   });
-  it.fails("test_atan2:2106", () => {
+  it("test_atan2:2106", () => {
     const x = new Sym('x');
     expect(sympyStr(solve(new Add([new Mul([rational(-1, 3), pi]), fn('atan2', [x, rational(2)])]), x, {}))).toBe('[2*sqrt(3)]');
   });
@@ -2135,7 +2135,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   //   assert solve((e1, e2), (x, y)) == ans
   //   => [(191/20, -3*sqrt(391)/20), (191/20, 3*sqrt(391)/20)]
   it.todo("test_issue_2777:2195");
-  it.fails("test_issue_2777:2196", () => {
+  it("test_issue_2777:2196", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(nonlinsolve([new Add([rational(-10), new Pow(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(1, 2))]), new Mul([new Pow(new Add([rational(-191, 20), x]), rational(-1)), new Add([rational(-3), new Pow(new Add([new Pow(y, rational(2)), new Pow(new Add([rational(10), new Mul([rational(-1), x])]), rational(2))]), rational(1, 2))])])], [x, y]))).toBe('[]');
@@ -2165,12 +2165,12 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const x = new Sym('x');
     expect(() => nsolve(Relational(x, new Float({ man: 1n, exp: -1n }, 53), '<', { evaluate: false }), x, rational(1))).toThrow(TypeError);
   });
-  it.fails("test_base_0_exp_0:2232", () => {
+  it("test_base_0_exp_0:2232", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([rational(-1), new Pow(rational(0), v1)]), v1, {}))).toBe('[0]');
   });
-  it.fails("test_base_0_exp_0:2233", () => {
+  it("test_base_0_exp_0:2233", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([rational(-1), new Pow(rational(0), new Add([rational(-2), v1]))]), v1, {}))).toBe('[2]');
@@ -2191,17 +2191,17 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   //           1176*(x + 2)**Rational(2, 3)*y - 169*x + 686, y, _unrad=False)) == 3
   //   => 3
   it.todo("test_issue_8755:2249");
-  it.fails("test_issue_2840_8155:2286", () => {
+  it("test_issue_2840_8155:2286", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([fn('sin', [new Mul([rational(3), x])]), fn('sin', [new Mul([rational(6), v1])])]), v1, {}))).toBe('[0, -2*pi/9, 2*pi/9]');
   });
-  it.fails("test_issue_2840_8155:2287", () => {
+  it("test_issue_2840_8155:2287", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([fn('sin', [new Mul([rational(300), x])]), fn('sin', [new Mul([rational(600), v1])])]), v1, {}))).toBe('[0, -pi/450, pi/450]');
   });
-  it.fails("test_issue_2840_8155:2288", () => {
+  it("test_issue_2840_8155:2288", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([new Mul([rational(-2), fn('sin', [new Mul([rational(2), x])])]), new Mul([rational(2), fn('sin', [v1])])]), v1, {}))).toBe('[0, -pi/3, pi/3]');
@@ -2298,7 +2298,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
   it("test_issue_14721:2412", () => {
     expect(sympyStr([])).toBe('[]');
   });
-  it.fails("test_issue_14779:2417", () => {
+  it("test_issue_14779:2417", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(solve(new Add([new Pow(new Add([rational(1089), new Pow(x, rational(4)), new Mul([rational(-130), new Pow(x, rational(2))])]), rational(1, 2)), new Pow(new Add([rational(3969), new Pow(x, rational(4)), new Mul([rational(-130), new Pow(x, rational(2))])]), rational(1, 2)), new Mul([rational(-96), new Pow(x, rational(-1)), abs(x)])]), x, {}))).toBe('[sqrt(130)]');
   });
@@ -2353,7 +2353,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v2 = x;
     expect(sympyStr(solve(new Add([new Mul([rational(-1), v1]), piecewise([new Float({ man: 0n, exp: 0n }, 53), Relational(x, new Float({ man: 3602879701896397n, exp: -55n }, 53), '<', { evaluate: false })], [v2, true])]), at(ordered([v1, v2]), 0)))).toBe('[{y: Piecewise((0.0, x < 0.1), (x, True))}]');
   });
-  it.fails("test_issue_17452:2503", () => {
+  it("test_issue_17452:2503", () => {
     const x = new Sym('x');
     expect(sympyStr(solve(new Add([pi, new Pow(new Pow(rational(7), x), x)]), x, {}))).toBe('[-sqrt(log(pi) + I*pi)/sqrt(log(7)), sqrt(log(pi) + I*pi)/sqrt(log(7))]');
   });
@@ -2442,7 +2442,7 @@ describe("sympy/solvers/tests/test_solvers.py", () => {
     const v2 = solve(new Add([rational(-1), new Pow(new Add([rational(-1), v1]), rational(-5))]), v1, {});
     expect(sympyStr([at(v2, 0), at(v2, 1), at(v2, 2), at(v2, 3), at(v2, 4)])).toBe('[2, -sqrt(5)/4 + 3/4 - sqrt(-5/8 + sqrt(5)/8), -sqrt(5)/4 + 3/4 + sqrt(-5/8 + sqrt(5)/8), sqrt(5)/4 + 3/4 - sqrt(-5/8 - sqrt(5)/8), sqrt(5)/4 + 3/4 + sqrt(-5/8 - sqrt(5)/8)]');
   });
-  it.fails("test_issue_20747:2580", () => {
+  it("test_issue_20747:2580", () => {
     const [dib, DBH, c0, c2, c3, THT, c4, HT, c1] = symbols('dib DBH c0 c2 c3 THT c4 HT c1');
     expect(sympyStr(solve(new Add([dib, new Mul([rational(-1), DBH, new Add([c0, new Mul([rational(-1), new Add([c2, new Mul([DBH, c3]), new Mul([THT, c4])]), log(new Add([rational(1), new Mul([rational(-1), new Pow(new Mul([new Pow(new Add([rational(-1), THT]), rational(-1)), new Add([rational(-1), HT])]), c1), new Add([rational(1), new Mul([rational(-1), exp(new Mul([c0, new Pow(new Add([c2, new Mul([DBH, c3]), new Mul([THT, c4])]), rational(-1))]))])])])]))])])])]), HT, {}))).toBe('[THT*((1 - exp((DBH*c0 - dib)/(DBH*(DBH*c3 + THT*c4 + c2))))/(1 - exp(c0/(DBH*c3 + THT*c4 + c2))))**(1/c1) - ((1 - exp((DBH*c0 - dib)/(DBH*(DBH*c3 + THT*c4 + c2))))/(1 - exp(c0/(DBH*c3 + THT*c4 + c2))))**(1/c1) + 1]');
   });

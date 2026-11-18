@@ -1552,3 +1552,19 @@ it('preserves sparse domains and handles unsupported algebraic root domains expl
   const q = sj.Quaternion(parse('x**2-1'), 0, 0, 0);
   expect(String(sj.factorNc(q))).toBe(String(sj.Quaternion(parse('(x-1)*(x+1)'), 0, 0, 0)));
 });
+
+it('reports a missing generator when converting an expression to a polynomial', () => {
+  expect(sj.asPoly(sj.S.Two)).toBe(sj.NoMatch);
+  expect(sj.asPoly(sj.sqrt(2), { extension: true })).toBe(sj.NoMatch);
+  expect(sj.asPoly(sj.sqrt(2), new sj.Sym('t'), { extension: true })).toBeInstanceOf(sj.Poly);
+});
+
+it('isolates both real and complex roots of a square-free factor', () => {
+  const p = P('(x-1)*(x**2+1)', x);
+  const [reals, complexes] = p.intervals(undefined, { all: true });
+  expect(reals.map(([[lo, hi], multiplicity]) => [String(lo), String(hi), multiplicity])).toEqual([['1', '1', 1]]);
+  expect(complexes).toHaveLength(2);
+  expect(complexes.every(([, multiplicity]) => multiplicity === 1)).toBe(true);
+  expect(() => P('(x-1)*(x+2)**2', x).intervals(undefined, { all: true })).toThrow(sj.NotImplementedError);
+  expect(() => p.refineRoot(sj.S.Zero, sj.S.Two, sj.S.NegOne)).toThrow(RangeError);
+});

@@ -23,7 +23,7 @@
  */
 
 import type { Expr } from './nodes';
-import { Add, Constant, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, impl } from './nodes';
+import { Add, Constant, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, UndefFn, impl } from './nodes';
 import { add, asBaseExp, mul, neg, pow, sub } from './ops';
 import { freeSymbols, subs, xreplace } from './traverse';
 import { asCoeffMul, asNumerDenom, asRealImag, coeff, isPolynomial } from './methods';
@@ -60,6 +60,9 @@ export function fact(e: Expr, name: string): V {
     const evaluated = impl.fn(e.name, e.args);
     if (evaluated.key !== e.key) return fact(evaluated, name);
   }
+  if (name === 'rational' && e instanceof Pow && isExp(e) && e.exp instanceof Fn && e.exp.name === 'log') {
+    return fact(at(e.exp.args, 0), name);
+  }
   if (name === 'zero' && e instanceof Integral && is(e.integrand, 'zero')) return true;
   const st = stateOf(e);
   const known = st.kb.get(name);
@@ -86,7 +89,7 @@ export function fact(e: Expr, name: string): V {
 
 /** Exact values at zeros and poles of unevaluated elementary functions. */
 function isElementaryValueQuery(e: Fn, name: string): boolean {
-  return ((name === 'zero' && ['sinh', 'cosh', 'acosh', 'sinc'].includes(e.name)) ||
+  return ((name === 'zero' && ['sinh', 'cosh', 'acosh', 'sinc', 'cos'].includes(e.name)) ||
     (name === 'finite' && ['sec', 'csc'].includes(e.name))) && e.args.every((arg) => arg.isNumber);
 }
 
@@ -150,6 +153,7 @@ function initialFacts(e: Expr): Map<string, boolean> {
   }
   if (e instanceof Constant || e instanceof Special) return fromRecord({ commutative: true, ...CONSTANT_FACTS[e.name] });
   if (e instanceof Sym) return e.assumptions0;
+  if (e instanceof UndefFn && e.givenFacts.size > 0) return new Map(e.givenFacts);
   if (e instanceof ExtensionExpr && 'assumptions0' in e && e.assumptions0 instanceof Map && e.assumptions0.size > 0) return e.assumptions0;
   if (e instanceof Add || e instanceof Mul || e instanceof Pow) return new Map();
   // (SymPy Function._eval_is_commutative: all the arguments are commutative)
@@ -437,8 +441,17 @@ function addImaginary(e: Expr): V {
   return bz === false ? false : undefined;
 }
 
+function isRealRadical(e: Expr): boolean {
+  if (e instanceof Rational) return true;
+  if (e instanceof Add || e instanceof Mul) return e.args.every(isRealRadical);
+  return e instanceof Pow && e.exp instanceof Rational && isRealRadical(e.base);
+}
+
+const closedRealAlgebraicZero = (e: Expr): boolean => isRealRadical(e) && impl.equalsZero?.(e) === true;
+
 function addZero(e: Expr): V {
   if (!e.isCommutative) return undefined;
+  if (e.isNumber && closedRealAlgebraicZero(e)) return true;
   const nz: Expr[] = [];
   let z = 0;
   let imOrZ = false;
@@ -485,7 +498,7 @@ function addIrrational(e: Expr): V {
 
 /** SymPy Add._eval_is_extended_positive (sign 1) and _eval_is_extended_negative (sign -1). */
 function addSign(e: Expr, sign: 1 | -1): V {
-  if (e.isNumber) return numberSign(e, sign);
+  if (e.isNumber) return numberSign(e, sign) ?? (closedRealAlgebraicZero(e) ? false : undefined);
   const P = sign === 1 ? 'extended_positive' : 'extended_negative';
   const NN = sign === 1 ? 'extended_nonnegative' : 'extended_nonpositive';
   const NP = sign === 1 ? 'extended_nonpositive' : 'extended_nonnegative';
@@ -1309,6 +1322,7 @@ const FUNCTIONS: Readonly<Partial<Record<string, FunctionFacts>>> = {
   exp_polar: {
     given: { polar: true },
     handlers: {
+      rational: on((a) => is(a, 'zero') ? true : undefined),
       extended_real: on((a) => (is(a, 'extended_real') ? true : undefined)),
       finite: on(expFinite),
       zero: on((a) => a instanceof Special && a.name === '-oo'),

@@ -244,8 +244,10 @@ export function add(...xs: ExprLike[]): Expr {
   if (ab && sx.some((e) => ab.is(e) || (e instanceof Add && e.args.some((a) => ab.is(a))))) {
     // interval arithmetic: the intervals absorb a numeric remainder, symbolic terms stay beside them
     const flat = sx.flatMap((e) => (e instanceof Add ? e.args : [e]));
-    const abs = flat.filter((e) => ab.is(e));
+    const complexInfinity = flat.lastIndexOf(S.ComplexInfinity);
+    const abs = flat.filter((e, i) => ab.is(e) && (i > complexInfinity || ab.bounds(e).some((bound) => bound instanceof Special)));
     const rest = add(...flat.filter((e) => !ab.is(e)));
+    if (abs.length === 0) return rest;
     if (rest.freeSymbols().size === 0) return ab.add(abs, rest);
     // like SymPy, the interval absorbs the numeric term: x + 1 + AccumBounds(1, 2) = x + AccumBounds(2, 3)
     const [c, terms] = rest instanceof Add && isNum(at(rest.args, 0)) ? [at(rest.args, 0), rest.args.slice(1)] : [S.Zero, [rest]];

@@ -447,3 +447,38 @@ it('counts operations in a matrix product and matches through the registered hoo
   expect(String(sj.countOps(new MatMulNode([sj.S.NegOne, a, b]), { visual: true }))).toBe('MATMUL + NEG');
   expect(String(sj.countOps(new MatMulNode([a, b]), { visual: true }))).toBe('MATMUL');
 });
+
+it('cancels common infinite factors and a negative numeric coefficient while matching', async () => {
+  const sj = await import('../../src');
+  const x = new sj.Sym('x');
+  const wildcard = new sj.Wild('a');
+  const e = new sj.Mul([sj.S.NegativeInfinity, sj.I, x]);
+  const target = new sj.Mul([sj.S.Infinity, sj.I, wildcard]);
+  const match = sj.match(e, target);
+  expect(match).toBeInstanceOf(Map);
+  if (match instanceof Map) expect(match.get(wildcard)?.equals(sj.neg(x))).toBe(true);
+  expect(sj.match(new sj.Mul([sj.S.Infinity, sj.I, x]), target)).toBeInstanceOf(Map);
+  const f = sj.SymFunction('f')(x);
+  const n = new sj.Wild('n');
+  const coefficients = sj.match(sj.mul(5, sj.pow(f, 2)), sj.mul(-1, wildcard, sj.pow(f, n)));
+  expect(coefficients).toBeInstanceOf(Map);
+  if (coefficients instanceof Map) {
+    expect(coefficients.get(wildcard)?.equals(-5)).toBe(true);
+    expect(coefficients.get(n)?.equals(sj.S.Two)).toBe(true);
+  }
+  const xr = new sj.Sym('xr', { real: true }), yr = new sj.Sym('yr', { real: true });
+  const b = new sj.Wild('b');
+  expect(sj.match(sj.or(sj.Le(0, xr), sj.Le(yr, xr)), sj.or(sj.Le(sj.pow(wildcard, -1), b), sj.Le(wildcard, b)))).toBe(sj.NoMatch);
+});
+
+it('propagates an exceptional rewrite of a bound pattern argument', async () => {
+  const sj = await import('../../src');
+  class Unrebuildable extends sj.ExtensionExpr {
+    constructor(arg: sj.Expr) { super('Unrebuildable', [arg]); }
+    withArgs(): sj.Expr { throw new RangeError('cannot rebuild'); }
+  }
+  const x = new sj.Wild('x');
+  const pattern = new sj.BoolOp('Or', [new sj.Rel('Eq', x, sj.S.One), new Unrebuildable(x)]);
+  const input = new sj.BoolOp('Or', [new sj.Rel('Eq', sj.S.Two, sj.S.One), new Unrebuildable(sj.S.Two)]);
+  expect(() => sj.match(input, pattern)).toThrow(RangeError);
+});

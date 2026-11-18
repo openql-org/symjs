@@ -8,18 +8,20 @@
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import type { ExprLike, FnName } from './nodes';
-import { Add, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Integral, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
+import { Add, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Integral, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { numAdd, numNeg } from './num';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
-import { boundSymbols, freeSymbols, mapBottomUp as mapBottomUpM, rebuild as rebuildM, subs as subsM, xreplace as xreplaceM } from './traverse';
+import { boundSymbols, freeSymbols, mapBottomUp as mapBottomUpM, rebuild as rebuildM, some, subs as subsM, xreplace as xreplaceM } from './traverse';
+import { Eq, piecewise } from './logic';
 import { iterArgs, traversalArgs } from './containers';
 import { SubsNode } from './subsnode';
 import { BasicNode } from './basic';
 import { Indexed } from './indexed';
 import { at, getOrThrow } from './guard';
 import { ordered } from './match';
+import type { Truth } from './truth';
 import { InvariantError } from './errors';
 
 // Higher layers are reached through impl (docs/architecture.md: the core imports no other layer)
@@ -579,7 +581,9 @@ export function isPolynomial(eIn: ExprLike, syms: readonly Expr[] = []): boolean
 /** SymPy `is_rational_function(*syms)`. */
 export function isRationalFunction(eIn: ExprLike, syms: readonly Expr[] = []): boolean {
   const e = sympify(eIn);
-  if ([S.NaN, S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((v) => e.has(v))) return false;
+  // A symbol's metadata, such as a random variable's support, is not part of the rational function.
+  const nonfinite = (x: Expr): boolean => x instanceof Special || (!(x instanceof Sym) && x.args.some(nonfinite));
+  if (nonfinite(e)) return false;
   const s = symsOrAll(e, syms);
   if (s.length === 0) return true;
   const inSyms = (x: Expr) => s.some((y) => y.key === x.key);
@@ -596,12 +600,16 @@ export function isRationalFunction(eIn: ExprLike, syms: readonly Expr[] = []): b
   return go(e);
 }
 
+const knownZeroExpression = (e: Expr): boolean => isZeroQ(e) === true
+  || e instanceof Add && e.args.every(knownZeroExpression)
+  || e instanceof Mul && e.args.every((factor) => factor instanceof Rational || factor instanceof Sym && factor.assumptions0.get('finite') === true) && e.args.some(knownZeroExpression);
+
 /** SymPy `is_constant(*wrt)` (symbolic check via derivatives). */
 export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
   const e = sympify(eIn);
   const free = [...freeSymbols(e)];
   const vars = wrt.length ? free.filter((f) => wrt.some((w) => w.key === f.key)) : free;
-  if (vars.length === 0) return true;
+  if (vars.length === 0 || knownZeroExpression(e)) return true;
   if (e instanceof Sym) return false;
   for (const v of vars) {
     let d: Expr;
@@ -620,6 +628,32 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
   }
   return true;
 }
+
+/**
+ * SymPy's fuzzy constancy check. An undecided zero denominator leaves a
+ * derivative-based proof inconclusive because the original expression can have poles.
+ */
+export function isConstantTruth(eIn: ExprLike, wrt: readonly Sym[] = []): Truth {
+  const e = sympify(eIn);
+  const free = freeSymbols(e);
+  if (!free.size || wrt.length > 0 && !wrt.some((x) => [...free].some((v) => v.key === x.key))) return true;
+  if (!isConstant(e, wrt)) return false;
+  if (knownZeroExpression(e)) return true;
+  let result: Truth = true;
+  some(e, (term) => {
+    if (term instanceof Pow && term.exp instanceof Rational && term.exp.isNegative) {
+      const zero = isZeroQ(term.base);
+      if (zero === true) {
+        result = false;
+        return true;
+      }
+      if (zero === undefined) result = 'unknown';
+    }
+    return false;
+  });
+  return result;
+}
+
 
 /** SymPy `as_real_imag()`. */
 export function asRealImag(eIn: ExprLike): [Expr, Expr] {
@@ -963,6 +997,16 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
   const go = (t: Expr): boolean | undefined => {
     if (!t.has(x)) return true;
     if (t.key === x.key) return true;
+    if (t instanceof Piecewise) {
+      if (isReal(point) !== true) return undefined;
+      for (const [value, condition] of t.pairs) {
+        if (some(condition, (part) => part instanceof Rel && part.has(x) && Eq(subsAt(part.lhs), subsAt(part.rhs)) !== S.false)) return undefined;
+        const holds = subsAt(condition);
+        if (holds === S.true) return go(value);
+        if (holds !== S.false) return undefined;
+      }
+      return undefined;
+    }
     if (isAddLike(t) || isMulLike(t)) {
       const rs = t.args.map(go);
       if (rs.some((r) => r === false)) return false;
@@ -1282,17 +1326,27 @@ export function normal(eIn: ExprLike): Expr {
  * with `series`, which gives exactly the terms below the order (SymPy's
  * _eval_nseries may give fewer).
  */
-export function nseries(eIn: ExprLike, x?: Sym, x0: ExprLike = 0, n = 6, opts: { dir?: '+' | '-'; logx?: Expr; cdir?: number } = {}): Expr {
+type NseriesOptions = { dir?: '+' | '-'; logx?: Expr; cdir?: number };
+
+export function nseries(
+  eIn: ExprLike, variable?: Sym, x0: ExprLike = 0, n = 6,
+  directionOrOptions: '+' | '-' | NseriesOptions = '+', options: { logx?: Expr } = {},
+): Expr {
+  const opts = typeof directionOrOptions === 'string' ? { ...options, dir: directionOrOptions } : directionOrOptions;
   const e = sympify(eIn);
   const fs = [...freeSymbols(e)].filter((s) => s instanceof Sym);
+  let x = variable;
   if (x === undefined) {
     if (fs.length > 1) throw new RangeError('x must be given for multivariate functions.');
     if (fs.length === 0) return e;
-    return impl.series(e, at(fs, 0), x0, n, opts.dir, { logx: opts.logx });
+    x = at(fs, 0);
   }
   if (!fs.some((s) => s.key === x.key)) return e;
+  if (e instanceof Piecewise && sympify(x0).equals(S.Zero)) {
+    return piecewise(...e.pairs.map(([value, condition]) => [nseries(value, x, x0, n, opts), condition] as const));
+  }
   const dir = opts.cdir ? (opts.cdir < 0 ? '-' : '+') : opts.dir;
-  return impl.series(e, x, x0, n, dir, { logx: opts.logx, local: opts.dir !== '-' });
+  return impl.series(e, x, x0, n, dir, { logx: opts.logx, local: variable !== undefined && opts.dir !== '-' });
 }
 
 /** An expression that can be applied to arguments (a Lambda, a random process, ...: SymPy callable()). */

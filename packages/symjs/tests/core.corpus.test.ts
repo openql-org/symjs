@@ -2326,10 +2326,10 @@ describe("sympy/core/tests/test_arit.py", () => {
     const k = new Sym('k', { negative: true });
     expect(sympyStr(isPositive(new Add([x, n, new Mul([rational(-1), k])])))).toBe('None');
   });
-  it.fails("test_Add_is_negative_positive:944", () => {
+  it("test_Add_is_negative_positive:944", () => {
     expect(sympyStr(isZero(new Add([rational(-3), new Pow(new Add([new Mul([rational(-1, 2), new Pow(rational(2), rational(1, 2))]), new Mul([rational(-1, 2), new Pow(rational(10), rational(1, 2))])]), rational(2)), new Mul([rational(-1), new Pow(rational(5), rational(1, 2))])])))).toBe('True');
   });
-  it.fails("test_Add_is_negative_positive:946", () => {
+  it("test_Add_is_negative_positive:946", () => {
     expect(sympyStr(isZero(new Add([new Pow(new Add([rational(1), new Pow(rational(3), rational(1, 2))]), rational(1, 2)), new Pow(new Add([rational(3), new Mul([rational(3), new Pow(rational(3), rational(1, 2))])]), rational(1, 2)), new Mul([rational(-1), new Pow(new Add([rational(10), new Mul([rational(6), new Pow(rational(3), rational(1, 2))])]), rational(1, 2))])])))).toBe('True');
   });
   it("test_Add_is_nonpositive_nonnegative:957", () => {
@@ -7171,16 +7171,16 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Mul_does_not_distribute_infinity:2362", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_issue_8247_8354:2378", () => {
+  it("test_issue_8247_8354:2378", () => {
     expect(sympyStr(isPositive(new Add([new Pow(new Add([rational(1), new Pow(rational(3), rational(1, 2))]), rational(1, 2)), new Pow(new Add([rational(3), new Mul([rational(3), new Pow(rational(3), rational(1, 2))])]), rational(1, 2)), new Mul([rational(-1), new Pow(new Add([rational(10), new Mul([rational(6), new Pow(rational(3), rational(1, 2))])]), rational(1, 2))])])))).toBe('False');
   });
-  it.fails("test_issue_8247_8354:2382", () => {
+  it("test_issue_8247_8354:2382", () => {
     expect(sympyStr(isPositive(new Add([new Mul([rational(-4), new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(4, 3))]), new Mul([rational(116), new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(1, 3))]), new Mul([rational(1678), new Pow(rational(2), rational(1, 3))]), new Mul([rational(-1), new Pow(rational(2), rational(1, 3)), new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(2))]), new Mul([rational(12), new Pow(rational(93), rational(1, 2)), new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(1, 3))]), new Mul([rational(174), new Pow(rational(2), rational(1, 3)), new Pow(rational(93), rational(1, 2))])])))).toBe('False');
   });
   it("test_issue_8247_8354:2385", () => {
     expect(sympyStr(isPositive(new Add([new Mul([rational(-1), new Pow(rational(3), rational(1, 2)), new Add([rational(-3), new Mul([rational(4), new Pow(fn('cos', [new Mul([rational(19, 90), pi])]), rational(2))])])]), new Mul([new Add([new Mul([rational(-6), fn('tan', [new Mul([rational(19, 90), pi])])]), new Mul([rational(2), new Pow(rational(3), rational(1, 2))])]), fn('cos', [new Mul([rational(11, 90), pi])]), fn('cos', [new Mul([rational(19, 90), pi])])])])))).not.toBe('True');
   });
-  it.fails("test_issue_8247_8354:2391", () => {
+  it("test_issue_8247_8354:2391", () => {
     expect(sympyStr(isPositive(new Add([new Mul([new Pow(new Add([new Mul([rational(-2), new Pow(rational(2), rational(1, 3))]), new Mul([new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(1, 3)), new Add([rational(-2), new Mul([rational(-1), new Pow(rational(2), rational(2, 3)), new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(1, 3))])])])]), rational(2)), new Add([rational(1566), new Mul([rational(162), new Pow(rational(93), rational(1, 2))])])]), new Mul([rational(9), new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(2, 3)), new Pow(new Add([new Mul([rational(-2), new Pow(rational(2), rational(1, 3))]), new Mul([new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(1, 3)), new Add([rational(-2), new Mul([rational(-1), new Pow(rational(2), rational(2, 3)), new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(1, 3))])])])]), rational(3))]), new Mul([rational(72), new Pow(new Add([rational(29), new Mul([rational(3), new Pow(rational(93), rational(1, 2))])]), rational(2, 3)), new Add([rational(783), new Mul([rational(81), new Pow(rational(93), rational(1, 2))])])])])))).toBe('False');
   });
   it("test_Add_is_zero:2396", () => {
@@ -7259,11 +7259,11 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(new Add([zoo, x, AccumBounds(rational(1), rational(2))]).neg()), '-x + (AccumBounds(-2, -1) + zoo)', [x], { fn: '.__neg__', input: 'x + AccumBounds(1, 2) + zoo' })).toBe(true);
   });
-  it.fails("test_issue_22021:2458 (3)", () => {
+  it("test_issue_22021:2458 (3)", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([AccumBounds(rational(1), rational(2)), zoo, x]).neg())).toBe('-x + zoo');
   });
-  it.fails("test_issue_22021:2458 (4)", () => {
+  it("test_issue_22021:2458 (4)", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([AccumBounds(rational(1), rational(2)), x, zoo]).neg())).toBe('-x + zoo');
   });
@@ -7271,7 +7271,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(new Add([x, zoo, AccumBounds(rational(1), rational(2))]).neg()), '-x + (AccumBounds(-2, -1) + zoo)', [x], { fn: '.__neg__', input: 'x + AccumBounds(1, 2) + zoo' })).toBe(true);
   });
-  it.fails("test_issue_22021:2458 (6)", () => {
+  it("test_issue_22021:2458 (6)", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([x, AccumBounds(rational(1), rational(2)), zoo]).neg())).toBe('-x + zoo');
   });
@@ -9006,19 +9006,19 @@ describe("sympy/core/tests/test_noncommutative.py", () => {
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(transpose(new Add([A, new Mul([I, B])])))).toBe('transpose(A) + I*transpose(B)');
   });
-  it.fails("test_transpose:133", () => {
+  it("test_transpose:133", () => {
     const X = new Sym('X', { commutative: false, hermitian: true });
     expect(sympyStr(transpose(X))).toBe('conjugate(X)');
   });
-  it.fails("test_transpose:134", () => {
+  it("test_transpose:134", () => {
     const X = new Sym('X', { commutative: false, hermitian: true });
     expect(sympyStr(transpose(new Mul([rational(-1), I, X])))).toBe('-I*conjugate(X)');
   });
-  it.fails("test_transpose:135", () => {
+  it("test_transpose:135", () => {
     const Y = new Sym('Y', { commutative: false, antihermitian: true });
     expect(sympyStr(transpose(Y))).toBe('-conjugate(Y)');
   });
-  it.fails("test_transpose:136", () => {
+  it("test_transpose:136", () => {
     const Y = new Sym('Y', { commutative: false, antihermitian: true });
     expect(sympyStr(transpose(new Mul([rational(-1), I, Y])))).toBe('I*conjugate(Y)');
   });
@@ -9299,7 +9299,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(new Mul([new Pow(new Add([new Pow(rational(2), x), new Pow(rational(3), x)]), rational(-1)), new Add([new Pow(rational(2), new Add([rational(1), x])), new Pow(rational(3), new Add([rational(1), x]))])]).subs(new Pow(rational(2), x), w))).not.toBe('(2**(x + 1) + 3**(x + 1))/(2**x + 3**x)');
   });
-  it.fails("test_logexppow:112", () => {
+  it("test_logexppow:112", () => {
     const w = new Sym('w');
     const x = new Sym('x', { real: true });
     expect(sympyStr(new Mul([new Pow(new Add([new Pow(rational(2), x), new Pow(rational(3), x)]), rational(-1)), new Add([new Pow(rational(2), new Add([rational(1), x])), new Pow(rational(3), new Add([rational(1), x]))])]).subs(exp(new Mul([x, log(2)])), w))).not.toBe('(2**(x + 1) + 3**(x + 1))/(2**x + 3**x)');
@@ -9431,7 +9431,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(new Mul([x, y, A]).subs(new Mul([x, y]), a))).toBe('a*A');
   });
-  it.fails("test_mul:226", () => {
+  it("test_mul:226", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Mul([new Pow(x, rational(2)), new Pow(y, new Mul([rational(3, 2), x]))]).subs(new Mul([x, new Pow(y, new Mul([rational(1, 2), x]))]), rational(2)))).toBe('4*y**(x/2)');
   });
@@ -10904,7 +10904,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const t = new Sym('t');
     expect(sympyStr(subs(new Mul([(SymFunction('x'))(t), (SymFunction('y'))(t)]), new Map([[(SymFunction('x'))(t), new Add([rational(1), (SymFunction('x'))(t)])], [(SymFunction('y'))(t), (SymFunction('x'))(t)]])))).toBe('(x(t) + 1)*x(t)');
   });
-  it.fails("test_issue_19558:880", () => {
+  it("test_issue_19558:880", () => {
     const x = new Sym('x');
     expect(sympyStr(new Mul([new Pow(new Add([new Mul([rational(-4), new Pow(log(x), rational(3))]), new Mul([rational(2), x, fn('cos', [x])])]), rational(-1)), new Pow(new Add([rational(1), new Mul([rational(-1), new Pow(log(x), rational(4))]), new Mul([rational(2), fn('sin', [x])])]), rational(2)), new Pow(new Add([rational(3), new Mul([rational(-7), fn('sin', [x])]), new Mul([rational(3), new Pow(log(x), rational(4))])]), rational(-2)), new Add([new Mul([rational(-12), new Pow(log(x), rational(3))]), new Mul([rational(7), x, fn('cos', [x])])])]).subs(x, oo))).toBe('AccumBounds(-oo, oo)');
   });

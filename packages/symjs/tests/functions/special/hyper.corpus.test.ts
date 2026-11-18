@@ -206,7 +206,7 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
     const z = new Sym('z');
     expect(sympyStr(hyper([rational(1), rational(2)], [rational(3), rational(4), rational(5)], z).isCommutative)).toBe('True');
   });
-  it.fails("test_hyper:54", () => {
+  it("test_hyper:54", () => {
     const z = new Sym('z');
     expect(sympyStr(testDerivativeNumerically(hyper([new Add([new Float({ man: 174275017497929n, exp: -46n }, 53), new Mul([new Float({ man: 751038643638141n, exp: -52n }, 53), I])]), new Add([new Float({ man: 2827443974845153n, exp: -50n }, 53), new Mul([new Float({ man: -428138583153969n, exp: -51n }, 53), I])]), new Add([new Float({ man: 6268557144125757n, exp: -51n }, 53), new Mul([new Float({ man: -885800733539461n, exp: -51n }, 53), I])])], [new Add([new Float({ man: 5138242032879201n, exp: -51n }, 53), new Mul([new Float({ man: 144004964815285n, exp: -48n }, 53), I])]), new Add([new Float({ man: 6548488053058525n, exp: -51n }, 53), new Mul([new Float({ man: 10553861056369n, exp: -50n }, 53), I])])], z), z))).toBe('True');
   });
@@ -214,7 +214,7 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
     const [a1, a2, b1, b2, b3, z] = symbols('a1 a2 b1 b2 b3 z');
     expect(sympyStr(diff(hyper([a1, a2], [b1, b2, b3], z), z))).toBe('a1*a2*hyper((a1 + 1, a2 + 1), (b1 + 1, b2 + 1, b3 + 1), z)/(b1*b2*b3)');
   });
-  it.fails("test_hyper:61", () => {
+  it("test_hyper:61", () => {
     const z = new Sym('z');
     expect(sympyStr(diff(hyper([z], [], z), z))).toBe('Derivative(hyper((z,), (), z), z)');
   });
@@ -361,15 +361,15 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
   //   raises(ValueError, lambda: meijerg(((3, 1), (2,)), ((1,), (2, 0)), x))
   //   => None
   it.todo("test_meijer:165");
-  it.fails("test_meijer:170", () => {
+  it("test_meijer:170", () => {
     const z = new Sym('z');
     expect(sympyStr(testDerivativeNumerically(meijerg([new Add([new Float({ man: 6268557144125757n, exp: -51n }, 53), new Mul([new Float({ man: -885800733539461n, exp: -51n }, 53), I])])], [new Add([new Float({ man: 174275017497929n, exp: -46n }, 53), new Mul([new Float({ man: 2439559474594783n, exp: -50n }, 53), I])])], [], [new Add([new Float({ man: 5138242032879201n, exp: -51n }, 53), new Mul([new Float({ man: 144004964815285n, exp: -48n }, 53), I])]), new Add([new Float({ man: 6548488053058525n, exp: -51n }, 53), new Mul([new Float({ man: 10553861056369n, exp: -50n }, 53), I])])], z), z))).toBe('True');
   });
-  it.fails("test_meijer:174", () => {
+  it("test_meijer:174", () => {
     const z = new Sym('z');
     expect(sympyStr(testDerivativeNumerically(meijerg([], [new Add([new Float({ man: 6552166077060631n, exp: -51n }, 53), new Mul([new Float({ man: 1087136244991531n, exp: -50n }, 53), I])])], [], [new Add([new Float({ man: 2600994933089351n, exp: -50n }, 53), new Mul([new Float({ man: 1035070175822225n, exp: -51n }, 53), I])]), new Add([new Float({ man: 6328046648432193n, exp: -51n }, 53), new Mul([new Float({ man: 905597212270403n, exp: -50n }, 53), I])])], z), z))).toBe('True');
   });
-  it.fails("test_meijer:178", () => {
+  it("test_meijer:178", () => {
     const z = new Sym('z');
     expect(sympyStr(testDerivativeNumerically(meijerg([], [], [new Add([new Float({ man: 5566770506059763n, exp: -51n }, 53), new Mul([new Float({ man: -1798281890552797n, exp: -51n }, 53), I])])], [new Add([new Float({ man: 1370316921388177n, exp: -49n }, 53), new Mul([new Float({ man: 499390532281747n, exp: -51n }, 53), I])]), new Add([new Float({ man: 6559517746944167n, exp: -51n }, 53), new Mul([new Float({ man: 1050704132010545n, exp: -50n }, 53), I])])], z), z))).toBe('True');
   });
@@ -390,47 +390,47 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
   //           z**s*gamma(c - s)*gamma(-a + s + 1)/(gamma(b - s)*gamma(-d + s + 1))
   //   => z**s*gamma(c - s)*gamma(-a + s + 1)/(gamma(b - s)*gamma(-d + s + 1))
   it.todo("test_meijer:195");
-  it.fails("test_meijerg_derivative:200", () => {
+  it("test_meijerg_derivative:200", () => {
     const [x, z] = symbols('x z');
     expect(sympyStr(diff(meijerg([], [rational(1), rational(1)], [rational(0), rational(0), x], [], z), x))).toBe('meijerg(((), (1, 1)), ((0, 0, x), ()), z)*log(z) + 2*meijerg(((), (1, 1, 1)), ((0, 0, 0, x), ()), z)');
   });
-  it.fails("test_meijerg_derivative:206", () => {
+  it("test_meijerg_derivative:206", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([x], [], [], [], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:207", () => {
+  it("test_meijerg_derivative:207", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([new Pow(x, rational(2))], [], [], [], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:208", () => {
+  it("test_meijerg_derivative:208", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([], [x], [], [], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:209", () => {
+  it("test_meijerg_derivative:209", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([], [], [x], [], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:210", () => {
+  it("test_meijerg_derivative:210", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([], [], [], [x], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:211", () => {
+  it("test_meijerg_derivative:211", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([x], [rational(5)], [rational(6)], [], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:212", () => {
+  it("test_meijerg_derivative:212", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([x], [rational(6)], [rational(5)], [], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:213", () => {
+  it("test_meijerg_derivative:213", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([rational(5), x], [], [], [rational(6)], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:214", () => {
+  it("test_meijerg_derivative:214", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([rational(6), x], [], [], [rational(5)], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });
-  it.fails("test_meijerg_derivative:216", () => {
+  it("test_meijerg_derivative:216", () => {
     const x = new Sym('x');
     expect(sympyStr(testDerivativeNumerically(meijerg([rational(7)], [rational(3, 2)], [rational(-3, 2), x], [rational(5)], new Add([new Float({ man: 400316787206647n, exp: -47n }, 53), new Mul([new Float({ man: 1161723352960525n, exp: -51n }, 53), I])])), x))).toBe('True');
   });

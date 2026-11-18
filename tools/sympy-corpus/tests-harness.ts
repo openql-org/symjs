@@ -3,21 +3,22 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { fmt, matchesSympyErratum, runCase } from './harness';
-import type { Case, CaseObservation, Outcome } from './harness';
+import { equalsSerializedOperand, fmt, matchesSympyErratum, runCase } from './harness';
+import type { Case, CaseObservation, Outcome, Tree } from './harness';
 
 export interface TestCase extends Case {
   test: string;
   line: number;
   op: '==' | '!=' | 'is' | 'is not' | 'truthy' | 'falsy';
   raises?: string;
+  expectedOperand?: Tree;
 }
 
 export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string }; phase?: 'input' | 'invoke' | 'result' };
 
 export function testCaseKey(c: TestCase): string {
   // Replay state annotates an existing assertion without changing its ratchet identity.
-  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass', 'matrixClass', 'boundMatrix'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
+  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass', 'matrixClass', 'boundMatrix', 'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
 }
 
 // The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
@@ -56,6 +57,15 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
   // a truth-value assertion whose SymPy answer is wrong: the registered correct value counts as compatible
   if ((outcome.status === 'fail' || outcome.status === 'equivalent') && outcome.got !== undefined && matchesSympyErratum(c, outcome.got)) return { status: 'equivalent', got: outcome.got };
   if (c.op === '!=') {
+    if (c.expectedOperand !== undefined && observation && 'value' in observation &&
+        outcome.status !== 'error' && outcome.status !== 'unsupported') {
+      try {
+        return equalsSerializedOperand(observation.value, c.expectedOperand)
+          ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
+      } catch (error) {
+        return { status: 'error', reason: error instanceof Error ? error.message : String(error) };
+      }
+    }
     // Python != compares numbers by value (Float(1.0) == 1) and other expressions by structure: a
     // mathematically equal but different expression satisfies it
     if (outcome.status === 'pass') return { status: 'fail', got: c.expected };
@@ -79,12 +89,8 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
 
 export function runTestCase(c: TestCase): TestOutcome {
   if (c.exclusion) return { status: 'unsupported', reason: c.exclusion };
-  // Upstream tests inject exact random draws through a private keyword. The
-  // public JS methods have no such input; dropping it would measure a random
-  // experiment instead of the captured assertion.
-  if (c.kwargs && '_random_prec' in c.kwargs) return { status: 'unsupported', reason: 'upstream private random fixture _random_prec' };
   // A draw from Python's seeded random generator cannot be reproduced by the JS methods.
-  if (c.fn === '.random') return { status: 'unsupported', reason: "a draw from Python's seeded random generator" };
+  if (c.fn === '.random' && c.randomState === undefined) return { status: 'unsupported', reason: 'unrecorded random generator state' };
   let observation: CaseObservation | undefined;
   // These established public names capitalize the second word after "Non".
   const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };

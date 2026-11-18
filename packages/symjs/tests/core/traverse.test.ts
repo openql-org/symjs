@@ -31,6 +31,7 @@ import {
   xreplace,
 } from '../../src';
 import { boundSymbols, piecewiseFold } from '../../src/core/traverse';
+import { BoolOp } from '../../src/core/boolalg';
 import { at } from '../../src/core/guard';
 
 const [x, y, C1, C2, z, w, n] = symbols('x y C1 C2 z w n');
@@ -268,6 +269,24 @@ describe('use and preorderTraversal (SymPy sympy.core.traversal)', () => {
 describe('piecewiseFold (SymPy piecewise_fold)', () => {
   const P = sj.Piecewise([x, sj.Gt(x, 0)], [mul(-1, x), true]);
   const Q = sj.Piecewise([1, sj.Gt(y, 0)], [2, true]);
+  it('flattens nested values and translates conditional Boolean branches', () => {
+    const args = [sj.Gt(x, 0), sj.Lt(y, 1), sj.Gt(y, 1)] as const;
+    for (const condition of [new BoolOp('ITE', args), sj.ITE(...args, { evaluate: false })]) {
+      expect(str(piecewiseFold(sj.piecewise([x, condition]))))
+        .toBe('Piecewise((x, ((x <= 0) | (y < 1)) & ((x > 0) | (y > 1))))');
+    }
+    const p = sj.piecewise([sj.cos(x), sj.Lt(x, 0)], [0, true]);
+    expect(str(piecewiseFold(sj.piecewise([0, sj.Eq(p, 0)], [pow(p, -1), true]))))
+      .toBe('Piecewise((0, (x >= 0) | Eq(cos(x), 0)), (1/cos(x), x < 0), (zoo, True))');
+    const nested = sj.piecewise([sj.Tuple(add(P, 1), 2), sj.Lt(y, 0)], [0, true]);
+    expect(str(piecewiseFold(nested)))
+      .toBe('Piecewise(((Piecewise((x + 1, x > 0), (1 - x, True)), 2), y < 0), (0, True))');
+    const incomplete = sj.piecewise([sj.piecewise([1, sj.Gt(x, 0)]), sj.Gt(y, 0)], [2, true]);
+    const inside = [[x, -1], [y, 1]] as const;
+    expect(piecewiseFold(incomplete).subs(inside)).toBe(incomplete.subs(inside));
+    const complete = sj.piecewise([P, sj.Gt(y, 0)], [2, true]);
+    expect(piecewiseFold(complete).subs(inside).equals(complete.subs(inside))).toBe(true);
+  });
   it('combines shared branch conditions before expanding independent choices', () => {
     const c = sj.Gt(x, 0);
     const terms = Array.from({ length: 40 }, (_, i) => sj.piecewise([i + 1, c], [0, true]));
@@ -551,4 +570,38 @@ it('does not replace a derivative with respect to a different independent variab
   const f = sj.SymFunction('f')(x, y);
   const a = sj.derivative(f, [[x, 2]]);
   expect(a.subs(sj.derivative(f, [[y, 1]]), z).key).toBe(a.key);
+});
+
+it('orders derivative replacements by their full orders and restores split symbolic powers', async () => {
+  const sj = await import('../../src');
+  const x = sj.symbol('x'), y = sj.symbol('y'), t = sj.symbol('t');
+  const a = sj.SymFunction('a')(t);
+  const first = a.diff(t);
+  const second = a.diff(t, 2);
+  expect(sj.subs(sj.add(a, first, second), new Map<sj.Expr, sj.Expr>([[a, x], [first, y], [second, sj.S.One]])).equals(sj.add(1, x, y))).toBe(true);
+  const product = sj.parse('x**2*y**(3*x/2)');
+  expect(String(sj.subs(product, [[sj.parse('x*y**(x/2)'), 2]]))).toBe('4*y**(x/2)');
+  const exponential = sj.exp(sj.mul(x, sj.log(2)));
+  expect(sj.subs(sj.pow(2, x), [[exponential, y]]).equals(y)).toBe(true);
+});
+
+it('matches exponential patterns only when the resulting power divides the source', async () => {
+  const sj = await import('../../src');
+  const { countOps } = await import('../../src/core/traverse');
+  const x = sj.symbol('x');
+  const y = sj.symbol('y');
+  const a = sj.symbol('a');
+  const raw = new sj.Mul([new sj.Pow(sj.S.One, x), y]);
+  expect(countOps(raw)).toBe(5);
+  expect(sj.subs(sj.pow(y, x), [[sj.exp(sj.mul(x, sj.log(2))), a]])).toEqual(sj.pow(y, x));
+  const p = new sj.Mul([new sj.Pow(sj.S.One, x), sj.pow(y, x), sj.pow(y, x)]);
+  const pattern = new sj.Mul([sj.pow(y, x), y]);
+  const unmatched = sj.subs(p, [[pattern, a]]);
+  const nested = new sj.Mul([new sj.Pow(new sj.Pow(y, x), sj.S.Half), new sj.Pow(y, sj.mul(2, x)), x]);
+  expect(String(sj.subs(nested, [[sj.mul(sj.pow(y, x), x), 2]]))).toBe('2*(y**x)**(3/2)');
+  expect(unmatched.has(a)).toBe(false);
+  const f = sj.SymFunction('f')(x);
+  const order = sj.symbol('m', { integer: true, nonnegative: true });
+  const derivative = sj.derivative(f, [[x, order]]);
+  expect(sj.subs(sj.add(derivative, f), new Map<sj.Expr, sj.Expr>([[f, x], [derivative, y]])).equals(sj.add(x, y))).toBe(true);
 });

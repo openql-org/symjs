@@ -298,7 +298,7 @@
         {
           "file": "core.json",
           "cases": 9337,
-          "bytes": 4198928
+          "bytes": 4209315
         }
       ],
       "auditFile": "core.audit.json",

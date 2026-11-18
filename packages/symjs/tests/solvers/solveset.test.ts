@@ -41,6 +41,14 @@ it('includes the complex solutions of a polynomial system with real unknowns', (
   const [a, b] = symbols('a b', { real: true });
   const eqs = [add(pow(a, 2), mul(-2, pow(b, 2)), -2), add(mul(a, b), -2)];
   expect(nonlinsolve(eqs, [a, b]).map(String).sort()).toEqual(['-2,-1', '-sqrt(2)*I,sqrt(2)*I', '2,1', 'sqrt(2)*I,-sqrt(2)*I']);
+  expect(nonlinsolve([add(a, mul(-1, S.I))], [a]).map(String)).toEqual(['I']);
+});
+it('rejects the extraneous solution from squaring a radical equation', () => {
+  expect(nonlinsolve([parse('sqrt(y)-x-z'), parse('y-1')], [x, y, z]).map(String)).toEqual(['1 - z,1,z']);
+});
+it('represents a dependent coordinate in a positive-dimensional system', () => {
+  const equations = [parse('x**4-3*x**2+y*x'), parse('x*z**2'), parse('y*z-1')];
+  expect(nonlinsolve(equations, [x, y, z]).map(String)).toEqual(['0,1/z,z']);
 });
 it('extends assignments, excludes poles and preserves requested column order', () => {
   const known = [new Map([[y, S.One]])];

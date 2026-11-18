@@ -726,3 +726,23 @@ it('splits integer powers with a common exponent without reordering noncommutati
   expect(sj.asBaseExp(sj.mul(a.pow(2), x.pow(2))).map(String)).toEqual(['x*a', '2']);
   expect(sj.asBaseExp(sj.mul(a, b)).map(String)).toEqual(['a*b', '1']);
 });
+
+it('keeps the order of interval and complex infinity terms in a raw sum', () => {
+  const finite = sj.AccumBounds(1, 2);
+  const unbounded = sj.AccumBounds(S.NegativeInfinity, 2);
+  expect(sj.neg(new Add([x, finite, S.ComplexInfinity])).equals(add(sj.neg(x), S.ComplexInfinity))).toBe(true);
+  expect(String(sj.neg(new Add([S.ComplexInfinity, finite, x])))).toContain('AccumBounds');
+  expect(String(add(unbounded, S.ComplexInfinity, x))).toContain('AccumBounds');
+});
+
+it('preserves zero-, one- and multiple-operand constructors when evaluation is disabled', () => {
+  sj.evaluate(false, () => {
+    expect(add()).toBe(S.Zero);
+    expect(add(x)).toBe(x);
+    expect(add(1, 2)).toBeInstanceOf(sj.Add);
+    expect(mul()).toBe(S.One);
+    expect(mul(x)).toBe(x);
+    expect(mul(1, 2)).toBeInstanceOf(sj.Mul);
+    expect(pow(x, 1)).toBeInstanceOf(sj.Pow);
+  });
+});

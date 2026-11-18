@@ -296,7 +296,7 @@ export interface Impl {
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
   isComparable(e: Expr): boolean;
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
-  rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> }): Expr;
+  rewrite?(this: void, e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> }): Expr;
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
   expandComplex?(e: Expr): Expr;
@@ -335,7 +335,7 @@ export interface Impl {
   /** A node of the same type with new arguments, re-canonicalized (registered by core/traverse). */
   rebuild: (e: Expr, args: readonly Expr[]) => Expr;
   /** A named function applied with automatic evaluation (registered by functions/elementary). */
-  fn?(name: FnName, args: readonly Expr[]): Expr;
+  fn?(this: void, name: FnName, args: readonly Expr[]): Expr;
   /** expand with only the mul hint (registered by simplify/expand). */
   expandMul?(e: Expr): Expr;
   /** as_real_imag of exp and functions (registered by simplify/expand). */
@@ -369,6 +369,7 @@ export interface Impl {
   rebuildSet?: (e: Expr, args: readonly Expr[]) => Expr;
   /** SymPy Set._eval_subs: a set that binds a variable (ImageSet, ConditionSet) substituted, or undefined for the generic rule. */
   subsSet?: (e: Expr, old: Expr, nw: Expr, subs: (x: Expr) => Expr) => Expr | undefined;
+  piecewiseFold?: (e: Expr) => Expr;
   /** SymPy factor (set by the polys module). */
   factor?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */
@@ -1202,11 +1203,15 @@ export class Integral extends Expr {
 /** Application of an undefined function, e.g. f(x). Create with `Function('f')`. */
 export class UndefFn extends Expr {
   readonly kind = 'Undef' as const;
-  constructor(readonly name: string, readonly args: readonly Expr[]) {
+  constructor(readonly name: string, readonly args: readonly Expr[], readonly givenFacts: ReadonlyMap<string, boolean> = new Map()) {
     super();
   }
+  protected override computeCommutative(): boolean {
+    return this.givenFacts.get('commutative') ?? super.computeCommutative();
+  }
   protected computeKey(): string {
-    return `@${this.name}(${this.args.map((a) => a.key).join(',')})`;
+    const assumptions = this.givenFacts.size === 0 ? '' : JSON.stringify([...this.givenFacts].sort(([a], [b]) => a.localeCompare(b)));
+    return `@${this.name}${assumptions}(${this.args.map((a) => a.key).join(',')})`;
   }
 }
 
@@ -1386,6 +1391,9 @@ export abstract class ExtensionExpr extends Expr {
   get args(): readonly Expr[] {
     return this.#args;
   }
+  /** Symbolic arguments exposed to pattern searches, including tuple-valued arguments. */
+  searchArgs(): readonly Expr[] { return this.args; }
+
   /** A node of the same class with new arguments (required for traversals). */
   abstract withArgs(args: readonly Expr[]): Expr;
   /**

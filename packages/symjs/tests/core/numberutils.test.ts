@@ -230,3 +230,10 @@ it('converts a high-precision dyadic float without a binary64 round trip', () =>
   expect(rationalFromString('1').key).not.toBe(sj.rationalFromFloat(exact).key);
   expect(sj.rationalFromFloat(exact).key).toBe(sj.Rational.of(2n ** 70n + 1n, 2n ** 70n).key);
 });
+
+it('normalizes mpf tuples and keeps the special zero-mantissa encodings', () => {
+  expect(sj.mpfNorm([1, 0n, 1n, 0], 10)).toEqual([0, 0n, 0n, 0]);
+  expect(sj.mpfNorm([0, 0n, -456n, -2], 10)).toEqual([0, 0n, -456n, -2]);
+  expect(sj.mpfNorm([0, 15n, 0n, 4], 3)).toEqual([0, 1n, 4n, 1]);
+  expect(sj.mpfNorm([1, 9n, 0n, 4], 3)).toEqual([1, 1n, 3n, 1]);
+});

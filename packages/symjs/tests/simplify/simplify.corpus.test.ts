@@ -570,7 +570,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(separatevars(new Add([y, new Mul([rational(2), x])]), { symbols: [], dict: true, force: false }))).toBe('{\'coeff\': 2*x + y}');
   });
-  it.fails("test_separatevars:314", () => {
+  it("test_separatevars:314", () => {
     const m = new Sym('m', { commutative: false });
     const n = new Sym('n', { commutative: false });
     expect(sympyStr(separatevars(new Add([m, new Mul([n, m])]), { symbols: [], force: false }))).toBe('(1 + n)*m');
@@ -1769,15 +1769,15 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(new Mul([abs(x), fn('sign', [x])])))).toBe('x');
   });
-  it.fails("test_issue_19484:1030", () => {
+  it("test_issue_19484:1030", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(new Mul([new Add([x, fn('sign', [new Add([x, new Pow(x, rational(3))])])]), abs(new Add([x, new Pow(x, rational(3))]))])))).toBe('x**3 + x*Abs(x**3 + x) + x');
   });
-  it.fails("test_issue_19484:1033", () => {
+  it("test_issue_19484:1033", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(new Mul([new Add([new Pow(x, rational(2)), fn('sign', [new Add([rational(1), new Pow(x, rational(3))])])]), abs(new Add([rational(1), new Pow(x, rational(3))]))])))).toBe('x**3 + x**2*Abs(x**3 + 1) + 1');
   });
-  it.fails("test_issue_19484:1037", () => {
+  it("test_issue_19484:1037", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(new Mul([new Add([x, fn('sign', [new Add([x, new Pow((SymFunction('f'))(x), rational(3))])])]), abs(new Add([x, new Pow((SymFunction('f'))(x), rational(3))]))])))).toBe('x*Abs(x + f(x)**3) + x + f(x)**3');
   });

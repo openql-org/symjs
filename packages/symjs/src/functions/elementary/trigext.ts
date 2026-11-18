@@ -12,14 +12,15 @@
 import type { Expr, ExprLike, FnName } from '../../core/nodes';
 import { defined, first, pair } from '../../core/guard';
 import { Add, Float, Fn, Mul, Rational, S, Special, registerFunctionHeads } from '../../core/nodes';
-import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../../core/ops';
+import { add, couldExtractMinusSign, mul, neg, pow, splitCoeff, sqrt } from '../../core/ops';
 import { asCoefficient, asIndependent } from '../../core/methods';
 import { NotImplementedError } from '../../core/errors';
 import { expandMul } from '../../simplify/expand';
 import type { Sym } from '../../core/nodes';
 import { ratMod } from '../../core/num';
 import { AccumBounds } from '../../core/accumbounds';
-import { isReal } from '../../core/assumptions';
+import { isIntegerQ, isReal } from '../../core/assumptions';
+import { fact } from '../../core/exprfacts';
 import { mapBottomUp } from '../../core/traverse';
 import { fnPartials } from '../../calculus/diff';
 import { numericFns } from '../../numeric/evalf';
@@ -28,7 +29,7 @@ import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
 import type { Mpc } from '../../numeric/mpfun';
 import type { Evaluator } from './elementary';
-import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, im, log, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
+import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, im, log, re, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
 
 export const cot = (x: ExprLike): Expr => fn('cot', [x]);
 export const sec = (x: ExprLike): Expr => fn('sec', [x]);
@@ -108,7 +109,7 @@ function peeloffIpi(arg: Expr): [Expr, Rational] {
       const fl = twice.p >= 0n ? twice.p / twice.q : -((-twice.p + twice.q - 1n) / twice.q);
       const m2 = Rational.of(fl, 2n);
       if (m2.isZero) return [arg, m2];
-      return [add(arg, neg(mul(m2, ipi))), m2];
+      return [add(...arg.args.filter((term) => term !== a), mul(add(K, neg(m2)), ipi)), m2];
     }
   }
   return [arg, Rational.of(0n)];
@@ -403,9 +404,25 @@ const evalCot: Evaluator = (x) => {
   if (couldExtractMinusSign(x)) return neg(cot(neg(x)));
   const c = iCoeff(x);
   if (c !== undefined) return neg(mul(I, coth(c)));
+  const multiple = asCoefficient(x, pi);
+  if (multiple !== undefined) {
+    if (isIntegerQ(multiple) === true) return S.ComplexInfinity;
+    const [scale, factor] = splitCoeff(multiple);
+    if (scale instanceof Float) {
+      const [p, q] = F.toRational(scale.mpf);
+      const remainder = p % q;
+      // SymPy _pi_coeff recognizes integers and binary fractions with a single fractional bit.
+      if ((remainder & (remainder - 1n)) === 0n) {
+        const exact = mul(Rational.of(p, q), factor);
+        if (fact(exact, 'integer') === true) return S.ComplexInfinity;
+        const reduced = ratMod(Rational.of(p, q), S.One);
+        if (fact(factor, 'integer') === true) return cot(mul(reduced, factor, pi));
+        return cot(mul(exact, pi));
+      }
+    }
+  }
   const pc = piCoeffOnly(x);
   if (pc !== undefined) {
-    if (pc.isInteger) return S.ComplexInfinity;
     // cot((k + 1/2)*pi) = 0
     if (pc.q === 2n) return S.Zero;
     if (pc.q === 5n || pc.q === 10n) return tan(add(div(pi, 2), neg(x)));
@@ -551,6 +568,19 @@ function lookup(table: () => [Expr, Expr][], x: Expr): Expr | undefined {
 /** I*AccumBounds(-pi/2, pi/2), the value of atanh and asech at zoo (an unevaluated product: the bounds are not real). */
 const iHalfPiBounds = (): Expr => new Mul([I, AccumBounds(neg(div(pi, 2)), div(pi, 2))]);
 
+/** Reduce a known numeric argument by integer multiples of the vertical period. */
+function inverseHyperbolicBranch(arg: Expr, reflect: boolean): Expr | undefined {
+  if (arg.freeSymbols().size > 0) return undefined;
+  if (isReal(arg) === true) return arg;
+  const real = re(arg);
+  const imaginary = im(arg);
+  if (isReal(real) !== true || isReal(imaginary) !== true) return undefined;
+  const turns = fn('floor', [add(div(imaginary, pi), half)]);
+  if (!(turns instanceof Rational && turns.isInteger)) return undefined;
+  const reduced = add(real, mul(I, add(imaginary, mul(-turns.p, pi))));
+  return reflect && turns.p % 2n !== 0n ? neg(reduced) : reduced;
+}
+
 const evalAsinh: Evaluator = (x) => {
   if (isNan(x)) return S.NaN;
   if (isOo(x) || isNegOo(x) || isZoo(x)) return x;
@@ -561,6 +591,7 @@ const evalAsinh: Evaluator = (x) => {
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, asin(c));
   if (couldExtractMinusSign(x)) return neg(asinh(neg(x)));
+  if (isFn(x, 'sinh')) return inverseHyperbolicBranch(first(x.args), true);
   return undefined;
 };
 
@@ -588,15 +619,7 @@ const evalAtanh: Evaluator = (x) => {
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, atan(c));
   if (couldExtractMinusSign(x)) return neg(atanh(neg(x)));
-  if (isFn(x, 'tanh')) {
-    const t = first(x.args);
-    if (!t.isNumber) return undefined;
-    if (isReal(t) === true) return t;
-    const strip = fn('floor', [div(mul(2, im(t)), pi)]);
-    if (!(strip instanceof Rational) || !strip.isInteger) return undefined;
-    const turns = strip.p + (strip.p % 2n === 0n ? 0n : 1n);
-    return add(t, mul(Rational.of(-turns, 2), I, pi));
-  }
+  if (isFn(x, 'tanh')) return inverseHyperbolicBranch(first(x.args), false);
   return undefined;
 };
 

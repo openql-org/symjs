@@ -8,12 +8,23 @@
  */
 
 import { type Constant, type Expr, Float, Rational, impl } from './nodes';
-import { toRational } from '../numeric/mpf';
+import { bitLength, normalize, toRational } from '../numeric/mpf';
 import { numCmp } from './num';
 import { isPositive } from './assumptions';
 import { at, pair } from './guard';
 import { NoMatch } from './truth';
 import type { NoMatchResult } from './truth';
+
+type MpfTuple = readonly [sign: number, mantissa: bigint, exponent: bigint, bits: number];
+
+/** Normalize an mpf tuple to binary precision, preserving the special values. */
+export function mpfNorm(tuple: MpfTuple, precision: number): MpfTuple {
+  const [sign, mantissa, exponent, bits] = tuple;
+  if (mantissa === 0n) return bits === 0 ? [0, 0n, 0n, 0] : tuple;
+  const rounded = normalize(sign === 0 ? mantissa : -mantissa, exponent, precision);
+  const magnitude = rounded.man < 0n ? -rounded.man : rounded.man;
+  return [sign, magnitude, rounded.exp, bitLength(magnitude)];
+}
 
 /** Exact rational value of a double (SymPy Rational(0.2) = 3602879701896397/18014398509481984). */
 export function rationalFromFloat(v: number | Float): Rational {

@@ -540,11 +540,11 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), rational(0), '>=', { evaluate: false })]], x, true))).toBe('(-oo < x) & (x < oo)');
   });
-  it.fails("test_reduce_poly_inequalities_complex_relational:126", () => {
+  it("test_reduce_poly_inequalities_complex_relational:126", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), rational(0), '>', { evaluate: false })]], x, true))).toBe('(x > -oo) & (x < oo) & Ne(x, 0)');
   });
-  it.fails("test_reduce_poly_inequalities_complex_relational:129", () => {
+  it("test_reduce_poly_inequalities_complex_relational:129", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), rational(0), '!=', { evaluate: false })]], x, true))).toBe('(x > -oo) & (x < oo) & Ne(x, 0)');
   });
@@ -729,7 +729,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceInequalities([Relational(new Add([rational(-1), new Pow(x, rational(2))]), rational(0), '>=', { evaluate: false })], []))).toBe('((1 <= x) & (x < oo)) | ((-oo < x) & (x <= -1))');
   });
-  it.fails("test_issue_8235:261", () => {
+  it("test_issue_8235:261", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceInequalities([Relational(new Add([rational(-9), x, new Pow(x, rational(8))]), rational(0), '>=', { evaluate: false })], []))).toBe('((-oo < x) & (x <= CRootOf(x**8 + x - 9, 0))) | ((x < oo) & (CRootOf(x**8 + x - 9, 1) <= x))');
   });
@@ -737,11 +737,11 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceInequalities([Relational(new Pow(new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(2)), rational(1, 2)), rational(1), '<', { evaluate: false })], []))).toBe('(0 < x) & (x < 2)');
   });
-  it.fails("test_issue_5526:268", () => {
+  it("test_issue_5526:268", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(reduceInequalities(Relational(new Add([rational(-1), x, new Integral([new Pow(y, rational(2)), y, rational(1), rational(3)])]), rational(0), '>=', { evaluate: false }), [x]))).toBe('x >= 1 - Integral(y**2, (y, 1, 3))');
   });
-  it.fails("test_issue_5526:273", () => {
+  it("test_issue_5526:273", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(reduceInequalities([Relational(new Add([x, new Pow(y, rational(2)), Sum((SymFunction('f'))(x), [x, rational(1), rational(3)])]), rational(0), '>=', { evaluate: false })], [x]))).toBe('x >= -y**2 - Sum(f(x), (x, 1, 3))');
   });
@@ -789,7 +789,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(() => str(Relational(new Mul([new Pow(x, rational(-1)), new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(-3), I, x])])]), rational(0), '<', { evaluate: false }))).toThrow(RangeError);
   });
-  it.fails("test_solve_univariate_inequality:302", () => {
+  it("test_solve_univariate_inequality:302", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Add([rational(-2), new Pow(x, rational(7)), new Mul([rational(-1), x])]), rational(0), '>', { evaluate: false }), x, { relational: true }))).toBe('(x < oo) & (CRootOf(x**7 - x - 2, 0) < x)');
   });
@@ -797,7 +797,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Pow(new Add([rational(-2), x]), rational(-1)), rational(0), '>', { evaluate: false }), x, { relational: true }))).toBe('(2 < x) & (x < oo)');
   });
-  it.fails("test_solve_univariate_inequality:310", () => {
+  it("test_solve_univariate_inequality:310", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Mul([new Pow(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(-3), x])]), rational(-1)), new Add([rational(-1), x])]), rational(0), '<=', { evaluate: false }), x, { relational: true }))).toBe('(x > -oo) & (x < 2) & Ne(x, 1)');
   });
@@ -867,15 +867,15 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(fn('sin', [x]), rational(0), '<=', { evaluate: false }), x, { relational: false }))).toBe('Union({0}, Interval.Ropen(pi, 2*pi))');
   });
-  it.fails("test_trig_inequalities:356", () => {
+  it("test_trig_inequalities:356", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(fn('sin', [x]), rational(1), '<=', { evaluate: false }), x, { relational: false }))).toBe('Reals');
   });
-  it.fails("test_trig_inequalities:357", () => {
+  it("test_trig_inequalities:357", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(fn('cos', [x]), rational(-2), '<', { evaluate: false }), x, { relational: false }))).toBe('EmptySet');
   });
-  it.fails("test_trig_inequalities:358", () => {
+  it("test_trig_inequalities:358", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(fn('sin', [x]), rational(-1), '>=', { evaluate: false }), x, { relational: false }))).toBe('Reals');
   });
@@ -903,7 +903,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(rel('Lt', new Add([rational(1), new Mul([rational(-1), x]), new Mul([rational(-1), abs(new Add([rational(-1), x]))])]), S.Zero), x))).toBe('(1 < x) & (x < oo)');
   });
-  it.fails("test_issue_8545:381", () => {
+  it("test_issue_8545:381", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceInequalities([Relational(new Add([rational(1), new Mul([rational(-1), x]), new Mul([rational(-1), new Pow(new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(2)), rational(1, 2))])]), rational(0), '<', { evaluate: false })], []))).toBe('(1 < x) & (x < oo)');
   });
@@ -915,7 +915,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(oo, x, '>', { evaluate: false }), x, { relational: true }))).toBe('(-oo < x) & (x < oo)');
   });
-  it.fails("test_issue_10198:390", () => {
+  it("test_issue_10198:390", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceInequalities([Relational(new Add([rational(-1), new Pow(abs(new Add([rational(1), new Mul([rational(-1), new Pow(x, rational(-1))])])), rational(-1))]), rational(0), '<', { evaluate: false })], []))).toBe('(x > -oo) & (x < 1/2) & Ne(x, 0)');
   });
@@ -932,16 +932,16 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
   //           1 - 1/sqrt(x)), '<', x))
   //   => None
   it.todo("test_issue_10198:397");
-  it.fails("test_issue_10047:408", () => {
+  it("test_issue_10047:408", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceInequalities([Relational(fn('sin', [x]), rational(2), '<', { evaluate: false })], []))).toBe('True');
   });
-  it.fails("test_issue_10047:409", () => {
+  it("test_issue_10047:409", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solveset(Relational(fn('sin', [v1]), rational(2), '<', { evaluate: false }), v1, Reals))).toBe('Reals');
   });
-  it.fails("test_issue_10268:413", () => {
+  it("test_issue_10268:413", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceInequalities([Relational(log(x), rational(1000), '<', { evaluate: false })], []))).toBe('(0 < x) & (x < exp(1000))');
   });
@@ -973,7 +973,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Mul([rational(-1), new Pow(x, rational(-2))]), rational(0), '<', { evaluate: false }), x, interval(rational(1), rational(10), false, false)))).toBe('Interval(1, 10)');
   });
-  it.fails("test_issue_10671_12466:445", () => {
+  it("test_issue_10671_12466:445", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Mul([new Pow(x, rational(-1)), log(new Add([rational(-6), x]))]), rational(0), '<=', { evaluate: false }), x, Reals))).toBe('Interval.Lopen(6, 7)');
   });

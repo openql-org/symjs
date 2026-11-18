@@ -156,6 +156,7 @@ export {
   isPolynomial,
   isRationalFunction,
   isConstant,
+  isConstantTruth,
   asRealImag,
   asNumerDenom,
   atoms,
@@ -287,7 +288,7 @@ export {
   toComplex,
   lambdify,
 } from './numeric/evalf';
-export type { ScaledZero, RawMpfTuple } from './numeric/evalf';
+export type { RawEvalfResult, ScaledZero, RawMpfTuple } from './numeric/evalf';
 export {
   float,
 } from './numeric/floatctor';
@@ -374,6 +375,7 @@ export {
   numDigits,
   modInverse,
   limitDenominator,
+  mpfNorm,
 } from './core/numberutils';
 export {
   nfloat,
@@ -685,5 +687,7 @@ export const Number = _SymNumber_;
 /** @deprecated Use `SymFunction` (`Function` shadows the JavaScript global); removed in 1.0. */
 export const Function = _SymFunction_;
 
-export { complexAccuracy, getIntegerPart } from './numeric/evalf';
+export { complexAccuracy, evalfRaw, getIntegerPart } from './numeric/evalf';
 export type { EvalfResult } from './numeric/evalf';
+export { LatticeOp } from './core/operations';
+export type { LatticeOperation } from './core/operations';

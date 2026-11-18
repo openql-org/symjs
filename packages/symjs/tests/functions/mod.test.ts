@@ -236,3 +236,13 @@ it('retains modular power trees when totient evaluation is unavailable', async (
     Object.assign(impl, saved);
   }
 });
+
+it('computes rational remainders at the precision of the Float operand', () => {
+  const divisor = Rational.of(500n, 41n);
+  const left = Mod(divisor, new Float({ man: 2949n, exp: -13n }, 13));
+  const right = Mod(new Float({ man: 535n, exp: -6n }, 13), divisor);
+  expect(String(left)).toBe('0.316');
+  expect(String(right)).toBe('8.36');
+  expect(left).toMatchObject({ prec: 13 });
+  expect(right).toMatchObject({ prec: 13 });
+});

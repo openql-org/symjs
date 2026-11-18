@@ -14,6 +14,7 @@ import './calculus/doit';
 
 export {
   simplify,
+  exprEquals,
   clearCoefficients,
   factorSum,
   inversecombine,

@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, I, Sym, add, expPolar, expand, expandComplex, expandLog, expandMultinomial, expandPowerBase, expandTrig, mul, parse, pow, sstr, symbol, symbols } from '../../src';
+import { DiracDelta, Heaviside, I, Sym, abs, add, expPolar, expand, expandComplex, expandLog, expandMultinomial, expandPowerBase, expandTrig, fn, mul, parse, pow, sstr, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 import { expandMulRounds } from '../../src/simplify/expand';
 
@@ -14,6 +14,20 @@ const [x, y] = symbols('x y');
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
 const Qs = (s: string, syms: Sym[]) => parse(s, { symbols: syms, locals: { Heaviside, DiracDelta } });
 const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(String).join(', ')}]` : String(v));
+
+it('factors integer logarithms when requested and cancels common log bases', () => {
+  expect(sstr(expandLog(P('log(12)'), { factor: true }))).toBe('log(3) + 2*log(2)');
+  expect(sstr(expandLog(P('log(21)/log(7)')))).toBe('log(3)/log(7) + 1');
+  expect(sstr(expandLog(P('log(6)/log(35)')))).toBe('log(6)/log(35)');
+  expect(sstr(expandLog(fn('log', [-2], { evaluate: false })))).toBe('log(2) + I*pi');
+  expect(sstr(expandLog(fn('log', [1], { evaluate: false })))).toBe('0');
+});
+
+it('expands a complex modulus and retains a hyperbolic function of an extended real', () => {
+  const t = symbol('t', { extendedReal: true });
+  expect(sstr(expandComplex(abs(x)))).toBe('sqrt(re(x)**2 + im(x)**2)');
+  expect(sstr(expandComplex(fn('cosh', [t], { evaluate: false })))).toBe('cosh(t)');
+});
 type Assume = NonNullable<Parameters<typeof symbol>[1]>;
 const PPolar = (s: string, a: Record<string, Assume> = {}): Expr =>
   parse(s, { locals: { exp_polar: expPolar }, symbols: Object.entries(a).map(([k, v]) => symbol(k, v)) });
@@ -414,4 +428,66 @@ it('retains an irreducible complex square root and handles unevaluated special c
 it('expands the base of an unevaluated logarithm', async () => {
   const { fn } = await import('../../src');
   expect(String(expandLog(fn('log', [x, 10], { evaluate: false })))).toBe('log(x)/log(10)');
+});
+
+describe('product denominators (SymPy Mul._eval_expand_mul)', () => {
+  const [a, b, c] = symbols('a b c');
+  const P = (s: string) => parse(s, { symbols: { a, b, c } });
+  it('multiplies out a denominator that is a product', () => {
+    expect(sstr(expand(P('1/(a*(b + c))')))).toBe('1/(a*b + a*c)');
+    expect(sstr(expand(P('2*a/(b*(c + 1))')))).toBe('2*a/(b*c + b)');
+    expect(sstr(expand(P('(a + b)/(c*(a + 1))')))).toBe('a/(a*c + c) + b/(a*c + c)');
+    expect(sstr(expand(P('1/(2*(b + c))')))).toBe('1/(2*b + 2*c)');
+    expect(sstr(expand(P('a/(b + c)**2')))).toBe('a/(b**2 + 2*b*c + c**2)');
+  });
+  it('does so for the mul hint alone and without deep', () => {
+    expect(sstr(expand(P('1/(a*(b + c))'), { power_exp: false, power_base: false, log: false, multinomial: false }))).toBe('1/(a*b + a*c)');
+    expect(sstr(expand(P('1/(a*(b + c))'), { deep: false }))).toBe('1/(a*b + a*c)');
+  });
+  it('leaves other denominators as they are', () => {
+    expect(sstr(expand(P('1/(a*sqrt(b + c))')))).toBe('1/(a*sqrt(b + c))');
+    expect(sstr(expand(P('1/(a*b)')))).toBe('1/(a*b)');
+    expect(sstr(expand(P('1/(b + c)')))).toBe('1/(b + c)');
+  });
+});
+
+it('allows scoped callers to keep product denominators factored', async () => {
+  const sj = await import('../../src');
+  const { withFactoredDenominators } = await import('../../src/simplify/expand');
+  const input = parse('1/(y*(x + 1))');
+  expect(String(withFactoredDenominators(() => {
+    expect(String(withFactoredDenominators(() => expand(input)))).toBe('1/(y*(x + 1))');
+    return expand(input);
+  }))).toBe('1/(y*(x + 1))');
+  expect(String(expand(input))).toBe('1/(x*y + y)');
+  expect(String(withFactoredDenominators(() => expand(parse('1/((x+1)*(y+2))'))))).toBe('1/((x + 1)*(y + 2))');
+  const a = new sj.Add([x, sj.neg(x), sj.S.Two]);
+  const b = new sj.Add([y, sj.neg(y), sj.Rational.of(3)]);
+  const raw = new sj.Mul([new sj.Pow(a, sj.S.NegOne), new sj.Pow(b, sj.S.NegOne), x]);
+  expect(String(withFactoredDenominators(() => expand(raw, {
+    deep: false, power_exp: false, power_base: false, log: false, multinomial: false,
+  })))).toBe('x/6');
+});
+
+it('expands exponential sums, logarithmic products and complex hyperbolic functions', async () => {
+  const sj = await import('../../src');
+  const n = symbol('n');
+  const p = symbol('p', { positive: true });
+  const a = symbol('a', { commutative: false });
+  expect(String(sj.expandPowerExp(sj.exp(sj.Sum(x, [x, 1, n]))))).toBe('Product(exp(x), (x, 1, n))');
+  expect(String(sj.expandPowerExp(sj.exp(sj.Sum(a, [x, 1, n]))))).toBe('exp(Sum(a, (x, 1, n)))');
+  const product = (f: Expr): Expr => sj.fn('log', [sj.Product(f, [x, 1, n])], { evaluate: false });
+  expect(String(expandLog(product(x), true))).toBe('Sum(log(x), (x, 1, n))');
+  expect(String(expandLog(product(p.mul(x.pow(2)).add(1))))).toBe('log(Product(p*x**2 + 1, (x, 1, n)))');
+  expect(String(expandLog(product(p.pow(x))))).toBe('log(Product(p**x, (x, 1, n)))');
+  expect(String(expandLog(product(p)))).toBe('Sum(log(p), (x, 1, n))');
+  const [r, i] = sj.symbols('r i', { real: true });
+  for (const name of ['tanh', 'coth', 'sech', 'csch'] as const) {
+    const e = sj.fn(name, [r.add(sj.I.mul(i))]);
+    const atPoint = new Map([[r, sj.S.One], [i, sj.S.Half]]);
+    const before = sj.evalf(e.subs(atPoint)).toComplex();
+    const after = sj.evalf(sj.expandComplex(e).subs(atPoint)).toComplex();
+    expect(after.re).toBeCloseTo(before.re);
+    expect(after.im).toBeCloseTo(before.im);
+  }
 });

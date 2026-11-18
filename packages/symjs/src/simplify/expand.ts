@@ -13,9 +13,10 @@ import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/e
 import { rebuild } from '../core/traverse';
 import { at, defined, first } from '../core/guard';
 import { ratMod } from '../core/num';
-import { factorInt } from '../core/numbers';
-import { asNumerDenom } from '../core/methods';
 import { integerNthroot } from '../core/numberutils';
+import { factorInt } from '../core/numbers';
+import { Concrete } from '../core/concrete';
+import { asNumerDenom } from '../core/methods';
 
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 
@@ -84,28 +85,56 @@ function expandMultinomial(e: Pow, force = false): Expr {
   return e;
 }
 
-function distributeProduct(e: Expr): Expr {
-  if (!(e instanceof Mul)) return e;
-  if (!e.args.some((factor) => factor instanceof Add)) return mul(...e.args);
-  return e.args.reduce<Expr>((product, factor) => distribute(product, factor), S.One);
+let factoredDenominators = false;
+
+/**
+ * @internal Run an expansion that leaves product denominators factored (1/(x*(y + 1)) stays), for callers whose
+ * rules match the factors of the denominator.
+ */
+export function withFactoredDenominators<T>(run: () => T): T {
+  const saved = factoredDenominators;
+  factoredDenominators = true;
+  try {
+    return run();
+  } finally {
+    factoredDenominators = saved;
+  }
 }
 
-/** Expand reciprocal products together before distributing the numerator. */
+/** The product of the factors of a Mul, distributed over its sums. */
+function distributeFactors(m: Expr): Expr {
+  if (!(m instanceof Mul) || !m.args.some((a) => a instanceof Add)) return m;
+  return m.args.reduce<Expr>((acc, f) => distribute(acc, f), Rational.of(1n));
+}
+
+/**
+ * SymPy Mul._eval_expand_mul on the fraction of a product: a denominator that is itself a product is
+ * multiplied out (1/(x*(y + 1)) becomes 1/(x*y + x)).
+ */
+function expandProductDenominator(node: Mul): Expr {
+  if (factoredDenominators) return node;
+  if (!node.args.some((f) => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isNegative)) return node;
+  const [n, d] = defined(impl.fraction?.(node), 'impl.fraction (simplify/rational)');
+  if (!(d instanceof Mul)) return node;
+  const denominator = distributeFactors(d);
+  return denominator === d ? node : mul(distributeFactors(n), pow(denominator, -1));
+}
+
 function expandProduct(e: Mul): Expr {
-  if (e.isCommutative && e.args.some((factor) => factor instanceof Pow && isNegative(factor.exp) === true)) {
-    const parts = impl.fraction?.(e);
-    if (parts !== undefined && parts[1] instanceof Mul) {
-      const [numerator, denominator] = parts;
-      return distribute(distributeProduct(numerator), pow(distributeProduct(denominator), -1));
-    }
+  if (e.args.some((a) => a instanceof Add)) return e.args.reduce<Expr>(distribute, S.One);
+  const inverse = e.args.filter((factor): factor is Pow => factor instanceof Pow && factor.exp.equals(S.NegOne) && factor.base instanceof Add);
+  if (inverse.length === 2) {
+    const denominator = distribute(first(inverse).base, at(inverse, 1).base);
+    if (isNum(denominator)) return mul(pow(denominator, -1), ...e.args.filter((factor) => !inverse.some((part) => part === factor)));
   }
-  return distributeProduct(e);
+  return mul(...e.args);
 }
 
 function expandNode(e: Expr): Expr {
   if (e.args.length === 0) return e;
   const args = e.args.map(expandNode);
-  const node = args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
+  const rebuilt = args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
+  const node = rebuilt instanceof Mul ? expandProductDenominator(rebuilt) : rebuilt;
 
   if (node instanceof Mul) return expandProduct(node);
   if (node instanceof Pow) return expandMultinomial(node);
@@ -144,6 +173,8 @@ export interface ExpandHints {
   power_exp?: boolean;
   power_base?: boolean;
   log?: boolean;
+  /** Split logarithms of integers into logarithms of their factors. */
+  factor?: boolean;
   complex?: boolean;
   trig?: boolean;
   force?: boolean;
@@ -157,8 +188,6 @@ export interface ExpandHints {
   denom?: boolean;
   /** Preserve unevaluated factors and ambiguous exponents when splitting a fraction. */
   exact?: boolean;
-  /** Factor integer arguments before expanding logarithms. */
-  factor?: boolean;
   /** Hints defined by extension nodes (ExtensionExpr.expandSelf), e.g. { double: true }. */
   [hint: string]: unknown;
 }
@@ -179,6 +208,9 @@ const isNonPositive = (e: Expr): boolean => isNonNegative(mul(-1, e)) === true;
 function powerExp(e: Expr, force: boolean): Expr {
   if (!(e instanceof Pow)) return e;
   const [b, x] = e.args;
+  if (isE(b) && x instanceof Concrete && x.kind2 === 'Sum' && x.isCommutative) {
+    return new Concrete('Product', [pow(b, x.function), ...x.args.slice(1)]);
+  }
   if (!(x instanceof Add) || !x.isCommutative) return e;
   if (isE(b) || force || isNonZero(b) === true || allNonnegOrNonpos(x)) {
     return mul(...x.args.map((t) => pow(b, t)));
@@ -289,8 +321,16 @@ function expandLogNode(e: Expr, force: boolean, factor: boolean): Expr {
   if (a instanceof Pow) {
     // log(b**x) = x*log(b) for real x when b > 0 or -1 < x <= 1
     const [b, x] = a.args;
-    const unitExp = (): boolean => isPositive(add(x, 1)) === true && isNonPositive(add(x, -1));
+    const unitExp = (): boolean => {
+      if (isPositive(add(x, 1)) === true && isNonPositive(add(x, -1))) return true;
+      const [numerator, denominator] = asNumerDenom(x);
+      return isPositive(denominator) === true && isPositive(add(numerator, denominator)) === true
+        && isNonPositive(add(numerator, mul(-1, denominator)));
+    };
     if (force || (isReal(x) === true && (isPositive(b) === true || unitExp())) || isPolar(b)) return mul(x, expandLogNode(log(b), force, factor));
+  }
+  if (a instanceof Concrete && a.kind2 === 'Product' && (force || isPositive(a.function) === true)) {
+    return new Concrete('Sum', [log(a.function), ...a.args.slice(1)]);
   }
   return e;
 }
@@ -440,6 +480,10 @@ const RECIPROCAL_OF = { sec: 'cos', csc: 'sin', sech: 'cosh', csch: 'sinh' } as 
 
 /** Split into real and imaginary parts (SymPy expand(complex=True)). */
 function expandComplexNode(e: Expr): Expr {
+  if (e instanceof Fn && e.name === 'abs') {
+    const [real, imaginary] = asRealImagExpand(first(e.args));
+    return pow(add(pow(real, 2), pow(imaginary, 2)), S.Half);
+  }
   const [r, i] = asRealImagExpand(e);
   return add(r, mul(S.I, i));
 }
@@ -447,6 +491,8 @@ function expandComplexNode(e: Expr): Expr {
 export function asRealImagExpand(e: Expr): [Expr, Expr] {
   if (e instanceof Fn) {
     const a = first(e.args);
+    if (['sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch'].includes(e.name)
+      && (isReal(a) === true || a instanceof Sym && a.assumptions0.get('extended_real') === true)) return [e, S.Zero];
     const ra = re(a);
     const ia = im(a);
     switch (e.name) {
@@ -458,6 +504,21 @@ export function asRealImagExpand(e: Expr): [Expr, Expr] {
         return [mul(sinh(ra), cos(ia)), mul(cosh(ra), sin(ia))];
       case 'cosh':
         return [mul(cosh(ra), cos(ia)), mul(sinh(ra), sin(ia))];
+      case 'tanh':
+      case 'coth': {
+        const hyperbolicSin = sinh(ra);
+        const cosine = cos(ia);
+        const sine = sin(ia);
+        const isTanh = e.name === 'tanh';
+        const inv = pow(add(pow(hyperbolicSin, 2), pow(isTanh ? cosine : sine, 2)), -1);
+        return [mul(hyperbolicSin, cosh(ra), inv), mul(isTanh ? 1 : -1, sine, cosine, inv)];
+      }
+      case 'sech':
+      case 'csch': {
+        const [real, imaginary] = asRealImagExpand(fn(e.name === 'sech' ? 'cosh' : 'sinh', [a]));
+        const inv = pow(add(pow(real, 2), pow(imaginary, 2)), -1);
+        return [mul(real, inv), mul(-1, imaginary, inv)];
+      }
       case 'tan': {
         if (ia instanceof Rational && ia.isZero) return [tan(ra), S.Zero];
         const den = pow(add(cos(mul(2, ra)), cosh(mul(2, ia))), -1);
@@ -519,6 +580,7 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     e = applyBottomUp(e, (x) => (x instanceof ExtensionExpr ? (x.expandSelf(hint, h) ?? x) : x), h.deep);
   }
   if (h.func && impl.expandFunc) e = impl.expandFunc(e);
+  if (h.complex) e = expandComplexNode(e);
   for (let round = 0; round < 6; round++) {
     const was = e;
     if (h.complex) e = applyBottomUp(e, expandComplexNode, false);
@@ -544,7 +606,8 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
   return e;
 }
 
-function expandMulShallow(e: Expr, doMul: boolean, doMulti: boolean, force = false): Expr {
+function expandMulShallow(eIn: Expr, doMul: boolean, doMulti: boolean, force = false): Expr {
+  const e = doMul && eIn instanceof Mul ? expandProductDenominator(eIn) : eIn;
   if (doMul && e instanceof Mul) return expandProduct(e);
   if (doMulti && e instanceof Pow) return expandMultinomial(e, force);
   return e;
@@ -595,12 +658,26 @@ function expandLogRatio(e: Expr): Expr {
   return expandMulOnly(mul(e, pow(n, -1), d, ratio));
 }
 
-/** Expand logarithms, including numeric ratios with a common logarithm base. */
-export const expand_log = (e: ExprLike, force = false, options: { deep?: boolean; factor?: boolean } = {}): Expr => {
-  const expr = sympify(e);
-  const split = options.factor === true ? expr : applyBottomUp(expr, expandLogRatio, options.deep !== false);
-  return expand(split, { power_exp: false, power_base: false, mul: false, multinomial: false, force, ...options });
-};
+export function expand_log(e: ExprLike, options: boolean | { force?: boolean; factor?: boolean; deep?: boolean } = false, legacy: { factor?: boolean; deep?: boolean } = {}): Expr {
+  const opts = typeof options === 'boolean' ? { force: options, ...legacy } : options;
+  const expandLogs = (x: ExprLike, factor: boolean): Expr =>
+    expand(x, { power_exp: false, power_base: false, mul: false, multinomial: false, ...opts, factor });
+  let expression = sympify(e);
+  if (!opts.factor) {
+    const integerLog = (x: Expr): x is Fn => x instanceof Fn && x.name === 'log' && first(x.args) instanceof Rational;
+    const count = (x: Expr): number => (x instanceof Fn && x.name === 'log' ? 1 : 0) + x.args.reduce((n, a) => n + count(a), 0);
+    expression = applyBottomUp(expression, (x) => {
+      const ratio = expandLogRatio(x);
+      if (ratio.key !== x.key) return ratio;
+      if (!(x instanceof Mul) || !x.args.some(integerLog)) return x;
+      const denominator = x.args.find((part): part is Pow => part instanceof Pow && part.exp.equals(S.NegOne) && integerLog(part.base));
+      if (!denominator) return x;
+      const expanded = expandMul(expandLogs(x, true));
+      return count(expanded) <= count(x) ? expanded : x;
+    }, opts.deep ?? true);
+  }
+  return expandLogs(expression, opts.factor === true);
+}
 export const expand_trig = (e: ExprLike): Expr =>
   expand(e, { power_exp: false, power_base: false, log: false, mul: false, multinomial: false, trig: true });
 export const expand_complex = (e: ExprLike): Expr =>

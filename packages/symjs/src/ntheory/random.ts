@@ -18,6 +18,13 @@ const MATRIX_A = 0x9908b0df;
 const UPPER_MASK = 0x80000000;
 const LOWER_MASK = 0x7fffffff;
 
+/** The MT19937 words, current offset and optional cached Gaussian. */
+export interface RandomState {
+  readonly words: readonly number[];
+  readonly index: number;
+  readonly gaussian?: number;
+}
+
 /** Python's random.Random: the MT19937 generator seeded like CPython. */
 export class Random {
   private readonly mt = new Uint32Array(N);
@@ -42,6 +49,22 @@ export class Random {
       n >>= 32n;
     }
     this.initByArray(key);
+  }
+
+  /** Save an independent copy of the current generator state. */
+  getState(): RandomState {
+    return { words: [...this.mt], index: this.mti, ...(this.#gaussNext === undefined ? {} : { gaussian: this.#gaussNext }) };
+  }
+
+  /** Restore the generator state. */
+  setState(state: RandomState): void {
+    if (state.words.length !== N || !Number.isInteger(state.index) || state.index < 0 || state.index > N ||
+        state.words.some((word) => !Number.isInteger(word) || word < 0 || word > 0xffffffff)) {
+      throw new RangeError('invalid MT19937 state');
+    }
+    this.mt.set(state.words);
+    this.mti = state.index;
+    this.#gaussNext = state.gaussian;
   }
 
   private initGenrand(s: number): void {

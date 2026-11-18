@@ -101,6 +101,16 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(sj.re(f(r)), r))).toBe('re(Derivative(f(r), r))');
     expect(s(sj.diff(sj.im(f(r)), r))).toBe('im(Derivative(f(r), r))');
   });
+  it('uses the axis of the differentiation variable for real and imaginary components', () => {
+    const real = sj.symbol('r', { real: true });
+    const imaginary = sj.symbol('y', { imaginary: true });
+    expect(diff(sj.fn('re', [mul(I, real)], { evaluate: false }), real).equals(sj.S.Zero)).toBe(true);
+    expect(diff(sj.fn('im', [imaginary], { evaluate: false }), imaginary).equals(mul(-1, I))).toBe(true);
+    expect(diff(sj.fn('conjugate', [imaginary], { evaluate: false }), imaginary).equals(sj.S.NegOne)).toBe(true);
+    expect(sj.fdiff(sj.abs(x)).equals(sj.sign(x))).toBe(true);
+    expect(diff(sj.fn('re', [imaginary], { evaluate: false }), imaginary).equals(sj.S.Zero)).toBe(true);
+    expect(diff(sj.Sum(x, [x, 1, 5]), x).equals(sj.S.Zero)).toBe(true);
+  });
 
   it('differentiates undefined functions, derivatives, sums and piecewise functions', () => {
     expect(s(sj.diff(f(g(x)), x))).toBe('Derivative(f(g(x)), g(x))*Derivative(g(x), x)');
@@ -360,4 +370,14 @@ it('differentiates a sum with a bound variable and checks explicit polynomial pa
   const [i, x, n] = symbols('i x n');
   expect(diff(Sum(i, [i, 0, 3]), i).equals(0)).toBe(true);
   expect(() => fdiff(legendre(n, x), 1)).toThrow(RangeError);
+});
+
+it('preserves mixed partials with dependent arguments through evaluation', () => {
+  const f = sj.SymFunction('f');
+  const g = sj.SymFunction('g')(x);
+  const expr = f(x, g);
+  const mixed = sj.diff(sj.diff(expr, x), g);
+  expect(mixed.equals(sj.diff(sj.diff(expr, g), x))).toBe(true);
+  expect(mixed.equals(sj.doit(sj.derivative(expr, [[x, 1], [g, 1]])))).toBe(true);
+  expect(String(mixed)).toContain('Subs(');
 });

@@ -20,6 +20,23 @@ const sset = (s: Iterable<readonly unknown[]>): string[] => [...s].map(tup).sort
 const dio = (eq: string, opts: D.DiophantineOptions = {}) => sset(D.diophantine(P(eq), opts));
 const show = (v: unknown): string => (sj.isNoMatch(v) ? 'None' : v === sj.EmptySet ? 'EmptySet' : Array.isArray(v) ? tup(v) : String(v));
 
+it('partitions integers with optional fixed length and zero padding', () => {
+  expect([...sj.diopPartition(3)]).toEqual([[1n, 1n, 1n], [1n, 2n], [3n]]);
+  expect([...sj.diopPartition(3, 5)]).toEqual([]);
+  expect([...sj.diopPartition(3, 5, true)]).toEqual([[0n, 0n, 0n, 0n, 3n], [0n, 0n, 0n, 1n, 2n], [0n, 0n, 1n, 1n, 1n]]);
+  expect([...sj.diopPartition(0)]).toEqual([[]]);
+  expect([...sj.diopPartition(1, 0)]).toEqual([[]]);
+});
+
+it('checks parametric integrality and reconstructs a square-free solution', () => {
+  expect(sj.checkParam(P('3 + x/3'), P('4 + x/2'), 2n, [x]).size).toBe(0);
+  expect(sj.checkParam(P('3/2'), P('4 + x'), 2n, [x]).size).toBe(0);
+  expect(sj.checkParam(P('4 + x'), P('3/2'), 2n, [x]).size).toBe(0);
+  expect(sj.checkParam(P('3 + x/3'), P('4 + x/2'), 2n, null).parameters).toEqual([]);
+  expect(sj.reconstruct(6, 10, 3)).toBe(6n);
+  expect(() => sj.reconstruct(4, 20, 1)).toThrow(RangeError);
+});
+
 describe('diophantine', () => {
   it('solves the doctest equations', () => {
     expect(dio('a**4 + b**4 - 97')).toEqual(['(2, 3)']);

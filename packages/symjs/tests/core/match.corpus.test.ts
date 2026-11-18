@@ -961,7 +961,7 @@ describe("sympy/core/tests/test_match.py", () => {
     const v1 = x;
     expect(sympyStr(new Set([meijerg([], [], [rational(0)], [], v1), v1]))).toBe('{meijerg(((), ()), ((0,), ()), x), x}');
   });
-  it.fails("test_issue_17354:710", () => {
+  it("test_issue_17354:710", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(match(Or(Relational(rational(0), x, '<=', { evaluate: false }), Relational(y, x, '<=', { evaluate: false })), Or(Relational(new Wild('a', { exclude: [] }), new Wild('b', { exclude: [] }), '<=', { evaluate: false }), Relational(new Pow(new Wild('a', { exclude: [] }), rational(-1)), new Wild('b', { exclude: [] }), '<=', { evaluate: false }))))).toBe('None');
@@ -1019,7 +1019,7 @@ describe("sympy/core/tests/test_match.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Map([[new Wild('V', { exclude: [] }), x]]))).toBe('{V_: x}');
   });
-  it.fails("test_issue_22462:766", () => {
+  it("test_issue_22462:766", () => {
     const x = new Sym('x');
     expect(sympyStr(match(new Mul([rational(5), new Pow((SymFunction('f'))(x), rational(2))]), new Mul([rational(-1), new Wild('Q', { exclude: [] }), new Pow((SymFunction('f'))(x), new Wild('n', { exclude: [] }))])))).toBe('{n_: 2, Q_: -5}');
   });

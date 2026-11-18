@@ -63,7 +63,7 @@ import {
 } from './complex';
 import * as F from './mpf';
 import { dpsToPrec } from './mpf';
-import { type Mpc, type MpPart, MpSpecialValue, evalAdaptive, fromMpc } from './mpeval';
+import { type Mpc, type MpPart, MpSpecialValue, evalAdaptive, evalMp, fromMpc } from './mpeval';
 import { asRealImag } from '../core/methods';
 import { fn } from '../functions/elementary/elementary';
 import { fromInt } from './mpf';
@@ -364,6 +364,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     // SymPy Function._eval_evalf: a function that is not a number keeps its arguments
     // (f(1).evalf() == f(1), sin(x + 1).evalf() == sin(x + 1), exp(x + 1).evalf() == exp(x + 1))
     if (x.args.length === 0 || isFunction(x)) return x;
+    if (x instanceof Piecewise) return rebuild(x, x.pairs.flatMap(([value, condition]) => [go(value), condition]));
     // keep integer exponents exact (SymPy: (x**2).evalf() == x**2)
     if (x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger) return rebuild(x, [go(x.base), x.exp]);
     if (x instanceof Mul && x.args[0] instanceof Rational && x.args[0].p === -1n && x.args[0].q === 1n) {
@@ -377,6 +378,11 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     if (x instanceof Concrete) {
       const v = impl.evalConcrete?.(x);
       if (v !== undefined) return go(v);
+    }
+    if (x instanceof Integral && x.args.length === 4 && x.freeSymbols().size === 0) {
+      const value = impl.doit?.(x);
+      const result = value === undefined ? undefined : numeric(value, noValue);
+      if (result !== undefined) return result;
     }
     return rebuild(x, x.args.map(go));
   };
@@ -461,6 +467,40 @@ impl.isComparable = isComparable;
 impl.toComplex = toComplex;
 
 export type EvalfResult = readonly [Mpf, Mpf, number, number];
+
+type RawPart = Mpf | NoMatchResult;
+type RawAccuracy = number | NoMatchResult;
+export type RawEvalfResult = readonly [RawPart, RawPart, RawAccuracy, RawAccuracy];
+
+/** Evaluate a closed number at binary precision and preserve its component accuracies. */
+export function evalfRaw(expression: ExprLike, precision: number): RawEvalfResult | NoMatchResult {
+  const e = sympify(expression);
+  if (!Number.isSafeInteger(precision) || precision < 1) throw new RangeError('precision must be a positive integer');
+  if (isZero(e) === true || e instanceof Concrete && isZero(e.function) === true) return [NoMatch, NoMatch, precision, NoMatch];
+  const accuracy = { re: precision, im: precision };
+  try {
+    const [real, imaginary] = evalAdaptive(e, precision, undefined, accuracy);
+    if (!(e instanceof Add)) return rawParts(real, imaginary, accuracy.re, accuracy.im);
+    // As in evalf_add, retain the relative precision before rounding the reported value.
+    const working = precision + 10;
+    const terms = e.args.map((term) => evalMp(term, working));
+    const estimate = (index: 0 | 1, value: Mpf, fallback: number): number => {
+      const parts = terms.map((term) => term[index]).filter((term) => !F.isZero(term));
+      if (parts.length < 2 || F.isZero(value)) return fallback;
+      const sum = parts.reduce((total, term) => F.add(total, term, working), F.ZERO);
+      return Math.min(Math.max(F.mag(sum) + working - Math.max(...parts.map(F.mag)), 1), working + 1);
+    };
+    return rawParts(real, imaginary, estimate(0, real, accuracy.re), estimate(1, imaginary, accuracy.im));
+  } catch {
+    return NoMatch;
+  }
+}
+
+function rawParts(real: Mpf, imaginary: Mpf, realAccuracy: number, imaginaryAccuracy: number): RawEvalfResult {
+  const r = F.isZero(real);
+  const i = F.isZero(imaginary);
+  return [r ? NoMatch : real, i ? NoMatch : imaginary, r && !i ? NoMatch : realAccuracy, i ? NoMatch : imaginaryAccuracy];
+}
 
 /** Relative accuracy in bits, using SymPy's maximum-norm error estimate. */
 export function complexAccuracy(result: EvalfResult | Expr): number {

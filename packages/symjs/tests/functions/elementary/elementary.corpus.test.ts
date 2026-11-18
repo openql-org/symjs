@@ -1537,7 +1537,7 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
   it("test_log_assumptions:441", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_log_assumptions:442", () => {
+  it("test_log_assumptions:442", () => {
     const x = new Sym('x', { infinite: true, extendedPositive: true });
     expect(sympyStr(isExtendedPositive(log(x)))).toBe('True');
   });
@@ -1732,7 +1732,7 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const z = new Sym('z');
     expect(sympyStr(expand(log(new Pow(z, rational(-1))), {}))).not.toBe('-log(z)');
   });
-  it.fails("test_log_simplify:588", () => {
+  it("test_log_simplify:588", () => {
     const z = new Sym('z');
     const x = new Sym('x', { positive: true });
     expect(sympyStr(expand(log(new Pow(z, new Mul([x, new Pow(new Add([rational(1), x]), rational(-1))]))), {}))).toBe('x*log(z)/(x + 1)');
@@ -1890,12 +1890,12 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const x = new Sym('x');
     expect(sympyStr(taylorTerm(log(x), 4, x))).toBe('x**5/5');
   });
-  it.fails("test_exp_expand_NC:672", () => {
+  it("test_exp_expand_NC:672", () => {
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(expand(exp(new Add([A, B])), {}))).toBe('exp(A + B)');
   });
-  it.fails("test_exp_expand_NC:673", () => {
+  it("test_exp_expand_NC:673", () => {
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     const C = new Sym('C', { commutative: false });
@@ -2030,26 +2030,26 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
   it("test_polar:711", () => {
     expect(sympyStr(Ge(new Float({ man: 558499n, exp: -48n }, 20), 0))).toBe('True');
   });
-  it.fails("test_polar:713", () => {
+  it("test_polar:713", () => {
     expect(sympyStr(ask(Q.rational(fn('exp_polar', [rational(0)]))))).toBe('True');
   });
-  it.fails("test_exp_summation:720", () => {
+  it("test_exp_summation:720", () => {
     const [i, w, n, j, m] = symbols('i w n j m');
     expect(sympyStr(expand(exp(Sum(new Mul([i, w]), [i, rational(0), n], [j, rational(0), m])), {}))).toBe('Product(exp(i*w), (i, 0, n), (j, 0, m))');
   });
-  it.fails("test_log_product:732", () => {
+  it("test_log_product:732", () => {
     const n = new Sym('n');
     const x = new Sym('x', { positive: true });
     const i = new Sym('i', { positive: true, integer: true });
     expect(sympyStr(simplify(log(Product(new Pow(x, i), [i, rational(1), n]))))).toBe('log(Product(x**i, (i, 1, n)))');
   });
-  it.fails("test_log_product:733", () => {
+  it("test_log_product:733", () => {
     const n = new Sym('n');
     const x = new Sym('x', { positive: true });
     const i = new Sym('i', { positive: true, integer: true });
     expect(sympyStr(expand(log(Product(new Pow(x, i), [i, rational(1), n])), {}))).toBe('Sum(i*log(x), (i, 1, n))');
   });
-  it.fails("test_log_product:735", () => {
+  it("test_log_product:735", () => {
     const [n, m] = symbols('n m');
     const x = new Sym('x', { positive: true });
     const i = new Sym('i', { positive: true, integer: true });
@@ -2057,7 +2057,7 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const j = new Sym('j', { positive: true, integer: true });
     expect(sympyStr(simplify(log(Product(new Mul([new Pow(x, i), new Pow(y, j)]), [i, rational(1), n], [j, rational(1), m]))))).toBe('log(Product(x**i*y**j, (i, 1, n), (j, 1, m)))');
   });
-  it.fails("test_log_product:736", () => {
+  it("test_log_product:736", () => {
     const [n, m] = symbols('n m');
     const x = new Sym('x', { positive: true });
     const i = new Sym('i', { positive: true, integer: true });
@@ -2065,7 +2065,7 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const j = new Sym('j', { positive: true, integer: true });
     expect(sympyStr(expand(log(Product(new Mul([new Pow(x, i), new Pow(y, j)]), [i, rational(1), n], [j, rational(1), m])), {}))).toBe('Sum(i*log(x) + j*log(y), (i, 1, n), (j, 1, m))');
   });
-  it.fails("test_log_product:739", () => {
+  it("test_log_product:739", () => {
     const n = new Sym('n');
     expect(sympyStr(simplify(log(Product(rational(-2), [n, rational(0), rational(4)]))))).toBe('log(Product(-2, (n, 0, 4)))');
   });
@@ -2073,11 +2073,11 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const n = new Sym('n');
     expect(sympyStr(expand(log(Product(rational(-2), [n, rational(0), rational(4)])), {}))).toBe('log(Product(-2, (n, 0, 4)))');
   });
-  it.fails("test_log_product:741", () => {
+  it("test_log_product:741", () => {
     const n = new Sym('n');
     expect(sympyStr(expand(log(Product(rational(-2), [n, rational(0), rational(4)])), { force: true }))).toBe('Sum(log(2) + I*pi, (n, 0, 4))');
   });
-  it.fails("test_log_product:744", () => {
+  it("test_log_product:744", () => {
     const n = new Sym('n');
     const z = new Sym('z', { real: true });
     const i = new Sym('i', { positive: true, integer: true });
@@ -2088,12 +2088,12 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const i = new Sym('i', { positive: true, integer: true });
     expect(sympyStr(expand(log(Product(exp(new Mul([w, i])), [i, rational(0), n])), {}))).toBe('log(Product(exp(i*w), (i, 0, n)))');
   });
-  it.fails("test_log_product:748", () => {
+  it("test_log_product:748", () => {
     const [w, n] = symbols('w n');
     const i = new Sym('i', { positive: true, integer: true });
     expect(sympyStr(expand(log(Product(exp(new Mul([w, i])), [i, rational(0), n])), { force: true }))).toBe('Sum(i*w, (i, 0, n))');
   });
-  it.fails("test_log_product:751", () => {
+  it("test_log_product:751", () => {
     const [n, m] = symbols('n m');
     const j = new Sym('j', { positive: true, integer: true });
     const i = new Sym('i', { positive: true, integer: true });
@@ -2107,7 +2107,7 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const x = new Sym('x');
     expect(sympyStr(expandLog(log(x, 10), false))).toBe('log(x)/log(10)');
   });
-  it.fails("test_issue_8866:773", () => {
+  it("test_issue_8866:773", () => {
     const y = new Sym('y', { positive: true });
     expect(sympyStr(simplify(new Mul([new Pow(log(new Mul([rational(1, 5), y])), rational(-1)), log(new Mul([rational(1, 10), y]))])))).toBe('log(y/10)/log(y/5)');
   });
@@ -2134,10 +2134,10 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
   it.fails("test_log_expand_factor:783", () => {
     expect(sympyStr(expandLog(log(12), false))).toBe('log(3) + 2*log(2)');
   });
-  it.fails("test_log_expand_factor:784", () => {
+  it("test_log_expand_factor:784", () => {
     expect(sympyStr(expandLog(new Mul([new Pow(log(7), rational(-1)), log(21)]), false))).toBe('log(3)/log(7) + 1');
   });
-  it.fails("test_log_expand_factor:785", () => {
+  it("test_log_expand_factor:785", () => {
     expect(sympyStr(expandLog(new Add([new Mul([new Pow(log(5), rational(-1)), log(45)]), log(20)]), false))).toBe('1 + 2*log(3)/log(5) + log(20)');
   });
   it.fails("test_log_expand_factor:787", () => {
@@ -2147,59 +2147,59 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
     const n = new Sym('n', { positive: true, integer: true });
     expect(sympyStr(isNonnegative(log(n)))).toBe('True');
   });
-  it.fails("test_issue_18473:797", () => {
+  it("test_issue_18473:797", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(exp(new Mul([x, log(fn('cos', [new Pow(x, rational(-1))]))])), x, {}))).toBe('nan');
   });
-  it.fails("test_issue_18473:798", () => {
+  it("test_issue_18473:798", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(exp(new Mul([x, log(fn('tan', [new Pow(x, rational(-1))]))])), x, {}))).toBe('nan');
   });
-  it.fails("test_issue_18473:799", () => {
+  it("test_issue_18473:799", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(fn('cos', [new Pow(x, rational(-1))])), x, {}))).toBe('nan');
   });
-  it.fails("test_issue_18473:800", () => {
+  it("test_issue_18473:800", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(fn('tan', [new Pow(x, rational(-1))])), x, {}))).toBe('nan');
   });
-  it.fails("test_issue_18473:801", () => {
+  it("test_issue_18473:801", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(new Add([rational(2), fn('cos', [new Pow(x, rational(-1))])])), x, {}))).toBe('AccumBounds(0, log(3))');
   });
-  it.fails("test_issue_18473:802", () => {
+  it("test_issue_18473:802", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(exp(new Mul([x, log(new Add([rational(2), fn('cos', [new Pow(x, rational(-1))])]))])), x, {}))).toBe('1');
   });
-  it.fails("test_issue_18473:803", () => {
+  it("test_issue_18473:803", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(new Add([rational(-2), fn('cos', [new Pow(x, rational(-1))])])), x, {}))).toBe('nan');
   });
-  it.fails("test_issue_18473:804", () => {
+  it("test_issue_18473:804", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(exp(new Mul([x, log(new Add([rational(-2), fn('cos', [new Pow(x, rational(-1))])]))])), x, {}))).toBe('nan');
   });
-  it.fails("test_issue_18473:805", () => {
+  it("test_issue_18473:805", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(new Add([rational(1), fn('cos', [new Pow(x, rational(-1))])])), x, {}))).toBe('AccumBounds(-oo, log(2))');
   });
-  it.fails("test_issue_18473:806", () => {
+  it("test_issue_18473:806", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(exp(new Mul([x, log(new Add([rational(1), fn('cos', [new Pow(x, rational(-1))])]))])), x, {}))).toBe('AccumBounds(0, 1)');
   });
-  it.fails("test_issue_18473:807", () => {
+  it("test_issue_18473:807", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(new Pow(fn('sin', [new Pow(x, rational(-1))]), rational(2))), x, {}))).toBe('AccumBounds(-oo, 0)');
   });
-  it.fails("test_issue_18473:808", () => {
+  it("test_issue_18473:808", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(exp(new Mul([x, log(new Pow(fn('sin', [new Pow(x, rational(-1))]), rational(2)))])), x, {}))).toBe('AccumBounds(0, 1)');
   });
-  it.fails("test_issue_18473:809", () => {
+  it("test_issue_18473:809", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(log(new Pow(fn('tan', [new Pow(x, rational(-1))]), rational(2))), x, {}))).toBe('AccumBounds(-oo, oo)');
   });
-  it.fails("test_issue_18473:810", () => {
+  it("test_issue_18473:810", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(exp(new Mul([rational(2), x, log(new Pow(fn('tan', [new Pow(x, rational(-1))]), rational(2)))])), x, {}))).toBe('AccumBounds(0, oo)');
   });
@@ -2484,7 +2484,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(isReal(fn('cos', [x])))).toBe('True');
   });
-  it.fails("test_cosh:174", () => {
+  it("test_cosh:174", () => {
     expect(sympyStr(isReal(fn('cosh', [new Add([rational(1), new Mul([rational(2), I])])])))).toBe('False');
   });
   // the arguments do not type-check against the public API
@@ -2620,10 +2620,10 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   //   assert tanh(x).as_real_imag(deep=False) == (tanh(x), 0)
   //   => (tanh(x), 0)
   it.todo("test_tanh:256");
-  it.fails("test_tanh:257", () => {
+  it("test_tanh:257", () => {
     expect(sympyStr(isReal(fn('tanh', [new Add([rational(1), new Mul([rational(1, 3), pi, I])])])))).toBe('False');
   });
-  it.fails("test_tanh:258", () => {
+  it("test_tanh:258", () => {
     const x = new Sym('x', { extendedReal: true });
     expect(sympyStr(isReal(fn('tanh', [x])))).toBe('True');
   });
@@ -2744,22 +2744,22 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('coth', [new Mul([I, x])]))).toBe('-I*cot(x)');
   });
-  it.fails("test_coth:329", () => {
+  it("test_coth:329", () => {
     const k = new Sym('k', { integer: true });
     expect(sympyStr(fn('coth', [new Mul([pi, I, k])]))).toBe('zoo');
   });
-  it.fails("test_coth:330", () => {
+  it("test_coth:330", () => {
     const k = new Sym('k', { integer: true });
     expect(sympyStr(fn('coth', [new Mul([rational(17), pi, I, k])]))).toBe('zoo');
   });
-  it.fails("test_coth:332", () => {
+  it("test_coth:332", () => {
     const k = new Sym('k', { integer: true });
     expect(sympyStr(fn('coth', [new Mul([pi, I, k])]))).toBe('zoo');
   });
-  it.fails("test_coth:334", () => {
+  it("test_coth:334", () => {
     expect(sympyStr(fn('coth', [new Add([new Mul([pi, I]), log(new Mul([rational(-1), fn('tan', [rational(2)])]))])]))).toBe('coth(log(-tan(2)))');
   });
-  it.fails("test_coth:335", () => {
+  it("test_coth:335", () => {
     expect(sympyStr(fn('coth', [new Add([rational(1), new Mul([rational(1, 2), pi, I])])]))).toBe('tanh(1)');
   });
   // the arguments do not type-check against the public API
@@ -3522,10 +3522,10 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   it("test_asech:820", () => {
     expect(sympyStr(fn('asech', [new Mul([rational(-1), new Pow(rational(2), rational(1, 2))])]))).toBe('3*I*pi/4');
   });
-  it.fails("test_asech:823", () => {
+  it("test_asech:823", () => {
     expect(sympyStr(expandMul(new Mul([new Pow(new Add([new Pow(rational(6), rational(1, 2)), new Mul([rational(-1), new Pow(rational(2), rational(1, 2))])]), rational(-1)), new Pow(new Add([new Mul([rational(1, 4), new Pow(rational(2), rational(1, 2))]), new Mul([rational(1, 4), new Pow(rational(6), rational(1, 2))])]), rational(-1))])))).toBe('1');
   });
-  it.fails("test_asech:824", () => {
+  it("test_asech:824", () => {
     expect(sympyStr(expandMul(new Mul([new Pow(new Add([new Pow(rational(2), rational(1, 2)), new Pow(rational(6), rational(1, 2))]), rational(-1)), new Pow(new Add([new Mul([rational(-1, 4), new Pow(rational(2), rational(1, 2))]), new Mul([rational(1, 4), new Pow(rational(6), rational(1, 2))])]), rational(-1))])))).toBe('1');
   });
   it("test_asech:825", () => {
@@ -3537,13 +3537,13 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   it("test_asech:827", () => {
     expect(sympyStr(simplify(new Mul([new Pow(new Add([rational(1, 2), new Mul([rational(-1, 4), new Pow(rational(2), rational(1, 2))])]), rational(-1, 2)), new Pow(new Add([rational(4), new Mul([rational(2), new Pow(rational(2), rational(1, 2))])]), rational(-1, 2))])))).toBe('1');
   });
-  it.fails("test_asech:828", () => {
+  it("test_asech:828", () => {
     expect(sympyStr(expandMul(new Mul([new Pow(new Add([rational(1), new Pow(rational(5), rational(1, 2))]), rational(-1)), new Pow(new Add([rational(-1, 4), new Mul([rational(1, 4), new Pow(rational(5), rational(1, 2))])]), rational(-1))])))).toBe('1');
   });
-  it.fails("test_asech:829", () => {
+  it("test_asech:829", () => {
     expect(sympyStr(expandMul(new Mul([new Pow(new Add([rational(-1), new Mul([rational(-1), new Pow(rational(5), rational(1, 2))])]), rational(-1)), new Pow(new Add([rational(1, 4), new Mul([rational(-1, 4), new Pow(rational(5), rational(1, 2))])]), rational(-1))])))).toBe('1');
   });
-  it.fails("test_asech:830", () => {
+  it("test_asech:830", () => {
     expect(sympyStr(expandMul(new Mul([new Pow(new Add([new Mul([rational(-1), new Pow(rational(2), rational(1, 2))]), new Mul([rational(-1), new Pow(rational(6), rational(1, 2))])]), rational(-1)), new Pow(new Add([new Mul([rational(-1, 4), new Pow(rational(6), rational(1, 2))]), new Mul([rational(1, 4), new Pow(rational(2), rational(1, 2))])]), rational(-1))])))).toBe('1');
   });
   it("test_asech:833", () => {
@@ -3778,10 +3778,10 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
   it("test_acsch:959", () => {
     expect(sympyStr(fn('acsch', [new Mul([rational(-2, 3), I, new Pow(rational(3), rational(1, 2))])]))).toBe('I*pi/3');
   });
-  it.fails("test_acsch:962", () => {
+  it("test_acsch:962", () => {
     expect(sympyStr(expandMul(new Mul([new Pow(new Add([new Pow(rational(2), rational(1, 2)), new Pow(rational(6), rational(1, 2))]), rational(-1)), new Pow(new Add([new Mul([rational(-1, 4), new Pow(rational(2), rational(1, 2))]), new Mul([rational(1, 4), new Pow(rational(6), rational(1, 2))])]), rational(-1))])))).toBe('1');
   });
-  it.fails("test_acsch:963", () => {
+  it("test_acsch:963", () => {
     expect(sympyStr(expandMul(new Mul([new Pow(new Add([rational(1), new Pow(rational(5), rational(1, 2))]), rational(-1)), new Pow(new Add([rational(-1, 4), new Mul([rational(1, 4), new Pow(rational(5), rational(1, 2))])]), rational(-1))])))).toBe('1');
   });
   it("test_acsch:964", () => {
@@ -4375,12 +4375,12 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const b = new Sym('b', { real: true });
     expect(sympyStr(conjugate(fn('csch', [new Add([a, new Mul([I, b])])])))).toBe('csch(a - I*b)');
   });
-  it.fails("test_complex:1320", () => {
+  it("test_complex:1320", () => {
     const a = new Sym('a', { real: true });
     const b = new Sym('b', { real: true });
     expect(sympyStr(expand(fn('sinh', [new Add([a, new Mul([I, b])])]), { complex: true, deep: true }))).toBe('I*sin(b)*cosh(a) + cos(b)*sinh(a)');
   });
-  it.fails("test_complex:1322", () => {
+  it("test_complex:1322", () => {
     const a = new Sym('a', { real: true });
     const b = new Sym('b', { real: true });
     expect(sympyStr(expand(fn('cosh', [new Add([a, new Mul([I, b])])]), { complex: true, deep: true }))).toBe('I*sin(b)*sinh(a) + cos(b)*cosh(a)');
@@ -4405,12 +4405,12 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const b = new Sym('b', { real: true });
     expect(equivalent(sympyStr(expand(fn('sech', [new Add([a, new Mul([I, b])])]), { complex: true, deep: true })), '-I*sin(b)*sinh(a)/(sin(b)**2*sinh(a)**2 + cos(b)**2*cosh(a)**2) + cos(b)*cosh(a)/(sin(b)**2*sinh(a)**2 + cos(b)**2*cosh(a)**2)', [a, b], { fn: '.expand', input: 'sech(a + I*b)' })).toBe(true);
   });
-  it.fails("test_complex:1320 (2)", () => {
+  it("test_complex:1320 (2)", () => {
     const a = new Sym('a', { real: true });
     const b = new Sym('b', { real: true });
     expect(sympyStr(expand(fn('sinh', [new Add([a, new Mul([I, b])])]), { complex: true, deep: false }))).toBe('I*sin(b)*cosh(a) + cos(b)*sinh(a)');
   });
-  it.fails("test_complex:1322 (2)", () => {
+  it("test_complex:1322 (2)", () => {
     const a = new Sym('a', { real: true });
     const b = new Sym('b', { real: true });
     expect(sympyStr(expand(fn('cosh', [new Add([a, new Mul([I, b])])]), { complex: true, deep: false }))).toBe('I*sin(b)*sinh(a) + cos(b)*cosh(a)');
@@ -4447,7 +4447,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(expand(fn('tanh', [a]), { complex: true, deep: true }))).toBe('tanh(a)');
   });
-  it.fails("test_complex_2899:1340 (4)", () => {
+  it("test_complex_2899:1340 (4)", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(expand(fn('coth', [a]), { complex: true, deep: true }))).toBe('coth(a)');
   });
@@ -4463,7 +4463,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(expand(fn('tanh', [a]), { complex: true, deep: false }))).toBe('tanh(a)');
   });
-  it.fails("test_complex_2899:1340 (8)", () => {
+  it("test_complex_2899:1340 (8)", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(expand(fn('coth', [a]), { complex: true, deep: false }))).toBe('coth(a)');
   });
@@ -4626,7 +4626,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rewrite(fn('tanh', [x]), 'coth', { pattern: [], deep: true }))).toBe('1/coth(x)');
   });
-  it.fails("test_coth_rewrite:1413", () => {
+  it("test_coth_rewrite:1413", () => {
     const x = new Sym('x');
     expect(sympyStr(rewrite(fn('coth', [x]), 'exp', { pattern: [], deep: true }))).toBe('(exp(x) + exp(-x))/(exp(x) - exp(-x))');
   });
@@ -4766,7 +4766,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const k = new Sym('k', { real: true });
     expect(sympyStr(isPositive(fn('cosh', [k])))).toBe('True');
   });
-  it.fails("test_cosh_positive:1481", () => {
+  it("test_cosh_positive:1481", () => {
     const k = new Sym('k', { real: true });
     const n = new Sym('n', { integer: true });
     expect(sympyStr(isPositive(fn('cosh', [new Add([k, new Mul([rational(2), pi, I, n])])])))).toBe('True');
@@ -4781,7 +4781,7 @@ describe("sympy/functions/elementary/tests/test_hyperbolic.py", () => {
     const k = new Sym('k', { real: true });
     expect(sympyStr(isNonnegative(fn('cosh', [k])))).toBe('True');
   });
-  it.fails("test_cosh_nonnegative:1490", () => {
+  it("test_cosh_nonnegative:1490", () => {
     const k = new Sym('k', { real: true });
     const n = new Sym('n', { integer: true });
     expect(sympyStr(isNonnegative(fn('cosh', [new Add([k, new Mul([rational(2), pi, I, n])])])))).toBe('True');
@@ -11517,7 +11517,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   it("test_sinc:886", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_sinc:887", () => {
+  it("test_sinc:887", () => {
     const n = new Sym('n', { integer: true, nonzero: true });
     expect(sympyStr(isZero(fn('sinc', [new Mul([pi, n])])))).toBe('True');
   });
@@ -11533,7 +11533,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const xr = new Sym('xr', { real: true, nonzero: true });
     expect(sympyStr(isReal(fn('sinc', [xr])))).toBe('True');
   });
-  it.fails("test_sinc:892", () => {
+  it("test_sinc:892", () => {
     const xr = new Sym('xr', { real: true, nonzero: true });
     expect(sympyStr(isReal(fn('sinc', [new Mul([I, xr])])))).toBe('True');
   });
@@ -11670,7 +11670,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   it("test_asin:933", () => {
     expect(sympyStr(isReal(fn('asin', [new Float({ man: 3602879701896397n, exp: -54n }, 53)])))).toBe('True');
   });
-  it.fails("test_asin:934", () => {
+  it("test_asin:934", () => {
     expect(sympyStr(isReal(new Mul([rational(-1), fn('asin', [rational(2)])])))).toBe('False');
   });
   it("test_asin:935", () => {
@@ -12344,7 +12344,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   it("test_atan:1082", () => {
     expect(sympyStr(fn('atan', [S.NegativeInfinity]))).toBe('-pi/2');
   });
-  it.fails("test_atan:1083", () => {
+  it("test_atan:1083", () => {
     expect(sympyStr(fn('atan', [zoo]))).toBe('AccumBounds(-pi/2, pi/2)');
   });
   it("test_atan:1085", () => {
@@ -13521,7 +13521,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const e = new Sym('e', { even: true });
     expect(equivalent(sympyStr(fn('tan', [new Mul([new Float({ man: 9n, exp: -1n }, 53), pi, e])])), '0', [e], { fn: 'tan', input: '4.5*pi*e' })).toBe(true);
   });
-  it.fails("test_issue_4420:1465", () => {
+  it("test_issue_4420:1465", () => {
     const e = new Sym('e', { even: true });
     expect(sympyStr(fn('cot', [new Mul([new Float({ man: 9n, exp: -1n }, 53), pi, e])]))).toBe('zoo');
   });
@@ -13831,7 +13831,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const a = new Sym('a', { algebraic: true });
     expect(sympyStr(isAlgebraic(fn('sec', [a])))).toBe('None');
   });
-  it.fails("test_sec:1691", () => {
+  it("test_sec:1691", () => {
     const na = new Sym('na', { nonzero: true, algebraic: true });
     expect(sympyStr(isAlgebraic(fn('sec', [na])))).toBe('False');
   });
@@ -14003,7 +14003,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const a = new Sym('a', { algebraic: true });
     expect(sympyStr(isAlgebraic(fn('csc', [a])))).toBe('None');
   });
-  it.fails("test_csc:1783", () => {
+  it("test_csc:1783", () => {
     const na = new Sym('na', { nonzero: true, algebraic: true });
     expect(sympyStr(isAlgebraic(fn('csc', [na])))).toBe('False');
   });
@@ -14177,7 +14177,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   it("test_asec_is_real:1845", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_asec_is_real:1847", () => {
+  it("test_asec_is_real:1847", () => {
     const n = new Sym('n', { positive: true, integer: true });
     expect(sympyStr(isExtendedReal(fn('asec', [n])))).toBe('True');
   });
@@ -14189,7 +14189,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const r = new Sym('r', { real: true });
     expect(sympyStr(isReal(fn('asec', [r])))).toBe('None');
   });
-  it.fails("test_asec_is_real:1851", () => {
+  it("test_asec_is_real:1851", () => {
     const t = new Sym('t', { real: false, finite: true });
     expect(sympyStr(isReal(fn('asec', [t])))).toBe('False');
   });
@@ -14503,7 +14503,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rewrite(fn('sin', [x]), 'sqrt', { pattern: [], deep: true }))).toBe('sin(x)');
   });
-  it.fails("test_issue_11864:2117", () => {
+  it("test_issue_11864:2117", () => {
     const k = new Sym('k', { real: true });
     expect(sympyStr(rewrite(piecewise([rational(1), Relational(new Mul([pi, k]), rational(0), '==', { evaluate: false })], [new Mul([new Pow(pi, rational(-1)), new Pow(k, rational(-1)), fn('sin', [new Mul([pi, k])])]), true]), 'sinc', { pattern: [], deep: true }))).toBe('Piecewise((1, Eq(pi*k, 0)), (sinc(pi*k), True))');
   });

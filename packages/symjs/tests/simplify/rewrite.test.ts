@@ -7,7 +7,8 @@
 
 import { describe, expect, it } from 'vitest';
 import type { ExprLike, FnName } from '../../src';
-import { add, defineFunction, fn, harmonic, mul, parse, rational, rewrite, sstr, sub, subs, symbol, symbols, toComplex, zeta } from '../../src';
+import { I, SymFunction, add, defineFunction, fn, harmonic, mul, parse, rational, rewrite, sstr, sub, subs, symbol, symbols, toComplex, zeta } from '../../src';
+import { registerRewrite, rewriteRules } from '../../src/core/nodes';
 
 it('rewrites harmonic sums to polygamma or zeta where the order allows it', () => {
   const n = symbol('n');
@@ -29,6 +30,24 @@ const p = symbol('p', { positive: true });
 const kk = symbol('kk', { integer: true });
 const P = (s: string) => parse(s, { symbols: [x, y, n, k, r, p, kk] });
 const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(String).join(', ')}]` : String(v));
+
+it('rewrites exact tangent and cotangent values through sine and cosine radicals', () => {
+  const angle = P('2*pi/5');
+  const raw = { evaluate: false };
+  expect(sstr(rewrite(fn('tan', [angle], raw), 'sqrt'))).toBe('sqrt(sqrt(5)/8 + 5/8)/(-1/4 + sqrt(5)/4)');
+  expect(sstr(rewrite(fn('cot', [angle], raw), 'sqrt'))).toBe('(-1/4 + sqrt(5)/4)/sqrt(sqrt(5)/8 + 5/8)');
+  expect(rewrite(fn('tan', [x], raw), 'sqrt').equals(fn('tan', [x]))).toBe(true);
+  expect(sstr(rewrite(fn('tan', [mul(I, x)], raw), 'sqrt'))).toBe('I*sinh(x)/cosh(x)');
+  expect(sstr(rewrite(P('arg(re(x) + I*re(y))'), 'atan2'))).toBe('atan2(re(y), re(x))');
+});
+
+it('rewrites Piecewise to ITE only with a Boolean value on every branch', () => {
+  expect(sstr(rewrite(P('Piecewise((x < 1, x > 1), (y < 2, True))'), 'ITE'))).toBe('ITE(x > 1, x < 1, y < 2)');
+  for (const source of ['Piecewise((x < 1, x > 1))', 'Piecewise((x < 1, x > 1), (3, True))', 'Piecewise((3, x > 1), (y < 2, True))']) {
+    const value = P(source);
+    expect(rewrite(value, 'ITE').equals(value)).toBe(true);
+  }
+});
 
 describe('rewrite', () => {
   it('rewrites trigonometric functions like SymPy', async () => {
@@ -323,8 +342,7 @@ it('rewrites exponential integrals through their two polar boundary values', asy
   expect(rewrite(new s.Fn('Ci', [s.symbol('x')]), 'expint').has(s.S.I)).toBe(true);
 });
 
-it('recognizes undefined functions in rewrite patterns and rewrites Ci using E1', async () => {
-  const { SymFunction } = await import('../../src');
+it('recognizes undefined functions in rewrite patterns and rewrites Ci using E1', () => {
   const f = SymFunction('f')(x);
   expect(rewrite(f, 'exp', { pattern: ['f'] })).toBe(f);
   expect(String(rewrite(P('Ci(x)'), 'expint'))).toBe('-expint(1, x*exp_polar(-I*pi/2))/2 - expint(1, x*exp_polar(I*pi/2))/2');
@@ -351,4 +369,39 @@ it('rewrites beta, gamma, polygamma and zeta to their defining forms', async () 
   for (const [name, args, target, expected] of cases) {
     expect(String(rewrite(s.fn(name, args, { evaluate: false }), target))).toBe(expected);
   }
+});
+
+it('passes rewrite hints from the expression to a rule in the core registry', () => {
+  const name = 'rewriteHintExample';
+  const f = SymFunction(name)(x);
+  registerRewrite(name, 'exp', (_args, _self, hints) => hints?.['replacement']);
+  try {
+    expect(f.rewrite('exp', { pattern: [name], hints: { replacement: y } })).toBe(y);
+    expect(rewrite(f, 'exp', { pattern: [name] })).toBe(f);
+  } finally {
+    delete rewriteRules[name];
+  }
+});
+
+it('rewrites special functions in unevaluated form', () => {
+  for (const [name, args, target, expected] of [
+    ['sin', [x], 'sinc', 'x*sinc(x)'],
+    ['coth', [x], 'tractable', '(exp(x) + exp(-x))/(exp(x) - exp(-x))'],
+    ['factorial2', [x], 'gamma', '2**(x/2)*gamma(x/2 + 1)*Piecewise((1, Eq(Mod(x, 2), 0)), (sqrt(2)/sqrt(pi), Eq(Mod(x, 2), 1)))'],
+    ['beta', [x, y], 'gamma', 'gamma(x)*gamma(y)/gamma(x + y)'],
+    ['loggamma', [x], 'intractable', 'log(gamma(x))'],
+    ['lowergamma', [x, y], 'uppergamma', 'gamma(x) - uppergamma(x, y)'],
+    ['uppergamma', [x, y], 'lowergamma', 'gamma(x) - lowergamma(x, y)'],
+    ['uppergamma', [x, y], 'expint', 'y**x*expint(1 - x, y)'],
+    ['lowergamma', [x, y], 'expint', '-y**x*expint(1 - x, y) + gamma(x)'],
+    ['lowergamma', [-1, y], 'expint', 'lowergamma(-1, y)'],
+    ['lowergamma', [symbol('j', { integer: true, positive: true }), y], 'expint', '-y**j*expint(1 - j, y) + gamma(j)'],
+    ['polygamma', [1, x], 'zeta', 'zeta(2, x)'],
+    ['polygamma', [0, x], 'zeta', 'polygamma(0, x)'],
+    ['polygamma', [y, x], 'zeta', 'polygamma(y, x)'],
+    ['zeta', [2], 'bernoulli', 'pi**2/6'],
+    ['zeta', [x], 'bernoulli', 'bernoulli(1 - x)/(x - 1)'],
+    ['zeta', [2, x], 'bernoulli', 'bernoulli(-1, x)'],
+    ['zeta', [-2], 'bernoulli', '0'],
+  ] as const) expect(String(rewrite(fn(name, args, { evaluate: false }), target))).toBe(expected);
 });

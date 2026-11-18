@@ -197,3 +197,11 @@ it('takes square roots of nonnegative symbolic bounds', () => {
   const n = sj.symbol('n', { nonnegative: true, integer: true });
   expect(String(pow(A(n, add(n, 1)), S.Half))).toBe('AccumBounds(sqrt(n), sqrt(n + 1))');
 });
+
+it('absorbs indeterminate products into the whole extended real line', async () => {
+  const sj = await import('../../src');
+  const bounds = sj.AccumBounds(sj.S.NegativeInfinity, sj.S.Infinity);
+  expect(sj.mul(bounds, sj.S.NaN)).toBe(bounds);
+  expect(sj.mul(bounds, 0)).toBe(bounds);
+  expect(sj.mul(bounds, sj.AccumBounds(-1, 1))).toBe(bounds);
+});

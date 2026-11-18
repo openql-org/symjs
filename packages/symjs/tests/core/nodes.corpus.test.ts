@@ -1351,7 +1351,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([rational(1), new Pow(x, rational(-1))])))).toBe('O(1/x)');
   });
-  it.fails("test_add_1:166", () => {
+  it("test_add_1:166", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(log(x), rational(-1)), log(x)])))).toBe('O((log(x)**2 + 1)/log(x))');
   });
@@ -1486,11 +1486,11 @@ describe("sympy/series/tests/test_order.py", () => {
   //   assert (x + x**2).extract_leading_order(x) == ((x, O(x)),)
   //   => ((x, O(x)),)
   it.todo("test_leading_order:240");
-  it.fails("test_order_symbols:256", () => {
+  it("test_order_symbols:256", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(new Mul([x, y, new Integral([x, x, rational(1), rational(2)]), fn('sin', [x])])))).toBe('O(x**2*y, x, y)');
   });
-  it.fails("test_order_symbols:257", () => {
+  it("test_order_symbols:257", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(new Mul([x, y, new Integral([x, x, rational(1), rational(2)]), fn('sin', [x])]), x))).toBe('O(x**2)');
   });
@@ -1589,7 +1589,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const [b, a] = symbols('b a');
     expect(sympyStr(O(b, [a, b], rational(0)).add(O(rational(1), [a, b], rational(0))))).toBe('O(1, a, b)');
   });
-  it.fails("test_issue_4279:310", () => {
+  it("test_issue_4279:310", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(O(new Add([a, b]), [a, b], rational(0)).add(O(rational(1), [a, b], rational(0))))).toBe('O(1, a, b)');
   });
@@ -1886,11 +1886,11 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([rational(1), O(x, x, rational(0))]).subs(x, new Pow(x, rational(-1))))).toBe('1 + O(1/x, (x, oo))');
   });
-  it.fails("test_order_subs_limits:419", () => {
+  it("test_order_subs_limits:419", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Add([rational(1), O(x, x, rational(0))]), x, rational(0), '+'))).toBe('1');
   });
-  it.fails("test_order_subs_limits:421", () => {
+  it("test_order_subs_limits:421", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([new Pow(x, rational(-1)), new Add([x, O(new Pow(x, rational(2)), x, rational(0))])]), x, rational(0), '+'))).toBe('1');
   });
@@ -1918,7 +1918,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, rational(2)), x, oo).subs(x, O(x, x, oo)))).toBe('O(x**2, (x, oo))');
   });
-  it.fails("test_order_subs_limits:431", () => {
+  it("test_order_subs_limits:431", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([x, O(new Pow(x, rational(2)), x, rational(0))]).subs(x, new Add([x, O(new Pow(x, rational(2)), x, rational(0))])))).toBe('x + O(x**2)');
   });
@@ -1953,7 +1953,7 @@ describe("sympy/series/tests/test_order.py", () => {
   it("test_issue_9192:450", () => {
     expect(sympyStr(O(rational(1)).mul(O(rational(1))))).toBe('O(1)');
   });
-  it.fails("test_issue_9192:451", () => {
+  it("test_issue_9192:451", () => {
     expect(sympyStr(O(rational(1)).pow(O(rational(1))))).toBe('O(1)');
   });
   it("test_issue_9910:455", () => {

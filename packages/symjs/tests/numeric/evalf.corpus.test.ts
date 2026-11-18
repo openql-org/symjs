@@ -530,7 +530,7 @@ describe("sympy/core/tests/test_evalf.py", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(finiteSet(rational(1), new Add([a, new Mul([rational(-1), b])])).evalf(15, { subs: new Map([[a, rational(1)], [b, rational(2)]]) }))).toBe('{-1.0, 1.0}');
   });
-  it.fails("test_issue_20291:645", () => {
+  it("test_issue_20291:645", () => {
     const b = new Sym('b');
     expect(sympyStr(new SetOp('Complement', [new SetOp('Intersection', [Reals, finiteSet(new Add([new Mul([rational(-1, 2), b]), new Mul([rational(-1, 2), new Pow(new Add([new Pow(b, rational(2)), new Mul([rational(-4), pi])]), rational(1, 2))])]))]), finiteSet(rational(0))]).evalf(15, { subs: new Map([[b, rational(1)]]) }))).toBe('EmptySet');
   });

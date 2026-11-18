@@ -270,6 +270,29 @@ it('expands the logarithmic coefficients of reciprocal inverse functions', () =>
   expect(sj.sstr(series(sj.acsc(x), x, 0, 5))).toBe('-I*log(2) + pi/2 + I*log(x) + I*x**2/4 + 3*I*x**4/32 + O(x**5)');
 });
 
+it('expands smooth functions at finite arguments and real absolute-value displacements', () => {
+  const t = new Sym('t', { positive: true });
+  const f = sj.SymFunction('f');
+  expect(() => sj.series(f(t.pow(-1)), t)).toThrow(SeriesError);
+  expect(String(sj.series(f(t), t, 0, 0))).toContain('O(');
+  expect(String(sj.series(sj.erfc(t.pow(-1)), t))).toBe('O(t**6)');
+  const a = new Sym('a', { real: true });
+  expect(() => new Expander(t).ser(sj.erf(a.mul(t.pow(-1))), sj.rational(3))).toThrow(SeriesError);
+  const z = new Sym('z');
+  const radius = sj.series(sj.abs(z.add(t)), t, 0, 3);
+  expect(String(radius)).toContain('re(sign(z))');
+});
+
+it('handles signs and zero truncation at the edge of the expansion', () => {
+  const t = new Sym('t', { positive: true }), r = new Sym('r', { real: true });
+  const engine = new Expander(t,x);
+  expect(engine.ser(new UndefFn('f',[t]),sj.S.Zero).coeff(sj.S.Zero).toString()).toBe('f(0)');
+  expect(() => engine.ser(sj.erf(sj.mul(r,sj.pow(t,-1))),sj.S.One)).toThrow(SeriesError);
+  expect(engine.ser(new sj.Fn('erfc', [sj.mul(-1,sj.pow(t,-1))]),sj.S.One).coeff(sj.S.Zero).equals(2)).toBe(true);
+  expect(String(series(P('frac(-x**8)'),x,0,4))).toBe('1 + O(x**4)');
+  expect(String(series(P('frac(x**8)'),x,0,4))).toBe('O(x**4)');
+});
+
 it('expands the local distribution on the positive ray', () => {
   const expander = new Expander(t);
   const F = sj.SingularityFunction;
@@ -288,4 +311,9 @@ it('delegates expansions when the special-function order also varies', () => {
   const expander = new Expander(t);
   expect(() => expander.ser(sj.polylog(t, t), Rational.of(2))).toThrow(SeriesError);
   expect(() => expander.ser(sj.expint(y, t), Rational.of(2))).not.toThrow();
+  expect(expander.ser(sj.expint(t, 2), Rational.of(2)).coeff(sj.S.Zero).equals(sj.exp(-2).div(2))).toBe(true);
+  expect(expander.ser(sj.expint(1, t), Rational.of(2)).coeff(sj.S.One).equals(1)).toBe(true);
+  expect(String(expander.ser(sj.expint(2, t), Rational.of(2)).coeff(sj.S.One))).toBe('_L - 1 + EulerGamma - I*pi');
+  const ei = new UndefFn(SCALED_EI, [t.add(1)]);
+  expect(String(expander.ser(ei, Rational.of(2)).coeff(sj.S.One))).toBe('1 - _eis(1)');
 });

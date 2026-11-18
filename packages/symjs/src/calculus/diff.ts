@@ -17,7 +17,7 @@ import { Concrete } from '../core/concrete';
 import { DefinedFunctionCall } from '../core/defun';
 import { Indexed } from '../core/indexed';
 import { add, mul, pow, sympify } from '../core/ops';
-import { rebuild, xreplace } from '../core/traverse';
+import { mapBottomUp, rebuild, xreplace } from '../core/traverse';
 import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 
 /**
@@ -119,10 +119,13 @@ function d(e: Expr, x: Expr): Expr {
     }
     const u = first(e.args);
     if (e.name === 'conjugate' || e.name === 're' || e.name === 'im') {
-      // linear, but not holomorphic: the derivative is taken inside only for a real variable (SymPy keeps Derivative(conjugate(x), x))
-      if (isReal(x) !== true) return derivative(e, [[x, 1]]);
+      const imaginary = (a: Expr): boolean => a instanceof Sym && a.assumptions.imaginary === true;
+      const realAxis = isReal(x) === true || e.name !== 'conjugate' && isReal(u) === true;
+      if (!realAxis && !imaginary(x) && (e.name === 'conjugate' || !imaginary(u))) return derivative(e, [[x, 1]]);
       const du = d(u, x);
-      return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+      if (realAxis) return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+      if (e.name === 'conjugate') return mul(-1, conjugate(du));
+      return mul(-1, S.I, e.name === 're' ? fnIm(du) : fnRe(du));
     }
     const du = d(u, x);
     // SymPy Abs._eval_derivative: sign(conjugate(u))*u' for a real or imaginary u, otherwise
@@ -172,7 +175,15 @@ function d(e: Expr, x: Expr): Expr {
     return diffHooks.order(de, vars, point);
   }
   if (e instanceof Derivative) {
-    if (e.expr instanceof UndefFn && e.expr.args.some((a) => a.key === x.key)) return derivative(e, [[x, 1]], true);
+    if (e.expr instanceof UndefFn) {
+      if (e.variableOrders.some(([v]) => v.equals(x))) return derivative(e, [[x, 1]], true);
+      const inner = d(e.expr, x);
+      if (inner instanceof Derivative) {
+        const orders = [...e.variableOrders, ...inner.variableOrders];
+        return derivative(inner.expr, orders, orders.every(([variable]) => !(variable instanceof Dummy)));
+      }
+      return e.variableOrders.reduce((value, [v, n]) => diff(value, v, n), inner);
+    }
     // otherwise x enters through the expression: evaluate the inner derivative first, like SymPy
     // (diff(Derivative(f(x*y), y), x) = x*y*Subs(Derivative(f(xi), (xi, 2)), xi, x*y) + Subs(Derivative(f(xi), xi), xi, x*y))
     const inner = e.doit();
@@ -234,7 +245,22 @@ function diffIntegral(e: Integral, x: Expr): Expr {
 /** The derivative with respect to a subexpression t, which is treated as a symbol. */
 function diffWrtTerm(e: Expr, t: Expr, n: number): Expr {
   const xi = new Dummy('xi');
-  return xreplace(diff(xreplace(e, [[t, xi]]), xi, n), [[xi, t]]);
+  const result = diff(xreplace(e, [[t, xi]]), xi, n);
+  if (!(t instanceof UndefFn)) return xreplace(result, [[xi, t]]);
+  const partials = mapBottomUp(result, (term) => {
+    if (term instanceof Derivative && term.expr instanceof UndefFn) {
+      const orders = term.variableOrders;
+      const partial = orders.find(([v]) => v.equals(xi));
+      if (partial !== undefined && orders.some(([v]) => !v.equals(xi) && t.has(v) && term.expr.args.some((arg) => arg.equals(v)))) {
+        const bound = new Dummy('xi');
+        const body = xreplace(term.expr, [[xi, bound]]);
+        const rest = orders.filter(([v]) => !v.equals(xi));
+        return new SubsNode([derivative(body, [[bound, partial[1]], ...rest]), bound, t]);
+      }
+    }
+    return term;
+  });
+  return xreplace(partials, [[xi, t]]);
 }
 
 /** The distinct indexed objects with the given base in e. */
@@ -315,6 +341,7 @@ export function fdiff(f: ExprLike, argindex = 1): Expr {
   if (unavailablePartials[e.name]?.includes(argindex)) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
   const i = argindex - 1;
   const a = at(e.args, i);
+  if (e instanceof Fn && e.name === 'abs') return fn('sign', [a]);
   const xi = new Dummy(`xi_${argindex}`);
   const dg = diff(rebuild(e, e.args.map((b, j) => (j === i ? xi : b))), xi);
   const unevaluated = (x: Expr): boolean => ((x instanceof Derivative || x instanceof SubsNode) && x.has(xi)) || x.args.some(unevaluated);

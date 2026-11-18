@@ -14,6 +14,32 @@ const x = sj.symbol('x');
 const y = sj.symbol('y');
 const s = (e: unknown): string => String(e);
 
+it('determines rationality for exponentials of unevaluated natural logarithms', () => {
+  const ofLog = (...args: sj.ExprLike[]) => new sj.Pow(sj.S.E, sj.fn('log', args, { evaluate: false }));
+  expect(ask(Q.rational(ofLog(3)))).toBe(true);
+  expect(ask(Q.rational(ofLog(sj.pi)))).toBe(false);
+  expect(ask(Q.rational(ofLog(3, 10)))).toBe('unknown');
+});
+
+it('queries the extended log and polar exponential on raw inputs', () => {
+  const raw = { evaluate: false };
+  expect(ask(Q.extended_positive(sj.fn('log', [sj.oo], raw)))).toBe(true);
+  expect(ask(Q.extended_positive(sj.fn('log', [sj.S.NegativeInfinity], raw)))).toBe('unknown');
+  expect(ask(Q.rational(sj.fn('exp_polar', [0], raw)))).toBe(true);
+});
+
+it('recognizes a product of three imaginary factors', () => {
+  const [u, v, w] = sj.symbols('u v w', { imaginary: true });
+  expect(ask(Q.real(sj.mul(u, v, w)))).toBe(false);
+});
+
+it('distinguishes nonreal inverse sine and cosine values from extended reals', () => {
+  expect(ask(Q.extended_real(sj.asin(2)))).toBe(false);
+  expect(ask(Q.extended_real(sj.acos(2)))).toBe(false);
+  expect(sj.isReal(sj.asin(-2))).toBe(false);
+  expect(ask(Q.extended_real(sj.asin(x)))).toBe('unknown');
+});
+
 const locals: Record<string, (...a: sj.Expr[]) => sj.Expr> = {
   ...Object.fromEntries(Object.keys(Q).map((k) => [`Q_${k}`, (...a: sj.Expr[]) => defined(Q[k], k)(...a)])),
   Xor: (...a) => sj.Xor(...a),
