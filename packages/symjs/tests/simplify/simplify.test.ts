@@ -321,3 +321,11 @@ it('uses expression-valued measures and the algebraic zero certificate', async (
   const zero = sj.parse('sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))');
   expect(impl.equalsZero?.(zero)).toBe(true);
 });
+
+it('cancels shifted powers of the roots of a characteristic polynomial', () => {
+  const n = symbol('n', {integer:true});
+  for (const base of [parse('(1+sqrt(5))/2'),parse('(1-sqrt(5))/2')]) {
+    const residual = add(pow(base,add(n,2)),mul(-1,pow(base,add(n,1))),mul(-1,pow(base,n)));
+    expect(simplify(residual)).toBe(S.Zero);
+  }
+});

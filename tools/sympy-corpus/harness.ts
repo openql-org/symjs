@@ -1339,6 +1339,8 @@ export function deserialize(tree: Tree): unknown {
       return new sj.SingleODEProblem(deserialize(tree['eq'] as Tree) as Expr, deserialize(tree['func'] as Tree) as sj.UndefFn, deserialize(tree['sym'] as Tree) as Sym);
     case 'SingleODESolver': {
       const problem = deserialize(tree['problem'] as Tree) as sj.SingleODEProblem;
+      if (tree['cls'] === 'SingleODESolver') return new sj.SingleODESolver(problem);
+      if (tree['cls'] === 'FirstLinear') return new sj.FirstLinear(problem);
       if (tree['cls'] === 'NthAlgebraic') return new sj.NthAlgebraic(problem);
       throw new Unsupported(`ODE solver ${String(tree['cls'])}`);
     }
@@ -2007,6 +2009,16 @@ function relationArgs(args: unknown[], kw: Record<string, unknown>, op: string):
 }
 
 export const ADAPTERS: Record<string, Adapter> = {
+  checkodesol: (args, kw) => {
+    const [ode, sol] = args;
+    if (ode instanceof JsTuple || ode instanceof JsList) {
+      const [ok, residuals] = sj.checksysodesol(asExprList(ode), asExprList(sol));
+      return new JsTuple([ok, new JsList(residuals)]);
+    }
+    const func = args[2] ?? kw['func'];
+    if (sol instanceof JsTuple || sol instanceof JsList) return new JsList(sj.checkodesol(asExpr(ode), asExprList(sol), func == null ? undefined : asExpr(func)).map((row) => new JsTuple(row)));
+    return new JsTuple(sj.checkodesol(asExpr(ode), asExpr(sol), func == null ? undefined : asExpr(func)));
+  },
   checksysodesol: (args, kw) => {
     noKw(kw);
     const solutions = args[1];
@@ -2019,7 +2031,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (funcs !== undefined && !funcs.every((f): f is sj.UndefFn => f instanceof sj.UndefFn)) throw new TypeError('expected dependent functions');
     const ics = kw['ics'];
     if (ics !== undefined && !(ics instanceof JsDict)) throw new TypeError('expected initial conditions mapping');
-    return fromJs(sj.dsolveSystem(asExprList(args[0]), funcs, args[2] === undefined && kw['t'] === undefined ? undefined : asSym(args[2] ?? kw['t']), ics instanceof JsDict ? new Map(ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)])) : undefined));
+    return fromJs(sj.dsolveSystem(asExprList(args[0]), funcs, args[2] === undefined && kw['t'] === undefined ? undefined : asSym(args[2] ?? kw['t']), ics instanceof JsDict ? new Map(ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)])) : undefined, { simplify: kw['simplify'] !== false, doit: kw['doit'] !== false }));
   },
   linear_ode_to_matrix: (args, kw) => {
     noKw(kw);
@@ -2033,8 +2045,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const matrix = args[0];
     if (!(matrix instanceof Matrix)) throw new TypeError('expected a matrix');
     if (args[1] === undefined) return sj.matrixExp(matrix);
-    const z = new sj.Dummy('lambda');
-    return sj.analyticFunc(matrix, sj.exp(sj.mul(asExpr(args[1]), z)), z);
+    return sj.odeMatrixExp(matrix, asSym(args[1]));
   },
   power_representation: (args, kw) => fromJs(sj.powerRepresentation(asExpr(args[0]), asExpr(args[1]), asExpr(args[2]), { zeros: (kw['zeros'] ?? args[3]) === true })),
   sum_of_squares: (args, kw) => fromJs(sj.sumOfSquares(asExpr(args[0]), asExpr(args[1]), { zeros: (kw['zeros'] ?? args[2]) === true })),
@@ -4015,7 +4026,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.aseries(asExpr(self), x, n, Boolean(kw['hir']));
   },
   classify_ode: (args, kw) => {
-    for (const key of Object.keys(kw)) if (key !== 'ics') throw new Unsupported(`kwargs ${key}`);
+    for (const key of Object.keys(kw)) if (!['ics', 'prep', 'dict'].includes(key)) throw new Unsupported(`kwargs ${key}`);
     const ics = kw['ics'];
     if (ics !== undefined && !(ics instanceof JsDict)) throw new TypeError('expected initial conditions mapping');
     const eq = asExpr(args[0]);
@@ -4030,7 +4041,12 @@ export const ADAPTERS: Record<string, Adapter> = {
       fx = [...found.values()][0];
     }
     if (!(fx instanceof sj.UndefFn)) throw new TypeError('expected a dependent function');
-    return new JsTuple(sj.classifyOde(eq, fx, ics instanceof JsDict ? { ics: ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)]) } : {}));
+    const hints = sj.classifyOde(eq, fx, ics instanceof JsDict ? { ics: ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)]) } : {});
+    if (kw['dict'] === true) {
+      if (hints.length) throw new Unsupported('ODE solver hint dictionary');
+      return new JsDict([['order', sj.odeOrder(eq, fx)], ['default', null], ['ordered_hints', new JsTuple([])]]);
+    }
+    return new JsTuple(hints);
   },
   line_integrate: (args, kw) => (noKw(kw), sj.lineIntegrate(asExpr(args[0]), args[1] as sj.Curve, (args[2] as JsList).items.map(asSym))),
   minimal_polynomial: (args, kw) => {
@@ -4441,6 +4457,19 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
 
   // ---- ODEs
+  filldedent: (args, kw) => (noKw(kw), sj.filldedent(String(args[0]), args[1] === undefined ? 70 : intArg(args[1]))),
+  get_numbered_constants: (args, kw) => {
+    const eq = args[0];
+    if (eq === null) throw new RangeError('expected an expression or sequence');
+    const num = intArg(args[1] ?? kw['num'] ?? 1);
+    const cs = sj.getNumberedConstants(eq instanceof Expr ? eq : asExprList(eq), num, intArg(args[2] ?? kw['start'] ?? 1), String(args[3] ?? kw['prefix'] ?? 'C'));
+    return num === 1 ? cs[0] : new JsTuple(cs);
+  },
+  pdsolve: (args, kw) => {
+    const solvefun = kw['solvefun'] ?? args[3];
+    const func = args[1] ?? kw['func'];
+    return sj.pdsolve(asExpr(args[0]), func == null ? undefined : asExpr(func), String(kw['hint'] ?? args[2] ?? 'default'), solvefun instanceof UFnClass ? sj.SymFunction(solvefun.name) : undefined);
+  },
   rsolve_poly: (args, kw) => (noKw(kw), first0(sj.rsolvePoly((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
   rsolve_ratio: (args, kw) => (noKw(kw), first0(sj.rsolveRatio((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
   rsolve_hyper: (args, kw) => (noKw(kw), first0(sj.rsolveHyper((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
@@ -4468,6 +4497,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     const options: sj.DsolveOptions = {};
     if (ics instanceof JsDict) options.ics = ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)]);
     if (kw['hint'] !== undefined || args[2] !== undefined) options.hint = String(kw['hint'] ?? args[2]);
+    if (kw['n'] !== undefined) options.n = intArg(kw['n']);
+    if (kw['x0'] !== undefined) options.x0 = asExpr(kw['x0']);
     if (kw['xi'] !== undefined) options.xi = asExpr(kw['xi']);
     if (kw['eta'] !== undefined) options.eta = asExpr(kw['eta']);
     return fromJs(sj.dsolve(eq, funcs, options));
@@ -7124,6 +7155,10 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // y' = sin(x*y) implies y'(0) = 0. The upstream quadratic has derivative
+  // sin(4) - 4*(1 + sin(4))*cos(4) at zero (about -0.121). Its Taylor
+  // remainder is cubic at the initial point x = 2.
+  "sympy.solvers.ode.tests.test_ode:assert dsolve(eq, hint='1st_power_series', ics={f(2): 2}, n=3) == sol": 'Eq(f(x), 2 + (x - 2)*sin(4) + (x - 2)**2*(sin(4) + 1)*cos(4) + O((x - 2)**3, (x, 2)))',
   // For exponential X >= 0, P(X**2 <= z) = P(X <= sqrt(z)). SymPy includes
   // the negative preimage: its expression at z=1 is exp(1)-exp(-1) > 1.
   "sympy.stats.tests.test_continuous_rv:cdf(Exponential('e', 1)**2)(z)": 'Piecewise((1 - exp(-sqrt(z)), z >= 0), (0, True))',
