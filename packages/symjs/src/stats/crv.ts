@@ -19,6 +19,7 @@ import { BoolOp, and } from '../core/boolalg';
 import { xreplace } from '../core/traverse';
 import { Lambda, LambdaNode } from '../core/lambda';
 import { NotImplementedError } from '../core/errors';
+import { isRationalFunction } from '../core/methods';
 import { at, cast, defined, first } from '../core/guard';
 import { EmptySet, FiniteSet, Interval, Reals, SetExpr, SetOp, asRelational, inf, interval, intersection, union } from '../sets/sets';
 import { solveUnivariateInequality, solveset } from '../solvers/inequalities';
@@ -92,7 +93,11 @@ function integrateFromLeft(f: Expr, x: Sym, left: Expr, z: Expr): Expr {
 
 /** The set where the condition on var holds (SymPy reduce_rational_inequalities_wrap). */
 export function reduceRationalInequalitiesWrap(condition: Expr, v: Sym): SetExpr {
-  const one = (c: Expr): SetExpr => cast(solveUnivariateInequality(c, v, { relational: false }), SetExpr);
+  // SymPy reduces rational inequalities only: any other condition is a ValueError
+  const one = (c: Expr): SetExpr => {
+    if (c instanceof Rel && !isRationalFunction(add(c.lhs, mul(-1, c.rhs)), [v])) throw new RangeError(`Reduction of condition failed ${c.toString()}`);
+    return cast(solveUnivariateInequality(c, v, { relational: false }), SetExpr);
+  };
   if (condition instanceof Rel) return one(condition);
   if (condition instanceof BoolOp && condition.op === 'Or') return union(...condition.args.map(one));
   if (condition instanceof BoolOp && condition.op === 'And') return intersection(...condition.args.map(one));
@@ -111,8 +116,8 @@ export class SingleContinuousDomain extends SingleDomain {
   override get isContinuous(): boolean {
     return true;
   }
-  override computeExpectation(expr: Expr, variables?: readonly Sym[]): Expr {
-    const vs = variables ?? this.symbols;
+  override computeExpectation(expr: Expr, variables?: Iterable<Sym>): Expr {
+    const vs = variables === undefined ? this.symbols : [...variables];
     if (!vs.length) return expr;
     if (vs.length !== 1 || first(vs).key !== this.symbol.key) throw new RangeError('Values should be equal');
     return makeIntegral(expr, [limitOver(this.symbol, this.set)]);

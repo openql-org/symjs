@@ -17,7 +17,7 @@
 
 import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ, isReal, isNegative, isPositive } from '../core/assumptions';
 import { AccumBounds } from '../core/accumbounds';
-import { Eq, Gt, Ne, piecewise, Le, Lt } from '../core/logic';
+import { Eq, Gt, Ne, piecewise, Le, Lt, rel } from '../core/logic';
 import type { Expr, ExprLike, RelOp } from '../core/nodes';
 import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { Concrete } from '../core/concrete';
@@ -34,6 +34,7 @@ import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary/elementary';
 import { factor } from '../polys/sympoly';
 import { NotImplementedError } from '../core/errors';
+import { Mod } from '../functions/mod';
 import { UPoly, polyCoefficients, roots } from '../polys/poly';
 import { fn as fnErf } from '../functions/elementary/elementary';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
@@ -48,7 +49,7 @@ import { cancelFraction, isRationalIn, ratint } from './rationaltools';
 import { trigintegrate } from './trigonometry';
 import { heurisch, heurischTrig } from './heurisch';
 import { manualintegrate, sqrtQuadraticRule } from './manualintegrate';
-import { floor, sign } from '../functions/special/special';
+import { floor, Max, Min, sign } from '../functions/special/special';
 import { and, or, BoolOp } from '../core/boolalg';
 import { ordered } from '../core/match';
 import { reduceInequalities } from '../solvers/inequalities';
@@ -857,7 +858,7 @@ function piecewiseBreaks(f: Piecewise, x: Sym): [Expr, Expr | undefined][] | und
   for (const [e, c] of f.pairs) {
     if (c instanceof BoolAtom && c.value) {
       out.push([e, undefined]);
-      continue;
+      break;
     }
     if (!(c instanceof Rel) || !(c.op === 'Lt' || c.op === 'Le') || c.lhs.key !== x.key || c.rhs.has(x)) return undefined;
     out.push([e, c.rhs]);
@@ -916,6 +917,102 @@ function definitePiecewise(f: Piecewise, x: Sym, a: Expr, b: Expr): Expr | undef
   return add(...terms);
 }
 
+type PiecewiseInterval = readonly [start: Expr, end: Expr];
+type PiecewiseSegment = readonly [start: Expr, end: Expr, branch: number];
+
+/** Find the intervals described by Boolean combinations of affine conditions. */
+function conditionIntervals(condition: Expr, x: Sym): PiecewiseInterval[] | undefined {
+  const whole = [S.NegativeInfinity, S.Infinity] as const;
+  if (condition instanceof BoolAtom) return condition.value ? [whole] : [];
+  if (condition instanceof BoolOp && (condition.op === 'And' || condition.op === 'Or')) {
+    let intervals: PiecewiseInterval[] = condition.op === 'And' ? [whole] : [];
+    for (const term of condition.args) {
+      const ranges = conditionIntervals(term, x);
+      if (!ranges) return undefined;
+      intervals = condition.op === 'Or' ? [...intervals, ...ranges] : intervals.flatMap(([a, b]) =>
+        ranges.map(([c, d]) => [Max(a, c), Min(b, d)] as const));
+    }
+    return intervals;
+  }
+  if (!(condition instanceof Rel)) return undefined;
+  if ((condition.op === 'Eq' || condition.op === 'Ne') && Mod.isApplied(condition.lhs)) {
+    const [argument, period] = pair(condition.lhs.args);
+    // With a fixed real period, equality to a fixed residue holds only at isolated points.
+    if (argument.key === x.key && period instanceof Rational && !condition.rhs.has(x)) {
+      return condition.op === 'Eq' ? [] : [whole];
+    }
+  }
+  const difference = expand(add(condition.lhs, mul(-1, condition.rhs)));
+  const coeffs = polyCoefficients(difference, x);
+  if (!coeffs || [...coeffs.keys()].some((degree) => degree > 1)) return undefined;
+  const slope = coeffs.get(1);
+  const remainder = coeffs.get(0) ?? S.Zero;
+  if (slope === undefined) {
+    const value = rel(condition.op, remainder, S.Zero);
+    return value === S.true ? [whole] : value === S.false ? [] : undefined;
+  }
+  const positive = isPositive(slope) === true;
+  if (!positive && isNegative(slope) !== true) return undefined;
+  const bound = mul(-1, remainder, pow(slope, -1));
+  if (condition.op === 'Eq') return [];
+  if (condition.op === 'Ne') return [[whole[0], bound], [bound, whole[1]]];
+  const upper = (condition.op === 'Lt' || condition.op === 'Le') === positive;
+  return upper ? [[whole[0], bound]] : [[bound, whole[1]]];
+}
+
+/** Clip the unassigned segments against each branch in evaluation order. */
+function piecewiseSegments(f: Piecewise, x: Sym, start: Expr, end: Expr): PiecewiseSegment[] | undefined {
+  let segments: PiecewiseSegment[] = [[start, end, -1]];
+  for (const [branch, [, condition]] of f.pairs.entries()) {
+    if (!segments.some((segment) => segment[2] === -1)) break;
+    const ranges = conditionIntervals(condition, x);
+    if (!ranges) return undefined;
+    for (const [left, right] of ranges) {
+      const top = Max(left, right);
+      segments = segments.flatMap((segment): PiecewiseSegment[] => {
+        const [a, b, current] = segment;
+        if (current >= 0 || a.key === b.key) return [segment];
+        if (left === S.NegativeInfinity && top === S.Infinity) return [[a, b, branch]];
+        const lo = Min(b, Max(a, left));
+        const hi = Min(b, Max(a, top));
+        if (lo.key === hi.key) return [segment];
+        const clipped: PiecewiseSegment[] = [];
+        if (a.key !== lo.key) clipped.push([a, lo, -1]);
+        clipped.push([lo, hi, branch]);
+        if (hi.key !== b.key) clipped.push([hi, b, -1]);
+        return clipped;
+      });
+    }
+  }
+  return segments.filter(([a, b]) => a.key !== b.key);
+}
+
+function symbolicDefinitePiecewise(f: Piecewise, x: Sym, a: Expr, b: Expr): Expr | undefined {
+  const orderedIntegral = (start: Expr, end: Expr): Expr | undefined => {
+    const segments = piecewiseSegments(f, x, start, end);
+    if (!segments) return undefined;
+    let total: Expr = S.Zero;
+    let previous: Expr | undefined;
+    for (const [left, right, branch] of segments) {
+      if (branch < 0) return previous === undefined ? S.NaN : piecewise([total, Le(end, previous)], [S.NaN, true]);
+      const result = integrate(at(f.pairs, branch)[0], x, [left, right]);
+      if (result instanceof Integral) return undefined;
+      total = add(total, result);
+      previous = right;
+    }
+    return total;
+  };
+  const order = cmpSign(a, b);
+  if (order !== undefined) {
+    const result = order < 0 ? orderedIntegral(a, b) : orderedIntegral(b, a);
+    return result === undefined || order < 0 ? result : mul(-1, result);
+  }
+  const forward = orderedIntegral(a, b);
+  const reverse = orderedIntegral(b, a);
+  if (forward === undefined || reverse === undefined) return undefined;
+  return piecewise([forward, Lt(a, b)], [mul(-1, reverse), true]);
+}
+
 /**
  * SymPy Piecewise._handle_irel: the relations of the conditions that do not
  * contain x are replaced by each combination of truth values (all true
@@ -944,7 +1041,14 @@ function handleIrel(f: Piecewise, x: Sym, handler: (e: Expr) => Expr): Expr | un
       const andargs = irel.filter((_, i) => truth[i]);
       const free = [...new Set(andargs.flatMap((r) => [...r.freeSymbols()].map((s) => s.key)))];
       const sym = andargs.flatMap((r) => [...r.freeSymbols()]).find((s): s is Sym => s instanceof Sym);
-      const c = free.length === 1 && sym ? reduceInequalities(andargs, [sym]) : and(...andargs);
+      let c = and(...andargs);
+      if (free.length === 1 && sym) {
+        try {
+          c = reduceInequalities(andargs, [sym]);
+        } catch {
+          // Conditions independent of the integration variable can be kept symbolically.
+        }
+      }
       if (c instanceof BoolAtom && !c.value) continue;
       cond = c;
     }
@@ -969,12 +1073,31 @@ export function piecewiseIntegrate(f: Piecewise, x: Sym): Expr {
 /** Continuous antiderivative of a Piecewise in x. */
 function integratePiecewise(f: Piecewise, x: Sym): Expr | undefined {
   const br = piecewiseBreaks(f, x);
-  if (!br) return undefined;
+  if (!br || br.some(([, bound], i) => bound !== undefined && i > 0
+    && (cmpSign(defined(at(br, i - 1)[1], 'preceding Piecewise interval bound'), bound) ?? 1) > 0)) {
+    const segments = piecewiseSegments(f, x, S.NegativeInfinity, S.Infinity);
+    if (!segments) return undefined;
+    const pieces: [Expr, Expr][] = [];
+    let previous: Expr = S.NaN;
+    for (const [start, end, index] of segments) {
+      const [value, condition] = index < 0 ? [S.NaN, S.false] : at(f.pairs, index);
+      let primitive = integrate(value, x);
+      if (primitive instanceof Integral) return undefined;
+      if (previous !== S.NaN && primitive !== S.NaN) {
+        const offset = add(subs(previous, [[x, start]]), mul(-1, subs(primitive, [[x, start]])));
+        if (!(offset instanceof Special)) primitive = add(primitive, offset);
+      }
+      const test = end === S.Infinity ? S.true : subs(condition, [[x, end]]) === S.false ? Lt(x, end) : Le(x, end);
+      pieces.push([primitive, test]);
+      previous = primitive;
+    }
+    return piecewise(...pieces);
+  }
   const pieces: [Expr, Expr][] = [];
   let prevF: Expr | undefined;
   let prevBreak: Expr | undefined;
   for (const [e, c] of br) {
-    let F = new Integrator(x).integrate(e);
+    let F = new Integrator(x).integrate(e) ?? otherMethods(e, x);
     if (F === undefined) return undefined;
     if (prevF !== undefined && prevBreak !== undefined) {
       // continuity at the previous breakpoint
@@ -1120,7 +1243,12 @@ function singularPoints(f: Expr, x: Sym, a: Expr, b: Expr): Expr[] | undefined {
         // Numerical ordering is used only for constant real roots, never for parameters.
         const real = cmpReal(r, S.Zero);
         if (real !== undefined) points.set(r.key, r);
-        else if (r.freeSymbols().size !== 0) return undefined;
+        else if (r.freeSymbols().size !== 0) {
+          // a parametric root: on the real axis when its assumptions say so, off it when they exclude that
+          const onAxis = isReal(r);
+          if (onAxis === true) points.set(r.key, r);
+          else if (onAxis !== false) return undefined;
+        }
       }
     } catch {
       // Root isolation failed: do not assert that the interval is regular.
@@ -1173,6 +1301,27 @@ function otherMethods(f: Expr, x: Sym): Expr | undefined {
   }
 }
 const activeMethods = new Set<string>();
+
+/** Integrate the absolute value of an affine sine or cosine by its half-periods. */
+function definiteAbsTrig(f: Expr, x: Sym, a: Expr, b: Expr): Expr | undefined {
+  if (!(f instanceof Fn) || f.name !== 'abs') return undefined;
+  const wave = at(f.args, 0);
+  if (!(wave instanceof Fn) || (wave.name !== 'sin' && wave.name !== 'cos')) return undefined;
+  const argument = at(wave.args, 0);
+  const coefficients = polyCoefficients(argument, x);
+  if (coefficients === undefined || [...coefficients.keys()].some((degree) => degree > 1)) return undefined;
+  const slope = coefficients.get(1);
+  if (slope === undefined || isNonZero(slope) !== true || isReal(slope) !== true) return undefined;
+  const u = wave.name === 'cos' ? add(argument, mul(S.Half, S.Pi)) : argument;
+  const primitive = (point: Expr): Expr | undefined => {
+    const value = subs(u, [[x, point]]);
+    if (isReal(value) !== true) return undefined;
+    const periods = floor(mul(value, pow(S.Pi, -1)));
+    return periods instanceof Rational ? add(mul(2, periods), 1, mul(-1, cos(add(value, mul(-1, periods, S.Pi))))) : undefined;
+  };
+  const left = primitive(a), right = primitive(b);
+  return left === undefined || right === undefined ? undefined : mul(add(right, mul(-1, left)), pow(slope, -1));
+}
 
 /**
  * risch_integrate as SymPy's integrate uses it: the elementary part, plus
@@ -1280,6 +1429,10 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     }
   }
   if (limits || isReal(x) === true) f = realIntegrand(f, x) ?? f;
+  if (limits) {
+    const periodic = definiteAbsTrig(f, x, sympify(limits[0]), sympify(limits[1]));
+    if (periodic !== undefined) return periodic;
+  }
   if (f instanceof ExtensionExpr) {
     const own = f.integrateSelf(x, limits && [sympify(limits[0]), sympify(limits[1])], (g) => integrate(g, x, limits, opts));
     if (own !== undefined) return own;
@@ -1289,10 +1442,15 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     const r = handleIrel(f, x, (g) => integrate(g, x, limits, opts));
     if (r !== undefined) return r;
     if (limits) {
-      const result = definitePiecewise(f, x, sympify(limits[0]), sympify(limits[1]));
+      const a = sympify(limits[0]);
+      const b = sympify(limits[1]);
+      const result = definitePiecewise(f, x, a, b) ?? symbolicDefinitePiecewise(f, x, a, b);
       if (result !== undefined) return result;
     }
   }
+  // an integral that stays unevaluated keeps the integrand as given (SymPy returns Integral(p, (x, a, b)))
+  const given = f;
+  const unevaluatedAsGiven = (result: Expr): Expr => (limits && result instanceof Integral && given !== f ? new Integral([given, x, sympify(limits[0]), sympify(limits[1])]) : result);
   if (limits && some(f, (e) => e instanceof Piecewise)) {
     const [a, b] = [sympify(limits[0]), sympify(limits[1])];
     f = simplifyConditionsOnInterval(decideConditionsOnInterval(f, x, a, b), x, a, b);
@@ -1316,7 +1474,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   if (!limits) return F ?? new Integral([f, x]);
   const a = sympify(limits[0]);
   const b = sympify(limits[1]);
-  if (F === undefined) return definiteWithoutAntiderivative(f, x, a, b, opts);
+  if (F === undefined) return unevaluatedAsGiven(definiteWithoutAntiderivative(f, x, a, b, opts));
   // An antiderivative's endpoint difference is valid only between singularities.
   // Evaluate the two sides independently: this is an improper integral, not a principal value.
   if (a.key === b.key) return S.Zero;
@@ -1328,7 +1486,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   const order = cmpReal(a, b);
   if (order !== undefined && order > 0) return mul(-1, integrate(f, x, [b, a], opts));
   const interior: Expr[] = [];
-  const bad = (e: Expr): boolean => e instanceof Special || e.args.some(bad);
+  const bad = (e: Expr): boolean => e instanceof Special || impl.accumBounds?.is(e) === true || e.args.some(bad);
   for (const p of points) {
     const left = cmpSign(p, a);
     const right = cmpSign(p, b);
@@ -1338,7 +1496,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
       const l = impl.limit(F, x, p, '-');
       const r = impl.limit(F, x, p, '+');
       if (l.key === r.key && !bad(l) && !l.has(x)) continue;
-      return unevaluated;
+      return [a, b].some((e) => e instanceof Special) ? definiteWithoutAntiderivative(f, x, a, b, opts) : unevaluated;
     }
     if (left > 0 && right < 0) interior.push(p);
   }
@@ -1349,9 +1507,14 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   };
   const bounds = [a, ...interior, b];
   const parts: Expr[] = [];
+  const isInfinity = (v: Expr): boolean => v === S.Infinity || v === S.NegativeInfinity;
   for (let i = 1; i < bounds.length; i++) {
     try {
-      parts.push(add(endpoint(at(bounds, i), '-'), mul(-1, endpoint(at(bounds, i - 1), '+'))));
+      const lower = endpoint(at(bounds, i - 1), '+');
+      const upper = endpoint(at(bounds, i), '-');
+      if (isInfinity(upper) && rootIsReal(lower) === true) parts.push(upper);
+      else if (isInfinity(lower) && rootIsReal(upper) === true) parts.push(mul(-1, lower));
+      else parts.push(add(upper, mul(-1, lower)));
     } catch (error) {
       if (error instanceof NotImplementedError) return unevaluated;
       throw error;

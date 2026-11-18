@@ -15,21 +15,24 @@
 
 import { toGamma } from '../simplify/gammasimp';
 import { powsimp } from '../simplify/powsimp';
-import { isNegative, isPositive, isReal } from '../core/assumptions';
+import { isIntegerQ, isNegative, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, ExtensionExpr, Float, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
-import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
+import { Add, Dummy, ExtensionExpr, Float, Fn, Limit, Mul, Piecewise, Rel, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
+import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { mapBottomUp, rebuild, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { fn, log } from '../functions/elementary/elementary';
 import { polyCoefficients } from '../polys/poly';
-import { expandMul as expand } from '../simplify/expand';
+import { expandMul as expand, expand_log as expandLog } from '../simplify/expand';
 import { cancel, fraction, ratsimp, together } from '../simplify/rational';
 import { factorTerms } from '../simplify/exprtools';
 import { AccumBoundsNode, accumBounds } from '../core/accumbounds';
 import { Expander, isZeroCoeff } from './puiseux';
 import { SignUnknownError, gruntz } from './gruntz';
-import { defined, first, getOrThrow } from '../core/guard';
+import { at, defined, first, getOrThrow } from '../core/guard';
+import { orUnsolved, type UnsolvedResult } from '../core/truth';
+import { rel } from '../core/logic';
+import { Mod } from '../functions/mod';
 import { NotImplementedError } from '../core/errors';
 import { nsimplify } from '../numeric/nfloat';
 
@@ -254,8 +257,18 @@ class Limiter {
 
   private structural(f: Expr): LV | typeof STOP {
     const z = this.z;
-    if (!f.has(z)) return f;
+    if (!f.has(z)) return f instanceof Sym && f.assumptions.zero ? S.Zero : f;
     if (f.key === z.key) return this.z0;
+
+    if (Mod.isApplied(f)) {
+      const arg = first(f.args);
+      const divisor = at(f.args, 1);
+      if (arg.equals(z) && !divisor.has(z) && isIntegerQ(mul(this.z0, pow(divisor, -1))) === true) {
+        if (isPositive(divisor)) return this.dir === '+' ? S.Zero : divisor;
+        if (isNegative(divisor)) return this.dir === '-' ? S.Zero : divisor;
+        throw new NotImplementedError('Limit of Mod depends on the sign of its divisor');
+      }
+    }
 
     if (f instanceof Add) {
       const vals = f.args.map((a) => this.lim(a));
@@ -333,7 +346,7 @@ class Limiter {
       const expLog = (): LV => {
         const v = this.lim(mul(h, log(b)));
         if (v === undefined || v === BOUNDED) return undefined;
-        return isDirectedInf(v) ? this.expInf(v, S.E) : exp(v);
+        return this.exponential(v);
       };
       if (isZeroE(lb)) {
         if (isZeroE(lh)) return expLog();
@@ -353,7 +366,12 @@ class Limiter {
       if (!isFinite_(lb) && !isInf(lb) && !isDirectedInf(lb)) return undefined;
       // a base tending to 0 that is not written as 0 (1 - cos(a)**2 - sin(a)**2): undetermined here
       if (isNegative(lh) && isFinite_(lb) && isZeroCoeff(lb)) return undefined;
-      if (lb instanceof Rational && lb.isOne && isInf(lh)) return expLog();
+      if (lb instanceof Rational && lb.isOne && isInf(lh)) {
+        // log(1 + u)/u tends to 1 as u tends to 0.
+        const product = this.lim(cancel(mul(h, add(b, -1))));
+        if (isValue(product) && isFinite_(product)) return exp(product);
+        return expLog();
+      }
       if (isInf(lb) && isZeroE(lh)) return expLog();
       // an infinite base off the positive axis to the power oo: the modulus grows, the direction turns (SymPy: zoo)
       if (isInf(lh) && lh.name === 'oo' && (isDirectedInf(lb) || (isInf(lb) && lb.name !== 'oo'))) return S.ComplexInfinity;
@@ -361,6 +379,7 @@ class Limiter {
       if (isFinite_(lb) && (isDirectedInf(lh) || (isInf(lh) && lh.name !== 'zoo' && isPositive(lb) !== true))) {
         return this.expInf(lh, lb);
       }
+      if (lb === S.NegativeInfinity && lh instanceof Sym && isIntegerQ(lh) && isPositive(lh)) return this.infinity(pow(-1, lh));
       const r = pow(lb, lh);
       if (isNaN_(r)) return expLog();
       // a fractional power on its branch cut (sqrt(-1 + I*x) from below)
@@ -371,7 +390,13 @@ class Limiter {
       const ls = f.args.map((a) => this.lim(a));
       const vs = ls.filter(isValue);
       if (vs.length !== ls.length) return undefined;
+      // On the upper bank K_nu(-r) = exp(-i*pi*nu)*K_nu(r) - i*pi*I_nu(r).
+      if (f.name === 'besselk' && at(vs, 1) === S.NegativeInfinity && !first(f.args).has(z) &&
+          isReal(first(f.args)) === true && isReal(subs(at(f.args, 1), [[z, new Dummy('r', { real: true })]])) === true) {
+        return mul(S.NegativeInfinity, S.I);
+      }
       const r = fn(f.name, vs);
+      if (f.name === 'harmonic' && vs[0] === S.Infinity && !at(f.args, 1).has(this.z)) return r;
       if (hasSpecialInside(r) || isNaN_(r)) return undefined;
       return r;
     }
@@ -383,6 +408,10 @@ class Limiter {
         return this.lim(pow(fn('abs', [arg.base]), arg.exp));
       }
       const la = this.lim(arg);
+      if ((f.name === 'sin' || f.name === 'cos') && this.z0 instanceof Special) {
+        const frequency = mul(arg, pow(z, -1));
+        if (frequency instanceof Sym && frequency.assumptions0.get('nonzero') === true) return accumBounds(-1, 1);
+      }
       if (la === undefined || la === BOUNDED) return undefined;
       if (la instanceof Special) {
         if ((f.name === 'sin' || f.name === 'cos') && la.name !== 'zoo') return BOUNDED;
@@ -582,7 +611,7 @@ class Limiter {
     const zPow = (a: Expr): a is Pow => a instanceof Pow && a.base.has(this.z) && a.exp.has(this.z);
     if (f instanceof Mul && f.args.some(zPow) && f.args.every((a) => this.probeSign(a instanceof Pow ? a.base : a) === 1)) {
       const v = this.lim(add(...f.args.map((a) => (a instanceof Pow ? mul(a.exp, log(a.base)) : log(a)))));
-      if (isValue(v)) return isDirectedInf(v) ? this.expInf(v, S.E) : exp(v);
+      if (isValue(v)) return this.exponential(v);
     }
     return this.bySeries(f) ?? this.byLHopital(f);
   }
@@ -606,6 +635,10 @@ class Limiter {
     if (e.isZero && m === 0) return dropZeros(c);
     const sign = m % 2 === 0 ? a : mul(-1, a);
     return this.infinity(sign);
+  }
+
+  private exponential(v: Expr): LV {
+    return isDirectedInf(v) ? this.expInf(v, S.E) : exp(v);
   }
 
   /**
@@ -727,7 +760,41 @@ class Limiter {
  * The function applications depending on z rewritten in terms of tractable functions
  * (SymPy gruntz: e.rewrite('tractable', deep=True, limitvar=z)); expm1(z) = exp(z) - 1.
  */
-const tractable = (e: Expr, z: Sym): Expr => mapBottomUp(e, (a) => (a instanceof ExtensionExpr && a.has(z) ? (a.rewriteSelf('tractable', a.args) ?? a) : a));
+const tractable = (e: Expr, z: Sym): Expr => mapBottomUp(e, (a) => {
+  if (a instanceof Pow && a.base instanceof Rational && a.base.isPositive && a.exp.has(log(z))) {
+    // b**(c + k*log(z)) = b**c * z**(k*log(b)) for positive b.
+    const exponent = expand(mul(expandLog(log(a.base)), a.exp));
+    return mul(...(exponent instanceof Add ? exponent.args : [exponent]).map(exp));
+  }
+  return a instanceof ExtensionExpr && a.has(z) ? (a.rewriteSelf('tractable', a.args) ?? a) : a;
+});
+
+/**
+ * Remove common powers of z with symbolic exponents at positive infinity.
+ * For a fixed real c, (z+c)**k = z**k*(1+c/z)**k on the eventual positive ray.
+ */
+function cancelShiftedPowers(e: Expr, z: Sym): Expr {
+  const powers = new Map<string, Dummy>();
+  const normalized = mapBottomUp(e, (u) => {
+    if (!(u instanceof Pow) || !u.base.has(z) || u.exp.has(z) || !u.exp.freeSymbols().size) return u;
+    const c = add(u.base, mul(-1, z));
+    if (c.has(z) || isReal(c) !== true) return u;
+    const factors = (u.exp instanceof Add ? u.exp.args : [u.exp]).map((a) => {
+      const [k, exponent] = splitCoeff(a);
+      if (exponent.equals(S.One)) return pow(z, k);
+      let power = powers.get(exponent.key);
+      if (!power) {
+        power = new Dummy('power', isReal(exponent) === true ? { positive: true } : {});
+        powers.set(exponent.key, power);
+      }
+      return pow(power, k);
+    });
+    return mul(...factors, pow(add(1, mul(c, pow(z, -1))), u.exp));
+  });
+  if (!powers.size) return e;
+  const result = cancel(normalized);
+  return [...powers.values()].some((v) => result.has(v)) ? e : result;
+}
 
 /**
  * Limit of e as z -> z0. dir is '+' (default, like SymPy), '-' or '+-'
@@ -742,8 +809,9 @@ export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-'
 export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-', budget: number): Expr {
   // Floats are converted to exact numbers first, as in SymPy (limit(x**0.5, x, 16) = 4)
   const given = sympify(ex);
-  const e = tractable(hasFloat(given) ? nsimplify(given) : given, z);
   const z0 = sympify(z0x);
+  const canonical = tractable(hasFloat(given) ? nsimplify(given) : given, z);
+  const e = z0 === S.Infinity && canonical instanceof Mul ? cancelShiftedPowers(canonical, z) : canonical;
   if (dir === '+-' && !(z0 instanceof Special)) {
     const l = limitWithin(e, z, z0, '-', budget);
     const r = limitWithin(e, z, z0, '+', budget);
@@ -763,8 +831,7 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
   if (z0 instanceof Special && z0.name === 'nan') return S.NaN;
   // a directed infinity c*oo: the limit of e(c*z/|c|) as z -> oo (SymPy)
   if (isDirectedInf(z0)) {
-    // (a product keeps -oo as -1*oo, so the infinity in it is oo)
-    const c = mul(...z0.args.filter((a) => !isInf(a)));
+    const c = mul(...z0.args.map((a) => a === S.NegativeInfinity ? S.NegOne : a === S.Infinity ? S.One : a));
     const v = limitWithin(subs(e, [[z, mul(c, pow(fn('abs', [c]), -1), z)]]), z, S.Infinity, '+', budget);
     // (SymPy's Limit approaches oo*I from below and -oo*I from above)
     const side = c.key === S.I.key ? '-' : c.key === mul(-1, S.I).key ? '+' : dir;
@@ -774,7 +841,16 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
   const es = setSigns(e, z, z0, d, budget);
   // SymPy's Limit approaches oo from below and -oo from above
   const unevaluated = (): Expr => new Limit([given, z, z0], z0 instanceof Special ? (z0.name === 'oo' ? '-' : '+') : dir);
+  if (given instanceof Pow && isInf(given.exp) && given.base.has(z)) return unevaluated();
   const limiter = new Limiter(z, z0, d, budget);
+  if (z0 === S.Infinity && es instanceof Mul && es.args.every((a) => a instanceof Pow && a.exp.has(z))
+      && es.args.some((a) => a instanceof Pow && a.base.has(z) && a.exp.has(z))) {
+    try {
+      return gruntz(es, z, z0, d, 3 * budget);
+    } catch (err) {
+      if (err instanceof SignUnknownError) throw new NotImplementedError(err.message);
+    }
+  }
   const v = limiter.lim(es);
   if (v === undefined || v === BOUNDED) {
     const g = z0 instanceof Special && z0.name === 'oo' ? gammaAsymptotic(es, z) : undefined;
@@ -815,7 +891,7 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
       if (err instanceof SignUnknownError) raised = err;
     }
     // (the heuristics do not see branch cuts either; they are not tried when the budget is spent)
-    const h = limiter.exhausted ? undefined : heuristics(es, z, z0, d, budget);
+    const h = limiter.exhausted ? undefined : heuristicLimit(es, z, z0, d, budget);
     if (h !== undefined && limiter.continuous(es, h)) return h;
     // a sign that the algorithm cannot decide is an error, like in SymPy (limit(exp(x*y), x, oo)); but
     // not for a constant base other than E to a power, which SymPy decides first (pow_heuristics:
@@ -877,6 +953,24 @@ function intervalLimit(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number
  */
 function setSigns(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number): Expr {
   return mapBottomUp(e, (x: Expr) => {
+    if (x instanceof Piecewise) {
+      for (const [value, condition] of x.pairs) {
+        const side = mapBottomUp(condition, (c) => {
+          if (!(c instanceof Rel) || !c.has(z)) return c;
+          const t = new Sym('_side', { positive: true });
+          const delta = add(c.lhs, mul(-1, c.rhs));
+          const shift = z0 instanceof Special ? mul(z0 === S.Infinity ? 1 : -1, pow(t, -1)) : add(z0, mul(dir === '+' ? 1 : -1, t));
+          try {
+            return rel(c.op, new Expander(t).leading(subs(delta, [[z, shift]])).c, S.Zero);
+          } catch {
+            return c;
+          }
+        });
+        if (side === S.true) return value;
+        if (side !== S.false) break;
+      }
+      return x;
+    }
     if (!(x instanceof Fn && (x.name === 'abs' || x.name === 'sign' || x.name === 'arg') && x.has(z))) return x;
     const a = first(x.args);
     let sig: Expr;
@@ -905,6 +999,11 @@ function unsureFinite(l: Expr): boolean {
   return l.has(S.Infinity) && !isInf(l);
 }
 
+/** Compute a limit from the limits of its arguments, or return Unsolved. */
+export function heuristics(e: Expr, z: Sym, point: Expr, direction: '+' | '-'): Expr | UnsolvedResult {
+  return orUnsolved(heuristicLimit(e, z, point, direction, BUDGET));
+}
+
 /** Nesting of the heuristics (each level splits an expression into its arguments). */
 let heuristicsDepth = 0;
 
@@ -912,7 +1011,7 @@ let heuristicsDepth = 0;
  * The limit computed argument by argument (SymPy heuristics), for the forms the other methods
  * leave undecided; its results may be intervals (limit(sin(x), x, oo) = AccumBounds(-1, 1)).
  */
-function heuristics(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number): Expr | undefined {
+function heuristicLimit(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number): Expr | undefined {
   if (heuristicsDepth > 12) return undefined;
   heuristicsDepth++;
   try {
@@ -933,7 +1032,7 @@ function heuristics(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number): 
         if (!(e instanceof Add)) return undefined;
         let m = factorTerms(e);
         if (!(m instanceof Mul)) m = together(m);
-        return m instanceof Mul ? heuristics(m, z, z0, dir, budget) : undefined;
+        return m instanceof Mul ? heuristicLimit(m, z, z0, dir, budget) : undefined;
       }
       if (l instanceof Limit || isNaN_(l)) return undefined;
       r.push(l);
@@ -983,7 +1082,11 @@ function heuristics(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number): 
 function gammaAsymptotic(e: Expr, n: Sym): Expr | undefined {
   const isGammaLike = (x: Expr): boolean => (x instanceof Fn && ['gamma', 'factorial', 'binomial', 'rf', 'ff'].includes(x.name) && x.has(n)) || x.args.some(isGammaLike);
   if (!isGammaLike(e)) return undefined;
-  const g = toGamma(e);
+  // For fixed positive c the omitted integral from 0 to c is bounded by c**n/n.
+  // Thus uppergamma(n,c)/gamma(n) tends to 1. Apply this equivalence only to factors.
+  const completeGamma = (f: Expr): Expr => f instanceof Fn && f.name === 'uppergamma' &&
+    first(f.args).equals(n) && !at(f.args, 1).has(n) && isPositive(at(f.args, 1)) === true ? fn('gamma', [n]) : f;
+  const g = toGamma(e instanceof Mul ? mul(...e.args.map(completeGamma)) : e);
   let failed = false as boolean; // set inside a callback
   const out = mapBottomUp(g, (x: Expr) => {
     if (!(x instanceof Fn && x.name === 'gamma') || !x.has(n)) return x;

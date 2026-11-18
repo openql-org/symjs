@@ -538,3 +538,9 @@ describe('fu.ts: helpers and options', () => {
     expect(FU.nodeCount(P('Derivative(f(x), x)'))).toBe(3);
   });
 });
+
+it('groups addends by the supplied key alone', () => {
+  const e = parse('2*x + 3*y');
+  expect(FU.processCommonAddends(e, (group) => parse(String(group.args.length)), () => 'all', false)).toEqual(parse('2'));
+  expect(() => FU.processCommonAddends(e, (v) => v, undefined, false)).toThrow(/group key/);
+});

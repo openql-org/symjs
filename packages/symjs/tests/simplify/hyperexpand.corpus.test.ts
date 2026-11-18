@@ -65,7 +65,7 @@ describe("doctests of sympy.simplify.hyperexpand", () => {
 });
 
 describe("sympy/simplify/tests/test_hyperexpand.py", () => {
-  it.fails("test_branch_bug:36", () => {
+  it("test_branch_bug:36", () => {
     const z = new Sym('z');
     expect(sympyStr(hyperexpand(hyper([rational(-1, 3), rational(1, 2)], [rational(2, 3), rational(3, 2)], new Mul([rational(-1), z]))))).toBe('-z**(1/3)*lowergamma(exp_polar(I*pi)/3, z)/5 + sqrt(pi)*erf(sqrt(z))/(5*sqrt(z))');
   });
@@ -148,7 +148,7 @@ describe("sympy/simplify/tests/test_hyperexpand.py", () => {
   it("test_plan:226", () => {
     expect(sympyStr([])).toBe('[]');
   });
-  it.fails("test_plan:228", () => {
+  it("test_plan:228", () => {
     const z = new Sym('z');
     expect(() => devisePlan(new Hyper_Function([1], []), new Hyper_Function([], []), z)).toThrow(RangeError);
   });
@@ -157,7 +157,7 @@ describe("sympy/simplify/tests/test_hyperexpand.py", () => {
   //           devise_plan(Hyper_Function([2], [1]), Hyper_Function([2], [2]), z)
   //   => None
   it.todo("test_plan:230");
-  it.fails("test_plan:232", () => {
+  it("test_plan:232", () => {
     const z = new Sym('z');
     expect(() => devisePlan(new Hyper_Function([2], []), new Hyper_Function([rational(1, 2)], []), z)).toThrow(RangeError);
   });
@@ -223,19 +223,19 @@ describe("sympy/simplify/tests/test_hyperexpand.py", () => {
   //   assert RR.almosteq((hyperexpand(f)/g).n(), 1.0, 1e-12)
   //   => True
   it.todo("test_meijerg_with_Floats:579");
-  it.fails("test_lerchphi:585", () => {
+  it("test_lerchphi:585", () => {
     const [a, z] = symbols('a z');
     expect(sympyStr(hyperexpand(new Mul([new Pow(a, rational(-1)), hyper([rational(1), a], [new Add([rational(1), a])], z)])))).toBe('lerchphi(z, 1, a)');
   });
-  it.fails("test_lerchphi:586", () => {
+  it("test_lerchphi:586", () => {
     const [a, z] = symbols('a z');
     expect(sympyStr(hyperexpand(new Mul([new Pow(a, rational(-2)), hyper([rational(1), a, a], [new Add([rational(1), a]), new Add([rational(1), a])], z)])))).toBe('lerchphi(z, 2, a)');
   });
-  it.fails("test_lerchphi:588", () => {
+  it("test_lerchphi:588", () => {
     const [a, z] = symbols('a z');
     expect(sympyStr(hyperexpand(new Mul([new Pow(a, rational(-3)), hyper([rational(1), a, a, a], [new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a])], z)])))).toBe('lerchphi(z, 3, a)');
   });
-  it.fails("test_lerchphi:590", () => {
+  it("test_lerchphi:590", () => {
     const [a, z] = symbols('a z');
     expect(sympyStr(hyperexpand(new Mul([new Pow(a, rational(-10)), hyper([rational(1), a, a, a, a, a, a, a, a, a, a], [new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a]), new Add([rational(1), a])], z)])))).toBe('lerchphi(z, 10, a)');
   });
@@ -255,19 +255,19 @@ describe("sympy/simplify/tests/test_hyperexpand.py", () => {
     const z = new Sym('z');
     expect(sympyStr(hyperexpand(new Mul([z, hyper([rational(1), rational(1)], [rational(2)], z)])))).toBe('-log(1 - z)');
   });
-  it.fails("test_lerchphi:600", () => {
+  it("test_lerchphi:600", () => {
     const z = new Sym('z');
     expect(sympyStr(hyperexpand(new Mul([z, hyper([rational(1), rational(1), rational(1)], [rational(2), rational(2)], z)])))).toBe('polylog(2, z)');
   });
-  it.fails("test_lerchphi:601", () => {
+  it("test_lerchphi:601", () => {
     const z = new Sym('z');
     expect(sympyStr(hyperexpand(new Mul([z, hyper([rational(1), rational(1), rational(1), rational(1)], [rational(2), rational(2), rational(2)], z)])))).toBe('polylog(3, z)');
   });
-  it.fails("test_lerchphi:603", () => {
+  it("test_lerchphi:603", () => {
     const [a, z] = symbols('a z');
     expect(sympyStr(hyperexpand(hyper([rational(1), rational(3, 2), a], [rational(1, 2), new Add([rational(1), a])], z)))).toBe('-2*a/(z - 1) + (-2*a**2 + a)*lerchphi(z, 1, a)');
   });
-  it.fails("test_lerchphi:623", () => {
+  it("test_lerchphi:623", () => {
     expect(sympyStr(hyperexpand(hyper([rational(1, 2), rational(1, 2), rational(1, 2), rational(1)], [rational(3, 2), rational(3, 2), rational(3, 2)], rational(1, 4))))).toBe('-polylog(3, -1/2) + polylog(3, 1/2)');
   });
   it("test_partial_simp:635", () => {
@@ -280,7 +280,7 @@ describe("sympy/simplify/tests/test_hyperexpand.py", () => {
     const [a, b, z] = symbols('a b z');
     expect(sympyStr(hyperexpand(hyper([rational(3), a], [rational(1), b], z)))).toBe('(-a*b/2 + a*z/2 + 2*a)*hyper((a + 1,), (b,), z) + (a*b/2 - 2*a + 1)*hyper((a,), (b,), z)');
   });
-  it.fails("test_partial_simp:648", () => {
+  it("test_partial_simp:648", () => {
     const [a, b, z] = symbols('a b z');
     expect(sympyStr(hyperexpand(hyper([rational(3)], [rational(1), a, b], z)))).toBe('hyper((), (a, b), z) + z*hyper((), (b, a + 1), z)/(2*a) - z*(b - 4)*hyper((), (a + 1, b + 1), z)/(2*a*b)');
   });

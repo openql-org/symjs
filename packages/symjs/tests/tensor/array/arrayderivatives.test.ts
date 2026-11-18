@@ -118,3 +118,16 @@ it('reduces singleton axes in vector Jacobians and scalar matrix gradients', asy
   expect(str(diff(root, v))).toBe('(1/2)*w*(v.T*w)**(-1/2)');
   expect(str(diff(MatMul(Identity(3), v), v))).toBe('I');
 });
+
+it('retains factors in scalar differentials and contracts elementwise vector Jacobians', async () => {
+  const { diff, MatAdd, MatPow, HadamardProduct, HadamardPower } = await import('../../../src');
+  const v = MatrixSymbol('v', 3, 1), w = MatrixSymbol('w', 3, 1);
+  const A = MatrixSymbol('A', 3, 3), X = MatrixSymbol('X', 3, 3);
+  expect(str(diff(HadamardProduct(w, v), v))).toBe('DiagMatrix(w)');
+  expect(str(diff(HadamardPower(v, 2), v))).toBe('2*DiagMatrix(v)');
+  expect(str(diff(MatMul(w.T, HadamardProduct(A, X), v), X))).toBe('HadamardProduct(w*v.T, A)');
+  expect(str(diff(HadamardPower(MatMul(w.T, X, v), 2), X))).toBe('2*w*w.T*X*v*v.T');
+  expect(str(diff(MatPow(MatMul(w.T, X, v), S.Half), X))).toBe('(1/2)*w*(w.T*X*v)**(-1/2)*v.T');
+  expect(str(diff(MatMul(w.T, MatAdd(X, A), v), X))).toBe('w*v.T');
+  expect(str(diff(Trace(MatMul(X, A)), X))).toBe('A.T');
+});

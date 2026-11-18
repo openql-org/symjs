@@ -12,7 +12,7 @@ import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, S, Sym } from '../
 import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { countOps, ordered } from '../core/match';
 import { keepCoeff } from '../core/methods';
-import { rebuild, subs, xreplace } from '../core/traverse';
+import { mapBottomUp, rebuild, some, subs, xreplace } from '../core/traverse';
 import { log } from '../functions/elementary/elementary';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand_log, expandMul } from './expand';
@@ -28,6 +28,22 @@ export interface PowsimpOptions {
 }
 
 const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+/** Combine ordinary roots of -1 with exp(I*pi*r) on the principal branch. */
+export function combinePhases(expr: Expr): Expr {
+  if (!some(expr, (e) => e instanceof Pow && e.base.key === S.NegOne.key) || !some(expr, isExpPow)) return expr;
+  return mapBottomUp(expr, (e) => {
+    if (!(e instanceof Pow && isExpPow(e))) return e;
+    const terms = addArgs(expandMul(e.exp));
+    let phase: Expr = S.Zero;
+    const rest: Expr[] = [];
+    for (const term of terms) {
+      const r = mul(term, pow(mul(S.I, S.Pi), -1));
+      if (r instanceof Rational) phase = add(phase, r);
+      else rest.push(term);
+    }
+    return phase.key === S.Zero.key ? e : mul(pow(-1, phase), exp(add(...rest)));
+  });
+}
 /** The exponent of exp(x), or undefined for any other node. */
 const expExponent = (e: Expr): Expr | undefined => (e instanceof Pow && isExpPow(e) ? e.exp : undefined);
 const isRat = (e: Expr): e is Rational => e instanceof Rational;
@@ -612,7 +628,8 @@ export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Ex
       other.pop();
       put([], [[], only]);
     }
-    if (!logs.length && [...log1.values()].every((v) => v.items.length === 1 && first(v.items)[0].length === 0)) return rv;
+    if (!logs.length && [...log1.values()].every((v) => v.items.length === 1 && first(v.items)[0].length === 0 &&
+      !log1.has(mul(-1, ...v.k).key))) return rv;
     for (const [o, e0, l0] of logs) {
       const [l1, ...lRest] = ordered(l0).map((x) => first(x.args));
       let e: Expr = log(pow(defined(l1), mul(...e0)));

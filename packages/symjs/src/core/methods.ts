@@ -8,12 +8,13 @@
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import type { ExprLike, FnName } from './nodes';
-import { Add, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
+import { Add, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { numAdd, numNeg } from './num';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
-import { boundSymbols, freeSymbols, mapBottomUp as mapBottomUpM, rebuild as rebuildM, subs as subsM, xreplace as xreplaceM } from './traverse';
+import { boundSymbols, freeSymbols, mapBottomUp as mapBottomUpM, rebuild as rebuildM, some, subs as subsM, xreplace as xreplaceM } from './traverse';
+import { Eq, piecewise } from './logic';
 import { at, getOrThrow } from './guard';
 import { ordered } from './match';
 import { InvariantError } from './errors';
@@ -946,6 +947,16 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
   const go = (t: Expr): boolean | undefined => {
     if (!t.has(x)) return true;
     if (t.key === x.key) return true;
+    if (t instanceof Piecewise) {
+      if (isReal(point) !== true) return undefined;
+      for (const [value, condition] of t.pairs) {
+        if (some(condition, (part) => part instanceof Rel && part.has(x) && Eq(subsAt(part.lhs), subsAt(part.rhs)) !== S.false)) return undefined;
+        const holds = subsAt(condition);
+        if (holds === S.true) return go(value);
+        if (holds !== S.false) return undefined;
+      }
+      return undefined;
+    }
     if (isAddLike(t) || isMulLike(t)) {
       const rs = t.args.map(go);
       if (rs.some((r) => r === false)) return false;
@@ -965,6 +976,16 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
       return !isZoo(subsAt(t.exp));
     }
     if (t instanceof Fn) {
+      if (BESSEL_FUNCTIONS.has(t.name)) {
+        const order = at(t.args, 0), argument = at(t.args, 1);
+        if (order.has(x)) return false;
+        if (go(argument) !== true) return undefined;
+        const value = subsAt(argument);
+        if (isZoo(value)) return false;
+        const zero = isZeroValue(value);
+        if (isIntegerQ(order) === true && BESSEL_INTEGER_MEROMORPHIC.has(t.name)) return true;
+        return zero === undefined ? undefined : !zero;
+      }
       if (t.args.slice(1).some((u) => u.has(x))) return false;
       const arg0 = at(t.args, 0);
       if (!go(arg0)) return undefined;
@@ -986,6 +1007,9 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
   };
   return go(e);
 }
+
+const BESSEL_FUNCTIONS = new Set(['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'hn1', 'hn2']);
+const BESSEL_INTEGER_MEROMORPHIC = new Set(['besselj', 'besseli', 'jn', 'yn', 'hn1', 'hn2']);
 
 /**
  * SymPy Basic.is_same(a, b, approx): structural equality where the numbers
@@ -1190,16 +1214,27 @@ export function normal(eIn: ExprLike): Expr {
  * with `series`, which gives exactly the terms below the order (SymPy's
  * _eval_nseries may give fewer).
  */
-export function nseries(eIn: ExprLike, x?: Sym, x0: ExprLike = 0, n = 6): Expr {
+type NseriesOptions = { dir?: '+' | '-'; logx?: Expr; cdir?: number };
+
+export function nseries(
+  eIn: ExprLike, variable?: Sym, x0: ExprLike = 0, n = 6,
+  directionOrOptions: '+' | '-' | NseriesOptions = '+', options: { logx?: Expr } = {},
+): Expr {
+  const opts = typeof directionOrOptions === 'string' ? { ...options, dir: directionOrOptions } : directionOrOptions;
   const e = sympify(eIn);
   const fs = [...freeSymbols(e)].filter((s) => s instanceof Sym);
+  let x = variable;
   if (x === undefined) {
     if (fs.length > 1) throw new RangeError('x must be given for multivariate functions.');
     if (fs.length === 0) return e;
-    return impl.series(e, at(fs, 0), x0, n);
+    x = at(fs, 0);
   }
   if (!fs.some((s) => s.key === x.key)) return e;
-  return impl.series(e, x, x0, n);
+  if (e instanceof Piecewise && sympify(x0).equals(S.Zero)) {
+    return piecewise(...e.pairs.map(([value, condition]) => [nseries(value, x, x0, n, opts), condition] as const));
+  }
+  const dir = opts.cdir ? (opts.cdir < 0 ? '-' : '+') : opts.dir;
+  return impl.series(e, x, x0, n, dir, { logx: opts.logx, local: variable !== undefined && opts.dir !== '-' });
 }
 
 /** An expression that can be applied to arguments (a Lambda, a random process, ...: SymPy callable()). */

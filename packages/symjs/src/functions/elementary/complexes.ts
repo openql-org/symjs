@@ -11,7 +11,7 @@
 import { isIntegerQ, isPolar, isPositive, isReal } from '../../core/assumptions';
 import { defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike, Substitution } from '../../core/nodes';
-import { Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn, registerFunctionHeads } from '../../core/nodes';
+import { Add, Constant, Dummy, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, registerFunctionHeads } from '../../core/nodes';
 import { BoolOp } from '../../core/boolalg';
 import { add, exp, mul, pow, sympify } from '../../core/ops';
 import { asCoefficient, asIndependent } from '../../core/methods';
@@ -435,6 +435,9 @@ for (const name of ['lowergamma', 'uppergamma'] as const) {
 /** SymPy _polarify. */
 function polarifyInner(eq: Expr, lift: boolean, pause = false): Expr {
   if (isPolar(eq)) return eq;
+  if (eq instanceof Piecewise) {
+    return rebuild(eq, eq.pairs.flatMap(([value, condition]) => [polarifyInner(value, lift, pause), condition]));
+  }
   if (eq.freeSymbols().size === 0 && !pause && !(eq instanceof Special)) return polarLift(eq);
   if (eq instanceof Sym && !pause && lift) return polarLift(eq);
   if (eq.args.length === 0) return eq;

@@ -101,6 +101,16 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(sj.re(f(r)), r))).toBe('re(Derivative(f(r), r))');
     expect(s(sj.diff(sj.im(f(r)), r))).toBe('im(Derivative(f(r), r))');
   });
+  it('uses the axis of the differentiation variable for real and imaginary components', () => {
+    const real = sj.symbol('r', { real: true });
+    const imaginary = sj.symbol('y', { imaginary: true });
+    expect(diff(sj.fn('re', [mul(I, real)], { evaluate: false }), real).equals(sj.S.Zero)).toBe(true);
+    expect(diff(sj.fn('im', [imaginary], { evaluate: false }), imaginary).equals(mul(-1, I))).toBe(true);
+    expect(diff(sj.fn('conjugate', [imaginary], { evaluate: false }), imaginary).equals(sj.S.NegOne)).toBe(true);
+    expect(sj.fdiff(sj.abs(x)).equals(sj.sign(x))).toBe(true);
+    expect(diff(sj.fn('re', [imaginary], { evaluate: false }), imaginary).equals(sj.S.Zero)).toBe(true);
+    expect(diff(sj.Sum(x, [x, 1, 5]), x).equals(sj.S.Zero)).toBe(true);
+  });
 
   it('differentiates undefined functions, derivatives, sums and piecewise functions', () => {
     expect(s(sj.diff(f(g(x)), x))).toBe('Derivative(f(g(x)), g(x))*Derivative(g(x), x)');
@@ -160,9 +170,7 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(cast(sj.MatMul(X, X), sj.MatrixExpr).at(0, 0), X.at(0, 0)))).toBe('2*X[0, 0]');
     expect(s(sj.diff(sj.Trace(sj.MatMul(X, X)), X.at(0, 1)))).toBe('2*X[1, 0]');
     expect(s(sj.diff(sj.pow(X.at(0, 0), 3), X.at(0, 0), 2))).toBe('6*X[0, 0]');
-    // SymPy 1.14: Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1)); symjs has no KroneckerDelta range and keeps delta**2
-    // (a positive power of KroneckerDelta is the delta: SymPy prints Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1)))
-    expect(s(sj.diff(sj.Trace(Z), Z.at(0, 0)))).toBe('Sum(KroneckerDelta(0, i), (i, 0, n - 1))');
+    expect(s(sj.diff(sj.Trace(Z), Z.at(0, 0)))).toBe('Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1))');
   });
 });
 
@@ -336,4 +344,16 @@ it('handles unavailable extension and function derivatives and bound indices', a
   expect(diff(new Integral([x, x, sj.S.Zero, sj.S.One]), x)).toBe(sj.S.Zero);
   const base = new sj.IndexedBase('A');
   expect(() => diff(base.at(x), base.at(x, y))).toThrow('different number of indices');
+});
+
+it('distinguishes a bound summation index from an independent scalar', () => {
+  const i = sj.symbol('i');
+  expect(sj.diff(sj.Sum(i, [i, 1, 4]), i)).toBe(sj.S.Zero);
+});
+
+it('differentiates a sum with a bound variable and checks explicit polynomial partials', async () => {
+  const { diff, fdiff, legendre, Sum, symbols } = await import('../../src');
+  const [i, x, n] = symbols('i x n');
+  expect(diff(Sum(i, [i, 0, 3]), i).equals(0)).toBe(true);
+  expect(() => fdiff(legendre(n, x), 1)).toThrow(RangeError);
 });

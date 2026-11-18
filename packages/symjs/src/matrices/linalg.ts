@@ -27,6 +27,7 @@ import { expandMul } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 import { exp } from '../core/ops';
 import { Matrix } from './matrix';
+import { uniquelyNamedSymbol } from '../core/symbol';
 import { lcm } from '../core/numbers';
 
 /** SymPy simplify, late-bound as in matrix.ts (the matrices entry loads it). */
@@ -144,6 +145,10 @@ export function echelonForm(m: Matrix): Matrix {
 }
 
 export function rank(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}): number {
+  if (opts.iszerofunc && m.rows === 2 && m.cols === 2) {
+    if (m.data.every(opts.iszerofunc)) return 0;
+    return opts.iszerofunc(m.det()) ? 1 : 2;
+  }
   return rref(m, opts)[1].length;
 }
 
@@ -300,8 +305,8 @@ export function isDiagonalizable(m: Matrix, realsOnly = false): boolean {
 }
 
 /** (P, D) with M = P D P^-1. */
-export function diagonalize(m: Matrix): [Matrix, Matrix] {
-  if (!isDiagonalizable(m)) throw new MatrixError('Matrix is not diagonalizable');
+export function diagonalize(m: Matrix, realsOnly = false): [Matrix, Matrix] {
+  if (!isDiagonalizable(m, realsOnly)) throw new MatrixError('Matrix is not diagonalizable');
   const cols: Matrix[] = [];
   const vals: Expr[] = [];
   for (const [v, , vecs] of eigenvects(m)) {
@@ -316,8 +321,13 @@ export function diagonalize(m: Matrix): [Matrix, Matrix] {
   return [P, Matrix.diag(...vals)];
 }
 
-/** Matrix exponential via diagonalization. */
+/** Matrix exponential by Hermite interpolation, including defective matrices. */
 export function matrixExp(m: Matrix): Matrix {
+  if (!m.isSquare) throw new NonSquareMatrixError('Matrix exponential requires a square matrix');
+  if (!isDiagonalizable(m)) {
+    const x = new Dummy('x');
+    return analyticFunc(m, exp(x), x);
+  }
   const [P, D] = diagonalize(m);
   const E = Matrix.diag(...Array.from({ length: D.rows }, (_, i) => exp(D.get(i, i))));
   return P.mul(E).mul(P.inv()).map((e) => expandMul(e));
@@ -331,6 +341,8 @@ export function matrixExp(m: Matrix): Matrix {
 export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
   if (!m.isSquare) throw new NonSquareMatrixError('analytic_func: square matrix expected');
   const f = sympify(fIn);
+  const dependsOnX = (e: Expr): boolean => [...e.freeSymbols()].some((v) => v.key === x.key);
+  if (!dependsOnX(f) || m.data.some(dependsOnX)) throw new RangeError('analyticFunc requires an independent function parameter');
   const n = m.rows;
   const eig = new Map<string, [Expr, number]>();
   for (const v of m.eigenvals()) {
@@ -356,7 +368,11 @@ export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
         row.push(mul(c, pow(lam, a - d)));
       }
       r.push(row);
-      fv.push([subsValue(at(derivs, d), x, lam)]);
+      const value = subsValue(at(derivs, d), x, lam);
+      if ([S.NaN, S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((pole) => value.has(pole))) {
+        throw new RangeError(`Function is not analytic at eigenvalue ${String(lam)}`);
+      }
+      fv.push([value]);
     }
   }
   const c = Matrix.of(r).inv().mul(Matrix.of(fv));
@@ -376,6 +392,7 @@ function subsValue(e: Expr, x: Sym, v: Expr): Expr {
 /** Matrix logarithm (SymPy Matrix.log) via analytic_func. */
 export function matrixLog(m: Matrix): Matrix {
   const x = new Dummy('x');
+  if (m.isSquare && m.eigenvals().some(isExactZero)) throw new MatrixError('Matrix logarithm requires nonzero eigenvalues');
   return analyticFunc(m, log(x), x);
 }
 
@@ -940,7 +957,10 @@ export function gaussJordanSolve(A: Matrix, b: Matrix, opts: { freevar?: boolean
   const pv = pivots.filter((p) => p < n);
   const free = Array.from({ length: n }, (_, j) => j).filter((j) => !pv.includes(j));
   const cols = b.cols;
-  const taus = Matrix.fromFunction(free.length, cols, (i, c) => new Sym(`tau${i * cols + c}`));
+  const prefix = uniquelyNamedSymbol('tau', [...A.data, ...b.data], {
+    compare: (name) => name.replace(/\d+$/, ''), modify: (name) => `_${name}`,
+  }).name;
+  const taus = Matrix.fromFunction(free.length, cols, (i, c) => new Sym(`${prefix}${i * cols + c}`));
   const sol = Matrix.fromFunction(n, cols, (j, c) => {
     const f = free.indexOf(j);
     if (f >= 0) return taus.get(f, c);
@@ -1017,8 +1037,8 @@ export function casoratian(seqs: readonly ExprLike[], n: Expr, zero = true): Exp
 
 /** SymPy Matrix.rref_rhs(rhs): [rref of A, the right-hand side transformed alike]. */
 export function rrefRhs(A: Matrix, rhs: Matrix): [Matrix, Matrix] {
-  const [R] = rref(A.hstack(rhs));
-  return [R.slice(range(0, A.rows), range(0, A.cols)), R.slice(range(0, A.rows), range(A.cols, A.cols + rhs.cols))];
+  const [R] = rref(A.hstack(Matrix.eye(A.rows), rhs));
+  return [R.slice(range(0, A.rows), range(0, A.cols)), R.slice(range(0, A.rows), range(R.cols - rhs.cols, R.cols))];
 }
 
 /** SymPy Matrix.rank_decomposition: [C, F] with A = C*F, C the pivot columns of A and F the nonzero rows of rref(A). */

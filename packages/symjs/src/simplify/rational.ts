@@ -37,7 +37,9 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
   const num: Expr[] = [];
   const den: Expr[] = [];
   for (const f of factors) {
-    if (f instanceof Rational) {
+    if (!f.isCommutative) {
+      num.push(f);
+    } else if (f instanceof Rational) {
       num.push(Rational.of(f.p));
       den.push(Rational.of(f.q));
     } else if (opts.exact && f instanceof Pow) {
@@ -133,6 +135,14 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
 export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
   if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined) return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(sympify(ex), opts);
   const e = together(sympify(ex));
+  // Noncommuting right denominators may only cancel against a matching left factor.
+  if (e instanceof Mul && !e.isCommutative) {
+    const inverse = at(e.args, -1);
+    if (inverse instanceof Pow && inverse.exp.key === S.NegOne.key) {
+      const ratio = radicalContentRatio(mul(...e.args.slice(0, -1)), inverse.base);
+      if (ratio) return ratio;
+    }
+  }
   let [n, d] = fraction(e);
   // SymPy as_numer_denom of sums (also inside products): the terms' denominators, also those of exp(-x) = 1/exp(x)
   if (n instanceof Add || n instanceof Mul) {
@@ -199,6 +209,7 @@ function floatToRational(f: Float, prec: number): Rational {
   const x = Rational.of(p, q);
   const b1 = Rational.of(p0 + k * p1, q0 + k * q1);
   const b2 = Rational.of(p1, q1);
+  if (b1.isZero || b2.isZero) return x;
   const dist = (b: Rational): Rational => {
     const t = Rational.of(b.p * x.q - x.p * b.q, b.q * x.q);
     return t.isNegative ? Rational.of(-t.p, t.q) : t;

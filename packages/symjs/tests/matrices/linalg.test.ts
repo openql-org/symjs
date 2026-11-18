@@ -756,3 +756,22 @@ it('sizes block diagonals and applies custom rank zero tests', () => {
   expect(L.rank(approximate)).toBe(2);
   expect(L.rank(approximate, { iszerofunc: (e) => Math.abs(e.toComplex().re) < 1e-9 })).toBe(1);
 });
+
+it('tests the determinant for a custom two-dimensional rank tolerance', () => {
+  const zero = (e: sj.Expr): boolean => Math.abs(e.toNumber()) < 1e-8;
+  expect(L.rank(Matrix.zeros(2), { iszerofunc: zero })).toBe(0);
+  expect(L.rank(Matrix.eye(2), { iszerofunc: zero })).toBe(2);
+  expect(L.rank(Matrix.col(1, 0), { iszerofunc: zero })).toBe(1);
+  expect(L.rank(Matrix.row(0, 0), { iszerofunc: zero })).toBe(0);
+});
+
+it('checks analyticity at each eigenvalue with its multiplicity', () => {
+  expect(() => analyticFunc(Matrix.eye(2), y, x)).toThrow(RangeError);
+  expect(() => analyticFunc(Matrix.col(x), sj.exp(x), x)).toThrow(RangeError);
+  expect(() => analyticFunc(Matrix.zeros(2), log(x), x)).toThrow(RangeError);
+  expect(() => analyticFunc(Matrix.zeros(2), sj.sqrt(x), x)).toThrow(RangeError);
+  expect(() => matrixLog(Matrix.zeros(1))).toThrow(MatrixError);
+  expect(() => matrixLog(Matrix.row(1, 2))).toThrow(NonSquareMatrixError);
+  expect(L.gaussJordanSolve(Matrix.zeros(1, 2), Matrix.col(0))[1].data.map(String)).toEqual(['tau0', 'tau1']);
+  expect(L.gaussJordanSolve(Matrix.row(1, 0), Matrix.col(sj.symbol('tau9')))[1].data.map(String)).toEqual(['_tau0']);
+});

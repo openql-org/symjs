@@ -3133,7 +3133,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   it("test_multiplication:1003", () => {
     expect(sympyStr(Matrix.of([[oo, rational(0)], [rational(0), oo]]).pow(2))).toBe('Matrix([[oo, 0], [0, oo]])');
   });
-  it.fails("test_multiplication:1006", () => {
+  it("test_multiplication:1006", () => {
     expect(sympyStr(Matrix.of([[oo, oo], [rational(0), rational(0)]]).pow(2))).toBe('Matrix([[nan, nan], [nan, nan]])');
   });
   it("test_multiplication:1012", () => {
@@ -3653,7 +3653,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   //           Matrix([cos(a) + I*sin(a)])
   //   => Matrix([[I*sin(a) + cos(a)]])
   it.todo("test_expand:1659");
-  it.fails("test_expand:1662", () => {
+  it("test_expand:1662", () => {
     expect(sympyStr(matrixExp(Matrix.of([[rational(0), rational(1), rational(2)], [rational(0), rational(0), rational(-1)], [rational(0), rational(0), rational(0)]])))).toBe('Matrix([[1, 1, 3/2], [0, 1, -1], [0, 0, 1]])');
   });
   it("test_refine:1673", () => {
@@ -3668,16 +3668,16 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(Matrix.of([[new Pow(abs(x), rational(2)), new Pow(new Pow(x, rational(2)), rational(1, 2))], [new Mul([new Pow(new Pow(x, rational(2)), rational(1, 2)), new Pow(abs(y), rational(2))]), new Mul([new Pow(new Pow(y, rational(2)), rational(1, 2)), new Pow(abs(x), rational(2))])]]), And(Q.negative(x), Q.negative(y))))).toBe('Matrix([[x**2, -x], [-x*y**2, -x**2*y]])');
   });
-  it.fails("test_random:1685", () => {
+  it("test_random:1685", () => {
     expect(sympyStr(randMatrix(3, 3, { seed: 3, symmetric: false }))).toBe('Matrix([[30, 75, 69], [16, 47, 77], [60, 80, 74]])');
   });
-  it.fails("test_random:1689", () => {
+  it("test_random:1689", () => {
     expect(sympyStr(randMatrix(3, undefined, { seed: 4, symmetric: true }))).toBe('Matrix([[30, 38, 13], [38, 92, 50], [13, 50, 61]])');
   });
   it("test_random:1693", () => {
     expect(sympyStr(Matrix.of([[rational(30), rational(38), rational(13)], [rational(38), rational(92), rational(50)], [rational(13), rational(50), rational(61)]]))).toBe('Matrix([[30, 38, 13], [38, 92, 50], [13, 50, 61]])');
   });
-  it.fails("test_random:1696", () => {
+  it("test_random:1696", () => {
     expect(sympyStr(randMatrix(3, undefined, { seed: 4, symmetric: true }))).toBe('Matrix([[30, 38, 13], [38, 92, 50], [13, 50, 61]])');
   });
   it("test_inverse:1715", () => {
@@ -4560,7 +4560,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   it.fails("test_errors:2669", () => {
     expect(() => dot(Matrix.of([[rational(1)], [rational(2)]]), Matrix.col(rational(1), rational(2), rational(3)), false, 'maths')).toThrow(ShapeError);
   });
-  it.fails("test_errors:2670", () => {
+  it("test_errors:2670", () => {
     expect(() => matrixExp(Matrix.of([[rational(1)], [rational(2)], [rational(3)]]))).toThrow(NonSquareMatrixError);
   });
   it("test_errors:2671", () => {

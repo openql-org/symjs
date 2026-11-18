@@ -136,6 +136,26 @@ export function besselsimp(ex: ExprLike): Expr {
     if (nu instanceof Rational && nu.isInteger && nu.p > 1n) return integerReduce(t.name, Number(nu.p), z);
     return t;
   });
+  // Eliminate the lowest of three consecutive orders using the J/Y recurrence.
+  for (;;) {
+    const orders: Fn[] = [];
+    mapBottomUp(e, (t) => {
+      if (t instanceof Fn && (t.name === 'besselj' || t.name === 'bessely')) orders.push(t);
+      return t;
+    });
+    const replacements: [Expr, Expr][] = [];
+    for (const lower of orders) {
+      const [nu, z] = pair(lower.args);
+      const middle = new Fn(lower.name, [add(nu, 1), z]);
+      const upper = new Fn(lower.name, [add(nu, 2), z]);
+      // Consecutive orders can round to the same floating-point number.
+      if (new Set([lower.key, middle.key, upper.key]).size === 3 && e.has(middle) && e.has(upper)) {
+        replacements.push([lower, add(mul(2, add(nu, 1), pow(z, -1), middle), mul(-1, upper))]);
+      }
+    }
+    if (!replacements.length) break;
+    e = expand(xreplace(e, replacements));
+  }
   if (e.key !== orig.key) {
     try {
       e = factor(together(expand(e)));

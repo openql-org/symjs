@@ -103,3 +103,12 @@ describe('minsolve_linear_system', () => {
     expect(showMap(byName(particularSolution(eqs, vs, false)))).toBe('{a: 0, b: 0, c: 0, d: 1, e: 1}');
   });
 });
+
+it('reconstructs a lower-degree quotient in a finite residue field', () => {
+  const ideal = [parse('x**3 + x + 1')];
+  const opts = { domain: 'GF(2)' };
+  expect(String(ratsimpmodprime(parse('x**2 + 1'), ideal, [], opts))).toBe('1/x');
+  expect(String(ratsimpmodprime(parse('x**3 + x + 1'), ideal, [x], opts))).toBe('0');
+  expect(() => ratsimpmodprime(x, ideal, [x, y], opts)).toThrow(/univariate/);
+  expect(() => ratsimpmodprime(x, [x, y], [x], opts)).toThrow(/univariate/);
+});

@@ -244,7 +244,7 @@ describe("sympy/series/tests/test_formal.py", () => {
   it("test_fps:160", () => {
     expect(sympyStr(fps(rational(1)))).toBe('1');
   });
-  it.fails("test_fps:161", () => {
+  it("test_fps:161", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(rational(2), x))).toBe('2');
   });
@@ -288,7 +288,7 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(log(new Add([rational(1), x])))).toBe('log(x + 1)');
   });
-  it.fails("test_fps:178", () => {
+  it("test_fps:178", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(fps(log(new Add([rational(1), x])), x, rational(0), '+').subs(x, y))).toBe('FormalPowerSeries(log(x + 1), x, 0, 1, (SeqFormula(-1/((-1)**_k*_k), (_k, 1, oo)), SeqFormula(x**_k, (_k, 0, oo)), 0))');
   });
@@ -373,19 +373,19 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(new Add([new Pow(new Add([rational(-1), x]), rational(-1)), new Mul([rational(-1), fn('cos', [x])]), fn('sin', [x])]), x, rational(0), '+').truncate())).toBe('-2 - x**2/2 - 7*x**3/6 - 25*x**4/24 - 119*x**5/120 + O(x**6)');
   });
-  it.fails("test_fps__asymptotic:335", () => {
+  it("test_fps__asymptotic:335", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(exp(x), x, oo))).toBe('exp(x)');
   });
-  it.fails("test_fps__asymptotic:336", () => {
+  it("test_fps__asymptotic:336", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(exp(x), x, S.NegativeInfinity, '+').truncate())).toBe('O(x**(-6), (x, oo))');
   });
-  it.fails("test_fps__asymptotic:339", () => {
+  it("test_fps__asymptotic:339", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('erf', [x]), x, oo, '+').truncate())).toBe('1 + O(x**(-6), (x, oo))');
   });
-  it.fails("test_fps__asymptotic:340", () => {
+  it("test_fps__asymptotic:340", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('erf', [x]), x, S.NegativeInfinity, '+').truncate())).toBe('-1 + O(x**(-6), (x, oo))');
   });
@@ -393,7 +393,7 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('atan', [x]), x, oo, '+').truncate())).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x + pi/2 + O(x**(-6), (x, oo))');
   });
-  it.fails("test_fps__asymptotic:345", () => {
+  it("test_fps__asymptotic:345", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('atan', [x]), x, S.NegativeInfinity, '+').truncate())).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x - pi/2 + O(x**(-6), (x, oo))');
   });
@@ -443,7 +443,7 @@ describe("sympy/series/tests/test_formal.py", () => {
   //           Sum((-(-1)**(-k)*x**(k + n))/k, (k, 1, oo))
   //   => Sum(-x**(_k + n)/((-1)**_k*_k), (_k, 1, oo))
   it.todo("test_fps_symbolic:409");
-  it.fails("test_fps_symbolic:413", () => {
+  it("test_fps_symbolic:413", () => {
     const x = new Sym('x');
     const n = new Sym('n', { integer: true });
     expect(sympyStr(fps(new Mul([new Pow(new Add([rational(-2), x]), n), log(new Add([rational(1), x]))]), x, rational(2), '+').truncate())).toBe('(x - 2)**(n + 5)/1215 - (x - 2)**(n + 4)/324 + (x - 2)**(n + 3)/81 - (x - 2)**(n + 2)/18 + (x - 2)**(n + 1)/3 + (x - 2)**n*log(3) + O((x - 2)**(n + 6), (x, 2))');

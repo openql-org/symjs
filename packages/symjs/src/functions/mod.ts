@@ -43,21 +43,22 @@ function evalMod(p: Expr, q: Expr): Expr | undefined {
   if (p instanceof Rational && p.isOne && (symbolFact(q, 'prime') === true || (symbolFact(q, 'even') === true && isPositive(q) === true))) return S.One;
   if (p.key === q.key || add(p, q).key === S.Zero.key) return S.Zero;
   if (q instanceof Rational && q.equals(S.One) && isIntegerQ(p) === true) return S.Zero;
-  if (q instanceof Rational && q.p === 2n && q.q === 1n) {
-    if (symbolFact(p, 'even') === true) return S.Zero;
-    if (symbolFact(p, 'odd') === true) return S.One;
-  }
-  if (p instanceof Fn && p.name === 'factorial' && !(p.args[0] instanceof Rational) && isIntegerQ(at(p.args, 0)) === true) {
+  if (p instanceof Fn && p.name === 'factorial' && !(p.args[0] instanceof Rational)) {
     const n = at(p.args, 0);
     const aq = couldExtractMinusSign(q) ? mul(-1, q) : q;
-    if (isPositive(aq) === true && isNonNegative(add(n, mul(-1, aq))) === true) return S.Zero;
     if (add(n, 1).key === aq.key) {
-      if (symbolFact(aq, 'prime') === true) return isPositive(q) === true ? add(q, -1) : Rational.of(-1);
+      if (symbolFact(aq, 'prime') === true) return aq.key === q.key ? add(q, -1) : S.NegOne;
       if (symbolFact(aq, 'composite') === true && (symbolFact(aq, 'odd') === true || isNonNegative(add(aq, -6)) === true)) return S.Zero;
     }
+    if (isIntegerQ(n) === true && isPositive(aq) === true && isNonNegative(add(n, mul(-1, aq))) === true) return S.Zero;
   }
   const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
   if (isInt(q)) {
+    if (p instanceof Fn && p.name === 'partition') {
+      // Ramanujan's congruences p(5n+4), p(7n+5) and p(11n+6).
+      const residue = q.p === 5n ? 4n : q.p === 7n ? 5n : q.p === 11n ? 6n : undefined;
+      if (residue !== undefined && evalMod(at(p.args, 0), q)?.equals(Rational.of(residue))) return S.Zero;
+    }
     if (p instanceof Pow) {
       if (isInt(p.base) && isInt(p.exp) && p.exp.p >= 0n) return Rational.of(powmod(p.base.p, p.exp.p, q.p));
       if (integerExpression(p)) {
@@ -72,6 +73,10 @@ function evalMod(p: Expr, q: Expr): Expr | undefined {
     const r = evalMod(p.base, q);
     if (r instanceof Rational && r.isZero) return S.Zero;
     if (r instanceof Rational && r.isOne && q instanceof Rational && q.p === 2n && q.q === 1n) return S.One;
+  }
+  if (q instanceof Rational && q.p === 2n && q.q === 1n) {
+    if (symbolFact(p, 'even') === true) return S.Zero;
+    if (symbolFact(p, 'odd') === true) return S.One;
   }
   // Denest when the inner modulus is a multiple of q, or its range lies inside q's range.
   const negative = mul(-1, p);

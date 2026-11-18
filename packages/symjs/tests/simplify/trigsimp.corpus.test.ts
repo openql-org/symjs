@@ -428,7 +428,7 @@ describe("sympy/simplify/tests/test_trigsimp.py", () => {
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(trigsimp(new Add([A, new Mul([new Pow(fn('tan', [x]), rational(2)), A])]), { old: false, deep: false }))).toBe('A/cos(x)**2');
   });
-  it.fails("test_trigsimp_noncommutative:241", () => {
+  it("test_trigsimp_noncommutative:241", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(trigsimp(new Add([new Mul([rational(-1), A]), new Mul([new Pow(fn('cos', [x]), rational(-2)), A])]), { old: false, deep: false }))).toBe('tan(x)**2*A');
@@ -443,7 +443,7 @@ describe("sympy/simplify/tests/test_trigsimp.py", () => {
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(trigsimp(new Add([A, new Mul([new Pow(fn('cot', [x]), rational(2)), A])]), { old: false, deep: false }))).toBe('A/sin(x)**2');
   });
-  it.fails("test_trigsimp_noncommutative:244", () => {
+  it("test_trigsimp_noncommutative:244", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(trigsimp(new Add([new Mul([rational(-1), A]), new Mul([new Pow(fn('sin', [x]), rational(-2)), A])]), { old: false, deep: false }))).toBe('A/tan(x)**2');

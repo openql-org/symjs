@@ -6,12 +6,14 @@ import { Derivative, Expr, ExtensionExpr, Rational, S, Sym, UndefFn, type ExprLi
 import { Indexed } from '../../core/indexed';
 import { at, first } from '../../core/guard';
 import { callableClass } from '../../core/callable';
-import { sympify } from '../../core/ops';
+import { add, mul, pow, sympify } from '../../core/ops';
 import { NoMatch, isNoMatch, type NoMatchResult } from '../../core/truth';
 import { NotImplementedError } from '../../core/errors';
 import { diff, diffHooks } from '../../calculus/diff';
 import { Matrix } from '../../matrices/matrix';
-import { Identity, ImmutableMatrixNode, MatrixExpr, MatrixSymbolNode, ZeroMatrixNode } from '../../matrices/expressions/matexpr';
+import { Identity, ImmutableMatrixNode, MatAddNode, MatMulNode, MatPowNode, MatrixExpr, MatrixSymbolNode, TraceNode, TransposeNode, ZeroMatrixNode, transposeOf } from '../../matrices/expressions/matexpr';
+import { HadamardPowerNode, HadamardProductNode, hadamardPower, hadamardProduct } from '../../matrices/expressions/hadamard';
+import { diagonalizeVector } from '../../matrices/expressions/diagonal';
 import { NDimArray, deriveByArray } from '../ndimarray';
 import { ArrayExpr, ArrayContraction, getShape } from './expressions/arrayexpressions';
 import { arrayDerive } from './expressions/arrayexprderivatives';
@@ -27,6 +29,48 @@ const explicit = (expr: Expr): expr is ImmutableMatrixNode | NDimArray => expr i
 const unbox = (expr: Expr): Expr | Matrix => expr instanceof ImmutableMatrixNode ? expr.matrix : expr;
 const validVariable = (variable: Expr): boolean => variable instanceof Sym || variable instanceof UndefFn || variable instanceof Derivative || variable instanceof Indexed || shaped(variable) ||
   (variable instanceof ExtensionExpr && (!variable.isScalar || variable.name === 'MatrixElement' || variable.name === 'ArrayElement'));
+
+/** Pull the coefficient of dX back through the factors of a scalar matrix differential. */
+function matrixGradient(expr: Expr, variable: MatrixSymbolNode): Expr | NoMatchResult {
+  const unit = (e: MatrixExpr): boolean => e.rows.key === '1' && e.cols.key === '1';
+  const transposedWeight = (e: Expr): Expr => {
+    if (e instanceof MatrixExpr && unit(e)) return e;
+    if (e instanceof MatMulNode) return mul(...[...e.args].reverse().map(transposedWeight));
+    return transposeOf(e);
+  };
+  // A vector's elementwise Jacobian is diagonal.
+  if (variable.rows.key === '1' || variable.cols.key === '1') {
+    if (expr instanceof HadamardPowerNode && expr.base.key === variable.key && scalar(expr.exp) && !expr.exp.has(variable)) {
+      return mul(expr.exp, diagonalizeVector(hadamardPower(variable, add(expr.exp, -1))));
+    }
+    if (expr instanceof HadamardProductNode && expr.args.length > 1 && expr.args.filter((a) => a.has(variable)).length === 1 && expr.args.some((a) => a.key === variable.key)) {
+      return diagonalizeVector(hadamardProduct(...expr.args.filter((a) => a.key !== variable.key)));
+    }
+  }
+  if (!(expr instanceof TraceNode || expr instanceof MatrixExpr && unit(expr))) return NoMatch;
+  const terms: Expr[] = [];
+  const visit = (node: Expr, weight: Expr): boolean => {
+    if (!node.has(variable)) return true;
+    if (node.key === variable.key) { terms.push(weight); return true; }
+    if (node instanceof TransposeNode) return visit(node.arg, transposedWeight(weight));
+    if (node instanceof MatAddNode) return node.args.every((a) => visit(a, weight));
+    if (node instanceof MatMulNode) {
+      const [coeff, factors] = node.asCoeffMatrices();
+      if (coeff.has(variable)) return false;
+      return factors.every((a, i) => !a.has(variable) || visit(a, mul(coeff,
+        ...factors.slice(0, i).reverse().map(transposeOf), weight, ...factors.slice(i + 1).reverse().map(transposeOf))));
+    }
+    if (node instanceof HadamardProductNode) {
+      return node.args.every((a, i) => !a.has(variable) || visit(a, hadamardProduct(weight, ...node.args.filter((_, j) => i !== j))));
+    }
+    if ((node instanceof MatPowNode || node instanceof HadamardPowerNode) && node.base instanceof MatrixExpr && unit(node.base) && scalar(node.exp) && !node.exp.has(variable)) {
+      return visit(node.base, mul(node.exp, pow(node.base, add(node.exp, -1)), weight));
+    }
+    return false;
+  };
+  const value = expr instanceof TraceNode ? expr.arg : expr;
+  return visit(value, Identity(value.rows)) && terms.length ? add(...terms) : NoMatch;
+}
 
 function once(expr: Expr, variable: Expr): Expr | NoMatchResult {
   if (scalar(expr)) {
@@ -52,6 +96,10 @@ function once(expr: Expr, variable: Expr): Expr | NoMatchResult {
   if (variable instanceof MatrixExpr || variable instanceof ArrayExpr) {
     // SymPy retains independent symbolic matrix derivatives unevaluated.
     if (!scalar(expr) && !expr.has(variable)) return NoMatch;
+    if (variable instanceof MatrixSymbolNode) {
+      const gradient = matrixGradient(expr, variable);
+      if (!isNoMatch(gradient)) return gradient;
+    }
     try {
       let derived = arrayDerive(expr, variable);
       const dims = getShape(derived);
