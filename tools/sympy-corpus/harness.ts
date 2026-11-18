@@ -496,6 +496,9 @@ function polyMatrixArgs(args: unknown[], kw: Record<string, unknown>): unknown[]
 const tupleItems = (t: unknown): Expr[] => (t as JsTuple).items.map((x) => x as Expr);
 
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
+  MellinTransform: ([f, x, s]) => new sj.MellinTransform(asExpr(f), asExpr(x), asExpr(s)),
+  FourierTransform: ([f, x, s]) => new sj.FourierTransform(asExpr(f), asExpr(x), asExpr(s)),
+  InverseFourierTransform: ([f, s, x]) => new sj.InverseFourierTransform(asExpr(f), asExpr(s), asExpr(x)),
   LaplaceTransform: ([f, t, s]) => new sj.LaplaceTransform(f!, t as Sym, s as Sym),
   InverseLaplaceTransform: ([F, s, t, plane]) => new sj.InverseLaplaceTransform(F!, s as Sym, t as Sym, plane instanceof sj.Dummy && plane.name === 'None' ? undefined : plane),
   DiracDelta: ([x, k]) => sj.DiracDelta(x!, k),
@@ -2925,7 +2928,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   diff: (args, kw) => args.some((v) => v instanceof Matrix || v instanceof sj.NDimArray) ? ADAPTERS['.diff']!(args.slice(1), kw, args[0]) : (noKw(kw), diffArgs(asExpr(args[0]), args.slice(1))),
   integrate: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'conds') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['conds', 'meijerg', 'manual'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     // a formal power series: its definite integral is that of its function (SymPy FormalPowerSeries.integrate)
     if (args[0] instanceof sj.FormalPowerSeries && args[1] instanceof JsTuple && args[1].items.length === 3) {
       const [v, lo, hi] = args[1].items;
@@ -2940,7 +2943,13 @@ export const ADAPTERS: Record<string, Adapter> = {
       lims = [fs[0]];
     }
     for (const v of lims) {
-      if (v instanceof Sym) f = sj.integrate(f, v);
+      if (v instanceof Sym) {
+        if (kw['manual'] === true) f = sj.manualintegrate(f, v);
+        else if (kw['meijerg'] === true) {
+          const result = sj.meijerintIndefinite(f, v);
+          f = result instanceof sj.Expr ? result : sj.integrate(f, v);
+        } else f = sj.integrate(f, v);
+      }
       else if (v instanceof JsTuple && v.items.length === 3)
         f = sj.integrate(f, asSym(v.items[0]), [asExpr(v.items[1]), asExpr(v.items[2])], { conds: conds === 'none' ? 'none' : 'piecewise' });
       else if (v instanceof JsTuple && v.items.length === 1) f = sj.integrate(f, asSym(v.items[0]));
@@ -3707,6 +3716,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
     return sj.signsimp(asExpr(args[0]), kw['evaluate'] === undefined ? true : Boolean(kw['evaluate']));
   },
+  '.almosteq': (args, kw, self) => {
+    noKw(kw);
+    const domain = self instanceof JsDomain ? self.domain : self;
+    if (!(domain instanceof sj.RealField)) throw new Unsupported('almosteq domain');
+    const value = (v: unknown): unknown => v instanceof JsFloat ? v.v : v;
+    return domain.context.almosteq(value(args[0]), value(args[1]), { relEps: value(args[2]), absEps: value(args[3]) });
+  },
+  '.is_Piecewise': (_args, kw, self) => (noKw(kw), self instanceof sj.Piecewise),
   '.rewrite': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     const name = (v: unknown): string => {
@@ -4944,6 +4961,10 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
+    if (Array.isArray(a) && i instanceof sj.Slice) {
+      const [start, stop, step] = i.indices(a.length);
+      return new JsTuple(Array.from({ length: Math.max(0, Math.ceil((stop - start) / step)) }, (_, k) => a[start + k * step]));
+    }
     if (a instanceof sj.PolyRing && i instanceof sj.Slice) {
       const [start, stop, step] = i.indices(a.ngens);
       if (step === 1) return a.slice(start, stop);
