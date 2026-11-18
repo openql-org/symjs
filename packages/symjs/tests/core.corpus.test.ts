@@ -6710,14 +6710,12 @@ describe("sympy/core/tests/test_arit.py", () => {
   it.fails("test_Mod_Pow:2034", () => {
     expect(sympyStr(Mod(new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), rational(2))))), rational(59049)))).toBe('32191');
   });
-  // the case takes more than 4 seconds
-  //   assert Mod(expr, 3**10) == 18016
-  //   => 18016
-  it.todo("test_Mod_Pow:2036");
-  // the case takes more than 4 seconds
-  //   assert Mod(expr, 3**10) == 5137
-  //   => 5137
-  it.todo("test_Mod_Pow:2038");
+  it.fails("test_Mod_Pow:2036", () => {
+    expect(sympyStr(Mod(new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), rational(2)))))), rational(59049)))).toBe('18016');
+  });
+  it.fails("test_Mod_Pow:2038", () => {
+    expect(sympyStr(Mod(new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), rational(2))))))), rational(59049)))).toBe('5137');
+  });
   it("test_Mod_Pow:2042", () => {
     expect(equivalent(sympyStr(Mod(new Pow(new Pow(rational(2), rational(2)), rational(2)), rational(59049))), '16', [], { fn: 'Mod', input: '(2**2)**2' })).toBe(true);
   });
@@ -6739,18 +6737,15 @@ describe("sympy/core/tests/test_arit.py", () => {
   it.fails("test_Mod_Pow:2056", () => {
     expect(sympyStr(Mod(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), rational(59049)))).toBe('9229');
   });
-  // the case takes more than 4 seconds
-  //   assert Mod(expr, 3**10) == 25708
-  //   => 25708
-  it.todo("test_Mod_Pow:2058");
-  // the case takes more than 4 seconds
-  //   assert Mod(expr, 3**10) == 26608
-  //   => 26608
-  it.todo("test_Mod_Pow:2060");
-  // the case takes more than 4 seconds
-  //   assert Mod(expr, 3**10) == 1966
-  //   => 1966
-  it.todo("test_Mod_Pow:2064");
+  it.fails("test_Mod_Pow:2058", () => {
+    expect(sympyStr(Mod(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))), rational(59049)))).toBe('25708');
+  });
+  it.fails("test_Mod_Pow:2060", () => {
+    expect(sympyStr(Mod(new Pow(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))), new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))))), rational(59049)))).toBe('26608');
+  });
+  it.fails("test_Mod_Pow:2064", () => {
+    expect(sympyStr(Mod(new Pow(new Pow(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))), new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))))), new Pow(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))), new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))))), rational(59049)))).toBe('1966');
+  });
   it("test_Mod_is_integer:2071", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(isIntegerValued(Mod(x, y)))).toBe('None');
@@ -7824,10 +7819,10 @@ describe("sympy/core/tests/test_diff.py", () => {
   //           [Derivative(re(x), (x, 2)), Derivative(im(x), (x, 2))])
   //   => [Derivative(re(x), (x, 2)), Derivative(im(x), (x, 2))]
   it.todo("test_diff_no_eval_derivative:97");
-  // the case takes more than 4 seconds
-  //   assert x.diff(x, 10**8) == 0
-  //   => 0
-  it.todo("test_speed:105");
+  it("test_speed:105", () => {
+    const x = new Sym('x');
+    expect(sympyStr(diff(x, x, 100000000))).toBe('0');
+  });
   it("test_deriv_noncommutative:111", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });

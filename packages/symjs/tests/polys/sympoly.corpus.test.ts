@@ -385,7 +385,7 @@ describe("doctests of sympy.polys.polytools", () => {
   //   Poly(f).gff_list()
   //   => [(Poly(x, x, domain='ZZ'), 1), (Poly(x + 2, x, domain='ZZ'), 4)]
   it.todo("Poly(f).gff_list()");
-  // a primitive result that no library call returned
+  // a result object that did not come from the library
   //   Poly(x**6 - 4*x**4 + 4*x**3 - x**2).ground_roots()
   //   => {1: 2, 0: 2}
   it.todo("Poly(x**6 - 4*x**4 + 4*x**3 - x**2).ground_roots()");
@@ -1168,7 +1168,7 @@ describe("doctests of sympy.polys.polytools", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(groebner([add(-1, pow(x, 2), mul(-1, x)), add(pow(add(1, mul(-1, x)), 10), mul(-1, pow(x, 10)), mul(y, add(-1, mul(2, x))))], [x, y], 'lex'))).toBe('GroebnerBasis([x**2 - x - 1, y - 55], x, y, domain=\'ZZ\', order=\'lex\')');
   });
-  // a primitive result that no library call returned
+  // a result object that did not come from the library
   //   ground_roots(x**6 - 4*x**4 + 4*x**3 - x**2)
   //   => {1: 2, 0: 2}
   it.todo("ground_roots(x**6 - 4*x**4 + 4*x**3 - x**2)");
@@ -3000,9 +3000,9 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y, z, t] = symbols('x y z t');
     expect(sympyStr(Poly.from(new Add([x, y]), [x, y], { domain: 'ZZ', pure: false }).replace(z, t))).toBe('Poly(x + y, x, y, domain=\'ZZ\')');
   });
-  it.fails("test_Poly_replace:967", () => {
+  it("test_Poly_replace:967", () => {
     const [x, y] = symbols('x y');
-    expect(() => Poly.from(new Add([x, y]), [x, y], { domain: 'ZZ', pure: false }).toString()).toThrow(PolynomialError);
+    expect(() => Poly.from(new Add([x, y]), [x, y], { domain: 'ZZ', pure: false }).replace(x, y)).toThrow(PolynomialError);
   });
   it("test_Poly_replace:969", () => {
     const [x, y, z] = symbols('x y z');
@@ -3020,7 +3020,7 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y] = symbols('x y');
     expect(() => Poly.from(new Add([x, y]), [y], { domain: 'ZZ[x]', pure: false }).toString()).toThrow(PolynomialError);
   });
-  it.fails("test_Poly_reorder:977", () => {
+  it("test_Poly_reorder:977", () => {
     const [x, y, z] = symbols('x y z');
     expect(() => Poly.from(new Add([x, y]), [x, y], { domain: 'ZZ', pure: false }).reorder(x, z)).toThrow(PolynomialError);
   });
@@ -3060,11 +3060,11 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(Poly.from(new Add([new Mul([rational(-1), x]), new Mul([x, y])]), [z, x, y], { domain: 'ZZ', pure: false }).ltrim(1))).toBe('Poly(x*y - x, x, y, domain=\'ZZ\')');
   });
-  it.fails("test_Poly_ltrim:994", () => {
+  it("test_Poly_ltrim:994", () => {
     const [y, x] = symbols('y x');
     expect(() => Poly.from(new Add([new Pow(y, rational(2)), new Mul([x, new Pow(y, rational(2))])]), [x, y], { domain: 'ZZ', pure: false }).ltrim(y)).toThrow(PolynomialError);
   });
-  it.fails("test_Poly_ltrim:995", () => {
+  it("test_Poly_ltrim:995", () => {
     const [x, y] = symbols('x y');
     expect(() => Poly.from(new Add([new Mul([rational(-1), x]), new Mul([x, y])]), [x, y], { domain: 'ZZ', pure: false }).ltrim(rational(-1))).toThrow(PolynomialError);
   });
@@ -6614,9 +6614,9 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Add([rational(-921416), new Mul([rational(8192), new Pow(x, rational(2))]), new Mul([rational(242313), I]), new Mul([x, new Add([rational(22656), new Mul([rational(175232), I])])])]), { deep: false, gaussian: false }))).toBe('I*(x*(64 - 64*I) + 773 + 596*I)**2');
   });
-  it.fails("test_factor:2667", () => {
+  it("test_factor:2667", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(new Add([rational(-921416), new Mul([rational(8192), new Pow(x, rational(2))]), new Mul([rational(242313), I]), new Mul([x, new Add([rational(22656), new Mul([rational(175232), I])])])]), { domain: 'ZZ_I', deep: false, gaussian: false }))).toBe('I*(x*(64 - 64*I) + 773 + 596*I)**2');
+    expect(equivalent(sympyStr(factor(new Add([rational(-921416), new Mul([rational(8192), new Pow(x, rational(2))]), new Mul([rational(242313), I]), new Mul([x, new Add([rational(22656), new Mul([rational(175232), I])])])]), { domain: 'ZZ_I', deep: false, gaussian: false })), 'I*(x*(64 - 64*I) + 773 + 596*I)**2', [x], { fn: 'factor', input: '8192*x**2 + x*(22656 + 175232*I) - 921416 + 242313*I' })).toBe(true);
   });
   it("test_factor:2668", () => {
     const x = new Sym('x');
@@ -6636,7 +6636,7 @@ describe("sympy/polys/tests/test_polytools.py", () => {
   });
   it("test_factor:2677", () => {
     const [y, x] = symbols('y x');
-    expect(equivalent(sympyStr(factor(new Add([new Mul([rational(-4), new Pow(y, rational(2))]), new Mul([rational(2), new Pow(x, rational(2))])]), { extension: [new Pow(rational(2), rational(1, 2))], deep: false, gaussian: false })), '2*(x - sqrt(2)*y)*(x + sqrt(2)*y)', [y, x], { fn: 'factor', input: '2*x**2 - 4*y**2' })).toBe(true);
+    expect(sympyStr(factor(new Add([new Mul([rational(-4), new Pow(y, rational(2))]), new Mul([rational(2), new Pow(x, rational(2))])]), { extension: [new Pow(rational(2), rational(1, 2))], deep: false, gaussian: false }))).toBe('2*(x - sqrt(2)*y)*(x + sqrt(2)*y)');
   });
   it("test_factor:2680", () => {
     const x = new Sym('x');
@@ -6854,12 +6854,10 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(factor(new Mul([new Pow(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])]), rational(200000)), new Add([rational(1), new Pow(x, rational(7))])]), { deep: false, gaussian: false }))).toBe('(x + 1)*(x - y)**200000*(x + y)**200000*(x**6 - x**5 + x**4 - x**3 + x**2 - x + 1)');
   });
-  // the case takes more than 4 seconds
-  //   assert factor(g, gaussian=True) == \
-  //           (x + 1)*(x - I*y)**200000*(x + I*y)**200000*(x**6 - x**5 +
-  //            x**4 - x**3 + x**2 - x + 1)
-  //   => (x + 1)*(x - I*y)**200000*(x + I*y)**200000*(x**6 - x**5 + x**4 - x**3 + x**2 - x + 1)
-  it.todo("test_factor_large:2822");
+  it.fails("test_factor_large:2822", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(factor(new Mul([new Pow(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(200000)), new Add([rational(1), new Pow(x, rational(7))])]), { deep: false, gaussian: true }))).toBe('(x + 1)*(x - I*y)**200000*(x + I*y)**200000*(x**6 - x**5 + x**4 - x**3 + x**2 - x + 1)');
+  });
   // a result object that did not come from the library
   //   assert factor_list(f) == \
   //           (1, [(x + 1, 1), (x - y, 200000), (x + y, 200000), (x**6 -
@@ -7634,11 +7632,11 @@ describe("sympy/polys/tests/test_polytools.py", () => {
   it("test_nroots:3209", () => {
     expect(sympyStr(Lt(0, new Float(1e-300)))).toBe('True');
   });
-  // a primitive result that no library call returned
+  // a result object that did not come from the library
   //   assert Poly(f).ground_roots() == {S.One: 2, S.Zero: 2}
   //   => {1: 2, 0: 2}
   it.todo("test_ground_roots:3215");
-  // a primitive result that no library call returned
+  // a result object that did not come from the library
   //   assert ground_roots(f) == {S.One: 2, S.Zero: 2}
   //   => {1: 2, 0: 2}
   it.todo("test_ground_roots:3216");

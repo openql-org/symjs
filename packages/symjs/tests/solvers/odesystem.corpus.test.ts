@@ -971,7 +971,7 @@ describe("sympy/solvers/ode/tests/test_systems.py", () => {
     const t = new Sym('t');
     expect(sympyStr(dsolve([Relational(new Add([new Mul([rational(-9), derivative((SymFunction('y'))(t), [[t, 1]])]), new Mul([rational(7), (SymFunction('x'))(t)]), derivative((SymFunction('x'))(t), [[t, 2]])]), rational(0), '==', { evaluate: false }), Relational(new Add([new Mul([rational(7), (SymFunction('y'))(t)]), new Mul([rational(9), derivative((SymFunction('x'))(t), [[t, 1]])]), derivative((SymFunction('y'))(t), [[t, 2]])]), rational(0), '==', { evaluate: false })]))).toBe('[Eq(y(t), C1*(9 - sqrt(109))*sin(sqrt(2)*t*sqrt(9*sqrt(109) + 95)/2)/14 - C2*(9 - sqrt(109))*cos(sqrt(2)*t*sqrt(9*sqrt(109) + 95)/2)/14 + C3*(9 + sqrt(109))*sin(sqrt(2)*t*sqrt(95 - 9*sqrt(109))/2)/14 - C4*(9 + sqrt(109))*cos(sqrt(2)*t*sqrt(95 - 9*sqrt(109))/2)/14), Eq(x(t), -C1*(9 - sqrt(109))*cos(sqrt(2)*t*sqrt(9*sqrt(109) + 95)/2)/14 - C2*(9 - sqrt(109))*sin(sqrt(2)*t*sqrt(9*sqrt(109) + 95)/2)/14 + C3*(9 + sqrt(109))*cos(sqrt(2)*t*sqrt(95 - 9*sqrt(109))/2)/14 + C4*(9 + sqrt(109))*sin(sqrt(2)*t*sqrt(95 - 9*sqrt(109))/2)/14)]');
   });
-  // the replay exceeds its deadline
+  // the case takes more than 4 seconds
   //   assert checksysodesol(eqs11, sol11) == (True, [0, 0])
   //   => (True, [0, 0])
   it.todo("test_higher_order_to_first_order:1608");
@@ -1003,7 +1003,7 @@ describe("sympy/solvers/ode/tests/test_systems.py", () => {
     const t = new Sym('t');
     expect(sympyStr(dsolve([Relational(new Add([new Mul([rational(4), (SymFunction('x'))(t)]), new Mul([rational(8), derivative((SymFunction('y'))(t), [[t, 1]])]), derivative((SymFunction('x'))(t), [[t, 2]])]), rational(0), '==', { evaluate: false }), Relational(new Add([new Mul([rational(-8), derivative((SymFunction('x'))(t), [[t, 1]])]), new Mul([rational(4), (SymFunction('y'))(t)]), derivative((SymFunction('y'))(t), [[t, 2]])]), rational(0), '==', { evaluate: false })]))).toBe('[Eq(y(t), -C1*(2 - sqrt(5))*sin(2*t*sqrt(4*sqrt(5) + 9))/2 + C2*(2 - sqrt(5))*cos(2*t*sqrt(4*sqrt(5) + 9))/2 - C3*(2 + sqrt(5))*sin(2*t*sqrt(9 - 4*sqrt(5)))/2 + C4*(2 + sqrt(5))*cos(2*t*sqrt(9 - 4*sqrt(5)))/2), Eq(x(t), -C1*(2 - sqrt(5))*cos(2*t*sqrt(4*sqrt(5) + 9))/2 - C2*(2 - sqrt(5))*sin(2*t*sqrt(4*sqrt(5) + 9))/2 + C3*(2 + sqrt(5))*cos(2*t*sqrt(9 - 4*sqrt(5)))/2 + C4*(2 + sqrt(5))*sin(2*t*sqrt(9 - 4*sqrt(5)))/2)]');
   });
-  // the replay exceeds its deadline
+  // the case takes more than 4 seconds
   //   assert checksysodesol(eqs12, sol12) == (True, [0, 0])
   //   => (True, [0, 0])
   it.todo("test_higher_order_to_first_order_12:1676");

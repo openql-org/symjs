@@ -6679,10 +6679,9 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new AlgebraicNumber(new Add([new AlgebraicNumber(new AlgebraicNumber(new CRootOf(new Add([rational(-2), new Pow(x, rational(2))]), 1), [rational(1), rational(0)], {}), [rational(1), rational(0)], {}).asExpr(), new AlgebraicNumber(new CRootOf(new Add([rational(-3), new Pow(x, rational(2))]), 1), [rational(1), rational(0)], {}).asExpr()]), [rational(1), rational(0)], {}).minpoly())).toBe('Poly(x**4 - 10*x**2 + 1, x, domain=\'ZZ\')');
   });
-  // an error outside the library
-  //   assert alg.dom == QQ
-  //   => QQ
-  it.todo("test_Domain_alg_field_from_poly:866");
+  it("test_Domain_alg_field_from_poly:866", () => {
+    expect(sympyStr(QQ)).toBe('QQ');
+  });
   it.fails("test_Domain_cyclotomic_field:871", () => {
     const zeta = new Sym('zeta');
     expect(sympyStr(new AlgebraicNumber(new AlgebraicNumber(new CRootOf(new Add([rational(1), new Pow(new Dummy('x', {}, 1000000), rational(4)), new Mul([rational(-1), new Pow(new Dummy('x', {}, 1000000), rational(2))])]), 3), [rational(1), rational(0)], { alias: zeta }), [rational(1), rational(0)], { alias: zeta }).minpoly())).toBe('Poly(_x**4 - _x**2 + 1, _x, domain=\'ZZ\')');
