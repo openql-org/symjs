@@ -451,13 +451,7 @@ export function freeSymbols(e: Expr): Set<Expr> {
       for (const s of freeSymbols(integrand)) if (s.key !== v.key) out.set(s.key, s);
       x.args.slice(2).forEach(go);
     } else if (x instanceof Concrete) {
-      // bound summation variables are not free
-      const bound = new Set(x.limits.map(([k]) => k.key));
-      for (const s of freeSymbols(x.function)) if (!bound.has(s.key)) out.set(s.key, s);
-      for (const [, a, b] of x.limits) {
-        go(a);
-        go(b);
-      }
+      for (const s of x.freeSymbols()) out.set(s.key, s);
     } else x.args.forEach(go);
   };
   go(e);

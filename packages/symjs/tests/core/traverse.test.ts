@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
+import { ExtensionExpr, Sym } from '../../src/core/nodes';
 import {
   Derivative,
   type Expr,
@@ -29,7 +30,7 @@ import {
   symbols,
   xreplace,
 } from '../../src';
-import { piecewiseFold } from '../../src/core/traverse';
+import { boundSymbols, piecewiseFold } from '../../src/core/traverse';
 
 const [x, y, C1, C2, z, w, n] = symbols('x y C1 C2 z w n');
 
@@ -306,6 +307,40 @@ it('rebuilds limits and substitutes into indefinite integration limits', () => {
   expect(sj.subs(new Integral([x, x]), [[x, 2]])).toEqual(new Integral([x, x, rational(2)]));
   expect(sj.subs(new Integral([x, x]), [[x, y]])).toEqual(new Integral([y, y]));
   expect(String(sj.subs(mul(rational(1, 2), x), [[mul(2, x), y]]))).toBe('x/2');
+});
+
+it('honors extension substitution hooks and symbols with inner free symbols', () => {
+  class InnerSymbol extends Sym {
+    override innerFreeSymbols(): readonly Sym[] { return [y]; }
+  }
+  class Wrapper extends ExtensionExpr {
+    constructor(args: readonly sj.Expr[]) { super('Wrapper', args); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new Wrapper(args); }
+    override subsSelf(_old: sj.Expr, _nw: sj.Expr, sub: (e: sj.Expr) => sj.Expr): sj.Expr { return sub(this.args[0] ?? sj.S.Zero); }
+  }
+  expect([...sj.freeSymbols(new InnerSymbol('inner'))].map(String)).toEqual(['inner', 'y']);
+  const random = sj.Normal('X', y, 1);
+  expect(sj.pspace(sj.subs(random, [[y, 2]])).key).toBe(sj.pspace(sj.Normal('X', 2, 1)).key);
+  expect(String(sj.subs(new Wrapper([x]), [[x, 2]]))).toBe('2');
+  expect(String(sj.subs(sj.interval(x, y), [[x, 1]]))).toBe('Interval(1, y)');
+  const condition = new sj.ConditionSet(x, sj.Gt(x, y), sj.Reals);
+  expect(sj.subs(condition, [[x, 1]])).toBe(condition);
+  const derivative = new sj.Derivative([sj.SymFunction('f')(x), x, sj.S.One]);
+  expect(sj.subs(derivative, [[x, 2]])).toBeInstanceOf(sj.Subs);
+});
+
+it('substitutes only unbound arguments of an extension binder', () => {
+  class Binder extends ExtensionExpr {
+    constructor(args: readonly sj.Expr[]) { super('Binder', args); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new Binder(args); }
+    override bindings(): { variables: readonly number[]; scope: readonly number[] } { return { variables: [0], scope: [1] }; }
+  }
+  const binder = new Binder([x, x.mul(y), x]);
+  expect(boundSymbols(binder)).toEqual([x]);
+  expect([...sj.freeSymbols(binder)].map(String).sort()).toEqual(['x', 'y']);
+  expect(sj.subs(binder, [[x, 2]]).args.map(String)).toEqual(['x', 'x*y', '2']);
+  const independent = new Binder([x, x.mul(y), y]);
+  expect(sj.subs(independent, [[x, 2]])).toBe(independent);
 });
 
 it('stops substitution after a true Piecewise branch', () => {

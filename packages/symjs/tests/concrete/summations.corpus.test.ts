@@ -809,22 +809,22 @@ describe("sympy/concrete/tests/test_products.py", () => {
     const x = new Sym('x', { integer: true });
     expect(equivalent(sympyStr(asDummy(Sum(new Mul([Product(x, [y, rational(1), new Add([rational(-1), new Dummy('Dummy_206754620128397', {}, 1000000)])]), Product(x, [y, new Add([rational(1), new Dummy('Dummy_206754620128397', {}, 1000000)]), z])]), [new Dummy('Dummy_206754620128397', {}, 1000000), rational(1), z]))), 'Sum(Product(x, (_0, 1, _0 - 1))*Product(x, (_0, _0 + 1, z)), (_0, 1, z))', [x, y, z], { fn: '.as_dummy', input: 'Sum(Product(x, (y, 1, _Dummy_206754620128397 - 1))*Product(x, (y, _Dummy_206754620128397 + 1, z)), (_Dummy_206754620128397, 1, z))' })).toBe(true);
   });
-  it.fails("test_issue_20848:407", () => {
+  it("test_issue_20848:407", () => {
     const [y, z] = symbols('y z');
     const x = new Sym('x', { integer: true });
     expect(sympyStr(doit(Sum(new Mul([Product(x, [y, rational(1), new Add([rational(-1), new Dummy('Dummy_206754620128398', {}, 1000000)])]), Product(x, [y, new Add([rational(1), new Dummy('Dummy_206754620128398', {}, 1000000)]), z])]), [new Dummy('Dummy_206754620128398', {}, 1000000), rational(1), z])))).toBe('x**(z - 1)*z');
   });
-  it.fails("test_issue_20848:408", () => {
+  it("test_issue_20848:408", () => {
     const [y, z] = symbols('y z');
     const x = new Sym('x', { integer: true });
     expect(sympyStr(diff(Product(x, [y, x, z]), x))).toBe('Derivative(Product(x, (y, x, z)), x)');
   });
-  it.fails("test_issue_20848:409", () => {
+  it("test_issue_20848:409", () => {
     const [t, z] = symbols('t z');
     const x = new Sym('x', { integer: true });
     expect(sympyStr(diff(Product(t, [x, rational(1), z]), x))).toBe('0');
   });
-  it.fails("test_issue_20848:410", () => {
+  it("test_issue_20848:410", () => {
     const n = new Sym('n', { integer: true });
     const x = new Sym('x', { integer: true });
     expect(sympyStr(doit(Sum(new Mul([new Dummy('Dummy_206754620128399', {}, 1000000), Product(fn('sin', [new Mul([n, x])]), [n, rational(-1), new Add([rational(-1), new Dummy('Dummy_206754620128399', {}, 1000000)])]), Product(fn('sin', [new Mul([n, x])]), [n, new Add([rational(1), new Dummy('Dummy_206754620128399', {}, 1000000)]), rational(1)]), fn('cos', [new Mul([x, new Dummy('Dummy_206754620128399', {}, 1000000)])])]), [new Dummy('Dummy_206754620128399', {}, 1000000), rational(-1), rational(1)])))).toBe('0');
@@ -1685,11 +1685,11 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
   //   raises(ValueError, lambda: summation(1))
   //   => None
   it.todo("test_Sum_interface:692");
-  it.fails("test_diff:696", () => {
+  it("test_diff:696", () => {
     const x = new Sym('x');
     expect(sympyStr(diff(Sum(x, [x, rational(1), rational(2)]), x))).toBe('0');
   });
-  it.fails("test_diff:697", () => {
+  it("test_diff:697", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(diff(Sum(new Mul([x, y]), [x, rational(1), rational(2)]), x))).toBe('0');
   });
@@ -1697,7 +1697,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(diff(Sum(new Mul([x, y]), [y, rational(1), rational(2)]), x))).toBe('Sum(y, (y, 1, 2))');
   });
-  it.fails("test_diff:700", () => {
+  it("test_diff:700", () => {
     const [x, y, a] = symbols('x y a');
     expect(sympyStr(diff(Sum(new Mul([x, y]), [x, rational(1), a]), a))).toBe('Derivative(Sum(x*y, (x, 1, a)), a)');
   });
@@ -1786,7 +1786,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
   it("test_is_commutative:734 (3)", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_zero:741", () => {
+  it("test_is_zero:741", () => {
     const x = new Sym('x');
     expect(sympyStr(isZero(Sum(rational(0), [x, rational(1), rational(1)])))).toBe('True');
   });
@@ -1794,7 +1794,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const x = new Sym('x');
     expect(sympyStr(isZero(Sum(x, [x, rational(1), rational(1)])))).toBe('None');
   });
-  it.fails("test_is_zero:741 (2)", () => {
+  it("test_is_zero:741 (2)", () => {
     const x = new Sym('x');
     expect(sympyStr(isZero(Product(rational(0), [x, rational(1), rational(1)])))).toBe('True');
   });
@@ -1802,11 +1802,11 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const x = new Sym('x');
     expect(sympyStr(isZero(Product(x, [x, rational(1), rational(1)])))).toBe('None');
   });
-  it.fails("test_is_zero:744", () => {
+  it("test_is_zero:744", () => {
     const x = new Sym('x');
     expect(sympyStr(isZero(Sum(rational(0), [x, rational(1), rational(0)])))).toBe('True');
   });
-  it.fails("test_is_zero:745", () => {
+  it("test_is_zero:745", () => {
     const x = new Sym('x');
     expect(sympyStr(isZero(Product(rational(0), [x, rational(1), rational(0)])))).toBe('False');
   });
@@ -2507,7 +2507,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Sum(m, [m, new Mul([rational(-1), M]), M])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1294", () => {
+  it("test_sumproducts_assumptions:1294", () => {
     const m = new Sym('m', { integer: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Sum(m, [m, new Mul([rational(-1), M]), M])))).toBe('True');
@@ -2532,7 +2532,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Product(m, [m, new Mul([rational(-1), M]), M])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1294 (2)", () => {
+  it("test_sumproducts_assumptions:1294 (2)", () => {
     const m = new Sym('m', { integer: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Product(m, [m, new Mul([rational(-1), M]), M])))).toBe('True');
@@ -2547,17 +2547,17 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonpositive(Sum(m, [m, rational(0), M])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1300", () => {
+  it("test_sumproducts_assumptions:1300", () => {
     const m = new Sym('m', { integer: true, nonnegative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNegative(Sum(m, [m, rational(0), M])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1301", () => {
+  it("test_sumproducts_assumptions:1301", () => {
     const m = new Sym('m', { integer: true, nonnegative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Sum(m, [m, rational(0), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1302", () => {
+  it("test_sumproducts_assumptions:1302", () => {
     const m = new Sym('m', { integer: true, nonnegative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Sum(m, [m, rational(0), M])))).toBe('True');
@@ -2572,92 +2572,92 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonpositive(Product(m, [m, rational(0), M])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1300 (2)", () => {
+  it("test_sumproducts_assumptions:1300 (2)", () => {
     const m = new Sym('m', { integer: true, nonnegative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNegative(Product(m, [m, rational(0), M])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1301 (2)", () => {
+  it("test_sumproducts_assumptions:1301 (2)", () => {
     const m = new Sym('m', { integer: true, nonnegative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Product(m, [m, rational(0), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1302 (2)", () => {
+  it("test_sumproducts_assumptions:1302 (2)", () => {
     const m = new Sym('m', { integer: true, nonnegative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Product(m, [m, rational(0), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1306", () => {
+  it("test_sumproducts_assumptions:1306", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isPositive(Sum(m, [m, rational(1), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1307", () => {
+  it("test_sumproducts_assumptions:1307", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonpositive(Sum(m, [m, rational(1), M])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1308", () => {
+  it("test_sumproducts_assumptions:1308", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNegative(Sum(m, [m, rational(1), M])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1309", () => {
+  it("test_sumproducts_assumptions:1309", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Sum(m, [m, rational(1), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1310", () => {
+  it("test_sumproducts_assumptions:1310", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Sum(m, [m, rational(1), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1306 (2)", () => {
+  it("test_sumproducts_assumptions:1306 (2)", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isPositive(Product(m, [m, rational(1), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1307 (2)", () => {
+  it("test_sumproducts_assumptions:1307 (2)", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonpositive(Product(m, [m, rational(1), M])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1308 (2)", () => {
+  it("test_sumproducts_assumptions:1308 (2)", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNegative(Product(m, [m, rational(1), M])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1309 (2)", () => {
+  it("test_sumproducts_assumptions:1309 (2)", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Product(m, [m, rational(1), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1310 (2)", () => {
+  it("test_sumproducts_assumptions:1310 (2)", () => {
     const m = new Sym('m', { integer: true, positive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Product(m, [m, rational(1), M])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1313", () => {
+  it("test_sumproducts_assumptions:1313", () => {
     const m = new Sym('m', { integer: true, negative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isPositive(Sum(m, [m, new Mul([rational(-1), M]), rational(-1)])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1314", () => {
+  it("test_sumproducts_assumptions:1314", () => {
     const m = new Sym('m', { integer: true, negative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonpositive(Sum(m, [m, new Mul([rational(-1), M]), rational(-1)])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1315", () => {
+  it("test_sumproducts_assumptions:1315", () => {
     const m = new Sym('m', { integer: true, negative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNegative(Sum(m, [m, new Mul([rational(-1), M]), rational(-1)])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1316", () => {
+  it("test_sumproducts_assumptions:1316", () => {
     const m = new Sym('m', { integer: true, negative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Sum(m, [m, new Mul([rational(-1), M]), rational(-1)])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1317", () => {
+  it("test_sumproducts_assumptions:1317", () => {
     const m = new Sym('m', { integer: true, negative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Sum(m, [m, new Mul([rational(-1), M]), rational(-1)])))).toBe('True');
@@ -2682,17 +2682,17 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Product(m, [m, new Mul([rational(-1), M]), rational(-1)])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1322", () => {
+  it("test_sumproducts_assumptions:1322", () => {
     const m = new Sym('m', { integer: true, negative: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Product(m, [m, new Mul([rational(-1), M]), rational(-1)])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1325", () => {
+  it("test_sumproducts_assumptions:1325", () => {
     const m = new Sym('m', { integer: true, nonpositive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isPositive(Sum(m, [m, new Mul([rational(-1), M]), rational(0)])))).toBe('False');
   });
-  it.fails("test_sumproducts_assumptions:1326", () => {
+  it("test_sumproducts_assumptions:1326", () => {
     const m = new Sym('m', { integer: true, nonpositive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonpositive(Sum(m, [m, new Mul([rational(-1), M]), rational(0)])))).toBe('True');
@@ -2707,7 +2707,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Sum(m, [m, new Mul([rational(-1), M]), rational(0)])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1329", () => {
+  it("test_sumproducts_assumptions:1329", () => {
     const m = new Sym('m', { integer: true, nonpositive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Sum(m, [m, new Mul([rational(-1), M]), rational(0)])))).toBe('True');
@@ -2732,7 +2732,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(Product(m, [m, new Mul([rational(-1), M]), rational(0)])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1334", () => {
+  it("test_sumproducts_assumptions:1334", () => {
     const m = new Sym('m', { integer: true, nonpositive: true });
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Product(m, [m, new Mul([rational(-1), M]), rational(0)])))).toBe('True');
@@ -2765,7 +2765,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const m = new Sym('m', { integer: true });
     expect(sympyStr(isNonpositive(Product(rational(2), [m, rational(0), oo])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1345", () => {
+  it("test_sumproducts_assumptions:1345", () => {
     const m = new Sym('m', { integer: true });
     expect(sympyStr(isNegative(Product(rational(2), [m, rational(0), oo])))).toBe('False');
   });
@@ -2777,12 +2777,12 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const m = new Sym('m', { integer: true });
     expect(sympyStr(isFinite(Product(rational(2), [m, rational(0), oo])))).toBe('None');
   });
-  it.fails("test_sumproducts_assumptions:1349", () => {
+  it("test_sumproducts_assumptions:1349", () => {
     const x = new Sym('x');
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isPositive(Product(rational(0), [x, M, new Add([rational(-1), M])])))).toBe('True');
   });
-  it.fails("test_sumproducts_assumptions:1350", () => {
+  it("test_sumproducts_assumptions:1350", () => {
     const x = new Sym('x');
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(isFinite(Product(rational(0), [x, M, new Add([rational(-1), M])])))).toBe('True');
@@ -2942,7 +2942,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(doit(Product(new Mul([x, y]), [y, rational(1), rational(0)], [x, S.NegativeInfinity, oo])))).toBe('1');
   });
-  it.fails("test_empty_sequence:1426", () => {
+  it("test_empty_sequence:1426", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(doit(Sum(x, [x, S.NegativeInfinity, oo], [y, rational(1), rational(0)])))).toBe('0');
   });
@@ -3074,7 +3074,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Pow(new Add([rational(1), new Pow(x, rational(2))]), rational(-1)), [x, S.NegativeInfinity, oo]))).toBe('pi/tanh(pi)');
   });
-  it.fails("test_summation_by_residues:1561", () => {
+  it("test_summation_by_residues:1561", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Pow(x, rational(-6)), [x, rational(1), oo]))).toBe('pi**6/945');
   });
@@ -3092,11 +3092,11 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Pow(new Add([rational(-1), new Mul([rational(4), new Pow(x, rational(2))])]), rational(-1)), [x, S.NegativeInfinity, oo]))).toBe('0');
   });
-  it.fails("test_summation_by_residues:1568", () => {
+  it("test_summation_by_residues:1568", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Mul([new Pow(x, rational(2)), new Pow(new Add([rational(-1, 4), new Pow(x, rational(2))]), rational(-2))]), [x, S.NegativeInfinity, oo]))).toBe('pi**2/2');
   });
-  it.fails("test_summation_by_residues:1569", () => {
+  it("test_summation_by_residues:1569", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Pow(new Add([rational(-1), new Mul([rational(4), new Pow(x, rational(2))])]), rational(-2)), [x, S.NegativeInfinity, oo]))).toBe('pi**2/8');
   });
@@ -3104,15 +3104,15 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(evalSumResidue(new Pow(new Add([rational(1), new Pow(new Add([rational(-1, 2), x]), rational(2))]), rational(-1)), [x, S.NegativeInfinity, oo])), 'pi*tanh(pi)', [x], { fn: 'eval_sum_residue', input: '1/((x - 1/2)**2 + 1)' })).toBe(true);
   });
-  it.fails("test_summation_by_residues:1571", () => {
+  it("test_summation_by_residues:1571", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Pow(x, rational(-2)), [x, rational(1), oo]))).toBe('pi**2/6');
   });
-  it.fails("test_summation_by_residues:1572", () => {
+  it("test_summation_by_residues:1572", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Pow(x, rational(-4)), [x, rational(1), oo]))).toBe('pi**4/90');
   });
-  it.fails("test_summation_by_residues:1573", () => {
+  it("test_summation_by_residues:1573", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Mul([new Pow(x, rational(-2)), new Pow(new Add([rational(4), new Pow(x, rational(2))]), rational(-1))]), [x, rational(1), oo]))).toBe('-pi*(-pi/12 - 1/(16*pi) + 1/(8*tanh(2*pi)))/2');
   });
@@ -3168,19 +3168,19 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Mul([rational(-1), new Pow(rational(-1), x), new Pow(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(-2), x])]), rational(-1))]), [x, rational(1), oo]))).toBe('pi/(2*sinh(pi)) + 1/2');
   });
-  it.fails("test_summation_by_residues:1601", () => {
+  it("test_summation_by_residues:1601", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Pow(x, rational(-2)), [x, rational(2), oo]))).toBe('-1 + pi**2/6');
   });
-  it.fails("test_summation_by_residues:1602", () => {
+  it("test_summation_by_residues:1602", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Pow(x, rational(-2)), [x, rational(3), oo]))).toBe('-5/4 + pi**2/6');
   });
-  it.fails("test_summation_by_residues:1603", () => {
+  it("test_summation_by_residues:1603", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Mul([new Pow(rational(-1), x), new Pow(x, rational(-2))]), [x, rational(1), oo]))).toBe('-pi**2/12');
   });
-  it.fails("test_summation_by_residues:1604", () => {
+  it("test_summation_by_residues:1604", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Mul([new Pow(rational(-1), x), new Pow(x, rational(-2))]), [x, rational(2), oo]))).toBe('1 - pi**2/12');
   });
