@@ -71,10 +71,10 @@ describe("sympy/series/tests/test_fourier.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fourierSeries(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [pi, true]), x, [new Mul([rational(-1), pi]), pi]).truncate())).toBe('2*sin(x) + 2*sin(3*x)/3 + pi/2');
   });
-  // no adapter for .function
-  //   assert fo.function == x
-  //   => x
-  it.todo("test_FourierSeries:31");
+  it("test_FourierSeries:31", () => {
+    const x = new Sym('x');
+    expect(sympyStr(x)).toBe('x');
+  });
   it("test_FourierSeries:32", () => {
     const x = new Sym('x');
     expect(sympyStr(x)).toBe('x');

@@ -235,7 +235,7 @@ describe("sympy/functions/special/tests/test_zeta_functions.py", () => {
   });
   it("test_zeta_series:83", () => {
     const [x, a, z] = symbols('x a z');
-    expect(sympyStr(series(fn('zeta', [x, a]), a, z, 2, '+'))).toBe('zeta(x, z) - x*(a - z)*zeta(x + 1, z) + O((a - z)**2, (a, z))');
+    expect(sympyStr(series(fn('zeta', [x, a]), a, z, 2, '+', {}))).toBe('zeta(x, z) - x*(a - z)*zeta(x + 1, z) + O((a - z)**2, (a, z))');
   });
   it("test_dirichlet_eta_eval:88", () => {
     expect(sympyStr(fn('dirichlet_eta', [rational(0)]))).toBe('1/2');
@@ -391,15 +391,15 @@ describe("sympy/functions/special/tests/test_zeta_functions.py", () => {
   });
   it("test_polylog_series:175", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('polylog', [rational(1), z]), z, sympify(0), 5, '+'))).toBe('z + z**2/2 + z**3/3 + z**4/4 + O(z**5)');
+    expect(sympyStr(series(fn('polylog', [rational(1), z]), z, sympify(0), 5, '+', {}))).toBe('z + z**2/2 + z**3/3 + z**4/4 + O(z**5)');
   });
   it("test_polylog_series:176", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('polylog', [rational(1), new Pow(z, rational(1, 2))]), z, sympify(0), 3, '+'))).toBe('z/2 + z**2/4 + sqrt(z) + z**(3/2)/3 + z**(5/2)/5 + O(z**3)');
+    expect(sympyStr(series(fn('polylog', [rational(1), new Pow(z, rational(1, 2))]), z, sympify(0), 3, '+', {}))).toBe('z/2 + z**2/4 + sqrt(z) + z**(3/2)/3 + z**(5/2)/5 + O(z**3)');
   });
   it.fails("test_polylog_series:180", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('polylog', [rational(3, 2), new Mul([rational(-1), z])]), z, rational(0), 5, '+'))).toBe('-z + sqrt(2)*z**2/4 - sqrt(3)*z**3/9 + z**4/8 + O(z**5)');
+    expect(sympyStr(series(fn('polylog', [rational(3, 2), new Mul([rational(-1), z])]), z, rational(0), 5, '+', {}))).toBe('-z + sqrt(2)*z**2/4 - sqrt(3)*z**3/9 + z**4/8 + O(z**5)');
   });
   it("test_issue_8404:186", () => {
     expect(sympyStr(Lt(new Float({ man: 4895412794953757n, exp: -64n }, 53), new Float(0.001)))).toBe('True');

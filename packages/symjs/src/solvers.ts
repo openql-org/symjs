@@ -41,7 +41,7 @@ export {
   invQuick,
   solveLinearSystemLU,
 } from './solvers/solve';
-export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvify, invertComplex, invertReal } from './solvers/solveset';
+export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvesetComplex, solvify, invertComplex, invertReal } from './solvers/solveset';
 export { dsolveSystem, canonicalOdes, linodesolveType, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
 export {
   diophantine,
@@ -153,3 +153,6 @@ export { bivariateType } from './solvers/bivariate';
 export { SingleODEProblem, SingleODESolver, NthAlgebraic, ODEMatchError } from './solvers/ode/single';
 
 impl.asSet = asSetOf;
+
+export { linodesolve } from './solvers/linodesolve';
+export type { LinodesolveOptions } from './solvers/linodesolve';

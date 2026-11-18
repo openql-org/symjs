@@ -2557,11 +2557,11 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
   });
   it.fails("test_issue_23942:2116", () => {
     const [x, a, z] = symbols('x a z');
-    expect(sympyStr(series(new Integral([new Pow(new Add([new Pow(new Add([rational(1), x]), rational(2)), new Mul([a, new Pow(new Add([rational(1), x]), rational(3))])]), rational(-1, 2)), x, rational(0), z]), a, rational(1), 1, '+'))).toBe('Integral(1/sqrt(x**3 + 4*x**2 + 5*x + 2), (x, 0, z)) + O(a - 1, (a, 1))');
+    expect(sympyStr(series(new Integral([new Pow(new Add([new Pow(new Add([rational(1), x]), rational(2)), new Mul([a, new Pow(new Add([rational(1), x]), rational(3))])]), rational(-1, 2)), x, rational(0), z]), a, rational(1), 1, '+', {}))).toBe('Integral(1/sqrt(x**3 + 4*x**2 + 5*x + 2), (x, 0, z)) + O(a - 1, (a, 1))');
   });
   it.fails("test_issue_23942:2118", () => {
     const [x, a, z] = symbols('x a z');
-    expect(sympyStr(series(new Integral([new Pow(new Add([new Pow(new Add([rational(5), x]), rational(2)), new Mul([a, new Pow(new Add([rational(4), new Mul([rational(-1), x])]), rational(4))])]), rational(-1, 2)), x, rational(0), z]), a, rational(2), 1, '+'))).toBe('Integral(1/sqrt(2*x**4 - 32*x**3 + 193*x**2 - 502*x + 537), (x, 0, z)) + O(a - 2, (a, 2))');
+    expect(sympyStr(series(new Integral([new Pow(new Add([new Pow(new Add([rational(5), x]), rational(2)), new Mul([a, new Pow(new Add([rational(4), new Mul([rational(-1), x])]), rational(4))])]), rational(-1, 2)), x, rational(0), z]), a, rational(2), 1, '+', {}))).toBe('Integral(1/sqrt(2*x**4 - 32*x**3 + 193*x**2 - 502*x + 537), (x, 0, z)) + O(a - 2, (a, 2))');
   });
   it.fails("test_issue_25886:2129", () => {
     const y = new Sym('y');

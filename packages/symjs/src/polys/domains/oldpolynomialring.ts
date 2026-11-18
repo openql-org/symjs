@@ -4,9 +4,12 @@
 // Copyright (c) 2006-2023 SymPy Development Team, BSD 3-Clause (see LICENSE).
 
 import { NotImplementedError } from '../../core/errors';
+import { defined } from '../../core/guard';
 import type { Expr, ExprLike, Sym } from '../../core/nodes';
+import { mul, pow, sympify } from '../../core/ops';
+import { fraction, together } from '../../simplify/rational';
 import { str } from '../../printing/str';
-import { CoercionFailed, Domain, domainHooks, QQ, ZZ, RR, EX } from '../domains';
+import { CoercionFailed, Domain, domainHooks } from '../domains';
 import { PolyRing, type OrderLike } from '../rings';
 import type { MonomialOrdering } from '../orderings';
 
@@ -50,17 +53,23 @@ export class PolynomialRingBase extends Domain {
   override equals(other: Domain): boolean {
     return other instanceof PolynomialRingBase && this.toString() === other.toString() && this.order.toString() === other.order.toString();
   }
-  canon(e: Expr): Expr { return this.polynomialRing.fromExpr(e).asExpr(); }
+  canon(e: Expr): Expr { return this.fromSympy(e); }
   fromSympy(e: ExprLike): Expr {
-    try { return this.polynomialRing.fromExpr(e).asExpr(); }
+    try {
+      if (this.order.isGlobal) return this.polynomialRing.fromExpr(e).asExpr();
+      const [n, d] = fraction(together(sympify(e)));
+      const numerator = this.polynomialRing.fromExpr(n), denominator = this.polynomialRing.fromExpr(d);
+      if (denominator.isZero) throw new CoercionFailed('denominator is zero');
+      const [num, den] = numerator.cancel(denominator);
+      if (den.LM.some((k) => k !== 0)) throw new CoercionFailed('denominator is not a local unit');
+      return mul(num.asExpr(), pow(den.asExpr(), -1));
+    }
     catch {
-      if (!this.order.isGlobal) throw new NotImplementedError('fractional representatives of localized polynomial rings are not implemented');
       throw new CoercionFailed(`cannot convert to ${this.toString()}`);
     }
   }
   getField(): Domain {
-    if (![QQ, ZZ, RR, EX].includes(this.dom)) throw new NotImplementedError('fraction fields over this coefficient domain are not implemented');
-    return this.dom.fracField(...this.symbols);
+    return this.dom.symbols.length ? defined(domainHooks.compositeField, 'composite domains')(this.dom, this.symbols) : this.dom.fracField(...this.symbols);
   }
   /** The ring over another coefficient domain, with the same generators and order (SymPy set_domain). */
   setDomain(K: Domain): PolynomialRingBase {
@@ -71,7 +80,8 @@ export class PolynomialRingBase extends Domain {
    * domain, and for a local order the elements with such a constant term.
    */
   override isUnit(a: unknown): boolean {
-    const p = this.polynomialRing.fromExpr(this.toSympy(this.convert(a)));
+    const [n] = fraction(together(this.toSympy(this.convert(a))));
+    const p = this.polynomialRing.fromExpr(n);
     if (this.order.isGlobal && !p.isGround) return false;
     return this.dom.isUnit(this.dom.convert(p.const()));
   }

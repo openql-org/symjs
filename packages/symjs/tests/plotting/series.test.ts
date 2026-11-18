@@ -56,6 +56,13 @@ it('handles logarithmic meshes, integer domains and invalid ranges', () => {
   expect(() => new p.LineOver1DRangeSeries(x, [x, 0, 1], '', { depth: -1 })).toThrow(RangeError);
   expect(() => new p.LineOver1DRangeSeries(x, [x, 0, 1], '', { n: [] })).toThrow(RangeError);
 });
+it('validates list coordinates and requires every symbolic parameter to be supplied', () => {
+  expect(() => Reflect.construct(p.List2DSeries, [() => 0, []])).toThrow(TypeError);
+  expect(() => Reflect.construct(p.List2DSeries, [[], () => 0])).toThrow(TypeError);
+  expect(() => new p.List2DSeries([parse('cos(x)')], [parse('sin(x)')])).toThrow(RangeError);
+  expect(() => new p.List2DSeries([parse('cos(x)'), y], [parse('sin(x)'), 2], '', { params: new Map([[a, 1]]) })).toThrow(RangeError);
+  expect(new p.List2DSeries([a, parse('a + 1')], [1, 2], '', { params: new Map([[a, 2]]) }).getData()).toEqual([[2, 3], [1, 2]]);
+});
 it('keeps exclusion gaps and phase unwrapping in the numeric result', () => {
   const s = new p.LineOver1DRangeSeries(x, [x, -2, 2], '', { n: 5, exclude: [0, 10] });
   const data = s.getData(); expect(data[0]).toContain(0); expect(data[1]!.filter(Number.isNaN)).toHaveLength(1);

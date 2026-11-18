@@ -11,11 +11,11 @@ import { equivalent } from '../sympy-equivalent';
 describe("doctests of sympy.series.series", () => {
   it("series(f, x, 2, 6, \"+\")", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('tan', [x]), x, rational(2), 6, '+'))).toBe('tan(2) + (1 + tan(2)**2)*(x - 2) + (x - 2)**2*(tan(2)**3 + tan(2)) + (x - 2)**3*(1/3 + 4*tan(2)**2/3 + tan(2)**4) + (x - 2)**4*(tan(2)**5 + 5*tan(2)**3/3 + 2*tan(2)/3) + (x - 2)**5*(2/15 + 17*tan(2)**2/15 + 2*tan(2)**4 + tan(2)**6) + O((x - 2)**6, (x, 2))');
+    expect(sympyStr(series(fn('tan', [x]), x, rational(2), 6, '+', {}))).toBe('tan(2) + (1 + tan(2)**2)*(x - 2) + (x - 2)**2*(tan(2)**3 + tan(2)) + (x - 2)**3*(1/3 + 4*tan(2)**2/3 + tan(2)**4) + (x - 2)**4*(tan(2)**5 + 5*tan(2)**3/3 + 2*tan(2)/3) + (x - 2)**5*(2/15 + 17*tan(2)**2/15 + 2*tan(2)**4 + tan(2)**6) + O((x - 2)**6, (x, 2))');
   });
   it("series(f, x, 2, 3, \"-\")", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('tan', [x]), x, rational(2), 3, '-'))).toBe('tan(2) + (2 - x)*(-tan(2)**2 - 1) + (2 - x)**2*(tan(2)**3 + tan(2)) + O((x - 2)**3, (x, 2))');
+    expect(sympyStr(series(fn('tan', [x]), x, rational(2), 3, '-', {}))).toBe('tan(2) + (2 - x)*(-tan(2)**2 - 1) + (2 - x)**2*(tan(2)**3 + tan(2)) + O((x - 2)**3, (x, 2))');
   });
 });
 
@@ -65,28 +65,28 @@ describe("sympy/series/tests/test_aseries.py", () => {
 describe("sympy/series/tests/test_series.py", () => {
   it("test_sin:21", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('sin', [x]), x, rational(0), 6, '+'))).toBe('x - x**3/6 + x**5/120 + O(x**6)');
+    expect(sympyStr(series(fn('sin', [x]), x, rational(0), 6, '+', {}))).toBe('x - x**3/6 + x**5/120 + O(x**6)');
   });
   it("test_cos:27", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cos', [x]), x, rational(0), 6, '+'))).toBe('1 - x**2/2 + x**4/24 + O(x**6)');
+    expect(sympyStr(series(fn('cos', [x]), x, rational(0), 6, '+', {}))).toBe('1 - x**2/2 + x**4/24 + O(x**6)');
   });
   it("test_exp:33", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(exp(x), x, rational(0), 6, '+'))).toBe('1 + x + x**2/2 + x**3/6 + x**4/24 + x**5/120 + O(x**6)');
+    expect(sympyStr(series(exp(x), x, rational(0), 6, '+', {}))).toBe('1 + x + x**2/2 + x**3/6 + x**4/24 + x**5/120 + O(x**6)');
   });
   it("test_exp2:39", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(exp(fn('cos', [x])), x, rational(0), 6, '+'))).toBe('E - E*x**2/2 + E*x**4/6 + O(x**6)');
+    expect(sympyStr(series(exp(fn('cos', [x])), x, rational(0), 6, '+', {}))).toBe('E - E*x**2/2 + E*x**4/6 + O(x**6)');
   });
   it("test_issue_5223:43", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(rational(1), x, sympify(0), 6, '+'))).toBe('1');
+    expect(sympyStr(series(rational(1), x, sympify(0), 6, '+', {}))).toBe('1');
   });
   it("test_issue_5223:45", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(fn('cos', [v1]), v1, sympify(0), 6, '+'))).toBe('1 - x**2/2 + x**4/24 + O(x**6)');
+    expect(sympyStr(series(fn('cos', [v1]), v1, sympify(0), 6, '+', {}))).toBe('1 - x**2/2 + x**4/24 + O(x**6)');
   });
   // the arguments do not type-check against the public API
   //   raises(ValueError, lambda: cos(x + y).series())
@@ -101,7 +101,7 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it.fails("test_issue_5223:56", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(abs(x), x, rational(1), 6, '-'))).toBe('x');
+    expect(sympyStr(series(abs(x), x, rational(1), 6, '-', {}))).toBe('x');
   });
   it("test_issue_5223:57", () => {
     const x = new Sym('x');
@@ -114,11 +114,11 @@ describe("sympy/series/tests/test_series.py", () => {
   it.fails("test_issue_5223:63", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(derivative(exp(x), [[x, 1]]), v1, sympify(0), 3, '+'))).toBe('Derivative(x**3/6, x) + Derivative(x**2/2, x) + Derivative(x, x) + Derivative(1, x) + O(x**3)');
+    expect(sympyStr(series(derivative(exp(x), [[x, 1]]), v1, sympify(0), 3, '+', {}))).toBe('Derivative(x**3/6, x) + Derivative(x**2/2, x) + Derivative(x, x) + Derivative(1, x) + O(x**3)');
   });
   it.fails("test_issue_5223:66", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(new Integral([new Integral([x, x, rational(1), rational(3)]), y, rational(1), x]), x, sympify(0), 6, '+'))).toBe('4*x - 4');
+    expect(sympyStr(series(new Integral([new Integral([x, x, rational(1), rational(3)]), y, rational(1), x]), x, sympify(0), 6, '+', {}))).toBe('4*x - 4');
   });
   it("test_issue_5223:68", () => {
     const x = new Sym('x');
@@ -131,7 +131,7 @@ describe("sympy/series/tests/test_series.py", () => {
   it.fails("test_issue_5223:71", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(() => series(new Pow(new Pow(fn('sin', [v1]), rational(-1)), oo), v1, sympify(0), 6, '+')).toThrow(PoleError);
+    expect(() => series(new Pow(new Pow(fn('sin', [v1]), rational(-1)), oo), v1, sympify(0), 6, '+', {})).toThrow(PoleError);
   });
   // the arguments do not type-check against the public API
   //   assert ((sin(x))**y).nseries(x, n=1, logx=logx) == \
@@ -140,46 +140,46 @@ describe("sympy/series/tests/test_series.py", () => {
   it.todo("test_issue_5223:73");
   it("test_issue_5223:76", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('sin', [new Pow(x, rational(-1))]), x, oo, 5, '+'))).toBe('-1/(6*x**3) + 1/x + O(x**(-5), (x, oo))');
+    expect(sympyStr(series(fn('sin', [new Pow(x, rational(-1))]), x, oo, 5, '+', {}))).toBe('-1/(6*x**3) + 1/x + O(x**(-5), (x, oo))');
   });
   it("test_issue_5223:77", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(abs(x), x, oo, 5, '+'))).toBe('x');
+    expect(sympyStr(series(abs(x), x, oo, 5, '+', {}))).toBe('x');
   });
   it("test_issue_5223:78", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(abs(x), x, S.NegativeInfinity, 5, '-'))).toBe('-x');
+    expect(sympyStr(series(abs(x), x, S.NegativeInfinity, 5, '-', {}))).toBe('-x');
   });
   it("test_issue_5223:79", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(abs(x), x, oo, 5, '+'))).toBe('x');
+    expect(sympyStr(series(abs(x), x, oo, 5, '+', {}))).toBe('x');
   });
   it("test_issue_5223:80", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(abs(x), x, S.NegativeInfinity, 5, '-'))).toBe('-x');
+    expect(sympyStr(series(abs(x), x, S.NegativeInfinity, 5, '-', {}))).toBe('-x');
   });
   it("test_issue_5223:82", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(equivalent(sympyStr(series(exp(new Mul([x, log(x)])), v1, sympify(0), 3, '+')), '1 + x*log(x) + x**2*log(x)**2/2 + O(x**3*log(x)**3)', [x], { fn: '.series', input: 'exp(x*log(x))' })).toBe(true);
+    expect(equivalent(sympyStr(series(exp(new Mul([x, log(x)])), v1, sympify(0), 3, '+', {})), '1 + x*log(x) + x**2*log(x)**2/2 + O(x**3*log(x)**3)', [x], { fn: '.series', input: 'exp(x*log(x))' })).toBe(true);
   });
   it("test_issue_5223:86", () => {
     const p = new Sym('p', { positive: true });
     const v1 = p;
-    expect(equivalent(sympyStr(series(exp(new Mul([new Pow(p, rational(3, 2)), log(p)])), v1, sympify(0), 3, '+')), '1 + p**(3/2)*log(p) + O(p**3*log(p)**3)', [p], { fn: '.series', input: 'exp(p**(3/2)*log(p))' })).toBe(true);
+    expect(equivalent(sympyStr(series(exp(new Mul([new Pow(p, rational(3, 2)), log(p)])), v1, sympify(0), 3, '+', {})), '1 + p**(3/2)*log(p) + O(p**3*log(p)**3)', [p], { fn: '.series', input: 'exp(p**(3/2)*log(p))' })).toBe(true);
   });
   it("test_issue_5223:89", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(equivalent(sympyStr(series(exp(new Mul([log(x), fn('sin', [v1])])), v1, sympify(0), 2, '+')), '1 + x*log(x) + O(x**2*log(x)**2)', [x], { fn: '.series', input: 'exp(log(x)*sin(x))' })).toBe(true);
+    expect(equivalent(sympyStr(series(exp(new Mul([log(x), fn('sin', [v1])])), v1, sympify(0), 2, '+', {})), '1 + x*log(x) + O(x**2*log(x)**2)', [x], { fn: '.series', input: 'exp(log(x)*sin(x))' })).toBe(true);
   });
   it.fails("test_issue_6350:94", () => {
     const k = new Sym('k');
-    expect(sympyStr(series(new Mul([rational(-1, 6), new Pow(rational(3), rational(1, 2)), new Pow(pi, rational(-1)), new Pow(k, rational(-1, 3)), new Add([new Mul([new Pow(k, rational(1, 3)), new Pow(fn('gamma', [rational(1, 3)]), rational(2)), new Pow(fn('gamma', [rational(2, 3)]), rational(2)), fn('besseli', [rational(-1, 3), new Mul([rational(2), k])])]), new Mul([new Pow(k, rational(4, 3)), exp(new Mul([rational(-2, 3), pi, I])), fn('gamma', [rational(-2, 3)]), fn('gamma', [rational(-1, 3)]), hyper([rational(1)], [rational(4, 3), rational(5, 3)], new Pow(k, rational(2)))]), new Mul([new Pow(k, rational(1, 3)), fn('besseli', [rational(1, 3), new Mul([rational(2), k])]), exp(new Mul([rational(-1, 3), pi, I])), fn('gamma', [rational(-1, 3)]), fn('gamma', [rational(1, 3)]), fn('gamma', [rational(2, 3)]), fn('gamma', [rational(4, 3)])])]), exp(new Mul([rational(2, 3), pi, I]))]), k, rational(0), 3, '+'))).toBe('-(-1)**(2/3)*sqrt(3)*gamma(1/3)**2*gamma(2/3)/(6*pi*k**(1/3)) - sqrt(3)*k*gamma(-2/3)*gamma(-1/3)/(6*pi) - (-1)**(1/3)*sqrt(3)*k**(1/3)*gamma(-1/3)*gamma(1/3)*gamma(2/3)/(6*pi) - (-1)**(2/3)*sqrt(3)*k**(5/3)*gamma(1/3)**2*gamma(2/3)/(4*pi) - (-1)**(1/3)*sqrt(3)*k**(7/3)*gamma(-1/3)*gamma(1/3)*gamma(2/3)/(8*pi) + O(k**3)');
+    expect(sympyStr(series(new Mul([rational(-1, 6), new Pow(rational(3), rational(1, 2)), new Pow(pi, rational(-1)), new Pow(k, rational(-1, 3)), new Add([new Mul([new Pow(k, rational(1, 3)), new Pow(fn('gamma', [rational(1, 3)]), rational(2)), new Pow(fn('gamma', [rational(2, 3)]), rational(2)), fn('besseli', [rational(-1, 3), new Mul([rational(2), k])])]), new Mul([new Pow(k, rational(4, 3)), exp(new Mul([rational(-2, 3), pi, I])), fn('gamma', [rational(-2, 3)]), fn('gamma', [rational(-1, 3)]), hyper([rational(1)], [rational(4, 3), rational(5, 3)], new Pow(k, rational(2)))]), new Mul([new Pow(k, rational(1, 3)), fn('besseli', [rational(1, 3), new Mul([rational(2), k])]), exp(new Mul([rational(-1, 3), pi, I])), fn('gamma', [rational(-1, 3)]), fn('gamma', [rational(1, 3)]), fn('gamma', [rational(2, 3)]), fn('gamma', [rational(4, 3)])])]), exp(new Mul([rational(2, 3), pi, I]))]), k, rational(0), 3, '+', {}))).toBe('-(-1)**(2/3)*sqrt(3)*gamma(1/3)**2*gamma(2/3)/(6*pi*k**(1/3)) - sqrt(3)*k*gamma(-2/3)*gamma(-1/3)/(6*pi) - (-1)**(1/3)*sqrt(3)*k**(1/3)*gamma(-1/3)*gamma(1/3)*gamma(2/3)/(6*pi) - (-1)**(2/3)*sqrt(3)*k**(5/3)*gamma(1/3)**2*gamma(2/3)/(4*pi) - (-1)**(1/3)*sqrt(3)*k**(7/3)*gamma(-1/3)*gamma(1/3)*gamma(2/3)/(8*pi) + O(k**3)');
   });
   it.fails("test_issue_11313:102", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Integral([fn('cos', [x]), x]), x, sympify(0), 6, '+'))).toBe('x - x**3/6 + x**5/120 + O(x**6)');
+    expect(sympyStr(series(new Integral([fn('cos', [x]), x]), x, sympify(0), 6, '+', {}))).toBe('x - x**3/6 + x**5/120 + O(x**6)');
   });
   it("test_issue_11313:103", () => {
     const x = new Sym('x');
@@ -219,28 +219,28 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it.fails("test_issue_11313:118", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Integral([log(x), x]), x, sympify(0), 6, '+'))).toBe('x*(log(x) - 1)');
+    expect(sympyStr(series(new Integral([log(x), x]), x, sympify(0), 6, '+', {}))).toBe('x*(log(x) - 1)');
   });
   it.fails("test_series_of_Subs:128", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), x, sympify(0), 6, '+'))).toBe('Subs(sin(x), x, y)');
+    expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), x, sympify(0), 6, '+', {}))).toBe('Subs(sin(x), x, y)');
   });
   it.fails("test_series_of_Subs:131", () => {
     const [x, y] = symbols('x y');
     const v1 = y;
-    expect(sympyStr(series(Subs(fn('sin', [x]), [x], [v1]), v1, sympify(0), 6, '+'))).toBe('Subs(x**5/120, x, y) + Subs(-x**3/6, x, y) + Subs(x, x, y) + O(y**6)');
+    expect(sympyStr(series(Subs(fn('sin', [x]), [x], [v1]), v1, sympify(0), 6, '+', {}))).toBe('Subs(x**5/120, x, y) + Subs(-x**3/6, x, y) + Subs(x, x, y) + O(y**6)');
   });
   it.fails("test_series_of_Subs:132", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), y, sympify(0), 6, '+'))).toBe('Subs(x**5/120, x, y) + Subs(-x**3/6, x, y) + Subs(x, x, y) + O(y**6)');
+    expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), y, sympify(0), 6, '+', {}))).toBe('Subs(x**5/120, x, y) + Subs(-x**3/6, x, y) + Subs(x, x, y) + O(y**6)');
   });
   it("test_series_of_Subs:133", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), z, sympify(0), 6, '+'))).toBe('Subs(sin(x), x, y)');
+    expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), z, sympify(0), 6, '+', {}))).toBe('Subs(sin(x), x, y)');
   });
   it.fails("test_series_of_Subs:134", () => {
     const [z, x, y] = symbols('z x y');
-    expect(sympyStr(series(Subs(new Mul([fn('cos', [z]), fn('sin', [x])]), [x], [y]), z, sympify(0), 6, '+'))).toBe('Subs(sin(x), x, y) + Subs(z**4*sin(x)/24, x, y) + Subs(-z**2*sin(x)/2, x, y) + O(z**6)');
+    expect(sympyStr(series(Subs(new Mul([fn('cos', [z]), fn('sin', [x])]), [x], [y]), z, sympify(0), 6, '+', {}))).toBe('Subs(sin(x), x, y) + Subs(z**4*sin(x)/24, x, y) + Subs(-z**2*sin(x)/2, x, y) + O(z**6)');
   });
   it("test_series_of_Subs:136", () => {
     const [x, z, y] = symbols('x z y');
@@ -260,19 +260,19 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it.fails("test_issue_3978:145", () => {
     const x = new Sym('x');
-    expect(sympyStr(series((SymFunction('f'))(x), x, rational(0), 3, '-'))).toBe('f(0) + x*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 0) + x**2*Subs(Derivative(f(x), (x, 2)), x, 0)/2 + O(x**3)');
+    expect(sympyStr(series((SymFunction('f'))(x), x, rational(0), 3, '-', {}))).toBe('f(0) + x*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 0) + x**2*Subs(Derivative(f(x), (x, 2)), x, 0)/2 + O(x**3)');
   });
   it.fails("test_issue_3978:148", () => {
     const x = new Sym('x');
-    expect(sympyStr(series((SymFunction('f'))(x), x, rational(0), 3, '+'))).toBe('f(0) + x*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 0) + x**2*Subs(Derivative(f(x), (x, 2)), x, 0)/2 + O(x**3)');
+    expect(sympyStr(series((SymFunction('f'))(x), x, rational(0), 3, '+', {}))).toBe('f(0) + x*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 0) + x**2*Subs(Derivative(f(x), (x, 2)), x, 0)/2 + O(x**3)');
   });
   it.fails("test_issue_3978:151", () => {
     const x = new Sym('x');
-    expect(sympyStr(series((SymFunction('f'))(new Pow(x, rational(2))), x, rational(0), 3, '+'))).toBe('f(0) + x**2*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 0) + O(x**3)');
+    expect(sympyStr(series((SymFunction('f'))(new Pow(x, rational(2))), x, rational(0), 3, '+', {}))).toBe('f(0) + x**2*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 0) + O(x**3)');
   });
   it.fails("test_issue_3978:153", () => {
     const x = new Sym('x');
-    expect(sympyStr(series((SymFunction('f'))(new Add([rational(1), new Pow(x, rational(2))])), x, rational(0), 3, '+'))).toBe('f(1) + x**2*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 1) + O(x**3)');
+    expect(sympyStr(series((SymFunction('f'))(new Add([rational(1), new Pow(x, rational(2))])), x, rational(0), 3, '+', {}))).toBe('f(1) + x**2*Subs(Derivative(f(_xi_1), _xi_1), _xi_1, 1) + O(x**3)');
   });
   // function TestF
   //   assert TestF(x).series(x, 0, 3) ==  TestF(0) + \
@@ -282,11 +282,11 @@ describe("sympy/series/tests/test_series.py", () => {
   it.todo("test_issue_3978:159");
   it("test_issue_5852:178", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(fn('cos', [new Mul([x, new Pow(log(x), rational(-1))])]), rational(-1)), x, rational(0), 6, '+'))).toBe('1 + x**2/(2*log(x)**2) + 5*x**4/(24*log(x)**4) + O(x**6)');
+    expect(sympyStr(series(new Pow(fn('cos', [new Mul([x, new Pow(log(x), rational(-1))])]), rational(-1)), x, rational(0), 6, '+', {}))).toBe('1 + x**2/(2*log(x)**2) + 5*x**4/(24*log(x)**4) + O(x**6)');
   });
   it("test_issue_4583:183", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cos', [new Add([rational(1), x, new Pow(x, rational(2))])]), x, rational(0), 5, '+'))).toBe('cos(1) - x*sin(1) + x**2*(-sin(1) - cos(1)/2) + x**3*(-cos(1) + sin(1)/6) + x**4*(-11*cos(1)/24 + sin(1)/2) + O(x**5)');
+    expect(sympyStr(series(fn('cos', [new Add([rational(1), x, new Pow(x, rational(2))])]), x, rational(0), 5, '+', {}))).toBe('cos(1) - x*sin(1) + x**2*(-sin(1) - cos(1)/2) + x**3*(-cos(1) + sin(1)/6) + x**4*(-11*cos(1)/24 + sin(1)/2) + O(x**5)');
   });
   it("test_issue_6318:190", () => {
     const x = new Sym('x');
@@ -295,11 +295,11 @@ describe("sympy/series/tests/test_series.py", () => {
   it("test_x_is_base_detection:195", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(new Pow(new Pow(v1, rational(2)), rational(2, 3)), v1, sympify(0), 6, '+'))).toBe('x**(4/3)');
+    expect(sympyStr(series(new Pow(new Pow(v1, rational(2)), rational(2, 3)), v1, sympify(0), 6, '+', {}))).toBe('x**(4/3)');
   });
   it("test_issue_7203:199", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cos', [x]), x, pi, 3, '+'))).toBe('-1 + (x - pi)**2/2 + O((x - pi)**3, (x, pi))');
+    expect(sympyStr(series(fn('cos', [x]), x, pi, 3, '+', {}))).toBe('-1 + (x - pi)**2/2 + O((x - pi)**3, (x, pi))');
   });
   // the arguments do not type-check against the public API
   //   assert series(exp(x), x, n=8) == 1 + a*b + a**2*b**2/2 + \
@@ -314,7 +314,7 @@ describe("sympy/series/tests/test_series.py", () => {
   it.fails("test_issue_9173:222", () => {
     const [y, b0, p1, p3, b1, b2, p2] = symbols('y b0 p1 p3 b1 b2 p2');
     const p0_ = new Sym('p0');
-    expect(sympyStr(series(new Mul([new Pow(new Add([rational(1), new Mul([new Pow(y, rational(-1)), new Add([new Mul([new Pow(b0, rational(-3)), new Add([new Mul([p1, new Pow(b0, rational(2))]), new Mul([rational(-1), p3, new Add([new Mul([rational(-1), new Pow(b1, rational(2))]), new Mul([b0, b2])])]), new Mul([rational(-1), b0, b1, p2])])]), new Mul([new Pow(y, rational(-1)), new Add([new Mul([new Pow(b0, rational(-2)), new Add([new Mul([b0, p2]), new Mul([rational(-1), b1, p3])])]), new Mul([p3, new Pow(b0, rational(-1)), new Pow(y, rational(-1))])])])])])]), rational(-1)), new Add([p0_, new Mul([new Pow(y, rational(-1)), new Add([p1, new Mul([new Pow(y, rational(-1)), new Add([p2, new Mul([p3, new Pow(y, rational(-1))])])])])])])]), y, sympify(0), 3, '+'))).toBe('y*(b0*p2/p3 + b0*(-p2/p3 + b1/b0)) + y**2*(b0*p1/p3 + b0*p2*(-p2/p3 + b1/b0)/p3 + b0*(-p1/p3 + (p2/p3 - b1/b0)**2 + b1*p2/(b0*p3) + b2/b0 - b1**2/b0**2)) + b0 + O(y**3)');
+    expect(sympyStr(series(new Mul([new Pow(new Add([rational(1), new Mul([new Pow(y, rational(-1)), new Add([new Mul([new Pow(b0, rational(-3)), new Add([new Mul([p1, new Pow(b0, rational(2))]), new Mul([rational(-1), p3, new Add([new Mul([rational(-1), new Pow(b1, rational(2))]), new Mul([b0, b2])])]), new Mul([rational(-1), b0, b1, p2])])]), new Mul([new Pow(y, rational(-1)), new Add([new Mul([new Pow(b0, rational(-2)), new Add([new Mul([b0, p2]), new Mul([rational(-1), b1, p3])])]), new Mul([p3, new Pow(b0, rational(-1)), new Pow(y, rational(-1))])])])])])]), rational(-1)), new Add([p0_, new Mul([new Pow(y, rational(-1)), new Add([p1, new Mul([new Pow(y, rational(-1)), new Add([p2, new Mul([p3, new Pow(y, rational(-1))])])])])])])]), y, sympify(0), 3, '+', {}))).toBe('y*(b0*p2/p3 + b0*(-p2/p3 + b1/b0)) + y**2*(b0*p1/p3 + b0*p2*(-p2/p3 + b1/b0)/p3 + b0*(-p1/p3 + (p2/p3 - b1/b0)**2 + b1*p2/(b0*p3) + b2/b0 - b1**2/b0**2)) + b0 + O(y**3)');
   });
   it("test_issue_9173:225", () => {
     const [b0, y, b1, p2, p3, b2, p1] = symbols('b0 y b1 p2 p3 b2 p1');
@@ -322,15 +322,15 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it("test_issue_9549:230", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Mul([new Pow(new Add([new Pow(x, rational(2)), new Pow(x, rational(3))]), rational(-1)), new Add([rational(1), x, new Pow(x, rational(2))])]), x, oo, 6, '+'))).toBe('x**(-5) - 1/x**4 + x**(-3) + 1/x + O(x**(-6), (x, oo))');
+    expect(sympyStr(series(new Mul([new Pow(new Add([new Pow(x, rational(2)), new Pow(x, rational(3))]), rational(-1)), new Add([rational(1), x, new Pow(x, rational(2))])]), x, oo, 6, '+', {}))).toBe('x**(-5) - 1/x**4 + x**(-3) + 1/x + O(x**(-6), (x, oo))');
   });
   it("test_issue_10761:234", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(new Add([new Pow(x, rational(-3)), new Pow(x, rational(-2))]), rational(-1)), x, rational(0), 6, '+'))).toBe('x**3 - x**4 + x**5 + O(x**6)');
+    expect(sympyStr(series(new Pow(new Add([new Pow(x, rational(-3)), new Pow(x, rational(-2))]), rational(-1)), x, rational(0), 6, '+', {}))).toBe('x**3 - x**4 + x**5 + O(x**6)');
   });
   it("test_issue_12578:239", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(new Add([rational(1), new Mul([rational(-1), new Pow(new Add([new Mul([rational(1, 2), x]), new Mul([rational(-1, 2), new Pow(x, rational(-1))])]), rational(-4))])]), rational(1, 8)), x, rational(0), 17, '+'))).toBe('1 - 2*x**4 - 8*x**6 - 34*x**8 - 152*x**10 - 714*x**12 - 3472*x**14 - 17318*x**16 + O(x**17)');
+    expect(sympyStr(series(new Pow(new Add([rational(1), new Mul([rational(-1), new Pow(new Add([new Mul([rational(1, 2), x]), new Mul([rational(-1, 2), new Pow(x, rational(-1))])]), rational(-4))])]), rational(1, 8)), x, rational(0), 17, '+', {}))).toBe('1 - 2*x**4 - 8*x**6 - 34*x**8 - 152*x**10 - 714*x**12 - 3472*x**14 - 17318*x**16 + O(x**17)');
   });
   it("test_issue_12791:256", () => {
     const theta = new Sym('theta', { real: true });
@@ -340,15 +340,15 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it("test_issue_14384:261", () => {
     const [x, a] = symbols('x a');
-    expect(sympyStr(series(new Pow(x, a), x, sympify(0), 6, '+'))).toBe('x**a');
+    expect(sympyStr(series(new Pow(x, a), x, sympify(0), 6, '+', {}))).toBe('x**a');
   });
   it("test_issue_14384:262", () => {
     const [x, a] = symbols('x a');
-    expect(sympyStr(series(new Pow(x, new Mul([rational(-2), a])), x, sympify(0), 6, '+'))).toBe('x**(-2*a)');
+    expect(sympyStr(series(new Pow(x, new Mul([rational(-2), a])), x, sympify(0), 6, '+', {}))).toBe('x**(-2*a)');
   });
   it("test_issue_14384:263", () => {
     const [a, x] = symbols('a x');
-    expect(sympyStr(series(exp(new Mul([a, log(x)])), x, sympify(0), 6, '+'))).toBe('exp(a*log(x))');
+    expect(sympyStr(series(exp(new Mul([a, log(x)])), x, sympify(0), 6, '+', {}))).toBe('exp(a*log(x))');
   });
   // a function that did not come from the library
   //   raises(PoleError, lambda: series(x**I, x))
@@ -364,35 +364,35 @@ describe("sympy/series/tests/test_series.py", () => {
   it.todo("test_issue_14384:266");
   it("test_issue_14885:270", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Mul([new Pow(x, rational(-3, 2)), exp(x)]), x, rational(0), 6, '+'))).toBe('x**(-3/2) + 1/sqrt(x) + sqrt(x)/2 + x**(3/2)/6 + x**(5/2)/24 + x**(7/2)/120 + x**(9/2)/720 + x**(11/2)/5040 + O(x**6)');
+    expect(sympyStr(series(new Mul([new Pow(x, rational(-3, 2)), exp(x)]), x, rational(0), 6, '+', {}))).toBe('x**(-3/2) + 1/sqrt(x) + sqrt(x)/2 + x**(3/2)/6 + x**(5/2)/24 + x**(7/2)/120 + x**(9/2)/720 + x**(11/2)/5040 + O(x**6)');
   });
   it.fails("test_issue_15539:276", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('atan', [x]), x, S.NegativeInfinity, 6, '+'))).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x - pi/2 + O(x**(-6), (x, -oo))');
+    expect(sympyStr(series(fn('atan', [x]), x, S.NegativeInfinity, 6, '+', {}))).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x - pi/2 + O(x**(-6), (x, -oo))');
   });
   it.fails("test_issue_15539:278", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('atan', [x]), x, oo, 6, '+'))).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x + pi/2 + O(x**(-6), (x, oo))');
+    expect(sympyStr(series(fn('atan', [x]), x, oo, 6, '+', {}))).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x + pi/2 + O(x**(-6), (x, oo))');
   });
   it("test_issue_7259:283", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(LambertW(x), x, sympify(0), 6, '+'))).toBe('x - x**2 + 3*x**3/2 - 8*x**4/3 + 125*x**5/24 + O(x**6)');
+    expect(sympyStr(series(LambertW(x), x, sympify(0), 6, '+', {}))).toBe('x - x**2 + 3*x**3/2 - 8*x**4/3 + 125*x**5/24 + O(x**6)');
   });
   it("test_issue_7259:284", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(LambertW(new Pow(x, rational(2))), x, sympify(0), 8, '+'))).toBe('x**2 - x**4 + 3*x**6/2 + O(x**8)');
+    expect(sympyStr(series(LambertW(new Pow(x, rational(2))), x, sympify(0), 8, '+', {}))).toBe('x**2 - x**4 + 3*x**6/2 + O(x**8)');
   });
   it("test_issue_7259:285", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(LambertW(fn('sin', [x])), x, sympify(0), 4, '+'))).toBe('x - x**2 + 4*x**3/3 + O(x**4)');
+    expect(sympyStr(series(LambertW(fn('sin', [x])), x, sympify(0), 4, '+', {}))).toBe('x - x**2 + 4*x**3/3 + O(x**4)');
   });
   it("test_issue_11884:288", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('cos', [x]), x, rational(1), 1, '+'))).toBe('cos(1) + O(x - 1, (x, 1))');
+    expect(sympyStr(series(fn('cos', [x]), x, rational(1), 1, '+', {}))).toBe('cos(1) + O(x - 1, (x, 1))');
   });
   it("test_issue_18008:293", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(2))]), new Mul([x, new Add([rational(1), new Mul([rational(-1), x])])])]), rational(-1)), new Add([rational(1), new Mul([x, new Add([rational(1), new Mul([rational(-1), x])])])])]), x, oo, 4, '+'))).toBe('-9/(32*x**3) - 3/(16*x**2) - 1/(8*x) + 1/4 + x/2 + O(x**(-4), (x, oo))');
+    expect(sympyStr(series(new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(2))]), new Mul([x, new Add([rational(1), new Mul([rational(-1), x])])])]), rational(-1)), new Add([rational(1), new Mul([x, new Add([rational(1), new Mul([rational(-1), x])])])])]), x, oo, 4, '+', {}))).toBe('-9/(32*x**3) - 3/(16*x**2) - 1/(8*x) + 1/4 + x/2 + O(x**(-4), (x, oo))');
   });
   it("test_issue_18842:299", () => {
     expect(sympyStr(nsimplify(new Float({ man: -2594353599766723n, exp: -56n }, 53), {}))).toBe('-180019443780011/5000000000000000');
@@ -403,15 +403,15 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it("test_issue_11407:358", () => {
     const [a, b, c, x] = symbols('a b c x');
-    expect(sympyStr(series(new Pow(new Add([a, b, new Mul([c, x])]), rational(1, 2)), x, rational(0), 1, '+'))).toBe('sqrt(a + b) + O(x)');
+    expect(sympyStr(series(new Pow(new Add([a, b, new Mul([c, x])]), rational(1, 2)), x, rational(0), 1, '+', {}))).toBe('sqrt(a + b) + O(x)');
   });
   it("test_issue_11407:359", () => {
     const [a, b, c, x] = symbols('a b c x');
-    expect(sympyStr(series(new Pow(new Add([a, b, c, new Mul([c, x])]), rational(1, 2)), x, rational(0), 1, '+'))).toBe('sqrt(a + b + c) + O(x)');
+    expect(sympyStr(series(new Pow(new Add([a, b, c, new Mul([c, x])]), rational(1, 2)), x, rational(0), 1, '+', {}))).toBe('sqrt(a + b + c) + O(x)');
   });
   it("test_issue_14037:363", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Mul([new Pow(x, rational(-51)), fn('sin', [new Pow(x, rational(50))])]), x, sympify(0), 0, '+'))).toBe('1/x + O(1)');
+    expect(sympyStr(series(new Mul([new Pow(x, rational(-51)), fn('sin', [new Pow(x, rational(50))])]), x, sympify(0), 0, '+', {}))).toBe('1/x + O(1)');
   });
   it("test_issue_20697:377", () => {
     const [b_0, y, b_1, p_2, p_3, b_2, p_1] = symbols('b_0 y b_1 p_2 p_3 b_2 p_1');
@@ -423,7 +423,7 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it.fails("test_issue_21938:390", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Add([new Mul([rational(-1), fn('sin', [new Pow(x, rational(-1))])]), fn('sin', [new Add([new Pow(x, rational(-1)), exp(new Mul([rational(-1), x]))])])]), x, oo, 6, '+'))).toBe('(1/(24*x**4) - 1/(2*x**2) + 1 + O(x**(-6), (x, oo)))*exp(-x)');
+    expect(sympyStr(series(new Add([new Mul([rational(-1), fn('sin', [new Pow(x, rational(-1))])]), fn('sin', [new Add([new Pow(x, rational(-1)), exp(new Mul([rational(-1), x]))])])]), x, oo, 6, '+', {}))).toBe('(1/(24*x**4) - 1/(2*x**2) + 1 + O(x**(-6), (x, oo)))*exp(-x)');
   });
   it("test_issue_23432:396", () => {
     const x = new Sym('x');
@@ -439,30 +439,30 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it("test_issue_24266:406", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(exp(new Mul([rational(-1), pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 3, '+'))).toBe('-1 + 2*I*pi*x + 2*pi**2*x**2 + O(x**3)');
+    expect(sympyStr(series(exp(new Mul([rational(-1), pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 3, '+', {}))).toBe('-1 + 2*I*pi*x + 2*pi**2*x**2 + O(x**3)');
   });
   it("test_issue_24266:407", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Mul([exp(new Mul([rational(-1), pi, I, new Add([rational(1), new Mul([rational(2), x])])])), fn('gamma', [new Add([rational(1), x])])]), x, rational(0), 3, '+'))).toBe('-1 + x*(EulerGamma + 2*I*pi) + x**2*(-EulerGamma**2/2 + 23*pi**2/12 - 2*EulerGamma*I*pi) + O(x**3)');
+    expect(sympyStr(series(new Mul([exp(new Mul([rational(-1), pi, I, new Add([rational(1), new Mul([rational(2), x])])])), fn('gamma', [new Add([rational(1), x])])]), x, rational(0), 3, '+', {}))).toBe('-1 + x*(EulerGamma + 2*I*pi) + x**2*(-EulerGamma**2/2 + 23*pi**2/12 - 2*EulerGamma*I*pi) + O(x**3)');
   });
   it.fails("test_issue_24266:411", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(new Mul([rational(2), I]), new Mul([rational(-1), pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 2, '+'))).toBe('exp(pi**2/2 - I*pi*log(2)) + x*(pi**2*exp(pi**2/2 - I*pi*log(2)) - 2*I*pi*exp(pi**2/2 - I*pi*log(2))*log(2)) + O(x**2)');
+    expect(sympyStr(series(new Pow(new Mul([rational(2), I]), new Mul([rational(-1), pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 2, '+', {}))).toBe('exp(pi**2/2 - I*pi*log(2)) + x*(pi**2*exp(pi**2/2 - I*pi*log(2)) - 2*I*pi*exp(pi**2/2 - I*pi*log(2))*log(2)) + O(x**2)');
   });
   it("test_issue_24266:413", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(rational(2), new Mul([rational(-1), pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 2, '+'))).toBe('exp(-I*pi*log(2)) - 2*I*pi*x*exp(-I*pi*log(2))*log(2) + O(x**2)');
+    expect(sympyStr(series(new Pow(rational(2), new Mul([rational(-1), pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 2, '+', {}))).toBe('exp(-I*pi*log(2)) - 2*I*pi*x*exp(-I*pi*log(2))*log(2) + O(x**2)');
   });
   it("test_issue_24266:416", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(series(new Pow(y, new Mul([pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 2, '+'))).toBe('exp(I*pi*log(y)) + 2*I*pi*x*exp(I*pi*log(y))*log(y) + O(x**2)');
+    expect(sympyStr(series(new Pow(y, new Mul([pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 2, '+', {}))).toBe('exp(I*pi*log(y)) + 2*I*pi*x*exp(I*pi*log(y))*log(y) + O(x**2)');
   });
   it("test_issue_24266:417", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(series(new Pow(new Mul([I, y]), new Mul([pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 2, '+'))).toBe('exp(I*pi*log(I*y)) + 2*I*pi*x*exp(I*pi*log(I*y))*log(I*y) + O(x**2)');
+    expect(sympyStr(series(new Pow(new Mul([I, y]), new Mul([pi, I, new Add([rational(1), new Mul([rational(2), x])])])), x, rational(0), 2, '+', {}))).toBe('exp(I*pi*log(I*y)) + 2*I*pi*x*exp(I*pi*log(I*y))*log(I*y) + O(x**2)');
   });
   it("test_issue_26856:421", () => {
     const x = new Sym('x');
-    expect(() => series(new Pow(rational(2), x), x, oo, -1, '+')).toThrow(RangeError);
+    expect(() => series(new Pow(rational(2), x), x, oo, -1, '+', {})).toThrow(RangeError);
   });
 });

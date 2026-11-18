@@ -36,7 +36,7 @@ describe("doctests of sympy.functions.special.bessel", () => {
   });
   it("series(airyai(z), z, 0, 3)", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('airyai', [z]), z, rational(0), 3, '+'))).toBe('3**(5/6)*gamma(1/3)/(6*pi) - 3**(1/6)*z*gamma(2/3)/(2*pi) + O(z**3)');
+    expect(sympyStr(series(fn('airyai', [z]), z, rational(0), 3, '+', {}))).toBe('3**(5/6)*gamma(1/3)/(6*pi) - 3**(1/6)*z*gamma(2/3)/(2*pi) + O(z**3)');
   });
   it("airyai(-2).evalf(50)", () => {
     expect(sympyStr(fn('airyai', [rational(-2)]).evalf(50, {}))).toBe('0.22740742820168557599192443603787379946077222541710');
@@ -69,7 +69,7 @@ describe("doctests of sympy.functions.special.bessel", () => {
   });
   it("series(airyaiprime(z), z, 0, 3)", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('airyaiprime', [z]), z, rational(0), 3, '+'))).toBe('-3**(2/3)/(3*gamma(1/3)) + 3**(1/3)*z**2/(6*gamma(2/3)) + O(z**3)');
+    expect(sympyStr(series(fn('airyaiprime', [z]), z, rational(0), 3, '+', {}))).toBe('-3**(2/3)/(3*gamma(1/3)) + 3**(1/3)*z**2/(6*gamma(2/3)) + O(z**3)');
   });
   it("airyaiprime(-2).evalf(50)", () => {
     expect(sympyStr(fn('airyaiprime', [rational(-2)]).evalf(50, {}))).toBe('0.61825902074169104140626429133247528291577794512415');
@@ -105,7 +105,7 @@ describe("doctests of sympy.functions.special.bessel", () => {
   });
   it("series(airybi(z), z, 0, 3)", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('airybi', [z]), z, rational(0), 3, '+'))).toBe('3**(1/3)*gamma(1/3)/(2*pi) + 3**(2/3)*z*gamma(2/3)/(2*pi) + O(z**3)');
+    expect(sympyStr(series(fn('airybi', [z]), z, rational(0), 3, '+', {}))).toBe('3**(1/3)*gamma(1/3)/(2*pi) + 3**(2/3)*z*gamma(2/3)/(2*pi) + O(z**3)');
   });
   it("airybi(-2).evalf(50)", () => {
     expect(sympyStr(fn('airybi', [rational(-2)]).evalf(50, {}))).toBe('-0.41230258795639848808323405461146104203453483447240');
@@ -141,7 +141,7 @@ describe("doctests of sympy.functions.special.bessel", () => {
   });
   it("series(airybiprime(z), z, 0, 3)", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('airybiprime', [z]), z, rational(0), 3, '+'))).toBe('3**(1/6)/gamma(1/3) + 3**(5/6)*z**2/(6*gamma(2/3)) + O(z**3)');
+    expect(sympyStr(series(fn('airybiprime', [z]), z, rational(0), 3, '+', {}))).toBe('3**(1/6)/gamma(1/3) + 3**(5/6)*z**2/(6*gamma(2/3)) + O(z**3)');
   });
   it("airybiprime(-2).evalf(50)", () => {
     expect(sympyStr(fn('airybiprime', [rational(-2)]).evalf(50, {}))).toBe('0.27879516692116952268509756941098324140300059345163');
@@ -526,211 +526,211 @@ describe("sympy/functions/special/tests/test_bessel.py", () => {
   });
   it("test_besselj_series:86", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(0), x]), x, sympify(0), 6, '+'))).toBe('1 - x**2/4 + x**4/64 + O(x**6)');
+    expect(sympyStr(series(fn('besselj', [rational(0), x]), x, sympify(0), 6, '+', {}))).toBe('1 - x**2/4 + x**4/64 + O(x**6)');
   });
   it.fails("test_besselj_series:87", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(0), new Pow(x, new Float({ man: 2476979795053773n, exp: -51n }, 53))]), x, sympify(0), 6, '+'))).toBe('1 + x**4.4/64 - x**2.2/4 + O(x**6)');
+    expect(sympyStr(series(fn('besselj', [rational(0), new Pow(x, new Float({ man: 2476979795053773n, exp: -51n }, 53))]), x, sympify(0), 6, '+', {}))).toBe('1 + x**4.4/64 - x**2.2/4 + O(x**6)');
   });
   it("test_besselj_series:88", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(0), new Add([x, new Pow(x, rational(2))])]), x, sympify(0), 6, '+'))).toBe('1 - x**2/4 - x**3/2 - 15*x**4/64 + x**5/16 + O(x**6)');
+    expect(sympyStr(series(fn('besselj', [rational(0), new Add([x, new Pow(x, rational(2))])]), x, sympify(0), 6, '+', {}))).toBe('1 - x**2/4 - x**3/2 - 15*x**4/64 + x**5/16 + O(x**6)');
   });
   it("test_besselj_series:90", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(0), new Add([x, new Pow(x, rational(1, 2))])]), x, sympify(0), 4, '+'))).toBe('1 - x/4 - 15*x**2/64 + 215*x**3/2304 - x**(3/2)/2 + x**(5/2)/16 + 23*x**(7/2)/384 + O(x**4)');
+    expect(sympyStr(series(fn('besselj', [rational(0), new Add([x, new Pow(x, rational(1, 2))])]), x, sympify(0), 4, '+', {}))).toBe('1 - x/4 - 15*x**2/64 + 215*x**3/2304 - x**(3/2)/2 + x**(5/2)/16 + 23*x**(7/2)/384 + O(x**4)');
   });
   it("test_besselj_series:93", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(0), new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1))])]), x, sympify(0), 6, '+'))).toBe('1 - x**2/4 - x**3/2 - 47*x**4/64 - 15*x**5/16 + O(x**6)');
+    expect(sympyStr(series(fn('besselj', [rational(0), new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1))])]), x, sympify(0), 6, '+', {}))).toBe('1 - x**2/4 - x**3/2 - 47*x**4/64 - 15*x**5/16 + O(x**6)');
   });
   it("test_besselj_series:95", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(0), log(new Add([rational(1), x]))]), x, sympify(0), 6, '+'))).toBe('1 - x**2/4 + x**3/4 - 41*x**4/192 + 17*x**5/96 + O(x**6)');
+    expect(sympyStr(series(fn('besselj', [rational(0), log(new Add([rational(1), x]))]), x, sympify(0), 6, '+', {}))).toBe('1 - x**2/4 + x**3/4 - 41*x**4/192 + 17*x**5/96 + O(x**6)');
   });
   it("test_besselj_series:97", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(1), fn('sin', [x])]), x, sympify(0), 6, '+'))).toBe('x/2 - 7*x**3/48 + 73*x**5/1920 + O(x**6)');
+    expect(sympyStr(series(fn('besselj', [rational(1), fn('sin', [x])]), x, sympify(0), 6, '+', {}))).toBe('x/2 - 7*x**3/48 + 73*x**5/1920 + O(x**6)');
   });
   it("test_besselj_series:98", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(1), new Mul([rational(2), new Pow(x, rational(1, 2))])]), x, sympify(0), 6, '+'))).toBe('sqrt(x) - x**(3/2)/2 + x**(5/2)/12 - x**(7/2)/144 + x**(9/2)/2880 - x**(11/2)/86400 + O(x**6)');
+    expect(sympyStr(series(fn('besselj', [rational(1), new Mul([rational(2), new Pow(x, rational(1, 2))])]), x, sympify(0), 6, '+', {}))).toBe('sqrt(x) - x**(3/2)/2 + x**(5/2)/12 - x**(7/2)/144 + x**(9/2)/2880 - x**(11/2)/86400 + O(x**6)');
   });
   it.fails("test_besselj_series:101", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselj', [rational(2), fn('sin', [x])]), x, sympify(0), 4, '+'))).toBe('(-x**3/12 + x/2)**2/2 + O(x**4)');
+    expect(sympyStr(series(fn('besselj', [rational(2), fn('sin', [x])]), x, sympify(0), 4, '+', {}))).toBe('(-x**3/12 + x/2)**2/2 + O(x**4)');
   });
   it.fails("test_bessely_series:106", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(0), x]), x, sympify(0), 4, '+'))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi + x**2*(-log(x)/(2*pi) + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi)) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(0), x]), x, sympify(0), 4, '+', {}))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi + x**2*(-log(x)/(2*pi) + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi)) + O(x**4*log(x))');
   });
   it.fails("test_bessely_series:108", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(1), x]), x, sympify(0), 4, '+'))).toBe('-2/(pi*x) + x*(log(x)/pi - log(2)/pi - (1 - 2*EulerGamma)/(2*pi)) + x**3*(-log(x)/(8*pi) + (5/2 - 2*EulerGamma)/(16*pi) + log(2)/(8*pi)) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(1), x]), x, sympify(0), 4, '+', {}))).toBe('-2/(pi*x) + x*(log(x)/pi - log(2)/pi - (1 - 2*EulerGamma)/(2*pi)) + x**3*(-log(x)/(8*pi) + (5/2 - 2*EulerGamma)/(16*pi) + log(2)/(8*pi)) + O(x**4*log(x))');
   });
   it.fails("test_bessely_series:111", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(2), x]), x, sympify(0), 4, '+'))).toBe('-4/(pi*x**2) - 1/pi + x**2*(log(x)/(4*pi) - log(2)/(4*pi) - (3/2 - 2*EulerGamma)/(8*pi)) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(2), x]), x, sympify(0), 4, '+', {}))).toBe('-4/(pi*x**2) - 1/pi + x**2*(log(x)/(4*pi) - log(2)/(4*pi) - (3/2 - 2*EulerGamma)/(8*pi)) + O(x**4*log(x))');
   });
   it.fails("test_bessely_series:113", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(3), x]), x, sympify(0), 4, '+'))).toBe('-16/(pi*x**3) - 2/(pi*x) - x/(4*pi) + x**3*(log(x)/(24*pi) - log(2)/(24*pi) - (11/6 - 2*EulerGamma)/(48*pi)) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(3), x]), x, sympify(0), 4, '+', {}))).toBe('-16/(pi*x**3) - 2/(pi*x) - x/(4*pi) + x**3*(log(x)/(24*pi) - log(2)/(24*pi) - (11/6 - 2*EulerGamma)/(48*pi)) + O(x**4*log(x))');
   });
   it.fails("test_bessely_series:116", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(0), new Pow(x, new Float({ man: 2476979795053773n, exp: -51n }, 53))]), x, sympify(0), 4, '+'))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2.2*log(x)/pi + x**2.2*(-0.55*log(x)/pi + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi)) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(0), new Pow(x, new Float({ man: 2476979795053773n, exp: -51n }, 53))]), x, sympify(0), 4, '+', {}))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2.2*log(x)/pi + x**2.2*(-0.55*log(x)/pi + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi)) + O(x**4*log(x))');
   });
   it.fails("test_bessely_series:119", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(0), new Add([x, new Pow(x, rational(2))])]), x, sympify(0), 4, '+'))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi - (2 - 2*EulerGamma)*(-x**3/(2*pi) - x**2/(4*pi)) + 2*x/pi + x**2*(-log(x)/(2*pi) - 1/pi + log(2)/(2*pi)) + x**3*(-log(x)/pi + 1/(6*pi) + log(2)/pi) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(0), new Add([x, new Pow(x, rational(2))])]), x, sympify(0), 4, '+', {}))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi - (2 - 2*EulerGamma)*(-x**3/(2*pi) - x**2/(4*pi)) + 2*x/pi + x**2*(-log(x)/(2*pi) - 1/pi + log(2)/(2*pi)) + x**3*(-log(x)/pi + 1/(6*pi) + log(2)/pi) + O(x**4*log(x))');
   });
   it.fails("test_bessely_series:123", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(0), new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1))])]), x, sympify(0), 3, '+'))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi + 2*x/pi + x**2*(-log(x)/(2*pi) + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi) + 1/pi) + O(x**3*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(0), new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1))])]), x, sympify(0), 3, '+', {}))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi + 2*x/pi + x**2*(-log(x)/(2*pi) + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi) + 1/pi) + O(x**3*log(x))');
   });
   it.fails("test_bessely_series:126", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(0), log(new Add([rational(1), x]))]), x, sympify(0), 3, '+'))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi - x/pi + x**2*(-log(x)/(2*pi) + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi) + 5/(12*pi)) + O(x**3*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(0), log(new Add([rational(1), x]))]), x, sympify(0), 3, '+', {}))).toBe('2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi - x/pi + x**2*(-log(x)/(2*pi) + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi) + 5/(12*pi)) + O(x**3*log(x))');
   });
   it.fails("test_bessely_series:129", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(1), fn('sin', [x])]), x, sympify(0), 4, '+'))).toBe('-1/(pi*(-x**3/12 + x/2)) - (1 - 2*EulerGamma)*(-x**3/12 + x/2)/pi + x*(log(x)/pi - log(2)/pi) + x**3*(-7*log(x)/(24*pi) - 1/(6*pi) + (5/2 - 2*EulerGamma)/(16*pi) + 7*log(2)/(24*pi)) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(1), fn('sin', [x])]), x, sympify(0), 4, '+', {}))).toBe('-1/(pi*(-x**3/12 + x/2)) - (1 - 2*EulerGamma)*(-x**3/12 + x/2)/pi + x*(log(x)/pi - log(2)/pi) + x**3*(-7*log(x)/(24*pi) - 1/(6*pi) + (5/2 - 2*EulerGamma)/(16*pi) + 7*log(2)/(24*pi)) + O(x**4*log(x))');
   });
   it.fails("test_bessely_series:133", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(1), new Mul([rational(2), new Pow(x, rational(1, 2))])]), x, sympify(0), 3, '+'))).toBe('-1/(pi*sqrt(x)) + sqrt(x)*(log(x)/pi - (1 - 2*EulerGamma)/pi) + x**(3/2)*(-log(x)/(2*pi) + (5/2 - 2*EulerGamma)/(2*pi)) + x**(5/2)*(log(x)/(12*pi) - (10/3 - 2*EulerGamma)/(12*pi)) + O(x**3*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(1), new Mul([rational(2), new Pow(x, rational(1, 2))])]), x, sympify(0), 3, '+', {}))).toBe('-1/(pi*sqrt(x)) + sqrt(x)*(log(x)/pi - (1 - 2*EulerGamma)/pi) + x**(3/2)*(-log(x)/(2*pi) + (5/2 - 2*EulerGamma)/(2*pi)) + x**(5/2)*(log(x)/(12*pi) - (10/3 - 2*EulerGamma)/(12*pi)) + O(x**3*log(x))');
   });
   it.fails("test_bessely_series:137", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('bessely', [rational(2), fn('sin', [x])]), x, sympify(0), 4, '+'))).toBe('-1/(pi*(-x**3/12 + x/2)**2) - (3/2 - 2*EulerGamma)*(-x**3/12 + x/2)**2/(2*pi) + x**2*(log(x)/(4*pi) - log(2)/(4*pi) - 1/(pi*x**6/36 - pi*x**4/3 + pi*x**2)) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('bessely', [rational(2), fn('sin', [x])]), x, sympify(0), 4, '+', {}))).toBe('-1/(pi*(-x**3/12 + x/2)**2) - (3/2 - 2*EulerGamma)*(-x**3/12 + x/2)**2/(2*pi) + x**2*(log(x)/(4*pi) - log(2)/(4*pi) - 1/(pi*x**6/36 - pi*x**4/3 + pi*x**2)) + O(x**4*log(x))');
   });
   it("test_besseli_series:141", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(0), x]), x, sympify(0), 6, '+'))).toBe('1 + x**2/4 + x**4/64 + O(x**6)');
+    expect(sympyStr(series(fn('besseli', [rational(0), x]), x, sympify(0), 6, '+', {}))).toBe('1 + x**2/4 + x**4/64 + O(x**6)');
   });
   it.fails("test_besseli_series:142", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(0), new Pow(x, new Float({ man: 2476979795053773n, exp: -51n }, 53))]), x, sympify(0), 6, '+'))).toBe('1 + x**4.4/64 + x**2.2/4 + O(x**6)');
+    expect(sympyStr(series(fn('besseli', [rational(0), new Pow(x, new Float({ man: 2476979795053773n, exp: -51n }, 53))]), x, sympify(0), 6, '+', {}))).toBe('1 + x**4.4/64 + x**2.2/4 + O(x**6)');
   });
   it("test_besseli_series:143", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(0), new Add([x, new Pow(x, rational(2))])]), x, sympify(0), 6, '+'))).toBe('1 + x**2/4 + x**3/2 + 17*x**4/64 + x**5/16 + O(x**6)');
+    expect(sympyStr(series(fn('besseli', [rational(0), new Add([x, new Pow(x, rational(2))])]), x, sympify(0), 6, '+', {}))).toBe('1 + x**2/4 + x**3/2 + 17*x**4/64 + x**5/16 + O(x**6)');
   });
   it("test_besseli_series:145", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(0), new Add([x, new Pow(x, rational(1, 2))])]), x, sympify(0), 4, '+'))).toBe('1 + x/4 + 17*x**2/64 + 217*x**3/2304 + x**(3/2)/2 + x**(5/2)/16 + 25*x**(7/2)/384 + O(x**4)');
+    expect(sympyStr(series(fn('besseli', [rational(0), new Add([x, new Pow(x, rational(1, 2))])]), x, sympify(0), 4, '+', {}))).toBe('1 + x/4 + 17*x**2/64 + 217*x**3/2304 + x**(3/2)/2 + x**(5/2)/16 + 25*x**(7/2)/384 + O(x**4)');
   });
   it("test_besseli_series:147", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(0), new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1))])]), x, sympify(0), 6, '+'))).toBe('1 + x**2/4 + x**3/2 + 49*x**4/64 + 17*x**5/16 + O(x**6)');
+    expect(sympyStr(series(fn('besseli', [rational(0), new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1))])]), x, sympify(0), 6, '+', {}))).toBe('1 + x**2/4 + x**3/2 + 49*x**4/64 + 17*x**5/16 + O(x**6)');
   });
   it("test_besseli_series:149", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(0), log(new Add([rational(1), x]))]), x, sympify(0), 6, '+'))).toBe('1 + x**2/4 - x**3/4 + 47*x**4/192 - 23*x**5/96 + O(x**6)');
+    expect(sympyStr(series(fn('besseli', [rational(0), log(new Add([rational(1), x]))]), x, sympify(0), 6, '+', {}))).toBe('1 + x**2/4 - x**3/4 + 47*x**4/192 - 23*x**5/96 + O(x**6)');
   });
   it("test_besseli_series:151", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(1), fn('sin', [x])]), x, sympify(0), 6, '+'))).toBe('x/2 - x**3/48 - 47*x**5/1920 + O(x**6)');
+    expect(sympyStr(series(fn('besseli', [rational(1), fn('sin', [x])]), x, sympify(0), 6, '+', {}))).toBe('x/2 - x**3/48 - 47*x**5/1920 + O(x**6)');
   });
   it("test_besseli_series:152", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(1), new Mul([rational(2), new Pow(x, rational(1, 2))])]), x, sympify(0), 6, '+'))).toBe('sqrt(x) + x**(3/2)/2 + x**(5/2)/12 + x**(7/2)/144 + x**(9/2)/2880 + x**(11/2)/86400 + O(x**6)');
+    expect(sympyStr(series(fn('besseli', [rational(1), new Mul([rational(2), new Pow(x, rational(1, 2))])]), x, sympify(0), 6, '+', {}))).toBe('sqrt(x) + x**(3/2)/2 + x**(5/2)/12 + x**(7/2)/144 + x**(9/2)/2880 + x**(11/2)/86400 + O(x**6)');
   });
   it.fails("test_besseli_series:154", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(2), fn('sin', [x])]), x, sympify(0), 4, '+'))).toBe('(-x**3/12 + x/2)**2/2 + O(x**4)');
+    expect(sympyStr(series(fn('besseli', [rational(2), fn('sin', [x])]), x, sympify(0), 4, '+', {}))).toBe('(-x**3/12 + x/2)**2/2 + O(x**4)');
   });
   it.fails("test_besseli_series:157", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(0), x]), x, oo, 4, '+'))).toBe('sqrt(2)*(sqrt(1/x) - (1/x)**(3/2)/8 - 3*(1/x)**(5/2)/128 - 15*(1/x)**(7/2)/1024 + O((1/x)**(9/2), (x, oo)))*exp(x)/(2*sqrt(pi))');
+    expect(sympyStr(series(fn('besseli', [rational(0), x]), x, oo, 4, '+', {}))).toBe('sqrt(2)*(sqrt(1/x) - (1/x)**(3/2)/8 - 3*(1/x)**(5/2)/128 - 15*(1/x)**(7/2)/1024 + O((1/x)**(9/2), (x, oo)))*exp(x)/(2*sqrt(pi))');
   });
   it.fails("test_besseli_series:159", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besseli', [rational(0), x]), x, S.NegativeInfinity, 4, '+'))).toBe('sqrt(2)*(sqrt(-1/x) - (-1/x)**(3/2)/8 - 3*(-1/x)**(5/2)/128 - 15*(-1/x)**(7/2)/1024 + O((-1/x)**(9/2), (x, -oo)))*exp(-x)/(2*sqrt(pi))');
+    expect(sympyStr(series(fn('besseli', [rational(0), x]), x, S.NegativeInfinity, 4, '+', {}))).toBe('sqrt(2)*(sqrt(-1/x) - (-1/x)**(3/2)/8 - 3*(-1/x)**(5/2)/128 - 15*(-1/x)**(7/2)/1024 + O((-1/x)**(9/2), (x, -oo)))*exp(-x)/(2*sqrt(pi))');
   });
   it.fails("test_besselk_series:165", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(0), x]), x, sympify(0), 4, '+'))).toBe('log(2) - EulerGamma - log(x) + x**2*(-log(x)/4 - EulerGamma/4 + log(2)/4 + 1/4) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(0), x]), x, sympify(0), 4, '+', {}))).toBe('log(2) - EulerGamma - log(x) + x**2*(-log(x)/4 - EulerGamma/4 + log(2)/4 + 1/4) + O(x**4*log(x))');
   });
   it.fails("test_besselk_series:167", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(1), x]), x, sympify(0), 4, '+'))).toBe('1/x + x*(log(x)/2 - log(2)/2 - 1/4 + EulerGamma/2) + x**3*(log(x)/16 - 5/64 - log(2)/16 + EulerGamma/16) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(1), x]), x, sympify(0), 4, '+', {}))).toBe('1/x + x*(log(x)/2 - log(2)/2 - 1/4 + EulerGamma/2) + x**3*(log(x)/16 - 5/64 - log(2)/16 + EulerGamma/16) + O(x**4*log(x))');
   });
   it.fails("test_besselk_series:170", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(2), x]), x, sympify(0), 4, '+'))).toBe('2/x**2 - 1/2 + x**2*(-log(x)/8 - EulerGamma/8 + log(2)/8 + 3/32) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(2), x]), x, sympify(0), 4, '+', {}))).toBe('2/x**2 - 1/2 + x**2*(-log(x)/8 - EulerGamma/8 + log(2)/8 + 3/32) + O(x**4*log(x))');
   });
   it.fails("test_besselk_series:172", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(2), x]), x, sympify(0), 1, '+'))).toBe('2/x**2 - 1/2 + O(x)');
+    expect(sympyStr(series(fn('besselk', [rational(2), x]), x, sympify(0), 1, '+', {}))).toBe('2/x**2 - 1/2 + O(x)');
   });
   it.fails("test_besselk_series:173", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(0), new Pow(x, new Float({ man: 2476979795053773n, exp: -51n }, 53))]), x, sympify(0), 4, '+'))).toBe('log(2) - EulerGamma - 1.1*log(x) + x**2.2*(-0.275*log(x) - EulerGamma/4 + log(2)/4 + 1/4) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(0), new Pow(x, new Float({ man: 2476979795053773n, exp: -51n }, 53))]), x, sympify(0), 4, '+', {}))).toBe('log(2) - EulerGamma - 1.1*log(x) + x**2.2*(-0.275*log(x) - EulerGamma/4 + log(2)/4 + 1/4) + O(x**4*log(x))');
   });
   it.fails("test_besselk_series:176", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(0), new Add([x, new Pow(x, rational(2))])]), x, sympify(0), 4, '+'))).toBe('log(2) - EulerGamma - log(x) + (2 - 2*EulerGamma)*(x**3/4 + x**2/8) - x + x**2*(-log(x)/4 + log(2)/4 + 1/2) + x**3*(-log(x)/2 - 7/12 + log(2)/2) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(0), new Add([x, new Pow(x, rational(2))])]), x, sympify(0), 4, '+', {}))).toBe('log(2) - EulerGamma - log(x) + (2 - 2*EulerGamma)*(x**3/4 + x**2/8) - x + x**2*(-log(x)/4 + log(2)/4 + 1/2) + x**3*(-log(x)/2 - 7/12 + log(2)/2) + O(x**4*log(x))');
   });
   it.fails("test_besselk_series:179", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(0), new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1))])]), x, sympify(0), 3, '+'))).toBe('log(2) - EulerGamma - log(x) - x + x**2*(-log(x)/4 - 1/4 - EulerGamma/4 + log(2)/4) + O(x**3*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(0), new Mul([x, new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(-1))])]), x, sympify(0), 3, '+', {}))).toBe('log(2) - EulerGamma - log(x) - x + x**2*(-log(x)/4 - 1/4 - EulerGamma/4 + log(2)/4) + O(x**3*log(x))');
   });
   it.fails("test_besselk_series:181", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(0), log(new Add([rational(1), x]))]), x, sympify(0), 3, '+'))).toBe('log(2) - EulerGamma - log(x) + x/2 + x**2*(-log(x)/4 - EulerGamma/4 + 1/24 + log(2)/4) + O(x**3*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(0), log(new Add([rational(1), x]))]), x, sympify(0), 3, '+', {}))).toBe('log(2) - EulerGamma - log(x) + x/2 + x**2*(-log(x)/4 - EulerGamma/4 + 1/24 + log(2)/4) + O(x**3*log(x))');
   });
   it.fails("test_besselk_series:183", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(1), new Mul([rational(2), new Pow(x, rational(1, 2))])]), x, sympify(0), 3, '+'))).toBe('1/(2*sqrt(x)) + sqrt(x)*(log(x)/2 - 1/2 + EulerGamma) + x**(3/2)*(log(x)/4 - 5/8 + EulerGamma/2) + x**(5/2)*(log(x)/24 - 5/36 + EulerGamma/12) + O(x**3*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(1), new Mul([rational(2), new Pow(x, rational(1, 2))])]), x, sympify(0), 3, '+', {}))).toBe('1/(2*sqrt(x)) + sqrt(x)*(log(x)/2 - 1/2 + EulerGamma) + x**(3/2)*(log(x)/4 - 5/8 + EulerGamma/2) + x**(5/2)*(log(x)/24 - 5/36 + EulerGamma/12) + O(x**3*log(x))');
   });
   it.fails("test_besselk_series:186", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(2), fn('sin', [x])]), x, sympify(0), 4, '+'))).toBe('1/(2*(-x**3/12 + x/2)**2) + (3/2 - 2*EulerGamma)*(-x**3/12 + x/2)**2/4 + x**2*(-log(x)/8 + log(2)/8 - 1/(x**6/18 - 2*x**4/3 + 2*x**2)) + x**4/(x**6/6 - 2*x**4 + 6*x**2) + O(x**4*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(2), fn('sin', [x])]), x, sympify(0), 4, '+', {}))).toBe('1/(2*(-x**3/12 + x/2)**2) + (3/2 - 2*EulerGamma)*(-x**3/12 + x/2)**2/4 + x**2*(-log(x)/8 + log(2)/8 - 1/(x**6/18 - 2*x**4/3 + 2*x**2)) + x**4/(x**6/6 - 2*x**4 + 6*x**2) + O(x**4*log(x))');
   });
   it.fails("test_besselk_series:187", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(2), new Pow(x, rational(2))]), x, sympify(0), 2, '+'))).toBe('2/x**4 - 1/2 + O(x**2)');
+    expect(sympyStr(series(fn('besselk', [rational(2), new Pow(x, rational(2))]), x, sympify(0), 2, '+', {}))).toBe('2/x**4 - 1/2 + O(x**2)');
   });
   it.fails("test_besselk_series:188", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(2), new Pow(x, rational(2))]), x, sympify(0), 6, '+'))).toBe('2/x**4 - 1/2 + x**4*(-log(x)/4 - EulerGamma/8 + log(2)/8 + 3/32) + O(x**6*log(x))');
+    expect(sympyStr(series(fn('besselk', [rational(2), new Pow(x, rational(2))]), x, sympify(0), 6, '+', {}))).toBe('2/x**4 - 1/2 + x**4*(-log(x)/4 - EulerGamma/8 + log(2)/8 + 3/32) + O(x**6*log(x))');
   });
   it.fails("test_besselk_series:189", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Mul([new Pow(x, rational(2)), fn('besselk', [rational(2), x])]), x, sympify(0), 2, '+'))).toBe('2 + O(x**2)');
+    expect(sympyStr(series(new Mul([new Pow(x, rational(2)), fn('besselk', [rational(2), x])]), x, sympify(0), 2, '+', {}))).toBe('2 + O(x**2)');
   });
   it.fails("test_besselk_series:192", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(0), x]), x, oo, 4, '+'))).toBe('sqrt(2)*sqrt(pi)*(sqrt(1/x) + (1/x)**(3/2)/8 - 3*(1/x)**(5/2)/128 + 15*(1/x)**(7/2)/1024 + O((1/x)**(9/2), (x, oo)))*exp(-x)/2');
+    expect(sympyStr(series(fn('besselk', [rational(0), x]), x, oo, 4, '+', {}))).toBe('sqrt(2)*sqrt(pi)*(sqrt(1/x) + (1/x)**(3/2)/8 - 3*(1/x)**(5/2)/128 + 15*(1/x)**(7/2)/1024 + O((1/x)**(9/2), (x, oo)))*exp(-x)/2');
   });
   it.fails("test_besselk_series:194", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(0), x]), x, S.NegativeInfinity, 4, '+'))).toBe('sqrt(2)*sqrt(pi)*(-I*sqrt(-1/x) + I*(-1/x)**(3/2)/8 + 3*I*(-1/x)**(5/2)/128 + 15*I*(-1/x)**(7/2)/1024 + O((-1/x)**(9/2), (x, -oo)))*exp(-x)/2');
+    expect(sympyStr(series(fn('besselk', [rational(0), x]), x, S.NegativeInfinity, 4, '+', {}))).toBe('sqrt(2)*sqrt(pi)*(-I*sqrt(-1/x) + I*(-1/x)**(3/2)/8 + 3*I*(-1/x)**(5/2)/128 + 15*I*(-1/x)**(7/2)/1024 + O((-1/x)**(9/2), (x, -oo)))*exp(-x)/2');
   });
   it.fails("test_besselk_frac_order_series:199", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(5, 3), x]), x, sympify(0), 2, '+'))).toBe('2**(2/3)*gamma(5/3)/x**(5/3) - 3*2**(2/3)*x**(1/3)*gamma(5/3)/8 + 2**(1/3)*x**(5/3)*gamma(-5/3)/8 + O(x**2)');
+    expect(sympyStr(series(fn('besselk', [rational(5, 3), x]), x, sympify(0), 2, '+', {}))).toBe('2**(2/3)*gamma(5/3)/x**(5/3) - 3*2**(2/3)*x**(1/3)*gamma(5/3)/8 + 2**(1/3)*x**(5/3)*gamma(-5/3)/8 + O(x**2)');
   });
   it.fails("test_besselk_frac_order_series:202", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(1, 2), x]), x, sympify(0), 2, '+'))).toBe('sqrt(2)*sqrt(pi)/(2*sqrt(x)) - sqrt(2)*sqrt(pi)*sqrt(x)/2 + sqrt(2)*sqrt(pi)*x**(3/2)/4 + O(x**2)');
+    expect(sympyStr(series(fn('besselk', [rational(1, 2), x]), x, sympify(0), 2, '+', {}))).toBe('sqrt(2)*sqrt(pi)/(2*sqrt(x)) - sqrt(2)*sqrt(pi)*sqrt(x)/2 + sqrt(2)*sqrt(pi)*x**(3/2)/4 + O(x**2)');
   });
   it.fails("test_besselk_frac_order_series:204", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(1, 2), new Pow(x, rational(1, 2))]), x, sympify(0), 2, '+'))).toBe('sqrt(2)*sqrt(pi)/(2*x**(1/4)) - sqrt(2)*sqrt(pi)*x**(1/4)/2 + sqrt(2)*sqrt(pi)*x**(3/4)/4 - sqrt(2)*sqrt(pi)*x**(5/4)/12 + sqrt(2)*sqrt(pi)*x**(7/4)/48 + O(x**2)');
+    expect(sympyStr(series(fn('besselk', [rational(1, 2), new Pow(x, rational(1, 2))]), x, sympify(0), 2, '+', {}))).toBe('sqrt(2)*sqrt(pi)/(2*x**(1/4)) - sqrt(2)*sqrt(pi)*x**(1/4)/2 + sqrt(2)*sqrt(pi)*x**(3/4)/4 - sqrt(2)*sqrt(pi)*x**(5/4)/12 + sqrt(2)*sqrt(pi)*x**(7/4)/48 + O(x**2)');
   });
   it.fails("test_besselk_frac_order_series:207", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(1, 2), new Pow(x, rational(2))]), x, sympify(0), 2, '+'))).toBe('sqrt(2)*sqrt(pi)/(2*x) - sqrt(2)*sqrt(pi)*x/2 + O(x**2)');
+    expect(sympyStr(series(fn('besselk', [rational(1, 2), new Pow(x, rational(2))]), x, sympify(0), 2, '+', {}))).toBe('sqrt(2)*sqrt(pi)/(2*x) - sqrt(2)*sqrt(pi)*x/2 + O(x**2)');
   });
   it.fails("test_besselk_frac_order_series:209", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(-1, 2), x]), x, sympify(0), 6, '+'))).toBe('sqrt(2)*sqrt(pi)/(2*sqrt(x)) - sqrt(2)*sqrt(pi)*sqrt(x)/2 + sqrt(2)*sqrt(pi)*x**(3/2)/4 - sqrt(2)*sqrt(pi)*x**(5/2)/12 + sqrt(2)*sqrt(pi)*x**(7/2)/48 - sqrt(2)*sqrt(pi)*x**(9/2)/240 + sqrt(2)*sqrt(pi)*x**(11/2)/1440 + O(x**6)');
+    expect(sympyStr(series(fn('besselk', [rational(-1, 2), x]), x, sympify(0), 6, '+', {}))).toBe('sqrt(2)*sqrt(pi)/(2*sqrt(x)) - sqrt(2)*sqrt(pi)*sqrt(x)/2 + sqrt(2)*sqrt(pi)*x**(3/2)/4 - sqrt(2)*sqrt(pi)*x**(5/2)/12 + sqrt(2)*sqrt(pi)*x**(7/2)/48 - sqrt(2)*sqrt(pi)*x**(9/2)/240 + sqrt(2)*sqrt(pi)*x**(11/2)/1440 + O(x**6)');
   });
   it.fails("test_besselk_frac_order_series:210", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('besselk', [rational(-7, 6), x]), x, sympify(0), 6, '+'))).toBe('2**(1/6)*gamma(7/6)/x**(7/6) - 3*2**(1/6)*x**(5/6)*gamma(7/6)/2 + 2**(5/6)*x**(7/6)*gamma(-7/6)/8 - 9*2**(1/6)*x**(17/6)*gamma(7/6)/40 + 3*2**(5/6)*x**(19/6)*gamma(-7/6)/208 - 9*2**(1/6)*x**(29/6)*gamma(7/6)/880 + 9*2**(5/6)*x**(31/6)*gamma(-7/6)/15808 + O(x**6)');
+    expect(sympyStr(series(fn('besselk', [rational(-7, 6), x]), x, sympify(0), 6, '+', {}))).toBe('2**(1/6)*gamma(7/6)/x**(7/6) - 3*2**(1/6)*x**(5/6)*gamma(7/6)/2 + 2**(5/6)*x**(7/6)*gamma(-7/6)/8 - 9*2**(1/6)*x**(17/6)*gamma(7/6)/40 + 3*2**(5/6)*x**(19/6)*gamma(-7/6)/208 - 9*2**(1/6)*x**(29/6)*gamma(7/6)/880 + 9*2**(5/6)*x**(31/6)*gamma(-7/6)/15808 + O(x**6)');
   });
   it("test_diff:214", () => {
     const [n, z] = symbols('n z');
@@ -1632,7 +1632,7 @@ describe("sympy/functions/special/tests/test_bessel.py", () => {
   });
   it("test_airyai:635", () => {
     const z = new Sym('z', { real: false });
-    expect(sympyStr(series(fn('airyai', [z]), z, rational(0), 3, '+'))).toBe('3**(5/6)*gamma(1/3)/(6*pi) - 3**(1/6)*z*gamma(2/3)/(2*pi) + O(z**3)');
+    expect(sympyStr(series(fn('airyai', [z]), z, rational(0), 3, '+', {}))).toBe('3**(5/6)*gamma(1/3)/(6*pi) - 3**(1/6)*z*gamma(2/3)/(2*pi) + O(z**3)');
   });
   it("test_airyai:638", () => {
     const z = new Sym('z', { real: false });
@@ -1666,7 +1666,7 @@ describe("sympy/functions/special/tests/test_bessel.py", () => {
   });
   it("test_airybi:671", () => {
     const z = new Sym('z', { real: false });
-    expect(sympyStr(series(fn('airybi', [z]), z, rational(0), 3, '+'))).toBe('3**(1/3)*gamma(1/3)/(2*pi) + 3**(2/3)*z*gamma(2/3)/(2*pi) + O(z**3)');
+    expect(sympyStr(series(fn('airybi', [z]), z, rational(0), 3, '+', {}))).toBe('3**(1/3)*gamma(1/3)/(2*pi) + 3**(2/3)*z*gamma(2/3)/(2*pi) + O(z**3)');
   });
   it("test_airybi:674", () => {
     const z = new Sym('z', { real: false });
@@ -1700,7 +1700,7 @@ describe("sympy/functions/special/tests/test_bessel.py", () => {
   });
   it("test_airyaiprime:706", () => {
     const z = new Sym('z', { real: false });
-    expect(sympyStr(series(fn('airyaiprime', [z]), z, rational(0), 3, '+'))).toBe('-3**(2/3)/(3*gamma(1/3)) + 3**(1/3)*z**2/(6*gamma(2/3)) + O(z**3)');
+    expect(sympyStr(series(fn('airyaiprime', [z]), z, rational(0), 3, '+', {}))).toBe('-3**(2/3)/(3*gamma(1/3)) + 3**(1/3)*z**2/(6*gamma(2/3)) + O(z**3)');
   });
   it("test_airyaiprime:709", () => {
     const z = new Sym('z', { real: false });
@@ -1734,7 +1734,7 @@ describe("sympy/functions/special/tests/test_bessel.py", () => {
   });
   it("test_airybiprime:741", () => {
     const z = new Sym('z', { real: false });
-    expect(sympyStr(series(fn('airybiprime', [z]), z, rational(0), 3, '+'))).toBe('3**(1/6)/gamma(1/3) + 3**(5/6)*z**2/(6*gamma(2/3)) + O(z**3)');
+    expect(sympyStr(series(fn('airybiprime', [z]), z, rational(0), 3, '+', {}))).toBe('3**(1/6)/gamma(1/3) + 3**(5/6)*z**2/(6*gamma(2/3)) + O(z**3)');
   });
   it("test_airybiprime:744", () => {
     const z = new Sym('z', { real: false });

@@ -158,7 +158,7 @@ describe("doctests of sympy.functions.special.gamma_functions", () => {
   });
   it("series(gamma(x), x, 0, 3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('gamma', [x]), x, rational(0), 3, '+'))).toBe('1/x - EulerGamma + x*(EulerGamma**2/2 + pi**2/12) + x**2*(-EulerGamma*pi**2/12 - zeta(3)/3 - EulerGamma**3/6) + O(x**3)');
+    expect(sympyStr(series(fn('gamma', [x]), x, rational(0), 3, '+', {}))).toBe('1/x - EulerGamma + x*(EulerGamma**2/2 + pi**2/12) + x**2*(-EulerGamma*pi**2/12 - zeta(3)/3 - EulerGamma**3/6) + O(x**3)');
   });
   it("gamma(pi).evalf(40)", () => {
     expect(sympyStr(fn('gamma', [pi]).evalf(40, {}))).toBe('2.288037795340032417959588909060233922890');
@@ -1316,19 +1316,19 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   it.todo("test_erf:108");
   it("test_erf_series:112", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('erf', [x]), x, rational(0), 7, '+'))).toBe('2*x/sqrt(pi) - 2*x**3/(3*sqrt(pi)) + x**5/(5*sqrt(pi)) + O(x**7)');
+    expect(sympyStr(series(fn('erf', [x]), x, rational(0), 7, '+', {}))).toBe('2*x/sqrt(pi) - 2*x**3/(3*sqrt(pi)) + x**5/(5*sqrt(pi)) + O(x**7)');
   });
   it.fails("test_erf_series:115", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('erf', [x]), x, oo, 6, '+'))).toBe('-(3/(4*x**5) - 1/(2*x**3) + 1/x + O(x**(-6), (x, oo)))*exp(-x**2)/sqrt(pi) + 1');
+    expect(sympyStr(series(fn('erf', [x]), x, oo, 6, '+', {}))).toBe('-(3/(4*x**5) - 1/(2*x**3) + 1/x + O(x**(-6), (x, oo)))*exp(-x**2)/sqrt(pi) + 1');
   });
   it.fails("test_erf_series:117", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('erf', [new Pow(x, rational(2))]), x, oo, 8, '+'))).toBe('-(-1/(2*x**6) + x**(-2) + O(x**(-8), (x, oo)))*exp(-x**4)/sqrt(pi) + 1');
+    expect(sympyStr(series(fn('erf', [new Pow(x, rational(2))]), x, oo, 8, '+', {}))).toBe('-(-1/(2*x**6) + x**(-2) + O(x**(-8), (x, oo)))*exp(-x**4)/sqrt(pi) + 1');
   });
   it.fails("test_erf_series:119", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('erf', [new Pow(x, rational(1, 2))]), x, oo, 3, '+'))).toBe('-(sqrt(1/x) - (1/x)**(3/2)/2 + 3*(1/x)**(5/2)/4 + O(x**(-3), (x, oo)))*exp(-x)/sqrt(pi) + 1');
+    expect(sympyStr(series(fn('erf', [new Pow(x, rational(1, 2))]), x, oo, 3, '+', {}))).toBe('-(sqrt(1/x) - (1/x)**(3/2)/2 + 3*(1/x)**(5/2)/4 + O(x**(-3), (x, oo)))*exp(-x)/sqrt(pi) + 1');
   });
   it("test_erf_evalf:124", () => {
     expect(sympyStr(Lt(new Float({ man: 170711n, exp: -53n }, 53), new Float(1e-8)))).toBe('True');
@@ -1469,11 +1469,11 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   it.todo("test_erfc:193");
   it("test_erfc_series:197", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('erfc', [x]), x, rational(0), 7, '+'))).toBe('1 - 2*x/sqrt(pi) + 2*x**3/(3*sqrt(pi)) - x**5/(5*sqrt(pi)) + O(x**7)');
+    expect(sympyStr(series(fn('erfc', [x]), x, rational(0), 7, '+', {}))).toBe('1 - 2*x/sqrt(pi) + 2*x**3/(3*sqrt(pi)) - x**5/(5*sqrt(pi)) + O(x**7)');
   });
   it.fails("test_erfc_series:200", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('erfc', [x]), x, oo, 6, '+'))).toBe('(3/(4*x**5) - 1/(2*x**3) + 1/x + O(x**(-6), (x, oo)))*exp(-x**2)/sqrt(pi)');
+    expect(sympyStr(series(fn('erfc', [x]), x, oo, 6, '+', {}))).toBe('(3/(4*x**5) - 1/(2*x**3) + 1/x + O(x**(-6), (x, oo)))*exp(-x**2)/sqrt(pi)');
   });
   it("test_erfc_evalf:205", () => {
     expect(sympyStr(Lt(new Float({ man: 5742756509n, exp: -60n }, 53), new Float(1e-8)))).toBe('True');
@@ -1600,11 +1600,11 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   it.todo("test_erfi:261");
   it("test_erfi_series:265", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('erfi', [x]), x, rational(0), 7, '+'))).toBe('2*x/sqrt(pi) + 2*x**3/(3*sqrt(pi)) + x**5/(5*sqrt(pi)) + O(x**7)');
+    expect(sympyStr(series(fn('erfi', [x]), x, rational(0), 7, '+', {}))).toBe('2*x/sqrt(pi) + 2*x**3/(3*sqrt(pi)) + x**5/(5*sqrt(pi)) + O(x**7)');
   });
   it.fails("test_erfi_series:268", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('erfi', [x]), x, oo, 6, '+'))).toBe('(3/(4*x**5) + 1/(2*x**3) + 1/x + O(x**(-6), (x, oo)))*exp(x**2)/sqrt(pi) - I');
+    expect(sympyStr(series(fn('erfi', [x]), x, oo, 6, '+', {}))).toBe('(3/(4*x**5) + 1/(2*x**3) + 1/x + O(x**(-6), (x, oo)))*exp(x**2)/sqrt(pi) - I');
   });
   it("test_erfi_evalf:273", () => {
     expect(sympyStr(Lt(new Float({ man: 13n, exp: -48n }, 53), new Float(1e-13)))).toBe('True');
@@ -1832,29 +1832,29 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rewrite(fn('Ei', [new Mul([rational(2), log(x)])]), 'li', { pattern: [], deep: true }))).toBe('li(x**2)');
   });
-  // no adapter for gruntz
+  // the arguments do not type-check against the public API
   //   assert gruntz(Ei(x+exp(-x))*exp(-x)*x, x, oo) == 1
   //   => 1
   it.todo("test_ei:433");
   it("test_ei:435", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('Ei', [x]), x, sympify(0), 6, '+'))).toBe('EulerGamma + log(x) + x + x**2/4 + x**3/18 + x**4/96 + x**5/600 + O(x**6)');
+    expect(sympyStr(series(fn('Ei', [x]), x, sympify(0), 6, '+', {}))).toBe('EulerGamma + log(x) + x + x**2/4 + x**3/18 + x**4/96 + x**5/600 + O(x**6)');
   });
   it("test_ei:437", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('Ei', [x]), x, rational(1), 3, '+'))).toBe('Ei(1) + E*(x - 1) + O((x - 1)**3, (x, 1))');
+    expect(sympyStr(series(fn('Ei', [x]), x, rational(1), 3, '+', {}))).toBe('Ei(1) + E*(x - 1) + O((x - 1)**3, (x, 1))');
   });
   it.fails("test_ei:438", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('Ei', [x]), x, oo, 6, '+'))).toBe('(120/x**5 + 24/x**4 + 6/x**3 + 2/x**2 + 1/x + 1 + O(x**(-6), (x, oo)))*exp(x)/x');
+    expect(sympyStr(series(fn('Ei', [x]), x, oo, 6, '+', {}))).toBe('(120/x**5 + 24/x**4 + 6/x**3 + 2/x**2 + 1/x + 1 + O(x**(-6), (x, oo)))*exp(x)/x');
   });
   it.fails("test_ei:440", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('Ei', [x]), x, S.NegativeInfinity, 6, '+'))).toBe('(120/x**5 + 24/x**4 + 6/x**3 + 2/x**2 + 1/x + 1 + O(x**(-6), (x, -oo)))*exp(x)/x');
+    expect(sympyStr(series(fn('Ei', [x]), x, S.NegativeInfinity, 6, '+', {}))).toBe('(120/x**5 + 24/x**4 + 6/x**3 + 2/x**2 + 1/x + 1 + O(x**(-6), (x, -oo)))*exp(x)/x');
   });
   it.fails("test_ei:442", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('Ei', [new Mul([rational(-1), x])]), x, oo, 6, '+'))).toBe('-(-120/x**5 + 24/x**4 - 6/x**3 + 2/x**2 - 1/x + 1 + O(x**(-6), (x, oo)))*exp(-x)/x');
+    expect(sympyStr(series(fn('Ei', [new Mul([rational(-1), x])]), x, oo, 6, '+', {}))).toBe('-(-120/x**5 + 24/x**4 - 6/x**3 + 2/x**2 - 1/x + 1 + O(x**(-6), (x, oo)))*exp(-x)/x');
   });
   it("test_ei:445", () => {
     const unicode = pprintUseUnicode(false);
@@ -1910,20 +1910,20 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   });
   it.fails("test_expint:492", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('expint', [rational(1), z]), z, sympify(0), 6, '+'))).toBe('-EulerGamma - log(z) + z - z**2/4 + z**3/18 - z**4/96 + z**5/600 + O(z**6)');
+    expect(sympyStr(series(fn('expint', [rational(1), z]), z, sympify(0), 6, '+', {}))).toBe('-EulerGamma - log(z) + z - z**2/4 + z**3/18 - z**4/96 + z**5/600 + O(z**6)');
   });
   it.fails("test_expint:495", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('expint', [rational(4), z]), z, sympify(0), 6, '+'))).toBe('1/3 - z/2 + z**2/2 + z**3*(log(z)/6 - 11/36 + EulerGamma/6 - I*pi/6) - z**4/24 + z**5/240 + O(z**6)');
+    expect(sympyStr(series(fn('expint', [rational(4), z]), z, sympify(0), 6, '+', {}))).toBe('1/3 - z/2 + z**2/2 + z**3*(log(z)/6 - 11/36 + EulerGamma/6 - I*pi/6) - z**4/24 + z**5/240 + O(z**6)');
   });
   it.fails("test_expint:499", () => {
     const x = new Sym('x');
     const n = new Sym('n', { integer: true });
-    expect(sympyStr(series(fn('expint', [n, x]), x, oo, 3, '+'))).toBe('(1 + n*(n + 1)/x**2 - n/x + O(x**(-3), (x, oo)))*exp(-x)/x');
+    expect(sympyStr(series(fn('expint', [n, x]), x, oo, 3, '+', {}))).toBe('(1 + n*(n + 1)/x**2 - n/x + O(x**(-3), (x, oo)))*exp(-x)/x');
   });
   it.fails("test_expint:502", () => {
     const [z, y] = symbols('z y');
-    expect(sympyStr(series(fn('expint', [z, y]), z, rational(0), 2, '+'))).toBe('exp(-y)/y - z*meijerg(((), (1, 1)), ((0, 0, 1), ()), y)/y + O(z**2)');
+    expect(sympyStr(series(fn('expint', [z, y]), z, rational(0), 2, '+', {}))).toBe('exp(-y)/y - z*meijerg(((), (1, 1)), ((0, 0, 1), ()), y)/y + O(z**2)');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: expint(x, y).fdiff(3))
@@ -2036,7 +2036,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   });
   it.fails("test_li:585", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('li', [z]), z, sympify(0), 6, '+'))).toBe('log(z)**5/600 + log(z)**4/96 + log(z)**3/18 + log(z)**2/4 + log(z) + log(log(z)) + EulerGamma');
+    expect(sympyStr(series(fn('li', [z]), z, sympify(0), 6, '+', {}))).toBe('log(z)**5/600 + log(z)**4/96 + log(z)**3/18 + log(z)**2/4 + log(z) + log(log(z)) + EulerGamma');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: li(z).fdiff(2))
@@ -2052,7 +2052,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   });
   it.fails("test_Li:600", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('Li', [z]), z, sympify(0), 6, '+'))).toBe('log(z)**5/600 + log(z)**4/96 + log(z)**3/18 + log(z)**2/4 + log(z) + log(log(z)) - li(2) + EulerGamma');
+    expect(sympyStr(series(fn('Li', [z]), z, sympify(0), 6, '+', {}))).toBe('log(z)**5/600 + log(z)**4/96 + log(z)**3/18 + log(z)**2/4 + log(z) + log(log(z)) - li(2) + EulerGamma');
   });
   // the error class ArgumentIndexError is not public
   //   raises(ArgumentIndexError, lambda: Li(z).fdiff(2))
@@ -2125,7 +2125,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   it.todo("test_si:651");
   it.fails("test_si:654", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('Si', [x]), x, oo, 6, '+'))).toBe('-(-6/x**4 + x**(-2) + O(x**(-6), (x, oo)))*sin(x) - (24/x**5 - 2/x**3 + 1/x + O(x**(-6), (x, oo)))*cos(x) + pi/2');
+    expect(sympyStr(series(fn('Si', [x]), x, oo, 6, '+', {}))).toBe('-(-6/x**4 + x**(-2) + O(x**(-6), (x, oo)))*sin(x) - (24/x**5 - 2/x**3 + 1/x + O(x**(-6), (x, oo)))*cos(x) + pi/2');
   });
   // the arguments do not type-check against the public API
   //   assert Si(x).rewrite(sinc).dummy_eq(Integral(sinc(t), (t, 0, x)))
@@ -2202,11 +2202,11 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   it.todo("test_ci:701");
   it.fails("test_ci:704", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('Ci', [x]), x, oo, 6, '+'))).toBe('-(-6/x**4 + x**(-2) + O(x**(-6), (x, oo)))*cos(x) + (24/x**5 - 2/x**3 + 1/x + O(x**(-6), (x, oo)))*sin(x)');
+    expect(sympyStr(series(fn('Ci', [x]), x, oo, 6, '+', {}))).toBe('-(-6/x**4 + x**(-2) + O(x**(-6), (x, oo)))*cos(x) + (24/x**5 - 2/x**3 + 1/x + O(x**(-6), (x, oo)))*sin(x)');
   });
   it.fails("test_ci:707", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('Ci', [x]), x, S.NegativeInfinity, 6, '+'))).toBe('-(-6/x**4 + x**(-2) + O(x**(-6), (x, -oo)))*cos(x) + (24/x**5 - 2/x**3 + 1/x + O(x**(-6), (x, -oo)))*sin(x) + I*pi');
+    expect(sympyStr(series(fn('Ci', [x]), x, S.NegativeInfinity, 6, '+', {}))).toBe('-(-6/x**4 + x**(-2) + O(x**(-6), (x, -oo)))*cos(x) + (24/x**5 - 2/x**3 + 1/x + O(x**(-6), (x, -oo)))*sin(x) + I*pi');
   });
   it.fails("test_ci:710", () => {
     const x = new Sym('x');
@@ -2264,7 +2264,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   });
   it("test_fresnel:739", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('fresnels', [z]), z, sympify(0), 15, '+'))).toBe('pi*z**3/6 - pi**3*z**7/336 + pi**5*z**11/42240 + O(z**15)');
+    expect(sympyStr(series(fn('fresnels', [z]), z, sympify(0), 15, '+', {}))).toBe('pi*z**3/6 - pi**3*z**7/336 + pi**5*z**11/42240 + O(z**15)');
   });
   it.fails("test_fresnel:742", () => {
     const w = new Sym('w', { real: true });
@@ -2396,15 +2396,15 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   });
   it("test_fresnel_series:834", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('fresnelc', [z]), z, sympify(0), 15, '+'))).toBe('z - pi**2*z**5/40 + pi**4*z**9/3456 - pi**6*z**13/599040 + O(z**15)');
+    expect(sympyStr(series(fn('fresnelc', [z]), z, sympify(0), 15, '+', {}))).toBe('z - pi**2*z**5/40 + pi**4*z**9/3456 - pi**6*z**13/599040 + O(z**15)');
   });
   it.fails("test_fresnel_series:842", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('fresnels', [z]), z, oo, 6, '+'))).toBe('-sin(pi*z**2/2)/(pi**2*z**3) + 1/2 + (-1/(pi*z) + 3/(pi**3*z**5))*cos(pi*z**2/2) + O(z**(-6), (z, oo))');
+    expect(sympyStr(series(fn('fresnels', [z]), z, oo, 6, '+', {}))).toBe('-sin(pi*z**2/2)/(pi**2*z**3) + 1/2 + (-1/(pi*z) + 3/(pi**3*z**5))*cos(pi*z**2/2) + O(z**(-6), (z, oo))');
   });
   it.fails("test_fresnel_series:843", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('fresnelc', [z]), z, oo, 6, '+'))).toBe('-cos(pi*z**2/2)/(pi**2*z**3) + 1/2 + (1/(pi*z) - 3/(pi**3*z**5))*sin(pi*z**2/2) + O(z**(-6), (z, oo))');
+    expect(sympyStr(series(fn('fresnelc', [z]), z, oo, 6, '+', {}))).toBe('-cos(pi*z**2/2)/(pi**2*z**3) + 1/2 + (1/(pi*z) - 3/(pi**3*z**5))*sin(pi*z**2/2) + O(z**(-6), (z, oo))');
   });
   // a primitive result that no library call returned
   //   assert (fresnels(z).series(z, -oo) + fs.subs(z, -z)).expand().is_Order
@@ -2574,11 +2574,11 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
   });
   it("test_gamma_series:103", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('gamma', [new Add([rational(1), x])]), x, rational(0), 3, '+'))).toBe('1 - EulerGamma*x + x**2*(EulerGamma**2/2 + pi**2/12) + O(x**3)');
+    expect(sympyStr(series(fn('gamma', [new Add([rational(1), x])]), x, rational(0), 3, '+', {}))).toBe('1 - EulerGamma*x + x**2*(EulerGamma**2/2 + pi**2/12) + O(x**3)');
   });
   it("test_gamma_series:105", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('gamma', [x]), x, rational(-1), 3, '+'))).toBe('-1/(x + 1) + EulerGamma - 1 + (x + 1)*(-1 - pi**2/12 - EulerGamma**2/2 + EulerGamma) + (x + 1)**2*(-1 - pi**2/12 - EulerGamma**2/2 + EulerGamma**3/6 + zeta(3)/3 + EulerGamma*pi**2/12 + EulerGamma) + O((x + 1)**3, (x, -1))');
+    expect(sympyStr(series(fn('gamma', [x]), x, rational(-1), 3, '+', {}))).toBe('-1/(x + 1) + EulerGamma - 1 + (x + 1)*(-1 - pi**2/12 - EulerGamma**2/2 + EulerGamma) + (x + 1)**2*(-1 - pi**2/12 - EulerGamma**2/2 + EulerGamma**3/6 + zeta(3)/3 + EulerGamma*pi**2/12 + EulerGamma) + O((x + 1)**3, (x, -1))');
   });
   it("test_lowergamma:123", () => {
     const x = new Sym('x');
@@ -2641,7 +2641,7 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
   });
   it.fails("test_lowergamma:173", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('lowergamma', [x, rational(2)]), x, oo, 3, '+'))).toBe('2**x*(1 + 2/(x + 1))*exp(-2)/x + O(exp(x*log(2))/x**3, (x, oo))');
+    expect(sympyStr(series(fn('lowergamma', [x, rational(2)]), x, oo, 3, '+', {}))).toBe('2**x*(1 + 2/(x + 1))*exp(-2)/x + O(exp(x*log(2))/x**3, (x, oo))');
   });
   it.fails("test_lowergamma:176", () => {
     const [x, y] = symbols('x y');
@@ -3411,7 +3411,7 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
   it.todo("test_polygamma_expansion:625");
   it.fails("test_polygamma_expansion:627", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(fn('polygamma', [rational(1), new Pow(x, rational(-1))]), x, sympify(0), 5, '+'))).toBe('x + x**2/2 + x**3/6 + O(x**5)');
+    expect(sympyStr(series(fn('polygamma', [rational(1), new Pow(x, rational(-1))]), x, sympify(0), 5, '+', {}))).toBe('x + x**2/2 + x**3/6 + O(x**5)');
   });
   // the arguments do not type-check against the public API
   //   assert polygamma(3, 1/x).nseries(x, n=11) == \

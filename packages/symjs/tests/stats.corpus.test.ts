@@ -5324,10 +5324,10 @@ describe("sympy/stats/tests/test_finite_rv.py", () => {
     const robSol = new Sym('robSol');
     expect(sympyStr(kurtosis(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(20), new Float({ man: 5404319552844595n, exp: -53n }, 53), new Float({ man: 3602879701896397n, exp: -56n }, 53)])]))))).toBe('9.20671773300391');
   });
-  // the case takes more than 4 seconds
-  //   assert E(robSol.subs({k: x, delta: y, c: z})) == moment(robSol.subs({k: x, delta: y, c: z}), 1)
-  //   => 4.66751770845310
-  it.todo("test_robust_soliton:440 (19)");
+  it("test_robust_soliton:440 (19)", () => {
+    const robSol = new Sym('robSol');
+    expect(sympyStr(expectation(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 3602879701896397n, exp: -54n }, 53), new Float({ man: 5764607523034235n, exp: -59n }, 53)])]))))).toBe('4.66751770845310');
+  });
   // the case takes more than 4 seconds
   //   assert variance(robSol.subs({k: x, delta: y, c: z})) == cmoment(robSol.subs({k: x, delta: y, c: z}), 2)
   //   => 38.5278603836912
@@ -5392,10 +5392,10 @@ describe("sympy/stats/tests/test_finite_rv.py", () => {
     const robSol = new Sym('robSol');
     expect(sympyStr(expectation(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 3602879701896397n, exp: -53n }, 53), new Float({ man: 1080863910568919n, exp: -55n }, 53)])]))))).toBe('5.78629427035194');
   });
-  it("test_robust_soliton:441 (23)", () => {
-    const robSol = new Sym('robSol');
-    expect(sympyStr(variance(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 3602879701896397n, exp: -53n }, 53), new Float({ man: 1080863910568919n, exp: -55n }, 53)])]))))).toBe('78.0210287641063');
-  });
+  // the case takes more than 4 seconds
+  //   assert variance(robSol.subs({k: x, delta: y, c: z})) == cmoment(robSol.subs({k: x, delta: y, c: z}), 2)
+  //   => 78.0210287641063
+  it.todo("test_robust_soliton:441 (23)");
   // the case takes more than 4 seconds
   //   assert skewness(robSol.subs({k: x, delta: y, c: z})) == smoment(robSol.subs({k: x, delta: y, c: z}), 3)
   //   => 3.46641000736892
@@ -5408,10 +5408,10 @@ describe("sympy/stats/tests/test_finite_rv.py", () => {
     const robSol = new Sym('robSol');
     expect(sympyStr(expectation(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 3602879701896397n, exp: -53n }, 53), new Float({ man: 3602879701896397n, exp: -56n }, 53)])]))))).toBe('5.82269742015339');
   });
-  it("test_robust_soliton:441 (24)", () => {
-    const robSol = new Sym('robSol');
-    expect(sympyStr(variance(new RandomSymbol(robSol, new SingleFinitePSpace([robSol, new RobustSolitonDistribution([rational(50), new Float({ man: 3602879701896397n, exp: -53n }, 53), new Float({ man: 3602879701896397n, exp: -56n }, 53)])]))))).toBe('58.2075641409515');
-  });
+  // the case takes more than 4 seconds
+  //   assert variance(robSol.subs({k: x, delta: y, c: z})) == cmoment(robSol.subs({k: x, delta: y, c: z}), 2)
+  //   => 58.2075641409515
+  it.todo("test_robust_soliton:441 (24)");
   // the case takes more than 4 seconds
   //   assert skewness(robSol.subs({k: x, delta: y, c: z})) == smoment(robSol.subs({k: x, delta: y, c: z}), 3)
   //   => 2.59115673341485

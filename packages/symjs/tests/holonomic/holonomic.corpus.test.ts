@@ -541,7 +541,7 @@ describe("sympy/holonomic/tests/test_holonomic.py", () => {
   it("test_expr_to_holonomic:503", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(series(new Add([rational(1), new Mul([x, exp(x)]), fn('cos', [v1])]), v1, sympify(0), 10, '+'))).toBe('2 + x + x**2/2 + x**3/2 + 5*x**4/24 + x**5/24 + x**6/144 + x**7/720 + x**8/4480 + x**9/40320 + O(x**10)');
+    expect(sympyStr(series(new Add([rational(1), new Mul([x, exp(x)]), fn('cos', [v1])]), v1, sympify(0), 10, '+', {}))).toBe('2 + x + x**2/2 + x**3/2 + 5*x**4/24 + x**5/24 + x**6/144 + x**7/720 + x**8/4480 + x**9/40320 + O(x**10)');
   });
   it("test_expr_to_holonomic:506", () => {
     const x = new Sym('x');

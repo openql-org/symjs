@@ -214,12 +214,12 @@ describe("sympy/geometry/tests/test_curve.py", () => {
     const t = new Sym('t');
     expect(() => Curve([new Mul([rational(2), t]), new Pow(t, rational(2))], [t, rational(0), rational(2)]).parameterValue([2, 0], t)).toThrow(RangeError);
   });
-  // no adapter for the operator ()
-  //   assert c(2) == Point(2, 4)
-  //   => Point2D(2, 4)
-  it.todo("test_issue_17997:119");
-  // no adapter for the operator ()
-  //   assert p(1) == Point(2, 1)
-  //   => Point2D(2, 1)
-  it.todo("test_issue_17997:120");
+  it("test_issue_17997:119", () => {
+    const t = new Sym('t');
+    expect(sympyStr(Curve([t, new Pow(t, rational(2))], [t, rational(0), rational(10)]).at(2))).toBe('Point2D(2, 4)');
+  });
+  it("test_issue_17997:120", () => {
+    const s = new Sym('s');
+    expect(sympyStr(Curve([new Mul([rational(2), s]), new Pow(s, rational(2))], [s, rational(0), rational(2)]).at(1))).toBe('Point2D(2, 1)');
+  });
 });

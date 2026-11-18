@@ -838,35 +838,35 @@ describe("sympy/functions/special/tests/test_singularity_functions.py", () => {
   });
   it("test_series:90", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(SingularityFunction(x, rational(-3), rational(2)), x, sympify(0), 6, '+'))).toBe('x**2 + 6*x + 9');
+    expect(sympyStr(series(SingularityFunction(x, rational(-3), rational(2)), x, sympify(0), 6, '+', {}))).toBe('x**2 + 6*x + 9');
   });
   it("test_series:91", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(SingularityFunction(x, rational(-2), rational(1)), x, sympify(0), 6, '+'))).toBe('x + 2');
+    expect(sympyStr(series(SingularityFunction(x, rational(-2), rational(1)), x, sympify(0), 6, '+', {}))).toBe('x + 2');
   });
   it("test_series:92", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(0)), x, sympify(0), 6, '+'))).toBe('1');
+    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(0)), x, sympify(0), 6, '+', {}))).toBe('1');
   });
   it("test_series:93", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(0)), x, sympify(0), 6, '-'))).toBe('0');
+    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(0)), x, sympify(0), 6, '-', {}))).toBe('0');
   });
   it("test_series:94", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(-1)), x, sympify(0), 6, '+'))).toBe('0');
+    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(-1)), x, sympify(0), 6, '+', {}))).toBe('0');
   });
   it("test_series:95", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(-2)), x, sympify(0), 6, '+'))).toBe('0');
+    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(-2)), x, sympify(0), 6, '+', {}))).toBe('0');
   });
   it("test_series:96", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(-3)), x, sympify(0), 6, '+'))).toBe('0');
+    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(-3)), x, sympify(0), 6, '+', {}))).toBe('0');
   });
   it("test_series:97", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(-4)), x, sympify(0), 6, '+'))).toBe('0');
+    expect(sympyStr(series(SingularityFunction(x, rational(0), rational(-4)), x, sympify(0), 6, '+', {}))).toBe('0');
   });
   // a function that did not come from the library
   //   assert (SingularityFunction(x + l, 0, 1)/2\

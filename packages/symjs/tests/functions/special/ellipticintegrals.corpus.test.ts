@@ -11,12 +11,12 @@ import { equivalent } from '../../sympy-equivalent';
 describe("doctests of sympy.functions.special.elliptic_integrals", () => {
   it("elliptic_e(z, m).series(z)", () => {
     const [z, m] = symbols('z m');
-    expect(sympyStr(series(fn('elliptic_e', [z, m]), z, sympify(0), 6, '+'))).toBe('z + z**5*(-m**2/40 + m/30) - m*z**3/6 + O(z**6)');
+    expect(sympyStr(series(fn('elliptic_e', [z, m]), z, sympify(0), 6, '+', {}))).toBe('z + z**5*(-m**2/40 + m/30) - m*z**3/6 + O(z**6)');
   });
   it("elliptic_e(m).series(n=4)", () => {
     const m = new Sym('m');
     const v1 = m;
-    expect(sympyStr(series(fn('elliptic_e', [v1]), v1, sympify(0), 4, '+'))).toBe('pi/2 - pi*m/8 - 3*pi*m**2/128 - 5*pi*m**3/512 + O(m**4)');
+    expect(sympyStr(series(fn('elliptic_e', [v1]), v1, sympify(0), 4, '+', {}))).toBe('pi/2 - pi*m/8 - 3*pi*m**2/128 - 5*pi*m**3/512 + O(m**4)');
   });
   it("elliptic_e(1 + I, 2 - I/2).n()", () => {
     expect(sympyStr(fn('elliptic_e', [add(1, I), add(2, mul(rational(-1, 2), I))]).evalf(15, {}))).toBe('1.55203744279187 + 0.290764986058437*I');
@@ -29,7 +29,7 @@ describe("doctests of sympy.functions.special.elliptic_integrals", () => {
   });
   it("elliptic_f(z, m).series(z)", () => {
     const [z, m] = symbols('z m');
-    expect(sympyStr(series(fn('elliptic_f', [z, m]), z, sympify(0), 6, '+'))).toBe('z + z**5*(3*m**2/40 - m/30) + m*z**3/6 + O(z**6)');
+    expect(sympyStr(series(fn('elliptic_f', [z, m]), z, sympify(0), 6, '+', {}))).toBe('z + z**5*(3*m**2/40 - m/30) + m*z**3/6 + O(z**6)');
   });
   it("elliptic_f(3.0 + I/2, 1.0 + I)", () => {
     expect(sympyStr(fn('elliptic_f', [add(new Float({ man: 3n, exp: 0n }, 53), mul(rational(1, 2), I)), add(new Float({ man: 1n, exp: 0n }, 53), I)]))).toBe('2.909449841483 + 1.74720545502474*I');
@@ -43,11 +43,11 @@ describe("doctests of sympy.functions.special.elliptic_integrals", () => {
   it("elliptic_k(m).series(n=3)", () => {
     const m = new Sym('m');
     const v1 = m;
-    expect(sympyStr(series(fn('elliptic_k', [v1]), v1, sympify(0), 3, '+'))).toBe('pi/2 + pi*m/8 + 9*pi*m**2/128 + O(m**3)');
+    expect(sympyStr(series(fn('elliptic_k', [v1]), v1, sympify(0), 3, '+', {}))).toBe('pi/2 + pi*m/8 + 9*pi*m**2/128 + O(m**3)');
   });
   it("elliptic_pi(n, z, m).series(z, n=4)", () => {
     const [n, z, m] = symbols('n z m');
-    expect(sympyStr(series(fn('elliptic_pi', [n, z, m]), z, sympify(0), 4, '+'))).toBe('z + z**3*(m/6 + n/3) + O(z**4)');
+    expect(sympyStr(series(fn('elliptic_pi', [n, z, m]), z, sympify(0), 4, '+', {}))).toBe('z + z**3*(m/6 + n/3) + O(z**4)');
   });
   it("elliptic_pi(0.5 + I, 1.0 - I, 1.2)", () => {
     expect(sympyStr(fn('elliptic_pi', [add(new Float({ man: 1n, exp: -1n }, 53), I), add(new Float({ man: 1n, exp: 0n }, 53), mul(-1, I)), new Float(1.2)]))).toBe('2.50232379629182 - 0.760939574180767*I');
@@ -111,7 +111,7 @@ describe("sympy/functions/special/tests/test_elliptic_integrals.py", () => {
   });
   it("test_K:48", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('elliptic_k', [z]), z, sympify(0), 6, '+'))).toBe('pi/2 + pi*z/8 + 9*pi*z**2/128 + 25*pi*z**3/512 + 1225*pi*z**4/32768 + 3969*pi*z**5/131072 + O(z**6)');
+    expect(sympyStr(series(fn('elliptic_k', [z]), z, sympify(0), 6, '+', {}))).toBe('pi/2 + pi*z/8 + 9*pi*z**2/128 + 25*pi*z**3/512 + 1225*pi*z**4/32768 + 3969*pi*z**5/131072 + O(z**6)');
   });
   it("test_K:51", () => {
     const m = new Sym('m');
@@ -170,7 +170,7 @@ describe("sympy/functions/special/tests/test_elliptic_integrals.py", () => {
   });
   it("test_F:75", () => {
     const [z, m] = symbols('z m');
-    expect(sympyStr(series(fn('elliptic_f', [z, m]), z, sympify(0), 6, '+'))).toBe('z + z**5*(3*m**2/40 - m/30) + m*z**3/6 + O(z**6)');
+    expect(sympyStr(series(fn('elliptic_f', [z, m]), z, sympify(0), 6, '+', {}))).toBe('z + z**5*(3*m**2/40 - m/30) + m*z**3/6 + O(z**6)');
   });
   it("test_F:78", () => {
     const [m, z] = symbols('m z');
@@ -254,15 +254,15 @@ describe("sympy/functions/special/tests/test_elliptic_integrals.py", () => {
   });
   it("test_E:116", () => {
     const [z, m] = symbols('z m');
-    expect(sympyStr(series(fn('elliptic_e', [z, m]), z, sympify(0), 6, '+'))).toBe('z + z**5*(-m**2/40 + m/30) - m*z**3/6 + O(z**6)');
+    expect(sympyStr(series(fn('elliptic_e', [z, m]), z, sympify(0), 6, '+', {}))).toBe('z + z**5*(-m**2/40 + m/30) - m*z**3/6 + O(z**6)');
   });
   it("test_E:118", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('elliptic_e', [z]), z, sympify(0), 6, '+'))).toBe('pi/2 - pi*z/8 - 3*pi*z**2/128 - 5*pi*z**3/512 - 175*pi*z**4/32768 - 441*pi*z**5/131072 + O(z**6)');
+    expect(sympyStr(series(fn('elliptic_e', [z]), z, sympify(0), 6, '+', {}))).toBe('pi/2 - pi*z/8 - 3*pi*z**2/128 - 5*pi*z**3/512 - 175*pi*z**4/32768 - 441*pi*z**5/131072 + O(z**6)');
   });
   it("test_E:120", () => {
     const z = new Sym('z');
-    expect(sympyStr(series(fn('elliptic_e', [new Mul([rational(4), z, new Pow(new Add([rational(1), z]), rational(-1))])]), z, sympify(0), 6, '+'))).toBe('pi/2 - pi*z/2 + pi*z**2/8 - 3*pi*z**3/8 - 15*pi*z**4/128 - 93*pi*z**5/128 + O(z**6)');
+    expect(sympyStr(series(fn('elliptic_e', [new Mul([rational(4), z, new Pow(new Add([rational(1), z]), rational(-1))])]), z, sympify(0), 6, '+', {}))).toBe('pi/2 - pi*z/2 + pi*z**2/8 - 3*pi*z**3/8 - 15*pi*z**4/128 - 93*pi*z**5/128 + O(z**6)');
   });
   it("test_E:123", () => {
     const [m, z] = symbols('m z');
@@ -363,7 +363,7 @@ describe("sympy/functions/special/tests/test_elliptic_integrals.py", () => {
   });
   it("test_P:175", () => {
     const [n, z, m] = symbols('n z m');
-    expect(sympyStr(series(fn('elliptic_pi', [n, z, m]), z, sympify(0), 6, '+'))).toBe('z + z**3*(m/6 + n/3) + z**5*(3*m**2/40 + m*n/10 - m/30 + n**2/5 - n/15) + O(z**6)');
+    expect(sympyStr(series(fn('elliptic_pi', [n, z, m]), z, sympify(0), 6, '+', {}))).toBe('z + z**3*(m/6 + n/3) + z**5*(3*m**2/40 + m*n/10 - m/30 + n**2/5 - n/15) + O(z**6)');
   });
   it("test_P:178", () => {
     const [m, n, z] = symbols('m n z');

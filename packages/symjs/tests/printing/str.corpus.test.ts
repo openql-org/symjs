@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { CoordSystem, Manifold, Patch } from '../../src/diffgeom';
-import { Add, And, Array, ArrayElement, ArraySymbol, Category, Circle, Complement, CovarianceNode, Cycle, Dict, DieDistribution, Dummy, Ellipse, Equivalent, ExpectationNode, ExponentialDistribution, Float, FracField, Heaviside, I, Identity, IdentityMorphism, IndependentProductPSpace, Integral, Lambda, Limit, MatAdd, MatMul, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mul, MutableSparseMatrix, NamedMorphism, Naturals, NormalDistribution, Not, O, OneMatrix, Or, PSpace, Partition, Perm, Point2D, Poly, PolyRing, Polygon, Pow, ProbabilityNode, Product, PythonMPQ, Q, QQ, QQ_I, Quaternion, RandomSymbol, Reals, Relational, S, SingleContinuousPSpace, SingleFinitePSpace, Str, StrPrinter, Subs, Sum, Sym, SymFunction, SymObject, SymmetricDifference, Triangle, Tuple, UnevaluatedExpr, VarianceNode, Wild, WildFunction, ZZ, ZZ_I, ZeroMatrix, abs, add, derivative, exp, factor, finiteSet, float, fn, groebner, interval, isUnsolved, mul, oo, pi, pow, pprintUseUnicode, precedence, rational, rationalFromString, rootof, round, series, sortGens, sqrt, sstr, sstrrepr, str, symbols, sympify, where } from '../../src';
+import { AccumBounds, Add, And, Array, ArrayElement, ArraySymbol, Category, Circle, Complement, CovarianceNode, Cycle, Dict, DieDistribution, Dummy, Ellipse, Equivalent, ExpectationNode, ExponentialDistribution, Float, FracField, Heaviside, I, Identity, IdentityMorphism, IndependentProductPSpace, Integral, Lambda, Limit, MatAdd, MatMul, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mul, MutableSparseMatrix, NamedMorphism, Naturals, NormalDistribution, Not, O, OneMatrix, Or, PSpace, Partition, Perm, Point2D, Poly, PolyRing, Polygon, Pow, ProbabilityNode, Product, PythonMPQ, Q, QQ, QQ_I, Quaternion, RandomSymbol, Reals, Relational, S, SingleContinuousPSpace, SingleFinitePSpace, Str, StrPrinter, Subs, Sum, Sym, SymFunction, SymObject, SymmetricDifference, Triangle, Tuple, UnevaluatedExpr, VarianceNode, Wild, WildFunction, ZZ, ZZ_I, ZeroMatrix, abs, add, derivative, exp, factor, finiteSet, float, fn, groebner, interval, isUnsolved, mul, oo, pi, pow, pprintUseUnicode, precedence, rational, rationalFromString, rootof, round, series, sortGens, sqrt, sstr, sstrrepr, str, symbols, sympify, where } from '../../src';
 import { at, pyStr, sympyStr, text } from '../sympy-str';
 
 describe("doctests of sympy.printing.str", () => {
@@ -312,7 +312,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(series(fn('sin', [x]), x, rational(0), 15, '+'))).toBe('x - x**3/6 + x**5/120 - x**7/5040 + x**9/362880 - x**11/39916800 + x**13/6227020800 + O(x**15)');
+      expect(pyStr(series(fn('sin', [x]), x, rational(0), 15, '+', {}))).toBe('x - x**3/6 + x**5/120 - x**7/5040 + x**9/362880 - x**11/39916800 + x**13/6227020800 + O(x**15)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -683,14 +683,18 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // no adapter for AccumulationBounds
-  //   assert str(AccumBounds(0, a)) == "AccumBounds(0, a)"
-  //   => AccumBounds(0, a)
-  it.todo("test_AccumBounds:227");
-  // no adapter for AccumulationBounds
-  //   assert str(AccumBounds(0, 1)) == "AccumBounds(0, 1)"
-  //   => AccumBounds(0, 1)
-  it.todo("test_AccumBounds:228");
+  it.fails("test_AccumBounds:227", () => {
+    const a = new Sym('a', { real: true });
+    expect(sympyStr(AccumBounds(rational(0), a))).toBe('AccumBounds(0, a)');
+  });
+  it("test_AccumBounds:228", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(AccumBounds(rational(0), rational(1)))).toBe('AccumBounds(0, 1)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_Lambda:232", () => {
     const unicode = pprintUseUnicode(false);
     try {
@@ -3101,46 +3105,106 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // an error outside the library
-  //   assert str(X[x:x + 1, y:y + 1]) == 'X[x:x + 1, y:y + 1]'
-  //   => X[x:x + 1, y:y + 1]
-  it.todo("test_MatrixSlice:1015");
-  // an error outside the library
-  //   assert str(X[x:x + 1:2, y:y + 1:2]) == 'X[x:x + 1:2, y:y + 1:2]'
-  //   => X[x:x + 1:2, y:y + 1:2]
-  it.todo("test_MatrixSlice:1016");
-  // an error outside the library
-  //   assert str(X[:x, y:]) == 'X[:x, y:]'
-  //   => X[:x, y:]
-  it.todo("test_MatrixSlice:1017");
-  // an error outside the library
-  //   assert str(X[:x, y:]) == 'X[:x, y:]'
-  //   => X[:x, y:]
-  it.todo("test_MatrixSlice:1018");
-  // an error outside the library
-  //   assert str(X[x:, :y]) == 'X[x:, :y]'
-  //   => X[x:, :y]
-  it.todo("test_MatrixSlice:1019");
-  // an error outside the library
-  //   assert str(X[x:y, z:w]) == 'X[x:y, z:w]'
-  //   => X[x:y, z:w]
-  it.todo("test_MatrixSlice:1020");
-  // an error outside the library
-  //   assert str(X[x:y:t, w:t:x]) == 'X[x:y:t, w:t:x]'
-  //   => X[x:y:t, w:t:x]
-  it.todo("test_MatrixSlice:1021");
-  // an error outside the library
-  //   assert str(X[x::y, t::w]) == 'X[x::y, t::w]'
-  //   => X[x::y, t::w]
-  it.todo("test_MatrixSlice:1022");
-  // an error outside the library
-  //   assert str(X[:x:y, :t:w]) == 'X[:x:y, :t:w]'
-  //   => X[:x:y, :t:w]
-  it.todo("test_MatrixSlice:1023");
-  // an error outside the library
-  //   assert str(X[::x, ::y]) == 'X[::x, ::y]'
-  //   => X[::x, ::y]
-  it.todo("test_MatrixSlice:1024");
+  it("test_MatrixSlice:1015", () => {
+    const [x, y] = symbols('x y');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, new Add([rational(1), x]), null], [y, new Add([rational(1), y]), null]))).toBe('X[x:x + 1, y:y + 1]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1016", () => {
+    const [x, y] = symbols('x y');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, new Add([rational(1), x]), rational(2)], [y, new Add([rational(1), y]), rational(2)]))).toBe('X[x:x + 1:2, y:y + 1:2]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1017", () => {
+    const [x, y] = symbols('x y');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [null, x, null], [y, null, null]))).toBe('X[:x, y:]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1018", () => {
+    const [x, y] = symbols('x y');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [null, x, null], [y, null, null]))).toBe('X[:x, y:]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1019", () => {
+    const [x, y] = symbols('x y');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, null, null], [null, y, null]))).toBe('X[x:, :y]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1020", () => {
+    const [x, y, z, w] = symbols('x y z w');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, y, null], [z, w, null]))).toBe('X[x:y, z:w]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1021", () => {
+    const [x, y, t, w] = symbols('x y t w');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, y, t], [w, t, x]))).toBe('X[x:y:t, w:t:x]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1022", () => {
+    const [x, y, t, w] = symbols('x y t w');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [x, null, y], [t, null, w]))).toBe('X[x::y, t::w]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1023", () => {
+    const [x, y, t, w] = symbols('x y t w');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [null, x, y], [null, t, w]))).toBe('X[:x:y, :t:w]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_MatrixSlice:1024", () => {
+    const [x, y] = symbols('x y');
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [null, null, x], [null, null, y]))).toBe('X[::x, ::y]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_MatrixSlice:1025", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
@@ -3195,10 +3259,15 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // expected an expression, got None
-  //   assert str(X[1:10:2]) == 'X[1:10:2, :]'
-  //   => X[1:10:2, :]
-  it.todo("test_MatrixSlice:1031");
+  it("test_MatrixSlice:1031", () => {
+    const n = new Sym('n', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(MatrixSlice(new MatrixSymbol('X', n, n), [1, 10, 2], []))).toBe('X[1:10:2, :]');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_MatrixSlice:1032", () => {
     const unicode = pprintUseUnicode(false);
     try {

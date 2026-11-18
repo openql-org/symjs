@@ -6,7 +6,8 @@
 import { NotImplementedError } from '../../core/errors';
 import { at, first, last } from '../../core/guard';
 import { Expr, S, type ExprLike } from '../../core/nodes';
-import { add, mul, neg } from '../../core/ops';
+import { add, mul, neg, pow } from '../../core/ops';
+import { fraction, together } from '../../simplify/rational';
 import type { IntLike } from '../../ntheory/intutil';
 import { str } from '../../printing/str';
 import { intArg } from '../compatibility';
@@ -156,7 +157,12 @@ export class SubModule extends Module {
       : (m) => [this.context.order.key(m.slice(1)), first(m)];
   }
   toString(): string { return `<${this.gens.map((g) => g.toString()).join(', ')}>`; }
-  private sparse(vector: readonly Expr[]): Sdm { return sdmFromVector(vector, this.order, this.context.domain, { gens: this.context.symbols }); }
+  private sparse(vector: readonly Expr[]): Sdm {
+    if (this.context.order.isGlobal) return sdmFromVector(vector, this.order, this.context.domain, { gens: this.context.symbols });
+    const fractions = vector.map((e) => fraction(together(e)));
+    const cleared = fractions.map(([n], i) => mul(n, ...fractions.filter((_, j) => i !== j).map(([, d]) => d)));
+    return sdmFromVector(cleared, this.order, this.context.domain, { gens: this.context.symbols });
+  }
   private vector(sparse: Sdm, rank: number): Expr[] { return sdmToVector(sparse, this.context.symbols, this.context.domain, rank); }
   private lifted(): readonly (readonly Expr[])[] { return [...this.gens.map((g) => g.data), ...this.container.relations()]; }
   private basis(): Sdm[] {
@@ -164,7 +170,13 @@ export class SubModule extends Module {
     return this.basisCache;
   }
   private extendedBasis(): [Sdm[], Sdm[]] {
-    this.extendedCache ??= sdmGroebner(this.lifted().map((g) => this.sparse(g)), sdmNfMora, this.order, this.context.domain, true);
+    if (!this.extendedCache) {
+      const lifted = this.lifted();
+      const [G, coefficients] = sdmGroebner(lifted.map((g) => this.sparse(g)), sdmNfMora, this.order, this.context.domain, true);
+      // Extended coefficients refer to the generators after clearing their denominators.
+      const scales = lifted.map((g) => mul(...g.map((e) => fraction(together(e))[1])));
+      this.extendedCache = [G, this.context.order.isGlobal ? coefficients : coefficients.map((c) => sdmFromVector(this.vector(c, lifted.length).map((e, i) => mul(e, at(scales, i))), this.order, this.context.domain, { gens: this.context.symbols }))];
+    }
     return this.extendedCache;
   }
   convert(element: ModuleInput): ModuleElement {
@@ -183,11 +195,24 @@ export class SubModule extends Module {
   /** Weak normal form, zero exactly for elements in the submodule. */
   reduceElement(element: ModuleInput, fully = false): ModuleElement {
     const vector = this.container.convert(element).data;
-    const NF = fully && this.context.order.isGlobal ? sdmNfBuchbergerReduced : sdmNfMora;
+    if (!this.context.order.isGlobal) {
+      const G = this.basis();
+      // Restore Mora's local-unit multiplier to preserve the original coset.
+      const [remainder, multiplier] = sdmNfMora(this.sparse(vector), G, this.order, this.context.domain, [this.sparse([S.One]), G.map(() => [])]);
+      const denominator = mul(first(this.vector(multiplier, 1)), ...vector.map((e) => fraction(together(e))[1]));
+      return this.container.convert(this.vector(remainder, this.rank).map((e) => mul(e, pow(denominator, -1))));
+    }
+    const NF = fully ? sdmNfBuchbergerReduced : sdmNfMora;
     return this.container.convert(this.vector(NF(this.sparse(vector), this.basis(), this.order, this.context.domain), this.rank));
   }
   inTermsOfGenerators(element: ModuleInput): Expr[] {
-    if (!this.context.order.isGlobal) throw new NotImplementedError('generator coordinates over local orders require division by local units');
+    if (!this.context.order.isGlobal) {
+      const vector = this.convert(element);
+      const relations = this.container.submodule(vector, ...this.gens).syzygyModule();
+      const ordered = new SubModule(relations.gens, relations.container, true);
+      const relation = first(ordered.basis().map((g) => ordered.vector(g, this.gens.length + 1)).filter((g) => this.context.polynomialRing.isUnit(first(g))));
+      return relation.slice(1).map((c) => this.ring.fromSympy(mul(neg(c), pow(first(relation), -1))));
+    }
     const vector = this.container.convert(element).data;
     const [G, coefficients] = this.extendedBasis();
     const [remainder, relation] = sdmNfMora(this.sparse(vector), G, this.order, this.context.domain, [[], coefficients]);

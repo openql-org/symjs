@@ -340,7 +340,14 @@ export class Parametric3DLineSeries extends Line3DBaseSeries {
 }
 export class List2DSeries extends Line2DBaseSeries {
   readonly kind = 'list';
-  constructor(readonly listX: readonly PlotBound[], readonly listY: readonly PlotBound[], label: string | NoMatchResult = '', options: SeriesOptions = {}) { super([], [], label, options, 1000); if (listX.length !== listY.length) throw new RangeError('Coordinate lists must have equal length.'); if (this.useCm && this.colorFunc instanceof Expr) throw new TypeError('List series require a numeric callback for the color function.'); }
+  constructor(readonly listX: readonly PlotBound[], readonly listY: readonly PlotBound[], label: string | NoMatchResult = '', options: SeriesOptions = {}) {
+    super([], [], label, options, 1000);
+    if (!Array.isArray(listX) || !Array.isArray(listY)) throw new TypeError('List series require coordinate arrays.');
+    if (listX.length !== listY.length) throw new RangeError('Coordinate lists must have equal length.');
+    const allowed = new Set([...this.params.keys()].map((s) => s.key));
+    for (const value of [...listX, ...listY]) if (value instanceof Expr) for (const s of freeSymbols(value)) if (!allowed.has(s.key)) throw new RangeError(`Unknown plotting symbol ${s.toString()}.`);
+    if (this.useCm && this.colorFunc instanceof Expr) throw new TypeError('List series require a numeric callback for the color function.');
+  }
   protected sample(): number[][] { const data = [this.listX.map((v) => real(this.bound(v))), this.listY.map((v) => real(this.bound(v)))]; if (this.useCm && !(this.colorFunc instanceof NoMatchResult)) { const colors = this.evalColorFunc(...data); data.push(colors); } return data; }
 }
 export abstract class SurfaceBaseSeries extends BaseSeries {

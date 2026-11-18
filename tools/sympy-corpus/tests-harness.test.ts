@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { assertionOutcome, runTestCase, testCaseKey } from './tests-harness';
 import { deserialize, runCase, counterpartFor } from './harness';
 import type { Case, Tree } from './harness';
@@ -312,4 +313,69 @@ it('passes Python booleans to symbolic Boolean operators', () => {
   for (const [fn, expected] of [['.__and__', 'x'], ['.__or__', 'True'], ['.__xor__', '~x'], ['.__lshift__', 'True']] as const) {
     expect(runTestCase({ ...base, category: 'logic', fn, self: { t: 'Js', v: true }, args: [symbol], expected })).toEqual({ status: 'pass' });
   }
+});
+
+it('converts solver varargs, function unknowns and constant variable sets', () => {
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const y: Tree = { t: 'Symbol', name: 'y', assume: {} };
+  const zero: Tree = { t: 'Rational', p: '0', q: '1' };
+  const equation: Tree = { t: 'Add', args: [x, { t: 'Mul', args: [{ t: 'Rational', p: '-1', q: '1' }, y] }] };
+  const c = { ...base, category: 'solvers', module: 'sympy.solvers.tests.test_solveset', fn: 'nonlinsolve' };
+  const eqs: Tree = { t: 'Tuple', items: [equation, zero], list: true };
+  expect(runTestCase({ ...c, args: [eqs, x, y], expected: '{(y, y)}' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, args: [eqs, { t: 'Tuple', items: [x, y], list: true }], expected: '{(y, y)}' })).toEqual({ status: 'pass' });
+  const f: Tree = { t: 'UFn', name: 'f', args: [x] };
+  expect(runTestCase({ ...c, args: [{ t: 'Tuple', items: [f, zero] }, f, y], expected: '{(0, y)}' }).status).toBe('pass');
+  const C2: Tree = { t: 'Symbol', name: 'C2', assume: {} };
+  const product: Tree = { t: 'Mul', args: [C2, x] };
+  expect(runTestCase({ ...c, fn: 'constant_renumber', args: [product], kwargs: { variables: { t: 'JsSet', items: [x] } }, expected: 'C1*x' }).status).toBe('pass');
+  expect(runTestCase({ ...c, fn: 'constant_renumber', args: [{ t: 'Tuple', items: [product], list: true }], kwargs: { variables: { t: 'JsSet', items: [x] } }, expected: '[C1*x]' }).status).toBe('pass');
+});
+
+it('replays keyword nseries arguments without passing an options object as the expansion point', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/series.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.fn === '.nseries' && c.src === 'assert abs(x).nseries(x, n=4) == x');
+  expect(selected.length).toBeGreaterThan(0);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('maps series function attributes, free-group slices and curve calls to public members', () => {
+  for (const [category, fn, tag] of [
+    ['series', '.function', 'FormalPowerSeries'],
+    ['combinatorics', '.__getitem__', 'FreeGroup'],
+    ['geometry', '.__call__', 'Geom'],
+  ]) {
+    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${category}.json`, import.meta.url), 'utf8'));
+    const selected = cases.filter((c) => c.fn === fn && c.self?.t === tag);
+    expect(selected.length).toBeGreaterThan(0);
+    for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+  }
+});
+
+it('preserves symbolic Python slice bounds for matrix printing', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/printing.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.fn === '.__getitem__' && c.test === 'test_MatrixSlice');
+  expect(selected).toHaveLength(19);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('passes serialized built-in function classes to the public LaTeX printer', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/printing.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.fn === 'latex' && c.args?.[0]?.t === 'FnClass' && ['sin', 'cos', 'tan', 'log', 'Ei', 'zeta', 'mygamma'].includes(String(c.args[0]['name'])));
+  expect(selected.length).toBeGreaterThan(5);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('translates real cdir arguments into the public series direction', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/series.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.fn === '.series' && c.src.startsWith('assert frac(x).series(x, cdir='));
+  expect(selected.length).toBeGreaterThan(0);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('constructs category arrow descriptions with a public NoMatch for Python None', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/categories.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.fn === 'ArrowStringDescription');
+  expect(selected).toHaveLength(6);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
