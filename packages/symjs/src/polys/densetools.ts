@@ -551,3 +551,6 @@ export function dmpRevert(f: DensePoly, g: number, u: number, K: Domain): unknow
   throw new MultivariatePolynomialError(`${String(f)}, ${String(g)}`);
 }
 
+
+import { dmpTools } from './polyclasses';
+Object.assign(dmpTools, { dmpDiffIn, dmpEvalIn, dmpGroundMonic, dmpGroundContent, dmpGroundPrimitive, dmpGroundTrunc, dmpCompose, dupDecompose, dmpClearDenoms });

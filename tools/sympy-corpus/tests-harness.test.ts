@@ -4,7 +4,7 @@
 import { expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { assertionOutcome, runTestCase, testCaseKey } from './tests-harness';
-import { deserialize, runCase, counterpartFor } from './harness';
+import { deserialize, runCase, counterpartFor, matches } from './harness';
 import type { Case, Tree } from './harness';
 import * as dg from '@symjs/symjs/diffgeom';
 import * as sj from '../../packages/symjs/src';
@@ -507,4 +507,40 @@ it('translates Python Boolean set attributes and partial truth assignments', () 
   const model = { t: 'Dict', items: [[x, boolean(null)], [y, boolean(true)]] };
   expect(runTestCase({ ...base, fn: 'pl_true', args: [expression, model], expected: 'None' })).toEqual({ status: 'pass' });
   expect(runTestCase({ ...base, fn: 'pl_true', args: [{ ...expression, op: 'Or' }, model], expected: 'True' })).toEqual({ status: 'pass' });
+});
+
+it('replays the recursive dense DMP object API', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.module === 'sympy.polys.tests.test_polyclasses' && c.test.startsWith('test_DMP'));
+  expect(selected.length).toBeGreaterThan(100);
+  for (const c of selected) expect(runTestCase(c), testCaseKey(c)).toEqual({ status: 'pass' });
+});
+
+it('preserves old polynomial-ring and AGCA operator conventions', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const selections = [
+    ['sympy.polys.tests.test_polytools', 'test_Poly__new__', 373],
+    ['sympy.polys.tests.test_polytools', 'test_Poly_eval', 1658],
+    ['sympy.polys.tests.test_polytools', 'test_gcdex', 1967],
+    ['sympy.polys.tests.test_polytools', 'test_gcdex', 1971],
+    ['sympy.polys.tests.test_polytools', 'test_cancel', 3315],
+    ['sympy.polys.agca.tests.test_ideals', 'test_ideal_operations', 29],
+    ['sympy.polys.agca.tests.test_ideals', 'test_ideal_operations', 30],
+    ['sympy.polys.agca.tests.test_modules', 'test_quotient', 401],
+    ['sympy.polys.domains.tests.test_polynomialring', 'test_globalring', 28],
+    ['sympy.polys.domains.tests.test_polynomialring', 'test_globalring', 31],
+  ] as const;
+  for (const [module, test, line] of selections) {
+    const selected = cases.filter((c) => c.module === module && c.test === test && c.line === line);
+    expect(selected.length).toBeGreaterThan(0);
+    for (const c of selected) expect(runTestCase(c), testCaseKey(c)).toEqual({ status: 'pass' });
+  }
+});
+
+it('compares dense polynomial domains without rounding large coefficients', () => {
+  const n = 10n ** 40n;
+  const f = new sj.DMPJs([n], sj.ZZ);
+  expect(matches(f, `DMP_Python([${n}], QQ)`)).toBe(true);
+  expect(matches(f, `DMP_Python([${n + 1n}], QQ)`)).toBe(false);
+  expect(matches(new sj.DMPJs([sj.QQ.convert(sj.Rational.of(1, 3))], sj.QQ), 'DMP_Python([MPQ(2,3)], QQ)')).toBe(false);
 });
