@@ -16,7 +16,7 @@ import { str } from '../printing/str';
 import { decomposePower } from '../simplify/exprtools';
 import { fraction } from '../simplify/rational';
 import { intArg } from './compatibility';
-import { CoercionFailed, FractionField, ZZ } from './domains';
+import { CoercionFailed, ZZ } from './domains';
 import type { Domain } from './domains';
 import { lex } from './orderings';
 import type { MonomialOrdering } from './orderings';
@@ -127,12 +127,12 @@ export class FracField {
   }
 
   toRing(): PolyRing { return this.ring; }
-  /** Convert to the expression-backed domain supported by the existing domain layer. */
-  toDomain(): FractionField {
-    if (String(this.domain) !== this.domain.ground || this.domain.ground === 'EX' || !this.symbols.every((s) => s instanceof Sym)) {
-      throw new NotImplementedError('fraction-field domain conversion requires a basic ground domain and symbol generators');
+  /** Convert to a fraction-field domain over the same coefficient domain. */
+  toDomain(): Domain {
+    if (!this.symbols.every((s) => s instanceof Sym)) {
+      throw new NotImplementedError('fraction-field domain conversion requires symbol generators');
     }
-    return new FractionField(this.domain.ground, this.symbols);
+    return this.domain.fracField(...this.symbols);
   }
 }
 
@@ -150,7 +150,7 @@ export class FracElement {
     if (!this.denom.equals(1)) throw new RangeError('denominator should be 1');
     return this.numer;
   }
-  parent(): FractionField { return this.field.toDomain(); }
+  parent(): Domain { return this.field.toDomain(); }
   copy(): FracElement { return this.rawNew(this.numer, this.denom); }
   rawNew(numer: PolyElement, denom: PolyElement = this.field.ring.one): FracElement { return this.field.rawNew(numer, denom); }
   new(numer: PolyElement, denom: PolyElement): FracElement { return this.field.new(numer, denom); }

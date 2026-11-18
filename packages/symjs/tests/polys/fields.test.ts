@@ -13,6 +13,7 @@ import { diff } from '../../src/calculus/diff';
 import { FracElement, FracField, field, sfield, vfield, xfield } from '../../src/polys/fields';
 import { QQ, ZZ } from '../../src/polys/domains';
 import { GF } from '../../src/polys/domains/finitefield';
+import { AlgebraicField } from '../../src';
 import { PolyRing } from '../../src/polys/rings';
 import refs from './fields.references.json';
 
@@ -201,9 +202,21 @@ describe('SymPy sparse rational function field references', () => {
     expect(() => F.fieldNew(new FracField('t').one)).toThrow(NotImplementedError);
     expect(() => F.fieldNew('x')).toThrow(NotImplementedError);
     expect(() => f.compose(x,y)).toThrow(NotImplementedError);
-    // Domain wrappers currently support the existing basic expression domains only.
-    expect(() => new FracField('x', GF(5)).toDomain()).toThrow(NotImplementedError);
-    expect(() => new FracField('x', 'EX').toDomain()).toThrow(NotImplementedError);
+    expect(String(new FracField('x', GF(5)).toDomain())).toBe('GF(5)(x)');
+    expect(String(new FracField('x', 'EX').toDomain())).toBe('EX(x)');
     expect(() => new FracField([p('sqrt(x)')]).toDomain()).toThrow(NotImplementedError);
   });
+});
+
+it('preserves coefficient domains in fraction-field wrappers (SymPy 1.14)', () => {
+  const t = new Sym('t'), X = new Sym('x');
+  for (const K of [GF(5), new AlgebraicField(QQ, p('sqrt(2)')), QQ.fracField(t), QQ.polyRing(t)]) {
+    const F = new FracField([X], K), D = F.toDomain();
+    expect(String(D)).toBe(`${String(K)}(x)`);
+    expect(String(D.toSympy(D.fromSympy(p('x + 1'))))).toBe('x + 1');
+    const a = F.fromExpr(p('(x**2-1)/(x-1)'));
+    expect(a.equals(F.fromExpr(p('x+1')))).toBe(true);
+    expect(F.fromExpr(D.toSympy(D.fromSympy(a.asExpr()))).equals(a)).toBe(true);
+  }
+  expect(String(new FracField('x', GF(5)).one.parent())).toBe('GF(5)(x)');
 });

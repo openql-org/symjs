@@ -38,7 +38,8 @@ export function eqsToMatrix(coeffs: readonly ReadonlyMap<Expr, unknown>[], rhs: 
  * only solved generators appear, with free generators left as parameters.
  * An inconsistent system returns NoMatch (SymPy returns None).
  */
-export function solveLinSys(eqs: readonly PolyElement[], ring: PolyRing): Map<Expr,Expr> | NoMatchResult {
+export function solveLinSys(eqs: readonly PolyElement[], ringIn: PolyRing | PolynomialRingBase): Map<Expr,Expr> | NoMatchResult {
+  const ring = ringIn instanceof PolyRing ? ringIn : new PolyRing(ringIn.symbols, ringIn.dom, ringIn.order);
   if (!ring.domain.isField) throw new InvariantError('solve_lin_sys requires field coefficients');
   const coeffs: Map<Expr,Expr>[] = [], rhs: Expr[] = [];
   for (const eq of eqs) {
@@ -64,7 +65,7 @@ export function solveLinSys(eqs: readonly PolyElement[], ring: PolyRing): Map<Ex
 }
 
 /** Convert expression equations to a polynomial ring over a coefficient field. */
-export function sympyEqsToRing(eqs: readonly Expr[], symbols: readonly Expr[]): [PolyElement[], Domain] {
+export function sympyEqsToRing(eqs: readonly Expr[], symbols: readonly Expr[]): [PolyElement[], PolynomialRingBase] {
   const polys = eqs.map((e) => Poly.from(e, symbols));
   const [domain] = constructDomain(polys.flatMap((p) => p.coeffs()), { field: true, extension: true });
   const ring = new PolyRing(symbols, domain);

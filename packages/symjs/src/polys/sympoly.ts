@@ -673,6 +673,8 @@ export class Poly {
   }
   /** Pseudo-remainder: the remainder of LC(g)**(deg f - deg g + 1)*f (SymPy dup_prem). */
   prem(o: Poly): Poly {
+    const finite = this.finitePair(o);
+    if (finite) return finite[0].finitePseudoDiv(finite[1])[1];
     const x = this.univariate();
     if (o.isZero) throw new RangeError('prem: division by zero polynomial');
     const dg = o.degree();
@@ -720,6 +722,8 @@ export class Poly {
   }
   /** Pseudo-quotient. */
   pquo(o: Poly): Poly {
+    const finite = this.finitePair(o);
+    if (finite) return finite[0].finitePseudoDiv(finite[1])[0];
     const x = this.univariate();
     const k = this.degree() - o.degree() + 1;
     const scaled = mul(pow(o.LC(), Math.max(0, k)), this.asExpr());
@@ -995,6 +999,12 @@ export class Poly {
     return discriminant(this.asExpr(), this.univariate());
   }
   resultant(o: Poly): Expr {
+    const finite = this.finitePair(o);
+    if (finite) {
+      const [f, g] = finite;
+      const x = expectType(first(f.gens), (s): s is Sym => s instanceof Sym, 'resultant generator');
+      return f.like(resultant(f.asExpr(), g.asExpr(), x), f.gens.slice(1)).asExpr();
+    }
     return resultant(this.asExpr(), o.asExpr(), this.univariate());
   }
   /** Last coefficient in term order. */
@@ -1069,7 +1079,26 @@ export class Poly {
   }
   /** Pseudo-division: (pquo, prem). */
   pdiv(o: Poly): [Poly, Poly] {
+    const finite = this.finitePair(o);
+    if (finite) return finite[0].finitePseudoDiv(finite[1]);
     return [this.pquo(o), this.prem(o)];
+  }
+  /** Pseudo-division in the first generator over a finite coefficient ring. */
+  private finitePseudoDiv(g: Poly): [Poly, Poly] {
+    if (g.isZero) throw new RangeError('pseudo-division by zero polynomial');
+    const x = first(this.gens), dg = g.degree(x);
+    let remaining = Math.max(0, this.degree(x) - dg + 1);
+    const leading = (f: Poly): Poly => f.like(add(...f.termList.filter((t) => first(t.monom) === f.degree(x)).map((t) => mul(t.coeff, ...f.gens.slice(1).map((s, i) => pow(s, at(t.monom, i + 1)))))));
+    const lc = leading(g);
+    let q = this.like(0), r: Poly = this;
+    while (!r.isZero && r.degree(x) >= dg) {
+      const term = leading(r).mul(this.like(pow(x, r.degree(x) - dg)));
+      q = q.mul(lc).add(term);
+      r = r.mul(lc).sub(term.mul(g));
+      remaining--;
+    }
+    const scale = lc.pow(remaining);
+    return [q.mul(scale), r.mul(scale)];
   }
   pexquo(o: Poly): Poly {
     const [q, r] = this.pdiv(o);

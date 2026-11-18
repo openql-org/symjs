@@ -171,7 +171,8 @@ export class PuiseuxPoly {
       const [m, c] = first(this.terms());
       if (!n.isInteger && !groundEq(c, this.ring.domain.one)) throw new RangeError('only monomials can be raised to a rational power');
       if (n.isNegative && !this.ring.domain.isField && !groundEq(c, this.ring.domain.one)) throw new RangeError('cannot invert a non-unit coefficient');
-      return this.ring.fromDict([[m.map((e) => multiplyExponents(e, n)), this.ring.domainNew(pow(c, n))]]);
+      const coefficient = n.isInteger ? groundQuo(this.ring.domain, this.ring.domain.one, this.ring.domainNew(pow(c, -n.p))) : this.ring.domain.one;
+      return this.ring.fromDict([[m.map((e) => multiplyExponents(e, n)), coefficient]]);
     }
     let k = n.p;
     let result = this.ring.one;
@@ -189,7 +190,7 @@ export class PuiseuxPoly {
       if (groundIsZero(this.ring.domain, d)) throw new RangeError('division by zero');
       // SymPy converts the reciprocal into the domain before multiplying,
       // so even (2*x)/2 cannot be formed over ZZ through a scalar divisor.
-      return this.mul(this.ring.domainNew(pow(d, -1)));
+      return this.mul(this.ring.domain.isField ? groundQuo(this.ring.domain, this.ring.domain.one, d) : this.ring.domainNew(pow(d, -1)));
     }
     const q = this.ring.ringNew(other);
     if (!q.isTerm) throw new RangeError('only terms can be inverted');

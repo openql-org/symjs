@@ -9,6 +9,29 @@ import { add, expand, factorNc, mul, parse, pow, sstr, str, Sym, symbols } from 
 import { factorListInt } from '../../src/polys/sympoly';
 
 import algebraicRefs from './sympoly.algebraic.references.json';
+import finitePseudoRefs from './finite-pseudo.references.json';
+
+describe('finite-domain pseudo-division and resultants (SymPy 1.14)', () => {
+  for (const row of finitePseudoRefs) it(`${row.f} by ${row.g} modulo ${row.modulus}`, () => {
+    const gens = row.gens.map((s) => new Sym(s)), X = new Sym('x');
+    const poly = (e: sj.ExprLike): sj.Poly => Poly.from(e, gens, { modulus: row.modulus });
+    const f = poly(parse(row.f)), g = poly(parse(row.g)), [q, r] = f.pdiv(g);
+    expect([String(q.asExpr()), String(r.asExpr())]).toEqual([row.q, row.r]);
+    expect([q.domain, r.domain]).toEqual([f.domain, f.domain]);
+    expect(f.pquo(g).equals(q)).toBe(true);
+    expect(f.prem(g).equals(r)).toBe(true);
+    const lc = Poly.from(g.asExpr(), [X]).LC();
+    const scale = poly(pow(lc, Math.max(0, f.degree(X) - g.degree(X) + 1)));
+    expect(f.mul(scale).equals(q.mul(g).add(r))).toBe(true);
+    if (row.resultant !== undefined) expect(String(f.resultant(g))).toBe(row.resultant);
+  });
+  it('rejects a zero polynomial divisor and preserves exact quotient errors', () => {
+    const f = Poly.from(parse('x**2+1'), [new Sym('x')], { modulus: 5 });
+    expect(() => f.pdiv(f.sub(f))).toThrow(RangeError);
+    expect(() => f.pexquo(f.add(1))).toThrow(sj.ExactQuotientFailed);
+    expect(f.pexquo(f).asExpr().equals(1)).toBe(true);
+  });
+});
 
 const { Poly } = sj;
 const [x, y, z] = symbols('x y z');

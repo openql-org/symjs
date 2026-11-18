@@ -39,4 +39,17 @@ it('converts symbolic equations to a common polynomial coefficient field', async
   const [eqs,domain] = sympyEqsToRing([parseExpr('x-y'),parseExpr('x+a*y')],[x!,y!]);
   expect(eqs.map(String)).toEqual(['x - y','x + a*y']);
   expect(String(domain)).toBe('ZZ(a)[x,y]');
+  const result = solveLinSys(eqs,domain);
+  expect(isNoMatch(result)).toBe(false);
+  if (isNoMatch(result)) return;
+  expect([...result].map(([k,v])=>[str(k),str(v)]).sort(([a],[b])=>String(a).localeCompare(String(b)))).toEqual([['x','0'],['y','0']]);
+});
+
+it('solves converted rational equations and preserves free parameters', async () => {
+  const { sympyEqsToRing } = await import('../../src');
+  const [eqs,domain] = sympyEqsToRing([parse('2*x-y-1')],[x,y]);
+  const result = solveLinSys(eqs,domain);
+  expect(isNoMatch(result)).toBe(false);
+  if (isNoMatch(result)) return;
+  expect([...result].map(([k,v])=>[str(k),str(v)])).toEqual([['x','y/2 + 1/2']]);
 });

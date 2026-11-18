@@ -37,7 +37,7 @@ export {
 } from './polys/sympoly';
 
 export { rootsDict as roots } from './polys/poly';
-export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly } from './polys/appellseqs';
+export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly, dupBernoulli, dupBernoulliC, dupGenocchi, dupEuler, dupAndre } from './polys/appellseqs';
 export { dispersion, dispersionset } from './polys/dispersion';
 export { eqsToMatrix, solveLinSys, sympyEqsToRing } from './polys/solvers';
 export { sqfNorm } from './polys/sympoly';

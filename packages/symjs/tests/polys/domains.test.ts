@@ -15,6 +15,13 @@ const b = new Sym('b');
 const s = (e: Parameters<typeof sstr>[0]) => sstr(e);
 
 describe('ground domains', () => {
+  it('constructs fraction fields from coefficient-domain names or objects', () => {
+    const named = new FractionField('QQ', [x]), supplied = new FractionField(QQ, [x]);
+    expect(named.equals(supplied)).toBe(true);
+    expect(named.domain).toBe(QQ);
+    expect(s(named.fromSympy(P('(x+1)/2')))).toBe('x/2 + 1/2');
+    expect(named.fromSympy(P('(x+1)/2')).equals(supplied.fromSympy(P('(x+1)/2')))).toBe(true);
+  });
   it('names, fields and unification (SymPy unify)', () => {
     expect([ZZ, QQ, RR].map(String)).toEqual(['ZZ', 'QQ', 'RR']);
     expect(String(QQ.polyRing(a, b))).toBe('QQ[a,b]');
