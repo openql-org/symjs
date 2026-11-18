@@ -641,3 +641,52 @@ PORTS['sympy.polys.orderings:O((1, 2, 3, 4))'] = () => {
   PORTS[`${m}DMP([[[ZZ(2)], [ZZ(1), ZZ(0)]], [[]]], ZZ).permute([1, 0, 2])`] = () => dmp(sj.dmpPermute(f, [1, 0, 2], 2, sj.ZZ));
   PORTS[`${m}DMP([[[ZZ(2)], [ZZ(1), ZZ(0)]], [[]]], ZZ).permute([1, 2, 0])`] = () => dmp(sj.dmpPermute(f, [1, 2, 0], 2, sj.ZZ));
 }
+
+// Function subclass fixtures from the upstream unit tests.
+const functionTestModule = 'sympy.core.tests.test_function';
+const argumentCounts = (f: (...args: never[]) => unknown): unknown => {
+  const counts = sj.arity(f);
+  return sj.isNoMatch(counts) ? sj.Naturals0 : sj.finiteSet(...(typeof counts === 'number' ? [counts] : counts));
+};
+const zeroArgumentFunction = sj.defineFunction('myfunc', { eval: () => undefined });
+const oneArgumentFunction = sj.defineFunction('myfunc', { eval: (_x) => undefined });
+const variadicFunction = sj.defineFunction('myfunc', { eval: (..._args) => undefined });
+for (const [line, f, applied, args] of [
+  [143, zeroArgumentFunction, false, []], [144, zeroArgumentFunction, true, []],
+  [152, oneArgumentFunction, false, [x]], [153, oneArgumentFunction, true, [x]],
+  [161, variadicFunction, false, [x]], [162, variadicFunction, true, [x]],
+] as const) {
+  const src = `assert myfunc${applied ? `(${args.length ? 'x' : ''})` : ''}.nargs == ${line < 150 ? 'FiniteSet(0)' : line < 160 ? 'FiniteSet(1)' : 'S.Naturals0'}`;
+  PORTS[`${functionTestModule}:${line}:${src}`] = () => {
+    return argumentCounts(applied ? sj.func(f(...args)) : f);
+  };
+}
+const f1: sj.FunctionDefinition = { nargs: 2 };
+const f2: sj.FunctionDefinition = { ...f1 };
+const f3: sj.FunctionDefinition = { ...f2 };
+const f4: sj.FunctionDefinition = { ...f3, nargs: [1, 2] };
+const f5: sj.FunctionDefinition = { ...f4 };
+const f6: sj.FunctionDefinition = { ...f5 };
+const f7: sj.FunctionDefinition = { ...f6, nargs: undefined };
+const f8: sj.FunctionDefinition = { ...f7 };
+const f9: sj.FunctionDefinition = { ...f8 };
+const f10: sj.FunctionDefinition = { ...f9, nargs: 1 };
+const f11: sj.FunctionDefinition = { ...f10 };
+[f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11].forEach((definition, i) => {
+  const name = `f${i + 1}`;
+  const expected = i < 3 ? 'FiniteSet(2)' : i < 6 ? 'FiniteSet(1, 2)' : i < 9 ? 'S.Naturals0' : 'FiniteSet(1)';
+  PORTS[`${functionTestModule}:assert ${name}.nargs == ${expected}`] = () => argumentCounts(sj.defineFunction(name, definition));
+});
+PORTS[`${functionTestModule}:assert mf.diff(x) == Derivative(mf, x)`] = () => sj.diff(sj.defineFunction('myfunc', { nargs: 1, fdiff: () => sj.NoMatch })(x), x);
+const myFunction = sj.defineFunction('my_function', {
+  eval: (arg) => arg.equals(0) ? 0 : undefined,
+  fdiff: (args) => sj.cos(args[0] ?? sj.S.Zero),
+});
+const myFunction2 = sj.defineFunction('my_function2', {
+  eval: (arg) => arg.equals(0) ? 1 : undefined,
+  fdiff: (args) => sj.mul(-1, sj.sin(args[0] ?? sj.S.Zero)),
+});
+const interfaceModule = 'sympy.functions.elementary.tests.test_interface';
+PORTS[`${interfaceModule}:assert my_function(x).series(x, 0, 10) == sin(x).series(x, 0, 10)`] = () => sj.series(myFunction(x), x, 0, 10);
+PORTS[`${interfaceModule}:assert limit(my_function(x)/x, x, 0) == 1`] = () => sj.limit(sj.mul(myFunction(x), sj.pow(x, -1)), x, 0);
+PORTS[`${interfaceModule}:assert my_function2(x).series(x, 0, 10) == cos(x).series(x, 0, 10)`] = () => sj.series(myFunction2(x), x, 0, 10);

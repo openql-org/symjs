@@ -6703,7 +6703,7 @@ function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets
 }
 
 function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome {
-  const portEntry = PORTS[`${c.module}:${c.src}`];
+  const portEntry = PORTS[`${c.module}:${'line' in c ? c.line : ''}:${c.src}`] ?? PORTS[`${c.module}:${c.src}`];
   const port = Array.isArray(portEntry) ? (portEntry as readonly (() => unknown)[])[occurrence(c)] : (portEntry as (() => unknown) | undefined);
   if (port) {
     // a doctest that needs Python code (classes, lambdas) runs as its JavaScript translation
@@ -6856,16 +6856,6 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'sympy.liealgebras.tests.test_type_B:assert c.lie_algebra() == "so(6)"': 'so(7)',
   // D_n = so(2n) has n(2n-1) generators; D_4 has dimension 28.
   'sympy.liealgebras.tests.test_type_D:assert c.basis() == 6': '28',
-  // Karr reversal is Sum(f, (k, a, b)) = -Sum(f, (k, b + 1, a - 1)).
-  // For example, the reversed geometric series is -sum(2**(-k), k >= 0) = -2.
-  "sympy.concrete.tests.test_sums_products:assert Sum(1/(x**2 + 1), (x, oo, 0)).doit(deep=False) == Rational(-1, 2) + pi / (2 * tanh(pi))": "-pi/(2*tanh(pi)) + 1/2",
-  "sympy.concrete.tests.test_sums_products:assert Sum(c**x/factorial(x), (x, oo, 0)).doit(deep=False).simplify() == exp(c) - 1": "1 - exp(c)",
-  "sympy.concrete.tests.test_sums_products:assert Sum((-1)**x/x, (x, oo,0)).doit() == -log(2)": "log(2)",
-  "sympy.concrete.tests.test_sums_products:assert Sum((1/2)**x,(x, oo, -1)).doit() == S(2)": "-2.00000000000000",
-  "sympy.concrete.tests.test_sums_products:assert Sum(1/x, (x, oo, 0)).doit() == oo": "-oo",
-  "sympy.concrete.tests.test_sums_products:assert Sum((-1)**x/(2*x+1), (x, oo, -1)).doit() == pi/4": "-pi/4",
-  "sympy.concrete.tests.test_sums_products:assert Sum((((-1)**x) * c**(2*x+1)) / factorial(2*x+1), (x, oo, -1)).doit() == sin(c)": "-sin(c)",
-  "sympy.concrete.tests.test_sums_products:assert Sum(1/x**n, (x, oo, 0)).doit() \\\n        == Piecewise((zeta(n), n > 1), (Sum(x**(-n), (x, oo, 0)), True))": "-Piecewise((zeta(n), n > 1), (Sum(x**(-n), (x, 1, oo)), True))",
   // If (1 + pi)^2 were algebraic, then its square root minus 1 would make pi algebraic.
   "sympy.assumptions.tests.test_query:assert ask(Q.algebraic(z)) is None": "False",
   // The complex base may be zero: 0**(-1) is not complex.

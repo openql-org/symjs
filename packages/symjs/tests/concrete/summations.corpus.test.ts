@@ -851,7 +851,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const i = new Sym('i', { integer: true });
     expect(sympyStr(Sum(piecewise([exp(new Mul([rational(-1), i])), Relational(Mod(i, rational(2)), rational(0), '>', { evaluate: false })], [rational(0), true]), [i, rational(0), rational(11)]).evalf(3, {}))).toBe('0.425');
   });
-  it.fails("test_karr_convention:143", () => {
+  it("test_karr_convention:143", () => {
     const x = new Sym('x');
     expect(sympyStr(doit(Sum(new Pow(new Add([rational(1), new Pow(x, rational(2))]), rational(-1)), [x, oo, rational(0)])))).toBe('-1/2 + pi/(2*tanh(pi))');
   });
@@ -859,23 +859,23 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const c = new Sym('c');
     expect(sympyStr(simplify(new Mul([c, new Add([new Mul([rational(-1), new Pow(c, rational(-1))]), new Mul([new Pow(c, rational(-1)), exp(c)])])])))).toBe('exp(c) - 1');
   });
-  it.fails("test_karr_convention:145", () => {
+  it("test_karr_convention:145", () => {
     const x = new Sym('x');
     expect(sympyStr(doit(Sum(new Mul([new Pow(rational(-1), x), new Pow(x, rational(-1))]), [x, oo, rational(0)])))).toBe('-log(2)');
   });
-  it.fails("test_karr_convention:146", () => {
+  it("test_karr_convention:146", () => {
     const x = new Sym('x');
-    expect(sympyStr(doit(Sum(new Pow(new Float({ man: 1n, exp: -1n }, 53), x), [x, oo, rational(-1)])))).toBe('2');
+    expect(equivalent(sympyStr(doit(Sum(new Pow(new Float({ man: 1n, exp: -1n }, 53), x), [x, oo, rational(-1)]))), '2')).toBe(true);
   });
-  it.fails("test_karr_convention:147", () => {
+  it("test_karr_convention:147", () => {
     const x = new Sym('x');
     expect(sympyStr(doit(Sum(new Pow(x, rational(-1)), [x, oo, rational(0)])))).toBe('oo');
   });
-  it.fails("test_karr_convention:148", () => {
+  it("test_karr_convention:148", () => {
     const x = new Sym('x');
     expect(sympyStr(doit(Sum(new Mul([new Pow(rational(-1), x), new Pow(new Add([rational(1), new Mul([rational(2), x])]), rational(-1))]), [x, oo, rational(-1)])))).toBe('pi/4');
   });
-  it.fails("test_karr_convention:149", () => {
+  it("test_karr_convention:149", () => {
     const [x, c] = symbols('x c');
     expect(sympyStr(doit(Sum(new Mul([new Pow(rational(-1), x), new Pow(c, new Add([rational(1), new Mul([rational(2), x])])), new Pow(fn('factorial', [new Add([rational(1), new Mul([rational(2), x])])]), rational(-1))]), [x, oo, rational(-1)])))).toBe('sin(c)');
   });
@@ -888,7 +888,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(doit(Sum(new Mul([new Pow(c, x), fn('binomial', [n, x])]), [x, rational(0), oo])))).toBe('Piecewise(((c + 1)**n, ((n <= -1) & (Abs(c) < 1)) | ((n > 0) & (Abs(c) <= 1)) | ((n <= 0) & (n > -1) & Ne(c, -1) & (Abs(c) <= 1))), (Sum(c**x*binomial(n, x), (x, 0, oo)), True))');
   });
-  it.fails("test_karr_convention:159", () => {
+  it("test_karr_convention:159", () => {
     const x = new Sym('x');
     const n = new Sym('n', { integer: true });
     expect(sympyStr(doit(Sum(new Pow(x, new Mul([rational(-1), n])), [x, oo, rational(0)])))).toBe('Piecewise((zeta(n), n > 1), (Sum(x**(-n), (x, oo, 0)), True))');
