@@ -4,10 +4,10 @@
 // Tests of src/simplify/simplify.ts.
 
 import { describe, expect, it, vi } from 'vitest';
-import { I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
+import { UndefFn, SymFunction, piecewise, Eq, Ne, Ge, Gt, Le, Lt, and, I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
 import type { Expr } from '../../src';
 import { clearCoefficients, factorSum, inversecombine, ncSimplify, nthroot, fn, S, Sum, Mul, Pow } from '../../src';
-import { Add, And, Eq, Ge, Gt, Le, Lt, Or, Piecewise, Rel, Tuple, pi, sstr } from '../../src';
+import { Add, And, Or, Piecewise, Rel, Tuple, pi, sstr } from '../../src';
 
 it('retains a short logarithmic change-of-base ratio', () => {
   const y = symbol('y', { positive: true });
@@ -450,5 +450,55 @@ it('handles an indeterminate minimal polynomial for an algebraic difference', as
     expect(sj.exprEquals(sj.sqrt(2), 0)).toBe(false);
   } finally {
     mock.mockRestore();
+  }
+});
+
+it('honors explicitly requested inverse cancellation for user functions', () => {
+  const x = symbol('x'), g = SymFunction('g');
+  class F extends UndefFn { inverse() { return g; } }
+  expect(simplify(new F('f', [g(x)]), { inverse: true })).toEqual(x);
+  for (const args of [[x], [sin(x)], [g(x), x]]) {
+    const f = new F('f', args);
+    expect(inversecombine(f)).toEqual(f);
+  }
+});
+
+it('cancels an unevaluated logarithm of an exponential in explicit inverse mode', () => {
+  const x = symbol('x');
+  const raw = { evaluate: false };
+  expect(simplify(fn('log', [exp(x)], raw), { inverse: true })).toEqual(x);
+  const based = fn('log', [exp(x), 2], raw);
+  expect(simplify(based, { inverse: true })).toEqual(x.div(fn('log', [2])));
+  const unmatched = fn('log', [exp(x), 2, 3], raw);
+  expect(inversecombine(unmatched)).toEqual(unmatched);
+});
+
+it('preserves an unevaluated logarithm of a symbolic sum', () => {
+  const [n, x] = symbols('n x');
+  const log = fn('log', [Sum(n, [n, 1, x])], { evaluate: false });
+  expect(simplify(log)).toEqual(log);
+});
+
+it('retains the strongest comparable conjunct and preserves independent conditions', () => {
+  const [x, y, z] = symbols('x y z');
+  for (const op of [Ge, Gt, Le, Lt]) {
+    const bound = op === Ge || op === Gt ? 2 : 1;
+    expect(simplify(and(op(x, 1), op(x, 2))).equals(op(x, bound))).toBe(true);
+  }
+  for (const condition of [and(Ge(x, 1), Lt(x, 2)), and(Ne(x, y), Ne(x, z))]) {
+    expect(simplify(condition).equals(condition)).toBe(true);
+  }
+});
+
+it('preserves piecewise values that do not define a Kronecker delta', () => {
+  const [x, y] = symbols('x y');
+  const delta = KroneckerDelta(x, y);
+  for (const condition of [
+    piecewise([1, Ge(x, y)], [0, true]), piecewise([2, Eq(x, y)], [0, true]),
+    piecewise([1, Eq(x, y)], [2, true]), piecewise([0, Ne(x, y)], [2, true]),
+    piecewise([1, Eq(x, y)], [0, Ge(x, y)]),
+  ]) {
+    const result = simplify(add(delta, condition));
+    expect(result.has(delta)).toBe(true);
   }
 });

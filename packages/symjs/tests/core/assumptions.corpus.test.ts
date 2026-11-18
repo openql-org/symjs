@@ -2274,10 +2274,10 @@ describe("sympy/core/tests/test_assumptions.py", () => {
     const n = new Sym('n', { negative: true });
     expect(sympyStr(isImaginary(new Add([new Mul([rational(-3), I]), new Mul([I, n]), new Mul([rational(-1), pi, I])])))).toBe('True');
   });
-  it.fails("test_issue_4149:1091", () => {
+  it("test_issue_4149:1091", () => {
     expect(sympyStr(isReal(new Add([new Mul([new Float({ man: 3900231685776983n, exp: -52n }, 53), I]), new Mul([rational(-1, 2), I, new Pow(rational(3), rational(1, 2))])])))).toBe('False');
   });
-  it.fails("test_issue_4149:1092", () => {
+  it("test_issue_4149:1092", () => {
     expect(sympyStr(isImaginary(new Add([new Mul([new Float({ man: 3900231685776983n, exp: -52n }, 53), I]), new Mul([rational(-1, 2), I, new Pow(rational(3), rational(1, 2))])])))).toBe('True');
   });
   it("test_issue_2920:1097", () => {
@@ -2335,25 +2335,25 @@ describe("sympy/core/tests/test_assumptions.py", () => {
   it("test_issues_8632_8633_8638_8675_8992:1139", () => {
     expect(sympyStr(isNegative(new Add([rational(-1), new Mul([new Pow(new Add([rational(1), new Dummy('Dummy_54209841706655', { positive: true }, 1000000)]), rational(-1)), new Dummy('Dummy_54209841706655', { positive: true }, 1000000)])])))).toBe('True');
   });
-  it.fails("test_issues_8632_8633_8638_8675_8992:1140", () => {
+  it("test_issues_8632_8633_8638_8675_8992:1140", () => {
     expect(sympyStr(isPositive(new Add([rational(-1, 2), new Pow(new Add([rational(2), new Dummy('Dummy_54209841706655', { positive: true }, 1000000)]), rational(3))])))).toBe('True');
   });
   it("test_issues_8632_8633_8638_8675_8992:1142", () => {
     expect(sympyStr(isNonpositive(new Add([rational(-3), new Dummy('Dummy_54209841706663', { negative: true }, 1000000)])))).toBe('True');
   });
-  it.fails("test_issue_9115_9150:1147", () => {
+  it("test_issue_9115_9150:1147", () => {
     expect(sympyStr(Ge(fn('factorial', [new Dummy('n', { integer: true, nonnegative: true }, 1000000)]), 1))).toBe('True');
   });
-  it.fails("test_issue_9115_9150:1148", () => {
+  it("test_issue_9115_9150:1148", () => {
     expect(sympyStr(Lt(fn('factorial', [new Dummy('n', { integer: true, nonnegative: true }, 1000000)]), 1))).toBe('False');
   });
   it("test_issue_9115_9150:1150", () => {
     expect(sympyStr(isEven(fn('factorial', [new Add([rational(1), new Dummy('n', { integer: true, nonnegative: true }, 1000000)])])))).toBe('None');
   });
-  it.fails("test_issue_9115_9150:1151", () => {
+  it("test_issue_9115_9150:1151", () => {
     expect(sympyStr(isEven(fn('factorial', [new Add([rational(2), new Dummy('n', { integer: true, nonnegative: true }, 1000000)])])))).toBe('True');
   });
-  it.fails("test_issue_9115_9150:1152", () => {
+  it("test_issue_9115_9150:1152", () => {
     expect(sympyStr(Ge(fn('factorial', [new Add([rational(2), new Dummy('n', { integer: true, nonnegative: true }, 1000000)])]), 2))).toBe('True');
   });
   it("test_issue_10024:1165", () => {

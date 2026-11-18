@@ -1008,6 +1008,7 @@ const digitSum = (n: bigint, p: bigint) => {
 /** binomial(n, k) modulo m for nonnegative integers (prime-power moduli of moderate size). */
 export function binomialMod(nIn: IntLike, kIn: IntLike, mIn: IntLike): bigint {
   const [n, k, m] = [intOf(nIn), intOf(kIn), intOf(mIn)];
+  if (m < 1n) throw new RangeError('the modulus is required to be positive');
   if (k < 0n || k > n) return 0n;
   if (m === 1n) return 0n;
   // prime-power parts of m, combined by the Chinese remainder theorem

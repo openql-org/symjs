@@ -53,7 +53,7 @@ import { Add, CRootOf, Mul } from '../../../src';
 it('refines reciprocals near zero and preserves exact degenerate root intervals',()=>{
   const b=algebraicEnclosure(parse('1/(sqrt(2)+I/100)'),20);
   expect(b[0][0].p).toBeGreaterThan(0n);
-  expect(algebraicEnclosure(new CRootOf(parse('x-1'),0),20)[0]).toEqual([S.One,S.One]);
+  expect(algebraicEnclosure(new CRootOf(parse('x-1'),0),20)[0].map(String)).toEqual(['1','1']);
   expect(algebraicEnclosure(parse('tan(pi/7)'),20)[0][0].p).toBeGreaterThan(0n);
   expect(algebraicEnclosure(new Pow(S.E,parse('-I*pi/7')),20)[1][1].p).toBeLessThan(0n);
   const cancelImaginary=new Add([S.Two,S.I,new Mul([S.NegOne,S.I])]);

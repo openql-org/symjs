@@ -25,7 +25,7 @@ import { asinh } from '../functions/elementary/trigext';
 import { diff } from '../calculus/diff';
 import { polyCoefficients } from '../polys/poly';
 import { DiracDelta, Heaviside, isDiracDelta, isHeaviside } from './transforms/delta';
-import { expand, expandMul } from '../simplify/expand';
+import { expand, expandMul, expand_trig } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -51,6 +51,23 @@ export function manualintegrate(f: ExprLike, x: Sym): Expr {
       return args.length === 1 ? e.expr : new Derivative(args);
     }
   }
+  // Split a linear numerator into a multiple of the quadratic derivative and a constant.
+  if (e instanceof Mul) {
+    const reciprocal = e.args.find((t): t is Pow => t instanceof Pow && t.exp.equals(S.NegOne));
+    if (reciprocal !== undefined) {
+      const q = polyCoefficients(reciprocal.base, x);
+      const p = polyCoefficients(mul(...e.args.filter(t => t !== reciprocal)), x);
+      if (q !== undefined && Math.max(...q.keys()) === 2 && p !== undefined && Math.max(...p.keys()) === 1) {
+        const a = getOrThrow(q, 2), b = q.get(1) ?? S.Zero, c = q.get(0) ?? S.Zero;
+        const discriminant = add(mul(4, a, c), mul(-1, pow(b, 2)));
+        if (isPositive(discriminant) === true && isNonZero(a) === true) {
+          const scale = mul(getOrThrow(p, 1), pow(mul(2, a), -1));
+          const remainder = add(p.get(0) ?? S.Zero, mul(-1, b, scale)), h = sqrt(discriminant);
+          return add(mul(scale, log(reciprocal.base)), mul(2, remainder, pow(h, -1), atan(mul(add(mul(2, a, x), b), pow(h, -1)))));
+        }
+      }
+    }
+  }
   // DiracDeltaRule preserves the original affine argument and its zero-slope case.
   if (isDiracDelta(e)) {
     const argument = at(e.args, 0), pc = polyCoefficients(argument, x);
@@ -73,6 +90,17 @@ export function manualintegrate(f: ExprLike, x: Sym): Expr {
       return mul(heaviside, add(primitive, mul(-1, xreplace(primitive, [[x, boundary]]))));
     }
   }
+  const secant = factors.find((v): v is Fn => v instanceof Fn && v.name === 'sec');
+  if (secant !== undefined) {
+    const v = at(secant.args, 0), trig = mul(...factors.filter((g) => g !== secant));
+    if (trig instanceof Fn && (trig.name === 'sin' || trig.name === 'cos')) {
+      const multiple = cancel(mul(at(trig.args, 0), pow(v, -1)));
+      if (multiple instanceof Rational && multiple.isInteger && multiple.p > 1n) {
+        const expanded = expandMul(mul(expand_trig(trig), pow(cos(v), -1)));
+        return manualintegrate(expanded, x);
+      }
+    }
+  }
   // SqrtLinearRule substitutes u = sqrt(a + b*x), producing a rational integrand.
   const root = factors.find((t) => t instanceof Pow && t.exp instanceof Rational && t.exp.q === 2n);
   if (root instanceof Pow && root.exp instanceof Rational) {
@@ -85,8 +113,95 @@ export function manualintegrate(f: ExprLike, x: Sym): Expr {
       return piecewise([primitive, Ne(b, 0)], [mul(pow(a, root.exp), manualintegrate(rest, x)), true]);
     }
   }
+  if (root instanceof Pow && root.exp instanceof Rational && e instanceof Mul) {
+    const q = polyCoefficients(root.base, x);
+    const rest = mul(...factors.filter((v) => v !== root));
+    if (q?.size === 2 && q.has(0) && q.has(2) && rest instanceof Pow && rest.base.equals(x) && rest.exp instanceof Rational) {
+      const a = getOrThrow(q, 0), b = getOrThrow(q, 2), k = rest.exp;
+      // u = sqrt(a+b*x**2) gives x*dx = u*du/b.
+      if (k.isInteger && k.p > 0n && k.p % 2n === 1n && isNonZero(b) === true) {
+        const u = new Dummy('u');
+        const transformed = expand(mul(pow(b, -1), pow(u, root.exp.p + 1n), pow(mul(add(pow(u, 2), mul(-1, a)), pow(b, -1)), (k.p - 1n) / 2n)));
+        const primitive = impl.integrate(transformed, u);
+        return xreplace(primitive, [[u, sqrt(root.base)]]);
+      }
+      if (k.equals(S.NegOne) && root.exp.equals(S.Half) && isNegative(a) === true) {
+        const h = sqrt(mul(-1, a));
+        return add(root, mul(-1, h, atan(mul(root, pow(h, -1)))));
+      }
+      if (k.equals(Rational.of(-4)) && root.exp.equals(S.NegHalf) && isNonZero(a) === true) {
+        const u = mul(sqrt(root.base), pow(x, -1));
+        return mul(pow(a, -2), add(mul(b, u), mul(Rational.of(-1, 3), pow(u, 3))));
+      }
+    }
+  }
+  if (e instanceof Mul) {
+    const exponential = factors.find((t): t is Pow => t instanceof Pow && t.base.equals(S.E));
+    if (exponential !== undefined) {
+      const other = mul(...factors.filter((t) => t !== exponential));
+      // u = x**m turns x**(m-1)*exp(x**(2*m)) into a Gaussian.
+      const exponent = exponential.exp;
+      if (exponent instanceof Pow && exponent.base.equals(x) && exponent.exp instanceof Rational && exponent.exp.isInteger && exponent.exp.p > 0n && exponent.exp.p % 2n === 0n) {
+        const m = exponent.exp.p / 2n;
+        if (other.equals(pow(x, m - 1n))) return mul(-1, S.I, sqrt(S.Pi), Rational.of(1, 2n * m), fn('erf', [mul(S.I, pow(x, m))]));
+      }
+      // u = exp(a*x+b) turns sqrt(c+d*exp(2*a*x+2*b))*du into a quadratic radical.
+      if (other instanceof Pow && other.exp.equals(S.Half)) {
+        const rate = diff(exponent, x);
+        if (!rate.has(x) && isNonZero(rate) === true) {
+          const u = new Dummy('u');
+          const radicand = xreplace(other.base, [[exp(mul(2, exponent)), pow(u, 2)]]);
+          if (!radicand.has(x)) return mul(pow(rate, -1), xreplace(impl.integrate(sqrt(radicand), u), [[u, exponential]]));
+        }
+      }
+    }
+  }
+  // Substitute the innermost affine radical first in a nested quadratic radical.
+  if (e instanceof Pow && e.exp instanceof Rational && e.exp.q === 2n && e.base instanceof Add) {
+    for (const term of preorderTraversal(e.base)) {
+      if (!(term instanceof Pow && term.exp.equals(S.Half))) continue;
+      const pc = polyCoefficients(term.base, x);
+      if (pc === undefined || Math.max(...pc.keys()) !== 1) continue;
+      const b = getOrThrow(pc, 1), a = pc.get(0) ?? S.Zero, u = new Dummy('u');
+      if (isNonZero(b) !== true) continue;
+      const argument = mul(add(pow(u, 2), mul(-1, a)), pow(b, -1));
+      const radicand = expand(xreplace(e.base, [[term, u], [x, argument]]));
+      const n = e.exp.p;
+      if (n < 1n || polyCoefficients(radicand, u) === undefined) continue;
+      const transformed = mul(2, u, pow(b, -1), pow(radicand, (n - 1n) / 2n));
+      const primitive = sqrtQuadraticRule(mul(expand(transformed), sqrt(radicand)), u, true);
+      if (primitive !== undefined) return xreplace(primitive, [[u, term]]);
+    }
+  }
   const special = specialRule(e, x);
   if (special !== undefined) return special;
+  // For u = sqrt(c + b*exp(k*x)), dx/u = 2*du/(k*(u**2-c)).
+  if (e instanceof Pow && e.exp.equals(S.NegHalf) && e.base instanceof Add) {
+    const [c, dependent] = asIndependent(e.base, [x], { asAdd: true });
+    const rate = cancel(mul(diff(dependent, x), pow(dependent, -1)));
+    if (isNonZero(c) === true && !rate.has(x) && !isZero(rate)) {
+      const u = sqrt(e.base), h = sqrt(c);
+      return mul(pow(mul(rate, h), -1), add(log(add(u, mul(-1, h))), mul(-1, log(add(u, h)))));
+    }
+  }
+  // With u = log(x), exp(P(log(x)))*dx becomes exp(P(u)+u)*du.
+  if (e instanceof Pow && e.base.equals(S.E) && e.exp.has(log(x))) {
+    const u = new Dummy('u'), exponent = add(u, xreplace(e.exp, [[log(x), u]]));
+    const pc = polyCoefficients(exponent, u);
+    if (!exponent.has(x) && pc !== undefined && Math.max(...pc.keys()) === 2) {
+      return xreplace(manualintegrate(exp(exponent), u), [[u, log(x)]]);
+    }
+  }
+  // x**n/log(x) is the exponential integral after u = (n+1)*log(x).
+  const logarithm = log(x);
+  if (e instanceof Mul && e.has(pow(logarithm, -1))) {
+    const power = mul(e, logarithm);
+    const exponent = power.equals(x) ? S.One : power instanceof Pow && power.base.equals(x) ? power.exp : undefined;
+    if (exponent !== undefined && !exponent.has(x)) {
+      const rate = add(exponent, 1);
+      return piecewise([fn('Ei', [mul(rate, logarithm)]), Ne(rate, 0)], [log(logarithm), true]);
+    }
+  }
   // URule: keep the substituted power intact before polynomial expansion.
   if (e instanceof Pow && e.exp instanceof Rational && !e.exp.equals(S.NegOne)) {
     const slope = diff(e.base, x);
@@ -109,6 +224,7 @@ export function manualintegrate(f: ExprLike, x: Sym): Expr {
         if (e.has(pow(t, 2))) { kernel = pow(t, 2); primitive = mul(-1, fn('cot', [u])); }
         else primitive = mul(-1, log(add(fn('cot', [u]), t)));
         break;
+      case 'tanh': primitive = log(cosh(u)); break;
       case 'coth': primitive = log(sinh(u)); break;
       case 'sech': primitive = mul(2, atan(fn('tanh', [mul(S.Half, u)]))); break;
       case 'csch': primitive = log(fn('tanh', [mul(S.Half, u)])); break;
@@ -198,6 +314,17 @@ function specialRule(e: Expr, x: Sym): Expr | undefined {
     const u = at(e.base.args, 0), slope = diff(u, x);
     if (!slope.has(x) && !isZero(slope)) return mul(fn('li', [u]), pow(slope, -1));
   }
+  if (e instanceof Mul) {
+    const logarithm = e.args.find((v): v is Fn => v instanceof Fn && v.name === 'log');
+    if (logarithm !== undefined) {
+      const z = add(1, mul(-1, at(logarithm.args, 0)));
+      const dz = diff(z, x);
+      if (!isZero(dz)) {
+        const ratio = cancel(mul(...e.args.filter((v) => v !== logarithm), z, pow(dz, -1)));
+        if (!ratio.has(x)) return mul(-1, ratio, fn('polylog', [S.Two, z]));
+      }
+    }
+  }
   const timesX = cancel(mul(e, x));
   const isExponential = (t: Expr): t is Pow => t instanceof Pow && t.base.equals(S.E);
   if (timesX instanceof Fn || isExponential(timesX)) {
@@ -258,7 +385,7 @@ function specialRule(e: Expr, x: Sym): Expr | undefined {
     const t = pow(sin(x), 2), pc = polyCoefficients(e.base, t);
     if (pc !== undefined && Math.max(...pc.keys()) === 1) {
       const a = pc.get(0) ?? S.Zero, d = mul(-1, getOrThrow(pc, 1));
-      if (!isZero(a) && !a.equals(d)) return mul(fn(e.exp.p === 1n ? 'elliptic_e' : 'elliptic_f', [x, mul(d, pow(a, -1))]), pow(a, e.exp));
+      if (!a.has(x) && !d.has(x) && !isZero(a) && !a.equals(d)) return mul(fn(e.exp.p === 1n ? 'elliptic_e' : 'elliptic_f', [x, mul(d, pow(a, -1))]), pow(a, e.exp));
     }
   }
   return undefined;

@@ -118,11 +118,8 @@ describe('dsolve with the lie_group hint (SymPy)', () => {
     expect(String(dsolve(parse('Derivative(f(x), x) - 1/(x + f(x))'), fx, { hint: 'lie_group', xi: 1, eta: -1 }))).toBe('Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)');
   });
   it('where SymPy fails', () => {
-    // SymPy raises a TypeError (in abaco2_similar). The canonical coordinates give ds/dr = tanh(r/2)/2 (SymPy's
-    // simplify form), and the implicit solution is kept as solve does not invert log(cosh(u)); differentiating it
-    // gives f' = (1 + tanh(u))/(1 - tanh(u)) = exp(x + f(x)) with u = (x + f(x))/2. The separable solution is
-    // Eq(f(x), log(-1/(C1 + exp(x))))
-    expect(lie('-exp(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(C1 - x/2 + f(x)/2 - log(cosh((x + f(x))/2)), 0)');
+    // SymPy raises a TypeError (in abaco2_similar); the explicit solution satisfies f' = exp(x + f(x))
+    expect(lie('-exp(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(f(x), -x + log(1/(C1*exp(-x) - 1)))');
   });
 });
 

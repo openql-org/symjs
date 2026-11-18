@@ -336,3 +336,10 @@ describe('powsimp and powdenest with polar bases (SymPy test_powsimp_polar, test
     expect(String(run())).toBe(want);
   });
 });
+
+it('combines logarithms inside exponentials and collects reciprocal rational bases', () => {
+  expect(String(logcombine(parse('exp(log(x) - log(y))'), { force: true }))).toBe('x/y');
+  const t = symbol('t'), half = parse('1/2');
+  expect(String(powsimp(mul(parse('1/8'), pow(half, t))))).toBe('(1/2)**(t + 3)');
+  expect(String(logcombine(parse('exp(sin(x))')))).toBe('exp(sin(x))');
+});

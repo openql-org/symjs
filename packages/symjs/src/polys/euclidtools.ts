@@ -249,7 +249,7 @@ export function heuGcd(fIn: ZPoly, gIn: ZPoly, n: number, start?: bigint): GcdRe
   const fNorm = maxNorm(f);
   const gNorm = maxNorm(g);
   const B = 2n * bmin(fNorm, gNorm) + 29n;
-  let x = start ?? bmax(bmin(B, 99n * iroot(B, 2n)), 2n * bmin(fNorm / babs(groundLC(f)), gNorm / babs(groundLC(g))) + (n === 1 ? 2n : 4n));
+  let x = start ?? bmax(bmin(B, 99n * iroot(B, 2n)), 2n * bmin(fNorm / babs(groundLC(f)), gNorm / babs(groundLC(g))) + 4n);
   // (a candidate from a cofactor takes the sign of f or g; the GCD gets a positive leading coefficient)
   const withContent = ([h, cff, cfg]: GcdResult): GcdResult => {
     const s = groundLC(h) < 0n ? -1n : 1n;

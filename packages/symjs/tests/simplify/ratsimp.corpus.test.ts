@@ -59,7 +59,7 @@ describe("sympy/simplify/tests/test_ratsimp.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ratsimpmodprime(new Mul([new Pow(new Add([x, new Pow(y, rational(2)), new Mul([rational(-2), y])]), rational(-1)), new Add([rational(4), new Mul([rational(-1), x]), new Mul([rational(-2), y]), new Mul([x, y])])]), [new Add([rational(-2), x]), new Add([rational(-3), y])], [x, y], { order: 'lex' }))).toBe('2/5');
   });
-  it.fails("test_ratsimpmodprime:73", () => {
+  it("test_ratsimpmodprime:73", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ratsimpmodprime(x, [new Add([y, new Mul([rational(-2), x])])], [], { order: 'lex' }))).toBe('y/2');
   });

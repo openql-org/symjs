@@ -127,3 +127,13 @@ it('validates indexed constructors and evaluates substituted sequence entries', 
   expect(String(new sj.Indexed([tuple, sj.S.Half]).withArgs([tuple, sj.S.Half]))).toBe('(10, 20)[1/2]');
   expect(String(new sj.Indexed([tuple, i, j]).withArgs([tuple, i, j]))).toBe('(10, 20)[i, j]');
 });
+
+it('gives the element when the base becomes an explicit array (SymPy Indexed on an NDimArray)', () => {
+  const [x, y, z, w] = symbols('x y z w');
+  const A = new IndexedBase('A', { shape: [2, 2] });
+  const M = sj.ImmutableDenseNDimArray([[x, y], [z, w]]);
+  expect(str(sj.subs(A.at(0, 0), [[A, M]]))).toBe('x');
+  expect(str(sj.subs(A.at(1, 0), [[A, M]]))).toBe('z');
+  // a symbolic index stays an indexed entry
+  expect(str(sj.subs(A.at(x, 0), [[A, M]]))).toBe('[[x, y], [z, w]][x, 0]');
+});

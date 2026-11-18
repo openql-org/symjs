@@ -11,3 +11,4 @@
 
 export * as gates from './gates';
 export { Commutator } from './secondquant';
+export { Tr } from './trace';

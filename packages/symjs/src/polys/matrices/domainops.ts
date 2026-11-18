@@ -27,6 +27,7 @@ import type { Domain } from '../domains';
 import { FractionField, IntegerRing, PolynomialRing, RationalField, RealField } from '../domains';
 import { Poly } from '../sympoly';
 import { FiniteField } from '../domains/finitefield';
+import { GaussianIntegerRing, GaussianRationalField } from '../domains/gaussiandomains';
 import { floatToString } from '../../numeric/mpf';
 import { constructDomain } from '../constructor';
 
@@ -53,9 +54,9 @@ export function isNegative(K: Domain, a: Expr): boolean {
   return K.isNegative(a);
 }
 
-/** SymPy K.canonical_unit: -1 for a negative element (by its leading coefficient), else 1. */
+/** SymPy K.canonical_unit, expressed in the matrix's coefficient representation. */
 export function canonicalUnit(K: Domain, a: Expr): Expr {
-  return isNegative(K, a) ? K.neg(K.one) : K.one;
+  return K.toSympy(K.canonicalUnit(a));
 }
 
 /** The multiplicative inverse in a field (SymPy a**-1). */
@@ -82,8 +83,13 @@ export function div(K: Domain, a: Expr, b: Expr): [Expr, Expr] {
     const [q, r] = floorDivmod(rat(a).p, rat(b).p);
     return [Rational.of(q), Rational.of(r)];
   }
+  if (K instanceof PolynomialRing) {
+    const [q, r] = polyOf(K, a).divAuto(polyOf(K, b), false);
+    return [q.asExpr(), r.asExpr()];
+  }
   if (K.isField) return [K.quo(a, b), K.zero];
-  throw new NotImplementedError(`div in ${K.toString()}`);
+  const [q, r] = K.div(a, b);
+  return [K.toSympy(q), K.toSympy(r)];
 }
 
 /** SymPy K.quo (floor division in ZZ). */
@@ -146,6 +152,7 @@ export function gcd(K: Domain, a: Expr, b: Expr): Expr {
     const R = K.getRing();
     return K.quo(gcd(R, numer(K, a), numer(K, b)), lcm(R, denom(K, a), denom(K, b)));
   }
+  if (K instanceof GaussianIntegerRing || K instanceof GaussianRationalField) return K.toSympy(K.gcd(a, b));
   return K.one;
 }
 
@@ -164,8 +171,12 @@ export function lcm(K: Domain, a: Expr, b: Expr): Expr {
   return K.mul(a, b);
 }
 
-/** SymPy ZZ.gcdex: [s, t, g] with s*a + t*b = g = gcd(a, b). */
+/** SymPy K.gcdex: [s, t, g] with s*a + t*b = g = gcd(a, b). */
 export function gcdex(K: Domain, a: Expr, b: Expr): [Expr, Expr, Expr] {
+  if (K instanceof PolynomialRing && K.symbols.length === 1 && K.dom.isField) {
+    const [s, t, g] = polyOf(K, a).gcdex(polyOf(K, b), false);
+    return [s.asExpr(), t.asExpr(), g.asExpr()];
+  }
   if (!isZZ(K)) throw new NotImplementedError(`gcdex in ${K.toString()}`);
   const [s, t, g] = igcdex(rat(a).p, rat(b).p);
   return [Rational.of(s), Rational.of(t), Rational.of(g)];

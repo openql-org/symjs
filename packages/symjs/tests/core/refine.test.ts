@@ -28,6 +28,22 @@ it('queries the extended log and polar exponential on raw inputs', () => {
   expect(ask(Q.rational(sj.fn('exp_polar', [0], raw)))).toBe(true);
 });
 
+it('recognizes exact rational and algebraic values of unevaluated elementary functions', () => {
+  const raw = { evaluate: false };
+  for (const e of [sj.fn('cos', [0], raw), sj.fn('asin', [0], raw), sj.fn('atan', [0], raw), sj.fn('log', [1], raw), sj.fn('acos', [1], raw)]) {
+    expect(ask(Q.rational(e))).toBe(true);
+    expect(ask(Q.algebraic(e))).toBe(true);
+  }
+  expect(ask(Q.rational(sj.fn('log', [1, 1], raw)))).toBe('unknown');
+  expect(ask(Q.rational(sj.fn('abs', [0], raw)))).toBe(true);
+});
+
+it('rejects an imaginary result when a symbolic sum has a nonzero real part', () => {
+  const p = sj.symbol('p', { positive: true });
+  const j = sj.symbol('j', { imaginary: true });
+  expect(ask(Q.imaginary(p.add(j)))).toBe(false);
+});
+
 it('recognizes a product of three imaginary factors', () => {
   const [u, v, w] = sj.symbols('u v w', { imaginary: true });
   expect(ask(Q.real(sj.mul(u, v, w)))).toBe(false);
@@ -891,6 +907,9 @@ it('handles core boolean atoms and relation normalization without optional propo
   await import('../../src/core');
   const nodes = await import('../../src/core/nodes');
   const bool = await import('../../src/core/boolalg');
+  const n = new nodes.Sym('n', { integer: true, positive: true });
+  expect(nodes.functionFactHandlers.factorial).toBeUndefined();
+  expect(core.ask(core.Q.positive(new nodes.Fn('factorial', [n])))).toBe(true);
   expect(core.ask(true)).toBe(true);
   expect(core.ask(false)).toBe(false);
   expect(() => core.ask(bool.or(core.Q.real(new nodes.Sym('u')), core.Q.real(new nodes.Sym('v'))), false)).toThrow(RangeError);
@@ -901,4 +920,12 @@ it('handles core boolean atoms and relation normalization without optional propo
   expect(core.ask(bool.or(core.Q.real(nodes.S.I), core.Q.positive(nodes.S.NegOne)))).toBe(false);
   expect(core.ask(core.Q.eq(a, b), core.Q.eq(b, a))).toBe(true);
   expect(core.ask(bool.or(core.Q.real(a), core.Q.real(b)), bool.and(core.Q.positive(a), core.Q.positive(b)))).toBe(true);
+});
+
+it('classifies unevaluated elementary functions at zero as rational and algebraic', () => {
+  const t = new sj.Fn('tan', [sj.S.Zero]);
+  const e = new sj.Pow(sj.S.E, sj.S.Zero);
+  expect(sj.ask(sj.Q.rational(e))).toBe(true);
+  expect(sj.ask(sj.Q.rational(t))).toBe(true);
+  expect(sj.ask(sj.Q.algebraic(t))).toBe(true);
 });

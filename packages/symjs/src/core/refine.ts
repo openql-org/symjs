@@ -813,9 +813,18 @@ class Decider {
     return this.q('real', e) === false ? false : undefined;
   }
 
+  private hasRationalElementaryValue(e: Fn): boolean {
+    if (e.args.length !== 1) return false;
+    const argument = at(e.args, 0);
+    if (['sin', 'cos', 'tan', 'asin', 'atan'].includes(e.name)) return this.q('zero', argument) === true;
+    if (e.name === 'log' || e.name === 'acos') return this.q('zero', add(argument, -1)) === true;
+    return false;
+  }
+
   private rational(e: Expr): Tri {
     if (e instanceof Rational) return true;
     if (e instanceof Fn && e.name === 'exp_polar' && this.q('zero', at(e.args, 0)) === true) return true;
+    if (e instanceof Fn && this.hasRationalElementaryValue(e)) return true;
     if (e instanceof Fn && this.q('zero', e) === true) return true;
     // SymPy Abs._eval_is_rational and _eval_is_integer: |a| of a rational (integer) real a
     if (e instanceof Fn && e.name === 'abs' && this.q('real', at(e.args, 0)) === true) return this.q('rational', at(e.args, 0));
@@ -845,7 +854,7 @@ class Decider {
         return this.q('rational', at(x.args, 0));
       }
       if (this.q('algebraic', e) === false) return false;
-      if (isConst(b, 'E')) return undefined;
+      if (isConst(b, 'E')) return this.q('zero', x) === true ? true : undefined;
       if (isInt(x) && x.p === -1n && this.q('rational', b) === false && this.q('finite', b) === true) return false;
       if (this.q('integer', x) === true && this.q('rational', b) === true) return this.q('nonzero', b) === true || this.q('nonnegative', x) === true ? true : undefined;
       // an unevaluated rational power of a rational number is irrational or not real
@@ -899,6 +908,7 @@ class Decider {
       return undefined;
     }
     if (e instanceof Fn) {
+      if (this.hasRationalElementaryValue(e)) return true;
       // the functions named below take one argument
       const a = (): Expr => at(e.args, 0);
       if (['cot', 'acot'].includes(e.name) && this.q('algebraic', a()) === true) return false;

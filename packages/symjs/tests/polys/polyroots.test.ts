@@ -85,3 +85,9 @@ it('returns cyclotomic roots in trigonometric or algebraic form', () => {
   expect(rootsCyclotomic(p('x**2-x+1'), true).map(String)).toEqual(['1 - (-1)**(1/3)','(-1)**(1/3)']);
   expect(() => rootsCyclotomic(p('x**2-2'))).toThrow(RangeError);
 });
+
+it('recognizes cyclotomic factors and validates cubic inputs', () => {
+  expect(() => rootsCubic(p('x**2-1'))).toThrow(PolynomialError);
+  expect(roots(cyclotomicPoly(7, x), x, { multiple: true })).toHaveLength(6);
+  expect(roots(parseExpr('x**6+4*x**3+1'), x, { multiple: true, skipQuintic: true })).toHaveLength(0);
+});

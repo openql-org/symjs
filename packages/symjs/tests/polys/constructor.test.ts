@@ -40,8 +40,7 @@ describe('constructDomain', () => {
     expect(cd([x], { extension: true })).toBe('(ZZ[x], [x])');
     expect(cd([x, P('y/2')], { field: true })).toBe('(ZZ(x,y), [x, y/2])');
     expect(cd([x, P('1.5*y')])).toBe('(RR[x,y], [x, 1.5*y])');
-    // SymPy: (ZZ_I[x], [(0 + 1*I)*x]); symjs has no polynomial rings over ZZ_I
-    expect(cd([P('I*x')])).toBe('(EX, [EX(I*x)])');
+    expect(cd([P('I*x')])).toBe('(ZZ_I[x], [I*x])');
     expect(cd([x, P('x + sqrt(2)')])).toBe('(EX, [EX(x), EX(x + sqrt(2))])');
     expect(cd([x, P('sin(x)')])).toBe('(EX, [EX(x), EX(sin(x))])');
     expect(cd([sin(x)])).toBe('(EX, [EX(sin(x))])');
@@ -56,4 +55,52 @@ it('recognizes indexed and trigonometric algebraic coefficients in automatic ext
   const r=CRootOf(P('x**3-x-1'),0),a=cos(mul(pi,Rational.of(1,7)));
   expect(String(constructDomain([r],{extension:true})[0])).toContain('QQ<CRootOf');
   expect(String(constructDomain([a],{extension:true})[0])).toContain('QQ<');
+});
+
+it('constructs polynomial and fraction domains over Gaussian and complex coefficients', () => {
+  for (const [expressions, name] of [
+    [['2*x', 'I'], 'ZZ_I[x]'],
+    [['2*x', 'I*y'], 'ZZ_I[x,y]'],
+    [['x/2', 'I'], 'QQ_I[x]'],
+    [['I*x/2', '1'], 'QQ_I[x]'],
+    [['I*x/2', '3.5'], 'CC[x]'],
+    [['3.5*x', 'I'], 'CC[x]'],
+    [['x/2', '3.5*I*y'], 'CC[x,y]'],
+    [['I*x', '1/y'], 'ZZ_I(x,y)'],
+    [['I*x/2', '1/y'], 'ZZ_I(x,y)'],
+  ] as const) {
+    const es = expressions.map(P);
+    const [domain, values] = constructDomain(es);
+    expect(String(domain)).toBe(name);
+    expect(Array.isArray(values)).toBe(true);
+    if (!Array.isArray(values)) throw new TypeError('expected coefficient list');
+    values.forEach((value, i) => expect(domain.toSympy(value).sub(es[i] ?? 0).expand().equals(0)).toBe(true));
+  }
+});
+
+import { Poly, polyConstructionHooks } from '../../src/polys/sympoly';
+import { ZZ, QQ } from '../../src/polys/domains';
+import { AlgebraicField } from '../../src/polys/domains/algebraicfield';
+it('registers common domain inference for polynomial construction', () => {
+  const infer = polyConstructionHooks.domain;
+  const algebraic = polyConstructionHooks.algebraic;
+  if (infer === undefined || algebraic === undefined) throw new TypeError('missing polynomial construction hooks');
+  expect(String(infer([P('1/2')], { pure: true }))).toBe('QQ');
+  expect(String(infer([sqrt(2)], { extension: true }))).toBe('QQ<sqrt(2)>');
+  expect(infer([P('1')], { domain: ZZ })).toBe(ZZ);
+  const field = new AlgebraicField(QQ, sqrt(2));
+  const data = algebraic(field);
+  expect(data.generator.equals(sqrt(2))).toBe(true);
+  expect(data.minpoly.degree()).toBe(2);
+  expect(data.coefficients(P('1 + sqrt(2)')).map(String)).toEqual(['1', '1']);
+  expect(algebraic(ZZ).coefficients(I).map(String)).toEqual(['1', '0']);
+  expect(Poly.from(P('x + sqrt(2)'), [x], { extension: true }).domain).toBe('QQ<sqrt(2)>');
+});
+
+it('constructs algebraic fields of complex roots of unity', () => {
+  const w = P('exp(-2*I*pi/3)');
+  const [domain, coefficients] = constructDomain([P('exp(2*I*pi/3)'), w, 1], { extension: true });
+  expect(String(domain)).toBe('QQ<exp(-2*I*pi/3)>');
+  expect(repr(coefficients)).toBe('[ANP([MPQ(-1,1), MPQ(-1,1)], [MPQ(1,1), MPQ(1,1), MPQ(1,1)], QQ), ANP([MPQ(1,1), MPQ(0,1)], [MPQ(1,1), MPQ(1,1), MPQ(1,1)], QQ), ANP([MPQ(1,1)], [MPQ(1,1), MPQ(1,1), MPQ(1,1)], QQ)]');
+  expect(String(constructDomain([P('exp(x)')], { extension: true })[0])).toBe('EX');
 });

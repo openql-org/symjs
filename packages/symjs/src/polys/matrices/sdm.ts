@@ -18,7 +18,7 @@ import type { Domain } from '../domains';
 import { ExpressionRawDomain } from '../domains/expressionrawdomain';
 import type { Shape, Slice } from './ddm';
 import { DDM, ddmHooks, sliceIndices } from './ddm';
-import { convertFrom, elemEq, elemRepr, elemStr, exquo, inv, isExact } from './domainops';
+import { convertFrom, elemEq, elemRepr, elemStr, exquo, hasAssocField, inv, isExact } from './domainops';
 import { DMBadInputError, DMDomainError, DMShapeError } from './exceptions';
 
 /** A sparse row: column -> nonzero element. */
@@ -258,8 +258,9 @@ export class SDM {
   }
   /** Multiplication by a domain element on the right. */
   mul(b: Expr): SDM {
+    const scalar = this.domain.fromSympy(b);
     return new SDM(
-      unopDict(this.data, (a) => this.domain.mul(a, b), this.domain),
+      unopDict(this.data, (a) => this.domain.mul(a, scalar), this.domain),
       this.shape,
       this.domain,
     );
@@ -325,6 +326,7 @@ export class SDM {
   }
   /** Reduced row echelon form over a field: [rref, pivots]. */
   rref(): [SDM, number[]] {
+    if (hasAssocField(this.domain)) return this.convertTo(this.domain.getField()).rref();
     const [B, pivots] = sdmIrref(this.data, this.domain);
     return [new SDM(B, this.shape, this.domain), pivots];
   }

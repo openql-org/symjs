@@ -449,9 +449,18 @@ function isRealRadical(e: Expr): boolean {
 
 const closedRealAlgebraicZero = (e: Expr): boolean => isRealRadical(e) && impl.equalsZero?.(e) === true;
 
+function containsPowerOfSum(e: Expr): boolean {
+  if (e instanceof Pow) return e.base instanceof Add && e.exp instanceof Rational && e.exp.isInteger && e.exp.isPositive;
+  return e instanceof Mul && e.args.some(containsPowerOfSum);
+}
+
 function addZero(e: Expr): V {
   if (!e.isCommutative) return undefined;
-  if (e.isNumber && closedRealAlgebraicZero(e)) return true;
+  if (e.isNumber) {
+    if (e.args.some(containsPowerOfSum)
+        && e.args.every((term) => is(term, 'extended_real')) && impl.expand(e).equals(S.Zero)) return true;
+    if (closedRealAlgebraicZero(e)) return true;
+  }
   const nz: Expr[] = [];
   let z = 0;
   let imOrZ = false;

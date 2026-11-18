@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, Rational, besseli, besselj, besselsimp, expPolar, fn, mul, parse, polarLift, symbol, symbols } from '../../src';
+import { Float, DiracDelta, Heaviside, Rational, besseli, besselj, besselsimp, expPolar, fn, mul, parse, polarLift, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 
 const [z, nu] = symbols('z nu x');
@@ -73,4 +73,9 @@ describe("besselsimp (cov2): SymPy 1.14 cases", () => {
   it.each(cases)('%s', (_name, run, want) => {
     expect(showMap(run())).toBe(want);
   });
+});
+
+it('retains an order when adding one rounds back to that order', () => {
+  const e = besselj(new Float(2 ** 60), z);
+  expect(besselsimp(e).equals(e)).toBe(true);
 });

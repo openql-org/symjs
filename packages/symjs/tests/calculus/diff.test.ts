@@ -365,6 +365,11 @@ it('treats a symbol in a bound summand as independent', async () => {
   expect(s.diff(new s.Concrete('Sum', [x, x, s.S.One, s.S.Two]), x)).toBe(s.S.Zero);
 });
 
+it('distinguishes a bound summation index from an independent scalar', () => {
+  const i = sj.symbol('i');
+  expect(sj.diff(sj.Sum(i, [i, 1, 4]), i)).toBe(sj.S.Zero);
+});
+
 it('differentiates a sum with a bound variable and checks explicit polynomial partials', async () => {
   const { diff, fdiff, legendre, Sum, symbols } = await import('../../src');
   const [i, x, n] = symbols('i x n');

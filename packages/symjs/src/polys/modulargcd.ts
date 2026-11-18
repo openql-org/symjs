@@ -14,7 +14,10 @@ import { ZZ } from './domains';
 import type { Domain } from './domains';
 import { AlgebraicField } from './domains/algebraicfield';
 import { GF } from './domains/finitefield';
+import { heuGcd } from './euclidtools';
+import { gfGcd } from './galoistools';
 import type { PolyElement } from './rings';
+import { zpoly, type ZPoly } from './wang';
 
 type Cofactors = [PolyElement, PolyElement, PolyElement];
 
@@ -141,8 +144,47 @@ export function modgcdUnivariate(f: PolyElement, g: PolyElement): Cofactors { re
 /** GCD and cofactors in ZZ[x, y] (SymPy modgcd_bivariate). */
 export function modgcdBivariate(f: PolyElement, g: PolyElement): Cofactors { return integerModgcd(f, g); }
 
+/** A degree-preserving coprime image in every variable excludes a common factor. */
+function coprimeImages(f: ZPoly, g: ZPoly, n: number): boolean {
+  const prime = 65537n;
+  const degrees = (p: ZPoly, j: number) => Math.max(...[...p.values()].map(({ e }) => at(e, j)));
+  for (let j = 0; j < n; j++) {
+    const df = degrees(f, j), dg = degrees(g, j);
+    if (df === 0 || dg === 0) continue;
+    const image = (poly: ZPoly, degree: number, point: bigint): bigint[] => {
+      const coefficients = Array<bigint>(degree + 1).fill(0n);
+      for (const { e, c } of poly.values()) {
+        let value = c;
+        for (const [i, power] of e.entries()) if (i !== j) value = value * (point + BigInt(i)) ** BigInt(power) % prime;
+        const k = degree - at(e, j);
+        coefficients[k] = (at(coefficients, k) + value) % prime;
+      }
+      return coefficients;
+    };
+    const certified = [1n, 2n, 3n].some((point) => {
+      const a = image(f, df, point), b = image(g, dg, point);
+      return first(a) !== 0n && first(b) !== 0n && gfGcd(a, b, prime).length === 1;
+    });
+    if (!certified) return false;
+  }
+  return true;
+}
+
 /** GCD and cofactors in ZZ[x_1, ..., x_n] (SymPy modgcd_multivariate). */
-export function modgcdMultivariate(f: PolyElement, g: PolyElement): Cofactors { return integerModgcd(f, g); }
+export function modgcdMultivariate(f: PolyElement, g: PolyElement): Cofactors {
+  checkRing(f, g);
+  const R = f.ring;
+  if (!R.domain.equals(ZZ)) throw new DomainError('modular integer GCD requires ZZ');
+  const t = trivial(f, g);
+  if (t !== false) return t;
+  const encode = (p: PolyElement) => zpoly(p.listterms().map(([e, c]) => [e, ZZ.convert(c)]));
+  const candidate = heuGcd(encode(f), encode(g), R.ngens);
+  if (candidate && coprimeImages(candidate[1], candidate[2], R.ngens)) {
+    const decode = (p: ZPoly) => R.fromTerms([...p.values()].map(({ e, c }) => [e, c]));
+    return [decode(candidate[0]), decode(candidate[1]), decode(candidate[2])];
+  }
+  return integerModgcd(f, g);
+}
 
 /**
  * Monic GCD and cofactors over an algebraic number field (SymPy func_field_modgcd).

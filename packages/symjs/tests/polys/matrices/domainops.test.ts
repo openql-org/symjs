@@ -24,7 +24,7 @@ describe('domain operations', () => {
     expect(ops.div(ZZ, q(6), q(2)).map(String)).toEqual(['3', '0']);
     expect(ops.div(QQ, q(1, 2), q(3)).map(String)).toEqual(['1/6', '0']);
     expect(() => ops.div(ZZ, q(1), q(0))).toThrow(RangeError);
-    expect(() => ops.div(ZX, x, x)).toThrow(NotImplementedError);
+    expect(ops.div(ZX, x, x).map(String)).toEqual(['1', '0']);
     expect([String(ops.quo(ZZ, q(7), q(2))), String(ops.rem(ZZ, q(7), q(2)))]).toEqual(['3', '1']);
     expect(String(ops.exquo(ZZ, q(6), q(3)))).toBe('2');
     expect(() => ops.exquo(ZZ, q(7), q(3))).toThrow(ExactQuotientFailed);
@@ -47,6 +47,9 @@ describe('domain operations', () => {
     expect(String(ops.gcd(RR, new Float(2), new Float(3)))).toBe('1');
     expect(String(ops.lcm(RR, new Float(2), new Float(3)))).toContain('6.0');
     expect(ops.gcdex(ZZ, q(4), q(6)).map(String)).toEqual(['-1', '1', '2']);
+    expect(ops.gcdex(QQ.polyRing(x), add(x, 1), x).map(String)).toEqual(['1', '-1', '1']);
+    expect(() => ops.gcdex(ZX, x, x)).toThrow(NotImplementedError);
+    expect(() => ops.gcdex(QQ.polyRing(x, new Sym('y')), x, x)).toThrow(NotImplementedError);
     expect(() => ops.gcdex(QQ, q(4), q(6))).toThrow(NotImplementedError);
     expect(ops.cofactors(ZZ, q(4), q(6)).map(String)).toEqual(['2', '2', '3']);
     expect(ops.cofactors(ZZ, q(0), q(0)).map(String)).toEqual(['0', '0', '0']);
@@ -55,6 +58,7 @@ describe('domain operations', () => {
     expect(String(ops.canonicalUnit(ZZ, q(-3)))).toBe('-1');
     expect(String(ops.canonicalUnit(ZX, add(mul(-1, x), 1)))).toBe('-1');
     expect(ops.isNegative(FX, mul(-1, x, pow(add(x, 1), -1)))).toBe(true);
+    expect(ops.isNegative(ZX, add(mul(-1, x), 1))).toBe(true);
     expect([String(ops.numer(QQ, q(2, 3))), String(ops.denom(QQ, q(2, 3))), String(ops.denom(ZZ, q(2)))]).toEqual(['2', '3', '1']);
     expect([String(ops.numer(FX, mul(x, pow(add(x, 1), -1)))), String(ops.denom(FX, mul(x, pow(add(x, 1), -1))))]).toEqual(['x', 'x + 1']);
     expect([ops.hasAssocRing(QQ), ops.hasAssocRing(FX), ops.hasAssocRing(ZZ), ops.hasAssocField(ZX), ops.hasAssocField(QQ)]).toEqual([true, true, false, true, false]);
@@ -77,6 +81,9 @@ describe('domain operations', () => {
     expect(String(ZZ_I.getField())).toBe('QQ_I');
     expect(String(QQ_I.quo(q(1), add(1, I)))).toBe('1/2 - I/2');
     expect(String(ZZ_I.mul(add(1, I), add(1, I)))).toBe('2*I');
+    expect(ops.div(ZZ_I, add(1, I), add(1, I)).map(String)).toEqual(['1', '0']);
+    expect(String(ops.gcd(ZZ_I, add(1, I), add(1, I)))).toBe('1 + I');
+    expect(String(ops.gcd(QQ_I, add(1, I), add(1, I)))).toBe('1');
   });
   it('construct_domain', () => {
     const c = (es: unknown[], field = false) => String(ops.domainOfExprs(es as never, { field })[0]);

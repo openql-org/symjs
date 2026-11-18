@@ -150,9 +150,9 @@ describe('meijerint_definite: more cases of the lookup table and the intervals',
   it.each(cases)('%s over (%s, %s)', (f, lo, hi, want) => expect(run(f, lo, hi) ?? 'None').toEqual(want));
   const others: [string, string, string, string[] | 'None'][] = [
     // SymPy: meijerg(((0, 1/2, 1/2), (1,)), ((), ()), 16) (the same G-function (the order of the parameters an))
-    ["sin(1/x)*exp(-x)", "0", "oo", ["meijerg(((1/2, 0, 1/2), (1,)), ((), ()), 16)", "True"]],
+    ["sin(1/x)*exp(-x)", "0", "oo", ["meijerg(((0, 1/2, 1/2), (1,)), ((), ()), 16)", "True"]],
     // SymPy: meijerg(((1/2, 1/2, 1), (1/2,)), ((), ()), 16)/sqrt(pi) (the same value, 0.0643107738265933 (mpmath))
-    ["exp(-1/x)*besselj(0,x)", "0", "oo", ["meijerg(((), ()), ((0, -1/2, 0), (0,)), 1/16)/(4*sqrt(pi))", "True"]],
+    ["exp(-1/x)*besselj(0,x)", "0", "oo", ["meijerg(((), ()), ((-1/2, 0, 0), (0,)), 1/16)/(4*sqrt(pi))", "True"]],
     // SymPy: ERR TypeError (SymPy raises TypeError)
     ["exp(x)", "oo", "0", "None"],
     // SymPy: E*(-log(2) + log(-2*exp_polar(I*pi)) - Ei(2*exp_polar(I*pi)) + I*pi) (the same value:

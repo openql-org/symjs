@@ -483,11 +483,11 @@ describe("sympy/polys/tests/test_ring_series.py", () => {
   //           (tan(a)**3 + tan(a))*x**2 + (tan(a)**2 + 1)*x + tan(a)
   //   => (2*(tan(a))**3 + 2*(tan(a)))*x**3*y + ((tan(a))**4 + 4/3*(tan(a))**2 + 1/3)*x**3 + ((tan(a))**2 + 1)*x**2*y + ((tan(a))**3 + (tan(a)))*x**2 + ((tan(a))**2 + 1)*x + (tan(a))
   it.todo("test_tan:317");
-  it.fails("test_tan:322", () => {
+  it("test_tan:322", () => {
     const [x, y, a] = symbols('x y a');
     expect(sympyStr(rsTan(new PolyRing([x, y], EX, 'lex').fromExpr(new Add([a, x])), new PolyRing([x, y], EX, 'lex').fromExpr(x), rational(5)))).toBe('EX(tan(a)**5 + 5*tan(a)**3/3 + 2*tan(a)/3)*x**4 + EX(tan(a)**4 + 4*tan(a)**2/3 + 1/3)*x**3 + EX(tan(a)**3 + tan(a))*x**2 + EX(tan(a)**2 + 1)*x + EX(tan(a))');
   });
-  it.fails("test_tan:325", () => {
+  it("test_tan:325", () => {
     const [x, y, a] = symbols('x y a');
     expect(sympyStr(rsTan(new PolyRing([x, y], EX, 'lex').fromExpr(new Add([a, x, new Mul([y, new Pow(x, rational(2))])])), new PolyRing([x, y], EX, 'lex').fromExpr(x), rational(4)))).toBe('EX(2*tan(a)**3 + 2*tan(a))*x**3*y + EX(tan(a)**4 + 4*tan(a)**2/3 + 1/3)*x**3 + EX(tan(a)**2 + 1)*x**2*y + EX(tan(a)**3 + tan(a))*x**2 + EX(tan(a)**2 + 1)*x + EX(tan(a))');
   });

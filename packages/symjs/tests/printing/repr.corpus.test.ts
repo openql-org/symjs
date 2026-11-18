@@ -225,7 +225,7 @@ describe("sympy/printing/tests/test_repr.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Singletons:49 (17)", () => {
+  it("test_Singletons:49 (17)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(srepr(EmptySequence, {}))).toBe('EmptySequence');
@@ -458,7 +458,7 @@ describe("sympy/printing/tests/test_repr.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Wild:49", () => {
+  it("test_Wild:49", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(srepr(new Wild('x', { exclude: [], even: true }), {}))).toBe('Wild(\'x\', even=True)');

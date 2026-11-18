@@ -14,13 +14,17 @@
 
 import { at, defined } from '../core/guard';
 import { Dummy } from '../core/nodes';
-import type { Expr } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { groundGcd, groundLcm, groundQuo } from './compatibility';
 import { monomialDivides, monomialLcm, monomialLdiv, monomialMul } from './monomial';
 import type { MonomialKey } from './orderings';
 import { compareMonomialKeys, lex } from './orderings';
 import type { Monom, PolyElement } from './rings';
 import { PolyRing } from './rings';
+import { GF } from './domains/finitefield';
+import { constructDomain } from './constructor';
+import { Poly } from './sympoly';
+import { GroebnerBasis, groebner, type GroebnerOptions, type MonomialOrder } from './groebner';
 
 /** A signature: a monomial and the index of an input polynomial. */
 export type Signature = readonly [Monom, number];
@@ -146,6 +150,51 @@ export function f5Reduce(fIn: LabeledPolynomial, B: readonly LabeledPolynomial[]
 
 const byLM = (ring: PolyRing) => (a: PolyElement, b: PolyElement): number => cmpKeys(orderKey(ring, a.LM), orderKey(ring, b.LM));
 
+type SparsePair = readonly [PolyElement, PolyElement, Monom];
+
+/** SymPy's improved Buchberger algorithm, with pairs ordered by their least common monomial. */
+function buchberger(input: readonly PolyElement[], ring: PolyRing): PolyElement[] {
+  const order = byLM(ring);
+  let initial = [...input];
+  for (;;) {
+    const reduced = initial.map((g, i) => g.rem(initial.slice(0, i)))
+      .filter((g) => !g.isZero).map((g) => g.monic());
+    if (initial.length === reduced.length && initial.every((g, i) => g.equals(at(reduced, i)))) break;
+    initial = reduced;
+  }
+  let basis: PolyElement[] = [];
+  let pairs: SparsePair[] = [];
+  const update = (h: PolyElement): void => {
+    const mh = h.LM;
+    const pending: SparsePair[] = basis.map((g) => [h, g, monomialLcm(mh, g.LM)]);
+    const retained: SparsePair[] = [];
+    const relativelyPrime = ([f, g, m]: SparsePair) => monomialMul(f.LM, g.LM).every((e, i) => e === at(m, i));
+    while (pending.length) {
+      const candidate = defined(pending.pop());
+      const dominated = (p: SparsePair) => monomialDivides(p[2], candidate[2]);
+      if (relativelyPrime(candidate) || (!pending.some(dominated) && !retained.some(dominated))) retained.push(candidate);
+    }
+    const sameMonomial = (a: Monom, b: Monom) => a.every((e, i) => e === at(b, i));
+    pairs = pairs.filter(([a, b, m]) => !monomialDivides(mh, m)
+      || sameMonomial(monomialLcm(a.LM, mh), m) || sameMonomial(monomialLcm(b.LM, mh), m));
+    pairs.push(...retained.filter((pair) => !relativelyPrime(pair)));
+    basis = basis.filter((g) => !monomialDivides(mh, g.LM));
+    basis.push(h);
+  };
+  initial.sort(order);
+  for (const g of initial) update(g);
+  while (pairs.length) {
+    let index = 0;
+    for (let i = 1; i < pairs.length; i++) {
+      if (ring.order.compare(at(pairs, i)[2], at(pairs, index)[2]) < 0) index = i;
+    }
+    const [a, b] = at(pairs.splice(index, 1), 0);
+    const remainder = spoly(a, b).rem([...basis].sort(order));
+    if (!remainder.isZero) update(remainder.monic());
+  }
+  return redGroebner(basis).sort((a, b) => order(b, a));
+}
+
 /** SymPy _f5b(F, ring): the reduced Groebner basis of F (over a field) by the F5B algorithm. */
 export function f5b(FIn: readonly PolyElement[], ring: PolyRing): PolyElement[] {
   // the input interreduced
@@ -267,8 +316,22 @@ function groebnerOf(seq: readonly PolyElement[], ring: PolyRing): PolyElement[] 
 }
 
 /** A reduced Groebner basis in a sparse polynomial ring, clearing denominators over rings. */
-export function groebnerInRing(seq: readonly PolyElement[], ring: PolyRing): PolyElement[] {
+export function groebnerInRing(seq: readonly PolyElement[], ring: PolyRing, method = 'buchberger'): PolyElement[] {
+  if (method !== 'f5b' && method !== 'buchberger') throw new RangeError(`unknown Groebner basis method: ${method}`);
   const field = ring.domain.isField ? ring : ring.withDomain(ring.domain.getField());
-  const basis = f5b(seq.map((p) => field.fromExpr(p.asExpr())), field);
-  return field === ring ? basis : basis.map((p) => ring.fromExpr(p.clearDenoms()[1].asExpr()));
+  const basis = (method === 'f5b' ? f5b : buchberger)(seq.map((p) => p.setRing(field)), field);
+  return field === ring ? basis : basis.map((p) => p.clearDenoms()[1].setRing(ring));
+}
+
+/** Reduced Gröbner basis with optional coefficient-domain arithmetic. */
+export function groebnerWithDomain(F: readonly ExprLike[], gens: readonly Sym[], order: MonomialOrder = 'lex', opts: GroebnerOptions = {}): GroebnerBasis {
+  return groebner(F, gens, order, opts, (polys, generators, ordering, options) => {
+    const extension = options.extension === true ? true : undefined;
+    const domain = options.modulus === undefined ? options.domain ?? constructDomain(polys.flatMap((p) => p.coeffs()), { extension, field: options.field })[0]
+      : GF(options.modulus, options.symmetric ?? true);
+    const ring = new PolyRing(generators, domain, ordering);
+    const basis = groebnerInRing(polys.map((p) => ring.fromExpr(p.asExpr())), ring, options.method);
+    const exprs = basis.map((g) => ring.domain.isExact ? g.asExpr() : Poly.from(g.asExpr(), generators, { domain: ring.domain }).asExpr());
+    return new GroebnerBasis(exprs, generators, String(ring.domain), ordering, options.polys, ring);
+  });
 }

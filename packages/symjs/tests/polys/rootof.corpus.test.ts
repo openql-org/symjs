@@ -258,15 +258,15 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rootof(Poly.from(new Add([x, new Mul([rational(-1), y])]), [x], { domain: 'ZZ[y]', pure: false }), rational(0)))).toBe('y');
   });
-  it.fails("test_CRootOf___new__:105", () => {
+  it("test_CRootOf___new__:105", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rootof(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1), y])]), [x], { domain: 'ZZ[y]', pure: false }), rational(0)))).toBe('-sqrt(y)');
   });
-  it.fails("test_CRootOf___new__:106", () => {
+  it("test_CRootOf___new__:106", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rootof(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1), y])]), [x], { domain: 'ZZ[y]', pure: false }), rational(1)))).toBe('sqrt(y)');
   });
-  it.fails("test_CRootOf___new__:108", () => {
+  it("test_CRootOf___new__:108", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rootof(Poly.from(new Add([new Pow(x, rational(3)), new Mul([rational(-1), y])]), [x], { domain: 'ZZ[y]', pure: false }), rational(0)))).toBe('y**(1/3)');
   });
@@ -288,7 +288,7 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
   it("test_CRootOf_attributes:119", () => {
     expect(sympyStr(new Set())).toBe('set()');
   });
-  it.fails("test_CRootOf_attributes:124", () => {
+  it("test_CRootOf_attributes:124", () => {
     const [x, y] = symbols('x y');
     expect(() => rootof(Poly.from(new Add([rational(1), new Pow(x, rational(3)), new Mul([x, y])]), [x], { domain: 'ZZ[y]', pure: false }), rational(0))).toThrow(NotImplementedError);
   });
@@ -375,7 +375,7 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new CRootOf(new Add([rational(1), x, new Pow(x, rational(3))]), 0).subs(x, y))).toBe('CRootOf(x**3 + x + 1, 0)');
   });
-  it.fails("test_CRootOf_diff:189", () => {
+  it("test_CRootOf_diff:189", () => {
     const x = new Sym('x');
     expect(sympyStr(diff(new CRootOf(new Add([rational(1), x, new Pow(x, rational(3))]), 0), x))).toBe('0');
   });
@@ -593,7 +593,7 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
     const [a, x] = symbols('a x');
     expect(sympyStr(new RootSumNode([new Add([a, new Pow(x, rational(2))]), Lambda([x], exp(x)), x]).evalf(15, {}))).toBe('RootSum(a + x**2, Lambda(x, exp(x)))');
   });
-  it.fails("test_RootSum_diff:526", () => {
+  it("test_RootSum_diff:526", () => {
     const [x, r] = symbols('x r');
     expect(sympyStr(diff(new RootSumNode([new Add([rational(3), x, new Pow(x, rational(3))]), Lambda([r], exp(new Mul([r, x]))), x]), x))).toBe('RootSum(x**3 + x + 3, Lambda(r, r*exp(r*x)))');
   });
@@ -601,7 +601,7 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
     const [x, r, y] = symbols('x r y');
     expect(sympyStr(new RootSumNode([new Add([rational(3), x, new Pow(x, rational(3))]), Lambda([r], exp(new Mul([r, x]))), x]).subs(y, rational(1)))).toBe('RootSum(x**3 + x + 3, Lambda(r, exp(r*x)))');
   });
-  it.fails("test_RootSum_subs:537", () => {
+  it("test_RootSum_subs:537", () => {
     const [x, r, y] = symbols('x r y');
     expect(sympyStr(new RootSumNode([new Add([rational(3), x, new Pow(x, rational(3))]), Lambda([r], exp(new Mul([r, x]))), x]).subs(x, y))).toBe('RootSum(y**3 + y + 3, Lambda(r, exp(r*y)))');
   });
@@ -652,7 +652,7 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
   //   assert unchanged(Eq, r, p)
   //   => True
   it.todo("test_issue_15920:687");
-  it.fails("test_issue_19113:693", () => {
+  it("test_issue_19113:693", () => {
     const y = new Sym('y');
     const unicode = pprintUseUnicode(false);
     try {
@@ -661,11 +661,11 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_issue_19113:694", () => {
+  it("test_issue_19113:694", () => {
     const y = new Sym('y');
     expect(sympyStr(Poly.from(new Add([rational(1), new Pow(fn('tan', [y]), rational(3)), new Mul([rational(-1), fn('tan', [y])])]), [fn('tan', [y])], { domain: 'ZZ', pure: false }).realRoots())).toBe('[CRootOf(x**3 - x + 1, 0)]');
   });
-  it.fails("test_issue_19113:696", () => {
+  it("test_issue_19113:696", () => {
     const x = new Sym('x');
     expect(sympyStr(Poly.from(new Add([rational(1), new Pow(fn('tan', [x]), rational(3)), new Mul([rational(-1), fn('tan', [x])])]), [fn('tan', [x])], { domain: 'ZZ', pure: false }).realRoots())).toBe('[CRootOf(x**3 - x + 1, 0)]');
   });

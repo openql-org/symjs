@@ -47,7 +47,10 @@ function pureComplex(e: Expr): [Expr, Expr] | undefined {
 function isAlgebraicNumber(e: Expr): boolean {
   if (e instanceof Rational || isI(e)) return true;
   if (e instanceof Add || e instanceof Mul) return e.args.every(isAlgebraicNumber);
-  if (e instanceof Pow) return e.exp instanceof Rational && isAlgebraicNumber(e.base);
+  if (e instanceof Pow) {
+    if (e.base instanceof Constant && e.base.name === 'E') return mul(e.exp, -1, S.I, pow(S.Pi, -1)) instanceof Rational;
+    return e.exp instanceof Rational && isAlgebraicNumber(e.base);
+  }
   if(e instanceof ExtensionExpr&&e.name==='CRootOf')return true;
   return freeSymbols(e).size===0&&fact(e,'algebraic')===true;
 }
@@ -132,14 +135,19 @@ function constructComposite(coeffs: readonly Expr[], opt: Options): Construction
   }
   const fractions = opt.field || parts.some(([, d]) => !(d instanceof Rational));
   const numbers = fractions ? parts.flatMap(([n, d]) => [...coefficientsOf(n), ...coefficientsOf(d)]) : parts.flatMap(([n, d]) => coefficientsOf(n).map((c) => mul(c, pow(d, -1))));
-  let [rationals, floats] = [false, false];
+  let [rationals, floats, complexes] = [false, false, false];
   for (const c of numbers) {
     if (c instanceof Float) floats = true;
-    else if (!(c instanceof Rational)) return null;
-    else if (!c.isInteger) rationals = true;
+    else if (c instanceof Rational) {
+      if (!c.isInteger) rationals = true;
+    } else {
+      const parts = defined(pureComplex(c), 'complex coefficient');
+      complexes = true;
+      if (parts.some((part) => part instanceof Float)) floats = true;
+      else if (parts.some((part) => !isInt(part))) rationals = true;
+    }
   }
-  // symjs polynomial rings are over ZZ, QQ and RR (SymPy also makes ZZ_I[x], QQ_I[x] and CC[x]; symjs uses EX there)
-  const ground = floats ? RR : rationals ? QQ : ZZ;
+  const ground = floats ? complexes ? CC : RR : rationals ? complexes ? QQ_I : QQ : complexes ? ZZ_I : ZZ;
   // the polynomial rings of symjs have symbols as generators (SymPy also allows ZZ[sin(x)]; symjs uses EX there)
   const syms = gens.filter((g): g is Sym => g instanceof Sym);
   if (syms.length !== gens.length) return null;

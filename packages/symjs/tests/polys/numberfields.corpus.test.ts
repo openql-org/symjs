@@ -171,11 +171,11 @@ describe("sympy/polys/numberfields/tests/test_minpoly.py", () => {
   it.fails("test_minimal_polynomial:87", () => {
     expect(sympyStr(minimalPolynomial(new Pow(rational(2), rational(1, 2)), undefined, { compose: true, polys: true }))).toBe('Poly(x**2 - 2, x, domain=\'ZZ\')');
   });
-  it.fails("test_minimal_polynomial:88", () => {
+  it("test_minimal_polynomial:88", () => {
     const x = new Sym('x');
     expect(sympyStr(minimalPolynomial(new Pow(rational(2), rational(1, 2)), x, { compose: true, polys: true }))).toBe('Poly(x**2 - 2, x, domain=\'QQ\')');
   });
-  it.fails("test_minimal_polynomial:89", () => {
+  it("test_minimal_polynomial:89", () => {
     const x = new Sym('x');
     expect(sympyStr(minimalPolynomial(new Pow(rational(2), rational(1, 2)), x, { compose: false, polys: true }))).toBe('Poly(x**2 - 2, x, domain=\'QQ\')');
   });
@@ -489,7 +489,7 @@ describe("sympy/polys/numberfields/tests/test_minpoly.py", () => {
     const x = new Sym('x');
     expect(sympyStr(minimalPolynomial(fn('tan', [new Mul([rational(1, 5), pi])]), x, { compose: true, polys: false }))).toBe('x**4 - 10*x**2 + 5');
   });
-  it.fails("test_minpoly_compose:315", () => {
+  it("test_minpoly_compose:315", () => {
     expect(sympyStr(isZero(new Add([rational(-45), new Pow(new Add([rational(5), new Mul([rational(-2), new Pow(rational(5), rational(1, 2))])]), rational(2)), new Mul([rational(20), new Pow(rational(5), rational(1, 2))])])))).toBe('True');
   });
   it("test_minpoly_compose:319", () => {
@@ -503,7 +503,7 @@ describe("sympy/polys/numberfields/tests/test_minpoly.py", () => {
     const x = new Sym('x');
     expect(sympyStr(minimalPolynomial(fn('tan', [new Mul([rational(1, 10), pi])]), x, { compose: true, polys: false }))).toBe('5*x**4 - 10*x**2 + 1');
   });
-  it.fails("test_minpoly_compose:325", () => {
+  it("test_minpoly_compose:325", () => {
     expect(sympyStr(isZero(new Add([rational(-9), new Mul([rational(4), new Pow(rational(5), rational(1, 2))]), new Mul([rational(5), new Pow(new Add([rational(1), new Mul([rational(-2, 5), new Pow(rational(5), rational(1, 2))])]), rational(2))])])))).toBe('True');
   });
   it.fails("test_minpoly_compose:327", () => {
@@ -636,7 +636,7 @@ describe("sympy/polys/numberfields/tests/test_minpoly.py", () => {
   //               (sqrt(3)/2, -sqrt(6)/6 + sqrt(2)*I/2))
   //   => {(sqrt(3)/2, sqrt(6)/3), (sqrt(3)/2, -sqrt(6)/6 - sqrt(2)*I/2), (sqrt(3)/2, -sqrt(6)/6 + sqrt(2)*I/2)}
   it.todo("test_issue_18248:430");
-  it.fails("test_issue_13230:438", () => {
+  it("test_issue_13230:438", () => {
     const v1 = intersection(Circle(Point2D(rational(3), new Pow(rational(5), rational(1, 2)), { evaluate: false }), rational(5)), Circle(Point2D(rational(4), new Pow(rational(7), rational(1, 2)), { evaluate: false }), rational(6)));
     expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('[Point2D(-1 + (-sqrt(7) + sqrt(5))*(-2*sqrt(7)/29 + 9*sqrt(5)/29 + sqrt(196*sqrt(35) + 1941)/29), -2*sqrt(7)/29 + 9*sqrt(5)/29 + sqrt(196*sqrt(35) + 1941)/29), Point2D(-1 + (-sqrt(7) + sqrt(5))*(-sqrt(196*sqrt(35) + 1941)/29 - 2*sqrt(7)/29 + 9*sqrt(5)/29), -sqrt(196*sqrt(35) + 1941)/29 - 2*sqrt(7)/29 + 9*sqrt(5)/29)]');
   });

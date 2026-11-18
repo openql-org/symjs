@@ -4,6 +4,7 @@
 // Tests of src/printing/latex.ts.
 
 import { describe, expect, it } from 'vitest';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import * as sj from '../../src';
 import { adjoint, exp, I, mul, pow, rational, sin, sqrt, Sym, symbol, symbols, SymFunction } from '../../src';
 import { Add, Float, Fn, Integral, Limit, Mul, Order, Pow, Rational, Rel, S } from '../../src/core/nodes';
@@ -860,4 +861,40 @@ it('prints symbolic derivative orders in LaTeX', () => {
   const [x, n] = sj.symbols('x n');
   const f = sj.SymFunction('f')(x);
   expect(latex(f.diff(x, n))).toContain('^{n}');
+});
+
+// Replay the serialized algebraic objects that the expression-only test generator cannot reconstruct.
+const algebraicCases = new Set(['test_latex_basic', 'test_Modules', 'test_QuotientRing', 'test_PolynomialRingBase', 'test_latex_PolyElement', 'test_latex_FracElement', 'test_latex_Poly', 'test_latex_Poly_order', 'test_latex_numbers', 'test_latex_ordinals', 'test_categories']);
+for (const c of passingModuleCases('printing', 'sympy.printing.tests.test_latex').filter((c) => algebraicCases.has(c.test))) {
+  it(`${c.test}:${c.line}`, () => expect(runTestCase(c), c.src).toEqual({ status: 'pass' }));
+}
+
+it('prints ground domains, zero polynomials and finite ordinal terms', () => {
+  expect(latex(sj.ZZ)).toBe('\\mathbb{Z}');
+  expect(latex(sj.EX)).toBe('EX');
+  expect(latex(new sj.PolyRing([x], sj.ZZ).zero)).toBe('0');
+  expect(latex(sj.Poly.from(0, [x], { pure: true }))).toContain('\\operatorname{PurePoly}');
+  expect(latex(sj.ord0)).toBe('');
+  expect(latex(sj.OmegaPower(0, 4))).toBe('4 \\omega^{ord0}');
+  expect(latex(sj.GF(5))).toBe('\\mathbb{F}_{5}');
+  expect(latex(new sj.SingleDomain([x, sj.Reals]))).toBe('\\text{Domain: }\\left\\{x\\right\\} \\in \\mathbb{R}');
+});
+
+it('prints constant Fourier series and half-infinite symbolic ranges', () => {
+  expect(latex(new sj.FourierSeries(S.One, x, S.NegOne, S.One))).toBe('1');
+  const k = symbol('k', { integer: true });
+  expect(latex(sj.Range.of(S.Infinity, k, -2))).toBe('\\left\\{\\ldots, k + 4, k + 2\\right\\}');
+});
+
+it('snapshots global defaults for each printer and supports per-call overrides', () => {
+  const { imaginaryUnit } = sj.LatexPrinter.globalSettings;
+  const printer = new sj.LatexPrinter();
+  try {
+    sj.LatexPrinter.setGlobalSettings({ imaginaryUnit: 'j' });
+    expect(latex(I)).toBe('j');
+    expect(latex(I, { imaginaryUnit: 'ri' })).toBe('\\mathrm{i}');
+    expect(printer.doprint(I)).toBe('i');
+  } finally {
+    sj.LatexPrinter.setGlobalSettings({ imaginaryUnit });
+  }
 });

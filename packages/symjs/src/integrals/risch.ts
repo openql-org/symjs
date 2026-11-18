@@ -126,7 +126,8 @@ export interface DifferentialExtensionOptions {
  * substitutions. A manual extension is given as an {@link ExtensionSpec}.
  */
 export class DifferentialExtension extends DiffExtension {
-  private readonly dummy: boolean;
+  /** Whether tower generators are distinct dummy symbols. */
+  readonly dummy: boolean;
   private ts: Generator<Sym, never>;
 
   constructor(f: ExprLike | ExtensionSpec, x?: Sym, opts: DifferentialExtensionOptions = {}) {

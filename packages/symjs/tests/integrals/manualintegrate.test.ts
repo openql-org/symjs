@@ -214,3 +214,41 @@ it('retains affine-power fallbacks and quadratic degeneracies', () => {
   expect(String(sj.manualintegrate(new sj.Pow(sj.pow(x, 2), sj.S.NegHalf), x))).toContain('log(x)');
   expect(String(sj.manualintegrate(sj.DiracDelta(sj.mul(3, x)), x))).toBe('Heaviside(3*x)/3');
 });
+
+it('substitutes powers into Gaussians and exponential quadratic radicals', () => {
+  for (const [source, expected] of [
+    ['x*exp(x**4)', '-I*sqrt(pi)*erf(I*x**2)/4'],
+    ['exp(x)*sqrt(1+exp(2*x))', 'exp(x)*sqrt(1+exp(2*x))/2+asinh(exp(x))/2'],
+    ['x/(x**2+1)', 'log(x**2+1)/2'],
+    ['1/(x*log(x))', 'log(log(x))'],
+  ] as const) expect(sj.manualintegrate(parse(source), x).equals(parse(expected))).toBe(true);
+});
+
+it('retains unresolved substitutions when the change of variable still depends on x', () => {
+  for (const source of [
+    '1/sqrt(1+sqrt(x**2+1))', 'sqrt(1+sqrt(a*x+1))', 'sqrt(1+sin(x)+sqrt(x+2))',
+    'exp(x*log(x))', 'exp(x**2)*sqrt(1+exp(x**2))', 'sin(x)/log(x)',
+  ]) {
+    const f = parse(source);
+    expect(sj.manualintegrate(f, x).equals(sj.integral(f, x))).toBe(true);
+  }
+});
+
+it('reduces quadratic denominators with vanishing coefficients', () => {
+  for (const [source, expected] of [
+    ['x/(x**2+x)', 'log(x+1)'],
+    ['x/(x**2+2)', 'log(x**2+2)/2'],
+  ] as const) expect(sj.manualintegrate(parse(source), x).equals(parse(expected))).toBe(true);
+});
+
+it('preserves radicals outside the quadratic substitution and secants without a multiple angle', () => {
+  for (const f of [parse('sqrt(1+sqrt(x))'), parse('sec(x)*sin(x)')]) {
+    expect(sj.manualintegrate(f, x).equals(sj.integral(f, x))).toBe(true);
+  }
+});
+
+it('distinguishes a held constant logarithm from a dilogarithm derivative', () => {
+  const two = new sj.Add([x, x.neg(), sj.S.Two]);
+  const f = new sj.Mul([new sj.Fn('log', [two]), sj.pow(x, -1)]);
+  expect(sj.manualintegrate(f,x).equals(parse('log(2)*log(x)'))).toBe(true);
+});

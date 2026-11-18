@@ -646,7 +646,7 @@ it('replays captured tensor components through public array replacements without
   const c: TestCase = { ...base, category: 'tensor', fn: '.__getitem__', self: tensor(false), args: [integer(1)], tensorData, expected: '-3' };
   expect(runTestCase(c)).toEqual({ status: 'pass' });
   expect(runTestCase({ ...c, tensorData: [[type, integer(2)]] })).toEqual({ status: 'unsupported', reason: 'invalid tensor replacement state' });
-  expect(runTestCase({ ...c, fn: '.__pow__' })).toEqual({ status: 'unsupported', reason: 'legacy tensor norm powers are not exposed by the public tensor API' });
+  expect(runTestCase({ ...c, fn: '.__pow__', expected: 'sqrt(5)*I' })).toEqual({ status: 'pass' });
   expect(testCaseKey(c)).toBe(testCaseKey({ ...c, tensorData: undefined }));
   expect(runTestCase({ ...c, tensorData: undefined }).status).toBe('unsupported');
   expect(runTestCase({ ...c, fn: '.data', args: [], expected: '[2, -3]' })).toEqual({ status: 'pass' });
@@ -800,6 +800,52 @@ it('replays bound matrix methods and random draws with captured state', () => {
       status: 'unsupported', reason: 'unrecorded random generator state',
     });
   }
+});
+
+it('keeps a stable assertion ID when the replay supplies both core and integration metadata', () => {
+  const one: Tree = { t: 'Rational', p: '1', q: '1' };
+  const tagged: TestCase = {
+    ...base,
+    args: [{ ...one, indexedAssumptions: { integer: true }, matrixClass: 'MutableDenseMatrix' }],
+    comparisonTree: one, expectedOperand: one, polyReplay: { method: 'buchberger' },
+    boundMatrix: { t: 'Matrix', rows: [[one]] }, divideError: true,
+  };
+  expect(testCaseKey(tagged)).toBe(testCaseKey(base));
+});
+
+it('uses numeric nonconstancy when exact expression equality is undecided', () => {
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const self: Tree = { t: 'Add', args: [x, { t: 'Fn', name: 'sin', args: [x] }] };
+  expect(sj.exprEquals(sj.parse('x + sin(x)'), 0)).toBe('unknown');
+  expect(runTestCase({ ...base, fn: '.equals', self, args: [{ t: 'Rational', p: '0', q: '1' }], op: 'is', expected: 'False' })).toEqual({ status: 'pass' });
+});
+
+it('replays recorded polynomial options and right operands from other categories', () => {
+  const replayed = [
+    ['polys', 'sympy.polys.tests.test_galoistools', 468],
+    ['polys', 'sympy.polys.numberfields.tests.test_numbers', 151],
+    ['polys', 'sympy.polys.numberfields.tests.test_modules', 283],
+    ['polys', 'sympy.polys.numberfields.tests.test_utilities', 99],
+    ['polys', 'sympy.polys.tests.test_fields', 23],
+    ['tensor', 'sympy.tensor.tests.test_indexed', 22],
+    ['stats', 'sympy.stats.tests.test_rv', 156],
+  ] as const;
+  for (const [category, module, line] of replayed) {
+    const cases = passingModuleCases(category, module).filter((c) => c.line === line && (c.comparisonTree || c.polyReplay));
+    expect(cases, `${module}:${line}`).not.toHaveLength(0);
+    for (const c of cases) expect(runTestCase(c).status, c.src).toBe('pass');
+  }
+});
+
+it('reports equal operands in recorded inequality assertions', () => {
+  const comparisonTree: Tree = { t: 'Rational', p: '1', q: '1' };
+  const test = { ...base, comparisonTree, op: '!=' as const, expected: 'other' };
+  const outcome = { status: 'fail' as const, got: '1' };
+  const observation = { value: sj.S.One };
+  expect(assertionOutcome(test, outcome, observation)).toEqual(outcome);
+  expect(assertionOutcome({ ...test, category: 'polys' }, outcome, observation)).toEqual(outcome);
+  const text = { ...test, comparisonTree: { t: 'Str', v: 'other' } };
+  expect(assertionOutcome(text, outcome, observation)).toEqual({ status: 'pass' });
 });
 
 it('replays the default mapping and divide-by-zero settings in their original calls', () => {

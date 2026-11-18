@@ -14,6 +14,8 @@
 import * as sj from '../../packages/symjs/src';
 import { parseLatex } from '../../packages/symjs/src/parsing';
 import { Expr } from '../../packages/symjs/src';
+import { withPermCyclic } from '../../packages/symjs/src/printing/str';
+import type { Case } from './harness';
 import { JsDict, JsList, JsSet, JsTuple } from './harness';
 import { DifferentialExtension } from '../../packages/symjs/src/integrals/risch';
 import { partition as unifyPartition } from '../../packages/symjs/src/unify/core';
@@ -191,6 +193,61 @@ class ModOpNode extends sj.ExtensionExpr {
   }
 }
 const modOp = (how: ModOpNode['how'], a: sj.ExprLike, b: sj.ExprLike): Expr => new ModOpNode(how, [sj.sympify(a), sj.sympify(b)]);
+
+/** The local R subclasses in the upstream printer tests implement the active printer's hook. */
+class PrinterHookFixture extends sj.ExtensionExpr {
+  constructor(args: readonly Expr[], private readonly showArgument: boolean) { super('R', args); }
+  withArgs(args: readonly Expr[]): Expr { return new PrinterHookFixture(args, this.showArgument); }
+  override printStr(print: (e: Expr) => string): string { return this.showArgument ? `foo(${print(this.args[0]!)})` : 'foo'; }
+  override printLatex(print: (e: Expr) => string): string { return this.printStr(print); }
+  printRepr(print: (e: Expr) => string): string { return this.printStr(print); }
+}
+
+/** The low- and high-precedence infix functions in test_precedence.py. */
+class InfixFixture extends sj.DefinedFunctionCall {
+  constructor(name: string, args: readonly Expr[]) { super(name, args, {}); }
+  withArgs(args: readonly Expr[]): Expr { return new InfixFixture(this.name, args); }
+  strPrecedence(): number { return this.name === 'LowPrecedenceF' ? sj.PRECEDENCE.Mul - 5 : sj.PRECEDENCE.Func; }
+  override printStr(print: (e: Expr) => string): string { return this.args.map(print).join(' F '); }
+}
+
+/** Reconstruct locally defined classes using the enclosing test, before invoking the normal adapter. */
+export function printingFixtureFunction(c: Case, name: string): ((args: Expr[]) => Expr) | undefined {
+  if (!('test' in c)) return;
+  if (c.test === 'test_printmethod' && name === 'R' && 'line' in c) {
+    return (args) => new PrinterHookFixture(args, c.line !== 67 && c.line !== 115);
+  }
+  if (c.test === 'test_custom_function_precedence_comparison' && ['LowPrecedenceF', 'HighPrecedenceF'].includes(name)) {
+    return (args) => new InfixFixture(name, args);
+  }
+  if (c.test === 'test_function_subclass_different_name' && name === 'mygamma') {
+    const mygamma = sj.defineFunction(name, { eval: (a) => {
+      const value = sj.gamma(a);
+      return value instanceof sj.Fn && value.name === 'gamma' ? undefined : value;
+    } });
+    return (args) => mygamma(...args);
+  }
+  return undefined;
+}
+
+/** The upstream permutation tests temporarily set Permutation.print_cyclic to False. */
+export function withPrintingContext<T>(c: Case, run: () => T): T {
+  if (!('test' in c) || !('line' in c)) return run();
+  if (c.test === 'test_global_settings' && c.line === 3126) {
+    const { imaginaryUnit } = sj.LatexPrinter.globalSettings;
+    try {
+      sj.LatexPrinter.setGlobalSettings({ imaginaryUnit: 'j' });
+      return run();
+    } finally {
+      sj.LatexPrinter.setGlobalSettings({ imaginaryUnit });
+    }
+  }
+  const arrayForm = c.test === 'test_pretty_Permutation' && (c.line === 417 || c.line === 420)
+    || c.test === 'test_latex_permutation' && c.line === 336
+    || c.test === 'test_Permutation_Cycle' && c.line === 396
+    || c.test === 'test_Permutation' && c.fn === 'srepr';
+  return arrayForm ? withPermCyclic(false, run) : run();
+}
 
 // ---- sympy.utilities.memoization: the doctest's memoized factorial after factorial(4) and factorial(3)
 function memoFactorial(): sj.RecurrenceMemo<number> {

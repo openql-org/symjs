@@ -7,6 +7,7 @@ import { Float, Rational, Sym, parseExpr as P, sstr } from '../../src/index';
 import { ExactQuotientFailed, NotImplementedError } from '../../src/core/errors';
 import { CoercionFailed, DMF, DMP, EX, Expression, ExpressionDomain, FractionField, IntegerRing, PolynomialRing, QQ, RR, RationalField, RealField, ZZ, domainArith, domainNeg, gcdSettings, groundRational, groundToSympy, isDomainElement } from '../../src/polys/domains';
 import { PythonMPQ } from '../../src/polys/domains/pythonrational';
+import { toRational as exactFloat } from '../../src/numeric/mpf';
 import '../../src/polys/domains/algebraicfield';
 
 const x = new Sym('x');
@@ -49,6 +50,11 @@ describe('ground domains', () => {
     expect(() => ZZ.fromSympy(Rational.of(1n, 2n))).toThrow(CoercionFailed);
     expect(() => ZZ.fromSympy(new Float(2.5))).toThrow(CoercionFailed);
     expect(s(QQ.fromSympy(new Float(1.4)))).toBe('7/5');
+    expect(s(QQ.fromSympy(new Float(-1.4)))).toBe('-7/5');
+    for (const value of [1e-30, 1 / 45035996273704]) {
+      const f = new Float(value);
+      expect(QQ.fromSympy(f)).toEqual(Rational.of(...exactFloat(f.mpf)));
+    }
     expect(() => QQ.fromSympy(P('sqrt(2)'))).toThrow(CoercionFailed);
     expect(s(RR.fromSympy(Rational.of(1n, 4n)))).toBe('0.250000000000000');
     expect(s(RR.fromSympy(P('pi')))).toBe('3.14159265358979');
@@ -101,6 +107,9 @@ describe('old polynomial rings (DMP) and their fraction fields (DMF)', () => {
     expect(String(R)).toBe('ZZ[x]');
     expect(R.gens).toEqual([x]);
     expect(String(R.fromList([1, 0, -1]))).toBe('DMP(x**2 - 1, ZZ)');
+    expect(R.equals(ZZ.oldPolyRing(new Sym('x')))).toBe(true);
+    expect(R.equals(ZZ.oldPolyRing(a))).toBe(false);
+    expect(R.equals(RQ)).toBe(false);
     expect(() => R.fromSympy(P('1/x'))).toThrow(CoercionFailed);
     expect(R.zero.degree()).toBe(-Infinity);
     expect(s(R.zero.LC())).toBe('0');
@@ -131,10 +140,17 @@ describe('old polynomial rings (DMP) and their fraction fields (DMF)', () => {
     const g = R.fromSympy(P('(x**3 + 7*x - 1)*(5*x + 3)'));
     expect(s(f.gcd(g).toSympy())).toBe('x**3 + 7*x - 1');
     expect(s(g.gcd(f).toSympy())).toBe('x**3 + 7*x - 1');
+    const p = R.fromList([15, -31, -30, 23, 7]), q = R.fromList([195, -838, 944, -165, -112]);
+    expect(p.gcd(q).toList().map(s)).toEqual(['15', '-46', '16', '7']);
+    expect(q.gcd(p).toList().map(s)).toEqual(['15', '-46', '16', '7']);
+    expect(R.fromList([8, 283, 358, -544]).gcd(R.fromList([1, 43, 306])).toList().map(s)).toEqual(['1', '34']);
+    const large = R.fromList([1, -4851]);
+    expect(large.gcd(large).equals(large)).toBe(true);
   });
   it('exact division', () => {
     expect(s(R.fromSympy(P('x**2 - 1')).exquo(R.fromSympy(P('x - 1'))).toSympy())).toBe('x + 1');
     expect(() => R.fromSympy(P('x**2')).exquo(R.fromSympy(P('2*x')))).toThrow(ExactQuotientFailed);
+    expect(() => R.fromSympy(x).exquo(R.fromList([2, 1]))).toThrow(ExactQuotientFailed);
     expect(() => R.fromSympy(P('x**2')).exquo(R.fromSympy(P('x + 1')))).toThrow(ExactQuotientFailed);
     expect(() => R.fromSympy(P('x')).exquo(R.zero)).toThrow(RangeError);
     expect(() => R.fromSympy(P('x')).exquo(R.fromSympy(P('x**2')))).toThrow(ExactQuotientFailed);
@@ -156,6 +172,8 @@ describe('old polynomial rings (DMP) and their fraction fields (DMF)', () => {
   });
   it('shift, derivative and equality', () => {
     const p = R.fromSympy(P('x**2'));
+    expect(p.degree()).toBe(2);
+    expect(p.allCoeffs().map(s)).toEqual(['1', '0', '0']);
     expect(s(p.shift(1).toSympy())).toBe('x**2 + 2*x + 1');
     expect(s(p.diff().toSympy())).toBe('2*x');
     expect(s(p.mulGround(3).toSympy())).toBe('3*x**2');
@@ -166,6 +184,7 @@ describe('old polynomial rings (DMP) and their fraction fields (DMF)', () => {
   it('fractions (DMF, SymPy dmp_cancel)', () => {
     const K = R.getField();
     expect(String(K)).toBe('ZZ(x)');
+    expect(String(K.new([Rational.of(1), Rational.of(0)]).toSympy())).toBe('x');
     const f = K.fromSympy(P('(2*x + 2)/(-4*x**2 + 4)'));
     expect(s(f.numer().toSympy())).toBe('-1');
     expect(s(f.denom().toSympy())).toBe('2*x - 2');

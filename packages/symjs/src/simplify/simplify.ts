@@ -15,9 +15,9 @@ import { countOps as opCount } from '../core/match';
 import { mapBottomUp, piecewiseFold, rebuild, some, subs, xreplace } from '../core/traverse';
 import { combsimp } from './gammasimp';
 import { besselsimp } from './besselsimp';
-import { Hyper, MeijerG, kroneckersimp } from '../functions/special/hyper';
+import { Hyper, MeijerG, KroneckerDelta, kroneckersimp } from '../functions/special/hyper';
 import { expand as expandAll, expand_log, expand_power_exp, expandMul as expand } from './expand';
-import { logcombine, powsimp } from './powsimp';
+import { combinePhases, logcombine, powsimp } from './powsimp';
 import { factorTerms, signsimp } from './exprtools';
 import { collectAbs, radsimp } from './radsimp';
 import { cancel, fraction, together } from './rational';
@@ -28,7 +28,7 @@ import { simplifyRelation } from '../core/relational';
 import { isNegative } from '../core/assumptions';
 import type { Truth } from '../core/truth';
 import { BoolOp, and } from '../core/boolalg';
-import { Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
+import { Eq, Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
 import { ordered } from '../core/match';
 import type { SetExpr } from '../sets/sets';
 import { EmptySet, Interval, Reals, cmpReal, complement, intersection, interval, union } from '../sets/sets';
@@ -71,10 +71,17 @@ export function inversecombine(expr: ExprLike): Expr {
     sinh: 'asinh', cosh: 'acosh', tanh: 'atanh', coth: 'acoth', sech: 'asech', csch: 'acsch',
   };
   return mapBottomUp(sympify(expr), (e) => {
-    if (e instanceof Fn && e.args.length === 1) {
+    if (e instanceof UndefFn && 'inverse' in e && typeof e.inverse === 'function' && e.args.length === 1) {
       const inner = first(e.args);
-      if (e.name === 'log' && inner instanceof Pow && inner.base.key === S.E.key) return inner.exp;
-      if (inner instanceof Fn && inner.args.length === 1 && inverse[e.name] === inner.name) return first(inner.args);
+      if (inner.args.length === 1 && e.inverse()(first(inner.args)).equals(inner)) return first(inner.args);
+    }
+    if (e instanceof Fn) {
+      const inner = e.args[0];
+      if (e.name === 'log' && inner instanceof Pow && inner.base.key === S.E.key) {
+        if (e.args.length === 1) return inner.exp;
+        if (e.args.length === 2) return mul(inner.exp, pow(rebuild(e, [at(e.args, 1)]), -1));
+      }
+      if (e.args.length === 1 && inner instanceof Fn && inner.args.length === 1 && inverse[e.name] === inner.name) return first(inner.args);
     }
     if (e instanceof Pow && e.base.key === S.E.key && e.exp instanceof Fn && e.exp.name === 'log') return first(e.exp.args);
     return e;
@@ -291,9 +298,35 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
     return candidate === undefined || ex.root.equals(candidate) ? ex
       : new AlgebraicNumber(candidate, ex.coeffList, ex.alias === undefined ? {} : { alias: ex.alias });
   }
-  const input = sympify(ex);
+  const input = opts.inverse ? inversecombine(ex) : sympify(ex);
+  if (input instanceof BoolOp && input.op === 'And') {
+    const terms = input.args.map((a) => simplify(a, opts));
+    const fixed: Expr[] = [];
+    for (;;) {
+      const eq = terms.find((t): t is Rel => t instanceof Rel && t.op === 'Eq' &&
+        ((t.lhs instanceof Sym && t.rhs.freeSymbols().size === 0) || (t.rhs instanceof Sym && t.lhs.freeSymbols().size === 0)));
+      if (!eq) break;
+      const [v, c] = eq.lhs instanceof Sym ? eq.args : [eq.rhs, eq.lhs] as const;
+      fixed.push(Eq(v, c));
+      terms.splice(terms.indexOf(eq), 1);
+      for (const [j, t] of terms.entries()) terms[j] = xreplace(t, [[v, c]]);
+    }
+    // Compare bounds with the same left side, retaining the stronger constraints.
+    for (const [i, a] of terms.entries()) {
+      if (!(a instanceof Rel)) continue;
+      for (const [j, b] of terms.entries()) {
+        if (i === j || !(b instanceof Rel) || a.lhs.key !== b.lhs.key) continue;
+        if (a.op === 'Ge' && b.op === 'Le' && a.rhs.key === b.rhs.key) return simplify(and(...fixed, ...terms.filter((_, k) => k !== i && k !== j), Eq(a.lhs, a.rhs)), opts);
+        if (a.op !== b.op) continue;
+        const stronger = a.op === 'Gt' || a.op === 'Ge' ? Ge : a.op === 'Lt' || a.op === 'Le' ? Le : undefined;
+        if (stronger && stronger(a.rhs, b.rhs) === S.true) terms[j] = S.true;
+      }
+    }
+    return and(...fixed, ...terms);
+  }
   if (input instanceof Piecewise) return simplifyPiecewise(input, opts);
-  if (input instanceof Add && input.args.some((term) => term instanceof Piecewise)) {
+  // (a sum with Kronecker deltas keeps its Piecewise terms apart: they become deltas below)
+  if (input instanceof Add && input.args.some((term) => term instanceof Piecewise) && !some(input, (e) => e instanceof Fn && e.name === 'KroneckerDelta')) {
     const folded = piecewiseFold(input);
     if (folded instanceof Piecewise) return simplifyPiecewise(folded, opts);
   }
@@ -304,7 +337,7 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
     return value(result) < (opts.ratio ?? 1.7) * value(input) ? result : input;
   }
   const rationalized = opts.rational !== undefined && opts.rational !== false && some(input, (e) => e instanceof Float);
-  const sympified = rationalized ? nsimplify(input, { rational: true }) : input;
+  let sympified = rationalized ? nsimplify(input, { rational: true }) : input;
   if (sympified instanceof ExtensionExpr) {
     const own = sympified.simplifySelf((x) => simplify(x, opts));
     if (own !== undefined) return own;
@@ -361,9 +394,37 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
     const c = combsimp(sympified);
     return measure(c) <= ratio * measure(sympified) ? c : sympified;
   }
+  if (some(sympified, (e) => e instanceof Piecewise)) {
+    if (hasFn(sympified, KRONECKER)) {
+      sympified = mapBottomUp(sympified, (p) => {
+        if (!(p instanceof Piecewise) || p.pairs.length !== 2) return p;
+        const [[a, cond], [b, last]] = [first(p.pairs), at(p.pairs, 1)] as const;
+        if (!(cond instanceof Rel) || last.key !== S.true.key) return p;
+        if ((cond.op === 'Eq' && a.key === S.One.key && b.key === S.Zero.key) ||
+            (cond.op === 'Ne' && a.key === S.Zero.key && b.key === S.One.key)) return KroneckerDelta(cond.lhs, cond.rhs);
+        return p;
+      });
+    }
+    const folded = piecewiseFold(sympified);
+    if (folded instanceof Piecewise) return piecewise(...folded.pairs.map(([v, c]) => [simplify(v, opts), simplify(c, opts)] as const));
+  }
+  const leading = sympified instanceof Mul ? first(sympified.args) : undefined;
+  if (leading instanceof Float && leading.mpf.man === 1n && leading.mpf.exp === 0n && !sympified.isCommutative) {
+    sympified = mul(...sympified.args.slice(1));
+  }
+  if (sympified instanceof Mul && sympified.args.some((a) => a.key === S.I.key)) {
+    sympified = mul(...sympified.args.map((a) => a instanceof Pow && a.exp.key === S.Half.key && isNegative(a.base) === true
+      ? mul(S.I, pow(mul(-1, a.base), S.Half)) : a));
+  }
   const original = collectAbs(signsimp(sympified));
   // deep simplification: the arguments of the nodes other than sums, products and powers
-  let expr = absorbSign(mapTopDownUnhandled(original, (x) => simplify(x, opts)));
+  let signed = absorbSign(original);
+  if (hasFn(signed, SIGN) && hasFn(signed, ABS)) {
+    const distributed = expand(signed);
+    const absorbed = absorbSign(distributed);
+    if (absorbed.key !== distributed.key) signed = absorbed;
+  }
+  let expr = mapTopDownUnhandled(signed, (x) => simplify(x, opts));
   if (!(expr instanceof Add || expr instanceof Mul || expr instanceof Pow)) {
     // SymPy log._eval_simplify: the logarithm expanded when that is not longer
     if (expr instanceof Fn && expr.name === 'log') expr = shorter(expand_log(expr), expr);
@@ -404,6 +465,8 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
   // no hollow 2-argument products c*(a + b)
   expr = mapBottomUp(short, (x) => (x instanceof Mul && x.args.length === 2 && isNum(first(x.args)) && x.args[1] instanceof Add ? mul(...x.args) : x));
   expr = rationalizeDenominator(expr);
+  const phased = combinePhases(expr);
+  if (phased.key !== expr.key) expr = shorter(expr, phased, expand(phased));
   if (couldExtractMinusSign(expr)) {
     // (SymPy checks d != 0; a division by zero is already zoo in the numerator)
     const [n, d] = fraction(expr);
@@ -415,6 +478,8 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
   return r instanceof Rational && r.isZero ? S.Zero : r;
 }
 
+const ABS = new Set(['abs']);
+const SIGN = new Set(['sign']);
 const LOG = new Set(['log']);
 const KRONECKER = new Set(['KroneckerDelta']);
 
@@ -544,6 +609,8 @@ function reevaluate(e: Expr): Expr {
 
 /** Options of simplify (SymPy ratio and measure). */
 export interface SimplifyOptions {
+  /** Cancel inverse function pairs formally. */
+  inverse?: boolean;
   /** Evaluate Integral, Sum, Product, Derivative and Limit nodes; default true. */
   doit?: boolean;
   /** Rationalize Floats; null restores Floats after simplification. Default false. */

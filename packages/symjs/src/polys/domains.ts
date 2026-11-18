@@ -185,7 +185,9 @@ export function unifyGens(fIn: readonly Expr[], gIn: readonly Expr[]): Expr[] {
 }
 
 /** Is e a generator, or (in a field) the reciprocal of one (x in QQ(1/x))? */
-const isGenerator = (e: Expr, gens: readonly Expr[], ring: boolean): boolean => gens.some((g) => g.key === e.key) || (!ring && gens.some((g) => g.key === pow(e, -1).key));
+// (a domain read back from its name, QQ[l], has plain symbols: they stand for the symbol of that name with any assumptions)
+const sameGenerator = (g: Expr, e: Expr): boolean => g.key === e.key || (g instanceof Sym && e instanceof Sym && g.name === str(e) && Object.keys(g.assumptions).length === 0);
+const isGenerator = (e: Expr, gens: readonly Expr[], ring: boolean): boolean => gens.some((g) => sameGenerator(g, e)) || (!ring && gens.some((g) => sameGenerator(g, pow(e, -1))));
 
 /**
  * e is built from the generators, numbers of the ground domain, +, * and
@@ -454,6 +456,9 @@ export abstract class Domain {
   protected recompose(_K: Domain, _gens: readonly Sym[]): Domain {
     throw new NotImplementedError(`${this.toString()} is not a composite domain`);
   }
+  /** Whether elements are represented modulo a finite extension's defining polynomial. */
+  get isFiniteExtension(): boolean { return false; }
+
   /** The smallest domain containing this one and K1 (SymPy unify). */
   unify(K1In: Domain): Domain {
     let [K0, K1]: [Domain, Domain] = [this, K1In];
@@ -466,6 +471,7 @@ export abstract class Domain {
       if (K0.unificationKind === kind) return K0;
       if (K1.unificationKind === kind) return K1;
     }
+    if (K1.isFiniteExtension) return K1.unify(K0);
     if (K0.compositeParts !== false || K1.compositeParts !== false) return K0.unifyComposite(K1);
     const kind = (K: Domain): UnificationKind => K.unificationKind;
     if (kind(K1) === 'CC') [K0, K1] = [K1, K0];

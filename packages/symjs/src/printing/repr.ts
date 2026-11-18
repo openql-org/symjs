@@ -10,6 +10,8 @@
  * the tree printers (`srepr`, `print_tree`, `dotprint`) share.
  */
 
+import type { Predicate } from '../core/refine';
+import type { AlgebraicNumber, Domain, FiniteExtension, FracElement, FracField, FractionField, PolyElement, PolyRing, PolynomialRingBase } from '../polys';
 import { Add, BoolAtom, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Integral, Limit, Mul, Order, Piecewise, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
 import { numNeg } from '../core/num';
 import { BoolOp } from '../core/boolalg';
@@ -74,7 +76,8 @@ const reprDps = (prec: number): number => {
 function givenAssumptions(e: Sym): [string, boolean][] {
   const a = e.assumptions;
   const out: [string, boolean][] = [];
-  if (a.integer === true && a.zero !== true) out.push(['integer', true]);
+  if (a.even !== undefined) out.push(['even', a.even]);
+  else if (a.integer === true && a.zero !== true) out.push(['integer', true]);
   if (a.zero === true) out.push(['zero', true]);
   else if (a.positive === true) out.push(['positive', true]);
   else if (a.negative === true) out.push(['negative', true]);
@@ -212,6 +215,7 @@ function matrixRepr(m: ReprMatrix, cls: string, item: (e: Expr) => string): stri
  */
 export function basicView(e: Expr, printOrder = false): BasicView {
   const v = (x: Expr): BasicView => basicView(x, printOrder);
+  const reprArg = (arg: Expr): string => viewRepr(v(arg));
   const text = str(e);
   const atom = (cls: string, repr: string, isExpr = true): BasicView => ({ cls, args: [], isExpr, str: text, repr, expr: e });
   const node = (cls: string, args: readonly BasicView[], isExpr = true): BasicView => ({ cls, args, isExpr, str: text, expr: e });
@@ -224,7 +228,7 @@ export function basicView(e: Expr, printOrder = false): BasicView {
     if (e instanceof WildFunction) return atom('WildFunction', `WildFunction(${pyRepr(e.name)})`);
     // a symbol class with its own repr (SymPy BaseScalar prints as R.x)
     const printRepr: unknown = Reflect.get(e, 'printRepr');
-    if (typeof printRepr === 'function') return atom(e.sortClass, String(Reflect.apply(printRepr, e, [])));
+    if (typeof printRepr === 'function') return atom(e.sortClass, String(Reflect.apply(printRepr, e, [reprArg])));
     const cls = e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol';
     return atom(cls, symbolRepr(e, cls));
   }
@@ -240,9 +244,10 @@ export function basicView(e: Expr, printOrder = false): BasicView {
   if (e instanceof ExtensionExpr) {
     // a node with its own repr (Permutation)
     const printRepr: unknown = Reflect.get(e, 'printRepr');
-    if (typeof printRepr === 'function') return atom(e.name, String(Reflect.apply(printRepr, e, [])), false);
+    if (typeof printRepr === 'function') return atom(e.name, String(Reflect.apply(printRepr, e, [reprArg])), false);
     const m: unknown = Reflect.get(e, 'matrix');
     if (isMatrixLike(m)) return { ...node('ImmutableDenseMatrix', []), repr: matrixRepr(m, 'ImmutableDenseMatrix', (x) => srepr(x)) };
+    if (e.name === 'EmptySequence') return atom(e.name, e.name, false);
     if (e.atomClass) return atom(e.name, `${e.name}(${pyRepr(text)})`, false);
   }
   const set = setClass(e);
@@ -272,7 +277,7 @@ interface ReprTuple {
 }
 
 /** What `srepr` prints: expressions, function classes, matrices, objects with their own repr, lists, dicts, sets, strings, numbers, booleans and null (Python None). */
-export type ReprPrintable = ReprTuple | Expr | number | bigint | boolean | string | null | ReprMatrix | FunctionClassLike | ReprObject | readonly ReprPrintable[] | ReadonlyMap<ReprPrintable, ReprPrintable> | ReadonlySet<ReprPrintable>;
+export type ReprPrintable = Predicate | AlgebraicNumber | Domain | FiniteExtension | FracElement | FracField | PolyElement | PolyRing | ReprTuple | Expr | number | bigint | boolean | string | null | ReprMatrix | FunctionClassLike | ReprObject | readonly ReprPrintable[] | ReadonlyMap<ReprPrintable, ReprPrintable> | ReadonlySet<ReprPrintable>;
 
 let reprOrder: SreprOptions['order'];
 
@@ -304,6 +309,37 @@ export interface SreprOptions {
   readonly permCyclic?: boolean;
 }
 
+/** Sparse rings keep their generator tuple and monomial ordering in their constructor form. */
+function ringRepr(name: string, symbols: readonly Expr[], domain: Domain, order: string): string {
+  return `${name}(${reprValue({ tupleItems: symbols })}, ${String(domain)}, ${order})`;
+}
+
+function termsRepr(poly: PolyElement): string {
+  return '[' + poly.terms().map(([powers, coeff]) => {
+    const monomial = reprValue({ tupleItems: powers });
+    return `(${monomial}, ${str(coeff)})`;
+  }).join(', ') + ']';
+}
+
+const isReprRing = (v: object): v is PolyRing | FracField => 'symbols' in v && 'order' in v && 'fromExpr' in v;
+const isReprPolynomial = (v: object): v is PolyElement => 'listterms' in v && 'ring' in v;
+const isReprFraction = (v: object): v is FracElement => 'field' in v && 'numer' in v && 'denom' in v;
+const isAlgebraicNumber = (v: object): v is AlgebraicNumber => 'root' in v && 'coeffs' in v;
+const isFiniteExtension = (v: object): v is FiniteExtension => 'modulus' in v && 'generator' in v && 'basis' in v;
+const isDomain = (v: object): v is Domain => 'fromSympy' in v && 'symbols' in v;
+const isOldPolynomialRing = (v: Domain): v is PolynomialRingBase => 'coefficientDomain' in v && 'order' in v;
+const isFractionField = (v: Domain): v is FractionField => v.isField && 'gens' in v && 'domain' in v;
+
+function domainRepr(domain: Domain): string {
+  if (isOldPolynomialRing(domain)) {
+    const order = String(domain.order);
+    const cls = domain.order.isGlobal === true ? 'GlobalPolynomialRing' : 'GeneralizedPolynomialRing';
+    return `${cls}(${domainRepr(domain.dom)}, ${domain.symbols.map(reprValue).join(', ')}${order === 'grevlex' ? '' : ', order=' + order})`;
+  }
+  if (isFractionField(domain)) return `FractionField(${ringRepr('FracField', domain.gens, domain.domain, 'lex')})`;
+  return String(domain);
+}
+
 function reprValue(expr: ReprPrintable): string {
   if (typeof expr === 'string') return pyRepr(expr);
   if (typeof expr === 'number' || typeof expr === 'bigint') return String(expr);
@@ -311,6 +347,7 @@ function reprValue(expr: ReprPrintable): string {
   if (expr === null) return 'None';
   if (expr instanceof Expr) return viewRepr(basicView(expr, true));
   // SymPy ReprPrinter._print_FunctionClass
+  if ('predicateName' in expr) return String(expr);
   if (isUndefinedFunction(expr)) return `Function(${pyRepr(expr.functionName)})`;
   if (isFunctionClass(expr)) return expr.functionName;
   if ('tupleItems' in expr) {
@@ -320,6 +357,12 @@ function reprValue(expr: ReprPrintable): string {
   if (isList(expr)) return `[${expr.map((x) => reprValue(x)).join(', ')}]`;
   if (isMatrixLike(expr)) return matrixRepr(expr, 'MutableDenseMatrix', (x) => reprValue(x));
   if (expr instanceof Map) return `{${[...expr].map(([k, v]) => `${reprValue(k)}: ${reprValue(v)}`).join(', ')}}`;
+  if (isReprRing(expr)) return ringRepr('ring' in expr ? 'FracField' : 'PolyRing', expr.symbols, expr.domain, String(expr.order));
+  if (isReprPolynomial(expr)) return `PolyElement(${reprValue(expr.ring)}, ${termsRepr(expr)})`;
+  if (isReprFraction(expr)) return `FracElement(${reprValue(expr.field)}, ${termsRepr(expr.numer)}, ${termsRepr(expr.denom)})`;
+  if (isAlgebraicNumber(expr)) return `AlgebraicNumber(${reprValue(expr.root)}, ${reprValue(expr.coeffs())})`;
+  if (isFiniteExtension(expr)) return `FiniteExtension(${String(expr.modulus.setDomain(expr.domain))})`;
+  if (isDomain(expr)) return domainRepr(expr);
   if (isReprObject(expr)) return expr.repr();
   return expr.size ? `{${[...expr].map((x) => reprValue(x)).join(', ')}}` : 'set()';
 }

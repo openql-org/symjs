@@ -792,3 +792,16 @@ it('represents an unevaluated Laplace transform as an integral and in LaTeX', as
   expect(String(transform.asIntegral)).toBe('Integral(f(t)*exp(-s*t), (t, 0, oo))');
   expect(latex(transform)).toBe('\\mathcal{L}_{t}\\left[f{\\left(t \\right)}\\right]\\left(s\\right)');
 });
+
+it('returns the half-plane of convergence for the sine and hyperbolic integrals', () => {
+  const [t, s] = symbols('t s');
+  for (const [name, value, plane] of [
+    ['Si', '(pi/2 - atan(s))/s', '0'],
+    ['Shi', 'acoth(s)/s', '1'],
+    ['Chi', 'log(1/(s**2 - 1))/(2*s)', '1'],
+  ] as const) {
+    const [actual, boundary, condition] = laplaceTransform(parse(name + '(t)'), t, s);
+    expect(actual.equals(parse(value))).toBe(true);
+    expect([String(boundary), String(condition)]).toEqual([plane, 'True']);
+  }
+});

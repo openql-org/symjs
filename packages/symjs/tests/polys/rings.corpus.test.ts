@@ -594,7 +594,7 @@ describe("sympy/polys/tests/test_rings.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_PolyElement__str__:244 (2)", () => {
+  it("test_PolyElement__str__:244 (2)", () => {
     const [t, x] = symbols('t x');
     const unicode = pprintUseUnicode(false);
     try {

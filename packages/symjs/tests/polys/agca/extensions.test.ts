@@ -69,6 +69,11 @@ describe('FiniteExtension', () => {
     expect(s(G.setDomain('QQ(x)'))).toBe('QQ(x)[t]/(t**2 - x**3 - x + 1)');
     expect(s(new FiniteExtension(P('t**2 - x', [t], { field: true })).new(t).pow(-1))).toBe('t/x');
     expect(s(new FiniteExtension(P('t**2 - x', [t], { domain: 'QQ(x,y)' })).drop(y))).toBe('QQ(x)[t]/(t**2 - x)');
+    const p = (source: string) => sj.Poly.from(sj.parse(source), [t], { domain: F.toDomain() });
+    expect(String(p('t+x').add(p('t-x')).asExpr())).toBe('2*t');
+    expect(String(p('t+x').sub(p('t-x')).asExpr())).toBe('2*x');
+    expect(String(p('t**2-x**2').exquo(p('t-x')).asExpr())).toBe('t + x');
+    expect(p('t**2-x**2').div(p('t-x')).map((poly) => String(poly.asExpr()))).toEqual(['t + x', '0']);
   });
   it('drop and errors', () => {
     const K = new FiniteExtension(P('t**2 - x', [t], { domain: 'ZZ[x,y]' }));
@@ -105,7 +110,15 @@ describe('FiniteExtension.unify (SymPy test_Domain_unify_FiniteExtension)', () =
     expect(String(K.unify(sj.QQ))).toBe('QQ[x]/(x**2 - 2)');
     expect(String(K.unify(sj.ZZ.polyRing(x, y)))).toBe('ZZ[y][x]/(x**2 - 2)');
     const L = new FiniteExtension(sj.Poly.from(sj.parse('y**2 - 2'), [y], { domain: 'ZZ' }));
-    expect(() => K.unify(L)).toThrow(NotImplementedError);
+    const tower = K.unify(L);
+    expect(String(tower)).toBe('ZZ[x]/(x**2 - 2)[y]/(y**2 - 2)');
+    expect(L.unify(K).equals(tower)).toBe(true);
+    expect(K.toDomain().unify(L.toDomain()).equals(tower.toDomain())).toBe(true);
+    expect(sj.ZZ.unify(K.toDomain()).equals(K.toDomain())).toBe(true);
+    expect(K.toDomain().hasCharacteristicZero).toBe(true);
+    expect(K.toDomain().characteristic()).toBe(0n);
+    expect(String(K.convertFrom(sj.ZZ.convert(2), sj.ZZ))).toBe('2');
+    expect(() => K.convert({})).toThrow(CoercionFailed);
   });
 });
 

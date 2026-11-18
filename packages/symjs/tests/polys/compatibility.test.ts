@@ -29,6 +29,23 @@ const Y = sj.symbols('y')[0];
 void [EX, RR, C, T, p, q, r, Y];
 
 describe('SymPy doctest and suite values', () => {
+  it('finds square-free parts over finite fields and handles constant discriminants', () => {
+    const [F, u] = ring('u', sj.GF(2)) as [PolyRing, PolyElement];
+    const f = u.pow(2).add(1);
+    expect(F.dupSqfP(f)).toBe(false);
+    expect(F.dupSqfPart(f).equals(u.add(1))).toBe(true);
+    const [content, factors] = F.dupSqfList(f);
+    expect(content.equals(1)).toBe(true);
+    expect(factors.map(([g, k]) => [g.equals(u.add(1)), k])).toEqual([[true, 2]]);
+    const [M, v] = ring('u,v', sj.GF(2)) as [PolyRing, PolyElement];
+    expect(M.dmpSqfP(v)).toBe(true);
+    expect(M.dmpSqfPart(v).equals(v)).toBe(true);
+    expect(() => M.dmpSqfList(v)).toThrow(sj.NotImplementedError);
+    expect(show(U.dupDiscriminant(U.zero))).toBe('0');
+    expect(show(R.dmpDiscriminant(R.zero))).toBe('0');
+    const [E, g] = ring('u', EX) as [PolyRing, PolyElement];
+    expect(() => E.dupMaxNorm(g.mulGround(new sj.Sym('a')))).toThrow(sj.DomainError);
+  });
   it('compares ground numbers exactly across rational and floating representations', () => {
     const X = new sj.Sym('x'), Y = new sj.Sym('y'), one = sj.Rational.of(1);
     expect([

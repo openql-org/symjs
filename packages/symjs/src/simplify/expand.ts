@@ -7,7 +7,7 @@
 
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import { Add, Constant, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sqrt, sympify } from '../core/ops';
 import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { rebuild } from '../core/traverse';
@@ -17,6 +17,11 @@ import { integerNthroot } from '../core/numberutils';
 import { factorInt } from '../core/numbers';
 import { Concrete } from '../core/concrete';
 import { asNumerDenom } from '../core/methods';
+
+/** The core entry can distribute finite numeric limits without loading the full predicate engine. */
+export const expandHooks = {
+  canDistributeIntegral: (e: Integral): boolean => e.args.slice(2).every(isNum),
+};
 
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 
@@ -178,6 +183,7 @@ export interface ExpandHints {
   complex?: boolean;
   trig?: boolean;
   force?: boolean;
+  basic?: boolean;
   /** Expand special functions into simpler ones (SymPy func=True). */
   func?: boolean;
   /** Expand numerator and denominator separately (SymPy frac=True). */
@@ -569,6 +575,20 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     ...hints,
   };
   let e = sympify(ex);
+  if (e instanceof Integral && hints['basic'] !== false) {
+    const limits: (readonly Expr[])[] = [];
+    let body: Expr = e;
+    while (body instanceof Integral) {
+      limits.unshift(body.args.slice(1));
+      body = body.integrand;
+    }
+    const integrand = expand(body, hints);
+    const wrap = (g: Expr): Expr => limits.reduce((f, l) => new Integral([f, ...l]), g);
+    const finiteBound = (v: Expr): boolean => !(v instanceof Special) && (v instanceof Sym ? v.assumptions0.get('finite') !== false : v.args.every(finiteBound));
+    const finite = limits.every((l) => (l.length === 3 ? l.slice(1) : l.slice(0, 1)).every(finiteBound));
+    return integrand instanceof Add && (h.force || integrand.isCommutative && finite)
+      ? add(...integrand.args.map(wrap)) : wrap(integrand);
+  }
   // a node class with its own expand (SymPy Expectation.expand)
   if (e instanceof ExtensionExpr) {
     const own = e.expandTop(hints);
@@ -591,6 +611,9 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     else if (h.multinomial) e = applyBottomUp(e, (x) => expandMulShallow(x, false, true, h.force), h.deep);
     if (h.power_base) e = applyBottomUp(e, (x) => powerBase(x, h.force), h.deep);
     if (h.power_exp) e = applyBottomUp(e, (x) => powerExp(x, h.force), h.deep);
+    if (h.basic !== false) e = applyBottomUp(e, (t) => t instanceof Integral && t.integrand instanceof Add &&
+      (h.force || (t.integrand.isCommutative && expandHooks.canDistributeIntegral(t)))
+      ? add(...t.integrand.args.map((a) => new Integral([a, ...t.args.slice(1)]))) : t, h.deep);
     if (h.trig) e = applyBottomUp(e, expandTrigNode, h.deep);
     if (h.mul && e.key !== was.key) e = h.deep ? (h.multinomial ? expandMul(e) : expandMulOnly(e)) : expandMulShallow(e, h.mul, h.multinomial);
     if (e.key === was.key) break;
@@ -627,13 +650,13 @@ export function expandMulOnly(e: Expr): Expr {
 }
 
 export const expand_mul = (e: ExprLike): Expr =>
-  expand(e, { power_exp: false, power_base: false, log: false, multinomial: false });
+  expand(e, { basic: false, power_exp: false, power_base: false, log: false, multinomial: false });
 export const expand_multinomial = (e: ExprLike): Expr =>
-  expand(e, { power_exp: false, power_base: false, log: false, mul: false });
+  expand(e, { basic: false, power_exp: false, power_base: false, log: false, mul: false });
 export const expand_power_exp = (e: ExprLike, force = false): Expr =>
-  expand(e, { power_base: false, log: false, mul: false, multinomial: false, force });
+  expand(e, { basic: false, power_base: false, log: false, mul: false, multinomial: false, force });
 export const expand_power_base = (e: ExprLike, opts: { force?: boolean; deep?: boolean } = {}): Expr =>
-  expand(e, { power_exp: false, log: false, mul: false, multinomial: false, ...opts });
+  expand(e, { basic: false, power_exp: false, log: false, mul: false, multinomial: false, ...opts });
 function integerLogArgument(e: Expr): Rational | undefined {
   if (!(e instanceof Fn) || e.name !== 'log') return undefined;
   const argument = at(e.args, 0);
@@ -661,7 +684,7 @@ function expandLogRatio(e: Expr): Expr {
 export function expand_log(e: ExprLike, options: boolean | { force?: boolean; factor?: boolean; deep?: boolean } = false, legacy: { factor?: boolean; deep?: boolean } = {}): Expr {
   const opts = typeof options === 'boolean' ? { force: options, ...legacy } : options;
   const expandLogs = (x: ExprLike, factor: boolean): Expr =>
-    expand(x, { power_exp: false, power_base: false, mul: false, multinomial: false, ...opts, factor });
+    expand(x, { basic: false, power_exp: false, power_base: false, mul: false, multinomial: false, ...opts, factor });
   let expression = sympify(e);
   if (!opts.factor) {
     const integerLog = (x: Expr): x is Fn => x instanceof Fn && x.name === 'log' && first(x.args) instanceof Rational;
@@ -679,10 +702,10 @@ export function expand_log(e: ExprLike, options: boolean | { force?: boolean; fa
   return expandLogs(expression, opts.factor === true);
 }
 export const expand_trig = (e: ExprLike): Expr =>
-  expand(e, { power_exp: false, power_base: false, log: false, mul: false, multinomial: false, trig: true });
+  expand(e, { basic: false, power_exp: false, power_base: false, log: false, mul: false, multinomial: false, trig: true });
 export const expand_complex = (e: ExprLike): Expr =>
-  expand(e, { complex: true, power_exp: false, power_base: false, log: false, mul: false, multinomial: false });
+  expand(e, { basic: false, complex: true, power_exp: false, power_base: false, log: false, mul: false, multinomial: false });
 
 impl.expand = (e) => expand(e);
-impl.expandMul = (e) => expandMul(e);
+impl.expandMul = expandMul;
 impl.asRealImagExpand = (e) => asRealImagExpand(e);

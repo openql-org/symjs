@@ -6,7 +6,8 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, Float, Fn, impl, isMulLike, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
+import { Add, Constant, Dummy, Float, Fn, impl, isMulLike, Mul, Piecewise, Pow, Rational, Rel, S, Sym, isNum } from '../core/nodes';
+import { piecewise } from '../core/logic';
 import { fromRational } from '../numeric/mpf';
 import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
@@ -37,7 +38,9 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
   const num: Expr[] = [];
   const den: Expr[] = [];
   for (const f of factors) {
-    if (f instanceof Rational) {
+    if (!f.isCommutative) {
+      num.push(f);
+    } else if (f instanceof Rational) {
       num.push(Rational.of(f.p));
       den.push(Rational.of(f.q));
     } else if (opts.exact && f instanceof Pow) {
@@ -130,12 +133,28 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
  * PolyElement.cancel does: denominators cleared, p and q with integer (Gaussian) coefficients and
  * the leading coefficient of q (lex order of the generators) canonical.
  */
-export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
-  if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined) return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(sympify(ex), opts);
+export function cancel(ex: ExprLike, opts: PolynomialDomainOptions & { greedy?: boolean } = {}): Expr {
   const input = sympify(ex);
+  if (input instanceof Rel) return input;
+  if (input instanceof Piecewise) return piecewise(...input.pairs.map(([value, condition]) => [cancel(value, opts), condition] as const));
   if (input instanceof Mul && !input.isCommutative) {
-    const scalars = input.args.filter((a) => a.isCommutative);
-    if (scalars.length) return mul(cancel(mul(...scalars)), ...input.args.filter((a) => !a.isCommutative));
+    const product = together(input);
+    if (product instanceof Mul) {
+      const inverse = at(product.args, -1);
+      if (inverse instanceof Pow && inverse.exp.key === S.NegOne.key) {
+        const ratio = radicalContentRatio(expand(mul(...product.args.slice(0, -1))), expand(inverse.base));
+        if (ratio !== undefined) return ratio;
+      }
+    }
+  }
+  if ((input instanceof Add || input instanceof Mul) && (!input.isCommutative || input.args.some(containsPiecewise))) {
+    const ordinary = input.args.filter((e) => e.isCommutative && !containsPiecewise(e));
+    const special = input.args.filter((e) => !e.isCommutative || containsPiecewise(e));
+    const combine = input instanceof Add ? add : mul;
+    return combine(cancel(combine(...ordinary), opts), ...special.map((e) => cancel(e, opts)));
+  }
+  if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined || opts.greedy === false) {
+    return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(input, opts.greedy === false && opts.extension === undefined ? { ...opts, extension: true } : opts);
   }
   const e = together(input);
   let [n, d] = fraction(e);
@@ -180,6 +199,10 @@ export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
   return q instanceof Rational && q.isOne ? p : mul(p, pow(q, -1));
 }
 
+function containsPiecewise(e: Expr): boolean {
+  return e instanceof Piecewise || e.args.some(containsPiecewise);
+}
+
 /**
  * SymPy mpmath MPContext.to_rational(x, limit=True) for a Float of precision prec: its exact
  * value, or the best rational approximation with a denominator up to 1/tolerance (tolerance =
@@ -204,6 +227,7 @@ function floatToRational(f: Float, prec: number): Rational {
   const x = Rational.of(p, q);
   const b1 = Rational.of(p0 + k * p1, q0 + k * q1);
   const b2 = Rational.of(p1, q1);
+  if (b1.isZero || b2.isZero) return x;
   const dist = (b: Rational): Rational => {
     const t = Rational.of(b.p * x.q - x.p * b.q, b.q * x.q);
     return t.isNegative ? Rational.of(-t.p, t.q) : t;

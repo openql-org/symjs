@@ -9,8 +9,46 @@ import { iroot } from '../core/numbers';
 import { igcd, igcdex } from '../core/numberutils';
 import { at } from '../core/guard';
 import { NoMatch, type NoMatchResult } from '../core/truth';
+import { asInt } from '../ntheory/intutil';
+import { dmpFromDict } from './densebasic';
+import { AlgebraicField } from './domains/algebraicfield';
+import type { GaussianIntegerRing, GaussianRationalField } from './domains/gaussiandomains';
+import type { PythonMPQ } from './domains/pythonrational';
 import { gfGcdex } from './galoistools';
 import type { PolyElement } from './rings';
+import { wangFactor, zpoly, type RandInt, type ZPoly } from './wang';
+
+type ExtensionField = AlgebraicField | GaussianIntegerRing | GaussianRationalField;
+
+/** Order factors by outer dense length, multiplicity, and the dense coefficient list. */
+export function sortExtensionFactors<P extends { listterms(): [readonly number[], Expr][] }>(
+  factors: readonly [P, number][], domain: ExtensionField, level: number,
+): [P, number][] {
+  const compareCoeffs = (a: unknown, b: unknown): number => {
+    const coordinates = (value: unknown): readonly PythonMPQ[] => {
+      if (domain instanceof AlgebraicField) return domain.convert(value).toList();
+      const z = domain.convert(value);
+      return [z.re, z.im];
+    };
+    const u = coordinates(a), v = coordinates(b);
+    for (let i = 0; i < Math.min(u.length, v.length); i++) {
+      const sign = at(u, i).compare(at(v, i));
+      if (sign) return sign;
+    }
+    return u.length - v.length;
+  };
+  const compareDense = (a: unknown, b: unknown): number => {
+    if (!Array.isArray(a) || !Array.isArray(b)) return compareCoeffs(a, b);
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      const sign = compareDense(a[i], b[i]);
+      if (sign) return sign;
+    }
+    return a.length - b.length;
+  };
+  const dense = factors.map((factor) => ({ factor, terms: dmpFromDict(new Map(factor[0].listterms()), level, domain) }));
+  dense.sort((a, b) => a.terms.length - b.terms.length || a.factor[1] - b.factor[1] || compareDense(a.terms, b.terms));
+  return dense.map(({ factor }) => factor);
+}
 
 /** Determine factor multiplicities by repeated exact polynomial division. */
 export function dupTrialDivision(fIn: PolyElement, factors: readonly PolyElement[]): [PolyElement, number][] {
@@ -29,6 +67,25 @@ export function dupTrialDivision(fIn: PolyElement, factors: readonly PolyElement
     result.push([factor, k]);
   }
   return result.sort(([a, k], [b, l]) => a.degree() - b.degree() || k - l || a.toString().localeCompare(b.toString()));
+}
+
+/** Factor a primitive square-free integer polynomial by Wang's algorithm. */
+export function dmpZzWang(f: PolyElement, modulus?: number, seed?: readonly number[]): PolyElement[] {
+  const encode = (p: PolyElement): ZPoly => zpoly(p.terms().map(([m, c]) => [m, asInt(c)]));
+  const decode = (p: ZPoly): PolyElement => f.ring.fromDict([...p.values()].map(({ e, c }) => [e, c]));
+  const leadingFactors = (p: ZPoly): [bigint, ZPoly[]] => {
+    const [content, factors] = decode(p).factorList();
+    return [asInt(content), factors.map(([g]) => encode(g))];
+  };
+  let index = 0;
+  const random: RandInt | undefined = seed === undefined ? undefined : (lo, hi) => {
+    while (index < seed.length) {
+      const value = at(seed, index++);
+      if (value >= lo && value <= hi) return value;
+    }
+    throw new RangeError('Wang evaluation point sequence exhausted');
+  };
+  return wangFactor(encode(f), f.ring.ngens, leadingFactors, random, modulus).map(decode);
 }
 
 /** Mignotte's multivariate factor coefficient bound over the integers. */

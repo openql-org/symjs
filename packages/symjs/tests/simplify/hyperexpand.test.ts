@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { I, Rational, Sym, expPolar, hyper, meijerg, mul, parse, pi, sstr, type Expr } from '../../src';
-import { HyperRep, hyperexpand, type HyperRepName } from '../../src/simplify/hyperexpand';
+import { HyperRep, hyperexpand, powdenestPolar, type HyperRepName } from '../../src/simplify/hyperexpand';
 import * as sj from '../../src';
 
 it('exposes differential parameter reductions and shift plans', () => {
@@ -199,7 +199,7 @@ describe('hyperexpand: the same functions in other forms than SymPy', () => {
     // SymPy: (z - 2)/((1 - z)*(2*z - 2))
     [["H", [["1", "3"], ["2"]], "z"], "(z - 2)/((1 - z)*(2*z - 2))", [1.7346938775510203, 0.0]],
     // SymPy: -4/z + 4*polylog(2, z)/z**2
-    [["H", [["1", "2", "2"], ["3", "3"]], "z"], "hyper((1, 2, 2), (3, 3), z)", [1.1613115589100476, 0.0]],
+    [["H", [["1", "2", "2"], ["3", "3"]], "z"], "-4/z + 4*polylog(2, z)/z**2", [1.1613115589100476, 0.0]],
     // SymPy: 2*elliptic_k(z)/pi
     [["H", [["1/2", "1/2"], ["1"]], "z"], "hyper((1/2, 1/2), (1,), z)", [1.0910959103627815, 0.0]],
     // SymPy: 2/(5*z) + 2*log(1 - z)/(5*z**2) - 2*log(1 - z**(1/3))/(5*z**(1/3)) - 2*exp(-2*I*pi/3)*log(-z**(1/3)*exp_polar(2*I*pi/3) + 1)/(5*z**(1/3)) - 2*exp(2*I*pi/3)*log(-z**(1/3)*exp_polar(4*I*pi/3) + 1)/(5*z**(1/3))
@@ -414,4 +414,59 @@ describe('Operator (SymPy sympy.simplify.hyperexpand.Operator)', () => {
     // SymPy Poly(1/x, x) raises PolynomialError
     expect(() => new sj.Operator(parse('1/x'), x)).toThrow(sj.PolynomialError);
   });
+});
+
+it('constructs contiguous operators and detects singular parameter shifts', () => {
+  const { Operator: op } = sj;
+  const z = sj.symbol('z');
+  expect(op.shiftA(2).poly.map(String)).toEqual(['1', '1/2']);
+  expect(op.shiftB(3).poly.map(String)).toEqual(['1', '1/2']);
+  expect(() => op.shiftA(0)).toThrow(/zero upper/);
+  expect(() => op.shiftB(1)).toThrow(/unit lower/);
+  expect(() => op.unShiftA([1], [], 0, z)).toThrow(/unit upper/);
+  expect(() => op.unShiftA([2], [2], 0, z)).toThrow(/cancels/);
+  expect(() => op.unShiftB([], [-1], 0, z)).toThrow(/-1 lower/);
+  expect(() => op.unShiftB([2], [2], 0, z)).toThrow(/cancels/);
+  expect(op.unShiftA([2], [], 0, z)).toBeInstanceOf(op);
+  expect(op.unShiftB([], [2], 0, z)).toBeInstanceOf(op);
+  expect(op.reduceOrder(2, 1)).toBeInstanceOf(op);
+  expect(op.reduceOrder(1, 2)).toBe(sj.NoMatch);
+});
+
+it('compares parameter tuples and applies them to an argument', () => {
+  const z = sj.symbol('z');
+  const f = new sj.Hyper_Function([1], [2]);
+  expect(f.sizes).toEqual([1, 1]);
+  expect(f.args.map(String)).toEqual(['(1,)', '(2,)']);
+  expect(f.call(z)).toEqual(sj.hyper([1], [2], z));
+  expect(f.equals(new sj.Hyper_Function([1], [2]))).toBe(true);
+  expect(f.equals(new sj.Hyper_Function([1], [3]))).toBe(false);
+  expect(f.equals(z)).toBe(false);
+  expect(f.has(sj.S.One)).toBe(true);
+  expect(f.has(z)).toBe(false);
+});
+
+it('rejects parameter shifts through a cancelling lower parameter', () => {
+  const origin = new sj.Hyper_Function([2], [2]);
+  const target = new sj.Hyper_Function([2], [1]);
+  for (const from of [
+    new sj.Hyper_Function([], [1]), new sj.Hyper_Function([2], []),
+    new sj.Hyper_Function([sj.S.Half], [1]), new sj.Hyper_Function([2, 2], [1]),
+  ]) expect(() => sj.devisePlan(target, from, z)).toThrow(/not reachable/);
+  expect(() => sj.devisePlan(target, origin, z)).toThrow(/Non-suitable/);
+  expect(() => sj.devisePlan(origin, new sj.Hyper_Function([1], [2]), z)).toThrow(/Non-suitable/);
+});
+
+it('denests a product of polar powers', () => {
+  expect(String(powdenestPolar(parse('(p*q*x)**a')))).toBe('p**a*q**a*x**a');
+});
+
+it('includes the simple- and double-pole contributions to a Meijer G expansion', () => {
+  const third = Rational.of(1, 3), half = Rational.of(1, 2);
+  const g = meijerg([third], [1, 1], [0, 0, half], [Rational.of(2, 3)], z);
+  const expansion = hyperexpand(g, { allowHyper: true });
+  expect(expansion.subs([[z, half]]).evalf(20).toNumber()).toBeCloseTo(-0.6018113203333155, 10);
+  const partial = meijerg([third], [], [Rational.of(1, 5), half], [], z);
+  expect(hyperexpand(partial).equals(partial)).toBe(true);
+  expect(hyperexpand(partial, { allowHyper: true }).equals(partial)).toBe(false);
 });

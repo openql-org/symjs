@@ -20,6 +20,8 @@ import { UnsolvableFactorError } from '../polys/polyerrors';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import type { PolyConstructionOptions } from '../polys/sympoly';
 import { Poly, factorListExpr, sortGens } from '../polys/sympoly';
+import { PolynomialRing } from '../polys/domains';
+import { preprocessDomain } from '../polys/polyoptions';
 import { expand } from '../simplify/expand';
 import { radsimp } from '../simplify/sqrtdenest';
 import { Eq } from '../core/logic';
@@ -90,11 +92,15 @@ function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[], op
   if (!gens.length) return eqs.every((e) => e instanceof Rational && e.isZero) ? [[]] : [];
   const vars = [...gens, ...sortSyms([...all.values()].filter((s) => !genKeys.has(s.key)))];
   const hasGen = (e: Expr) => [...freeSymbols(e)].filter((s) => s instanceof Sym).some((s) => genKeys.has(s.key));
+  let domain = opts.domain === undefined ? undefined : preprocessDomain(opts.domain);
+  // Coefficient-ring generators already promoted to polynomial variables must be removed from the ground domain.
+  while (domain instanceof PolynomialRing && domain.symbols.some((s) => vars.some((v) => v.key === s.key))) domain = domain.dom;
+  const factorOptions = domain === undefined ? opts : { ...opts, domain };
 
   const factorSets: Factor[][] = [];
   for (const e of eqs) {
     if (e instanceof Rational && e.isZero) continue;
-    const fs: [Expr, unknown][] = Object.keys(opts).length ? Poly.from(e, vars, opts).factorList()[1].map(([p, k]) => [p.asExpr(), k]) : factorListExpr(e, vars)[1];
+    const fs: [Expr, unknown][] = Object.keys(factorOptions).length ? Poly.from(e, vars, factorOptions).factorList()[1].map(([p, k]) => [p.asExpr(), k]) : factorListExpr(e, vars)[1];
     const genFactors = fs.filter(([f]) => hasGen(f)).map(([f]) => ({ expr: f, ground: false }));
     const params = fs.filter(([f]) => !hasGen(f)).map(([f]) => f);
     if (!params.length) {

@@ -958,7 +958,7 @@
         {
           "file": "polys.json",
           "cases": 12154,
-          "bytes": 12123959
+          "bytes": 12129842
         }
       ],
       "auditFile": "polys.audit.json",
@@ -1322,13 +1322,13 @@
         "optional-dependency": 10,
         "upstream-skip": 2
       },
-      "seconds": 79.348,
+      "seconds": 34.76,
       "retainedModules": 0,
       "shards": [
         {
           "file": "stats.json",
           "cases": 2025,
-          "bytes": 1953182
+          "bytes": 1954509
         }
       ],
       "auditFile": "stats.audit.json",
@@ -1415,7 +1415,7 @@
         {
           "file": "tensor.json",
           "cases": 1953,
-          "bytes": 2780778
+          "bytes": 2793262
         }
       ],
       "auditFile": "tensor.audit.json",
@@ -2313,5 +2313,5 @@
   ],
   "timeoutSeconds": 120,
   "jobs": 4,
-  "lastRunSeconds": 66.071
+  "lastRunSeconds": 35.017
 }

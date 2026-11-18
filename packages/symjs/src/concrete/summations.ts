@@ -18,14 +18,17 @@ import { BoolOp, and, not } from '../core/boolalg';
 import { isIntegerQ, isNegative, isNonNegative, isPositive, isZero as isZeroQ } from '../core/assumptions';
 import { Eq, Gt, Le, Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, mapBottomUp, xreplace } from '../core/traverse';
+import { freeSymbols, mapBottomUp, some, subs, xreplace } from '../core/traverse';
 import { abs, fn, log, re, sin, tan } from '../functions/elementary/elementary';
 import { bernoulliNumber, factorial, harmonic, zeta } from '../functions/special/special';
 import { contains, Naturals0 } from '../sets/sets';
 import { fact } from '../core/exprfacts';
 import { rf } from '../functions/combinatorial/factorials';
 import { polyCoefficients, roots } from '../polys/poly';
-import { expand as expandFull, expandMul as expand } from '../simplify/expand';
+import { expand as expandFull, expandMul, withFactoredDenominators } from '../simplify/expand';
+
+/** Distribution over sums with the denominators left factored: the summation rules match the factors of a term. */
+const expand = (e: ExprLike): Expr => withFactoredDenominators(() => expandMul(e));
 import { combsimp } from '../simplify/gammasimp';
 import { powsimp } from '../simplify/powsimp';
 import { residue } from '../series/residues';
@@ -653,8 +656,15 @@ export function summation(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): 
     const [a, b] = [sympify(a0), sympify(b0)];
     // the summation variable has the signs of its limits (SymPy _dummy_with_inherited_properties_concrete)
     const d = inheritedDummy(k, a, b);
-    const r = d === undefined ? sumOne(e, k, a, b) : sumOne(xreplace(e, [[k, d]]), d, a, b);
-    if (r === undefined) return Sum(e, [k, a, b], ...limits.slice(i + 1));
+    // (substituted with evaluation: a condition such as d >= 0 is decided by the inherited sign)
+    const withDummy = d === undefined ? e : subs(e, [[k, d]]);
+    const r = d === undefined ? sumOne(e, k, a, b) : sumOne(withDummy, d, a, b);
+    // SymPy returns the sum of the function as evaluated with those assumptions; here that form is taken when
+    // the assumptions decide every condition, and the given function is kept otherwise
+    if (r === undefined) {
+      const decided = d !== undefined && !some(withDummy, (t) => t instanceof Piecewise);
+      return Sum(decided ? xreplace(withDummy, [[d, k]]) : e, [k, a, b], ...limits.slice(i + 1));
+    }
     e = d === undefined ? r : xreplace(r, [[d, k]]);
   }
   return e;

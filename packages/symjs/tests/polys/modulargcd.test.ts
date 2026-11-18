@@ -8,7 +8,7 @@ import { QQ, ZZ } from '../../src/polys/domains';
 import { AlgebraicField } from '../../src/polys/domains/algebraicfield';
 import { parse } from '../../src/parsing/parser';
 import { DomainError } from '../../src/core/errors';
-import { first } from '../../src/core/guard';
+import { first, pair } from '../../src/core/guard';
 
 for (const c of passingModuleCases('polys', 'sympy.polys.tests.test_modulargcd')) {
   it(`${c.test}:${c.line}`, () => {
@@ -51,4 +51,13 @@ it('normalizes zero inputs and rejects incompatible coefficient rings', () => {
   expect(funcFieldModgcd(A.zero, A.zero).map((p) => p.isZero)).toEqual([true, true, true]);
   expect(funcFieldModgcd(A.zero, f.mulGround(2)).map((p) => String(p.asExpr()))).toEqual(['y + sqrt(2)', '0', '2']);
   expect(funcFieldModgcd(f.mulGround(2), A.zero).map((p) => String(p.asExpr()))).toEqual(['y + sqrt(2)', '2', '0']);
+});
+
+it('falls back to modular reconstruction when the certificate prime drops a leading term', () => {
+  const R = new PolyRing('x y', ZZ);
+  const [x, y] = pair(R.gens);
+  const a = x.mulGround(65537).add(y), b = x.add(y).add(1);
+  const h = x.add(y.mulGround(2));
+  const result = modgcdMultivariate(h.mul(a), h.mul(b));
+  expect(result.map(String)).toEqual([h, a, b].map(String));
 });

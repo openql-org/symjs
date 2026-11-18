@@ -22,6 +22,7 @@ describe('rref', () => {
     expect(dmRrefChooseMethod(full(q(2n ** 80n)), 'auto', false)).toEqual(['CD', 'sparse']);
     expect(dmRrefChooseMethod(full(q(1n, 2n ** 55n * 3n ** 0n)).sub(full(q(0n))), 'auto', false)).toEqual(['GJ', 'sparse']);
     expect(dmRrefChooseMethod(A(), 'FF_dense', false)).toEqual(['FF', 'dense']);
+    expect(() => Reflect.apply(dmRrefChooseMethod, undefined, [A(), 'invalid_dense', false])).toThrow(RangeError);
     const big = (rows: number, cols: number, f: (i: number, j: number) => number) => DM(Array.from({ length: rows }, (_, i) => Array.from({ length: cols }, (__, j) => f(i, j))), ZZ);
     expect(dmRrefChooseMethod(big(12, 12, (i, j) => (i === j ? 1 : 0)), 'auto', false)[0]).toBe('GJ');
     expect(dmRrefChooseMethod(big(12, 12, () => 1), 'auto', false)[0]).toBe('GJ');

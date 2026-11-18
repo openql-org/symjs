@@ -3,7 +3,8 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { equalsSerializedOperand, fmt, matchesSympyErratum, runCase } from './harness';
+import { Expr } from '../../packages/symjs/src/core/nodes';
+import { deserialize, equalsSerializedOperand, fmt, matchesSympyErratum, pyEquals, runCase } from './harness';
 import type { Case, CaseObservation, Outcome, Tree } from './harness';
 
 export interface TestCase extends Case {
@@ -12,13 +13,26 @@ export interface TestCase extends Case {
   op: '==' | '!=' | 'is' | 'is not' | 'truthy' | 'falsy';
   raises?: string;
   expectedOperand?: Tree;
+  comparisonTree?: Tree;
+  polyReplay?: {
+    method?: string;
+    originalCoeffs?: Tree[];
+    intervalPrinter?: boolean;
+    submoduleDiscard?: { original: Tree; index: number; computedTable: boolean };
+  };
 }
 
 export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string }; phase?: 'input' | 'invoke' | 'result' };
 
+const REPLAY_STATE = new Set([
+  'tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix', 'polyReplay',
+  'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation',
+]);
+
 export function testCaseKey(c: TestCase): string {
   // Replay state annotates an existing assertion without changing its ratchet identity.
-  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass', 'matrixClass', 'boundMatrix', 'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
+  const serialized = JSON.stringify(c, (key, value: unknown) => REPLAY_STATE.has(key) ? undefined : value);
+  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(serialized).digest('hex').slice(0, 20)}`;
 }
 
 // The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
@@ -66,6 +80,14 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
         return { status: 'error', reason: error instanceof Error ? error.message : String(error) };
       }
     }
+    if (c.category === 'polys' && c.comparisonTree && observation && 'value' in observation) {
+      const rhs = deserialize(c.comparisonTree);
+      return pyEquals(observation.value, rhs) ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
+    }
+    if (c.comparisonTree && observation && 'value' in observation && observation.value instanceof Expr) {
+      const rhs = deserialize(c.comparisonTree);
+      if (rhs instanceof Expr) return observation.value.equals(rhs) ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
+    }
     // Python != compares numbers by value (Float(1.0) == 1) and other expressions by structure: a
     // mathematically equal but different expression satisfies it
     if (outcome.status === 'pass') return { status: 'fail', got: c.expected };
@@ -95,7 +117,14 @@ export function runTestCase(c: TestCase): TestOutcome {
   // These established public names capitalize the second word after "Non".
   const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };
   const fn = alias[c.fn];
-  const call = c.boundMatrix ? { ...c, fn: '.' + c.fn, self: c.boundMatrix } : fn === undefined ? c : { ...c, fn };
+  const call = c.boundMatrix ? { ...c, fn: '.' + c.fn, self: c.boundMatrix } : { ...c, fn: fn ?? c.fn };
+  if (c.polyReplay?.method !== undefined) call.kwargs = { ...call.kwargs, method: { t: 'Str', v: c.polyReplay.method } };
+  if (c.polyReplay?.originalCoeffs && call.self?.t === 'AlgebraicNumber') call.self = { ...call.self, coeffs: c.polyReplay.originalCoeffs };
+  if (c.polyReplay?.intervalPrinter && call.self?.t === 'StrPrinter') call.self = { ...call.self, t: 'IntervalPrinter' };
+  if (c.polyReplay?.submoduleDiscard) {
+    const { original, index, computedTable } = c.polyReplay.submoduleDiscard;
+    call.self = { ...original, discardBefore: index, computedTable };
+  }
   const outcome = runCase(call, (event) => { observation = event; });
   const result = assertionOutcome(c, outcome, observation);
   return result.status === 'error' ? { ...result, phase: observation === undefined ? 'input' : 'error' in observation ? 'invoke' : 'result' } : result;

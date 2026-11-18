@@ -381,7 +381,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const nc = new Sym('nc', { commutative: false });
     expect(sympyStr(simplify(new Add([x, new Mul([x, nc])])))).toBe('x*(1 + nc)');
   });
-  it.fails("test_simplify_other:173", () => {
+  it("test_simplify_other:173", () => {
     const [x, t] = symbols('x t');
     expect(sympyStr(simplify(new Add([new Mul([I, new Pow(pi, rational(-1, 2)), new Pow(x, rational(-1)), new Add([new Mul([rational(1, 2), pi, x, new Pow(t, rational(-1, 2)), exp(new Add([new Mul([rational(-3, 4), pi, I]), new Mul([rational(1, 4), I, new Pow(t, rational(-1)), new Pow(x, rational(2))])]))]), new Mul([rational(-1, 2), pi, x, new Pow(t, rational(-1, 2)), fn('erf', [new Mul([rational(1, 2), x, new Pow(t, rational(-1, 2)), exp(new Mul([rational(-3, 4), pi, I]))])]), exp(new Add([new Mul([rational(-3, 4), pi, I]), new Mul([rational(1, 4), I, new Pow(t, rational(-1)), new Pow(x, rational(2))])]))])]), exp(new Mul([rational(-1, 4), I, new Pow(t, rational(-1)), new Pow(x, rational(2))]))]), new Mul([rational(-1, 2), I, new Pow(pi, rational(1, 2)), new Pow(t, rational(-1, 2)), new Add([rational(1), new Mul([rational(-1), fn('erf', [new Mul([rational(1, 2), x, new Pow(t, rational(-1, 2)), exp(new Mul([rational(1, 4), pi, I]))])])])]), exp(new Mul([rational(1, 4), pi, I]))])])))).toBe('-(-1)**(3/4)*sqrt(pi)/sqrt(t)');
   });
@@ -946,7 +946,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(logcombine(new Add([new Mul([x, new Add([rational(1), y])]), log(2), log(3)]), { force: false }))).toBe('x*(y + 1) + log(6)');
   });
-  it.fails("test_logcombine_1:503", () => {
+  it("test_logcombine_1:503", () => {
     const [x, y] = symbols('x y');
     const w = new Sym('w', { positive: true });
     expect(sympyStr(logcombine(new Add([new Mul([new Add([x, y]), log(w)]), new Mul([new Add([new Mul([rational(-1), x]), new Mul([rational(-1), y])]), log(3)])]), { force: false }))).toBe('(x + y)*log(w/3)');
@@ -1000,7 +1000,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
   //   assert str(modified) == '[_x, n, p]'
   //   => [_x, n, p]
   it.todo("test_posify:543");
-  it.fails("test_posify:546", () => {
+  it("test_posify:546", () => {
     const y = new Sym('y');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1181,23 +1181,23 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const [t, a, y] = symbols('t a y');
     expect(sympyStr(cosineTransform(new Mul([new Pow(t, rational(-1)), fn('sin', [new Mul([a, new Pow(t, rational(-1))])])]), t, y))).toBe('sqrt(2)*sqrt(pi)*besselj(0, 2*sqrt(a)*sqrt(y))/2');
   });
-  it.fails("test_besselsimp:650", () => {
+  it("test_besselsimp:650", () => {
     const [x, a, b] = symbols('x a b');
     expect(sympyStr(besselsimp(new Add([new Mul([x, new Add([new Mul([a, new Add([new Mul([rational(1, 2), fn('besselj', [new Add([rational(-1), new Mul([rational(5), I])]), x])]), new Mul([rational(-1, 2), fn('besselj', [new Add([rational(1), new Mul([rational(5), I])]), x])])])]), new Mul([b, new Add([new Mul([rational(1, 2), fn('bessely', [new Add([rational(-1), new Mul([rational(5), I])]), x])]), new Mul([rational(-1, 2), fn('bessely', [new Add([rational(1), new Mul([rational(5), I])]), x])])])])])]), new Mul([new Add([rational(25), new Pow(x, rational(2))]), new Add([new Mul([a, fn('besselj', [new Mul([rational(5), I]), x])]), new Mul([b, fn('bessely', [new Mul([rational(5), I]), x])])])]), new Mul([rational(1, 4), new Pow(x, rational(2)), new Add([new Mul([a, new Add([new Mul([rational(-2), fn('besselj', [new Mul([rational(5), I]), x])]), fn('besselj', [new Add([rational(-2), new Mul([rational(5), I])]), x]), fn('besselj', [new Add([rational(2), new Mul([rational(5), I])]), x])])]), new Mul([b, new Add([new Mul([rational(-2), fn('bessely', [new Mul([rational(5), I]), x])]), fn('bessely', [new Add([rational(-2), new Mul([rational(5), I])]), x]), fn('bessely', [new Add([rational(2), new Mul([rational(5), I])]), x])])])])])])))).toBe('0');
   });
-  it.fails("test_besselsimp:656", () => {
+  it("test_besselsimp:656", () => {
     const [x, a, b] = symbols('x a b');
     expect(sympyStr(besselsimp(new Add([new Mul([x, new Add([new Mul([a, new Add([new Mul([rational(-9, 2), fn('besselj', [rational(4, 3), new Mul([rational(9), x])])]), new Mul([rational(9, 2), fn('besselj', [rational(-2, 3), new Mul([rational(9), x])])])])]), new Mul([b, new Add([new Mul([rational(-9, 2), fn('bessely', [rational(4, 3), new Mul([rational(9), x])])]), new Mul([rational(9, 2), fn('bessely', [rational(-2, 3), new Mul([rational(9), x])])])])])])]), new Mul([new Add([rational(-1, 9), new Mul([rational(81), new Pow(x, rational(2))])]), new Add([new Mul([a, fn('besselj', [rational(1, 3), new Mul([rational(9), x])])]), new Mul([b, fn('bessely', [rational(1, 3), new Mul([rational(9), x])])])])]), new Mul([rational(81, 4), new Pow(x, rational(2)), new Add([new Mul([a, new Add([new Mul([rational(-2), fn('besselj', [rational(1, 3), new Mul([rational(9), x])])]), fn('besselj', [rational(-5, 3), new Mul([rational(9), x])]), fn('besselj', [rational(7, 3), new Mul([rational(9), x])])])]), new Mul([b, new Add([new Mul([rational(-2), fn('bessely', [rational(1, 3), new Mul([rational(9), x])])]), fn('bessely', [rational(-5, 3), new Mul([rational(9), x])]), fn('bessely', [rational(7, 3), new Mul([rational(9), x])])])])])])])))).toBe('0');
   });
-  it.fails("test_besselsimp:661", () => {
+  it("test_besselsimp:661", () => {
     const [a, x] = symbols('a x');
     expect(sympyStr(besselsimp(new Add([new Mul([rational(-2), a, new Pow(x, rational(-1)), fn('besselj', [a, x])]), fn('besselj', [new Add([rational(1), a]), x]), fn('besselj', [new Add([rational(-1), a]), x])])))).toBe('0');
   });
-  it.fails("test_besselsimp:663", () => {
+  it("test_besselsimp:663", () => {
     const [a, x] = symbols('a x');
     expect(sympyStr(besselsimp(new Add([fn('besselj', [a, x]), fn('besselj', [new Add([rational(1), a]), x]), fn('besselj', [new Add([rational(-1), a]), x])])))).toBe('(2*a + x)*besselj(a, x)/x');
   });
-  it.fails("test_besselsimp:665", () => {
+  it("test_besselsimp:665", () => {
     const [x, a] = symbols('x a');
     expect(sympyStr(besselsimp(new Add([new Mul([new Pow(x, rational(2)), fn('besselj', [a, x])]), new Mul([new Pow(x, rational(3)), fn('besselj', [new Add([rational(1), a]), x])]), fn('besselj', [new Add([rational(2), a]), x])])))).toBe('2*a*x*besselj(a + 1, x) + x**3*besselj(a + 1, x) - x**2*besselj(a + 2, x) + 2*x*besselj(a + 1, x) + besselj(a + 2, x)');
   });
@@ -1205,7 +1205,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(simplify(piecewise([new Add([new Mul([x, new Add([x, y])]), new Mul([rational(-1), y, new Add([x, y])])]), Relational(x, new Add([new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))]), '<', { evaluate: false })], [new Add([y, new Mul([new Pow(x, rational(-1)), new Pow(y, rational(2))])]), true])))).toBe('Piecewise(((x - y)*(x + y), x < 1), (y*(x + y)/x, True))');
   });
-  it.fails("test_issue_from_PR1599:690", () => {
+  it("test_issue_from_PR1599:690", () => {
     const n1 = new Sym('n1', { negative: true });
     expect(sympyStr(simplify(new Mul([I, new Pow(n1, rational(1, 2))])))).toBe('-sqrt(-n1)');
   });
@@ -1217,7 +1217,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(simplify(new Add([new Mul([rational(2), x]), new Mul([rational(2), new Pow(x, rational(2))]), new Mul([rational(4), y]), new Mul([rational(4), x, y])])))).toBe('2*x**2 + 4*x*y + 2*x + 4*y');
   });
-  it.fails("test_issue_7001:712", () => {
+  it("test_issue_7001:712", () => {
     const [r, R] = symbols('r R');
     expect(sympyStr(simplify(new Mul([rational(1, 4), new Pow(pi, rational(-1)), new Pow(r, rational(-1)), new Add([new Mul([rational(-2), piecewise([new Mul([rational(4, 3), pi, r]), Relational(R, r, '>=', { evaluate: false })], [new Mul([rational(4, 3), pi, new Pow(R, rational(3)), new Pow(r, rational(-2))]), true])]), new Mul([rational(-1), r, piecewise([new Mul([rational(4, 3), pi]), Relational(R, r, '>=', { evaluate: false })], [new Mul([rational(-8, 3), pi, new Pow(R, rational(3)), new Pow(r, rational(-3))]), true])])])])))).toBe('Piecewise((-1, R >= r), (0, True))');
   });
@@ -1225,55 +1225,55 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(Relational(new Add([new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))]), rational(2), '<', { evaluate: false })))).toBe('True');
   });
-  it.fails("test_issue_9398:730", () => {
+  it("test_issue_9398:730", () => {
     expect(sympyStr(cancel(new Float(1e-14), {}))).not.toBe('0');
   });
-  it.fails("test_issue_9398:731", () => {
+  it("test_issue_9398:731", () => {
     expect(sympyStr(cancel(new Mul([new Float({ man: 6338253001141147n, exp: -99n }, 53), I]), {}))).not.toBe('0');
   });
   it("test_issue_9398:733", () => {
     expect(sympyStr(simplify(new Float(1e-14)))).not.toBe('0');
   });
-  it.fails("test_issue_9398:734", () => {
+  it("test_issue_9398:734", () => {
     expect(sympyStr(simplify(new Mul([new Float({ man: 6338253001141147n, exp: -99n }, 53), I])))).not.toBe('0');
   });
-  it.fails("test_issue_9398:736", () => {
+  it("test_issue_9398:736", () => {
     expect(sympyStr(simplify(new Mul([new Float({ man: 6338253001141147n, exp: -99n }, 53), I])))).not.toBe('0');
   });
-  it.fails("test_issue_9398:738", () => {
+  it("test_issue_9398:738", () => {
     expect(sympyStr(cancel(new Float(1e-20), {}))).not.toBe('0');
   });
-  it.fails("test_issue_9398:739", () => {
+  it("test_issue_9398:739", () => {
     expect(sympyStr(cancel(new Mul([new Float({ man: 6646139978924579n, exp: -119n }, 53), I]), {}))).not.toBe('0');
   });
   it("test_issue_9398:741", () => {
     expect(sympyStr(simplify(new Float(1e-20)))).not.toBe('0');
   });
-  it.fails("test_issue_9398:742", () => {
+  it("test_issue_9398:742", () => {
     expect(sympyStr(simplify(new Mul([new Float({ man: 6646139978924579n, exp: -119n }, 53), I])))).not.toBe('0');
   });
-  it.fails("test_issue_9398:744", () => {
+  it("test_issue_9398:744", () => {
     expect(sympyStr(cancel(new Float(1e-100), {}))).not.toBe('0');
   });
-  it.fails("test_issue_9398:745", () => {
+  it("test_issue_9398:745", () => {
     expect(sympyStr(cancel(new Mul([new Float({ man: 492525077454931n, exp: -381n }, 53), I]), {}))).not.toBe('0');
   });
   it("test_issue_9398:747", () => {
     expect(sympyStr(simplify(new Float(1e-100)))).not.toBe('0');
   });
-  it.fails("test_issue_9398:748", () => {
+  it("test_issue_9398:748", () => {
     expect(sympyStr(simplify(new Mul([new Float({ man: 492525077454931n, exp: -381n }, 53), I])))).not.toBe('0');
   });
-  it.fails("test_issue_9398:751", () => {
+  it("test_issue_9398:751", () => {
     expect(sympyStr(cancel(new Float({ man: 4733750568358851n, exp: -3374n }, 53), {}))).not.toBe('0');
   });
-  it.fails("test_issue_9398:752", () => {
+  it("test_issue_9398:752", () => {
     expect(sympyStr(cancel(new Mul([new Float({ man: 4733750568358851n, exp: -3374n }, 53), I]), {}))).not.toBe('0');
   });
   it("test_issue_9398:754", () => {
     expect(sympyStr(simplify(new Float({ man: 4733750568358851n, exp: -3374n }, 53)))).not.toBe('0');
   });
-  it.fails("test_issue_9398:755", () => {
+  it("test_issue_9398:755", () => {
     expect(sympyStr(simplify(new Mul([new Float({ man: 4733750568358851n, exp: -3374n }, 53), I])))).not.toBe('0');
   });
   it("test_issue_9324_simplify:761", () => {
@@ -1639,38 +1639,38 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const y = new Sym('y', { real: true });
     expect(sympyStr(simplify(And(Relational(x, y, '<=', { evaluate: false }), Relational(new Pow(x, rational(2)), rational(4), '==', { evaluate: false }))))).toBe('(x <= y) & Eq(x**2, 4)');
   });
-  it.fails("test_issue_21869:898", () => {
+  it("test_issue_21869:898", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(2), '==', { evaluate: false }), Relational(new Pow(x, rational(2)), rational(4), '==', { evaluate: false }))))).toBe('Eq(x, 2)');
   });
-  it.fails("test_issue_21869:901", () => {
+  it("test_issue_21869:901", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(1), '==', { evaluate: false }), Relational(new Pow(x, rational(3)), new Pow(x, rational(2)), '==', { evaluate: false }))))).toBe('Eq(x, 1)');
   });
-  it.fails("test_issue_21869:904", () => {
+  it("test_issue_21869:904", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(0), '==', { evaluate: false }), Relational(fn('sin', [x]), new Pow(x, rational(2)), '==', { evaluate: false }))))).toBe('Eq(x, 0)');
   });
-  it.fails("test_issue_21869:907", () => {
+  it("test_issue_21869:907", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(2), '==', { evaluate: false }), Relational(new Pow(x, rational(3)), new Pow(x, rational(2)), '==', { evaluate: false }))))).toBe('False');
   });
-  it.fails("test_issue_21869:910", () => {
+  it("test_issue_21869:910", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(1), '==', { evaluate: false }), Relational(y, new Pow(x, rational(2)), '==', { evaluate: false }))))).toBe('Eq(x, 1) & Eq(y, 1)');
   });
-  it.fails("test_issue_21869:913", () => {
+  it("test_issue_21869:913", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(1), '==', { evaluate: false }), Relational(y, new Pow(x, rational(2)), '==', { evaluate: false }), Relational(new Pow(y, rational(2)), rational(1), '==', { evaluate: false }))))).toBe('Eq(x, 1) & Eq(y, 1)');
   });
-  it.fails("test_issue_21869:916", () => {
+  it("test_issue_21869:916", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(1), '==', { evaluate: false }), Relational(new Pow(y, rational(2)), rational(4), '==', { evaluate: false }), Relational(y, new Mul([rational(2), new Pow(x, rational(2))]), '==', { evaluate: false }))))).toBe('Eq(x, 1) & Eq(y, 2)');
   });
-  it.fails("test_issue_21869:919", () => {
+  it("test_issue_21869:919", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(1), '==', { evaluate: false }), Relational(y, new Pow(x, rational(2)), '==', { evaluate: false }), Relational(new Pow(y, rational(2)), rational(4), '==', { evaluate: false }))))).toBe('False');
@@ -1707,11 +1707,11 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const i = new Sym('i');
     expect(sympyStr(simplify(KroneckerDelta(rational(0), i)))).toBe('KroneckerDelta(0, i)');
   });
-  it.fails("test_simplify_kroneckerdelta:956", () => {
+  it("test_simplify_kroneckerdelta:956", () => {
     const j = new Sym('j');
     expect(sympyStr(simplify(new Mul([KroneckerDelta(rational(1), j), piecewise([rational(0), Relational(j, rational(0), '!=', { evaluate: false })], [rational(1), true])])))).toBe('0');
   });
-  it.fails("test_simplify_kroneckerdelta:957", () => {
+  it("test_simplify_kroneckerdelta:957", () => {
     const [i, j] = symbols('i j');
     expect(sympyStr(simplify(new Add([KroneckerDelta(rational(1), i), piecewise([rational(1), Relational(j, rational(2), '==', { evaluate: false })], [rational(0), true])])))).toBe('KroneckerDelta(1, i) + KroneckerDelta(2, j)');
   });
@@ -1743,22 +1743,22 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(new Mul([rational(5), abs(new Mul([new Pow(new Add([rational(-1), x]), rational(-1)), new Add([rational(-1), new Pow(x, rational(2))])]))])))).toBe('5*Abs(x + 1)');
   });
-  it.fails("test_issue_19822:985", () => {
+  it("test_issue_19822:985", () => {
     const n = new Sym('n');
     expect(sympyStr(simplify(And(Relational(n, rational(1), '>', { evaluate: false }), Relational(new Add([rational(-2), n]), rational(1), '>', { evaluate: false }))))).toBe('n > 3');
   });
-  it.fails("test_issue_18645:990", () => {
+  it("test_issue_18645:990", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(And(Relational(x, rational(3), '>=', { evaluate: false }), Relational(x, rational(3), '<=', { evaluate: false }))))).toBe('Eq(x, 3)');
   });
-  it.fails("test_issue_18645:992", () => {
+  it("test_issue_18645:992", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(And(Relational(x, rational(3), '==', { evaluate: false }), Relational(x, rational(3), '<=', { evaluate: false }))))).toBe('Eq(x, 3)');
   });
   it("test_issue_8373:1012", () => {
     expect(sympyStr(simplify(S['true']))).toBe('True');
   });
-  it.fails("test_issue_7950:1017", () => {
+  it("test_issue_7950:1017", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(And(Relational(x, rational(1), '==', { evaluate: false }), Relational(x, rational(2), '==', { evaluate: false }))))).toBe('False');
   });
@@ -1821,7 +1821,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const X = new Sym('X', { commutative: false });
     expect(sympyStr(simplify(X))).toBe('X');
   });
-  it.fails("test_nc_recursion_coeff:1093", () => {
+  it("test_nc_recursion_coeff:1093", () => {
     const X = new Sym('X', { commutative: false });
     expect(sympyStr(simplify(new Mul([new Float({ man: 1n, exp: 0n }, 53), X])))).toBe('X');
   });

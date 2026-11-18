@@ -1071,11 +1071,11 @@ describe("sympy/polys/domains/tests/test_domains.py", () => {
     const y = new Sym('y');
     expect(sympyStr(new FiniteExtension(Poly.from(new Add([rational(-2), new Pow(y, rational(2))]), [y], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(new Add([rational(-2), new Pow(y, rational(2))]), [y], { domain: 'ZZ', pure: false }))))).toBe('ZZ[y]/(y**2 - 2)');
   });
-  it.fails("test_Domain_unify_FiniteExtension:354", () => {
+  it("test_Domain_unify_FiniteExtension:354", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new FiniteExtension(Poly.from(new Add([rational(-2), new Pow(x, rational(2))]), [x], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(new Add([rational(-2), new Pow(y, rational(2))]), [y], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)[y]/(y**2 - 2)');
   });
-  it.fails("test_Domain_unify_FiniteExtension:355", () => {
+  it("test_Domain_unify_FiniteExtension:355", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(new FiniteExtension(Poly.from(new Add([rational(-2), new Pow(y, rational(2))]), [y], { domain: 'ZZ', pure: false })).unify(new FiniteExtension(Poly.from(new Add([rational(-2), new Pow(x, rational(2))]), [x], { domain: 'ZZ', pure: false }))))).toBe('ZZ[x]/(x**2 - 2)[y]/(y**2 - 2)');
   });

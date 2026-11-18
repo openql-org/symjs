@@ -428,7 +428,7 @@ describe("sympy/tensor/array/expressions/tests/test_array_expressions.py", () =>
     const k = new Sym('k');
     expect(sympyStr(tensordiagonal(new ArraySymbol('M', [k, k]), [0, 1]))).toBe('ArrayDiagonal(M, (0, 1))');
   });
-  it.fails("test_array_expr_construction_with_functions:729", () => {
+  it("test_array_expr_construction_with_functions:729", () => {
     const k = new Sym('k');
     expect(sympyStr(tensordiagonal(new ArrayDiagonal(new ArrayTensorProduct(new ArraySymbol('M', [k, k]), new ArraySymbol('N', [k, k])), [0, 1]), [0, 1]))).toBe('ArrayDiagonal(ArrayTensorProduct(M, N), (0, 1), (2, 3))');
   });

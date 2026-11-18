@@ -32,6 +32,9 @@ it('constructs primitive elements and representations of every generator', () =>
   expect(reps.map(String)).toEqual(['1/2,0,-9/2,0', '-1/2,0,11/2,0']);
   expect(primitiveElement([a, mul(-1, a)], x)[1]).toEqual([1, 0]);
   expect(primitiveElement([1, 2], x, { ex: true }).map(String)).toEqual(['x', '0,0', '1,2']);
+  expect(primitiveElement([0, 2], x, { ex: true }).map(String)).toEqual(['x', '0,0', ',2']);
+  expect(primitiveElement([1, a, 0], x, { ex: true }).map(String)).toEqual(['x**2 - 2*x - 1', '1,1,0', '1,1,-1,']);
+  expect(primitiveElement([0, a], x, { ex: true }).map(String)).toEqual(['x**2 - 2', '1,1', ',1,0']);
   expect(() => primitiveElement([])).toThrow('At least');
 });
 it('embeds values into an explicit field without numerical approximations', () => {

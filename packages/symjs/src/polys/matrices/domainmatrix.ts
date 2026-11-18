@@ -462,11 +462,11 @@ export class DomainMatrix {
     const [, pivots] = this.rref();
     return this.extract(range(this.shape[0]), pivots);
   }
-  /** A basis of the row space (the nonzero rows of the rref) over a field. */
+  /** A basis of the row space, using the original linearly independent rows. */
   rowspace(): DomainMatrix {
     if (!this.domain.isField) throw new DMNotAField('Not a field');
-    const [r, pivots] = this.rref();
-    return r.extract(range(pivots.length), range(this.shape[1]));
+    const [, pivots] = this.transpose().rref();
+    return this.extract(pivots, range(this.shape[1]));
   }
   /** A basis of the nullspace as rows (with divideLast over a field, the last nonzero element of each is 1). */
   nullspace(opts: { divideLast?: boolean } = {}): DomainMatrix {
@@ -514,14 +514,15 @@ export class DomainMatrix {
     return this.solveDen(DomainMatrix.eye(this.shape, this.domain), method);
   }
   /** [xnum, xden] with self*xnum = xden*b, without leaving the domain. */
-  solveDen(b: DomainMatrix, method: 'rref' | 'charpoly' = 'rref'): [DomainMatrix, Expr] {
+  solveDen(b: DomainMatrix, method: string = 'rref'): [DomainMatrix, Expr] {
     const [m, n] = this.shape;
     if (m !== b.shape[0]) throw new DMShapeError('Matrix equation shape mismatch.');
     if (method === 'charpoly') {
       if (m !== n) throw new DMNonSquareMatrixError("method='charpoly' requires a square matrix.");
       return this.solveDenCharpoly(b);
     }
-    return this.solveDenRref(b);
+    if (method === 'rref') return this.solveDenRref(b);
+    throw new DMBadInputError(`unknown solve method: ${method}`);
   }
   /** solveDen by fraction-free row reduction of the augmented matrix. */
   solveDenRref(b: DomainMatrix): [DomainMatrix, Expr] {

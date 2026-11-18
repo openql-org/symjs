@@ -301,7 +301,7 @@ describe("sympy/simplify/tests/test_radsimp.py", () => {
     const a = new Sym('a');
     expect(sympyStr(radsimp(new Pow(new Add([new Pow(rational(3), rational(1, 2)), new Pow(rational(5), rational(1, 2)), new Pow(rational(7), rational(1, 2)), new Mul([a, new Pow(rational(2), rational(1, 2))])]), rational(-1)), { symbolic: true }))).toBe('(8*sqrt(2)*a**7 - 8*sqrt(7)*a**6 - 8*sqrt(5)*a**6 - 8*sqrt(3)*a**6 - 180*sqrt(2)*a**5 + 8*sqrt(30)*a**5 + 8*sqrt(42)*a**5 + 8*sqrt(70)*a**5 - 24*sqrt(105)*a**4 + 84*sqrt(3)*a**4 + 100*sqrt(5)*a**4 + 116*sqrt(7)*a**4 - 72*sqrt(70)*a**3 - 40*sqrt(42)*a**3 - 8*sqrt(30)*a**3 + 782*sqrt(2)*a**3 - 462*sqrt(3)*a**2 - 302*sqrt(7)*a**2 - 254*sqrt(5)*a**2 + 120*sqrt(105)*a**2 - 795*sqrt(2)*a - 62*sqrt(30)*a + 82*sqrt(42)*a + 98*sqrt(70)*a - 118*sqrt(105) + 59*sqrt(7) + 295*sqrt(5) + 531*sqrt(3))/(16*a**8 - 480*a**6 + 3128*a**4 - 6360*a**2 + 3481)');
   });
-  it.fails("test_radsimp:61", () => {
+  it("test_radsimp:61", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(radsimp(new Pow(new Add([new Pow(rational(3), rational(1, 2)), new Pow(rational(7), rational(1, 2)), new Mul([a, new Pow(rational(2), rational(1, 2))]), new Mul([b, new Pow(rational(2), rational(1, 2))])]), rational(-1)), { symbolic: true }))).toBe('(sqrt(2)*a*(a + b)**2 - 5*sqrt(2)*a + sqrt(42)*a + sqrt(2)*b*(a + b)**2 - 5*sqrt(2)*b + sqrt(42)*b - sqrt(7)*(a + b)**2 - sqrt(3)*(a + b)**2 - 2*sqrt(3) + 2*sqrt(7))/(2*a**4 + 8*a**3*b + 12*a**2*b**2 - 20*a**2 + 8*a*b**3 - 40*a*b + 2*b**4 - 20*b**2 + 8)');
   });
@@ -599,11 +599,11 @@ describe("sympy/simplify/tests/test_radsimp.py", () => {
   //           x**2: umul(S(3), a + 1), x**3: 1}
   //   => {1: (a + 1)**3, x: 3*(a + 1)**2, x**2: 3*(a + 1), x**3: 1}
   it.todo("test_collect_func:291");
-  it.fails("test_collect_order:299", () => {
+  it("test_collect_order:299", () => {
     const [t, x] = symbols('t x');
     expect(sympyStr(collect(new Add([t, new Mul([t, x]), new Mul([t, new Pow(x, rational(2))]), O(new Pow(x, rational(3)), x, rational(0))]), [t], {}))).toBe('t*(1 + x + x**2 + O(x**3))');
   });
-  it.fails("test_collect_order:300", () => {
+  it("test_collect_order:300", () => {
     const [t, x] = symbols('t x');
     expect(sympyStr(collect(new Add([t, new Pow(x, rational(2)), new Mul([t, x]), O(new Pow(x, rational(3)), x, rational(0))]), [t], {}))).toBe('x**2 + t*(1 + x + O(x**3)) + O(x**3)');
   });
@@ -615,7 +615,7 @@ describe("sympy/simplify/tests/test_radsimp.py", () => {
   //   assert collect(f, x, distribute_order_term=False) == g
   //   => x*(a + b) + x**2*(c + d) + O(x**3)
   it.todo("test_collect_order:307");
-  it.fails("test_collect_order:311", () => {
+  it("test_collect_order:311", () => {
     const [b, a] = symbols('b a');
     expect(sympyStr(collect(new Add([new Mul([b, fn('cos', [a])]), new Mul([rational(-1, 2), new Pow(b, rational(2)), fn('sin', [a])]), new Mul([rational(-1, 6), new Pow(b, rational(3)), fn('cos', [a])]), new Mul([rational(-1, 720), new Pow(b, rational(6)), fn('sin', [a])]), new Mul([rational(-1, 5040), new Pow(b, rational(7)), fn('cos', [a])]), new Mul([rational(1, 24), new Pow(b, rational(4)), fn('sin', [a])]), new Mul([rational(1, 120), new Pow(b, rational(5)), fn('cos', [a])]), new Mul([rational(1, 40320), new Pow(b, rational(8)), fn('sin', [a])]), new Mul([rational(1, 362880), new Pow(b, rational(9)), fn('cos', [a])]), O(new Pow(b, rational(10)), b, rational(0)), fn('sin', [a])]), [fn('sin', [a]), fn('cos', [a])], {}))).toBe('(1 - b**2/2 + b**4/24 - b**6/720 + b**8/40320 + O(b**10))*sin(a) + (b - b**3/6 + b**5/120 - b**7/5040 + b**9/362880 + O(b**10))*cos(a)');
   });
@@ -669,7 +669,7 @@ describe("sympy/simplify/tests/test_radsimp.py", () => {
     const [x, y, a] = symbols('x y a');
     expect(sympyStr(collect(new Add([new Pow(new Add([rational(1), x]), y), new Mul([a, new Pow(new Add([rational(1), x]), y)])]), [new Pow(new Add([rational(1), x]), new Wild('.2', { exclude: [] }))], {}))).toBe('(a + 1)*(x + 1)**y');
   });
-  it.fails("test_collect_Wild:349", () => {
+  it("test_collect_Wild:349", () => {
     const [x, y, a] = symbols('x y a');
     expect(sympyStr(collect(new Add([new Pow(new Add([rational(1), x]), y), new Mul([a, new Pow(new Add([rational(1), x]), y)])]), [new Pow(new Wild('.1', { exclude: [] }), new Wild('.2', { exclude: [] }))], {}))).toBe('(a + 1)*(x + 1)**y');
   });
@@ -733,11 +733,11 @@ describe("sympy/simplify/tests/test_radsimp.py", () => {
     const x = new Sym('x');
     expect(sympyStr(collect(new Add([new Mul([derivative((SymFunction('f'))(x), [[x, 1]]), (SymFunction('f'))(x)]), derivative((SymFunction('f'))(x), [[x, 1]]), (SymFunction('f'))(x)]), [derivative((SymFunction('f'))(x), [[x, 1]]), (SymFunction('f'))(x)], {}))).toBe('(f(x) + 1)*Derivative(f(x), x) + f(x)');
   });
-  it.fails("test_issue_6097:395", () => {
+  it("test_issue_6097:395", () => {
     const [a, y, x, b] = symbols('a y x b');
     expect(sympyStr(collect(new Add([new Mul([a, new Pow(y, new Mul([new Float({ man: 1n, exp: 1n }, 53), x]))]), new Mul([b, new Pow(y, new Mul([new Float({ man: 1n, exp: 1n }, 53), x]))])]), [new Pow(y, x)], {}))).toBe('(a + b)*(y**x)**2.0');
   });
-  it.fails("test_issue_6097:396", () => {
+  it("test_issue_6097:396", () => {
     const [a, x, b] = symbols('a x b');
     expect(sympyStr(collect(new Add([new Mul([a, new Pow(rational(2), new Mul([new Float({ man: 1n, exp: 1n }, 53), x]))]), new Mul([b, new Pow(rational(2), new Mul([new Float({ man: 1n, exp: 1n }, 53), x]))])]), [new Pow(rational(2), x)], {}))).toBe('(a + b)*(2**x)**2.0');
   });

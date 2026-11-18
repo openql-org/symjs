@@ -234,3 +234,8 @@ it('factors polynomial systems in their coefficient domain', () => {
     ["Poly(x + I, x, domain='QQ_I')"], ["Poly(x - I, x, domain='QQ_I')"],
   ]);
 });
+
+it('factors symbolic parameters in composite coefficient domains', () => {
+  const f = P(['a*(x - 1)*(x + 1)', 'b*(x - 1)*(x + 1)']);
+  expect(show(factorSystemCond(f, [x], { domain: 'ZZ[a,b]' }))).toBe('[[x + 1], [x - 1], [a, b]]');
+});

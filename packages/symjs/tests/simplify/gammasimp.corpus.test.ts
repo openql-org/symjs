@@ -272,7 +272,7 @@ describe("sympy/simplify/tests/test_gammasimp.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(gammasimp(new Mul([new Pow(fn('gamma', [y]), rational(-1)), new Add([rational(1), x]), fn('factorial', [x])])))).toBe('gamma(x + 2)/gamma(y)');
   });
-  it.fails("test_gammasimp:76", () => {
+  it("test_gammasimp:76", () => {
     const [k, n, x] = symbols('k n x');
     expect(sympyStr(simplify(new Mul([new Pow(fn('gamma', [new Add([rational(1), k])]), rational(-1)), new Pow(fn('gamma', [new Add([rational(1), n, new Mul([rational(-1), k])])]), rational(-1)), piecewise([new Mul([new Pow(fn('gamma', [new Add([n, x])]), rational(-1)), fn('gamma', [new Add([k, n, x])])]), Relational(new Add([n, x]), rational(0), '>', { evaluate: false })], [new Mul([new Pow(rational(-1), k), new Pow(fn('gamma', [new Add([rational(1), new Mul([rational(-1), k]), new Mul([rational(-1), n]), new Mul([rational(-1), x])])]), rational(-1)), fn('gamma', [new Add([rational(1), new Mul([rational(-1), n]), new Mul([rational(-1), x])])])]), true]), fn('gamma', [new Add([rational(1), n])])])))).toBe('Piecewise((gamma(n + 1)*gamma(k + n + x)/(gamma(k + 1)*gamma(n + x)*gamma(-k + n + 1)), n > -x), ((-1)**k*gamma(n + 1)*gamma(-n - x + 1)/(gamma(k + 1)*gamma(-k + n + 1)*gamma(-k - n - x + 1)), True))');
   });

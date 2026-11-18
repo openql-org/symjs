@@ -206,3 +206,10 @@ describe('collectAbs (SymPy collect_abs)', () => {
     expect(String(collectAbs(parse('Abs(x)*Abs(y)*B*A', { symbols: [A, B] })))).toBe('Abs(x*y)*B*A');
   });
 });
+
+it('returns collected coefficients keyed by expressions and rejects noncommuting patterns', () => {
+  const x = symbol('x'), A = symbol('A', { commutative: false });
+  const groups = collect(parse('x*y + x*z'), x, { evaluate: false });
+  expect(String(groups.get(symbol('x')))).toBe('y + z');
+  expect(() => collect(A.add(1), A)).toThrow(/noncommutative/);
+});
