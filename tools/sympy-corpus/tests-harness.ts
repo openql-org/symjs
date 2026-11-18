@@ -27,7 +27,7 @@ export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; ac
 
 const REPLAY_STATE = new Set([
   'tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix', 'polyReplay',
-  'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation',
+  'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation', 'dummyIndex', 'globalEvaluate',
 ]);
 
 export function testCaseKey(c: TestCase): string {
@@ -81,7 +81,8 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
         return { status: 'error', reason: error instanceof Error ? error.message : String(error) };
       }
     }
-    if (c.category === 'polys' && c.comparisonTree && observation && 'value' in observation) {
+    // (polynomial objects and geometric entities are compared by structure, as Python's != does)
+    if ((c.category === 'polys' || c.category === 'geometry') && c.comparisonTree && observation && 'value' in observation) {
       const rhs = deserialize(c.comparisonTree);
       return pyEquals(observation.value, rhs) ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
     }

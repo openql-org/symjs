@@ -617,10 +617,20 @@ class Capture:
             owner = getattr(function, "__self__", None)
             if not name.startswith(".") and isinstance(owner, sympy.MatrixBase):
                 record["boundMatrix"] = extract.ser(owner)
-            if name == "classof":
+            # a call made under `with evaluate(False)` builds its result unevaluated
+            if not sympy.core.parameters.global_parameters.evaluate and name in ("Max", "Min"):
+                record["globalEvaluate"] = False
+            if name in ("classof", "srepr"):
                 for arg, tree in zip(args, record["args"]):
                     if tree["t"] == "Matrix":
                         tree["matrixClass"] = type(arg).__name__
+            if name == "srepr":
+                # srepr shows what the corpus trees leave out: the index of a Dummy and an explicit commutative=True
+                for arg, tree in zip(args, record["args"]):
+                    if isinstance(arg, sympy.Dummy):
+                        tree["dummyIndex"] = str(arg.dummy_index)
+                    if isinstance(arg, sympy.Symbol) and arg._assumptions_orig.get("commutative") is True:
+                        tree["assume"] = {**tree["assume"], "commutative": True}
             if name.startswith("."):
                 record["self"] = extract.ser(receiver)
             if self.category == "core" and name == ".diff" and isinstance(receiver, sympy.core.function.AppliedUndef):
@@ -763,6 +773,9 @@ class Capture:
                 pass
         # two random symbols of the same name print alike: the right-hand side is kept as a tree
         if op == "!=" and self.category == "stats" and isinstance(expected, sympy.stats.rv.RandomSymbol):
+            case["comparisonTree"] = extract.ser(expected)
+        # symbols that differ only in their assumptions print alike in a geometric entity as well
+        if op == "!=" and self.category == "geometry" and isinstance(expected, sympy.geometry.entity.GeometryEntity):
             case["comparisonTree"] = extract.ser(expected)
         if ported_function_case(case):
             case.pop("exclusion", None)
@@ -1252,7 +1265,7 @@ def without_replay_state(value):
         return {k: without_replay_state(v) for k, v in value.items()
                 if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree",
                              "matrixClass", "boundMatrix", "polyReplay", "expectedOperand", "zeroDefault", "divideError",
-                             "functionPartials", "randomState", "latticeOperation")}
+                             "functionPartials", "randomState", "latticeOperation", "dummyIndex", "globalEvaluate")}
     if isinstance(value, list):
         return [without_replay_state(v) for v in value]
     return value

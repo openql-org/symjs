@@ -89,6 +89,7 @@ function givenAssumptions(e: Sym): [string, boolean][] {
   if (a.integer === false && a.commutative !== false) out.push(['integer', false]);
   if (a.zero === false && a.positive !== true && a.negative !== true && a.integer !== false) out.push(['zero', false]);
   if (a.commutative === false) out.push(['commutative', false]);
+  else if (e.givenCommutative) out.push(['commutative', true]);
   if (a.polar === true) out.push(['polar', true]);
   return out;
 }
@@ -336,7 +337,7 @@ function domainRepr(domain: Domain): string {
     const cls = domain.order.isGlobal === true ? 'GlobalPolynomialRing' : 'GeneralizedPolynomialRing';
     return `${cls}(${domainRepr(domain.dom)}, ${domain.symbols.map(reprValue).join(', ')}${order === 'grevlex' ? '' : ', order=' + order})`;
   }
-  if (isFractionField(domain)) return `FractionField(${ringRepr('FracField', domain.gens, domain.domain, 'lex')})`;
+  if (isFractionField(domain)) return `FractionField(${ringRepr('FracField', domain.gens, domain.domain, domain.order)})`;
   return String(domain);
 }
 

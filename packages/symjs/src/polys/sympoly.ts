@@ -22,7 +22,7 @@ import type { ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Pow, Rational, Rel, S, Sym, compareExpr, impl, isNum } from '../core/nodes';
 import { evalf as evalfExpr } from '../numeric/evalf';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, mapBottomUp, rebuild, xreplace } from '../core/traverse';
+import { freeSymbols, mapBottomUp, rebuild, some, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { str } from '../printing/str';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
@@ -61,6 +61,8 @@ export interface PolyConstructionOptions extends PolynomialDomainOptions {
   extension?: boolean | ExprLike | readonly ExprLike[];
   gaussian?: boolean;
   pure?: boolean;
+  /** Keep the expression as given instead of expanding it first (SymPy expand=False). */
+  expand?: boolean;
 }
 /** Options of Poly.intervals: the real bounds of the roots and the fast refinement of SymPy. */
 export interface IntervalsOptions {
@@ -447,7 +449,7 @@ export class Poly {
     const modulus = modulusOption(opts);
     const requestedDomain = opts.domain === undefined ? undefined : String(opts.domain);
     if (opts.domain !== undefined && opts.field !== undefined) throw new OptionError("'field' option is not allowed together with 'domain'");
-    const e = expand(sympify(ex));
+    const e = opts.expand === false ? sympify(ex) : expand(sympify(ex));
     // over RR the generators are the symbols (numbers such as sqrt(3) become coefficients)
     const real = requestedDomain === 'R' || requestedDomain === 'RR' || requestedDomain === 'CC';
     const algebraicDomain = /^(?:ZZ|QQ)(?:_I|<)/.test(requestedDomain ?? '');
@@ -464,10 +466,12 @@ export class Poly {
           monom[i] = at(monom, i) + 1;
           continue;
         }
-        if (f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && f.exp.isPositive) {
-          const j = gs.findIndex((g) => g.key === f.base.key);
+        if (f instanceof Pow) {
+          // SymPy decompose_power: the integer part of the exponent counts the generator (3**(2*x) is (3**x)**2)
+          const [base, power] = decomposePower(f);
+          const j = power > 0 ? gs.findIndex((g) => g.key === base.key) : -1;
           if (j >= 0) {
-            monom[j] = at(monom, j) + Number(f.exp.p);
+            monom[j] = at(monom, j) + power;
             continue;
           }
         }
@@ -3098,6 +3102,23 @@ export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: bo
   // SymPy: a PolynomialError for non-commutative expressions leads to factor_nc
   if (!e.isCommutative) return factorNc(e);
   if (e instanceof Add && opts.domain === undefined && opts.extension === undefined && (e.has(S.I) || e.args.some((t) => (t instanceof Mul ? t.args : [t]).some((a) => a instanceof Float)))) {
+    // SymPy together (gcd_terms): a Float that is the coefficient of every term up to its sign is taken out,
+    // and the rest is factored exactly (1.5*x + 1.5 is 1.5*(x + 1))
+    const parts = e.args.map((t): [Float | undefined, Expr] => {
+      const float = t instanceof Float ? t : t instanceof Mul ? t.args.find((a): a is Float => a instanceof Float) : undefined;
+      return [float, float === undefined || t instanceof Float ? S.One : mul(...(t instanceof Mul ? t.args : []).filter((a) => a !== float))];
+    });
+    const leading = at(parts, 0)[0];
+    const magnitude = Math.abs(leading?.toNumber() ?? 1);
+    if (leading !== undefined && parts.every(([c]) => c !== undefined && Math.abs(c.toNumber()) === magnitude)) {
+      const inner = add(...parts.map(([c, rest]) => ((c?.toNumber() ?? 1) < 0 ? mul(-1, rest) : rest)));
+      if (!some(inner, (a) => a instanceof Float)) {
+        // the sign goes with the Float so that the leading coefficient of the rest is positive
+        const positive = leading.toNumber() < 0 ? mul(-1, leading) : leading;
+        const negative = isNegativeLeading(inner, opts.gens);
+        return keepCoeff(negative ? mul(-1, positive) : positive, factor(negative ? mul(-1, inner) : inner, opts));
+      }
+    }
     const p = Poly.from(e, opts.gens);
     // (generators that are functions, such as sin(x), are factored symbolically below)
     if (p.domain === 'RR' && p.gens.length && p.gens.every((g) => g instanceof Sym)) return factorInexactReal(p);
@@ -3113,12 +3134,23 @@ function primitiveGaussian(f: Poly, K: Domain): [Expr, Poly] {
   return [mul(common, Rational.of(1n, denominator)), integral.mulGround(pow(common, -1)).setDomain(K)];
 }
 
+/** Whether the leading coefficient of e as a polynomial is negative (false when e is no polynomial). */
+function isNegativeLeading(e: Expr, gens?: readonly Expr[]): boolean {
+  try {
+    const lc = Poly.from(e, gens).LC();
+    return lc instanceof Rational && lc.isNegative;
+  } catch {
+    return false;
+  }
+}
+
 /** Factor over RR through QQ and normalize the factors by their maximum coefficient. */
 function factorInexactReal(p: Poly): Expr {
   const [content, factors] = p.toExact().factorList();
-  if (factors.length === 1 && first(factors)[1] === 1) return p.asExpr();
   let coefficient = content;
   const exprs = factors.map(([f, k]) => {
+    // (SymPy takes a generator common to all terms out before the polynomial is built: it stays exact)
+    if (f.termList.length === 1 && f.LC().equals(S.One)) return pow(f.asExpr(), k);
     const norm = f.maxNorm();
     coefficient = mul(coefficient, pow(norm, k));
     const normalized = Poly.from(f.mulGround(pow(norm, -1)).asExpr(), p.gens, { domain: 'RR' });

@@ -766,6 +766,9 @@ function deserializeDomain(tree: Tree): sj.Domain | undefined {
     return new sj.PolynomialRingBase(base, symbols, blocks?.length === symbols.length
       ? sj.buildProductOrder(blocks.map((name, i) => [name, definedOr(symbols[i], 'ordering generator')]), symbols) : order);
   }
+  // (a monomial order other than lex is given to the domain class itself)
+  const order = typeof tree['order'] === 'string' && tree['order'] !== 'lex' ? tree['order'] : undefined;
+  if (order !== undefined && !name.endsWith(']')) return new sj.FractionField(base, symbols, order);
   return name.endsWith(']') ? base.polyRing(...symbols) : base.fracField(...symbols);
 }
 
@@ -1481,7 +1484,8 @@ export function deserialize(tree: Tree): unknown {
       return new (cls as new () => unknown)();
     }
     case 'SetOp': {
-      const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as sj.SetExpr);
+      // a geometric entity among the operands is the set of its points
+      const xs = (tree['args'] as Tree[]).map((x) => deserialize(x)).map((x) => x instanceof sj.GeometryEntity ? sj.geometrySet(x) : x as sj.SetExpr);
       return new sj.SetOp(tree['op'] as 'Union' | 'Intersection' | 'Complement', xs);
     }
     case 'Groebner':
@@ -1731,10 +1735,16 @@ export function deserialize(tree: Tree): unknown {
       return new sj.WildFunction(tree['name'] as string, (tree['nargs'] as number[] | null) ?? undefined);
     case 'Dummy': {
       const a = Object.fromEntries(Object.entries(tree['assume'] as Record<string, boolean>).map(([k, v]) => [camel(k), v]));
-      return new sj.Dummy(tree['name'] as string, a, 1_000_000 + (tree['index'] as number));
+      // (srepr cases carry SymPy's own index)
+      return new sj.Dummy(tree['name'] as string, a, tree['dummyIndex'] === undefined ? 1_000_000 + (tree['index'] as number) : Number(tree['dummyIndex']));
     }
-    case 'UFn':
-      return new sj.UndefFn(String(tree['name']), (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))));
+    case 'UFn': {
+      const operands = (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a)));
+      if (tree['assume'] === undefined) return new sj.UndefFn(String(tree['name']), operands);
+      // a function class declared with assumptions
+      const assumptions = Object.fromEntries(Object.entries(tree['assume'] as Record<string, boolean>).map(([k, v]) => [camel(k), v]));
+      return sj.SymFunction(String(tree['name']), { assumptions })(...operands);
+    }
     case 'Derivative': {
       const expr = deserialize(tree['expr'] as Tree);
       const variables = (tree['vc'] as [Tree, number | Tree][]).map(([v, n]): [Expr | Matrix, number | Expr] => [deserialize(v) as Expr | Matrix, typeof n === 'number' ? n : asExpr(deserialize(n))]);
@@ -2182,6 +2192,8 @@ const asSet = (v: unknown): sj.SetExpr => {
   if (v instanceof JsSet) return sj.finiteSet(...v.items.map(expressionContainer));
   throw new TypeError('expected a set');
 };
+// an operand of Union and Intersection: SymPy's geometric sets are sets themselves
+const asSetOperand = (v: unknown): sj.SetExpr => (v instanceof sj.GeometryEntity ? sj.geometrySet(v) : asSet(v));
 const typeMethod = (self: unknown, type: string, f: () => unknown, kw: Record<string, unknown>): unknown => {
   noKw(kw);
   if (!(self instanceof TypeRef && self.name === type)) throw new Unsupported(`classmethod of ${type}`);
@@ -2992,8 +3004,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (typeof g !== 'function') throw new Unsupported('use function');
     return sj.use(asExpr(args[0]), (x) => (g as (e: Expr) => Expr)(x), kw['level'] === undefined ? 0 : intArg(kw['level']));
   },
-  Union: (args, kw) => kw['evaluate'] === false ? new sj.SetOp('Union', args.map(asSet)) : (noKw(kw), sj.union(...args.map(asSet))),
-  Intersection: (args, kw) => (noKw(kw), sj.Intersection(...args.map(asSet))),
+  Union: (args, kw) => kw['evaluate'] === false ? new sj.SetOp('Union', args.map(asSetOperand)) : (noKw(kw), sj.union(...args.map(asSetOperand))),
+  Intersection: (args, kw) => (noKw(kw), sj.Intersection(...args.map(asSetOperand))),
   ProductSet: (args, kw) => (noKw(kw), sj.ProductSet(...args.map(asSet))),
   Complement: (args, kw) => (noKw(kw), sj.complement(asSet(args[0]), asSet(args[1]))),
   '.open': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), true, true), kw),
@@ -5284,7 +5296,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return Tr(operand instanceof Matrix ? operand : asExpr(operand), labels);
   },
   Poly: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian','field','symmetric'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian','field','symmetric','expand'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (kw['symmetric'] !== undefined && kw['modulus'] === undefined) throw new sj.OptionError('symmetric requires modulus');
     const [e, ...rawGens] = args;
     const gens = rawGens.flatMap((g) => g instanceof JsTuple ? g.items : [g]);
@@ -5295,6 +5307,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       ...polynomialOptions(kw),
       ...(kw['gaussian'] === undefined ? {} : { gaussian: Boolean(kw['gaussian']) }),
       ...(kw['field'] === undefined ? {} : { field: Boolean(kw['field']) }),
+      ...(kw['expand'] === false ? { expand: false } : {}),
     };
     if (e instanceof sj.Poly) return sj.Poly.fromPoly(e, gens.length ? gens.map(asExpr) : e.gens, opts);
     return sj.Poly.fromExpr(typeof e === 'string' ? e : expression(e), gens.map(asExpr), opts);
@@ -6161,6 +6174,8 @@ export interface Case {
   functionPartials?: Tree[];
   randomState?: RandomState;
   latticeOperation?: [Tree, Tree];
+  /** false for a call recorded under `with evaluate(False)`. */
+  globalEvaluate?: boolean;
   fn: string;
   category: string;
   module: string;
@@ -7478,6 +7493,15 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.func' && c.self?.t === 'Vec' && c.self['cls'] === 'BaseScalar') return (args) => sj.BaseScalar(intArg(args[0]), args[1] as sj.CoordSys3D);
   if (c.fn === '.func' && c.self?.t === 'Vec' && c.self['cls'] === 'Point') return (args) => sj.VectorPoint(args[0] as string, args[1] as Expr, args[2] as sj.VectorPoint);
   if (c.fn === 'GeometryEntity') return (args) => new sj.GeometryEntity('GeometryEntity', args.map(asExpr));
+  // SymPy Triangle(sss=...) returns None when no triangle has those sides; symjs raises a GeometryError
+  if (c.fn === 'Triangle' && c.category === 'geometry' && c.kwargs?.['sss'] !== undefined) return (_args, kw) => {
+    try {
+      return sj.Triangle({ sss: tupleItems(kw['sss'] as Expr | JsTuple).map(asExpr) });
+    } catch (error) {
+      if (error instanceof sj.GeometryError) return null;
+      throw error;
+    }
+  };
   if (c.fn === '.cut_section' && c.category === 'geometry') return (args, _kw, self) => new JsTuple((self as sj.Polygon).cutSection(args[0] as sj.Line2D).map((part) => part === sj.EmptySet ? null : part));
   if (c.fn === '.is_collinear' && c.category === 'geometry') return (args, kw, self) => {
     noKw(kw);
@@ -8179,7 +8203,10 @@ function diophantineStateAdapter(c: Case): Adapter | undefined {
   };
 }
 
-export function runCase(c: Case, observe?: (event: CaseObservation) => void): Outcome {
+export function runCase(recorded: Case, observe?: (event: CaseObservation) => void): Outcome {
+  // a call recorded under `with evaluate(False)` is replayed with evaluate=False
+  const c: Case = recorded.globalEvaluate === false && recorded.kwargs?.['evaluate'] === undefined
+    ? { ...recorded, kwargs: { ...recorded.kwargs, evaluate: { t: 'Js', v: false } } } : recorded;
   const replay = () => asDoctest(c, () => c.category === 'printing' ? withPrintingContext(c, () => runCase0(c, observe)) : runCase0(c, observe));
   if (!c.divideError && !c.randomState) return replay();
   const divide = errorSettings.divide;

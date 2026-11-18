@@ -97,6 +97,14 @@ export abstract class SetExpr extends Expr {
   elementOf(_x: Expr): Truth {
     return 'unknown';
   }
+  /** SymPy intersection_sets of this class: its intersection with another set, or undefined without a rule. */
+  intersectWith(_other: SetExpr): SetExpr | undefined {
+    return undefined;
+  }
+  /** SymPy union_sets of this class: its union with another set, or undefined when the two do not combine. */
+  unionWith(_other: SetExpr): SetExpr | undefined {
+    return undefined;
+  }
 }
 
 const isNegOo = (e: Expr) => e instanceof Special && e.name === '-oo';
@@ -1671,6 +1679,15 @@ export function union(...sets0: SetExpr[]): SetExpr {
       return union(merged, ...sets.filter((s) => !compatible.includes(s)));
     }
   }
+  // the classes with their own rule combine pairwise (SymPy union_sets)
+  if (sets.some((s) => s.unionWith !== SetExpr.prototype.unionWith)) {
+    for (const [i, a] of sets.entries()) {
+      for (const [j, b] of sets.entries()) {
+        const merged = i === j ? undefined : a.unionWith(b);
+        if (merged !== undefined) return union(merged, ...sets.filter((_, k) => k !== i && k !== j));
+      }
+    }
+  }
   if (sets.includes(Complexes) && sets.every((s) => isSubset(s, Complexes) === true)) return Complexes;
   // the rationals contain the integers and the naturals (SymPy union_sets)
   if (sets.includes(Rationals) && sets.every((s) => s === Rationals || s === Integers || s === Naturals || s === Naturals0)) return Rationals;
@@ -1826,6 +1843,8 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
   if (a === UniversalSet) return b;
   if (b === UniversalSet) return a;
   if (a.key === b.key) return a;
+  const own = a.intersectWith(b) ?? b.intersectWith(a);
+  if (own !== undefined) return own;
   if (a instanceof ConditionSet) return conditionSet(a.variable, a.condition, intersection(a.base, b));
   if (b instanceof ConditionSet) return conditionSet(b.variable, b.condition, intersection(a, b.base));
   if (a instanceof FiniteSet || b instanceof FiniteSet) return intersectFinite([a, b]);

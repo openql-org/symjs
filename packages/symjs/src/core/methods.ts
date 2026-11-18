@@ -501,8 +501,10 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
   }
   if (c instanceof Add && isNum(at(c.args, 0))) {
     const co = coeff(e, c);
-    const xa0 = mul(extractAdditively(co, 1) ?? S.Zero, c);
-    if (!isZeroE(xa0)) {
+    // (the scalar is tested before it multiplies c: 0 times a matrix is a zero matrix, not 0)
+    const times = extractAdditively(co, 1) ?? S.Zero;
+    const xa0 = mul(times, c);
+    if (!isZeroE(times)) {
       // e - c = (co - 1)*c + diff (SymPy adds diff.extract_additively(c) or diff, which takes c off twice
       // when diff contains it: ((y + 2)*(x + 1) + x + 1 + z).extract_additively(x + 1) = z + (x + 1)*(y + 1))
       return add(xa0, add(e, mul(-1, co, c)));
@@ -525,9 +527,10 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
   }
   const co = add(...coTerms);
   const diff_ = add(...diffTerms);
-  const xa0 = mul(extractAdditively(co, 1) ?? S.Zero, c);
+  const times = extractAdditively(co, 1) ?? S.Zero;
+  const xa0 = mul(times, c);
   // e - c = (co - 1)*c + diff, as above
-  if (!isZeroE(xa0)) {
+  if (!isZeroE(times)) {
     const remainder = extractAdditively(diff_, c);
     return add(xa0, remainder === undefined || isZeroE(remainder) ? diff_ : remainder);
   }

@@ -10,7 +10,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Rational, S, Sym, impl } from '../core/nodes';
 import { at, cast } from '../core/guard';
 import { add, mul, sympify } from '../core/ops';
-import { rebuild, xreplace } from '../core/traverse';
+import { rebuild, some, xreplace } from '../core/traverse';
 import { Concrete, doitConcrete, sumIsConvergent } from '../concrete/summations';
 import { integrate } from '../integrals/integrate';
 import { limit } from '../series/limits';
@@ -50,7 +50,12 @@ export function doit(ex: ExprLike | Matrix): Expr | Matrix {
     if (y instanceof Limit) return limit(at(y.args, 0), cast(y.args[1], Sym, 'limit variable'), at(y.args, 2), y.dir);
     if (y instanceof Concrete) return doitConcrete(y);
     if (y instanceof ExtensionExpr) return y.doitSelf() ?? y;
-    if (y instanceof Derivative) return y.doit();
+    if (y instanceof Derivative) {
+      // SymPy Derivative.doit: a result that still has derivatives is evaluated again
+      // (Derivative(Abs(f(x)), f(x)) is sign(f(x))*Derivative(f(x), f(x)), then sign(f(x)))
+      const result = y.doit();
+      return result.key !== y.key && some(result, (t) => t instanceof Derivative) ? go(result) : result;
+    }
     return y;
   };
   return go(sympify(ex));

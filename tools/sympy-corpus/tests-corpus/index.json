@@ -514,13 +514,13 @@
         "completed": 113,
         "marked-slow": 4
       },
-      "seconds": 26.893,
+      "seconds": 11.822,
       "retainedModules": 0,
       "shards": [
         {
           "file": "geometry.json",
           "cases": 1102,
-          "bytes": 823199
+          "bytes": 828056
         }
       ],
       "auditFile": "geometry.audit.json",
@@ -2313,5 +2313,5 @@
   ],
   "timeoutSeconds": 120,
   "jobs": 4,
-  "lastRunSeconds": 9.265
+  "lastRunSeconds": 12.019
 }

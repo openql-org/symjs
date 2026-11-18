@@ -894,6 +894,8 @@ export class Sym extends Expr {
     return deduceAllFacts({ commutative: true, ...Object.fromEntries(Object.entries(this.assumptions).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])) });
   }
 
+  /** Whether commutative=True was given explicitly: it is the default, and SymPy's srepr shows it only then. */
+  readonly givenCommutative: boolean;
   constructor(readonly name: string, assumptions: Assumptions = {}) {
     super();
     if (typeof name !== 'string') {
@@ -903,6 +905,7 @@ export class Sym extends Expr {
     if (commutative !== undefined && typeof commutative !== 'boolean') throw new RangeError('commutativity must be true or false');
     const facts = deduceAllFacts(Object.fromEntries(Object.entries(assumptions).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])));
     const a: { -readonly [K in keyof Assumptions]: Assumptions[K] } = { ...assumptions };
+    this.givenCommutative = a.commutative === true;
     if (a.commutative === true) delete a.commutative;
     // Keep the core sign/number flags available to the arithmetic hot paths.
     for (const k of ['real', 'positive', 'nonnegative', 'negative', 'nonpositive', 'integer', 'zero'] as const) {

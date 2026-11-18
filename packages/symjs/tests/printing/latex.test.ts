@@ -898,3 +898,11 @@ it('snapshots global defaults for each printer and supports per-call overrides',
     sj.LatexPrinter.setGlobalSettings({ imaginaryUnit });
   }
 });
+
+it('prints an image set of several variables and a formal power series like SymPy', () => {
+  const [x, y] = sj.symbols('x y');
+  const image = new sj.ImageSet(sj.Tuple(x, y), sj.add(x, y), sj.finiteSet(1, 2, 3), sj.finiteSet(3, 4));
+  expect(sj.latex(image)).toBe('\\left\\{x + y\\; \\middle|\\; x \\in \\left\\{1, 2, 3\\right\\}, y \\in \\left\\{3, 4\\right\\}\\right\\}');
+  expect(sj.latex(new sj.ImageSet(x, sj.pow(x, 2), sj.Naturals))).toBe('\\left\\{x^{2}\\; \\middle|\\; x \\in \\mathbb{N}\\right\\}');
+  expect(sj.latex(sj.fps(sj.log(sj.add(1, x)), x))).toBe('\\sum_{k=1}^{\\infty} - \\frac{\\left(-1\\right)^{- k} x^{k}}{k}');
+});

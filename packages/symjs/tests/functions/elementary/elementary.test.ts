@@ -809,3 +809,19 @@ it('transposes noncommutative symbols with Hermitian assumptions', () => {
   expect(transpose(mul(-1, I, h)).equals(mul(-1, I, conjugate(h)))).toBe(true);
   expect(transpose(mul(-1, I, a)).equals(mul(I, conjugate(a)))).toBe(true);
 });
+
+it('arg counts a factor of known sign by its sign (SymPy arg.eval)', () => {
+  const x = new sj.Sym('x');
+  const p = new sj.Sym('p', { positive: true });
+  const q = new sj.Sym('q', { negative: true });
+  const f = sj.SymFunction('f', { assumptions: { extendedPositive: true } })(x);
+  const g = sj.SymFunction('g', { assumptions: { extendedNegative: true } })(x);
+  expect(String(sj.arg(sj.mul(sj.add(3, sj.I), p)))).toBe('atan(1/3)');
+  expect(String(sj.arg(sj.mul(sj.add(3, sj.I), q)))).toBe('-pi + atan(1/3)');
+  expect(String(sj.arg(sj.mul(2, sj.add(3, sj.I), p, x)))).toBe('arg(x*(3 + I))');
+  // a function declared extended_positive or extended_negative has that sign
+  expect(String(sj.arg(f))).toBe('0');
+  expect(String(sj.arg(g))).toBe('pi');
+  expect(String(sj.arg(sj.mul(sj.add(3, sj.I), f)))).toBe('atan(1/3)');
+  expect(String(sj.arg(sj.mul(sj.I, g)))).toBe('-pi/2');
+});

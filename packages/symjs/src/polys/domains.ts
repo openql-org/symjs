@@ -820,10 +820,13 @@ abstract class SymbolicDomain extends Domain {
   readonly domain: Domain;
   /** The generators over the coefficient domain (SymPy symbols). */
   readonly gens: readonly Sym[];
-  constructor(coefficients: Ground | Domain, gens: readonly Sym[]) {
+  /** The monomial order of the generators (SymPy order). */
+  readonly order: string;
+  constructor(coefficients: Ground | Domain, gens: readonly Sym[], order = 'lex') {
     super();
     this.domain = typeof coefficients === 'string' ? GROUNDS[coefficients] : coefficients;
     this.ground = this.domain.ground;
+    this.order = order;
     this.gens = gens;
     this.symbols = [...this.domain.symbols, ...gens];
   }

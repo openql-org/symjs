@@ -119,7 +119,7 @@ it('handles unions and non-real periodic representatives', () => {
 });
 
 it('solves polynomial equations over the complex domain explicitly', () => {
-  expect(sj.solvesetComplex(add(pow(x, 2), 1), x)).toEqual(sj.FiniteSet.of(mul(-1, S.I), S.I));
+  expect(sj.solvesetComplex(add(pow(x, 2), 1), x).key).toBe(sj.FiniteSet.of(mul(-1, S.I), S.I).key);
 });
 
 it('handles empty nonlinear systems and rejects missing unknowns', () => {

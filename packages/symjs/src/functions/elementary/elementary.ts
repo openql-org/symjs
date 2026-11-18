@@ -27,7 +27,9 @@ import {
   impl,
   isNum,
   ExtensionExpr,
-  Sym, registerFunctionHeads } from '../../core/nodes';
+  Sym, registerFunctionHeads,
+  UndefFn,
+} from '../../core/nodes';
 import { numAbs, numNeg, ratMod } from '../../core/num';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../../core/ops';
 
@@ -526,11 +528,22 @@ const evalArg: Evaluator = (x) => {
     }
     if (depth === 3 || (depth === 2 && isReal(a) === true)) return S.NaN;
   }
-  if (isPositive(x)) return S.Zero;
+  // the sign of a factor (SymPy sign(a) of 1 or -1: positive or negative, an infinite value included for a
+  // function declared extended_positive or extended_negative)
+  const knownSign = (t: Expr): 1 | -1 | undefined =>
+    isPositive(t) === true ? 1 : isNegative(t) === true ? -1
+      : t instanceof UndefFn ? (t.givenFacts.get('extended_positive') === true ? 1 : t.givenFacts.get('extended_negative') === true ? -1 : undefined) : undefined;
+  if (knownSign(x) === 1) return S.Zero;
+  if (knownSign(x) === -1) return S.Pi;
   {
     const sg = numericSign(x);
     if (sg === 1) return S.Zero;
     if (sg === -1) return S.Pi;
+  }
+  // SymPy arg.eval: a factor of known sign counts by that sign only (arg((3 + I)*p) = arg(3 + I) for positive p)
+  if (x instanceof Mul) {
+    const reduced = mul(...x.args.map((t) => (knownSign(t) === 1 ? S.One : knownSign(t) === -1 ? S.NegOne : t)));
+    if (reduced.key !== x.key) return arg(reduced);
   }
   // a + b*I with real numeric a, b
   if (x.freeSymbols().size === 0 && !isReal(x)) {

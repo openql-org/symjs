@@ -99,7 +99,7 @@ describe('probabilities (SymPy test_discrete_probability)', () => {
     const X2 = Geometric('X2', R(1, 3));
     // SymPy: Sum(Piecewise((1/(4*2**n), n >= -1), (0, True)), (n, -oo, -1))/3 (a Piecewise whose condition
     // bounds X2 by a parameter is not summed here)
-    expect(str(rewrite(P(Lt(add(X1, X2), 3)), 'Sum'))).toBe('Sum(Sum((2/3)**(X2 - 1)*Piecewise(((1/2)**(-X2 + n + 2)/2, X2 - n <= 2), (0, True))/3, (X2, 1, oo)), (n, -oo, -1))');
+    expect(str(rewrite(P(Lt(add(X1, X2), 3)), 'Sum'))).toBe('Sum(Sum((2/3)**(X2 - 1)*Piecewise(((1/2)**(-X2 + n + 3), X2 - n <= 2), (0, True))/3, (X2, 1, oo)), (n, -oo, -1))');
     // SymPy's 1/12 is wrong: X1 + X2 = 3 for (1, 2) and (2, 1), with probability (1/2)*(2/9) + (1/4)*(1/3) = 7/36
     expect(str(P(Eq(add(X1, X2), 3)))).toBe('7/36');
   });

@@ -6,7 +6,7 @@
  */
 
 import type { Expr } from './nodes';
-import { Add, Constant, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, S, Special, Sym, impl } from './nodes';
+import { Add, Constant, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, S, Special, Sym, UndefFn, impl } from './nodes';
 import { at, pair } from './guard';
 
 export type Tri = boolean | undefined;
@@ -31,7 +31,13 @@ export function torf(xs: readonly Expr[], f: (e: Expr) => Tri): Tri {
   return vs.every((v) => v === false) ? false : undefined;
 }
 
+/** The fact an undefined function was declared with (SymPy Function('f', positive=True)), or undefined. */
+function givenFact(e: UndefFn, fact: string): Tri {
+  return e.givenFacts.get(fact);
+}
+
 export function isZero(e: Expr): Tri {
+  if (e instanceof UndefFn) return givenFact(e, 'zero');
   if (e instanceof Rational || e instanceof Float) return e.isZero;
   if (e instanceof Special) return e.name === 'nan' ? undefined : false;
   if (e instanceof Constant) return false;
@@ -97,6 +103,7 @@ export function isZero(e: Expr): Tri {
 }
 
 export function isReal(e: Expr): Tri {
+  if (e instanceof UndefFn) return givenFact(e, 'real');
   if (e instanceof Rational || e instanceof Float) return true;
   // extended reals: oo and -oo behave as real for simplification purposes
   if (e instanceof Special) return e.name === 'oo' || e.name === '-oo' ? true : undefined;
@@ -460,6 +467,7 @@ function addBoundSign(e: Add): 1 | -1 | 0.5 | -0.5 | undefined {
 }
 
 export function isPositive(e: Expr): Tri {
+  if (e instanceof UndefFn) return givenFact(e, 'positive');
   if (e instanceof Piecewise) return piecewiseTorf(e, isPositive);
   if (e instanceof Rational || e instanceof Float) return e.isPositive;
   if (e instanceof Special) return e.name === 'oo' ? true : e.name === '-oo' ? false : undefined;
@@ -506,6 +514,7 @@ export function isPositive(e: Expr): Tri {
 }
 
 export function isNegative(e: Expr): Tri {
+  if (e instanceof UndefFn) return givenFact(e, 'negative');
   if (e instanceof Piecewise) return piecewiseTorf(e, isNegative);
   if (e instanceof Rational || e instanceof Float) return e.isNegative;
   if (e instanceof Special) return e.name === '-oo' ? true : e.name === 'oo' ? false : undefined;
@@ -551,6 +560,7 @@ export function isNegative(e: Expr): Tri {
 }
 
 export function isNonNegative(e: Expr): Tri {
+  if (e instanceof UndefFn) return givenFact(e, 'nonnegative');
   if (isPositive(e) || isZero(e)) return true;
   if (e instanceof Sym && e.assumptions.nonnegative) return true;
   if (e instanceof Sym && e.assumptions.negative) return false;
@@ -585,6 +595,7 @@ export function isNonNegative(e: Expr): Tri {
 }
 
 export function isIntegerQ(e: Expr): Tri {
+  if (e instanceof UndefFn) return givenFact(e, 'integer');
   if (e instanceof Rational) return e.isInteger;
   if (e instanceof Special) return false;
   if (e instanceof Float) return false;
