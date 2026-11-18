@@ -772,3 +772,50 @@ it('an infinite base gives a finite power for a negative exponent and an infinit
   const positive = new sj.Sym('positive_power_exponent', { positive: true });
   expect(sj.ask(sj.Q.finite(sj.pow(base, positive)))).toBe(false);
 });
+
+it('queries exponential phases and their integer powers', () => {
+  const { Fn, Pow, S, mul } = sj;
+  const phase = mul(S.I, S.Pi, x);
+  const forms = [new Pow(S.E, phase)];
+  for (const base of forms) {
+    expect(ask(Q.real(new Pow(base, y)), sj.And(Q.integer(x), Q.integer(y)))).toBe(true);
+    expect(ask(Q.imaginary(new Pow(base, y)), sj.And(Q.integer(x), Q.integer(y)))).toBe(false);
+    expect(ask(Q.real(new Pow(base, y)), Q.imaginary(y))).toBe('unknown');
+    expect(ask(Q.imaginary(new Pow(base, y)), Q.imaginary(y))).toBe('unknown');
+    expect(ask(Q.real(new Pow(base, y)), sj.And(Q.imaginary(phase), Q.imaginary(y)))).toBe(true);
+    expect(ask(Q.imaginary(new Pow(base, y)), sj.And(Q.imaginary(phase), Q.imaginary(y)))).toBe(false);
+  }
+  expect(ask(Q.algebraic(new Pow(S.E, phase)), Q.rational(x))).toBe(true);
+  expect(ask(Q.odd(new Fn('re', [x])), Q.odd(x))).toBe(true);
+  expect(ask(Q.odd(new Fn('im', [x])), Q.real(x))).toBe(false);
+  expect(ask(Q.finite(new Pow(x, y)), sj.And(sj.Not(Q.finite(x)), Q.extended_positive(y)))).toBe(false);
+  expect(ask(Q.hermitian(sj.add(x, y)), sj.And(sj.Not(Q.hermitian(x)), Q.hermitian(y)))).toBe(false);
+  expect(ask(Q.extended_real(new sj.Add([S.NegativeInfinity, x])), Q.real(x))).toBe(true);
+  expect(refine(new Pow(new Pow(x, S.NegOne), S.Half), Q.positive(x)).toString()).toBe('1/sqrt(x)');
+  const reciprocalRoot = new Pow(new Pow(x, S.NegOne), S.Half);
+  expect(refine(reciprocalRoot)).toBe(reciprocalRoot);
+});
+
+it('keeps unknown numerical coordinates undecided', () => {
+  const e = new sj.Pow(new sj.Fn('erf2inv', [sj.S.One]), sj.S.Half);
+  expect(ask(Q.imaginary(e))).toBe('unknown');
+});
+
+it('handles core boolean atoms and relation normalization without optional proposition handlers', async () => {
+  const { vi } = await import('vitest');
+  vi.resetModules();
+  const core = await import('../../src/core/refine');
+  await import('../../src/core');
+  const nodes = await import('../../src/core/nodes');
+  const bool = await import('../../src/core/boolalg');
+  expect(core.ask(true)).toBe(true);
+  expect(core.ask(false)).toBe(false);
+  expect(() => core.ask(bool.or(core.Q.real(new nodes.Sym('u')), core.Q.real(new nodes.Sym('v'))), false)).toThrow(RangeError);
+  const a = new nodes.Sym('a'), b = new nodes.Sym('b');
+  const relation = new nodes.Rel('Gt', a, b);
+  expect(core.ask(relation, core.Q.real(a))).toBe('unknown');
+  expect(core.ask(relation, relation)).toBe(true);
+  expect(core.ask(bool.or(core.Q.real(nodes.S.I), core.Q.positive(nodes.S.NegOne)))).toBe(false);
+  expect(core.ask(core.Q.eq(a, b), core.Q.eq(b, a))).toBe(true);
+  expect(core.ask(bool.or(core.Q.real(a), core.Q.real(b)), bool.and(core.Q.positive(a), core.Q.positive(b)))).toBe(true);
+});
