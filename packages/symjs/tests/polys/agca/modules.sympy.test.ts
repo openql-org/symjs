@@ -36,3 +36,16 @@ it('supports finite coefficient fields and quotient-ring zero divisors', () => {
   const h = homomorphism(F, F, [[0, 0], [0, 1]]), D = F.submodule([x, 0]);
   expect(h.restrictDomain(D).kernel().equals(D)).toBe(true);
 });
+
+interface LocalReference { order: string; generators: string[][]; vector: string[]; coordinates: string[] }
+const local: { version: string; modules: LocalReference[] } = JSON.parse(readFileSync(new URL('./local.references.json', import.meta.url), 'utf8'));
+for (const [i, reference] of local.modules.entries()) it(`matches SymPy ${local.version} localized coordinates ${i}`, () => {
+  const L = new PolynomialRingBase(QQ, [x, y], reference.order), ambient = L.freeModule(2);
+  const M = ambient.submodule(...vectors(reference.generators));
+  const target = ambient.convert(reference.vector.map((e) => p(e)));
+  const coefficients = M.inTermsOfGenerators(target);
+  expect(coefficients.map((e) => L.canon(e).key)).toEqual(reference.coordinates.map((e) => L.fromSympy(p(e)).key));
+  expect(coefficients).toHaveLength(reference.coordinates.length);
+  expect(M.gens.reduce((sum, g, j) => sum.add(g.mul(at(coefficients, j))), ambient.convert(0)).equals(target)).toBe(true);
+  for (const relation of M.syzygyModule().gens) expect(M.gens.reduce((sum, g, j) => sum.add(g.mul(at(relation.data, j))), ambient.convert(0)).isZero()).toBe(true);
+});

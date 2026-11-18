@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { QQ, ZZ, PolynomialRingBase, FreeModule, QuotientModule, ModuleElement, CoercionFailed } from '../../../src/polys';
 import { NotImplementedError } from '../../../src/core/errors';
 import { at, first } from '../../../src/core/guard';
@@ -68,6 +68,7 @@ describe('submodule standard bases', () => {
     const N = F.submodule([1, 0], [1, 1]);
     expect(String(N.syzygyModule())).toBe(refs['injective_syzygy']);
     const coefficients = N.inTermsOfGenerators([x, p('x*x')]);
+    expect(N.inTermsOfGenerators([x, p('x*x')])).toEqual(coefficients);
     expect(`[${coefficients.map(str).join(', ')}]`).toBe(refs['coefficients']);
     expect(N.gens.reduce((sum, g, i) => sum.add(g.mul(at(coefficients, i))), F.convert(0)).equals(F.convert([x, p('x*x')]))).toBe(true);
     expect(() => M.inTermsOfGenerators([0, 1])).toThrow(RangeError);
@@ -144,4 +145,29 @@ it('prints quotient coefficients and lifts them to polynomial-module cosets', ()
   expect(String(lifted)).toBe('[1, 0] + <[x**2 + 1, 0], [0, x**2 + 1]>');
   expect(F.quot.contains(lifted)).toBe(true);
   expect(F.convert([x.pow(2),0]).equals(e.neg())).toBe(true);
+});
+
+it('reconstructs fractional intersection and quotient relations over a local ring', () => {
+  const L = new PolynomialRingBase(QQ, [x, y], 'ilex'), ambient = L.freeModule(1);
+  const A = ambient.submodule([p('x/(1+x)')]), B = ambient.submodule([p('1/(1+y)')]);
+  const [I, relations] = A.moduleQuotient(B, true);
+  for (const [i, c] of I.gens.entries()) expect(A.gens.reduce((s, g, j) => s.add(g.mul(at(at(relations, i), j))), ambient.convert(0)).equals(first(B.gens).mul(c))).toBe(true);
+  expect(A.moduleQuotient(B, true)[0].equals(I)).toBe(true);
+  const [intersection, left, right] = A.intersect(B, true);
+  for (const [i, g] of intersection.gens.entries()) {
+    expect(A.gens.reduce((s, a, j) => s.add(a.mul(at(at(left, i), j))), ambient.convert(0)).equals(g)).toBe(true);
+    expect(B.gens.reduce((s, b, j) => s.add(b.mul(at(at(right, i), j))), ambient.convert(0)).equals(g)).toBe(true);
+  }
+  expect(() => A.inTermsOfGenerators([1])).toThrow(CoercionFailed);
+  const D = ambient.submodule([p('x+x*x+y*y')]);
+  const input = ambient.convert([x]), remainder = D.reduceElement(input);
+  expect(D.contains(input.sub(remainder))).toBe(true);
+  expect(ambient.submodule().reduceElement([p('x/(1+x)')]).equals(ambient.convert([p('x/(1+x)')]))).toBe(true);
+});
+
+it('propagates computation failures from membership checks', () => {
+  const ambient = R.freeModule(1), failure = new RangeError('computation failed');
+  const conversion = vi.spyOn(ambient, 'convert').mockImplementation(() => { throw failure; });
+  expect(() => ambient.contains([0])).toThrow(failure);
+  conversion.mockRestore();
 });

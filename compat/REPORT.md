@@ -19,8 +19,8 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 456 selected for e
 
 | Inventory status | Modules |
 |---|---:|
-| complete | 93 |
-| partial | 446 |
+| complete | 94 |
+| partial | 445 |
 | unassessed | 0 |
 | extend | 111 |
 | excluded | 175 |
@@ -57,7 +57,7 @@ Complete means public exports and class members are present, doctest and unit-te
 | parsing | 4 | 5 | 0 | 0 | 35 |
 | physics | 0 | 0 | 0 | 111 | 0 |
 | plotting | 0 | 11 | 0 | 0 | 24 |
-| polys | 12 | 83 | 0 | 0 | 11 |
+| polys | 13 | 82 | 0 | 0 | 11 |
 | printing | 4 | 12 | 0 | 0 | 24 |
 | release | 0 | 0 | 0 | 0 | 1 |
 | sandbox | 0 | 0 | 0 | 0 | 2 |
@@ -129,6 +129,7 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.parsing.latex.errors`
 - `sympy.parsing.latex.lark`
 - `sympy.parsing.latex.lark.latex_parser`
+- `sympy.polys.agca`
 - `sympy.polys.fglmtools`
 - `sympy.polys.matrices.eigen`
 - `sympy.polys.matrices.exceptions`
@@ -221,7 +222,7 @@ Every manual adapter is listed in `adapter-inventory.json`. Remaining mathematic
 | Abstract tensors | complete | Index types and variance; Einstein contractions and dummy capture avoidance; Free-index complete symmetry and antisymmetry; Symmetric metric contraction and traces; Butler–Portugal canonicalization under general slot symmetries; Tensor sums, component arrays and wild-tensor matching; Commutation groups of TensorManager; Partial derivatives of tensor expressions and their component arrays |  | Deprecated component data registry (data, set_metric) and the deprecated helpers tensorhead, tensorsymmetry and TensorType (deprecated by SymPy (since 1.4 and 1.5)) |
 | PDE | partial | First-order constant-coefficient linear PDEs; Particular solutions and arbitrary functions; Degenerate complex characteristic chart; Residual verification with bound-variable normalization; Additive and multiplicative variable separation; First-order linear PDEs with variable coefficients | Parameter specializations that change equation class | Higher-order PDE solving (SymPy 1.14 pdsolve solves first-order linear equations only (allhints)); Boundary and initial conditions (SymPy 1.14 pdsolve takes no initial or boundary conditions) |
 | Category theory | complete | Objects, named and identity morphisms; Composition, identity laws and associativity; Diagram premises and conclusions; Hom sets and finite subdiagrams; Diagram grid layout (generic, sequential, grouped, transposed); Xy-pic output with curved arrows, loops and arrow formatters |  | General category hom sets (also unavailable upstream) (SymPy 1.14 Category.hom raises NotImplementedError); Functors and natural transformations (outside SymPy 1.14 implementation) (SymPy 1.14 has no functors or natural transformations) |
-| Commutative algebra modules | partial | Free modules over polynomial rings with field coefficients; Submodule membership, syzygies, intersections and ideal quotients; Generator and intersection relations verified by reconstruction; Quotient modules and polynomial quotient rings; Homomorphism kernels, images, restrictions and induced quotient maps; First isomorphism theorem and quotient-ring zero divisors; Polynomial input with local monomial orders | Fractional representatives in localized polynomial rings; Generator coordinates and quotient rings over local monomial orders; Fraction fields over general coefficient domains; Modules over non-field coefficient domains; General free resolutions and homological algebra |  |
+| Commutative algebra modules | complete | Free modules over polynomial rings with field coefficients; Submodule membership, syzygies, intersections and ideal quotients; Generator and intersection relations verified by reconstruction; Quotient modules and polynomial quotient rings; Homomorphism kernels, images, restrictions and induced quotient maps; First isomorphism theorem and quotient-ring zero divisors; Polynomial input with local monomial orders; Fractional representatives in localized polynomial rings; Generator coordinates and quotient rings over local monomial orders; Fraction fields over general coefficient domains |  | Modules over non-field coefficient domains (SymPy 1.14 FreeModulePolyRing.__init__ raises NotImplementedError: Ground domain must be a field for ZZ.old_poly_ring(x).free_module(1)); General free resolutions and homological algebra (SymPy 1.14 sympy.polys.agca has no free-resolution, homology, Ext or Tor API; syzygy_module is implemented and tested) |
 | Array expressions | partial | Symbolic array shapes, entries, products, contractions, diagonals and axis permutations; Explicit expansion and componentwise equality after axis transformations; Indexed full-range sums and free-index ordering; Matrix chains, transposes, traces and disconnected contractions; Array derivatives with variable axes first, including rectangular and rank-three shapes; Trace derivative checked independently against entrywise differentiation | General fixed-index slices and shifted-index conversion; Index-dependent scalar weights and partial summation ranges; General Hadamard and nonlinear elementwise matrix recognition; Inverse and noninteger matrix-power derivatives; Matrix-power expansion beyond 100 factors; Further canonicalization of mixed diagonal and permutation expressions |  |
 | Rational function fields | partial | Sparse polynomial fractions over ZZ, QQ and finite prime fields; Reduced arithmetic and denominator normalization checked by polynomial identities; Real and expression coefficient arithmetic; Differentiation including positive characteristic, substitution, partial and complete evaluation; Generator inference for symbols, roots, logarithms and exponentials; Polynomial ring conversion and cross-field generator reordering | General nested coefficient fields and algebraic coefficient domains; Domain wrappers beyond ZZ, QQ and RR with symbol generators | Composition (also unimplemented in SymPy 1.14) (SymPy 1.14 FracElement.compose raises NotImplementedError); Python caller-namespace injection for vfield is represented by F.gens (Python-specific: JavaScript has no caller namespace; F.gens is the counterpart) |
 | Finite-domain polynomials | partial | Symmetric coefficient normalization and domain-preserving arithmetic over GF(p); Univariate GCD, LCM, extended GCD and inverses checked by polynomial identities; Recursive multivariate division with exact coefficient quotients; Finite prime-field factorization and square-free decomposition, including zero derivatives; Differentiation, dense integration, evaluation and incompatible-domain errors; Explicit domains on factor, gcd, lcm and univariate cancel; SymPy 1.14 exception behavior for zero ground subtraction, zero square-free decomposition and extended GCD with a zero divisor | Multivariate finite-field GCD, factorization and rational cancellation; Finite-domain pseudo-division, resultants and further Poly methods; Nonsymmetric coefficient presentations and nonprime-modulus factorization; General algebraic-domain factorization beyond the existing extension algorithm |  |
@@ -232,7 +233,7 @@ Direct regression-test paths are maintained in `capabilities.json`. Remaining it
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
-**Fully covered (100% test coverage): 100.0% of source files (490/490), 100.0% of statements (108252/108252)**
+**Fully covered (100% test coverage): 100.0% of source files (490/490), 100.0% of statements (108289/108289)**
 
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|

@@ -58,3 +58,35 @@ for left, right in [
         'quotient': [str(R.to_sympy(v)) for v in quotient.gens],
     })
 path.with_name('modules.references.json').write_text(json.dumps(cases, indent=2) + '\n')
+
+# Localized module coordinates and rational functions over coefficient domains.
+from sympy import GF, ZZ, ilex, igrlex, igrevlex
+
+local_cases = []
+for order in (ilex, igrlex, igrevlex):
+    L = QQ.old_poly_ring(x, y, order=order)
+    for generators, vector in [
+        ([[1+x, 0], [0, 1+y]], [1, 1]),
+        ([[x/(1+x), y/(1+y)]], [x/(1+x), y/(1+y)]),
+        ([[x, 0], [0, y]], [x/(1+x), y/(1+y)]),
+        ([[x, 0], [x*(1+y), 0]], [x, 0]),
+        ([], [0, 0]),
+    ]:
+        M = L.free_module(2).submodule(*generators)
+        local_cases.append({
+            'order': str(order),
+            'generators': [[str(v) for v in g] for g in generators],
+            'vector': [str(v) for v in vector],
+            'coordinates': [str(L.to_sympy(c)) for c in M.in_terms_of_generators(vector)],
+        })
+fields = []
+for name, K, coefficient in [('GF(5)', GF(5), 6), ('ZZ[y]', ZZ.poly_ring(y), y),
+                             ('QQ(y)', QQ.frac_field(y), 1/y),
+                             ('QQ<sqrt(2)>', QQ.algebraic_field(sympy.sqrt(2)), sympy.sqrt(2))]:
+    field = K.old_poly_ring(x).get_field()
+    for expression in [(x*x-1)/(x-1), (x*x-coefficient**2)/(x-coefficient)]:
+        fields.append({'domain': name, 'expression': str(expression),
+                       'expected': str(field.to_sympy(field.from_sympy(expression)))})
+path.with_name('local.references.json').write_text(json.dumps({
+    'version': sympy.__version__, 'modules': local_cases, 'fields': fields,
+}, indent=2) + '\n')
