@@ -129,3 +129,13 @@ it('lists sparse entries in row and column order', () => {
   }
   expect(new SparseMatrix([[0]]).CL).toEqual([]);
 });
+
+it('preserves matrix class priority and rejects partially specified dimensions', async () => {
+  const { MutableSparseMatrix, ImmutableSparseMatrix, ImmutableMatrix, Matrix, classof } = await import('../../src');
+  const sparse = new MutableSparseMatrix([[1]]);
+  const immutable = new ImmutableSparseMatrix([[1]]);
+  expect(classof(sparse, immutable)).toBe(ImmutableSparseMatrix);
+  expect(classof(ImmutableMatrix(Matrix.eye(1)), immutable)).toBe(ImmutableSparseMatrix);
+  // @ts-expect-error Both dimensions must be supplied together.
+  expect(() => new MutableSparseMatrix(null, 1, [[1, 2]])).toThrow(RangeError);
+});

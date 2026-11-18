@@ -14,6 +14,7 @@ import { at, cast } from '../../core/guard';
 import type { ExprLike , Expr} from '../../core/nodes';
 import { ExtensionExpr, S } from '../../core/nodes';
 import { add, mul, sympify } from '../../core/ops';
+import { AppliedPredicate, ask } from '../../core/refine';
 import { rebuild } from '../../core/traverse';
 import type { Truth } from '../../core/truth';
 import { adjoint as adjointFn } from '../../functions/elementary/elementary';
@@ -193,6 +194,10 @@ export class BlockMatrixNode extends MatrixExpr {
   override transpose(): Expr {
     return this.evalTranspose();
   }
+  override asRealImagSelf(): [Expr, Expr] {
+    const part = (i: 0 | 1): Expr => BlockMatrixNode.create(this.blocks.map((m) => asMat(m).asRealImagSelf()[i]));
+    return [part(0), part(1)];
+  }
   override evalAdjoint(): Expr {
     const b = this.blocks;
     return BlockMatrixNode.create(Matrix.fromFunction(b.cols, b.rows, (i, j) => adjointFn(b.get(j, i))));
@@ -208,8 +213,8 @@ export class BlockMatrixNode extends MatrixExpr {
     if (r === 1 && c === 1) return det(this.block(0, 0));
     if (r === 2 && c === 2) {
       const [A, B, C, D] = [this.block(0, 0), this.block(0, 1), this.block(1, 0), this.block(1, 1)];
-      if (askInvertible(A) === true) return mul(det(A), det(minus(D, times(C, A.I, B))));
-      if (askInvertible(D) === true) return mul(det(D), det(minus(A, times(B, D.I, C))));
+      if (ask(new AppliedPredicate('invertible', [A])) === true) return mul(det(A), det(minus(D, times(C, A.I, B))));
+      if (ask(new AppliedPredicate('invertible', [D])) === true) return mul(det(D), det(minus(A, times(B, D.I, C))));
     }
     return new DeterminantNode(this);
   }
@@ -508,7 +513,7 @@ function bcUnpack(e: Expr): Expr {
   return r === 1 && c === 1 ? b.block(0, 0) : e;
 }
 
-function bcMatAdd(e: Expr): Expr {
+export function bcMatAdd(e: Expr): Expr {
   const blocks = e.args.filter(isBlock);
   if (!blocks.length) return e;
   const nonblocks = e.args.filter((a) => !isBlock(a));
@@ -518,7 +523,7 @@ function bcMatAdd(e: Expr): Expr {
   return block;
 }
 
-function bcBlockPlusIdent(e: Expr): Expr {
+export function bcBlockPlusIdent(e: Expr): Expr {
   const idents = e.args.filter((a) => a instanceof MatrixExpr && a.isIdentity === true);
   if (!idents.length) return e;
   const blocks = e.args.filter(isBlock);
@@ -539,7 +544,7 @@ function bcDist(e: Expr): Expr {
   return e;
 }
 
-function bcMatMul(e: Expr): Expr {
+export function bcMatMul(e: Expr): Expr {
   let factor: Expr;
   let matrices: Expr[];
   if (e instanceof MatPowNode) {
@@ -571,7 +576,7 @@ function bcMatMul(e: Expr): Expr {
   return times(factor, ...matrices);
 }
 
-function bcTranspose(e: Expr): Expr {
+export function bcTranspose(e: Expr): Expr {
   return asMat(blockCollapse(at(e.args, 0))).evalTranspose();
 }
 
@@ -713,8 +718,16 @@ export function bounds(sizes: readonly number[]): [number, number][] {
 }
 
 /** SymPy blockcut(expr, rowsizes, colsizes): a matrix cut into blocks of slices. */
-export function blockcut(expr: MatArg, rowsizes: readonly number[], colsizes: readonly number[]): BlockMatrixNode {
-  const rb = bounds(rowsizes);
-  const cb = bounds(colsizes);
+export function blockcut(expr: MatArg, rowsizes: readonly ExprLike[], colsizes: readonly ExprLike[]): BlockMatrixNode {
+  const cuts = (sizes: readonly ExprLike[]): [Expr, Expr][] => {
+    let low: Expr = S.Zero;
+    return sizes.map((size) => {
+      const start = low;
+      low = add(low, size);
+      return [start, low];
+    });
+  };
+  const rb = cuts(rowsizes);
+  const cb = cuts(colsizes);
   return BlockMatrixNode.create(rb.map((r) => cb.map((c) => MatrixSliceNode.create(expr, r, c))));
 }

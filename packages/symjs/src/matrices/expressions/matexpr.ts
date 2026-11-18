@@ -640,6 +640,7 @@ export class MatrixSymbolNode extends MatrixExpr {
   constructor(symbolName: string, rows: ExprLike, cols: ExprLike) {
     super('MatrixSymbol', [new Str(symbolName), dim(rows), dim(cols)]);
   }
+  override freeSymbolsSelf(): ReadonlySet<Expr> { return new Set([this]); }
   /** The name of the matrix (SymPy MatrixSymbol.name). */
   get symbolName(): string {
     return cast(this.args[0], Str).value;
@@ -692,6 +693,7 @@ export function explicitLatexContents(m: Matrix, print: (e: Expr) => string = la
 
 /** SymPy ImmutableMatrix (ImmutableDenseMatrix): an explicit matrix inside matrix expressions. */
 export class ImmutableMatrixNode extends MatrixExpr {
+  get classPriority(): number { return 8; }
   constructor(readonly matrix: Matrix) {
     super('ImmutableDenseMatrix', matrix.data);
   }
@@ -833,7 +835,12 @@ export class MatrixElementNode extends MatScalar {
   }
   override diffSelf(v: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     if (v instanceof MatrixElementNode) {
-      if (same(v.parent, this.parent)) return mul(KroneckerDelta(this.i, v.i), KroneckerDelta(this.j, v.j));
+      if (same(v.parent, this.parent)) {
+        const matrix = this.parent;
+        const delta = (a: Expr, b: Expr, axis: 0 | 1): Expr => KroneckerDelta(a, b,
+          matrix instanceof MatrixExpr ? [S.Zero, add(matrix.shape[axis], -1)] : undefined);
+        return mul(delta(this.i, v.i, 0), delta(this.j, v.j, 1));
+      }
       if (!this.parent.has(v.parent)) return S.Zero;
       return undefined;
     }
@@ -2119,7 +2126,7 @@ export class TraceNode extends MatScalar {
 
 /** A symbol name not used in the expression (SymPy uniquely_named_symbol). */
 function uniqueName(base: string, e: Expr): string {
-  const used = new Set([...freeSymbols(e)].filter((s) => s instanceof Sym).map((s) => s.name));
+  const used = new Set([...freeSymbols(e), ...matrixSymbols(e).flatMap((m) => m.shape.flatMap((dim) => [...freeSymbols(dim)]))].filter((s) => s instanceof Sym).map((s) => s.name));
   if (!used.has(base)) return base;
   for (let k = 0; ; k++) if (!used.has(`${base}${k}`)) return `${base}${k}`;
 }

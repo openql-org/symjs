@@ -36,3 +36,15 @@ describe('matrices/linalg, linsys, domainmatrix, mutable', () => {
     for (const [A, f, d] of cases) expect([String(toDM(A, { field: true }).domain), String(toDM(A).domain)]).toEqual([f, d]);
   });
 });
+
+it('rejects conflicting domain selection options', () => {
+  expect(() => toDM(Matrix.eye(1), { field: true, domain: sj.QQ })).toThrow(TypeError);
+});
+
+it('chooses an algebraic extension for radical entries', () => {
+  const matrix = M([[1, sj.sqrt(2)]]);
+  const result = toDM(matrix, { extension: true });
+  expect(String(result.domain)).toBe('QQ<sqrt(2)>');
+  expect(result.toMatrix().equals(matrix)).toBe(true);
+  expect(String(toDM(M([[x]]), { composite: false }).domain)).toBe('EXRAW');
+});

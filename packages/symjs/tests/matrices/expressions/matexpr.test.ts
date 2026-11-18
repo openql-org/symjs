@@ -1112,3 +1112,13 @@ describe('LaTeX settings of matrix expressions (SymPy 1.14 test_latex)', () => {
     expect(latex(Identity(1))).toBe('\\mathbb{I}');
   });
 });
+
+it('uses the parent dimensions for deltas of matrix-entry derivatives', async () => {
+  const { MatrixElementNode } = await import('../../../src/matrices/expressions/matexpr');
+  const [i, j, k, l] = symbols('i j k l');
+  const A = MatrixSymbol('A', 2, 3);
+  expect(String(A.at(i, j).diff(A.at(k, l)))).toBe('KroneckerDelta(i, k, (0, 1))*KroneckerDelta(j, l, (0, 2))');
+  const scalar = symbol('m');
+  const entry = new MatrixElementNode(scalar, i, j);
+  expect(String(entry.diffSelf(new MatrixElementNode(scalar, k, l), diff))).toBe('KroneckerDelta(i, k)*KroneckerDelta(j, l)');
+});

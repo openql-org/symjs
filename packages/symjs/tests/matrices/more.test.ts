@@ -158,3 +158,15 @@ it('accepts positional elementary swap and add arguments', () => {
   expect(s(more.elementaryColOp(A, { op: 'n->n+km', index: 0, k: 5, index1: 1 }))).toBe('Matrix([[1, 0, 0], [5, 1, 0], [0, 0, 1]])');
   expect(() => more.elementaryRowOp(A, { op: 'n<->m', index: 0 })).toThrow('index2 must be given');
 });
+
+it('samples positions before drawing matrix entries', () => {
+  expect(String(more.randMatrix(3, 3, { seed: 4, symmetric: true }))).toBe('Matrix([[30, 38, 13], [38, 92, 50], [13, 50, 61]])');
+  expect(more.randMatrix(2, 2, { percent: 100, prng: () => 0.5 }).get(0, 1).toNumber()).toBe(50);
+  expect(more.randMatrix(10, 10, { percent: 1, seed: 1, min: 1 }).todok().size).toBe(1);
+  expect(() => more.randMatrix(1, 1, { percent: -100 })).toThrow(RangeError);
+  expect(() => more.randMatrix(1, 1, { percent: 200 })).toThrow(RangeError);
+  expect(() => more.randMatrix(1, 1, { min: 2, max: 1 })).toThrow(RangeError);
+  expect(() => more.luDecompositionSimple(M([[0, 1], [0, 2]]), true)).toThrow(RangeError);
+  expect(() => more.luDecompositionSimple(M([[1, 2], [0, 0]]), true)).toThrow(RangeError);
+  expect(more.luDecompositionSimple(Matrix.eye(2), true)[0].equals(Matrix.eye(2))).toBe(true);
+});
