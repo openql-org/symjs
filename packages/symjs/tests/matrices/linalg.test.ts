@@ -11,7 +11,7 @@ import * as sj from '../../src';
 import { analyticFunc, I, log, Matrix, matrixLog, mul, oo, parse, parseExpr, Rational, S, simplify, sstr, symbols } from '../../src';
 import * as L from '../../src/matrices/linalg';
 import { isDiagonalizable, jordanForm } from '../../src/matrices/linalg';
-import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotLoadedError } from '../../src/core/errors';
+import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotLoadedError, ShapeError } from '../../src/core/errors';
 
 const q = (n: number) => Rational.of(n, 4);
 const [x] = symbols('x');
@@ -34,6 +34,11 @@ describe('matrix functions (SymPy Matrix.log / analytic_func)', () => {
 });
 
 describe('matrix solving and constructions', () => {
+  it('forms bordered Hessians from constraint gradients', () => {
+    expect(String(L.hessian(parse('z + x*y**2'), [y, x], [parse('x**2 + 2*y**3')]))).toBe('Matrix([[0, 6*y**2, 2*x], [6*y**2, 2*x, 2*y], [2*x, 2*y, 0]])');
+    expect(String(L.hessian(parse('x**2'), [x], [x, parse('x**2')]))).toBe('Matrix([[0, 0, 1], [0, 0, 2*x], [1, 2*x, 2]])');
+    expect(() => L.hessian(x, [])).toThrow(ShapeError);
+  });
   it('match SymPy', async () => {
     const { Matrix, matrixSolve, gaussJordanSolve, solveLeastSquares, GramSchmidt, hessian, wronskian, casoratian, normalized } = await import('../../src');
     const [x, y, n] = symbols('x y n');

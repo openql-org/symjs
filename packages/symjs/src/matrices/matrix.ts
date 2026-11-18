@@ -414,7 +414,7 @@ export class Matrix {
    */
   charpolyCoeffs(): Expr[] {
     if (!this.isSquare) throw new NonSquareMatrixError('charpoly: matrix must be square');
-    return berkowitz(this);
+    return berkowitz(this).map(simplify);
   }
 
   /** Characteristic polynomial det(λI - A) as an expression in `lambda`. */

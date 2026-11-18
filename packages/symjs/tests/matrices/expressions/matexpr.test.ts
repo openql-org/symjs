@@ -13,7 +13,7 @@ import * as sj from '../../../src';
 import { adjoint, conjugate, cos, diff, Dummy, Eq, exp, type Expr, I as ImagUnit, Lambda, latex, Matrix, matrixExp, mul, Rational, S, sin, sstr, symbol, symbols, SymFunction as UFunction, transpose } from '../../../src';
 import { Adjoint, det, Determinant, ElementwiseApplyFunction, GenericIdentity, GenericZeroMatrix, HadamardProduct, Identity, ImmutableMatrix, Inverse, isMataddValid, isMatmulValid, isSquare, MatAdd, MatMul, MatPow, MatrixElement, MatrixExpr, MatrixSlice, MatrixSymbol, matrixSymbols, MatScalar, mergeExplicitMatAdd, mergeExplicitMatMul, OneMatrix, per, Permanent, PermutationMatrix, PermutationNode, ShapeError, Str, Trace, trace, Transpose, ZeroMatrix } from '../../../src/matrices/expressions';
 import { doit } from '../../../src/calculus/doit';
-import { MatMulNode, MatrixElementNode, MatrixSliceNode, negate, TraceNode, transposeOf } from '../../../src/matrices/expressions/matexpr';
+import { hasNode, isMatrix, MatMulNode, MatrixElementNode, MatrixSliceNode, negate, TraceNode, transposeOf } from '../../../src/matrices/expressions/matexpr';
 import { rebuild } from '../../../src/core/traverse';
 import { cast } from '../../../src/core/guard';
 
@@ -35,6 +35,45 @@ const Mi = ImmutableMatrix([
   [3, 4],
 ]);
 const Yn = MatrixSymbol('Y', n, n);
+
+describe('matrix expression traversal and unevaluated operations', () => {
+  it('recognizes matrices and finds nested nodes', () => {
+    expect(isMatrix(X)).toBe(true);
+    expect(cast(MatrixElement(X, 0, 0), MatrixElementNode).symbol).toBe(X);
+    expect(isMatrix(x)).toBe(false);
+    expect(hasNode(Trace(X), (e) => e.equals(X))).toBe(true);
+    expect(hasNode(Trace(X), (e) => e.equals(Y))).toBe(false);
+  });
+  it('preserves inverses of rectangular products and unmatched product inverses', () => {
+    expect(s(M(MatMul(A, B)).evalInverse())).toBe('(A*B)**(-1)');
+    expect(s(M(MatMul(Inverse(MatMul(X, Y)), Z)).doit({ deep: false }))).toBe('(X*Y)**(-1)*Z');
+    expect(s(M(MatMul(Z, Inverse(MatMul(X, Y)))).doit({ deep: false }))).toBe('Z*(X*Y)**(-1)');
+    expect(s(sj.xreplace(Inverse(X), [[X, Y]]))).toBe('Y**(-1)');
+    expect(s(sj.sub(X, Y))).toBe('X - Y');
+    expect(s(sj.add(S.Zero, Mi))).toBe('Matrix([[1, 2], [3, 4]])');
+  });
+  it('validates reflected matrix arithmetic', () => {
+    expect(s(X.radd(Y))).toBe('X + Y');
+    expect(s(X.rsub(Y))).toBe('-X + Y');
+    expect(() => X.radd(5)).toThrow(TypeError);
+    expect(() => X.rsub(5)).toThrow(TypeError);
+    expect(() => X.rdiv(2)).toThrow(sj.NotImplementedError);
+    expect(() => X.rpow(3)).toThrow(sj.NotImplementedError);
+  });
+  it('validates explicit identity and singular inverses', () => {
+    expect(ImmutableMatrix([[1, 0]]).isIdentity).toBe(false);
+    expect(() => ImmutableMatrix([[1, 2], [2, 4]]).evalInverse()).toThrow(sj.NonInvertibleMatrixError);
+  });
+  it('prints block determinants in matrix notation', () => {
+    expect(L(Determinant(sj.BlockMatrix([[X, Y], [Y, X]])))).toBe('\\left|{\\begin{matrix}X & Y\\\\Y & X\\end{matrix}}\\right|');
+    expect(L(Determinant(sj.BlockDiagMatrix(X, Y)))).toBe('\\left|{\\begin{matrix}X & 0\\\\0 & Y\\end{matrix}}\\right|');
+  });
+  it('keeps scalar-valued functions applied elementwise to a one-by-one matrix', () => {
+    const v = MatrixSymbol('v', 1, 1);
+    expect(s(ElementwiseApplyFunction(Lambda(x, sin(x)), v))).toBe('Lambda(x, sin(x)).(v)');
+    expect(s(ElementwiseApplyFunction(sin, v))).toBe('Lambda(_d, sin(_d)).(v)');
+  });
+});
 
 describe('_shape', () => {
   const [m, n, p, q] = symbols('m n p q');

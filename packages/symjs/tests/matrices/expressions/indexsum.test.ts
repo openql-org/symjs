@@ -97,3 +97,20 @@ it('reconstructs sums of independently contracted matrix products', () => {
   expect(s(fromIndexSummation(add(mul(2, ab), mul(3, ac)), r))).toBe('2*A*B + 3*A*C');
   expect(s(fromIndexSummation(mul(2, Sum(A.at(inner, inner), [inner, 0, 2]))))).toBe('2*Trace(A)');
 });
+
+it('contracts a nested sum inside an outer matrix product', () => {
+  const [a, b, c, d] = symbols('a b c d', { integer: true });
+  const A = MatrixSymbol('A', 3, 3), B = MatrixSymbol('B', 3, 3), C = MatrixSymbol('C', 3, 3);
+  const inner = Sum(mul(B.at(b, c), C.at(c, d)), [c, 0, 2]);
+  expect(s(fromIndexSummation(Sum(mul(A.at(a, b), inner), [b, 0, 2])))).toBe('A*B*C');
+});
+
+it('reconstructs sums inside indexed products and preserves fixed indices', () => {
+  const [a, b, c] = symbols('a b c', { integer: true });
+  const A = MatrixSymbol('A', 3, 3), B = MatrixSymbol('B', 3, 3), C = MatrixSymbol('C', 3, 3);
+  const entries = Sum(mul(add(A.at(a, b), B.at(b, a)), C.at(b, c)), [b, 0, 2]);
+  expect(s(fromIndexSummation(entries))).toBe('(A + B.T)*C');
+  expect(s(fromIndexSummation(entries, a, c))).toBe('(A + B.T)*C');
+  expect(s(fromIndexSummation(Sum(mul(A.at(a, b), B.at(b, 0)), [b, 0, 2])))).toBe('(A*B)[a, 0]');
+  expect(s(fromIndexSummation(Sum(mul(A.at(0, b), B.at(b, c)), [b, 0, 2])))).toBe('(A*B)[0, c]');
+});

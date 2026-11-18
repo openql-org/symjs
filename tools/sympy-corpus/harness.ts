@@ -3706,13 +3706,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.ones': (args, kw) => ADAPTERS['ones']!(args, kw),
   GramSchmidt: (args, kw) => {
     noKw(kw);
-    const vs = (args[0] as JsList).items.map((v) => v instanceof sj.ImmutableMatrix ? v.matrix : v) as Matrix[];
+    const values = args[0] instanceof sj.FiniteSet ? args[0].args : (args[0] as JsList).items;
+    const vs = values.map((v) => v instanceof sj.ImmutableMatrix ? v.matrix : v) as Matrix[];
     return new JsList(sj.GramSchmidt(vs, Boolean(args[1])));
   },
   hessian: (args, kw) => {
     noKw(kw);
     const vs = args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items.map(asExpr) : args[1] instanceof Matrix ? args[1].data : [asExpr(args[1])];
-    return sj.hessian(asExpr(args[0]), vs);
+    return sj.hessian(asExpr(args[0]), vs, args[2] === undefined ? [] : asExprList(args[2]));
   },
   wronskian: (args, kw) => (noKw(kw), sj.wronskian((args[0] as JsList).items.map(asExpr), asExpr(args[1]))),
   casoratian: (args, kw) => {
@@ -4207,6 +4208,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     const [c, nc] = sj.argsCncSplit(asExpr(self), split1 === undefined ? true : Boolean(split1));
     return new JsList([kw['cset'] ? new JsSet(c) : new JsList(c), new JsList(nc)]);
   },
+  factor_in_front: (args, kw) => (noKw(kw), sj.factorInFront(asExpr(args[0]))),
+  remove_ids: (args, kw) => (noKw(kw), sj.removeIds(asExpr(args[0]))),
+  combine_powers: (args, kw) => (noKw(kw), sj.combinePowers(asExpr(args[0]))),
+  any_zeros: (args, kw) => (noKw(kw), sj.anyZeros(asExpr(args[0]))),
   '.xreplace': (args, kw, self) => {
     noKw(kw);
     const d = args[0];
@@ -5855,7 +5860,14 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
-  if (['Add', 'Mul', '.hstack', '.vstack'].includes(c.fn)) return ADAPTERS[c.fn];
+  if (['Add', 'Mul', '.hstack', '.vstack', '.args_cnc'].includes(c.fn)) return ADAPTERS[c.fn];
+  if (c.fn === 'MatAdd' || c.fn === 'MatMul') return (args, kw) => {
+    const { evaluate, ...rest } = kw;
+    noKw(rest);
+    const expression = c.fn === 'MatAdd' ? sj.MatAdd(...args.map(asMatrixExpression)) : sj.MatMul(...args.map(asMatrixExpression));
+    return evaluate === true && expression instanceof sj.MatrixExpr ? expression.doit({ deep: false }) : expression;
+  };
+  if (c.fn === '.name' && c.self?.t === 'MatrixSymbol') return (_args, kw, self) => (noKw(kw), (self as sj.MatrixSymbol).symbolName);
   if (['Matrix', 'MutableDenseMatrix', 'MutableMatrix'].includes(c.fn) && ['MatrixSymbol', 'MatExpr'].includes(c.args?.[0]?.t ?? '')) return ADAPTERS[c.fn];
   if (c.fn === 'MatrixSet') return (args, kw) => {
     noKw(kw);
@@ -6245,6 +6257,12 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (right instanceof sj.PuiseuxPoly && ['.__add__', '.__sub__', '.__mul__', '.__truediv__'].includes(c.fn)) return fromJs(dunder(right.ring.ringNew(left as Expr), [right]));
     }
     const right = args[0];
+    if (!(self0 instanceof sj.MatrixExpr) && right instanceof sj.MatrixExpr) {
+      if (c.fn === '.__add__') return right.radd(asMatrixExpression(self0));
+      if (c.fn === '.__sub__') return right.rsub(asMatrixExpression(self0));
+      if (c.fn === '.__truediv__') return right.rdiv(asMatrixExpression(self0));
+      if (c.fn === '.__pow__') return right.rpow(asExpr(self0));
+    }
     if (c.fn === '.__mul__' && self0 instanceof JsTuple && right instanceof Matrix) throw new TypeError('cannot multiply a list by a matrix');
     if (c.fn === '.__mul__' && (self0 instanceof JsDMP || self0 instanceof sj.DMP || self0 instanceof sj.DMPJs) && (right instanceof sj.ModuleElement || right instanceof sj.ModuleImplementedIdeal)) {
       const ring = right instanceof sj.ModuleElement ? right.module.ring : right.ring;
@@ -6651,7 +6669,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') ? undefined : auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       // (a DomainMatrix error is the method's own result)
-      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (['parse_expr', '.copyin_list'].includes(c.fn) && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
+      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (['parse_expr', '.copyin_list', '.applyfunc'].includes(c.fn) && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }

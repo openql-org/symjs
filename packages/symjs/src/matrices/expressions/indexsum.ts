@@ -10,10 +10,12 @@
 import { Concrete } from '../../core/concrete';
 import { NotImplementedError } from '../../core/errors';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Add, Mul, S } from '../../core/nodes';
+import { Add, Mul, Rational, S } from '../../core/nodes';
 import { add, mul, sympify } from '../../core/ops';
 import { compareKeys, sortKey } from '../../printing/sortkey';
-import { MatAddNode, MatMulNode, MatrixElementNode, MatrixExpr, TraceNode, transposeOf } from './matexpr';
+import { hasNode, MatAddNode, MatMulNode, MatrixElementNode, MatrixExpr, TraceNode, transposeOf } from './matexpr';
+import { convertIndexedToArray } from '../../tensor/array/expressions/fromindexedtoarray';
+import { convertArrayToMatrix } from '../../tensor/array/expressions/fromarraytomatrix';
 import { same } from './util';
 import { at, cast, pair } from '../../core/guard';
 
@@ -128,6 +130,13 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
  */
 export function fromIndexSummation(exprIn: ExprLike, firstIndex?: Expr, lastIndex?: Expr): Expr {
   const expr = sympify(exprIn);
+  const indexed = (e: Expr): boolean => hasNode(e, (a) => a instanceof MatrixElementNode);
+  const needsArray = hasNode(expr, (e) => e instanceof MatrixElementNode && (e.i instanceof Rational || e.j instanceof Rational)
+    || e instanceof Mul && e.args.some((a) => a instanceof Add && indexed(a)));
+  if (needsArray) {
+    const indices = [firstIndex, lastIndex].filter((i): i is Expr => i !== undefined);
+    return convertArrayToMatrix(convertIndexedToArray(expr, indices));
+  }
   const [body, limits] = peel(expr);
   if (body instanceof Add) {
     const terms = body.args.map((t) => {
