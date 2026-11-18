@@ -282,7 +282,7 @@ it('keeps indexed derivative deltas inside summation bounds', () => {
   const expr = sj.Sum(sj.mul(2, a.at(i)), [i, sj.S.NegativeInfinity, sj.oo]);
   expect(String(sj.diff(expr, a.at(j)))).toBe('Sum(2*KroneckerDelta(i, j), (i, -oo, oo))');
   const dependent = sj.Sum(a.at(i), [i, 0, a.at(j)]);
-  expect(() => sj.diff(dependent, a.at(j))).toThrow(NotImplementedError);
+  expect(() => sj.diff(dependent, a.at(j))).toThrow(sj.NotImplementedError);
 });
 
 it('retains nonscalar differentiation and rejects unsupported scalar derivatives', () => {
@@ -290,7 +290,7 @@ it('retains nonscalar differentiation and rejects unsupported scalar derivatives
   expect(sj.diff(X, X)).toBeInstanceOf(sj.Derivative);
   expect(sj.diff(X, X, 0)).toBe(X);
   expect(sj.diff(x, X)).toBe(sj.S.Zero);
-  expect(() => sj.diff(sj.Tuple(x), x)).toThrow(NotImplementedError);
+  expect(() => sj.diff(sj.Tuple(x), x)).toThrow(sj.NotImplementedError);
   const inner = new sj.Integral([x, x]);
   expect(String(sj.diff(new sj.Integral([inner, x, y]), y))).toBe('Integral(x, (x, y))');
 });
@@ -301,8 +301,8 @@ it('differentiates indefinite integrals and special functions with constant para
   expect(String(sj.diff(sj.besselj(0, x), x))).toBe('-besselj(1, x)');
   const a = new sj.IndexedBase('Bound');
   const i = new sj.Idx('i'), j = new sj.Idx('j');
-  expect(() => sj.diff(sj.Sum(a.at(i), [i, a.at(i), 3]), a.at(j))).toThrow(NotImplementedError);
-  expect(() => sj.diff(sj.Sum(a.at(i), [i, 0, a.at(i)]), a.at(j))).toThrow(NotImplementedError);
+  expect(() => sj.diff(sj.Sum(a.at(i), [i, a.at(i), 3]), a.at(j))).toThrow(sj.NotImplementedError);
+  expect(() => sj.diff(sj.Sum(a.at(i), [i, 0, a.at(i)]), a.at(j))).toThrow(sj.NotImplementedError);
 });
 
 it('retains the scalar-only fallback when the array layer is not registered', async () => {
@@ -323,7 +323,7 @@ it('handles unavailable extension and function derivatives and bound indices', a
     constructor() { super('Formal', [x]); }
     withArgs(): sj.Expr { return this; }
   }
-  expect(() => diff(new Formal(), x)).toThrow(NotImplementedError);
+  expect(() => diff(new Formal(), x)).toThrow(sj.NotImplementedError);
   const { fnPartials } = await import('../../src/calculus/diff');
   const saved = fnPartials.sin;
   fnPartials.sin = () => undefined;
