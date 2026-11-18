@@ -65,7 +65,8 @@ const CASES = [
   ['core', 'parse, diff, expand, str, latex', 222],
   ['core', '*', 330],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
-  ['special', '*', 408],
+  // Error-function and Fresnel rewrites plus polygamma expansion add approximately 3 KiB.
+  ['special', '*', 411],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 1054],
   // The polys entry re-exports the sparse domain matrices through a
@@ -81,7 +82,7 @@ const CASES = [
   ['sets', '*', 378],
   ['matrices', 'Matrix', 836],
   ['printing', 'pretty', 241],
-  ['discrete', '*', 299],
+  ['discrete', '*', 300],
   ['strategies', '*', 214],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
   ['parsing', '*', 855],
@@ -98,7 +99,7 @@ const CASES = [
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
   ['plotting', '*', 1092],
   ['crypto', '*', 367],
-  ['liealgebras', '*', 345],
+  ['liealgebras', '*', 346],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
   ['codegen', '*', 435],
   // The root is side-effect free: a named import brings only the entry points
@@ -107,7 +108,7 @@ const CASES = [
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2789],
+  ['index', '*', 2791],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

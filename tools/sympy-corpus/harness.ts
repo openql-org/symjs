@@ -5809,6 +5809,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // At z=1 SymPy gives erfi(1)+2*I. E_(1/2)(w)=sqrt(pi)*erfc(sqrt(w))/sqrt(w) requires a negative constant term.
+  "sympy.functions.special.tests.test_error_functions:assert erfi(z).rewrite('expint') == sqrt(-z**2)/z - z*expint(S.Half, -z**2)/sqrt(S.Pi)": '-z*erfc(sqrt(-z**2))/sqrt(-z**2) - sqrt(-z**2)/z',
   // SymPy mixes Poly.gens=(y,x) with Options.gens=(x,y). Neither published
   // result solves the original pair; these tuples satisfy both equations.
   'sympy.solvers.polysys:solve_biquadratic(a, b, NewOption)': [
