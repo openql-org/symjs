@@ -700,6 +700,9 @@ class Capture:
         case = {**self.metadata(site), **record, "expected": text, "op": op, **extra}
         if op == "!=" and self.category == "tensor" and isinstance(expected, (sympy.Idx, sympy.Indexed, sympy.IndexedBase, sympy.tensor.tensor.TensorHead)):
             case["comparisonTree"] = extract.ser(expected)
+        # two random symbols of the same name print alike: the right-hand side is kept as a tree
+        if op == "!=" and self.category == "stats" and isinstance(expected, sympy.stats.rv.RandomSymbol):
+            case["comparisonTree"] = extract.ser(expected)
         if ported_function_case(case):
             case.pop("exclusion", None)
         if isinstance(expected, str):

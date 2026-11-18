@@ -32,5 +32,9 @@
   "sympy.core.tests.test_priority:test_pow:125: assert (l**x).args == ((-1)**x).args and (l**x).is_Pow": "Python test class sympy.core.tests.test_priority.Lower requires Python method execution",
   "sympy.core.tests.test_priority:test_sub:116: assert h - l == h - x == 1": "Python test class sympy.core.tests.test_priority.Higher requires Python method execution",
   "sympy.core.tests.test_priority:test_sub:117: assert l - h == x - h == 2": "Python test class sympy.core.tests.test_priority.Higher requires Python method execution",
-  "sympy.core.tests.test_priority:test_sub:118: assert x - l == -(l - x) == x + 1": "Python test class sympy.core.tests.test_priority.Lower requires Python method execution"
+  "sympy.core.tests.test_priority:test_sub:118: assert x - l == -(l - x) == x + 1": "Python test class sympy.core.tests.test_priority.Lower requires Python method execution",
+  "sympy.stats.tests.test_rv:test_NamedArgsMixin:318: assert a.foo == 1": "Python test class sympy.stats.tests.test_rv.test_NamedArgsMixin.<locals>.Foo requires Python method execution",
+  "sympy.stats.tests.test_rv:test_NamedArgsMixin:319: assert a.bar == 2": "Python test class sympy.stats.tests.test_rv.test_NamedArgsMixin.<locals>.Foo requires Python method execution",
+  "sympy.stats.tests.test_rv:test_NamedArgsMixin:321: raises(AttributeError, lambda: a.baz)": "Python test class sympy.stats.tests.test_rv.test_NamedArgsMixin.<locals>.Foo requires Python method execution",
+  "sympy.stats.tests.test_rv:test_NamedArgsMixin:326: raises(AttributeError, lambda: Bar(S(1), S(2)).foo)": "Python test class sympy.stats.tests.test_rv.test_NamedArgsMixin.<locals>.Bar requires Python method execution"
 }
