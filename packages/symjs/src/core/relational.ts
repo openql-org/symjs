@@ -3,7 +3,7 @@
 
 /** SymPy relational predicates: three-valued comparisons under assumptions. */
 import type { Expr, ExprLike, RelOp } from './nodes';
-import { Add, BoolAtom, Rational, Rel, S, Sym, impl } from './nodes';
+import { Add, BoolAtom, Mul, Rational, Rel, S, Sym, impl } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { BasicNode } from './basic';
 import { canonicalRelation, rel } from './logic';
@@ -11,6 +11,7 @@ import type { Assumption } from './refine';
 import { ask, Q } from './refine';
 import type { Truth } from './truth';
 import { truthNot } from './truth';
+import { isPositive } from './assumptions';
 import { isPolynomial } from './methods';
 import { gcd, lcm } from './numbers';
 import { first } from './guard';
@@ -50,7 +51,18 @@ export function negated(relation: Rel): Rel {
 }
 
 /** SymPy is_eq. */
-export const isEq = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => ask(Q.eq(lhs, rhs), assumptions);
+export function isEq(lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth {
+  const a = sympify(lhs), b = sympify(rhs);
+  if (a.key !== b.key && ask(Q.infinite(a), assumptions) === true && ask(Q.infinite(b), assumptions) === true) {
+    const realA = ask(Q.extended_real(a), assumptions), realB = ask(Q.extended_real(b), assumptions);
+    if (realA !== 'unknown' && realB !== 'unknown' && realA !== realB) return false;
+    if (realA === true && realB === true) {
+      const positiveA = ask(Q.extended_positive(a), assumptions), positiveB = ask(Q.extended_positive(b), assumptions);
+      if (positiveA !== 'unknown' && positiveB !== 'unknown') return positiveA === positiveB;
+    }
+  }
+  return ask(Q.eq(a, b), assumptions);
+}
 /** SymPy is_neq. */
 export const isNeq = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => truthNot(isEq(lhs, rhs, assumptions));
 /** SymPy is_ge. */
@@ -71,7 +83,12 @@ export function simplifyRelation(relation: Rel, simplify: (e: Expr) => Expr): Ex
   if (!(r instanceof Rel)) return r;
   const canonical = canonicalRelation(r);
   if (r.args.some((a) => a instanceof BoolAtom)) return canonical;
-  const difference = impl.expand(add(r.lhs, mul(-1, r.rhs)));
+  let difference = add(r.lhs, mul(-1, r.rhs));
+  if (difference instanceof Mul) {
+    const factors = difference.args.filter((f) => !f.isNumber || isPositive(f) !== true);
+    difference = mul(...factors);
+  }
+  difference = impl.expand(difference);
   if (difference instanceof Rational) return rel(r.op, difference, S.Zero);
   const terms = difference instanceof Add ? difference.args : [difference];
   let constant: Expr = S.Zero;

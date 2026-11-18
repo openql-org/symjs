@@ -86,6 +86,14 @@ export function splitCoeff(e: Expr): [Num, Expr] {
 /** Return [base, exponent] of e (exponent 1 for non-powers). */
 export function asBaseExp(e: Expr): [Expr, Expr] {
   if (e instanceof Pow) return [e.base, e.exp];
+  if (e instanceof Mul) {
+    const pairs = e.args.map(asBaseExp);
+    const exponent = pairs[0]?.[1];
+    if (exponent instanceof Rational && exponent.isInteger && !exponent.isOne &&
+        pairs.every(([, x]) => x.key === exponent.key) && pairs.filter(([b]) => !b.isCommutative).length <= 1) {
+      return [mul(...pairs.map(([b]) => b)), exponent];
+    }
+  }
   return [e, S.One];
 }
 

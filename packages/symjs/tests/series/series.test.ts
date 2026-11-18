@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { Sym, parse, DiracDelta, Heaviside, series, symbol, sstr, symbols } from '../../src';
+import { SeriesError } from '../../src/series/puiseux';
 import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
 import { readFileSync } from 'node:fs';
@@ -582,4 +583,30 @@ it('retains unevaluated integrals independent of the expansion variable', async 
 it('removes explicit zero order terms when adding expressions', () => {
   const x = new sj.Sym('x');
   expect(sj.add(x, new sj.Order([sj.S.Zero, x, sj.S.Zero])).key).toBe(x.key);
+});
+
+it('finds a leading term with a symbolic power or an essential singularity in an argument', () => {
+  const x = sj.symbol('x');
+  const f = sj.defineFunction('f');
+  expect(String(sj.asLeadingTerm(sj.parse('3 + x**(log(3)/log(2) - 1)'), x))).toBe('3');
+  expect(String(sj.asLeadingTerm(sj.parse('sinh(tanh(1/x))'), x, { cdir: 1 }))).toBe('sinh(1)');
+  expect(String(sj.asLeadingTerm(sj.parse('sinh(tanh(1/x))'), x, { cdir: -1 }))).toBe('-sinh(1)');
+  expect(sj.asLeadingTerm(f(x.pow(-1)), x).key).toBe(f(x.pow(-1)).key);
+  expect(() => sj.asLeadingTerm(f(x), x)).toThrow(sj.NotImplementedError);
+});
+
+it('substitutes a supplied logarithm along the positive ray and uses directional rules', () => {
+  const [x, y] = sj.symbols('x y');
+  expect(String(sj.series(sj.parse('loggamma(log(1/x))'), x, 0, 1, '+', { logx: y }))).toBe('loggamma(-y)');
+  expect(String(sj.asLeadingTerm(sj.floor(sj.neg(x)), x))).toBe('-1');
+  expect(() => sj.leadterm(sj.add(x.pow(y), 1), x)).toThrow(sj.NotImplementedError);
+  expect(() => sj.asLeadingTerm(sj.parse('sinh(1/x + sin(1/x))'), x)).toThrow(sj.NotImplementedError);
+});
+
+it('rebuilds an order with its implicit variable and origin', () => {
+  const [x, y] = sj.symbols('x y');
+  const order = new sj.Order([x.pow(2)]);
+  expect(sj.replace(order, x, y)).toEqual(sj.O(y.pow(2), y));
+  const power = x.pow(sj.sqrt(2));
+  expect(() => sj.leadterm(new sj.Add([power, sj.neg(power)]), x)).toThrow(SeriesError);
 });

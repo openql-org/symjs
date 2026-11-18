@@ -64,6 +64,10 @@ export interface EvalfOptions {
   subs?: NumericValues;
   /** Replace parts smaller than this (or than the precision when true) by zero. */
   chop?: boolean | number;
+  /** Raise PrecisionExhausted if the requested accuracy cannot be achieved. */
+  strict?: boolean;
+  /** Maximum working precision in decimal digits. */
+  maxn?: number;
 }
 
 /** Substitution specification. */
@@ -280,7 +284,7 @@ export interface Impl {
   latex(e: Expr): string;
   subs(e: Expr, s: Substitution): Expr;
   xreplace(e: Expr, s: Substitution): Expr;
-  diff(e: Expr, x: Expr, n: number): Expr;
+  diff(e: Expr, x: Expr, n: ExprLike): Expr;
   expand(e: Expr): Expr;
   simplify(e: Expr): Expr;
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
@@ -306,6 +310,8 @@ export interface Impl {
   leadterm?(e: Expr, x: Sym): [Expr, Expr];
   /** Asymptotic containment, registered by series/series. */
   orderContains?: (order: Order, expr: Expr) => boolean | 'unknown';
+  subsFunction?(expr: Expr, name: string, replacement: (...args: Expr[]) => Expr, arities?: readonly number[]): Expr;
+  rebuildOrder?: (args: readonly Expr[]) => Expr;
   /** The value of a sum or product with finite integer limits, for evalf (registered by calculus/doit); undefined when it is not a number. */
   evalConcrete?(c: Expr): Expr | undefined;
   /** Lambert W function (registered by functions/special). */
@@ -360,7 +366,7 @@ export interface Impl {
   /** SymPy factor (set by the polys module). */
   factor?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */
-  fraction?(e: Expr): [Expr, Expr];
+  fraction?(e: Expr, options?: { exact?: boolean }): [Expr, Expr];
   conjugate(e: Expr): Expr;
   abs(e: Expr): Expr;
   freeSymbols(e: Expr): Set<Expr>;
@@ -602,7 +608,7 @@ export abstract class Expr {
     }
     return impl.subs(this, a);
   }
-  diff(x: Expr, n = 1): Expr {
+  diff(x: Expr, n: ExprLike = 1): Expr {
     return impl.diff(this, x, n);
   }
   /** Limit as z -> z0 (dir '+' by default, like SymPy). */
@@ -705,7 +711,7 @@ export class Rational extends Expr {
     this.q = q;
   }
 
-  static of(p: bigint | number, q: bigint | number = 1n): Rational {
+  static of(p: bigint | number, q: bigint | number = 1n, options: { gcd?: bigint } = {}): Rational {
     let P = BigInt(p);
     let Q = BigInt(q);
     if (Q === 0n) throw new RangeError('Rational: division by zero');
@@ -713,7 +719,8 @@ export class Rational extends Expr {
       P = -P;
       Q = -Q;
     }
-    const g = gcd(P, Q);
+    const g = options.gcd ?? gcd(P, Q);
+    if (options.gcd !== undefined && (g < 1n || P % g !== 0n || Q % g !== 0n)) throw new RangeError('Rational: invalid common divisor');
     if (g > 1n) {
       P /= g;
       Q /= g;
@@ -1181,7 +1188,7 @@ export class UndefFn extends Expr {
 
 /**
  * Unevaluated derivative. args: [expr, v1, n1, v2, n2, ...] where ni are
- * positive integer counts (SymPy `variable_count`). @internal ctor
+ * nonnegative integer counts which may be symbolic (SymPy `variable_count`). @internal ctor
  */
 export class Derivative extends Expr {
   readonly kind = 'Derivative' as const;
@@ -1191,19 +1198,31 @@ export class Derivative extends Expr {
   get expr(): Expr {
     return at(this.args, 0);
   }
-  get variableCount(): [Expr, number][] {
-    const out: [Expr, number][] = [];
-    for (let i = 1; i < this.args.length; i += 2) {
-      out.push([at(this.args, i), Number(asRational(at(this.args, i + 1), 'derivative count').p)]);
-    }
+  /** The differentiation variables paired with their exact orders. */
+  get variableOrders(): [Expr, Expr][] {
+    const out: [Expr, Expr][] = [];
+    for (let i = 1; i < this.args.length; i += 2) out.push([at(this.args, i), this.args[i + 1] ?? S.One]);
     return out;
+  }
+  /** Integer counts for algorithms that require a concrete derivative order. */
+  get variableCount(): [Expr, number][] {
+    return this.variableOrders.map(([v, order]) => {
+      if (!(order instanceof Rational && order.isInteger) || order.p > BigInt(Number.MAX_SAFE_INTEGER)) {
+        throw new RangeError('a concrete derivative order is required');
+      }
+      return [v, Number(order.p)];
+    });
+  }
+  /** The sum of the orders across differentiation variables. */
+  get derivativeOrder(): Expr {
+    return impl.add(...this.variableOrders.map(([, n]) => n));
   }
   /** Reconstruct a derivative while preserving subclass behavior. */
   withArgs(args: readonly Expr[]): Derivative { return new Derivative(args); }
   /** Evaluate the derivative in variable order. */
   doit(): Expr {
     let result = this.expr;
-    for (const [variable, count] of this.variableCount) result = impl.diff(result, variable, count);
+    for (const [variable, count] of this.variableOrders) result = impl.diff(result, variable, count);
     return result;
   }
   protected computeKey(): string {

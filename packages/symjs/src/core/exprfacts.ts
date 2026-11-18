@@ -23,7 +23,7 @@
  */
 
 import type { Expr } from './nodes';
-import { Add, Constant, Dummy, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, impl } from './nodes';
+import { Add, Constant, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, impl } from './nodes';
 import { add, asBaseExp, mul, neg, pow, sub } from './ops';
 import { freeSymbols, subs, xreplace } from './traverse';
 import { asCoeffMul, asNumerDenom, asRealImag, coeff, isPolynomial } from './methods';
@@ -31,6 +31,7 @@ import { FACT_PREREQUISITES, deduceFacts } from './facts';
 import { Q, ask } from './refine';
 import { assumptions } from './checkassumptions';
 import { isNegative as numberIsNegative, isPositive as numberIsPositive } from './assumptions';
+import { factorialLowerBound } from './logic';
 import { at } from './guard';
 
 /** A fact value: true, false or undefined for SymPy's None. */
@@ -59,6 +60,7 @@ export function fact(e: Expr, name: string): V {
     const evaluated = impl.fn(e.name, e.args);
     if (evaluated.key !== e.key) return fact(evaluated, name);
   }
+  if (name === 'zero' && e instanceof Integral && is(e.integrand, 'zero')) return true;
   const st = stateOf(e);
   const known = st.kb.get(name);
   if (known !== undefined || st.none.has(name) || st.busy.has(name)) return known;
@@ -155,6 +157,12 @@ function initialFacts(e: Expr): Map<string, boolean> {
 /** The handler of a fact for the class of e, bound to e. */
 function handlerFor(e: Expr, f: string): (() => V) | undefined {
   const bind = <T extends Expr>(h: ((x: T) => V) | undefined, x: T): (() => V) | undefined => (h === undefined ? undefined : () => h(x));
+  if (f === 'complex' && e instanceof Fn && e.name === 'log') {
+    return () => {
+      const argument = at(e.args, 0);
+      return is(argument, 'complex') ? fuzzyNot(fact(argument, 'zero')) : undefined;
+    };
+  }
   if (f === 'finite' && e instanceof Fn && (e.name === 'sin' || e.name === 'cos') && is(at(e.args, 0), 'extended_real')) return () => true;
   if (e instanceof Add) return bind(ADD[f], e);
   if (e instanceof Mul) return bind(MUL[f], e);
@@ -416,7 +424,10 @@ function addImaginary(e: Expr): V {
   const b = add(...nz);
   if (b.key === e.key) return undefined;
   const bz = fact(b, 'zero');
-  if (bz === true) return fuzzyNot(fact(add(...imI), 'zero'));
+  if (bz === true) {
+    const exact = imI.map((x) => x instanceof Float ? impl.rationalFromFloat?.(x) ?? x : x);
+    return fuzzyNot(fact(add(...exact), 'zero'));
+  }
   return bz === false ? false : undefined;
 }
 
@@ -474,6 +485,10 @@ function addSign(e: Expr, sign: 1 | -1): V {
   const NP = sign === 1 ? 'extended_nonpositive' : 'extended_nonnegative';
   const [c, a] = coeffAdd(e);
   if (!isZeroValue(c)) {
+    if (sign === 1 && a instanceof Pow && a.exp instanceof Rational && a.exp.isInteger && a.exp.isPositive && a.base instanceof Add) {
+      const [constant, rest] = coeffAdd(a.base);
+      if (is(constant, 'nonnegative') && is(rest, 'nonnegative') && is(add(c, pow(constant, a.exp)), P)) return true;
+    }
     const v = monotonicSign(a);
     if (v !== undefined) {
       const s = add(v, c);
@@ -1100,6 +1115,13 @@ const trigRational = on((a) => (is(a, 'rational') && isNot(a, 'zero') ? false : 
 
 /** SymPy handlers of Abs, re, im, sign, floor, ceiling, frac, tan, cot, exp_polar and Mod. */
 const FUNCTIONS: Readonly<Partial<Record<string, FunctionFacts>>> = {
+  factorial: {
+    handlers: {
+      positive: (e) => factorialLowerBound(e) === undefined ? undefined : true,
+      integer: (e) => factorialLowerBound(e) === undefined ? undefined : true,
+      even: (e) => factorialLowerBound(e)?.p === 2n ? true : undefined,
+    },
+  },
   abs: {
     given: { extended_real: true, extended_negative: false, extended_nonnegative: true },
     handlers: {

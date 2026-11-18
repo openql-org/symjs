@@ -7,6 +7,9 @@
 import { describe, expect, it } from 'vitest';
 import { Derivative, Subs, SymFunction, diff, doit, freeSymbols, latex, parse, sstr, symbols } from '../../src';
 
+import { SubsNode } from '../../src/core/subsnode';
+import { S } from '../../src';
+
 const [x, y, z] = symbols('x y z');
 
 const f = SymFunction('f');
@@ -55,4 +58,41 @@ it('evaluates substitutions before numerical approximation and preserves a forma
   expect(() => Subs(x, [x, x], [1, 2])).toThrow(RangeError);
   expect(() => Subs(x, [x, y], [1])).toThrow(RangeError);
   expect(Subs(x, [], []).key).toBe(x.key);
+});
+
+it('replaces function heads before differentiating and postpones derivatives of absent variables', async () => {
+  const s = await import('../../src');
+  const f = s.SymFunction('h');
+  const h = new s.FunctionHead('h');
+  const cosine = new s.FunctionHead('cos', (...args) => s.cos(args[0] ?? s.S.Zero));
+  const inner = f(x);
+  expect(String(h)).toBe('h');
+  expect(h.withArgs()).toBe(h);
+  expect(String(doit(Subs(s.derivative(f(inner), [[inner, 1]]), h, cosine)))).toBe('-sin(cos(x))');
+  expect(String(doit(Subs(s.derivative(f(inner), [[x, 1]]), h, cosine)))).toBe('sin(x)*sin(cos(x))');
+  expect(doit(Subs(x, x, x)).key).toBe(x.key);
+  expect(doit(Subs(s.derivative(f(y), [[x, 1], [y, 1]]), y, f(x))).key).not.toBe('0');
+  expect(doit(Subs(x.add(1), x, 2)).key).toBe('3');
+});
+
+it('can substitute at a point before the global evaluation hook is registered', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const restore = { ...impl };
+  try {
+    impl.doit = undefined;
+    expect(new SubsNode([x.add(1), x, S.Two]).doitSelf().key).toBe('3');
+    expect(new SubsNode([Derivative(x.pow(2), x), x, S.Two]).doitSelf().key).toBe('4');
+  } finally {
+    Object.assign(impl, restore);
+  }
+});
+
+it('substitutes only at and after a bound variable’s point', () => {
+  const expr = x.mul(y).mul(z);
+  const at = Subs(expr, [y, x, z], [x.add(1), x.add(z), x]);
+  expect(at.subs(x, y).key).toBe(Subs(expr, [y, x, z], [x.add(1), y.add(z), y]).key);
+  expect(Subs(x.mul(y), x, x).subs(x, z).key).toBe(Subs(z.mul(y), z, z).key);
+  const g = SymFunction('g');
+  const u = f(x, y);
+  expect(Subs(u.mul(2).add(g(x)), u, 1).subs(y, 2).key).toBe(Subs(u.mul(2).add(g(x)), [u, y], [1, 2]).key);
 });

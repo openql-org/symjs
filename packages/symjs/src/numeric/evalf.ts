@@ -6,7 +6,7 @@
  */
 
 import { DeferredVector } from '../core/classes';
-import { isReal } from '../core/assumptions';
+import { isReal, isZero } from '../core/assumptions';
 import type {
   ComplexValue as C,
   ConstantName,
@@ -35,7 +35,7 @@ import {
 } from '../core/nodes';
 import { at } from '../core/guard';
 import { Concrete } from '../core/concrete';
-import { EvalfValueError } from '../core/errors';
+import { PrecisionExhausted, EvalfValueError } from '../core/errors';
 import { add, mul, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
 import type { NoMatchResult } from '../core/truth';
@@ -292,7 +292,7 @@ export function evalf(ex: ExprLike, n?: number | NumericValues, opts: EvalfOptio
   let values = opts.subs;
   if (typeof n === 'number') dps = n;
   else if (n !== undefined) values = n;
-  return evalfPrec(e, dpsToPrec(dps), values, opts.chop);
+  return evalfPrec(e, dpsToPrec(dps), values, opts.chop, opts);
 }
 
 /** A function application (exp is a power of E here, a function in SymPy). */
@@ -313,7 +313,8 @@ function specialPart(p: MpPart, prec: number): Expr {
 }
 
 /** evalf at a binary precision. */
-export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number): Expr {
+export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number, options: Pick<EvalfOptions, 'maxn' | 'strict'> = {}): Expr {
+  const maxPrec = options.maxn === undefined ? Infinity : dpsToPrec(options.maxn);
   const raw = makeRawLookup(values);
   // an exact value is evaluated at the working precision, not the target one
   const lookup = (s: Sym, wp: number): Mpc | undefined => {
@@ -337,10 +338,18 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     visit(x);
     if (!ok) return undefined;
     try {
-      return fromMpc(evalAdaptive(x, prec, look), prec, chop);
+      const accuracy = options.strict === true ? { re: prec, im: prec } : undefined;
+      const parts = evalAdaptive(x, prec, look, accuracy, maxPrec);
+      const result = fromMpc(parts, prec, chop);
+      if (accuracy !== undefined && chop !== true &&
+          (complexAccuracy([...parts, accuracy.re, accuracy.im]) < prec ||
+           result === S.Zero && Math.min(accuracy.re, accuracy.im) < prec)) {
+        throw new PrecisionExhausted('could not achieve the requested accuracy');
+      }
+      return result;
     } catch (err) {
       // (SymPy raises the ValueError of mpmath)
-      if (err instanceof EvalfValueError) throw err;
+      if (err instanceof EvalfValueError || err instanceof PrecisionExhausted) throw err;
       // mpmath's inf and nan (SymPy _from_mpmath: Float._new(re) + Float._new(im)*I)
       if (err instanceof MpSpecialValue) return add(specialPart(err.re, prec), mul(specialPart(err.im, prec), S.I));
       // not numerically evaluable
@@ -349,6 +358,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
   };
   /** SymPy _eval_evalf: the numeric parts evaluated, the others kept. */
   const go = (x: Expr): Expr => {
+    if (x instanceof Integral && isZero(x.integrand) === true) return S.Zero;
     const v = numeric(x, noValue);
     if (v !== undefined) return v;
     // SymPy Function._eval_evalf: a function that is not a number keeps its arguments

@@ -778,3 +778,46 @@ it('splits complex products with a symbolic imaginary factor', () => {
   expect(a.key).toBe(sj.mul(sj.I, i, sj.im(x)).key);
   expect(b.key).toBe(sj.mul(-1, sj.I, i, sj.re(x)).key);
 });
+
+it('keeps a canonical name for each integral limit and respects occurrences in endpoints', () => {
+  const [a, b, t] = sj.symbols('a b t');
+  const inner = new sj.Integral([sj.add(a, b), a, sj.S.Zero, t]);
+  const all = new sj.Integral([inner, b, sj.S.Zero, sj.S.One]);
+  expect([...sj.canonicalVariables(all)].map(([u,v]) => [String(u), String(v)])).toEqual([['a', '_0'], ['b', '_1']]);
+  expect(String(sj.asDummy(all))).toBe('Integral(_0 + _1, (_0, 0, t), (_1, 0, 1))');
+  expect([...sj.iterFreeArgs(all)].map(String)).toEqual([String(all), '0', 't', '0', '1']);
+  expect([...sj.iterFreeArgs(a.add(1))].map(String)).toEqual(['a + 1', '1', 'a']);
+  expect([...sj.exprFreeSymbols(sj.Tuple(a, b))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(sj.Eq(a, b))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(a.add(1))].map(String)).toEqual(['1', 'a']);
+  expect([...sj.exprFreeSymbols(all)].map(String)).toEqual(['a', 'b']);
+  expect([...sj.exprFreeSymbols(sj.Basic(a))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(sj.Subs(a, a, b))]).toEqual([]);
+  const indexed = new sj.Indexed([a, b]);
+  expect([...sj.exprFreeSymbols(indexed)]).toEqual([indexed]);
+});
+it('extracts common radicals of matching degree', () => {
+  const e = sj.parse('6**(1/3) + (-6)**(1/3)');
+  expect(String(sj.asContentPrimitive(e, { radical: true })[1])).toBe('6**(1/3)*(1 + (-1)**(1/3))');
+  expect(sj.asContentPrimitive(sj.parse('sqrt(2) + sqrt(3)'), { radical: true })[1].key).toBe(sj.parse('sqrt(2) + sqrt(3)').key);
+  expect(sj.asContentPrimitive(sj.parse('1 + sqrt(2)'), { radical: true })[1].key).toBe(sj.parse('1 + sqrt(2)').key);
+});
+
+it('keeps free endpoints of sums separate from their bound occurrences', () => {
+  const [x, y] = sj.symbols('x y');
+  const sum = new sj.Concrete('Sum', [x, x, sj.S.Zero, x]);
+  expect(String(sj.asDummy(sum))).toBe('Sum(_0, (_0, 0, x))');
+  expect([...sj.iterFreeArgs(sum)].map(String)).toEqual([String(sum), '0', 'x']);
+  expect(String(sj.asDummy(sj.add(sum, y)))).toBe('y + Sum(_0, (_0, 0, x))');
+  const mixed = new sj.Add([sj.sqrt(2), sj.pow(3, sj.Rational.of(1, 3))]);
+  expect(sj.asContentPrimitive(mixed, { radical: true })[1].key).toBe(mixed.key);
+});
+
+it('extracts additive terms from the remainder of a factored expression', () => {
+  const [x, y] = sj.symbols('x y');
+  const sum = x.add(y);
+  expect(String(sj.extractAdditively(sum.mul(x.add(1)).add(sum).add(3), sum))).toBe('x*(x + y) + 3');
+  expect(String(sj.extractAdditively(sum.mul(x.add(1)).add(sum).add(2).add(x), sum))).toBe('x*(x + y) + x + 2');
+  const partial = sum.mul(x.add(1)).add(sum.mul(2));
+  expect(String(sj.extractAdditively(partial, sum))).toBe('x*(x + y) + x + y');
+});

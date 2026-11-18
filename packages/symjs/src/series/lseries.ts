@@ -84,9 +84,11 @@ export function dir(ex: ExprLike, x: Sym, cdir: ExprLike): Expr {
     if (coeff instanceof Special && coeff.name === 'nan') coeff = limit(arg, x, 0);
     if (coeff instanceof Special && coeff.name === 'zoo') {
       try {
-        coeff = leadterm(arg, x)[0];
-        // a leading coefficient with log(x) is not a direction (SymPy raises and takes the limit)
-        if (coeff.has(log(x))) coeff = limit(arg, x, 0);
+        const [coefficient, exponent] = leadterm(arg, x);
+        // A sum can have distinct orders. Use its limit if the dominant term
+        // diverges, while a single power supplies its leading coefficient.
+        coeff = coefficient.has(log(x)) || (arg instanceof Add && isNegative(exponent) === true)
+          ? limit(arg, x, 0) : coefficient;
       } catch {
         coeff = limit(arg, x, 0);
       }

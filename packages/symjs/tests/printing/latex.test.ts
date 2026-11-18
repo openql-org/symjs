@@ -855,3 +855,9 @@ it('separates compound Levi-Civita indices and groups powers', () => {
   expect(latex(sj.LeviCivita(x, sj.add(y, 1), z))).toBe('\\varepsilon_{x, y + 1, z}');
   expect(latex(pow(sj.LeviCivita(x, y, z), 2))).toBe('\\left(\\varepsilon_{x y z}\\right)^{2}');
 });
+
+it('prints symbolic derivative orders in LaTeX', () => {
+  const [x, n] = sj.symbols('x n');
+  const f = sj.SymFunction('f')(x);
+  expect(latex(f.diff(x, n))).toContain('^{n}');
+});

@@ -983,3 +983,43 @@ it('classifies integer powers on the complex diagonals', () => {
     expect(fact(e, 'imaginary')).toBe(Math.abs(n) % 4 === 2);
   }
 });
+
+it('reasons about zero integrands, finite logarithms and shifted factorials', () => {
+  const x = sj.symbol('x', { complex: true, zero: false });
+  const n = sj.symbol('n', { integer: true, nonnegative: true });
+  const p = sj.symbol('p', { positive: true });
+  expect(fact(new sj.Integral([S.Zero, p, S.Zero, S.One]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('log', [x]), 'complex')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [n.add(2)]), 'even')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [n]), 'even')).toBeUndefined();
+  expect(fact(new sj.Fn('factorial', [n]), 'positive')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [n]), 'integer')).toBe(true);
+  expect(fact(p.add(2).pow(3).sub(S.Half), 'positive')).toBe(true);
+});
+
+it('keeps the dyadic coefficients of imaginary sums exact', () => {
+  const e = new sj.Add([sj.mul(new sj.Float(0.866025403784439), S.I), sj.mul(Rational.of(-1, 2), sj.sqrt(3), S.I)]);
+  expect(fact(e, 'imaginary')).toBe(true);
+  const p = sj.symbol('p', { positive: true });
+  expect(fact(p.add(2).pow(3).sub(100), 'positive')).toBeUndefined();
+  const y = sj.symbol('y');
+  expect(fact(new sj.Fn('factorial', [y]), 'integer')).toBeUndefined();
+  expect(fact(new sj.Fn('log', [y]), 'complex')).toBeUndefined();
+});
+
+it('detects imaginary sums with both floating and exact parts', () => {
+  const e = new sj.Add([new Mul([new sj.Float(1.5), S.I]), new Mul([Rational.of(3, 2), S.I])]);
+  expect(fact(e, 'imaginary')).toBe(true);
+});
+
+it('classifies an imaginary floating product before the rational conversion hook is loaded', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const saved = { ...impl };
+  try {
+    impl.rationalFromFloat = undefined;
+    const e = new sj.Add([sj.mul(new sj.Float(1.5), S.I), S.I]);
+    expect(fact(e, 'imaginary')).toBe(true);
+  } finally {
+    Object.assign(impl, saved);
+  }
+});

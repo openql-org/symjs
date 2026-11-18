@@ -7,8 +7,9 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Expr, ExtensionExpr, Sym, impl } from './nodes';
+import { Derivative, Expr, ExtensionExpr, Fn, Sym, UndefFn, impl } from './nodes';
 import { add, mul, sympify } from './ops';
+import { FunctionHead } from './undef';
 import { at } from './guard';
 
 /** A bound slot keyed by its evaluation point; it cannot collide with a free symbol. */
@@ -75,8 +76,43 @@ export class SubsNode extends ExtensionExpr {
     const value = this.doitSelf();
     return value.key === this.key ? this : evaluate(value);
   }
+  override get doitDeep(): boolean { return false; }
+
+  override subsSelf(old: Expr, replacement: Expr, recurse: (e: Expr) => Expr): Expr {
+    const variables = this.variables;
+    const points = this.point;
+    const i = variables.findIndex((v) => v.key === old.key);
+    if (i >= 0) {
+      if ((replacement instanceof Sym || replacement instanceof Fn || replacement instanceof UndefFn) && !this.has(replacement)) return impl.xreplace(this, [[old, replacement]]);
+      return new SubsNode([this.expr, ...variables, ...points.map((p, j) => j < i ? p : recurse(p))]);
+    }
+    const changed = variables.map(recurse);
+    if (changed.some((v, j) => v.key !== at(variables, j).key)) {
+      return new SubsNode([this.expr, ...variables, old, ...points, replacement]);
+    }
+    return new SubsNode([recurse(this.expr), ...variables, ...points.map(recurse)]);
+  }
+
   override doitSelf(): Expr {
-    return this.expr.subs(this.variables.map((v, i): [Expr, Expr] => [v, at(this.point, i)]));
+    const substitutions = this.variables.map((v, i): [Expr, Expr] => [v, at(this.point, i)]).filter(([v, p]) => v.key !== p.key);
+    if (!substitutions.length) return this.expr;
+    let source = this.expr;
+    const values: [Expr, Expr][] = [];
+    for (const [from, to] of substitutions) {
+      if (from instanceof FunctionHead && to instanceof FunctionHead && to.apply && impl.subsFunction) {
+        source = impl.subsFunction(source, from.name, to.apply, to.arities);
+      } else values.push([from, to]);
+    }
+    if (!(source instanceof Derivative)) return (impl.doit?.(source) ?? source).subs(values);
+    let expression = source.expr;
+    const pending: [Expr, Expr][] = [];
+    for (const [variable, order] of source.variableOrders) {
+      if (expression.has(variable)) expression = impl.diff(expression, variable, order);
+      else pending.push([variable, order]);
+    }
+    expression = expression.subs(values);
+    for (const [variable, order] of pending) expression = impl.diff(expression, variable, order);
+    return expression.key === this.key ? this : impl.doit?.(expression) ?? expression;
   }
 }
 

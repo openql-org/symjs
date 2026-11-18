@@ -8,13 +8,13 @@
 import { Special } from './nodes';
 import type { ExprLike, RelOp } from './nodes';
 import { Expr } from './nodes';
-import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
+import { Add, BoolAtom, Float, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
 import { numCmp } from './num';
 import { add, couldExtractMinusSign, knownNonreal, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { at, cast } from './guard';
-import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 const isSpecial = (name: string) => (x: Expr): boolean => x instanceof Special && x.name === name;
@@ -27,6 +27,14 @@ function isFiniteReal(e: Expr): boolean {
 }
 
 /** Create a relation, evaluating it to True/False when the difference is a number. */
+/** Lower bound on factorial(n) when n is a nonnegative integer. */
+export function factorialLowerBound(e: Expr): Rational | undefined {
+  if (!(e instanceof Fn) || e.name !== 'factorial') return undefined;
+  const n = at(e.args, 0);
+  if (isIntegerQ(n) !== true || isNonNegative(n) !== true) return undefined;
+  return isNonNegative(add(n, -2)) === true ? Rational.of(2) : S.One;
+}
+
 export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   const lhs = sympify(a);
   const rhs = sympify(b);
@@ -71,8 +79,21 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     }
   }
   if (!equality && isNum(lhs) && isNum(rhs)) return byCmp(numCmp(lhs, rhs));
+  if (!equality && (lhs instanceof Rational || rhs instanceof Rational)) {
+    const reverse = lhs instanceof Rational;
+    const numeric = reverse ? lhs : rhs;
+    const bound = factorialLowerBound(reverse ? rhs : lhs);
+    if (numeric instanceof Rational && bound !== undefined) {
+      const compared = numCmp(bound, numeric);
+      const test = reverse ? REVERSED[op] : op;
+      if (compared > 0 || compared === 0 && (test === 'Ge' || test === 'Lt')) return test === 'Gt' || test === 'Ge' ? S.true : S.false;
+    }
+  }
   // equal sides (such as oo and oo, whose difference is nan)
-  if (lhs.key === rhs.key) return byCmp(0);
+  if (lhs.key === rhs.key) {
+    if (equality || (lhs instanceof Sym ? lhs.assumptions0.get('extended_real') === true : isReal(lhs) === true)) return byCmp(0);
+    return new Rel(op, lhs, rhs);
+  }
   // SymPy compares bounded integer indices through the extrema of their ranges.
   if (!equality) {
     const interval = (e: Expr): readonly [Expr, Expr] => e instanceof Sym && 'lower' in e && 'upper' in e && e.lower instanceof Expr && e.upper instanceof Expr ? [e.lower, e.upper] : [e, e];
@@ -141,7 +162,7 @@ const relationHeads = { Eq, Ne, Lt, Le, Gt, Ge } as const;
 registerHeadResolver(Rel, (e) => relationHeads[e.op]);
 
 /** SymPy is_number: an expression without symbols (pi/2, sqrt(2)). */
-const isNumber = (e: Expr): boolean => e.freeSymbols().size === 0;
+const isNumber = (e: Expr): boolean => e.kind !== 'Set' && e.freeSymbols().size === 0;
 
 const REVERSED: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
 

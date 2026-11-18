@@ -1028,7 +1028,7 @@ describe("sympy/core/tests/test_power.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rewrite(new Pow(new Add([rational(2), new Mul([rational(3), I])]), x), 'exp', { pattern: [], deep: true }))).toBe('exp(x*(log(sqrt(13)) + I*atan(3/2)))');
   });
-  it.fails("test_power_rewrite_exp:253 (2)", () => {
+  it("test_power_rewrite_exp:253 (2)", () => {
     const y = new Sym('y');
     expect(sympyStr(rewrite(new Pow(y, new Add([rational(5), new Mul([rational(6), I])])), 'exp', { pattern: [], deep: true }))).toBe('exp((5 + 6*I)*log(y))');
   });
@@ -1332,7 +1332,7 @@ describe("sympy/core/tests/test_power.py", () => {
   it("test_better_sqrt:484", () => {
     expect(sympyStr(expandMultinomial(new Pow(new Mul([new Pow(new Add([rational(3), new Mul([rational(-4), I])]), rational(-3)), new Add([rational(3), new Mul([rational(4), I])])]), rational(1, 2))))).toBe('sqrt((-117 + 44*I)*(3 + 4*I))/125');
   });
-  it.fails("test_better_sqrt:485", () => {
+  it("test_better_sqrt:485", () => {
     expect(sympyStr(expand(new Pow(new Mul([new Pow(new Add([rational(3), new Mul([rational(-4), I])]), rational(-3)), new Add([rational(3), new Mul([rational(4), I])])]), rational(1, 2)), {}))).toBe('7/125 - 24*I/125');
   });
   it("test_better_sqrt:489", () => {

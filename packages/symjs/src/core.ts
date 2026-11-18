@@ -61,7 +61,8 @@ export {
 } from './core/nodes';
 export { ExprMap } from './core/exprmap';
 export { Indexed, IndexedBase } from './core/indexed';
-export { Factors } from './core/factors';
+export { Factors, Term } from './core/factors';
+export { FactRules } from './core/facts';
 export { AccumBounds, AccumBoundsNode } from './core/accumbounds';
 export {
   isReal,
@@ -172,6 +173,8 @@ export {
   asDummy,
   assumptions0,
   canonicalVariables,
+  iterFreeArgs,
+  exprFreeSymbols,
   isScalar,
   asExpr,
   copy,
@@ -198,7 +201,7 @@ export {
   PreorderTraversal,
   piecewiseFold,
 } from './core/traverse';
-export { Tuple, TupleNode, Dict, DictNode } from './core/containers';
+export { iterArgs, Tuple, TupleNode, Dict, DictNode } from './core/containers';
 export {
   replace,
   find,
@@ -253,6 +256,7 @@ export {
   fdiff,
 } from './calculus/diff';
 export {
+  FunctionHead,
   SymFunction,
 } from './core/undef';
 export type { UndefinedFunction, FunctionClassLike } from './core/undef';

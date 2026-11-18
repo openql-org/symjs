@@ -224,3 +224,9 @@ it('inverts a numeric expression only for a modulus greater than one', () => {
   expect(() => sj.modInverse(sj.symbol('x'), R(2))).toThrow(TypeError);
   expect(() => sj.modInverse(R(2), sj.symbol('m'))).toThrow(TypeError);
 });
+
+it('converts a high-precision dyadic float without a binary64 round trip', () => {
+  const exact = new sj.Float({ man: 2n ** 70n + 1n, exp: -70n }, 80);
+  expect(rationalFromString('1').key).not.toBe(sj.rationalFromFloat(exact).key);
+  expect(sj.rationalFromFloat(exact).key).toBe(sj.Rational.of(2n ** 70n + 1n, 2n ** 70n).key);
+});

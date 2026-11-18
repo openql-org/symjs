@@ -202,7 +202,7 @@ describe('rewrite of a power as exp (SymPy Pow._eval_rewrite_as_exp)', () => {
     expect(String(rewrite(pow(I, I), 'exp'))).toBe('exp(-pi/2)');
     expect(String(rewrite(P('(2 + 3*I)**x'), 'exp'))).toBe('exp(x*(log(sqrt(13)) + I*atan(3/2)))');
     // a power of a symbol to an exponent without symbols stays a power
-    expect(String(rewrite(pow(x, 2), 'exp'))).toBe('x**2');
+    expect(String(rewrite(pow(x, 2), 'exp'))).toBe('exp(2*log(x))');
     // a power of 0 or one that contains exp is kept
     expect(String(rewrite(new PowNode(s.Zero, x), 'exp'))).toBe('0**x');
     expect(String(rewrite(pow(e(x), y), 'exp'))).toBe('exp(x)**y');
@@ -274,4 +274,18 @@ describe('rewrites between trigonometric, hyperbolic and inverse functions (SymP
   it('rewrites trigonometric functions with Bessel functions', () => {
     for (const f of ['sin(x)', 'cos(x)', 'tan(x)', 'cot(x)', 'sec(x)', 'csc(x)']) agrees(f, 'besselj', 0.7);
   });
+});
+
+it('rewrites equations and number symbols using their defining expressions', async () => {
+  const s = await import('../../src');
+  const [x, y] = symbols('x y');
+  expect(rewrite(s.Eq(x, y), 'Add').key).toBe(x.sub(y).key);
+  expect(rewrite(s.S.GoldenRatio, 'sqrt').toNumber()).toBeCloseTo(s.S.GoldenRatio.toNumber());
+  expect(rewrite(s.S.TribonacciConstant, 'sqrt').toNumber()).toBeCloseTo(s.S.TribonacciConstant.toNumber());
+});
+
+it('rewrites exponential integrals through their two polar boundary values', async () => {
+  const s = await import('../../src');
+  expect(rewrite(s.Shi(s.symbol('x')), 'expint').has(s.S.I)).toBe(true);
+  expect(rewrite(new s.Fn('Ci', [s.symbol('x')]), 'expint').has(s.S.I)).toBe(true);
 });

@@ -150,3 +150,9 @@ describe('precedence of the logic operators (SymPy PRECEDENCE)', () => {
     expect(withPermCyclic(undefined, () => permCyclic())).toBe(true);
   });
 });
+
+it('prints a condition set over the universal base without showing the base', () => {
+  const x = sj.symbol('x');
+  const condition = new sj.Contains(x, sj.Reals);
+  expect(str(new sj.ConditionSet(x, condition, sj.UniversalSet))).toBe('ConditionSet(x, Contains(x, Reals))');
+});

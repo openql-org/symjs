@@ -662,10 +662,10 @@ describe("sympy/core/tests/test_exprtools.py", () => {
   it("test_factor_terms:281", () => {
     expect(sympyStr(factorTerms(new Add([new Pow(rational(2), rational(1, 2)), new Pow(rational(10), rational(1, 2))]), {}))).toBe('sqrt(2) + sqrt(10)');
   });
-  it.fails("test_factor_terms:282", () => {
+  it("test_factor_terms:282", () => {
     expect(sympyStr(factorTerms(new Add([new Pow(rational(2), rational(1, 2)), new Pow(rational(10), rational(1, 2))]), { radical: true }))).toBe('sqrt(2)*(1 + sqrt(5))');
   });
-  it.fails("test_factor_terms:284", () => {
+  it("test_factor_terms:284", () => {
     expect(sympyStr(factorTerms(new Add([new Pow(rational(-6), rational(1, 3)), new Pow(rational(6), rational(1, 3))]), { radical: true }))).toBe('6**(1/3)*(1 + (-1)**(1/3))');
   });
   // the arguments do not type-check against the public API
@@ -743,7 +743,7 @@ describe("sympy/core/tests/test_exprtools.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(factorTerms(Sum(new Add([new Mul([x, y]), new Mul([x, new Pow(y, rational(2))])]), [y, rational(1), rational(10)]), {}))).toBe('x*Sum(y*(y + 1), (y, 1, 10))');
   });
-  it.fails("test_factor_terms:316 (2)", () => {
+  it("test_factor_terms:316 (2)", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(factorTerms(new Integral([x, y, rational(1), rational(10)]), {}))).toBe('x*Integral(1, (y, 1, 10))');
   });

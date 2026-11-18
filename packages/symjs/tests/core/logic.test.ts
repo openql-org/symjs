@@ -314,3 +314,23 @@ it('compares a bounded index against disjoint numeric bounds', () => {
   expect(Lt(i, 5)).toBe(S.true);
   expect(Lt(i, 0)).toBe(S.false);
 });
+
+it('checks realness before ordering identical expressions and bounds factorials', () => {
+  const x = sj.symbol('u');
+  const n = sj.symbol('n', { integer: true, nonnegative: true });
+  const r = sj.symbol('r', { real: true });
+  expect(Lt(x, x)).toBeInstanceOf(sj.Rel);
+  expect(Le(r, r)).toBe(S.true);
+  const f = new sj.Fn('factorial', [n]);
+  const g = new sj.Fn('factorial', [n.add(2)]);
+  expect(Ge(f, 1)).toBe(S.true);
+  expect(Lt(f, 1)).toBe(S.false);
+  expect(Gt(g, 1)).toBe(S.true);
+  expect(Lt(1, g)).toBe(S.true);
+  expect(Gt(f, 2)).toBeInstanceOf(sj.Rel);
+});
+
+it('leaves a factorial comparison undecided when the argument can be negative', () => {
+  const x = sj.symbol('x', { integer: true });
+  expect(Ge(new sj.Fn('factorial', [x]), 1)).toBeInstanceOf(sj.Rel);
+});

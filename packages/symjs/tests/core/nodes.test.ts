@@ -347,3 +347,16 @@ it('computes rational cofactors and promotes mixed inputs to the wider float pre
   expect(low.cofactors(high).map((f) => [f.value, f.prec])).toEqual([[1, 100], [3, 100], [2, 100]]);
   expect(R(4).cofactors(high).map((n) => n.key)).toEqual([new Float(1, 100), new Float(4, 100), high].map((f) => f.key));
 });
+
+it('preserves explicit rational content and detects nonconcrete derivative counts', () => {
+  const x = sj.symbol('x');
+  const n = sj.symbol('n');
+  expect(Rational.of(2, 4, { gcd: 1n }).q).toBe(4n);
+  expect(() => Rational.of(2, 4, { gcd: 0n })).toThrow(RangeError);
+  expect(() => Rational.of(3, 4, { gcd: 2n })).toThrow(RangeError);
+  expect(() => Rational.of(2, 3, { gcd: 2n })).toThrow(RangeError);
+  expect(() => new sj.Derivative([x, x, n]).variableCount).toThrow(RangeError);
+  expect(() => new sj.Derivative([x, x, Rational.of(1, 2)]).variableCount).toThrow(RangeError);
+  expect(() => new sj.Derivative([x, x, Rational.of(2n ** 55n)]).variableCount).toThrow(RangeError);
+  expect(new sj.Derivative([x, x, n]).derivativeOrder.key).toBe(n.key);
+});

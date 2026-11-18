@@ -683,7 +683,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_AccumBounds:227", () => {
+  it("test_AccumBounds:227", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(AccumBounds(rational(0), a))).toBe('AccumBounds(0, a)');
   });

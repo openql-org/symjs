@@ -716,3 +716,13 @@ it('uses the sign of rational and symbolic exponents of zero', () => {
   expect(mul(sj.expPolar(x), sj.expPolar(mul(2, x))).key).toBe(sj.expPolar(mul(3, x)).key);
   expect(mul(sj.expPolar(x), sj.expPolar(sj.neg(x))).key).toBe(S.One.key);
 });
+
+it('splits integer powers with a common exponent without reordering noncommutative factors', () => {
+  const a = sj.symbol('a', { commutative: false });
+  const b = sj.symbol('b', { commutative: false });
+  expect(sj.asBaseExp(sj.mul(x.pow(2), y.pow(2))).map(String)).toEqual(['x*y', '2']);
+  expect(sj.asBaseExp(sj.mul(x.pow(2), y.pow(3))).map(String)).toEqual(['x**2*y**3', '1']);
+  expect(sj.asBaseExp(sj.mul(a.pow(2), b.pow(2))).map(String)).toEqual(['a**2*b**2', '1']);
+  expect(sj.asBaseExp(sj.mul(a.pow(2), x.pow(2))).map(String)).toEqual(['x*a', '2']);
+  expect(sj.asBaseExp(sj.mul(a, b)).map(String)).toEqual(['a*b', '1']);
+});

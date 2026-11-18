@@ -8,6 +8,7 @@
  */
 
 import { type Constant, type Expr, Float, Rational, impl } from './nodes';
+import { toRational } from '../numeric/mpf';
 import { numCmp } from './num';
 import { isPositive } from './assumptions';
 import { at, pair } from './guard';
@@ -15,7 +16,8 @@ import { NoMatch } from './truth';
 import type { NoMatchResult } from './truth';
 
 /** Exact rational value of a double (SymPy Rational(0.2) = 3602879701896397/18014398509481984). */
-export function rationalFromFloat(v: number): Rational {
+export function rationalFromFloat(v: number | Float): Rational {
+  if (v instanceof Float) return Rational.of(...toRational(v.mpf));
   if (!Number.isFinite(v)) throw new RangeError('rationalFromFloat: non-finite value');
   if (Number.isInteger(v)) return Rational.of(BigInt(v));
   const buf = new DataView(new ArrayBuffer(8));
@@ -145,7 +147,7 @@ export function expandSymbolNames(spec: string): string[] {
   }
   return out;
 }
-impl.rationalFromFloat = (f) => rationalFromFloat(f.value);
+impl.rationalFromFloat = rationalFromFloat;
 
 const babs = (n: bigint): bigint => (n < 0n ? -n : n);
 

@@ -380,3 +380,33 @@ it('dispatches expansion hints and top level expansion through extension nodes',
   expect(String(impl.expand?.(pow(add(x, 1), 2)))).toBe('x**2 + 2*x + 1');
   expect(impl.asRealImagExpand?.(x).map(String)).toEqual(['re(x)', 'im(x)']);
 });
+
+it('expands exact numerators, reciprocal products, numeric powers, and logarithm ratios', () => {
+  expect(String(expand(parse('x*(x+1)/y'), { numer: true, exact: true }))).toBe('(x**2 + x)/y');
+  expect(String(expand(parse('1/(y*(x+1))')))).toBe('1/(x*y + y)');
+  expect(String(expandMultinomial(parse('3**(x+y+3)')))).toBe('27*3**(x + y)');
+  expect(String(expandLog(parse('log(42)/log(6)')))).toBe('1 + log(7)/log(6)');
+  expect(String(expandLog(parse('log(42)'), false, { factor: true }))).toBe('log(2) + log(3) + log(7)');
+});
+
+it('expands a principal square root with exact real and imaginary parts', () => {
+  expect(String(expand(parse('sqrt(-527/15625 - 336*I/15625)')))).toBe('7/125 - 24*I/125');
+  expect(String(expand(parse('sqrt(3 + 4*I)')))).toBe('2 + I');
+  expect(String(expand(parse('sqrt(1 + I)')))).toBe('sqrt(1 + I)');
+  expect(String(expandLog(parse('log(7)/log(3)')))).toBe('log(7)/log(3)');
+});
+
+it('keeps nonrational roots and expands a positive imaginary component exactly', () => {
+  expect(String(expand(parse('sqrt(3+4*I)')))).toBe('2 + I');
+  expect(String(expand(parse('sqrt(2+I)')))).toBe('sqrt(2 + I)');
+  expect(String(expandLog(parse('log(1)'), false, { factor: true }))).toBe('0');
+});
+
+it('retains an irreducible complex square root and handles unevaluated special cases', async () => {
+  const s = await import('../../src');
+  const p = new s.Pow(add(6, mul(8, I)), s.S.Half);
+  expect(expandMultinomial(p).key).toBe(p.key);
+  const zeroPower = new s.Pow(s.S.Zero, new s.Add([s.S.Two, s.S.One]));
+  expect(expandMultinomial(zeroPower)).toBe(s.S.Zero);
+  expect(expandLog(new s.Fn('log', [s.S.One])).key).toBe(s.S.Zero.key);
+});

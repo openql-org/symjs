@@ -6,6 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
+import { MatMulNode } from '../../src/matrices/expressions/matexpr';
+import { impl } from '../../src/core/nodes';
 import {
   Derivative,
   Dummy,
@@ -423,4 +425,25 @@ it('distinguishes names of extension calls sharing a node class', () => {
   expect(sj.match(new Call('g', [x]), new Call('f', [w]))).toBeInstanceOf(sj.NoMatchResult);
   const result = sj.match(new Call('f', [x]), new Call('f', [w]));
   expect(result instanceof Map ? String(result.get(w)) : '').toBe('x');
+});
+
+it('controls rematching of a child exposed by rebuilding', () => {
+  const [x, y] = sj.symbols('x y');
+  const original = sj.mul(y, sj.sin(x));
+  const reduce = (arg: sj.Expr) => sj.sin(arg).div(y);
+  const [value, mapping] = sj.replace(original, { fn: 'sin' }, reduce, { map: true }) as [sj.Expr, Map<sj.Expr, sj.Expr>];
+  expect(value.key).toBe(sj.sin(x).key);
+  expect(mapping.size).toBe(1);
+  expect((sj.replace(original, { fn: 'sin' }, reduce, { simultaneous: false }) as sj.Expr).key).toBe(reduce(x).key);
+  const order = sj.O(x.sub(1).pow(3), x, 1);
+  expect(sj.replace(order, { type: 'Pow' }, (base, exponent) => base.pow(exponent).div(exponent))).toBeInstanceOf(sj.Order);
+});
+
+it('counts operations in a matrix product and matches through the registered hook', () => {
+  const x = sj.symbol('x');
+  const a = sj.MatrixSymbol('A', 2, 2), b = sj.MatrixSymbol('B', 2, 2);
+  expect(impl.match?.(x, x)).toEqual(new Map());
+  expect(String(sj.countOps(new MatMulNode([sj.S.NegOne, a]), { visual: true }))).toBe('NEG');
+  expect(String(sj.countOps(new MatMulNode([sj.S.NegOne, a, b]), { visual: true }))).toBe('MATMUL + NEG');
+  expect(String(sj.countOps(new MatMulNode([a, b]), { visual: true }))).toBe('MATMUL');
 });

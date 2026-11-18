@@ -318,3 +318,20 @@ it('distinguishes same-name dummies when substituting numeric values', () => {
   expect(a.evalf(20, { subs: new Map([[a, S.ComplexInfinity]]) })).toBe(S.ComplexInfinity);
   expect(sj.Subs(a, a, b).evalf(15, { subs: { x: 2 } }).toNumber()).toBe(2);
 });
+
+it('raises for ambiguous cancellation at the precision limit in strict mode', () => {
+  const uncertain = new sj.Fn('sin', [sj.mul(160, S.Pi)]);
+  expect(() => uncertain.evalf(15, { maxn: 100, strict: true })).toThrow(sj.PrecisionExhausted);
+  expect(uncertain.evalf(15, { chop: true, strict: true })).toBe(S.Zero);
+  expect(sj.sqrt(2).evalf(15, { maxn: 90, strict: true }).toNumber()).toBeCloseTo(Math.SQRT2);
+});
+
+it('evaluates an unevaluated zero integral exactly', () => {
+  const x = sj.symbol('x');
+  expect(new sj.Integral([S.Zero, x, x, x]).evalf()).toBe(S.Zero);
+});
+
+it('reports lost accuracy when inexact terms cancel to a zero mantissa', () => {
+  const e = new sj.Add([sj.S.Pi, sj.neg(sj.S.Pi)]);
+  expect(() => e.evalf(15, { strict: true })).toThrow(sj.PrecisionExhausted);
+});

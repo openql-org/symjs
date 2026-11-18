@@ -55,3 +55,16 @@ it('rejects empty arities and invalid derivative orders and removes zero counts'
   expect(() => sj.derivative(f, [[x, 0.5]])).toThrow(RangeError);
   expect(String(sj.derivative(sj.derivative(f, [[x, 1]]), [[x, 0], [x, 1]]))).toBe('Derivative(f(x), (x, 2))');
 });
+
+it('merges and cancels symbolic orders while preserving their free symbols', () => {
+  const [x, y, n] = sj.symbols('x y n');
+  const f = sj.SymFunction('f')(x, y);
+  const d = sj.derivative(f, [[x, n], [y, 1], [x, 2]], true);
+  expect(String(d)).toBe('Derivative(f(x, y), (x, n + 2), y)');
+  expect([...d.freeSymbols()].map(String)).toEqual(['x', 'y', 'n']);
+  expect(sj.derivative(f, [[x, n], [x, n.neg()]])).toBe(f);
+  expect(() => sj.derivative(f, [[x, 0.5]])).toThrow(RangeError);
+  expect(() => sj.derivative(f, [[x, sj.Rational.of(1, 2)]])).toThrow(RangeError);
+  expect(() => sj.derivative(f, [[x, -1]])).toThrow(RangeError);
+  expect(sj.derivative(f, [[x, sj.symbol('z', { zero: true })]])).toBe(f);
+});

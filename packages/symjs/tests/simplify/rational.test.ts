@@ -261,3 +261,13 @@ describe('numer and denom', () => {
     expect(String(denom(P('x*y**(-n)'), { exact: true }))).toBe(String(fraction(P('x*y**(-n)'), { exact: true })[1]));
   });
 });
+
+it('cancels scalar factors while preserving the noncommuting word', async () => {
+  const s = await import('../../src');
+  const a = s.symbol('A', { commutative: false }), b = s.symbol('B', { commutative: false });
+  const x = s.symbol('x');
+  const product = s.mul(a, b);
+  expect(String(s.cancel(s.mul(product, x.pow(2).sub(1), x.add(1).pow(-1))))).toBe('(x - 1)*A*B');
+  expect(s.cancel(product).key).toBe(product.key);
+  expect(String(s.cancel(s.mul(x.add(1), x.add(1).pow(-1)), { domain: 'QQ' }))).toBe('1');
+});

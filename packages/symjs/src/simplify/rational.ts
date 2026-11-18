@@ -132,7 +132,12 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
  */
 export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
   if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined) return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(sympify(ex), opts);
-  const e = together(sympify(ex));
+  const input = sympify(ex);
+  if (input instanceof Mul && !input.isCommutative) {
+    const scalars = input.args.filter((a) => a.isCommutative);
+    if (scalars.length) return mul(cancel(mul(...scalars)), ...input.args.filter((a) => !a.isCommutative));
+  }
+  const e = together(input);
   let [n, d] = fraction(e);
   // SymPy as_numer_denom of sums (also inside products): the terms' denominators, also those of exp(-x) = 1/exp(x)
   if (n instanceof Add || n instanceof Mul) {
@@ -420,7 +425,7 @@ function leadingUnit(d: Expr, gens: readonly Expr[]): Expr | undefined {
 const lexGreater = (a: readonly number[], b: readonly number[]): boolean =>
   a.reduce<boolean | undefined>((r, v, i) => r ?? (v !== at(b, i) ? v > at(b, i) : undefined), undefined) === true;
 
-impl.fraction = (e) => fraction(e);
+impl.fraction = fraction;
 
 /** SymPy ratsimp: polynomial part plus a cancelled remainder over a single denominator. */
 export function ratsimp(ex: ExprLike): Expr {

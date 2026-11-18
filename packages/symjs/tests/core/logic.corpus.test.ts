@@ -3551,7 +3551,7 @@ describe("sympy/core/tests/test_relational.py", () => {
     const [q, r] = symbols('q r');
     expect(sympyStr(simplify(Relational(new Add([new Mul([rational(-2), q]), new Mul([rational(2), r])]), rational(0), '<=', { evaluate: false })))).toBe('q >= r');
   });
-  it.fails("test_simplify_relational:729", () => {
+  it("test_simplify_relational:729", () => {
     const [r, q] = symbols('r q');
     expect(sympyStr(simplify(Relational(new Add([new Mul([new Pow(rational(2), rational(1, 2)), new Add([r, new Mul([rational(-1), q])])]), new Mul([rational(-1), new Pow(rational(2), rational(1, 2)), new Add([q, new Mul([rational(-1), r])])])]), rational(0), '<=', { evaluate: false })))).toBe('q >= r');
   });
@@ -3862,7 +3862,7 @@ describe("sympy/core/tests/test_relational.py", () => {
   it("test_issue_10304:884", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_issue_18412:891", () => {
+  it("test_issue_18412:891", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(replace(Relational(x, new Mul([pi, new Pow(y, rational(3)), new Add([rational(1, 6), new Mul([rational(1, 4), z, new Pow(y, rational(-1))])])]), '==', { evaluate: false }), new Pow(y, rational(3)), z))).toBe('Eq(x, pi*z*(1/6 + z/(4*y)))');
   });
@@ -4602,11 +4602,11 @@ describe("sympy/core/tests/test_relational.py", () => {
   it("test_is_eq:1188", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_eq:1189", () => {
+  it("test_is_eq:1189", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(isEq(x, y, And(Q.extended_real(x), Q.infinite(x), Q.infinite(y), Not(Q.extended_real(y)))))).toBe('False');
   });
-  it.fails("test_is_eq:1190", () => {
+  it("test_is_eq:1190", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(isEq(x, y, And(Q.extended_negative(y), Q.extended_positive(x), Q.infinite(x), Q.infinite(y))))).toBe('False');
   });
@@ -4716,7 +4716,7 @@ describe("sympy/core/tests/test_relational.py", () => {
     const nr = new Sym('nr', { rational: false });
     expect(sympyStr(Relational(nr, new Float(0.1), '==', { evaluate: true }))).toBe('False');
   });
-  it.fails("test_rewrite_Add:1271", () => {
+  it("test_rewrite_Add:1271", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(Relational(x, y, '==', { evaluate: false }), 'Add', { pattern: [], deep: true }))).toBe('x - y');
   });

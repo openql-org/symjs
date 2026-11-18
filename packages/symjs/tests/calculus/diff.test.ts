@@ -337,3 +337,22 @@ it('handles unavailable extension and function derivatives and bound indices', a
   const base = new sj.IndexedBase('A');
   expect(() => diff(base.at(x), base.at(x, y))).toThrow('different number of indices');
 });
+
+it('keeps unknown derivative orders and evaluates orders of atomic symbols', async () => {
+  const s = await import('../../src');
+  const [x, y, n] = s.symbols('x y n');
+  const p = s.symbol('p', { integer: true, positive: true });
+  const f = s.SymFunction('f')(x, y);
+  expect(String(f.diff(x, n))).toBe('Derivative(f(x, y), (x, n))');
+  expect(String(x.diff(x, n))).toBe('Piecewise((x, Eq(n, 0)), (1, Eq(n, 1)), (0, True))');
+  expect(String(y.diff(x, n))).toBe('Piecewise((y, Eq(n, 0)), (0, True))');
+  expect(y.diff(x, p)).toBe(s.S.Zero);
+  expect(String(s.doit(f.diff(x, n).subs(n, 2)))).toBe('Derivative(f(x, y), (x, 2))');
+  expect(f.diff(x, n).key).toBe(s.derivative(f, [[x, n]]).key);
+});
+
+it('treats a symbol in a bound summand as independent', async () => {
+  const s = await import('../../src');
+  const x = s.symbol('x');
+  expect(s.diff(new s.Concrete('Sum', [x, x, s.S.One, s.S.Two]), x)).toBe(s.S.Zero);
+});

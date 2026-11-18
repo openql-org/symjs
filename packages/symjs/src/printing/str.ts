@@ -227,7 +227,7 @@ function strInner(e: Expr): string {
     return `${e.kind2}(${str(e.function)}, ${e.limits.map(([k, a, b]) => `(${str(k)}, ${str(a)}, ${str(b)})`).join(', ')})`;
   }
   if (e instanceof Derivative) {
-    const vs = e.variableCount.map(([v, n]) => (n === 1 ? str(v) : `(${str(v)}, ${n})`));
+    const vs = e.variableOrders.map(([v, n]) => (n.key === '1' ? str(v) : `(${str(v)}, ${str(n)})`));
     return `Derivative(${str(e.expr)}, ${vs.join(', ')})`;
   }
   if (e instanceof Limit) {

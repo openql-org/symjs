@@ -262,7 +262,7 @@ export function fmt(v: unknown): string {
   if (v instanceof sj.Poly) return v.toString();
   if (v instanceof sj.AlgebraicNumber) return sj.str(v.asExpr());
   if (v instanceof sj.GroebnerBasis) return v.toString();
-  if (v instanceof sj.Monomial || v instanceof sj.Factors || v instanceof sj.DomainMatrix) return v.toString();
+  if (v instanceof sj.Monomial || v instanceof sj.Term || v instanceof sj.Factors || v instanceof sj.DomainMatrix) return v.toString();
   if (v instanceof JsFloat) return Number.isInteger(v.v) ? v.v.toFixed(1) : String(v.v);
   if (v instanceof Error) return v.message;
   if (v instanceof Map) return fmt(new JsDict([...v]));
@@ -653,7 +653,13 @@ function polyMatrixArgs(args: unknown[], kw: Record<string, unknown>): unknown[]
 /** The parameter tuples of a serialized hyper or meijerg. */
 const tupleItems = (t: unknown): Expr[] => (t as JsTuple).items.map((x) => x as Expr);
 
+const fooFixture = sj.defineFunction('foo');
+const signInvariantFixture = sj.defineFunction('sign_invariant');
+const identityFixture = sj.defineFunction('identity_func', { eval: (value: Expr) => value });
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
+  foo: (args) => fooFixture(...args),
+  identity_func: (args) => identityFixture(...args),
+  sign_invariant: (args) => signInvariantFixture(...args),
   Dagger: ([x]) => sj.adjoint(definedOr(x, 'Dagger operand')),
   MellinTransform: ([f, x, s]) => new sj.MellinTransform(asExpr(f), asExpr(x), asExpr(s)),
   FourierTransform: ([f, x, s]) => new sj.FourierTransform(asExpr(f), asExpr(x), asExpr(s)),
@@ -734,6 +740,12 @@ function reduceAbs(e: Expr, op: string, x: Sym): Expr {
   const r = OP_STR[op];
   if (!r) throw new Unsupported(`relation ${op}`);
   return sj.solveUnivariateInequality(sj.rel(r, e, S.Zero), x);
+}
+
+function subsOperand(value: unknown): Expr {
+  if (value instanceof FnClass) return new sj.FunctionHead(value.name, (...xs) => applyFn(value.name, xs));
+  if (value instanceof UFnClass) return new sj.FunctionHead(value.name, sj.SymFunction(value.name, { nargs: value.nargs }), value.nargs);
+  return asExpr(value);
 }
 
 function integralNode(args: unknown[]): Expr {
@@ -899,7 +911,7 @@ export function deserialize(tree: Tree): unknown {
       return tree['v'];
     case 'Rational':
       if (tree['mpq']) return new sj.PythonMPQ(BigInt(tree['p'] as string), BigInt(tree['q'] as string));
-      return sj.Rational.of(BigInt(tree['p'] as string), BigInt(tree['q'] as string));
+      return sj.Rational.of(BigInt(tree['p'] as string), BigInt(tree['q'] as string), { gcd: 1n });
     case 'GaussianElement': {
       // an element x + y*I of ZZ_I or QQ_I
       const dom = tree['domain'] === 'ZZ_I' ? sj.ZZ_I : sj.QQ_I;
@@ -1296,8 +1308,8 @@ export function deserialize(tree: Tree): unknown {
     case 'Subs':
       return sj.Subs(
         deserialize(tree['expr'] as Tree) as Expr,
-        (tree['vars'] as Tree[]).map((x) => deserialize(x) as Expr) as never,
-        (tree['point'] as Tree[]).map((x) => deserialize(x) as Expr) as never,
+        (tree['vars'] as Tree[]).map((a) => subsOperand(deserialize(a))),
+        (tree['point'] as Tree[]).map((a) => subsOperand(deserialize(a))),
       );
     case 'MatExpr': {
       const cls = tree['cls'] as string;
@@ -1512,11 +1524,11 @@ export function deserialize(tree: Tree): unknown {
       return sj.SymFunction(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))));
     case 'Derivative': {
       const expr = deserialize(tree['expr'] as Tree) as Expr | Matrix;
-      const variables = (tree['vc'] as [Tree, number][]).map(([v, n]): [Expr | Matrix, number] => [deserialize(v) as Expr | Matrix, n]);
+      const variables = (tree['vc'] as [Tree, number | Tree][]).map(([v, n]): [Expr | Matrix, number | Expr] => [deserialize(v) as Expr | Matrix, typeof n === 'number' ? n : asExpr(deserialize(n))]);
       const shaped = (value: Expr | Matrix) => value instanceof Matrix || value instanceof sj.MatrixExpr || value instanceof sj.NDimArray || value instanceof sj.ArrayExpr;
       // The original corpus serialized ArrayDerivative using its Derivative base tag.
-      if (shaped(expr) || variables.some(([v]) => shaped(v))) return sj.ArrayDerivative(expr, ...variables);
-      return sj.derivative(expr as Expr, variables as [Expr, number][]);
+      if (shaped(expr) || variables.some(([v]) => shaped(v))) return sj.ArrayDerivative(expr, ...variables.map(([v, n]): [Expr | Matrix, number] => [v, intArg(n)]));
+      return sj.derivative(expr as Expr, variables as [Expr, number | Expr][]);
     }
     case 'Dict':
       return new JsDict((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k), deserialize(v)] as const));
@@ -1782,13 +1794,12 @@ function rootsDict(rs: Expr[]): JsDict {
 }
 
 function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
-  const differentiate = (expression: Expr, variable: Expr, order = 1): Expr => evaluate
-    ? sj.diff(expression, variable, order) : sj.derivative(expression, [[variable, order]]);
+  const differentiate = (expression: Expr, variable: Expr, order: sj.ExprLike = 1): Expr => sj.diff(expression, variable, order);
   if (!evaluate) {
-    const variables: [Expr, number][] = [];
+    const variables: [Expr, sj.ExprLike][] = [];
     for (let i = 0; i < rest.length; i++) {
       const spec = rest[i];
-      if (spec instanceof JsTuple || spec instanceof JsList) variables.push([asExpr(spec.items[0]), intArg(spec.items[1])]);
+      if (spec instanceof JsTuple || spec instanceof JsList) variables.push([asExpr(spec.items[0]), asExpr(spec.items[1])]);
       else {
         const n = rest[i + 1];
         variables.push([typeof spec === 'string' ? sj.symbol(spec) : asExpr(spec), n instanceof sj.Rational ? intArg(n) : 1]);
@@ -1808,7 +1819,7 @@ function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
     if (spec instanceof JsTuple || spec instanceof JsList) {
       if (spec.items.length !== 2) throw new TypeError('diff requires a (variable, order) pair');
       if (rest[i + 1] instanceof sj.Rational) throw new TypeError('diff variable-order pair cannot be followed by a number');
-      out = differentiate(out, asExpr(spec.items[0]), intArg(spec.items[1]));
+      out = differentiate(out, asExpr(spec.items[0]), asExpr(spec.items[1]));
       continue;
     }
     const v = typeof rest[i] === 'string' ? sj.symbol(String(rest[i])) : asExpr(rest[i]);
@@ -1852,7 +1863,7 @@ function subsArgs(e: Expr, args: readonly unknown[]): Expr {
   throw new RangeError('subs requires a mapping or a sequence of pairs');
 }
 
-const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force', 'func', 'frac', 'numer', 'denom', 'diracdelta', 'wrt', 'modulus'];
+const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force', 'func', 'frac', 'numer', 'denom', 'exact', 'factor', 'diracdelta', 'wrt', 'modulus'];
 function expandHints(kw: Record<string, unknown>): sj.ExpandHints {
   for (const k of Object.keys(kw)) if (!HINTS.includes(k)) throw new Unsupported(`expand hint ${k}`);
   // wrt (the variable of the diracdelta hint) is an expression
@@ -1922,13 +1933,15 @@ const polyM =
   };
 
 function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown>): unknown {
-  for (const k of Object.keys(kw)) if (!['subs', 'n', 'chop'].includes(k)) {
-    if (['strict', 'maxn', 'quad', 'verbose'].includes(k)) throw new Unsupported(`evalf kwarg ${k}`);
+  for (const k of Object.keys(kw)) if (!['subs', 'n', 'chop', 'strict', 'maxn'].includes(k)) {
+    if (['quad', 'verbose'].includes(k)) throw new Unsupported(`evalf kwarg ${k}`);
     throw new TypeError(`unknown evalf keyword ${k}`);
   }
   const n = args.length ? intArg(args[0]) : kw['n'] !== undefined ? intArg(kw['n']) : 15;
   if (args.length > 1) throw new Unsupported('evalf args');
   const opts: sj.EvalfOptions = {};
+  if (kw['strict'] !== undefined) opts.strict = Boolean(kw['strict']);
+  if (kw['maxn'] !== undefined) opts.maxn = intArg(kw['maxn']);
   const subs = kw['subs'];
   if (subs !== undefined) {
     if (!(subs instanceof JsDict)) throw new TypeError('evalf substitutions must be a mapping');
@@ -1998,6 +2011,16 @@ function relationArgs(args: unknown[], kw: Record<string, unknown>, op: string):
 }
 
 export const ADAPTERS: Record<string, Adapter> = {
+  FactRules: (args, kw) => {
+    noKw(kw);
+    const rules = args[0];
+    if (typeof rules !== 'string') throw new Unsupported('FactRules requires rule text');
+    return new sj.FactRules(rules);
+  },
+  Term: (args, kw) => {
+    noKw(kw);
+    return new sj.Term(asExpr(args[0]), args[1] instanceof sj.Factors ? args[1] : undefined, args[2] instanceof sj.Factors ? args[2] : undefined);
+  },
   as_mpmath: (args, kw) => {
     noKw(kw);
     const opts = args[2];
@@ -2016,6 +2039,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const keys = check instanceof JsDict ? check.entries.map(([k]) => k) : check instanceof JsTuple || check instanceof JsList || check instanceof JsSet ? check.items : undefined;
     return fromJs(sj.assumptions(asExpr(args[0]), keys?.map(String)));
   },
+  '.expr_free_symbols': (_args, kw, self) => (noKw(kw), fromJs(sj.exprFreeSymbols(asExpr(self)))),
   '.is_rational': (_args, kw, self) => (noKw(kw), none(new sj.AssumptionsWrapper(asExpr(self)).isRational)),
   '.is_infinite': (_args, kw, self) => (noKw(kw), none(sj.isInfinite(asExpr(self)))),
   failing_assumptions: (args, kw) => fromJs(sj.failingAssumptions(asExpr(args[0]), kw as sj.AssumptionValues)),
@@ -2185,33 +2209,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   Subs: (args, kw) => {
     noKw(kw);
-    const many = (a: unknown) => (a instanceof JsTuple ? a.items.map(asExpr) : asExpr(a));
+    const many = (a: unknown) => (a instanceof JsTuple ? a.items.map(subsOperand) : subsOperand(a));
     return sj.Subs(asExpr(args[0]), many(args[1]), many(args[2]));
   },
   Derivative: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
-    if (kw['evaluate'] === true) {
-      let e = asExpr(args[0]);
-      for (const a of args.slice(1)) {
-        if (a instanceof JsTuple) e = sj.diff(e, asExpr(a.items[0]), Number((a.items[1] as sj.Rational).p));
-        else e = sj.diff(e, asExpr(a));
-      }
-      return e;
-    }
-    const e = asExpr(args[0]);
-    const vc: [Expr, number][] = [];
-    for (let i = 1; i < args.length; i++) {
-      const a = args[i];
-      if (a instanceof JsTuple) vc.push([asExpr(a.items[0]), intArg(a.items[1])]);
-      else {
-        const count = args[i + 1];
-        if (count instanceof sj.Rational || typeof count === 'number') {
-          vc.push([asExpr(a), intArg(count)]);
-          i++;
-        } else vc.push([asExpr(a), 1]);
-      }
-    }
-    return sj.derivative(e, vc);
+    return diffArgs(asExpr(args[0]), args.slice(1), kw['evaluate'] === true);
   },
   symbols: (args, kw) => {
     const a: Record<string, boolean> = {};
@@ -2475,11 +2478,19 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   S: (args, kw) => ADAPTERS['sympify']!(args, kw),
   Rational: (args, kw) => {
-    noKw(kw);
-    const conv = (v: unknown): Expr =>
-      typeof v === 'string' ? sj.rationalFromString(v) : v instanceof sj.Float ? sj.rationalFromFloat(v.value) : asExpr(v);
-    const [p, q] = args.map(conv);
-    return q ? sj.mul(p!, sj.pow(q, -1)) : p;
+    for (const k of Object.keys(kw)) if (k !== 'gcd') throw new Unsupported(`kwargs ${k}`);
+    const conv = (v: unknown): sj.Rational => {
+      if (typeof v === 'string') return sj.rationalFromString(v);
+      const expr = asExpr(v);
+      if (expr instanceof sj.Float) return sj.rationalFromFloat(expr);
+      if (expr instanceof sj.Rational) return expr;
+      throw new TypeError('Rational requires numeric arguments');
+    };
+    const p = conv(args[0]);
+    if (args.length === 1) return p;
+    const q = conv(args[1]);
+    const g = kw['gcd'] === undefined ? undefined : integerBigArg(kw['gcd']);
+    return sj.Rational.of(p.p * q.q, p.q * q.p, { gcd: g });
   },
   Integer: (args, kw) => {
     noKw(kw);
@@ -3131,7 +3142,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   numer_expand: (args, kw) => sj.expand(asExpr(args[0]), { ...expandHints(kw), numer: true }),
   expand_mul: exprFn(sj.expand_mul),
   expand_multinomial: exprFn(sj.expand_multinomial),
-  expand_log: (args, kw) => sj.expand_log(asExpr(args[0]), Boolean(kw['force'])),
+  expand_log: (args, kw) => sj.expand_log(asExpr(args[0]), Boolean(kw['force']), { deep: kw['deep'] !== false, factor: kw['factor'] === true }),
   expand_power_exp: exprFn((e) => sj.expand_power_exp(e)),
   expand_power_base: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'force' && k !== 'deep') throw new Unsupported(`kwargs ${k}`);
@@ -3273,18 +3284,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof Matrix) throw new TypeError('applyfunc requires a callable');
     throw new Unsupported('applyfunc receiver');
   },
-  '.as_dummy': (_args, kw, self) => {
-    noKw(kw);
-    if (self instanceof Sym && !(self instanceof sj.Dummy)) return new sj.Dummy(self.name, self.assumptions);
-    if (self instanceof sj.Integral && self.args.length === 2) return self;
-    if (self instanceof sj.Integral) {
-      // bound variable replaced by a Dummy named 0 (SymPy as_dummy)
-      const d = new sj.Dummy('0');
-      const v = self.args[1]!;
-      return new sj.Integral([sj.xreplace(self.args[0]!, [[v, d]]), d, ...self.args.slice(2)]);
-    }
-    throw new Unsupported('as_dummy');
-  },
+  '.as_dummy': exprMethod(sj.asDummy),
   LambertW: (args, kw) => (noKw(kw), sj.LambertW(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
   '.is_same': (args, kw, self) => {
     noKw(kw);
@@ -4246,7 +4246,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.replace': (args, kw, self) => {
     if (self instanceof sj.Poly) return (noKw(kw), self.replace(asExpr(args[0]), asExpr(args[1])));
-    for (const k of Object.keys(kw)) if (!['exact', 'map'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['exact', 'map', 'simultaneous'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const q = toQuery(args[0]);
     const v = args[1];
     let value: sj.Replacement;
@@ -4263,10 +4263,12 @@ export const ADAPTERS: Record<string, Adapter> = {
           v.call(...v.vars.map((p) => vals[ws.findIndex((w) => w.name === (p as Sym).name)] ?? S.Zero));
       } else value = (...vals: Expr[]) => v.call(...vals);
     } else value = v instanceof FnClass || v instanceof UFnClass ? { fn: v.name } : v instanceof TypeRef ? { type: v.name } : asExpr(v);
+    if (typeof q === 'object' && !(q instanceof Expr) && value instanceof Expr) throw new TypeError('a type query requires a type or callable replacement');
     if (self instanceof Matrix) return self.replace(q, value, { exact: kw['exact'] === undefined ? undefined : Boolean(kw['exact']), apply: applyFn });
     const r = sj.replace(asExpr(self), q, value, {
       exact: kw['exact'] === undefined ? undefined : Boolean(kw['exact']),
       map: Boolean(kw['map']),
+      simultaneous: kw['simultaneous'] !== false,
       apply: applyFn,
     });
     if (Array.isArray(r)) return new JsTuple([r[0], new JsDict([...r[1]])]);
@@ -4448,7 +4450,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsSet(sj.atoms(self instanceof JsTuple ? expressionContainer(self) : asExpr(self), pred));
   },
   '.as_ordered_terms': (args, kw, self) => {
-    for (const k of Object.keys(kw)) if (k !== 'order') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'order' && k !== 'data') throw new Unsupported(`kwargs ${k}`);
+    if (kw['data'] === true) return ADAPTERS['.as_terms']!(args, {}, self);
     if (kw['order'] !== undefined) return new JsList(sj.asOrderedTerms(asExpr(self), String(kw['order']) as sj.TermOrder));
     // with a monomial ordering ('lex', 'rev-lex', 'grlex', ...)
     if (args.length) return new JsList(sj.asOrderedTerms(asExpr(self), args[0] as sj.TermOrder));
@@ -5667,7 +5670,7 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
 const pythonTypeError = (message: string): never => { throw new TypeError(message); };
 
 const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknown>> = {
-  '.__add__': (a, [b]) => (Array.isArray(a) && (b instanceof sj.ModuleElement || b instanceof sj.SubModule) ? b.add(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
+  '.__add__': (a, [b]) => a instanceof JsLambda || b instanceof JsLambda ? sj.add(asExpr(lambdaAsNode(a)), asExpr(lambdaAsNode(b))) : (Array.isArray(a) && (b instanceof sj.ModuleElement || b instanceof sj.SubModule) ? b.add(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
   '.__sub__': (a, [b]) => (Array.isArray(a) && b instanceof sj.ModuleElement ? b.neg().add(a) : undefined) ?? (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? (isScalar(a) && b instanceof sj.DMPJs ? b.neg().add(a) : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
   '.__mul__': (a, [b]) => (b instanceof sj.Point && isScalar(a) ? b.mul(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && (b instanceof sj.PolyMatrix || b instanceof sj.DomainMatrix) ? pythonTypeError(`can't multiply sequence by non-int of type '${b.constructor.name}'`) : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
@@ -6023,6 +6026,7 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.fn === '.free_symbols' && (c.self?.t === 'FnClass' || c.self?.t === 'UFnClass')) return (_args, kw) => (noKw(kw), new JsSet([]));
   if (c.fn === 'Str') return (args, kw) => {
     noKw(kw);
     if (typeof args[0] !== 'string' || args.length !== 1) throw new TypeError('Str requires one string argument');
@@ -6124,6 +6128,11 @@ function autoAdapter(c: Case): Adapter | undefined {
     const name = args[0] instanceof JsTuple ? args[0].items as [string | Sym, Sym] : args[0] as string | Sym;
     const expressions = args[1] instanceof JsTuple ? args[1].items.map(asExpr) : args[1] === undefined ? [] : asExpr(args[1]);
     return sj.uniquelyNamedSymbol(name, expressions, kw);
+  };
+  if (c.fn === 'iterargs' || c.fn === 'iterfreeargs') return (args, kw) => {
+    noKw(kw);
+    const e = asExpr(args[0]);
+    return fromJs(c.fn === 'iterargs' ? sj.iterArgs(e) : sj.iterFreeArgs(e));
   };
   if (c.fn === 'postorder_traversal') return (args, kw) => {
     const node = (value: unknown): unknown => value instanceof JsTuple ? value.items.map(node) : value;
@@ -6520,7 +6529,7 @@ function autoAdapter(c: Case): Adapter | undefined {
     const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow, RisingFactorial: function RisingFactorial(x: Expr, k: Expr) { return sj.rf(x, k); }, FallingFactorial: function FallingFactorial(x: Expr, k: Expr) { return sj.ff(x, k); }, PowerSet: sj.PowerSet, Contains: (x: Expr, s: sj.SetExpr) => new sj.Contains(x, s) };
     if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[REL_OPS[x.name] ?? camel(x.name)];
     const headName = String(c.args?.[0]?.['name']);
-    if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);
+    if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge', 'Lambda'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);
     if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
     // The dense tools keep GF(p) coefficients as field elements: a zero-order derivative returns them unchanged.
     const fieldElements = (v: unknown): unknown => v instanceof JsFFElement ? plain(v) : v instanceof JsList ? new JsList(v.items.map(fieldElements)) : v instanceof JsTuple ? new JsTuple(v.items.map(fieldElements)) : v;
@@ -7001,7 +7010,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') ? undefined : auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       // (a DomainMatrix error is the method's own result)
-      if (!auto || (self === undefined && ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'loggamma'].includes(c.fn)) || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (['parse_expr', 'Dict', '.has_free', '.has_xfree', '.evalf', '.n'].includes(c.fn) && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
+      if (!auto || (self === undefined && ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'loggamma'].includes(c.fn)) || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (['parse_expr', '.diff', '.replace', 'Dict', '.has_free', '.has_xfree', '.evalf', '.n'].includes(c.fn) && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }

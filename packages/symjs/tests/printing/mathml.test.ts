@@ -293,3 +293,10 @@ it('prints vector components with unit and negative coefficients', () => {
 it('prints the zero vector as a bold hatted zero', () => {
   expect(mathml(sj.Vector.zero, { printer: 'presentation' })).toBe('<mover><mi mathvariant="bold">0</mi><mo>^</mo></mover>');
 });
+
+it('prints symbolic derivative orders in both MathML forms', () => {
+  const [x, n] = sj.symbols('x n');
+  const d = sj.SymFunction('f')(x).diff(x, n);
+  expect(mathml(d)).toContain('<degree><ci>n</ci></degree>');
+  expect(mathml(d, { printer: 'presentation' })).toContain('<mi>n</mi>');
+});

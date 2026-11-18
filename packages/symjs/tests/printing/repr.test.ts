@@ -203,3 +203,8 @@ it('distinguishes native tuples from lists and symbolic Tuple nodes', () => {
   expect(srepr({ tupleItems: [x] })).toBe("(Symbol('x'),)");
   expect(srepr({ tupleItems: [x, { tupleItems: [y, 1] }] })).toBe("(Symbol('x'), (Symbol('y'), 1))");
 });
+
+it('preserves symbolic derivative counts in expression representations', () => {
+  const [x, n] = sj.symbols('x n');
+  expect(srepr(sj.SymFunction('f')(x).diff(x, n))).toContain("(Symbol('x'), Symbol('n'))");
+});

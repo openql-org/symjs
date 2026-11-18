@@ -526,3 +526,20 @@ it('uses an integral float exponent only when the coefficient ratio is exactly i
   const nearSix = sj.Rational.of(6n * 10n ** 20n + 1n, 10n ** 20n);
   expect(power(nearSix).subs(power(new sj.Float(3)), z).key).toBe(power(nearSix).key);
 });
+
+it('visits limits, piecewise branches and derivative specifications as tuples', () => {
+  const [x, n] = sj.symbols('x n');
+  const limit = new sj.Integral([x, x, sj.S.Zero, sj.S.One]);
+  expect([...sj.iterArgs(limit)].map(String)).toEqual(['Integral(x, (x, 0, 1))', 'x', '(x, 0, 1)', 'x', '0', '1']);
+  const d = sj.derivative(x, [[x,n]]);
+  expect([...sj.iterArgs(d)].map(String)).toContain('(x, n)');
+  expect([...sj.iterArgs(sj.Sum(x, [x, 1, n]))].map(String)).toContain('(x, 1, n)');
+  expect([...sj.iterArgs(sj.Piecewise([x, sj.Lt(x, 0)], [n, true]))].map(String)).toContain('(x, x < 0)');
+});
+
+it('does not replace a derivative with respect to a different independent variable', () => {
+  const [x, y, z] = sj.symbols('x y z');
+  const f = sj.SymFunction('f')(x, y);
+  const a = sj.derivative(f, [[x, 2]]);
+  expect(a.subs(sj.derivative(f, [[y, 1]]), z).key).toBe(a.key);
+});

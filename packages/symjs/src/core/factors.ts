@@ -10,10 +10,11 @@ import type { Expr, ExprLike } from './nodes';
 import { Add, Float, Mul, Rational, S, isNum } from './nodes';
 import { ExprMap } from './exprmap';
 import { add, asBaseExp, mul, neg, pow, sub, sympify } from './ops';
-import { argsCncSplit, asPowersDict, extractAdditively } from './methods';
+import { argsCncSplit, asCoeffMul, asPowersDict, decomposePower, extractAdditively, primitive } from './methods';
 import { str } from '../printing/str';
 import { getOrThrow } from './guard';
 import { ordered } from './match';
+import { gcd, lcm } from './numbers';
 import { isNegative } from './assumptions';
 
 const isNumber = (e: Expr): boolean => isNum(e);
@@ -279,4 +280,90 @@ export class Factors {
     const items = ordered([...this.factors.keys()]).map((k) => `${str(k)}: ${str(getOrThrow(this.factors, k))}`);
     return `Factors({${items.join(', ')}})`;
   }
+}
+
+/** A commutative term as a coefficient times a quotient of two factor products. */
+export class Term {
+  readonly coeff: Expr;
+  readonly numer: Factors;
+  readonly denom: Factors;
+
+  constructor(term: ExprLike, numer?: Factors, denom?: Factors) {
+    const expr = sympify(term);
+    if (numer !== undefined || denom !== undefined) {
+      this.coeff = expr;
+      this.numer = numer ?? new Factors();
+      this.denom = denom ?? new Factors();
+      return;
+    }
+    if (!expr.isCommutative) throw new TypeError('Term requires a commutative expression');
+    const [coefficient, factors] = asCoeffMul(expr);
+    let c = coefficient;
+    const numerator = new ExprMap<bigint>();
+    const denominator = new ExprMap<bigint>();
+    for (const factor of factors) {
+      const [base, exponent] = decomposePower(factor);
+      const [content, prim] = base instanceof Add ? primitive(base) : [S.One, base];
+      c = mul(c, pow(content, exponent));
+      const target = exponent > 0n ? numerator : denominator;
+      const power = exponent > 0n ? exponent : -exponent;
+      if (power !== 0n) target.set(prim, (target.get(prim) ?? 0n) + power);
+    }
+    this.coeff = c;
+    this.numer = new Factors(numerator);
+    this.denom = new Factors(denominator);
+  }
+
+  asExpr(): Expr {
+    return mul(this.coeff, this.numer.asExpr(), pow(this.denom.asExpr(), -1));
+  }
+
+  mul(other: Term): Term {
+    const [numer, denom] = this.numer.mul(other.numer).normal(this.denom.mul(other.denom));
+    return new Term(mul(this.coeff, other.coeff), numer, denom);
+  }
+
+  inv(): Term {
+    return new Term(pow(this.coeff, -1), this.denom, this.numer);
+  }
+
+  quo(other: Term): Term {
+    return this.mul(other.inv());
+  }
+
+  pow(exponent: ExprLike): Term {
+    const n = sympify(exponent);
+    if (!(n instanceof Rational && n.isInteger)) throw new TypeError('Term powers require integer exponents');
+    if (n.isNegative) return this.inv().pow(Rational.of(-n.p));
+    return new Term(pow(this.coeff, n), this.numer.pow(n), this.denom.pow(n));
+  }
+
+  gcd(other: Term): Term {
+    return new Term(termContent(this.coeff, other.coeff, false), this.numer.gcd(other.numer), this.denom.gcd(other.denom));
+  }
+
+  lcm(other: Term): Term {
+    return new Term(termContent(this.coeff, other.coeff, true), this.numer.lcm(other.numer), this.denom.lcm(other.denom));
+  }
+
+  equals(other: Term): boolean {
+    const sameFactors = (a: Factors, b: Factors): boolean => a.factors.size === b.factors.size &&
+      [...a.factors].every(([base, exponent]) => b.factors.get(base)?.key === exponent.key);
+    return this.coeff.key === other.coeff.key && sameFactors(this.numer, other.numer) && sameFactors(this.denom, other.denom);
+  }
+
+  toString(): string {
+    return `Term(${str(this.coeff)}, ${String(this.numer)}, ${String(this.denom)})`;
+  }
+}
+
+function termContent(a: Expr, b: Expr, multiple: boolean): Expr {
+  if (a instanceof Rational && b instanceof Rational) {
+    return multiple ? Rational.of(lcm(a.p, b.p), gcd(a.q, b.q)) : Rational.of(gcd(a.p, b.p), lcm(a.q, b.q));
+  }
+  if (a instanceof Float || b instanceof Float) {
+    const prec = Math.max(a instanceof Float ? a.prec : 0, b instanceof Float ? b.prec : 0);
+    return multiple ? mul(a, b) : new Float(1, prec);
+  }
+  throw new TypeError('Term coefficients must be real numbers');
 }

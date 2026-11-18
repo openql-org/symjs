@@ -170,16 +170,16 @@ function intLog(b: Expr, c: Expr): number | undefined {
 function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
   // Derivative(f, (x, 2)).subs(Derivative(f, x), y) -> Derivative(y, x) (SymPy Derivative._eval_subs)
   if (e instanceof Derivative && old instanceof Derivative && e.expr.key === old.expr.key) {
-    const have = new Map(e.variableCount.map(([v, n]) => [v.key, [v, n] as [Expr, number]]));
-    const remaining = new Map(have);
-    for (const [v, n] of old.variableCount) {
+    const remaining = new Map(e.variableOrders.map((pair) => [pair[0].key, pair] as const));
+    for (const [v, n] of old.variableOrders) {
       const h = remaining.get(v.key);
-      if (!h || h[1] < n) return undefined;
-      remaining.set(v.key, [v, h[1] - n]);
+      if (!h) return undefined;
+      const order = add(h[1], mul(-1, n));
+      if (order.key === S.Zero.key) remaining.delete(v.key);
+      else if (isPositive(order) === true) remaining.set(v.key, [v, order]);
+      else return undefined;
     }
-    const vc = [...remaining.values()].filter(([, n]) => n > 0);
-    if (!vc.length) return nw;
-    return new Derivative([nw, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]);
+    return remaining.size ? new Derivative([nw, ...[...remaining.values()].flat()]) : nw;
   }
   if (e instanceof Add && old.isNumber) {
     const negative = mul(-1, old);
@@ -424,14 +424,14 @@ export function subsFunction(expr: Expr, name: string, replacement: (...args: Ex
       let body = e.expr;
       const variables: Expr[] = [];
       const points: [Expr, Expr][] = [];
-      for (const [v, n] of e.variableCount) {
+      for (const [v, n] of e.variableOrders) {
         const value = go(v);
         if (!(value instanceof Sym || value instanceof UndefFn)) {
           const dummy = new Dummy('xi');
           body = xreplace(body, [[v, dummy]]);
-          variables.push(dummy, Rational.of(n));
+          variables.push(dummy, go(n));
           points.push([dummy, value]);
-        } else variables.push(value, Rational.of(n));
+        } else variables.push(value, go(n));
       }
       const result = new Derivative([go(body), ...variables]);
       return points.length ? new SubsNode([result, ...points.map(([v]) => v), ...points.map(([, p]) => p)]) : result;
@@ -446,6 +446,8 @@ export function subsFunction(expr: Expr, name: string, replacement: (...args: Ex
   };
   return go(expr);
 }
+
+impl.subsFunction = subsFunction;
 
 /** Variables bound by a definite Integral or a Sum/Product (SymPy bound_symbols). */
 export function boundSymbols(e: Expr): Expr[] {
@@ -465,7 +467,7 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e.args.length === 0) return e instanceof Sym ? (e.substituteInner((x) => subsOne(x, old, nw)) ?? e) : e;
   // Derivative._eval_subs preserves the independent differentiation variables.
   if (e instanceof Derivative && old instanceof Sym) {
-    const variables = e.variableCount.map(([v]) => v);
+    const variables = e.variableOrders.map(([v]) => v);
     const changingVariable = variables.some((v) => v.key === old.key);
     const validVariable = nw instanceof Sym || nw instanceof UndefFn;
     if (changingVariable && !validVariable) return new SubsNode([e, old, nw]);
@@ -473,6 +475,7 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     if (introduced.some((v) => variables.some((w) => w.key === v.key) && e.expr.has(v))) return new SubsNode([e, old, nw]);
     if (changingVariable && nw.key !== old.key && e.expr.has(nw)) return new SubsNode([e, old, nw]);
   }
+  if (e instanceof SubsNode) return e.subsSelf(old, nw, (x) => subsOne(x, old, nw));
   // the variable of an indefinite integral replaced: the antiderivative at that point (SymPy (x, b) limit)
   if (e instanceof Integral && e.args.length === 2 && e.variable.key === old.key && !(nw instanceof Sym)) return new Integral([e.integrand, old, nw]);
   // a bound variable is not free: only the limits are substituted
@@ -565,8 +568,8 @@ export function freeSymbols(e: Expr): Set<Expr> {
         } else go(a);
       });
     } else if (x instanceof Derivative) {
-      // Differentiation variables are not free unless present in the expression.
-      go(at(x.args, 0));
+      go(x.expr);
+      for (const [, order] of x.variableOrders) go(order);
     } else if (x instanceof Integral && x.args.length >= 3) {
       // the integration variable of a definite integral (or one with an upper limit) is bound
       const v = x.variable;

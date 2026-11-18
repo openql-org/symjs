@@ -6,8 +6,9 @@
  */
 
 import type { Expr, ExprLike } from './nodes';
-import { Derivative, Rational, Sym, UndefFn } from './nodes';
-import { sympify } from './ops';
+import { Derivative, ExtensionExpr, Float, S, Sym, UndefFn } from './nodes';
+import { add, sympify } from './ops';
+import { isIntegerQ, isNegative, isZero } from './assumptions';
 import { cast } from './guard';
 import { NoMatch, isNoMatch, type NoMatchResult } from './truth';
 
@@ -59,27 +60,40 @@ export function functions(names: string): UndefinedFunction[] {
     .map((n) => SymFunction(n));
 }
 
+/** A named function held as a symbolic argument of Subs. */
+export class FunctionHead extends ExtensionExpr {
+  constructor(name: string, readonly apply?: (...args: Expr[]) => Expr, readonly arities?: readonly number[]) {
+    super(name, []);
+  }
+
+  withArgs(): Expr { return this; }
+
+  protected override computeKey(): string { return `FunctionHead(${JSON.stringify(this.name)})`; }
+
+  override printStr(): string { return this.name; }
+}
+
 /** Build Derivative(expr, (v, n)...), merging repeated consecutive variables. */
-export function derivative(expr: Expr, variables: readonly [Expr, number][], evaluated = false): Expr {
+export function derivative(expr: Expr, variables: readonly [Expr, ExprLike][], evaluated = false): Expr {
   let e = expr;
-  let vc: [Expr, number][] = [];
+  let vc: [Expr, Expr][] = [];
   if (e instanceof Derivative) {
-    vc = e.variableCount;
+    vc = e.variableOrders;
     e = e.expr;
   }
-  for (const [v, n] of variables) {
-    if (!Number.isSafeInteger(n) || n < 0) throw new RangeError('derivative order must be a nonnegative integer');
-    if (n === 0) continue;
+  for (const [v, count] of variables) {
+    const n = derivativeCount(count);
+    if (n === S.Zero) continue;
     const last = vc[vc.length - 1];
-    if (last && last[0].key === v.key) last[1] += n;
+    if (last && last[0].key === v.key) last[1] = add(last[1], n);
     else vc.push([v, n]);
   }
   // evaluated derivatives: SymPy sorts symbol variables (they commute) and merges repeats
   if (evaluated && vc.every(([v]) => v instanceof Sym)) {
-    const merged = new Map<string, [Expr, number]>();
+    const merged = new Map<string, [Expr, Expr]>();
     for (const [v, n] of vc) {
       const m = merged.get(v.key);
-      if (m) m[1] += n;
+      if (m) m[1] = add(m[1], n);
       else merged.set(v.key, [v, n]);
     }
     vc = [...merged.values()].sort(([a], [b]) => {
@@ -88,5 +102,15 @@ export function derivative(expr: Expr, variables: readonly [Expr, number][], eva
       return an < bn ? -1 : an > bn ? 1 : 0;
     });
   }
-  return vc.length ? new Derivative([e, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]) : e;
+  vc = vc.filter(([, n]) => n !== S.Zero);
+  return vc.length ? new Derivative([e, ...vc.flat()]) : e;
+}
+
+/** A concrete or symbolic nonnegative integer order. */
+export function derivativeCount(order: ExprLike): Expr {
+  const n = sympify(order);
+  if (n instanceof Float || isIntegerQ(n) === false || isNegative(n) === true) {
+    throw new RangeError('derivative order must be a nonnegative integer');
+  }
+  return isZero(n) === true ? S.Zero : n;
 }

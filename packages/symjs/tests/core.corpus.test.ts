@@ -1175,7 +1175,7 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Add_Mul_is_integer:462", () => {
     expect(sympyStr(isIntegerValued(new Add([rational(1), new Mul([new Add([rational(1), new Pow(rational(3), rational(1, 2))]), new Add([rational(1), new Mul([rational(-1), new Pow(rational(3), rational(1, 2))])])])])))).not.toBe('False');
   });
-  it.fails("test_Add_Mul_is_finite:468", () => {
+  it("test_Add_Mul_is_finite:468", () => {
     const x = new Sym('x', { extendedReal: true, finite: false });
     expect(sympyStr(isFinite(fn('sin', [x])))).toBe('True');
   });
@@ -1186,7 +1186,7 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Add_Mul_is_finite:470", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_Add_Mul_is_finite:471", () => {
+  it("test_Add_Mul_is_finite:471", () => {
     const x = new Sym('x', { extendedReal: true, finite: false });
     expect(sympyStr(isFinite(new Mul([rational(1024), fn('sin', [x])])))).toBe('True');
   });
@@ -1194,7 +1194,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x = new Sym('x', { extendedReal: true, finite: false });
     expect(sympyStr(isFinite(new Mul([exp(x), fn('sin', [x])])))).toBe('None');
   });
-  it.fails("test_Add_Mul_is_finite:473", () => {
+  it("test_Add_Mul_is_finite:473", () => {
     const x = new Sym('x', { extendedReal: true, finite: false });
     expect(sympyStr(isFinite(new Mul([AccumBounds(rational(-1), rational(1)), fn('sin', [x])])))).toBe('True');
   });
@@ -1202,7 +1202,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x = new Sym('x', { extendedReal: true, finite: false });
     expect(sympyStr(isFinite(new Mul([x, exp(x), fn('sin', [x])])))).toBe('None');
   });
-  it.fails("test_Add_Mul_is_finite:476", () => {
+  it("test_Add_Mul_is_finite:476", () => {
     const x = new Sym('x', { extendedReal: true, finite: false });
     expect(sympyStr(isFinite(new Add([rational(-67), fn('sin', [x])])))).toBe('True');
   });
@@ -2917,7 +2917,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const xr = new Sym('xr', { real: true });
     expect(sympyStr(isFinite(new Pow(n, xr)))).toBe('True');
   });
-  it.fails("test_Pow_is_finite:1192", () => {
+  it("test_Pow_is_finite:1192", () => {
     const xe = new Sym('xe', { extendedReal: true });
     expect(sympyStr(isFinite(new Pow(fn('sin', [xe]), rational(2))))).toBe('True');
   });
@@ -5381,42 +5381,42 @@ describe("sympy/core/tests/test_arit.py", () => {
     const j = new Sym('j', { integer: true, zero: false });
     expect(sympyStr(isImaginary(new Pow(new Add([p, new Mul([I, p])]), new Mul([rational(2), j]))))).toBe('None');
   });
-  it.fails("test_Mul_is_imaginary_real:1504", () => {
+  it("test_Mul_is_imaginary_real:1504", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isImaginary(new Pow(new Add([p, new Mul([I, p])]), rational(-1))))).toBe('False');
   });
-  it.fails("test_Mul_is_imaginary_real:1505", () => {
+  it("test_Mul_is_imaginary_real:1505", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isImaginary(new Pow(new Add([p, new Mul([I, p])]), rational(2))))).toBe('True');
   });
-  it.fails("test_Mul_is_imaginary_real:1506", () => {
+  it("test_Mul_is_imaginary_real:1506", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isImaginary(new Pow(new Add([p, new Mul([I, p])]), rational(3))))).toBe('False');
   });
-  it.fails("test_Mul_is_imaginary_real:1507", () => {
+  it("test_Mul_is_imaginary_real:1507", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isImaginary(new Pow(new Add([p, new Mul([I, p])]), rational(4))))).toBe('False');
   });
-  it.fails("test_Mul_is_imaginary_real:1508", () => {
+  it("test_Mul_is_imaginary_real:1508", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isImaginary(new Pow(new Add([p, new Mul([I, p])]), rational(5))))).toBe('False');
   });
   it("test_Mul_is_imaginary_real:1509", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_Mul_is_imaginary_real:1510", () => {
+  it("test_Mul_is_imaginary_real:1510", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isReal(new Pow(new Add([p, new Mul([I, p])]), rational(2))))).toBe('False');
   });
-  it.fails("test_Mul_is_imaginary_real:1511", () => {
+  it("test_Mul_is_imaginary_real:1511", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isReal(new Pow(new Add([p, new Mul([I, p])]), rational(3))))).toBe('False');
   });
-  it.fails("test_Mul_is_imaginary_real:1512", () => {
+  it("test_Mul_is_imaginary_real:1512", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isReal(new Pow(new Add([p, new Mul([I, p])]), rational(4))))).toBe('True');
   });
-  it.fails("test_Mul_is_imaginary_real:1513", () => {
+  it("test_Mul_is_imaginary_real:1513", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(isReal(new Pow(new Add([p, new Mul([I, p])]), rational(5))))).toBe('False');
   });
@@ -5975,7 +5975,7 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_product_irrational:1823", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_issue_5919:1827", () => {
+  it("test_issue_5919:1827", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expand(new Mul([x, new Pow(y, rational(-1)), new Pow(new Add([rational(1), y]), rational(-1))]), {}))).toBe('x/(y**2 + y)');
   });
@@ -6034,7 +6034,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const m = new Sym('m', { integer: true, positive: true });
     expect(sympyStr(Mod(new Pow(new Mul([rational(-2), k]), m), k))).toBe('0');
   });
-  it.fails("test_Mod:1859", () => {
+  it("test_Mod:1859", () => {
     const x = new Sym('x');
     expect(sympyStr(Mod(new Add([new Float({ man: -3715469692580659n, exp: -50n }, 53), x]), rational(1)))).toBe('Mod(1.0*x + 0.7, 1)');
   });
@@ -6459,35 +6459,35 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Mod:1899", () => {
     expect(sympyStr(Mod(new Mul([rational(5), new Pow(rational(2), rational(1, 2))]), new Pow(rational(5), rational(1, 2))))).toBe('-3*sqrt(5) + 5*sqrt(2)');
   });
-  it.fails("test_Mod:1901", () => {
+  it("test_Mod:1901", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(Mod(rational(2), new Add([rational(3), p])))).toBe('2');
   });
-  it.fails("test_Mod:1902", () => {
+  it("test_Mod:1902", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(Mod(rational(-2), new Add([rational(3), p])))).toBe('p + 1');
   });
-  it.fails("test_Mod:1903", () => {
+  it("test_Mod:1903", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(Mod(rational(2), new Add([rational(-3), new Mul([rational(-1), p])])))).toBe('-p - 1');
   });
-  it.fails("test_Mod:1904", () => {
+  it("test_Mod:1904", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(Mod(rational(-2), new Add([rational(-3), new Mul([rational(-1), p])])))).toBe('-2');
   });
-  it.fails("test_Mod:1905", () => {
+  it("test_Mod:1905", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(Mod(new Add([rational(5), p]), new Add([rational(3), p])))).toBe('2');
   });
-  it.fails("test_Mod:1906", () => {
+  it("test_Mod:1906", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(Mod(new Add([rational(-5), new Mul([rational(-1), p])]), new Add([rational(3), p])))).toBe('p + 1');
   });
-  it.fails("test_Mod:1907", () => {
+  it("test_Mod:1907", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(Mod(new Add([rational(5), p]), new Add([rational(-3), new Mul([rational(-1), p])])))).toBe('-p - 1');
   });
-  it.fails("test_Mod:1908", () => {
+  it("test_Mod:1908", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(Mod(new Add([rational(-5), new Mul([rational(-1), p])]), new Add([rational(-3), new Mul([rational(-1), p])])))).toBe('-2');
   });
@@ -6498,7 +6498,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(unchanged(Mod, rational(1), n))).toBe('True');
   });
-  it.fails("test_Mod:1915", () => {
+  it("test_Mod:1915", () => {
     const n = new Sym('n', { prime: true });
     expect(sympyStr(Mod(rational(1), n))).toBe('1');
   });
@@ -6506,7 +6506,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x = new Sym('x');
     expect(sympyStr(Mod(new Add([rational(3), x]), rational(1)))).toBe('Mod(x, 1)');
   });
-  it.fails("test_Mod:1919", () => {
+  it("test_Mod:1919", () => {
     const x = new Sym('x');
     expect(sympyStr(Mod(new Add([new Float({ man: 3n, exp: 0n }, 53), x]), rational(1)))).toBe('Mod(1.0*x, 1)');
   });
@@ -6600,11 +6600,11 @@ describe("sympy/core/tests/test_arit.py", () => {
     const i = new Sym('i', { integer: true });
     expect(sympyStr(Mod(new Mul([rational(4), i]), rational(4)))).toBe('0');
   });
-  it.fails("test_Mod:1955", () => {
+  it("test_Mod:1955", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(Mod(fn('factorial', [n]), n))).toBe('0');
   });
-  it.fails("test_Mod:1956", () => {
+  it("test_Mod:1956", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(Mod(fn('factorial', [new Add([rational(2), n])]), n))).toBe('0');
   });
@@ -6614,26 +6614,26 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Mod:1960", () => {
     expect(sympyStr(Mod(fn('factorial', [rational(18042)]), rational(18043)))).toBe('18042');
   });
-  it.fails("test_Mod:1962", () => {
+  it("test_Mod:1962", () => {
     const n = new Sym('n', { prime: true });
     expect(sympyStr(Mod(fn('factorial', [new Add([rational(-1), n])]), n))).toBe('n - 1');
   });
-  it.fails("test_Mod:1963", () => {
+  it("test_Mod:1963", () => {
     const n = new Sym('n', { prime: true });
     expect(sympyStr(Mod(fn('factorial', [new Add([rational(-1), n])]), new Mul([rational(-1), n])))).toBe('-1');
   });
   it("test_Mod:1964", () => {
     expect(sympyStr(doit(new Add([rational(-4), fn('factorial', [rational(3)])])))).toBe('2');
   });
-  it.fails("test_Mod:1966", () => {
+  it("test_Mod:1966", () => {
     const n = new Sym('n', { composite: true, odd: true });
     expect(sympyStr(Mod(fn('factorial', [new Add([rational(-1), n])]), n))).toBe('0');
   });
-  it.fails("test_Mod:1970", () => {
+  it("test_Mod:1970", () => {
     const n = new Sym('n', { even: true });
     expect(sympyStr(Mod(n, rational(2)))).toBe('0');
   });
-  it.fails("test_Mod:1972", () => {
+  it("test_Mod:1972", () => {
     const n = new Sym('n', { odd: true });
     expect(sympyStr(Mod(n, rational(2)))).toBe('1');
   });
@@ -6644,7 +6644,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x = new Sym('x');
     expect(sympyStr(Mod(new Add([rational(1), Mod(new Add([rational(1), x]), rational(2))]), rational(2)))).toBe('Mod(x, 2)');
   });
-  it.fails("test_Mod:1981", () => {
+  it("test_Mod:1981", () => {
     const x1 = new Sym('x1', { integer: true });
     expect(sympyStr(Mod(new Mul([new Add([rational(4), x1]), Mod(new Add([rational(2), x1]), rational(4))]), rational(4)))).toBe('Mod(x1*(x1 + 2), 4)');
   });
@@ -6652,7 +6652,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x1 = new Sym('x1', { integer: true });
     expect(sympyStr(Mod(new Mul([rational(4), Mod(new Add([rational(2), x1]), rational(4))]), rational(4)))).toBe('0');
   });
-  it.fails("test_Mod:1986", () => {
+  it("test_Mod:1986", () => {
     const i = new Sym('i', { integer: true, positive: true });
     expect(sympyStr(Mod(new Mul([rational(3), i]), rational(2)))).toBe('Mod(i, 2)');
   });
@@ -6665,11 +6665,11 @@ describe("sympy/core/tests/test_arit.py", () => {
     const i = new Sym('i', { integer: true, positive: true });
     expect(sympyStr(Mod(new Mul([rational(8), i]), rational(4)))).toBe('0');
   });
-  it.fails("test_Mod:1991", () => {
+  it("test_Mod:1991", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(Mod(x, y), 'floor', { pattern: [], deep: true }))).toBe('x - y*floor(x/y)');
   });
-  it.fails("test_Mod:1992", () => {
+  it("test_Mod:1992", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(rewrite(new Mul([new Pow(y, rational(-1)), new Add([x, new Mul([rational(-1), Mod(x, y)])])]), 'floor', { pattern: [], deep: true }))).toBe('floor(x/y)');
   });
@@ -6681,7 +6681,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x = new Sym('x', { integer: true });
     expect(sympyStr(unchanged(Mod, x, rational(2)))).toBe('True');
   });
-  it.fails("test_Mod:2010", () => {
+  it("test_Mod:2010", () => {
     const x = new Sym('x', { integer: true });
     expect(sympyStr(Mod(new Mul([rational(3), x]), rational(2)))).toBe('Mod(x, 2)');
   });
@@ -6707,13 +6707,13 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Mod_Pow:2032", () => {
     expect(equivalent(sympyStr(Mod(new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), rational(2)))), rational(59049))), '6487', [], { fn: 'Mod', input: '2**(2**(2**2))' })).toBe(true);
   });
-  it.fails("test_Mod_Pow:2034", () => {
+  it("test_Mod_Pow:2034", () => {
     expect(sympyStr(Mod(new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), rational(2))))), rational(59049)))).toBe('32191');
   });
-  it.fails("test_Mod_Pow:2036", () => {
+  it("test_Mod_Pow:2036", () => {
     expect(sympyStr(Mod(new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), rational(2)))))), rational(59049)))).toBe('18016');
   });
-  it.fails("test_Mod_Pow:2038", () => {
+  it("test_Mod_Pow:2038", () => {
     expect(sympyStr(Mod(new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), new Pow(rational(2), rational(2))))))), rational(59049)))).toBe('5137');
   });
   it("test_Mod_Pow:2042", () => {
@@ -6728,22 +6728,22 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Mod_Pow:2048", () => {
     expect(equivalent(sympyStr(Mod(new Pow(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), rational(2)), rational(2)), rational(2)), rational(2)), rational(59049))), '38281', [], { fn: 'Mod', input: '((((2**2)**2)**2)**2)**2' })).toBe(true);
   });
-  it.fails("test_Mod_Pow:2050", () => {
+  it("test_Mod_Pow:2050", () => {
     expect(sympyStr(Mod(new Pow(new Pow(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), rational(2)), rational(2)), rational(2)), rational(2)), rational(2)), rational(59049)))).toBe('15928');
   });
   it("test_Mod_Pow:2054", () => {
     expect(equivalent(sympyStr(Mod(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), rational(59049))), '256', [], { fn: 'Mod', input: '(2**2)**(2**2)' })).toBe(true);
   });
-  it.fails("test_Mod_Pow:2056", () => {
+  it("test_Mod_Pow:2056", () => {
     expect(sympyStr(Mod(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), rational(59049)))).toBe('9229');
   });
-  it.fails("test_Mod_Pow:2058", () => {
+  it("test_Mod_Pow:2058", () => {
     expect(sympyStr(Mod(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))), rational(59049)))).toBe('25708');
   });
-  it.fails("test_Mod_Pow:2060", () => {
+  it("test_Mod_Pow:2060", () => {
     expect(sympyStr(Mod(new Pow(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))), new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))))), rational(59049)))).toBe('26608');
   });
-  it.fails("test_Mod_Pow:2064", () => {
+  it("test_Mod_Pow:2064", () => {
     expect(sympyStr(Mod(new Pow(new Pow(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))), new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))))), new Pow(new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))), new Pow(new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2)))), new Pow(new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))), new Pow(new Pow(rational(2), rational(2)), new Pow(rational(2), rational(2))))))), rational(59049)))).toBe('1966');
   });
   it("test_Mod_is_integer:2071", () => {
@@ -7191,7 +7191,7 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Add_is_zero:2400", () => {
     expect(sympyStr(isZero(new Add([new Pow(new Add([rational(1), I]), rational(2)), new Mul([rational(-2), I])])))).toBe('None');
   });
-  it.fails("test_issue_14392:2404", () => {
+  it("test_issue_14392:2404", () => {
     const v1 = asRealImag(nan);
     expect(sympyStr([at(v1, 0), at(v1, 1)], 't')).toBe('(nan, nan)');
   });
@@ -7489,7 +7489,7 @@ describe("sympy/core/tests/test_complex.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(expand(new Mul([I, fn('sin', [x])]), { complex: true }))).toBe('I*sin(x)');
   });
-  it.fails("test_evalc:88", () => {
+  it("test_evalc:88", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(expand(fn('sinh', [new Add([x, new Mul([I, y])])]), { complex: true }))).toBe('I*sin(y)*cosh(x) + cos(y)*sinh(x)');
@@ -7498,7 +7498,7 @@ describe("sympy/core/tests/test_complex.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(expand(fn('cos', [x]), { complex: true }))).toBe('cos(x)');
   });
-  it.fails("test_evalc:92", () => {
+  it("test_evalc:92", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(expand(fn('cosh', [new Add([x, new Mul([I, y])])]), { complex: true }))).toBe('I*sin(y)*sinh(x) + cos(y)*cosh(x)');
@@ -7624,14 +7624,14 @@ describe("sympy/core/tests/test_complex.py", () => {
     const v1 = asRealImag(new Pow(x, rational(2)));
     expect(equivalent(sympyStr([at(v1, 0), at(v1, 1)], 't'), '(re(x)**2 - im(x)**2, 2*re(x)*im(x))', [x], { fn: '.as_real_imag', input: 'x**2' })).toBe(true);
   });
-  it.fails("test_real_imag:194", () => {
+  it("test_real_imag:194", () => {
     const x = new Sym('x');
     const r = new Sym('r', { real: true });
     const i = new Sym('i', { imaginary: true });
     const v1 = asRealImag(new Mul([x, r, i]));
     expect(sympyStr([at(v1, 0), at(v1, 1)], 't')).toBe('(I*i*r*im(x), -I*i*r*re(x))');
   });
-  it.fails("test_real_imag:195", () => {
+  it("test_real_imag:195", () => {
     const [x, y] = symbols('x y');
     const r = new Sym('r', { real: true });
     const i = new Sym('i', { imaginary: true });
@@ -8595,14 +8595,14 @@ describe("sympy/core/tests/test_expand.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([rational(2432902008176640000n), new Pow(x, rational(20)), new Mul([rational(-12870931245150988800n), new Pow(x, rational(3))]), new Mul([rational(-8752948036761600000n), x]), new Mul([rational(-3599979517947607200n), new Pow(x, rational(5))]), new Mul([rational(-311333643161390640n), new Pow(x, rational(7))]), new Mul([rational(-10142299865511450n), new Pow(x, rational(9))]), new Mul([rational(-135585182899530), new Pow(x, rational(11))]), new Mul([rational(-756111184500), new Pow(x, rational(13))]), new Mul([rational(-1672280820), new Pow(x, rational(15))]), new Mul([rational(-1256850), new Pow(x, rational(17))]), new Mul([rational(-210), new Pow(x, rational(19))]), new Mul([rational(20615), new Pow(x, rational(18))]), new Mul([rational(53327946), new Pow(x, rational(16))]), new Mul([rational(40171771630), new Pow(x, rational(14))]), new Mul([rational(11310276995381), new Pow(x, rational(12))]), new Mul([rational(1307535010540395), new Pow(x, rational(10))]), new Mul([rational(63030812099294896n), new Pow(x, rational(8))]), new Mul([rational(1206647803780373360n), new Pow(x, rational(6))]), new Mul([rational(8037811822645051776n), new Pow(x, rational(4))]), new Mul([rational(13803759753640704000n), new Pow(x, rational(2))])]).has(new Mul([rational(-1672280820), new Pow(x, rational(15))])))).toBe('True');
   });
-  it.fails("test_expand_mul:253", () => {
+  it("test_expand_mul:253", () => {
     expect(sympyStr(expand(new Mul([rational(2), rational(3)]), {}))).toBe('6');
   });
-  it.fails("test_expand_mul:256", () => {
+  it("test_expand_mul:256", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(new Mul([rational(2), rational(3), new Pow(x, rational(-1))]), {}))).toBe('6/x');
   });
-  it.fails("test_expand_mul:258", () => {
+  it("test_expand_mul:258", () => {
     expect(sympyStr(expand(new Mul([rational(2), rational(1, 3)]), {}))).toBe('2/3');
   });
   it("test_power_expand:265", () => {
@@ -8617,7 +8617,7 @@ describe("sympy/core/tests/test_expand.py", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(expand(new Pow(rational(2), new Add([a, b])), {}))).toBe('2**a*2**b');
   });
-  it.fails("test_power_expand:275", () => {
+  it("test_power_expand:275", () => {
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(expand(new Pow(rational(2), new Add([A, B])), {}))).toBe('2**(A + B)');
@@ -8627,7 +8627,7 @@ describe("sympy/core/tests/test_expand.py", () => {
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(expand(new Pow(A, new Add([a, b])), {}))).not.toBe('A**(a + b)');
   });
-  it.fails("test_issues_5919_6830:283", () => {
+  it("test_issues_5919_6830:283", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(new Add([new Mul([rational(-1), new Pow(x, rational(-1)), new Pow(new Add([rational(-1), new Pow(x, rational(-1))]), rational(-1))]), new Mul([new Pow(x, rational(-1)), new Pow(new Add([rational(1), new Mul([rational(-1), new Pow(x, rational(-1))])]), rational(-2)), new Add([rational(-1), new Pow(x, rational(-1))])])]), {}))).toBe('1/(x**2 - 2*x + 1) - 1/(x - 2 + 1/x) - 1/(1 - x)');
   });
@@ -8671,7 +8671,7 @@ describe("sympy/core/tests/test_expand.py", () => {
     const x = new Sym('x');
     expect(sympyStr(expandMultinomial(new Pow(new Add([rational(1), x]), rational(3))))).toBe('x**3 + 3*x**2 + 3*x + 1');
   });
-  it.fails("test_issues_5919_6830:328", () => {
+  it("test_issues_5919_6830:328", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expandMultinomial(new Pow(rational(3), new Add([rational(3), x, y]))))).toBe('27*3**(x + y)');
   });
@@ -8679,10 +8679,10 @@ describe("sympy/core/tests/test_expand.py", () => {
     const t = new Sym('t', { positive: true });
     expect(sympyStr(expand(new Add([new Mul([rational(-1), log(new Mul([rational(1, 4), new Pow(t, rational(2))]))]), new Mul([rational(-2), log(2)]), log(new Pow(t, rational(2)))]), {}))).toBe('0');
   });
-  it.fails("test_expand_log:334", () => {
+  it("test_expand_log:334", () => {
     expect(sympyStr(expandLog(new Mul([new Pow(log(6), rational(-1)), log(42)]), false))).toBe('1 + log(7)/log(6)');
   });
-  it.fails("test_expand_log:336", () => {
+  it("test_expand_log:336", () => {
     expect(sympyStr(expandLog(new Mul([new Pow(log(3628800), rational(-1)), log(1213808491894092595200000000n)]), false))).toBe('log(7)/log(3628800) + 4');
   });
   it("test_issue_23952:341", () => {
@@ -8771,7 +8771,7 @@ describe("sympy/core/tests/test_expand.py", () => {
     const nn2 = new Sym('nn2', { nonnegative: true });
     expect(sympyStr(expand(new Pow(x, new Add([nn1, nn2])), {}))).toBe('x**nn1*x**nn2');
   });
-  it.fails("test_issue_23952:359", () => {
+  it("test_issue_23952:359", () => {
     const x = new Sym('x');
     const nn1 = new Sym('nn1', { nonnegative: true });
     const nn2 = new Sym('nn2', { nonnegative: true });
@@ -8818,13 +8818,13 @@ describe("sympy/core/tests/test_noncommutative.py", () => {
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(cancel(new Add([new Mul([A, B]), new Mul([rational(-1), B, A])]), {}))).toBe('A*B - B*A');
   });
-  it.fails("test_cancel:44", () => {
+  it("test_cancel:44", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(cancel(new Mul([new Add([rational(-1), x]), A, B]), {}))).toBe('(x - 1)*A*B');
   });
-  it.fails("test_cancel:45", () => {
+  it("test_cancel:45", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
@@ -9285,7 +9285,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Pow(new Mul([rational(-1), x]), rational(1, 3)).subs(x, rational(27)))).toBe('3*(-1)**(1/3)');
   });
-  it.fails("test_powers:103", () => {
+  it("test_powers:103", () => {
     const [x, y] = symbols('x y');
     const n = new Sym('n', { negative: true });
     expect(sympyStr(new Pow(x, new Mul([new Float({ man: 1n, exp: 2n }, 53), y])).subs(new Pow(x, new Mul([new Float({ man: 1n, exp: 1n }, 53), y])), n))).toBe('n**2.0');
@@ -10821,7 +10821,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Subs(new Mul([x, y]), [y], [new Add([rational(1), x])]).subs(x, y))).toBe('Subs(y**2, y, y + 1)');
   });
-  it.fails("test_Subs_subs:814", () => {
+  it("test_Subs_subs:814", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(Subs(new Mul([x, y, z]), [y, x, z], [new Add([rational(1), x]), new Add([x, z]), x]).subs(x, y))).toBe('Subs(x*y*z, (y, x, z), (x + 1, y + z, y))');
   });
