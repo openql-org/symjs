@@ -215,3 +215,12 @@ describe('literal values, rational square roots and enclosing intervals', () => 
     }
   });
 });
+
+it('inverts a numeric expression only for a modulus greater than one', () => {
+  expect(sj.modInverse(sj.S.Pi, R(2)).key).toBe(sj.pow(sj.S.Pi, -1).key);
+  expect(sj.modInverse(R(2), sj.S.Pi).key).toBe(R(1, 2).key);
+  expect(sj.modInverse(R(3), new sj.Float(1.5)).key).toBe(R(1, 3).key);
+  expect(() => sj.modInverse(sj.S.Pi, R(1))).toThrow(RangeError);
+  expect(() => sj.modInverse(sj.symbol('x'), R(2))).toThrow(TypeError);
+  expect(() => sj.modInverse(R(2), sj.symbol('m'))).toThrow(TypeError);
+});

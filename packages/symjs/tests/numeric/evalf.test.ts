@@ -309,3 +309,12 @@ describe('evalf helpers', () => {
     expect(getIntegerPart(S.Zero, 1)).toEqual([NoMatch, NoMatch, NoMatch, NoMatch]);
   });
 });
+
+it('distinguishes same-name dummies when substituting numeric values', () => {
+  const a = new sj.Dummy('x');
+  const b = new sj.Dummy('x');
+  const expr = sj.add(a, sj.mul(2, b));
+  expect(expr.evalf(20, { subs: new Map([[a, 3], [b, 5]]) }).toNumber()).toBe(13);
+  expect(a.evalf(20, { subs: new Map([[a, S.ComplexInfinity]]) })).toBe(S.ComplexInfinity);
+  expect(sj.Subs(a, a, b).evalf(15, { subs: { x: 2 } }).toNumber()).toBe(2);
+});

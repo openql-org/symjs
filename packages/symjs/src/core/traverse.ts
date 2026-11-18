@@ -6,11 +6,12 @@
  */
 
 import { piecewise, rel } from './logic';
+import { toRational } from '../numeric/mpf';
 import { Concrete } from './concrete';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import type { Key } from '../printing/sortkey';
 import type { ExprLike, Substitution } from './nodes';
-import { Add, Derivative, Dummy, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, asRational, impl, isNum } from './nodes';
+import { Add, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, asRational, impl, isNum } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { isIntegerQ, isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
@@ -123,6 +124,13 @@ function powerOf(ct1: [Expr, Expr], ct2: [Expr, Expr], old: Pow): Expr | undefin
   if (ct1[1].key !== ct2[1].key) return undefined;
   const k = mul(ct1[0], pow(ct2[0], -1));
   if (k instanceof Rational && k.isInteger) return k;
+  if (k instanceof Float && k.mpf.exp >= 0n && isNum(ct1[0]) && isNum(ct2[0])) {
+    const exact = (n: Float | Rational): Rational => n instanceof Float ? Rational.of(...toRational(n.mpf)) : n;
+    const a = exact(ct1[0]);
+    const b = exact(ct2[0]);
+    const ratio = Rational.of(a.p * b.q, a.q * b.p);
+    if (ratio.isInteger && ratio.key === exact(k).key) return k;
+  }
   const combines = (isPositive(old.base) === true && isReal(old.exp) === true) || (isNonNegative(old.base) === true && isNonNegative(old.exp) === true);
   return combines ? k : undefined;
 }

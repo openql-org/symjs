@@ -62,8 +62,7 @@ describe('node classes', () => {
     expect(() => asRational(x)).toThrow(InvariantError);
     expect(() => Rational.of(1, 0)).toThrow(RangeError);
     expect(() => new Float(Infinity)).toThrow(RangeError);
-    // SymPy accepts Symbol(''); symjs requires a non-empty name
-    expect(() => new sj.Sym('')).toThrow(SyntaxError);
+    expect(new sj.Sym('').name).toBe('');
     expect(() => Reflect.construct(sj.Sym, [5])).toThrow(SyntaxError);
   });
   it('keys Wild properties and WildFunction arities', () => {
@@ -308,4 +307,43 @@ describe('func (SymPy Basic.func)', () => {
     expect(sj.str(sj.func(g)(B))).toBe('adjoint(B)');
     expect(sj.func(sj.adjoint(B))).toBe(sj.func(g));
   });
+});
+
+it('matches contiguous noncommuting factors and preserves their order', () => {
+  const a = sj.symbol('a', { commutative: false });
+  const b = sj.symbol('b', { commutative: false });
+  const c = sj.symbol('c', { commutative: false });
+  const product = sj.mul(2, a, b, c);
+  expect(product.has(sj.mul(a, b))).toBe(true);
+  expect(product.has(sj.mul(b, a))).toBe(false);
+  expect(product.has(sj.mul(a, c))).toBe(false);
+  expect(product.has(sj.mul(3, a))).toBe(false);
+  expect(() => Reflect.construct(sj.Sym, ['x', { commutative: null }])).toThrow(RangeError);
+  expect(Rational.of(-2).bitNot().p).toBe(1n);
+  expect(() => Rational.of(1, 2).bitNot()).toThrow(TypeError);
+});
+
+it('exposes symbol forms, integral bounds and optional extension hooks', () => {
+  const x = sj.symbol('x');
+  expect(x.prettyForm).toBeUndefined();
+  expect(x.conjugate().key).toBe(sj.conjugate(x).key);
+  expect(new sj.Sym('i', { aboveFermi: true }).key).toContain('A');
+  expect(new sj.Sym('j', { belowFermi: true }).key).toContain('B');
+  expect(new sj.Integral([x, x, S.Zero, S.One]).limits).toEqual([S.Zero, S.One]);
+  expect(new sj.Integral([x, x]).limits).toBeUndefined();
+  const box = new Box([x]);
+  expect(box.trigsimpSelf((e) => e)).toBeUndefined();
+  expect(box.kindSelf()).toBeUndefined();
+  expect(box.matchesSelf(x)).toBeUndefined();
+  expect(box.expandSelf('custom', {})).toBeUndefined();
+});
+
+it('computes rational cofactors and promotes mixed inputs to the wider float precision', () => {
+  expect(R(1, 2).cofactors(R(3, 4)).map(String)).toEqual(['1/4', '2', '3']);
+  expect(R(0).cofactors(R(-2)).map(String)).toEqual(['2', '0', '-1']);
+  expect(() => R(0).cofactors(R(0))).toThrow(RangeError);
+  const low = new Float(3, 30);
+  const high = new Float(2, 100);
+  expect(low.cofactors(high).map((f) => [f.value, f.prec])).toEqual([[1, 100], [3, 100], [2, 100]]);
+  expect(R(4).cofactors(high).map((n) => n.key)).toEqual([new Float(1, 100), new Float(4, 100), high].map((f) => f.key));
 });

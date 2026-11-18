@@ -295,3 +295,22 @@ it('retains undecidable inequalities for overlapping index ranges', () => {
   for (const op of [sj.Lt, sj.Le, sj.Gt, sj.Ge]) expect(op(a, b)).toBeInstanceOf(sj.Rel);
   expect(sj.Lt(a, x)).toBeInstanceOf(sj.Rel);
 });
+
+it('compares Boolean atoms and uses exact facts about finite floats', () => {
+  expect(Eq(S.true, S.true)).toBe(S.true);
+  expect(Ne(S.true, S.false)).toBe(S.true);
+  expect(Eq(S.true, S.false)).toBe(S.false);
+  const irrational = sj.symbol('u', { irrational: true });
+  const noninteger = sj.symbol('v', { integer: false });
+  expect(Eq(irrational, new sj.Float(0.5))).toBe(S.false);
+  expect(Ne(new sj.Float(2), noninteger)).toBe(S.true);
+  expect(Eq(noninteger, new sj.Float(0))).toBe(S.false);
+  expect(Eq(noninteger, new sj.Float(0.5))).toBeInstanceOf(sj.Rel);
+  expect(() => Gt(sj.add(sj.symbol('r', { real: true }), sj.I), 0)).toThrow(TypeError);
+});
+
+it('compares a bounded index against disjoint numeric bounds', () => {
+  const i = sj.Idx('i', [1, 3]);
+  expect(Lt(i, 5)).toBe(S.true);
+  expect(Lt(i, 0)).toBe(S.false);
+});

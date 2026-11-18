@@ -71,6 +71,10 @@ export class SubsNode extends ExtensionExpr {
     }
     return add(...terms);
   }
+  override evalfSelf(evaluate: (x: Expr) => Expr): Expr {
+    const value = this.doitSelf();
+    return value.key === this.key ? this : evaluate(value);
+  }
   override doitSelf(): Expr {
     return this.expr.subs(this.variables.map((v, i): [Expr, Expr] => [v, at(this.point, i)]));
   }
@@ -87,6 +91,7 @@ export function Subs(exprIn: ExprLike, variables: ExprLike | readonly ExprLike[]
   const vs = asList(variables).map((v) => sympify(v));
   const ps = asList(point).map((p) => sympify(p));
   if (vs.length !== ps.length) throw new RangeError('Subs: number of variables and points differ');
+  if (new Set(vs.map((v) => v.key)).size !== vs.length) throw new RangeError('Subs: duplicate substitution variable');
   if (!vs.length) return expr;
   return new SubsNode([expr, ...vs, ...ps]);
 }

@@ -5,6 +5,7 @@
 import type { Expr, ExprLike, RelOp } from './nodes';
 import { Add, BoolAtom, Rational, Rel, S, Sym, impl } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
+import { BasicNode } from './basic';
 import { canonicalRelation, rel } from './logic';
 import type { Assumption } from './refine';
 import { ask, Q } from './refine';
@@ -53,7 +54,10 @@ export const isEq = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = tru
 /** SymPy is_neq. */
 export const isNeq = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => truthNot(isEq(lhs, rhs, assumptions));
 /** SymPy is_ge. */
-export const isGe = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => ask(Q.ge(lhs, rhs), assumptions);
+export const isGe = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => {
+  if ([lhs, rhs].some((e) => e instanceof BasicNode && e.name === 'Basic')) throw new TypeError('inequalities require expressions');
+  return ask(Q.ge(lhs, rhs), assumptions);
+};
 /** SymPy is_le. */
 export const isLe = (lhs: ExprLike, rhs: ExprLike, assumptions: Assumption = true): Truth => isGe(rhs, lhs, assumptions);
 /** SymPy is_gt. */

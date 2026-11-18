@@ -116,3 +116,8 @@ it('orders linear symbols by the symbolic sort key', async () => {
   const a = new Sym('a'), B = new Sym('B');
   expect(String(simplify(new Rel('Ge', add(a, B), S.Zero)))).toBe('B >= -a');
 });
+
+it('rejects ordering of a generic Basic object', async () => {
+  const { Basic } = await import('../../src');
+  expect(() => isLt(Basic(), S.One)).toThrow(TypeError);
+});

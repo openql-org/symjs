@@ -7,11 +7,11 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Rational, Sym, impl } from '../core/nodes';
+import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Rational, S, Sym, impl } from '../core/nodes';
 import { at, cast } from '../core/guard';
 import { add, mul, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
-import { Concrete, doitConcrete } from '../concrete/summations';
+import { Concrete, doitConcrete, sumIsConvergent } from '../concrete/summations';
 import { integrate } from '../integrals/integrate';
 import { limit } from '../series/limits';
 import './diff';
@@ -62,7 +62,11 @@ const EVALF_TERMS = 1000n;
 /** A sum or product with finite integer limits evaluated to a number (SymPy Sum.evalf), or undefined. */
 export function evalConcreteValue(c: Concrete): Expr | undefined {
   const finite = c.limits.every(([, a, b]) => a instanceof Rational && b instanceof Rational && a.isInteger && b.isInteger && b.p - a.p < EVALF_TERMS);
-  if (!finite) return undefined;
+  if (!finite) {
+    const infiniteSum = c.kind2 === 'Sum' && c.limits.length === 1 && c.limits.some(([, a, b]) => a === S.NegativeInfinity || b === S.Infinity);
+    if (!infiniteSum || c.freeSymbols().size) return undefined;
+    if (sumIsConvergent(c) === false) throw new RangeError('the sum diverges');
+  }
   const v = doitConcrete(c);
   return v instanceof Concrete || v.freeSymbols().size ? undefined : v;
 }

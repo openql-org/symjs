@@ -132,11 +132,11 @@ const isValueMap = (v: NumericValues): v is ReadonlyMap<Expr | string, Value> =>
 function makeRawLookup(values: NumericValues | undefined): (s: Sym) => Value | undefined {
   if (!values) return () => undefined;
   if (isValueMap(values)) {
-    const byName = new Map<string, Value>();
+    const byKey = new Map<string, Value>();
     for (const [k, v] of values) {
-      byName.set(typeof k === 'string' ? k : k instanceof Sym ? k.name : k.key, v);
+      if (typeof k !== 'string') byKey.set(k.key, v);
     }
-    return (s) => byName.get(s.name);
+    return (s) => byKey.get(s.key) ?? values.get(s.name);
   }
   return (s) => (Object.prototype.hasOwnProperty.call(values, s.name) ? values[s.name] : undefined);
 }
@@ -320,6 +320,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     const v = raw(s);
     if (v === undefined) return undefined;
     if (typeof v === 'number') return [F.fromNumber(v), F.ZERO];
+    if (v instanceof Special) return undefined;
     if (v instanceof Expr) return evalAdaptive(v, wp);
     return [F.fromNumber(v.re), F.fromNumber(v.im)];
   };
@@ -392,6 +393,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
   };
   const e2 = sub(e);
   if (e2 instanceof Special) return pole ? e : e2;
+  if (e2.kind === 'Set') return go(e2);
   if (e2 instanceof Add || e2 instanceof Mul || (e2 instanceof Pow && !isFunction(e2))) return go(e2);
   // a node that evaluates its parts itself (SymPy _eval_evalf: vectors evaluate their components)
   const own = e2 instanceof ExtensionExpr ? e2.evalfSelf(go, F.precToDps(prec)) : undefined;

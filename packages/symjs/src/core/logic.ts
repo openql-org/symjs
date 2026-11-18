@@ -10,7 +10,7 @@ import type { ExprLike, RelOp } from './nodes';
 import { Expr } from './nodes';
 import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
 import { numCmp } from './num';
-import { add, couldExtractMinusSign, mul, sympify } from './ops';
+import { add, couldExtractMinusSign, knownNonreal, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { at, cast } from './guard';
@@ -48,10 +48,17 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   if (!equality) {
     for (const operand of [lhs, rhs]) {
       if (isBoolean(operand)) throw new TypeError('Can only compare inequalities with expressions');
-      if (isSpecial('zoo')(operand) || (operand instanceof Sym ? operand.assumptions0.get('extended_real') === false : isReal(operand) === false)) {
+      if (isSpecial('zoo')(operand) || knownNonreal(operand)) {
         throw new TypeError(`Invalid comparison of non-real ${String(operand)}`);
       }
     }
+  }
+  if (equality && lhs instanceof BoolAtom && rhs instanceof BoolAtom) return (lhs.value === rhs.value) === (op === 'Eq') ? S.true : S.false;
+  if (equality) {
+    const symbol = lhs instanceof Sym ? lhs : rhs;
+    const number = lhs instanceof Float ? lhs : rhs;
+    if (symbol instanceof Sym && number instanceof Float && (symbol.assumptions0.get('rational') === false ||
+        symbol.assumptions.integer === false && (number.isZero || number.mpf.exp >= 0n))) return op === 'Eq' ? S.false : S.true;
   }
   const decided = impl.relational?.(op, lhs, rhs);
   if (decided !== undefined) return decided;

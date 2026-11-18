@@ -219,15 +219,15 @@ describe("sympy/core/tests/test_evalf.py", () => {
     const n = new Sym('n');
     expect(equivalent(sympyStr(Sum(new Pow(n, rational(-1)), [n, rational(1), rational(2)]).evalf(15, {})), '1.5', [n], { fn: '.evalf', input: 'Sum(1/n, (n, 1, 2))' })).toBe(true);
   });
-  it.fails("test_evalf_sum:332", () => {
+  it("test_evalf_sum:332", () => {
     const n = new Sym('n');
     expect(sympyStr(Sum(new Mul([E, new Pow(fn('factorial', [n]), rational(-1))]), [n, rational(0), oo]).evalf(15, {}))).toBe('7.38905609893065');
   });
-  it.fails("test_evalf_sum:334", () => {
+  it("test_evalf_sum:334", () => {
     const n = new Sym('n');
     expect(sympyStr(Sum(new Mul([n, new Pow(rational(2), n), new Pow(fn('factorial', [n]), rational(-1))]), [n, rational(0), oo]).evalf(15, {}))).toBe('14.7781121978613');
   });
-  it.fails("test_evalf_sum:337", () => {
+  it("test_evalf_sum:337", () => {
     const x = new Sym('x');
     expect(sympyStr(Sum(new Pow(x, rational(-2)), [x, rational(100), oo]).evalf(15, {}))).toBe('0.0100501666633336');
   });
@@ -522,11 +522,11 @@ describe("sympy/core/tests/test_evalf.py", () => {
   it("test_issue_17421:631", () => {
     expect(sympyStr(fn('acos', [fn('cosh', [rational(1)])]).evalf(15, {}))).toBe('1.0*I');
   });
-  it.fails("test_issue_20291:640", () => {
+  it("test_issue_20291:640", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(finiteSet(a, b).evalf(15, { subs: new Map([[a, rational(1)], [b, rational(2)]]) }))).toBe('{1.0, 2.0}');
   });
-  it.fails("test_issue_20291:642", () => {
+  it("test_issue_20291:642", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(finiteSet(rational(1), new Add([a, new Mul([rational(-1), b])])).evalf(15, { subs: new Map([[a, rational(1)], [b, rational(2)]]) }))).toBe('{-1.0, 1.0}');
   });
@@ -546,7 +546,7 @@ describe("sympy/core/tests/test_evalf.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Pow(rational(0), x).evalf(15, { subs: new Map([[x, rational(-1)]]) }))).toBe('zoo');
   });
-  it.fails("test_evalf_with_zoo:652", () => {
+  it("test_evalf_with_zoo:652", () => {
     const x = new Sym('x');
     expect(sympyStr(new Pow(rational(0), x).evalf(15, { subs: new Map([[x, new Add([rational(-1), I])]]) }))).toBe('nan');
   });
@@ -608,7 +608,7 @@ describe("sympy/core/tests/test_evalf.py", () => {
   it("test_evalf_with_zoo:669", () => {
     expect(sympyStr(zoo.evalf(15, { chop: true }))).toBe('zoo');
   });
-  it.fails("test_evalf_with_zoo:670", () => {
+  it("test_evalf_with_zoo:670", () => {
     const x = new Sym('x');
     expect(sympyStr(x.evalf(undefined, { subs: new Map([[x, zoo]]) }))).toBe('zoo');
   });

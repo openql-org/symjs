@@ -703,3 +703,16 @@ it('uses symbolic parity when raising negative numbers to integer powers', () =>
   expect(sj.pow(new sj.Float(-2.5), odd).equals(sj.mul(-1, sj.pow(new sj.Float(2.5), odd)))).toBe(true);
   expect(String(sj.pow(2, odd))).toBe('2**n');
 });
+
+it('uses the sign of rational and symbolic exponents of zero', () => {
+  const z = sj.symbol('z', { zero: true });
+  expect(pow(0, z)).toBe(S.One);
+  expect(pow(S.ComplexInfinity, z)).toBe(S.One);
+  expect(pow(0, sj.I)).toBe(S.NaN);
+  expect(pow(0, sj.add(-1, sj.I))).toBe(S.NaN);
+  expect(pow(0, sj.symbol('w', { real: false }))).toBeInstanceOf(Pow);
+  expect(pow(0, Rational.of(1, 2))).toBe(S.Zero);
+  expect(pow(0, Rational.of(-1, 2))).toBe(S.ComplexInfinity);
+  expect(mul(sj.expPolar(x), sj.expPolar(mul(2, x))).key).toBe(sj.expPolar(mul(3, x)).key);
+  expect(mul(sj.expPolar(x), sj.expPolar(sj.neg(x))).key).toBe(S.One.key);
+});

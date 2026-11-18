@@ -898,7 +898,7 @@ describe("sympy/core/tests/test_power.py", () => {
     const n = new Sym('n', { negative: true });
     expect(sympyStr([I, at(asNumerDenom(new Mul([I, new Pow(new Mul([rational(-1), n]), rational(-1, 2))])), 1)], 't')).toBe('(I, sqrt(-n))');
   });
-  it.fails("test_issue_4362:189", () => {
+  it("test_issue_4362:189", () => {
     const x = new Sym('x');
     const sym1 = new Sym('0 or neg', { nonpositive: true });
     const v1 = asNumerDenom(new Pow(new Mul([x, new Pow(sym1, rational(-1))]), rational(-1, 2)));
@@ -1056,11 +1056,11 @@ describe("sympy/core/tests/test_power.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rational(0).pow(new Add([rational(-2), x])))).not.toBe('oo**(2 - x)');
   });
-  it.fails("test_zero:266", () => {
+  it("test_zero:266", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rational(0).pow(new Mul([rational(2), x, y])))).toBe('0**(x*y)');
   });
-  it.fails("test_zero:267", () => {
+  it("test_zero:267", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rational(0).pow(new Mul([rational(-2), x, y])))).toBe('zoo**(x*y)');
   });

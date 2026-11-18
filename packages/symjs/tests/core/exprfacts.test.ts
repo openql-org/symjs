@@ -967,3 +967,19 @@ it('reads assumption knowledge bases supplied by extension nodes', () => {
   }
   expect(fact(new Known(), 'finite')).toBe(true);
 });
+
+it('decides rationality after reducing an unevaluated function', () => {
+  const three = Rational.of(3);
+  expect(fact(sj.fn('log', [sj.exp(three)], { evaluate: false }), 'rational')).toBe(true);
+  expect(fact(sj.fn('sin', [sj.asin(three)], { evaluate: false }), 'rational')).toBe(true);
+});
+
+it('classifies integer powers on the complex diagonals', () => {
+  const a = sj.symbol('a', { negative: true });
+  const b = sj.add(a, sj.mul(-1, sj.I, a));
+  for (const n of [-4, -3, -2, 2, 3, 4]) {
+    const e = new Pow(b, Rational.of(n));
+    expect(fact(e, 'real')).toBe(n % 4 === 0);
+    expect(fact(e, 'imaginary')).toBe(Math.abs(n) % 4 === 2);
+  }
+});

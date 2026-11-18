@@ -754,3 +754,27 @@ it('optionally includes nonrational numeric coefficients in asCoeffMul', () => {
   expect(sj.asCoeffMul(x, [], false).map(String)).toEqual(['1', 'x']);
   expect(sj.asCoeffMul(sj.mul(x, y), [], false).map(String)).toEqual(['1', 'x,y']);
 });
+
+it('respects integral bindings when looking for a free subexpression', () => {
+  const [x, y] = sj.symbols('x y');
+  const pattern = sj.sin(x);
+  const integral = new sj.Integral([pattern, x, sj.S.Zero, y]);
+  expect(sj.hasFree(integral, pattern)).toBe(false);
+  expect(sj.hasFree(integral, integral)).toBe(true);
+  expect(sj.hasFree(sj.add(integral, pattern), pattern)).toBe(true);
+});
+
+it('combines numerators that share only some denominators', () => {
+  const [a, b, x, y] = sj.symbols('a b x y');
+  const expr = sj.add(a.div(x), b.div(x), sj.pow(y, -1));
+  const [num, den] = sj.asNumerDenom(expr);
+  expect(den.key).toBe(x.mul(y).key);
+  expect(num.key).toBe(sj.add(x, sj.mul(y, sj.add(a, b))).key);
+});
+it('splits complex products with a symbolic imaginary factor', () => {
+  const i = sj.symbol('i', { imaginary: true });
+  const x = sj.symbol('x');
+  const [a, b] = sj.asRealImag(sj.mul(i, x));
+  expect(a.key).toBe(sj.mul(sj.I, i, sj.im(x)).key);
+  expect(b.key).toBe(sj.mul(-1, sj.I, i, sj.re(x)).key);
+});

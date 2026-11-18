@@ -81,3 +81,8 @@ describe('round', () => {
     expect(sstr(round(p('-pi/50'), 1))).toBe('-0.e-1');
   });
 });
+
+it('rounds at a decimal magnitude below the binary64 range', () => {
+  expect(String(round(float('1e-500'), 510))).toBe('1.000000000e-500');
+  expect(String(round(float('1e-500'), 20))).toBe('0.0');
+});

@@ -28,6 +28,13 @@ export class BoolOp extends Expr {
   protected computeKey(): string {
     return `${this.op}(${this.args.map((a) => a.key).join(',')})`;
   }
+  override has(sub: Expr): boolean {
+    if ((this.op === 'And' || this.op === 'Or') && sub instanceof BoolOp && sub.op === this.op) {
+      const keys = new Set(this.args.map((a) => a.key));
+      if (sub.args.every((a) => keys.has(a.key))) return true;
+    }
+    return super.has(sub);
+  }
   /** A node of the same class with new arguments (re-evaluated). */
   withArgs(args: readonly Expr[]): Expr {
     switch (this.op) {

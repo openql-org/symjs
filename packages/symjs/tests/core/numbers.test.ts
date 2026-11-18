@@ -41,3 +41,8 @@ describe('numeric helpers', () => {
     expect(sj.sqrt(Rational.of(big)).equals(Rational.of(2n ** 550n))).toBe(true);
   });
 });
+
+it('takes an integer root with a degree larger than the bit length', () => {
+  expect(iroot(16n, 10n ** 17n)).toBe(1n);
+  expect(iroot(16n, 4n)).toBe(2n);
+});

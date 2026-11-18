@@ -14,6 +14,7 @@ const [x] = core.symbols('x');
 
 describe('core entry without the other feature areas', () => {
   it('reports that simplification, integration, limits and series are not loaded', () => {
+    expect(() => x.rewrite('exp')).toThrow(NotLoadedError);
     expect(() => x.simplify()).toThrow("simplify is not available: import '@symjs/symjs/simplify'");
     expect(() => x.limit(x, 0)).toThrow("limit is not available: import '@symjs/symjs/calculus'");
     expect(() => x.series(x)).toThrow("series is not available: import '@symjs/symjs/calculus'");

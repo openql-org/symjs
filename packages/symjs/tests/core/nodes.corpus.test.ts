@@ -325,13 +325,13 @@ describe("sympy/core/tests/test_operations.py", () => {
     const c = new Sym('c', { commutative: false });
     expect(sympyStr(new Mul([a, b, c]).has(new Mul([c, b])))).toBe('False');
   });
-  it.fails("test_issue_14025:51", () => {
+  it("test_issue_14025:51", () => {
     const a = new Sym('a', { commutative: false });
     const b = new Sym('b', { commutative: false });
     const c = new Sym('c', { commutative: false });
     expect(sympyStr(new Mul([a, b, c]).has(new Mul([b, c])))).toBe('True');
   });
-  it.fails("test_issue_14025:52", () => {
+  it("test_issue_14025:52", () => {
     const a = new Sym('a', { commutative: false });
     const b = new Sym('b', { commutative: false });
     const c = new Sym('c', { commutative: false });
@@ -782,10 +782,10 @@ describe("sympy/core/tests/test_symbol.py", () => {
     const [y, x, z] = symbols('y x z');
     expect(sympyStr(new Set([y, x, z]))).toBe('{y, x, z}');
   });
-  it.fails("test_symbols:250", () => {
+  it("test_symbols:250", () => {
     expect(() => expandSymbolNames('')).toThrow(RangeError);
   });
-  it.fails("test_symbols:251", () => {
+  it("test_symbols:251", () => {
     expect(() => expandSymbolNames(',')).toThrow(RangeError);
   });
   // a function that did not come from the library
@@ -1063,15 +1063,15 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rational(-28).mul(O(x, x, rational(0))))).toBe('O(x)');
   });
-  it.fails("test_simple_1:40", () => {
+  it("test_simple_1:40", () => {
     const x = new Sym('x');
     expect(sympyStr(O(O(x, x, rational(0))))).toBe('O(x)');
   });
-  it.fails("test_simple_1:41", () => {
+  it("test_simple_1:41", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(O(x, x, rational(0)), y))).toBe('O(x, x, y)');
   });
-  it.fails("test_simple_1:42", () => {
+  it("test_simple_1:42", () => {
     expect(sympyStr(O(rational(-23)))).toBe('O(1)');
   });
   it("test_simple_1:43", () => {
@@ -1148,7 +1148,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, rational(0)).add(exp(new Pow(x, rational(-1)))))).toBe('exp(1/x) + O(x)');
   });
-  it.fails("test_simple_4:71", () => {
+  it("test_simple_4:71", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, rational(0)).pow(2))).toBe('O(x**2)');
   });
@@ -1168,7 +1168,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, rational(0)).sub(O(x, x, rational(0))))).toBe('O(x)');
   });
-  it.fails("test_simple_6:82", () => {
+  it("test_simple_6:82", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, rational(0)).add(O(rational(1))))).toBe('O(1)');
   });
@@ -1176,29 +1176,29 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, rational(0)).add(O(new Pow(x, rational(2)), x, rational(0))))).toBe('O(x)');
   });
-  it.fails("test_simple_6:84", () => {
+  it("test_simple_6:84", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, rational(-1)), x, rational(0)).add(O(rational(1))))).toBe('O(1/x)');
   });
-  it.fails("test_simple_6:85", () => {
+  it("test_simple_6:85", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, rational(0)).add(O(exp(new Pow(x, rational(-1))), x, rational(0))))).toBe('O(exp(1/x))');
   });
-  it.fails("test_simple_6:86", () => {
+  it("test_simple_6:86", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, rational(3)), x, rational(0)).add(O(exp(new Mul([rational(2), new Pow(x, rational(-1))])), x, rational(0))))).toBe('O(exp(2/x))');
   });
-  it.fails("test_simple_6:87", () => {
+  it("test_simple_6:87", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, rational(-3)), x, rational(0)).add(O(exp(new Mul([rational(2), new Pow(x, rational(-1))])), x, rational(0))))).toBe('O(exp(2/x))');
   });
   it("test_simple_7:91", () => {
     expect(sympyStr(rational(1).add(O(rational(1))))).toBe('O(1)');
   });
-  it.fails("test_simple_7:92", () => {
+  it("test_simple_7:92", () => {
     expect(sympyStr(rational(2).add(O(rational(1))))).toBe('O(1)');
   });
-  it.fails("test_simple_7:93", () => {
+  it("test_simple_7:93", () => {
     const x = new Sym('x');
     expect(sympyStr(x.add(O(rational(1))))).toBe('O(1)');
   });
@@ -1355,19 +1355,19 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(log(x), rational(-1)), log(x)])))).toBe('O((log(x)**2 + 1)/log(x))');
   });
-  it.fails("test_add_1:167", () => {
+  it("test_add_1:167", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([x, exp(new Pow(x, rational(-1)))])))).toBe('O(exp(1/x))');
   });
-  it.fails("test_add_1:168", () => {
+  it("test_add_1:168", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(x, rational(-20)), exp(new Pow(x, rational(-1)))])))).toBe('O(exp(1/x))');
   });
-  it.fails("test_ln_args:172", () => {
+  it("test_ln_args:172", () => {
     const x = new Sym('x');
     expect(sympyStr(O(log(x), x, rational(0)).add(O(log(x), x, rational(0))))).toBe('O(log(x))');
   });
-  it.fails("test_ln_args:173", () => {
+  it("test_ln_args:173", () => {
     const x = new Sym('x');
     expect(sympyStr(O(log(x), x, rational(0)).add(O(log(x), x, rational(0))))).toBe('O(log(x))');
   });
@@ -1423,7 +1423,7 @@ describe("sympy/series/tests/test_order.py", () => {
   //   assert (Order(x + y) + x).expr == (x + y)
   //   => x + y
   it.todo("test_multivar_1:195");
-  it.fails("test_multivar_1:196", () => {
+  it("test_multivar_1:196", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(new Add([x, y]), [x, y], rational(0)).add(new Pow(x, rational(2))))).toBe('O(x + y, x, y)');
   });
@@ -1443,11 +1443,11 @@ describe("sympy/series/tests/test_order.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(new Add([x, y]), [x, y], rational(0)).mul(x))).toBe('O(x**2 + x*y, x, y)');
   });
-  it.fails("test_multivar_3:213", () => {
+  it("test_multivar_3:213", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Add([O(x, x, rational(0)), O(y, y, rational(0))]).add(O(new Add([x, y]), [x, y], rational(0))))).toBe('O(x + y, x, y)');
   });
-  it.fails("test_multivar_3:217", () => {
+  it("test_multivar_3:217", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(O(new Mul([y, new Pow(x, rational(2))]), [x, y], rational(0)).add(O(new Mul([x, y]), [x, y], rational(0))))).toBe('O(x*y, x, y)');
   });
@@ -1557,7 +1557,7 @@ describe("sympy/series/tests/test_order.py", () => {
   //   raises(NotImplementedError, lambda: (O(x) + O(y)).getn())
   //   => None
   it.todo("test_getO:290");
-  it.fails("test_leading_term:295", () => {
+  it("test_leading_term:295", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(fn('polygamma', [rational(0), new Pow(x, rational(-1))]), rational(-1))))).toBe('O(1/log(x))');
   });
@@ -1581,11 +1581,11 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(isPow(new Pow(O(rational(1)), x)))).toBe('True');
   });
-  it.fails("test_issue_4279:308", () => {
+  it("test_issue_4279:308", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(O(a, [a, b], rational(0)).add(O(rational(1), [a, b], rational(0))))).toBe('O(1, a, b)');
   });
-  it.fails("test_issue_4279:309", () => {
+  it("test_issue_4279:309", () => {
     const [b, a] = symbols('b a');
     expect(sympyStr(O(b, [a, b], rational(0)).add(O(rational(1), [a, b], rational(0))))).toBe('O(1, a, b)');
   });
@@ -1593,15 +1593,15 @@ describe("sympy/series/tests/test_order.py", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(O(new Add([a, b]), [a, b], rational(0)).add(O(rational(1), [a, b], rational(0))))).toBe('O(1, a, b)');
   });
-  it.fails("test_issue_4279:311", () => {
+  it("test_issue_4279:311", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(O(rational(1), [a, b], rational(0)).add(O(a, [a, b], rational(0))))).toBe('O(1, a, b)');
   });
-  it.fails("test_issue_4279:312", () => {
+  it("test_issue_4279:312", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(O(rational(1), [a, b], rational(0)).add(O(b, [a, b], rational(0))))).toBe('O(1, a, b)');
   });
-  it.fails("test_issue_4279:313", () => {
+  it("test_issue_4279:313", () => {
     const [a, b] = symbols('a b');
     expect(sympyStr(O(rational(1), [a, b], rational(0)).add(O(new Add([a, b]), [a, b], rational(0))))).toBe('O(1, a, b)');
   });
@@ -1702,23 +1702,23 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rational(-28).mul(O(x, x, oo)))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:357", () => {
+  it("test_order_at_infinity:357", () => {
     const x = new Sym('x');
     expect(sympyStr(O(O(x, x, oo), x, oo))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:358", () => {
+  it("test_order_at_infinity:358", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(O(x, x, oo), y, oo))).toBe('O(x, (x, oo), (y, oo))');
   });
-  it.fails("test_order_at_infinity:359", () => {
+  it("test_order_at_infinity:359", () => {
     const x = new Sym('x');
     expect(sympyStr(O(rational(3), x, oo))).toBe('O(1, (x, oo))');
   });
-  it.fails("test_order_at_infinity:360", () => {
+  it("test_order_at_infinity:360", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(new Add([x, y, new Pow(x, rational(2))]), x, oo))).toBe('O(x**2, (x, oo))');
   });
-  it.fails("test_order_at_infinity:361", () => {
+  it("test_order_at_infinity:361", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(new Add([x, y, new Pow(x, rational(2))]), y, oo))).toBe('O(y, (y, oo))');
   });
@@ -1738,19 +1738,19 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(O(new Pow(x, rational(2)), x, oo).div(new Pow(log(x), rational(3)))), 'O(x**2/log(1/x)**3, (x, oo))', [x], { fn: '.__truediv__', input: 'O(x**2, (x, oo))' })).toBe(true);
   });
-  it.fails("test_order_at_infinity:368", () => {
+  it("test_order_at_infinity:368", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(new Pow(x, rational(-1))))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:368 (2)", () => {
+  it("test_order_at_infinity:368 (2)", () => {
     const x = new Sym('x');
     expect(sympyStr(new Pow(x, rational(-1)).add(O(x, x, oo)))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:369", () => {
+  it("test_order_at_infinity:369", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(rational(1)))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:369 (2)", () => {
+  it("test_order_at_infinity:369 (2)", () => {
     const x = new Sym('x');
     expect(sympyStr(rational(1).add(O(x, x, oo)))).toBe('O(x, (x, oo))');
   });
@@ -1766,31 +1766,31 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(O(x, x, oo).add(new Pow(x, rational(2)))), 'x**2 + O(x, (x, oo))', [x], { fn: '.__add__', input: 'O(x, (x, oo))' })).toBe(true);
   });
-  it.fails("test_order_at_infinity:372", () => {
+  it("test_order_at_infinity:372", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, rational(-1)), x, oo).add(new Pow(x, rational(-2))))).toBe('O(1/x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:372 (2)", () => {
+  it("test_order_at_infinity:372 (2)", () => {
     const x = new Sym('x');
     expect(sympyStr(new Pow(x, rational(-2)).add(O(new Pow(x, rational(-1)), x, oo)))).toBe('O(1/x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:373", () => {
+  it("test_order_at_infinity:373", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(exp(new Pow(x, rational(-1)))))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:375", () => {
+  it("test_order_at_infinity:375", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).pow(2))).toBe('O(x**2, (x, oo))');
   });
-  it.fails("test_order_at_infinity:377", () => {
+  it("test_order_at_infinity:377", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(O(new Pow(x, rational(2)), x, oo)))).toBe('O(x**2, (x, oo))');
   });
-  it.fails("test_order_at_infinity:378", () => {
+  it("test_order_at_infinity:378", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(O(new Pow(x, rational(-2)), x, oo)))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:379", () => {
+  it("test_order_at_infinity:379", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(O(new Pow(x, rational(-1)), x, oo)))).toBe('O(x, (x, oo))');
   });
@@ -1798,27 +1798,27 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).sub(O(x, x, oo)))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:382", () => {
+  it("test_order_at_infinity:382", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(O(rational(1), x, oo)))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:383", () => {
+  it("test_order_at_infinity:383", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(O(new Pow(x, rational(2)), x, oo)))).toBe('O(x**2, (x, oo))');
   });
-  it.fails("test_order_at_infinity:384", () => {
+  it("test_order_at_infinity:384", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, rational(-1)), x, oo).add(O(rational(1), x, oo)))).toBe('O(1, (x, oo))');
   });
-  it.fails("test_order_at_infinity:385", () => {
+  it("test_order_at_infinity:385", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).add(O(rational(1), x, oo)))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_at_infinity:386", () => {
+  it("test_order_at_infinity:386", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, rational(3)), x, oo).add(O(rational(1), x, oo)))).toBe('O(x**3, (x, oo))');
   });
-  it.fails("test_order_at_infinity:387", () => {
+  it("test_order_at_infinity:387", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, rational(-3)), x, oo).add(O(rational(1), x, oo)))).toBe('O(1, (x, oo))');
   });
@@ -1842,7 +1842,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, rational(0)).add(O(x, x, oo)))).toBe('O(x, (x, oo)) + O(x)');
   });
-  it.fails("test_mixing_order_at_zero_and_infinity:399", () => {
+  it("test_mixing_order_at_zero_and_infinity:399", () => {
     const x = new Sym('x');
     expect(sympyStr(O(O(x, x, oo)))).toBe('O(x, (x, oo))');
   });
@@ -1874,7 +1874,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([rational(1), new Mul([rational(-1), x])]), x, rational(1)))).toBe('O(x - 1, (x, 1))');
   });
-  it.fails("test_order_at_some_point:412", () => {
+  it("test_order_at_some_point:412", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([rational(-1), x]), x, rational(1)).pow(2))).toBe('O((x - 1)**2, (x, 1))');
   });
@@ -1956,7 +1956,7 @@ describe("sympy/series/tests/test_order.py", () => {
   it.fails("test_issue_9192:451", () => {
     expect(sympyStr(O(rational(1)).pow(O(rational(1))))).toBe('O(1)');
   });
-  it.fails("test_issue_9910:455", () => {
+  it("test_issue_9910:455", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Mul([x, log(x)]), fn('sin', [x])]), x, oo))).toBe('O(x*log(1/x), (x, oo))');
   });
@@ -1988,15 +1988,15 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(() => str(O(new Pow(x, rational(3)), x, rational(0)))).toThrow(NotImplementedError);
   });
-  it.fails("test_issue_15539:474", () => {
+  it("test_issue_15539:474", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(x, rational(-4)), new Pow(x, rational(-2))]), x, S.NegativeInfinity))).toBe('O(x**(-2), (x, -oo))');
   });
-  it.fails("test_issue_15539:475", () => {
+  it("test_issue_15539:475", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(x, rational(-4)), exp(x)]), x, S.NegativeInfinity))).toBe('O(x**(-4), (x, -oo))');
   });
-  it.fails("test_issue_15539:476", () => {
+  it("test_issue_15539:476", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(x, rational(-4)), exp(new Mul([rational(-1), x]))]), x, S.NegativeInfinity))).toBe('O(exp(-x), (x, -oo))');
   });
@@ -2012,19 +2012,19 @@ describe("sympy/series/tests/test_order.py", () => {
   //   assert O(log(x)).contains(2)
   //   => True
   it.todo("test_issue_22165:484");
-  it.fails("test_issue_23231:490", () => {
+  it("test_issue_23231:490", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(rational(2), x), new Pow(x, x)]), x, oo))).toBe('O(exp(x*log(x)), (x, oo))');
   });
-  it.fails("test_issue_23231:491", () => {
+  it("test_issue_23231:491", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(x, rational(2)), new Pow(x, x)]), x, oo))).toBe('O(exp(x*log(x)), (x, oo))');
   });
-  it.fails("test_issue_23231:492", () => {
+  it("test_issue_23231:492", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(x, rational(-2)), new Pow(x, x)]), x, oo))).toBe('O(exp(x*log(x)), (x, oo))');
   });
-  it.fails("test_issue_23231:493", () => {
+  it("test_issue_23231:493", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(rational(2), x), new Pow(rational(3), x)]), x, oo))).toBe('O(exp(x*log(3)), (x, oo))');
   });
@@ -2032,15 +2032,15 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([rational(1), new Mul([x, fn('sin', [x])])]), x, oo))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_issue_22836:501", () => {
+  it("test_issue_22836:501", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(rational(2), x), fn('factorial', [x])]), x, oo))).toBe('O(factorial(x), (x, oo))');
   });
-  it.fails("test_issue_22836:502", () => {
+  it("test_issue_22836:502", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(rational(2), x), new Pow(x, x), fn('factorial', [x])]), x, oo))).toBe('O(exp(x*log(x)), (x, oo))');
   });
-  it.fails("test_issue_22836:503", () => {
+  it("test_issue_22836:503", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([x, fn('factorial', [x])]), x, oo))).toBe('O(factorial(x), (x, oo))');
   });

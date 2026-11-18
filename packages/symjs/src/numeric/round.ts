@@ -28,8 +28,9 @@ function roundInt(n: bigint, k: number): bigint {
 
 /** Position of the first significant digit: _mag(12) = 2, _mag(.012) = -1. */
 function decimalMag(v: F.Mpf): number {
-  const x = Math.abs(F.toNumber(v));
-  let m = Math.ceil(Math.log10(x));
+  const magnitude = F.mag(v);
+  const mantissa = F.toNumber(F.ldexp(F.abs(v), -magnitude));
+  let m = Math.ceil(Math.log10(mantissa) + magnitude * Math.LOG10E * Math.LN2);
   // correct for off-by-one using exact comparison with 10**m
   const p = m >= 0 ? F.fromInt(10n ** BigInt(m)) : F.fromRational(1n, 10n ** BigInt(-m), 200);
   if (F.cmp(F.abs(v), p) >= 0) m += 1;

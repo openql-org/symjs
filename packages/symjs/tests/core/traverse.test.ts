@@ -515,3 +515,14 @@ it('counts large noncommutative power runs exactly', () => {
   expect(subs(mul(pow(x, count), pow(A, count)), [[mul(x, A), B]]).key).toBe(pow(B, count).key);
   expect(subs(mul(pow(x, 3), A), [[mul(x, A), B]]).key).toBe(mul(pow(x, 2), B).key);
 });
+
+it('uses an integral float exponent only when the coefficient ratio is exactly integral', () => {
+  const x = sj.symbol('x');
+  const y = sj.symbol('y');
+  const z = sj.symbol('z');
+  const power = (coefficient: sj.Expr) => sj.pow(x, sj.mul(coefficient, y));
+  expect(power(new sj.Float(6)).subs(power(sj.Rational.of(3)), z).key).toBe(sj.pow(z, new sj.Float(2)).key);
+  expect(power(sj.Rational.of(6)).subs(power(new sj.Float(3)), z).key).toBe(sj.pow(z, new sj.Float(2)).key);
+  const nearSix = sj.Rational.of(6n * 10n ** 20n + 1n, 10n ** 20n);
+  expect(power(nearSix).subs(power(new sj.Float(3)), z).key).toBe(power(nearSix).key);
+});

@@ -7,7 +7,9 @@
  * range syntax of symbols().
  */
 
-import { type Constant, Float, Rational, impl } from './nodes';
+import { type Constant, type Expr, Float, Rational, impl } from './nodes';
+import { numCmp } from './num';
+import { isPositive } from './assumptions';
 import { at, pair } from './guard';
 import { NoMatch } from './truth';
 import type { NoMatchResult } from './truth';
@@ -244,7 +246,14 @@ export function numDigits(n: bigint, base = 10): number {
 }
 
 /** Inverse of a modulo m (SymPy mod_inverse); for non-integers 1/a when m > 1. */
-export function modInverse(a: Rational, m: Rational): Rational {
+export function modInverse(a: Rational, m: Rational): Rational;
+export function modInverse(a: Expr, m: Expr): Expr;
+export function modInverse(a: Expr, m: Expr): Expr {
+  if (!(a instanceof Rational && m instanceof Rational)) {
+    if (!a.isNumber || !m.isNumber) throw new TypeError('mod_inverse requires numeric arguments');
+    if (m instanceof Rational || m instanceof Float ? numCmp(m, Rational.of(1)) > 0 : isPositive(m.sub(1)) === true) return a.pow(-1);
+    throw new RangeError('mod_inverse: inverse does not exist');
+  }
   if (a.isInteger && m.isInteger) {
     // no inverse modulo 1 or -1 (SymPy); the result has the sign of m (Python's x % m)
     if (babs(m.p) === 1n) throw new RangeError('mod_inverse: inverse does not exist');

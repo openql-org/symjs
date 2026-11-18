@@ -138,9 +138,10 @@ const fuzzy = (v: FuzzyLike): Truth => v ?? 'unknown';
  * `assumptions(x + I)` for a positive x is `{finite: true, complex: true,
  * real: false, zero: false, ...}`.
  */
-export function assumptions(expr: ExprLike): Map<AssumptionName, boolean> {
+export function assumptions(expr: ExprLike, check?: Iterable<string>): Map<AssumptionName, boolean> {
   const f = factsOf(sympify(expr));
-  return new Map(ASSUMPTION_NAMES.flatMap((k): [AssumptionName, boolean][] => {
+  const names = check === undefined ? ASSUMPTION_NAMES : [...new Set(check)].filter(isName);
+  return new Map(names.flatMap((k): [AssumptionName, boolean][] => {
     const v = f.get(k);
     return v === undefined ? [] : [[k, v]];
   }));

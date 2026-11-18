@@ -17,9 +17,9 @@ import { InvariantError, NotImplementedError, NotLoadedError } from './errors';
 import type { Kind } from './kind';
 import { at } from './guard';
 import { classOf } from './callable';
-import { gcd } from './numbers';
+import { gcd, lcm } from './numbers';
 import { deduceAllFacts } from './facts';
-import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
+import { type Mpf, fromNumber as mpfFromNumber, fromRational as mpfFromRational, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
 
 export type ExprKind =
   | 'Rational'
@@ -660,6 +660,14 @@ export abstract class Expr {
   }
   has(sub: Expr): boolean {
     if (this.key === sub.key) return true;
+    if (this.constructor === sub.constructor && (this instanceof Add || this instanceof Mul)) {
+      const commutative = new Set(this.args.filter((a) => a.isCommutative).map((a) => a.key));
+      if (sub.args.every((a) => !a.isCommutative || commutative.has(a.key))) {
+        const order = this.args.filter((a) => !a.isCommutative);
+        const pattern = sub.args.filter((a) => !a.isCommutative);
+        if (!pattern.length || order.some((_, i) => pattern.every((a, j) => a.key === order[i + j]?.key))) return true;
+      }
+    }
     return this.args.some((a) => a.has(sub));
   }
 
@@ -744,6 +752,21 @@ export class Rational extends Expr {
     if (this.q !== 1n || b === undefined) throw new TypeError('bitwise operations need integers');
     return Rational.of(op(this.p, b));
   }
+  /** The numeric gcd and both quotients (SymPy Number.cofactors). */
+  cofactors(other: Num): [Num, Num, Num] {
+    if (other instanceof Float) {
+      const [g, b, a] = other.cofactors(this);
+      return [g, a, b];
+    }
+    const g = Rational.of(gcd(this.p, other.p), lcm(this.q, other.q));
+    if (g.isZero) throw new RangeError('cofactors of two exact zeros');
+    return [g, Rational.of(this.p * g.q, this.q * g.p), Rational.of(other.p * g.q, other.q * g.p)];
+  }
+  /** Bitwise complement of an integer in two's complement. */
+  bitNot(): Rational {
+    if (!this.isInteger) throw new TypeError('bitwise operations need integers');
+    return Rational.of(~this.p);
+  }
   /** SymPy Integer.__lshift__: the integer shifted left by n bits (a RangeError for a negative n). */
   lshift(n: Rational | number | bigint): Rational {
     return this.bits(n, (a, b) => (b < 0n ? negativeShift() : a << b));
@@ -792,6 +815,12 @@ export class Float extends Expr {
     this.mpf = mpfNormalize(value.man, value.exp, prec);
     this.prec = prec;
   }
+  /** In the real field the gcd is one, at the precision of the two operands. */
+  cofactors(other: Num): [Float, Float, Float] {
+    const prec = other instanceof Float ? Math.max(this.prec, other.prec) : this.prec;
+    const value = other instanceof Float ? other.mpf : mpfFromRational(other.p, other.q, prec);
+    return [new Float(1, prec), new Float(this.mpf, prec), new Float(value, prec)];
+  }
   /** Nearest JS double. */
   get value(): number {
     return mpfToNumber(this.mpf);
@@ -835,10 +864,11 @@ export class Sym extends Expr {
 
   constructor(readonly name: string, assumptions: Assumptions = {}) {
     super();
-    // like SymPy, any non-empty string is a valid name (e.g. symbols(':3') gives 0, 1, 2)
-    if (typeof name !== 'string' || name.length === 0) {
+    if (typeof name !== 'string') {
       throw new SyntaxError(`Invalid symbol name: ${JSON.stringify(name)}`);
     }
+    const commutative: unknown = Reflect.get(assumptions, 'commutative');
+    if (commutative !== undefined && typeof commutative !== 'boolean') throw new RangeError('commutativity must be true or false');
     const facts = deduceAllFacts(Object.fromEntries(Object.entries(assumptions).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])));
     const a: { -readonly [K in keyof Assumptions]: Assumptions[K] } = { ...assumptions };
     if (a.commutative === true) delete a.commutative;

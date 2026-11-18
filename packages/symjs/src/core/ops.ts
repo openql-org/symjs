@@ -315,10 +315,10 @@ function perfectPower(n: bigint): [bigint, bigint] | undefined {
  */
 function intPow(n: bigint, e: Rational): [Rational, RatPow[]] {
   if (e.isNegative) {
-    // SymPy Rational._eval_power of 1/n: n**(p*(q - 1)/q) / n**p
-    const ne = numNeg(e);
-    const [c, rads] = intPow(n, Rational.of(ne.p * (ne.q - 1n), ne.q));
-    return [numMul(c, Rational.of(1n, ipow(n, ne.p))), rads];
+    // n**(-p/q) = n**(ceil(p/q) - p/q) / n**ceil(p/q).
+    const whole = (-e.p + e.q - 1n) / e.q;
+    const [c, rads] = intPow(n, Rational.of(whole * e.q + e.p, e.q));
+    return [numMul(c, Rational.of(1n, ipow(n, whole))), rads];
   }
   const root = iroot(n, e.q);
   if (ipow(root, e.q) === n) return [Rational.of(ipow(root, e.p)), []];
@@ -742,6 +742,14 @@ function keepCoeffMul(c: Num, t: Expr): Expr {
 let IPI: Expr | undefined;
 const iPi = (): Expr => (IPI ??= new Mul([S.I, S.Pi]));
 
+// A sum of extended-real terms and exactly one nonreal term cannot be real.
+export function knownNonreal(e: Expr): boolean {
+  const real = (x: Expr) => x instanceof Sym ? x.assumptions0.get('extended_real') : isReal(x);
+  if (!(e instanceof Add)) return real(e) === false;
+  const terms = e.args.map(real);
+  return terms.filter((v) => v === false).length === 1 && !terms.includes(undefined);
+}
+
 export function pow(bx: ExprLike, ex: ExprLike): Expr {
   const b = sympify(bx);
   const e = sympify(ex);
@@ -792,8 +800,14 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   if ((b instanceof Rational || b instanceof Float) && b.isNegative && e instanceof Sym && e.assumptions0.get('odd') === true) return mul(-1, pow(numNeg(b), e));
 
   if (b instanceof Rational && b.isZero) {
+    if (e instanceof Sym && e.assumptions.zero) return S.One;
+    if (knownNonreal(e)) return S.NaN;
     if (isPositive(e)) return S.Zero;
     if (isNegative(e)) return S.ComplexInfinity;
+    if (e instanceof Mul) {
+      const [c, rest] = splitCoeff(e);
+      if (c instanceof Float || !c.isOne) return pow(c.isNegative ? S.ComplexInfinity : S.Zero, rest);
+    }
   }
 
   if (isI(b) && e instanceof Rational && e.isInteger) {
@@ -1091,6 +1105,7 @@ function powSpecial(b: Expr, e: Expr): Expr | undefined {
   if (b instanceof Special) {
     if (b.name === 'oo') return infPow(e);
     if (b.name === 'zoo') {
+      if (e instanceof Sym && e.assumptions.zero) return S.One;
       // SymPy gives zoo**oo = 0; |zoo|**oo is infinite, so zoo**oo = zoo here
       if (e instanceof Special && e.name === 'zoo') return S.NaN;
       if (isPositive(e)) return b;

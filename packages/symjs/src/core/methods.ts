@@ -572,7 +572,7 @@ export function isPolynomial(eIn: ExprLike, syms: readonly Expr[] = []): boolean
 /** SymPy `is_rational_function(*syms)`. */
 export function isRationalFunction(eIn: ExprLike, syms: readonly Expr[] = []): boolean {
   const e = sympify(eIn);
-  if (e instanceof Special) return false;
+  if ([S.NaN, S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((v) => e.has(v))) return false;
   const s = symsOrAll(e, syms);
   if (s.length === 0) return true;
   const inSyms = (x: Expr) => s.some((y) => y.key === x.key);
@@ -627,6 +627,16 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   if ((e0 instanceof Pow && e0.base instanceof Constant && e0.base.name === 'E') || e0 instanceof Fn) {
     return asRealImagExpand(e0);
   }
+  if (e0 instanceof Mul && e0.isCommutative && e0.args.some((a) => a instanceof Sym && a.assumptions.imaginary)) {
+    let real: Expr = S.One;
+    let imag: Expr = S.Zero;
+    for (const factor of e0.args) {
+      const a = re(factor);
+      const b = im(factor);
+      [real, imag] = [add(mul(real, a), mul(-1, imag, b)), add(mul(real, b), mul(imag, a))];
+    }
+    return [real, imag];
+  }
   const e = expandMul(e0);
   return [re(e), im(e)];
 }
@@ -635,7 +645,7 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
 export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
   const e = sympify(eIn);
   // SymPy Mul.as_numer_denom of a MatMul: the products of the numerators and of the denominators
-  if (!e.isCommutative && !(isMulLike(e) && !(e instanceof Mul))) return [e, S.One];
+  if (!e.isCommutative && !isMulLike(e)) return [e, S.One];
   if (e instanceof Rational) return [Rational.of(e.p), Rational.of(e.q)];
   if (isMulLike(e)) {
     const ns: Expr[] = [];
@@ -664,7 +674,7 @@ export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
       n = base;
       d = S.One;
     }
-    const dnonpos = isNegativeQ(d) === true || isZeroQ(d) === true ? true : isPositive(d) === true ? false : undefined;
+    const dnonpos = (d instanceof Sym && d.assumptions.nonpositive === true) || isNegativeQ(d) === true || isZeroQ(d) === true ? true : isPositive(d) === true ? false : undefined;
     if (dnonpos === true) {
       n = mul(-1, n);
       d = mul(-1, d);
@@ -744,15 +754,13 @@ export function hasFree(eIn: ExprLike, ...patterns: (ExprLike | { fn: string })[
       };
       return [...free].some((s) => s.key === q.key) || differentiationVariable(e);
     }
-    if (e.has(q)) return true;
-    // a sub-sum or sub-product of an Add/Mul also counts (x + y + 1 has y + 1)
-    const qs = q instanceof Add ? q.args : q instanceof Mul ? q.args : undefined;
-    if (!qs) return false;
-    const go = (x: Expr): boolean => {
-      if (x.kind === q.kind && qs.every((a) => x.args.some((b) => b.key === a.key))) return true;
-      return x.args.some(go);
-    };
-    return go(e);
+    if (e.key === q.key) return true;
+    const masked = mapBottomUpM(e, (node) => {
+      if (node.kind !== 'Integral' || node.args.length < 3) return node;
+      const dummy = new Dummy();
+      return rebuildM(node, [xreplaceM(at(node.args, 0), [[at(node.args, 1), dummy]]), dummy, ...node.args.slice(2)]);
+    });
+    return masked.has(q);
   });
 }
 

@@ -47,3 +47,12 @@ describe('Subs (SymPy Subs)', () => {
     expect(sstr(diff(Subs(f(x), x, y), y))).toBe('Derivative(f(y), y)');
   });
 });
+
+it('evaluates substitutions before numerical approximation and preserves a formal derivative', () => {
+  expect(Subs(x, x, 3).evalf().toNumber()).toBe(3);
+  const formal = Subs(diff(f(x), x), x, 0);
+  expect(formal.evalf().key).toBe(formal.key);
+  expect(() => Subs(x, [x, x], [1, 2])).toThrow(RangeError);
+  expect(() => Subs(x, [x, y], [1])).toThrow(RangeError);
+  expect(Subs(x, [], []).key).toBe(x.key);
+});

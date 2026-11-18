@@ -26,7 +26,7 @@ import type { Expr } from './nodes';
 import { Add, Constant, Dummy, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, impl } from './nodes';
 import { add, asBaseExp, mul, neg, pow, sub } from './ops';
 import { freeSymbols, subs, xreplace } from './traverse';
-import { asCoeffMul, asNumerDenom, coeff, isPolynomial } from './methods';
+import { asCoeffMul, asNumerDenom, asRealImag, coeff, isPolynomial } from './methods';
 import { FACT_PREREQUISITES, deduceFacts } from './facts';
 import { Q, ask } from './refine';
 import { assumptions } from './checkassumptions';
@@ -55,6 +55,10 @@ export function fact(e: Expr, name: string): V {
   if (name === 'commutative' && e instanceof Pow) return e.isCommutative;
   // (SymPy Float: is_rational and is_irrational are None)
   if (e instanceof Float && (name === 'rational' || name === 'irrational')) return undefined;
+  if (name === 'rational' && e instanceof Fn && impl.fn) {
+    const evaluated = impl.fn(e.name, e.args);
+    if (evaluated.key !== e.key) return fact(evaluated, name);
+  }
   const st = stateOf(e);
   const known = st.kb.get(name);
   if (known !== undefined || st.none.has(name) || st.busy.has(name)) return known;
@@ -882,7 +886,18 @@ function powInteger(e: Pow): V {
   return undefined;
 }
 
+// On either diagonal the argument is an odd multiple of pi/4. For an integer
+// power the real and imaginary axes alternate at multiples of two.
+function diagonalPower(e: Pow, imaginary: boolean): V {
+  if (!(e.base instanceof Add && e.exp instanceof Rational && e.exp.isInteger)) return undefined;
+  const [a, b] = asRealImag(e.base);
+  if (!is(a, 'nonzero') || (a.key !== b.key && a.key !== neg(b).key)) return undefined;
+  return e.exp.p % 4n === 0n ? !imaginary : imaginary && e.exp.p % 2n === 0n;
+}
+
 function powExtendedReal(e: Pow): V {
+  const diagonal = diagonalPower(e, false);
+  if (diagonal !== undefined) return diagonal;
   const [b, ex] = e.args;
   const realB = fact(b, 'extended_real');
   if (realB === undefined) return b instanceof Pow && isExp(b) && is(b.exp, 'imaginary') ? fact(ex, 'imaginary') : undefined;
@@ -943,6 +958,8 @@ function powFinite(e: Pow): V {
 }
 
 function powImaginary(e: Pow): V {
+  const diagonal = diagonalPower(e, true);
+  if (diagonal !== undefined) return diagonal;
   const [b, ex] = e.args;
   if (!b.isCommutative) return false;
   if (is(b, 'imaginary') && is(ex, 'integer')) return fact(ex, 'odd');

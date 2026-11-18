@@ -43,6 +43,7 @@ export function ipow(base: bigint, exp: bigint): bigint {
 export function iroot(n: bigint, k: bigint): bigint {
   if (n < 0n) throw new RangeError('iroot: negative radicand');
   if (n < 2n || k === 1n) return n;
+  if (k >= BigInt(n.toString(2).length)) return 1n;
   // Newton's iteration from x0 = 2**ceil(bits/k) > n^(1/k) decreases to floor(n^(1/k)) and
   // stops there (y >= x); a floating-point guess would overflow beyond 2**1024
   let x = 1n << BigInt(Math.ceil(n.toString(2).length / Number(k)));
