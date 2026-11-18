@@ -398,6 +398,8 @@ const SOLVE_FOR_EXPR: [string, string][] = [
   ['x - 1 | x + 1', '[2]'],
   ['x + y + 2*a + 1 | x + y', '[-2*a - 1]'],
   ['x + 3 | 2*y', '[]'],
+  ['x + exp(2*x) | exp(x)', '[-sqrt(-x), sqrt(-x)]'],
+  ['exp(x) - 1 | exp(y)', '[]'],
 ];
 const SOLVE_LINEAR: [string, { symbols?: string[]; exclude?: string[] }, string][] = [
   ['y + sin(x)**2 + cos(x)**2', {}, '(y, -sin(x)**2 - cos(x)**2)'],
@@ -790,6 +792,25 @@ it('retains denominator and radical checks in larger elimination systems', () =>
   expect(nonlinsolve([parse('x**(1/7) - y'), parse('x - 1'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[1, 1, 1]']);
 });
 
+it('keeps indexed roots of the numerator when the denominator is nonzero', () => {
+  const numerator = parse('y**7+y+1');
+  const equations = [parse('x-y'), parse('(y**7+y+1)/(y+2)')];
+  const roots = Array.from({ length: 7 }, (_, index) => new CRootOf(numerator, index));
+  expect(solveSystem(equations, [x, y]).map(show)).toEqual(roots.map((root) => show([root, root])));
+});
+
+it('keeps requested free parameters after polynomial elimination', () => {
+  // SymPy 1.14: test_issue_21022.
+  const equations = ['k-16', 'p-8', 'y**2+z**2-x**2', 'd-x+p', 'd**2+k**2-y**2', 'z**2-p**2-k**2', 'abc-efg'].map((equation) => parse(equation));
+  const variables = symbols('abc d efg k p x y z');
+  expect(solveSystem(equations, variables).map(show).sort()).toEqual([
+    '[efg, 32, efg, 16, 8, 40, -16*sqrt(5), -8*sqrt(5)]',
+    '[efg, 32, efg, 16, 8, 40, -16*sqrt(5), 8*sqrt(5)]',
+    '[efg, 32, efg, 16, 8, 40, 16*sqrt(5), -8*sqrt(5)]',
+    '[efg, 32, efg, 16, 8, 40, 16*sqrt(5), 8*sqrt(5)]',
+  ]);
+});
+
 describe('detQuick, invQuick and solveLinearSystemLU (SymPy solvers.py)', () => {
   const [z, a, b] = symbols('z a b');
   const M = (rows: (number | Expr)[][]) => Matrix.of(rows);
@@ -930,6 +951,8 @@ it('checks evaluated inequalities and retains symbolic coordinates in finite sys
   expect(String(nsolve(parse('Integral(x*y, (x,0,5))'), y, 2))).toBe('0');
   expect(solveLinear(parse('x+Derivative(2*x,x)')).map(String)).toEqual(['x','-2']);
   expect(solveLinear(parse('x+Integral(x,y)-2'), { symbols: [x] }).map(String)).toEqual(['x','2/(y + 1)']);
+  expect(solveLinear(parse('Integral(2, (x, 0, x)) - 6'), { symbols: [x] }).map(String)).toEqual(['x', '3']);
+  expect(solveLinear(parse('Integral(2, x) + x - 6'), { symbols: [x] }).map(String)).toEqual(['x', '2']);
 });
 it('supports coefficient inference, expression targets, and numeric checking flags', async () => {
   const { checksol, S, solveSystem, detPerm, detMinor } = await import('../../src');
@@ -994,6 +1017,7 @@ it('takes logarithms of two positive exponential terms', () => {
   expect(solutions).toHaveLength(2);
   for (const value of solutions) expect(Math.abs(value.toComplex().re)).toBeCloseTo(Math.sqrt(6 * Math.log(2) / Math.log(5)), 12);
   expect(show(solve(parse('2**x+x'), x))).toBe('[-LambertW(log(2))/log(2)]');
+  expect(() => solve(parse('5**(x/2) + 2**(x/3)'), x)).toThrow(NotImplementedError);
 });
 
 it('keeps free coordinates in monic positive-dimensional systems', () => {
@@ -1008,7 +1032,12 @@ it('keeps free coordinates in monic positive-dimensional systems', () => {
 });
 
 it('solves parameter-dependent leading coefficients on the nonvanishing branch', () => {
-  expect(nonlinsolve([parse('x**2*y**2+1')], [x, y]).map((row) => row.map(String))).toEqual([['-I/y', 'y'], ['I/y', 'y']]);
+  const equations = [parse('x**2*y**2+1')];
+  expect(solveSystem(equations, [x, y]).map((row) => row.map(String))).toEqual([['-I/y', 'y'], ['I/y', 'y']]);
+  expect(nonlinsolve(equations, [x, y]).map((row) => row.map(String))).toEqual([
+    ['-I/y', 'Complement({y}, {0})'],
+    ['I/y', 'Complement({y}, {0})'],
+  ]);
 });
 
 it('inverts reciprocal trigonometric and hyperbolic functions', () => {

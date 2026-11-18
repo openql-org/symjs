@@ -155,3 +155,9 @@ describe('ordered terms with unevaluated function values', () => {
     expect(str(sj.add(sj.log2(3), Rational.of(-1n, 2n), sj.O(x)))).toBe('log2(3) - 1/2 + O(x)');
   });
 });
+
+it('uses the exponential sort priority and orders a single factor', () => {
+  const x = sj.symbol('x');
+  expect(sj.classKey(sj.exp(x))).toEqual([4, 10, 'exp']);
+  expect(sj.asOrderedFactors(x)).toEqual([x]);
+});

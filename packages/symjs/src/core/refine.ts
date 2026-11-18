@@ -16,7 +16,7 @@
  */
 
 import type { Assumptions, ExprLike } from './nodes';
-import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym } from './nodes';
+import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, functionFactHandlers } from './nodes';
 import { add, couldExtractMinusSign, mul, pow, sympify } from './ops';
 import { mapBottomUp, xreplace } from './traverse';
 import { asRealImag } from './methods';
@@ -576,6 +576,7 @@ class Decider {
     this.memo.set(k, null);
     const r = (isMinMax(e) && MIN_MAX_PREDICATES.has(name) ? torf(e.args, (a) => this.q(name, a)) : undefined)
       ?? (e instanceof Piecewise && PIECEWISE_PREDICATES.has(name) ? torf(e.pairs.map(([x]) => x), (a) => this.q(name, a)) : undefined)
+      ?? (e instanceof Fn ? functionFactHandlers[e.name]?.(name, e.args, (fact, arg) => this.q(fact, arg)) : undefined)
       ?? this.numericDomain(name, e)
       ?? this.builtin(name, e);
     this.memo.set(k, r);

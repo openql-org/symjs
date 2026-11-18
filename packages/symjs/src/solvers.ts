@@ -51,7 +51,7 @@ export {
 } from './solvers/solve';
 export type { SolveOptions } from './solvers/solve';
 export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvesetComplex, solveDecomposition, solvify, invertComplex, invertReal } from './solvers/solveset';
-export { dsolveSystem, canonicalOdes, linodesolveType, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
+export { dsolveSystem, matrixExp as odeMatrixExp, canonicalOdes, linodesolveType, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
 export {
   diophantine,
   classifyDiop,
@@ -162,7 +162,7 @@ export { continuousDomain, functionRange, lcim } from './solvers/calculusutil';
 export { lpmin, lpmax, linprog, showLinprog, UnboundedLPError, InfeasibleLPError } from './solvers/simplex';
 export type { LPMatrixLike, LPBound, LPBounds } from './solvers/simplex';
 export { bivariateType } from './solvers/bivariate';
-export { SingleODEProblem, SingleODESolver, NthAlgebraic, ODEMatchError } from './solvers/ode/single';
+export { SingleODEProblem, SingleODESolver, FirstLinear, getNumberedConstants, NthAlgebraic, ODEMatchError } from './solvers/ode/single';
 
 impl.asSet = asSetOf;
 

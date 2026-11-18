@@ -1203,6 +1203,10 @@ function replaceTarget(e: Expr, target: Expr, t: Expr): Expr {
   const go = (x: Expr): Expr => {
     if (x.key === target.key) return t;
     if (x.kind === 'Derivative') return x;
+    if (x instanceof Pow && target instanceof Pow && x.base.key === target.base.key) {
+      const replaced = subs(x, [[target, t]]);
+      if (replaced.key !== x.key) return replaced;
+    }
     // a sum target matches the terms of a sum up to the numeric term (SymPy Add._eval_subs: (x - 1).subs(x + 1, t) = t - 2)
     if (target instanceof Add && x instanceof Add) {
       const tTerms = target.args.filter((a) => !(a instanceof Rational));
@@ -1334,7 +1338,7 @@ function linearPivot(equations: readonly Expr[], unknowns: readonly Sym[], prefe
  * univariate (after substitution) are solved and their solutions substituted.
  * Returns the list of solution tuples.
  */
-export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opts: { check?: boolean; manual?: boolean; rational?: boolean } = {}): Expr[][] {
+export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opts: { check?: boolean; checkAssumptions?: boolean; manual?: boolean; rational?: boolean } = {}): Expr[][] {
   if (opts.rational && eqs.some((e) => some(sympify(e), (atom) => atom instanceof Float))) {
     const exact = eqs.map((e) => mapBottomUp(sympify(e), (atom) => atom instanceof Float ? rationalFromString(atom.toString()) : atom));
     return nonlinsolve(exact, syms, { ...opts, rational: false });
@@ -1348,7 +1352,7 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opt
   const lin = linearEqToMatrix(eqs, syms);
   if (lin) {
     const s = solveAugmented(lin[0].hstack(lin[1]), syms);
-    if (s) return opts.check === false || syms.every((v, i) => checkSolution(S.Zero, v, at(s, i))) ? [s] : [];
+    if (s) return opts.check === false || opts.checkAssumptions === false || syms.every((v, i) => checkSolution(S.Zero, v, at(s, i))) ? [s] : [];
     if (!opts.manual || opts.check !== false) return [];
   }
   if (opts.manual && opts.check === false && syms.length === 1 && eqs.length) {
@@ -1479,8 +1483,8 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opt
         const next = new Map(assigned);
         for (const [k, w] of next) next.set(k, simplifyBack(xreplace(w, unknowns.map((u, i): [Expr, Expr] => [u, at(sol, i)]))));
         unknowns.forEach((u, i) => next.set(u.key, at(sol, i)));
-        // every unknown is assigned now
-        results.push(syms.map((s) => getOrThrow(next, s.key)));
+        // Symbols absent from the remaining equations are free parameters.
+        results.push(syms.map((s) => next.get(s.key) ?? s));
       }
       return;
     }
@@ -1492,7 +1496,7 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opt
   go(prepared, new Map());
   if (opts.check !== false) {
     const valid = results.filter((row) => {
-      if (!syms.every((v, i) => checkSolution(S.Zero, v, at(row, i)))) return false;
+      if (opts.checkAssumptions !== false && !syms.every((v, i) => checkSolution(S.Zero, v, at(row, i)))) return false;
       const assignment = syms.map((v, i): [Expr, Expr] => [v, at(row, i)]);
       return original.every((eq) => denominators(eq).every((d) => !isZeroE(xreplace(d, assignment))));
     });

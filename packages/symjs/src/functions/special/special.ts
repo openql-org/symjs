@@ -33,7 +33,7 @@ import { numAdd, numMul } from '../../core/num';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
 import { Concrete } from '../../core/concrete';
-import { evalMp, MpSpecialValue, mpFns } from '../../numeric/mpeval';
+import { evalMp, MpSpecialValue, mpFn2, mpFns } from '../../numeric/mpeval';
 import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
 import type { Mpc } from '../../numeric/mpfun';
@@ -140,11 +140,11 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
   // SymPy binomial.eval: binomial(n, n) = 1 and binomial(n, n - 1) = n unless n may be a negative integer
   const d = add(n, neg(k));
   const generic = isNonNegative(n) === true || isIntegerQ(n) === false;
+  if (isZero(k) === true) return S.One;
   if (generic && d instanceof Rational && d.isZero) return S.One;
   if (generic && d instanceof Rational && d.isOne) return n;
   if (isInt(k)) {
     if (k.isNegative) return S.Zero;
-    if (k.isZero) return S.One;
     if (isInt(n) && !n.isNegative && k.p > n.p) return S.Zero;
     if (n instanceof Rational) {
       // very large k: keep binomial(n, k) unevaluated instead of looping k times, unless
@@ -166,6 +166,10 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
       return numMul(num, R(1n, factorialBig(k.p)));
     }
     if (k.isOne) return n;
+    return undefined;
+  }
+  if (isIntegerQ(k) === true) {
+    if (isNegative(k) === true || (isNonNegative(n) === true && isIntegerQ(n) === true && isNegative(d) === true)) return S.Zero;
     return undefined;
   }
   if (isNonNegative(n) === false && isIntegerQ(n) === true) return S.ComplexInfinity;
@@ -191,6 +195,7 @@ function evalRF(x: Expr, k: Expr): Expr | undefined {
     if (k.isPositive) return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(x, i)));
     return mul(...Array.from({ length: Number(-k.p) }, (_, i) => pow(add(x, -(i + 1)), -1)));
   }
+  if (isIntegerQ(k) === false && isIntegerQ(x) === true && isNegative(x) === true) return S.Zero;
   return undefined;
 }
 
@@ -1227,6 +1232,24 @@ function mpBetainc(args: Mpc[], prec: number, regularized: boolean): Mpc {
 mpFns['betainc'] = (args, prec) => mpBetainc(args, prec, false);
 mpFns['betainc_regularized'] = (args, prec) => mpBetainc(args, prec, true);
 
+/** Analytic continuation in the order, expressed through the Hurwitz zeta derivative. */
+function generalizedPolygamma(s: Mpc, z: Mpc, p: number): Mpc {
+  const [integer, denominator] = F.toRational(s[0]);
+  if (M.isReal(s) && denominator === 1n && integer >= 0n) return SP.cpolygamma(Number(integer), z, p);
+  const step = F.ldexp(F.ONE, -Math.ceil(p / 2) - 16);
+  const wp = p + Math.ceil(p / 2) + 40;
+  const u = M.cadd(s, M.C1, wp);
+  const h: Mpc = [step, F.ZERO];
+  const plus = SP.czeta(M.cadd(u, h, wp), wp, z);
+  const minus = SP.czeta(M.csub(u, h, wp), wp, z);
+  const dz = M.cdiv(M.csub(plus, minus, wp), [F.ldexp(step, 1), F.ZERO], wp);
+  const ns = M.cneg(s);
+  const shift = M.cadd([M.mpEuler(wp), F.ZERO], SP.cpolygamma(0, ns, wp), wp);
+  return M.cdiv(M.cadd(dz, M.cmul(shift, SP.czeta(u, wp, z), wp), wp), SP.cgamma(ns, wp), p);
+}
+
+mpFns.polygamma = mpFn2(generalizedPolygamma);
+
 type Spec = {
   eval?: (...args: Expr[]) => Expr | undefined;
   partials?: (args: readonly Expr[], i: number) => Expr;
@@ -1318,7 +1341,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
       if (i === 1) return fnN('polygamma', add(n, 1), x);
       return noPartial('polygamma', [n, x], 0);
     }),
-    numeric: binary((n, z) => cpolygamma(n.re, z)),
+    numeric: binary((n, z) => n.im === 0 && Number.isInteger(n.re) && n.re >= 0 ? cpolygamma(n.re, z) : mpNumeric('polygamma', [n, z])),
     conjugate: true,
   },
   lowergamma: {
@@ -1481,7 +1504,10 @@ export const factorial2 = (n: ExprLike): Expr => fn('factorial2', [n]);
 export const binomial = (n: ExprLike, k: ExprLike): Expr => fn('binomial', [n, k]);
 export const subfactorial = (n: ExprLike): Expr => fn('subfactorial', [n]);
 export const harmonic = (n: ExprLike, m?: ExprLike): Expr => (m === undefined ? fn('harmonic', [n]) : fn('harmonic', [n, m]));
-export const catalan = (n: ExprLike): Expr => fn('catalan', [n]);
+export function catalan(n: ExprLike): Expr {
+  if (arguments.length !== 1) throw new TypeError('catalan requires one argument');
+  return fn('catalan', [n]);
+}
 export const gamma = (x: ExprLike): Expr => fn('gamma', [x]);
 export const loggamma = (x: ExprLike): Expr => fn('loggamma', [x]);
 export const polygamma = (n: ExprLike, x: ExprLike): Expr => fn('polygamma', [n, x]);
@@ -1491,6 +1517,8 @@ export const digamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
 /** SymPy trigamma(x) = polygamma(1, x); with `{ evaluate: false }` the unevaluated trigamma(x). */
 export const trigamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
   opts.evaluate === false ? new Fn('trigamma', [sympify(x)]) : fn('polygamma', [1, x]);
+fnPartials.digamma = (args) => fn('polygamma', [1, first(args)]);
+fnPartials.trigamma = (args) => fn('polygamma', [2, first(args)]);
 export const lowergamma = (s: ExprLike, x: ExprLike): Expr => fn('lowergamma', [s, x]);
 export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [s, x]);
 export const beta = (a: ExprLike, b: ExprLike = a): Expr => fn('beta', [a, b]);
@@ -1629,10 +1657,17 @@ export function expandFunc(e: Expr): Expr {
     }
     if (y instanceof Fn) {
       if (y.name === 'binomial') {
-        const [n, k] = y.args;
-        if (n !== undefined && k !== undefined && isInt(k) && k.isPositive) {
-          return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(n, -i)), R(1n, factorialBig(k.p)));
+        const [n, k] = pair(y.args);
+        if (isNum(n)) return fnN('binomial', n, k);
+        const difference = add(n, neg(k));
+        // Symbolic expansion uses the complementary index when it is an explicit integer.
+        const order = isInt(difference) ? difference : k;
+        if (isInt(order)) {
+          if (order.isZero) return S.One;
+          if (order.isNegative) return S.Zero;
+          return mul(...Array.from({ length: Number(order.p) }, (_, i) => add(n, -i)), R(1n, factorialBig(order.p)));
         }
+        return fnN('binomial', n, k);
       }
       if (y.name === 'harmonic' && y.args.length === 1) {
         const n = first(y.args);
