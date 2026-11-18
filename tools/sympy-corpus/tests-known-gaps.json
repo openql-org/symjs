@@ -1473,7 +1473,6 @@
     "sympy.core.tests.test_relational:test_issue_23731:1258 #d6893dfad1e0f2079aaa",
     "sympy.core.tests.test_relational:test_issue_23731:1263 #d67150a02cd74ee85065",
     "sympy.core.tests.test_relational:test_issue_23731:1265 #24e5e6d8ca5730322b1b",
-    "sympy.core.tests.test_relational:test_issue_8245:691 #8029794646b612e8d081",
     "sympy.core.tests.test_relational:test_multivariate_linear_function_simplification:1146 #675a4b78daafb65bd58d",
     "sympy.core.tests.test_relational:test_multivariate_linear_function_simplification:1147 #4af32f4f346a0d13eb0a",
     "sympy.core.tests.test_relational:test_multivariate_linear_function_simplification:1153 #f6f12b2728fc566aa731",

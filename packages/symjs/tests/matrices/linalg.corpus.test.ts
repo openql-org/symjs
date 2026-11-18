@@ -496,11 +496,11 @@ describe("doctests of sympy.matrices.determinant", () => {
   });
   it("M.charpoly(x) == M.charpoly(y)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Poly.from(add(-6, pow(x, 2), mul(-1, x)), [x], { domain: 'ZZ', pure: true }).equals(Poly.from(add(-6, pow(y, 2), mul(-1, y)), [y], { domain: 'ZZ', pure: true })))).toBe('True');
+    expect(sympyStr(Poly.from(add(-6, pow(x, 2), mul(-1, x)), [x], { domain: 'ZZ', pure: true }).eq(Poly.from(add(-6, pow(y, 2), mul(-1, y)), [y], { domain: 'ZZ', pure: true })))).toBe('True');
   });
   it("M.charpoly(x) == M.charpoly(y) (2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Poly.from(add(-6, pow(x, 2), mul(-1, x)), [x], { domain: 'ZZ', pure: true }).equals(Poly.from(add(-6, pow(y, 2), mul(-1, y)), [y], { domain: 'ZZ', pure: true })))).toBe('True');
+    expect(sympyStr(Poly.from(add(-6, pow(x, 2), mul(-1, x)), [x], { domain: 'ZZ', pure: true }).eq(Poly.from(add(-6, pow(y, 2), mul(-1, y)), [y], { domain: 'ZZ', pure: true })))).toBe('True');
   });
   it("M.charpoly().as_expr()", () => {
     const lambda = new Sym('lambda');
@@ -682,11 +682,11 @@ describe("doctests of sympy.matrices.matrices", () => {
   });
   it("M.charpoly(x) == M.charpoly(y)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Poly.from(add(-6, pow(x, 2), mul(-1, x)), [x], { domain: 'ZZ', pure: true }).equals(Poly.from(add(-6, pow(y, 2), mul(-1, y)), [y], { domain: 'ZZ', pure: true })))).toBe('True');
+    expect(sympyStr(Poly.from(add(-6, pow(x, 2), mul(-1, x)), [x], { domain: 'ZZ', pure: true }).eq(Poly.from(add(-6, pow(y, 2), mul(-1, y)), [y], { domain: 'ZZ', pure: true })))).toBe('True');
   });
   it("M.charpoly(x) == M.charpoly(y) (2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Poly.from(add(-6, pow(x, 2), mul(-1, x)), [x], { domain: 'ZZ', pure: true }).equals(Poly.from(add(-6, pow(y, 2), mul(-1, y)), [y], { domain: 'ZZ', pure: true })))).toBe('True');
+    expect(sympyStr(Poly.from(add(-6, pow(x, 2), mul(-1, x)), [x], { domain: 'ZZ', pure: true }).eq(Poly.from(add(-6, pow(y, 2), mul(-1, y)), [y], { domain: 'ZZ', pure: true })))).toBe('True');
   });
   it("M.charpoly().as_expr()", () => {
     const lambda = new Sym('lambda');

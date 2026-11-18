@@ -3531,7 +3531,7 @@ describe("sympy/core/tests/test_relational.py", () => {
   it("test_issue_8245:691 (13)", () => {
     expect(sympyStr(Lt(new Float({ man: 361201808515991n, exp: -48n }, 53), rational(6506833320952669167898688709329n, 5070602400912917605986812821504n)))).toBe('True');
   });
-  it.fails("test_issue_8245:691 (14)", () => {
+  it("test_issue_8245:691 (14)", () => {
     expect(sympyStr(Lt(new Float({ man: 5779228936255859n, exp: -52n }, 53), rational(6506833320952669167898688709329n, 5070602400912917605986812821504n)))).toBe('True');
   });
   it("test_issue_8245:691 (15)", () => {

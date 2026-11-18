@@ -340,11 +340,11 @@ describe("sympy/assumptions/tests/test_refine.py", () => {
   });
   it("test_Piecewise:97", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(refine(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(3), true]), Relational(x, rational(0), '!=', { evaluate: false }))), '3', [x], { fn: 'refine', input: 'Piecewise((1, Eq(x, 0)), (3, True))' })).toBe(true);
+    expect(sympyStr(refine(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(3), true]), Relational(x, rational(0), '!=', { evaluate: false })))).toBe('3');
   });
   it("test_Piecewise:99", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(refine(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(3), true]), Relational(rational(0), x, '!=', { evaluate: false }))), '3', [x], { fn: 'refine', input: 'Piecewise((1, Eq(x, 0)), (3, True))' })).toBe(true);
+    expect(sympyStr(refine(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(3), true]), Relational(rational(0), x, '!=', { evaluate: false })))).toBe('3');
   });
   it("test_Piecewise:101", () => {
     const [x, y] = symbols('x y');
@@ -352,7 +352,7 @@ describe("sympy/assumptions/tests/test_refine.py", () => {
   });
   it("test_Piecewise:103", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(refine(piecewise([rational(1), Relational(x, rational(0), '!=', { evaluate: false })], [rational(3), true]), Relational(x, rational(0), '!=', { evaluate: false }))), '1', [x], { fn: 'refine', input: 'Piecewise((1, Ne(x, 0)), (3, True))' })).toBe(true);
+    expect(sympyStr(refine(piecewise([rational(1), Relational(x, rational(0), '!=', { evaluate: false })], [rational(3), true]), Relational(x, rational(0), '!=', { evaluate: false })))).toBe('1');
   });
   it("test_Piecewise:105", () => {
     const x = new Sym('x');

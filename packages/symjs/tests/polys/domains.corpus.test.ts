@@ -86,11 +86,11 @@ describe("doctests of sympy.polys.domains.domain", () => {
   });
   it("K.ext.minpoly == f", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(-2, pow(new Dummy('x', {}, 1000000), 2)), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }).equals(Poly.from(add(-2, pow(x, 2)), [x], { domain: 'ZZ', pure: false })))).toBe('True');
+    expect(sympyStr(Poly.from(add(-2, pow(new Dummy('x', {}, 1000000), 2)), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }).eq(Poly.from(add(-2, pow(x, 2)), [x], { domain: 'ZZ', pure: false })))).toBe('True');
   });
   it("L.ext.minpoly == g", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(-1, mul(-6, new Dummy('x', {}, 1000000)), mul(8, pow(new Dummy('x', {}, 1000000), 3))), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }).equals(Poly.from(add(-1, mul(-6, x), mul(8, pow(x, 3))), [x], { domain: 'ZZ', pure: false })))).toBe('True');
+    expect(sympyStr(Poly.from(add(-1, mul(-6, new Dummy('x', {}, 1000000)), mul(8, pow(new Dummy('x', {}, 1000000), 3))), [new Dummy('x', {}, 1000000)], { domain: 'QQ', pure: true }).eq(Poly.from(add(-1, mul(-6, x), mul(8, pow(x, 3))), [x], { domain: 'ZZ', pure: false })))).toBe('True');
   });
   it("L.to_sympy(L([1, 1, 1]))", () => {
     const alpha = new Sym('alpha');

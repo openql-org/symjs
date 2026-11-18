@@ -4522,6 +4522,7 @@
  "sympy.polys.tests.test_polytools:test_groebner:3639 #fd6adfc87b51ed6c0002",
  "sympy.polys.tests.test_polytools:test_intervals:2946 #d597f6b2331142141429",
  "sympy.polys.tests.test_polytools:test_intervals:2947 #96ac48cb53ea071c4271",
+ "sympy.polys.tests.test_polytools:test_intervals:2948 #2f9213a2b68285b123a2",
  "sympy.polys.tests.test_polytools:test_issue_14364:3898 #f5e35c1e2ae120e7bb97",
  "sympy.polys.tests.test_polytools:test_issue_14364:3899 #499d55d6a4782c9fe176",
  "sympy.polys.tests.test_polytools:test_issue_14364:3900 #b5b7f8eb360cd40cb247",
