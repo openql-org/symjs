@@ -5215,7 +5215,9 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 
 function autoAdapter(c: Case): Adapter | undefined {
   if (c.self?.t === 'Tuple' || c.args?.some((arg) => arg.t === 'Tuple')) {
-    if (c.fn === '.__add__') return (args, kw, self) => {
+    // tuple + tuple concatenates and tuple + number raises; an operand with its own addition (a Point plus a
+    // coordinate tuple) keeps it
+    if (c.fn === '.__add__' && [c.self?.t, c.args?.[0]?.t].every((t) => t === 'Tuple' || t === 'Rational' || t === 'Float')) return (args, kw, self) => {
       noKw(kw);
       if (!(self instanceof JsTuple) || !(args[0] instanceof JsTuple)) throw new TypeError('Tuple concatenation requires tuples');
       return sj.Tuple(...self.items.map(expressionContainer)).concat(sj.Tuple(...args[0].items.map(expressionContainer)));
@@ -5787,6 +5789,18 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       else if (x instanceof Matrix) x.data.forEach(collect);
     };
     [...args, ...Object.values(kwargs), self].forEach(collect);
+    // symbols with assumptions inside objects whose free symbols hide them (the parameters of a random variable)
+    const collectTree = (t: unknown): void => {
+      if (Array.isArray(t)) return t.forEach(collectTree);
+      if (t === null || typeof t !== 'object') return;
+      const node = t as Tree;
+      if (node['t'] === 'Symbol' && typeof node['name'] === 'string' && !syms.has(node['name'])) {
+        const s = deserialize(node);
+        if (s instanceof Sym) syms.set(s.name, s);
+      }
+      Object.values(node).forEach(collectTree);
+    };
+    collectTree([c.args, c.kwargs, c.self]);
     const fmtOrUndefined = (x: unknown): string | undefined => {
       try {
         return fmt(x);

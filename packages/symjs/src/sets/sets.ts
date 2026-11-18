@@ -866,6 +866,12 @@ export function conditionSet(symIn: Expr, conditionIn: ExprLike | boolean, baseI
 // ---------------------------------------------------------------------------
 
 class SetOp extends SetExpr {
+  /** SymPy: a Union of iterable sets, an Intersection with an iterable set and a Complement of an iterable set iterate. */
+  override get isIterable(): boolean {
+    if (this.op === 'Union') return this.args.every((s) => s.isIterable);
+    if (this.op === 'Intersection') return this.args.some((s) => s.isIterable);
+    return first(this.args).isIterable;
+  }
   override get isEmptyQ(): Truth {
     const values = this.args.map((s) => s.isEmptyQ);
     if (this.op === 'Union') return values.every((v) => v === true) ? true : values.includes(false) ? false : 'unknown';
@@ -889,11 +895,14 @@ class SetOp extends SetExpr {
     const b = union(...this.args.slice(1));
     return add(a.measure, b.measure, neg(intersection(a, b).measure));
   }
+  readonly args: readonly SetExpr[];
+  /** Union and Intersection keep their arguments in canonical order, also unevaluated (SymPy orders them in __new__). */
   constructor(
     readonly op: 'Union' | 'Intersection' | 'Complement',
-    readonly args: readonly SetExpr[],
+    args: readonly SetExpr[],
   ) {
     super();
+    this.args = op === 'Complement' ? args : sortSets([...args]);
   }
   get className(): string {
     return this.op;
@@ -1615,7 +1624,11 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
   if (a === EmptySet || b === UniversalSet || a.key === b.key) return EmptySet;
   if (a instanceof SetOp && a.op === 'Union') return union(...a.args.map((s) => complement(s, b)));
   if (a instanceof SetOp && a.op === 'Complement') return new SetOp('Complement', [at(a.args, 0), union(at(a.args, 1), b)]);
-  if (b instanceof SetOp && b.op === 'Union' && !(intervalParts(a) && intervalParts(b))) return b.args.reduce(complement, a);
+  // remove the finite parts first (SymPy's Union orders FiniteSet before the other sets), so the result does not
+  // depend on the order of the union's arguments
+  if (b instanceof SetOp && b.op === 'Union' && !(intervalParts(a) && intervalParts(b))) {
+    return [...b.args.filter((s) => s instanceof FiniteSet), ...b.args.filter((s) => !(s instanceof FiniteSet))].reduce(complement, a);
+  }
   if (a instanceof ProductSetNode && b instanceof ProductSetNode && a.args.length !== b.args.length) return a;
   if (b instanceof FiniteSet) {
     const relevant = b.args.filter((x) => containsQ(a, x) !== false);

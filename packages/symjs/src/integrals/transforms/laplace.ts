@@ -103,9 +103,10 @@ export function simplifyConds(exprIn: ExprLike, s: Sym, aIn: ExprLike): Expr {
     if (ex1.has(s)) return bigger(pow(ex2, -1), pow(ex1, -1));
     const n = power(ex2);
     if (n === undefined) return undefined;
-    // SymPy catches the TypeError of comparing a non-real n; symjs's relationals stay undecided instead
     const bound = pow(abs(a), n);
     if (bound.key === S.ComplexInfinity.key || bound.key === S.NaN.key) return undefined;
+    // comparing a non-real exponent raises (SymPy catches that TypeError and leaves the condition)
+    if (isReal(n) === false) return undefined;
     if (holds(Gt(n, 0)) && holds(Le(abs(ex1), bound))) return false;
     if (holds(Lt(n, 0)) && holds(Ge(abs(ex1), bound))) return true;
     return undefined;

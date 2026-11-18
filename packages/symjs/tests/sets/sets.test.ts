@@ -1169,3 +1169,16 @@ it('decides nonempty unbounded intervals with real symbolic finite ends', () => 
   expect(I(x, sj.oo).isEmptyQ).toBe('unknown');
   expect(I(sj.S.NegativeInfinity, x).isEmptyQ).toBe('unknown');
 });
+
+it('iterates unevaluated set operations like SymPy and removes union parts independently of their order', () => {
+  const op = (o: 'Union' | 'Intersection' | 'Complement', ...xs: sj.SetExpr[]) => new sj.SetOp(o, xs);
+  const fin = sj.FiniteSet.of(1, 2);
+  // Union: every part iterable; Intersection: some part iterable; Complement: the first set iterable
+  expect([op('Union', fin, sj.Integers).isIterable, op('Union', fin, sj.Reals).isIterable]).toEqual([true, false]);
+  expect([op('Intersection', sj.Reals, fin).isIterable, op('Intersection', sj.Reals, sj.Interval.of(0, 1)).isIterable]).toEqual([true, false]);
+  expect([op('Complement', fin, sj.Reals).isIterable, op('Complement', sj.Reals, fin).isIterable]).toEqual([true, false]);
+  const pi = sj.FiniteSet.of(sj.pi);
+  const want = 'Union(Complement(Interval.open(-oo, pi), Naturals), Complement(Interval.open(pi, oo), Naturals))';
+  expect(String(Sets.complement(sj.Reals, op('Union', sj.Naturals, pi)))).toBe(want);
+  expect(String(Sets.complement(sj.Reals, op('Union', pi, sj.Naturals)))).toBe(want);
+});
