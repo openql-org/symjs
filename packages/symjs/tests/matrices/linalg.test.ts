@@ -742,3 +742,12 @@ it('evaluates permanents without enumerating every permutation', () => {
   expect(s(L.permanent(M([[0, 0], [0, 0]])))).toBe('0');
   expect(s(L.permanent(M([[1, 2, 3], [4, 5, 6]])))).toBe('58');
 });
+
+it('sizes block diagonals and applies custom rank zero tests', () => {
+  expect(String(L.blockDiagSized([1], { rows: 3, cols: 2 }))).toBe('Matrix([[1, 0], [0, 0], [0, 0]])');
+  expect(String(L.blockDiagSized([Matrix.col(1, 2), Matrix.row(3, 4)]))).toBe('Matrix([[1, 0, 0], [2, 0, 0], [0, 3, 4]])');
+  expect(() => L.blockDiagSized([Matrix.eye(2)], { rows: 1 })).toThrow('constructed matrix is 2 x 2');
+  const approximate = M([[1, 1], [1, 1.0000000000001]]);
+  expect(L.rank(approximate)).toBe(2);
+  expect(L.rank(approximate, { iszerofunc: (e) => Math.abs(e.toComplex().re) < 1e-9 })).toBe(1);
+});

@@ -357,6 +357,19 @@ export function matches(v: unknown, expectedIn: string): boolean {
   return matches0(v, expectedIn, got);
 }
 function matches0(v: unknown, expected: string, got: string): boolean {
+  if (v instanceof sj.Poly && /^(?:Pure)?Poly\(/.test(expected)) {
+    const pure = expected.startsWith('PurePoly(');
+    const body = expected.slice(expected.indexOf('(') + 1, -1);
+    const items = topLevelItems(`(${body})`);
+    if (items.length >= 2) {
+      try {
+        const other = sj.Poly.from(sj.parse(items[0]!), [sj.parse(items[1]!)], { pure });
+        if (v.eq(other)) return true;
+      } catch {
+        // Fall through to printed comparison for unsupported polynomial syntax.
+      }
+    }
+  }
   if (v instanceof sj.DMPJs) {
     const match = /^DMP_Python\((\[.*\]), (ZZ|QQ)\)$/.exec(expected);
     if (match) {
@@ -3601,7 +3614,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   matrix_multiply_elementwise: (args, kw) => (noKw(kw), sj.multiplyElementwise(args[0] as Matrix, args[1] as Matrix)),
   '.diag': (args, kw, self) => {
     if (!(self instanceof TypeRef)) throw new Unsupported('diag on instance');
-    return ADAPTERS['diag']!(args, kw);
+    return ADAPTERS['diag']!([...args, self], kw);
   },
   '.hstack': (args, kw) => (noKw(kw), args.length === 0 ? Matrix.zeros(0, 0) : (args[0] as Matrix).hstack(...(args.slice(1) as Matrix[]))),
   '.vstack': (args, kw) => (noKw(kw), args.length === 0 ? Matrix.zeros(0, 0) : (args[0] as Matrix).vstack(...(args.slice(1) as Matrix[]))),
@@ -3646,7 +3659,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.vee': matrixMethod((m) => Matrix.col(m.get(2, 1), m.get(0, 2), m.get(1, 0))),
   '.per': matrixMethod((m) => sj.permanent(m)),
   '.charpoly': matrixMethod((m, a) => {
-    const lam = a[0] instanceof Sym ? a[0] : new Sym('lambda');
+    const requested = a[0] instanceof Sym ? a[0].name : typeof a[0] === 'string' ? a[0] : 'lambda';
+    const names = new Set(m.data.flatMap((entry) => [...sj.freeSymbols(entry)]).filter((s): s is Sym => s instanceof Sym).map((s) => s.name));
+    let name = requested;
+    while (names.has(name)) name = `_${name}`;
+    const lam = new Sym(name);
     return sj.Poly.from(m.charpoly(lam), [lam], { pure: true });
   }),
   '.todok': matrixMethod((m) => {
@@ -3740,22 +3757,31 @@ export const ADAPTERS: Record<string, Adapter> = {
     return Matrix.zeros(r!, c ?? r!);
   },
   diag: (args, kw) => {
-    const unpack = Boolean(kw['unpack']);
+    for (const k of Object.keys(kw)) if (!['strict', 'unpack', 'rows', 'cols'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const classCall = args[args.length - 1] instanceof TypeRef;
+    if (classCall) args = args.slice(0, -1);
+    const unpack = kw['unpack'] === undefined ? classCall : Boolean(kw['unpack']);
+    const strict = kw['strict'] === undefined ? !classCall && kw['unpack'] !== false : Boolean(kw['strict']);
+    if (unpack && args.length === 1 && (args[0] instanceof JsTuple || args[0] instanceof JsList)) args = [...args[0].items];
     const blocks: (Matrix | Expr)[] = [];
     for (const a of args) {
       if (a instanceof Matrix) blocks.push(a);
       else if (a instanceof JsTuple || a instanceof JsList) {
-        if (unpack && args.length === 1) a.items.forEach((x) => blocks.push(asExpr(x)));
-        else if (a.items.every((r) => r instanceof JsTuple || r instanceof JsList)) {
-          // SymPy pads ragged rows with zeros
-          const rows = a.items.map((r) => (r as JsTuple).items.map(asExpr));
+        const nested = a.items.some((r) => r instanceof JsTuple || r instanceof JsList);
+        if (nested) {
+          if (strict && !a.items.every((r) => r instanceof JsTuple || r instanceof JsList)) throw new RangeError('Matrix is not a list of lists');
+          const rows = a.items.map((r) => r instanceof JsTuple || r instanceof JsList ? r.items.map(asExpr) : [asExpr(r)]);
           const w = Math.max(...rows.map((r) => r.length));
+          if (strict && rows.some((r) => r.length !== w)) throw new RangeError('Matrix is ragged');
           blocks.push(Matrix.of(rows.map((r) => [...r, ...Array.from({ length: w - r.length }, () => S.Zero)])));
         }
         else blocks.push(Matrix.col(...a.items.map(asExpr)));
       } else blocks.push(asExpr(a));
     }
-    return sj.blockDiag(...blocks);
+    return sj.blockDiagSized(blocks, {
+      ...(kw['rows'] === undefined ? {} : { rows: intArg(kw['rows']) }),
+      ...(kw['cols'] === undefined ? {} : { cols: intArg(kw['cols']) }),
+    });
   },
   limit: (args, kw) => {
     const dir = (kw['dir'] as string | undefined) ?? (typeof args[3] === 'string' ? (args[3] as string) : '+');
@@ -4654,7 +4680,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.rref': (_args, kw, self) => {
     if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
     const test = kw['iszerofunc'];
-    const [r, p] = sj.rref(self, test instanceof JsLambda ? { iszerofunc: (e) => test.call(e) === S.true } : {});
+    const [r, p] = sj.rref(self, test instanceof JsLambda ? { iszerofunc: (e) => {
+      const value = test.call(e);
+      return value instanceof sj.BoolAtom && value.value;
+    } } : {});
     return kw['pivots'] === false ? r : new JsTuple([r, new JsTuple(p)]);
   },
   block_collapse: (args, kw) => (noKw(kw), sj.blockCollapse(expressionContainer(args[0]))),
@@ -4674,7 +4703,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.is_echelon': matrixMethod((m) => sj.isEchelon(m)),
   '.echelon_form': matrixMethod((m) => sj.echelonForm(m)),
-  '.rank': matrixMethod((m) => sj.rank(m)),
+  '.rank': (_args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    const zero = kw['iszerofunc'];
+    return sj.rank(self, zero instanceof JsLambda ? { iszerofunc: (e) => {
+      const value = zero.call(e);
+      return value instanceof sj.BoolAtom && value.value;
+    } } : {});
+  },
   '.nullspace': matrixMethod((m) => new JsList(sj.nullspace(m))),
   '.columnspace': matrixMethod((m) => new JsList(sj.columnspace(m))),
   '.rowspace': matrixMethod((m) => new JsList(sj.rowspace(m))),
@@ -4733,7 +4769,22 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.minor_submatrix': matrixMethod((m, [i, j]) => m.minorSubmatrix(intArg(i), intArg(j))),
   '.cofactor': matrixMethod((m, [i, j]) => sj.linalg.cofactor(m, Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
   '.cofactor_matrix': matrixMethod((m) => m.cofactorMatrix()),
-  '.is_anti_symmetric': (_args, kw, self) => fromJs(sj.linalg.isAntiSymmetric(self as Matrix, kw['simplify'] === undefined ? true : Boolean(kw['simplify']))),
+  '.is_anti_symmetric': (_args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    const simp = kw['simplify'];
+    if (simp instanceof JsLambda) {
+      if (!self.isSquare) return false;
+      let unknown = false;
+      for (let i = 0; i < self.rows; i++) for (let j = i; j < self.cols; j++) {
+        const e = simp.call(new sj.Add([self.get(i, j), self.get(j, i)]));
+        if (e.equals(sj.S.Zero)) continue;
+        if (e instanceof sj.Rational || e instanceof sj.Float) return false;
+        unknown = true;
+      }
+      return unknown ? null : true;
+    }
+    return none(sj.linalg.isAntiSymmetric(self, simp === undefined ? true : Boolean(simp)));
+  },
   '.is_diagonal': matrixMethod((m) => sj.linalg.isDiagonal(m)),
   '.is_upper': matrixMethod((m) => sj.linalg.isUpper(m)),
   '.is_lower': matrixMethod((m) => sj.linalg.isLower(m)),
@@ -4774,7 +4825,16 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.adjugate': matrixMethod((m) => m.adjugate()),
   '.trace': matrixMethod((m) => m.trace()),
   '.eigenvals': matrixMethod((m) => rootsDict(m.eigenvals())),
-  '.is_symmetric': (_args, _kw, self) => sj.linalg.isSymmetric(self as Matrix),
+  '.is_symmetric': (_args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    const simp = kw['simplify'];
+    if (simp instanceof JsLambda) {
+      if (!self.isSquare) return false;
+      for (let i = 0; i < self.rows; i++) for (let j = i + 1; j < self.cols; j++) if (!sj.isZero(simp.call(sj.add(self.get(i, j), sj.mul(-1, self.get(j, i)))))) return false;
+      return true;
+    }
+    return sj.linalg.isSymmetric(self, simp === undefined ? true : Boolean(simp));
+  },
   '.tolist': matrixMethod((m) => new JsList(m.toArray().map((r) => new JsList(r)))),
 };
 
@@ -4843,11 +4903,30 @@ Object.assign(ADAPTERS, {
   ask: (args, kw) => {
     const { context, ...rest } = kw;
     noKw(rest);
-    const query = () => none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
+    const matrixPred = (x: unknown): sj.MatrixPredicate | undefined => {
+      if (x instanceof sj.MatrixPredicate) return x;
+      if (!(x instanceof sj.AppliedPredicate) || !(x.arg instanceof sj.MatrixExpr)) return undefined;
+      const make = sj.MatrixQ[x.predicate as keyof typeof sj.MatrixQ];
+      return make?.(x.arg);
+    };
+    const query = () => {
+      const predicate = matrixPred(args[0]);
+      return predicate
+        ? none(sj.askMatrix(predicate, matrixPred(args[1])))
+        : none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
+    };
     return context instanceof sj.AssumptionsContext ? sj.assuming([...context], query) : query();
   },
   lra_satask: (args, kw) => (noKw(kw), none(sj.lraSatask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)))),
-  refine: (args, kw) => (noKw(kw), sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean))),
+  refine: (args, kw) => {
+    noKw(kw);
+    const assumption = args[1] instanceof sj.AppliedPredicate && args[1].arg instanceof sj.MatrixExpr
+      ? sj.MatrixQ[args[1].predicate as keyof typeof sj.MatrixQ]?.(args[1].arg)
+      : args[1] instanceof sj.MatrixPredicate ? args[1] : undefined;
+    return assumption && args[0] instanceof Expr
+      ? sj.refineMatrix(args[0], assumption)
+      : sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean));
+  },
   '.refine': (args, kw, self) => {
     noKw(kw);
     const a = args[0] === undefined ? true : (args[0] as Expr | boolean);
@@ -4975,8 +5054,9 @@ Object.assign(ADAPTERS, {
     m.copyinMatrix(i!, j!, v as Matrix);
   }),
   '.copyin_list': mutating((m, [key, v]) => {
+    if (!(v instanceof JsList || v instanceof JsTuple)) throw new TypeError('value must be an ordered iterable');
     const [i, j] = (key as JsTuple).items.map(intArg);
-    const vals = (v as JsList).items.map((r) => (r instanceof JsList ? r.items.map(asExpr) : asExpr(r)));
+    const vals = v.items.map((r) => (r instanceof JsList || r instanceof JsTuple ? r.items.map(asExpr) : asExpr(r)));
     m.copyinList(i!, j!, vals as Expr[]);
   }),
   '.get_diag_blocks': matrixMethod((m) => new JsList(sj.getDiagBlocks(m))),
@@ -6563,7 +6643,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // DomainMatrix, DDM and SDM methods (and their classes' static methods) share names with Matrix and Poly adapters
     const isDomainMatrix = (x: unknown) => x instanceof sj.DomainMatrix || x instanceof sj.DDM || x instanceof sj.SDM || (x instanceof TypeRef && ['DomainMatrix', 'DDM', 'SDM'].includes(x.name));
     // (rewrite targets are SymPy classes, which only the rewrite adapter names)
-    const auto0 = (c.fn !== '.rewrite' && (isMatExpr(self) || args.some(isMatExpr))) || self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') || isDomainMatrix(self) || self instanceof sj.NDimArray || (self instanceof sj.Indexed && c.fn !== '.is_constant') ? autoAdapter(c) : undefined;
+    const auto0 = (c.fn !== '.rewrite' && !['ask', 'refine'].includes(c.fn) && (isMatExpr(self) || args.some(isMatExpr))) || self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') || isDomainMatrix(self) || self instanceof sj.NDimArray || (self instanceof sj.Indexed && c.fn !== '.is_constant') ? autoAdapter(c) : undefined;
     try {
       v = call(auto0 ?? adapter);
     } catch (e) {
@@ -6571,7 +6651,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') ? undefined : auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       // (a DomainMatrix error is the method's own result)
-      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (c.fn === 'parse_expr' && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
+      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (['parse_expr', '.copyin_list'].includes(c.fn) && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }

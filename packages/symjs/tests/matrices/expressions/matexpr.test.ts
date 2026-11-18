@@ -216,7 +216,7 @@ describe('matmul', () => {
     expect(s(X)).toBe('Matrix([[1, 1], [1, 1]])*A*Matrix([[1, 2], [3, 4]])');
     expect(s(mergeExplicitMatMul(X))).toBe('Matrix([[1, 1], [1, 1]])*A*Matrix([[1, 2], [3, 4]])');
     expect(L(MatMul(A, B))).toBe('A \\left[\\begin{matrix}1 & 1\\\\1 & 1\\end{matrix}\\right]');
-    expect(s(M(MatMul(2, A)).mul(C))).toBe('2*A*Matrix([[1, 2], [3, 4]])');
+    expect(s(M(MatMul(2, A)).mul(C))).toBe('A*Matrix([[2, 4], [6, 8]])');
     expect(s(M(MatMul(2, C, A)).doit())).toBe('Matrix([[2, 4], [6, 8]])*A');
     expect(s(MatMul(C, 2, A))).toBe('Matrix([[1, 2], [3, 4]])*2*A');
     expect(s(A.mul(eye(2)))).toBe('A');

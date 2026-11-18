@@ -68,6 +68,7 @@ export {
   pinv,
   jacobian,
   blockDiag,
+  blockDiagSized,
   rotAxis1,
   rotAxis2,
   rotAxis3,

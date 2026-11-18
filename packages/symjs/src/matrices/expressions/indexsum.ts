@@ -39,13 +39,22 @@ function peel(e: Expr): [Expr, Limit[]] {
 const prod = (coeff: Expr, mats: readonly Expr[]): Expr => cast(MatMulNode.create([coeff, ...mats]), MatrixExpr).doit();
 
 function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last?: Expr): Expr {
-  const summed = new Map(limits.map((l) => [l[0].key, l]));
-  const factors = body instanceof Mul ? body.args : [body];
+  const allLimits = [...limits];
+  const flattenFactors = (e: Expr): Expr[] => {
+    if (e instanceof Mul) return e.args.flatMap(flattenFactors);
+    if (limits.length > 0 && e instanceof Concrete && e.kind2 === 'Sum') {
+      allLimits.push(...e.limits);
+      return flattenFactors(e.function);
+    }
+    return [e];
+  };
+  const factors = flattenFactors(body);
+  const summed = new Map(allLimits.map((l) => [l[0].key, l]));
   const edges: Edge[] = [];
   const scalars: Expr[] = [];
   for (const f of factors) {
     if (f instanceof MatrixElementNode && f.parent instanceof MatrixExpr) edges.push({ mat: f.parent, a: f.i, b: f.j });
-    else if (limits.some(([v]) => f.has(v))) throw new NotImplementedError(`from_index_summation: cannot convert ${String(f)}`);
+    else if (allLimits.some(([v]) => f.has(v))) throw new NotImplementedError(`from_index_summation: cannot convert ${String(f)}`);
     else scalars.push(f);
   }
   const coeff = mul(...scalars);

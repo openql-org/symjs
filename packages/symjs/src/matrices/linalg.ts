@@ -143,8 +143,8 @@ export function echelonForm(m: Matrix): Matrix {
   return fromRows(A, m.cols);
 }
 
-export function rank(m: Matrix): number {
-  return rref(m)[1].length;
+export function rank(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}): number {
+  return rref(m, opts)[1].length;
 }
 
 export function nullspace(m: Matrix): Matrix[] {
@@ -810,9 +810,22 @@ export const colInsert = (m: Matrix, pos: number, o: Matrix): Matrix => m.colIns
 
 /** Block-diagonal matrix from scalars and matrices (SymPy diag). */
 export function blockDiag(...blocks: (Matrix | ExprLike)[]): Matrix {
+  return blockDiagSized(blocks);
+}
+
+export interface BlockDiagOptions {
+  readonly rows?: number;
+  readonly cols?: number;
+}
+
+/** SymPy Matrix.diag block placement with optional result dimensions. */
+export function blockDiagSized(blocks: readonly (Matrix | ExprLike)[], opts: BlockDiagOptions = {}): Matrix {
   const ms = blocks.map((b) => (b instanceof Matrix ? b : Matrix.of([[b]])));
-  const rows = ms.reduce((s, m) => s + m.rows, 0);
-  const cols = ms.reduce((s, m) => s + m.cols, 0);
+  const minimumRows = ms.reduce((s, m) => s + m.rows, 0);
+  const minimumCols = ms.reduce((s, m) => s + m.cols, 0);
+  const rows = opts.rows ?? opts.cols ?? minimumRows;
+  const cols = opts.cols ?? opts.rows ?? minimumCols;
+  if (rows < minimumRows || cols < minimumCols) throw new RangeError(`The constructed matrix is ${minimumRows} x ${minimumCols} but a size of ${rows} x ${cols} was specified.`);
   const out = Matrix.zeros(rows, cols).toArray();
   let r0 = 0;
   let c0 = 0;

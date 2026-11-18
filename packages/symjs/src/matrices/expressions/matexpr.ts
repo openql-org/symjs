@@ -21,7 +21,7 @@ export { ShapeError } from '../../core/errors';
 import { at, cast, last } from '../../core/guard';
 import { LambdaNode } from '../../core/lambda';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
+import { Add, Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
 import { isIntegerQ, isNegative, isZero } from '../../core/assumptions';
 import { and } from '../../core/boolalg';
 import { Eq } from '../../core/logic';
@@ -1432,7 +1432,12 @@ registerArithmetic((op, args) => {
   if (!args.some((a) => a instanceof MatrixExpr)) return undefined;
   switch (op) {
     case 'add':
-      return args.every((a) => a instanceof MatrixExpr) ? MatAddNode.create(args).doit() : undefined;
+      if (args.every((a) => a instanceof MatrixExpr)) return MatAddNode.create(args).doit();
+      {
+        const scalar = add(...args.filter((a) => !(a instanceof MatrixExpr)));
+        const matrix = MatAddNode.create(args.filter((a) => a instanceof MatrixExpr)).doit();
+        return same(scalar, S.Zero) ? matrix : new Add([scalar, matrix]);
+      }
     case 'sub': {
       const [a, b] = [at(args, 0), at(args, 1)];
       return a instanceof MatrixExpr && b instanceof MatrixExpr ? a.sub(b) : undefined;
@@ -1580,10 +1585,14 @@ function mulExplicit(a: Expr, b: Expr): Expr {
 
 function mergeExplicitMul(e: Expr): Expr {
   if (!e.args.some((a) => a instanceof ImmutableMatrixNode)) return e;
-  const ok = (x: Expr) => x instanceof ImmutableMatrixNode || isNumber(x);
+  const scalars = e.args.filter((a) => !(a instanceof MatrixExpr));
+  const matrices: Expr[] = e.args.filter((a) => a instanceof MatrixExpr);
+  const firstExplicit = matrices.findIndex((a) => a instanceof ImmutableMatrixNode);
+  if (scalars.length) matrices[firstExplicit] = mulExplicit(mul(...scalars), at(matrices, firstExplicit));
+  const ok = (x: Expr) => x instanceof ImmutableMatrixNode || !(x instanceof MatrixExpr);
   const newArgs: Expr[] = [];
-  let cur = at(e.args, 0);
-  for (const arg of e.args.slice(1)) {
+  let cur = at(matrices, 0);
+  for (const arg of matrices.slice(1)) {
     if (ok(arg) && ok(cur)) cur = mulExplicit(cur, arg);
     else {
       newArgs.push(cur);
