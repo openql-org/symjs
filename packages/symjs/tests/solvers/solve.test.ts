@@ -754,8 +754,12 @@ it('keeps free coordinates in monic positive-dimensional systems', () => {
   }
 });
 
-it('retains unsupported parameter-dependent leading coefficients explicitly', () => {
-  expect(() => nonlinsolve([parse('x**2*y**2+1')], [x, y])).toThrow('only zero-dimensional systems are supported');
+it('excludes zero values of a parameter-dependent leading coefficient', () => {
+  const rows = nonlinsolve([parse('x**2*y**2+1')], [x, y]);
+  expect(rows.map((row) => row.map(String))).toEqual([
+    ['-I/y', 'Complement({y}, {0})'],
+    ['I/y', 'Complement({y}, {0})'],
+  ]);
 });
 
 it('inverts reciprocal trigonometric and hyperbolic functions', () => {

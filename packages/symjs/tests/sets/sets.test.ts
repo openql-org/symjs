@@ -133,6 +133,8 @@ const CASES: readonly (readonly [sympy: string, run: () => unknown, expected: st
   ["Interval(0, 1).as_relational(x)", () => Sets.asRelational(I(0, 1), x), "(0 <= x) & (x <= 1)"],
   ["FiniteSet(1, 2).as_relational(x)", () => Sets.asRelational(F(1, 2), x), "Eq(x, 1) | Eq(x, 2)"],
   ["Union(Interval(0, 1), Interval(2, 3)).as_relational(x)", () => Sets.asRelational(U(I(0, 1), I(2, 3)), x), "((0 <= x) & (x <= 1)) | ((2 <= x) & (x <= 3))"],
+  ["(S.Reals - FiniteSet(0)).as_relational(x)", () => Sets.asRelational(Sets.complement(Sets.Reals, F(0)), x), "(-oo < x) & (x < oo) & Ne(x, 0)"],
+  ["(S.Reals - FiniteSet(-1, 1)).as_relational(x)", () => Sets.asRelational(Sets.complement(Sets.Reals, F(-1, 1)), x), "((-oo < x) & (x < -1)) | ((-1 < x) & (x < 1)) | ((1 < x) & (x < oo))"],
   ["Intersection(FiniteSet(y), Interval(0, 1)).as_relational(x)", () => Sets.asRelational(Sets.intersection(F(y), I(0, 1)), x), "Eq(x, y) & (0 <= x) & (x <= 1)"],
   ["Interval(0, 1).inf", () => Sets.inf(I(0, 1)), "0"],
   ["S.Reals.inf", () => Sets.inf(Sets.Reals), "-oo"],

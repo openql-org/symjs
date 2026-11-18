@@ -2265,10 +2265,10 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
   }
   if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(x, a)));
   if (s instanceof SetOp && s.op === 'Union') {
-    const intervals = s.args.filter((a) => a instanceof Interval).sort((a, b) => cmpReal(a.start, b.start) ?? 0);
-    if (intervals.length > 1 && intervals.length === s.args.length && intervals.slice(1).every((iv, i) => at(intervals, i).rightOpen && iv.leftOpen && at(intervals, i).end.key === iv.start.key)) {
-      const a = first(intervals), b = at(intervals, intervals.length - 1);
-      return and(asRelational(interval(a.start, b.end, a.leftOpen, b.rightOpen), x), ...intervals.slice(1).map((iv) => not(Eq(x, iv.start))));
+    const [a, b] = s.args;
+    // SymPy combines two intervals separated by a single excluded endpoint.
+    if (s.args.length === 2 && a instanceof Interval && b instanceof Interval && a.rightOpen && b.leftOpen && a.end.key === b.start.key) {
+      return and(asRelational(interval(a.start, b.end, a.leftOpen, b.rightOpen), x), not(Eq(x, a.end)));
     }
     return or(...s.args.map((a) => asRelational(a, x)));
   }
