@@ -20,10 +20,11 @@ import { xreplace as subs } from '../core/traverse';
 import { fn, log } from '../functions/elementary/elementary';
 import { fnTaylorAtZero } from '../calculus/diff';
 import { expandMul as expand } from '../simplify/expand';
-import { first, last } from '../core/guard';
+import { at, first, last } from '../core/guard';
 import { isNegative, isPositive, isReal } from '../core/assumptions';
 import { rewrite } from '../simplify/rewrite';
 import { Hyper } from '../functions/special/hyper';
+import { besselLocalExpansion } from '../functions/special/bessel';
 
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
 export class SeriesError extends NotImplementedError {}
@@ -284,6 +285,12 @@ export class Expander {
       return this.analytic((w) => new UndefFn(e.name, [w]), arg.coeff(S.Zero), h, n, this.taylorVariable);
     }
     if (e instanceof Hyper) return this.serHyper(e, n);
+    if (e instanceof ExtensionExpr && e.name === 'SingularityFunction') {
+      const power = at(e.args, 2);
+      if (isNegative(power) === true) return PS.constant(S.Zero);
+      const shift = add(first(e.args), mul(-1, at(e.args, 1)));
+      return isPositive(this.leading(shift).c) === true ? this.ser(pow(shift, power), n) : PS.constant(S.Zero);
+    }
     if (e instanceof ExtensionExpr && e.isTaylorExpandable) return this.serTaylor(e, n);
     throw new SeriesError(`cannot expand ${e.toString()}`);
   }
@@ -408,6 +415,14 @@ export class Expander {
   }
 
   private serFn(e: Fn, n: Rational): PS {
+    const [a, b] = e.args;
+    const zeroSeries = this.singularAtZero(e, n);
+    if (zeroSeries !== undefined) return zeroSeries;
+    if (b !== undefined && a instanceof Rational && !a.isNegative && !a.has(this.t) && b.has(this.t)
+      && (e.name === 'besselj' || e.name === 'besseli' || e.name === 'besselk' || e.name === 'bessely' && a.isInteger)) {
+      const leading = this.leading(b).e;
+      if (leading.isPositive && n.isPositive) return this.ser(besselLocalExpansion(e.name, a, b, leading.value, n.value), n).cut(n);
+    }
     const asym = this.asymptotic(e, n);
     if (asym !== undefined) return asym;
     // beta(a, b) = gamma(a)*gamma(b)/gamma(a + b)
@@ -592,13 +607,53 @@ export class Expander {
     return this.analytic((w) => fn(e.name, [w]), g0, h, n);
   }
 
+  /** Logarithmic and nonintegral special-function series at an argument of positive valuation. */
+  private singularAtZero(e: Fn, n: Rational): PS | undefined {
+    const name = e.name;
+    if (!['Ci', 'Chi', '_eis', '_erfs', 'expint', 'polylog'].includes(name)) return undefined;
+    const z = last(e.args);
+    if (!z.has(this.t)) return undefined;
+    const lead = this.leading(z);
+    if ((name === '_eis' && !lead.e.isPositive) || (name === '_erfs' && lead.e.isNegative)) return this.scaledExponentialIntegral(e, n);
+    if (!lead.e.isPositive) return undefined;
+    const order = first(e.args);
+    if (name === 'polylog' && order.has(this.t)) return undefined;
+    if (name === 'expint' && !(order instanceof Rational && order.isInteger && order.isPositive)) return undefined;
+    if (name === '_erfs') return this.ser(rewrite(e, 'intractable'), n);
+    const logarithm = add(S.EulerGamma, log(z));
+    const terms: Expr[] = [];
+    let factorial = 1n;
+    for (let k = 1; k * lead.e.value < n.value; k++) {
+      factorial *= BigInt(k);
+      if (name === 'polylog') terms.push(mul(pow(z, k), pow(k, mul(-1, order))));
+      else if (name === '_eis') terms.push(mul(Rational.of(1n, BigInt(k) * factorial), pow(z, k)));
+      else if (k % 2 === 0) terms.push(mul(Rational.of(name === 'Ci' && k % 4 === 2 ? -1n : 1n, BigInt(k) * factorial), pow(z, k)));
+    }
+    if (name === 'polylog') return this.ser(add(...terms), n).cut(n);
+    if (name === '_eis') return this.ser(mul(exp(mul(-1, z)), add(logarithm, ...terms)), n).cut(n);
+    if (name === 'expint') {
+      terms.length = 0;
+      let coefficient: Expr = S.One;
+      for (let j = 0; j * lead.e.value < n.value; j++) {
+        const k = add(order, -j - 1);
+        const factor = k.equals(0) ? add(fn('polygamma', [0, order]), mul(-1, log(z)), order.equals(1) ? S.Zero : mul(S.I, S.Pi)) : pow(k, -1);
+        terms.push(mul(coefficient, pow(z, j), factor));
+        coefficient = mul(coefficient, Rational.of(-1, j + 1));
+      }
+      return this.ser(add(...terms), n).cut(n);
+    }
+    return this.ser(add(logarithm, ...terms), n).cut(n);
+  }
+
   /**
    * Stirling's series of loggamma(g) and the asymptotic series of polygamma(0, g) for an argument
    * g -> +oo (SymPy loggamma._eval_aseries, polygamma._eval_aseries); undefined for other functions.
    */
   private asymptotic(e: Fn, n: Rational): PS | undefined {
-    const digamma = e.name === 'polygamma' && e.args.length === 2 && e.args[0] instanceof Rational && e.args[0].isZero;
-    if (!(e.name === 'loggamma' || digamma)) return undefined;
+    const order = e.name === 'polygamma' ? first(e.args) : undefined;
+    const polygamma = order instanceof Rational && order.isInteger && !order.isNegative;
+    const digamma = polygamma && order.isZero;
+    if (!(e.name === 'loggamma' || polygamma)) return undefined;
     // (the argument depends on t: the first argument of polygamma is 0)
     const g = last(e.args);
     const lead = this.leading(g);
@@ -606,6 +661,15 @@ export class Expander {
     const d = -lead.e.value;
     // terms up to z**(1 - 2K) (loggamma) or z**(-2K) (digamma); the rest is O(z**(-2K - 1))
     const K = Math.max(1, Math.ceil((Math.max(n.value, 1) / d - 1) / 2) + 1);
+    if (polygamma && !digamma) {
+      let factor = fn('gamma', [order]);
+      const terms = [factor, mul(order, factor, S.Half, pow(g, -1))];
+      for (let k = 1; k <= K; k++) {
+        factor = mul(factor, add(order, 2 * k - 1), add(order, 2 * k - 2), Rational.of(1, 2 * k * (2 * k - 1)));
+        terms.push(mul(factor, fn('bernoulli', [2 * k]), pow(g, -2 * k)));
+      }
+      return this.ser(mul(-1, pow(mul(-1, pow(g, -1)), order), add(...terms)), n).cut(n);
+    }
     const terms: Expr[] = digamma ? [log(g), mul(Rational.of(-1n, 2n), pow(g, -1))] : [mul(add(g, Rational.of(-1n, 2n)), log(g)), mul(-1, g), mul(S.Half, log(mul(2, S.Pi)))];
     for (let k = 1; k <= K; k++) {
       const b = fn('bernoulli', [Rational.of(2 * k)]);
@@ -620,20 +684,20 @@ export class Expander {
    * times sum_k (+-1)**k*a_k(nu)/g**k, a_k(nu) = (4*nu**2 - 1)*...*(4*nu**2 - (2*k - 1)**2)/(k!*8**k)
    * (Abramowitz and Stegun 9.7.1 and 9.7.2).
    */
-  private scaledExponentialIntegral(e: UndefFn, n: Rational): PS {
+  private scaledExponentialIntegral(e: UndefFn | Fn, n: Rational): PS {
     const g = first(e.args);
     const lead = this.leading(g);
     if (lead.e.isZero && e.name === SCALED_EI) {
       // F(z) = exp(-z)*Ei(z) satisfies F'(z) + F(z) = 1/z.
       const center = lead.c;
       const h = this.ser(add(g, mul(-1, center)), n);
-      let a: Expr = new UndefFn(e.name, [center]);
+      let a: Expr = e instanceof Fn ? fn(e.name, [center]) : new UndefFn(e.name, [center]);
       return this.powerSeries((j) => {
         if (j) a = mul(Rational.of(1, j), add(mul(j % 2 ? 1 : -1, pow(center, -j)), mul(-1, a)));
         return a;
       }, h, n);
     }
-    if (!(lead.e.isNegative && isPositive(lead.c))) throw new SeriesError(`cannot expand ${e.name}`);
+    if (!(lead.e.isNegative && (e.name === SCALED_EI ? isReal(lead.c) === true : isPositive(lead.c)))) throw new SeriesError(`cannot expand ${e.name}`);
     // e^-g Ei(g) ~ sum k!/g^(k+1), e^(g^2) erfc(g) ~ sum (-1)^k (1/2)_k/(sqrt(pi)*g^(2k+1)).
     const step = e.name === SCALED_EI ? 1 : 2;
     const K = Math.max(1, Math.ceil(Math.max(n.value, 1) / (-step * lead.e.value)));

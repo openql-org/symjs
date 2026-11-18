@@ -476,3 +476,20 @@ it('validates minor coordinates and insertion positions', () => {
   expect(() => M.minorSubmatrix(4, 5)).toThrow(RangeError);
   expect(() => M.rowInsert(4.7, M)).toThrow(TypeError);
 });
+
+it('joins empty left and top operands and preserves element replacement maps', async () => {
+  expect(Matrix.zeros(4, 0).rowJoin(M).equals(M)).toBe(true);
+  expect(Matrix.zeros(0, 4).colJoin(M).equals(M)).toBe(true);
+  expect(M.rowJoin(M).shape).toEqual([2, 4]);
+  expect(M.colJoin(M).shape).toEqual([4, 2]);
+  const [matrix, changes] = Matrix.col(x, x).replace(x, a, { map: true });
+  expect(matrix.equals(Matrix.col(a, a))).toBe(true);
+  expect([...changes]).toEqual([[x, a]]);
+  const { classof } = await import('../../src');
+  expect(classof(M, MutableMatrix.eye(1))).toBe(Matrix);
+  expect(classof(MutableMatrix.eye(1), M)).toBe(Matrix);
+  // @ts-expect-error Non-matrix operands have no class priority.
+  expect(() => classof(M, x)).toThrow(TypeError);
+  // @ts-expect-error Non-matrix operands have no class priority.
+  expect(() => classof(x, M)).toThrow(TypeError);
+});

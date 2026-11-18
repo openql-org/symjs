@@ -48,6 +48,42 @@ const run = (f: () => unknown): string => {
     return e instanceof Error ? `ERR ${e.constructor.name}: ${e.message}` : 'ERR';
   }
 };
+
+describe('special-function local and asymptotic series', () => {
+  it.each([
+    ['besselj(0, x**1.1)', 4, '1 - x**2.2/4 + O(x**4)'],
+    ['besselj(2, sin(x))', 4, '(-x**3/12 + x/2)**2/2 + O(x**4)'],
+    ['besselk(1/2, x**2)', 2, 'sqrt(2)*sqrt(pi)/(2*x) - sqrt(2)*sqrt(pi)*x/2 + O(x**2)'],
+    ['besselk(2, x)', 1, '2/x**2 - 1/2 + O(x)'],
+    ['bessely(0, log(1+x))', 3, '2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi - x/pi + x**2*(-log(x)/(2*pi) + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi) + 5/(12*pi)) + O(x**3*log(x))'],
+    ['expint(1, x)', 4, '-EulerGamma - log(x) + x - x**2/4 + x**3/18 + O(x**4)'],
+    ['polylog(3/2, -x)', 4, '-x + sqrt(2)*x**2/4 - sqrt(3)*x**3/9 + O(x**4)'],
+    ['polygamma(3, 1/x)', 4, '2*x**3 + O(x**4)'],
+    ['li(x)', 2, 'x*(1/log(x) + 1 + O(log(x)**(-2)))/log(x)'],
+  ] as const)('expands %s at zero', (f, n, expected) => {
+    expect(String(series(P(f), x, 0, n))).toBe(expected);
+  });
+
+  it.each([
+    ['besseli(0, x)', 2, 'sqrt(2)*(sqrt(1/x) + (1/x)**(3/2)/8 + O((1/x)**(5/2), (x, oo)))*exp(x)/(2*sqrt(pi))'],
+    ['erf(x)', 4, '-(-1/(2*x**3) + 1/x + O(x**(-4), (x, oo)))*exp(-x**2)/sqrt(pi) + 1'],
+    ['erfi(x)', 4, '(1/(2*x**3) + 1/x + O(x**(-4), (x, oo)))*exp(x**2)/sqrt(pi) - I'],
+    ['Ci(x)', 4, '-(x**(-2) + O(x**(-4), (x, oo)))*cos(x) + (-2/x**3 + 1/x + O(x**(-4), (x, oo)))*sin(x)'],
+    ['fresnelc(x)', 4, '-cos(pi*x**2/2)/(pi**2*x**3) + sin(pi*x**2/2)/(pi*x) + 1/2 + O(x**(-4), (x, oo))'],
+  ] as const)('expands %s at infinity', (f, n, expected) => {
+    expect(String(series(P(f), x, sj.oo, n))).toBe(expected);
+  });
+
+  it('finds leading terms across singular points', () => {
+    expect(sj.asLeadingTerm(P('besselk(1, sin(x))'), x).equals(P('1/x'))).toBe(true);
+    expect(sj.asLeadingTerm(P('bessely(-1/2, x)'), x).equals(P('sqrt(2)*sqrt(x)/sqrt(pi)'))).toBe(true);
+    expect(sj.asLeadingTerm(P('erf(1/x)'), x).equals(1)).toBe(true);
+    expect(sj.asLeadingTerm(P('erfc(1/x)'), x).equals(0)).toBe(true);
+    expect(sj.asLeadingTerm(sj.SingularityFunction(x, 3, 2), x).equals(0)).toBe(true);
+    expect(sj.asLeadingTerm(sj.SingularityFunction(x, 0, 0), x).equals(1)).toBe(true);
+    expect(sj.asLeadingTerm(sj.SingularityFunction(x, 0, 0), x, { cdir: -1 }).equals(0)).toBe(true);
+  });
+});
 const conc = (e: unknown): sj.Concrete => {
   if (!(e instanceof sj.Concrete)) throw new TypeError('a Sum or Product expected');
   return e;
@@ -610,4 +646,92 @@ it('preserves unresolved multivariate orders and checks logarithmic oscillations
   expect(() => series(new sj.Pow(sj.S.E, sj.mul(sj.I, sj.log(x))), x)).toThrow(sj.PoleError);
   expect(String(series(new sj.Pow(x, sj.pi), x))).toBe('x**pi');
   expect(String(sj.aseries(P('exp(x)+exp(-x)'), x))).toBe('exp(x) + exp(-x)');
+});
+
+it('uses the expansion point for the local singularity series', () => {
+  const F = sj.SingularityFunction;
+  const l = new Sym('l', { positive: true });
+  const half = sj.rational(1, 2);
+  const shift = sj.add(x, l);
+  const sum = sj.add(sj.mul(half, F(shift, 0, 1)), sj.neg(F(shift, sj.mul(half, l), 1)), sj.mul(half, F(shift, l, 1)));
+  expect(String(sj.asLeadingTerm(sum, x))).toBe('-x/2');
+  expect(String(sj.nseries(sum, x))).toBe('-x/2 + O(x**6)');
+  expect(sj.series(sum, x)).toBe(sj.S.Zero);
+  expect(sj.nseries(F(x, 0, 1), x)).toBe(sj.S.Zero);
+  expect(sj.nseries(F(x, 0, 0), x)).toBe(sj.S.One);
+  expect(sj.nseries(F(x, 0, 0), x, 0, 6, { cdir: -1 })).toBe(sj.S.Zero);
+  expect(sj.nseries(F(x, y, 1), x)).toBe(sj.S.Zero);
+  expect(sj.nseries(F(x, 0, -1), x)).toBe(sj.S.Zero);
+  expect(String(sj.nseries(F(shift, 0, 1), x))).toBe('l + x');
+});
+
+it('finds signed leading terms and asymptotic branches', () => {
+  expect(String(sj.asLeadingTerm(P('besseli(0,1/x)'), x))).toBe('sqrt(2)*exp(1/x)/(2*sqrt(pi)*sqrt(1/x))');
+  expect(sj.asLeadingTerm(P('besseli(0,1/x)'), x, { cdir: -1 }).equals(P('besseli(0,1/x)'))).toBe(true);
+  expect(sj.asLeadingTerm(P('besselj(x,1)'), x).equals(P('besselj(0,1)'))).toBe(true);
+  expect(sj.asLeadingTerm(P('erf(1/x)'), x, { cdir: -1 })).toBe(sj.S.NegOne);
+  expect(sj.asLeadingTerm(P('erfc(1/x)'), x, { cdir: -1 })).toBe(sj.S.Two);
+  expect(String(series(P('erf(1/x)'), x, sj.oo, 2))).toBe('2/(sqrt(pi)*x) + O(x**(-2), (x, oo))');
+  expect(String(series(P('fresnelc(x)'), x, sj.S.NegativeInfinity, 2))).toBe('sin(pi*x**2/2)/(pi*x) - 1/2 + O(x**(-2), (x, -oo))');
+  expect(String(sj.taylorTerm(sj.fresnelc(x), 0, x))).toBe('x');
+  expect(sj.taylorTerm(sj.fresnelc(x), -1, x)).toBe(sj.S.Zero);
+});
+
+it('composes Bessel series at regular and complex arguments', () => {
+  expect(String(series(P('besselj(0,x+1)'), x, 0, 2))).toBe('besselj(0, 1) - x*besselj(1, 1) + O(x**2)');
+  expect(String(series(P('bessely(0,I*x)'), x, 0, 2))).toBe('(2*log(x) - 2*log(2) + 2*EulerGamma + I*pi)/pi + O(x**2*log(x))');
+  expect(String(series(P('bessely(0,x**2+x)'), x, 0, 0))).toBe('O(log(x))');
+  expect(() => series(P('besselj(0,x**y)'), x)).toThrow(sj.NotImplementedError);
+});
+
+it('handles signed and unsupported leading-term sectors', () => {
+  expect(String(sj.asLeadingTerm(P('bessely(-1/3,x)'), x))).toBe('-2**(1/3)*sqrt(3)/(3*x**(1/3)*gamma(2/3))');
+  expect(sj.asLeadingTerm(sj.fn('besselk', [-1, x], { evaluate: false }), x).equals(P('1/x'))).toBe(true);
+  expect(String(sj.asLeadingTerm(P('besselk(y,x)'), x))).toBe('besselk(y, 0)');
+  expect(() => sj.asLeadingTerm(P('besselj(0,1/x)'), x)).toThrow(sj.NotImplementedError);
+  expect(() => sj.asLeadingTerm(P('erfc(I/x)'), x)).toThrow(sj.NotImplementedError);
+});
+
+it('selects infinity series by the argument direction and valuation', () => {
+  expect(String(series(P('Si(x)'), x, sj.S.NegativeInfinity, 2))).toContain('-pi/2');
+  expect(String(series(P('erf(x+1)'), x, sj.oo))).toBe('1 + O(x**(-6), (x, oo))');
+  expect(String(series(sj.fn('erfc', [sj.neg(x)], { evaluate: false }), x, sj.oo))).toBe('2 + O(x**(-6), (x, oo))');
+});
+
+
+it('expands special functions on the positive and negative real rays', () => {
+  const expand = (source: string, n: number, point: sj.Expr = sj.oo) => String(series(P(source), x, point, n));
+  expect(expand('lowergamma(x,2)', 3)).toBe('2**x*(1 + 2/(x + 1))*exp(-2)/x + O(exp(x*log(2))/x**3, (x, oo))');
+  expect(expand('besseli(0,x)', 2, sj.S.NegativeInfinity)).toContain('exp(-x)');
+  expect(expand('besselk(0,x)', 2)).toContain('sqrt(1/x) - (1/x)**(3/2)/8');
+  expect(expand('besselk(0,x)', 2, sj.S.NegativeInfinity)).toContain('-I*sqrt(-1/x)');
+  expect(expand('erfi(x)', 4)).toBe('(1/(2*x**3) + 1/x + O(x**(-4), (x, oo)))*exp(x**2)/sqrt(pi) - I');
+  expect(expand('erfc(x)', 4)).toBe('(-1/(2*x**3) + 1/x + O(x**(-4), (x, oo)))*exp(-x**2)/sqrt(pi)');
+  expect(expand('expint(2,x)', 3)).toBe('(6/x**2 - 2/x + 1 + O(x**(-3), (x, oo)))*exp(-x)/x');
+  expect(expand('Ei(x)', 3)).toBe('(2/x**2 + 1/x + 1 + O(x**(-3), (x, oo)))*exp(x)/x');
+  expect(expand('fresnels(x)', 4)).toBe('-sin(pi*x**2/2)/(pi**2*x**3) - cos(pi*x**2/2)/(pi*x) + 1/2 + O(x**(-4), (x, oo))');
+  expect(expand('Si(x)', 3)).toBe('-(x**(-2) + O(x**(-3), (x, oo)))*sin(x) - (1/x + O(x**(-3), (x, oo)))*cos(x) + pi/2');
+  expect(expand('Ci(x)', 3, sj.S.NegativeInfinity)).toContain('I*pi');
+  expect(expand('Ci(x)', 3)).toBe('-(x**(-2) + O(x**(-3), (x, oo)))*cos(x) + (1/x + O(x**(-3), (x, oo)))*sin(x)');
+  expect(expand('Li(x)', 2, sj.S.Zero)).toBe('x*(1/log(x) + 1 + O(log(x)**(-2)))/log(x) - li(2)');
+});
+
+it('keeps local Bessel powers and logarithms', () => {
+  expect(String(series(P('besseli(1,sin(x))'), x, 0, 2))).toBe('x/2 + O(x**2)');
+  expect(String(series(P('besselj(0,sin(x))'), x, 0, 2))).toBe('1 + O(x**2)');
+  expect(String(series(P('bessely(1,x)'), x, 0, 2))).toContain('O(x**2*log(x))');
+  expect(String(series(P('bessely(2,x)'), x, 0, 1))).toBe('-4/(pi*x**2) - 1/pi + O(x)');
+  expect(String(series(P('besselk(0,x+x**2)'), x, 0, 4))).toContain('(2 - 2*EulerGamma)*(x**3/4 + x**2/8)');
+  expect(String(series(P('bessely(0,x+x**2)'), x, 0, 4))).toContain('(2 - 2*EulerGamma)*(-x**3/(2*pi) - x**2/(4*pi))');
+  const cases = [
+    ['besselj(0,1+x)', 'besselj(0,1)'], ['besselj(1,x)', 'x/2'],
+    ['besselk(0,1/x)', 'sqrt(pi)*exp(-1/x)/sqrt(2/x)'],
+    ['bessely(0,x)', '2*(log(x)-log(2)+EulerGamma)/pi'],
+    ['besselk(0,x)', 'log(2)-EulerGamma-log(x)'], ['bessely(1,x)', '-2/(pi*x)'],
+    ['erfi(1/x)', 'erfi(1/x)'], ['erfc(x)', '1'],
+  ] as const;
+  for (const [source, expected] of cases) {
+    expect(sj.expandMul(sj.asLeadingTerm(P(source), x)).equals(sj.expandMul(P(expected))), source).toBe(true);
+  }
+  expect(String(sj.taylorTerm(sj.fresnelc(x), 1, x))).toBe('-pi**2*x**5/40');
 });

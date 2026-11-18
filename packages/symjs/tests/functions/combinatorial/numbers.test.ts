@@ -43,6 +43,149 @@ const locals = {
   // bell(n, k, (a, b, ...)) of SymPy
   bellx: (n: sj.Expr, k: sj.Expr, ...xs: sj.Expr[]) => sj.bell(n, k, xs),
 };
+
+it('evaluates residue symbols with symbolic integer arguments', () => {
+  const p = new Sym('p', { prime: true });
+  const k = new Sym('k', { integer: true });
+  const noninteger = new Sym('noninteger', { integer: false });
+  const even = new Sym('even', { even: true, positive: true });
+  const negative = new Sym('negative', { integer: true, negative: true });
+  expect(legendreSymbol(mul(p, k), p)).toBe(S.Zero);
+  expect(legendreSymbol(S.One, p)).toBe(S.One);
+  expect(jacobiSymbol(mul(p, k), p)).toBe(S.Zero);
+  expect(jacobiSymbol(S.One, k)).toBe(S.One);
+  expect(jacobiSymbol(x, S.One)).toBe(S.One);
+  expect(kroneckerSymbol(S.One, k)).toBe(S.One);
+  expect(kroneckerSymbol(x, S.One)).toBe(S.One);
+  for (const residue of [legendreSymbol, jacobiSymbol, kroneckerSymbol]) {
+    const symbolic = residue(x, k);
+    expect(sj.isIntegerValued(symbolic)).toBe(true);
+    expect(sj.isPrime(symbolic)).toBe(false);
+    expect(sj.isPositive(symbolic)).toBe('unknown');
+    expect(symbolic.func(x, k).equals(symbolic)).toBe(true);
+    expect(residue(sj.rational(2), sj.rational(3))).toEqual(S.NegOne);
+    expect(() => residue(noninteger, k)).toThrow(TypeError);
+    expect(() => residue(k, noninteger)).toThrow(TypeError);
+  }
+  expect(() => legendreSymbol(S.One, even)).toThrow(RangeError);
+  const notOdd = new Sym('notOdd', { odd: false });
+  expect(() => legendreSymbol(S.One, notOdd)).toThrow(RangeError);
+  expect(() => jacobiSymbol(S.One, notOdd)).toThrow(RangeError);
+  expect(() => jacobiSymbol(S.One, new Sym('notPositive', { positive: false }))).toThrow(RangeError);
+  expect(() => jacobiSymbol(S.One, sj.rational(4))).toThrow(RangeError);
+  expect(() => legendreSymbol(x, sj.rational(2))).toThrow(RangeError);
+  expect(() => legendreSymbol(x, sj.rational(9))).toThrow(RangeError);
+  expect(() => legendreSymbol(x, new Sym('notPrime', { prime: false }))).toThrow(RangeError);
+  expect(legendreSymbol(S.NaN, p).has(S.NaN)).toBe(true);
+  expect(() => jacobiSymbol(S.One, even)).toThrow(RangeError);
+  expect(() => jacobiSymbol(S.One, negative)).toThrow(RangeError);
+  expect(jacobiSymbol(k, 3).has(k)).toBe(true);
+  expect(kroneckerSymbol(k, 3).has(k)).toBe(true);
+});
+
+it('rewrites the sequence functions with their closed forms', () => {
+  const value = (f: sj.Expr, target: string, n: number) => sj.subs(sj.rewrite(f, target), [[x, sj.rational(n)]]).evalf(10).toNumber();
+  expect(value(fibonacci(x), 'sqrt', 8)).toBeCloseTo(21);
+  expect(value(sj.lucas(x), 'sqrt', 8)).toBeCloseTo(47);
+  expect(value(sj.tribonacci(x), 'sqrt', 8)).toBeCloseTo(44);
+  expect(value(sj.tribonacci(x), 'TribonacciConstant', 8)).toBeCloseTo(44);
+  for (const [f, target] of [[fibonacci(x, 2), 'sqrt'], [sj.tribonacci(x, 2), 'sqrt'], [sj.tribonacci(x, 2), 'TribonacciConstant']] as const) {
+    expect(sj.rewrite(f, target)).toEqual(f);
+  }
+  expect(sj.rewrite(bernoulli(-1), 'zeta')).toEqual(mul(sj.rational(1, 6), sj.pow(S.Pi, 2)));
+  expect(sj.rewrite(bernoulli(-4, x), 'zeta')).toEqual(mul(4, sj.zeta(5, x)));
+  expect(sj.rewrite(sj.genocchi(x), 'dirichlet_eta')).toEqual(mul(-2, x, sj.dirichletEta(add(1, mul(-1, x)))));
+  expect(sj.rewrite(sj.genocchi(x, 2), 'dirichlet_eta')).toEqual(mul(-2, x, sj.dirichletEta(add(1, mul(-1, x)), 2)));
+  expect(sj.rewrite(andre(x), 'polylog').has(sj.polylog(mul(-1, x), S.I))).toBe(true);
+  expect(sj.rewrite(andre(x), 'zeta').has(sj.zeta(add(x, 1), sj.rational(1, 4)))).toBe(true);
+});
+
+it('evaluates the continued Bernoulli, Euler, Genocchi and Andre functions', () => {
+  const held = (head: sj.Fn['name'], ...args: sj.ExprLike[]) => sj.fn(head, args, { evaluate: false });
+  expect(String(bernoulli(1_000_000).evalf())).toBe('-2.23799235765713e+4767529');
+  expect(String(bernoulli(5002).evalf(1530))).toMatch(/^6\.75652438842215044081\d+e\+12340$/);
+  expect(held('bernoulli', 5001).evalf().toNumber()).toBe(0);
+  expect(held('bernoulli', 0, 2).evalf().toNumber()).toBe(1);
+  expect(held('bernoulli', 1, 2).evalf().toNumber()).toBe(1.5);
+  expect(String(bernoulli(S.I).evalf(10))).toBe('0.9268485643 - 0.5821580598*I');
+  expect(String(bernoulli(S.I, S.I).evalf(10))).toBe('0.1267792071 + 0.01947413152*I');
+  expect(euler(-2).evalf().toNumber()).toBeCloseTo(1.83193118835444);
+  expect(held('euler', -1).evalf().toNumber()).toBeCloseTo(Math.PI / 2);
+  expect(held('euler', -1, 2).evalf().toNumber()).toBeCloseTo(2 - 2 * Math.log(2));
+  expect(String(euler(S.I, S.I).evalf(10))).toBe('0.04812930469 + 0.01052411008*I');
+  expect(sj.genocchi(sj.rational(5, 4)).evalf().toNumber()).toBeCloseTo(-1.104286457);
+  expect(String(sj.genocchi(S.I, 1).evalf(10))).toBe('-0.3161917278 - 1.45311955*I');
+  expect(andre(S.Infinity)).toBe(S.Infinity);
+  expect(andre(S.NaN)).toBe(S.NaN);
+  expect(andre(S.Zero)).toBe(S.One);
+  expect(andre(sj.rational(10))).toEqual(sj.rational(50521));
+  expect(andre(S.NegOne)).toEqual(mul(-1, sj.log(2)));
+  expect(andre(sj.rational(-2))).toEqual(mul(-2, S.Catalan));
+  expect(andre(sj.rational(-3))).toEqual(mul(sj.rational(3, 16), sj.zeta(3)));
+  expect(andre(sj.rational(-5))).toEqual(mul(sj.rational(-15, 256), sj.zeta(5)));
+  expect(held('andre', 10).evalf(10).toNumber()).toBe(50521);
+  expect(andre(sj.rational(-4)).evalf().toNumber()).toBeCloseTo(1.977889103);
+  expect(String(andre(S.I).evalf(10))).toBe('2.378417833 + 0.6343322845*I');
+  expect(andre(x).func(x)).toEqual(andre(x));
+});
+
+it('propagates assumptions of combinatorial and arithmetic sequences', () => {
+  const n = new Sym('n', { integer: true, positive: true });
+  const m = new Sym('m', { integer: true, nonnegative: true });
+  const odd = new Sym('odd', { odd: true, positive: true });
+  const check = (prop: sj.Predicate, expr: sj.Expr, expected: sj.Truth) => expect(sj.ask(prop(expr))).toBe(expected);
+  for (const f of [sj.divisorSigma, sj.udivisorSigma, sj.totient, sj.reducedTotient]) {
+    check(sj.Q.integer, f(n), true);
+    check(sj.Q.positive, f(n), true);
+    check(sj.Q.odd, f(n), 'unknown');
+  }
+  for (const f of [sj.primepi, sj.primenu, sj.primeomega, sj.partition]) {
+    check(sj.Q.integer, f(m), true);
+    check(sj.Q.nonnegative, f(m), true);
+  }
+  check(sj.Q.positive, sj.partition(m), true);
+  check(sj.Q.positive, sj.partition(x), 'unknown');
+  check(sj.Q.prime, mobius(n), false);
+  check(sj.Q.integer, mobius(n), true);
+  check(sj.Q.integer, andre(m), true);
+  check(sj.Q.positive, andre(m), true);
+  check(sj.Q.odd, andre(m), 'unknown');
+  check(sj.Q.integer, andre(x), 'unknown');
+  check(sj.Q.positive, sj.catalan(m), true);
+  check(sj.Q.integer, sj.catalan(m), true);
+  check(sj.Q.composite, sj.catalan(add(n, 3)), true);
+  check(sj.Q.composite, sj.catalan(x), 'unknown');
+  expect(mobius(sj.pow(3, add(n, 1)))).toBe(S.Zero);
+  expect(mobius(sj.pow(3, n)).has(n)).toBe(true);
+  const g = (n: sj.ExprLike, ...rest: sj.ExprLike[]) => sj.fn('genocchi', [n, ...rest], { evaluate: false });
+  check(sj.Q.prime, g(6), false);
+  check(sj.Q.prime, g(8), true);
+  check(sj.Q.integer, g(m, 1), true);
+  check(sj.Q.integer, g(m, x), 'unknown');
+  check(sj.Q.integer, g(m), true);
+  check(sj.Q.integer, g(x), 'unknown');
+  check(sj.Q.integer, g(new Sym('z', { integer: true })), 'unknown');
+  check(sj.Q.integer, g(new Sym('z', { even: true, negative: true })), 'unknown');
+  check(sj.Q.even, g(mul(2, n)), false);
+  check(sj.Q.odd, g(mul(2, n)), true);
+  check(sj.Q.even, g(mul(2, m)), 'unknown');
+  check(sj.Q.odd, g(mul(2, m)), 'unknown');
+  check(sj.Q.even, g(add(mul(2, n), 1)), true);
+  check(sj.Q.positive, g(mul(4, n)), true);
+  check(sj.Q.positive, g(odd), false);
+  check(sj.Q.positive, g(0), false);
+  check(sj.Q.negative, g(1), true);
+  check(sj.Q.negative, g(add(mul(4, n), -2)), true);
+  check(sj.Q.composite, g(m), 'unknown');
+  expect(() => Reflect.apply(sj.nD, undefined, [undefined, { m: 0 }])).toThrow(TypeError);
+});
+
+it('differentiates harmonic numbers with respect to their upper limit', () => {
+  const m = new Sym('m');
+  expect(sj.diff(sj.harmonic(x), x).equals(sj.zeta(2, add(x, 1)))).toBe(true);
+  expect(sj.diff(sj.harmonic(x, m), x).equals(mul(m, sj.zeta(add(m, 1), add(x, 1))))).toBe(true);
+  expect(sj.diff(sj.harmonic(x, m), m)).toBeInstanceOf(sj.Derivative);
+});
 /** Parse a SymPy expression with the symbols and functions above. */
 const P = (src: string): sj.Expr => sj.parse(src, { locals });
 /** NV sources are `expr;x=1.5;y=0.5+2i`: the numeric values of the free symbols. */

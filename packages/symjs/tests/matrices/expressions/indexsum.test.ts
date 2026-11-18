@@ -114,3 +114,27 @@ it('reconstructs sums inside indexed products and preserves fixed indices', () =
   expect(s(fromIndexSummation(Sum(mul(A.at(a, b), B.at(b, 0)), [b, 0, 2])))).toBe('(A*B)[a, 0]');
   expect(s(fromIndexSummation(Sum(mul(A.at(0, b), B.at(b, c)), [b, 0, 2])))).toBe('(A*B)[0, c]');
 });
+
+it('contracts complete sums of entries, entrywise powers and bounded deltas', async () => {
+  const { KroneckerDelta, Rational } = await import('../../../src');
+  const [a, b, c, d] = symbols('a b c d');
+  const A = MatrixSymbol('A', 3, 3), B = MatrixSymbol('B', 3, 3);
+  const e = A.at(a, b);
+  const sum = (f: Expr): Expr => Sum(f, [a, 0, 2], [b, 0, 2]);
+  expect(s(fromIndexSummation(sum(e)))).toBe('1*A*1');
+  expect(s(fromIndexSummation(sum(e.pow(2))))).toBe('Trace(A*A.T)');
+  expect(s(fromIndexSummation(sum(e.pow(3))))).toBe('Trace(HadamardPower(A.T, 2)*A)');
+  for (const p of [c, Rational.of(1, 2), Rational.of(-1)]) expect(() => fromIndexSummation(sum(e.pow(p)))).toThrow();
+  expect(() => fromIndexSummation(Sum(e, [a, 1, 2], [b, 0, 2]))).toThrow();
+  expect(() => fromIndexSummation(Sum(e, [a, 0, 2], [c, 0, 2]))).toThrow();
+  const tensor = mul(KroneckerDelta(b, c), KroneckerDelta(a, d), A.at(i, b), B.at(j, a));
+  expect(s(fromIndexSummation(Sum(tensor, [a, 0, 2], [b, 0, 2]), c))).toBe('ArrayTensorProduct(A.T, B)');
+  const selectRow = mul(KroneckerDelta(a, d), e);
+  expect(s(fromIndexSummation(Sum(mul(KroneckerDelta(a, d), A.at(d, b)), [d, 0, 2]), a))).toBe('A');
+  expect(s(fromIndexSummation(Sum(selectRow, [a, 0, 2]), d))).toBe('A');
+  expect(() => fromIndexSummation(Sum(selectRow, [a, 1, 2]))).toThrow();
+  const joined = mul(KroneckerDelta(b, c), e, B.at(c, d));
+  expect(s(fromIndexSummation(Sum(joined, [b, 0, 2], [c, 0, 2]), a))).toBe('A*B');
+  expect(() => fromIndexSummation(Sum(joined, [b, 1, 2], [c, 0, 2]))).toThrow();
+  expect(() => fromIndexSummation(Sum(joined, [b, 0, 1], [c, 0, 2]))).toThrow();
+});

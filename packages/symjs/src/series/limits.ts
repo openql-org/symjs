@@ -396,6 +396,7 @@ class Limiter {
         return mul(S.NegativeInfinity, S.I);
       }
       const r = fn(f.name, vs);
+      if (f.name === 'harmonic' && vs[0] === S.Infinity && !at(f.args, 1).has(this.z)) return r;
       if (hasSpecialInside(r) || isNaN_(r)) return undefined;
       return r;
     }

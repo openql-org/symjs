@@ -292,3 +292,28 @@ it('handles signs and zero truncation at the edge of the expansion', () => {
   expect(String(series(P('frac(-x**8)'),x,0,4))).toBe('1 + O(x**4)');
   expect(String(series(P('frac(x**8)'),x,0,4))).toBe('O(x**4)');
 });
+
+it('expands the local distribution on the positive ray', () => {
+  const expander = new Expander(t);
+  const F = sj.SingularityFunction;
+  expect(expander.ser(F(t, 0, -1), Rational.of(3)).terms).toEqual([]);
+  expect(expander.ser(F(t, 1, 2), Rational.of(3)).terms).toEqual([]);
+  expect(expander.ser(F(t, 0, 2), Rational.of(3)).terms).toEqual([{ e: Rational.of(2), c: sj.S.One }]);
+});
+
+it('expands scaled and logarithmic special functions at zero', () => {
+  expect(String(sj.series(sj.fn('_erfs', [x]), x, 0, 2))).toBe('1 - 2*x/sqrt(pi) + O(x**2)');
+  expect(String(sj.series(sj.fn('_eis', [x]), x, 0, 2))).toBe('EulerGamma + log(x) + x*(-log(x) - EulerGamma + 1) + O(x**2*log(x))');
+  expect(String(sj.series(sj.Ci(x), x, 0, 4))).toBe('EulerGamma + log(x) - x**2/4 + O(x**4)');
+});
+
+it('delegates expansions when the special-function order also varies', () => {
+  const expander = new Expander(t);
+  expect(() => expander.ser(sj.polylog(t, t), Rational.of(2))).toThrow(SeriesError);
+  expect(() => expander.ser(sj.expint(y, t), Rational.of(2))).not.toThrow();
+  expect(expander.ser(sj.expint(t, 2), Rational.of(2)).coeff(sj.S.Zero).equals(sj.exp(-2).div(2))).toBe(true);
+  expect(expander.ser(sj.expint(1, t), Rational.of(2)).coeff(sj.S.One).equals(1)).toBe(true);
+  expect(String(expander.ser(sj.expint(2, t), Rational.of(2)).coeff(sj.S.One))).toBe('_L - 1 + EulerGamma - I*pi');
+  const ei = new UndefFn(SCALED_EI, [t.add(1)]);
+  expect(String(expander.ser(ei, Rational.of(2)).coeff(sj.S.One))).toBe('1 - _eis(1)');
+});

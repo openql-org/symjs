@@ -45,6 +45,28 @@ const FACTS = [
   'zero',
 ] as const;
 
+it.each([
+  ['besseli(k, r)', 'extended_real', true], ['bessely(k, p)', 'extended_real', true],
+  ['airyai(r)', 'extended_real', true], ['airybiprime(i)', 'extended_real', false],
+  ['erf(ep)', 'positive', true], ['erf(en)', 'negative', true], ['erf(c)', 'finite', true],
+  ['erfc(I)', 'real', false], ['erf2(I, 0)', 'real', false], ['fresnelc(r)', 'finite', true],
+  ['gamma(ne+1/2)', 'positive', true], ['gamma(ne-1/2)', 'positive', false],
+  ['loggamma(np)', 'real', false], ['polygamma(2, -2.5)', 'negative', true],
+  ['polygamma(-2, -2.5)', 'positive', undefined], ['polygamma(0, I)', 'real', undefined],
+  ['zeta(1+p)', 'finite', true], ['zeta(x)', 'finite', undefined],
+] as const)('finds the %s %s fact', (source, predicate, expected) => {
+  expect(fact(parse(source), predicate)).toBe(expected);
+});
+
+it('distinguishes multivariate gamma poles from regular points', () => {
+  const expression = (a: sj.ExprLike) => sj.fn('multigamma', [a, 3], { evaluate: false });
+  expect(fact(expression(2), 'real')).toBe(true);
+  expect(fact(expression(sj.rational(1, 3)), 'real')).toBe(true);
+  expect(fact(expression(-1), 'real')).toBe(false);
+  expect(fact(expression(new sj.Float(-1)), 'real')).toBe(false);
+  expect(fact(expression(sj.symbol('u')), 'real')).toBeUndefined();
+});
+
 /**
  * Expressions (raw: unevaluated) and SymPy 1.14's value of each fact of FACTS in order, each
  * asked of a new expression: T True, F False, . None.
@@ -966,4 +988,23 @@ it('reads assumption knowledge bases supplied by extension nodes', () => {
     withArgs(): sj.Expr { return this; }
   }
   expect(fact(new Known(), 'finite')).toBe(true);
+});
+
+it('infers gamma signs from the floor on negative real intervals', () => {
+  const positiveGamma = (z: Expr) => fact(sj.fn('gamma', [z], { evaluate: false }), 'positive');
+  expect(positiveGamma(sj.rational(-5, 2))).toBe(false);
+  expect(positiveGamma(parse('x + y'))).toBeUndefined();
+  expect(positiveGamma(parse('x + 1/2'))).toBeUndefined();
+  expect(fact(sj.fn('multigamma', [new sj.Float(0.4), 3], { evaluate: false }), 'real')).toBe(true);
+});
+
+it('uses numerical gamma signs when the floor evaluator is unavailable', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const evaluator = Object.getOwnPropertyDescriptor(impl, 'fn');
+  try {
+    delete impl.fn;
+    expect(fact(sj.fn('gamma', [sj.rational(-5, 2)], { evaluate: false }), 'positive')).toBe(false);
+  } finally {
+    if (evaluator) Object.defineProperty(impl, 'fn', evaluator);
+  }
 });

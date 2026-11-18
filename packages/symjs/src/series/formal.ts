@@ -214,7 +214,7 @@ export class FormalPowerSeries extends SeriesBase {
   /** The series up to O((x - x0)**n) (SymPy truncate). */
   truncate(n = 6): Expr {
     if (this.symb.key === S.One.key) {
-      const s = series(this.fn, this.x, this.x0, n, this.direction);
+      const s = series(this.fn, this.x, this.x0, n, this.direction, { algebraic: true });
       if (this.x0 === S.NegativeInfinity) {
         return xreplace(s, [[S.NegativeInfinity, S.Infinity]]);
       }
@@ -222,7 +222,7 @@ export class FormalPowerSeries extends SeriesBase {
       return s;
     }
     if (this.x0 === S.Infinity) {
-      const body = series(this.core, this.x, this.x0, n, this.direction);
+      const body = series(this.core, this.x, this.x0, n, this.direction, { algebraic: true });
       const terms = body instanceof Add ? body.args : [body];
       return add(...terms.map((u) => u instanceof Order ? new Order([this.withSymb(u.expr), this.x, this.x0]) : this.withSymb(u)));
     }

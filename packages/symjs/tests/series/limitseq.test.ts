@@ -82,7 +82,7 @@ describe('limit_seq', () => {
       // x is not a number: no bounds of the odd and even limits -x and x (SymPy None)
       ['(-1)**n*x', 'None'],
       // SymPy: 0, AccumBounds(0, 2), 2 and a RecursionError (its XFAIL test expects 2)
-      ['(I/2)**n*harmonic(n)', 'None'],
+      ['(I/2)**n*harmonic(n)', '0'],
       ['((-1)**n + 1)*harmonic(n)/log(n)', 'AccumBounds(0, 2)'],
       ['harmonic(n)/log(n) + 1', '2'],
       ['n**3*Sum(2**k/k**2, (k, 1, n))**2 / (2**n * Sum(2**k/k, (k, 1, n)))', 'None'],

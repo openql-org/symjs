@@ -5,8 +5,22 @@
 
 // Expected values are the str() forms printed by SymPy 1.14.
 
-import { describe, expect, it } from 'vitest';
-import { add, defineFunction, fn, parse, rational, rewrite, sstr, sub, subs, symbol, symbols, toComplex } from '../../src';
+import { describe, expect, it, vi } from 'vitest';
+import { add, defineFunction, fn, harmonic, mul, parse, rational, rewrite, sstr, sub, subs, symbol, symbols, toComplex, zeta } from '../../src';
+
+it('rewrites harmonic sums to polygamma or zeta where the order allows it', () => {
+  const n = symbol('n');
+  const m = symbol('m', { integer: true, positive: true });
+  const p = symbol('p', { positive: true });
+  const order = add(p, 1);
+  expect(rewrite(harmonic(n), 'tractable')).toEqual(rewrite(harmonic(n), 'polygamma'));
+  expect(rewrite(harmonic(n), 'zeta')).toEqual(rewrite(harmonic(n), 'polygamma'));
+  expect(rewrite(harmonic(n, m), 'tractable')).toEqual(rewrite(harmonic(n, m), 'polygamma'));
+  expect(rewrite(harmonic(n, p), 'tractable')).toEqual(harmonic(n, p));
+  const difference = add(zeta(order), mul(-1, zeta(order, add(n, 1))));
+  expect(rewrite(harmonic(n, order), 'tractable')).toEqual(difference);
+  expect(rewrite(harmonic(n, order), 'zeta')).toEqual(difference);
+});
 
 const [x, y, n, k] = symbols('x y n k');
 const r = symbol('r', { real: true });
@@ -23,6 +37,24 @@ describe('rewrite', () => {
     expect(str(rewrite(tan(t!), 'sin'))).toBe('2*sin(t)**2/sin(2*t)');
     expect(str(rewrite(sin(t!), 'cos'))).toBe('cos(t - pi/2)');
   });
+});
+
+it('rewrites incomplete beta as an integral and normalizes by the full interval', () => {
+  const integrand = fn('betainc', [x, y, rational(1, 3), rational(1, 2)]);
+  expect(String(rewrite(integrand, 'Integral'))).toBe('Integral(_t**(x - 1)*(1 - _t)**(y - 1), (_t, 1/3, 1/2))');
+  const normalized = fn('betainc_regularized', integrand.args);
+  expect(String(rewrite(normalized, 'Integral'))).toContain('(_t, 0, 1)');
+  expect(rewrite(fn('betainc_regularized', [x, y, 0, 1]), 'Integral').equals(1)).toBe(true);
+});
+
+it('rewrites the gamma derivatives in terms of polygamma, harmonic numbers and zeta', () => {
+  const digamma = fn('digamma', [x], { evaluate: false });
+  const trigamma = fn('trigamma', [x], { evaluate: false });
+  expect(rewrite(digamma, 'polygamma').equals(P('polygamma(0,x)'))).toBe(true);
+  expect(rewrite(trigamma, 'polygamma').equals(P('polygamma(1,x)'))).toBe(true);
+  expect(rewrite(digamma, 'harmonic').equals(P('harmonic(x-1)-EulerGamma'))).toBe(true);
+  expect(rewrite(trigamma, 'harmonic').equals(P('pi**2/6-harmonic(x-1,2)'))).toBe(true);
+  expect(rewrite(trigamma, 'zeta').equals(P('zeta(2,x)'))).toBe(true);
 });
 
 describe("rewrite: results equal SymPy 1.14", () => {
@@ -274,4 +306,19 @@ describe('rewrites between trigonometric, hyperbolic and inverse functions (SymP
   it('rewrites trigonometric functions with Bessel functions', () => {
     for (const f of ['sin(x)', 'cos(x)', 'tan(x)', 'cot(x)', 'sec(x)', 'csc(x)']) agrees(f, 'besselj', 0.7);
   });
+});
+
+it('provides the cosine integral rewrite on the standalone simplify entry', async () => {
+  vi.resetModules();
+  const { rewrite } = await import('../../src/simplify/rewrite');
+  const { Ci } = await import('../../src/functions/special/special');
+  const { Sym } = await import('../../src/core/nodes');
+  expect(String(rewrite(Ci(new Sym('x')), 'expint'))).toBe('-expint(1, x*polar_lift(-I))/2 - expint(1, x*polar_lift(I))/2');
+});
+
+it('recognizes undefined functions in rewrite patterns and rewrites Ci using E1', async () => {
+  const { SymFunction } = await import('../../src');
+  const f = SymFunction('f')(x);
+  expect(rewrite(f, 'exp', { pattern: ['f'] })).toBe(f);
+  expect(String(rewrite(P('Ci(x)'), 'expint'))).toBe('-expint(1, x*exp_polar(-I*pi/2))/2 - expint(1, x*exp_polar(I*pi/2))/2');
 });

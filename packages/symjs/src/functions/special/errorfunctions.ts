@@ -5,14 +5,15 @@
 
 /** @file Rewrites of the error functions and Fresnel integrals. */
 import type { Expr } from '../../core/nodes';
-import { Rational, S } from '../../core/nodes';
+import { Fn, Rational, S } from '../../core/nodes';
 import { defined, first, pair } from '../../core/guard';
-import { add, mul, neg, pow, sqrt } from '../../core/ops';
-import { fn, log } from '../elementary/elementary';
+import { add, exp, mul, neg, pow, sqrt } from '../../core/ops';
+import { isNegative } from '../../core/assumptions';
+import { conjugate, conjugateCommutes, conjugateRules, fn, log } from '../elementary/elementary';
 import { hyper, meijerg } from './hyper';
 import { expandMul } from '../../simplify/expand';
 import { registerRewrite } from '../../simplify/rewrite';
-import { fnTaylorAtZero } from '../../calculus/diff';
+import { fnPartials, fnTaylorAtZero } from '../../calculus/diff';
 
 const R = (p: number, q: number): Rational => Rational.of(p, q);
 const invSqrtPi = pow(S.Pi, S.NegHalf);
@@ -92,11 +93,38 @@ registerRewrite('li', 'meijerg', (args) => {
   const z = log(first(args));
   return add(neg(log(neg(z))), mul(S.Half, add(log(z), neg(log(pow(z, -1))))), neg(meijerg([], [1], [0, 0], [], neg(z))));
 });
-registerRewrite('Ci', 'expint', (args) => {
-  const z = first(args);
-  const polar = (sign: number) => fn('exp_polar', [mul(sign, S.I, S.Pi, S.Half)]);
-  return mul(S.NegHalf, add(fn('expint', [1, mul(z, polar(1))]), fn('expint', [1, mul(z, polar(-1))])));
+registerRewrite('li', 'uppergamma', (args) => {
+  const z = log(first(args));
+  return add(neg(fn('expint', [1, neg(z)])), neg(log(neg(z))), mul(S.Half, add(log(z), neg(log(pow(z, -1))))));
 });
+registerRewrite('Ci', 'uppergamma', (args) => {
+  const z = first(args);
+  return mul(S.NegHalf, add(...[1, -1].map((sign) => fn('expint', [1, mul(z, fn('exp_polar', [mul(sign, S.I, S.Pi, S.Half)]))]))));
+});
+registerRewrite('expint', 'Ei', (args) => {
+  const [nu, z] = pair(args);
+  if (!nu.equals(1)) return undefined;
+  return add(neg(fn('Ei', [mul(z, fn('exp_polar', [mul(-1, S.I, S.Pi)]))])), mul(-1, S.I, S.Pi));
+});
+conjugateCommutes.delete('li');
+conjugateRules.li = (args) => {
+  const z = first(args);
+  return isNegative(z) === true ? new Fn('conjugate', [new Fn('li', args)]) : fn('li', [conjugate(z)]);
+};
+
+const scaledErfc = (z: Expr): Expr => mul(exp(neg(pow(z, 2))), fn('_erfs', [z]));
+registerRewrite('erf', 'tractable', (args) => add(1, neg(scaledErfc(first(args)))));
+registerRewrite('erfc', 'tractable', (args) => scaledErfc(first(args)));
+registerRewrite('erfi', 'tractable', (args) => mul(-1, S.I, add(1, neg(scaledErfc(mul(S.I, first(args)))))));
+registerRewrite('_erfs', 'intractable', (args) => {
+  const z = first(args);
+  return mul(exp(pow(z, 2)), add(1, neg(fn('erf', [z]))));
+});
+registerRewrite('Ei', 'tractable', (args) => mul(exp(first(args)), fn('_eis', args)));
+registerRewrite('li', 'tractable', (args) => mul(first(args), fn('_eis', [log(first(args))])));
+registerRewrite('_eis', 'intractable', (args) => mul(exp(neg(first(args))), fn('Ei', args)));
+fnPartials._erfs = (args) => add(mul(2, first(args), fn('_erfs', args)), mul(-2, invSqrtPi));
+fnPartials._eis = (args) => add(pow(first(args), -1), neg(fn('_eis', args)));
 
 // SymPy TrigonometricIntegral._eval_nseries integrates sin(z)/z or sinh(z)/z.
 for (const name of ['Si', 'Shi'] as const) fnTaylorAtZero[name] = (j) => {

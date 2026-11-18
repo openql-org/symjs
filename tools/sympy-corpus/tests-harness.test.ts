@@ -62,7 +62,8 @@ it('adapts function inverses, numerical derivatives, residue limits and derangem
   const limits = { t: 'Tuple', items: [x, integer(0), integer(5)] };
   expect(runTestCase({ ...base, fn: 'eval_sum_residue', args: [x, limits], expected: 'None' })).toEqual({ status: 'pass' });
   for (const [name, expected] of [['digamma', 'polygamma(0, x)'], ['trigamma', 'polygamma(1, x)']] as const) {
-    expect(String(deserialize(fn(name)))).toBe(expected);
+    expect(String(deserialize(fn(name)))).toBe(`${name}(x)`);
+    expect(runTestCase({ ...base, fn: name, args: [x], expected })).toEqual({ status: 'pass' });
   }
   expect(String(deserialize(fn('LeviCivita', [integer(1), integer(2), integer(3)])))).toBe('1');
   expect(runTestCase({ ...base, fn: '.epsilon_eq', self: integer(1), args: [integer(1)], expected: 'True' })).toEqual({ status: 'pass' });
