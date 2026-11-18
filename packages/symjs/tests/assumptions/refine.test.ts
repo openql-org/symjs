@@ -67,3 +67,37 @@ it('refines symmetric matrix entries without loading a matrix dependency into th
     expect(String(s.refineMatrixelement(s.MatrixElement(X, i!, j!), Q.symmetric(X)))).toBe(i === j ? 'X[0, 0]' : 'X[0, 1]');
   }
 });
+it('refines unevaluated real and imaginary parts and preserves undecidable parts', () => {
+  const assumptions = s.And(Q.real(x), Q.imaginary(y));
+  expect(String(s.refine(new s.Fn('re', [s.add(x, y)]), assumptions))).toBe('x');
+  expect(String(s.refine(new s.Fn('im', [s.add(x, y)]), assumptions))).toBe('-I*y');
+  expect(String(s.refine(new s.Fn('re', [s.mul(x, y)]), assumptions))).toBe('0');
+  expect(String(s.refine(new s.Fn('im', [s.mul(x, y)]), assumptions))).toBe('-I*x*y');
+  expect(String(s.refine(new s.Fn('im', [s.mul(x, y)]), Q.imaginary(y)))).toBe('im(x*y)');
+  expect(String(s.refine(new s.Fn('re', [x])))).toBe('re(x)');
+  expect(String(s.refine(new s.Fn('im', [x])))).toBe('im(x)');
+  expect(String(s.refine(s.arg(x)))).toBe('arg(x)');
+  const matrix = s.MatrixSymbol('M', 2, 2);
+  expect(String(s.refine(s.MatrixElement(matrix, 1, 0)))).toBe('M[1, 0]');
+});
+it('restricts nested parity identities to complete half-integer exponents', () => {
+  const nested = s.pow(-1, x);
+  for (const [coefficient, constant, extra] of [
+    [s.S.Half, s.S.Half, y], [s.S.Half, s.Rational.of(1, 3), s.S.Zero],
+    [s.Rational.of(3, 2), s.S.Half, s.S.Zero], [s.Rational.of(1, 3), s.S.Half, s.S.Zero],
+  ]) {
+    const e = s.pow(-1, s.add(s.mul(coefficient!, nested), constant!, extra!));
+    expect(s.refine(e, Q.integer(x)).equals(e)).toBe(true);
+  }
+  const negativeHalf = s.pow(-1, s.add(s.mul(s.Rational.of(-1, 2), nested), s.S.Half));
+  expect(String(s.refine(negativeHalf, Q.integer(x)))).toBe('(-1)**x');
+  const unknownInteger = s.pow(-1, s.add(s.mul(s.S.Half, nested), s.S.Half));
+  expect(s.refine(unknownInteger).equals(unknownInteger)).toBe(true);
+  const unrelated = s.pow(-1, s.add(s.mul(x, y), s.S.Half));
+  expect(s.refine(unrelated, Q.integer(x)).equals(unrelated)).toBe(true);
+});
+it('preserves the principal square root of an inverse across the negative real axis', () => {
+  const root = new s.Pow(new s.Pow(x, s.S.NegOne), s.S.Half);
+  expect(s.refine(root, Q.real(x))).toBe(root);
+  expect(String(s.refine(root, Q.positive(x)))).toBe('1/sqrt(x)');
+});

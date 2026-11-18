@@ -17,7 +17,7 @@
 
 import type { Assumptions, ExprLike } from './nodes';
 import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym } from './nodes';
-import { add, mul, pow, sympify } from './ops';
+import { add, couldExtractMinusSign, mul, pow, sympify } from './ops';
 import { mapBottomUp, xreplace } from './traverse';
 import { isIntegerQ, isMinMax, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero, torf } from './assumptions';
 import { BoolOp, and, not, or, xor } from './boolalg';
@@ -135,6 +135,18 @@ export interface Predicate {
 }
 
 const handlers = new Map<string, PredicateHandler[]>();
+
+/** Register an optional decision procedure for propositions. */
+export function registerPropositionHandler(handler: (proposition: Expr, assumptions: Expr) => Truth): void {
+  propositionHandlers.push(handler);
+}
+const propositionHandlers: ((proposition: Expr, assumptions: Expr) => Truth)[] = [];
+
+/** Register structural assumption refinements supplied by feature modules. */
+export function registerRefineHandler(handler: (expr: Expr, assumptions: Assumption) => Expr): void {
+  refineHandlers.push(handler);
+}
+const refineHandlers: ((expr: Expr, assumptions: Assumption) => Expr)[] = [];
 
 /**
  * A predicate with the given name (SymPy Predicate); handlers added with
@@ -380,7 +392,6 @@ function dnf(e: Expr, negated = false): (readonly [AppliedPredicate, boolean])[]
     return acc;
   }
   if (e instanceof AppliedPredicate) return [[[e, !negated]]];
-  // a relation as an assumption is not used (SymPy ask(Q.positive(x), x > 0) is None)
   return [[]];
 }
 
@@ -413,7 +424,8 @@ function branches(assumptions: Assumption): Branch[] {
 /** Q.gt(a, b) as a fact about a - b (Q.positive(a - b)). */
 function relationFact(p: AppliedPredicate, v: boolean): [Expr, string, boolean] | undefined {
   if (p.args.length !== 2) return undefined;
-  const d = add(at(p.args, 0), mul(-1, at(p.args, 1)));
+  let d = add(at(p.args, 0), mul(-1, at(p.args, 1)));
+  if ((p.predicate === 'eq' || p.predicate === 'ne') && couldExtractMinusSign(d)) d = mul(-1, d);
   switch (p.predicate) {
     case 'gt':
       return [d, 'positive', v];
@@ -1092,7 +1104,12 @@ export function ask(proposition: ExprLike | boolean, assumptions: Assumption = t
     const withA = and(assumed, a);
     if (!consistentBranches(withA).length || ask(b, withA) === true) return true;
   }
-  const vs = branches(assumed).map((b) => decide(prop, new Decider(b, assumed)));
+  for (const handler of propositionHandlers) {
+    const value = handler(prop, assumed);
+    if (value !== 'unknown') return value;
+  }
+  const relationAssumed = prop instanceof Rel ? mapBottomUp(assumed, (node) => node instanceof Rel ? new AppliedPredicate(REL_PREDICATES[node.op], [node.lhs, node.rhs]) : node) : assumed;
+  const vs = branches(relationAssumed).map((b) => decide(prop, new Decider(b, relationAssumed)));
   if (vs.every((v) => v === true)) return true;
   if (vs.every((v) => v === false)) return false;
   return 'unknown';
@@ -1132,7 +1149,9 @@ export function refine(expr: unknown, assumptions: Assumption = true): unknown {
     return expr.map((x: Expr) => refine(x, assumptions));
   }
   if (!(expr instanceof Expr) && typeof expr !== 'number' && typeof expr !== 'bigint') throw new SympifyError(`Cannot convert ${String(expr)} to an expression`, expr);
-  const e = sympify(expr);
+  let e = sympify(expr);
+  if (e instanceof Pow && e.exp.equals(S.Half) && e.base instanceof Pow && e.base.exp.equals(S.NegOne) && ask(Q.positive(e.base.base), assumptions) !== true) return e;
+  for (const handler of refineHandlers) e = mapBottomUp(e, (node) => handler(node, assumptions));
   if (e instanceof AppliedPredicate || (e instanceof BoolOp && (e.op === 'And' || e.op === 'Or' || e.op === 'Not'))) {
     const v = ask(e, assumptions);
     if (v !== 'unknown') return v ? S.true : S.false;

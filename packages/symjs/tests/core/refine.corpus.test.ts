@@ -733,22 +733,22 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_singular:42", () => {
     expect(sympyStr(ask(Q.singular(new MatrixSymbol('X', rational(2), rational(2))), Not(Q.invertible(new MatrixSymbol('X', rational(2), rational(2))))))).toBe('True');
   });
-  it.fails("test_invertible_BlockMatrix:50", () => {
+  it("test_invertible_BlockMatrix:50", () => {
     expect(sympyStr(ask(Q.invertible(BlockMatrix(Matrix.of([[Identity(rational(3))]]))), true))).toBe('True');
   });
-  it.fails("test_invertible_BlockMatrix:51", () => {
+  it("test_invertible_BlockMatrix:51", () => {
     expect(sympyStr(ask(Q.invertible(BlockMatrix(Matrix.of([[ZeroMatrix(rational(3), rational(3))]]))), true))).toBe('False');
   });
-  it.fails("test_invertible_BlockMatrix:56", () => {
+  it("test_invertible_BlockMatrix:56", () => {
     expect(sympyStr(ask(Q.invertible(BlockMatrix(Matrix.of([[sympifyMatrix(Matrix.of([[rational(1), rational(1), rational(1)], [rational(1), rational(1), rational(1)], [rational(1), rational(1), rational(1)]])), sympifyMatrix(Matrix.of([[rational(4), rational(2)], [rational(2), rational(3)], [rational(7), rational(5)]]))], [sympifyMatrix(Matrix.of([[rational(1), rational(2), rational(3)], [rational(3), rational(5), rational(4)]])), sympifyMatrix(Matrix.of([[rational(1), rational(0)], [rational(0), rational(1)]]))]]))), true))).toBe('True');
   });
-  it.fails("test_invertible_BlockMatrix:61", () => {
+  it("test_invertible_BlockMatrix:61", () => {
     expect(sympyStr(ask(Q.invertible(BlockMatrix(Matrix.of([[sympifyMatrix(Matrix.of([[rational(4), rational(2)], [rational(2), rational(3)], [rational(7), rational(5)]])), sympifyMatrix(Matrix.of([[rational(1), rational(1), rational(1)], [rational(1), rational(1), rational(1)], [rational(1), rational(1), rational(1)]]))], [sympifyMatrix(Matrix.of([[rational(1), rational(0)], [rational(0), rational(1)]])), sympifyMatrix(Matrix.of([[rational(1), rational(2), rational(3)], [rational(3), rational(5), rational(4)]]))]]))), true))).toBe('True');
   });
-  it.fails("test_invertible_BlockMatrix:66", () => {
+  it("test_invertible_BlockMatrix:66", () => {
     expect(sympyStr(ask(Q.invertible(BlockMatrix(Matrix.of([[sympifyMatrix(Matrix.of([[rational(1), rational(2), rational(3)], [rational(3), rational(5), rational(4)]])), sympifyMatrix(Matrix.of([[rational(1), rational(0)], [rational(0), rational(1)]]))], [sympifyMatrix(Matrix.of([[rational(1), rational(1), rational(1)], [rational(1), rational(1), rational(1)], [rational(1), rational(1), rational(1)]])), sympifyMatrix(Matrix.of([[rational(4), rational(2)], [rational(2), rational(3)], [rational(7), rational(5)]]))]]))), true))).toBe('True');
   });
-  it.fails("test_invertible_BlockMatrix:71", () => {
+  it("test_invertible_BlockMatrix:71", () => {
     expect(sympyStr(ask(Q.invertible(BlockMatrix(Matrix.of([[sympifyMatrix(Matrix.of([[rational(1), rational(0)], [rational(0), rational(1)]])), sympifyMatrix(Matrix.of([[rational(1), rational(2), rational(3)], [rational(3), rational(5), rational(4)]]))], [sympifyMatrix(Matrix.of([[rational(4), rational(2)], [rational(2), rational(3)], [rational(7), rational(5)]])), sympifyMatrix(Matrix.of([[rational(1), rational(1), rational(1)], [rational(1), rational(1), rational(1)], [rational(1), rational(1), rational(1)]]))]]))), true))).toBe('True');
   });
   it("test_invertible_BlockDiagMatrix:78", () => {
@@ -781,31 +781,31 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_symmetric:90", () => {
     expect(sympyStr(ask(Q.symmetric(MatMul(Transpose(new MatrixSymbol('Y', rational(2), rational(3))), new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Y', rational(2), rational(3)))), true))).toBe('None');
   });
-  it.fails("test_symmetric:91", () => {
+  it("test_symmetric:91", () => {
     expect(sympyStr(ask(Q.symmetric(MatMul(Transpose(new MatrixSymbol('Y', rational(2), rational(3))), new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Y', rational(2), rational(3)))), Q.symmetric(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
   it("test_symmetric:92", () => {
     expect(sympyStr(ask(Q.symmetric(MatPow(new MatrixSymbol('X', rational(2), rational(2)), rational(10))), Q.symmetric(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_symmetric:93", () => {
+  it("test_symmetric:93", () => {
     expect(sympyStr(ask(Q.symmetric(new MatrixSymbol('A1x1', rational(1), rational(1))), true))).toBe('True');
   });
-  it.fails("test_symmetric:94", () => {
+  it("test_symmetric:94", () => {
     expect(sympyStr(ask(Q.symmetric(MatAdd(new MatrixSymbol('A1x1', rational(1), rational(1)), new MatrixSymbol('B1x1', rational(1), rational(1)))), true))).toBe('True');
   });
-  it.fails("test_symmetric:95", () => {
+  it("test_symmetric:95", () => {
     expect(sympyStr(ask(Q.symmetric(MatMul(new MatrixSymbol('A1x1', rational(1), rational(1)), new MatrixSymbol('B1x1', rational(1), rational(1)))), true))).toBe('True');
   });
   it("test_symmetric:96", () => {
     expect(sympyStr(ask(Q.symmetric(MatMul(Transpose(new MatrixSymbol('V1', rational(2), rational(1))), new MatrixSymbol('V1', rational(2), rational(1)))), true))).toBe('True');
   });
-  it.fails("test_symmetric:97", () => {
+  it("test_symmetric:97", () => {
     expect(sympyStr(ask(Q.symmetric(MatMul(Transpose(new MatrixSymbol('V1', rational(2), rational(1))), MatAdd(new MatrixSymbol('V1', rational(2), rational(1)), new MatrixSymbol('V2', rational(2), rational(1))))), true))).toBe('True');
   });
-  it.fails("test_symmetric:98", () => {
+  it("test_symmetric:98", () => {
     expect(sympyStr(ask(Q.symmetric(MatAdd(MatMul(Transpose(new MatrixSymbol('V1', rational(2), rational(1))), MatAdd(new MatrixSymbol('V1', rational(2), rational(1)), new MatrixSymbol('V2', rational(2), rational(1)))), new MatrixSymbol('A1x1', rational(1), rational(1)))), true))).toBe('True');
   });
-  it.fails("test_symmetric:99", () => {
+  it("test_symmetric:99", () => {
     expect(sympyStr(ask(Q.symmetric(MatrixSlice(new MatrixSymbol('Y', rational(2), rational(3)), [rational(0), rational(1), rational(1)], [rational(1), rational(2), rational(1)])), true))).toBe('True');
   });
   it("test_symmetric:100", () => {
@@ -814,7 +814,7 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_symmetric:101", () => {
     expect(sympyStr(ask(Q.symmetric(ZeroMatrix(rational(3), rational(3))), true))).toBe('True');
   });
-  it.fails("test_symmetric:102", () => {
+  it("test_symmetric:102", () => {
     expect(sympyStr(ask(Q.symmetric(OneMatrix(rational(3), rational(3))), true))).toBe('True');
   });
   it("test_orthogonal:105", () => {
@@ -897,7 +897,7 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_fullrank:126", () => {
     expect(sympyStr(ask(Q.fullrank(new MatrixSymbol('X', rational(2), rational(2))), Q.fullrank(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_fullrank:127", () => {
+  it("test_fullrank:127", () => {
     expect(sympyStr(ask(Q.fullrank(MatPow(new MatrixSymbol('X', rational(2), rational(2)), rational(2))), Q.fullrank(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
   it("test_fullrank:128", () => {
@@ -921,7 +921,7 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_fullrank:134", () => {
     expect(sympyStr(ask(Q.fullrank(OneMatrix(rational(1), rational(1))), true))).toBe('True');
   });
-  it.fails("test_fullrank:135", () => {
+  it("test_fullrank:135", () => {
     expect(sympyStr(ask(Q.fullrank(OneMatrix(rational(3), rational(3))), true))).toBe('False');
   });
   it("test_fullrank:136", () => {
@@ -930,7 +930,7 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_positive_definite:140", () => {
     expect(sympyStr(ask(Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_positive_definite:141", () => {
+  it("test_positive_definite:141", () => {
     expect(sympyStr(ask(Q.positive_definite(Transpose(new MatrixSymbol('X', rational(2), rational(2)))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
   // the arguments do not type-check against the public API
@@ -961,13 +961,13 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_positive_definite:152", () => {
     expect(sympyStr(ask(Q.positive_definite(Identity(rational(3))), true))).toBe('True');
   });
-  it.fails("test_positive_definite:153", () => {
+  it("test_positive_definite:153", () => {
     expect(sympyStr(ask(Q.positive_definite(ZeroMatrix(rational(3), rational(3))), true))).toBe('False');
   });
-  it.fails("test_positive_definite:154", () => {
+  it("test_positive_definite:154", () => {
     expect(sympyStr(ask(Q.positive_definite(OneMatrix(rational(1), rational(1))), true))).toBe('True');
   });
-  it.fails("test_positive_definite:155", () => {
+  it("test_positive_definite:155", () => {
     expect(sympyStr(ask(Q.positive_definite(OneMatrix(rational(3), rational(3))), true))).toBe('False');
   });
   it("test_positive_definite:156", () => {
@@ -976,13 +976,13 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_positive_definite:158", () => {
     expect(sympyStr(ask(Q.positive_definite(MatMul(rational(-1), new MatrixSymbol('X', rational(2), rational(2)))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('None');
   });
-  it.fails("test_positive_definite:159", () => {
+  it("test_positive_definite:159", () => {
     expect(sympyStr(ask(Q.positive(MatrixElement(new MatrixSymbol('X', rational(2), rational(2)), rational(1), rational(1))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_triangular:162", () => {
+  it("test_triangular:162", () => {
     expect(sympyStr(ask(Q.upper_triangular(MatAdd(Identity(rational(2)), new MatrixSymbol('X', rational(2), rational(2)), Transpose(new MatrixSymbol('Z', rational(2), rational(2))))), And(Q.lower_triangular(new MatrixSymbol('Z', rational(2), rational(2))), Q.upper_triangular(new MatrixSymbol('X', rational(2), rational(2))))))).toBe('True');
   });
-  it.fails("test_triangular:164", () => {
+  it("test_triangular:164", () => {
     expect(sympyStr(ask(Q.upper_triangular(MatMul(new MatrixSymbol('X', rational(2), rational(2)), Transpose(new MatrixSymbol('Z', rational(2), rational(2))))), And(Q.lower_triangular(new MatrixSymbol('Z', rational(2), rational(2))), Q.upper_triangular(new MatrixSymbol('X', rational(2), rational(2))))))).toBe('True');
   });
   it("test_triangular:166", () => {
@@ -994,37 +994,37 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_triangular:168", () => {
     expect(sympyStr(ask(Q.upper_triangular(ZeroMatrix(rational(3), rational(3))), true))).toBe('True');
   });
-  it.fails("test_triangular:169", () => {
+  it("test_triangular:169", () => {
     expect(sympyStr(ask(Q.lower_triangular(OneMatrix(rational(1), rational(1))), true))).toBe('True');
   });
-  it.fails("test_triangular:170", () => {
+  it("test_triangular:170", () => {
     expect(sympyStr(ask(Q.upper_triangular(OneMatrix(rational(1), rational(1))), true))).toBe('True');
   });
-  it.fails("test_triangular:171", () => {
+  it("test_triangular:171", () => {
     expect(sympyStr(ask(Q.lower_triangular(OneMatrix(rational(3), rational(3))), true))).toBe('False');
   });
-  it.fails("test_triangular:172", () => {
+  it("test_triangular:172", () => {
     expect(sympyStr(ask(Q.upper_triangular(OneMatrix(rational(3), rational(3))), true))).toBe('False');
   });
   it("test_triangular:173", () => {
     expect(sympyStr(ask(Q.triangular(new MatrixSymbol('X', rational(2), rational(2))), Q.unit_triangular(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_triangular:174", () => {
+  it("test_triangular:174", () => {
     expect(sympyStr(ask(Q.upper_triangular(MatPow(new MatrixSymbol('X', rational(2), rational(2)), rational(3))), Q.upper_triangular(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_triangular:175", () => {
+  it("test_triangular:175", () => {
     expect(sympyStr(ask(Q.lower_triangular(MatPow(new MatrixSymbol('X', rational(2), rational(2)), rational(3))), Q.lower_triangular(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_diagonal:179", () => {
+  it("test_diagonal:179", () => {
     expect(sympyStr(ask(Q.diagonal(MatAdd(Identity(rational(2)), new MatrixSymbol('X', rational(2), rational(2)), Transpose(new MatrixSymbol('Z', rational(2), rational(2))))), And(Q.diagonal(new MatrixSymbol('X', rational(2), rational(2))), Q.diagonal(new MatrixSymbol('Z', rational(2), rational(2))))))).toBe('True');
   });
   it("test_diagonal:181", () => {
     expect(sympyStr(ask(Q.diagonal(ZeroMatrix(rational(3), rational(3))), true))).toBe('True');
   });
-  it.fails("test_diagonal:182", () => {
+  it("test_diagonal:182", () => {
     expect(sympyStr(ask(Q.diagonal(OneMatrix(rational(1), rational(1))), true))).toBe('True');
   });
-  it.fails("test_diagonal:183", () => {
+  it("test_diagonal:183", () => {
     expect(sympyStr(ask(Q.diagonal(OneMatrix(rational(3), rational(3))), true))).toBe('False');
   });
   it("test_diagonal:184", () => {
@@ -1039,31 +1039,31 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_diagonal:187", () => {
     expect(sympyStr(ask(Q.triangular(new MatrixSymbol('X', rational(2), rational(2))), Q.diagonal(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_diagonal:188", () => {
+  it("test_diagonal:188", () => {
     expect(sympyStr(ask(Q.diagonal(new MatrixSymbol('C0x0', rational(0), rational(0))), true))).toBe('True');
   });
-  it.fails("test_diagonal:189", () => {
+  it("test_diagonal:189", () => {
     expect(sympyStr(ask(Q.diagonal(new MatrixSymbol('A1x1', rational(1), rational(1))), true))).toBe('True');
   });
-  it.fails("test_diagonal:190", () => {
+  it("test_diagonal:190", () => {
     expect(sympyStr(ask(Q.diagonal(MatAdd(new MatrixSymbol('A1x1', rational(1), rational(1)), new MatrixSymbol('B1x1', rational(1), rational(1)))), true))).toBe('True');
   });
-  it.fails("test_diagonal:191", () => {
+  it("test_diagonal:191", () => {
     expect(sympyStr(ask(Q.diagonal(MatMul(new MatrixSymbol('A1x1', rational(1), rational(1)), new MatrixSymbol('B1x1', rational(1), rational(1)))), true))).toBe('True');
   });
-  it.fails("test_diagonal:192", () => {
+  it("test_diagonal:192", () => {
     expect(sympyStr(ask(Q.diagonal(MatMul(Transpose(new MatrixSymbol('V1', rational(2), rational(1))), new MatrixSymbol('V2', rational(2), rational(1)))), true))).toBe('True');
   });
-  it.fails("test_diagonal:193", () => {
+  it("test_diagonal:193", () => {
     expect(sympyStr(ask(Q.diagonal(MatMul(Transpose(new MatrixSymbol('V1', rational(2), rational(1))), MatAdd(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2))), new MatrixSymbol('V1', rational(2), rational(1)))), true))).toBe('True');
   });
-  it.fails("test_diagonal:194", () => {
+  it("test_diagonal:194", () => {
     expect(sympyStr(ask(Q.diagonal(MatrixSlice(new MatrixSymbol('Y', rational(2), rational(3)), [rational(0), rational(1), rational(1)], [rational(1), rational(2), rational(1)])), true))).toBe('True');
   });
-  it.fails("test_diagonal:195", () => {
+  it("test_diagonal:195", () => {
     expect(sympyStr(ask(Q.diagonal(MatMul(Transpose(new MatrixSymbol('V1', rational(2), rational(1))), MatAdd(new MatrixSymbol('V1', rational(2), rational(1)), new MatrixSymbol('V2', rational(2), rational(1))))), true))).toBe('True');
   });
-  it.fails("test_diagonal:196", () => {
+  it("test_diagonal:196", () => {
     expect(sympyStr(ask(Q.diagonal(MatPow(new MatrixSymbol('X', rational(2), rational(2)), rational(3))), Q.diagonal(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
   it("test_diagonal:197", () => {
@@ -1078,19 +1078,19 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_non_atoms:203", () => {
     expect(sympyStr(ask(Q.real(Trace(new MatrixSymbol('X', rational(2), rational(2)))), Q.positive(Trace(new MatrixSymbol('X', rational(2), rational(2))))))).toBe('True');
   });
-  it.fails("test_MatrixSlice:219", () => {
+  it("test_MatrixSlice:219", () => {
     expect(sympyStr(ask(Q.symmetric(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.symmetric(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
   it.fails("test_MatrixSlice:220", () => {
     expect(sympyStr(ask(Q.invertible(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.invertible(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_MatrixSlice:221", () => {
+  it("test_MatrixSlice:221", () => {
     expect(sympyStr(ask(Q.diagonal(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.diagonal(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
   it.fails("test_MatrixSlice:222", () => {
     expect(sympyStr(ask(Q.orthogonal(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.orthogonal(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_MatrixSlice:223", () => {
+  it("test_MatrixSlice:223", () => {
     expect(sympyStr(ask(Q.upper_triangular(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.upper_triangular(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
   it.fails("test_MatrixSlice:225", () => {
@@ -1108,10 +1108,10 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_MatrixSlice:229", () => {
     expect(sympyStr(ask(Q.upper_triangular(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(0), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.upper_triangular(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('None');
   });
-  it.fails("test_det_trace_positive:233", () => {
+  it("test_det_trace_positive:233", () => {
     expect(sympyStr(ask(Q.positive(Trace(new MatrixSymbol('X', rational(4), rational(4)))), Q.positive_definite(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_det_trace_positive:234", () => {
+  it("test_det_trace_positive:234", () => {
     expect(sympyStr(ask(Q.positive(Determinant(new MatrixSymbol('X', rational(4), rational(4)))), Q.positive_definite(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
   it("test_field_assumptions:239", () => {
@@ -1123,49 +1123,49 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_field_assumptions:241", () => {
     expect(sympyStr(ask(Q.complex_elements(new MatrixSymbol('X', rational(4), rational(4))), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_field_assumptions:242", () => {
+  it("test_field_assumptions:242", () => {
     expect(sympyStr(ask(Q.complex_elements(MatPow(new MatrixSymbol('X', rational(4), rational(4)), rational(2))), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_field_assumptions:243", () => {
+  it("test_field_assumptions:243", () => {
     expect(sympyStr(ask(Q.real_elements(MatPow(new MatrixSymbol('X', rational(4), rational(4)), rational(2))), Q.integer_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
   it("test_field_assumptions:244", () => {
     expect(sympyStr(ask(Q.real_elements(MatAdd(new MatrixSymbol('X', rational(4), rational(4)), new MatrixSymbol('Y', rational(4), rational(4)))), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('None');
   });
-  it.fails("test_field_assumptions:245", () => {
+  it("test_field_assumptions:245", () => {
     expect(sympyStr(ask(Q.real_elements(MatAdd(new MatrixSymbol('X', rational(4), rational(4)), new MatrixSymbol('Y', rational(4), rational(4)))), And(Q.real_elements(new MatrixSymbol('X', rational(4), rational(4))), Q.real_elements(new MatrixSymbol('Y', rational(4), rational(4))))))).toBe('True');
   });
-  it.fails("test_field_assumptions:247", () => {
+  it("test_field_assumptions:247", () => {
     expect(sympyStr(ask(Q.real_elements(HadamardProduct(new MatrixSymbol('X', rational(4), rational(4)), new MatrixSymbol('Y', rational(4), rational(4)))), And(Q.real_elements(new MatrixSymbol('X', rational(4), rational(4))), Q.real_elements(new MatrixSymbol('Y', rational(4), rational(4))))))).toBe('True');
   });
-  it.fails("test_field_assumptions:249", () => {
+  it("test_field_assumptions:249", () => {
     expect(sympyStr(ask(Q.complex_elements(MatAdd(new MatrixSymbol('X', rational(4), rational(4)), new MatrixSymbol('Y', rational(4), rational(4)))), And(Q.complex_elements(new MatrixSymbol('Y', rational(4), rational(4))), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4))))))).toBe('True');
   });
-  it.fails("test_field_assumptions:251", () => {
+  it("test_field_assumptions:251", () => {
     expect(sympyStr(ask(Q.real_elements(Transpose(new MatrixSymbol('X', rational(4), rational(4)))), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
   // the arguments do not type-check against the public API
   //   assert ask(Q.real_elements(X.I), Q.real_elements(X) & Q.invertible(X))
   //   => True
   it.todo("test_field_assumptions:252");
-  it.fails("test_field_assumptions:253", () => {
+  it("test_field_assumptions:253", () => {
     expect(sympyStr(ask(Q.real_elements(Trace(new MatrixSymbol('X', rational(4), rational(4)))), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_field_assumptions:254", () => {
+  it("test_field_assumptions:254", () => {
     expect(sympyStr(ask(Q.integer_elements(Determinant(new MatrixSymbol('X', rational(4), rational(4)))), Q.integer_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
   // the arguments do not type-check against the public API
   //   assert not ask(Q.integer_elements(X.I), Q.integer_elements(X))
   //   => None
   it.todo("test_field_assumptions:255");
-  it.fails("test_field_assumptions:257", () => {
+  it("test_field_assumptions:257", () => {
     const alpha = new Sym('alpha');
     expect(sympyStr(ask(Q.real_elements(MatMul(alpha, new MatrixSymbol('X', rational(4), rational(4)))), And(Q.real(alpha), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4))))))).toBe('True');
   });
-  it.fails("test_field_assumptions:258", () => {
+  it("test_field_assumptions:258", () => {
     expect(sympyStr(ask(Q.real_elements(LofLU(new MatrixSymbol('X', rational(4), rational(4)))), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_field_assumptions:260", () => {
+  it("test_field_assumptions:260", () => {
     const e = new Sym('e', { integer: true, negative: true });
     expect(sympyStr(ask(Q.real_elements(MatPow(new MatrixSymbol('X', rational(4), rational(4)), e)), And(Q.invertible(new MatrixSymbol('X', rational(4), rational(4))), Q.real_elements(new MatrixSymbol('X', rational(4), rational(4))))))).toBe('True');
   });
@@ -1182,28 +1182,28 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_matrix_element_sets:267", () => {
     expect(sympyStr(ask(Q.complex(MatrixElement(new MatrixSymbol('X', rational(4), rational(4)), rational(1), rational(2))), Q.complex_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_matrix_element_sets:268", () => {
+  it("test_matrix_element_sets:268", () => {
     expect(sympyStr(ask(Q.integer_elements(Identity(rational(3))), true))).toBe('True');
   });
-  it.fails("test_matrix_element_sets:269", () => {
+  it("test_matrix_element_sets:269", () => {
     expect(sympyStr(ask(Q.integer_elements(ZeroMatrix(rational(3), rational(3))), true))).toBe('True');
   });
-  it.fails("test_matrix_element_sets:270", () => {
+  it("test_matrix_element_sets:270", () => {
     expect(sympyStr(ask(Q.integer_elements(OneMatrix(rational(3), rational(3))), true))).toBe('True');
   });
-  it.fails("test_matrix_element_sets:272", () => {
+  it("test_matrix_element_sets:272", () => {
     expect(sympyStr(ask(Q.complex_elements(DFT(rational(3))), true))).toBe('True');
   });
-  it.fails("test_matrix_element_sets_slices_blocks:277", () => {
+  it("test_matrix_element_sets_slices_blocks:277", () => {
     expect(sympyStr(ask(Q.integer_elements(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(0), rational(4), rational(1)], [rational(3), rational(4), rational(1)])), Q.integer_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_matrix_element_sets_slices_blocks:278", () => {
+  it("test_matrix_element_sets_slices_blocks:278", () => {
     expect(sympyStr(ask(Q.integer_elements(BlockMatrix(Matrix.of([[new MatrixSymbol('X', rational(4), rational(4))], [new MatrixSymbol('X', rational(4), rational(4))]]))), Q.integer_elements(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_matrix_element_sets_determinant_trace:282", () => {
+  it("test_matrix_element_sets_determinant_trace:282", () => {
     expect(sympyStr(ask(Q.integer(Determinant(new MatrixSymbol('X', rational(2), rational(2)))), Q.integer_elements(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_matrix_element_sets_determinant_trace:283", () => {
+  it("test_matrix_element_sets_determinant_trace:283", () => {
     expect(sympyStr(ask(Q.integer(Trace(new MatrixSymbol('X', rational(2), rational(2)))), Q.integer_elements(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
   });
 });
@@ -7203,22 +7203,22 @@ describe("sympy/assumptions/tests/test_rel_queries.py", () => {
   //   assert lra_satask(Q.lt(w, 0)) is False
   //   => False
   it.todo("test_old_assumptions:77");
-  it.fails("test_rel_queries:81", () => {
+  it("test_rel_queries:81", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(ask(And(Q.gt(x, rational(3)), Q.lt(x, rational(2))), true))).toBe('False');
   });
-  it.fails("test_rel_queries:82", () => {
+  it("test_rel_queries:82", () => {
     const x = new Sym('x', { real: true });
     const z = new Sym('z', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(ask(Q.positive(new Add([x, new Mul([rational(-1), z])])), And(Relational(x, y, '>', { evaluate: false }), Relational(y, z, '>', { evaluate: false }))))).toBe('True');
   });
-  it.fails("test_rel_queries:83", () => {
+  it("test_rel_queries:83", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     expect(sympyStr(ask(Relational(new Add([x, y]), rational(2), '>', { evaluate: false }), And(Relational(x, rational(0), '<', { evaluate: false }), Relational(y, rational(0), '<', { evaluate: false }))))).toBe('False');
   });
-  it.fails("test_rel_queries:84", () => {
+  it("test_rel_queries:84", () => {
     const x = new Sym('x', { real: true });
     const z = new Sym('z', { real: true });
     const y = new Sym('y', { real: true });
@@ -7259,31 +7259,31 @@ describe("sympy/assumptions/tests/test_rel_queries.py", () => {
   //   raises(UnhandledInput, lambda: lra_satask((x > 0), (x > 2) & Q.integer(x)))
   //   => None
   it.todo("test_all_pred:103");
-  it.fails("test_number_line_properties:114", () => {
+  it("test_number_line_properties:114", () => {
     const a = new Sym('a', { real: true });
     const c = new Sym('c', { real: true });
     const b = new Sym('b', { real: true });
     expect(sympyStr(ask(Relational(a, c, '<=', { evaluate: false }), And(Relational(a, b, '<=', { evaluate: false }), Relational(b, c, '<=', { evaluate: false }))))).toBe('True');
   });
-  it.fails("test_number_line_properties:116", () => {
+  it("test_number_line_properties:116", () => {
     const a = new Sym('a', { real: true });
     const c = new Sym('c', { real: true });
     const b = new Sym('b', { real: true });
     expect(sympyStr(ask(Relational(a, c, '<', { evaluate: false }), And(Relational(a, b, '<=', { evaluate: false }), Relational(b, c, '<', { evaluate: false }))))).toBe('True');
   });
-  it.fails("test_number_line_properties:118", () => {
+  it("test_number_line_properties:118", () => {
     const a = new Sym('a', { real: true });
     const c = new Sym('c', { real: true });
     const b = new Sym('b', { real: true });
     expect(sympyStr(ask(Relational(a, c, '<', { evaluate: false }), And(Relational(b, c, '<=', { evaluate: false }), Relational(a, b, '<', { evaluate: false }))))).toBe('True');
   });
-  it.fails("test_number_line_properties:122", () => {
+  it("test_number_line_properties:122", () => {
     const a = new Sym('a', { real: true });
     const c = new Sym('c', { real: true });
     const b = new Sym('b', { real: true });
     expect(sympyStr(ask(Relational(new Add([a, c]), new Add([b, c]), '<=', { evaluate: false }), Relational(a, b, '<=', { evaluate: false })))).toBe('True');
   });
-  it.fails("test_number_line_properties:123", () => {
+  it("test_number_line_properties:123", () => {
     const a = new Sym('a', { real: true });
     const c = new Sym('c', { real: true });
     const b = new Sym('b', { real: true });
@@ -7293,18 +7293,18 @@ describe("sympy/assumptions/tests/test_rel_queries.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(ask(Q.eq(x, x), true))).toBe('True');
   });
-  it.fails("test_equality:155", () => {
+  it("test_equality:155", () => {
     const y = new Sym('y', { real: true });
     const x = new Sym('x', { real: true });
     expect(sympyStr(ask(Q.eq(y, x), Q.eq(x, y)))).toBe('True');
   });
-  it.fails("test_equality:156", () => {
+  it("test_equality:156", () => {
     const y = new Sym('y', { real: true });
     const x = new Sym('x', { real: true });
     const z = new Sym('z', { real: true });
     expect(sympyStr(ask(Q.eq(y, x), Or(Q.eq(x, y), Not(Q.eq(z, z)))))).toBe('True');
   });
-  it.fails("test_equality:159", () => {
+  it("test_equality:159", () => {
     const x = new Sym('x', { real: true });
     const z = new Sym('z', { real: true });
     const y = new Sym('y', { real: true });

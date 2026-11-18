@@ -4311,6 +4311,7 @@ Object.assign(ADAPTERS, {
     const query = () => none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
     return context instanceof sj.AssumptionsContext ? sj.assuming([...context], query) : query();
   },
+  lra_satask: (args, kw) => (noKw(kw), none(sj.lraSatask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)))),
   refine: (args, kw) => (noKw(kw), sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean))),
   '.refine': (args, kw, self) => {
     noKw(kw);
