@@ -825,3 +825,36 @@ it('arg counts a factor of known sign by its sign (SymPy arg.eval)', () => {
   expect(String(sj.arg(sj.mul(sj.add(3, sj.I), f)))).toBe('atan(1/3)');
   expect(String(sj.arg(sj.mul(sj.I, g)))).toBe('-pi/2');
 });
+
+it('evaluates atan2 like SymPy atan2.eval', () => {
+  const y = new sj.Sym('y');
+  const x = new sj.Sym('x');
+  const i = new sj.Sym('i', { imaginary: true });
+  const r = new sj.Sym('r', { real: true });
+  const nz = new sj.Sym('nz', { nonzero: true });
+  const show = (e: unknown) => String(e);
+  expect(show(sj.atan2(y, sj.oo))).toBe('0');
+  expect(show(sj.atan2(y, sj.S.NegativeInfinity))).toBe('2*pi*Heaviside(re(y)) - pi');
+  expect(show(sj.atan2(0, sj.S.NegativeInfinity))).toBe('pi');
+  expect(show(sj.atan2(0, 0))).toBe('nan');
+  // numbers that are not both real: the logarithmic form
+  expect(show(sj.atan2(2, sj.I))).toBe('-I*(log(sqrt(3)) + I*pi/2)');
+  expect(show(sj.atan2(sj.add(1, sj.I), 2))).toBe('-I*log((2 + I*(1 + I))/sqrt(4 + (1 + I)**2))');
+  // two imaginary numbers: the angle of their imaginary parts
+  expect(show(sj.atan2(sj.mul(2, sj.I), sj.mul(3, sj.I)))).toBe('atan(2/3)');
+  // y = 0
+  expect(show(sj.atan2(0, nz))).toBe('pi*(1 - Heaviside(nz))');
+  expect(show(sj.atan2(0, sj.add(1, sj.I)))).toBe('0');
+  expect(show(sj.atan2(0, i))).toBe('atan2(0, i)');
+  expect(show(sj.atan2(y, x))).toBe('atan2(y, x)');
+  // rewrites
+  expect(show(sj.rewrite(sj.atan2(i, r), 'arg'))).toBe('-I*log(Abs(I*i + r)/sqrt(Abs(i**2 + r**2))) + arg((I*i + r)/sqrt(i**2 + r**2))');
+  const [p, q] = [new sj.Sym('p', { real: true }), new sj.Sym('q', { real: true })];
+  expect(show(sj.rewrite(sj.atan2(p, q), 'arg'))).toBe('arg(I*p + q)');
+  expect(show(sj.rewrite(sj.atan2(0, sj.add(r, i)), 'atan'))).toBe('Piecewise((pi, r < 0), (0, True))');
+});
+
+it('exp is imaginary at the odd multiples of I*pi/2 (SymPy Pow._eval_is_imaginary)', () => {
+  const at = (k: string) => sj.isImaginary(new sj.Pow(sj.E, sj.mul(sj.I, sj.pi, sj.parse(k))));
+  expect(['1', '2', '1/2', '3/2', '-1/2', '1/3'].map(at)).toEqual([false, false, true, true, true, 'unknown']);
+});

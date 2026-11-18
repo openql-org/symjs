@@ -155,7 +155,9 @@ function exprEquivalent(a: Expr, b: Expr): boolean {
   const symbols = new Map([...sj.freeSymbols(a), ...sj.freeSymbols(b)].filter((s) => s instanceof sj.Sym).map((s) => [s.key, s]));
   // Closed algebraic numbers have no independent substitution points. Repeating
   // the same high-precision root evaluation provides no additional evidence.
-  const hasOrdering = (e: Expr): boolean => (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') || e.args.some(hasOrdering);
+  // (Max and Min compare their arguments: they take real points as inequalities do)
+  const hasOrdering = (e: Expr): boolean =>
+    (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') || (e instanceof sj.Fn && (e.name === 'Max' || e.name === 'Min')) || e.args.some(hasOrdering);
   const trials = symbols.size === 0 ? 1 : hasOrdering(a) || hasOrdering(b) ? 8 : 4;
   let agree = 0;
   for (let k = 0; k < trials; k++) {

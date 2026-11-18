@@ -1462,3 +1462,12 @@ describe('membership decided by assumptions (SymPy Interval._contains, FiniteSet
     expect(String(sj.complement(sj.finiteSet(l), sj.finiteSet(sj.mul(-1, l))))).toBe('{l}');
   });
 });
+
+it('cuts the image of the integers by an interval with indexed-root shifts (SymPy test_ceiling)', () => {
+  const n = new sj.Sym('n');
+  const f = new sj.CRootOf(sj.parse('x**5 - x**2 + 1'), 0);
+  const s = sj.ImageSet.of(sj.Lambda([n], sj.add(n, f)), sj.Integers);
+  const cut = sj.Intersection(s, sj.interval(-2, 2));
+  expect(cut).toBeInstanceOf(sj.FiniteSet);
+  expect(cut.args.map(String).sort()).toEqual(['CRootOf(x**5 - x**2 + 1, 0)', 'CRootOf(x**5 - x**2 + 1, 0) + 1', 'CRootOf(x**5 - x**2 + 1, 0) + 2', 'CRootOf(x**5 - x**2 + 1, 0) - 1']);
+});

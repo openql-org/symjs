@@ -121,7 +121,13 @@ export function realValue(e: Expr): number | undefined {
     const v = impl.toComplex(e);
     return Math.abs(v.im) > 1e-12 * Math.max(1, Math.abs(v.re)) ? undefined : v.re;
   } catch {
-    return undefined;
+    // a number without a machine evaluation (an indexed root) is evaluated in arbitrary precision
+    try {
+      const v = impl.evalf(e, 15);
+      return v instanceof Float || v instanceof Rational ? v.value : undefined;
+    } catch {
+      return undefined;
+    }
   }
 }
 

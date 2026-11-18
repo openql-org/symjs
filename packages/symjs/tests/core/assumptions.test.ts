@@ -457,3 +457,12 @@ it('answers for an undefined function from the facts it was declared with (SymPy
   expect(String(sj.sign(f))).toBe('1');
   expect(String(sj.Abs(k))).toBe('-k(x)');
 });
+
+it('a sum of real terms and one term that is not real is neither real nor zero', () => {
+  const i = new sj.Sym('i', { imaginary: true });
+  const r = new sj.Sym('r', { real: true });
+  const x = new sj.Sym('x');
+  expect([isReal(sj.add(r, i)), isZero(sj.add(r, i)), isReal(sj.add(r, sj.mul(2, i), 1))]).toEqual([false, false, false]);
+  expect([isReal(sj.add(r, i, x)), isZero(sj.add(r, i, x)), isReal(sj.add(i, sj.mul(sj.I, r)))]).toEqual([undefined, undefined, undefined]);
+  expect(String(sj.Ne(sj.add(r, i), 0))).toBe('True');
+});

@@ -430,6 +430,13 @@ reg2('atan2', 'atan', (y, x) =>
   piecewise([mul(2, atan(div(y, add(x, sqrt(add(pow(x, 2), pow(y, 2))))))), Ne(y, 0)], [pi, Lt(re(x), 0)], [0, Ne(x, 0)], [S.NaN, true]),
 );
 
+// SymPy atan2._eval_rewrite_as_arg
+reg2('atan2', 'arg', (y, x) => {
+  const n = add(x, mul(I, y));
+  if (isReal(x) === true && isReal(y) === true) return fn('arg', [n]);
+  const d = add(pow(x, 2), pow(y, 2));
+  return add(fn('arg', [div(n, sqrt(d))]), neg(mul(I, log(div(fn('abs', [n]), sqrt(fn('abs', [d])))))));
+});
 // complex functions
 reg1('arg', 'atan2', (a) => fn('atan2', [im(a), re(a)]));
 registerRewrite('Piecewise', 'ITE', (args, self) => {

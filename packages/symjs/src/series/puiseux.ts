@@ -532,13 +532,9 @@ export class Expander {
       if (lc === undefined) return PS.constant(fn(e.name, [g0]));
       const sign = isPositive(lc) ? 1 : isNegative(lc) ? -1 : 0;
       if (!(g0 instanceof Rational && g0.isInteger)) {
-        // off the integers floor/ceiling is constant. A symbolic g0 could be an integer: floor is
-        // continuous from the right and ceiling from the left, so floor(g0) and ceiling(g0) are the
-        // values on those sides (SymPy floor._eval_nseries). On the other side SymPy also gives
-        // floor(y) for floor(y - x) and ceiling(y) for ceiling(y + x), which is wrong for an integer y.
-        const r = fn(e.name, [g0]);
-        if (r instanceof Rational || (e.name === 'floor' ? sign > 0 : sign < 0)) return PS.constant(r);
-        throw new SeriesError(`cannot expand ${e.name}`);
+        // off the integers floor/ceiling is constant; a symbolic point is not an integer generically, so the
+        // value there is the series on both sides (SymPy floor._eval_nseries and ceiling._eval_nseries)
+        return PS.constant(fn(e.name, [g0]));
       }
       if (sign === 0) throw new SeriesError(`cannot expand ${e.name}`);
       const up = e.name === 'floor' ? (sign > 0 ? 0 : -1) : sign > 0 ? 1 : 0;

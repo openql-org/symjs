@@ -365,6 +365,8 @@ export interface Impl {
   emptySet?(): Expr;
   interval?(a: Expr, b: Expr): Expr;
   setIntersection?(a: Expr, b: Expr): Expr;
+  /** Heaviside(x), installed by the delta functions module. */
+  heaviside?(x: Expr): Expr;
   /** A set node rebuilt from new arguments, evaluated (registered by sets/sets). */
   rebuildSet?: (e: Expr, args: readonly Expr[]) => Expr;
   /** SymPy Set._eval_subs: a set that binds a variable (ImageSet, ConditionSet) substituted, or undefined for the generic rule. */
