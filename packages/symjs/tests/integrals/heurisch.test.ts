@@ -5,7 +5,7 @@
 // those of SymPy 1.14 heurisch (integrate adds the floor terms of continuous arctangents).
 
 import { describe, expect, it } from 'vitest';
-import { Integral, Piecewise, Sym, SymFunction, add, diff, integrate, parse, sstr, type Expr } from '../../src';
+import { Integral, Piecewise, Sym, jn, SymFunction, add, diff, integrate, parse, sstr, type Expr } from '../../src';
 import { at } from '../../src/core/guard';
 import { componentsOf, heurisch, heurischTrig, heurischWrapper, rootFactors, type HeurischOptions } from '../../src/integrals/heurisch';
 
@@ -43,7 +43,7 @@ describe('heurisch in tan(u/2)', () => {
 
 // the heuristic Risch algorithm: the results of SymPy 1.14 heurisch and heurisch_wrapper
 const [x, n, a, b] = [new Sym('x'), new Sym('n'), new Sym('a'), new Sym('b')];
-const PX = (s: string): Expr => parse(s, { symbols: [x, y, n, a, b] });
+const PX = (s: string): Expr => parse(s, { symbols: [x, y, n, a, b], locals: { jn } });
 const hr = (s: string, opts?: HeurischOptions): string => {
   const r = heurisch(PX(s), x, opts);
   return r === undefined ? 'None' : sstr(r);
@@ -146,4 +146,44 @@ describe('heurisch_wrapper', () => {
     // gamma(a) = 0 is not solved
     expect(hw('cos(gamma(a)*x)')).toBe('sin(x*gamma(a))/gamma(a)');
   });
+});
+
+
+describe('heurisch hints', () => {
+  it.each([
+    ['sqrt(1 + 7*x**2)', 'x*sqrt(7*x**2 + 1)/2 + sqrt(7)*asinh(sqrt(7)*x)/14'],
+    ['sqrt(1 - 7*x**2)', 'x*sqrt(1 - 7*x**2)/2 + sqrt(7)*asin(sqrt(7)*x)/14'],
+    ['1/sqrt(1 + 7*x**2)', 'sqrt(7)*asinh(sqrt(7)*x)/7'],
+    ['1/sqrt(1 - 7*x**2)', 'sqrt(7)*asin(sqrt(7)*x)/7'],
+    ['exp(-7*x**2)', 'sqrt(7)*sqrt(pi)*erf(sqrt(7)*x)/14'],
+    ['1/sqrt(9 - 4*x**2)', 'asin(2*x/3)/2'],
+    ['1/sqrt(9 + 4*x**2)', 'asinh(2*x/3)/2'],
+    ['1/sqrt(3*x**2 - 4)', 'sqrt(3)*log(3*x + sqrt(3)*sqrt(3*x**2 - 4))/3'],
+  ])('adds automatic hints for %s', (f, expected) => {
+    expect(hr(f, { hints: [] })).toBe(expected);
+  });
+  it('accepts explicitly supplied components', () => {
+    expect(hr('1/sqrt(x**2 + 1)', { hints: [PX('asinh(x)')] })).toBe('asinh(x)');
+  });
+});
+
+it('rejects automatic hints outside the quadratic sign cases', () => {
+  for (const f of ['sqrt(x**3 + 1)', 'exp(x**3)', 'exp(a*x**2)', 'sqrt(a*x**2 + 1)', 'sqrt(x**2 + x + 1)', 'sqrt(-x**2 - 1)']) {
+    expect(heurisch(PX(f), x, { hints: [], retries: -1 })).toBeUndefined();
+  }
+  expect(hr('exp(x)', { hints: [] })).toBe('exp(x)');
+  expect(hr('exp(x**2)', { hints: [] })).toBe('sqrt(pi)*erfi(x)/2');
+});
+
+it.each([
+  ['besselj(nu + 1, x)/besselj(nu, x)', 'nu*log(x) - log(besselj(nu, x))'],
+  ['(nu*besselj(nu, x) - x*besselj(nu + 1, x))/x', 'besselj(nu, x)'],
+  ['jn(nu + 1, x)/jn(nu, x)', 'nu*log(x) - log(jn(nu, x))'],
+])('uses adjacent Bessel orders for %s', (f, expected) => {
+  expect(hr(f)).toBe(expected);
+});
+
+it.each(['besseli', 'besselk'])('uses the modified Bessel recurrence of %s', (name) => {
+  const sign = name === 'besseli' ? '+' : '-';
+  expect(hr(`(nu*${name}(nu, x) ${sign} x*${name}(nu + 1, x))/x`)).toBe(`${name}(nu, x)`);
 });

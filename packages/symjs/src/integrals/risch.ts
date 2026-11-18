@@ -21,7 +21,8 @@ import { NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Constant, Dummy, Expr, Fn, Integral, Pow, Rational, S, Sym } from '../core/nodes';
 import { Ne, piecewise } from '../core/logic';
-import { add, exp, mul, pow, sympify } from '../core/ops';
+import { add, div, exp, mul, pow, sympify } from '../core/ops';
+import { Poly } from '../polys/sympoly';
 import { isRationalFunction } from '../core/methods';
 import { lcm as ilcm } from '../core/numbers';
 import { subs, xreplace } from '../core/traverse';
@@ -36,15 +37,16 @@ import type { ExtensionSpec } from './rischbase';
 import {
   DiffExtension,
   NonElementaryIntegral,
-  asPoly1t,
+  asPoly1t as kAsPoly1t,
   decrementLevel,
+  gcdexDiophantine as kGcdexDiophantine,
   derivation,
   hermiteReduce,
   residueReduce,
   residueReduceDerivation,
   residueReduceToBasic,
 } from './rischbase';
-import { KPoly, exprDiff, fracIn, kCancel } from './rischpoly';
+import { KPoly, exprDiff, fracIn as kFracIn, kCancel } from './rischpoly';
 
 export { NonElementaryIntegral } from './rischbase';
 
@@ -208,7 +210,7 @@ export class DifferentialExtension extends DiffExtension {
       }
       if (handleFirst === 'log' || !expNew) logNew = this.logPart(logs);
     }
-    [this.fa, this.fd] = fracIn(this.newf, this.t);
+    [this.fa, this.fd] = kFracIn(this.newf, this.t);
     this.autoAttrs();
   }
 
@@ -241,7 +243,7 @@ export class DifferentialExtension extends DiffExtension {
       const nw = exp(mul(p.exp, log(p.base)));
       let newterm: Expr;
       if (sympows.some((s) => s.key === i.key)) {
-        const [basea, based] = fracIn(p.base, this.t);
+        const [basea, based] = kFracIn(p.base, this.t);
         const A = isDerivK(basea, based, this);
         if (A === undefined) {
           this.newf = xreplace(this.newf, [[old, nw]]);
@@ -286,7 +288,7 @@ export class DifferentialExtension extends DiffExtension {
 
   /** The derivative of arg = arga/argd as an expression. */
   private dArg(arg: Expr): [KPoly, KPoly] {
-    const [arga, argd] = fracIn(arg, this.t);
+    const [arga, argd] = kFracIn(arg, this.t);
     const darga = argd.mul(derivation(arga, this)).sub(arga.mul(derivation(argd, this)));
     return kCancel(darga, argd.mul(argd));
   }
@@ -310,7 +312,7 @@ export class DifferentialExtension extends DiffExtension {
     const ip = integerPowers(exps.map((i) => castTo(i, Pow).exp));
     for (const [arg, others] of ip) {
       others.sort((a, b) => a[1].toNumber() - b[1].toNumber());
-      const [arga, argd] = fracIn(arg, this.t);
+      const [arga, argd] = kFracIn(arg, this.t);
       const A = isLogDerivKTRadical(arga, argd, this);
       if (A !== undefined) {
         // (SymPy also handles n = -1, but n is a positive common denominator)
@@ -351,7 +353,7 @@ export class DifferentialExtension extends DiffExtension {
   private logPart(logs: readonly Expr[]): boolean {
     let newExtension = false;
     for (const arg of ordered(logs.map((i) => at(i.args, 0)))) {
-      const [arga, argd] = fracIn(arg, this.t);
+      const [arga, argd] = kFracIn(arg, this.t);
       const A = isDerivK(arga, argd, this);
       if (A !== undefined) {
         const [, u, cst] = A;
@@ -379,10 +381,10 @@ export function integratePrimitivePolynomial(p0: KPoly, DE: DiffExtension): [KPo
   let p = p0;
   for (;;) {
     if (!p.has(t)) return [q, p, true];
-    const [Dta, Dtb] = fracIn(DE.d.asExpr(), at(DE.T, DE.T.length + DE.level - 1));
+    const [Dta, Dtb] = kFracIn(DE.d.asExpr(), at(DE.T, DE.T.length + DE.level - 1));
     // (SymPy catches NonElementaryIntegralException, which limited_integrate does not raise)
     const rv = decrementLevel(DE, () => {
-      const [aa, ad] = fracIn(p.LC(), DE.t);
+      const [aa, ad] = kFracIn(p.LC(), DE.t);
       return limitedIntegrate(aa, ad, [[Dta, Dtb]], DE);
     });
     if (rv === undefined) return [q, p, false];
@@ -439,14 +441,14 @@ export function integrateHyperexponentialPolynomial(pt: KPoly, pz: KPoly, DE: Di
     for (let i = -lo; i <= hi; i++) {
       if (i === 0) continue;
       const a = i < 0 ? pz.nth(-i) : pt.nth(i);
-      const [aa, ad] = fracIn(a, DE.t, { cancel: true });
-      const [iDta, iDtd] = fracIn(dtt.mulGround(i).asExpr(), DE.t);
+      const [aa, ad] = kFracIn(a, DE.t, { cancel: true });
+      const [iDta, iDtd] = kFracIn(dtt.mulGround(i).asExpr(), DE.t);
       const v = rischDEOrNone(iDta, iDtd, aa, ad, DE);
       if (v === undefined) {
         b = false;
         continue;
       }
-      const [va, vd] = fracIn(v, t1, { cancel: true });
+      const [va, vd] = kFracIn(v, t1, { cancel: true });
       qa = add(mul(qa, vd.asExpr()), mul(va.asExpr(), pow(t1, i), qd));
       qd = mul(qd, vd.asExpr());
     }
@@ -464,7 +466,7 @@ export function integrateHyperexponential(a: KPoly, d: KPoly, DE: DiffExtension,
     return [add(subsAll(fracExpr(g1), s), residueReduceToBasic(g2, DE, z)), new NonElementaryIntegral([cancel(subsAll(i, s)), DE.x]), b];
   }
   const p = cancel(add(fracExpr(h), mul(-1, residueReduceDerivation(g2, DE, z)), fracExpr(r)));
-  const [pt, pz] = asPoly1t(p, DE.t, z);
+  const [pt, pz] = kAsPoly1t(p, DE.t, z);
   const [qa, qd, b2] = integrateHyperexponentialPolynomial(pt, pz, DE);
   const i0 = pt.nth(0);
   let ret = add(subsAll(fracExpr(g1), s), residueReduceToBasic(g2, DE, z));
@@ -511,7 +513,7 @@ export function rischIntegrate(fIn: ExprLike, x: Sym, opts: RischIntegrateOption
     const kase = DE.case;
     if (!fa.has(DE.t) && !fd.has(DE.t) && kase !== 'base') {
       DE.decrementLevel();
-      [fa, fd] = fracIn([fa, fd], DE.t);
+      [fa, fd] = kFracIn([fa, fd], DE.t);
       continue;
     }
     [fa, fd] = kCancel(fa.as(DE.t), fd.as(DE.t));
@@ -528,7 +530,7 @@ export function rischIntegrate(fIn: ExprLike, x: Sym, opts: RischIntegrateOption
     result = add(result, ans);
     if (b) {
       DE.decrementLevel();
-      [fa, fd] = fracIn(i, DE.t);
+      [fa, fd] = kFracIn(i, DE.t);
       continue;
     }
     result = subs(result, DE.backsubs);
@@ -537,3 +539,27 @@ export function rischIntegrate(fIn: ExprLike, x: Sym, opts: RischIntegrateOption
     return [result, i instanceof NonElementaryIntegral ? i : S.Zero];
   }
 }
+
+/** Solve s*a + t*b = c, with degree(s) < degree(b), over the coefficient field (SymPy gcdex_diophantine). */
+export function gcdexDiophantine(a: Poly, b: Poly, c: Poly): [Poly, Poly] {
+  const x = expectType(at(a.gens, 0), (g): g is Sym => g instanceof Sym);
+  const result = kGcdexDiophantine(KPoly.of(a.asExpr(), x), KPoly.of(b.asExpr(), x), KPoly.of(c.asExpr(), x));
+  return [Poly.from(result[0].asExpr(), [x], { field: true }), Poly.from(result[1].asExpr(), [x], { field: true })];
+}
+
+/** Numerator and denominator as polynomials in t, optionally cancelling their common factor (SymPy frac_in). */
+export function fracIn(f: ExprLike | Poly | readonly [Poly, Poly], t: Sym, opts: { cancel?: boolean } = {}): [Poly, Poly] {
+  const input = isPolyPair(f)
+    ? div(f[0].asExpr(), f[1].asExpr())
+    : f instanceof Poly ? f.asExpr() : sympify(f);
+  const [a, b] = kFracIn(input, t, opts);
+  return [Poly.from(a.asExpr(), [t]), Poly.from(b.asExpr(), [t])];
+}
+
+/** Write a Laurent polynomial in t as a polynomial in t and z = 1/t (SymPy as_poly_1t). */
+export function asPoly1t(p: ExprLike, t: Sym, z: Sym): Poly {
+  const [a, b] = kAsPoly1t(sympify(p), t, z);
+  return Poly.from(add(a.asExpr(), b.asExpr()), [t, z]);
+}
+
+const isPolyPair = (f: ExprLike | Poly | readonly [Poly, Poly]): f is readonly [Poly, Poly] => Array.isArray(f);

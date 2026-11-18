@@ -59,6 +59,8 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Native field PRS, Trager factorization and certified intervals add about
 // 24 KiB to the root namespace. Automatic algebraic-atom classification also
 // links the assumption engine, adding up to 72 KiB to polynomial consumers.
+// Real interval splitting and public Risch helpers add under 2 KiB to the root namespace
+// and under 1 KiB to calculus and vector consumers.
 const CASES = [
   ['core', 'Rational', 202],
   ['core', 'parse, str', 222],
@@ -75,7 +77,7 @@ const CASES = [
   ['polys', 'factor', 774],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1051],
+  ['calculus', 'integrate', 1052],
   ['solvers', 'solve', 1140],
   ['solvers', 'dsolve', 1155],
   ['sets', '*', 378],
@@ -91,7 +93,7 @@ const CASES = [
   ['algebras', 'Quaternion', 650],
   ['holonomic', 'exprToHolonomic', 1234],
   ['geometry', '*', 1120],
-  ['vector', '*', 1212],
+  ['vector', '*', 1213],
   ['stats', '*', 1385],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
@@ -107,7 +109,7 @@ const CASES = [
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2789],
+  ['index', '*', 2791],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

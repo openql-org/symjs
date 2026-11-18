@@ -5,14 +5,14 @@
 
 /**
  * @file SymPy manualintegrate's sqrt_quadratic_rule for a polynomial times an
- * odd power of the square root of a quadratic with symbolic coefficients:
+ * odd power of the square root of a quadratic:
  * the recursion of SqrtQuadraticDenomRule, the logarithm of
  * ReciprocalSqrtQuadraticRule (with the perfect-square case of
  * NestedPowRule) and the degenerate cases of a vanishing leading coefficient
  * (sqrt_linear_rule).
  */
 
-import { isReal } from '../core/assumptions';
+import { isNegative, isPositive, isNonZero, isReal } from '../core/assumptions';
 import { at, defined, getOrThrow } from '../core/guard';
 import { Ne, piecewise } from '../core/logic';
 import { asIndependent } from '../core/methods';
@@ -20,7 +20,8 @@ import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Dummy, Fn, Mul, Piecewise, Pow, Rational, S, Special, impl } from '../core/nodes';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { preorderTraversal, xreplace } from '../core/traverse';
-import { atan, cos, log } from '../functions/elementary/elementary';
+import { asin, atan, cos, log } from '../functions/elementary/elementary';
+import { asinh } from '../functions/elementary/trigext';
 import { diff } from '../calculus/diff';
 import { polyCoefficients } from '../polys/poly';
 import { expand } from '../simplify/expand';
@@ -55,6 +56,11 @@ function polyIntegral(p: Expr, x: Sym): Expr {
 function reciprocalSqrt(a: Expr, b: Expr, c: Expr, x: Sym): Expr {
   const h = mul(-1, b, pow(mul(2, c), -1));
   const k = add(a, mul(-1, pow(b, 2), pow(mul(4, c), -1)));
+  const shifted = add(x, mul(-1, h));
+  if (isPositive(k) === true) {
+    if (isPositive(c) === true) return mul(asinh(mul(sqrt(mul(c, pow(k, -1))), shifted)), pow(sqrt(c), -1));
+    if (isNegative(c) === true) return mul(asin(mul(sqrt(mul(-1, c, pow(k, -1))), shifted)), pow(sqrt(mul(-1, c)), -1));
+  }
   const generic = mul(log(add(mul(2, sqrt(c), sqrt(add(a, mul(b, x), mul(c, pow(x, 2))))), b, mul(2, c, x))), pow(sqrt(c), -1));
   // a perfect square: (x - h)*log(x - h)/sqrt(c*(x - h)**2) (NestedPowRule)
   const xh = add(x, mul(-1, h));
@@ -74,7 +80,7 @@ function sqrtQuadraticDenom(a: Expr, b: Expr, c: Expr, coeffs0: readonly Expr[],
     coeffs[i + 2] = add(at(coeffs, i + 2), mul(-1, n - 1, a, coeff));
   }
   const d = at(coeffs, coeffs.length - 1);
-  const e = at(coeffs, coeffs.length - 2);
+  const e = coeffs.length > 1 ? at(coeffs, coeffs.length - 2) : S.Zero;
   const s = sqrt(add(a, mul(b, x), mul(c, pow(x, 2))));
   const constant = add(d, mul(-1, b, e, pow(mul(2, c), -1)));
   const I0 = isZero(constant) ? S.Zero : mul(constant, reciprocalSqrt(a, b, c, x));
@@ -83,6 +89,7 @@ function sqrtQuadraticDenom(a: Expr, b: Expr, c: Expr, coeffs0: readonly Expr[],
 
 /** The integral of f*sqrt(a + b*x)**n, b != 0 (sqrt_linear_rule: u = sqrt(a + b*x)), with its degenerate case b = 0. */
 function sqrtLinear(f: Expr, a: Expr, b: Expr, n: number, x: Sym): Expr {
+  if (isZero(b)) return mul(pow(sqrt(a), n), polyIntegral(f, x));
   const u = new Dummy('u');
   const sub = mul(xreplace(f, [[x, mul(add(pow(u, 2), mul(-1, a)), pow(b, -1))]]), pow(u, n + 1), 2, pow(b, -1));
   const [coeff, rest] = asIndependent(sub, [u]);
@@ -92,9 +99,9 @@ function sqrtLinear(f: Expr, a: Expr, b: Expr, n: number, x: Sym): Expr {
 
 /**
  * SymPy sqrt_quadratic_rule: the integral of f = p(x)*sqrt(a + b*x + c*x**2)**n
- * for a polynomial p, n = 1 or n = -1 (with p of degree 2 or more for n = -1)
- * and b != 0, when the coefficients are not known to be real (SymPy then
- * chooses asin and asinh by their signs). Undefined otherwise.
+ * for a polynomial p and n = 1 or n = -1. Real coefficients select asin
+ * and asinh by their signs; symbolic coefficients retain degenerate cases.
+ * Undefined otherwise.
  *
  * @example
  * sqrtQuadraticRule(parse('x*sqrt(x**2 + a*x + b)'), x)
@@ -108,13 +115,15 @@ export function sqrtQuadraticRule(f: Expr, x: Sym): Expr | undefined {
   if (pc === undefined || Math.max(...pc.keys()) !== 2 || Math.abs(n) !== 1) return undefined;
   const [a, b, c] = [pc.get(0) ?? S.Zero, pc.get(1) ?? S.Zero, getOrThrow(pc, 2)];
   const p = mul(...factors.filter((t) => t !== root));
+  if (polyCoefficients(p, x) === undefined) return undefined;
   const k = add(a, mul(-1, pow(b, 2), pow(mul(4, c), -1)));
-  if (isZero(b) || polyCoefficients(p, x) === undefined || (isReal(k) === true && isReal(c) === true)) return undefined;
+  if (n === 1 && (isZero(b) || (!p.has(x) && isReal(k) === true && isReal(c) === true))) return undefined;
+  if (isNegative(c) === true && isPositive(k) !== true && !isZero(k)) return undefined;
   const numer = defined(polyCoefficients(expand(mul(p, pow(root.base, (n + 1) / 2))), x), 'polynomial');
   const deg = Math.max(...numer.keys());
-  if (deg < 2) return undefined;
   const coeffs = Array.from({ length: deg + 1 }, (_, i) => numer.get(deg - i) ?? S.Zero);
   const generic = sqrtQuadraticDenom(a, b, c, coeffs, x);
+  if (isNonZero(c) === true) return generic;
   const linear = sqrtLinear(p, a, b, n, x);
   return piecewise([generic, Ne(c, 0)], ...(linear instanceof Piecewise ? linear.pairs : [[linear, S.true] as const]));
 }

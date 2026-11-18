@@ -202,7 +202,7 @@ describe("doctests of sympy.integrals", () => {
 });
 
 describe("sympy/integrals/tests/test_failing_integrals.py", () => {
-  it.fails("test_issue_4212_real:33", () => {
+  it("test_issue_4212_real:33", () => {
     const xr = new Sym('xr', { real: true });
     expect(sympyStr(integrate(fn('sign', [xr]), xr))).toBe('Piecewise((-xr, xr < 0), (xr, True))');
   });
@@ -824,11 +824,11 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [x, a] = symbols('x a');
     expect(sympyStr(integrate(new Add([SingularityFunction(x, rational(5), rational(-1)), SingularityFunction(x, a, rational(3))]), x))).toBe('SingularityFunction(x, 5, 0) + SingularityFunction(x, a, 4)/4');
   });
-  it.fails("test_integrate_SingularityFunction:612", () => {
+  it("test_integrate_SingularityFunction:612", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Add([new Mul([rational(-5), SingularityFunction(x, rational(-6), rational(-2))]), new Mul([rational(10), SingularityFunction(x, rational(4), rational(0))])]), x))).toBe('-5*SingularityFunction(x, -6, -1) + 10*SingularityFunction(x, 4, 1)');
   });
-  it.fails("test_integrate_SingularityFunction:617", () => {
+  it("test_integrate_SingularityFunction:617", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(integrate(new Add([new Mul([rational(-10), SingularityFunction(x, rational(-4), rational(7))]), new Mul([rational(-2), SingularityFunction(y, rational(10), rational(-2))]), new Mul([rational(2), y, new Pow(x, rational(2))])]), x))).toBe('2*x**3*y/3 - 2*x*SingularityFunction(y, 10, -2) - 5*SingularityFunction(x, -4, 8)/4');
   });
@@ -844,11 +844,11 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Integral([new Add([new Mul([rational(-10), SingularityFunction(x, rational(-4), rational(7))]), new Mul([rational(-2), SingularityFunction(y, rational(10), rational(-2))]), new Mul([rational(2), y, new Pow(x, rational(2))])]), x]))).toBe('Integral(2*x**2*y - 10*SingularityFunction(x, -4, 7) - 2*SingularityFunction(y, 10, -2), x)');
   });
-  it.fails("test_integrate_SingularityFunction:622", () => {
+  it("test_integrate_SingularityFunction:622", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(doit(new Integral([new Add([new Mul([rational(-10), SingularityFunction(x, rational(-4), rational(7))]), new Mul([rational(-2), SingularityFunction(y, rational(10), rational(-2))]), new Mul([rational(2), y, new Pow(x, rational(2))])]), x])))).toBe('2*x**3*y/3 - 2*x*SingularityFunction(y, 10, -2) - 5*SingularityFunction(x, -4, 8)/4');
   });
-  it.fails("test_integrate_SingularityFunction:626", () => {
+  it("test_integrate_SingularityFunction:626", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Add([new Mul([rational(-2), SingularityFunction(x, rational(10), rational(-2))]), new Mul([rational(10), SingularityFunction(x, rational(-4), rational(7))])]), x, [S.NegativeInfinity, x], { conds: 'piecewise' }))).toBe('5*SingularityFunction(x, -4, 8)/4 - 2*SingularityFunction(x, 10, -1)');
   });
@@ -962,11 +962,11 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [t, x, y] = symbols('t x y');
     expect(sympyStr(integrate(new Mul([exp(t), exp(new Mul([rational(-1), t, new Pow(new Add([x, new Mul([rational(-1), y])]), rational(1, 2))]))]), t))).toBe('Piecewise((-exp(t)/(sqrt(x - y)*exp(t*sqrt(x - y)) - exp(t*sqrt(x - y))), Ne(x, y + 1)), (t, True))');
   });
-  it.fails("test_integrate_max_min:686", () => {
+  it("test_integrate_max_min:686", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(integrate(fn('Min', [rational(2), x]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('4');
   });
-  it.fails("test_integrate_max_min:687", () => {
+  it("test_integrate_max_min:687", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(integrate(fn('Max', [new Pow(x, rational(2)), new Pow(x, rational(3))]), x, [rational(0), rational(2)], { conds: 'piecewise' }))).toBe('49/12');
   });
@@ -983,7 +983,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const c = new Sym('c', { extendedReal: true });
     expect(sympyStr(new Add([new Mul([rational(1, 2), c, new Pow(pi, rational(1, 2))]), new Mul([rational(1, 2), c, new Pow(pi, rational(1, 2)), fn('erf', [c])])]).add(new Mul([rational(1, 2), exp(new Mul([rational(-1), new Pow(c, rational(2))]))])))).toBe('sqrt(pi)*c*erf(c)/2 + sqrt(pi)*c/2 + exp(-c**2)/2');
   });
-  it.fails("test_integrate_Abs_sign:700", () => {
+  it("test_integrate_Abs_sign:700", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(abs(x), x, [rational(-2), rational(1)], { conds: 'piecewise' }))).toBe('5/2');
   });
@@ -995,31 +995,31 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(abs(new Add([rational(1), x])), x, [rational(0), rational(1)], { conds: 'piecewise' }))).toBe('3/2');
   });
-  it.fails("test_integrate_Abs_sign:703", () => {
+  it("test_integrate_Abs_sign:703", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(abs(new Add([rational(-1), new Pow(x, rational(2))])), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('4');
   });
-  it.fails("test_integrate_Abs_sign:704", () => {
+  it("test_integrate_Abs_sign:704", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(abs(new Add([new Pow(x, rational(2)), new Mul([rational(-3), x])])), x, [rational(-15), rational(15)], { conds: 'piecewise' }))).toBe('2259');
   });
-  it.fails("test_integrate_Abs_sign:705", () => {
+  it("test_integrate_Abs_sign:705", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(fn('sign', [x]), x, [rational(-1), rational(2)], { conds: 'piecewise' }))).toBe('1');
   });
-  it.fails("test_integrate_Abs_sign:706", () => {
+  it("test_integrate_Abs_sign:706", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Mul([fn('sign', [x]), fn('sin', [x])]), x, [new Mul([rational(-1), pi]), pi], { conds: 'piecewise' }))).toBe('4');
   });
-  it.fails("test_integrate_Abs_sign:707", () => {
+  it("test_integrate_Abs_sign:707", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Mul([new Pow(x, rational(2)), fn('sign', [new Add([rational(-2), x])])]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('11/3');
   });
-  it.fails("test_integrate_Abs_sign:710", () => {
+  it("test_integrate_Abs_sign:710", () => {
     const t = new Sym('t', { real: true });
     expect(sympyStr(integrate(abs(t), t))).toBe('Piecewise((-t**2/2, t <= 0), (t**2/2, True))');
   });
-  it.fails("test_integrate_Abs_sign:712", () => {
+  it("test_integrate_Abs_sign:712", () => {
     const t = new Sym('t', { real: true });
     expect(sympyStr(integrate(abs(new Add([rational(-6), new Mul([rational(2), t])])), t))).toBe('Piecewise((-t**2 + 6*t, t <= 3), (t**2 - 6*t + 18, True))');
   });
@@ -1028,15 +1028,15 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const t = new Sym('t', { real: true });
     expect(sympyStr(integrate(abs(new Add([new Pow(s, rational(2)), new Mul([rational(-1), t])])), t, [rational(0), rational(2)], { conds: 'piecewise' }))).toBe('2*s**2*Min(2, s**2) - 2*s**2 - Min(2, s**2)**2 + 2');
   });
-  it.fails("test_integrate_Abs_sign:716", () => {
+  it("test_integrate_Abs_sign:716", () => {
     const t = new Sym('t', { real: true });
     expect(sympyStr(integrate(exp(new Mul([rational(-1), abs(t)])), t))).toBe('Piecewise((exp(t), t <= 0), (2 - exp(-t), True))');
   });
-  it.fails("test_integrate_Abs_sign:718", () => {
+  it("test_integrate_Abs_sign:718", () => {
     const t = new Sym('t', { real: true });
     expect(sympyStr(integrate(fn('sign', [new Add([rational(-6), new Mul([rational(2), t])])]), t))).toBe('Piecewise((-t, t < 3), (t - 6, True))');
   });
-  it.fails("test_integrate_Abs_sign:720", () => {
+  it("test_integrate_Abs_sign:720", () => {
     const t = new Sym('t', { real: true });
     expect(sympyStr(integrate(new Mul([rational(2), t, fn('sign', [new Add([rational(-1), new Pow(t, rational(2))])])]), t))).toBe('Piecewise((t**2, t < -1), (2 - t**2, t < 1), (t**2, True))');
   });
@@ -1770,7 +1770,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(integrate(integrate(fn('cos', [new Mul([x, y])]), x, [new Mul([rational(-1, 2), pi]), new Mul([rational(1, 2), pi])], { conds: 'piecewise' }), y, [rational(0), pi], { conds: 'piecewise' }))).toBe('2*Si(pi**2/2)');
   });
-  it.fails("test_issue_4422:1244", () => {
+  it("test_issue_4422:1244", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Pow(new Add([rational(16), new Mul([rational(4), new Pow(x, rational(2))])]), rational(-1, 2)), x))).toBe('asinh(x/2)/2');
   });
@@ -2086,7 +2086,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
   //               (-x_1*cos(b) + x_2*cos(b), True))
   //   => Piecewise((-sin(a*x_1 + b)/a + sin(a*x_2 + b)/a, (a > -oo) & (a < oo) & Ne(a, 0)), (-x_1*cos(b) + x_2*cos(b), True))
   it.todo("test_issue_15509:1643");
-  it.fails("test_issue_4311_fast:1650", () => {
+  it("test_issue_4311_fast:1650", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(integrate(new Mul([x, abs(new Add([rational(-9), new Pow(x, rational(2))]))]), x))).toBe('Piecewise((x**4/4 - 9*x**2/2, x <= -3), (-x**4/4 + 9*x**2/2 - 81/2, x <= 3), (x**4/4 - 9*x**2/2, True))');
   });
@@ -2388,7 +2388,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Pow(fn('cosh', [x]), rational(-2)), x))).toBe('2*tanh(x/2)/(tanh(x/2)**2 + 1)');
   });
-  it.fails("test_issue_22863:1988", () => {
+  it("test_issue_22863:1988", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Mul([new Pow(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(-3), x])]), rational(-1, 2)), new Add([rational(-4), new Mul([rational(-1), new Pow(x, rational(2))]), new Mul([rational(2), x]), new Mul([rational(3), new Pow(x, rational(3))])])]), x, [rational(0), rational(1)], { conds: 'piecewise' }))).toBe('-101*sqrt(2)/8 - 135*log(3 - 2*sqrt(2))/16');
   });
@@ -2437,7 +2437,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const v1 = x;
     expect(sympyStr(integrate(new Pow(new Pow(v1, rational(5, 3)), rational(1, 2)), v1))).toBe('6*x*sqrt(x**(5/3))/11');
   });
-  it.fails("test_nested_pow:2021", () => {
+  it("test_nested_pow:2021", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Pow(new Pow(v1, rational(2)), rational(-1, 2)), v1))).toBe('x*log(x)/sqrt(x**2)');
@@ -2447,22 +2447,22 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const v1 = x;
     expect(sympyStr(integrate(new Mul([x, new Pow(new Pow(v1, rational(-4)), rational(1, 2))]), v1))).toBe('x**2*sqrt(x**(-4))*log(x)');
   });
-  it.fails("test_sqrt_quadratic:2026", () => {
+  it("test_sqrt_quadratic:2026", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Pow(new Add([rational(5), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), v1])]), rational(-1, 2)), v1))).toBe('sqrt(3)*asinh(3*sqrt(11)*(x + 2/3)/11)/3');
   });
-  it.fails("test_sqrt_quadratic:2027", () => {
+  it("test_sqrt_quadratic:2027", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Pow(new Add([rational(5), new Mul([rational(-3), new Pow(x, rational(2))]), new Mul([rational(4), v1])]), rational(-1, 2)), v1))).toBe('sqrt(3)*asin(3*sqrt(19)*(x - 2/3)/19)/3');
   });
-  it.fails("test_sqrt_quadratic:2028", () => {
+  it("test_sqrt_quadratic:2028", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Pow(new Add([rational(-5), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), v1])]), rational(-1, 2)), v1))).toBe('sqrt(3)*log(6*x + 2*sqrt(3)*sqrt(3*x**2 + 4*x - 5) + 4)/3');
   });
-  it.fails("test_sqrt_quadratic:2029", () => {
+  it("test_sqrt_quadratic:2029", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Pow(new Add([rational(1), new Mul([rational(-4), x]), new Mul([rational(4), new Pow(v1, rational(2))])]), rational(-1, 2)), v1))).toBe('(x - 1/2)*log(x - 1/2)/(2*sqrt((x - 1/2)**2))');
@@ -2471,17 +2471,17 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [a, b, x, c] = symbols('a b x c');
     expect(sympyStr(integrate(new Pow(new Add([a, new Mul([b, x]), new Mul([c, new Pow(x, rational(2))])]), rational(-1, 2)), x))).toBe('Piecewise((log(b + 2*sqrt(c)*sqrt(a + b*x + c*x**2) + 2*c*x)/sqrt(c), Ne(c, 0) & Ne(a - b**2/(4*c), 0)), ((b/(2*c) + x)*log(b/(2*c) + x)/sqrt(c*(b/(2*c) + x)**2), Ne(c, 0)), (2*sqrt(a + b*x)/b, Ne(b, 0)), (x/sqrt(a), True))');
   });
-  it.fails("test_sqrt_quadratic:2035", () => {
+  it("test_sqrt_quadratic:2035", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Mul([new Pow(new Add([rational(5), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), new Add([rational(6), new Mul([rational(7), v1])])]), v1))).toBe('7*sqrt(3*x**2 + 4*x + 5)/3 + 4*sqrt(3)*asinh(3*sqrt(11)*(x + 2/3)/11)/9');
   });
-  it.fails("test_sqrt_quadratic:2037", () => {
+  it("test_sqrt_quadratic:2037", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Mul([new Pow(new Add([rational(5), new Mul([rational(-3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), new Add([rational(6), new Mul([rational(7), v1])])]), v1))).toBe('-7*sqrt(-3*x**2 + 4*x + 5)/3 + 32*sqrt(3)*asin(3*sqrt(19)*(x - 2/3)/19)/9');
   });
-  it.fails("test_sqrt_quadratic:2039", () => {
+  it("test_sqrt_quadratic:2039", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Mul([new Pow(new Add([rational(-5), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), new Add([rational(6), new Mul([rational(7), v1])])]), v1))).toBe('7*sqrt(3*x**2 + 4*x - 5)/3 + 4*sqrt(3)*log(6*x + 2*sqrt(3)*sqrt(3*x**2 + 4*x - 5) + 4)/9');
@@ -2490,7 +2490,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [a, b, x, c, d, e] = symbols('a b x c d e');
     expect(sympyStr(integrate(new Mul([new Pow(new Add([a, new Mul([b, x]), new Mul([c, new Pow(x, rational(2))])]), rational(-1, 2)), new Add([d, new Mul([e, x])])]), x))).toBe('Piecewise(((-b*e/(2*c) + d)*Piecewise((log(b + 2*sqrt(c)*sqrt(a + b*x + c*x**2) + 2*c*x)/sqrt(c), Ne(a - b**2/(4*c), 0)), ((b/(2*c) + x)*log(b/(2*c) + x)/sqrt(c*(b/(2*c) + x)**2), True)) + e*sqrt(a + b*x + c*x**2)/c, Ne(c, 0)), ((2*d*sqrt(a + b*x) + 2*e*(-a*sqrt(a + b*x) + (a + b*x)**(3/2)/3)/b)/b, Ne(b, 0)), ((d*x + e*x**2/2)/sqrt(a), True))');
   });
-  it.fails("test_sqrt_quadratic:2049", () => {
+  it("test_sqrt_quadratic:2049", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Mul([new Pow(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(-3), x])]), rational(-1, 2)), new Add([rational(-4), new Mul([rational(-1), new Pow(x, rational(2))]), new Mul([rational(2), x]), new Mul([rational(3), new Pow(v1, rational(3))])])]), v1))).toBe('sqrt(x**2 - 3*x + 2)*(x**2 + 13*x/4 + 101/8) + 135*log(2*x + 2*sqrt(x**2 - 3*x + 2) - 3)/16');
@@ -2504,7 +2504,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [a, b, x, c] = symbols('a b x c');
     expect(sympyStr(integrate(new Pow(new Add([a, new Mul([b, x]), new Mul([c, new Pow(x, rational(2))])]), rational(1, 2)), x))).toBe('Piecewise(((a/2 - b**2/(8*c))*Piecewise((log(b + 2*sqrt(c)*sqrt(a + b*x + c*x**2) + 2*c*x)/sqrt(c), Ne(a - b**2/(4*c), 0)), ((b/(2*c) + x)*log(b/(2*c) + x)/sqrt(c*(b/(2*c) + x)**2), True)) + (b/(4*c) + x/2)*sqrt(a + b*x + c*x**2), Ne(c, 0)), (2*(a + b*x)**(3/2)/(3*b), Ne(b, 0)), (sqrt(a)*x, True))');
   });
-  it.fails("test_sqrt_quadratic:2063", () => {
+  it("test_sqrt_quadratic:2063", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(integrate(new Mul([x, new Pow(new Add([rational(4), new Pow(x, rational(2)), new Mul([rational(2), v1])]), rational(1, 2))]), v1))).toBe('(x**2/3 + x/6 + 5/6)*sqrt(x**2 + 2*x + 4) - 3*asinh(sqrt(3)*(x + 1)/3)/2');
@@ -3348,7 +3348,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   //   assert F.diff(x).equals(f)
   //   => True
   it.todo("test_nested_pow:31 (2)");
-  it.fails("test_nested_pow:30 (3)", () => {
+  it("test_nested_pow:30 (3)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Pow(new Pow(x, rational(2)), rational(-1, 2)), x))).toBe('x*log(x)/sqrt(x**2)');
   });
@@ -3412,7 +3412,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   //   assert F.diff(x).equals(f)
   //   => True
   it.todo("test_manualintegrate_sqrt_linear:31 (4)");
-  it.fails("test_manualintegrate_sqrt_quadratic:30", () => {
+  it("test_manualintegrate_sqrt_quadratic:30", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Pow(new Add([rational(-1), new Pow(new Add([x, new Mul([rational(-1), I])]), rational(2))]), rational(-1, 2)), x))).toBe('log(2*x + 2*sqrt(x**2 - 2*I*x - 2) - 2*I)');
   });
@@ -3420,7 +3420,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   //   assert F.diff(x).equals(f)
   //   => True
   it.todo("test_manualintegrate_sqrt_quadratic:31");
-  it.fails("test_manualintegrate_sqrt_quadratic:30 (2)", () => {
+  it("test_manualintegrate_sqrt_quadratic:30 (2)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Pow(new Add([rational(5), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), x))).toBe('sqrt(3)*asinh(3*sqrt(11)*(x + 2/3)/11)/3');
   });
@@ -3428,7 +3428,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   //   assert F.diff(x).equals(f)
   //   => True
   it.todo("test_manualintegrate_sqrt_quadratic:31 (2)");
-  it.fails("test_manualintegrate_sqrt_quadratic:30 (3)", () => {
+  it("test_manualintegrate_sqrt_quadratic:30 (3)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Pow(new Add([rational(5), new Mul([rational(-3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), x))).toBe('sqrt(3)*asin(3*sqrt(19)*(x - 2/3)/19)/3');
   });
@@ -3436,7 +3436,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   //   assert F.diff(x).equals(f)
   //   => True
   it.todo("test_manualintegrate_sqrt_quadratic:31 (3)");
-  it.fails("test_manualintegrate_sqrt_quadratic:30 (4)", () => {
+  it("test_manualintegrate_sqrt_quadratic:30 (4)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Pow(new Add([rational(-5), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), x))).toBe('sqrt(3)*log(6*x + 2*sqrt(3)*sqrt(3*x**2 + 4*x - 5) + 4)/3');
   });
@@ -3444,7 +3444,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   //   assert F.diff(x).equals(f)
   //   => True
   it.todo("test_manualintegrate_sqrt_quadratic:31 (4)");
-  it.fails("test_manualintegrate_sqrt_quadratic:30 (5)", () => {
+  it("test_manualintegrate_sqrt_quadratic:30 (5)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Pow(new Add([rational(1), new Mul([rational(-4), x]), new Mul([rational(4), new Pow(x, rational(2))])]), rational(-1, 2)), x))).toBe('(x - 1/2)*log(x - 1/2)/(2*sqrt((x - 1/2)**2))');
   });
@@ -3456,7 +3456,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
     const [a, b, x, c] = symbols('a b x c');
     expect(sympyStr(manualintegrate(new Pow(new Add([a, new Mul([b, x]), new Mul([c, new Pow(x, rational(2))])]), rational(-1, 2)), x))).toBe('Piecewise((log(b + 2*sqrt(c)*sqrt(a + b*x + c*x**2) + 2*c*x)/sqrt(c), Ne(c, 0) & Ne(a - b**2/(4*c), 0)), ((b/(2*c) + x)*log(b/(2*c) + x)/sqrt(c*(b/(2*c) + x)**2), Ne(c, 0)), (2*sqrt(a + b*x)/b, Ne(b, 0)), (x/sqrt(a), True))');
   });
-  it.fails("test_manualintegrate_sqrt_quadratic:30 (6)", () => {
+  it("test_manualintegrate_sqrt_quadratic:30 (6)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([new Pow(new Add([rational(5), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), new Add([rational(6), new Mul([rational(7), x])])]), x))).toBe('7*sqrt(3*x**2 + 4*x + 5)/3 + 4*sqrt(3)*asinh(3*sqrt(11)*(x + 2/3)/11)/9');
   });
@@ -3464,7 +3464,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   //   assert F.diff(x).equals(f)
   //   => True
   it.todo("test_manualintegrate_sqrt_quadratic:31 (6)");
-  it.fails("test_manualintegrate_sqrt_quadratic:30 (7)", () => {
+  it("test_manualintegrate_sqrt_quadratic:30 (7)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([new Pow(new Add([rational(5), new Mul([rational(-3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), new Add([rational(6), new Mul([rational(7), x])])]), x))).toBe('-7*sqrt(-3*x**2 + 4*x + 5)/3 + 32*sqrt(3)*asin(3*sqrt(19)*(x - 2/3)/19)/9');
   });
@@ -3472,7 +3472,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   //   assert F.diff(x).equals(f)
   //   => True
   it.todo("test_manualintegrate_sqrt_quadratic:31 (7)");
-  it.fails("test_manualintegrate_sqrt_quadratic:30 (8)", () => {
+  it("test_manualintegrate_sqrt_quadratic:30 (8)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([new Pow(new Add([rational(-5), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), x])]), rational(-1, 2)), new Add([rational(6), new Mul([rational(7), x])])]), x))).toBe('7*sqrt(3*x**2 + 4*x - 5)/3 + 4*sqrt(3)*log(6*x + 2*sqrt(3)*sqrt(3*x**2 + 4*x - 5) + 4)/9');
   });
@@ -3484,7 +3484,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
     const [a, b, x, c, d, e] = symbols('a b x c d e');
     expect(sympyStr(manualintegrate(new Mul([new Pow(new Add([a, new Mul([b, x]), new Mul([c, new Pow(x, rational(2))])]), rational(-1, 2)), new Add([d, new Mul([e, x])])]), x))).toBe('Piecewise(((-b*e/(2*c) + d)*Piecewise((log(b + 2*sqrt(c)*sqrt(a + b*x + c*x**2) + 2*c*x)/sqrt(c), Ne(a - b**2/(4*c), 0)), ((b/(2*c) + x)*log(b/(2*c) + x)/sqrt(c*(b/(2*c) + x)**2), True)) + e*sqrt(a + b*x + c*x**2)/c, Ne(c, 0)), ((2*d*sqrt(a + b*x) + 2*e*(-a*sqrt(a + b*x) + (a + b*x)**(3/2)/3)/b)/b, Ne(b, 0)), ((d*x + e*x**2/2)/sqrt(a), True))');
   });
-  it.fails("test_manualintegrate_sqrt_quadratic:687", () => {
+  it("test_manualintegrate_sqrt_quadratic:687", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([new Pow(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(-3), x])]), rational(-1, 2)), new Add([rational(-4), new Mul([rational(-1), new Pow(x, rational(2))]), new Mul([rational(2), x]), new Mul([rational(3), new Pow(x, rational(3))])])]), x))).toBe('sqrt(x**2 - 3*x + 2)*(x**2 + 13*x/4 + 101/8) + 135*log(2*x + 2*sqrt(x**2 - 3*x + 2) - 3)/16');
   });
@@ -3504,7 +3504,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
     const [a, b, x, c] = symbols('a b x c');
     expect(sympyStr(manualintegrate(new Pow(new Add([a, new Mul([b, x]), new Mul([c, new Pow(x, rational(2))])]), rational(1, 2)), x))).toBe('Piecewise(((a/2 - b**2/(8*c))*Piecewise((log(b + 2*sqrt(c)*sqrt(a + b*x + c*x**2) + 2*c*x)/sqrt(c), Ne(a - b**2/(4*c), 0)), ((b/(2*c) + x)*log(b/(2*c) + x)/sqrt(c*(b/(2*c) + x)**2), True)) + (b/(4*c) + x/2)*sqrt(a + b*x + c*x**2), Ne(c, 0)), (2*(a + b*x)**(3/2)/(3*b), Ne(b, 0)), (sqrt(a)*x, True))');
   });
-  it.fails("test_manualintegrate_sqrt_quadratic:30 (10)", () => {
+  it("test_manualintegrate_sqrt_quadratic:30 (10)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([x, new Pow(new Add([rational(4), new Pow(x, rational(2)), new Mul([rational(2), x])]), rational(1, 2))]), x))).toBe('(x**2/3 + x/6 + 5/6)*sqrt(x**2 + 2*x + 4) - 3*asinh(sqrt(3)*(x + 1)/3)/2');
   });

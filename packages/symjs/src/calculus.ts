@@ -27,7 +27,8 @@ export {
 export type { ParametricCurve } from './integrals/transform';
 // integral transforms (SymPy sympy.integrals.transforms and laplace)
 export * from './integrals/transforms/index';
-export { NonElementaryIntegral, integerPowers, rischIntegrate } from './integrals/risch';
+export { asPoly1t, fracIn, gcdexDiophantine } from './integrals/risch';
+export { DifferentialExtension, NonElementaryIntegral, integerPowers, rischIntegrate } from './integrals/risch';
 export { manualintegrate } from './integrals/manualintegrate';
 export { singularityintegrate } from './integrals/singularityfunctions';
 // the helpers of SymPy's integrators (rationaltools, trigonometry, deltafunctions, meijerint, heurisch)

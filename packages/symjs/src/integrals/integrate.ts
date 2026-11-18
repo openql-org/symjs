@@ -15,38 +15,17 @@
  * Unsupported integrands are returned as an unevaluated `Integral`.
  */
 
-import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ, isReal } from '../core/assumptions';
+import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ, isReal, isNegative, isPositive } from '../core/assumptions';
 import { AccumBounds } from '../core/accumbounds';
-import { Gt, Ne, piecewise } from '../core/logic';
-import type {
-  Expr,
-  ExprLike,
-  RelOp } from '../core/nodes';
-import {
-  Add,
-  BoolAtom,
-  Constant,
-  Dummy,
-  ExtensionExpr,
-  Fn,
-  Integral,
-  Mul,
-  Piecewise,
-  Pow,
-  Rational,
-  Rel,
-  S,
-  Special,
-  Sym,
-  impl,
-  isNum,
-} from '../core/nodes';
+import { Gt, Ne, piecewise, Le, Lt } from '../core/logic';
+import type { Expr, ExprLike, RelOp } from '../core/nodes';
+import { Add, BoolAtom, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { cmpReal } from '../sets/sets';
 import { numAdd, numInv, numMul, numNeg } from '../core/num';
 import { at, defined, expectType, getOrThrow, pair } from '../core/guard';
 import { gcd, lcm } from '../core/numbers';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { mapBottomUp as mapBottomUpI, piecewiseFold, some, xreplace as subs } from '../core/traverse';
+import { mapBottomUp as mapBottomUpI, piecewiseFold, some, xreplace as subs, mapBottomUp, preorderTraversal, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary/elementary';
 import { UPoly, polyCoefficients, roots } from '../polys/poly';
@@ -70,6 +49,7 @@ import { reduceInequalities } from '../solvers/inequalities';
 import { RootSumNode } from '../polys/rootsum';
 import { asIndependent, asNumerDenom } from '../core/methods';
 
+import { isReal as rootIsReal } from '../core/public';
 type R = Expr | undefined;
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
@@ -102,7 +82,7 @@ class Integrator {
    */
   private nonzero(a: Expr, f: Expr, F: () => Expr): R {
     if (isNum(a) || isNonZero(a) === true || a.freeSymbols().size === 0) return F();
-    const factors = (a instanceof Mul ? a.args : [a]).filter((t) => !isNum(t) && !isI(t));
+    const factors = (a instanceof Mul ? a.args : [a]).filter((t) => !isNum(t) && !isI(t) && isNonZero(t) !== true);
     const cond = mul(...factors);
     const main = F();
     // with the coefficient 0 the integrand is simpler (a constant or a polynomial): it has an antiderivative
@@ -1012,6 +992,7 @@ rischHooks.integrate = (f, x) => new Integrator(x).integrate(f) ?? new Integral(
 
 export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none' } = {}): Expr {
   let f = sympify(ex);
+  if (limits || isReal(x) === true) f = realIntegrand(f, x) ?? f;
   if (f instanceof ExtensionExpr) {
     const own = f.integrateSelf(x, limits && [sympify(limits[0]), sympify(limits[1])], (g) => integrate(g, x, limits, opts));
     if (own !== undefined) return own;
@@ -1186,4 +1167,50 @@ function gammaIntegral(f: Expr, x: Sym): [Expr, Expr | true] | undefined {
   const val = mul(...c, fnErf('gamma', [add(A, 1)]), pow(B, mul(-1, add(A, 1))));
   if (isPositiveQ(add(A, 1)) === true) return [val, true];
   return [val, Gt(fnErf('re', [A]), S.NegOne)];
+}
+
+/** A Piecewise agreeing with f on the open real intervals between its polynomial roots. */
+export function realIntegrand(f: Expr, x: Sym): Expr | undefined {
+  const targets: [Fn, Expr][] = [];
+  const points = new Map<string, Expr>();
+  for (const e of preorderTraversal(f)) {
+    if (!(e instanceof Fn) || !['abs', 'sign', 'Min', 'Max'].includes(e.name) || !e.has(x)) continue;
+    const args = e.args;
+    if (args.length > 2) return undefined;
+    const p = args.length === 1 ? at(args, 0) : add(at(args, 0), mul(-1, at(args, 1)));
+    const pc = polyCoefficients(p, x);
+    if (pc === undefined || [...pc.keys()].some((k) => k > 3) || isReal(xreplace(p, [[x, new Dummy('x', { real: true })]])) !== true) return undefined;
+    targets.push([e, p]);
+    for (const r of roots(p, x)) {
+      if (rootIsReal(r) === false) continue;
+      points.set(r.key, r);
+    }
+  }
+  if (!targets.length) return undefined;
+  const breaks = [...points.values()];
+  if (breaks.some((p, i) => breaks.slice(i + 1).some((q) => cmpReal(p, q) === undefined))) return undefined;
+  breaks.sort((p, q) => defined(cmpReal(p, q), 'ordered real roots'));
+  const pieces: [Expr, Expr][] = [];
+  for (let i = 0; i <= breaks.length; i++) {
+    const left = breaks[i - 1];
+    const right = breaks[i];
+    const sample = left === undefined ? right === undefined ? S.Zero : add(right, -1) : right === undefined ? add(left, 1) : mul(S.Half, add(left, right));
+    const replacements: [Expr, Expr][] = [];
+    for (const [node, p] of targets) {
+      const value = xreplace(p, [[x, sample]]).expand();
+      const negative = isNegative(value);
+      const positive = isPositive(value);
+      if (negative !== true && positive !== true) return undefined;
+      const a = at(node.args, 0);
+      const result = node.name === 'abs' ? mul(negative ? -1 : 1, a)
+        : node.name === 'sign' ? negative ? S.NegOne : S.One
+        : node.name === 'Min' ? negative ? a : at(node.args, 1)
+        : negative ? at(node.args, 1) : a;
+      replacements.push([node, result]);
+    }
+    const branch = mapBottomUp(f, (e) => replacements.find(([node]) => node.key === e.key)?.[1] ?? e);
+    const strict = targets.some(([node]) => node.name === 'sign');
+    pieces.push([branch, right === undefined ? S.true : strict ? Lt(x, right) : Le(x, right)]);
+  }
+  return piecewise(...pieces);
 }

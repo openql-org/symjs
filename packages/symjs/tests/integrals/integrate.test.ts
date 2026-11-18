@@ -9,7 +9,8 @@ import * as sj from '../../src';
 import { Sym, parse, integrate, symbols, diff, doit, latex, sstr } from '../../src';
 import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
-import { heavisideAtInfinity } from '../../src/integrals/integrate';
+import { heavisideAtInfinity, realIntegrand } from '../../src/integrals/integrate';
+import * as sjReal from '../../src';
 
 // Integrals (integrals/integrate.ts). Expected values are the str() forms printed by SymPy 1.14
 // (p is a positive, q a negative and r a real symbol).
@@ -140,11 +141,11 @@ describe('results that differ from SymPy 1.14', () => {
     // the same value for q < 0, written with sqrt(-q)
     ["sj.integrate(P('sin(q*x**2)'), x)", () => sj.integrate(P('sin(q*x**2)'), x), "-3*sqrt(2)*sqrt(pi)*fresnels(sqrt(2)*x*sqrt(-q)/sqrt(pi))*gamma(3/4)/(8*sqrt(-q)*gamma(7/4))", "3*sqrt(2)*sqrt(pi)*fresnels(sqrt(2)*sqrt(q)*x/sqrt(pi))*gamma(3/4)/(8*sqrt(q)*gamma(7/4))"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('1/sqrt(4 + x**2)'), x)", () => sj.integrate(P('1/sqrt(4 + x**2)'), x), "Integral(1/sqrt(x**2 + 4), x)", "asinh(x/2)"],
+    ["sj.integrate(P('1/sqrt(4 + x**2)'), x)", () => sj.integrate(P('1/sqrt(4 + x**2)'), x), "asinh(x/2)", "asinh(x/2)"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('1/sqrt(a - x**2)'), x)", () => sj.integrate(P('1/sqrt(a - x**2)'), x), "Integral(1/sqrt(a - x**2), x)", "Piecewise((-I*acosh(x/sqrt(a)), Abs(x**2/a) > 1), (asin(x/sqrt(a)), True))"],
     // completing the square is not implemented
-    ["sj.integrate(P('1/sqrt(4 - x**2 + x)'), x)", () => sj.integrate(P('1/sqrt(4 - x**2 + x)'), x), "Integral(1/sqrt(-x**2 + x + 4), x)", "asin(2*sqrt(17)*(x - 1/2)/17)"],
+    ["sj.integrate(P('1/sqrt(4 - x**2 + x)'), x)", () => sj.integrate(P('1/sqrt(4 - x**2 + x)'), x), "asin(2*sqrt(17)*(x - 1/2)/17)", "asin(2*sqrt(17)*(x - 1/2)/17)"],
     // log(cosh(x)) differs from SymPy's x - log(tanh(x) + 1) by a constant
     ["sj.integrate(P('tanh(x)'), x)", () => sj.integrate(P('tanh(x)'), x), "log(cosh(x))", "x - log(tanh(x) + 1)"],
     // not implemented in symjs (SymPy's result shown)
@@ -536,5 +537,62 @@ describe('rational, trigonometric and Piecewise integrands as SymPy integrates t
     expect(sstr(integrate(Q('-lambda*exp(-lambda*x)*log(lambda*exp(-lambda*x))'), x, [0, oo]))).toBe('1 - log(lambda)');
     // SymPy: 2*sqrt(3)*pi/3. The denominator is bounded below by 1.
     expect(sstr(integrate(Q('1/(2+cos(x))'), x, [0, Q('2*pi')]))).toBe('2*sqrt(3)*pi/3');
+  });
+});
+
+it('integrates special functions, odd cosine powers and extension components', () => {
+  const I = (s: string) => String(integrate(parse(s), x));
+  expect(I('li(x)')).toBe('x*li(x) - Ei(2*log(x))');
+  expect(I('Si(x)')).toBe('x*Si(x) + cos(x)');
+  expect(I('tanh(2*x)')).toBe('log(cosh(2*x))/2');
+  expect(I('sin(x)**2*cos(x)**3')).toBe('-sin(x)**5/5 + sin(x)**3/3');
+  expect(I('exp(pi*x**3)')).toBe('Integral(exp(pi*x**3), x)');
+  expect(String(integrate(new sj.Quaternion(x, 0, 0, 0), x, [0, 1]))).toBe('1/2 + 0*i + 0*j + 0*k');
+});
+
+it('retains symbolic slopes multiplied by nonzero numeric constants', () => {
+  expect(String(integrate(parse('exp(pi*y*x)'), x))).toBe('Piecewise((exp(pi*x*y)/(pi*y), Ne(y, 0)), (x, True))');
+});
+
+describe('absolute values and signs of real polynomials', () => {
+  const x = new sjReal.Sym('x', { real: true });
+  const p = (s: string) => sjReal.parse(s, { symbols: [x] });
+  it.each([
+    ['Abs(x)', [-2, 1], '5/2'],
+    ['Abs(x**2 - 1)', [-2, 2], '4'],
+    ['Abs(x**2 - 3*x)', [-15, 15], '2259'],
+    ['sign(x)', [-1, 2], '1'],
+    ['sin(x)*sign(x)', ['-pi', 'pi'], '4'],
+    ['x**2*sign(x - 2)', [0, 3], '11/3'],
+    ['Min(2, x)', [0, 3], '4'],
+    ['Max(x**2, x**3)', [0, 2], '49/12'],
+  ])('integrates %s over real root intervals', (f, limits, expected) => {
+    expect(String(sjReal.integrate(p(f), x, [p(String(limits[0])), p(String(limits[1]))]))).toBe(expected);
+  });
+  it.each([
+    ['Abs(x)', 'Piecewise((-x**2/2, x <= 0), (x**2/2, True))'],
+    ['Abs(2*x - 6)', 'Piecewise((-x**2 + 6*x, x <= 3), (x**2 - 6*x + 18, True))'],
+    ['exp(-Abs(x))', 'Piecewise((exp(x), x <= 0), (2 - exp(-x), True))'],
+    ['sign(2*x - 6)', 'Piecewise((-x, x < 3), (x - 6, True))'],
+    ['2*x*sign(x**2 - 1)', 'Piecewise((x**2, x < -1), (2 - x**2, x < 1), (x**2, True))'],
+  ])('finds a continuous primitive of %s', (f, expected) => {
+    expect(String(sjReal.integrate(p(f), x))).toBe(expected);
+  });
+  it('leaves nonpolynomial and unresolved signs for other methods', () => {
+    for (const f of ['sin(x)', 'Abs(sin(x))', 'Abs(x**4 + x + 1)', 'Min(x, x**2, x**3)', 'Abs(x - a) + Abs(x - b)', 'Abs(a*x)', 'Abs(x**2 + a)']) {
+      const r = realIntegrand(p(f), x);
+      expect(r).toBeUndefined();
+    }
+  });
+
+  it('handles a polynomial with no real roots', () => {
+    expect(String(realIntegrand(new sjReal.Fn('abs', [p('x**2 + 2*x + 2')]), x))).toBe('x**2 + 2*x + 2');
+  });
+
+  it('does not order unrelated real parameters or guess a parameter sign', () => {
+    const a = new sjReal.Sym('a', { real: true }), b = new sjReal.Sym('b', { real: true });
+    for (const f of ['Abs(x - a) + Abs(x - b)', 'Abs(a*x)']) {
+      expect(realIntegrand(sjReal.parse(f, { symbols: [x, a, b] }), x)).toBeUndefined();
+    }
   });
 });
