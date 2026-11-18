@@ -113,3 +113,66 @@ it('handles empty nonlinear systems and rejects missing unknowns', () => {
   expect(nonlinsolve([], [x, y])).toEqual([]);
   expect(() => nonlinsolve([add(pow(x, 2), -1)], [])).toThrow(RangeError);
 });
+
+it('inverts real hyperbolic functions and preserves partially inverted expressions', () => {
+  const r = new sj.Sym('r', { real: true }), p = new sj.Sym('p', { positive: true });
+  expect(sj.invertReal(sj.Abs(add(pow(x, 31), x, 1)), p, x).map(String)).toEqual(['x**31 + x', '{-p - 1, p - 1}']);
+  expect(sj.invertReal(sj.sinh(x), r, x).map(String)).toEqual(['x', '{asinh(r)}']);
+  expect(sj.invertReal(sj.sinh(log(x)), p, x).map(String)).toEqual(['x', '{exp(asinh(p))}']);
+  expect(sj.invertReal(sj.cosh(x), r, x).map(String)).toEqual(['x', 'Intersection({-acosh(r), acosh(r)}, Reals)']);
+  expect(sj.invertReal(sj.cosh(x), add(p, 1), x).map(String)).toEqual(['x', '{-acosh(p + 1), acosh(p + 1)}']);
+  expect(sj.invertReal(sj.tanh(x), r, x).map(String)).toEqual(['x', 'Intersection({atanh(r)}, Reals)']);
+  expect(sj.invertReal(sj.coth(x), add(p, 1), x).map(String)).toEqual(['x', '{acoth(p + 1)}']);
+  expect(sj.invertReal(sj.sech(x), r, x).map(String)).toEqual(['x', 'Intersection({-asech(r), asech(r)}, Reals)']);
+  expect(sj.invertReal(sj.csch(x), p, x).map(String)).toEqual(['x', '{acsch(p)}']);
+  expect(sj.invertReal(pow(x, sj.pi), sj.E.neg(), x).map(String)).toEqual(['x', 'EmptySet']);
+  expect(sj.invertReal(sj.Abs(x), -1, x).map(String)).toEqual(['x', 'EmptySet']);
+  expect(() => sj.invertReal(y, 0, x)).toThrow(RangeError);
+  expect(() => sj.invertReal(x, x, x)).toThrow(RangeError);
+  expect(sj.invertReal(add(mul(3, x), 1), p, x).map(String)).toEqual(['x', '{p/3 - 1/3}']);
+  expect(sj.invertReal(pow(2, exp(x)), p, x).map(String)).toEqual(['x', 'Intersection({log(log(p)/log(2))}, Reals)']);
+});
+
+it('solves functional decompositions through ranges and successive preimages', () => {
+  for (const [expression, expected] of [
+    ['exp(3*x)-6*exp(2*x)+11*exp(x)-6', '{0, log(2), log(3)}'],
+    ['exp(x+2)-1', '{-2}'], ['1/log(x)', 'EmptySet'], ['1/x', 'EmptySet'],
+  ] as const) expect(String(sj.solveDecomposition(sj.parseExpr(expression), x, sj.Reals))).toBe(expected);
+  expect(sj.solveDecomposition(x, x, sj.interval(1, 2))).toBe(sj.EmptySet);
+});
+
+it('preserves periodic families while solving decompositions', () => {
+  for (const f of [sj.sin(add(x, 1)), add(pow(sin(x), 2), mul(-1, sin(x))), sin(pow(x, 2)), sin(exp(x))]) {
+    const result = sj.solveDecomposition(f, x, sj.Reals);
+    const families = result instanceof sj.SetOp ? result.args : [result];
+    expect(families.every((family) => family instanceof ImageSet)).toBe(true);
+    for (const family of families) if (family instanceof ImageSet) {
+      const value = subs(family.expr, [[family.variable, 2]]);
+      const residual = subs(f, [[x, value]]).evalf().toComplex();
+      expect(Math.hypot(residual.re, residual.im)).toBeLessThan(1e-8);
+    }
+  }
+});
+
+it('handles zero right hand sides and nonzero real inverse hyperbolic values', () => {
+  const n = new sj.Sym('n', { negative: true });
+  expect(sj.invertReal(exp(x), 0, x)).toEqual([x, sj.EmptySet]);
+  expect(sj.invertReal(sj.csch(x), n, x).map(String)).toEqual(['x', '{acsch(n)}']);
+  expect(sj.invertReal(sj.csch(x), y, x)[1]).toBeInstanceOf(sj.SetOp);
+  expect(nonlinsolve([1, 2], [])).toEqual([]);
+  expect(nonlinsolve([0], [])).toEqual([[]]);
+});
+
+it('retains unresolved decompositions and inversion problems', () => {
+  const a = new sj.Sym('a', { real: true });
+  expect(sj.solveDecomposition(sin(add(pow(x, 5), x)), x, sj.Reals)).toBeInstanceOf(sj.ConditionSet);
+  expect(sj.solveDecomposition(sin(add(exp(x), a)), x, sj.Reals)).toBeInstanceOf(sj.ConditionSet);
+  expect(sj.solveDecomposition(sj.cos(add(x, 1)), x, sj.Reals)).toBeInstanceOf(sj.SetOp);
+  expect(() => sj.invertComplex(y, 0, x)).toThrow(RangeError);
+  expect(() => sj.invertComplex(x, x, x)).toThrow(RangeError);
+  expect(sj.invertReal(pow(x, sj.E), -1, x)).toEqual([x, sj.EmptySet]);
+  expect(sj.invertReal(pow(x, sj.pi), 1, x)[0]).toEqual(x);
+  expect(sj.invertReal(pow(x, S.I), 1, x).length).toBe(2);
+  expect(nonlinsolve([add(pow(y, 2), -1), add(y, -2)], [x, y])).toEqual([]);
+  expect(() => nonlinsolve([add(pow(y, 2), -1), add(x, sin(x))], [x, y])).toThrow(sj.NotImplementedError);
+});

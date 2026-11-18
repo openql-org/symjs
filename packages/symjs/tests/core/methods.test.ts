@@ -692,3 +692,30 @@ describe('canonicalVariables, assumptions0 and isScalar (SymPy 1.14)', () => {
     expect([sj.isScalar(x), sj.isScalar(sj.MatrixSymbol('A', 2, 2))]).toEqual([true, false]);
   });
 });
+
+it('compares renamed periodic unions and intersections independently of operand order', () => {
+  const d = new sj.Dummy('n', { integer: true }), n = new sj.Sym('n');
+  const image = (v: sj.Expr, sign: number) => new sj.ImageSet(v, sj.add(sj.mul(2, sj.pi, v), sj.mul(sign, sj.acos(y))), sj.Integers);
+  for (const op of ['Union', 'Intersection'] as const) {
+    const a = new sj.ConditionSet(x, sj.Le(y, 1), new sj.SetOp(op, [image(d, -1), image(d, 1)]));
+    const b = new sj.ConditionSet(x, sj.Le(y, 1), new sj.SetOp(op, [image(n, 1), image(n, -1)]));
+    expect(sj.dummyEq(a, b)).toBe(true);
+  }
+  expect(sj.dummyEq(new sj.SetOp('Complement', [image(d, 1), sj.Reals]), new sj.SetOp('Complement', [image(n, 1), sj.Reals]))).toBe(true);
+});
+
+it('extracts additive order terms and preserves floating primitive parts', () => {
+  const order = new sj.Order([sj.pow(x, 2), x, sj.S.Zero]);
+  expect(sj.getO(order)).toBe(order);
+  expect(sj.getO(new sj.Add([x, order]))).toBe(order);
+  expect(sj.getO(new sj.Add([x, y]))).toBe(sj.NoMatch);
+  expect(sj.getO(x)).toBe(sj.NoMatch);
+  expect(sj.primitive(sj.parseExpr('1.5*x+y')).map(String)).toEqual(['1', '1.5*x + y']);
+  expect(sj.asIndependent(x, [x], { asAdd: false })).toEqual([sj.S.One, x]);
+  const matrix = new sj.MatrixSymbol('A', 2, 2);
+  expect(sj.asRealImag(matrix).map(String)).toEqual(['(1/2)*Adjoint(A.T) + (1/2)*A', '-(I/2)*(-Adjoint(A.T) + A)']);
+  class ScalarExtension extends sj.ExtensionExpr {
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new ScalarExtension(this.name, args); }
+  }
+  expect(sj.asRealImag(new ScalarExtension('f', [x])).length).toBe(2);
+});

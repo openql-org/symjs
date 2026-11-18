@@ -1755,6 +1755,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   invert_complex: (args, kw) => (noKw(kw), new JsTuple(sj.invertComplex(asExpr(args[0]), asExpr(args[1]), asSym(args[2])))),
   invert_real: (args, kw) => (noKw(kw), new JsTuple(sj.invertReal(asExpr(args[0]), asExpr(args[1]), asSym(args[2])))),
+  solve_decomposition: (args, kw) => (noKw(kw), sj.solveDecomposition(asExpr(args[0]), asSym(args[1]), args[2] as sj.SetExpr)),
   solve_generic: (args, kw) => (noKw(kw), new JsList(sj.solveGeneric((args[0] as JsTuple).items as sj.Poly[], polynomialGenerators(args[1])).map((row) => new JsTuple(row)))),
   solve_biquadratic: (args, kw) => (noKw(kw), new JsList(sj.solveBiquadratic(args[0] as sj.Poly, args[1] as sj.Poly, polynomialGenerators(args[2])).map((row) => new JsTuple(row)))),
   finite_diff_weights: (args, kw) => (noKw(kw), fromJs(sj.finiteDiffWeights(intArg(args[0]), (args[1] as JsTuple).items.map(asExpr), args[2] === undefined ? 1 : asExpr(args[2])))),
@@ -1985,7 +1986,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   inv_quick: (args, kw) => (noKw(kw), (args[0] as Matrix).inv()),
   linear_eq_to_matrix: (args, kw) => {
     noKw(kw);
-    const eqs = args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
+    if (args[0] instanceof JsSet || args[1] instanceof JsSet) throw new TypeError('linear_eq_to_matrix requires ordered equations and symbols');
+    const eqs = args[0] instanceof Matrix ? args[0].data : args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
     const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
     return new JsTuple(sj.linearEqToMatrix(eqs, syms));
   },
@@ -2187,7 +2189,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (!['relational', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const rel = kw['relational'] ?? args[2];
     const dom = (kw['domain'] ?? args[3]) as sj.SetExpr | undefined;
-    return sj.solveUnivariateInequality(asExpr(args[0]), asSym(args[1]), { relational: rel === undefined ? true : Boolean(rel), domain: dom });
+    const inequality = typeof args[0] === 'boolean' ? args[0] ? S.true : S.false : asExpr(args[0]);
+    return sj.solveUnivariateInequality(inequality, asSym(args[1]), { relational: rel === undefined ? true : Boolean(rel), domain: dom });
   },
   solve_poly_inequality: (args, kw) => (noKw(kw), new JsList(sj.solvePolyInequality(asPoly(args[0]), args[1] as string))),
   solve_rational_inequalities: (args, kw) => {
@@ -3103,7 +3106,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   linsolve: (args, kw) => {
     noKw(kw);
     const first = args[0];
-    const syms = args[1] instanceof JsTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
+    const syms = args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items.map(asExpr) : args.slice(1).map(asExpr);
     let sol: Expr[] | undefined;
     if (first instanceof JsTuple && first.items.length === 2 && first.items[0] instanceof Matrix) {
       const [A, b] = first.items as [Matrix, Matrix];
@@ -3115,9 +3118,9 @@ export const ADAPTERS: Record<string, Adapter> = {
           return 'EmptySet';
         }
       }
-      sol = solveAug(A.hstack(b), syms);
+      sol = solveAug(A.hstack(b), syms.map(asSym));
     } else if (first instanceof Matrix) {
-      sol = solveAug(first, syms);
+      sol = solveAug(first, syms.map(asSym));
     } else if (first instanceof JsTuple) {
       if (first.items.length === 0) return 'EmptySet';
       const r = sj.linsolve(first.items.map(asExpr), syms);

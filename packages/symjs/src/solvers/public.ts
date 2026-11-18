@@ -10,12 +10,13 @@
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { at, defined } from '../core/guard';
-import { sympify } from '../core/ops';
-import { NonlinearError } from '../core/errors';
+import { add, mul, sympify } from '../core/ops';
+import { BoolAtom, Rel } from '../core/nodes';
 import type { NoMatchResult, Truth, UnsolvedResult } from '../core/truth';
 import { orNoMatch, orUnsolved, toTruth } from '../core/truth';
 import { EmptySet, Reals, type SetExpr } from '../sets/sets';
-import type { Matrix } from '../matrices/matrix';
+import { Matrix } from '../matrices/matrix';
+import { linearCoeffs } from './solveset';
 import * as S from './solve';
 import * as I from './inequalities';
 import * as O from './ode';
@@ -24,16 +25,27 @@ import { _linsolve } from '../polys/matrices/linsolve';
 
 /** SymPy linear_eq_to_matrix: [A, b] with A x = b; throws NonlinearError for nonlinear equations. */
 export function linearEqToMatrix(eqs: readonly ExprLike[], syms: readonly Sym[]): [Matrix, Matrix] {
-  const r = S.linearEqToMatrix(eqs, syms);
-  if (!r) throw new NonlinearError('linear_eq_to_matrix: the equations are not linear in the symbols');
-  return r;
+  if (!syms.length) throw new RangeError('linearEqToMatrix: symbols are required');
+  if (new Set(syms.map((s) => s.key)).size !== syms.length) throw new RangeError('linearEqToMatrix: duplicate symbols');
+  const rows = eqs.map((eq) => {
+    const e = sympify(eq);
+    if (e instanceof BoolAtom || (e instanceof Rel && e.op !== 'Eq')) throw new TypeError('linearEqToMatrix: an expression or equality is required');
+    if (e instanceof Rel) {
+      const lhs = linearCoeffs(e.lhs, ...syms), rhs = linearCoeffs(e.rhs, ...syms);
+      return lhs.map((c, i) => add(c, mul(-1, at(rhs, i))));
+    }
+    return linearCoeffs(e, ...syms);
+  });
+  return [Matrix.fromFunction(rows.length, syms.length, (i, j) => at(at(rows, i), j)), Matrix.fromFunction(rows.length, 1, (i) => mul(-1, at(at(rows, i), syms.length)))];
 }
 
 /**
  * SymPy linsolve: the solution of a linear system as values of the symbols
  * (free symbols stand for parameters), or EmptySet when it is inconsistent.
  */
-export function linsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Expr[] | typeof EmptySet {
+export function linsolve(eqs: readonly ExprLike[], syms: readonly Expr[]): Expr[] | typeof EmptySet {
+  if (eqs.length && !syms.length) throw new RangeError('linsolve: symbols are required');
+  if (new Set(syms.map((s) => s.key)).size !== syms.length) throw new RangeError('linsolve: duplicate symbols');
   const result = _linsolve(eqs, syms);
   return result instanceof Map ? syms.map((s) => defined(result.get(s))) : result;
 }

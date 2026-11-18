@@ -9,7 +9,7 @@ import type { Expr } from '../../src';
 import { BoolOp, xor } from '../../src/core/boolalg';
 import { Piecewise as PW, Sym } from '../../src/core/nodes';
 import { add, mul, pow } from '../../src/core/ops';
-import { finiteSet, Integers, intersection, interval, union } from '../../src/sets/sets';
+import { Complexes, ConditionSet, finiteSet, Integers, intersection, interval, union } from '../../src/sets/sets';
 import * as Q from '../../src/solvers/inequalities';
 
 const [x, y] = symbols('x y');
@@ -215,8 +215,7 @@ describe('solveset', () => {
     expect(show(Q.solveset(p('exp(x**2)-1'), x))).toBe('ConditionSet(x, Eq(exp(x**2) - 1, 0), Complexes)');
     expect(show(Q.solveset(p('exp(-x)-3'), x))).toBe('ImageSet(Lambda(_n, 2*_n*I*pi - log(3)), Integers)');
     expect(show(Q.solveset(p('x**2+x*sin(x)-1'), x, Reals))).toBe('ConditionSet(x, Eq(x**2 + x*sin(x) - 1, 0), Reals)');
-    // SymPy gives Range(2, oo, 1); integer domains are not supported for inequalities
-    expect(() => Q.solveset(p('x > 1'), x, Integers)).toThrow(NotImplementedError);
+    expect(show(Q.solveset(p('x > 1'), x, Integers))).toBe('Range(2, oo, 1)');
     expect(show(Q.solveset(p('x > 1'), x))).toBe('ConditionSet(x, x > 1, Complexes)');
   });
 });
@@ -552,4 +551,51 @@ describe('real roots with parameters of unknown realness (SymPy _invert_real)', 
 it('rejects increasing behavior on a translated interval of positive width', () => {
   const a = new Sym('a', { real: true });
   expect(Q.isIncreasing(mul(-1, xr), interval(a, add(a, 1)), xr)).toBe(false);
+});
+
+
+it('solves constant polynomial signs, including the zero polynomial', () => {
+  for (const [poly, rel, expected] of [
+    ['0', '==', '[Reals]'], ['1', '==', '[EmptySet]'], ['0', '!=', '[EmptySet]'],
+    ['2', '>', '[Reals]'], ['-2', '>=', '[EmptySet]'], ['0', '<=', '[Reals]'],
+  ] as const) expect(show(Q.solvePolyInequality(P(poly), rel))).toBe(expected);
+  expect(() => Q.solvePolyInequality(P('1'), '?')).toThrow(TypeError);
+  expect(() => Q.solvePolyInequality(P('a'), '>')).toThrow(NotImplementedError);
+});
+
+it('restricts inequalities to finite, empty and disconnected real domains', () => {
+  expect(show(Q.solveUnivariateInequality(p('x**2 > 1'), x, { relational: false, domain: union(interval(-3, -2), interval(0, 3)) }))).toBe('Union(Interval(-3, -2), Interval.Lopen(1, 3))');
+  expect(show(Q.solveUnivariateInequality(p('1/x > 0'), x, { relational: false, domain: finiteSet(-1, 0, 1, 2) }))).toBe('{1, 2}');
+  expect(show(Q.solveUnivariateInequality(Eq(x, 0), x, { relational: false, domain: finiteSet(0, 1) }))).toBe('{0}');
+  expect(show(Q.solveUnivariateInequality(p('x < 1'), x, { relational: false, domain: finiteSet() }))).toBe('EmptySet');
+});
+
+it('solves real exponential equations by logarithms and common generators', () => {
+  for (const [expression, expected] of [
+    ['2**x-4', '{2}'], ['2**x+4**x', 'EmptySet'], ['2**x-4**x+12', '{2}'],
+    ['2**x+4**x+8**x-84', '{2}'], ['(-2)**x-4', '{2}'], ['(-3)**x-27', 'EmptySet'],
+    ['(-5)**(x+1)-625', '{3}'], ['(-2)**x', 'EmptySet'],
+    ['2**x*x-1', '{LambertW(log(2))/log(2)}'],
+  ] as const) expect(show(Q.solveset(p(expression), x, Reals))).toBe(expected);
+  expect(show(Q.solveset(p('Abs(x)-2'), x, Reals))).toBe('{-2, 2}');
+  expect(show(Q.solveset(p('Abs(x+3)-2*Abs(x-3)'), x, Reals))).toBe('{1, 9}');
+});
+
+it('keeps unresolved real exponential equations explicit and checks domain types', () => {
+  expect(() => Q.solveUnivariateInequality(p('x > 0'), x, { domain: Complexes })).toThrow(NotImplementedError);
+  expect(show(Q.solveset(p('2**x'), x, Reals))).toBe('EmptySet');
+  expect(show(Q.solveset(p('3*(-2)**x'), x, Reals))).toBe('EmptySet');
+  expect(show(Q.solveset(p('(-2)**x+(-2)**(x+1)'), x, Reals))).toBe('EmptySet');
+  for (const expression of ['(-2)**x-y', '(-2)**x-1/2', '2**(I*x)-1', '2**x+3**x+1']) {
+    expect(Q.solveset(p(expression), x, Reals)).toBeInstanceOf(ConditionSet);
+  }
+});
+
+it('preserves decided inequalities in relational and set forms', () => {
+  expect(Q.solveUnivariateInequality(SS.true, x)).toBe(SS.true);
+  expect(Q.solveUnivariateInequality(SS.false, x)).toBe(SS.false);
+  expect(Q.solveUnivariateInequality(SS.true, x, { relational: false })).toBe(Reals);
+  const domain = interval(0, 1);
+  expect(Q.solveUnivariateInequality(SS.true, x, { relational: false, domain })).toBe(domain);
+  expect(Q.solveUnivariateInequality(SS.false, x, { relational: false })).toBe(finiteSet());
 });

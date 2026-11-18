@@ -480,7 +480,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '<=', { evaluate: false })]], x, false)), 'Interval(-1.00000000000000, 1.00000000000000)', [x], { fn: 'reduce_rational_inequalities', input: '[[x**2 <= 1.0]]' })).toBe(true);
   });
-  it.fails("test_reduce_poly_inequalities_real_interval:78", () => {
+  it("test_reduce_poly_inequalities_real_interval:78", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '<', { evaluate: false })]], x, false))).toBe('Interval.open(-1.00000000000000, 1.00000000000000)');
   });
@@ -488,11 +488,11 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '>=', { evaluate: false })]], x, false)), 'Union(Interval(-oo, -1.00000000000000), Interval(1.00000000000000, oo))', [x], { fn: 'reduce_rational_inequalities', input: '[[x**2 >= 1.0]]' })).toBe(true);
   });
-  it.fails("test_reduce_poly_inequalities_real_interval:83", () => {
+  it("test_reduce_poly_inequalities_real_interval:83", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '>', { evaluate: false })]], x, false))).toBe('Union(Interval.open(-oo, -1.00000000000000), Interval.open(1.00000000000000, oo))');
   });
-  it.fails("test_reduce_poly_inequalities_real_interval:87", () => {
+  it("test_reduce_poly_inequalities_real_interval:87", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceRationalInequalities([[Relational(new Pow(x, rational(2)), new Float({ man: 1n, exp: 0n }, 53), '!=', { evaluate: false })]], x, false))).toBe('Union(Interval.open(-oo, -1.00000000000000), Interval.open(-1.00000000000000, 1.00000000000000), Interval.open(1.00000000000000, oo))');
   });
@@ -761,7 +761,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Mul([new Add([rational(-1), x]), new Add([rational(-3), x]), new Add([rational(-2), x])]), rational(0), '>=', { evaluate: false }), x, { relational: true }))).toBe('((1 <= x) & (x <= 2)) | ((3 <= x) & (x < oo))');
   });
-  it.fails("test_solve_univariate_inequality:286", () => {
+  it("test_solve_univariate_inequality:286", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Mul([new Add([rational(-1), x]), new Add([rational(-4), x]), new Add([rational(-2), x])]), rational(0), '<', { evaluate: false }), x, { relational: true, domain: finiteSet(rational(0), rational(3)) }))).toBe('Eq(x, 0) | Eq(x, 3)');
   });
@@ -945,23 +945,23 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(reduceInequalities([Relational(log(x), rational(1000), '<', { evaluate: false })], []))).toBe('(0 < x) & (x < exp(1000))');
   });
-  it.fails("test_integer_domain_relational_isolve:427", () => {
+  it("test_integer_domain_relational_isolve:427", () => {
     const x = new Sym('x', { zero: false });
     expect(sympyStr(solveUnivariateInequality(Relational(new Mul([new Add([rational(-1), x]), new Add([rational(-4), x]), new Add([rational(-2), x])]), rational(0), '<', { evaluate: false }), x, { relational: true, domain: finiteSet(rational(0), rational(3)) }))).toBe('Eq(x, 3)');
   });
-  it.fails("test_integer_domain_relational_isolve:430", () => {
+  it("test_integer_domain_relational_isolve:430", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Add([rational(2), x]), rational(0), '<', { evaluate: false }), x, { relational: true, domain: Integers }))).toBe('(x > -oo) & (x <= -3) & Eq(Mod(x, 1), 0)');
   });
-  it.fails("test_integer_domain_relational_isolve:432", () => {
+  it("test_integer_domain_relational_isolve:432", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Add([rational(3), new Mul([rational(2), x])]), rational(0), '>', { evaluate: false }), x, { relational: true, domain: Integers }))).toBe('(x >= -1) & (x < oo) & Eq(Mod(x, 1), 0)');
   });
-  it.fails("test_integer_domain_relational_isolve:434", () => {
+  it("test_integer_domain_relational_isolve:434", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Add([rational(-2), new Pow(x, rational(2)), new Mul([rational(3), x])]), rational(0), '<', { evaluate: false }), x, { relational: true, domain: Integers }))).toBe('(x >= -3) & (x <= 0) & Eq(Mod(x, 1), 0)');
   });
-  it.fails("test_integer_domain_relational_isolve:436", () => {
+  it("test_integer_domain_relational_isolve:436", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Add([rational(-2), new Pow(x, rational(2)), new Mul([rational(3), x])]), rational(0), '>', { evaluate: false }), x, { relational: true, domain: Integers }))).toBe('((x >= 1) & (x < oo) & Eq(Mod(x, 1), 0)) | ((x > -oo) & (x <= -4) & Eq(Mod(x, 1), 0))');
   });
