@@ -9,6 +9,18 @@ import * as sj from '../../src';
 import { Sym, parse, DiracDelta, Heaviside, series, symbol, sstr, symbols } from '../../src';
 import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
+import { readFileSync } from 'node:fs';
+import { runTestCase, testCaseKey } from '../../../../tools/sympy-corpus/tests-harness';
+import type { TestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import orderCaseIds from './order-case-ids.json';
+
+describe('Order upstream regressions', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/tests-corpus/series.json', import.meta.url), 'utf8'));
+  const ids = new Set(orderCaseIds);
+  it.each(cases.filter((c) => ids.has(testCaseKey(c))))('$test:$line', (c) => {
+    expect(['pass', 'equivalent']).toContain(runTestCase(c).status);
+  });
+});
 
 // Series, orders and leading terms (series/series.ts, series/more.ts, series/puiseux.ts). Expected values are the str() forms printed by SymPy 1.14
 // (p is a positive, q a negative and r a real symbol).
@@ -424,12 +436,14 @@ it('retains order variables and implements asymptotic containment and products',
   expect(o(sj.pow(x,2)).contains(x)).toBe(false);
   expect(o(x).contains(0)).toBe(true);
   expect(o(1).contains(2)).toBe(true);
+  expect(o(1).contains(x)).toBe(true);
+  expect(new sj.Order([sj.S.Zero]).contains(1)).toBe(false);
   expect(o(1).contains(sj.oo)).toBe(false);
   expect(o(x).contains(o(x,x,1))).toBe('unknown');
-  expect((sj.O(sj.mul(x,y),[x,y]) as sj.Order).contains(sj.mul(x,y))).toBe('unknown');
+  expect((sj.O(sj.mul(x,y),[x,y]) as sj.Order).contains(sj.mul(x,y))).toBe(true);
   expect(o(1,x).contains(sj.SymFunction('h')(x))).toBe('unknown');
-  expect(o(1,x).contains(sj.S.NaN)).toBe('unknown');
-  expect(new sj.Order([sj.mul(y,x),x,sj.S.Zero]).contains(x)).toBe('unknown');
+  expect(o(1,x).contains(sj.S.NaN)).toBe(false);
+  expect(new sj.Order([sj.mul(y,x),x,sj.S.Zero]).contains(x)).toBe(true);
   expect(String(sj.mul(o(x),x))).toBe('O(x**2)');
   expect(String(sj.sub(o(x),o(x)))).toBe('O(x)');
   expect(String(sj.mul(o(x),o(y)))).toBe('O(x*y, x, y)');
@@ -490,4 +504,20 @@ it('uses the log(1 + x) convention for logarithmic Taylor terms', () => {
   for (const [n, expected] of [[-1, '0'], [0, 'x'], [1, '-x**2/2'], [4, 'x**5/5']] as const) {
     expect(sj.sstr(sj.taylorTerm(sj.log(x), n, x))).toBe(expected);
   }
+});
+
+it('preserves variables and undecidable growth in Order construction', () => {
+  const x = new sj.Sym('x'), y = new sj.Sym('y');
+  expect(String(sj.O(sj.O(x), [x, y]))).toBe('O(x, x, y)');
+  const unknown = sj.add(sj.SymFunction('f')(x), sj.SymFunction('g')(x));
+  expect(String(sj.O(unknown, x))).toBe('O(f(x) + g(x))');
+  expect(String(sj.O(unknown, x, sj.oo))).toBe('O(f(x) + g(x), (x, oo))');
+  expect(sj.O(sj.nan)).toBe(sj.nan);
+});
+
+it('retains the logarithmic bound of omitted series terms', () => {
+  const x = new sj.Sym('x');
+  expect(String(sj.series(sj.parse('sin(x)*log(x)'), x, 0, 3))).toBe('x*log(x) + O(x**3*log(x))');
+  expect(String(sj.series(sj.parse('sin(x*log(x))'), x, 0, 3))).toBe('x*log(x) + O(x**3*log(x)**3)');
+  expect(String(sj.series(sj.parse('log(x) + exp(x)'), x, 0, 2))).toBe('1 + log(x) + x + O(x**2)');
 });

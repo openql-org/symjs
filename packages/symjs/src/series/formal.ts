@@ -9,7 +9,7 @@
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Derivative, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sub, sympify } from '../core/ops';
-import { asIndependent, isMeromorphic, isPolynomial, isRationalFunction } from '../core/methods';
+import { asIndependent, asNumerDenom, isMeromorphic, isPolynomial, isRationalFunction } from '../core/methods';
 import { NotImplementedError } from '../core/errors';
 import { at, cast, expectType, first, getOrThrow } from '../core/guard';
 import type { UndefinedFunction } from '../core/undef';
@@ -36,6 +36,57 @@ import { Eq, piecewise } from '../core/logic';
 import { Mod } from '../functions/mod';
 import { interval, type SetExpr } from '../sets/sets';
 import { SeriesBase } from './series_class';
+import { apart } from '../polys/partfrac';
+import { limit } from './limits';
+import { doit } from '../calculus/doit';
+
+/** Coefficients of a rational function, or of a function with a rational derivative. */
+export function rationalAlgorithm(f: ExprLike, x: Sym, k: Sym, order = 4, full = false): [Expr, Expr, number] | NoMatchResult {
+  let derivative = sympify(f);
+  const derivatives: Expr[] = [];
+  for (let i = 0; i <= order; i++) {
+    if (i) derivative = diff(derivative, x);
+    if (!isRationalFunction(derivative, [x])) {
+      derivatives.push(derivative);
+      continue;
+    }
+    const decomposition = doit(apart(derivative, x, { full }));
+    let coefficient: Expr = S.Zero;
+    let independent: Expr = S.Zero;
+    for (const term of decomposition instanceof Add ? decomposition.args : [decomposition]) {
+      let [numerator, denominator] = asNumerDenom(term);
+      if (!denominator.has(x)) {
+        independent = add(independent, term);
+        continue;
+      }
+      const [constant, dependent] = asIndependent(denominator, [x], { asAdd: false });
+      numerator = mul(numerator, pow(constant, -1));
+      denominator = dependent;
+      const [base, multiplicity] = denominator instanceof Pow ? [denominator.base, denominator.exp] : [denominator, S.One];
+      const polynomial = Poly.from(base, [x]);
+      if (polynomial.degree() > 1) return NoMatch;
+      const a = polynomial.nth(0);
+      if (isZeroExpr(a)) {
+        independent = add(independent, term);
+        continue;
+      }
+      const slope = polynomial.nth(1);
+      const root = mul(-1, a, pow(slope, -1));
+      const j = expectType(multiplicity, (value): value is Rational => value instanceof Rational);
+      let binomial: Expr = S.One;
+      for (let n = 1; n < Number(j.p); n++) binomial = mul(binomial, add(k, n), Rational.of(1, n));
+      coefficient = add(coefficient, mul(pow(-1, j), numerator, pow(slope, mul(-1, j)), binomial, pow(root, mul(-1, add(j, k)))));
+    }
+    if (isZeroExpr(coefficient)) return NoMatch;
+    for (let j = 0; j < i; j++) {
+      coefficient = mul(coefficient, pow(add(k, j + 1), -1));
+      independent = integrate(independent, x);
+      independent = add(independent, limit(sub(at(derivatives, i - j - 1), independent), x, 0));
+    }
+    return [subs(coefficient, [[k, add(k, -i)]]), independent, i];
+  }
+  return NoMatch;
+}
 
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
 

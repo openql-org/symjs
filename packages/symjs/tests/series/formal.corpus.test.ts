@@ -389,7 +389,7 @@ describe("sympy/series/tests/test_formal.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('erf', [x]), x, S.NegativeInfinity, '+').truncate())).toBe('-1 + O(x**(-6), (x, oo))');
   });
-  it.fails("test_fps__asymptotic:343", () => {
+  it("test_fps__asymptotic:343", () => {
     const x = new Sym('x');
     expect(sympyStr(fps(fn('atan', [x]), x, oo, '+').truncate())).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x + pi/2 + O(x**(-6), (x, oo))');
   });

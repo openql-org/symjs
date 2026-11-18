@@ -65,6 +65,7 @@ describe('gruntz: the sign at infinity', () => {
   const g = new Gruntz();
   const S = (s: string) => sstr(g.sign(parse(s).subs(x, p), p));
   it('follows SymPy sign()', () => {
+    expect(sstr(g.sign(x, x))).toBe('1');
     expect(sstr(g.sign(p, p))).toBe('1');
     expect(S('1 - x')).toBe('-1');
     expect(S('(1 - x)**3')).toBe('-1');
@@ -78,6 +79,18 @@ describe('gruntz: the sign at infinity', () => {
     // constants whose sign the assumptions leave open (SymPy: 1 and -1)
     expect(S('besselj(0, 1)')).toBe('1');
     expect(S('besselj(0, 3)')).toBe('-1');
+  });
+});
+
+describe('Gruntz.compare', () => {
+  it.each([
+    ['log(x)', 'x', '<'],
+    ['x', 'exp(x)', '<'],
+    ['exp(x)', 'x**5', '>'],
+    ['exp(x)', 'exp(-x)', '='],
+    ['exp(x)', 'exp(x + exp(-x))', '='],
+  ])('compares %s and %s at infinity', (a, b, expected) => {
+    expect(new Gruntz().compare(P(a), P(b), x)).toBe(expected);
   });
 });
 
