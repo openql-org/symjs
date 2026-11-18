@@ -1283,8 +1283,7 @@ export function deserialize(tree: Tree): unknown {
       }
     }
     case 'Pred': {
-      const p = sj.Q[tree['name'] as string];
-      if (!p) throw new Unsupported(`predicate ${tree['name']}`);
+      const p = sj.Q[tree['name'] as string] ?? sj.Predicate(String(tree['name']));
       return p(...(tree['args'] as Tree[]).map((x) => deserialize(x) as Expr));
     }
     case 'Iterator':
@@ -4302,7 +4301,12 @@ Object.assign(ADAPTERS, {
   '.sort_key': (_args, _kw, self) => keyTree(sj.sortKey(asExpr(self))),
   '.dir': (args, kw, self) => (noKw(kw), sj.dir(asExpr(self), asSym(args[0]), asExpr(args[1]))),
   '.separate': (args, kw, self) => sj.separate(asExpr(self), { deep: Boolean(kw['deep'] ?? args[0]), force: Boolean(kw['force'] ?? args[1]) }),
-  ask: (args, kw) => (noKw(kw), none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)))),
+  ask: (args, kw) => {
+    const { context, ...rest } = kw;
+    noKw(rest);
+    const query = () => none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
+    return context instanceof sj.AssumptionsContext ? sj.assuming([...context], query) : query();
+  },
   refine: (args, kw) => (noKw(kw), sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean))),
   '.refine': (args, kw, self) => {
     noKw(kw);
