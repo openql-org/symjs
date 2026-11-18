@@ -501,6 +501,12 @@ class Limiter {
       if (rest.length) {
         const rv = this.lim(f instanceof Add ? add(...rest) : mul(...rest));
         if (!isValue(rv)) return undefined;
+        // Compare growth before adding infinite intervals: lower-order oscillations
+        // vanish relative to the divergent part, as in Gruntz's leading term.
+        if (f instanceof Add && isInf(rv) && vs.some(unsureFinite)) {
+          const scale = add(...rest);
+          if (intervalTerms.every((term) => isZeroE(this.interval(cancel(mul(term, pow(scale, -1))))))) return rv;
+        }
         if (f instanceof Add && isInf(rv) && intervalTerms.length === 1 && vs.some(unsureFinite)) {
           const term = first(intervalTerms);
           if (term instanceof Mul) {
@@ -512,6 +518,12 @@ class Limiter {
               else scale.push(a);
             }
             const amplitude = mul(...scale);
+            const ratio = cancel(mul(amplitude, pow(add(...rest), -1)));
+            let smaller = this.lim(ratio);
+            if (!isValue(smaller)) {
+              try { smaller = gruntz(ratio, this.z, this.z0, this.dir, this.budget); } catch { /* unresolved scale comparison */ }
+            }
+            if (bounded.length && isZeroE(smaller)) return rv;
             const relative = mul(add(...rest), pow(amplitude, -1));
             let small = this.lim(relative);
             if (!isValue(small)) {
@@ -520,6 +532,7 @@ class Limiter {
             const growth = this.lim(amplitude);
             if (bounded.length && isZeroE(small) && isValue(growth)) return mul(growth, ...bounded);
           }
+          return undefined;
         }
         vs.push(rv);
       }
