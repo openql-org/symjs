@@ -180,7 +180,7 @@ describe('solveset with parameters and inverse functions (sympy.stats needs both
     expect(String(Q.solveset(add(erfcinv(xr), -1), xr, Reals))).toBe('{erfc(1)}');
     // two terms with x, or x outside the function: not inverted (SymPy solves x*erf(x) = 0 to {0})
     expect(String(Q.solveset(add(erf(xr), erf(mul(2, xr))), xr, Reals))).toBe('ConditionSet(x, Eq(erf(x) + erf(2*x), 0), Reals)');
-    expect(String(Q.solveset(mul(xr, erf(xr)), xr, Reals))).toBe('ConditionSet(x, Eq(x*erf(x), 0), Reals)');
+    expect(String(Q.solveset(mul(xr, erf(xr)), xr, Reals))).toBe('{0}');
   });
 });
 
@@ -410,10 +410,10 @@ describe('inequalities', () => {
     expect(String(Q.solveRationalInequalities([[[[P('x-1'), P('x')], '>=']], [[[P('x+1'), P('1')], '<']]]))).toBe('Union(Interval.open(-oo, 0), Interval(1, oo))');
   });
   it('cases of an Abs split that are constant', () => {
-    // SymPy raises NotImplementedError for these
+    // Constant pieces retain denominator exclusions and reject nonreal ordering.
     const sgn = add(mul(xr, pow(Abs(xr), -1)), 1);
     expect(String(Q.solveUnivariateInequality(Eq(sgn, 0), xr, { relational: false }))).toBe('Interval.open(-oo, 0)');
-    expect(String(Q.solveUnivariateInequality(Gt(add(mul(xr, pow(Abs(xr), -1)), SS.I), 0), xr, { relational: false }))).toBe('EmptySet');
+    expect(() => Q.solveUnivariateInequality(Gt(add(mul(xr, pow(Abs(xr), -1)), SS.I), 0), xr, { relational: false })).toThrow(TypeError);
   });
   it('a periodic inequality with a rational period', () => {
     expect(String(Q.solveset(p('sin(pi*x) > 0'), x, Reals))).toBe('Interval.open(0, 1)');
@@ -634,4 +634,54 @@ it('finds nonempty domains for finite sets, empty sets and unions', () => {
 
 it('leaves absolute-value extrema with undecidable zero crossings unsupported', () => {
   expect(() => Q.minimum(p('Abs(x*y)'), x, interval(1, 2))).toThrow(NotImplementedError);
+});
+
+it('inverts real hyperbolic functions within their ranges', () => {
+  for (const source of ['cosh(x)', 'cosh(x)+2', 'tanh(x)-1', 'tanh(x)+1', 'coth(x)', 'sech(x)-2', 'sech(x)', 'csch(x)']) {
+    expect(solveset(p(source), x, Reals), source).toBe(sj.EmptySet);
+  }
+  for (const [source, expected] of [
+    ['sinh(x)-2', '{asinh(2)}'], ['cosh(x)-2', '{-acosh(2), acosh(2)}'],
+    ['tanh(x)-1/2', '{atanh(1/2)}'], ['coth(x)-2', '{acoth(2)}'],
+    ['sech(x)-1/2', '{-asech(1/2), asech(1/2)}'], ['csch(x)-3', '{acsch(3)}'],
+    ['coth(log(x))+2', '{exp(-acoth(2))}'], ['coth(exp(x))+2', 'EmptySet'],
+  ] as const) expect(String(solveset(p(source), x, Reals)), source).toBe(expected);
+  expect(String(solveset(p('tanh(x)-y'), x, Reals))).toBe('Intersection({log(y/(1 - y) + 1/(1 - y))/2}, Reals)');
+});
+
+it('tracks periods of real parts and nonempty images over disconnected targets', () => {
+  expect(Q.periodicity(new sj.Fn('re', [x]), x)).toBeUndefined();
+  expect(Q.periodicity(new sj.Fn('re', [y]), x)).toBe(SS.Zero);
+  const targets = new sj.SetOp('Union', [interval(-2, -1), interval(1, 2)]);
+  const input = new sj.SetOp('Intersection', [finiteSet(x), targets]);
+  expect(String(Q.notEmptyIn(input, x))).toBe('Union(Interval(-2, -1), Interval(1, 2))');
+});
+
+it('restricts complex-coefficient inequalities to real-valued points', () => {
+  for (const [expression, expected] of [
+    ['(x+I)*(x+2*I) < 0', 'Eq(x, 0)'],
+    ['((x-1)*(x-2)+I)*((x-1)*(x-2)+2*I) < 0', 'Eq(x, 1) | Eq(x, 2)'],
+    ['(((x-1)*(x-2)+I)*((x-1)*(x-2)+2*I))/(x-2) > 0', 'Eq(x, 1)'],
+  ] as const) expect(String(Q.solveUnivariateInequality(p(expression), x))).toBe(expected);
+  expect(() => Q.solveUnivariateInequality(p('x-I < 0'), x)).toThrow(TypeError);
+  const lhs = new sj.Mul([add(x, -2), add(x, -1), new sj.Pow(add(x, -1), SS.NegOne)]);
+  expect(String(Q.solveUnivariateInequality(sj.Relational(lhs, 0, '<', { evaluate: false }), x, { relational: false }))).toBe('Union(Interval.open(-oo, 1), Interval.open(1, 2))');
+});
+
+it('splits reciprocal trigonometric inequalities at their poles', () => {
+  expect(String(Q.solveUnivariateInequality(p('tan(x) < 1'), x, { relational: false }))).toBe('Union(Interval.Ropen(0, pi/4), Interval.open(pi/2, pi))');
+  for (const source of ['cot(x)>0', 'sec(x)>0', 'csc(x)>0']) {
+    expect(String(Q.solveUnivariateInequality(p(source), x, { relational: false }))).not.toContain('ConditionSet');
+  }
+  const realProduct = new sj.Mul([SS.I, SS.I, x]);
+  expect(String(Q.solveUnivariateInequality(sj.Relational(realProduct, 0, '>', { evaluate: false }), x))).toBe('(-oo < x) & (x < 0)');
+});
+
+it('preserves both sides of integer relationals and restricts finite integer domains', () => {
+  const inverse = pow(x, -1);
+  expect(String(solveset(sj.Relational(add(x, inverse), add(-2, inverse), '>', { evaluate: false }), x, Integers))).toBe('Union(Range(-1, 0, 1), Range(1, oo, 1))');
+  expect(String(solveset(p('x/(x-3)<3'), x, sj.Range.of(0, 5)))).toBe('Range(0, 3, 1)');
+  for (const source of ['Abs(x)-1', 'Min(x,15)-1', 'Max(x,15)-1']) {
+    expect(() => solveset(p(source), x, Complexes)).toThrow(RangeError);
+  }
 });

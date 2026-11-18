@@ -711,3 +711,48 @@ it('solves unevaluated-free equations without optional calculus evaluation', asy
     if (evaluate) Object.defineProperty(impl, 'doit', evaluate);
   }
 });
+
+
+it('inverts positive constant bases with nonlinear exponents', () => {
+  expect(show(solve(parse('4**(2*x**2+2*x)-8'), x))).toBe('[-3/2, 1/2]');
+  expect(show(solve(parse('4*3**(5*x+2)-7'), x))).toBe('[log((7/36)**(1/(5*log(3))))]');
+  expect(solve(parse('2**x'), x)).toEqual([]);
+});
+
+it('takes logarithms of two positive exponential terms', () => {
+  expect(show(solve(parse('4**(x/2)-2**(x/3)'), x))).toBe('[0]');
+  expect(show(solve(parse('5**(x/2)-2**(x/3)'), x))).toBe('[0]');
+  const solutions = solve(parse('5**(x/2)-2**(3/x)'), x);
+  expect(solutions).toHaveLength(2);
+  for (const value of solutions) expect(Math.abs(value.toComplex().re)).toBeCloseTo(Math.sqrt(6 * Math.log(2) / Math.log(5)), 12);
+  expect(() => solve(parse('2**x+x'), x)).toThrow(NotImplementedError);
+});
+
+it('keeps free coordinates in monic positive-dimensional systems', () => {
+  const [x, y, z] = symbols('x y z');
+  expect(nonlinsolve([parse('x**2-y**2')], [x, y]).map((row) => row.map(String))).toEqual([['-y', 'y'], ['y', 'y']]);
+  const rows = nonlinsolve([parse('x**2+y**2-1'), parse('z-2')], [x, y, z]);
+  expect(rows).toHaveLength(2);
+  for (const row of rows) {
+    expect(row[1]).toBe(y);
+    expect(String(row[2])).toBe('2');
+  }
+});
+
+it('retains unsupported parameter-dependent leading coefficients explicitly', () => {
+  expect(() => nonlinsolve([parse('x**2*y**2+1')], [x, y])).toThrow('only zero-dimensional systems are supported');
+});
+
+it('inverts reciprocal trigonometric and hyperbolic functions', () => {
+  for (const name of ['sec', 'csc', 'sech', 'csch']) {
+    expect(solve(parse(`${name}(x)`), x)).toEqual([]);
+    expect(solve(parse(`${name}(x)-2`), x).length).toBeGreaterThan(0);
+  }
+  expect(show(solve(parse('cot(x)'), x))).toBe('[pi/2]');
+  expect(show(solve(parse('cot(x)-1'), x))).toBe('[pi/4]');
+  for (const name of ['tanh', 'coth']) {
+    expect(solve(parse(`${name}(x)-1`), x)).toEqual([]);
+    expect(solve(parse(`${name}(x)+1`), x)).toEqual([]);
+    expect(solve(parse(`${name}(x)-1/2`), x)).toHaveLength(1);
+  }
+});
