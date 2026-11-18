@@ -288,7 +288,7 @@ export class GeometrySetNode extends SetExpr {
     return x instanceof FiniteSet ? x.args.every((point) => this.entity.contains(point)) : this.entity.contains(x);
   }
   /** SymPy intersection_sets(GeometrySet, Set): the common points as a finite set, with the other common entities. */
-  override intersectWith(other: SetExpr): SetExpr | undefined {
+  override intersectSelf(other: SetExpr): SetExpr | undefined {
     // (SymPy distributes the intersection over a union before this rule applies)
     if (other instanceof SetOp && other.op === 'Union') return union(...other.args.map((part) => intersection(this, cast(part, SetExpr))));
     if (!(other instanceof GeometrySetNode)) return undefined;
@@ -302,7 +302,7 @@ export class GeometrySetNode extends SetExpr {
     return union(...common.filter((e) => !e.isPoint).map((e) => new GeometrySetNode(e)), finiteSet(...common.filter((e) => e.isPoint)));
   }
   /** SymPy union_sets(GeometrySet, Set): the points and the sets that this set contains are absorbed. */
-  override unionWith(other: SetExpr): SetExpr | undefined {
+  override unionSelf(other: SetExpr): SetExpr | undefined {
     if (other instanceof FiniteSet) {
       const outside = other.args.filter((point) => !this.entity.contains(point));
       if (outside.length === other.args.length) return undefined;

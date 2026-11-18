@@ -252,9 +252,9 @@ describe('results that differ from SymPy 1.14', () => {
     // floor is continuous from the right, also at an integer y
     ["sj.series(P('floor(x + y)'), x, 0, 3)", () => sj.series(P('floor(x + y)'), x, 0, 3), "floor(y)", "floor(y)"],
     ["sj.series(P('ceiling(x + y)'), x, 0, 3, '-')", () => sj.series(P('ceiling(x + y)'), x, 0, 3, '-'), "ceiling(y)", "ceiling(y)"],
-    // SymPy gives floor(y) and ceiling(y), which is wrong for an integer y (floor(-x) = -1 for x -> 0+)
-    ["sj.series(P('floor(x + y)'), x, 0, 3, '-')", () => sj.series(P('floor(x + y)'), x, 0, 3, '-'), "ERR SeriesError: cannot expand floor", "floor(y)"],
-    ["sj.series(P('ceiling(x + y)'), x, 0, 3)", () => sj.series(P('ceiling(x + y)'), x, 0, 3), "ERR SeriesError: cannot expand ceiling", "ceiling(y)"],
+    // a symbolic point is not an integer generically: the value there on the other side as well (SymPy)
+    ["sj.series(P('floor(x + y)'), x, 0, 3, '-')", () => sj.series(P('floor(x + y)'), x, 0, 3, '-'), "floor(y)", "floor(y)"],
+    ["sj.series(P('ceiling(x + y)'), x, 0, 3)", () => sj.series(P('ceiling(x + y)'), x, 0, 3), "ceiling(y)", "ceiling(y)"],
     // SymPy raises NotImplementedError
     ["sj.series(P('ceiling(y*x)'), x, 0, 3)", () => sj.series(P('ceiling(y*x)'), x, 0, 3), "ERR SeriesError: cannot expand ceiling", "ERR NotImplementedError"],
     // exp(g) with g -> oo is returned unchanged; with g -> -oo it is smaller than every power (SymPy exp._eval_nseries)

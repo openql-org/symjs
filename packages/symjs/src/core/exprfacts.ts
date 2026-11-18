@@ -1372,6 +1372,9 @@ const EXP: Readonly<Partial<Record<string, PowHandler>>> = {
     return is(x, 'imaginary') ? fact(mul(-2, S.I, x, pow(S.Pi, -1)), 'even') : undefined;
   },
   complex: ({ exp: x }) => fuzzyOr([() => fact(x, 'complex'), () => fact(x, 'extended_negative')]),
+  // SymPy Pow._eval_is_imaginary for the base E: imaginary for an odd multiple of I*pi/2 in the exponent
+  // (an even multiple is real, which the extended_real rule decides)
+  imaginary: ({ exp: x }) => (is(mul(2, x, pow(mul(S.Pi, S.I), -1)), 'odd') ? true : undefined),
   algebraic: ({ exp: x }) => {
     if (is(mul(x, pow(S.Pi, -1), pow(S.I, -1)), 'rational')) return true;
     if (isNot(x, 'zero')) {

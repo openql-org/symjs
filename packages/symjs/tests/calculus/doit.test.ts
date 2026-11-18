@@ -76,3 +76,15 @@ it('evaluates the derivatives left in the result of a derivative (SymPy Derivati
   const g = sj.SymFunction('g')(x);
   expect(String(sj.doit(sj.derivative(g, [[x, 1]])))).toBe('Derivative(g(x), x)');
 });
+
+it('rewrites the sign of a nonzero argument by its absolute value (SymPy sign.doit)', () => {
+  const y = new sj.Sym('y', { imaginary: true });
+  const n = new sj.Sym('n', { nonzero: true });
+  const x = new sj.Sym('x');
+  expect(String(sj.doit(sj.sign(sj.add(1, y))))).toBe('(y + 1)/sqrt(1 - y**2)');
+  expect(String(sj.doit(sj.mul(2, sj.sign(n))))).toBe('2*n/Abs(n)');
+  expect(String(sj.doit(sj.sign(x)))).toBe('sign(x)');
+  // SymPy test_derivatives_issue_4757
+  const f = sj.SymFunction('f')(y);
+  expect(String(sj.doit(sj.subs(sj.diff(sj.Abs(f), y), [[f, sj.add(1, y)]])))).toBe('-y/sqrt(1 - y**2)');
+});

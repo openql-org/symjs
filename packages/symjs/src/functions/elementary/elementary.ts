@@ -452,12 +452,15 @@ function unitRoot(x: Expr): [Expr, Expr] | undefined {
 /** SymPy re/im: an imaginary argument (or one whose product with I is real) is I times a real. */
 const isImaginaryArg = (x: Expr): boolean => (x instanceof Sym && x.assumptions.imaginary === true) || isReal(mul(S.I, x)) === true;
 
+/** log of a nonnegative argument: an extended real number (-oo at 0), as SymPy's re and im take it. */
+const isExtendedRealLog = (x: Expr): boolean => x instanceof Fn && x.name === 'log' && isNonNegative(first(x.args)) === true;
+
 const evalRe: Evaluator = (x) => {
   if (x instanceof ExtensionExpr) {
     const parts = x.asRealImagSelf();
     if (parts !== undefined) return parts[0];
   }
-  if (isReal(x)) return x;
+  if (isReal(x) || isExtendedRealLog(x)) return x;
   if (isI(x)) return S.Zero;
   const ur = unitRoot(x);
   if (ur) return ur[0];
@@ -491,7 +494,7 @@ const evalIm: Evaluator = (x) => {
   }
   const ur = unitRoot(x);
   if (ur) return ur[1];
-  if (isReal(x)) return S.Zero;
+  if (isReal(x) || isExtendedRealLog(x)) return S.Zero;
   if (isI(x)) return S.One;
   if (x instanceof Add) return add(...x.args.map(im));
   if (x instanceof Mul) {

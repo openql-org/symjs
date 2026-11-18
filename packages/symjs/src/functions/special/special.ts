@@ -41,6 +41,7 @@ import * as SP from '../../numeric/mpspecial';
 import { chyp2f1 } from '../../numeric/mporthopoly';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../../core/ops';
 import { fnPartials } from '../../calculus/diff';
+import { piecewise, rel } from '../../core/logic';
 import { rebuild } from '../../core/traverse';
 import { impl } from '../../core/nodes';
 import { c as cx, cadd, cdiv, cexp, clog, cLambertW, cmul, cpow, csin } from '../../numeric/complex';
@@ -815,7 +816,31 @@ function partOf(p: F.Mpf, q: F.Mpf, wp: number, name: 'floor' | 'ceiling'): bigi
   return name === 'floor' ? (F.sign(r) < 0 ? n - 1n : n) : F.sign(r) > 0 ? n + 1n : n;
 }
 
-function evalAtan2(y: Expr, x: Expr): Expr | undefined {
+function evalAtan2(y0: Expr, x0: Expr): Expr | undefined {
+  // SymPy atan2.eval at an infinite x
+  if (x0 instanceof Special && x0.name === '-oo') {
+    if (isZero(y0) === true) return S.Pi;
+    return impl.heaviside ? add(mul(2, S.Pi, impl.heaviside(re(y0))), neg(S.Pi)) : undefined;
+  }
+  if (x0 instanceof Special && x0.name === 'oo') return S.Zero;
+  // two imaginary numbers: the angle of their imaginary parts
+  const imaginaryNumber = (e: Expr): boolean => e.isNumber && isZero(e) === false && isZero(re(e)) === true;
+  const [y, x] = imaginaryNumber(y0) && imaginaryNumber(x0) ? [fnN('im', y0), fnN('im', x0)] : [y0, x0];
+  const special = atan2OfReals(y, x);
+  if (special !== undefined) return special;
+  if (isReal(x) === true && isReal(y) === true && isZero(x) === true && isZero(y) === true) return S.NaN;
+  if (isZero(y) === true) {
+    if (isReal(x) === true && isZero(x) === false && impl.heaviside) return mul(S.Pi, add(1, neg(impl.heaviside(x))));
+    if (x.isNumber) return piecewise([S.Pi, rel('Lt', re(x), S.Zero)], [S.Zero, rel('Ne', x, S.Zero)], [S.NaN, S.true]);
+  }
+  // SymPy: the logarithmic form for numbers that are not both real
+  if (x.isNumber && y.isNumber && !(isReal(x) === true && isReal(y) === true)) {
+    return mul(-1, S.I, log(mul(add(x, mul(S.I, y)), pow(sqrt(add(pow(x, 2), pow(y, 2))), -1))));
+  }
+  return undefined;
+}
+
+function atan2OfReals(y: Expr, x: Expr): Expr | undefined {
   const yv = numericReal(y);
   const xv = numericReal(x);
   // a zero Float counts as zero (SymPy atan2(1, 0.0) = pi/2)

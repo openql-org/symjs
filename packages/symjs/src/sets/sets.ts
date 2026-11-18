@@ -98,11 +98,11 @@ export abstract class SetExpr extends Expr {
     return 'unknown';
   }
   /** SymPy intersection_sets of this class: its intersection with another set, or undefined without a rule. */
-  intersectWith(_other: SetExpr): SetExpr | undefined {
+  intersectSelf(_other: SetExpr): SetExpr | undefined {
     return undefined;
   }
   /** SymPy union_sets of this class: its union with another set, or undefined when the two do not combine. */
-  unionWith(_other: SetExpr): SetExpr | undefined {
+  unionSelf(_other: SetExpr): SetExpr | undefined {
     return undefined;
   }
 }
@@ -121,7 +121,13 @@ export function realValue(e: Expr): number | undefined {
     const v = impl.toComplex(e);
     return Math.abs(v.im) > 1e-12 * Math.max(1, Math.abs(v.re)) ? undefined : v.re;
   } catch {
-    return undefined;
+    // a number without a machine evaluation (an indexed root) is evaluated in arbitrary precision
+    try {
+      const v = impl.evalf(e, 15);
+      return v instanceof Float || v instanceof Rational ? v.value : undefined;
+    } catch {
+      return undefined;
+    }
   }
 }
 
@@ -1680,10 +1686,10 @@ export function union(...sets0: SetExpr[]): SetExpr {
     }
   }
   // the classes with their own rule combine pairwise (SymPy union_sets)
-  if (sets.some((s) => s.unionWith !== SetExpr.prototype.unionWith)) {
+  if (sets.some((s) => s.unionSelf !== SetExpr.prototype.unionSelf)) {
     for (const [i, a] of sets.entries()) {
       for (const [j, b] of sets.entries()) {
-        const merged = i === j ? undefined : a.unionWith(b);
+        const merged = i === j ? undefined : a.unionSelf(b);
         if (merged !== undefined) return union(merged, ...sets.filter((_, k) => k !== i && k !== j));
       }
     }
@@ -1843,7 +1849,7 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
   if (a === UniversalSet) return b;
   if (b === UniversalSet) return a;
   if (a.key === b.key) return a;
-  const own = a.intersectWith(b) ?? b.intersectWith(a);
+  const own = a.intersectSelf(b) ?? b.intersectSelf(a);
   if (own !== undefined) return own;
   if (a instanceof ConditionSet) return conditionSet(a.variable, a.condition, intersection(a.base, b));
   if (b instanceof ConditionSet) return conditionSet(b.variable, b.condition, intersection(a, b.base));
@@ -2186,7 +2192,15 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
       if (c === false) keep.push(x);
       else if (c === undefined) unknown.push(x);
     }
-    if (unknown.length) return union(finiteSet(...keep), new SetOp('Complement', [finiteSet(...unknown), b]));
+    if (unknown.length) {
+      // SymPy FiniteSet._complement: the elements of b that are elements of a are taken out of both; what is
+      // subtracted from the rest are the elements of b whose membership in a is open ({i, j, k} - {j} = {i, k})
+      const open = b instanceof FiniteSet ? finiteSet(...b.args.filter((y) => containsQ(a, y) === undefined)) : b;
+      if (open === EmptySet) return finiteSet(...keep, ...unknown);
+      // (a smaller difference is reduced again, as SymPy's Complement does)
+      const reduced = unknown.length < a.args.length || open.key !== b.key;
+      return union(finiteSet(...keep), reduced ? complement(finiteSet(...unknown), open) : new SetOp('Complement', [finiteSet(...unknown), open]));
+    }
     return finiteSet(...keep);
   }
   const pa = intervalParts(a);

@@ -7,9 +7,11 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Rational, S, Sym, impl } from '../core/nodes';
+import { Add, Derivative, ExtensionExpr, Fn, Integral, Limit, Mul, Rational, S, Sym, impl } from '../core/nodes';
 import { at, cast } from '../core/guard';
-import { add, mul, sympify } from '../core/ops';
+import { add, mul, pow, sympify } from '../core/ops';
+import { isZero } from '../core/assumptions';
+import { fn } from '../functions/elementary/elementary';
 import { rebuild, some, xreplace } from '../core/traverse';
 import { Concrete, doitConcrete, sumIsConvergent } from '../concrete/summations';
 import { integrate } from '../integrals/integrate';
@@ -50,6 +52,11 @@ export function doit(ex: ExprLike | Matrix): Expr | Matrix {
     if (y instanceof Limit) return limit(at(y.args, 0), cast(y.args[1], Sym, 'limit variable'), at(y.args, 2), y.dir);
     if (y instanceof Concrete) return doitConcrete(y);
     if (y instanceof ExtensionExpr) return y.doitSelf() ?? y;
+    // SymPy sign.doit: the sign of a nonzero argument is the argument over its absolute value
+    if (y instanceof Fn && y.name === 'sign' && isZero(at(y.args, 0)) === false) {
+      const argument = at(y.args, 0);
+      return mul(argument, pow(fn('abs', [argument]), -1));
+    }
     if (y instanceof Derivative) {
       // SymPy Derivative.doit: a result that still has derivatives is evaluated again
       // (Derivative(Abs(f(x)), f(x)) is sign(f(x))*Derivative(f(x), f(x)), then sign(f(x)))

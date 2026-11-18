@@ -1462,3 +1462,26 @@ describe('membership decided by assumptions (SymPy Interval._contains, FiniteSet
     expect(String(sj.complement(sj.finiteSet(l), sj.finiteSet(sj.mul(-1, l))))).toBe('{l}');
   });
 });
+
+it('cuts the image of the integers by an interval with indexed-root shifts (SymPy test_ceiling)', () => {
+  const n = new sj.Sym('n');
+  const f = new sj.CRootOf(sj.parse('x**5 - x**2 + 1'), 0);
+  const s = sj.ImageSet.of(sj.Lambda([n], sj.add(n, f)), sj.Integers);
+  const cut = sj.Intersection(s, sj.interval(-2, 2));
+  expect(cut).toBeInstanceOf(sj.FiniteSet);
+  expect(cut.args.map(String).sort()).toEqual(['CRootOf(x**5 - x**2 + 1, 0)', 'CRootOf(x**5 - x**2 + 1, 0) + 1', 'CRootOf(x**5 - x**2 + 1, 0) + 2', 'CRootOf(x**5 - x**2 + 1, 0) - 1']);
+});
+
+it('takes common symbols out of a difference of finite sets (SymPy FiniteSet._complement)', () => {
+  const [i, j, k, x, y] = sj.symbols('i j k x y');
+  const F = sj.finiteSet;
+  const show = (a: sj.SetExpr, b: sj.SetExpr) => String(sj.complement(a, b));
+  expect(show(F(i, j, k), F(j))).toBe('{i, k}');
+  expect(show(F(i, j, k), F(j, 1))).toBe('Complement({i, k}, {1})');
+  expect(show(F(1, 2, k), F(j))).toBe('Complement({1, 2, k}, {j})');
+  expect(show(F(1, 2, 3), F(2, j))).toBe('Complement({1, 3}, {j})');
+  expect(show(F(i, j), F(k))).toBe('Complement({i, j}, {k})');
+  expect(show(F(1, i), F(1))).toBe('{i}');
+  // SymPy test_issue_9808
+  expect(show(F(1, 2, x), F(x, y, 2, 3))).toBe('Complement({1}, {y})');
+});

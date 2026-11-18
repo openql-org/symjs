@@ -3812,8 +3812,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return Array.isArray(r) ? new JsTuple([r[0], new JsDict(r[1])]) : r;
   },
   piecewise_exclusive: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'skip_nan') throw new Unsupported(`kwargs ${k}`);
-    return sj.piecewiseExclusive(asExpr(args[0]), { skipNan: Boolean(kw['skip_nan']) });
+    for (const k of Object.keys(kw)) if (k !== 'skip_nan' && k !== 'deep') throw new Unsupported(`kwargs ${k}`);
+    return sj.piecewiseExclusive(asExpr(args[0]), { skipNan: Boolean(kw['skip_nan']), deep: kw['deep'] !== false });
   },
   Id: exprFn((e) => e),
   intervals: (args, kw) => {
@@ -4953,6 +4953,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.evalf': (args, kw, self) => evalfAdapter(self, args, kw),
   '.n': (args, kw, self) => evalfAdapter(self, args, kw),
+  // mpmath mpf.ae(other): equal up to the relative error 2**(-prec + 4) of the working precision (53 bits)
+  '.ae': (args, kw, self) => {
+    noKw(kw);
+    const [a, b] = [asExpr(self), asExpr(args[0])];
+    const tolerance = sj.mul(sj.pow(2, -49), sj.Max(sj.Abs(a), sj.Abs(b)));
+    return sj.Le(sj.Abs(sj.sub(a, b)), tolerance) === S.true;
+  },
   '.round': (args, kw, self) => {
     noKw(kw);
     return sj.round(asExpr(self), args.length ? intArg(args[0]) : undefined);
@@ -6638,7 +6645,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__truediv__': (a, [b]) => a instanceof sj.Poly && b instanceof sj.Poly ? sj.cancel(sj.mul(a.asExpr(), sj.pow(b.asExpr(), -1))) : a instanceof sj.Factors ? a.quo(b as sj.Factors | Expr) : (a instanceof Matrix && isScalar(b) ? a.scale(sj.pow(b, -1)) : undefined) ?? (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['exquo'] : ['truediv', 'div', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => (isScalar(a) && b instanceof sj.Poly ? sj.Poly.from(a, b.gens, { domain: b.domain }).quo(b) : undefined) ?? (a instanceof sj.Poly ? a.quo(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['quo'] : ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
-  '.__mod__': (a, [b]) => isScalar(a) && b instanceof sj.Poly ? sj.Poly.from(a, b.gens, { domain: b.domain }).rem(b) : a instanceof sj.Factors ? a.rem(b as sj.Factors | Expr) : (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.ANP || a instanceof sj.DMPJs ? ['rem'] : ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
+  '.__mod__': (a, [b]) => isScalar(a) && b instanceof sj.Poly ? sj.Poly.from(a, b.gens, { domain: b.domain }).rem(b) : a instanceof sj.Factors ? a.rem(b as sj.Factors | Expr) : (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.ANP || a instanceof sj.DMPJs ? ['rem'] : ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : a instanceof Matrix && isScalar(b) ? a.map((entry) => sj.Mod(entry, b)) : unsupportedOp('%')),
   '.__matmul__': (a, [b]) => a instanceof Matrix && !(b instanceof Matrix || b instanceof sj.MatrixExpr) ? { toString: () => 'NotImplemented' } : callMethod(a, ['matmul', 'mul'], [b])?.value ?? unsupportedOp('@'),
   '.__neg__': (a) => callMethod(a, ['neg'], [])?.value ?? (isScalar(a) ? sj.neg(a) : unsupportedOp('-')),
   '.__invert__': (a) => callMethod(a, ['bitNot', 'invert', 'inv', 'inverse'], [])?.value ?? (a instanceof Expr || typeof a === 'boolean' ? sj.Not(a) : unsupportedOp('~')),
@@ -7493,6 +7500,12 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.func' && c.self?.t === 'Vec' && c.self['cls'] === 'BaseScalar') return (args) => sj.BaseScalar(intArg(args[0]), args[1] as sj.CoordSys3D);
   if (c.fn === '.func' && c.self?.t === 'Vec' && c.self['cls'] === 'Point') return (args) => sj.VectorPoint(args[0] as string, args[1] as Expr, args[2] as sj.VectorPoint);
   if (c.fn === 'GeometryEntity') return (args) => new sj.GeometryEntity('GeometryEntity', args.map(asExpr));
+  // Python slices a str multiset of one repeated character into strings: the parts are 'a'*k, not lists
+  // (a str of length one is the list of that character)
+  if (c.fn === 'multiset_partitions' && c.args?.[0]?.t === 'Str' && String(c.args[0]['v']).length > 1 && new Set(String(c.args[0]['v'])).size === 1) {
+    return (args) => new JsList([...sj.multisetPartitions(String(args[0]), args[1] === undefined || args[1] === null ? null : intArg(args[1]))]
+      .map((parts) => new JsList(parts.map((part) => part.join('')))));
+  }
   // SymPy Triangle(sss=...) returns None when no triangle has those sides; symjs raises a GeometryError
   if (c.fn === 'Triangle' && c.category === 'geometry' && c.kwargs?.['sss'] !== undefined) return (_args, kw) => {
     try {
@@ -8546,6 +8559,10 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // The difference is 0.0058279433...: SymPy's own (pi**400 - (pi**400).round(1)).evalf(2, maxn=300) is 0.0058.
+  // With the default maxn=100 its evaluation of the 199-digit operands stops before the cancellation is
+  // resolved, and the printed -0.e+88 is a value without any correct digit.
+  "sympy.printing.tests.test_str:assert str((pi**400 - (pi**400).round(1)).n(2)) == '-0.e+88'": '0.0058',
   // Both zero and one are rational: asin(0) is zero, whereas asin(1) is pi/2.
   'sympy.core.tests.test_assumptions:assert asin(r).is_rational is False': 'None',
   // Both 1 and -1 are algebraic. Zero to those powers is respectively zero (algebraic) and zoo (not algebraic).

@@ -98,6 +98,8 @@ export function isZero(e: Expr): Tri {
   // SymPy Add._eval_is_zero: a sum of symbols known to be positive, negative or not an integer
   if (e instanceof Add && impl.freeSymbols(e).size > 0) {
     if (isIntegerQ(e) === false || isPositive(e) === true || isNegative(e) === true) return false;
+    // a sum that is not real is not 0
+    if (isReal(e) === false) return false;
   }
   return undefined;
 }
@@ -109,7 +111,12 @@ export function isReal(e: Expr): Tri {
   if (e instanceof Special) return e.name === 'oo' || e.name === '-oo' ? true : undefined;
   if (e instanceof Constant) return e.name !== 'I';
   if (e instanceof Sym) return e.assumptions.real;
-  if (e instanceof Add) return all(e.args, isReal) ? true : undefined;
+  if (e instanceof Add) {
+    if (all(e.args, isReal)) return true;
+    // real terms and exactly one term that is not real: the sum is not real
+    const reals = e.args.map(isReal);
+    return reals.filter((v) => v === false).length === 1 && reals.every((v) => v !== undefined) ? false : undefined;
+  }
   if (e instanceof Mul) {
     // a product of reals and imaginary factors (I or imaginary symbols) is real for an even count of
     // imaginary factors, and not real for an odd count when every factor is nonzero

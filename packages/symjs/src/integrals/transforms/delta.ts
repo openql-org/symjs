@@ -14,7 +14,7 @@
 import type { DefinedFunction, FunctionDefinition } from '../../core/defun';
 import type { Expr, ExprLike, RelOp } from '../../core/nodes';
 import { DefinedFunctionCall, defineFunction } from '../../core/defun';
-import { Add, Dummy, Mul, Rational, S, Sym } from '../../core/nodes';
+import { Add, Dummy, Mul, Rational, S, Sym, impl } from '../../core/nodes';
 import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from '../../core/assumptions';
 import { add, couldExtractMinusSign, mul, neg, pow, splitCoeff, sub } from '../../core/ops';
 import { at, first, getOrThrow } from '../../core/guard';
@@ -297,6 +297,8 @@ export function SingularityFunction(variable: ExprLike, offset: ExprLike, expone
 
 /** True when e is an application of Heaviside. */
 export const isHeaviside = (e: Expr): boolean => heavisideDef.isApplied(e);
+
+impl.heaviside = (x) => Heaviside(x);
 
 /** True when e is an application of DiracDelta. */
 export const isDiracDelta = (e: Expr): boolean => diracDef.isApplied(e);
