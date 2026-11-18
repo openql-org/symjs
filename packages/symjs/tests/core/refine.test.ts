@@ -14,6 +14,18 @@ const x = sj.symbol('x');
 const y = sj.symbol('y');
 const s = (e: unknown): string => String(e);
 
+it('recognizes a product of three imaginary factors', () => {
+  const [u, v, w] = sj.symbols('u v w', { imaginary: true });
+  expect(ask(Q.real(sj.mul(u, v, w)))).toBe(false);
+});
+
+it('distinguishes nonreal inverse sine and cosine values from extended reals', () => {
+  expect(ask(Q.extended_real(sj.asin(2)))).toBe(false);
+  expect(ask(Q.extended_real(sj.acos(2)))).toBe(false);
+  expect(sj.isReal(sj.asin(-2))).toBe(false);
+  expect(ask(Q.extended_real(sj.asin(x)))).toBe('unknown');
+});
+
 const locals: Record<string, (...a: sj.Expr[]) => sj.Expr> = {
   ...Object.fromEntries(Object.keys(Q).map((k) => [`Q_${k}`, (...a: sj.Expr[]) => defined(Q[k], k)(...a)])),
   Xor: (...a) => sj.Xor(...a),

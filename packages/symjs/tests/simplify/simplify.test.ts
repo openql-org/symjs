@@ -7,6 +7,51 @@ import { describe, expect, it } from 'vitest';
 import { I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
 import type { Expr } from '../../src';
 import { clearCoefficients, factorSum, inversecombine, ncSimplify, nthroot, fn, S, Sum, Mul, Pow } from '../../src';
+import { Add, And, Eq, Ge, Gt, Le, Lt, Or, Piecewise, Rel, Tuple, pi, sstr } from '../../src';
+
+it('retains a short logarithmic change-of-base ratio', () => {
+  const y = symbol('y', { positive: true });
+  const expr = parse('log(y/10)/log(y/5)', { symbols: [y] });
+  expect(simplify(expr).equals(expr)).toBe(true);
+});
+
+describe('simplifying Piecewise intervals and equalities', () => {
+  const [x, y] = symbols('x y', { real: true });
+  it.each([
+    [Piecewise([x, Gt(x, 2)]), 'Piecewise((x, x > 2), (nan, True))'],
+    [Piecewise([1, Gt(x, 3)], [2, Lt(x, 2)], [3, Gt(x, 1)]), 'Piecewise((1, x > 3), (2, x < 2), (3, True))'],
+    [Piecewise([1, Lt(x, 2)], [2, Lt(x, 1)], [3, true]), 'Piecewise((1, x < 2), (3, True))'],
+    [Piecewise([1, And(Gt(x, 1), Lt(x, 3))], [2, And(Gt(x, 2), Lt(x, 4))]), 'Piecewise((1, (x > 1) & (x < 3)), (2, (x >= 3) & (x < 4)), (nan, True))'],
+    [Piecewise([1, And(Ge(x, 1), Le(x, 3))], [2, Gt(x, 2)]), 'Piecewise((1, (x >= 1) & (x <= 3)), (2, x > 3), (nan, True))'],
+    [Piecewise([x, Eq(x, pi)], [pi, true]), 'pi'],
+    [Piecewise([9, Lt(x, 0)], [8, Eq(x, 3)], [7, true]), 'Piecewise((9, x < 0), (8, Eq(x, 3)), (7, True))'],
+    [Piecewise([x, Or(Gt(x, y), Lt(x, 1))], [1, true]), 'Piecewise((x, (x > y) | (x < 1)), (1, True))'],
+  ])('simplifies %s', (value, expected) => {
+    expect(sstr(simplify(value))).toBe(expected);
+  });
+
+  it('substitutes equalities through conjunctions and tuple values', () => {
+    const value = Piecewise([Tuple(x, y), And(Eq(x, 2), Eq(y, 1))], [Tuple(0, 0), true]);
+    expect(sstr(simplify(value))).toBe('Piecewise(((2, 1), Eq(x, 2) & Eq(y, 1)), ((0, 0), True))');
+  });
+
+  it('simplifies Boolean bounds in raw Piecewise nodes and collapses a folded sum', () => {
+    const never = new Piecewise([x, S.false, S.One, Gt(x, 0), S.Two, S.true]);
+    expect(sstr(simplify(never))).toBe('Piecewise((1, x > 0), (2, True))');
+    const reversed = Piecewise([x, new Rel('Lt', S.Zero, x)], [0, true], { evaluate: false });
+    expect(sstr(simplify(reversed))).toBe('Piecewise((x, x > 0), (0, True))');
+    const nonlinear = Piecewise([1, And(Gt(x, 0), Gt(pow(x, 2), 3))], [0, true]);
+    const simplified = simplify(nonlinear);
+    expect(simplified.subs(x, 2).equals(S.One)).toBe(true);
+    expect(simplified.subs(x, -2).equals(S.Zero)).toBe(true);
+    expect(simplify(new Add([reversed, mul(-1, reversed)])).equals(S.Zero)).toBe(true);
+  });
+
+  it('removes positive rational content from the complex sign', () => {
+    expect(sstr(simplify(fn('sign', [add(2, mul(2, I))])))).toBe('sign(1 + I)');
+    expect(sstr(simplify(fn('sign', [add(1, I)])))).toBe('sign(1 + I)');
+  });
+});
 
 it('strips coefficients while preserving the transformed equation', () => {
   expect(clearCoefficients(parse('4*y*(6*x + 3) - 2'))).toEqual([parse('y*(2*x + 1)'), parse('1/6')]);

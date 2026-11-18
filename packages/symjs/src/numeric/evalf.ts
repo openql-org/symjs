@@ -368,6 +368,11 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
       const v = impl.evalConcrete?.(x);
       if (v !== undefined) return go(v);
     }
+    if (x instanceof Integral && x.args.length === 4 && x.freeSymbols().size === 0) {
+      const value = impl.doit?.(x);
+      const result = value === undefined ? undefined : numeric(value, noValue);
+      if (result !== undefined) return result;
+    }
     return rebuild(x, x.args.map(go));
   };
   if (values === undefined) return go(e);

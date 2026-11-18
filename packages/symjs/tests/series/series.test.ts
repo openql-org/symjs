@@ -27,6 +27,36 @@ it('propagates accumulation bounds through exponential leading terms', () => {
   expect(sstr(sj.asLeadingTerm(parse('exp(x*log(cos(1/x) + 2))'), x))).toBe('1');
   expect(sstr(sj.asLeadingTerm(parse('exp(x*log(sin(1/x)**2))'), x))).toBe('AccumBounds(0, 1)');
   expect(sj.asLeadingTerm(parse('log(cos(1/x) - 2)'), x)).toBe(sj.S.NaN);
+  expect(sstr(sj.asLeadingTerm(parse('log(2*cos(1/x) + 3)'), x))).toBe('AccumBounds(0, log(5))');
+  expect(sstr(sj.asLeadingTerm(parse('exp(x*log(sin(1/x)**2))'), x, { cdir: -1 }))).toBe('AccumBounds(1, oo)');
+  expect(sstr(sj.asLeadingTerm(parse('exp(x*log(sin(1/x)**2))'), x, { cdir: sj.S.Zero }))).toBe('AccumBounds(0, 1)');
+  const constantPower = new sj.Pow(parse('sin(1/x)'), sj.S.Zero);
+  const rawLog = sj.fn('log', [constantPower], { evaluate: false });
+  expect(sj.asLeadingTerm(new sj.Pow(sj.S.E, new sj.Mul([x, rawLog])), x).equals(sj.S.One)).toBe(true);
+});
+
+it('leaves nonconstant scaling of oscillatory bounds to the general series machinery', () => {
+  const x = symbol('x');
+  for (const source of [
+    'log(cos(1/x) + x)',
+    'log(cos(1/x)**x)',
+    'exp(log(cos(1/x) + 2)/x)',
+    'exp(y*x*log(sin(1/x)**2))',
+  ]) expect(() => sj.asLeadingTerm(parse(source), x)).toThrow(/essential singularity/);
+});
+
+it('uses the direction of an argument and preserves its zero-order remainder', () => {
+  const x = symbol('x');
+  const phase = sj.arg(x);
+  expect(sj.asLeadingTerm(phase, x)).toBe(sj.S.Zero);
+  expect(sj.asLeadingTerm(phase, x, { cdir: sj.S.Zero })).toBe(sj.S.Zero);
+  expect(sj.asLeadingTerm(phase, x, { cdir: -1 })).toBe(sj.pi);
+  expect(sstr(series(phase, x, 0, 0))).toBe('O(1)');
+  expect(series(sj.sign(x), x, 0, 0).equals(sj.S.One)).toBe(true);
+  expect(series(new sj.Add([sj.abs(x), sj.mul(-1, x)]), x, 0, 0).equals(sj.S.Zero)).toBe(true);
+  expect(() => sj.asLeadingTerm(parse('sin(x + x**2)'), x, { cdir: sj.I })).toThrow(/nonreal direction/);
+  const p = sj.Piecewise([1, sj.Lt(x, -1)], [sj.sin(x), true]);
+  expect(sj.asLeadingTerm(p, x).equals(x)).toBe(true);
 });
 
 it('expands logarithms along the positive imaginary ray at infinity', () => {
@@ -595,4 +625,9 @@ it('retains unevaluated integrals independent of the expansion variable', async 
 it('removes explicit zero order terms when adding expressions', () => {
   const x = new sj.Sym('x');
   expect(sj.add(x, new sj.Order([sj.S.Zero, x, sj.S.Zero])).key).toBe(x.key);
+});
+
+it('reports a missing leading term when no Piecewise branch holds at zero', () => {
+  const x = new sj.Sym('x');
+  expect(() => sj.asLeadingTerm(sj.piecewise([x, sj.Gt(x, 1)]), x)).toThrow(/cannot expand Piecewise/);
 });

@@ -358,10 +358,10 @@ function oscillatingLeadingTerm(e: Expr, x: Sym, cdir: Expr): Expr | undefined {
     const ray = new Sym('_oscillation', { positive: true });
     const sign = isPositive(subs(factor, [[x, mul(cdir, ray)]]));
     if (sign === undefined) return undefined;
-    const oriented = sign ? range : mul(-1, range);
-    if (!(oriented instanceof AccumBoundsNode)) return oriented;
-    const lo = oriented.min === S.NegativeInfinity ? oriented.min : S.Zero;
-    const hi = oriented.max === S.Infinity ? oriented.max : S.Zero;
+    const lower = sign ? range.min : neg(range.max);
+    const upper = sign ? range.max : neg(range.min);
+    const lo = lower === S.NegativeInfinity ? lower : S.Zero;
+    const hi = upper === S.Infinity ? upper : S.Zero;
     return lo === hi ? lo : AccumBounds(lo, hi);
   }
   return undefined;

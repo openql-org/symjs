@@ -28,6 +28,7 @@ import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { mapBottomUp as mapBottomUpI, piecewiseFold, some, xreplace as subs, mapBottomUp, preorderTraversal, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary/elementary';
+import { Mod } from '../functions/mod';
 import { UPoly, polyCoefficients, roots } from '../polys/poly';
 import { fn as fnErf } from '../functions/elementary/elementary';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
@@ -732,7 +733,7 @@ function piecewiseBreaks(f: Piecewise, x: Sym): [Expr, Expr | undefined][] | und
   for (const [e, c] of f.pairs) {
     if (c instanceof BoolAtom && c.value) {
       out.push([e, undefined]);
-      continue;
+      break;
     }
     if (!(c instanceof Rel) || !(c.op === 'Lt' || c.op === 'Le') || c.lhs.key !== x.key || c.rhs.has(x)) return undefined;
     out.push([e, c.rhs]);
@@ -809,6 +810,13 @@ function conditionIntervals(condition: Expr, x: Sym): PiecewiseInterval[] | unde
     return intervals;
   }
   if (!(condition instanceof Rel)) return undefined;
+  if ((condition.op === 'Eq' || condition.op === 'Ne') && Mod.isApplied(condition.lhs)) {
+    const [argument, period] = pair(condition.lhs.args);
+    // With a fixed real period, equality to a fixed residue holds only at isolated points.
+    if (argument.key === x.key && period instanceof Rational && !condition.rhs.has(x)) {
+      return condition.op === 'Eq' ? [] : [whole];
+    }
+  }
   const difference = expand(add(condition.lhs, mul(-1, condition.rhs)));
   const coeffs = polyCoefficients(difference, x);
   if (!coeffs || [...coeffs.keys()].some((degree) => degree > 1)) return undefined;
@@ -871,7 +879,6 @@ function symbolicDefinitePiecewise(f: Piecewise, x: Sym, a: Expr, b: Expr): Expr
   };
   const order = cmpSign(a, b);
   if (order !== undefined) {
-    if (order === 0) return S.Zero;
     const result = order < 0 ? orderedIntegral(a, b) : orderedIntegral(b, a);
     return result === undefined || order < 0 ? result : mul(-1, result);
   }
@@ -942,7 +949,7 @@ export function piecewiseIntegrate(f: Piecewise, x: Sym): Expr {
 function integratePiecewise(f: Piecewise, x: Sym): Expr | undefined {
   const br = piecewiseBreaks(f, x);
   if (!br || br.some(([, bound], i) => bound !== undefined && i > 0
-    && (cmpSign(at(br, i - 1)[1] ?? S.Infinity, bound) ?? 1) > 0)) {
+    && (cmpSign(defined(at(br, i - 1)[1], 'preceding Piecewise interval bound'), bound) ?? 1) > 0)) {
     const segments = piecewiseSegments(f, x, S.NegativeInfinity, S.Infinity);
     if (!segments) return undefined;
     const pieces: [Expr, Expr][] = [];
@@ -965,7 +972,7 @@ function integratePiecewise(f: Piecewise, x: Sym): Expr | undefined {
   let prevF: Expr | undefined;
   let prevBreak: Expr | undefined;
   for (const [e, c] of br) {
-    let F = new Integrator(x).integrate(e);
+    let F = new Integrator(x).integrate(e) ?? otherMethods(e, x);
     if (F === undefined) return undefined;
     if (prevF !== undefined && prevBreak !== undefined) {
       // continuity at the previous breakpoint
@@ -1139,6 +1146,27 @@ function otherMethods(f: Expr, x: Sym): Expr | undefined {
 }
 const activeMethods = new Set<string>();
 
+/** Integrate the absolute value of an affine sine or cosine by its half-periods. */
+function definiteAbsTrig(f: Expr, x: Sym, a: Expr, b: Expr): Expr | undefined {
+  if (!(f instanceof Fn) || f.name !== 'abs') return undefined;
+  const wave = at(f.args, 0);
+  if (!(wave instanceof Fn) || (wave.name !== 'sin' && wave.name !== 'cos')) return undefined;
+  const argument = at(wave.args, 0);
+  const coefficients = polyCoefficients(argument, x);
+  if (coefficients === undefined || [...coefficients.keys()].some((degree) => degree > 1)) return undefined;
+  const slope = coefficients.get(1);
+  if (slope === undefined || isNonZero(slope) !== true || isReal(slope) !== true) return undefined;
+  const u = wave.name === 'cos' ? add(argument, mul(S.Half, S.Pi)) : argument;
+  const primitive = (point: Expr): Expr | undefined => {
+    const value = subs(u, [[x, point]]);
+    if (isReal(value) !== true) return undefined;
+    const periods = floor(mul(value, pow(S.Pi, -1)));
+    return periods instanceof Rational ? add(mul(2, periods), 1, mul(-1, cos(add(value, mul(-1, periods, S.Pi))))) : undefined;
+  };
+  const left = primitive(a), right = primitive(b);
+  return left === undefined || right === undefined ? undefined : mul(add(right, mul(-1, left)), pow(slope, -1));
+}
+
 /**
  * risch_integrate as SymPy's integrate uses it: the elementary part, plus
  * the nonelementary integral when the elementary part is not zero (SymPy
@@ -1169,6 +1197,10 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   let f = sympify(ex);
   if (f instanceof Rel && f.op === 'Eq') return Eq(integrate(f.lhs, x, limits, opts), integrate(f.rhs, x, limits, opts));
   if (limits || isReal(x) === true) f = realIntegrand(f, x) ?? f;
+  if (limits) {
+    const periodic = definiteAbsTrig(f, x, sympify(limits[0]), sympify(limits[1]));
+    if (periodic !== undefined) return periodic;
+  }
   if (f instanceof ExtensionExpr) {
     const own = f.integrateSelf(x, limits && [sympify(limits[0]), sympify(limits[1])], (g) => integrate(g, x, limits, opts));
     if (own !== undefined) return own;
@@ -1240,8 +1272,13 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   };
   const bounds = [a, ...interior, b];
   const parts: Expr[] = [];
+  const isInfinity = (v: Expr): boolean => v === S.Infinity || v === S.NegativeInfinity;
   for (let i = 1; i < bounds.length; i++) {
-    parts.push(add(endpoint(at(bounds, i), '-'), mul(-1, endpoint(at(bounds, i - 1), '+'))));
+    const lower = endpoint(at(bounds, i - 1), '+');
+    const upper = endpoint(at(bounds, i), '-');
+    if (isInfinity(upper) && rootIsReal(lower) === true) parts.push(upper);
+    else if (isInfinity(lower) && rootIsReal(upper) === true) parts.push(mul(-1, lower));
+    else parts.push(add(upper, mul(-1, lower)));
   }
   return add(...parts);
 }

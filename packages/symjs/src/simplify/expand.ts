@@ -234,7 +234,7 @@ function expandLogNode(e: Expr, force: boolean, factor: boolean): Expr {
   if (a instanceof Rational) {
     // perfect powers are removed (log(8) = 3*log(2)) and a fraction is split
     if (!a.isInteger) return add(log(Rational.of(a.p)), mul(-1, log(Rational.of(a.q))));
-    if (a.p <= 1n) return e;
+    if (a.p <= 1n) return log(a);
     if (factor) return add(...[...factorInt(a.p)].map(([base, count]) => mul(count, log(Rational.of(base)))));
     const pp = perfectPower(a.p);
     return pp ? mul(pp[1], log(Rational.of(pp[0]))) : e;

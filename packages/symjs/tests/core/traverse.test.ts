@@ -31,6 +31,7 @@ import {
   xreplace,
 } from '../../src';
 import { boundSymbols, piecewiseFold } from '../../src/core/traverse';
+import { BoolOp } from '../../src/core/boolalg';
 import { at } from '../../src/core/guard';
 
 const [x, y, C1, C2, z, w, n] = symbols('x y C1 C2 z w n');
@@ -268,6 +269,24 @@ describe('use and preorderTraversal (SymPy sympy.core.traversal)', () => {
 describe('piecewiseFold (SymPy piecewise_fold)', () => {
   const P = sj.Piecewise([x, sj.Gt(x, 0)], [mul(-1, x), true]);
   const Q = sj.Piecewise([1, sj.Gt(y, 0)], [2, true]);
+  it('flattens nested values and translates conditional Boolean branches', () => {
+    const args = [sj.Gt(x, 0), sj.Lt(y, 1), sj.Gt(y, 1)] as const;
+    for (const condition of [new BoolOp('ITE', args), sj.ITE(...args, { evaluate: false })]) {
+      expect(str(piecewiseFold(sj.piecewise([x, condition]))))
+        .toBe('Piecewise((x, ((x <= 0) | (y < 1)) & ((x > 0) | (y > 1))))');
+    }
+    const p = sj.piecewise([sj.cos(x), sj.Lt(x, 0)], [0, true]);
+    expect(str(piecewiseFold(sj.piecewise([0, sj.Eq(p, 0)], [pow(p, -1), true]))))
+      .toBe('Piecewise((0, (x >= 0) | Eq(cos(x), 0)), (1/cos(x), x < 0), (zoo, True))');
+    const nested = sj.piecewise([sj.Tuple(add(P, 1), 2), sj.Lt(y, 0)], [0, true]);
+    expect(str(piecewiseFold(nested)))
+      .toBe('Piecewise(((Piecewise((x + 1, x > 0), (1 - x, True)), 2), y < 0), (0, True))');
+    const incomplete = sj.piecewise([sj.piecewise([1, sj.Gt(x, 0)]), sj.Gt(y, 0)], [2, true]);
+    const inside = [[x, -1], [y, 1]] as const;
+    expect(piecewiseFold(incomplete).subs(inside)).toBe(incomplete.subs(inside));
+    const complete = sj.piecewise([P, sj.Gt(y, 0)], [2, true]);
+    expect(piecewiseFold(complete).subs(inside).equals(complete.subs(inside))).toBe(true);
+  });
   it('combines shared branch conditions before expanding independent choices', () => {
     const c = sj.Gt(x, 0);
     const terms = Array.from({ length: 40 }, (_, i) => sj.piecewise([i + 1, c], [0, true]));

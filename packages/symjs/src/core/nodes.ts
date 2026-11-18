@@ -286,7 +286,7 @@ export interface Impl {
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
   isComparable(e: Expr): boolean;
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
-  rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr;
+  rewrite?(this: void, e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr;
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
   expandComplex?(e: Expr): Expr;
@@ -323,7 +323,7 @@ export interface Impl {
   /** A node of the same type with new arguments, re-canonicalized (registered by core/traverse). */
   rebuild: (e: Expr, args: readonly Expr[]) => Expr;
   /** A named function applied with automatic evaluation (registered by functions/elementary). */
-  fn?(name: FnName, args: readonly Expr[]): Expr;
+  fn?(this: void, name: FnName, args: readonly Expr[]): Expr;
   /** expand with only the mul hint (registered by simplify/expand). */
   expandMul?(e: Expr): Expr;
   /** as_real_imag of exp and functions (registered by simplify/expand). */

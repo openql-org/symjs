@@ -150,12 +150,12 @@ export function isReal(e: Expr): Tri {
         if (isReal(a) === true) return true;
         if (e.name === 'tanh' && a instanceof Sym && a.assumptions0.get('extended_real') === true) return true;
         if (e.name === 'cosh' && isImaginaryValue(a)) return true;
-        const y = impl.fn?.('im', [a]);
-        if (y === undefined) return undefined;
+        const apply = impl.fn;
+        if (apply === undefined) return undefined;
+        const y = apply('im', [a]);
         const angle = e.name === 'cosh' ? y : impl.mul(2, y);
-        const sine = impl.fn?.('sin', [angle]);
-        const vanishes = sine === undefined ? undefined : isZero(sine);
-        return e.name === 'tanh' && vanishes === true && isZero(impl.fn?.('re', [a]) ?? a) !== false
+        const vanishes = isZero(apply('sin', [angle]));
+        return e.name === 'tanh' && vanishes === true && isZero(apply('re', [a])) !== false
           ? undefined : vanishes;
       }
       case 'sinc':
@@ -232,13 +232,13 @@ function realOn(a: Expr, lo: readonly [number, 'open' | 'closed'], hi: readonly 
 /** cosh(a + I*b) is real when sin(b)*sinh(a) vanishes. */
 function coshSign(a: Expr, sign: 1 | -1): Tri {
   if (isReal(a) === true) return sign === 1;
-  const y = impl.fn?.('im', [a]);
-  if (y === undefined) return undefined;
+  const apply = impl.fn;
+  if (apply === undefined) return undefined;
+  const y = apply('im', [a]);
   if (isIntegerQ(impl.mul(y, impl.pow(impl.mul(2, S.Pi), -1))) === true) return sign === 1;
-  const cosine = impl.fn?.('cos', [y]);
-  if (cosine === undefined) return undefined;
+  const cosine = apply('cos', [y]);
   if (cosine.equals(S.One) || cosine.equals(S.NegOne)) return cosine.equals(S.One) === (sign === 1);
-  if (isZero(impl.fn?.('re', [a]) ?? a) === true) return (sign === 1 ? isPositive : isNegative)(cosine);
+  if (isZero(apply('re', [a])) === true) return (sign === 1 ? isPositive : isNegative)(cosine);
   return undefined;
 }
 

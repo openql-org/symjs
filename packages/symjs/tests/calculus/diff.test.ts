@@ -108,6 +108,8 @@ describe('diff (SymPy diff)', () => {
     expect(diff(sj.fn('im', [imaginary], { evaluate: false }), imaginary).equals(mul(-1, I))).toBe(true);
     expect(diff(sj.fn('conjugate', [imaginary], { evaluate: false }), imaginary).equals(sj.S.NegOne)).toBe(true);
     expect(sj.fdiff(sj.abs(x)).equals(sj.sign(x))).toBe(true);
+    expect(diff(sj.fn('re', [imaginary], { evaluate: false }), imaginary).equals(sj.S.Zero)).toBe(true);
+    expect(diff(sj.Sum(x, [x, 1, 5]), x).equals(sj.S.Zero)).toBe(true);
   });
 
   it('differentiates undefined functions, derivatives, sums and piecewise functions', () => {

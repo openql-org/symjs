@@ -12,7 +12,7 @@
 import type { Expr, ExprLike, FnName } from '../../core/nodes';
 import { defined, first, pair } from '../../core/guard';
 import { Add, Float, Fn, Mul, Rational, S, Special, registerFunctionHeads } from '../../core/nodes';
-import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../../core/ops';
+import { add, couldExtractMinusSign, mul, neg, pow, splitCoeff, sqrt } from '../../core/ops';
 import { asCoefficient, asIndependent } from '../../core/methods';
 import { NotImplementedError } from '../../core/errors';
 import { expandMul } from '../../simplify/expand';
@@ -20,6 +20,7 @@ import type { Sym } from '../../core/nodes';
 import { ratMod } from '../../core/num';
 import { AccumBounds } from '../../core/accumbounds';
 import { isIntegerQ, isReal } from '../../core/assumptions';
+import { fact } from '../../core/exprfacts';
 import { mapBottomUp } from '../../core/traverse';
 import { fnPartials } from '../../calculus/diff';
 import { numericFns } from '../../numeric/evalf';
@@ -404,10 +405,24 @@ const evalCot: Evaluator = (x) => {
   const c = iCoeff(x);
   if (c !== undefined) return neg(mul(I, coth(c)));
   const multiple = asCoefficient(x, pi);
-  if (multiple !== undefined && isIntegerQ(multiple) === true) return S.ComplexInfinity;
+  if (multiple !== undefined) {
+    if (isIntegerQ(multiple) === true) return S.ComplexInfinity;
+    const [scale, factor] = splitCoeff(multiple);
+    if (scale instanceof Float) {
+      const [p, q] = F.toRational(scale.mpf);
+      const remainder = p % q;
+      // SymPy _pi_coeff recognizes integers and binary fractions with a single fractional bit.
+      if ((remainder & (remainder - 1n)) === 0n) {
+        const exact = mul(Rational.of(p, q), factor);
+        if (fact(exact, 'integer') === true) return S.ComplexInfinity;
+        const reduced = ratMod(Rational.of(p, q), S.One);
+        if (fact(factor, 'integer') === true) return cot(mul(reduced, factor, pi));
+        return cot(mul(exact, pi));
+      }
+    }
+  }
   const pc = piCoeffOnly(x);
   if (pc !== undefined) {
-    if (pc.isInteger) return S.ComplexInfinity;
     // cot((k + 1/2)*pi) = 0
     if (pc.q === 2n) return S.Zero;
     if (pc.q === 5n || pc.q === 10n) return tan(add(div(pi, 2), neg(x)));
@@ -560,12 +575,10 @@ function inverseHyperbolicBranch(arg: Expr, reflect: boolean): Expr | undefined 
   const real = re(arg);
   const imaginary = im(arg);
   if (isReal(real) !== true || isReal(imaginary) !== true) return undefined;
-  const value = imaginary.toNumber();
-  if (!Number.isFinite(value)) return undefined;
-  const k = Math.floor(value / Math.PI + 0.5);
-  if (!Number.isSafeInteger(k)) return undefined;
-  const reduced = add(real, mul(I, add(imaginary, mul(-k, pi))));
-  return reflect && k % 2 !== 0 ? neg(reduced) : reduced;
+  const turns = fn('floor', [add(div(imaginary, pi), half)]);
+  if (!(turns instanceof Rational && turns.isInteger)) return undefined;
+  const reduced = add(real, mul(I, add(imaginary, mul(-turns.p, pi))));
+  return reflect && turns.p % 2n !== 0n ? neg(reduced) : reduced;
 }
 
 const evalAsinh: Evaluator = (x) => {

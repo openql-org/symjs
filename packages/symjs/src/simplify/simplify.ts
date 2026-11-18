@@ -370,7 +370,7 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   if (hasFn(expr, KRONECKER)) expr = kroneckersimp(expr);
   if (hasFn(expr, BESSEL)) expr = besselsimp(expr);
   if (hasFn(expr, TRIG_HYP)) expr = trigsimp(expr);
-  if (hasFn(expr, LOG)) expr = shorter(expand_log(expr), logcombine(expr));
+  if (hasFn(expr, LOG)) expr = shorter(expand_log(expr), logcombine(expr), expr);
   if (hasFn(expr, COMBINATORIAL_GAMMA)) expr = combsimp(expr);
   // powers, the cancelled form and the factored or expanded form
   let short = shorter(powsimp(expr, { combine: 'exp', deep: true }), powsimp(expr), expr);

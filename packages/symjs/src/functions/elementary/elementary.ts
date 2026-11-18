@@ -8,7 +8,7 @@
 import { accumBoundsFunction } from './accumbounds';
 import { AccumBounds } from '../../core/accumbounds';
 import { piecewise } from '../../core/logic';
-import { first } from '../../core/guard';
+import { expectType, first } from '../../core/guard';
 import { precToDps } from '../../numeric/mpf';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../../core/assumptions';
 import type { ExprLike, FnName } from '../../core/nodes';
@@ -846,7 +846,7 @@ export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: b
     && ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(name)
     && 'applyfunc' in x0 && typeof x0.applyfunc === 'function') {
     const mapped: unknown = x0.applyfunc((value: Expr) => fn(name, [value]));
-    if (mapped instanceof Expr) return mapped;
+    return expectType(mapped, (value): value is Expr => value instanceof Expr, 'mapped set expression');
   }
   if (x0 !== undefined && rest.length === 0 && impl.accumBounds?.is(x0)) {
     const r = accumBoundsFunction(name, x0, (n, x) => fn(n, [x]));

@@ -624,7 +624,6 @@ class Decider {
         // isReal counts oo and -oo as real (extended reals); Q.real does not
         if (this.q('finite', e) === false) return false;
         if (isConst(e, 'I')) return false;
-        if (this.q('imaginary', e) === true) return false;
         if (e instanceof Add) {
           const rs = e.args.map((a) => this.q('real', a));
           if (rs.every((r) => r === true)) return true;
@@ -640,6 +639,7 @@ class Decider {
             if (e.args.every((a) => im.includes(a) || this.q('zero', a) === false)) return false;
           }
         }
+        if (this.q('imaginary', e) === true) return false;
         if (e instanceof Pow) {
           const { base, exp } = e;
           if (base instanceof Pow && isConst(base.base, 'E') && this.q('integer', exp) === true) {
@@ -667,6 +667,7 @@ class Decider {
         return isReal(this.re(e)) ?? (this.q('rational', e) === true ? true : undefined);
       case 'extended_real': {
         if (e instanceof Special) return e.name === 'oo' || e.name === '-oo';
+        if (e instanceof Fn && (e.name === 'asin' || e.name === 'acos')) return this.q('real', e);
         if (e instanceof Add && e.args.length === 2 && e.args.some((a) => a instanceof Special && (a.name === 'oo' || a.name === '-oo')) && e.args.some((a) => this.q('real', a) === true)) return true;
         // SymPy _eval_is_extended_real of functions real on the extended real line
         if (e instanceof Fn && e.args.length === 1 && EXTENDED_REAL_FNS.has(e.name) && this.q('extended_real', at(e.args, 0)) === true) return true;

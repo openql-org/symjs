@@ -14,7 +14,7 @@ import { Add, Derivative, Dummy, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, 
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { isIntegerQ, isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
-import { BoolOp, and } from './boolalg';
+import { BoolOp, and, not, or } from './boolalg';
 import { at, cast, defined, first } from './guard';
 
 const isSubsMap = (s: Substitution): s is ReadonlyMap<Expr, ExprLike> => s instanceof Map;
@@ -659,7 +659,31 @@ export function preorderTraversal(node: ExprLike, keys: boolean | ((e: Expr) => 
  * boolean connectives are not folded (their arguments are).
  */
 export function piecewiseFold(e: Expr): Expr {
-  if (e.isAtom || e instanceof Piecewise) return e;
+  if (e.isAtom) return e;
+  if (e instanceof Piecewise) {
+    const pairs: (readonly [Expr, Expr])[] = [];
+    let changed = false;
+    const original = e.pairs;
+    for (const [index, [value, condition]] of original.entries()) {
+      const folded = piecewiseFold(value);
+      let c = condition;
+      if (condition instanceof BoolOp ? condition.op === 'ITE' : condition instanceof ExtensionExpr && condition.name === 'ITE') {
+        const test = at(condition.args, 0), whenTrue = at(condition.args, 1), whenFalse = at(condition.args, 2);
+        c = and(or(not(test), whenTrue), or(test, whenFalse));
+      }
+      if (folded instanceof Piecewise) {
+        const inner = folded.pairs;
+        for (const [v, branch] of inner) pairs.push([v, and(c, branch)]);
+        // An undefined inner value cannot fall through to a later outer branch.
+        if (index + 1 < original.length && !inner.some(([, test]) => test === S.true)) pairs.push([S.NaN, c]);
+        changed = true;
+      } else {
+        pairs.push([folded, c]);
+        changed ||= folded !== value || c !== condition;
+      }
+    }
+    return changed ? piecewise(...pairs) : e;
+  }
   const args = e.args.map(piecewiseFold);
   const i = args.findIndex((a) => a instanceof Piecewise);
   if (i < 0 || e instanceof ExtensionExpr || e instanceof BoolOp) return args.some((a, j) => a !== e.args[j]) ? rebuild(e, args) : e;

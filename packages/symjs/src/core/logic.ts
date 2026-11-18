@@ -179,8 +179,7 @@ const NEGATED: Record<RelOp, RelOp> = { Lt: 'Ge', Le: 'Gt', Gt: 'Le', Ge: 'Lt', 
 
 /** The key of the canonical negation of a relation (SymPy c.negated.canonical). */
 function negatedKey(r: Rel): string {
-  const negated = rel(NEGATED[r.op], r.lhs, r.rhs);
-  return (negated instanceof Rel ? canonicalRelation(negated) : negated).key;
+  return canonicalRelation(new Rel(NEGATED[r.op], r.lhs, r.rhs)).key;
 }
 
 /** The relations of a condition made canonical (SymPy Piecewise.eval: cond.replace(is_Relational, _canonical_coeff)). */
@@ -248,9 +247,15 @@ export function piecewise(...args: (PiecewisePair | PiecewiseOptions)[]): Expr {
       }
       c = none ? S.false : and(...kept);
     } else if (c instanceof Rel && seen.has(negatedKey(c))) c = S.true;
-    seen.add(c.key);
     if (isFalse(c)) continue;
-    const ex = sympify(e);
+    let ex = sympify(e);
+    if (ex instanceof Piecewise) {
+      const inner = ex.pairs;
+      const firstReachable = inner.findIndex(([, test]) => !seen.has(test.key));
+      if (firstReachable < 0) ex = S.NaN;
+      else if (firstReachable > 0) ex = piecewise(...inner.slice(firstReachable));
+    }
+    seen.add(c.key);
     if (out.length && at(out, -2).key === ex.key) {
       // successive pairs with the same expression: one pair with the conditions or-ed
       out[out.length - 1] = or(c, at(out, -1));

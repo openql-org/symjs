@@ -18,6 +18,34 @@ import { rischHooks } from '../../src/integrals/risch';
 
 const syms = [new Sym('p', { positive: true }), new Sym('q', { negative: true }), new Sym('r', { real: true })];
 const P = (s: string) => parse(s, { symbols: syms });
+
+it('integrates affine Piecewise conditions that exclude a point or simplify to a truth value', () => {
+  const x = sj.symbol('x');
+  const a = sj.symbol('a');
+  expect(integrate(sj.Piecewise([1, sj.Ne(x, a)], [0, true]), x).equals(x)).toBe(true);
+  const condition = (lhs: Expr, rhs: Expr) => new sj.Rel('Gt', lhs, rhs);
+  const raw = (test: Expr) => new sj.Piecewise([sj.S.One, test, sj.S.Two, sj.S.true]);
+  expect(integrate(raw(sj.S.false), x).equals(sj.mul(2, x))).toBe(true);
+  expect(integrate(raw(condition(sj.add(x, 1), x)), x).equals(x)).toBe(true);
+  expect(integrate(raw(condition(x, x)), x).equals(sj.mul(2, x))).toBe(true);
+});
+
+it('evaluates symbolic interval holes and retains a singular branch constant', () => {
+  const x = sj.symbol('x');
+  const bound = sj.symbol('b', { positive: true });
+  expect(sstr(integrate(P('Piecewise((x,x<2))'), x, [0, bound])))
+    .toBe('Piecewise((Min(2, b)**2/2, b <= Min(2, b)), (nan, True))');
+  expect(sstr(integrate(P('Piecewise((1,x>0),(1/x,True))'), x)))
+    .toBe('Piecewise((log(x), x <= 0), (x, True))');
+});
+
+it('keeps the integral when a branch primitive or an affine clipping bound cannot be computed', () => {
+  const x = sj.symbol('x');
+  const a = sj.symbol('a');
+  const f = sj.SymFunction('f')(x);
+  expect(integrate(sj.Piecewise([f, sj.Gt(x, 0)], [0, true]), x)).toBeInstanceOf(sj.Integral);
+  expect(integrate(sj.Piecewise([1, sj.And(sj.Gt(x, a), sj.Gt(f, 0))], [0, true]), x)).toBeInstanceOf(sj.Integral);
+});
 const V = (s: string): Sym => {
   const v = P(s);
   if (!(v instanceof Sym)) throw new TypeError(s);
@@ -609,6 +637,66 @@ it('integrates special functions, odd cosine powers and extension components', (
 
 it('retains symbolic slopes multiplied by nonzero numeric constants', () => {
   expect(String(integrate(parse('exp(pi*y*x)'), x))).toBe('Piecewise((exp(pi*x*y)/(pi*y), Ne(y, 0)), (x, True))');
+});
+
+it('compares reversed Piecewise conditions and infinite breakpoints on a real interval', () => {
+  for (const condition of [
+    new sj.Rel('Lt', sj.S.NegativeInfinity, x),
+    new sj.Rel('Lt', sj.S.Zero, x),
+    new sj.Rel('Lt', sj.add(x, -1), x),
+  ]) {
+    const f = new sj.Mul([x, new sj.Piecewise([sj.S.One, condition, sj.S.Zero, sj.S.true])]);
+    expect(String(integrate(f, x, [0, 1]))).toBe('1/2');
+  }
+  const c = new sj.Rel('Gt', x, sj.S.Zero);
+  const f = new sj.Mul([x, new sj.Piecewise([sj.S.One, c, sj.S.Zero, sj.S.true])]);
+  const a = new sj.Sym('a', { positive: true });
+  expect(integrate(f, x, [a, sj.add(a, 1)]).subs(a, 2).equals(sj.Rational.of(5, 2))).toBe(true);
+});
+
+it('integrates absolute trigonometric waves across half-periods', () => {
+  expect(String(integrate(parse('Abs(sin(x))'), x, [0, parse('2*pi')]))).toBe('4');
+  expect(String(integrate(parse('Abs(cos(2*x))'), x, [parse('pi/4'), 0]))).toBe('-1/2');
+  expect(String(integrate(parse('Abs(sin(x-pi/4))'), x, [0, parse('pi/2')]))).toBe('2 - sqrt(2)');
+  for (const f of ['Abs(sin(x**2))', 'Abs(sin(exp(x)))', 'Abs(sin(a*x))', 'Abs(sin(x+I/2))']) {
+    expect(integrate(parse(f), x, [1, 2])).toBeInstanceOf(sj.Integral);
+  }
+  expect(integrate(parse('Abs(sin(x))'), x, [0, sj.S.Infinity])).toBeInstanceOf(sj.Integral);
+  for (const f of ['Abs(y)', 'Abs(log(y))']) {
+    expect(integrate(parse(f), x, [1, 2]).equals(parse(f))).toBe(true);
+  }
+  const imaginarySlope = sj.fn('abs', [sj.fn('sin', [sj.mul(sj.S.I, x)], { evaluate: false })], { evaluate: false });
+  expect(integrate(imaginarySlope, x, [0, 1])).toBeInstanceOf(sj.Integral);
+});
+
+it('matches the branch limits of a Piecewise Dirac delta antiderivative', () => {
+  const f = sj.piecewise([sj.DiracDelta(sj.add(x, -1)), sj.Lt(x, 2)], [0, true]);
+  expect(String(integrate(f, x))).toBe('Piecewise((Heaviside(x - 1), x < 2), (1, True))');
+});
+
+it('ignores isolated residue classes when measuring Piecewise intervals', () => {
+  const residue = sj.Mod(x, 2);
+  expect(String(integrate(sj.piecewise([1, sj.Eq(residue, 1)], [2, true]), x, [0, 5]))).toBe('10');
+  expect(String(integrate(sj.piecewise([1, sj.Ne(residue, 1)], [2, true]), x, [0, 5]))).toBe('5');
+  const y = new sj.Sym('y');
+  const unsupported = [
+    sj.Eq(sj.Mod(sj.pow(x, 2), 2), 1),
+    sj.Eq(sj.Mod(x, y), 1),
+    new sj.Rel('Eq', residue, x),
+  ];
+  for (const condition of unsupported) {
+    expect(integrate(new sj.Piecewise([sj.S.One, condition, sj.S.Two, sj.S.true]), x, [0, 5]))
+      .toBeInstanceOf(sj.Integral);
+  }
+});
+
+it('combines infinite limits with proven finite symbolic endpoints', () => {
+  const y = new sj.Sym('y');
+  const f = sj.piecewise([1, sj.Lt(sj.sub(x, y), 0)], [0, true]);
+  expect(integrate(f, y, [0, sj.S.Infinity])).toBe(sj.S.Infinity);
+  expect(integrate(1, y, [sj.S.NegativeInfinity, sj.Max(0, x)])).toBe(sj.S.Infinity);
+  expect(String(integrate(1, y, [sj.S.NegativeInfinity, x]))).toBe('x + oo');
+  expect(String(integrate(1, y, [x, sj.S.Infinity]))).toBe('-x + oo');
 });
 
 describe('absolute values and signs of real polynomials', () => {
