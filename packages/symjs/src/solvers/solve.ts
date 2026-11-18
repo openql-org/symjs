@@ -10,7 +10,7 @@ import { NonInvertibleMatrixError, NotImplementedError } from '../core/errors';
 import { solvePolySystem } from './polysys';
 import { ask, Q } from '../core/refine';
 import type { ExprLike } from '../core/nodes';
-import { Expr, Add, BoolAtom, Constant, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Expr, Add, BoolAtom, Constant, Dummy, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, piecewiseFold, rebuild, some, subs, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import { and, not, or } from '../core/boolalg';
@@ -20,6 +20,8 @@ import { NoMatch, type NoMatchResult } from '../core/truth';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
 import { evalMp, fromMpc } from '../numeric/mpeval';
+import { cmp as compareMpf, fromNumber } from '../numeric/mpf';
+import { cabs } from '../numeric/mpfun';
 import { rationalFromString } from '../core/numberutils';
 import { diff } from '../calculus/diff';
 import { acos, asin, atan, cosh, sinh, tanh, tan, sin, cos, fn, log } from '../functions/elementary/elementary';
@@ -33,6 +35,7 @@ import { linearEqToMatrix, solveAugmented } from '../matrices/linsys';
 import { luSolve } from '../matrices/linalg';
 import { Matrix } from '../matrices/matrix';
 import { ExprMap } from '../core/exprmap';
+import { ordered } from '../core/match';
 import { generateBell } from '../utilities/iterables';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand, expandMul, expand_power_exp } from '../simplify/expand';
@@ -99,8 +102,7 @@ export function checksol(equation: ExprLike | readonly ExprLike[], assignments: 
   if (residual instanceof Sym) return false;
   if (options.numerical !== false && !freeSymbols(residual).size) {
     try {
-      const { re, im } = fromMpc(evalMp(residual, 200), 200).toComplex();
-      return Number.isFinite(re) && Number.isFinite(im) ? Math.hypot(re, im) < 1e-9 : 'unknown';
+      return compareMpf(cabs(evalMp(residual, 200), 200), fromNumber(1e-9)) < 0;
     } catch {
       return 'unknown';
     }
@@ -196,7 +198,7 @@ function checkSolution(f: Expr, x: Sym, v: Expr): boolean {
   for (const name of ['positive', 'negative', 'nonnegative', 'nonpositive', 'real', 'imaginary', 'integer', 'zero'] as const) {
     const expected = a[name];
     if (expected === undefined) continue;
-    const actual = name === 'real' && v instanceof ExtensionExpr ? v.isRealSelf() ?? ask(Q.real(v)) : ask(Q[name](v));
+    const actual = ask(Q[name](v));
     if (actual === !expected) return false;
     if (name === 'real' && expected && actual === 'unknown') {
       const factors = v instanceof Mul ? v.args.filter((a) => !(a instanceof Rational)) : [v];
@@ -413,8 +415,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
     try {
       rs = roots(n, x, { quintics: true });
     } catch (err) {
-      if (!(err instanceof NotImplementedError)) throw err;
-      if (!rational && degree !== 5) throw err;
+      if (!(err instanceof NotImplementedError && (rational || degree === 5))) throw err;
       rs = [];
     }
     if (rational && rs.length < degree) return uniqueKeys(Poly.from(n, [x]).allRoots());
@@ -433,15 +434,12 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   if (dep.length > 1) {
     const factored = factorTerms(add(...dep));
     if (factored instanceof Mul && factored.args.filter((term) => term.has(x)).length === 1) {
-      const combined = add(factored, ...terms.filter((term) => !term.has(x)));
-      if (!combined.equals(num) && !expandMul(combined).equals(combined)) {
+      const dependent = first(factored.args.filter((term) => term.has(x)));
+      if (dependent instanceof Pow && !dependent.exp.has(x) && !(dependent.exp instanceof Rational && dependent.exp.isInteger)) {
         const independent = add(...terms.filter((term) => !term.has(x)));
-        const dependent = first(factored.args.filter((term) => term.has(x)));
-        if (dependent instanceof Pow && !dependent.exp.has(x) && !(dependent.exp instanceof Rational && dependent.exp.isInteger)) {
-          const coefficient = mul(...factored.args.filter((term) => !term.has(x)));
-          const y = mul(-1, independent, pow(coefficient, -1));
-          return solveRaw(add(dependent.base, mul(-1, pow(y, pow(dependent.exp, -1)))), x, depth + 1);
-        }
+        const coefficient = mul(...factored.args.filter((term) => !term.has(x)));
+        const y = mul(-1, independent, pow(coefficient, -1));
+        return solveRaw(add(dependent.base, mul(-1, pow(y, pow(dependent.exp, -1)))), x, depth + 1);
       }
     }
   }
@@ -501,7 +499,8 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
     }
     for (const [lhs, rhs] of [[firstTerm, mul(-1, secondTerm)], [secondTerm, mul(-1, firstTerm)]] as const) {
       if (lhs instanceof Pow && lhs.base.equals(x) && lhs.exp instanceof Rational && rhs instanceof Pow && !rhs.base.has(x) && ask(Q.positive(rhs.base)) === true) {
-        return lambertLogForm(add(mul(lhs.exp, log(x)), mul(-1, log(rhs.base), rhs.exp)), x) ?? [];
+        const solutions = lambertLogForm(add(mul(lhs.exp, log(x)), mul(-1, log(rhs.base), rhs.exp)), x);
+        if (solutions) return solutions;
       }
     }
   }
@@ -513,9 +512,6 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   if (pair) return solveRaw(pair, x, depth + 1);
   const lw = lambertSolve(num, x) ?? tsolveLambert(num, x, depth);
   if (lw) return lw;
-  // a*sin(u) + b*cos(u) = 0  ->  tan(u) = -b/a
-  const sc = sinCosLinear(num, x);
-  if (sc) return sc;
   // sum_i c_i*log(g_i) + b = 0 with rational c_i: prod_i g_i**(L*c_i) = exp(-L*b) (SymPy logcombine with force)
   const lg = logSum(terms, x);
   if (lg) return solveRaw(expandMul(add(lg[0], mul(-1, exp(mul(-1, lg[1]))))), x, depth + 1);
@@ -587,9 +583,7 @@ function clearSquareRootPair(e: Expr, x: Sym): Expr | undefined {
   const other: Expr[] = [];
   for (const term of e.args) {
     const factors = term instanceof Mul ? term.args : [term];
-    const sq = factors.filter((p): p is Pow => p instanceof Pow && p.exp.equals(S.Half) && p.has(x));
-    if (sq.length > 1) return undefined;
-    const r = sq[0];
+    const r = factors.find((p): p is Pow => p instanceof Pow && p.exp.equals(S.Half) && p.has(x));
     if (r) radicals.push([mul(...factors.filter((f) => f !== r)), r]);
     else other.push(term);
   }
@@ -841,29 +835,6 @@ function radicalsOfX(num: Expr, x: Sym): Expr[] | undefined {
     }
   }
   return out;
-}
-
-function sinCosLinear(e: Expr, x: Sym): Expr[] | undefined {
-  const terms = e instanceof Add ? e.args : [e];
-  let a: Expr = S.Zero;
-  let b: Expr = S.Zero;
-  let u: Expr | undefined;
-  for (const t of terms) {
-    const fs = t instanceof Mul ? t.args : [t];
-    const trig = fs.filter((g): g is Fn => g instanceof Fn && (g.name === 'sin' || g.name === 'cos') && g.has(x));
-    if (trig.length !== 1) return undefined;
-    const g = first(trig);
-    const arg = first(g.args);
-    if (u && u.key !== arg.key) return undefined;
-    u = arg;
-    const c = mul(...fs.filter((h) => h !== g));
-    if (c.has(x)) return undefined;
-    if (g.name === 'sin') a = add(a, c);
-    else b = add(b, c);
-  }
-  // a single sin or cos term, or terms with one function, were isolated before: both a and b are nonzero
-  if (!fraction(cancel(mul(a, pow(b, -1))))[1].isNumber) return undefined;
-  return solveRaw(add(defined(u, 'argument'), mul(-1, atan(mul(-1, b, pow(a, -1))))), x);
 }
 
 /**
@@ -1329,6 +1300,35 @@ function solveIndexedSystem(equations: readonly Expr[], variables: readonly Sym[
   });
 }
 
+/** Prefer sparse equations and pivots independent of the remaining unknowns in overdetermined systems. */
+function linearPivot(equations: readonly Expr[], unknowns: readonly Sym[], preferConstant: boolean) {
+  const candidates = [...equations];
+  const numerators = new Map<Expr, Expr>();
+  if (preferConstant) {
+    for (const equation of equations) numerators.set(equation, numerOf(equation));
+    const priorities = new Map(ordered([...numerators.values()]).map((numerator, index) => [numerator, index]));
+    const countUnknowns = new Map(equations.map((eq) => [eq, unknowns.filter((u) => eq.has(u)).length]));
+    candidates.sort((a, b) =>
+      getOrThrow(countUnknowns, a) - getOrThrow(countUnknowns, b) ||
+      getOrThrow(priorities, getOrThrow(numerators, a)) - getOrThrow(priorities, getOrThrow(numerators, b)),
+    );
+  }
+  let deferred: { equation: Expr; symbol: Sym; c0: Expr; c1: Expr; canVanish: boolean } | undefined;
+  for (const equation of candidates) {
+    const numerator = numerators.get(equation) ?? numerOf(equation);
+    for (const symbol of unknowns) {
+      const coefficients = polyCoefficients(numerator, symbol);
+      if (!coefficients || Math.max(...coefficients.keys()) !== 1) continue;
+      const c1 = getOrThrow(coefficients, 1);
+      const canVanish = unknowns.some((u) => c1.has(u));
+      const pivot = { equation, symbol, c0: coefficients.get(0) ?? S.Zero, c1, canVanish };
+      if (!preferConstant || !canVanish) return pivot;
+      deferred ??= pivot;
+    }
+  }
+  return deferred;
+}
+
 /**
  * Solve a polynomial system by successive elimination: equations that are
  * univariate (after substitution) are solved and their solutions substituted.
@@ -1356,6 +1356,7 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opt
     return solve(first(eqs), symbol, { check: false }).map((value) => [value]);
   }
   const results: Expr[][] = [];
+  const preferConstant = eqs.length > syms.length && opts.manual !== true;
   const go = (system: Expr[], assigned: Map<string, Expr>) => {
     const unchecked = opts.check === false && assigned.size > 0;
     const pending = uniqueKeys(system.map((e) => expandMul(e)).filter((e) => !isZeroE(e) && !(unchecked && (e instanceof Special || opts.manual && !syms.some((s) => !assigned.has(s.key) && e.has(s))))));
@@ -1399,31 +1400,23 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opt
         }
       }
     }
-    // prefer an equation that is linear in some unknown with a nonzero constant coefficient
-    for (const e of pending) {
-      for (const u of unknowns) {
-        const pc = polyCoefficients(numerOf(e), u);
-        if (pc && Math.max(...pc.keys()) === 1) {
-          const c1 = getOrThrow(pc, 1);
-          const c0 = pc.get(0) ?? S.Zero;
-          // c0 and c1 are free of u, and so is the value; the solutions where a coefficient c1 in the
-          // other unknowns vanishes are those of c1 = c0 = 0
-          if (unknowns.some((w) => c1.has(w))) go([c1, c0, ...pending.filter((p) => p !== e)], assigned);
-          const val = cancel(mul(-1, c0, pow(c1, -1)));
-          if (val instanceof Special) {
-            if (unchecked) go(pending.filter((p) => p !== e), assigned);
-            return;
-          }
-          const next = new Map(assigned);
-          for (const [k, w] of next) next.set(k, cancel(xreplace(w, [[u, val]])));
-          next.set(u.key, val);
-          go(
-            pending.filter((p) => p !== e).map((p) => xreplace(p, [[u, val]])),
-            next,
-          );
-          return;
-        }
+    const pivot = linearPivot(pending, unknowns, preferConstant);
+    if (pivot) {
+      const { equation, symbol, c0, c1, canVanish } = pivot;
+      const remaining = pending.filter((e) => e !== equation);
+      // The nonzero pivot gives the value of the symbol. Its vanishing branch
+      // leaves the symbol free and requires both coefficients to be zero.
+      if (canVanish) go([c1, c0, ...remaining], assigned);
+      const value = cancel(mul(-1, c0, pow(c1, -1)));
+      if (value instanceof Special) {
+        if (unchecked) go(remaining, assigned);
+        return;
       }
+      const next = new Map(assigned);
+      for (const [key, old] of next) next.set(key, cancel(xreplace(old, [[symbol, value]])));
+      next.set(symbol.key, value);
+      go(remaining.map((e) => xreplace(e, [[symbol, value]])), next);
+      return;
     }
     // a univariate equation
     for (const e of pending) {

@@ -3021,7 +3021,6 @@
     "sympy.solvers.tests.test_recurr:test_rsolve:130 #b8e7beac649b1344ccec",
     "sympy.solvers.tests.test_recurr:test_rsolve_raises:213 #7fb121168448fdd3f11b",
     "sympy.solvers.tests.test_solvers:test_issue_10169:2674 #05e1696dfc71a18c9ed9",
-    "sympy.solvers.tests.test_solvers:test_issue_21882:1581 #6bfd223aef04a2bb60c5",
     "sympy.solvers.tests.test_solvers:test_issue_6528:1807 #31764a03b90cbc90c95d",
     "sympy.solvers.tests.test_solveset:test_abs_invert_solvify:1582 #c19e9f5a2a54eabbd6e8",
     "sympy.solvers.tests.test_solveset:test_exponential_real:2854 #3d3960526605ccc04097",
