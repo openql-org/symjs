@@ -4898,7 +4898,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const x = new Sym('x');
     expect(sympyStr(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [new Pow(x, rational(-1)), true]).subs(x, new Float(0)))).toBe('1');
   });
-  it.fails("test_piecewise1:101", () => {
+  it("test_piecewise1:101", () => {
     const x = new Sym('x');
     expect(sympyStr(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(2), Relational(new Pow(x, rational(-1)), rational(2), '>', { evaluate: false })]).subs(x, new Float(0)))).toBe('1');
   });

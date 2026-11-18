@@ -299,3 +299,18 @@ it('excludes differentiation variables and composite bound integration variables
   const f = sj.SymFunction('f')(a), g = sj.SymFunction('g')(b);
   expect([...sj.freeSymbols(new sj.Integral([f, f, sj.S.One, g]))]).toEqual([b]);
 });
+
+it('rebuilds limits and substitutes into indefinite integration limits', () => {
+  const limit = new sj.Limit([x, x, sj.S.Zero], '-');
+  expect(sj.rebuild(limit, [y, x, sj.S.Zero])).toEqual(new sj.Limit([y, x, sj.S.Zero], '-'));
+  expect(sj.subs(new Integral([x, x]), [[x, 2]])).toEqual(new Integral([x, x, rational(2)]));
+  expect(sj.subs(new Integral([x, x]), [[x, y]])).toEqual(new Integral([y, y]));
+  expect(String(sj.subs(mul(rational(1, 2), x), [[mul(2, x), y]]))).toBe('x/2');
+});
+
+it('stops substitution after a true Piecewise branch', () => {
+  const expression = sj.piecewise([1, sj.Eq(pow(x, 2), -1)], [2, sj.Lt(x, 0)]);
+  expect(String(sj.subs(expression, [[x, sj.I]]))).toBe('1');
+  const excluded = sj.piecewise([sj.Lt(x, 0), sj.Eq(x, 0)], [1, true]);
+  expect(String(sj.subs(excluded, [[x, sj.I]]))).toBe('1');
+});

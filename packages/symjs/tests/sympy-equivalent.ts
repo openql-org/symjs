@@ -121,7 +121,8 @@ function trialValue(s: sj.Sym, k: number): Expr {
   const real = sj.Rational.of(magnitude, 37);
   if (a.positive || a.nonnegative) return real;
   if (a.negative || a.nonpositive) return sj.mul(-1, real);
-  if (a.real) return sj.mul(sign, real);
+  // Supplement complex samples with real points in the domain of inequalities.
+  if (a.real || (k >= 4 && a.real !== false && a.imaginary !== true && a.extendedReal !== false)) return sj.mul(sign, real);
   return sj.add(sj.mul(sign, real), sj.mul(sj.Rational.of(1 + (seed >>> 16) % 89, 41), sj.I));
 }
 
@@ -141,7 +142,8 @@ function exprEquivalent(a: Expr, b: Expr): boolean {
   const symbols = new Map([...sj.freeSymbols(a), ...sj.freeSymbols(b)].filter((s) => s instanceof sj.Sym).map((s) => [s.key, s]));
   // Closed algebraic numbers have no independent substitution points. Repeating
   // the same high-precision root evaluation provides no additional evidence.
-  const trials = symbols.size === 0 ? 1 : 4;
+  const hasOrdering = (e: Expr): boolean => (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') || e.args.some(hasOrdering);
+  const trials = symbols.size === 0 ? 1 : hasOrdering(a) || hasOrdering(b) ? 8 : 4;
   let agree = 0;
   for (let k = 0; k < trials; k++) {
     const replacements: [Expr, Expr][] = [...symbols.values()].map((s) => [s, trialValue(s, k)]);

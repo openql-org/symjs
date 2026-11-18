@@ -40,3 +40,17 @@ describe('Tuple and Dict (SymPy sympy.core.containers)', () => {
     expect(String(sj.Dict([[x, 1], [x, 2]]))).toBe('{x: 2}');
   });
 });
+
+
+it('repeats tuples and restricts index searches to Python slice bounds', () => {
+  const tuple = sj.Tuple(1, 2, 1);
+  expect(String(tuple.repeat(2))).toBe('(1, 2, 1, 1, 2, 1)');
+  expect(String(tuple.repeat(0))).toBe('()');
+  expect(String(tuple.repeat(-2))).toBe('()');
+  expect(() => tuple.repeat(0.5)).toThrow(TypeError);
+  expect(tuple.index(1, 1)).toBe(2);
+  expect(tuple.index(1, -1)).toBe(2);
+  expect(tuple.index(1, -100, -1)).toBe(0);
+  expect(() => tuple.index(1, 1, -1)).toThrow(RangeError);
+  expect(() => tuple.index(1, 9)).toThrow(RangeError);
+});

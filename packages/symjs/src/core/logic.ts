@@ -7,7 +7,7 @@
 
 import { Special } from './nodes';
 import type { Expr, ExprLike, RelOp } from './nodes';
-import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, impl, isNum, registerHeadResolver } from './nodes';
+import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
 import { numCmp } from './num';
 import { add, couldExtractMinusSign, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
@@ -44,7 +44,14 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     if (!equality) throw new TypeError('Invalid NaN comparison');
     return op === 'Eq' ? S.false : S.true;
   }
-  if (!equality && [lhs, rhs].some(isSpecial('zoo'))) throw new TypeError('Invalid comparison of non-real zoo');
+  if (!equality) {
+    for (const operand of [lhs, rhs]) {
+      if (isBoolean(operand)) throw new TypeError('Can only compare inequalities with expressions');
+      if (isSpecial('zoo')(operand) || (operand instanceof Sym ? operand.assumptions0.get('extended_real') === false : isReal(operand) === false)) {
+        throw new TypeError(`Invalid comparison of non-real ${String(operand)}`);
+      }
+    }
+  }
   const decided = impl.relational?.(op, lhs, rhs);
   if (decided !== undefined) return decided;
   const byCmp = (c: number): Expr => ({ Eq: c === 0, Ne: c !== 0, Lt: c < 0, Le: c <= 0, Gt: c > 0, Ge: c >= 0 }[op] ? S.true : S.false);
