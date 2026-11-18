@@ -1903,6 +1903,17 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new sj.Wild(String(args[0]), { exclude: ex });
   },
   WildFunction: (args, kw) => (noKw(kw), new sj.WildFunction(String(args[0]))),
+  Tuple: (args, kw) => (noKw(kw), sj.Tuple(...args.map(expressionContainer))),
+  Dict: (args, kw) => {
+    noKw(kw);
+    if (args.length === 1 && args[0] instanceof JsDict) return expressionContainer(args[0]);
+    const pairs = args.map((v) => {
+      if (!(v instanceof JsTuple) || v.items.length !== 2) throw new TypeError('Dict requires key-value pairs');
+      return [expressionContainer(v.items[0]), expressionContainer(v.items[1])] as const;
+    });
+    return sj.Dict(pairs);
+  },
+  Relational: (args, kw) => relationArgs(args, kw, args[2] === undefined ? '==' : String(args[2])),
   Equality: (args, kw) => relationArgs(args, kw, '=='),
   Unequality: (args, kw) => relationArgs(args, kw, '!='),
   Lambda: (args, kw) => {
@@ -5139,6 +5150,27 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.self?.t === 'Tuple' || c.args?.some((arg) => arg.t === 'Tuple')) {
+    if (c.fn === '.__add__') return (args, kw, self) => {
+      noKw(kw);
+      if (!(self instanceof JsTuple) || !(args[0] instanceof JsTuple)) throw new TypeError('Tuple concatenation requires tuples');
+      return sj.Tuple(...self.items.map(expressionContainer)).concat(sj.Tuple(...args[0].items.map(expressionContainer)));
+    };
+    if (c.fn === '.__mul__') return (args, kw, self) => {
+      noKw(kw);
+      const tuple = self instanceof JsTuple ? self : args[0];
+      const count = self instanceof JsTuple ? args[0] : self;
+      if (!(tuple instanceof JsTuple) || !(count instanceof sj.Rational) || !count.isInteger) throw new TypeError('Tuple repetition requires an integer');
+      return sj.Tuple(...tuple.items.map(expressionContainer)).repeat(Number(count.p));
+    };
+    if (c.fn === '.tuple_count' || c.fn === '.index') return (args, kw, self) => {
+      noKw(kw);
+      if (!(self instanceof JsTuple)) throw new TypeError('Expected a tuple');
+      const tuple = sj.Tuple(...self.items.map(expressionContainer));
+      return c.fn === '.tuple_count' ? tuple.count(asExpr(args[0])) : tuple.index(asExpr(args[0]), args[1] === undefined ? 0 : intArg(args[1]), args[2] === undefined ? tuple.length : intArg(args[2]));
+    };
+  }
+
   if (c.self?.t === 'PolyRing' && c.fn === '.dup_isolate_real_roots_list') return (args, kw, self) => {
     const ring = self as sj.PolyRing;
     if (!['ZZ', 'QQ'].includes(String(ring.domain))) throw new sj.DomainError('root isolation requires ZZ or QQ');

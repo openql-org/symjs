@@ -46,15 +46,22 @@ export class TupleNode extends ExtensionExpr {
     return this.args.filter((a) => a.key === k).length;
   }
   /** SymPy Tuple.index(value): the first position of value (RangeError when absent). */
-  index(value: ExprLike): number {
+  index(value: ExprLike, start = 0, stop = this.length): number {
     const k = sympify(value).key;
-    const i = this.args.findIndex((a) => a.key === k);
+    const from = start < 0 ? Math.max(0, this.length + start) : start;
+    const to = stop < 0 ? Math.max(0, this.length + stop) : stop;
+    const i = this.args.findIndex((a, j) => j >= from && j < to && a.key === k);
     if (i < 0) throw new RangeError(`${String(value)} is not in the Tuple`);
     return i;
   }
   /** SymPy Tuple + Tuple: the concatenation. */
   concat(other: TupleNode | readonly ExprLike[]): TupleNode {
     return new TupleNode([...this.args, ...(other instanceof TupleNode ? other.args : other.map(sympify))]);
+  }
+  /** Repeat the tuple like Python sequence multiplication. */
+  repeat(count: number): TupleNode {
+    if (!Number.isSafeInteger(count)) throw new TypeError('Tuple repetition requires an integer');
+    return new TupleNode(Array.from({ length: Math.max(0, count) }, () => this.args).flat());
   }
   /** SymPy StrPrinter._print_tuple: (a, b), (a,) and (). */
   override printStr(print: (e: Expr) => string): string {

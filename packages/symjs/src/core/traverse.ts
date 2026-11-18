@@ -10,7 +10,7 @@ import { Concrete } from './concrete';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import type { Key } from '../printing/sortkey';
 import type { ExprLike, Substitution } from './nodes';
-import { Add, Derivative, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, asRational, impl, isNum } from './nodes';
+import { Add, Derivative, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, asRational, impl, isNum } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
@@ -381,6 +381,16 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   }
   const r = evalSubs(e, old, nw);
   if (r !== undefined) return r;
+  if (e instanceof Piecewise) {
+    const pairs: [Expr, Expr][] = [];
+    for (const [value, condition] of e.pairs) {
+      const substituted = subsOne(condition, old, nw);
+      if (substituted === S.false) continue;
+      pairs.push([subsOne(value, old, nw), substituted]);
+      if (substituted === S.true) break;
+    }
+    return piecewise(...pairs);
+  }
   const args = e.args.map((a) => subsOne(a, old, nw));
   return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
 }
