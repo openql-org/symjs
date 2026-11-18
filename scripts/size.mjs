@@ -109,7 +109,8 @@ const CASES = [
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Tensor axis normalization, indexed broadcasting and matrix-array conversions.
-  ['index', '*', 2874],
+  // Polynomial remainder sequences, Hensel lifting and module orders add up to 2 KiB.
+  ['index', '*', 2876],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

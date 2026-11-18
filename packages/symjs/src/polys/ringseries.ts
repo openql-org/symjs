@@ -317,7 +317,7 @@ export function rsNewton(p: PolyElement, x: PolyElement, prec: ExprLike): Series
   if (p.ring.ngens !== 1 || p.isZero) throw new RangeError('Newton sums require a nonzero univariate polynomial');
   const degree = p.degree(), reversed = p.ring.fromTerms(p.listterms().map(([m, c]) => [[degree - first(m)], c]));
   const q = lift(p);
-  return restore(p, trunc(q.ring.groundNew(degree).sub(lift(rsMul(rsDiff(reversed, x), rsSeriesInversion(reversed, x, prec), x, prec)).mul(lift(x))), 0, rat(prec)));
+  return restore(p, q.ring.groundNew(degree).sub(lift(rsMul(rsDiff(reversed, x), rsSeriesInversion(reversed, x, prec), x, prec)).mul(lift(x))));
 }
 /** Polynomial whose roots are all pairwise sums of roots (SymPy rs_compose_add). */
 export function rsComposeAdd(p: PolyElement, q: PolyElement): PolyElement {

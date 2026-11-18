@@ -20,6 +20,33 @@
 import { at, defined, first } from '../core/guard';
 import { gcd as igcd, iroot } from '../core/numbers';
 import type { ZPoly, ZTerm } from './wang';
+import type { PolyElement } from './rings';
+
+/** Euclidean remainder sequence over a coefficient field. */
+export function dupEuclideanPrs(fIn: PolyElement, gIn: PolyElement): PolyElement[] {
+  let f = fIn, g = gIn;
+  const sequence = [f, g];
+  let h = f.rem(g);
+  while (!h.isZero) {
+    sequence.push(h);
+    [f, g] = [g, h];
+    h = f.rem(g);
+  }
+  return sequence;
+}
+
+/** Primitive pseudo-remainder sequence over a coefficient ring. */
+export function dupPrimitivePrs(fIn: PolyElement, gIn: PolyElement): PolyElement[] {
+  let f = fIn, g = gIn;
+  const sequence = [f, g];
+  let h = f.prem(g).primitive()[1];
+  while (!h.isZero) {
+    sequence.push(h);
+    [f, g] = [g, h];
+    h = f.prem(g).primitive()[1];
+  }
+  return sequence;
+}
 
 /** SymPy HEU_GCD_MAX: the number of evaluation points tried. */
 const HEU_GCD_MAX = 6;
