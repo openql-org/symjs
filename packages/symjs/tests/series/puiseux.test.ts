@@ -269,3 +269,26 @@ it('expands the logarithmic coefficients of reciprocal inverse functions', () =>
   expect(sj.sstr(series(sj.asec(x), x, 0, 5))).toBe('I*log(2) - I*log(x) - I*x**2/4 - 3*I*x**4/32 + O(x**5)');
   expect(sj.sstr(series(sj.acsc(x), x, 0, 5))).toBe('-I*log(2) + pi/2 + I*log(x) + I*x**2/4 + 3*I*x**4/32 + O(x**5)');
 });
+
+it('expands smooth functions at finite arguments and real absolute-value displacements', () => {
+  const t = new Sym('t', { positive: true });
+  const f = sj.SymFunction('f');
+  expect(() => sj.series(f(t.pow(-1)), t)).toThrow(SeriesError);
+  expect(String(sj.series(f(t), t, 0, 0))).toContain('O(');
+  expect(String(sj.series(sj.erfc(t.pow(-1)), t))).toBe('O(t**6)');
+  const a = new Sym('a', { real: true });
+  expect(() => new Expander(t).ser(sj.erf(a.mul(t.pow(-1))), sj.rational(3))).toThrow(SeriesError);
+  const z = new Sym('z');
+  const radius = sj.series(sj.abs(z.add(t)), t, 0, 3);
+  expect(String(radius)).toContain('re(sign(z))');
+});
+
+it('handles signs and zero truncation at the edge of the expansion', () => {
+  const t = new Sym('t', { positive: true }), r = new Sym('r', { real: true });
+  const engine = new Expander(t,x);
+  expect(engine.ser(new UndefFn('f',[t]),sj.S.Zero).coeff(sj.S.Zero).toString()).toBe('f(0)');
+  expect(() => engine.ser(sj.erf(sj.mul(r,sj.pow(t,-1))),sj.S.One)).toThrow(SeriesError);
+  expect(engine.ser(new sj.Fn('erfc', [sj.mul(-1,sj.pow(t,-1))]),sj.S.One).coeff(sj.S.Zero).equals(2)).toBe(true);
+  expect(String(series(P('frac(-x**8)'),x,0,4))).toBe('1 + O(x**4)');
+  expect(String(series(P('frac(x**8)'),x,0,4))).toBe('O(x**4)');
+});

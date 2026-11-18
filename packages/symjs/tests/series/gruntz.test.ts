@@ -128,3 +128,8 @@ describe('gruntz: the leading monomial with real exponents', () => {
     expect(() => monomialLead(parse('f(x)').subs(x, w), w, L, x, mul(-1, x))).toThrow(GruntzError);
   });
 });
+
+it('expands gamma near zero and scaled Ei at a moving center', () => {
+  expect(G('gamma(1/x)/x')).toBe('1');
+  expect(G('(Ei(x-exp(-exp(x)))-Ei(x))*exp(-x)*exp(exp(x))*x')).toBe('-1');
+});

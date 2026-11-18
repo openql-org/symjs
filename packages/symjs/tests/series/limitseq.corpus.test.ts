@@ -133,7 +133,7 @@ describe("sympy/series/tests/test_limitseq.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(limitSeq(new Mul([new Pow(new Add([rational(-5), new Mul([rational(3), new Pow(n, rational(3))]), new Mul([rational(4), n])]), rational(-1)), new Add([rational(4), new Mul([rational(3), new Pow(n, rational(2))]), new Mul([rational(5), new Pow(n, rational(3))])])]), n))).toBe('5/3');
   });
-  it.fails("test_limit_seq:81", () => {
+  it("test_limit_seq:81", () => {
     const n = new Sym('n', { integer: true });
     const k = new Sym('k', { integer: true });
     expect(sympyStr(limitSeq(new Mul([new Pow(n, rational(-1)), new Pow(fn('harmonic', [new Mul([rational(2), n])]), rational(-2)), Sum(fn('harmonic', [k]), [k, rational(1), n]), fn('harmonic', [n])]), n))).toBe('1');
@@ -149,7 +149,7 @@ describe("sympy/series/tests/test_limitseq.py", () => {
     const k = new Sym('k', { integer: true });
     expect(sympyStr(limitSeq(new Mul([new Pow(fn('binomial', [new Mul([rational(3), n]), n]), rational(-1)), new Pow(fn('binomial', [new Mul([rational(5), n]), n]), rational(-1)), Sum(new Mul([fn('binomial', [new Mul([rational(3), k]), k]), fn('binomial', [new Mul([rational(5), k]), k])]), [k, rational(1), n])]), n))).toBe('84375/83351');
   });
-  it.fails("test_limit_seq:91", () => {
+  it("test_limit_seq:91", () => {
     const n = new Sym('n', { integer: true });
     const k = new Sym('k', { integer: true });
     expect(sympyStr(limitSeq(new Mul([new Pow(fn('harmonic', [n]), rational(-3)), Sum(new Mul([new Pow(k, rational(-1)), new Pow(fn('harmonic', [k]), rational(2))]), [k, rational(1), new Mul([rational(2), n])])]), n))).toBe('1/3');
@@ -224,7 +224,7 @@ describe("sympy/series/tests/test_limitseq.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(limitSeq(new Add([new Mul([rational(2), new Pow(rational(-1), n)]), new Mul([rational(3), n, new Pow(new Add([rational(1), n]), rational(-1))])]), n))).toBe('AccumBounds(1, 5)');
   });
-  it.fails("test_limitseq_sum:120", () => {
+  it("test_limitseq_sum:120", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(limitSeq(new Add([new Mul([rational(-1), log(y)]), Sum(new Pow(x, rational(-1)), [x, rational(1), y])]), y))).toBe('EulerGamma');
   });
@@ -236,7 +236,7 @@ describe("sympy/series/tests/test_limitseq.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(limitSeq(new Mul([new Pow(rational(2), new Mul([rational(-1), x])), new Pow(x, rational(-1)), Sum(new Mul([new Pow(y, rational(2)), Sum(new Mul([new Pow(rational(2), z), new Pow(z, rational(-1))]), [z, rational(1), y])]), [y, rational(1), x])]), x))).toBe('4');
   });
-  it.fails("test_issue_9308:129", () => {
+  it("test_issue_9308:129", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(limitSeq(new Mul([new Pow(fn('factorial', [n]), rational(-1)), fn('subfactorial', [n])]), n))).toBe('exp(-1)');
   });
@@ -247,7 +247,7 @@ describe("sympy/series/tests/test_limitseq.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(limitSeq(new Pow(rational(-1, 2), n), n))).toBe('0');
   });
-  it.fails("test_issue_14196:144", () => {
+  it("test_issue_14196:144", () => {
     const m = new Sym('m');
     const n = new Sym('n', { positive: true });
     const k = new Sym('k', { positive: true });

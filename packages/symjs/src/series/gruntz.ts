@@ -27,7 +27,7 @@ import { coeff } from '../core/methods';
 import { Expander, SCALED_BESSELI, SCALED_BESSELK, SCALED_EI, SCALED_ERFC, isZeroCoeff } from './puiseux';
 
 /** Functions whose expansion at an infinite argument is known (or that the expansion rejects). */
-const TAME = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'loggamma', 'polygamma', 'abs', 're', 'im', 'arg']);
+const TAME = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'gamma', 'loggamma', 'polygamma', 'abs', 're', 'im', 'arg']);
 
 /** Functions continuous at 0. */
 const AT_ZERO = new Set(['sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'asin', 'acos', 'atan', 'asinh', 'atanh', 'erf', 'erfc']);
@@ -261,7 +261,7 @@ export class Gruntz {
     if (sig instanceof Rational && sig.isOne) return S.Zero;
     if (sig instanceof Rational && sig.p === -1n && sig.q === 1n) {
       // an imaginary coefficient I*a is a direction (I*oo)
-      if (c0 instanceof Mul && c0.args.some((a) => a.key === S.I.key) && !c0.has(x)) return mul(c0, S.Infinity);
+      if (c0 instanceof Mul && c0.args.some((a) => a.key === S.I.key) && !c0.has(x)) return mul(...c0.args.filter((a) => a.freeSymbols().size > 0 || isPositive(a) !== true), S.Infinity);
       // (the leading coefficient is not 0)
       return mul(this.sign(c0, x), S.Infinity);
     }
@@ -307,7 +307,7 @@ export class Gruntz {
   }
 
   /** e with the elements of omega written in terms of w; and log(w) in terms of x. */
-  private rewrite(e: Expr, omegaSet: SubsSet, x: Sym, w: Dummy): [Expr, Expr] {
+  rewrite(e: Expr, omegaSet: SubsSet, x: Sym, w: Dummy): [Expr, Expr] {
     const entries = [...omegaSet.items.values()];
     // (after moving up, every element is an exponential)
     const rewrites = omegaSet.rewrites;
@@ -495,7 +495,11 @@ function rewriteTractable(e: Expr, x: Sym, limitinf: (g: Expr) => Expr | undefin
         return a.name === 'erfc' ? tail : add(1, mul(-1, tail));
       }
       if (a.name === 'factorial') return exp(fn('loggamma', [add(first(a.args), 1)]));
-      if (a.name === 'gamma') return exp(fn('loggamma', [first(a.args)]));
+      if (a.name === 'gamma') {
+        const g = first(a.args);
+        if (limitinf(g)?.equals(S.Zero)) return a;
+        return exp(fn('loggamma', [g]));
+      }
       // binomial(n, k) = gamma(n + 1)/(gamma(k + 1)*gamma(n - k + 1))
       if (a.name === 'binomial') {
         const [m, k] = [at(a.args, 0), at(a.args, 1)];

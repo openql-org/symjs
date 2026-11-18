@@ -54,3 +54,26 @@ describe('Fourier series operations', () => {
     expect(s().sigmaApproximation(3).toString()).toBe('-4*cos(x)*sinc(pi/3) + cos(2*x)*sinc(2*pi/3) + pi**2/3');
   });
 });
+
+it('infers the variable and combines series on the same interval', () => {
+  const f = sj.fourierSeries(x, x);
+  expect(f.period.map(String)).toEqual(['-pi', 'pi']);
+  expect(String(f.asLeadingTerm())).toBe('2*sin(x)');
+  expect(f.add(f.neg()).equals(0)).toBe(true);
+  expect(f.sub(f).equals(0)).toBe(true);
+  expect(f.add(f)).toBeInstanceOf(sj.FourierSeries);
+  expect(f.add(f.shiftx(1))).toBeInstanceOf(sj.Add);
+  const shifted = f.shiftx(1).add(f.shiftx(1));
+  expect(shifted instanceof sj.FourierSeries && String(shifted.term(1))).toBe('4*sin(x + 1)');
+  expect(f.sub(x)).toBeInstanceOf(sj.Add);
+  expect(f.add(x)).toBeInstanceOf(sj.Add);
+  expect(f.subs([[x, x.pow(2)]])).toBe(f);
+  expect(() => f.add(sj.fourierSeries(x, x, [0, 1]))).toThrow(RangeError);
+  expect(() => f.add(sj.fourierSeries(x, x, [f.a, 1]))).toThrow(RangeError);
+  expect(sj.fourierSeries(3, undefined)).toEqual(sj.rational(3));
+  expect(sj.fourierSeries(x, undefined).equals(f)).toBe(true);
+  expect(() => sj.fourierSeries(P('x*y'), undefined)).toThrow(RangeError);
+  expect(() => Reflect.apply(sj.fourierSeries, undefined, [x, 3])).toThrow(RangeError);
+  expect(() => sj.fourierSeries(x, x, [0, sj.oo])).toThrow(RangeError);
+  expect(() => sj.fourierSeries(x, x, [sj.S.NegativeInfinity, 0])).toThrow(RangeError);
+});

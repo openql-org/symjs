@@ -208,15 +208,15 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([new Pow(new Add([rational(2), x]), rational(-1)), new Add([rational(2), piecewise([new Mul([new Pow(abs(new Add([rational(-6), x])), rational(1, 3)), fn('sign', [new Add([rational(-6), x])])]), Relational(fn('im', [x]), rational(0), '==', { evaluate: false })], [new Pow(new Add([rational(-6), x]), rational(1, 3)), true])])]), x, rational(-2), '+'))).toBe('1/12');
   });
-  it.fails("test_piecewise2:161", () => {
+  it("test_piecewise2:161", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([rational(2), new Pow(x, rational(1, 2)), piecewise([new Mul([new Pow(abs(new Pow(new Add([rational(4), new Mul([rational(-4), new Pow(new Add([rational(-1), new Mul([rational(2), x])]), rational(2))])]), rational(1, 2))), rational(-1)), new Add([rational(-2), new Mul([rational(4), x])])]), Relational(x, rational(1, 2), '>=', { evaluate: false })], [new Mul([new Pow(abs(new Pow(new Add([rational(4), new Mul([rational(-4), new Pow(new Add([rational(-1), new Mul([rational(2), x])]), rational(2))])]), rational(1, 2))), rational(-1)), new Add([rational(2), new Mul([rational(-4), x])])]), true])]), x, rational(0), '+'))).toBe('1');
   });
-  it.fails("test_piecewise2:162", () => {
+  it("test_piecewise2:162", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(piecewise([new Mul([rational(1, 2), new Pow(x, rational(2))]), Relational(x, new Float({ man: 1n, exp: -1n }, 53), '<=', { evaluate: false })], [new Add([new Float({ man: -1n, exp: -3n }, 53), new Mul([rational(1, 2), x])]), true]), x, rational(0), '+'))).toBe('0');
   });
-  it.fails("test_piecewise2:163", () => {
+  it("test_piecewise2:163", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(piecewise([new Add([rational(-9, 5), new Mul([rational(1, 5), x])]), Or(Relational(x, rational(4), '>', { evaluate: false }), Relational(x, rational(-1), '<', { evaluate: false }))], [new Pow(abs(new Add([rational(-3), x])), rational(1, 2)), true]), x, rational(-1), '+'))).toBe('2');
   });
@@ -608,7 +608,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(limit(new Mul([new Pow(new Mul([rational(6), x]), new Mul([rational(-1), x])), new Pow(new Add([rational(2), new Mul([rational(6), x])]), x)]), x, oo, '+'))).toBe('exp(1/3)');
   });
-  it.fails("test_exponential2:338", () => {
+  it("test_exponential2:338", () => {
     const [x, n] = symbols('x n');
     expect(sympyStr(limit(new Pow(new Add([rational(1), new Mul([x, new Pow(new Add([n, fn('sin', [n])]), rational(-1))])]), n), n, oo, '+'))).toBe('exp(x)');
   });
@@ -652,7 +652,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(fn('besselj', [rational(1), x]), x, new Mul([oo, I]), '+'))).toBe('oo*I');
   });
-  it.fails("test_bessel_functions_at_infinity:377", () => {
+  it("test_bessel_functions_at_infinity:377", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(fn('besselj', [rational(1), x]), x, new Mul([S.NegativeInfinity, I]), '+'))).toBe('-oo*I');
   });
@@ -692,7 +692,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(fn('besselk', [rational(1), x]), x, oo, '+'))).toBe('0');
   });
-  it.fails("test_bessel_functions_at_infinity:387", () => {
+  it("test_bessel_functions_at_infinity:387", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(fn('besselk', [rational(1), x]), x, S.NegativeInfinity, '+'))).toBe('-oo*I');
   });
@@ -1341,7 +1341,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(limit(new Mul([new Pow(rational(3), new Mul([rational(-1), n])), fn('binomial', [n, new Mul([rational(1, 2), n])])]), n, oo, '+'))).toBe('0');
   });
-  it.fails("test_issue_8634:721", () => {
+  it("test_issue_8634:721", () => {
     const x = new Sym('x');
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(limit(new Pow(x, n), x, S.NegativeInfinity, '+'))).toBe('oo*sign((-1)**n)');
@@ -1535,7 +1535,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(fn('erf', [new Add([new Pow(x, rational(1, 2)), new Mul([rational(-1), x])])]), x, oo, '+'))).toBe('-1');
   });
-  it.fails("test_issue_14276:882", () => {
+  it("test_issue_14276:882", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Pow(new Add([rational(1), new Pow(new Add([new Pow(x, rational(2)), fn('cos', [x])]), rational(-1))]), new Add([x, new Pow(x, rational(2))])), x, oo, '+'))).toBe('E');
   });
@@ -1623,7 +1623,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([new Pow(x, rational(-1)), new Add([new Mul([rational(-1), x]), log(new Add([rational(1), exp(x)]))])]), x, oo, '-'))).toBe('0');
   });
-  it.fails("test_issue_13571:939", () => {
+  it("test_issue_13571:939", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([new Pow(fn('gamma', [x]), rational(-1)), fn('uppergamma', [x, rational(1)])]), x, oo, '+'))).toBe('1');
   });
@@ -1888,12 +1888,12 @@ describe("sympy/series/tests/test_limits.py", () => {
     const m = new Sym('m', { real: true });
     expect(sympyStr(limit(new Mul([new Pow(x, rational(-1)), fn('cos', [new Mul([x, m])])]), x, oo, '+'))).toBe('Limit(cos(m*x)/x, x, oo, dir=\'-\')');
   });
-  it.fails("test_issue_19770:1155", () => {
+  it("test_issue_19770:1155", () => {
     const x = new Sym('x');
     const m = new Sym('m', { nonzero: true });
     expect(sympyStr(limit(fn('cos', [new Mul([x, m])]), x, oo, '+'))).toBe('AccumBounds(-1, 1)');
   });
-  it.fails("test_issue_19770:1156", () => {
+  it("test_issue_19770:1156", () => {
     const x = new Sym('x');
     const m = new Sym('m', { nonzero: true });
     expect(sympyStr(limit(new Mul([new Pow(x, rational(-1)), fn('cos', [new Mul([x, m])])]), x, oo, '+'))).toBe('0');
@@ -1970,7 +1970,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(series(log(log(x)), x, sympify(0), 6, '+', { logx: y }))).toBe('log(y)');
   });
-  it.fails("test_issue_21227:1203", () => {
+  it("test_issue_21227:1203", () => {
     const x = new Sym('x');
     expect(sympyStr(series(log(log(x)), x, sympify(0), 6, '+', { logx: new Mul([rational(-1), x]) }))).toBe('log(-x)');
   });
@@ -1978,19 +1978,19 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(series(log(log(x)), x, sympify(0), 6, '+', { logx: x }))).toBe('log(x)');
   });
-  it.fails("test_issue_21227:1208", () => {
+  it("test_issue_21227:1208", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(series(log(log(log(new Pow(x, rational(-1))))), x, sympify(0), 6, '+', { logx: y }))).toBe('log(log(-y))');
   });
-  it.fails("test_issue_21227:1209", () => {
+  it("test_issue_21227:1209", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(series(log(log(log(new Pow(x, rational(-1))))), x, sympify(0), 6, '+', { logx: new Mul([rational(-1), y]) }))).toBe('log(log(y))');
   });
-  it.fails("test_issue_21227:1210", () => {
+  it("test_issue_21227:1210", () => {
     const x = new Sym('x');
     expect(sympyStr(series(log(log(log(new Pow(x, rational(-1))))), x, sympify(0), 6, '+', { logx: x }))).toBe('log(log(-x))');
   });
-  it.fails("test_issue_21227:1211", () => {
+  it("test_issue_21227:1211", () => {
     const x = new Sym('x');
     expect(sympyStr(series(log(log(log(new Pow(x, rational(-1))))), x, sympify(0), 6, '+', { logx: new Mul([rational(-1), x]) }))).toBe('log(log(x))');
   });
@@ -2071,17 +2071,17 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Add([new Mul([rational(-1), log(new Add([new Mul([rational(-1), I]), fn('tan', [new Mul([rational(1, 2), x])])]))]), log(new Add([I, fn('tan', [new Mul([rational(1, 2), x])])]))]), x, pi, '-'))).toBe('0');
   });
-  it.fails("test_issue_22334:1283", () => {
+  it("test_issue_22334:1283", () => {
     const n = new Sym('n', { positive: true });
     const k = new Sym('k', { positive: true });
     expect(sympyStr(limit(new Mul([new Pow(new Add([rational(1), n]), k), new Pow(new Add([new Pow(new Add([rational(1), n]), new Add([rational(1), k])), new Mul([rational(-1), new Pow(n, new Add([rational(1), k]))])]), rational(-1))]), n, oo, '+'))).toBe('1/(k + 1)');
   });
-  it.fails("test_issue_22334:1284", () => {
+  it("test_issue_22334:1284", () => {
     const n = new Sym('n', { positive: true });
     const k = new Sym('k', { positive: true });
     expect(sympyStr(limit(new Mul([new Pow(new Add([rational(1), n]), k), new Pow(new Add([new Pow(new Add([rational(1), n]), k), new Mul([n, new Pow(new Add([rational(1), n]), k)]), new Mul([rational(-1), n, new Pow(n, k)])]), rational(-1))]), n, oo, '+'))).toBe('1/(k + 1)');
   });
-  it.fails("test_issue_22334:1285", () => {
+  it("test_issue_22334:1285", () => {
     const n = new Sym('n', { positive: true });
     const k = new Sym('k', { positive: true });
     expect(sympyStr(limit(new Mul([new Pow(new Add([rational(1), n]), k), new Pow(new Add([new Pow(new Add([rational(1), n]), k), new Mul([n, new Add([new Pow(new Add([rational(1), n]), k), new Mul([rational(-1), new Pow(n, k)])])])]), rational(-1))]), n, oo, '+'))).toBe('1/(k + 1)');
@@ -2139,25 +2139,25 @@ describe("sympy/series/tests/test_limits.py", () => {
     const a = new Sym('a', { real: true });
     expect(() => str(Mod(x, a))).toThrow(NotImplementedError);
   });
-  it.fails("test_issue_25230:1327", () => {
+  it("test_issue_25230:1327", () => {
     const x = new Sym('x');
     const b = new Sym('b', { positive: true });
     const n = new Sym('n', { integer: true });
     expect(sympyStr(limit(Mod(x, b), x, new Mul([n, b]), '+'))).toBe('0');
   });
-  it.fails("test_issue_25230:1328", () => {
+  it("test_issue_25230:1328", () => {
     const x = new Sym('x');
     const b = new Sym('b', { positive: true });
     const n = new Sym('n', { integer: true });
     expect(sympyStr(limit(Mod(x, b), x, new Mul([n, b]), '-'))).toBe('b');
   });
-  it.fails("test_issue_25230:1329", () => {
+  it("test_issue_25230:1329", () => {
     const x = new Sym('x');
     const c = new Sym('c', { negative: true });
     const n = new Sym('n', { integer: true });
     expect(sympyStr(limit(Mod(x, c), x, new Mul([n, c]), '+'))).toBe('c');
   });
-  it.fails("test_issue_25230:1330", () => {
+  it("test_issue_25230:1330", () => {
     const x = new Sym('x');
     const c = new Sym('c', { negative: true });
     const n = new Sym('n', { integer: true });
