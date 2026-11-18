@@ -57,3 +57,18 @@ describe('sstr with perm_cyclic', () => {
     expect(sstr(new sj.Permutation([1, 0, 2]))).toBe('(2)(0 1)');
   });
 });
+
+it('formats matrix rows with aligned columns, including empty shapes', () => {
+  expect(sstr(sj.Matrix.of([[x, 1], [sj.symbol('y'), sj.add(x, sj.symbol('y'))]]))).toBe('Matrix([\n[x,     1],\n[y, x + y]])');
+  expect(sstr(sj.Matrix.of([[1, 2]]))).toBe('Matrix([[1, 2]])');
+  expect(sstr(sj.Matrix.zeros(0, 1))).toBe('Matrix(0, 1, [])');
+  expect(sstr(sj.Matrix.zeros(1, 0))).toBe('Matrix(1, 0, [])');
+});
+
+it('provides the fallback printer and validates settings', () => {
+  const printer = new sj.StrPrinter();
+  expect(printer.emptyPrinter('foo')).toBe('foo');
+  expect(printer.emptyPrinter(sj.mul(x, sj.symbol('y')))).toBe('x*y');
+  expect(printer.emptyPrinter(32)).toBe('32');
+  expect(() => sstr(x, { unknown: true } as sj.SstrOptions)).toThrow("Unknown setting 'unknown'.");
+});

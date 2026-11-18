@@ -25,6 +25,7 @@ import { GrowableGrid } from '../../packages/symjs/src/categories/diagram_drawin
 import { PORTS } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../../packages/symjs/src';
+import { latexEscape } from '../../packages/symjs/src/printing/latex';
 import { Fn, headName } from '../../packages/symjs/src/core/nodes';
 
 // ---------------------------------------------------------------------------
@@ -549,8 +550,13 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   MellinTransform: ([f, x, s]) => new sj.MellinTransform(asExpr(f), asExpr(x), asExpr(s)),
   FourierTransform: ([f, x, s]) => new sj.FourierTransform(asExpr(f), asExpr(x), asExpr(s)),
   InverseFourierTransform: ([f, s, x]) => new sj.InverseFourierTransform(asExpr(f), asExpr(s), asExpr(x)),
+  InverseMellinTransform: ([f, s, x, a, b]) => new sj.InverseMellinTransform(asExpr(f), asExpr(s), asExpr(x), asExpr(a), asExpr(b)),
+  SineTransform: ([f, x, s]) => new sj.SineTransform(asExpr(f), asExpr(x), asExpr(s)),
+  InverseSineTransform: ([f, s, x]) => new sj.InverseSineTransform(asExpr(f), asExpr(s), asExpr(x)),
+  CosineTransform: ([f, x, s]) => new sj.CosineTransform(asExpr(f), asExpr(x), asExpr(s)),
+  InverseCosineTransform: ([f, s, x]) => new sj.InverseCosineTransform(asExpr(f), asExpr(s), asExpr(x)),
   LaplaceTransform: ([f, t, s]) => new sj.LaplaceTransform(f!, t as Sym, s as Sym),
-  InverseLaplaceTransform: ([F, s, t, plane]) => new sj.InverseLaplaceTransform(F!, s as Sym, t as Sym, plane instanceof sj.Dummy && plane.name === 'None' ? undefined : plane),
+  InverseLaplaceTransform: ([F, s, t, plane]) => new sj.InverseLaplaceTransform(F!, s as Sym, t as Sym, plane instanceof sj.Dummy && plane.name === 'None' ? undefined : plane instanceof JsTuple ? expressionContainer(plane) : plane),
   DiracDelta: ([x, k]) => sj.DiracDelta(x!, k),
   Heaviside: ([x, h0]) => sj.Heaviside(x!, h0),
   SingularityFunction: ([x, a, n]) => sj.SingularityFunction(x!, a!, n!),
@@ -1233,7 +1239,7 @@ export function deserialize(tree: Tree): unknown {
     case 'Partition': return new sj.Partition(...(tree['blocks'] as Tree[][]).map((b) => b.map((e) => deserialize(e) as Expr)));
     case 'FiniteExtension': return new sj.FiniteExtension(deserialize(tree['modulus'] as Tree) as sj.Poly);
     case 'FiniteDensity': return new sj.FiniteDensity((tree['items'] as [Tree, Tree][]).map(([k, v]) => [asExpr(deserialize(k)), asExpr(deserialize(v))]));
-    case 'StrPrinter': return new sj.StrPrinter(Object.fromEntries((deserialize(tree['settings'] as Tree) as JsDict).entries as [string,unknown][]));
+    case 'StrPrinter': return new sj.StrPrinter(printOptions(Object.fromEntries((deserialize(tree['settings'] as Tree) as JsDict).entries as [string,unknown][])));
     case 'Permutation':
       return new sj.Permutation(tree['array'] as number[]);
     case 'PermutationGroup':
@@ -2233,6 +2239,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     const chosen = [...new Set(names.flatMap((n) => each[n] ?? []))];
     const tr = tr0 instanceof JsTuple ? (chosen.length ? chosen : undefined) : tr0;
     if (tr !== undefined && tr !== 'all' && tr !== 'implicit' && !Array.isArray(tr)) throw new Unsupported('transformations');
+    // Python literals and identity tests are calling conventions outside the expression grammar.
+    const text = args[0].trim();
+    if (text === 'None') return null;
+    const identity = /^([A-Za-z_]\w*) is None$/.exec(text);
+    if (identity && localDict instanceof JsDict) return localDict.entries.find(([key]) => key === identity[1])?.[1] === null;
+    if (text.startsWith('[') && text.endsWith(']')) return ADAPTERS['sympify']!([text], {});
     // a function class in local_dict is a function of the parser's locals, anything else an expression
     const locals = localDict instanceof JsDict ? Object.fromEntries(localDict.entries.map(([k, v]) => [String(k), v instanceof UFnClass ? sj.SymFunction(v.name) : v instanceof JsLambda ? (...xs: Expr[]) => asExpr(v.call(...xs)) : asExpr(v)])) : undefined;
     return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as sj.ParseOptions['transformations'] } : {}), ...(equals ? { convertEqualsSigns: true } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { locals } : {}) });
@@ -3104,9 +3116,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'full_prec' && k !== 'perm_cyclic') throw new Unsupported(`kwargs ${k}`);
     // a Cycle prints as its str form
     if (args[0] instanceof sj.Cycle) return args[0].toString();
-    // a Python tuple prints as a SymPy Tuple
-    const v = args[0] instanceof JsTuple && !args[0].isList ? sj.Tuple(...args[0].items.map(asExpr)) : asExpr(args[0]);
-    return sj.sstr(v, { ...(kw['full_prec'] === undefined ? {} : { fullPrec: kw['full_prec'] as boolean }), ...(kw['perm_cyclic'] === undefined ? {} : { permCyclic: kw['perm_cyclic'] as boolean }) });
+    const value = (v: unknown): unknown => v instanceof JsTuple && !v.isList ? sj.Tuple(...v.items.map((x) => asExpr(value(x)))) : printable(v);
+    return sj.sstr(value(args[0]) as sj.StrPrintable, printOptions(kw));
   },
   rational_interpolate: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);
@@ -5217,7 +5228,18 @@ ADAPTERS['multiline_latex'] = (args, kw) => {
   const [lhs, rhs, terms] = args;
   return sj.multilineLatex(lhs as Expr, rhs as Expr, { ...(terms === undefined ? {} : { termsPerLine: printSetting(terms) as number }), ...printOptions(kw) });
 };
-ADAPTERS['srepr'] = (args, kw) => sj.srepr(printable(args[0]) as sj.ReprPrintable, printOptions(kw));
+ADAPTERS['srepr'] = (args, kw) => {
+  const value = (v: unknown): sj.ReprPrintable => v instanceof JsTuple && !v.isList
+    ? { tupleItems: v.items.map(value) }
+    : printable(v) as sj.ReprPrintable;
+  return sj.srepr(value(args[0]), printOptions(kw));
+};
+ADAPTERS['latex_escape'] = (args, kw) => (noKw(kw), latexEscape(String(args[0])));
+ADAPTERS['.emptyPrinter'] = (args, kw, self) => {
+  noKw(kw);
+  if (!(self instanceof sj.StrPrinter)) throw new Unsupported('emptyPrinter receiver');
+  return self.emptyPrinter(printable(args[0]) as sj.StrPrintable);
+};
 ADAPTERS['mathml'] = (args, kw) => sj.mathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
 ADAPTERS['print_mathml'] = (args, kw) => sj.printMathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
 ADAPTERS['print_tree'] = (args, kw) => sj.printTree(args[0] as Expr, printOptions(kw));

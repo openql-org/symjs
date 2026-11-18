@@ -836,3 +836,22 @@ it('prints a bold matrix symbol with an explicit LaTeX name and defaults unknown
   expect(latex(sj.MatrixSymbol('A{b}', 2, 2), { matSymbolStyle: 'bold' })).toBe('\\mathbf{A{b}}');
   expect(Reflect.apply(latex, undefined, [sj.adjoint(A), { adjointStyle: 'unknown' }])).toBe('A^{\\dagger}');
 });
+
+it('prints special builtin function classes with their conventional heads', () => {
+  for (const [name, expected] of [['KroneckerDelta', '\\delta'], ['gamma', '\\Gamma'], ['lowergamma', '\\gamma'], ['beta', '\\operatorname{B}'], ['DiracDelta', '\\delta'], ['Chi', '\\operatorname{Chi}']] as const) {
+    expect(latex(Object.assign(() => {}, { functionName: name }))).toBe(expected);
+  }
+});
+
+it('prints symbolic probabilities using their conventional operators', () => {
+  expect(latex(new sj.ExpectationNode([x]))).toBe('\\operatorname{E}\\left[x\\right]');
+  expect(latex(new sj.ProbabilityNode([x]))).toBe('\\operatorname{P}\\left(x\\right)');
+  expect(latex(new sj.VarianceNode([x]))).toBe('\\operatorname{Var}\\left(x\\right)');
+  expect(latex(new sj.CovarianceNode([x, y]))).toBe('\\operatorname{Cov}\\left(x, y\\right)');
+});
+
+it('separates compound Levi-Civita indices and groups powers', () => {
+  expect(latex(sj.LeviCivita(x, y, z))).toBe('\\varepsilon_{x y z}');
+  expect(latex(sj.LeviCivita(x, sj.add(y, 1), z))).toBe('\\varepsilon_{x, y + 1, z}');
+  expect(latex(pow(sj.LeviCivita(x, y, z), 2))).toBe('\\left(\\varepsilon_{x y z}\\right)^{2}');
+});
