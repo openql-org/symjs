@@ -38,6 +38,8 @@ export {
 } from './polys/sympoly';
 
 export { rootsDict as roots } from './polys/poly';
+export { dictFromExpr, parallelDictFromExpr } from './polys/polyutils';
+export type { DictFromExprOptions } from './polys/polyutils';
 export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly, dupBernoulli, dupBernoulliC, dupGenocchi, dupEuler, dupAndre } from './polys/appellseqs';
 export { dispersion, dispersionset } from './polys/dispersion';
 export { eqsToMatrix, solveLinSys, sympyEqsToRing } from './polys/solvers';
@@ -105,7 +107,7 @@ export {
   rootOf as rootof,
 } from './polys/rootof';
 export type { RootOfOptions } from './polys/rootof';
-export { ComplexInterval, countComplexRoots, refineRealRoot, isolateRealRoots, isolateRealRootsSqf, isolateRealRootsList } from './polys/rootisolation';
+export { ComplexInterval, countComplexRoots, refineRealRoot, isolateRealRoots, isolateRealRootsSqf, isolateRealRootsList, isolateComplexRootsSqf } from './polys/rootisolation';
 export {
   apart,
 } from './polys/partfrac';
