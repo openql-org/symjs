@@ -688,3 +688,18 @@ it('zero QR and Gauss-Jordan solutions with multiple right hand sides', async ()
   expect(reduced.get(0,2).toComplex().re).toBeCloseTo(-.301369863013699);
   expect(reduced.get(1,2).toComplex().re).toBeCloseTo(-.712328767123288);
 });
+
+
+it('matrix norm aliases, zero normalization, vector Jacobians and dependent orthogonalization', () => {
+  expect(String(L.norm(Matrix.eye(2), 'frobenius'))).toBe('sqrt(2)');
+  expect(L.normalized(Matrix.col(0, 0)).equals(Matrix.col(0, 0))).toBe(true);
+  expect(() => L.jacobian(Matrix.eye(2), [x])).toThrow(TypeError);
+  expect(() => L.jacobian(Matrix.col(x), Matrix.eye(2))).toThrow(TypeError);
+  expect(L.gramSchmidt([Matrix.col(1, 0), Matrix.col(2, 0)], false, false).map(String)).toEqual(['Matrix([[1], [0]])']);
+  expect(L.gramSchmidt([Matrix.col(0, 0)], false, false)).toEqual([]);
+  expect(L.gramSchmidt([Matrix.col(1, I), Matrix.col(1, I.mul(-1))]).map(String)).toEqual(['Matrix([[1], [I]])', 'Matrix([[1], [-I]])']);
+});
+
+it('rejects normalization of a matrix that is not a vector', () => {
+  expect(() => L.normalized(Matrix.eye(2))).toThrow(sj.ShapeError);
+});

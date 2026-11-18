@@ -15,9 +15,9 @@ import { asRealImag, atoms } from '../core/methods';
 import { replace, type Query, type Replacement } from '../core/match';
 import type { Truth } from '../core/truth';
 import { toTruth, truthAnd } from '../core/truth';
-import { isZero } from '../core/assumptions';
+import { isIntegerQ, isNonNegative, isPositive, isZero } from '../core/assumptions';
 import { sympifyMethod } from '../core/sympify';
-import { conjugate } from '../functions/elementary/elementary';
+import { conjugate, fn } from '../functions/elementary/elementary';
 import { evalf, lambdify, toComplex } from '../numeric/evalf';
 import { roots } from '../polys/poly';
 import { latex } from '../printing/latex';
@@ -52,6 +52,8 @@ export class Matrix {
   readonly data: readonly Expr[];
 
   protected constructor(rows: number, cols: number, data: readonly Expr[]) {
+    if (!Number.isSafeInteger(rows) || !Number.isSafeInteger(cols) || rows < 0 || cols < 0) throw new RangeError('Matrix dimensions must be nonnegative integers');
+    if (data.length !== rows * cols) throw new RangeError('Matrix data does not match its dimensions');
     this.#rows = rows;
     this.#cols = cols;
     this.data = data;
@@ -104,6 +106,7 @@ export class Matrix {
 
   /** Build from a generator f(i, j). */
   static fromFunction(rows: number, cols: number, f: (i: number, j: number) => ExprLike): Matrix {
+    if (!Number.isSafeInteger(rows) || !Number.isSafeInteger(cols) || rows < 0 || cols < 0) throw new RangeError('Matrix dimensions must be nonnegative integers');
     const data: Expr[] = [];
     for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) data.push(sympify(f(i, j)));
     return new Matrix(rows, cols, data);
@@ -159,6 +162,11 @@ export class Matrix {
     return this.rows === this.cols;
   }
 
+  /** Whether this is a square identity matrix, using structural entry equality. */
+  get isIdentity(): boolean {
+    return this.isSquare && this.data.every((e, k) => e.key === (Math.floor(k / this.cols) === k % this.cols ? S.One.key : S.Zero.key));
+  }
+
   /** Whether every entry is zero, with undecidable entries kept unknown. */
   get isZeroMatrix(): Truth {
     return truthAnd(...this.data.map((e) => toTruth(isZero(e))));
@@ -184,7 +192,7 @@ export class Matrix {
   }
 
   get(i: number, j: number): Expr {
-    if (i < 0 || i >= this.rows || j < 0 || j >= this.cols) throw new RangeError(`Matrix index (${i}, ${j}) out of range`);
+    if (!Number.isInteger(i) || !Number.isInteger(j) || i < 0 || i >= this.rows || j < 0 || j >= this.cols) throw new RangeError(`Matrix index (${i}, ${j}) out of range`);
     return at(this.data, i * this.cols + j);
   }
 
@@ -210,6 +218,7 @@ export class Matrix {
 
   /** Remove row i and column j. */
   minor(i: number, j: number): Matrix {
+    this.get(i, j);
     const rs = [...Array(this.rows).keys()].filter((r) => r !== i);
     const cs = [...Array(this.cols).keys()].filter((c) => c !== j);
     return this.slice(rs, cs);
@@ -273,9 +282,8 @@ export class Matrix {
   }
 
   /**
-   * SymPy Matrix.pow: the power by an integer (negative powers use the inverse) or, for a diagonal or
-   * 1 x 1 matrix, by any exponent (entrywise). Another matrix to a non-integer power is a RangeError
-   * (SymPy uses its Jordan form).
+   * Matrix powers by repeated squaring for integers and confluent polynomial interpolation
+   * for other exponents. Repeated eigenvalues use the same derivatives as Jordan block powers.
    */
   pow(n: number | ExprLike): Matrix {
     if (!this.isSquare) throw new NonSquareMatrixError('Matrix pow: matrix must be square');
@@ -283,7 +291,7 @@ export class Matrix {
     if (k === undefined) {
       const exp = sympify(n);
       if (this.isDiagonal()) return Matrix.fromFunction(this.rows, this.cols, (i, j) => (i === j ? pow(this.get(i, i), exp) : S.Zero));
-      throw new RangeError('Matrix pow: exponent must be an integer');
+      return this.interpolatedPower(exp);
     }
     if (k < 0) return this.inv().pow(-k);
     // SymPy MatrixBase.pow: a diagonal or 1x1 matrix is raised entrywise; otherwise the products
@@ -299,6 +307,44 @@ export class Matrix {
       if (m > 0) base = base.product(base, expand);
     }
     return result;
+  }
+
+  /** Hermite interpolation of z**exp on the eigenvalues, including their multiplicities. */
+  private interpolatedPower(exp: Expr): Matrix {
+    let eigenvalues = this.eigenvals().sort((a, b) => a.key.localeCompare(b.key));
+    if (eigenvalues.length !== this.rows) throw new RangeError('Matrix pow: could not determine all eigenvalues');
+    const identity = Matrix.eye(this.rows);
+    const distinct = [...new Map(eigenvalues.map((v) => [v.key, v])).values()];
+    if (distinct.length < eigenvalues.length && distinct.reduce((m, v) => m.mul(this.sub(identity.scale(v))).map(expand), identity).isZero) eigenvalues = distinct;
+    let result = Matrix.zeros(this.rows);
+    let basis = identity;
+    let divided: Expr[] = [];
+    for (let order = 0; order < eigenvalues.length; order++) {
+      const next: Expr[] = [];
+      for (let i = 0; i < eigenvalues.length - order; i++) {
+        const lo = at(eigenvalues, i);
+        const hi = at(eigenvalues, i + order);
+        let coefficient: Expr;
+        if (lo.key === hi.key) {
+          if (isZeroE(lo)) {
+            if (!(isPositive(exp) === true || (isIntegerQ(exp) === true && isNonNegative(exp) === true))) {
+              throw new NonInvertibleMatrixError('Non-invertible matrix requires a nonnegative exponent');
+            }
+            if (order > 0 && isIntegerQ(exp) !== true) throw new NonInvertibleMatrixError('Non-invertible Jordan block requires a nonnegative integer exponent');
+            coefficient = isIntegerQ(exp) === true ? fn('KroneckerDelta', [order, exp]) : S.Zero;
+          } else {
+            let binomial: Expr = S.One;
+            for (let j = 0; j < order; j++) binomial = mul(binomial, add(exp, -j), Rational.of(1, j + 1));
+            coefficient = mul(pow(lo, add(exp, -order)), binomial);
+          }
+        } else coefficient = mul(add(at(divided, i + 1), mul(-1, at(divided, i))), pow(add(hi, mul(-1, lo)), -1));
+        next.push(coefficient);
+      }
+      divided = next;
+      result = result.add(basis.scale(first(divided)));
+      basis = basis.mul(this.sub(identity.scale(at(eigenvalues, order)))).map(expand);
+    }
+    return result.map(simplify);
   }
 
   /** Kronecker (tensor) product this ⊗ o. */
@@ -602,6 +648,7 @@ export class Matrix {
   }
   /** SymPy row_insert(pos, other): other's rows inserted before row pos (a new matrix). */
   rowInsert(pos: number, o: Matrix): Matrix {
+    if (!Number.isInteger(pos)) throw new TypeError('row insertion position must be an integer');
     if (this.rows === 0 && this.cols === 0) return o;
     if (o.cols !== this.cols) throw new ShapeError('The matrices have incompatible number of columns.');
     let p = pos < 0 ? pos + this.rows : pos;
@@ -627,7 +674,7 @@ export class Matrix {
     const n = cols ? this.cols : this.rows;
     const order = range(0, n);
     if (isIndexList(perm)) {
-      perm.forEach((v, i) => (order[i] = v));
+      perm.slice(0, n).forEach((v, i) => (order[i] = v));
     } else {
       const swaps = [...perm];
       if (backward) swaps.reverse();

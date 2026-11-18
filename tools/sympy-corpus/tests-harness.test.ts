@@ -401,3 +401,12 @@ it('preserves printed polynomial monomials and checks exponent tuples exactly', 
   const p = { t: 'Poly', expr: x, gens: [x], domain: 'ZZ', pure: false };
   expect(runTestCase({ ...base, fn: '.LM', self: p, args: [], expected: '(2,)' }).status).toBe('fail');
 });
+
+it('replays matrix powers, indexing, identity predicates and matrix differentiation', () => {
+  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8')) as TestCase[];
+  const modules = ['sympy.matrices.tests.test_matrices', 'sympy.matrices.tests.test_matrixbase'];
+  const tests = ['test_diff_by_matrix', 'test_diff', 'test_power', 'test_fancy_index_matrix', 'test_is_Identity', 'test_nonvectorJacobian'];
+  const selected = cases.filter((c) => modules.includes(c.module) && tests.includes(c.test));
+  expect(selected).toHaveLength(233);
+  for (const c of selected) expect(['pass', 'equivalent'], `${c.module}:${c.test}:${c.line}`).toContain(runTestCase(c).status);
+});

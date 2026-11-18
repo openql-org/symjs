@@ -2633,7 +2633,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   //                               [11, 9, 10, 12]])
   //   => Matrix([[3, 1, 2, 4], [7, 5, 6, 8], [11, 9, 10, 12]])
   it.todo("test_permute:406 (2)");
-  it.fails("test_permute:412", () => {
+  it("test_permute:412", () => {
     expect(sympyStr(Matrix.of([[rational(1), rational(2), rational(3), rational(4)], [rational(5), rational(6), rational(7), rational(8)], [rational(9), rational(10), rational(11), rational(12)]]).permute([1, 2, 0, 3]))).toBe('Matrix([[5, 6, 7, 8], [9, 10, 11, 12], [1, 2, 3, 4]])');
   });
   // the arguments do not type-check against the public API
@@ -5019,7 +5019,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   it("test_matrix_norm:2879", () => {
     expect(sympyStr(norm(Matrix.of([[rational(1), rational(1)], [rational(1), rational(1)]]), rational(-2)))).toBe('0');
   });
-  it.fails("test_matrix_norm:2880", () => {
+  it("test_matrix_norm:2880", () => {
     expect(sympyStr(norm(Matrix.of([[rational(1), rational(1)], [rational(1), rational(1)]]), 'frobenius'))).toBe('2');
   });
   it("test_matrix_norm:2881", () => {
@@ -5039,7 +5039,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   it("test_matrix_norm:2891", () => {
     expect(sympyStr(norm(Matrix.of([[rational(1), rational(2), rational(-3)], [rational(4), rational(5), rational(13, 2)]]), rational(2)))).toBe('sqrt(sqrt(78665)/8 + 389/8)');
   });
-  it.fails("test_matrix_norm:2893", () => {
+  it("test_matrix_norm:2893", () => {
     expect(sympyStr(norm(Matrix.of([[rational(1), rational(2), rational(-3)], [rational(4), rational(5), rational(13, 2)]]), 'frobenius'))).toBe('sqrt(389)/2');
   });
   it("test_matrix_norm:2913", () => {
@@ -5167,7 +5167,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   it("test_normalized:2991", () => {
     expect(sympyStr(normalized(Matrix.of([[rational(3)], [rational(4)]])))).toBe('Matrix([[3/5], [4/5]])');
   });
-  it.fails("test_normalized:2995", () => {
+  it("test_normalized:2995", () => {
     expect(sympyStr(normalized(Matrix.of([[rational(0)], [rational(0)], [rational(0)]])))).toBe('Matrix([[0], [0], [0]])');
   });
   // cannot format (...values) => { 		out += `${values.map((v) => String(v)).join(" ")}\n`; 	}
