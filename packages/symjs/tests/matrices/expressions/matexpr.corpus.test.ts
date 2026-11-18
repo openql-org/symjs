@@ -1095,7 +1095,7 @@ describe("sympy/matrices/expressions/tests/test_matexpr.py", () => {
     const p = new Sym('p', { integer: true });
     expect(sympyStr(MatrixElement(new MatrixSymbol('w', n, rational(1)), k, p).diff(MatrixElement(new MatrixSymbol('w', n, rational(1)), k, p)))).toBe('1');
   });
-  it.fails("test_matrixelement_diff:306", () => {
+  it("test_matrixelement_diff:306", () => {
     const n = new Sym('n', { integer: true });
     const k = new Sym('k', { integer: true });
     const p = new Sym('p', { integer: true });
@@ -2677,7 +2677,7 @@ describe("sympy/matrices/expressions/tests/test_trace.py", () => {
   it("test_trace_constant_factor:97", () => {
     expect(sympyStr(trace(MatMul(rational(2), Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]]))))).toBe('10');
   });
-  it.fails("test_trace_rewrite:101", () => {
+  it("test_trace_rewrite:101", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(rewrite(Trace(new MatrixSymbol('A', n, n)), 'Sum', { pattern: [], deep: true }))).toBe('Sum(A[i, i], (i, 0, n - 1))');
   });

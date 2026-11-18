@@ -10,6 +10,7 @@ import { at, cast } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { S } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
+import { ImmutableMatrix } from '../matrices/expressions/matexpr';
 import { Matrix } from '../matrices/matrix';
 import type { ArrayInput, NestedArrayInput } from './ndimarray';
 import { ImmutableDenseNDimArray, ImmutableSparseNDimArray, NDimArray, SparseNDimArray, permuteArray } from './ndimarray';
@@ -58,7 +59,7 @@ const newOfClass = (a: NDimArray, it: ArrayInput, shape: readonly number[]): NDi
  */
 export function tensorproduct(...args: TensorArg[]): Expr {
   const hook = arrayOperationHooks.symbolic;
-  if (hook && args.some(hook.accepts)) return hook.product(args.map(arrayfy));
+  if (hook && args.some(hook.accepts)) return hook.product(args.map((a) => a instanceof Matrix ? ImmutableMatrix(a) : arrayfy(a)));
   if (args.length === 0) return S.One;
   if (args.length === 1) return arrayfy(at(args, 0));
   if (args.length > 2) return tensorproduct(tensorproduct(at(args, 0), at(args, 1)), ...args.slice(2));

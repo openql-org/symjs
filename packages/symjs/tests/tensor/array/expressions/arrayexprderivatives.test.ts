@@ -28,7 +28,7 @@ it('handles constant products, array symbols and unsupported variables', () => {
   expect(arrayDerive(new TP(N, N), M)).toBeInstanceOf(ZeroArray);
   expect(str(explicitArray(arrayDerive(new ArrayAdd(M, N), M)))).toBe(refs['derive_sum_explicit']);
   expect(() => arrayDerive(M, S.One)).toThrow(NotImplementedError);
-  expect(() => arrayDerive(new Reshape(A, [4]), A)).toThrow(NotImplementedError);
+  expect(str(arrayDerive(new Reshape(A, [4]), A))).toBe('Reshape(PermuteDims(ArrayTensorProduct(I, I), (3)(1 2)), (2, 2, 4))');
 });
 
 it('differentiates inverse matrices and elementwise functions', () => {

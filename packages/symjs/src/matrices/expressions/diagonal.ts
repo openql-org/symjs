@@ -16,7 +16,7 @@ import { Min } from '../../functions/special/special';
 import { compareKeys, sortKey } from '../../printing/sortkey';
 import { Matrix } from '../matrix';
 import type { DoitHints, EntryContext, MatArg } from './matexpr';
-import { ImmutableMatrixNode, MatMulNode, MatrixExpr, TransposeNode, doitArg, toMatrix } from './matexpr';
+import { IdentityNode, ImmutableMatrixNode, MatMulNode, MatrixExpr, TransposeNode, doitArg, toMatrix } from './matexpr';
 import { isInt, relTruth, same } from './util';
 
 /**
@@ -128,7 +128,7 @@ export class DiagMatrixNode extends MatrixExpr {
   }
   override doit(hints: DoitHints = {}): Expr {
     const vector = hints.deep === false ? this.vector : cast(doitArg(this.vector, hints), MatrixExpr);
-    if (same(vector.rows, S.One) && same(vector.cols, S.One)) return vector;
+    if (vector instanceof IdentityNode || same(vector.rows, S.One) && same(vector.cols, S.One)) return vector;
     if (vector instanceof ImmutableMatrixNode) {
       const m = vector.matrix;
       return new ImmutableMatrixNode(Matrix.diag(...m.data));

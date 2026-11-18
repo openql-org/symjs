@@ -519,15 +519,15 @@ describe("sympy/series/tests/test_nseries.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(series(exp(new Mul([new Add([rational(1), x]), log(new Mul([new Pow(x, rational(-1)), fn('sin', [new Mul([rational(2), x])])]))])), x, rational(0), 2, '+', {}))).toBe('2 + 2*x*log(2) + O(x**2)');
   });
-  it.fails("test_expbug4:254", () => {
+  it("test_expbug4:254", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(series(new Mul([rational(2), exp(O(x, x, rational(0)))]), x, rational(0), 2, '+', {}))).toBe('2 + O(x)');
   });
-  it.fails("test_expbug4:255", () => {
+  it("test_expbug4:255", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(series(new Pow(new Add([rational(2), O(x, x, rational(0))]), new Add([rational(1), x])), x, rational(0), 2, '+', {}))).toBe('2 + O(x)');
   });
-  it.fails("test_logbug4:259", () => {
+  it("test_logbug4:259", () => {
     const x = new Sym('x');
     expect(sympyStr(series(log(new Add([rational(2), O(x, x, rational(0))])), x, rational(0), 2, '+', {}))).toBe('log(2) + O(x)');
   });
@@ -535,7 +535,7 @@ describe("sympy/series/tests/test_nseries.py", () => {
   //   assert exp(log(1 + x)/x).nseries(x, n=3) == exp(1) + -exp(1)*x/2 + 11*exp(1)*x**2/24 + O(x**3)
   //   => E - E*x/2 + 11*E*x**2/24 + O(x**3)
   it.todo("test_expbug5:263");
-  it.fails("test_expbug5:265", () => {
+  it("test_expbug5:265", () => {
     const x = new Sym('x');
     expect(sympyStr(series(exp(O(x, x, rational(0))), x, rational(0), 2, '+', {}))).toBe('1 + O(x)');
   });
@@ -818,7 +818,7 @@ describe("sympy/series/tests/test_nseries.py", () => {
   //   assert frac(x**8).series(x, cdir=1) == O(x**6)
   //   => O(x**6)
   it.todo("test_frac:458");
-  it.fails("test_frac:459", () => {
+  it("test_frac:459", () => {
     const x = new Sym('x');
     expect(sympyStr(series(frac(new Pow(x, rational(-1))), x, sympify(0), 6, '+', {}))).toBe('AccumBounds(0, 1) + O(x**6)');
   });

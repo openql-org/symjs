@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+import { passingModuleCases, runTestCase } from '../../../../../../tools/sympy-corpus/tests-harness';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ArraySymbol, ArrayElement, ArrayTensorProduct as TP, ArrayContraction as C, ArrayDiagonal as D, ArrayAdd, PermuteDims as P, Reshape, ZeroArray, getShape, getRank, SymArray, MatrixSymbol, Sym, S, str, latex, tensorproduct, tensorcontraction, tensordiagonal, permutedims, parse, diff, expand, sub } from '../../../../src/index';
@@ -252,4 +253,15 @@ it('distributes contractions and products over sums and lifts factor permutation
     expect(actual.shape).toEqual(expected.shape);
     actual.flatElements().forEach((value, i) => expect(str(expand(sub(value, at(expected.flatElements(), i))))).toBe('0'));
   }
+});
+
+it('replays the upstream test_array_expressions assertions', () => {
+  for (const c of passingModuleCases('tensor', 'sympy.tensor.array.expressions.tests.test_array_expressions')) {
+    expect(['pass', 'equivalent'], c.src).toContain(runTestCase(c).status);
+  }
+});
+
+it('retains contractions of a single array when splitting index links', () => {
+  const expr = new C(M, [0, 1]);
+  expect(expr.splitMultipleContractions()).toBe(expr);
 });

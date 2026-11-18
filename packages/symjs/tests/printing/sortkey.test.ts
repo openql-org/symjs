@@ -163,3 +163,9 @@ it('orders exponentials and terms with real and imaginary numeric factors', asyn
   const imaginary = new sj.Mul([S.I, S.Pi, x]);
   expect(asOrderedTerms(new Add([S.One, imaginary]))).toEqual([imaginary, S.One]);
 });
+
+it('uses the exponential sort priority and orders a single factor', () => {
+  const x = sj.symbol('x');
+  expect(sj.classKey(sj.exp(x))).toEqual([4, 10, 'exp']);
+  expect(sj.asOrderedFactors(x)).toEqual([x]);
+});

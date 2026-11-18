@@ -10,6 +10,7 @@ import { and } from '../../src/core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne, piecewise, rel } from '../../src/core/logic';
 import { Expr, Rational, S } from '../../src/core/nodes';
 import { add, mul, pow, sub } from '../../src/core/ops';
+import { impl } from '../../src/core/nodes';
 
 const [x, y, z] = sj.symbols('x y z');
 
@@ -18,6 +19,40 @@ const { oo, zoo, nan, pi } = sj;
 const s = (e: Expr): string => e.toString();
 const R = (p: number, q = 1) => Rational.of(p, q);
 const negOo = mul(-1, oo);
+
+it('uses bounded index endpoints when deciding relations', () => {
+  const k = sj.Idx('k', [1, 3]);
+  expect(Lt(k, 4)).toBe(S.true);
+  expect(Lt(k, 0)).toBe(S.false);
+});
+
+it('canonicalizes Boolean and evaluated branch conditions', () => {
+  expect(piecewise([1, 0], [2, true]).equals(R(2))).toBe(true);
+  expect(s(piecewise([1, Eq(x, S.true)], [0, true]))).toBe('Piecewise((1, Eq(x, True)), (0, True))');
+  expect(piecewise([1, new sj.Rel('Lt', R(1), R(2))], [0, true]).equals(R(1))).toBe(true);
+});
+
+it('keeps a Piecewise geometric sum stable when evaluated again', () => {
+  const series = sj.doit(sj.Sum(sj.pow(y, x), [x, -1, S.Infinity]));
+  expect(String(series)).toBe('Piecewise((1/(y*(1 - y)), Abs(y) < 1), (Sum(y**x, (x, -1, oo)), True))');
+  expect(sj.doit(series).equals(series)).toBe(true);
+  const condition = Lt(sj.abs(y), 1);
+  const partial = piecewise([1, condition]);
+  expect(piecewise([3, condition], [partial, true]).subs(y, 2)).toBe(S.NaN);
+});
+
+it('keeps a relational condition when the folding dispatcher is unavailable', () => {
+  const fold = impl.piecewiseFold;
+  delete impl.piecewiseFold;
+  try {
+    const value = piecewise([1, Gt(x, 0)], [2, true]);
+    const condition = new sj.Rel('Lt', value, y);
+    const result = piecewise([x, condition]);
+    expect(result instanceof sj.Piecewise && result.pairs[0]?.[1] instanceof sj.Rel).toBe(true);
+  } finally {
+    if (fold) impl.piecewiseFold = fold;
+  }
+});
 
 describe('relations (SymPy test_relational)', () => {
   it('compares with nan', () => {
@@ -119,6 +154,13 @@ describe('ordering relations decided like SymPy (is_lt, is_le, is_gt, is_ge)', (
 });
 
 describe('Piecewise conditions made canonical and collapsed (SymPy Piecewise.eval, _piecewise_collapse_arguments)', () => {
+  it('keeps unevaluated conditions after dropping false and unreachable branches', () => {
+    const unevaluated = new sj.Rel('Eq', sj.S.One, x);
+    const expr = piecewise([1, unevaluated], [0, false], [2, true], [3, true], { evaluate: false });
+    expect(s(expr)).toBe('Piecewise((1, Eq(1, x)), (2, True))');
+    expect(piecewise([x, 1])).toBe(x);
+    expect(() => piecewise([x, 2])).toThrow(TypeError);
+  });
   const [x, y] = [new sj.Sym('x'), new sj.Sym('y')];
   const a = new sj.Sym('a', { positive: true });
   const s = (e: Expr): string => sj.str(e);

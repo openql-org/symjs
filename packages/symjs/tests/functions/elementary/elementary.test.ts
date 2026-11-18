@@ -13,6 +13,38 @@ import { abs, AccumBounds, add, adjoint, arg, conjugate, cos, cosh, exp, Float, 
 import { evaluators, forEachEntry } from '../../../src/functions/elementary/elementary';
 
 const x = new Sym('x');
+
+it('evaluates a principal logarithm on the unit circle', () => {
+  const a = sj.asin(5);
+  const modulus = sj.abs(a);
+  expect(sj.log(a.div(modulus)).equals(mul(I, arg(a)))).toBe(true);
+  expect(sj.floor(mul(I, sj.log(a.div(modulus)))).equals(S.Zero)).toBe(true);
+  const b = sj.asin(7);
+  expect(sj.ceiling(mul(-1, I, sj.log(b.div(abs(b))))).equals(S.NegOne)).toBe(true);
+  expect(String(sj.log(sj.asin(7).div(modulus)))).toBe('log(asin(7)/Abs(asin(5)))');
+  expect(String(sj.log(sj.asin(7).div(sj.cos(1))))).toBe('log(asin(7)/cos(1))');
+});
+
+it('uses the components of matrix expressions and rejects a set as an absolute-value argument', () => {
+  const a = sj.MatrixSymbol('A', 2, 2);
+  const explicit = sj.ImmutableMatrix([[1, sj.I], [0, 2]]);
+  expect(sj.sstr(sj.re(a))).toBe('(1/2)*Adjoint(A.T) + (1/2)*A');
+  expect(sj.sstr(sj.im(a))).toBe('-(I/2)*(-Adjoint(A.T) + A)');
+  expect(sj.sstr(sj.re(explicit))).toBe('Matrix([[1, 0], [0, 2]])');
+  const imaginary = sj.im(explicit);
+  expect(imaginary instanceof sj.MatrixExpr && imaginary.asExplicit().equals(sj.Matrix.of([[0, 1], [0, 0]]))).toBe(true);
+  expect(() => abs(sj.interval(2, 3))).toThrow(TypeError);
+  expect(sj.transpose(a).equals(a.T)).toBe(true);
+  const positive = sj.symbol('p', { positive: true });
+  expect(String(conjugate(sj.besselj(x, positive)))).toBe('besselj(conjugate(x), p)');
+});
+
+it('maps sine over a set expression', () => {
+  const domain = sj.interval(0, 1);
+  const value = sin(sj.SetExpression(domain));
+  expect(value instanceof sj.SetExpression).toBe(true);
+  expect(sj.sstr(value)).toBe('SetExpr(ImageSet(Lambda(_x, sin(_x)), Interval(0, 1)))');
+});
 it('evaluates undefined trigonometric values and nested principal arguments', () => {
   expect(evaluators.sin?.(S.ComplexInfinity)).toBe(S.NaN);
   expect(arg(new sj.Fn('arg', [new sj.Fn('arg', [new sj.Fn('arg', [x])])]))).toBe(S.NaN);
@@ -703,9 +735,8 @@ describe('functions at a number with an infinite part', () => {
   it.each(cases)('%s = %s', (src, want) => {
     expect(String(parse(src))).toBe(want);
   });
-  it('atan(zoo) stays unevaluated', () => {
-    // SymPy atan(zoo) = AccumBounds(-pi/2, pi/2)
-    expect(String(parse('atan(zoo)'))).toBe('atan(zoo)');
+  it('gives an accumulation range for atan at complex infinity', () => {
+    expect(String(parse('atan(zoo)'))).toBe('AccumBounds(-pi/2, pi/2)');
   });
 });
 

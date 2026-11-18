@@ -8,7 +8,7 @@ import { Lambda, LambdaNode } from '../../../core/lambda';
 import { TupleNode } from '../../../core/containers';
 import { at, cast, first } from '../../../core/guard';
 import { add, mul, sub, sympify } from '../../../core/ops';
-import { isNegative, isNonNegative } from '../../../core/assumptions';
+import { isNegative, isNonNegative, isReal } from '../../../core/assumptions';
 import { NotImplementedError } from '../../../core/errors';
 import { MatrixExpr, checkDim, strPrecedence, latexPrecedence } from '../../../matrices/expressions/matexpr';
 import { ImmutableDenseNDimArray, NDimArray } from '../../ndimarray';
@@ -17,6 +17,7 @@ import { Permutation } from '../../../combinatorics/permutations';
 import { KroneckerDelta } from '../../../functions/special/hyper';
 import { PREC } from '../../../printing/str';
 import { compareKeys, sortKey } from '../../../printing/sortkey';
+import { diagonalizeVector } from '../../../matrices/expressions/diagonal';
 import { sortContractionIndices } from './utils';
 
 export type ArrayShape = readonly ExprLike[];
@@ -90,7 +91,7 @@ export class ArrayElement extends ExtensionExpr {
     const shaped = parent instanceof ArrayExpr || parent instanceof MatrixExpr || parent instanceof NDimArray || shape.length > 0;
     if (shaped && ind.length !== shape.length) throw new RangeError('array index rank does not match the shape');
     ind.forEach((i, k) => {
-      if (isNegative(i) === true || (shaped && isNonNegative(sub(i, at(shape, k))) === true)) throw new RangeError('array index out of bounds');
+      if (isNegative(i) === true || (shaped && isReal(i) === true && isReal(at(shape, k)) === true && isNonNegative(sub(i, at(shape, k))) === true)) throw new RangeError('array index out of bounds');
     });
     super('ArrayElement', [parent, tuple(ind)]);
     this.indices = Object.freeze(ind);
@@ -226,6 +227,41 @@ export class ArrayContraction extends ArrayExpr {
       return reorderContraction(this, order);
     }
     return this;
+  }
+  /** Split a shared summation index into pairwise links through diagonal vectors. */
+  splitMultipleContractions(): Expr {
+    if (!(this.expr instanceof ArrayTensorProduct)) return this;
+    const factors = [...this.expr.args], blocks = factorBlocks(this.expr);
+    const groups = this.contractionIndices.map((group) => [...group]);
+    const occupied = new Set(groups.flat()), padding = new Set<number>();
+    for (const group of [...groups]) {
+      if (group.length < 3) continue;
+      const endpoints: number[] = [], vectors: number[] = [];
+      for (const axis of group) {
+        const i = blocks.findIndex((block) => block.includes(axis));
+        const block = at(blocks, i), mat = at(factors, i);
+        const other = block.find((k) => k !== axis);
+        if (mat instanceof MatrixExpr && other !== undefined && !occupied.has(other) &&
+            at(this.expr.shape, other).equals(1)) vectors.push(axis);
+        else endpoints.push(axis);
+      }
+      if (endpoints.length > 2) continue;
+      const chain = [...endpoints.slice(0, 1), ...vectors, ...endpoints.slice(1)];
+      groups.splice(groups.indexOf(group), 1);
+      let previous = first(chain);
+      for (const axis of chain.slice(1, -1)) {
+        const i = blocks.findIndex((block) => block.includes(axis));
+        factors[i] = diagonalizeVector(at(factors, i));
+        padding.add(i);
+        groups.push([previous, axis]);
+        previous = at(at(blocks, i), 1 - at(blocks, i).indexOf(axis));
+      }
+      groups.push([previous, at(chain, chain.length - 1)]);
+    }
+    if (!padding.size) return this;
+    const axes = blocks.flatMap((block, i) => padding.has(i) ? [...block, -1] : block);
+    const product = new ArrayTensorProduct(...factors.flatMap((mat, i) => padding.has(i) ? [mat, new OneArray(1)] : [mat]));
+    return new ArrayContraction(product, ...groups.map((group) => group.map((axis) => axes.indexOf(axis)))).doit();
   }
   sortArgsByName(): Expr {
     if (!(this.expr instanceof ArrayTensorProduct)) return this;
