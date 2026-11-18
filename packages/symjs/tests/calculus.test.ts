@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { expect, it } from 'vitest';
-import { Concrete, O, S, Sum, Sym, dominant, getn, isAbsolutelyConvergent, isConvergent, parse } from '../src';
+import { Concrete, dominant, getn, isAbsolutelyConvergent, isConvergent, NoMatch, O, oo, parse, S, Sum, Sym, symbols } from '../src';
 it('exposes calculus result wrappers', () => {
   const n = new Sym('n', { positive: true, integer: true });
   expect(String(dominant(parse('n**2 + n', { symbols: [n] }), n))).toBe('n**2');
@@ -11,11 +11,6 @@ it('exposes calculus result wrappers', () => {
   expect(isConvergent(sum)).toBe(true);
   expect(isAbsolutelyConvergent(sum)).toBe(true);
 });
-// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-
-import { expect, it } from 'vitest';
-import { Concrete, NoMatch, O, Sum, dominant, getn, isAbsolutelyConvergent, isConvergent, oo, parse, symbols } from '../src';
 
 it('exposes calculus queries with public result types', () => {
   const [n] = symbols('n');

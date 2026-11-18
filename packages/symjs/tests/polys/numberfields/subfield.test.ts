@@ -101,7 +101,7 @@ it('refines the enclosures when the first candidate boxes overlap but are too wi
 });
 
 
-import { isIsomorphismPossible, Poly, Rational } from '../../../src';
+import { isIsomorphismPossible, Poly } from '../../../src';
 it('checks embedding degrees and the discriminant obstruction', () => {
   const number = (root: string) => new AlgebraicNumber(parseExpr(root));
   expect(isIsomorphismPossible(number('sqrt(2)'), number('sqrt(3)'))).toBe(true);
