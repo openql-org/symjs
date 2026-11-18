@@ -257,3 +257,31 @@ it('rejects free symbols over an explicitly rational coefficient field',()=>{
   expect(()=>sj.minimalPolynomial(new sj.Sym('y'),new sj.Sym('x'),{domain:sj.QQ})).toThrow(sj.NotImplementedError);
   expect(()=>sj.minimalPolynomial(new sj.Sym('y'),new sj.Sym('x'),{domain:'QQ'})).toThrow(sj.NotImplementedError);
 });
+
+
+it('preserves algebraic field representations in polynomial conversion and equality', () => {
+  const a = new AlgebraicNumber(sqrt(2), [2, 3]);
+  const b = new AlgebraicNumber(sqrt(2), [2, 3], { alias: 'alpha' });
+  expect(String(a.asExpr(new sj.Sym('t')))).toBe('2*t + 3');
+  expect(String(a.asPoly(new sj.Sym('t')))).toBe("Poly(2*t + 3, t, domain='QQ')");
+  expect(String(a.asPoly())).toBe("PurePoly(2*_x + 3, _x, domain='QQ')");
+  expect(String(b.asPoly())).toBe("Poly(2*alpha + 3, alpha, domain='QQ')");
+  expect(a.isNumber).toBe(true);
+  expect(a.equals(b)).toBe(false);
+  expect(a.equals(new AlgebraicNumber(sqrt(2), [2, 3]))).toBe(true);
+  expect(b.equals(new AlgebraicNumber(sqrt(2), [2, 3], { alias: 'alpha' }))).toBe(true);
+  expect(b.equals(new AlgebraicNumber(sqrt(2), [2, 3], { alias: 'beta' }))).toBe(false);
+  expect(a.equals(2)).toBe(false);
+  expect(a.equals(new AlgebraicNumber(sqrt(3), [2, 3]))).toBe(false);
+  expect(a.equals(new AlgebraicNumber(sqrt(2), [1]))).toBe(false);
+  expect(a.equals(new AlgebraicNumber(sqrt(2), [2, 4]))).toBe(false);
+});
+
+
+it('retains rational and symbolic ground fields in minimal polynomial results', () => {
+  const x = new sj.Sym('x'), y = new sj.Sym('y');
+  expect(String(sj.minimalPolynomial(sqrt(2), x, { polys: true, domain: 'QQ' }))).toBe("Poly(x**2 - 2, x, domain='QQ')");
+  expect(String(sj.minimalPolynomial(sqrt(2), x, { polys: true, domain: sj.QQ }))).toBe("Poly(x**2 - 2, x, domain='QQ')");
+  expect(String(sj.minimalPolynomial(sqrt(y), x, { polys: true }))).toBe("Poly(x**2 - y, x, domain='ZZ(y)')");
+  expect(String(sj.minimalPolynomial(sj.S.I, x, { domain: 'QQ(y)' }))).toBe('x**2 + 1');
+});

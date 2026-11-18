@@ -99,3 +99,48 @@ it('refines the enclosures when the first candidate boxes overlap but are too wi
     expect(spy.mock.calls.some(([,bits])=>bits===64)).toBe(true);
   } finally {spy.mockRestore();}
 });
+
+
+import { isIsomorphismPossible, Poly, Rational } from '../../../src';
+it('checks embedding degrees and the discriminant obstruction', () => {
+  const number = (root: string) => new AlgebraicNumber(parseExpr(root));
+  expect(isIsomorphismPossible(number('sqrt(2)'), number('sqrt(3)'))).toBe(true);
+  expect(isIsomorphismPossible(number('sqrt(2)'), number('2**(1/3)'))).toBe(false);
+  expect(isIsomorphismPossible(number('sqrt(2)'), number('sqrt(2)+sqrt(3)'))).toBe(true);
+  expect(isIsomorphismPossible(number('1'), number('sqrt(2)'))).toBe(true);
+  const a = number('sqrt(2)');
+  const b = new AlgebraicNumber(parseExpr('sqrt(2)+sqrt(3)'), [1, 0], { minpoly: Poly.from(parseExpr('x**4+x+1'), [x]) });
+  const spy = vi.spyOn(b.minpoly(), 'discriminant').mockReturnValue(Rational.of(100));
+  try { expect(isIsomorphismPossible(a, b)).toBe(false); } finally { spy.mockRestore(); }
+});
+
+
+import { fieldIsomorphismPslq } from '../../../src';
+import * as identification from '../../../src/numeric/identification';
+it('verifies PSLQ embeddings exactly and rejects complex inputs', () => {
+  const a = new AlgebraicNumber(sqrt(2)), b = new AlgebraicNumber(theta);
+  expect(fieldIsomorphismPslq(a, b).toString()).toBe('1/2,0,-9/2,0');
+  expect(fieldIsomorphismPslq(new AlgebraicNumber(1), a).toString()).toBe('1');
+  expect(fieldIsomorphismPslq(new AlgebraicNumber(1), new AlgebraicNumber(0)).toString()).toBe('1');
+  expect(isNoMatch(fieldIsomorphismPslq(a, new AlgebraicNumber(sqrt(3))))).toBe(true);
+  expect(() => fieldIsomorphismPslq(new AlgebraicNumber(S.I), a)).toThrow('complex');
+  expect(() => fieldIsomorphismPslq(a, new AlgebraicNumber(S.I))).toThrow('complex');
+  const spy = vi.spyOn(identification, 'pslq');
+  try {
+    spy.mockReturnValue([1n, 1n, 1n]);
+    expect(isNoMatch(fieldIsomorphismPslq(a, a))).toBe(true);
+    spy.mockReset();
+    for (let k = 1n; k <= 4n; k++) spy.mockReturnValueOnce([k, 0n, 1n]);
+    expect(isNoMatch(fieldIsomorphismPslq(a, a))).toBe(true);
+  } finally { spy.mockRestore(); }
+});
+
+
+it('refines overlapping enclosures until their widths identify one embedding', () => {
+  const a = CRootOf(parseExpr('x**3-x-1'), 0), b = CRootOf(parseExpr('x**3-6*x**2+11*x-7'), 0);
+  const spy = vi.spyOn(enclosureModule, 'algebraicEnclosure');
+  try {
+    spy.mockReturnValueOnce([[Rational.of(-100), Rational.of(100)], [Rational.of(-100), Rational.of(100)]]);
+    expect(String(fieldIsomorphism(a, b))).toBe('1,-2');
+  } finally { spy.mockRestore(); }
+});

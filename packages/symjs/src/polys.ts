@@ -44,7 +44,7 @@ export { eqsToMatrix, solveLinSys, sympyEqsToRing } from './polys/solvers';
 export { sqfNorm } from './polys/sympoly';
 export type { FactorList, FactorListFrac, FactorListOptions, PolyConstructionOptions, PolynomialDomainOptions } from './polys/sympoly';
 export { minimalPolynomial } from './polys/numberfields';
-export { fieldIsomorphism, primitiveElement, toNumberField } from './polys/numberfields/subfield';
+export { fieldIsomorphism, fieldIsomorphismPslq, isIsomorphismPossible, primitiveElement, toNumberField } from './polys/numberfields/subfield';
 export type { PrimitiveElementOptions } from './polys/numberfields/subfield';
 export type { MinimalPolynomialOptions } from './polys/numberfields';
 export {

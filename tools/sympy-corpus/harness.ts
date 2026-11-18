@@ -911,7 +911,7 @@ export function deserialize(tree: Tree): unknown {
     case 'CRootOf':
       return new sj.CRootOf(deserialize(tree['poly'] as Tree) as Expr, tree['index'] as number);
     case 'Pow': {
-      const [b, e] = (tree['args'] as Tree[]).map((a) => deserialize(a) as Expr);
+      const [b, e] = (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a)));
       if (tree['evaluate'] === false && b !== undefined && e !== undefined) return new sj.Pow(b, e);
       // a power of rationals that SymPy kept as a Pow was built with evaluate=False
       // (an integer power too large to compute, Pow(2, 10**16, evaluate=False), is kept as it is)
@@ -1006,7 +1006,7 @@ export function deserialize(tree: Tree): unknown {
       return new sj.PuiseuxRing((tree['symbols'] as Tree[]).map((s) => deserialize(s) as Expr), (d instanceof JsDomain ? (d.domain ?? d.name) : d) as sj.Domain | string);
     }
     case 'PuiseuxPoly':
-      return (deserialize(tree['ring'] as Tree) as sj.PuiseuxRing).fromDict((tree['terms'] as [Tree[], Tree][]).map(([m, c]) => [m.map((e) => deserialize(e) as Expr), deserialize(c) as Expr]));
+      return (deserialize(tree['ring'] as Tree) as sj.PuiseuxRing).fromDict((tree['terms'] as [Tree[], Tree][]).map(([m, c]) => [m.map((e) => asExpr(deserialize(e))), asExpr(deserialize(c))]));
     case 'FracElement': {
       const field = deserialize(tree['field'] as Tree) as sj.FracField;
       return field.new(field.ring.fromExpr(deserialize(tree['numer'] as Tree) as Expr), field.ring.fromExpr(deserialize(tree['denom'] as Tree) as Expr));
@@ -1346,7 +1346,7 @@ export function deserialize(tree: Tree): unknown {
       return new sj.Dummy(tree['name'] as string, a, 1_000_000 + (tree['index'] as number));
     }
     case 'UFn':
-      return sj.SymFunction(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
+      return sj.SymFunction(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))));
     case 'Derivative': {
       const expr = deserialize(tree['expr'] as Tree) as Expr | Matrix;
       const variables = (tree['vc'] as [Tree, number][]).map(([v, n]): [Expr | Matrix, number] => [deserialize(v) as Expr | Matrix, n]);
@@ -1454,6 +1454,8 @@ export type Adapter = (args: unknown[], kwargs: Record<string, unknown>, self?: 
 
 const asExpr = (v: unknown): Expr => {
   if (v instanceof Expr) return v;
+  if (v instanceof sj.PythonMPQ) return sj.Rational.of(v.numerator, v.denominator);
+  if (v instanceof sj.AlgebraicNumber) return v.asExpr();
   if (typeof v === 'number') return sj.sympify(v);
   if (typeof v === 'boolean') return v ? S.true : S.false;
   throw new Unsupported(`expected an expression, got ${fmt(v)}`);
@@ -2857,6 +2859,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_poly': (args, kw, self) => {
     noKw(kw);
+    if (self instanceof sj.AlgebraicNumber) return self.asPoly(args[0] === undefined ? undefined : asExpr(args[0]));
     let e = asExpr(self);
     if (e instanceof sj.Rel && e.op === 'Eq') e = sj.add(e.lhs, sj.mul(-1, e.rhs));
     // SymPy None (NoMatch) for an expression that is not a polynomial in the generators
@@ -3582,9 +3585,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   line_integrate: (args, kw) => (noKw(kw), sj.lineIntegrate(asExpr(args[0]), args[1] as sj.Curve, (args[2] as JsList).items.map(asSym))),
   minimal_polynomial: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'polys' && k !== 'compose') throw new Unsupported(`kwargs ${k}`);
-    const x = args[1] instanceof Sym ? args[1] : undefined;
-    return sj.minimalPolynomial(asExpr(args[0]), x, { compose: kw['compose'] !== false, polys: Boolean(kw['polys']) });
+    for (const k of Object.keys(kw)) if (!['polys', 'compose', 'domain', 'x'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const x = (kw['x'] ?? args[1]) instanceof Sym ? asSym(kw['x'] ?? args[1]) : undefined;
+    return sj.minimalPolynomial(asExpr(args[0]), x, { compose: kw['compose'] !== false, polys: Boolean(kw['polys']), ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }) });
   },
   KroneckerDelta: (args, kw) => (noKw(kw), sj.KroneckerDelta(asExpr(args[0]), asExpr(args[1]))),
   hyper: (args, kw) => {
@@ -4113,7 +4116,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       return self.asExprAt(args.map(asExpr));
     }
     if (self instanceof Expr) return self;
-    if (self instanceof sj.AlgebraicNumber) return self.asExpr();
+    if (self instanceof sj.AlgebraicNumber) return self.asExpr(args[0] === undefined ? undefined : asExpr(args[0]));
     throw new Unsupported('as_expr');
   },
   '.total_degree': (_a, kw, self) => (noKw(kw), asPoly(self).totalDegree()),
@@ -4491,9 +4494,13 @@ Object.assign(ADAPTERS, {
   FunctionClass: (args, kw) => (noKw(kw), new UFnClass(String(args[0]))),
   UnevaluatedExpr: (args, kw) => (noKw(kw), new sj.UnevaluatedExpr(asExpr(args[0]))),
   AlgebraicNumber: (args, kw) => {
-    noKw(kw);
+    const { alias, ...rest } = kw;
+    noKw(rest);
     const coeffs = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asExpr) : undefined;
-    return new sj.AlgebraicNumber(asExpr(args[0]), coeffs).asExpr();
+    const root = args[0];
+    const opts = alias === undefined ? {} : { alias: typeof alias === 'string' ? alias : asSym(alias) };
+    if (root instanceof JsTuple) return new sj.AlgebraicNumber(asExpr(root.items[1]), coeffs, { ...opts, minpoly: asPoly(root.items[0]) });
+    return new sj.AlgebraicNumber(root instanceof sj.AlgebraicNumber ? root : asExpr(root), coeffs, opts);
   },
   SympifyError: errorAdapter(sj.SympifyError),
   PoleError: errorAdapter(sj.PoleError),
@@ -4924,7 +4931,7 @@ ADAPTERS['.as_set'] = (_args, kw, self) => (noKw(kw), self instanceof sj.Contain
 ADAPTERS['.of_type'] = (args, kw, self0) => {
   noKw(kw);
   const self = self0 instanceof JsDomain ? self0.domain : self0;
-  if (!(self instanceof sj.Domain) || !(args[0] instanceof JsFFElement)) throw new Unsupported('no adapter for .of_type');
+  if (!(self instanceof sj.Domain)) throw new Unsupported('no adapter for .of_type');
   return self.ofType(plain(args[0]));
 };
 
@@ -4970,7 +4977,7 @@ for (const name of Object.keys(sj.Q)) {
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
-const NUMERIC_FUNCTIONS = new Set(['.dup_zz_cyclotomic_poly', 'cyclotomic_poly', 'swinnerton_dyer_poly', 'symmetric_poly', 'interpolating_poly', 'dmp_alg_inject', 'solve_de', 'hyper_algorithm', 'bool_maxterm', 'bool_minterm', 'bool_monomial', 'unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix', 'gauss_legendre', 'gauss_laguerre', 'gauss_hermite', 'gauss_gen_laguerre', 'gauss_jacobi', 'gauss_chebyshev_t', 'gauss_chebyshev_u', 'gauss_lobatto']);
+const NUMERIC_FUNCTIONS = new Set(['jacobi_poly', 'gegenbauer_poly', 'chebyshevt_poly', 'chebyshevu_poly', 'hermite_poly', 'hermite_prob_poly', 'legendre_poly', 'laguerre_poly', 'bernoulli_poly', 'bernoulli_c_poly', 'genocchi_poly', 'euler_poly', 'andre_poly', '.dup_zz_cyclotomic_poly', 'cyclotomic_poly', 'swinnerton_dyer_poly', 'symmetric_poly', 'interpolating_poly', 'dmp_alg_inject', 'solve_de', 'hyper_algorithm', 'bool_maxterm', 'bool_minterm', 'bool_monomial', 'unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix', 'gauss_legendre', 'gauss_laguerre', 'gauss_hermite', 'gauss_gen_laguerre', 'gauss_jacobi', 'gauss_chebyshev_t', 'gauss_chebyshev_u', 'gauss_lobatto']);
 /** Python operators recorded as their special methods (the number-field doctests), and the methods that implement them. */
 /** A value that symjs arithmetic accepts directly (an expression or a JS number). */
 const isScalar = (v: unknown): v is ExprLike => v instanceof Expr || typeof v === 'number' || typeof v === 'bigint';
@@ -5187,6 +5194,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
       if (!Array.isArray(monomial)) throw new Unsupported('monomial exponent tuple');
       return tuple(a.key(monomial.map(Number)));
     }
+    if (a instanceof sj.PuiseuxRing) return a.ringNew(args[0] as sj.PuiseuxPoly);
     if (a instanceof sj.Poly) {
       let result: sj.Poly | Expr = a;
       for (const x of args) {
@@ -5524,6 +5532,31 @@ function autoAdapter(c: Case): Adapter | undefined {
     };
     return fromJs(self.extract(indices(args[0], self.shape[0]), indices(args[1], self.shape[1])));
   };
+  if (c.self?.t === 'AlgebraicNumber' && ['.rep', '.minpoly', '.alias', '.as_poly'].includes(c.fn)) return (args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.AlgebraicNumber)) throw new TypeError('expected an algebraic number');
+    if (c.fn === '.rep') return new JsDMP(new sj.PolyRing('x', sj.QQ).fromList(self.coeffs()));
+    if (c.fn === '.minpoly') return self.minpoly().asExprAt([new Sym('x')]);
+    if (c.fn === '.alias') return self.alias ?? null;
+    return self.asPoly(args[0] === undefined ? undefined : asExpr(args[0]));
+  };
+  if (c.fn === 'primitive_element') return (args, kw) => {
+    const x = args[1] === undefined ? undefined : asSym(args[1]);
+    const result = sj.primitiveElement(asExprList(args[0]), x, { ex: Boolean(kw['ex']) });
+    return new JsTuple([kw['polys'] ? sj.Poly.from(result[0], x === undefined ? undefined : [x], { domain: 'QQ' }) : result[0], ...result.slice(1).map(fromJs)]);
+  };
+  if (c.module === 'sympy.polys.tests.test_polyoptions' && c.self?.t === 'Dict' && ['.gens', '.domain'].includes(c.fn)) return (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof JsDict)) throw new TypeError('expected polynomial options');
+    const value = self.entries.find(([key]) => key === c.fn.slice(1))?.[1];
+    return value instanceof JsDomain ? new UFnClass(value.name) : value;
+  };
+  if (c.fn === 'prime_decomp') return (args, kw) => fromJs(sj.primeDecomp(toJs(args[0], true) as number, {
+    ...(args[1] === undefined && kw['T'] === undefined ? {} : { T: asPoly(kw['T'] ?? args[1]) }),
+    ...(kw['ZK'] === undefined ? {} : { ZK: kw['ZK'] as sj.Submodule }),
+    ...(kw['dK'] === undefined ? {} : { dK: asExpr(kw['dK']) as sj.Rational }),
+    ...(kw['radical'] === undefined ? {} : { radical: kw['radical'] as sj.Submodule }),
+  }));
   if (c.fn === '.is_MatMul') return (_args, kw, self) => (noKw(kw), self instanceof sj.MatMul);
   if (c.fn === '.is_MatAdd') return (_args, kw, self) => (noKw(kw), self instanceof sj.MatAdd);
   // SymPy's class flag is_Relational is an instance test of the relation class
@@ -5549,7 +5582,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (v instanceof Map) return new Map([...v].map(([k, a]) => [rationalInputs(k), rationalInputs(a)]));
       return v;
     };
-    const expressionCoefficients = ['sympy.polys.puiseux', 'sympy.polys.ring_series', 'sympy.polys.densearith', 'sympy.polys.matrices.dense', 'sympy.polys.densebasic', 'sympy.polys.rootisolation', 'sympy.polys.tests.test_rootisolation'];
+    const expressionCoefficients = ['sympy.polys.tests.test_puiseux', 'sympy.polys.tests.test_ring_series', 'sympy.polys.puiseux', 'sympy.polys.ring_series', 'sympy.polys.densearith', 'sympy.polys.matrices.dense', 'sympy.polys.densebasic', 'sympy.polys.rootisolation', 'sympy.polys.tests.test_rootisolation'];
     const polynomialInputs = (v: unknown): unknown => {
       if (v instanceof sj.PolyElement) return v.asExpr();
       if (Array.isArray(v)) return v.map(polynomialInputs);
@@ -5565,6 +5598,13 @@ function autoAdapter(c: Case): Adapter | undefined {
   const reflected = reflectedName === undefined ? undefined : DUNDER[reflectedName];
   if (reflected !== undefined && c.self?.t === 'Rational' && c.self['py'] === true) return (args, _kw, self) => fromJs(reflected(plain(conv(args[0])), [self]));
   if (dunder !== undefined) return (args, _kw, self0) => {
+    if (self0 instanceof sj.PuiseuxPoly || args[0] instanceof sj.PuiseuxPoly) {
+      const left = self0 instanceof sj.PythonMPQ ? sj.Rational.of(self0.numerator, self0.denominator) : self0;
+      const right = conv(args[0]);
+      if (left === null || right === null) throw new TypeError('unsupported Puiseux operand');
+      if (left instanceof sj.PuiseuxPoly) return fromJs(dunder(left, [right]));
+      if (right instanceof sj.PuiseuxPoly && ['.__add__', '.__sub__', '.__mul__', '.__truediv__'].includes(c.fn)) return fromJs(dunder(right.ring.ringNew(left as Expr), [right]));
+    }
     const right = args[0];
     if (c.fn === '.__mul__' && (self0 instanceof JsDMP || self0 instanceof sj.DMP) && (right instanceof sj.ModuleElement || right instanceof sj.ModuleImplementedIdeal)) {
       const ring = right instanceof sj.ModuleElement ? right.module.ring : right.ring;
@@ -6022,6 +6062,9 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // The empty Puiseux polynomial is the additive identity (p - p = 0);
+  // SymPy's empty printed string omits that value.
+  'sympy.polys.tests.test_puiseux:assert R2.zero == PuiseuxPoly(R1.zero, R2)': '0',
   // SymPy mixes Poly.gens=(y,x) with Options.gens=(x,y). Neither published
   // result solves the original pair; these tuples satisfy both equations.
   'sympy.solvers.polysys:solve_biquadratic(a, b, NewOption)': [
