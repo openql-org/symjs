@@ -106,3 +106,29 @@ it('solves first-order linear PDEs with variable coefficients', () => {
     expect(checkpdesol(eq, sol, u)[0]).toBe(true);
   }
 });
+
+it('reclassifies parameter specializations before choosing a solution hint', async () => {
+  const { subs } = await import('../../src');
+  const [a, b, c] = symbols('a b c');
+  const family = add(mul(a, x, ux), mul(b, uy), mul(c, u));
+  // SymPy 1.14 classify_pde of the substituted equations.
+  const cases = [
+    [[[a, 0], [b, 1], [c, 0]], '1st_linear_constant_coeff_homogeneous'],
+    [[[a, 1], [b, 0], [c, 0]], '1st_linear_variable_coeff'],
+    [[[a, 1], [b, 0], [c, 1]], '1st_linear_variable_coeff'],
+    [[[a, 0], [b, 1], [c, 2]], '1st_linear_constant_coeff_homogeneous'],
+  ] as const;
+  for (const [values, hint] of cases) {
+    const eq = subs(family, values);
+    expect(classifyPde(eq, u)).toEqual([hint]);
+    expect(checkpdesol(eq, pdsolve(eq, u, hint), u)[0]).toBe(true);
+  }
+  for (const value of [0, 1]) {
+    const eq = subs(family, [[a, 0], [b, 0], [c, value]]);
+    expect(classifyPde(eq, u)).toEqual([]);
+    expect(() => pdsolve(eq, u)).toThrow('only first-order');
+  }
+  const inhomogeneous = subs(add(family, mul(-1, b)), [[a, 0], [b, 1], [c, 0]]);
+  expect(classifyPde(inhomogeneous, u)).toEqual(['1st_linear_constant_coeff', '1st_linear_constant_coeff_Integral']);
+  expect(checkpdesol(inhomogeneous, pdsolve(inhomogeneous, u), u)[0]).toBe(true);
+});

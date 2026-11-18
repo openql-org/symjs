@@ -341,7 +341,7 @@ CORRESPONDENCES = {
     'sympy.parsing.latex.lark.latex_parser': ['parsing/latex/lark/latex_parser.ts', 'parsing/latex/lark/grammar/latex.ts', 'parsing/latex/lark/grammar/greek_symbols.ts', 'parsing/latex/lexer.ts', 'parsing/latex/tree.ts'],
     'sympy.parsing.latex.lark.transformer': ['parsing/latex/lark/transformer.ts'],
     'sympy.series': ['calculus.ts'],
-    'sympy.series.acceleration': ['numeric/mphyper.ts'],
+    'sympy.series.acceleration': ['series/acceleration.ts'],
     'sympy.series.aseries': ['series/series.ts'],
     'sympy.series.kauers': ['series/kauers.ts'],
     'sympy.series.order': ['core/nodes.ts', 'series/series.ts'],
@@ -463,16 +463,12 @@ NOTES = {
 # What a partially ported module still lacks; a limitation blocks completeness
 # (NOTES only describe a module).
 LIMITATIONS = {
-    'sympy.assumptions.sathandlers': 'allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported',
-    'sympy.assumptions.wrapper': 'is_infinite/is_extended_real/is_extended_nonnegative; AssumptionsWrapper not ported',
-    'sympy.functions.elementary._trigonometric_special': 'migcdex, ipartfrac, fermat_coords; the cos_3..cos_257 tables are not ported',
     'sympy.polys.appellseqs': 'Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.',
     'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration remains partial.',
     'sympy.polys.numberfields.utilities': 'Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.',
     'sympy.polys.puiseux': 'PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain',
     'sympy.polys.ring_series': 'truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented',
     'sympy.polys.rootoftools': 'Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.',
-    'sympy.series.acceleration': 'richardson/shanks of SymPy are symbolic: unassessed beyond the mpmath counterparts',
 }
 
 
