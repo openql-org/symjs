@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { expect, it } from 'vitest';
-import { Poly, rootFactors, rootsQuintic, roots, symbol, parseExpr, expand, mul, evalf, toComplex } from '../../src';
+import { Poly, rootFactors, rootsQuintic, roots, symbol, parseExpr, expand, mul, evalf, toComplex, cyclotomicPoly, rootsBinomial, rootsQuadratic, rootsCubic, rootsCyclotomic, PolynomialError } from '../../src';
 const x = symbol('x');
+const p = (s: string) => Poly.from(parseExpr(s), [x]);
 it('returns root factors and preserves unresolved residual factors', () => {
   const f = parseExpr('x**2-y');
   const factors = rootFactors(f,x);
@@ -63,4 +64,24 @@ it('routes requested quintic radicals through the public roots API with multipli
   expect(rs.size).toBe(5);
   expect([...rs.values()]).toEqual([2, 2, 2, 2, 2]);
   expect(roots(parseExpr('x**5-x+1'), x, { quintics: true }).size).toBe(0);
+});
+it('preserves binomial root order and multiplicity', () => {
+  expect(rootsBinomial(p('x**4')).map(String)).toEqual(['0','0','0','0']);
+  expect(rootsBinomial(p('x**3-1')).map(String)).toEqual(['1','-1/2 - sqrt(3)*I/2','-1/2 + sqrt(3)*I/2']);
+  expect(rootsBinomial(p('x**3+1'))).toHaveLength(3);
+  expect(rootsBinomial(p('x**2+1')).map(String)).toEqual(['-I','I']);
+  expect(rootsBinomial(p('x**2-y')).map(String)).toEqual(['-sqrt(y)','sqrt(y)']);
+  expect(() => rootsBinomial(p('1'))).toThrow(PolynomialError);
+});
+it('returns quadratic and cubic roots including repeated roots', () => {
+  expect(rootsQuadratic(p('2*x**2+3*x')).map(String)).toEqual(['-3/2','0']);
+  expect(rootsCubic(p('(x-1)**3')).map(String)).toEqual(['1','1','1']);
+});
+it('returns cyclotomic roots in trigonometric or algebraic form', () => {
+  for (const n of [1,2,3,4,5,6,7,8,12]) {
+    expect(rootsCyclotomic(Poly.from(cyclotomicPoly(n,x),[x]))).toHaveLength(Poly.from(cyclotomicPoly(n,x),[x]).degree());
+  }
+  expect(rootsCyclotomic(p('x**2+x+1'), true).map(String)).toEqual(['-(-1)**(1/3)','-1 + (-1)**(1/3)']);
+  expect(rootsCyclotomic(p('x**2-x+1'), true).map(String)).toEqual(['1 - (-1)**(1/3)','(-1)**(1/3)']);
+  expect(() => rootsCyclotomic(p('x**2-2'))).toThrow(RangeError);
 });

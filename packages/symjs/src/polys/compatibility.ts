@@ -33,13 +33,18 @@ import type { Domain } from './domains';
 import { EX, FractionField, groundRational, IntegerRing, PolynomialRing, QQ, RationalField, RealField, ZZ } from './domains';
 import { AlgebraicField } from './domains/algebraicfield';
 import { FiniteField } from './domains/finitefield';
-import { GaussianIntegerRing, GaussianRationalField } from './domains/gaussiandomains';
+import { GaussianIntegerRing, GaussianRationalField, QQ_I } from './domains/gaussiandomains';
 import { mgcd } from './mpoly';
 import { MultivariatePolynomialError } from './polyerrors';
 import { Poly, discriminant, polyGcd, resultant } from './sympoly';
 
 import { dmpSqfNorm } from './sqfreetools';
 import { dmpFromDict, dmpToDict } from './densebasic';
+import { cyclotomicCoeffs } from './numberfields';
+import { factorint, divisors } from '../ntheory/factor';
+import type { Truth } from '../core/truth';
+import { NoMatch } from '../core/truth';
+import type { NoMatchResult } from '../core/truth';
 import { FieldPoly } from './fieldpoly';
 
 /** An exponent vector. */
@@ -1170,6 +1175,21 @@ export abstract class IPolys<P extends CompatElement<P>> {
 
   /** The factorization (content, [(factor, multiplicity)]) (SymPy dmp_factor_list). */
   dmpFactorList(f: P): [Expr, [P, number][]] {
+    if (this.domain instanceof GaussianIntegerRing) {
+      const K = this.domain;
+      const [c, factors] = Poly.from(f.asExpr(), this.symbols, { domain: QQ_I }).factorList();
+      let coefficient = c;
+      const result: [P, number][] = [];
+      for (const [p, multiplicity] of factors) {
+        const terms = p.terms().map(([m, a]) => [m, QQ_I.convert(a)] as const);
+        const denominator = terms.reduce((d, [, a]) => ilcm(d, ilcm(a.re.denominator, a.im.denominator)), 1n);
+        const integral = terms.map(([m, a]) => [m, K.convert(a.mul(denominator))] as const);
+        const content = integral.reduce((g, [, a]) => K.gcd(g, a), K.convert(0));
+        coefficient = mul(coefficient, pow(mul(K.toSympy(content), Rational.of(1, denominator)), multiplicity));
+        result.push([this.fromTerms(integral.map(([m, a]) => [m, K.toSympy(a.divmod(content)[0])])), multiplicity]);
+      }
+      return [K.fromSympy(cancel(coefficient)), result];
+    }
     const [c, fs] = this.toPoly(f).factorList();
     return [groundConvert(this.domain, c), fs.map(([p, k]) => [this.fromPoly(p), k] as [P, number])];
   }
@@ -1184,6 +1204,76 @@ export abstract class IPolys<P extends CompatElement<P>> {
   /** The factorization over ZZ (SymPy dmp_zz_factor). */
   dmpZzFactor(f: P): [Expr, [P, number][]] {
     return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dupExtFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dmpExtFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dupQqIFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dmpQqIFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dupZzIFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization over the coefficient domain. */
+  dmpZzIFactor(f: P): [Expr, [P, number][]] {
+    return this.dmpFactorList(f);
+  }
+  /** Factorization of a square-free integer polynomial. */
+  dupZzFactorSqf(f: P): [Expr, P[]] {
+    const [c, factors] = this.dmpFactorList(f);
+    return [c, factors.map(([p]) => p)];
+  }
+  /** Include the content in a factor with multiplicity one. */
+  dupFactorListInclude(f: P): [P, number][] {
+    const [c, factors] = this.dmpFactorList(f);
+    const head = factors[0];
+    if (head === undefined) return [[this.groundNew(c), 1]];
+    return [[head[0].mulGround(c), head[1]], ...factors.slice(1)];
+  }
+  /** Multivariate factorization including the content. */
+  dmpFactorListInclude(f: P): [P, number][] {
+    return this.dupFactorListInclude(f);
+  }
+  /** The n-th cyclotomic polynomial over the integers. */
+  dupZzCyclotomicPoly(n: number): P {
+    const cs = cyclotomicCoeffs(n);
+    return this.fromTerms(cs.map((c, i) => [this.unit(0, cs.length - 1 - i), Rational.of(c)]));
+  }
+  /** Cyclotomic factorization of x**n - 1 or x**n + 1. */
+  dupZzCyclotomicFactor(f: P): P[] | NoMatchResult {
+    const terms = f.listterms();
+    if (terms.length !== 2 || !groundEq(this.groundLC(f), this.domain.one)) return NoMatch;
+    const constant = this.groundOf(this.coeffIn(f, 0, 0));
+    if (!(groundEq(constant, this.domain.one) || groundEq(constant, this.domain.neg(this.domain.one)))) return NoMatch;
+    const n = this.degIn(f, 0);
+    const positive = groundEq(constant, this.domain.one);
+    return divisors(positive ? 2 * n : n).filter(d => !positive || BigInt(n) % d !== 0n).map(d => this.dupZzCyclotomicPoly(Number(d)));
+  }
+  /** Univariate irreducibility over the coefficient domain. */
+  dupIrreducibleP(f: P): boolean {
+    return this.dmpIrreducibleP(f);
+  }
+  /** Univariate irreducibility over the integers. */
+  dupZzIrreducibleP(f: P): Truth {
+    const coeffs = this.toPoly(f).allCoeffs().map(c => rat(c).p);
+    const content = coeffs.slice(1).reduce((a, b) => igcd(a, b), 0n);
+    if (content !== 0n) {
+      for (const p of factorint(content).keys()) {
+        if (first(coeffs) % p !== 0n && last(coeffs) % (p * p) !== 0n) return true;
+      }
+    }
+    return 'unknown';
   }
   /** f is irreducible (SymPy dmp_irreducible_p). */
   dmpIrreducibleP(f: P): boolean {
