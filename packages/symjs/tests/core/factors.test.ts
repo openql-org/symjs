@@ -79,3 +79,46 @@ describe('Factors (SymPy Factors)', () => {
     expect(attempt(run)).toBe(expected);
   });
 });
+
+describe('Factors product operations', () => {
+  const a = new sj.Factors(sj.mul(sj.pow(x, 5), sj.pow(y, 3), sj.pow(z, 7)));
+  const b = new sj.Factors(sj.mul(sj.pow(y, 4), sj.pow(z, 3)));
+  it('scales exponents and validates powers', () => {
+    expect(String(a.pow(3))).toBe('Factors({x: 15, y: 9, z: 21})');
+    expect(String(a.pow(new sj.Factors(2)))).toBe('Factors({x: 10, y: 6, z: 14})');
+    expect(a.pow(0).isOne).toBe(true);
+    for (const e of [-1, x, sj.Rational.of(1n, 2n)]) expect(() => a.pow(e)).toThrow(RangeError);
+  });
+  it('takes common and union factors with comparable exponents', () => {
+    expect(String(a.gcd(b))).toBe('Factors({y: 3, z: 3})');
+    expect(String(a.gcd(0))).toBe(String(a));
+    expect(String(a.gcd(sj.pow(y, 2)))).toBe('Factors({y: 2})');
+    expect(String(new sj.Factors(sj.pow(x, n)).gcd(sj.pow(x, m)))).toBe('Factors({})');
+    expect(String(a.lcm(b))).toBe('Factors({x: 5, y: 4, z: 7})');
+    expect(String(a.lcm(sj.mul(sj.pow(y, 2), n)))).toBe('Factors({n: 1, x: 5, y: 3, z: 7})');
+    expect(a.lcm(0).isZero).toBe(true);
+    expect(new sj.Factors(0).lcm(x).isZero).toBe(true);
+    expect(() => new sj.Factors(sj.pow(x, n)).lcm(sj.pow(x, m))).toThrow(TypeError);
+  });
+  it('normalizes products and zero inputs', () => {
+    expect(a.normal(b).map(String)).toEqual(['Factors({x: 5, z: 4})', 'Factors({y: 1})']);
+    expect(new sj.Factors(x).normal(2).map(String)).toEqual(['Factors({x: 1})', 'Factors({2: 1})']);
+    expect(new sj.Factors(x).normal(0).map(String)).toEqual(['Factors({})', 'Factors({0: 1})']);
+    expect(new sj.Factors(0).normal(x).map(String)).toEqual(['Factors({0: 1})', 'Factors({})']);
+    expect(new sj.Factors(sj.pow(x, sj.add(n, 3))).div(sj.pow(x, -3)).map(String)).toEqual(['Factors({x: n + 6})', 'Factors({})']);
+  });
+  it('splits signed floats and infinity', () => {
+    expect(String(new sj.Factors(sj.S.NegativeInfinity))).toBe('Factors({-1: 1, oo: 1})');
+    expect(String(new sj.Factors(new sj.Float(-2)))).toBe('Factors({2.00000000000000: 1, -1: 1})');
+    expect(String(new sj.Factors(new sj.Float(2)))).toBe('Factors({2.00000000000000: 1})');
+  });
+});
+
+
+it('normalizes float units in factor maps without normalizing other bases', () => {
+  const make = (b: number, e: sj.ExprLike) => new sj.Factors(new Map<sj.Expr, sj.ExprLike>([[new sj.Float(b), e], [sj.I, 1]]));
+  expect(String(make(-1, 2))).toBe('Factors({1.00000000000000: 1, I: 1})');
+  expect(String(make(-1, 3))).toBe('Factors({1.00000000000000: 1, -1: 1, I: 1})');
+  expect(String(make(1, 2))).toBe('Factors({1.00000000000000: 1, I: 1})');
+  expect(String(make(2, 2))).toBe('Factors({2.00000000000000: 2, I: 1})');
+});

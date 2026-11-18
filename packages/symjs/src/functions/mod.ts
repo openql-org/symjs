@@ -16,14 +16,16 @@
 import type { Expr } from '../core/nodes';
 import { Add, Fn, Float, Mul, Pow, Rational, S, impl } from '../core/nodes';
 import { extractMultiplicatively } from '../core/methods';
-import { add, mul, pow } from '../core/ops';
+import { add, couldExtractMinusSign, mul, pow, splitCoeff } from '../core/ops';
 import { isqrt, powmod } from '../ntheory/intutil';
 import { at } from '../core/guard';
 import { isprime } from '../ntheory/primetest';
 import { sieve } from '../ntheory/sieve';
-import { isIntegerQ } from '../core/assumptions';
+import { isIntegerQ, isNonNegative, isPositive } from '../core/assumptions';
 import { defineFunction } from '../core/defun';
 import type { DefinedFunction } from '../core/defun';
+import { gcd } from '../core/numbers';
+import { count } from '../core/match';
 import { ratMod } from '../core/num';
 
 function evalMod(p: Expr, q: Expr): Expr | undefined {
@@ -42,16 +44,37 @@ function evalMod(p: Expr, q: Expr): Expr | undefined {
     if (p instanceof Pow && isInt(p.base) && isInt(p.exp) && p.exp.p > 0n) return Rational.of(powmod(p.base.p, p.exp.p, q.p));
     if (p instanceof Fn && p.name === 'factorial' && p.args[0] instanceof Rational && p.args[0].isInteger && p.args[0].p >= 0n) return factorialMod(p.args[0].p, q.p);
   }
+  // Pow._eval_Mod: an integer base divisible by q remains divisible at a positive integer power.
+  if (p instanceof Pow && isIntegerQ(p.base) === true && isIntegerQ(p.exp) === true && isPositive(p.exp) === true) {
+    const r = evalMod(p.base, q);
+    if (r instanceof Rational && r.isZero) return S.Zero;
+  }
+  // Denest when the inner modulus is a multiple of q, or its range lies inside q's range.
+  const negative = mul(-1, p);
+  const inner = Mod.isApplied(p) ? p : Mod.isApplied(negative) ? negative : undefined;
+  if (inner !== undefined) {
+    const innerQ = at(inner.args, 1);
+    const ratio = mul(innerQ, pow(q, -1));
+    if (isIntegerQ(ratio) === true) return Mod(mul(inner === p ? 1 : -1, at(inner.args, 0)), q);
+    if (isNonNegative(mul(inner === p ? 1 : -1, innerQ, add(q, mul(inner === p ? -1 : 1, innerQ)))) === true) return p;
+  }
   // a rational ratio k = p/q: Mod(p, q) = q*Mod(k, 1) (SymPy extracts gcd(p, q))
   const k = mul(p, pow(q, -1));
   if (k instanceof Rational) return mul(q, ratMod(k, S.One));
   if (isIntegerQ(k) === true) return S.Zero;
+  const [cp, rp] = splitCoeff(p);
+  const [cq, rq] = splitCoeff(q);
+  if (cp instanceof Rational && cq instanceof Rational && cp.isInteger && cq.isInteger) {
+    const g = gcd(cp.p, cq.p);
+    if (g > 1n) return mul(Rational.of(g), Mod(mul(Rational.of(cp.p / g), rp), mul(Rational.of(cq.p / g), rq)));
+  }
+  if (couldExtractMinusSign(p) && couldExtractMinusSign(q)) return mul(-1, Mod(mul(-1, p), mul(-1, q)));
   // Extract common symbolic factors before reducing the additive terms.
   // The quotient is structural, so no assumptions about floating signs enter.
   for (const g of q instanceof Mul ? q.args : [q]) {
     if (g instanceof Rational) continue;
     const quotient = extractMultiplicatively(p, g);
-    if (quotient !== undefined) return mul(g, Mod(quotient, mul(q, pow(g, -1))));
+    if (quotient !== undefined && quotient.key !== p.key) return mul(g, Mod(quotient, mul(q, pow(g, -1))));
   }
   return byRatio(p, q) ?? reduceTerms(p, q);
 }
@@ -66,7 +89,10 @@ function reduceTerms(p: Expr, q: Expr): Expr | undefined {
   // denest: Mod(Mod(x, q) + y, q) -> Mod(x + y, q)
   const inner = p.args.filter((t) => Mod.isApplied(t));
   if (inner.length && inner.every((t) => at(t.args, 1).key === q.key)) return Mod(add(...p.args.map((t) => (Mod.isApplied(t) ? at(t.args, 0) : t))), q);
-  const terms = p.args.map((t) => evalMod(t, q) ?? t);
+  const terms = p.args.map((t) => {
+    const r = evalMod(t, q);
+    return r !== undefined && count(r, (e) => Mod.isApplied(e)) <= count(t, (e) => Mod.isApplied(e)) ? r : t;
+  });
   const r = add(...terms);
   return r.key === p.key ? undefined : Mod(r, q);
 }
