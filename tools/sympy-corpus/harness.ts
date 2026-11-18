@@ -1776,6 +1776,11 @@ function rootsDict(rs: Expr[]): JsDict {
 }
 
 function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
+  if (!rest.length) {
+    const fs = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
+    if (fs.length !== 1) throw new Unsupported('diff variable');
+    return evaluate ? sj.diff(e, fs[0]!) : sj.derivative(e, [[fs[0]!, 1]]);
+  }
   const differentiate = (expression: Expr, variable: Expr, order = 1): Expr => evaluate
     ? sj.diff(expression, variable, order) : sj.derivative(expression, [[variable, order]]);
   if (!evaluate) {
@@ -1790,11 +1795,6 @@ function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
       }
     }
     return sj.derivative(e, variables);
-  }
-  if (!rest.length) {
-    const fs = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
-    if (fs.length !== 1) throw new Unsupported('diff variable');
-    return differentiate(e, fs[0]!);
   }
   let out = e;
   for (let i = 0; i < rest.length; i++) {
@@ -1852,6 +1852,11 @@ function expandHints(kw: Record<string, unknown>): sj.ExpandHints {
   // wrt (the variable of the diracdelta hint) is an expression
   return Object.fromEntries(Object.entries(kw).map(([k, v]) => [k, k === 'wrt' || k === 'modulus' ? v : Boolean(v)])) as sj.ExpandHints;
 }
+
+const invertEquationAdapter: Adapter = (args, kw) => {
+  for (const k of Object.keys(kw)) if (k !== 'integer_power') throw new Unsupported(`kwargs ${k}`);
+  return new JsTuple(sj.invertEquation(asExpr(args[0]), args.slice(1).map(asSym), { integerPower: Boolean(kw['integer_power']) }));
+};
 
 function asOrdered(e: Expr): Expr[] {
   return sj.orderedTerms(e);
@@ -2617,8 +2622,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       const r = ps[0]!.invert(ps[1]!);
       return (kw['polys'] === undefined ? asPolys : Boolean(kw['polys'])) ? r : r.asExpr();
     }
-    for (const k of Object.keys(kw)) if (k !== 'integer_power') throw new Unsupported(`kwargs ${k}`);
-    return new JsTuple(sj.invertEquation(asExpr(args[0]), args.slice(1).map(asSym), { integerPower: Boolean(kw['integer_power']) }));
+    return invertEquationAdapter(args, kw);
   },
   '.invert': (args, kw, self) => {
     noKw(kw);
@@ -3464,9 +3468,11 @@ export const ADAPTERS: Record<string, Adapter> = {
       const targets = (args[1] instanceof JsTuple || args[1] instanceof JsList || args[1] instanceof JsSet ? args[1].items : args.slice(1)).map(asExpr);
       const syms = targets;
       const back = (v: Expr) => v;
-      // like SymPy, equations free of the requested symbols are dropped
+      // SymPy drops equations that are independent of the requested unknowns.
       if (!first.items.length || first.items.some((v) => v === false || v instanceof sj.BoolAtom && !v.value)) return new JsList([]);
-      const eqs = first.items.filter((v) => v !== true && !(v instanceof sj.BoolAtom)).map((e) => sj.asEquation(asExprOrPoly(e))).filter((e) => !syms.length || syms.some((s) => e.has(s)));
+      const compound = syms.filter((s) => !(s instanceof Sym)).map((s, i) => [s, new sj.Dummy(`unknown${i}`)] as const);
+      const dependsOnTarget = (e: Expr): boolean => !syms.length || syms.some((s) => e.has(s)) || compound.some(([target, dummy]) => sj.subs(e, [[target, dummy]]).has(dummy));
+      const eqs = first.items.filter((v) => v !== true && !(v instanceof sj.BoolAtom)).map((e) => sj.asEquation(asExprOrPoly(e))).filter(dependsOnTarget);
       const vars = syms.length ? syms : allSymbols(eqs);
       if (!eqs.length || !vars.length) return new JsList([]);
       if (vars.every((v) => v instanceof Sym) && isLinearSystem(eqs, vars)) {
@@ -6027,7 +6033,17 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === 'uniquely_named_symbol') return (args, kw) => {
     const name = args[0] instanceof JsTuple ? args[0].items as [string | Sym, Sym] : args[0] as string | Sym;
     const expressions = args[1] instanceof JsTuple ? args[1].items.map(asExpr) : args[1] === undefined ? [] : asExpr(args[1]);
-    return sj.uniquelyNamedSymbol(name, expressions, kw);
+    const { compare, modify, ...assumptions } = kw;
+    const callback = (value: unknown): ((input: string) => string) | undefined => {
+      if (value === undefined || value === null) return undefined;
+      if (!(value instanceof JsLambda)) throw new Unsupported('symbol name callback');
+      return (input) => {
+        const output = value.callStrings(input);
+        if (typeof output !== 'string') throw new TypeError('symbol name callback must return a string');
+        return output;
+      };
+    };
+    return sj.uniquelyNamedSymbol(name, expressions, { ...assumptions, compare: callback(compare), modify: callback(modify) });
   };
   if (c.fn === 'postorder_traversal') return (args, kw) => {
     const node = (value: unknown): unknown => value instanceof JsTuple ? value.items.map(node) : value;
@@ -6038,8 +6054,14 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.__call__' && c.self && (['Symbol', 'Rational', 'Float'].includes(c.self.t) || c.self.t === 'Fn' && c.self['name'] !== 'Lambda')) return () => {
     throw new TypeError('expression is not callable');
   };
-  if (c.fn === '.numerator' || c.fn === '.denominator') return (_args, kw, self) => {
+  if (c.fn === '.numerator' && c.self?.t === 'ModuleElement') return (args, kw, self) => {
+    if (!(self instanceof sj.PowerBasisElement)) throw new Unsupported('power basis numerator');
+    const x = args[0] ?? kw['x'];
+    return self.numerator(x === undefined || x === null ? undefined : asExpr(x));
+  };
+  if ((c.fn === '.numerator' || c.fn === '.denominator') && c.self?.t === 'Rational') return (_args, kw, self) => {
     noKw(kw);
+    if (self instanceof sj.PythonMPQ) return sj.Rational.of(c.fn === '.numerator' ? self.numerator : self.denominator);
     if (!(self instanceof sj.Rational)) throw new Unsupported('rational attribute');
     return sj.Rational.of(c.fn === '.numerator' ? self.p : self.q);
   };
@@ -6301,7 +6323,11 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.func' && c.self?.t === 'Vec' && c.self['cls'] === 'Point') return (args) => sj.VectorPoint(args[0] as string, args[1] as Expr, args[2] as sj.VectorPoint);
   if (c.fn === 'GeometryEntity') return (args) => new sj.GeometryEntity('GeometryEntity', args.map(asExpr));
   if (c.fn === '.cut_section' && c.category === 'geometry') return (args, _kw, self) => new JsTuple((self as sj.Polygon).cutSection(args[0] as sj.Line2D).map((part) => part === sj.EmptySet ? null : part));
-  if (c.fn === '.is_collinear' && c.category === 'geometry') return (args) => sj.Point3D.areCollinear(...args.map((v) => v instanceof JsTuple ? v.items.map(asExpr) : asExpr(v)));
+  if (c.fn === '.is_collinear' && c.category === 'geometry') return (args, kw, self) => {
+    noKw(kw);
+    const points = args.map((v) => v instanceof JsTuple || v instanceof JsList ? v.items.map(asExpr) : asExpr(v));
+    return self instanceof sj.Point ? self.isCollinear(...points) : sj.Point3D.areCollinear(...points);
+  };
   if (c.fn === '.isNonZero' && c.self?.t === 'Geom') return (_args, _kw, self) => fromJs((self as sj.Point).isNonzero);
   if (c.fn === 'Parabola') return (args, kw) => sj.Parabola((args[0] ?? kw['focus']) as sj.Point, (args[1] ?? kw['directrix']) as sj.Line);
   if (c.fn === '.cartan_type') return (_args, _kw, self) => ({ toString: () => `Type${(self as sj.RootSystem).cartanType.series}()` });
@@ -6453,6 +6479,9 @@ function autoAdapter(c: Case): Adapter | undefined {
   const reflected = reflectedName === undefined ? undefined : DUNDER[reflectedName];
   if (reflected !== undefined && c.self?.t === 'Rational' && c.self['py'] === true) return (args, _kw, self) => fromJs(reflected(plain(conv(args[0])), [self]));
   if (dunder !== undefined) return (args, _kw, self0) => {
+    if (c.fn === '.__mul__' && (self0 instanceof JsList || self0 instanceof JsTuple) && args[0] instanceof Matrix) {
+      throw new TypeError('a sequence cannot multiply a matrix');
+    }
     if (c.fn === '.__floordiv__' && self0 instanceof sj.Rational && args[0] instanceof sj.NumberFieldModuleElement) return args[0].module.elementFromRational(self0).floordiv(args[0]);
     if (self0 instanceof sj.PuiseuxPoly || args[0] instanceof sj.PuiseuxPoly) {
       const left = self0 instanceof sj.PythonMPQ ? sj.Rational.of(self0.numerator, self0.denominator) : self0;
@@ -6862,7 +6891,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   // a doctest's Matrix is mutable: simplify() works in place and returns None
   const inPlaceSimplify: Adapter | undefined = c.fn === '.simplify' && c.self?.t === 'Matrix' && !c.module.includes('.tests.')
     ? (_args, kw, self) => { noKw(kw); if (self instanceof Matrix) self.simplify(); return null; } : undefined;
-  const adapter = inPlaceSimplify ?? tensorStateAdapter(c) ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  const solverInvert = c.fn === 'invert' && c.module === 'sympy.solvers.solvers' ? invertEquationAdapter : undefined;
+  const adapter = inPlaceSimplify ?? solverInvert ?? tensorStateAdapter(c) ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     let self = c.self ? deserialize(c.self) : undefined;
