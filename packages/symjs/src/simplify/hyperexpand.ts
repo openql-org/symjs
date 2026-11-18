@@ -23,21 +23,24 @@ import { Lt, Gt, piecewise } from '../core/logic';
 import { mapBottomUp, some, xreplace } from '../core/traverse';
 import { coeff, asNumerDenom } from '../core/methods';
 import { countOps } from '../core/match';
-import { isPolar, isPositive } from '../core/assumptions';
+import { Tuple } from '../core/containers';
+import { NoMatch, type NoMatchResult } from '../core/truth';
+import { isIntegerQ, isNegative, isPolar, isPositive } from '../core/assumptions';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { ExprMap } from '../core/exprmap';
 import { diff } from '../calculus/diff';
 import { PolynomialError } from '../core/errors';
 import { polyCoefficients } from '../polys/poly';
 import { abs, asin, atan, cos, cosh, fn, log, re, sin, sinh } from '../functions/elementary/elementary';
-import { Ci, Chi, Ei, Shi, Si, erf, expandFuncRules, expint, factorial, fresnelc, fresnels, gamma, lowergamma, uppergamma } from '../functions/special/special';
+import { Ci, Chi, Ei, Shi, Si, erf, expandFunc, expandFuncRules, expint, factorial, fresnelc, fresnels, gamma, lowergamma, uppergamma } from '../functions/special/special';
 import { rf } from '../functions/combinatorial/factorials';
 import { besseli, besselj } from '../functions/special/bessel';
 import { Hyper, MeijerG, gaussAtOne, hyper, meijerg } from '../functions/special/hyper';
 import { expPolar, extractBranchFactor, polarify, polarLift, unpolarify } from '../functions/elementary/complexes';
 import { expand } from './expand';
 import { cancel } from './rational';
-import { powdenest } from './powsimp';
+import { signsimp } from './exprtools';
+import { combinePhases, powdenest } from './powsimp';
 import { simplify } from './simplify';
 import { series } from '../series/series';
 
@@ -159,28 +162,38 @@ const derivativeOperator =
   (C: Vec): Vec =>
     C.map((c, j) => simp(add(mul(z, diff(c, z)), ...C.map((ci, i) => mul(ci, at(at(M, i), j))))));
 
-const shiftA = (ai: Expr): OpPoly => ({ poly: lin(1, pow(ai, -1)) });
-const shiftB = (bi: Expr): OpPoly => ({ poly: lin(1, pow(sub(bi, 1), -1)) });
+const shiftA = (ai: Expr): OpPoly => {
+  if (ai.key === S.Zero.key) throw new RangeError('Cannot increment zero upper index');
+  return { poly: lin(1, pow(ai, -1)) };
+};
+const shiftB = (bi: Expr): OpPoly => {
+  if (bi.key === S.One.key) throw new RangeError('Cannot decrement unit lower index');
+  return { poly: lin(1, pow(sub(bi, 1), -1)) };
+};
 const multOperator = (p: Expr): OpPoly => ({ poly: [p] });
 
 /** Decrement an upper index (SymPy UnShiftA). */
 function unShiftA(ap0: readonly Expr[], bq: readonly Expr[], i: number, z: Expr): OpPoly {
   const ap = [...ap0];
   const ai = sub(at(ap.splice(i, 1), 0), 1);
+  if (ai.key === S.Zero.key) throw new RangeError('Cannot decrement unit upper index');
   const m = pprod([[mul(z, ai)], ...ap.map((a) => lin(a, 1))]);
   const D = lin(neg(ai), ai);
   const n = pprod([D, ...bq.map((b) => padd(D, [sub(b, 1)]))]);
   const b0 = neg(first(n));
+  if (b0.key === S.Zero.key) throw new RangeError('Upper index cancels with lower');
   return { poly: pscale(padd(pcompose(n.slice(1), lin(1, pow(ai, -1))), pscale(m, S.NegOne)), pow(b0, -1)) };
 }
 /** Increment a lower index (SymPy UnShiftB). */
 function unShiftB(ap: readonly Expr[], bq0: readonly Expr[], i: number, z: Expr): OpPoly {
   const bq = [...bq0];
   const bi = add(at(bq.splice(i, 1), 0), 1);
+  if (bi.key === S.Zero.key) throw new RangeError('Cannot increment -1 lower index');
   const m = pprod([lin(0, sub(bi, 1)), ...bq.map((b) => lin(sub(b, 1), 1))]);
   const D = lin(sub(1, bi), sub(bi, 1));
   const n = pprod([[z], ...ap.map((a) => padd(D, [a]))]);
   const b0 = first(n);
+  if (b0.key === S.Zero.key) throw new RangeError('Lower index cancels with upper');
   return { poly: pscale(padd(m, pscale(pcompose(n.slice(1), lin(1, pow(sub(bi, 1), -1))), S.NegOne)), pow(b0, -1)) };
 }
 /** (m - n(sub))/n(0), the common form of the Meijer G un-shift operators. */
@@ -232,7 +245,7 @@ export interface HyperFunc {
   bq: Expr[];
 }
 const hyperFunc = (ap: readonly ExprLike[], bq: readonly ExprLike[]): HyperFunc => ({ ap: ap.map((a) => expand(sympify(a))), bq: bq.map((b) => expand(sympify(b))) });
-const hfGamma = (f: HyperFunc): number => f.ap.filter((a) => isInt(a) && a.isNegative).length;
+const hfGamma = (f: HyperFunc): number => f.ap.filter((a) => isIntegerQ(a) === true && isNegative(a) === true).length;
 function invariants(f: HyperFunc): string {
   const tr = (b: Map<string, { mod: Expr; items: Expr[] }>) =>
     [...b.values()]
@@ -866,6 +879,9 @@ function devisePlanInternal(target: HyperFunc, origin: HyperFunc, z: Expr): OpPo
   const B = defined2(bb);
   const NA = defined2(buckets(origin.ap));
   const NB = defined2(buckets(origin.bq));
+  const reachable = (a: Map<string, Expr[]>, b: Map<string, Expr[]>): boolean =>
+    a.size === b.size && [...a].every(([k, items]) => items.length === b.get(k)?.length);
+  if (!reachable(A, NA) || !reachable(B, NB)) throw new RangeError('Target parameters not reachable from origin');
   const ops: OpPoly[] = [];
   const doShifts = (fro: Expr[], to: readonly Expr[], inc: (p: Expr[], i: number) => OpPoly, dec: (p: Expr[], i: number) => OpPoly): OpPoly[] => {
     const out: OpPoly[] = [];
@@ -885,6 +901,9 @@ function devisePlanInternal(target: HyperFunc, origin: HyperFunc, z: Expr): OpPo
     const nal = sorted(NA.get(r.key) ?? []);
     const bk = sorted(B.get(r.key) ?? []);
     const nbk = sorted(NB.get(r.key) ?? []);
+    if (al.length && bk.length && (isPositive(sub(first(nbk), at(nal, -1))) === false || isPositive(sub(first(bk), at(al, -1))) === false)) {
+      throw new RangeError('Non-suitable parameters');
+    }
     const aother = others(NA, r.key);
     const bother = others(NB, r.key);
     const shiftsA = (from: Expr[], nb: Expr[]) =>
@@ -1066,7 +1085,7 @@ export function unpolarifyEval(e: Expr, opts: { subs?: Substitution } = {}): Exp
  */
 function denestPolarPow(t: Expr): Expr {
   if (!(t instanceof Pow)) return t;
-  const factors = t.base instanceof Mul ? t.base.args : [t.base];
+  const factors = Mul.makeArgs(t.base);
   const polars = factors.filter(isPolar);
   if (polars.length === 0) return t;
   const rest = mul(...factors.filter((f) => !isPolar(f)));
@@ -1099,7 +1118,13 @@ function hyperexpandFunc(func0: HyperFunc, zIn: Expr, ops0: readonly OpPoly[] = 
     const M = mapMat(f.M, s0);
     let C = applyOperators(f.C.map(s0), ops, derivativeOperator(M, z0));
     C = applyOperators(C, ops0, derivativeOperator(M.map((r, i) => r.map((c, j) => (i === j ? add(c, prem) : c))), z0));
-    if (premult.key === S.One.key) C = C.map(simp);
+    if (premult.key === S.One.key) C = C.map((c) => {
+      const reduced = simp(c);
+      const [n, d] = asNumerDenom(reduced);
+      const coefficients = polyCoefficients(n, z0);
+      if (!coefficients || [...coefficients.values()].every(isRat)) return reduced;
+      return signsimp(div(sum([...coefficients].map(([k, v]) => mul(v, pow(z0, k)))), d));
+    });
     const r = mul(sum(C.map((c, i) => mul(c, s0(at(f.B, i))))), premult);
     const res = xreplace(r, [[z0, z]]);
     return rewrite === 'none' ? res : rewriteReps(res, rewrite);
@@ -1129,10 +1154,34 @@ function hyperexpandFunc(func0: HyperFunc, zIn: Expr, ops0: readonly OpPoly[] = 
     const r = replaceHyperSpecial(carryout(buildHypergeometricFormula(func), ops));
     if (!some(r, (n) => n instanceof Hyper)) return add(r, p);
   }
-  const formula = lookupOrigin(func) ?? buildHypergeometricFormula(func);
+  const formula = lookupOrigin(func) ?? repeatedPoleFormula(func) ?? buildHypergeometricFormula(func);
   ops.push(...devisePlanInternal(func, formula.func, z0));
   const r = add(carryout(formula, ops), p);
-  return replaceHyperSpecial(powdenestPolar(r));
+  return combinePhases(replaceHyperSpecial(powdenestPolar(r)));
+}
+
+/** A rational series coefficient a^m/(n+a)^m gives a single Lerch transcendent. */
+function repeatedPoleFormula(func: HyperFunc): FormulaData | undefined {
+  const m = func.bq.length;
+  if (!m || func.ap.length !== m + 1) return undefined;
+  const ap = [...func.ap];
+  const unit = ap.findIndex((a) => a.key === S.One.key);
+  if (unit < 0) return undefined;
+  ap.splice(unit, 1);
+  const a = first(ap);
+  const b = add(a, 1);
+  if (ap.some((v) => v.key !== a.key) || func.bq.some((v) => v.key !== b.key)) return undefined;
+  const z = new Dummy('z');
+  const B = [S.One, ...ap.map((_, i) => expandFunc(fn('lerchphi', [z, i + 1, a])))];
+  const C = [...ap.map(() => S.Zero), pow(a, m)];
+  // D Phi(z,k,a) = Phi(z,k-1,a) - a Phi(z,k,a), and Phi(z,0,a) = 1/(1-z).
+  const M = B.map((_, i) => B.map((__, j) => {
+    if (i === 0) return S.Zero;
+    if (i === j) return neg(a);
+    if (j === i - 1) return i === 1 ? div(1, sub(1, z)) : S.One;
+    return S.Zero;
+  }));
+  return { func, z, symbols: [], B, C, M };
 }
 
 function reduceOrderHyper(func: HyperFunc): [HyperFunc, OpPoly[]] {
@@ -1317,6 +1366,19 @@ export class Operator {
       this.poly = Array.from({ length: Math.max(0, ...cs.keys()) + 1 }, (_, k) => cs.get(k) ?? S.Zero);
     }
   }
+  static shiftA(a: ExprLike): Operator { return publicOperator(shiftA(sympify(a))); }
+  static shiftB(b: ExprLike): Operator { return publicOperator(shiftB(sympify(b))); }
+  static unShiftA(ap: readonly ExprLike[], bq: readonly ExprLike[], i: number, z: Expr): Operator {
+    return publicOperator(unShiftA(ap.map(sympify), bq.map(sympify), i, z));
+  }
+  static unShiftB(ap: readonly ExprLike[], bq: readonly ExprLike[], i: number, z: Expr): Operator {
+    return publicOperator(unShiftB(ap.map(sympify), bq.map(sympify), i, z));
+  }
+  static reduceOrder(a: ExprLike, b: ExprLike): Operator | NoMatchResult {
+    const op = reduceOrderOp(sympify(a), sympify(b));
+    return op ? publicOperator(op) : NoMatch;
+  }
+
   /** SymPy apply: the operator applied to obj, where op applies the generator. */
   apply(obj: ExprLike, op: (e: Expr) => Expr): Expr {
     let d = sympify(obj);
@@ -1343,6 +1405,13 @@ export class Hyper_Function {
     const f = hyperFunc(ap, bq);
     this.ap = f.ap;
     this.bq = f.bq;
+  }
+  get args(): [Tuple, Tuple] { return [Tuple(...this.ap), Tuple(...this.bq)]; }
+  get sizes(): [number, number] { return [this.ap.length, this.bq.length]; }
+  call(z: ExprLike): Expr { return hyper(this.ap, this.bq, z); }
+  has(value: Expr): boolean { return this.args.some((arg) => arg.has(value)); }
+  equals(other: unknown): boolean {
+    return other instanceof Hyper_Function && this.args.every((arg, i) => arg.equals(at(other.args, i)));
   }
   toString(): string {
     return `Hyper_Function(${parameterTuple(this.ap)}, ${parameterTuple(this.bq)})`;

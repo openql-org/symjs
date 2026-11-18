@@ -9,7 +9,7 @@ import { Add, Mul, Pow, Fn, Dummy, type Expr } from '../../../core/nodes';
 import { at, first } from '../../../core/guard';
 import { NotImplementedError } from '../../../core/errors';
 import { Identity, InverseNode, MatPowNode, MatMulNode, MatrixSymbolNode } from '../../../matrices/expressions/matexpr';
-import { ArraySymbol, ArrayElementwiseApplyFunc, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayTensorProduct, PermuteDims, ZeroArray, getShape, getRank } from './arrayexpressions';
+import { ArraySymbol, ArrayElementwiseApplyFunc, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayTensorProduct, PermuteDims, Reshape, ZeroArray, getShape, getRank } from './arrayexpressions';
 import { convertMatrixToArray } from './frommatrixtoarray';
 
 /** Distribute the product rule while retaining factorized input array expressions. */
@@ -80,7 +80,8 @@ export function arrayDerive(expr: Expr, variable: Expr): Expr {
     return terms.length === 1 ? first(terms) : new ArrayAdd(...terms);
   }
   if (expr instanceof ArrayContraction) return new ArrayContraction(arrayDerive(expr.expr, variable), ...expr.contractionIndices.map((g) => g.map((i) => i + rank))).doit();
-  if (expr instanceof ArrayDiagonal) return new ArrayDiagonal(arrayDerive(expr.expr, variable), ...expr.diagonalIndices.map((g) => g.map((i) => i + rank)));
+  if (expr instanceof Reshape) return new Reshape(arrayDerive(expr.expr, variable), [...shape, ...expr.shape]);
+  if (expr instanceof ArrayDiagonal) return new ArrayDiagonal(arrayDerive(expr.expr, variable), ...expr.diagonalIndices.map((g) => g.map((i) => i + rank))).doit();
   if (expr instanceof PermuteDims) return new PermuteDims(arrayDerive(expr.expr, variable), [...prefix, ...expr.permutation.arrayForm.map((i) => i + rank)]).doit();
   throw new NotImplementedError('array derivative of this expression is not implemented');
 }

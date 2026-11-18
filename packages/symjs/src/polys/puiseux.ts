@@ -148,6 +148,12 @@ export class PuiseuxPoly {
   get isTerm(): boolean { return this.length === 1; }
   get isOne(): boolean { return this.equals(this.ring.one); }
   get(monom: readonly ExprLike[]): Expr { return this.data.get(monomKey(monom.map(rationalExponent)))?.[1] ?? this.ring.domain.zero; }
+  /** Lookup of a stored monomial, as in SymPy indexing. */
+  getitem(monom: readonly ExprLike[]): Expr {
+    const entry = this.data.get(monomKey(monom.map(rationalExponent)));
+    if (entry === undefined) throw new RangeError('monomial is not present');
+    return entry[1];
+  }
   /** Iterate over the exponent vectors, as over the keys of a sparse polynomial. */
   *[Symbol.iterator](): IterableIterator<PuiseuxMonom> { yield* this.monoms(); }
   terms(): [PuiseuxMonom, Expr][] { return [...this.data.values()].map(([m, c]) => [[...m], c]); }

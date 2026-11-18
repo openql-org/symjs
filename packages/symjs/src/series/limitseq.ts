@@ -14,7 +14,7 @@ import { Concrete } from '../core/concrete';
 import { at, last } from '../core/guard';
 import { asNumerDenom, coeff } from '../core/methods';
 import { add, mul, neg, pow, sub, sympify } from '../core/ops';
-import { freeSymbols, rebuild, subs, xreplace } from '../core/traverse';
+import { freeSymbols, mapBottomUp, rebuild, subs, xreplace } from '../core/traverse';
 import { type UnsolvedResult, orUnsolved } from '../core/truth';
 import { fn } from '../functions/elementary/elementary';
 import { expand } from '../simplify/expand';
@@ -25,6 +25,7 @@ import { factor } from '../polys/sympoly';
 import { doitConcrete } from '../concrete/summations';
 import { accumBounds } from '../core/accumbounds';
 import { isNegative, isReal } from '../core/assumptions';
+import { Expander } from './puiseux';
 import { limit } from './limits';
 
 /** The depth of nested limit_seq computations of dominant terms. */
@@ -120,6 +121,24 @@ const asLimit = (r: Expr): Expr | undefined => (r instanceof Limit || (r instanc
  */
 function limitInf(e: Expr, n: Sym): Expr | undefined {
   try {
+    const continuous = mapBottomUp(e, (a) => {
+      if (a instanceof Fn && a.name === 'harmonic' && a.args.length === 1) {
+        return add(fn('polygamma', [S.Zero, add(at(a.args, 0), 1)]), S.EulerGamma);
+      }
+      return a;
+    });
+    if (!continuous.equals(e)) {
+      const t = new Dummy('t', { positive: true });
+      const expander = new Expander(t);
+      try {
+        const lead = expander.leading(xreplace(continuous, [[n, pow(t, -1)]]));
+        if (lead.e.isZero) return asLimit(limit(lead.c, expander.L, S.NegativeInfinity));
+        const monomial = mul(xreplace(lead.c, [[expander.L, fn('log', [t])]]), pow(t, lead.e));
+        return asLimit(limit(monomial, t, S.Zero));
+      } catch {
+        // A sum or oscillatory factor can require discrete differences.
+      }
+    }
     return asLimit(limit(e, n, S.Infinity));
   } catch (ex) {
     // SymPy catches NotImplementedError and PoleError only: a ValueError (RangeError here) propagates
@@ -200,6 +219,9 @@ const isComparable = (e: Expr): boolean => isInfinite(e) || (e.isNumber && isRea
 function limitSeqImpl(ex: Expr, n: Sym, trials: number, depth: number): Expr | undefined {
   if (!ex.has(n)) return ex;
   let e = fibonacciToGoldenRatio(ex);
+  // For positive integer m, !m is the nearest integer to m!/e.
+  e = mapBottomUp(e, (a) => a instanceof Fn && a.name === 'subfactorial' && at(a.args, 0).equals(n)
+    ? fn('floor', [add(mul(fn('factorial', [n]), pow(S.E, -1)), S.Half)]) : a);
   e = rewrite(e, 'gamma', { pattern: ['factorial', 'subfactorial'] });
   const n0 = new Dummy('n', { integer: true, positive: true });
   const pows: Expr[] = [];

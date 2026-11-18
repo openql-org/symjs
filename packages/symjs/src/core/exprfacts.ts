@@ -164,7 +164,7 @@ function handlerFor(e: Expr, f: string): (() => V) | undefined {
 /** The class facts and handlers of the functions whose SymPy handlers are ported here. */
 function functionFacts(e: Expr): FunctionFacts | undefined {
   if (e instanceof Fn) return FUNCTIONS[e.name];
-  return e instanceof ExtensionExpr && e.name === 'Mod' ? FUNCTIONS['Mod'] : undefined;
+  return e instanceof ExtensionExpr ? FUNCTIONS[e.name] : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -416,8 +416,15 @@ function addImaginary(e: Expr): V {
   return bz === false ? false : undefined;
 }
 
+function containsPowerOfSum(e: Expr): boolean {
+  if (e instanceof Pow) return e.base instanceof Add && e.exp instanceof Rational && e.exp.isInteger && e.exp.isPositive;
+  return e instanceof Mul && e.args.some(containsPowerOfSum);
+}
+
 function addZero(e: Expr): V {
   if (!e.isCommutative) return undefined;
+  if (e.isNumber && e.args.some(containsPowerOfSum)
+      && e.args.every((term) => is(term, 'extended_real')) && impl.expand(e).equals(S.Zero)) return true;
   const nz: Expr[] = [];
   let z = 0;
   let imOrZ = false;
@@ -1081,8 +1088,91 @@ const trigAlgebraic = on((a) => {
 });
 const trigRational = on((a) => (is(a, 'rational') && isNot(a, 'zero') ? false : undefined));
 
+const ifExtendedReal = on((a) => (is(a, 'extended_real') ? true : undefined));
+const extendedReal = on((a) => fact(a, 'extended_real'));
+const allReal: Handler = (e) => (e.args.every((a) => is(a, 'real')) ? true : undefined);
+const besselReal = (argumentFact: string): FunctionFacts => ({
+  handlers: { extended_real: (e) => (is(at(e.args, 0), 'integer') && is(at(e.args, 1), argumentFact) ? true : undefined) },
+});
+const airyFacts: FunctionFacts = { handlers: { extended_real: extendedReal } };
+const fresnelFacts: FunctionFacts = { handlers: { extended_real: extendedReal, finite: extendedReal } };
+const tensorFacts: FunctionFacts = { given: { integer: true }, handlers: {} };
+
+const gammaReal: Handler = on((z) => {
+  if (is(z, 'nonpositive') && is(z, 'integer')) return false;
+  if (z instanceof Float && z.toNumber() <= 0 && Number.isInteger(z.toNumber())) return false;
+  if (is(z, 'positive') || is(z, 'noninteger')) return true;
+  return undefined;
+});
+const polygammaSign = (positive: boolean): Handler => (e) => {
+  const n = at(e.args, 0), z = at(e.args, 1);
+  if (is(n, 'positive')) {
+    if (is(n, 'odd') && is(z, 'real')) return positive;
+    if (is(n, 'even') && is(z, 'positive')) return !positive;
+    return numberSign(e, positive ? 1 : -1);
+  }
+  return undefined;
+};
+
 /** SymPy handlers of Abs, re, im, sign, floor, ceiling, frac, tan, cot, exp_polar and Mod. */
 const FUNCTIONS: Readonly<Partial<Record<string, FunctionFacts>>> = {
+  besselj: besselReal('extended_real'),
+  besseli: besselReal('extended_real'),
+  bessely: besselReal('positive'),
+  besselk: besselReal('positive'),
+  airyai: airyFacts,
+  airybi: airyFacts,
+  airyaiprime: airyFacts,
+  airybiprime: airyFacts,
+  LeviCivita: tensorFacts,
+  KroneckerDelta: tensorFacts,
+  erf: { handlers: {
+    real: ifExtendedReal,
+    imaginary: on((a) => (is(a, 'imaginary') ? true : undefined)),
+    finite: on((a) => fuzzyOr([() => fact(a, 'finite'), () => fact(a, 'extended_real')])),
+    zero: ofReal('zero'),
+    positive: ofReal('extended_positive'),
+    negative: ofReal('extended_negative'),
+  } },
+  erfc: { handlers: { real: on((a) => (is(a, 'extended_real') ? true : is(a, 'imaginary') ? false : undefined)) } },
+  erf2: { handlers: { extended_real: (e) => fact(at(e.args, 0), 'extended_real') && fact(at(e.args, 1), 'extended_real') } },
+  fresnels: fresnelFacts,
+  fresnelc: fresnelFacts,
+  beta: { handlers: { real: (e) => fact(at(e.args, 0), 'real') && fact(at(e.args, 1), 'real') } },
+  betainc: { handlers: { real: allReal } },
+  betainc_regularized: { handlers: { real: allReal } },
+  gamma: { handlers: { real: gammaReal, positive: on((z) => {
+    if (is(z, 'positive')) return true;
+    if (z instanceof Add) {
+      const numeric = z.args.find((term) => term instanceof Rational && !term.isInteger);
+      if (numeric instanceof Rational) {
+        const integerPart = add(...z.args.filter((term) => term !== numeric));
+        if (is(integerPart, 'integer')) {
+          const floor = numeric.p / numeric.q - (numeric.isNegative ? 1n : 0n);
+          return fact(add(integerPart, Rational.of(floor)), 'even');
+        }
+      }
+    }
+    if (is(z, 'noninteger')) {
+      const floored = impl.fn?.('floor', [z]);
+      return floored === undefined ? undefined : fact(floored, 'even');
+    }
+    return undefined;
+  }) } },
+  loggamma: { handlers: { real: on((z) => (is(z, 'positive') ? true : is(z, 'nonpositive') ? false : undefined)) } },
+  polygamma: { handlers: {
+    real: (e) => (e.args.every((a) => is(a, 'positive')) ? true : undefined),
+    positive: polygammaSign(true),
+    negative: polygammaSign(false),
+  } },
+  multigamma: { handlers: { real: (e) => {
+    const twice = mul(2, at(e.args, 0));
+    const difference = add(twice, neg(at(e.args, 1)), 1);
+    if (is(difference, 'positive') || is(twice, 'noninteger') && !(twice instanceof Float && Number.isInteger(twice.toNumber()))) return true;
+    if (is(difference, 'nonpositive') && (is(twice, 'integer') || twice instanceof Float && Number.isInteger(twice.toNumber()))) return false;
+    return undefined;
+  } } },
+  zeta: { handlers: { finite: on((s) => fuzzyNot(fact(add(s, -1), 'zero'))) } },
   abs: {
     given: { extended_real: true, extended_negative: false, extended_nonnegative: true },
     handlers: {

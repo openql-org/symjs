@@ -261,6 +261,25 @@ export function inferDomain(cs: Expr[]): string {
 
 type Term = { monom: number[]; coeff: Expr };
 
+/** Combine positive rational bases of roots of the same index to detect exact cancellation. */
+function combineRationalRadicals(e: Expr): Expr {
+  if (!(e instanceof Mul)) return e;
+  const roots = new Map<bigint, Rational>();
+  const others: Expr[] = [];
+  for (const factor of e.args) {
+    if (factor instanceof Pow && factor.base instanceof Rational && factor.base.isPositive
+        && factor.exp instanceof Rational && !factor.exp.isInteger) {
+      const { p, q } = factor.exp;
+      const power = asRational(pow(factor.base, Rational.of(p)), 'rational radicand');
+      roots.set(q, mulR(roots.get(q) ?? S.One, power));
+    } else {
+      others.push(factor);
+    }
+  }
+  if (!roots.size) return e;
+  return mul(...others, ...[...roots].map(([q, base]) => pow(base, Rational.of(1n, q))));
+}
+
 /** Lex comparison of two monomials of the same length. */
 const monomCmp = (a: readonly number[], b: readonly number[]): number => {
   for (let i = 0; i < a.length; i++) {
@@ -463,7 +482,7 @@ export class Poly {
     }
     const list = [...terms.values()]
       .map((t) => ({ monom: t.monom, coeff: gs.length && !isNum(t.coeff) ? expand(t.coeff) : t.coeff }))
-      .filter((t) => !(t.coeff instanceof Rational && t.coeff.isZero));
+      .filter(({ coeff }) => !(coeff instanceof Rational && coeff.isZero));
     if (opts.extension !== undefined || opts.gaussian !== undefined || algebraicDomain) {
       const K = defined(polyConstructionHooks.domain, 'polynomial domain construction')(list.map((t) => t.coeff), opts);
       const converted = list.map((t) => ({ monom: t.monom, coeff: K.fromSympy(t.coeff) }));
@@ -496,7 +515,8 @@ export class Poly {
     }
     const inferred = requestedDomain ?? inferDomain(list.length ? list.map((t) => t.coeff) : [S.Zero]);
     const domain = opts.field === true && requestedDomain === undefined ? fieldDomainName(inferred) : inferred;
-    return new Poly(gs, list, domain, opts.pure ?? false);
+    const nonzero = list.filter(({ coeff }) => !(coeff instanceof Add && mapBottomUp(coeff, combineRationalRadicals).equals(S.Zero)));
+    return new Poly(gs, nonzero, domain, opts.pure ?? false);
   }
 
   private termExpr(t: Term): Expr {
@@ -1797,6 +1817,12 @@ export class Poly {
     const norm = this.normPoly();
     if (!norm) return undefined;
     const N=norm.sqfPart(),x=this.univariate();
+    if (realOnly && this.coeffs().every((c) => isReal(c) === true) && this.gcd(this.diff()).degree() === 0) {
+      const normRoots = N.rootsWhere(true);
+      // The norm contains every real root of this square-free polynomial.
+      // Equal Sturm counts certify that it adds no roots for this embedding.
+      if (normRoots.length === this.countRoots()) return normRoots;
+    }
     const zeroTest=(p:Poly):((r:Expr)=>boolean)=>{
       const t=new Dummy('value');
       const residual=defined(p.like(add(p.asExpr(),mul(-1,t)),[x,t]).algebraicNorm(),'residual norm');
@@ -1852,7 +1878,26 @@ export class Poly {
   private algebraicNorm(): Poly | undefined {
     const K = this.algebraicField;
     if (K) {
-      const data = defined(polyConstructionHooks.algebraic, 'algebraic field data')(K), t = new Dummy('theta');
+      const data = defined(polyConstructionHooks.algebraic, 'algebraic field data')(K);
+      if (this.isUnivariate && !this.isZero) {
+        const minpoly = new UPoly(data.minpoly.allCoeffs().map((c) => asRational(c, 'minimal polynomial coefficient')).reverse());
+        const coefficients = this.allCoeffs().map((c) => new UPoly(data.coefficients(c).reverse()));
+        // The norm has degree at most [K:QQ] * degree(f). Evaluating the
+        // resultant at consecutive integers avoids symbolic PRS growth.
+        let samples = Array.from({ length: minpoly.degree * this.degree() + 1 }, (_, i) => {
+          const x = Rational.of(i);
+          const value = coefficients.reduce((p, c) => p.scale(x).add(c), new UPoly([]));
+          return rationalResultant(minpoly, value);
+        });
+        let norm = new UPoly([]), basis = new UPoly([S.One]);
+        for (let i = 0; samples.length > 0; i++) {
+          norm = norm.add(basis.scale(first(samples)));
+          samples = samples.slice(1).map((v, j) => asRational(add(v, mul(-1, at(samples, j))), 'forward difference'));
+          basis = basis.mul(new UPoly([Rational.of(-i), S.One])).scale(Rational.of(1, i + 1));
+        }
+        return Poly.from(norm.toExpr(this.gen), this.gens, { domain: 'QQ' });
+      }
+      const t = new Dummy('theta');
       const polynomial = add(...this.termList.map((term) => {
         const cs = data.coefficients(term.coeff);
         return mul(add(...cs.map((c,i) => mul(c,pow(t,cs.length-1-i)))),...term.monom.map((e,i) => pow(at(this.gens,i),e)));
@@ -2013,7 +2058,7 @@ export class Poly {
         // irreducible factors of degree >= 3: CRootOf(f, i) like SymPy, the real roots first
         const nreal = at(ranks,factorIndex).length;
         const crootof = defined(rootHooks.crootof, 'crootof hook');
-        for (let i = 0; i < f.degree(); i++) {
+        for (let i = 0; i < (realOnly ? nreal : f.degree()); i++) {
           const r = crootof(xreplace(f.asExpr(), [[x, new Sym('x')]]), i);
           if (i < nreal) for (let j = 0; j < k; j++) real.push([r, at(at(ranks,factorIndex),i)]);
           else group(r);
@@ -2888,6 +2933,20 @@ export function interpolate(data: readonly (readonly [ExprLike, ExprLike])[] | r
     mul(yi, ...pts.filter((_, j) => j !== i).map(([xj]) => mul(add(x, mul(-1, xj)), pow(add(xi, mul(-1, xj)), -1)))),
   );
   return expand(add(...terms));
+}
+
+/** Euclidean resultant over QQ. The leading coefficients account for each reduction. */
+function rationalResultant(left: UPoly, right: UPoly): Rational {
+  let a = left, b = right;
+  let product = S.One;
+  while (!b.isZero) {
+    if (b.degree === 0) return mulR(product, powR(b.lc, a.degree));
+    const r = a.divmod(b)[1];
+    if ((a.degree * b.degree) % 2 !== 0) product = mulR(product, S.NegOne);
+    product = mulR(product, powR(b.lc, a.degree - r.degree));
+    [a, b] = [b, r];
+  }
+  return S.Zero;
 }
 
 /**

@@ -10,7 +10,7 @@
  */
 
 import type { ExprLike } from '../core/nodes';
-import { Dummy, type Expr, Rational, S, Special, Sym, UndefFn } from '../core/nodes';
+import { Dummy, type Expr, Rational, S, Special, Sym, UndefFn, registerArithmetic } from '../core/nodes';
 import { at, cast } from '../core/guard';
 import { add, mul, pow, sub, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
@@ -566,7 +566,7 @@ export function SeqExprOp(...seqs: SeqBase[]): SeqExprOpNode { return new SeqExp
 /** SymPy SeqAdd: the term-wise sum of sequences (unevaluated). */
 export class SeqAddNode extends SeqExprOpBase {
   constructor(args: readonly SeqBase[]) {
-    super('SeqAdd', args);
+    super('SeqAdd', ordered(flattenSeqs(args, SeqAddNode)));
   }
   override withArgs(args: readonly Expr[]): Expr {
     return SeqAdd(...args.map((a) => cast(a, SeqBase, 'sequence')));
@@ -580,7 +580,7 @@ export class SeqAddNode extends SeqExprOpBase {
 /** SymPy SeqMul: the term-wise product of sequences (unevaluated). */
 export class SeqMulNode extends SeqExprOpBase {
   constructor(args: readonly SeqBase[]) {
-    super('SeqMul', args);
+    super('SeqMul', ordered(flattenSeqs(args, SeqMulNode)));
   }
   override withArgs(args: readonly Expr[]): Expr {
     return SeqMul(...args.map((a) => cast(a, SeqBase, 'sequence')));
@@ -601,7 +601,7 @@ export function SeqAdd(...seqs: (SeqBase | readonly SeqBase[])[]): SeqBase {
   const args = flattenSeqs(seqs, SeqAddNode).filter((a) => a !== EmptySequence);
   if (!args.length || commonInterval(args) === EmptySet) return EmptySequence;
   const r = reduce(args, (s, t) => combineRule(s, t, add));
-  return r.length === 1 ? at(r, 0) : new SeqAddNode(ordered(r));
+  return r.length === 1 ? at(r, 0) : new SeqAddNode(r);
 }
 
 /**
@@ -613,5 +613,14 @@ export function SeqMul(...seqs: (SeqBase | readonly SeqBase[])[]): SeqBase {
   const args = flattenSeqs(seqs, SeqMulNode);
   if (!args.length || commonInterval(args) === EmptySet) return EmptySequence;
   const r = reduce(args, (s, t) => combineRule(s, t, mul));
-  return r.length === 1 ? at(r, 0) : new SeqMulNode(ordered(r));
+  return r.length === 1 ? at(r, 0) : new SeqMulNode(r);
 }
+
+// Reflected arithmetic on a scalar and a sequence follows the sequence protocol.
+registerArithmetic((op, args) => {
+  const [left, right] = args;
+  if (args.length !== 2 || !(right instanceof SeqBase) || left instanceof SeqBase) return undefined;
+  if (op === 'add') return right.add(at(args, 0));
+  if (op === 'mul') return right.mul(at(args, 0));
+  return undefined;
+});

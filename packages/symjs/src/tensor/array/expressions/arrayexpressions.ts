@@ -8,14 +8,16 @@ import { Lambda, LambdaNode } from '../../../core/lambda';
 import { TupleNode } from '../../../core/containers';
 import { at, cast, first } from '../../../core/guard';
 import { add, mul, sub, sympify } from '../../../core/ops';
-import { isNegative, isNonNegative } from '../../../core/assumptions';
+import { isNegative, isNonNegative, isReal } from '../../../core/assumptions';
 import { NotImplementedError } from '../../../core/errors';
-import { MatrixExpr, checkDim } from '../../../matrices/expressions/matexpr';
+import { MatrixExpr, checkDim, strPrecedence, latexPrecedence } from '../../../matrices/expressions/matexpr';
 import { ImmutableDenseNDimArray, NDimArray } from '../../ndimarray';
 import { tensorproduct, tensorcontraction, tensordiagonal, permutedims, type PermutationLike } from '../../arrayop';
 import { Permutation } from '../../../combinatorics/permutations';
 import { KroneckerDelta } from '../../../functions/special/hyper';
+import { PREC } from '../../../printing/str';
 import { compareKeys, sortKey } from '../../../printing/sortkey';
+import { diagonalizeVector } from '../../../matrices/expressions/diagonal';
 import { sortContractionIndices } from './utils';
 
 export type ArrayShape = readonly ExprLike[];
@@ -89,14 +91,20 @@ export class ArrayElement extends ExtensionExpr {
     const shaped = parent instanceof ArrayExpr || parent instanceof MatrixExpr || parent instanceof NDimArray || shape.length > 0;
     if (shaped && ind.length !== shape.length) throw new RangeError('array index rank does not match the shape');
     ind.forEach((i, k) => {
-      if (isNegative(i) === true || (shaped && isNonNegative(sub(i, at(shape, k))) === true)) throw new RangeError('array index out of bounds');
+      if (isNegative(i) === true || (shaped && isReal(i) === true && isReal(at(shape, k)) === true && isNonNegative(sub(i, at(shape, k))) === true)) throw new RangeError('array index out of bounds');
     });
     super('ArrayElement', [parent, tuple(ind)]);
     this.indices = Object.freeze(ind);
   }
   withArgs(args: readonly Expr[]): Expr { return new ArrayElement(first(args), values(at(args, 1))); }
-  override printStr(print: (e: Expr) => string): string { return `${print(this.parent)}[${this.indices.map(print).join(', ')}]`; }
-  override printLatex(print: (e: Expr) => string): string { return `{{${print(this.parent)}}_{${this.indices.map(print).join(', ')}}}`; }
+  override printStr(print: (e: Expr) => string): string {
+    const parent = print(this.parent);
+    return `${strPrecedence(this.parent) < PREC.FUNC ? '(' + parent + ')' : parent}[${this.indices.map(print).join(', ')}]`;
+  }
+  override printLatex(print: (e: Expr) => string): string {
+    const parent = print(this.parent);
+    return `{{${latexPrecedence(this.parent) < PREC.FUNC ? '\\left(' + parent + '\\right)' : parent}}_{${this.indices.map(print).join(', ')}}}`;
+  }
   override diffSelf(x: Expr): Expr {
     if (x instanceof ArrayElement && x.parent.key === this.parent.key) return mul(...this.indices.map((i, k) => KroneckerDelta(i, at(x.indices, k))));
     return S.Zero;
@@ -139,16 +147,6 @@ export class ArrayTensorProduct extends ArrayExpr {
       const actual = [...remainingAxes(offset, groups), ...groups.map(first)];
       const diagonal = new ArrayDiagonal(new ArrayTensorProduct(...factors).doit(), ...groups).doit();
       return new PermuteDims(diagonal, desired.map((axis) => actual.indexOf(axis))).doit();
-    }
-    if (args.some((a) => a instanceof PermuteDims)) {
-      let offset = 0;
-      const permutation: number[] = [];
-      const factors = args.map((a) => {
-        permutation.push(...(a instanceof PermuteDims ? a.permutation.arrayForm : indices(getRank(a))).map((i) => i + offset));
-        offset += getRank(a);
-        return a instanceof PermuteDims ? a.expr : a;
-      });
-      return new PermuteDims(new ArrayTensorProduct(...factors).doit(), permutation).doit();
     }
     // Lift contractions out of the product without changing its free axes.
     let offset = 0;
@@ -229,6 +227,41 @@ export class ArrayContraction extends ArrayExpr {
       return reorderContraction(this, order);
     }
     return this;
+  }
+  /** Split a shared summation index into pairwise links through diagonal vectors. */
+  splitMultipleContractions(): Expr {
+    if (!(this.expr instanceof ArrayTensorProduct)) return this;
+    const factors = [...this.expr.args], blocks = factorBlocks(this.expr);
+    const groups = this.contractionIndices.map((group) => [...group]);
+    const occupied = new Set(groups.flat()), padding = new Set<number>();
+    for (const group of [...groups]) {
+      if (group.length < 3) continue;
+      const endpoints: number[] = [], vectors: number[] = [];
+      for (const axis of group) {
+        const i = blocks.findIndex((block) => block.includes(axis));
+        const block = at(blocks, i), mat = at(factors, i);
+        const other = block.find((k) => k !== axis);
+        if (mat instanceof MatrixExpr && other !== undefined && !occupied.has(other) &&
+            at(this.expr.shape, other).equals(1)) vectors.push(axis);
+        else endpoints.push(axis);
+      }
+      if (endpoints.length > 2) continue;
+      const chain = [...endpoints.slice(0, 1), ...vectors, ...endpoints.slice(1)];
+      groups.splice(groups.indexOf(group), 1);
+      let previous = first(chain);
+      for (const axis of chain.slice(1, -1)) {
+        const i = blocks.findIndex((block) => block.includes(axis));
+        factors[i] = diagonalizeVector(at(factors, i));
+        padding.add(i);
+        groups.push([previous, axis]);
+        previous = at(at(blocks, i), 1 - at(blocks, i).indexOf(axis));
+      }
+      groups.push([previous, at(chain, chain.length - 1)]);
+    }
+    if (!padding.size) return this;
+    const axes = blocks.flatMap((block, i) => padding.has(i) ? [...block, -1] : block);
+    const product = new ArrayTensorProduct(...factors.flatMap((mat, i) => padding.has(i) ? [mat, new OneArray(1)] : [mat]));
+    return new ArrayContraction(product, ...groups.map((group) => group.map((axis) => axes.indexOf(axis)))).doit();
   }
   sortArgsByName(): Expr {
     if (!(this.expr instanceof ArrayTensorProduct)) return this;

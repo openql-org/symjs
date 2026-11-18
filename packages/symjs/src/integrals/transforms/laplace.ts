@@ -23,8 +23,8 @@ import type { UndefinedFunction } from '../../core/undef';
 import { derivative } from '../../core/undef';
 import { Subs } from '../../core/subsnode';
 import { abs, arg, atan, cos, im, log, re, sin, sinh, cosh } from '../../functions/elementary/elementary';
-import { asinh, coth, sinc } from '../../functions/elementary/trigext';
-import { Ei, Max, digamma, erf, erfc, gamma, lowergamma, uppergamma } from '../../functions/special/special';
+import { acoth, asinh, coth, sinc } from '../../functions/elementary/trigext';
+import { Chi, Ei, Max, Shi, Si, digamma, erf, erfc, gamma, lowergamma, uppergamma } from '../../functions/special/special';
 import { besseli, besselj, besselk, bessely } from '../../functions/special/bessel';
 import { diff } from '../../calculus/diff';
 import { Matrix } from '../../matrices/matrix';
@@ -173,6 +173,10 @@ function buildRules(): RuleTable {
   const pi = S.Pi;
   const rules: LaplaceRule[] = [
     // 4.2.1 (a constant) is applied by laplaceApplySimpleRules before the table
+    // Integration by parts reduces Si and Shi to the transforms of sinc and sinh(t)/t.
+    r(Si(t), () => mul(sub(mul(pi, half), atan(s)), pow(s, -1)), () => T, () => Z),
+    r(Shi(t), () => mul(acoth(s), pow(s, -1)), () => T, () => S.One),
+    r(Chi(t), () => mul(half, log(pow(sub(pow(s, 2), 1), -1)), pow(s, -1)), () => T, () => S.One),
     r(t, () => pow(s, -2), () => T, () => Z), // 4.2.3
     r(pow(add(mul(a, t), b), -1), (m) => {
       const ba = mul(g(m, 'b'), pow(g(m, 'a'), -1));

@@ -63,8 +63,10 @@ without changing case records or re-executing upstream tests.
 `tensorData` snapshots the component replacements needed by a unit-test call:
 head arrays, index-type metrics, and the signatures of the special metric and
 Kronecker-delta heads. Replay uses the public `replaceWithArrays` and `getMatrix`
-APIs; snapshots are local to a case. Legacy tensor norm powers remain explicit
-API gaps.
+APIs. Tensor norm powers pass the same replacements to `pow`. Each snapshot
+belongs to one case. Indexed bases also retain assumptions distinct from their
+labels. Tensor inequalities whose operands can print identically carry a
+serialized right operand for structural comparison.
 
 Test-defined Python classes carry `unsupportedClass` markers instead of losing
 their method behavior under an ordinary class name. Affected assertions carry an

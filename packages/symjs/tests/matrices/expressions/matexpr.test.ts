@@ -840,6 +840,12 @@ describe('defaults and remaining paths', () => {
   it('merge_explicit of a product', () => {
     expect(s(mergeExplicitMatMul(MatMul(Mi, 2)))).toBe('Matrix([[2, 4], [6, 8]])');
     expect(s(mergeExplicitMatMul(MatMul(2, 3, Mi)))).toBe('Matrix([[6, 12], [18, 24]])');
+    expect(s(mergeExplicitMatMul(MatMul(2, Mi, X)))).toBe('Matrix([[2, 4], [6, 8]])*X');
+    expect(s(mergeExplicitMatMul(MatMul(x, Mi, X)))).toBe('x*Matrix([[1, 2], [3, 4]])*X');
+  });
+  it('evaluates explicit factors in the Mul constructor', () => {
+    expect(s(mul(x, MatMul(Mi, X)))).toBe('Matrix([[x, 2*x], [3*x, 4*x]])*X');
+    expect(s(mul(Mi, Mi))).toBe('Matrix([[7, 10], [15, 22]])');
   });
   it('generic identity and zero', () => {
     expect(GenericIdentity().key).toBe('GenericIdentity()');
@@ -1110,5 +1116,36 @@ describe('LaTeX settings of matrix expressions (SymPy 1.14 test_latex)', () => {
     expect(latex(OneMatrix(3, 4), { matSymbolStyle: 'bold' })).toBe('\\mathbf{1}');
     expect(latex(Identity(1), { matSymbolStyle: 'bold' })).toBe('\\mathbf{I}');
     expect(latex(Identity(1))).toBe('\\mathbb{I}');
+  });
+});
+
+it('uses the parent dimensions for deltas of matrix-entry derivatives', async () => {
+  const { MatrixElementNode } = await import('../../../src/matrices/expressions/matexpr');
+  const [i, j, k, l] = symbols('i j k l');
+  const A = MatrixSymbol('A', 2, 3);
+  expect(String(A.at(i, j).diff(A.at(k, l)))).toBe('KroneckerDelta(i, k, (0, 1))*KroneckerDelta(j, l, (0, 2))');
+  const scalar = symbol('m');
+  const entry = new MatrixElementNode(scalar, i, j);
+  expect(String(entry.diffSelf(new MatrixElementNode(scalar, k, l), diff))).toBe('KroneckerDelta(i, k)*KroneckerDelta(j, l)');
+});
+
+describe('MatrixElement of a scalar product with a matrix (SymPy MatrixKind of a Mul)', () => {
+  const M = ImmutableMatrix([[2]]);
+  const three = Rational.of(3);
+  const element = (factors: Expr[]): MatrixElementNode => sj.matrixElement(new sj.Mul(factors), 0, 0) as MatrixElementNode;
+  it('evaluates the product to its explicit entry', () => {
+    const e = element([three, new sj.Pow(S.E, M)]);
+    expect(String(e)).toBe('(3*exp(Matrix([[2]])))[0, 0]');
+    expect(String(e.doit())).toBe('3*exp(2)');
+    expect(String(element([three, M]).doit())).toBe('6');
+  });
+  it('keeps the element when the matrix is not explicit or the product has several matrices', () => {
+    const A = MatrixSymbol('A', 1, 1);
+    expect(String(element([three, new sj.Pow(S.E, A)]).doit({ deep: false }))).toBe('(3*exp(A))[0, 0]');
+    expect(String(element([three, M, new sj.Pow(S.E, M)]).doit())).toBe('(3*Matrix([[2]])*exp(Matrix([[2]])))[0, 0]');
+    expect(String(element([three, new sj.Pow(M, Rational.of(2))]).doit({ deep: false }))).toBe('(3*Matrix([[2]])**2)[0, 0]');
+  });
+  it('rejects a scalar', () => {
+    expect(() => sj.matrixElement(mul(3, symbol('x')), 0, 0)).toThrow(TypeError);
   });
 });

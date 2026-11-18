@@ -385,6 +385,10 @@ export function residueReduceToBasic(H: readonly [KPoly, KPoly][], DE: DiffExten
     ...H.map(([sz, h]) => {
       let body = mul(i, log(xreplace(h.asExpr(), [[z, i]])));
       for (const pr of s) body = xreplace(body, [pr]);
+      if (sz.degree === 1) {
+        const root = cancel(mul(-1, sz.eval(0), pow(sz.LC(), -1)));
+        return xreplace(body, [[i, root]]);
+      }
       return RootSum(sz.as(z).asExpr(), z, Lambda(i, body));
     }),
   );

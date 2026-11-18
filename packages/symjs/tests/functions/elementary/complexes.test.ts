@@ -352,6 +352,8 @@ describe('polar: cases outside the table', () => {
     expect(String(polarify(P('x*exp(y)'), { lift: true }))).toBe('exp(polar_lift(y))*polar_lift(x)');
     expect(String(polarify(P('2*x'), { lift: true }))).toBe('2*exp_polar(0)*polar_lift(x)');
     expect(String(polarify(P('sin(x) + exp(2)'), { subs: false }))).toBe('sin(x) + exp(2*exp_polar(0))');
+    const p = sj.Piecewise([sj.exp(mul(S.I, x)), sj.Gt(x, 0)], [x, true]);
+    expect(String(polarify(p, { lift: true }))).toBe('Piecewise((exp(exp_polar(I*pi/2)*polar_lift(x)), x > 0), (polar_lift(x), True))');
     const r = polarify(P('x*y + 2'));
     if (!Array.isArray(r)) throw new TypeError('expected [expr, reps]');
     const [e, reps] = r;

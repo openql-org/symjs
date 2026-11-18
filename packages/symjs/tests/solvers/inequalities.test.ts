@@ -148,8 +148,7 @@ describe('solveset with parameters and inverse functions (sympy.stats needs both
     expect(String(Q.solveset(add(pow(xr, 2), mul(-1, zp)), xr, Reals))).toBe('{-sqrt(zp), sqrt(zp)}');
     expect(String(Q.solveset(add(pow(xr, 2), zp), xr, Reals))).toBe('EmptySet');
     expect(String(Q.solveset(div(add(xr, mul(-1, z)), add(xr, mul(-1, w))), xr, Reals))).toBe('Complement({z}, Intersection({w}, Reals))');
-    // SymPy: Intersection({z/2}, Interval(0, 1)); the zeros cannot be placed in a bounded interval here
-    expect(String(Q.solveset(add(mul(2, xr), mul(-1, z)), xr, interval(0, 1)))).toBe('ConditionSet(x, Eq(2*x - z, 0), Interval(0, 1))');
+    expect(String(Q.solveset(add(mul(2, xr), mul(-1, z)), xr, interval(0, 1)))).toBe('Intersection({z/2}, Interval(0, 1))');
   });
   it('decided conditions and comparisons with oo', () => {
     const x0 = new Sym('x');
@@ -170,6 +169,10 @@ describe('solveset with parameters and inverse functions (sympy.stats needs both
       'Union({1}, Interval(-3, 0), Interval(5, 7))',
     );
     expect(String(Q.solveset(new PW([add(xr, -1), Gt(xr, 0)]), xr, Reals))).toBe('{1}');
+    const positive = new Sym('y', { positive: true });
+    const absolute = new PW([add(x, -3), Ge(x, 3), add(3, mul(-1, x)), SS.true]);
+    expect(String(Q.solveset(add(absolute, mul(-1, positive)), x, Reals))).toBe('{3 - y, y + 3}');
+    expect(String(Q.solveset(p('Piecewise((0, Eq(x, pi)), ((x - pi)/sin(x), True))'), x, Complexes))).toBe('{pi}');
     // SymPy raises a ValueError over the complex numbers
     expect(String(Q.solveset(new PW([add(xr, -1), Gt(xr, 0), add(xr, 1), SS.true]), xr))).toBe('ConditionSet(x, Eq(Piecewise((x - 1, x > 0), (x + 1, True)), 0), Complexes)');
   });
@@ -382,10 +385,8 @@ describe('solveset over intervals', () => {
     expect(String(Q.solveset(p('sin(x)-y'), x, interval(0, 1)))).toBe('ConditionSet(x, Eq(-y + sin(x), 0), Interval(0, 1))');
     // SymPy: ConditionSet(x, Ne(y, 0), {0})
     expect(String(Q.solveset(p('sin(x*y)'), x, interval(0, 1)))).toBe('ConditionSet(x, Eq(sin(x*y), 0), Interval(0, 1))');
-    // SymPy: Intersection({y}, Interval(0, 1))
-    expect(String(Q.solveset(p('x - y'), x, interval(0, 1)))).toBe('ConditionSet(x, Eq(x - y, 0), Interval(0, 1))');
-    // SymPy: Intersection({2}, Interval(0, y))
-    expect(String(Q.solveset(p('x - 2'), x, interval(0, y)))).toBe('ConditionSet(x, Eq(x - 2, 0), Interval(0, y))');
+    expect(String(Q.solveset(p('x - y'), x, interval(0, 1)))).toBe('Intersection({y}, Interval(0, 1))');
+    expect(String(Q.solveset(p('x - 2'), x, interval(0, y)))).toBe('Intersection({2}, Interval(0, y))');
     expect(String(Q.solveset(p('x**2 - 2'), x, interval(0, 3)))).toBe('{sqrt(2)}');
   });
   it('an inequality with parameters is a ConditionSet', () => {
@@ -685,4 +686,185 @@ it('preserves both sides of integer relationals and restricts finite integer dom
   for (const source of ['Abs(x)-1', 'Min(x,15)-1', 'Max(x,15)-1']) {
     expect(() => solveset(p(source), x, Complexes)).toThrow(RangeError);
   }
+});
+
+describe('solveset input and domain handling', () => {
+  it('infers a single unknown and supports expression targets', () => {
+    expect(solveset(p('x - 2')).toString()).toBe('{2}');
+    expect(solveset(0, undefined, Reals)).toBe(Reals);
+    expect(() => solveset(p('x + y'))).toThrow(RangeError);
+    expect(solveset(p('sin(x) - cos(x)'), p('sin(x)')).toString()).toBe('{cos(x)}');
+  });
+
+  it('solves products and clears coupled real radicals', () => {
+    expect(solveset(p('(x + 2)*(exp(x) - 3)'), x, Reals).toString()).toBe('{-2, log(3)}');
+    expect(solveset(p('sqrt(2*x - 1) - sqrt(x - 4) - 2'), x, Reals).toString()).toBe('{5, 13}');
+    expect(solveset(p('sqrt(x - 3) - sqrt(x) - 3'), x, Reals)).toBe(sj.EmptySet);
+  });
+
+  it('preserves the first matching piece and tests its finite boundary', () => {
+    const piecewise = p('Piecewise((0, Eq(x, pi)), ((x - pi)/sin(x), True))');
+    expect(solveset(piecewise, x, Reals).toString()).toBe('{pi}');
+  });
+
+  it('orders indexed roots and keeps large logarithmic bounds exact', () => {
+    expect(Q.solveUnivariateInequality(Gt(p('x**7 - x - 2'), 0), x, { relational: false }).toString())
+      .toBe('Interval.open(CRootOf(x**7 - x - 2, 0), oo)');
+    expect(Q.reduceInequalities(p('log(x) < 1000'), [x]).toString()).toBe('(0 < x) & (x < exp(1000))');
+  });
+});
+
+it('solves affine congruences over the integers', () => {
+  expect(solveset(sj.Mod(add(mul(5, x), -8), 7).sub(3), x, Integers).toString()).toMatch(/7\*.* \+ 5/);
+  expect(solveset(sj.Mod(mul(2, x), 4).sub(1), x, Integers)).toBe(sj.EmptySet);
+  expect(solveset(sj.Mod(x, 3).sub(SS.I), x, Integers)).toBe(sj.EmptySet);
+});
+
+it('folds minimum and maximum over their real branches', () => {
+  for (const [source, expected] of [
+    ['x*Max(x,15)-10', '{2/3}'],
+    ['x*Min(x,15)-10', '{-sqrt(10), sqrt(10)}'],
+    ['Max(x+2,Abs(x-3)-1)-3', '{-1, 1}'],
+  ] as const) expect(String(solveset(p(source), x, Reals)), source).toBe(expected);
+});
+
+it('restricts logarithmic comparisons to the input domain', () => {
+  const domain = interval(1, 4);
+  for (const [source, expected] of [
+    ['log(x)>1', 'Interval.Lopen(E, 4)'],
+    ['log(x)>=1', 'Interval(E, 4)'],
+    ['log(x)<1', 'Interval.Ropen(1, E)'],
+    ['log(x)<=1', 'Interval(1, E)'],
+    ['Eq(log(x),1)', '{E}'],
+    ['Ne(log(x),1)', 'Union(Interval.Ropen(1, E), Interval.Lopen(E, 4))'],
+  ] as const) expect(String(Q.solveUnivariateInequality(p(source), x, { domain, relational: false })), source).toBe(expected);
+  expect(String(Q.solveUnivariateInequality(p('x>0'), x, { domain: Integers, relational: false }))).toBe('Range(1, oo, 1)');
+  expect(String(Q.solveUnivariateInequality(p('Ne(x**2,0)'), x))).toBe('(x > -oo) & (x < oo) & Ne(x, 0)');
+});
+
+it('uses signs outside the range of a shifted sine', () => {
+  expect(Q.solveUnivariateInequality(p('2*sin(x)>3'), x)).toBe(SS.false);
+  expect(Q.solveUnivariateInequality(p('2*sin(x)<3'), x, { relational: false })).toBe(Reals);
+  expect(Q.reduceInequalities(p('sin(x)<2'), [x])).toBe(SS.true);
+  expect(solveset(p('Abs(sin(x))+1'), x, Reals)).toBe(sj.EmptySet);
+});
+
+it('solves real equations by their outer function', () => {
+  for (const [source, expected] of [
+    ['arg(x)', 'Interval.open(0, oo)'],
+    ['sinh(x)+sech(x)', '{log(sqrt(-2 + sqrt(5)))}'],
+    ['2**x-3**x', '{0}'],
+    ['2**x+3**x', 'EmptySet'],
+    ['0**x-1', '{0}'],
+    ['0**x-5', 'EmptySet'],
+    ['Abs(x)', '{0}'],
+    ['2*Abs(x)-4', '{-2, 2}'],
+    ['exp(x**2)-2', '{-sqrt(log(2)), sqrt(log(2))}'],
+    ['exp(1/x)-2', '{1/log(2)}'],
+  ] as const) expect(String(solveset(p(source), x, Reals)), source).toBe(expected);
+  expect(solveset(p('cos(x)+sinh(x)'), x, Complexes)).toBeInstanceOf(ConditionSet);
+  expect(solveset(p('sin(exp(x))'), x, Complexes)).toBeInstanceOf(ConditionSet);
+  expect(String(solveset(p('sin(Abs(x))'), x, Reals))).toBe(String(solveset(p('sin(x)'), x, Reals)));
+});
+
+it('validates the domain and tests candidate points in a finite set', () => {
+  // @ts-expect-error A scalar is an invalid domain.
+  expect(() => solveset(x, x, SS.One)).toThrow(TypeError);
+  expect(() => solveset(x, Reals)).toThrow(TypeError);
+  expect(solveset(1)).toBe(sj.EmptySet);
+  expect(String(solveset(p('Eq(x,1)'), x, finiteSet(1, 2)))).toBe('{1}');
+  expect(solveset(p('x-y'), x, finiteSet(1))).toBeInstanceOf(ConditionSet);
+  expect(String(solveset(p('Piecewise((0,Ne(x,1)),(1,True))'), x, Reals))).toBe('Union(Interval.open(-oo, 1), Interval.open(1, oo))');
+});
+
+it('isolates a variable alongside a bound integral or sum', () => {
+  expect(String(Q.reduceInequalities(p('x + Integral(y**2,(y,1,3)) - 1 >= 0'), [x])))
+    .toBe('x >= 1 - Integral(y**2, (y, 1, 3))');
+  expect(String(Q.reduceInequalities(p('x + y**2 + Sum(f(x),(x,1,3)) >= 0'), [x])))
+    .toBe('x >= -y**2 - Sum(f(x), (x, 1, 3))');
+  expect(String(Q.reduceInequalities(p('x*y<0'), [x]))).toBe('x*y < 0');
+});
+
+it('preserves real boundaries in transformed inequalities', () => {
+  expect(String(solveset(p('log(x-6)/x <= 0'), x, Reals))).toBe('Interval.Lopen(6, 7)');
+  expect(String(Q.reduceInequalities(p('1-x-sqrt((1-x)**2)<0'), [x]))).toBe('(1 < x) & (x < oo)');
+  expect(String(Q.solveUnivariateInequality(p('x**2>0'), x, { domain: interval(-2, 2) })))
+    .toBe('(x >= -2) & (x <= 2) & Ne(x, 0)');
+});
+
+it('handles affine congruence domain and residue restrictions', () => {
+  const mod = sj.Mod;
+  for (const equation of [mod(x, 3).sub(3), mod(x, -3).sub(1), mod(x, -3).add(3), mod(x, 3).sub(SS.Half)]) {
+    expect(solveset(equation, x, Integers)).toBe(sj.EmptySet);
+  }
+  expect(String(solveset(mod(x, -3).add(2), x, Integers))).toMatch(/3\*.* \+ 1/);
+  for (const equation of [mod(x, y).sub(1), mod(x.pow(2), 3).sub(1), mod(x, 3).sub(y), mod(x, 3).sub(x)]) {
+    expect(solveset(equation, x, Integers)).toBeInstanceOf(ConditionSet);
+  }
+});
+
+it('retains unresolved outer functions and filters radical candidates by interval', () => {
+  for (const source of ['Abs(x)-y', '0**x-y']) {
+    expect(solveset(p(source), x, Reals), source).toBeInstanceOf(ConditionSet);
+  }
+  expect(String(solveset(p('sqrt(2*x-1)-sqrt(x-4)-2'), x, interval(4, 8)))).toBe('{5}');
+  expect(String(solveset(p('2*x+(x-10)**(-2)'), x, Reals)))
+    .toBe('{-(3*sqrt(24081)/4 + 4027/4)**(1/3)/3 - 100/(3*(3*sqrt(24081)/4 + 4027/4)**(1/3)) + 20/3}');
+});
+
+it('rejects inconsistent integer congruences before dividing by the gcd', () => {
+  const residue = new sj.DefinedFunctionCall('Mod', [mul(2, x), Rational.of(4)], { nargs: 2 });
+  expect(solveset(add(residue, -1), x, Integers)).toBe(sj.EmptySet);
+});
+
+it('keeps unsupported equations after a failed radical elimination', () => {
+  expect(solveset(p('sin(sqrt(x))+sqrt(x-1)'), x, Reals)).toBeInstanceOf(ConditionSet);
+  expect(solveset(p('sqrt(x**2)-x+sqrt((x+1)**2)-(x+1)'), x, Reals)).toBeInstanceOf(ConditionSet);
+});
+
+it('handles real and imaginary components of phase and modulus', () => {
+  expect(solveset(p('arg(x+I)'), x, Reals)).toBe(sj.EmptySet);
+  expect(String(solveset(p('Abs(x+I)-2'), x, Reals))).toBe('{-sqrt(3), sqrt(3)}');
+  expect(String(solveset(p('atan2(x,2)-pi/3'), x, Reals))).toBe('{2*sqrt(3)}');
+  expect(solveset(p('atan2(x,2)-pi'), x, Reals)).toBe(sj.EmptySet);
+  expect(solveset(p('atan2(2,x)-y'), x, Reals)).toBeInstanceOf(ConditionSet);
+  expect(solveset(p('atan2(x,2)-y'), x, Reals)).toBeInstanceOf(ConditionSet);
+});
+
+it('includes finite domain endpoints of real radicals', () => {
+  expect(String(solveset(p('x+sqrt(x**2-5)>0'), x, Reals))).toBe('Interval(sqrt(5), oo)');
+  expect(String(solveset(p('x+sqrt(x**2-5)<0'), x, Reals))).toBe('Interval(-oo, -sqrt(5))');
+  expect(String(solveset(p('sqrt(x-2)+2>0'), x, Reals))).toBe('Interval(2, oo)');
+  expect(solveset(p('-x**2-2*x+(x+1)**2-1'), x, Reals)).toBe(Reals);
+});
+
+it('leaves real equations with symbolic powers conditional', () => {
+  const r = new Sym('r', { rational: true });
+  expect(solveset(add(pow(x, r), mul(-1, y)), x, Reals)).toBeInstanceOf(ConditionSet);
+});
+
+it('solves a Piecewise inequality on the regions selected by its conditions', () => {
+  expect(String(solveset(p('Piecewise((1,x>10),(0,True))>0'), x, Reals))).toBe('Interval.open(10, oo)');
+});
+
+it('preserves exact indexed-root endpoints when reducing a single inequality', () => {
+  expect(String(Q.reduceInequalities(p('x**8+x-9>=0'), [x])))
+    .toBe('((-oo < x) & (x <= CRootOf(x**8 + x - 9, 0))) | ((x < oo) & (CRootOf(x**8 + x - 9, 1) <= x))');
+});
+
+describe('solveset on intervals with parameters (SymPy 1.14)', () => {
+  const x = new Sym('x'), y = new Sym('y'), l = new Sym('l', { positive: true });
+  const P = (s: string) => parse(s, { symbols: { x, y, l } });
+  it('treats Interval(-oo, oo) as the real line', () => {
+    const line = new sj.Interval(SS.NegativeInfinity, SS.Infinity, true, true);
+    // SymPy prints the domain it was given: Intersection({y}, Interval(-oo, oo))
+    expect(String(solveset(P('x - y'), x, line))).toBe('Intersection({y}, Reals)');
+    expect(String(solveset(P('sin(x)'), x, line))).toBe('Union(ImageSet(Lambda(_n, 2*_n*pi), Integers), ImageSet(Lambda(_n, 2*_n*pi + pi), Integers))');
+  });
+  it('keeps the roots that the interval contains', () => {
+    expect(String(solveset(P('x**2 - l'), x, sj.Interval.of(0, SS.Infinity)))).toBe('{sqrt(l)}');
+    expect(String(solveset(P('(x - l)/(x + l)'), x, sj.Interval.of(0, SS.Infinity)))).toBe('{l}');
+    expect(String(solveset(P('x**2 - y'), x, sj.Interval.of(0, 1)))).toBe('Intersection({-sqrt(y), sqrt(y)}, Interval(0, 1))');
+    expect(String(solveset(P('(x - l)*(x - y)'), x, sj.Interval.of(0, SS.Infinity)))).toBe('Union({l}, Intersection({y}, Interval(0, oo)))');
+  });
 });

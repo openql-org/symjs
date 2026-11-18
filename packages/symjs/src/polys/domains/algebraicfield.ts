@@ -13,16 +13,17 @@
 import { DomainError } from '../../core/errors';
 import { at, defined, expectType, first } from '../../core/guard';
 import type { ExprLike } from '../../core/nodes';
-import { Add, Expr, Mul, Pow, Rational } from '../../core/nodes';
-import { add, mul, pow, sympify } from '../../core/ops';
+import { Add, Dummy, Expr, Mul, Pow, Rational, S } from '../../core/nodes';
+import { add, mul, pow, splitCoeff, sympify } from '../../core/ops';
 import { str } from '../../printing/str';
 import { expand } from '../../simplify/expand';
 import { CoercionFailed, Domain, QQ, domainHooks, groundRational, type UnificationKind } from '../domains';
-import { AlgebraicNumber } from '../numberfields';
+import { AlgebraicNumber, minimalPolynomial } from '../numberfields';
 import type { Submodule } from '../numberfields/modules';
 import type { PrimeIdeal } from '../numberfields/primes';
 import { toNumberField } from '../numberfields/subfield';
 import { ANP } from '../polyclasses';
+import { FieldPoly } from '../fieldpoly';
 import { asInt, type IntLike } from '../../ntheory/intutil';
 import type { PythonMPQ } from './pythonrational';
 
@@ -56,6 +57,7 @@ export class AlgebraicField extends Domain {
   readonly mod: QP;
   private readonly baseDomain: Domain;
   private readonly atomRepresentations = new Map<string,ANP>();
+  private reducedPowers: { powers: FieldPoly[]; generators: Expr[] } | undefined;
   private maximalOrderCache: [Submodule, Rational] | undefined;
   private readonly nilradicalsModP = new Map<bigint, Submodule>();
   protected override get unificationKind(): UnificationKind {
@@ -153,11 +155,34 @@ export class AlgebraicField extends Domain {
   override ofType(a: unknown): boolean {
     return a instanceof ANP;
   }
+  /** Reduce powers of an additive primitive element modulo the minimal polynomial of each summand. */
+  private makeReducedPowers(theta: Add): { powers: FieldPoly[]; generators: Expr[] } {
+    const terms = theta.args.map(splitCoeff).filter(([, term]) => !term.equals(S.One));
+    const generators = terms.map(([, term]) => term);
+    const dummy = new Dummy('a');
+    const monomial = (index: number, exponent: number) => terms.map((_, i) => i === index ? exponent : 0);
+    const image = new FieldPoly(QQ, terms.length, [
+      ...theta.args.filter((term) => term instanceof Rational).map((term) => [monomial(-1, 0), term] as const),
+      ...terms.map(([coefficient], i) => [monomial(i, 1), coefficient] as const),
+    ]);
+    const moduli = generators.map((g, i) => new FieldPoly(QQ, terms.length,
+      minimalPolynomial(g, dummy, { polys: true }).terms().map(([m, c]) => [monomial(i, first(m)), c])));
+    const powers = [image.one];
+    for (let n = 1; n < this.mod.length - 1; n++) {
+      powers.push(moduli.reduce((p, m) => p.div(m)[1], at(powers, n - 1).mul(image)));
+    }
+    return { powers, generators };
+  }
   /** The element as an expression in the extension (SymPy to_sympy). */
   override toSympy(a: unknown): Expr {
     if (!(a instanceof ANP)) return super.toSympy(a);
     const theta = this.generator;
     const n = a.rep.length - 1;
+    if (theta instanceof Add && n > 0) {
+      const { powers, generators } = this.reducedPowers ??= this.makeReducedPowers(theta);
+      const sum = a.rep.reduce((p, c, i) => p.add(at(powers, n - i).scale(c)), first(powers).zero);
+      return expand(sum.asExpr(generators));
+    }
     return expand(add(...a.rep.map((c, i) => mul(Rational.of(c.numerator, c.denominator), pow(theta, n - i)))));
   }
   canon(e: Expr): Expr {

@@ -28,6 +28,9 @@ import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, 
  */
 export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr | undefined>> = {};
 
+/** Argument positions for which a class's explicit fdiff raises. */
+export const unavailablePartials: Partial<Record<string, readonly number[]>> = {};
+
 /**
  * Taylor coefficients at 0 of one-argument functions whose derivatives at 0
  * are 0/0 forms (elliptic_k, elliptic_e): fnTaylorAtZero[name](j) is the
@@ -58,14 +61,14 @@ const fnDerivative: Partial<Record<Fn['name'], (u: Expr) => Expr>> = {
 };
 
 /**
- * A matrix element X[i, j] as the variable (told apart by name: the matrix
- * module builds on this one). An expression depends on it through X, as
+ * An array or matrix entry as the variable. Both modules build on calculus.
+ * An expression may depend on an entry through its parent, as
  * Trace(X) does, so it is not replaced by a dummy.
  */
-const isMatrixElement = (x: Expr): x is ExtensionExpr => x instanceof ExtensionExpr && x.name === 'MatrixElement';
+const isIndexedElement = (x: Expr): x is ExtensionExpr => x instanceof ExtensionExpr && (x.name === 'MatrixElement' || x.name === 'ArrayElement');
 
 /** e may depend on x: it contains x, or the matrix of a matrix element x. */
-const dependsOn = (e: Expr, x: Expr): boolean => e.has(x) || (isMatrixElement(x) && e.has(first(x.args)));
+const dependsOn = (e: Expr, x: Expr): boolean => e.has(x) || (isIndexedElement(x) && e.has(first(x.args)));
 
 function d(e: Expr, x: Expr): Expr {
   if (e.key === x.key) return S.One;
@@ -77,7 +80,7 @@ function d(e: Expr, x: Expr): Expr {
     const r = e.diffSelf(x, d);
     if (r !== undefined) return r;
     // SymPy keeps Derivative(Determinant(X), X[0, 0]) unevaluated
-    if (isMatrixElement(x)) return derivative(e, [[x, 1]]);
+    if (isIndexedElement(x)) return derivative(e, [[x, 1]]);
     throw new NotImplementedError(`diff: ${e.name} does not define a derivative`);
   }
 
@@ -116,10 +119,13 @@ function d(e: Expr, x: Expr): Expr {
     }
     const u = first(e.args);
     if (e.name === 'conjugate' || e.name === 're' || e.name === 'im') {
-      // linear, but not holomorphic: the derivative is taken inside only for a real variable (SymPy keeps Derivative(conjugate(x), x))
-      if (isReal(x) !== true) return derivative(e, [[x, 1]]);
+      const imaginary = (a: Expr): boolean => a instanceof Sym && a.assumptions.imaginary === true;
+      const realAxis = isReal(x) === true || e.name !== 'conjugate' && isReal(u) === true;
+      if (!realAxis && !imaginary(x) && (e.name === 'conjugate' || !imaginary(u))) return derivative(e, [[x, 1]]);
       const du = d(u, x);
-      return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+      if (realAxis) return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+      if (e.name === 'conjugate') return mul(-1, conjugate(du));
+      return mul(-1, S.I, e.name === 're' ? fnIm(du) : fnRe(du));
     }
     const du = d(u, x);
     // SymPy Abs._eval_derivative: sign(conjugate(u))*u' for a real or imaginary u, otherwise
@@ -278,11 +284,12 @@ export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
     for (let i = 0; i < n; i++) e = diffIndexed(e, x);
     return e;
   }
-  if (x instanceof ExtensionExpr && !x.isScalar && n > 0 && diffHooks.array) return diffHooks.array(e, x, n);
-  // SymPy: a variable that is not a scalar (is_scalar = False) keeps the derivative unevaluated
-  if (x instanceof ExtensionExpr && !x.isScalar && e.has(x)) return derivative(e, [[x, n]]);
+  if (x instanceof ExtensionExpr && !x.isScalar) {
+    if (diffHooks.array) return diffHooks.array(e, x, n);
+    if (e.has(x)) return derivative(e, [[x, n]]);
+  }
   // differentiate with respect to an expression such as f(x): treat it as a symbol
-  if (!(x instanceof Sym) && !isMatrixElement(x)) return diffWrtTerm(e, x, n);
+  if (!(x instanceof Sym) && !isIndexedElement(x)) return diffWrtTerm(e, x, n);
   for (let i = 0; i < n; i++) e = d(e, x);
   return e;
 }
@@ -300,8 +307,10 @@ export function fdiff(f: ExprLike, argindex = 1): Expr {
   const e = sympify(f);
   if (!(e instanceof Fn || e instanceof UndefFn || e instanceof DefinedFunctionCall)) throw new TypeError(`fdiff: ${e.toString()} is not a function application`);
   if (!Number.isInteger(argindex) || argindex < 1 || argindex > e.args.length) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
+  if (unavailablePartials[e.name]?.includes(argindex)) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
   const i = argindex - 1;
   const a = at(e.args, i);
+  if (e instanceof Fn && e.name === 'abs') return fn('sign', [a]);
   const xi = new Dummy(`xi_${argindex}`);
   const dg = diff(rebuild(e, e.args.map((b, j) => (j === i ? xi : b))), xi);
   const unevaluated = (x: Expr): boolean => ((x instanceof Derivative || x instanceof SubsNode) && x.has(xi)) || x.args.some(unevaluated);

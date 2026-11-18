@@ -178,7 +178,7 @@ describe("sympy/series/tests/test_fourier.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fourierSeries(new Add([new Pow(pi, rational(2)), new Mul([rational(-1), new Pow(x, rational(2))])]), x, [new Mul([rational(-1), pi]), pi]).truncate())).toBe('4*cos(x) - cos(2*x) + 2*pi**2/3');
   });
-  it.fails("test_FourierSeries__operations:107", () => {
+  it("test_FourierSeries__operations:107", () => {
     const x = new Sym('x');
     expect(sympyStr(fourierSeries(new Add([new Mul([rational(-1, 2), pi]), piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [pi, true])]), x, [new Mul([rational(-1), pi]), pi]).truncate())).toBe('2*sin(x) + 2*sin(3*x)/3 + 2*sin(5*x)/5');
   });

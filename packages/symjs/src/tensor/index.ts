@@ -164,14 +164,14 @@ export {
   riemannCyclicReplace,
 } from './tensor';
 export type { ArrayReplacements, CommGroup, Commutation, TensorIndexTypeOptions, TensorManagerClass } from './tensor';
-export { bsgsDirectProduct, canonicalFree, doubleCosetCanRep, dummySgs, gensProducts, getSymmetricGroupSgs, permAfDirectProduct, tensorGens } from './tensorcan';
+export { bsgsDirectProduct, canonicalFree, canonicalizeNaive, doubleCosetCanRep, dummySgs, gensProducts, getSymmetricGroupSgs, graphCertificate, permAfDirectProduct, tensorGens } from './tensorcan';
 export type { CanonComponent, PermLike } from './tensorcan';
 export { shape, NoShapeError, TensorProduct, TensorProductNode } from './functions';
 export type { Dimension } from './functions';
 export { ArrayExpr, ArraySymbol, ArrayElement, ArrayTensorProduct, ArrayContraction, ArrayDiagonal, ArrayAdd, ArrayElementwiseApplyFunc, PermuteDims, Reshape, OneArray, ZeroArray, getShape, getRank } from './array/expressions/arrayexpressions';
 export type { ArrayShape, ArrayAxes } from './array/expressions/arrayexpressions';
 export { convertMatrixToArray } from './array/expressions/frommatrixtoarray';
-export { convertArrayToMatrix } from './array/expressions/fromarraytomatrix';
+export { convertArrayToMatrix, identifyRemovableIdentityMatrices } from './array/expressions/fromarraytomatrix';
 export { convertIndexedToArray } from './array/expressions/fromindexedtoarray';
 export { convertArrayToIndexed } from './array/expressions/fromarraytoindexed';
 export { arrayDerive } from './array/expressions/arrayexprderivatives';

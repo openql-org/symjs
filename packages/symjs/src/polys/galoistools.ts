@@ -511,9 +511,10 @@ const shoup = (f: P, p: bigint): P[] => {
 export type GFFactorMethod = 'berlekamp' | 'zassenhaus' | 'shoup';
 const FACTOR_METHODS: Readonly<Record<GFFactorMethod, (f: P, p: bigint) => P[]>> = { berlekamp, zassenhaus, shoup };
 
-function factorSqf(fIn: P, p: bigint, method: GFFactorMethod = 'zassenhaus'): [bigint, P[]] {
+function factorSqf(fIn: P, p: bigint, method: string = 'zassenhaus'): [bigint, P[]] {
   const [lc, f] = monic(fIn, p);
   if (f.length - 1 < 1) return [lc, []];
+  if (method !== 'berlekamp' && method !== 'zassenhaus' && method !== 'shoup') throw new RangeError(`unknown finite-field factorization method: ${method}`);
   return [lc, FACTOR_METHODS[method](f, p)];
 }
 
@@ -854,8 +855,10 @@ export function gfIrredPRabin(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ
 }
 
 /** Whether f is irreducible over GF(p) (SymPy gf_irreducible_p, Rabin's test). */
-export function gfIrreducibleP(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): boolean {
-  return irredRabin(ints(f), asInt(p));
+export function gfIrreducibleP(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, method = 'rabin'): boolean {
+  if (method === 'ben-or') return irredBenOr(ints(f), asInt(p));
+  if (method === 'rabin') return irredRabin(ints(f), asInt(p));
+  throw new RangeError(`unknown finite-field irreducibility method: ${method}`);
 }
 
 /** Whether f is square-free (SymPy gf_sqf_p). */
@@ -928,12 +931,12 @@ export function gfFactorSqf(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, 
 }
 
 /** Factorization into irreducibles: [lc, [[factor, multiplicity], ...]] (SymPy gf_factor). */
-export function gfFactor(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ): [bigint, [bigint[], number][]] {
+export function gfFactor(f: readonly IntLike[], p: IntLike, _K: Domain = ZZ, method?: string): [bigint, [bigint[], number][]] {
   const m = asInt(p);
   const [lc, g] = monic(ints(f), m);
   if (g.length - 1 < 1) return [lc, []];
   const factors: [P, number][] = [];
-  for (const [h, n] of sqfList(g, m)[1]) for (const q of factorSqf(h, m)[1]) factors.push([q, n]);
+  for (const [h, n] of sqfList(g, m)[1]) for (const q of factorSqf(h, m, method)[1]) factors.push([q, n]);
   return [lc, sortFactors(factors)];
 }
 

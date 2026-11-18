@@ -6,31 +6,28 @@
  * (SymPy Basic.rewrite and the `_eval_rewrite_as_*` methods).
  */
 
-import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
+import type { Expr, ExprLike, RewriteRule } from '../core/nodes';
+import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Piecewise, Pow, Rational, S, UndefFn, impl, registerRewrite as addRewrite, rewriteRules } from '../core/nodes';
 import { Eq, Ge, Gt, Lt, Ne, piecewise, rel } from '../core/logic';
-import { and } from '../core/boolalg';
+import { BoolOp, and } from '../core/boolalg';
 import { Mod } from '../functions/mod';
-import { isIntegerQ, isNegative, isPositive, isReal, isZero } from '../core/assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from '../core/assumptions';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { isFunctionOf } from '../core/match';
 import { rebuild } from '../core/traverse';
 import { abs, acos, arg, asin, atan, conjugate, cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { acot, acsc, asec, asinh, atanh, acosh, cot, coth, csc, sec } from '../functions/elementary/trigext';
 import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special/special';
-import { ff } from '../functions/combinatorial/factorials';
+import { factorial2Gamma, factorialRewrites, ff } from '../functions/combinatorial/factorials';
 import { Sum } from '../core/concrete';
-import { first, pair } from '../core/guard';
+import { at, first, pair } from '../core/guard';
 
-/** A rewrite rule: the (already rewritten) arguments and the original node. */
-export type RewriteRule = (args: Expr[], self: Expr) => Expr | undefined;
-
-/** rewriteRules[functionName][target] (SymPy class names, e.g. 'Abs', 'exp'). */
-export const rewriteRules: Record<string, Record<string, RewriteRule>> = {};
+export type { RewriteRule };
+export { rewriteRules };
 
 /** @experimental May change in a minor release. */
 export function registerRewrite(fnName: string, target: string, rule: RewriteRule): void {
-  (rewriteRules[fnName] ??= {})[target] = rule;
+  addRewrite(fnName, target, rule);
 }
 
 /** A rule on the first argument (a missing argument is an invariant violation). */
@@ -84,7 +81,7 @@ function withArgs(e: Expr, args: Expr[]): Expr {
  * 'exp', 'cos', 'gamma', 'Piecewise'). With `pattern`, only nodes of those
  * functions are rewritten.
  */
-export function rewrite(exprIn: ExprLike, target: string, opts: { pattern?: readonly string[]; deep?: boolean } = {}): Expr {
+export function rewrite(exprIn: ExprLike, target: string, opts: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> } = {}): Expr {
   const expr = sympify(exprIn);
   const t = target === 'abs' ? 'Abs' : target;
   let pattern = opts.pattern ?? [];
@@ -92,7 +89,7 @@ export function rewrite(exprIn: ExprLike, target: string, opts: { pattern?: read
     pattern = pattern.filter((p) => hasClass(expr, p));
     if (!pattern.length) return expr;
   }
-  return rw(expr, pattern, t, opts.deep ?? true);
+  return rw(expr, pattern, t, opts.deep ?? true, opts.hints ?? {});
 }
 
 function hasClass(e: Expr, name: string): boolean {
@@ -100,8 +97,8 @@ function hasClass(e: Expr, name: string): boolean {
   return fnArgs(e).some((a) => hasClass(a, name));
 }
 
-function rw(e: Expr, pattern: readonly string[], target: string, deep: boolean): Expr {
-  const args = deep ? fnArgs(e).map((a) => rw(a, pattern, target, deep)) : fnArgs(e);
+function rw(e: Expr, pattern: readonly string[], target: string, deep: boolean, hints: Readonly<Record<string, Expr>>): Expr {
+  const args = deep ? fnArgs(e).map((a) => rw(a, pattern, target, deep, hints)) : fnArgs(e);
   const cls = className(e);
   if (e instanceof ExtensionExpr && (!pattern.length || pattern.includes(e.name))) {
     const r = e.rewriteSelf(target, args);
@@ -110,7 +107,7 @@ function rw(e: Expr, pattern: readonly string[], target: string, deep: boolean):
   if (!pattern.length || pattern.includes(cls)) {
     const rule = rewriteRules[cls]?.[target];
     if (rule) {
-      const r = rule(args, e);
+      const r = rule(args, e, hints);
       if (r !== undefined) return r;
     }
   }
@@ -145,6 +142,7 @@ reg1('sin', 'Pow', (a) => {
   return x === undefined ? undefined : add(div(mul(I, pow(x, neg(I))), 2), neg(div(mul(I, pow(x, I)), 2)));
 });
 reg1('sin', 'sincos', (a) => div(mul(sin(a), cos(a)), cos(a)));
+reg1('sin', 'sinc', (a) => mul(a, fn('sinc', [a])));
 
 reg1('cos', 'exp', (a) => {
   const x = expArg(a);
@@ -232,6 +230,9 @@ reg1('tanh', 'exp', (a) => {
   const pe = exp(a);
   return div(add(pe, neg(ne)), add(pe, ne));
 });
+for (const target of ['exp', 'tractable']) {
+  reg1('coth', target, (a) => div(add(exp(a), exp(neg(a))), add(exp(a), neg(exp(neg(a))))));
+}
 reg1('tanh', 'cosh', (a) => div(mul(I, raw('cosh', add(div(mul(pi, I), 2), neg(a)))), cosh(a)));
 reg1('tanh', 'sinh', (a) => div(mul(I, sinh(a)), raw('sinh', add(div(mul(pi, I), 2), neg(a)))));
 reg1('tanh', 'tan', (a) => neg(mul(I, raw('tan', mul(I, a)))));
@@ -241,7 +242,7 @@ reg1('tanh', 'tan', (a) => neg(mul(I, raw('tan', mul(I, a)))));
 const reciprocalRule = (name: Fn['name'], of: Fn['name'], target: string): void =>
   reg1(name, target, (a) => {
     const self = fn(of, [a]);
-    const t = rewriteRules[of]?.[target]?.([a], self);
+    const t = rewriteRules[of]?.[target]?.([a], self, {});
     return t === undefined || t.key === self.key ? undefined : div(1, t);
   });
 const cosForm = (a: Expr, target: string): Expr => rewrite(cos(a), target);
@@ -273,6 +274,14 @@ reg1('cot', 'Pow', (a) => {
 });
 reg1('cot', 'sin', (a) => div(sin(mul(2, a)), mul(2, pow(sin(a), 2))));
 reg1('cot', 'cos', (a) => div(cos(a), raw('cos', add(a, neg(div(pi, 2))))));
+for (const [name, inverse] of [['tan', false], ['cot', true]] as const) {
+  reg1(name, 'sqrt', (a) => {
+    const sine = sin(a);
+    const cosine = cos(a);
+    if ([sine, cosine].some((value) => value instanceof Fn && (value.name === 'sin' || value.name === 'cos'))) return undefined;
+    return inverse ? div(cosine, sine) : div(sine, cosine);
+  });
+}
 reg1('cot', 'sincos', (a) => div(cos(a), sin(a)));
 reg1('cot', 'tan', (a) => div(1, tan(a)));
 reg1('cot', 'sec', (a) => div(cosForm(a, 'sec'), sinForm(a, 'sec')));
@@ -413,6 +422,19 @@ reg2('atan2', 'atan', (y, x) =>
 );
 
 // complex functions
+reg1('arg', 'atan2', (a) => fn('atan2', [im(a), re(a)]));
+registerRewrite('Piecewise', 'ITE', (args, self) => {
+  if (!(self instanceof Piecewise) || args.at(-1) !== S.true) return undefined;
+  const boolean = (value: Expr): boolean => value === S.true || value === S.false || value.kind === 'Rel' || value.kind === 'BoolOp';
+  let result = at(args, -2);
+  if (!boolean(result)) return undefined;
+  for (let i = args.length - 4; i >= 0; i -= 2) {
+    const value = at(args, i);
+    if (!boolean(value)) return undefined;
+    result = new BoolOp('ITE', [at(args, i + 1), value, result]);
+  }
+  return result;
+});
 reg1('re', 'im', (a) => add(a, mul(-1, I, im(a))));
 reg1('im', 're', (a) => mul(neg(I), add(a, neg(re(a)))));
 /** SymPy _minmax_as_Piecewise: each argument with the conditions against the later ones. */
@@ -440,7 +462,42 @@ reg1('sign', 'Piecewise', (a) => {
 // ---------------------------------------------------------------------------
 
 reg1('factorial', 'gamma', (n) => gamma(add(n, 1)));
+for (const [head, rules] of Object.entries(factorialRewrites)) {
+  for (const [target, rule] of Object.entries(rules)) registerRewrite(head, target, rule);
+}
+reg1('factorial2', 'gamma', (n) => factorial2Gamma(n, Mod(n, 2)));
 reg1('gamma', 'factorial', (z) => factorial(add(z, -1)));
+reg2('beta', 'gamma', (a, b) => div(mul(gamma(a), gamma(b)), gamma(add(a, b))));
+const incompleteBetaIntegral = (args: readonly Expr[]): Expr => {
+  const [a, b] = pair(args), [x1, x2] = pair(args.slice(2));
+  const t = new Dummy('t');
+  return new Integral([mul(pow(t, add(a, -1)), pow(add(1, neg(t)), add(b, -1))), t, x1, x2]);
+};
+registerRewrite('betainc', 'Integral', incompleteBetaIntegral);
+registerRewrite('betainc_regularized', 'Integral', (args) => {
+  const [x1, x2] = pair(args.slice(2));
+  return x1.equals(0) && x2.equals(1) ? S.One : div(incompleteBetaIntegral(args), incompleteBetaIntegral([...pair(args), S.Zero, S.One]));
+});
+reg1('loggamma', 'intractable', (z) => log(gamma(z)));
+reg2('lowergamma', 'uppergamma', (s, z) => add(gamma(s), neg(uppergamma(s, z))));
+reg2('uppergamma', 'lowergamma', (s, z) => add(gamma(s), neg(fn('lowergamma', [s, z]))));
+const gammaExpint = (s: Expr, z: Expr): Expr => mul(pow(z, s), fn('expint', [add(1, neg(s)), z]));
+reg2('uppergamma', 'expint', gammaExpint);
+reg2('lowergamma', 'expint', (s, z) =>
+  isIntegerQ(s) && isNonNegative(neg(s)) === true ? undefined : add(gamma(s), neg(gammaExpint(s, z))));
+reg2('polygamma', 'zeta', (n, z) => isIntegerQ(n) && isPositive(n) ? mul(pow(-1, add(n, 1)), factorial(n), zeta(add(n, 1), z)) : undefined);
+reg1('trigamma', 'zeta', (z) => zeta(2, z));
+reg1('digamma', 'polygamma', (z) => polygamma(0, z));
+reg1('trigamma', 'polygamma', (z) => polygamma(1, z));
+reg1('digamma', 'harmonic', (z) => add(harmonic(add(z, -1)), neg(S.EulerGamma)));
+reg1('trigamma', 'harmonic', (z) => add(zeta(2), neg(harmonic(add(z, -1), 2))));
+registerRewrite('zeta', 'bernoulli', (args) => {
+  const s = first(args), a = args[1] ?? S.One;
+  if (a.key === S.One.key && isIntegerQ(mul(half, s)) === true && isNonNegative(s) === true) {
+    return div(neg(mul(pow(mul(2, I, pi), s), fn('bernoulli', [s]))), mul(2, factorial(s)));
+  }
+  return div(fn('bernoulli', [add(1, neg(s)), a]), add(s, -1));
+});
 reg2('binomial', 'factorial', (n, k) => div(factorial(n), mul(factorial(k), factorial(add(n, neg(k))))));
 reg2('binomial', 'gamma', (n, k) => div(gamma(add(n, 1)), mul(gamma(add(k, 1)), gamma(add(n, neg(k), 1)))));
 reg2('binomial', 'FallingFactorial', (n, k) => (isIntegerQ(k) ? div(ff(n, k), factorial(k)) : undefined));
@@ -459,12 +516,24 @@ const harmonicPolygamma: RewriteRule = (args) => {
   if (!(isIntegerQ(mm) && isPositive(mm))) return undefined;
   return piecewise(
     [add(polygamma(0, add(n, 1)), S.EulerGamma), Eq(mm, 1)],
-    [div(mul(pow(-1, mm), add(polygamma(add(mm, -1), 1), neg(polygamma(add(mm, -1), add(n, 1))))), gamma(mm)), true],
+    [div(mul(pow(-1, mm), add(mul(pow(-1, mm), factorial(add(mm, -1)), zeta(mm)), neg(polygamma(add(mm, -1), add(n, 1))))), gamma(mm)), true],
   );
 };
 registerRewrite('harmonic', 'polygamma', harmonicPolygamma);
 registerRewrite('harmonic', 'digamma', harmonicPolygamma);
 registerRewrite('harmonic', 'trigamma', harmonicPolygamma);
+registerRewrite('harmonic', 'tractable', (args, self) => {
+  const pg = harmonicPolygamma(args, self);
+  const m = args[1] ?? S.One;
+  if (pg !== undefined) return rewrite(pg, 'tractable');
+  if (isNonZero(add(m, -1)) === true) return rewrite(add(zeta(m), neg(zeta(m, add(first(args), 1)))), 'tractable');
+  return undefined;
+});
+registerRewrite('harmonic', 'zeta', (args) => {
+  const n = add(first(args), 1);
+  const m = args[1] ?? S.One;
+  return piecewise([add(polygamma(0, n), S.EulerGamma), Eq(m, 1)], [add(zeta(m), neg(zeta(m, n))), true]);
+});
 reg2('polygamma', 'harmonic', (n, z) => {
   if (!isIntegerQ(n)) return undefined;
   if (n instanceof Rational && n.isZero) return add(harmonic(add(z, -1)), neg(S.EulerGamma));

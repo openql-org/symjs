@@ -80,3 +80,10 @@ describe('separatevars dictionary and absolute values', () => {
     expect(String(separatevars(P('Abs(2)')))).toBe('2');
   });
 });
+
+it('factors only shared trailing noncommuting factors', () => {
+  const A = symbol('A', { commutative: false }), B = symbol('B', { commutative: false });
+  const x = symbol('x');
+  expect(String(separatevars(A.mul(B).add(x.mul(B))))).toBe('(x + A)*B');
+  expect(String(separatevars(A.mul(B).add(B.mul(A))))).toBe('A*B + B*A');
+});

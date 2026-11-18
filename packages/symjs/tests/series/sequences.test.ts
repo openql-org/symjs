@@ -239,3 +239,11 @@ it('exposes base sequence generators and recurrence equations', () => {
   expect(String(fib.recurrence)).toBe('Eq(y(n), y(n - 2) + y(n - 1))');
   expect(fib.slice(0,7).map(String)).toEqual(['0','1','1','2','3','5','8']);
 });
+
+it('applies sequence arithmetic with the sequence on the right', () => {
+  const seq = sj.SeqFormula(n);
+  expect(() => n.add(seq)).toThrow(TypeError);
+  expect(() => n.mul(seq)).toThrow(TypeError);
+  expect(n.pow(seq)).toBeInstanceOf(sj.Pow);
+  expect(sj.add(seq, seq)).toBeInstanceOf(sj.Mul);
+});

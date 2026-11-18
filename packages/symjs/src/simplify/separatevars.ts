@@ -7,14 +7,14 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Constant, Fn, Mul, Pow, Sym } from '../core/nodes';
-import { mul, pow, sympify } from '../core/ops';
+import { Add, Constant, Fn, Mul, Pow, Sym } from '../core/nodes';
+import { add, mul, pow, sympify } from '../core/ops';
 import { abs } from '../functions/elementary/elementary';
 import { xreplace } from '../core/traverse';
 import { factor } from '../polys/sympoly';
 import { expand } from './expand';
 import { posify } from './powsimp';
-import { first, getOrThrow } from '../core/guard';
+import { at, first, getOrThrow } from '../core/guard';
 
 function sep(e0: Expr, force: boolean): Expr {
   let e = e0;
@@ -35,6 +35,17 @@ function sep(e0: Expr, force: boolean): Expr {
   e = expand(e, { mul: false, multinomial: false, force });
   const [pe, reps] = force ? posify(e) : [e, new Map<Expr, Expr>()];
   e = xreplace(factor(pe), [...reps]);
+  if (e instanceof Add && !e.isCommutative) {
+    const terms = e.args.map((t) => t instanceof Mul ? [...t.args] : [t]);
+    const suffix: Expr[] = [];
+    while (first(terms).length) {
+      const f = at(first(terms), -1);
+      if (f.isCommutative || !terms.every((fs) => fs.at(-1)?.key === f.key)) break;
+      suffix.unshift(f);
+      terms.forEach((fs) => fs.pop());
+    }
+    if (suffix.length) return mul(add(...terms.map((fs) => mul(...fs))), ...suffix);
+  }
   // SymPy then pulls out the factors common to the terms of a sum and factors the rest again; factor
   // has already extracted them (the content and the common powers of the generators, also for
   // non-commutative terms), so a sum that factor leaves has none and is returned as it is

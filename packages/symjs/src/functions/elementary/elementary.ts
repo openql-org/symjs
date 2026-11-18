@@ -7,18 +7,18 @@
 
 import { accumBoundsFunction } from './accumbounds';
 import { AccumBounds } from '../../core/accumbounds';
-import { first } from '../../core/guard';
+import { piecewise } from '../../core/logic';
+import { expectType, first } from '../../core/guard';
 import { precToDps } from '../../numeric/mpf';
-import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../../core/assumptions';
-import type {
-  Expr,
-  ExprLike,
-  FnName } from '../../core/nodes';
+import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../../core/assumptions';
+import type { ExprLike, FnName } from '../../core/nodes';
 import {
   Add,
   Constant,
+  Expr,
   Fn,
   Mul,
+  Piecewise,
   Pow,
   Float,
   Rational,
@@ -264,6 +264,7 @@ const evalAcos: Evaluator = (x) => {
 };
 
 const evalAtan: Evaluator = (x) => {
+  if (x === S.ComplexInfinity) return AccumBounds(mul(S.NegHalf, S.Pi), mul(S.Half, S.Pi));
   if (x instanceof Special && x.name === 'oo') return mul(S.Half, S.Pi);
   if (x instanceof Special && x.name === '-oo') return mul(S.NegHalf, S.Pi);
   if (x instanceof Rational && x.isZero) return S.Zero;
@@ -309,6 +310,17 @@ const evalLog: Evaluator = (x, ...more) => {
     if (x.p === 1n && x.q !== 1n) return neg(log(Rational.of(x.q, 1n)));
   }
   if (x instanceof Constant && x.name === 'E') return S.One;
+  if (x instanceof Mul && x.freeSymbols().size === 0) {
+    const reciprocal = x.args.find((term): term is Pow => term instanceof Pow && term.exp.equals(S.NegOne)
+      && term.base instanceof Fn && term.base.name === 'abs');
+    if (reciprocal) {
+      const value = first(reciprocal.base.args);
+      if (mul(...x.args.filter((term) => term !== reciprocal)).equals(value) && isNonZero(value) === true) {
+        // Dividing by the modulus puts a nonzero number on the unit circle.
+        return mul(S.I, arg(value));
+      }
+    }
+  }
   // SymPy log.eval splits the principal argument of negative numeric
   // expressions, including sums of radicals. Symbolic signs stay unevaluated.
   if (x.freeSymbols().size === 0 && isNegative(x) === true) return add(log(neg(x)), mul(S.I, S.Pi));
@@ -352,6 +364,7 @@ function isEven(e: Expr): boolean {
 }
 
 const evalAbs: Evaluator = (x) => {
+  if (x.kind === 'Set') throw new TypeError('Abs requires an expression');
   if (isNum(x)) return numAbs(x);
   if (!isNonNegative(x) && !isNegative(x)) {
     const sg = numericSign(x);
@@ -371,6 +384,10 @@ const evalAbs: Evaluator = (x) => {
     const known: Expr[] = [];
     const unknown: Expr[] = [];
     for (const t of x.args) {
+      if (t instanceof Pow && t.exp instanceof Rational && t.exp.isNegative && isReal(t.base) !== true) {
+        unknown.push(t);
+        continue;
+      }
       const v = abs(t);
       if (v instanceof Fn && v.name === 'abs') unknown.push(t);
       else known.push(v);
@@ -434,6 +451,10 @@ function unitRoot(x: Expr): [Expr, Expr] | undefined {
 const isImaginaryArg = (x: Expr): boolean => (x instanceof Sym && x.assumptions.imaginary === true) || isReal(mul(S.I, x)) === true;
 
 const evalRe: Evaluator = (x) => {
+  if (x instanceof ExtensionExpr) {
+    const parts = x.asRealImagSelf();
+    if (parts !== undefined) return parts[0];
+  }
   if (isReal(x)) return x;
   if (isI(x)) return S.Zero;
   const ur = unitRoot(x);
@@ -462,6 +483,10 @@ const evalRe: Evaluator = (x) => {
 };
 
 const evalIm: Evaluator = (x) => {
+  if (x instanceof ExtensionExpr) {
+    const parts = x.asRealImagSelf();
+    if (parts !== undefined) return parts[1];
+  }
   const ur = unitRoot(x);
   if (ur) return ur[1];
   if (isReal(x)) return S.Zero;
@@ -549,6 +574,7 @@ export const conjugateRules: Partial<Record<string, (args: readonly Expr[]) => E
 /** Complex conjugate, pushed through the expression tree. */
 export function conjugate(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof Piecewise) return piecewise(...x.pairs.map(([value, condition]) => [conjugate(value), condition] as const));
   if (x instanceof ExtensionExpr) {
     const r = x.conjugateSelf();
     if (r !== undefined) return r;
@@ -598,6 +624,7 @@ export function conjugate(xx: ExprLike): Expr {
  */
 export function adjoint(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof Piecewise) return piecewise(...x.pairs.map(([value, condition]) => [adjoint(value), condition] as const));
   if (x instanceof ExtensionExpr) {
     const r = x.adjointSelf();
     if (r !== undefined) return r;
@@ -624,6 +651,7 @@ export function adjoint(xx: ExprLike): Expr {
 /** Transpose (SymPy transpose): commutative scalars are unchanged, products reverse. */
 export function transpose(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof Piecewise) return piecewise(...x.pairs.map(([value, condition]) => [transpose(value), condition] as const));
   if (x instanceof ExtensionExpr) {
     const r = x.transposeSelf();
     if (r !== undefined) return r;
@@ -814,6 +842,12 @@ export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: b
   const xs = args.map(sympify);
   if (opts.evaluate === false) return new Fn(name, xs);
   const [x0, ...rest] = xs;
+  if (x0 instanceof ExtensionExpr && x0.name === 'SetExpr' && rest.length === 0
+    && ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(name)
+    && 'applyfunc' in x0 && typeof x0.applyfunc === 'function') {
+    const mapped: unknown = x0.applyfunc((value: Expr) => fn(name, [value]));
+    return expectType(mapped, (value): value is Expr => value instanceof Expr, 'mapped set expression');
+  }
   if (x0 !== undefined && rest.length === 0 && impl.accumBounds?.is(x0)) {
     const r = accumBoundsFunction(name, x0, (n, x) => fn(n, [x]));
     if (r !== undefined) return r;

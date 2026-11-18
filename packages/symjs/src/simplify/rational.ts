@@ -38,7 +38,9 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
   const num: Expr[] = [];
   const den: Expr[] = [];
   for (const f of factors) {
-    if (f instanceof Rational) {
+    if (!f.isCommutative) {
+      num.push(f);
+    } else if (f instanceof Rational) {
       num.push(Rational.of(f.p));
       den.push(Rational.of(f.q));
     } else if (opts.exact && f instanceof Pow) {
@@ -136,9 +138,14 @@ export function cancel(ex: ExprLike, opts: PolynomialDomainOptions & { greedy?: 
   if (input instanceof Rel) return input;
   if (input instanceof Piecewise) return piecewise(...input.pairs.map(([value, condition]) => [cancel(value, opts), condition] as const));
   if (input instanceof Mul && !input.isCommutative) {
-    const [n, d] = fraction(together(input));
-    const ratio = radicalContentRatio(expand(n), expand(d));
-    if (ratio !== undefined) return ratio;
+    const product = together(input);
+    if (product instanceof Mul) {
+      const inverse = at(product.args, -1);
+      if (inverse instanceof Pow && inverse.exp.key === S.NegOne.key) {
+        const ratio = radicalContentRatio(expand(mul(...product.args.slice(0, -1))), expand(inverse.base));
+        if (ratio !== undefined) return ratio;
+      }
+    }
   }
   if ((input instanceof Add || input instanceof Mul) && (!input.isCommutative || input.args.some(containsPiecewise))) {
     const ordinary = input.args.filter((e) => e.isCommutative && !containsPiecewise(e));
@@ -220,6 +227,7 @@ function floatToRational(f: Float, prec: number): Rational {
   const x = Rational.of(p, q);
   const b1 = Rational.of(p0 + k * p1, q0 + k * q1);
   const b2 = Rational.of(p1, q1);
+  if (b1.isZero || b2.isZero) return x;
   const dist = (b: Rational): Rational => {
     const t = Rational.of(b.p * x.q - x.p * b.q, b.q * x.q);
     return t.isNegative ? Rational.of(-t.p, t.q) : t;

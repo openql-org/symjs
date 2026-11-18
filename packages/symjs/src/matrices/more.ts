@@ -9,6 +9,7 @@
  * and printing.
  */
 
+import { Random } from '../ntheory/random';
 import { MatrixError, SympifyError } from '../core/errors';
 import { at, defined, last } from '../core/guard';
 import type { ExprLike } from '../core/nodes';
@@ -187,7 +188,7 @@ export function singularValueDecomposition(A: Matrix): [Matrix, Matrix, Matrix] 
  * SymPy Matrix.LUdecomposition_Simple: L (below the diagonal, unit
  * diagonal implied) and U in one matrix, and the row swaps.
  */
-export function luDecompositionSimple(M: Matrix): [Matrix, [number, number][]] {
+export function luDecompositionSimple(M: Matrix, rankcheck = false): [Matrix, [number, number][]] {
   if (M.rows === 0 || M.cols === 0) return [Matrix.zeros(M.rows, M.cols), []];
   const lu = rows(M);
   const swaps: [number, number][] = [];
@@ -199,6 +200,7 @@ export function luDecompositionSimple(M: Matrix): [Matrix, [number, number][]] {
       if (cand >= 0) break;
       pivotCol++;
     }
+    if (rankcheck && pivotCol !== pivotRow) throw new RangeError('Matrix is rank deficient');
     if (cand < 0) return [Matrix.of(lu), swaps];
     if (cand !== pivotRow) {
       swaps.push([pivotRow, cand]);
@@ -222,6 +224,8 @@ export function luDecompositionSimple(M: Matrix): [Matrix, [number, number][]] {
     pivotCol++;
     if (pivotCol === M.cols) break;
   }
+  const lastPivot = Math.min(M.rows, M.cols) - 1;
+  if (rankcheck && isZeroExpr(get2(lu, lastPivot, lastPivot))) throw new RangeError('Matrix is rank deficient');
   return [Matrix.of(lu), swaps];
 }
 
@@ -701,47 +705,43 @@ export interface RandMatrixOptions {
   prng?: () => number;
 }
 
-/** A small seeded generator (mulberry32). */
-function seeded(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/**
- * SymPy randMatrix(r, c, min, max, seed, symmetric, percent): a random
- * integer matrix with entries in [min, max]; the same seed gives the same
- * matrix (the values differ from Python's generator).
- */
+/** SymPy randMatrix: sample positions without replacement before drawing their entries. */
 export function randMatrix(r: number, c: number = r, opts: RandMatrixOptions = {}): Matrix {
-  const rnd = opts.prng ?? (opts.seed !== undefined ? seeded(opts.seed) : Math.random);
+  if (opts.symmetric && r !== c) throw new RangeError('For symmetric matrices, r must equal c');
+  const generator = new Random(opts.seed);
+  const rnd = opts.prng;
+  const below = (n: number): number => rnd ? Math.floor(rnd() * n) : Number(generator.randbelow(BigInt(n)));
   const lo = opts.min ?? 0;
   const hi = opts.max ?? 99;
-  const pick = () => lo + Math.floor(rnd() * (hi - lo + 1));
-  if (opts.symmetric && r !== c) throw new RangeError('For symmetric matrices, r must equal c');
-  const data: number[][] = range(0, r).map(() => range(0, c).map(pick));
-  if (opts.symmetric) for (let i = 0; i < r; i++) for (let j = 0; j < i; j++) at(data, i)[j] = get2(data, j, i);
-  const percent = opts.percent ?? 100;
-  if (percent < 100) {
-    const cells = range(0, r * c);
-    const zeros = Math.round((r * c * (100 - percent)) / 100);
-    for (let k = 0; k < zeros; k++) {
-      const idx = k + Math.floor(rnd() * (cells.length - k));
-      const cell = at(cells, idx);
-      cells[idx] = at(cells, k);
-      cells[k] = cell;
-      const i = Math.floor(cell / c);
-      const j = cell % c;
-      at(data, i)[j] = 0;
-      if (opts.symmetric) at(data, j)[i] = 0;
+  const data = Matrix.zeros(r, c).toArray();
+  const cells = range(0, r * c);
+  const k = Math.floor(cells.length * (opts.percent ?? 100) / 100);
+  if (k < 0 || k > cells.length || hi < lo) throw new RangeError('Invalid random matrix range');
+  let indices = cells;
+  if (opts.percent !== undefined && opts.percent !== 100) {
+    indices = [];
+    const setSize = 21 + (k > 5 ? 4 ** Math.ceil(Math.log(3 * k) / Math.log(4)) : 0);
+    if (cells.length <= setSize) {
+      for (let i = 0; i < k; i++) {
+        const j = below(cells.length - i);
+        indices.push(at(cells, j));
+        cells[j] = at(cells, cells.length - i - 1);
+      }
+    } else {
+      const selected = new Set<number>();
+      while (selected.size < k) selected.add(below(cells.length));
+      indices = [...selected];
     }
   }
-  return Matrix.of(data);
+  for (const cell of indices) {
+    const i = Math.floor(cell / c);
+    const j = cell % c;
+    if (opts.symmetric && i > j) continue;
+    const value = Rational.of(lo + below(hi - lo + 1));
+    at(data, i)[j] = value;
+    if (opts.symmetric) at(data, j)[i] = value;
+  }
+  return Matrix.fromFunction(r, c, (i, j) => get2(data, i, j));
 }
 
 /** Nested arrays of symbols prefix_i_j... (SymPy symarray); the shape is a length or a list of lengths. */

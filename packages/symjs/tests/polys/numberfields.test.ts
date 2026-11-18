@@ -6,7 +6,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { add, AlgebraicNumber, Rational, sqrt } from '../../src';
-import { chooseFactor } from '../../src/polys/numberfields';
+import { chooseFactor, positiveRadicalMinpoly } from '../../src/polys/numberfields';
 
 const { parse } = sj;
 const show = (r: unknown): string => (Array.isArray(r) ? `[${r.map(show).join(', ')}]` : String(r));
@@ -287,4 +287,37 @@ it('retains rational and symbolic ground fields in minimal polynomial results', 
   expect(String(sj.minimalPolynomial(sqrt(2), x, { polys: true, domain: sj.QQ }))).toBe("Poly(x**2 - 2, x, domain='QQ')");
   expect(String(sj.minimalPolynomial(sqrt(y), x, { polys: true }))).toBe("Poly(x**2 - y, x, domain='ZZ(y)')");
   expect(String(sj.minimalPolynomial(sj.S.I, x, { domain: 'QQ(y)' }))).toBe('x**2 + 1');
+});
+
+it('finds minimal polynomials of symmetric expressions in cubic conjugates', () => {
+  const x = new sj.Sym('x'), p = parse('x**3 - 3*x + 1');
+  const a = sj.CRootOf(p, 0), b = sj.CRootOf(p, 1);
+  expect(String(sj.minimalPolynomial(sj.add(a, b), x))).toBe('x**3 - 3*x - 1');
+  expect(String(sj.minimalPolynomial(sj.mul(a, b), x))).toBe('x**3 + 3*x**2 - 1');
+  expect(String(sj.minimalPolynomial(sj.add(sj.pow(a, 3), sj.pow(b, 3), sj.mul(-3, sj.add(a, b))), x))).toBe('x + 2');
+});
+
+it('reduces the degree of a product of positive rational radicals', () => {
+  const x = new sj.Sym('x');
+  expect(String(positiveRadicalMinpoly(Rational.of(324), 6n, x))).toBe('x**3 - 18');
+  expect(String(positiveRadicalMinpoly(Rational.of(16, 81), 12n, x))).toBe('3*x**3 - 2');
+  expect(String(sj.minimalPolynomial(parse('6**(1/6)*54**(1/6)'), x))).toBe('x**3 - 18');
+  expect(String(sj.minimalPolynomial(parse('(2/3)**(1/6)*(1/6)**(1/6)'), x))).toBe('3*x**3 - 1');
+  expect(String(sj.minimalPolynomial(parse('6**(1/10)*24**(3/10)'), x))).toBe('x**5 - 288');
+});
+
+it('falls back to composition outside symmetric cubic polynomials', () => {
+  const x = new sj.Sym('x'), p = parse('x**3 - 3*x + 1'), q = parse('x**2 - 2');
+  const a = sj.CRootOf(p, 0), b = sj.CRootOf(p, 1);
+  const c = sj.CRootOf(q, 0), d = sj.CRootOf(q, 1);
+  const reducible = parse('x**3 - x');
+  const e = new sj.CRootOf(reducible, 0), f = new sj.CRootOf(reducible, 1);
+  const mp = (expression: sj.Expr) => String(sj.minimalPolynomial(expression, x));
+  expect(mp(add(a, c))).toBe('x**6 - 12*x**4 + 2*x**3 + 21*x**2 + 6*x - 1');
+  expect(mp(add(a, d))).toBe('x**6 - 12*x**4 + 2*x**3 + 21*x**2 + 6*x - 1');
+  expect(mp(add(c, d))).toBe('x');
+  expect(mp(add(e, f))).toBe('x + 1');
+  expect(mp(add(a, b.pow(2)))).toBe('x**3 - 6*x**2 + 24');
+  expect(mp(add(a.pow(-1), b.pow(-1)))).toBe('x**3 - 6*x**2 + 9*x - 1');
+  expect(mp(add(a, b, sqrt(2)))).toBe('x**6 - 12*x**4 - 2*x**3 + 21*x**2 - 6*x - 1');
 });

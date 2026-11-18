@@ -1271,7 +1271,7 @@ import continuationRefs from './continuation.references.json';
 for(const row of continuationRefs.algebraic) it(`Trager factorization: ${row.expr}`,()=>{
   const gens=row.gens.map((s)=>new Sym(s)),extension=row.extension.map((e)=>parse(e));
   const f=Poly.from(parse(row.expr),gens,{extension}),[c,fs]=f.factorList();
-  expect(expand(add(c,mul(-1,parse(row.content))))).toEqual(sj.S.Zero);
+  expect(expand(add(c,mul(-1,parse(row.content)))).equals(sj.S.Zero)).toBe(true);
   const remaining=[...fs];
   for(const [expr,k] of row.factors){
     const i=remaining.findIndex(([g,m])=>m===k&&g.equals(Poly.from(parse(String(expr)),gens,{extension})));
@@ -1814,4 +1814,33 @@ it('propagates unexpected coefficient-domain errors and tolerates unavailable al
   } finally {
     from.mockRestore();
   }
+});
+
+it('computes norms and real roots over an indexed coefficient field', () => {
+  const x = new Sym('x'), y = new Sym('y');
+  const r = sj.CRootOf(parse('y**5 + y**3 - 1'), 0);
+  const K = new sj.AlgebraicField(sj.QQ, r);
+  const f = Poly.from(add(pow(x, 5), mul(r, x), -1), [x], { domain: K });
+  const norm = Poly.from(parse('x**25 - 5*x**20 + x**17 + 10*x**15 - 3*x**12 - 10*x**10 + 3*x**7 + 6*x**5 - x**2 - 1'), [x]);
+  expect(f.norm().equals(norm)).toBe(true);
+  expect(f.realRoots().map(String)).toEqual([String(sj.CRootOf(norm.asExpr(), 0))]);
+  const g = Poly.from(add(x, mul(-1, r)), [x], { domain: K });
+  expect(g.norm().equals(Poly.from(parse('x**5 + x**3 - 1'), [x]))).toBe(true);
+  expect(String(Poly.from(parse('18**(1/3) - 2**(1/3)*3**(2/3)'), [y]))).toBe("Poly(0, y, domain='EX')");
+});
+
+it('retains supplied finite extensions in scalar operations and division', () => {
+  const x = new Sym('x'), y = new Sym('y');
+  const extension = new sj.FiniteExtension(Poly.from(parse('x**2 - 2'), [x], { domain: sj.QQ }));
+  const K = extension.toDomain();
+  const p = Poly.from(parse('y + x'), [y], { domain: K });
+  expect(Poly.from(y, [y]).getDomain().equals(sj.ZZ)).toBe(true);
+  expect(p.getDomain().equals(K)).toBe(true);
+  expect(p.add(1).getDomain().equals(K)).toBe(true);
+  expect(p.sub(1).getDomain().equals(K)).toBe(true);
+  const [q, r] = p.mul(p).div(p);
+  expect(q.equals(p)).toBe(true);
+  expect(r.isZero).toBe(true);
+  const ring = new sj.FiniteExtension(Poly.from(parse('x**2 - 2'), [x], { domain: sj.ZZ })).toDomain();
+  expect(Poly.from(y, [y], { domain: ring }).div(Poly.from(y, [y]))[0].isOne).toBe(true);
 });

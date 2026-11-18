@@ -179,3 +179,23 @@ class FiniteDensityDistribution extends Distribution {
     return S.Zero;
   }
 }
+
+describe('substitution rebuilds a compound space like its constructor (SymPy 1.14)', () => {
+  const rate = Beta('r', 2, 3);
+  it('keeps the compound space while a parameter is random', () => {
+    const s = new Sym('s', { positive: true });
+    const X = Normal('x', rate, s);
+    expect(str((X.subs(s, 2) as RandomSymbol).pspace)).toBe('CompoundPSpace(x, CompoundDistribution(NormalDistribution(r, 2)))');
+  });
+  it('gives the single space once no parameter is random', () => {
+    const s = new Sym('s', { positive: true });
+    const X = Normal('x', rate, s);
+    expect(str((X.subs(rate, new Sym('m')) as RandomSymbol).pspace)).toBe('SingleContinuousPSpace(x, NormalDistribution(m, s))');
+  });
+  it('conditions on the value of the random parameter', () => {
+    const l = new Sym('l', { positive: true });
+    const lambda = Beta(l, 2, 3);
+    const X = Poisson('x', lambda);
+    expect(str(density(X, Eq(lambda, (lambda as RandomSymbol).symbol)) as Expr)).toBe('PoissonDistribution(l)');
+  });
+});

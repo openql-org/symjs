@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Expected values from SymPy 1.14 sympy.tensor.tensor (printed with str()).
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import type { Expr, TensExpr } from '../../src';
@@ -569,8 +570,8 @@ describe('matching', () => {
       tens(add(K.at(p), mul(Q.at(p, q), K.at(q.neg())))).matches(K.at(p)),
     ].map(str);
     expect(got).toEqual(['{}', 'NoMatch', 'NoMatch', 'NoMatch', '{}', 'NoMatch', '{}', 'NoMatch']);
-    expect(() => tens(mul(W.at(p), K.at(q))).matches(mul(K.at(p), K.at(q)))).toThrow('wild tensors');
-    expect(() => tens(mul(new Wild('X'), K.at(q))).matches(mul(K.at(q), 2))).toThrow('wild tensors');
+    expect(tens(mul(W.at(p), K.at(q))).matches(mul(K.at(p), K.at(q)))).toBeInstanceOf(ExprMap);
+    expect(tens(mul(new Wild('X'), K.at(q))).matches(mul(K.at(q), 2))).toBeInstanceOf(ExprMap);
     expect(() => tens(add(K.at(w), mul(Q.at(w, p), K.at(p.neg())))).matches(add(K.at(q), mul(Q.at(q, p), K.at(p.neg()))))).toThrow('wild tensors');
   });
   it('builds wild heads, tensors and indices', () => {
@@ -689,4 +690,42 @@ it('substitutes free indices through the callable tensor convention and prints p
   const product = mul(head.at(i), head.at(j));
   if (!(product instanceof sj.TensMul)) throw new TypeError('expected tensor product');
   expect(product.strPrecedence()).toBe(sj.precedence(sj.mul(new Sym('x'), new Sym('y'))));
+});
+
+it('replays the upstream test_tensor assertions', () => {
+  for (const c of passingModuleCases('tensor', 'sympy.tensor.tests.test_tensor')) {
+    expect(['pass', 'equivalent'], c.src).toContain(runTestCase(c).status);
+  }
+});
+
+it('reconstructs tensor slot positions and rewrites scalar coefficients', () => {
+  expect(str(TensMul.fromData(2, [A, B], [[i, 0], [j, 1]], []))).toBe('2*A(i)*B(j)');
+  expect(str(TensMul.fromData(1, [A, B], [], [[0, 1]]))).toBe('A(L_0)*B(-L_0)');
+  expect(() => A.at(i).call()).toThrow('incompatible index types');
+  expect(() => A.at(i).call(TensorIndex('a', TensorIndexType('other')))).toThrow('incompatible index types');
+  expect(str(tens(mul(2, A.at(i))).rewrite('Indexed'))).toBe('2*A[i]');
+  expect(A.at(i).rewrite('log').equals(A.at(i))).toBe(true);
+  const element = tens(TensorElement(A.at(i), new Map([[i, 0]])));
+  expect(element.rewriteSelf('Indexed', element.args)).toBeUndefined();
+});
+
+it('checks existing bindings, unmatched factors and signs in product patterns', () => {
+  const w = WildTensorIndex('w', Lo);
+  const pattern = A.at(w), expr = A.at(i);
+  expect(pattern.matchesForm(expr, new ExprMap([[w, i]]))).toBeInstanceOf(ExprMap);
+  expect(pattern.matchesForm(expr, new ExprMap([[w, j]]))).toBe(sj.NoMatch);
+  const wildcard = WildTensorHead('W').at(i);
+  const product = tens(mul(wildcard, B.at(j)));
+  expect(product.matches(mul(A.at(i), B.at(j)), new Map([[wildcard.head, new WildTensExpr(C.at(i))]]))).toBe(sj.NoMatch);
+  expect(product.matches(mul(A.at(i), B.at(j), C.at(k)))).toBe(sj.NoMatch);
+  expect(tens(mul(2, A.at(w))).matches(mul(3, A.at(i)))).toBe(sj.NoMatch);
+  const composite = new TensMul([new Wild('w'), add(A.at(i), B.at(i))]);
+  expect(() => composite.matches(A.at(i))).toThrow('requires tensor factors');
+  const odd = TensorHead('odd', [Lo], undefined, 1);
+  expect(() => product.matches(odd.at(i))).toThrow('commuting factors');
+});
+
+it('uses ordinary power dispatch without component replacements', () => {
+  expect(A.pow(2).equals(sj.pow(A, 2))).toBe(true);
+  expect(() => A.at(i).pow(2)).toThrow('No power on abstract tensors');
 });

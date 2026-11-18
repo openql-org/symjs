@@ -221,3 +221,11 @@ describe('constructors and numeric values', () => {
     expect(() => v(new sj.Fn('riemann_xi', [sj.Rational.of(3n)]))).toThrow('Cannot evaluate riemann_xi numerically');
   });
 });
+
+it('keeps a polylog argument containing a deferred integral', async () => {
+  const sj = await import('../../../src');
+  const x = sj.symbol('x');
+  const f = sj.SymFunction('f');
+  const integral = new sj.Integral([f(x), x, sj.S.Zero, sj.S.One]);
+  expect(String(sj.polylog(0, integral))).toBe('polylog(0, Integral(f(x), (x, 0, 1)))');
+});

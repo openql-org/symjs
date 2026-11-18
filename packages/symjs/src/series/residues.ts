@@ -7,9 +7,8 @@
  */
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Order, Pow, Rational, S } from '../core/nodes';
+import { Add, Mul, Order, Pow, Rational, S } from '../core/nodes';
 import { NotImplementedError } from '../core/errors';
-import { asCoeffMul } from '../core/methods';
 import { add, mul, pow, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { collect } from '../simplify/radsimp';
@@ -31,8 +30,10 @@ export function residue(ex: ExprLike, x: Sym, x0: ExprLike = 0): Expr {
   const inv = pow(x, -1);
   let res: Expr = S.Zero;
   for (const arg of args) {
-    const [c, ms] = asCoeffMul(arg, [x]);
-    const m = mul(...ms);
+    const factors = arg instanceof Mul ? arg.args : [arg];
+    const dependent = (f: Expr): boolean => [...f.freeSymbols()].some((v) => v.equals(x));
+    const c = mul(...factors.filter((f) => !dependent(f)));
+    const m = mul(...factors.filter(dependent));
     const ok = m.key === S.One.key || m.key === x.key || (m instanceof Pow && m.base.key === x.key && m.exp instanceof Rational && m.exp.isInteger);
     if (!ok) throw new NotImplementedError(`term of unexpected form: ${m.toString()}`);
     if (m.key === inv.key) res = add(res, c);

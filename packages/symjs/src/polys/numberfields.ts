@@ -13,11 +13,13 @@
 
 import { NotImplementedError, PolynomialError } from '../core/errors';
 import { at, defined, expectType, first, pair } from '../core/guard';
+import { isPolynomial } from '../core/methods';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
 import { add, cbrt, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
+import { integerNthroot } from '../core/numberutils';
 import { evalf as evalfExpr } from '../numeric/evalf';
 import { parse } from '../parsing/parser';
 import { expand, expandMul } from '../simplify/expand';
@@ -27,6 +29,7 @@ import { cos } from '../functions/elementary/elementary';
 import { chebyshevtCoeffs } from '../functions/special/orthocoeffs';
 import { CRootOf } from './rootof';
 import { algebraicEnclosure } from './numberfields/interval';
+import { UPoly } from './poly';
 import { Poly, factor, factorListExpr, polyConstructionHooks, resultant } from './sympoly';
 import type { Domain } from './domains';
 import { CoercionFailed } from './domains';
@@ -349,12 +352,15 @@ function minpolyMul(ex: Mul, x: Sym, dom: Ground): Expr {
   const isRat = (f: Expr): boolean => f instanceof Rational || (f instanceof Pow && f.base instanceof Rational && f.exp instanceof Rational);
   const rat = ex.args.filter(isRat);
   const rest = ex.args.filter((f) => !isRat(f));
-  if (rat.length && rest.length && isQQ(dom)) {
-    const ex1 = mul(...rest);
+  const positiveRationalProduct = !rest.length && rat.every((f) =>
+    f instanceof Rational ? f.isPositive : f instanceof Pow && f.base instanceof Rational && f.base.isPositive);
+  if (rat.length && isQQ(dom) && (rest.length || positiveRationalProduct)) {
     const ex2 = mul(...rat);
     // ex2**L is rational for L the lcm of the exponent denominators
     const L = rat.reduce((l, f) => (f instanceof Pow && f.exp instanceof Rational ? ilcm(l, f.exp.q) : l), 1n);
     const R = expectType(pow(ex2, Rational.of(L)), (v): v is Rational => v instanceof Rational, 'a rational power');
+    if (positiveRationalProduct) return positiveRadicalMinpoly(R, L, x);
+    const ex1 = mul(...rest);
     const mp2 = add(mul(R.q, pow(x, Rational.of(L))), -R.p);
     return opAlgebraic('mul', ex1, ex2, x, dom, minimalPolynomialOf(ex1, x, dom), mp2);
   }
@@ -365,6 +371,23 @@ function minpolyMul(ex: Mul, x: Sym, dom: Ground): Expr {
     p = mul(p, px);
   }
   return mp;
+}
+
+/** The minimal polynomial of a positive rational to the power 1/degree. @internal */
+export function positiveRadicalMinpoly(radicand: Rational, index: bigint, x: Sym): Expr {
+  // A positive rational binomial is irreducible after removing all perfect
+  // powers whose prime exponent divides its degree.
+  let degree = index, value = radicand;
+  for (const prime of factorint(index).keys()) {
+    while (degree % prime === 0n) {
+      const [p, numeratorExact] = integerNthroot(value.p, prime);
+      const [q, denominatorExact] = integerNthroot(value.q, prime);
+      if (!numeratorExact || !denominatorExact) break;
+      value = Rational.of(p, q);
+      degree /= prime;
+    }
+  }
+  return add(mul(value.q, pow(x, Rational.of(degree))), -value.p);
 }
 
 /** The rational coefficient of a term (1 for a term without one). */
@@ -392,7 +415,51 @@ function normalize(p: Expr, x: Sym): Expr {
 }
 
 function minimalPolynomialOf(ex: Expr, x: Sym, dom: Ground): Expr {
+  if (!dom.symbols.length && !dom.extension.length) {
+    const cubic = symmetricCubicConjugates(ex, x);
+    if (cubic !== undefined) return normalize(cubic, x);
+  }
   return normalize(compose(ex, x, dom), x);
+}
+
+/** Express a symmetric polynomial of two cubic conjugates in the third conjugate by Viète's formulas. */
+function symmetricCubicConjugates(ex: Expr, x: Sym): Expr | undefined {
+  const roots = new Map<string, CRootOf>();
+  const visit = (e: Expr): void => {
+    if (e instanceof CRootOf) roots.set(e.key, e);
+    else e.args.forEach(visit);
+  };
+  visit(ex);
+  if (roots.size !== 2) return undefined;
+  const [a, b] = pair([...roots.values()]);
+  if (a.index === b.index || !a.poly.equals(xreplace(b.poly, [[b.gen, a.gen]]))) return undefined;
+  const modulus = UPoly.fromExpr(a.poly, a.gen)?.monic();
+  if (modulus?.degree !== 3 || !Poly.from(a.poly, [a.gen]).isIrreducible) return undefined;
+  const u = new Dummy('u'), v = new Dummy('v'), z = new Dummy('z');
+  const expression = xreplace(ex, [[a, u], [b, v]]);
+  if (!expression.equals(xreplace(expression, [[u, v], [v, u]]))) return undefined;
+  if (!isPolynomial(expression, [u, v])) return undefined;
+  const polynomial = Poly.from(expression, [u, v]);
+  if (!polynomial.coeffs().every((c) => c instanceof Rational)) return undefined;
+  const quadratic = at(modulus.coeffs, 2);
+  const sum = new UPoly([Rational.of(-quadratic.p, quadratic.q), S.NegOne]);
+  const product = new UPoly([at(modulus.coeffs, 1)]).sub(new UPoly([S.Zero, S.One]).mul(sum));
+  const reduce = (p: UPoly) => p.divmod(modulus)[1];
+  const sums = [new UPoly([Rational.of(2)]), sum];
+  const products = [new UPoly([S.One])];
+  for (let i = 1; i <= polynomial.totalDegree(); i++) {
+    products.push(reduce(at(products, i - 1).mul(product)));
+    if (i > 1) sums.push(reduce(sum.mul(at(sums, i - 1)).sub(product.mul(at(sums, i - 2)))));
+  }
+  let value = new UPoly([]);
+  for (const [monomial, c] of polynomial.terms()) {
+    const [i, j] = pair(monomial);
+    if (i < j) continue;
+    const term = i === j ? at(products, j) : at(products, j).mul(at(sums, i - j));
+    value = reduce(value.add(term.scale(expectType(c, (r): r is Rational => r instanceof Rational, 'rational coefficient'))));
+  }
+  if (value.degree <= 0) return add(x, mul(-1, value.lc));
+  return resultant(modulus.toExpr(z), add(x, mul(-1, value.toExpr(z))), z);
 }
 
 /** The free symbols of ex outside CRootOf (whose polynomial variable is bound). */

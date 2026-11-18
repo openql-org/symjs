@@ -409,3 +409,12 @@ describe('matrix expressions', () => {
     expect(() => B.inverse()).toThrow(NonInvertibleMatrixError);
   });
 });
+
+it('takes real and imaginary parts blockwise', async () => {
+  const { BlockMatrix, Identity, ZeroMatrix, I, OneMatrix } = await import('../../../src');
+  const B = BlockMatrix([[Identity(2), OneMatrix(2, 1).mul(I)]]);
+  expect(B.asRealImagSelf().map(String)).toEqual([
+    String(BlockMatrix([[Identity(2), ZeroMatrix(2, 1)]])),
+    String(BlockMatrix([[ZeroMatrix(2, 2), OneMatrix(2, 1)]])),
+  ]);
+});

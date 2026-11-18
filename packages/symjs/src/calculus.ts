@@ -16,7 +16,7 @@ export {
   doit,
 } from './calculus/doit';
 export {
-  integrate,
+  integral, integrate,
 } from './integrals/integrate';
 export {
   transformIntegral,
@@ -49,7 +49,7 @@ export {
 } from './integrals/public';
 export type { HeurischOptions } from './integrals/heurisch';
 export {
-  limit,
+  limit, heuristics,
 } from './series/limits';
 export {
   Sum,
@@ -63,7 +63,7 @@ export {
 } from './concrete/summations';
 export {
   series,
-  O,
+  O, asExprVariables,
 } from './series/series';
 
 export {

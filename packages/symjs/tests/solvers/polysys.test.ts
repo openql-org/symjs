@@ -4,7 +4,7 @@
 // Tests of src/solvers/polysys.ts: polynomial systems (solve_poly_system, factor_system); expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { factorSystem, factorSystemCond, NotImplementedError, parse, solvePolySystem, solveTriangulated, symbols } from '../../src';
+import { factorSystem, factorSystemCond, factorSystemPoly, Poly, NotImplementedError, parse, solvePolySystem, solveTriangulated, symbols } from '../../src';
 
 const [x, y, z] = symbols('x y z');
 const P = (ss: string[]) => ss.map((s) => parse(s));
@@ -226,4 +226,16 @@ it('factors systems over algebraic fields and independent function generators', 
   expect(show(factorSystem(P(['x**2-2']), [], { extension: parse('sqrt(2)') }))).toBe('[[x + sqrt(2)], [x - sqrt(2)]]');
   expect(show(factorSystemCond(P(['x**2+1']), [], { domain: 'QQ_I' }))).toBe('[[x + I], [x - I]]');
   expect(show(factorSystem(P(['sin(x)**2+cos(x)**2-1', 'x'])))).toBe('[[x, sin(x)**2 + cos(x)**2 - 1]]');
+});
+
+it('factors polynomial systems in their coefficient domain', () => {
+  const polynomial = Poly.from(parse('x**2 + 1'), [x], { domain: 'QQ_I' });
+  expect(factorSystemPoly([polynomial]).map((row) => row.map(String))).toEqual([
+    ["Poly(x + I, x, domain='QQ_I')"], ["Poly(x - I, x, domain='QQ_I')"],
+  ]);
+});
+
+it('factors symbolic parameters in composite coefficient domains', () => {
+  const f = P(['a*(x - 1)*(x + 1)', 'b*(x - 1)*(x + 1)']);
+  expect(show(factorSystemCond(f, [x], { domain: 'ZZ[a,b]' }))).toBe('[[x + 1], [x - 1], [a, b]]');
 });
