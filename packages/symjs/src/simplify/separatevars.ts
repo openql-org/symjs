@@ -7,8 +7,9 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Constant, Mul, Pow, Sym } from '../core/nodes';
+import { Constant, Fn, Mul, Pow, Sym } from '../core/nodes';
 import { mul, pow, sympify } from '../core/ops';
+import { abs } from '../functions/elementary/elementary';
 import { xreplace } from '../core/traverse';
 import { factor } from '../polys/sympoly';
 import { expand } from './expand';
@@ -17,6 +18,14 @@ import { first, getOrThrow } from '../core/guard';
 
 function sep(e0: Expr, force: boolean): Expr {
   let e = e0;
+  if (e instanceof Fn && e.name === 'abs') {
+    const arg = first(e.args);
+    if (arg instanceof Mul && !arg.isNumber) {
+      const factors = separatevars(arg, { dict: true, force });
+      if (factors instanceof Map) return mul(...[...factors.values()].map(abs));
+      return e;
+    }
+  }
   if (e.freeSymbols().size < 2) return e;
   if (e instanceof Mul) {
     const args = e.args.map((a) => sep(a, force));
@@ -38,11 +47,13 @@ function sep(e0: Expr, force: boolean): Expr {
  */
 export function separatevars(
   exIn: ExprLike,
-  opts: { symbols?: readonly Sym[]; dict?: boolean; force?: boolean } = {},
+  opts: { symbols?: readonly Sym[] | null; dict?: boolean; force?: boolean } = {},
 ): Expr | Map<Sym | 'coeff', Expr> | undefined {
   const e = sep(sympify(exIn), opts.force ?? false);
   if (!opts.dict) return e;
+  if (opts.symbols === null) return new Map([['coeff', e]]);
   const symbols = opts.symbols?.length ? [...opts.symbols] : [...e.freeSymbols()].filter((s) => s instanceof Sym);
+  if (!symbols.length) return undefined;
   const ret = new Map<Sym | 'coeff', Expr[]>([...symbols.map((s) => [s, []] as [Sym, Expr[]]), ['coeff', []]]);
   for (const f of e instanceof Mul ? e.args : [e]) {
     const inter = symbols.filter((s) => f.has(s));

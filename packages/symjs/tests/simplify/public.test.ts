@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { expect, it } from 'vitest';
-import { Pow, S, asFSign1, isNoMatch, parse, sqrtBiquadraticDenest, trigSplit } from '../../src';
+import { Pow, S, asFSign1, isNoMatch, parse, sqrtBiquadraticDenest, trigSplit, hypersimp, Sym } from '../../src';
 
 it('exposes trigonometric matching with NoMatch on failure', () => {
   expect(String(trigSplit(parse('cos(x)'), parse('cos(y)')))).toBe('1,1,1,x,y,true');
@@ -18,4 +18,11 @@ it('exposes biquadratic denesting and its NoMatch result', () => {
   const d2 = a.pow(2).sub(b.pow(2).mul(r));
   expect(String(sqrtBiquadraticDenest(root, a, b, r, d2))).toBe('sqrt(2) + sqrt(sqrt(2) + 2) + 2');
   expect(isNoMatch(sqrtBiquadraticDenest(root, a, S.Zero, r, d2))).toBe(true);
+});
+
+
+it('exposes hypergeometric ratios and reports missing ratios', () => {
+  const n = new Sym('n');
+  expect(String(hypersimp(parse('factorial(n)'), n))).toBe('n + 1');
+  expect(isNoMatch(hypersimp(parse('sin(n)'), n))).toBe(true);
 });

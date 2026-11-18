@@ -588,7 +588,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(separatevars(new Mul([x, new Add([rational(1), hyper([], [], new Mul([y, z]))])]), { symbols: [], force: false }))).toBe('x*(hyper((), (), y*z) + 1)');
   });
-  it.fails("test_separatevars:324", () => {
+  it("test_separatevars:324", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(separatevars(abs(new Mul([x, y])), { symbols: [], force: false }))).toBe('Abs(x)*Abs(y)');
   });
@@ -603,11 +603,11 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const x = new Sym('x');
     expect(sympyStr(isMul(new Mul([abs(x), abs(new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))]))])))).toBe('True');
   });
-  it.fails("test_separatevars:328 (3)", () => {
+  it("test_separatevars:328 (3)", () => {
     const x = new Sym('x');
     expect(sympyStr(separatevars(abs(new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])])), { symbols: [], force: false }))).toBe('Abs(x)*Abs(-1 + cos(1)**2 + sin(1)**2)');
   });
-  it.fails("test_separatevars:330", () => {
+  it("test_separatevars:330", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(separatevars(abs(new Mul([x, y, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])])), { symbols: [], force: false }))).toBe('Abs(x)*Abs(y)*Abs(-1 + cos(1)**2 + sin(1)**2)');
   });

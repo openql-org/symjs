@@ -2346,8 +2346,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   separatevars: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['symbols', 'dict', 'force'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    const symsArg = kw['symbols'] ?? args[1];
-    const symbols = symsArg instanceof JsTuple || symsArg instanceof JsList ? symsArg.items.map(asSym) : [];
+    const symsArg = Object.hasOwn(kw, 'symbols') ? kw['symbols'] : args[1];
+    const symbols = symsArg === null ? null : symsArg instanceof JsTuple || symsArg instanceof JsList ? symsArg.items.map(asSym) : [];
     const r = kw['dict'] ? sj.separatevars(asExpr(args[0]), { symbols, dict: true, force: Boolean(kw['force']) }) : sj.separatevars(asExpr(args[0]), { symbols, force: Boolean(kw['force']) });
     if (sj.isNoMatch(r)) return null;
     if (r instanceof Map) return new JsDict([...r].map(([k, v]) => [k, v] as const));
@@ -5111,6 +5111,10 @@ function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
     if (x instanceof Map || x instanceof Set) return x.size;
     throw new TypeError('len requires a sized value');
   };
+  if (v instanceof JsFunc) {
+    const callback = (publicApi as unknown as Record<string, unknown>)[camel(v.name)];
+    if (typeof callback === 'function') return callback;
+  }
   if (v instanceof JsFunc && v.name === '_operator.ge') return (a: number | string, b: number | string) => a >= b;
   // Named series callbacks are callable public algorithms, not harness implementations.
   if (v instanceof TypeRef && (v.name === 'Basic' || v.name === 'Expr')) return v.name;
@@ -5353,6 +5357,7 @@ function autoAdapter(c: Case): Adapter | undefined {
     };
     return fromJs(self.extract(indices(args[0], self.shape[0]), indices(args[1], self.shape[1])));
   };
+  if (c.fn === '.is_Piecewise') return (_args, kw, self) => (noKw(kw), self instanceof sj.Piecewise);
   if (c.fn === '.is_MatMul') return (_args, kw, self) => (noKw(kw), self instanceof sj.MatMul);
   if (c.fn === '.is_MatAdd') return (_args, kw, self) => (noKw(kw), self instanceof sj.MatAdd);
   // SymPy's class flag is_Relational is an instance test of the relation class

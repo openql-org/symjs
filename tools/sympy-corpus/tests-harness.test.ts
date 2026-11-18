@@ -430,3 +430,16 @@ it('treats != as structural: an equivalent but different expression satisfies it
   if (c === undefined) throw new Error('missing case');
   expect(runTestCase(c)).toEqual({ status: 'pass' });
 });
+
+it('translates named CSE callbacks and preserves None in separatevars options', () => {
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const y: Tree = { t: 'Symbol', name: 'y', assume: {} };
+  const e: Tree = { t: 'Add', args: [x, y] };
+  const opts: Tree = { t: 'Tuple', items: [{ t: 'Tuple', items: [{ t: 'JsFunc', name: 'sub_pre' }, { t: 'JsFunc', name: 'sub_post' }] }], list: true };
+  const simplify = { ...base, module: 'sympy.simplify.tests.test_cse', category: 'simplify' };
+  expect(runTestCase({ ...simplify, fn: 'preprocess_for_cse', args: [e, opts], expected: 'x + y' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...simplify, fn: 'postprocess_for_cse', args: [e, opts], expected: 'x + y' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...simplify, fn: 'cse', args: [e], kwargs: { optimizations: opts }, expected: '([], [x + y])' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...simplify, fn: 'separatevars', args: [e], kwargs: { dict: { t: 'Js', v: true }, symbols: { t: 'Js', v: null } }, expected: "{'coeff': x + y}" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...simplify, fn: '.is_Piecewise', self: x, args: [], expected: 'False' })).toEqual({ status: 'pass' });
+});
