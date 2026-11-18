@@ -1374,8 +1374,14 @@ function setToCondition(st: SetExpr, x: Sym): Expr {
 }
 
 /** SymPy piecewise_exclusive: make the conditions of a Piecewise mutually exclusive. */
-export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): Expr {
-  const pairs = cast(p, Piecewise, 'Piecewise').pairs;
+export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean; deep?: boolean } = {}): Expr {
+  // SymPy: every Piecewise of the expression (deep, the default), or the expression itself when it is one
+  if (opts.deep !== false) return mapBottomUp(p, (t) => (t instanceof Piecewise ? exclusivePieces(t, opts) : t));
+  return p instanceof Piecewise ? exclusivePieces(p, opts) : p;
+}
+
+function exclusivePieces(p: Piecewise, opts: { skipNan?: boolean }): Expr {
+  const pairs = p.pairs;
   const syms = new Map<string, Sym>();
   for (const [, c] of pairs) for (const t of [...c.freeSymbols()].filter((s) => s instanceof Sym)) syms.set(t.key, t);
   if (syms.size !== 1) return piecewiseExclusiveLogic(pairs, opts.skipNan ?? false);

@@ -3812,8 +3812,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return Array.isArray(r) ? new JsTuple([r[0], new JsDict(r[1])]) : r;
   },
   piecewise_exclusive: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'skip_nan') throw new Unsupported(`kwargs ${k}`);
-    return sj.piecewiseExclusive(asExpr(args[0]), { skipNan: Boolean(kw['skip_nan']) });
+    for (const k of Object.keys(kw)) if (k !== 'skip_nan' && k !== 'deep') throw new Unsupported(`kwargs ${k}`);
+    return sj.piecewiseExclusive(asExpr(args[0]), { skipNan: Boolean(kw['skip_nan']), deep: kw['deep'] !== false });
   },
   Id: exprFn((e) => e),
   intervals: (args, kw) => {

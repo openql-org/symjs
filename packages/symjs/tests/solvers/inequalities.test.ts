@@ -910,3 +910,11 @@ it('checks original equations and domain membership after clearing coupled radic
     }
   }
 });
+
+it('makes every Piecewise of an expression exclusive (SymPy piecewise_exclusive deep)', () => {
+  const piece = sj.piecewise([0, Lt(x, 0)], [Rational.of(1, 2), sj.Le(x, 0)], [1, true]);
+  expect(String(sj.piecewiseExclusive(sj.add(piece, 2)))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0)) + 2');
+  expect(String(sj.piecewiseExclusive(sj.add(piece, 2), { deep: false }))).toBe('Piecewise((0, x < 0), (1/2, x <= 0), (1, True)) + 2');
+  expect(String(sj.piecewiseExclusive(piece, { deep: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
+  expect(String(sj.piecewiseExclusive(sj.add(x, 1)))).toBe('x + 1');
+});
