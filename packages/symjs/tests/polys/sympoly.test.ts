@@ -775,8 +775,8 @@ describe('factor on expressions (SymPy _symbolic_factor) and factor_list', () =>
     expect(G('exp(x - y)*(x + 1)', { fraction: false })).toBe('(x + 1)*exp(x)*exp(-y)');
     // SymPy factor(sin(x**2 + 2*x + 1) + x, deep=True)
     expect(G('sin(x**2 + 2*x + 1) + x', { deep: true })).toBe('x + sin((x + 1)**2)');
-    // Floats: SymPy factors over RR (2.0*(x + 1)); symjs leaves them
-    expect(G('2.0*x + 2.0')).toBe('2.0*x + 2.0');
+    // Floats: the common coefficient comes out (SymPy)
+    expect(G('2.0*x + 2.0')).toBe('2.0*(x + 1)');
   });
   it('non-commutative expressions go to factor_nc', () => {
     const A = new Sym('A', { commutative: false });
@@ -1868,6 +1868,18 @@ it('makes a polynomial monic over the field of its coefficient ring (SymPy to_fi
   // a symbol with assumptions is the generator of the domain of that name
   const l = new Sym('l', { positive: true });
   expect(String(sj.integrate(sj.pow(add(pow(x, 2), pow(l, 2)), -1), x, [0, sj.oo]))).toBe('pi/(2*l)');
-  // inexact coefficients with a function as generator are left to the symbolic factorization
-  expect(String(sj.factor(parse('1.5*sin(x)**2 - 1.5')))).toBe('1.5*sin(x)**2 - 1.5');
+  // a Float common to all terms is taken out and the rest is factored exactly (SymPy)
+  expect(String(sj.factor(parse('1.5*sin(x)**2 - 1.5')))).toBe('1.5*(sin(x) - 1)*(sin(x) + 1)');
+  expect(String(sj.factor(parse('-0.5*x + 0.5')))).toBe('-0.5*(x - 1)');
+  expect(String(sj.factor(parse('1.0*x + 1.0')))).toBe('1.0*(x + 1)');
+  expect(String(sj.factor(parse('2.5*x*y - 2.5*y')))).toBe('2.5*y*(x - 1)');
+  // other inexact polynomials are factored over the rationals and normalized by their largest coefficient
+  expect(String(sj.factor(parse('-3.0*z + 3')))).toBe('-3.0*(1.0*z - 1.0)');
+  expect(String(sj.factor(parse('x + 1.0')))).toBe('1.0*(1.0*x + 1.0)');
+  expect(String(sj.factor(parse('2.0*x + 1')))).toBe('2.0*(1.0*x + 0.5)');
+  expect(String(sj.factor(parse('1.0*x*y + 2.0*y')))).toBe('2.0*y*(0.5*x + 1.0)');
+  expect(String(sj.factor(parse('1.5*x + 1.5*y + 3.0')))).toBe('3.0*(0.5*x + 0.5*y + 1.0)');
+  // a function generator with coefficients of different size stays with the symbolic factorization
+  expect(String(sj.factor(parse('1.5*sin(x)**2 - 2.5')))).toBe('1.5*sin(x)**2 - 2.5');
+  expect(String(sj.factor(parse('1.5*sqrt(x) + 1.5*x**pi')))).toContain('1.5');
 });
