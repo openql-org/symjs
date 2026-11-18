@@ -172,3 +172,4 @@ export type { HyperSeriesResult } from './series/formal';
 export { SeriesBase } from './series/series_class';
 
 export { orderAt, orderAtOo } from './integrals/orders';
+export { gruntz } from './series/gruntz';
