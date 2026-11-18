@@ -25,6 +25,8 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
  * The budgets are the sizes measured when they were set plus about 10%:
  * raise one only together with the change that needs it.
  */
+// Rational Riccati coefficient constructors add under 4 KiB to the root namespace;
+// shared ODE initial-condition validation adds under 1 KiB to dsolve consumers.
 // Symbol metadata, relation accessors, function arities and special-function
 // queries add at most 2 KiB to the affected core/special/printing consumers.
 // Assumption-aware solve loads the predicate engine; keep its cost explicit.
@@ -77,7 +79,7 @@ const CASES = [
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 1051],
   ['solvers', 'solve', 1140],
-  ['solvers', 'dsolve', 1155],
+  ['solvers', 'dsolve', 1156],
   ['sets', '*', 378],
   ['matrices', 'Matrix', 836],
   ['printing', 'pretty', 241],
@@ -111,7 +113,7 @@ const CASES = [
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Real exponential inversion and functional decomposition contribute about 3 KiB.
   // Finite solver exports and the extended solver algorithms add under 3 KiB.
-  ['index', '*', 2795],
+  ['index', '*', 2799],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

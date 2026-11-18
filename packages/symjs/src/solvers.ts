@@ -95,7 +95,7 @@ export {
   GeneralSumOfEvenPowers,
 } from './solvers/diophantine';
 export type { DiophantineOptions, DiophantineSolveOptions, PowerRepresentationOptions } from './solvers/diophantine';
-export { classifyOde } from './solvers/dsolve';
+export { classifyOde } from './solvers/ode';
 export { constantsimp, constantRenumber, odeSolSimplicity, solveIcs } from './solvers/odesimp';
 export {
   dsolve,
@@ -159,3 +159,6 @@ impl.asSet = asSetOf;
 
 export { linodesolve } from './solvers/linodesolve';
 export type { LinodesolveOptions } from './solvers/linodesolve';
+
+export { matchRiccati, valAtInf, checkNecessaryConds, limitAtInf, inverseTransformPoly, rationalLaurentSeries, constructCCase1, constructCCase2, constructCCase3, constructC, constructDCase4, constructDCase5, constructDCase6, constructD } from './solvers/ode/riccati';
+export { linearOdeToMatrix, ODEOrderError, ODENonlinearError } from './solvers/odesystem';

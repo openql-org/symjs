@@ -76,3 +76,20 @@ it('classifies differential systems with complete coefficient tables', () => {
   expect(sjClassify.classifySysode([sjClassify.parseExpr('Derivative(x(t),t)-x(t)**2')],[x]).get('is_linear')).toBe(false);
   expect(() => sjClassify.classifySysode([1])).toThrow(TypeError);
 });
+
+it('counts derivatives of expressions containing the dependent function', async () => {
+  const sj = await import('../../src');
+  const x = new sj.Sym('x'), f = new sj.UndefFn('f', [x]);
+  expect(sj.odeOrder(new sj.Derivative([sj.pow(f, 2), x, sj.Rational.of(2)]), f)).toBe(2);
+  const inner = new sj.Derivative([f, x, sj.S.One]);
+  expect(sj.odeOrder(new sj.Derivative([sj.add(f, inner), x, sj.Rational.of(2)]), f)).toBe(3);
+});
+
+it('validates initial conditions while classifying without solving constants', () => {
+  const equation = parse('Derivative(f(x),x)-f(x)');
+  const fx = new sjClassify.UndefFn('f', [x]);
+  const hints = sjClassify.classifyOde(equation, fx);
+  expect(hints).toContain('1st_linear');
+  expect(sjClassify.classifyOde(equation, fx, { ics: [[f(0), f(0)]] })).toEqual(hints);
+  expect(() => sjClassify.classifyOde(equation, fx, { ics: [[f(x), 1]] })).toThrow(RangeError);
+});

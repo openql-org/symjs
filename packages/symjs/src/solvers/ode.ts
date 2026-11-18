@@ -21,17 +21,16 @@ import { add, mul, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asEquation, linearEqToMatrix, linsolve } from './solve';
-import { dsolveRaw } from './dsolve';
+import { classifyOde as classifyOdeHints, dsolveRaw } from './dsolve';
 
 /** Order of the highest derivative of f in e. */
 export function odeOrder(e: Expr, f: UndefFn): number {
-  let n = 0;
-  const go = (x: Expr) => {
-    if (x instanceof Derivative && x.expr.key === f.key) n = Math.max(n, x.variableCount.reduce((s, [, k]) => s + k, 0));
-    x.args.forEach(go);
-  };
-  go(e);
-  return n;
+  if (!e.has(f)) return 0;
+  if (e instanceof Derivative) {
+    const count = e.variableCount.reduce((n, [, k]) => n + k, 0);
+    return e.expr.equals(f) ? count : count + Math.max(0, ...e.expr.args.map((arg) => odeOrder(arg, f)));
+  }
+  return Math.max(0, ...e.args.map((arg) => odeOrder(arg, f)));
 }
 
 /** Classify a system by its derivative orders, coefficients and linearity. */
@@ -118,6 +117,32 @@ function dsolveSingle(eqIn: ExprLike, fx: Expr, opts: DsolveOptions): Expr | Exp
   return out.length === 1 ? first(out) : out;
 }
 
+/** Validate a function or derivative initial condition and return its point and order. */
+function initialCondition(fx: UndefFn, x: Sym, cond: Expr, v: ExprLike): [Expr, number] {
+  const val = sympify(v);
+  if (cond instanceof SubsNode || cond instanceof Derivative) {
+    const deriv = cond instanceof SubsNode ? cond.expr : cond;
+    const old = cond instanceof SubsNode ? first(cond.variables) : x;
+    // Derivative(f(y), y) is f(x).diff(x).subs(x, y); Derivative(f(a), (x, k)) with a free of x also stands for f^(k)(a)
+    const at0 = cond instanceof Derivative && cond.expr instanceof UndefFn && cond.expr.args.length === 1 && !first(cond.expr.args).has(x) && first(cond.variableCount)[0].key === x.key;
+    const point = cond instanceof SubsNode ? first(cond.point) : at0 ? first(cond.expr.args) : first(cond.variableCount)[0];
+    if (
+      !(deriv instanceof Derivative) || !(deriv.expr instanceof UndefFn) || deriv.expr.name !== fx.name || deriv.expr.args.length !== 1 ||
+      deriv.variableCount.length !== 1 || old.key !== x.key || point.has(x) || val.has(x)
+    ) {
+      throw new RangeError('dsolve: invalid boundary conditions for Derivatives');
+    }
+    return [point, first(deriv.variableCount)[1]];
+  } else if (cond instanceof UndefFn) {
+    if (cond.name !== fx.name || cond.args.length !== 1 || first(cond.args).has(x) || val.has(x)) {
+      throw new RangeError('dsolve: invalid boundary conditions for Function');
+    }
+    return [first(cond.args), 0];
+  } else {
+    throw new RangeError('dsolve: enter boundary conditions of the form [[f(point), value], [Subs(Derivative(f(x), (x, order)), x, point), value]]');
+  }
+}
+
 /**
  * SymPy solve_ics, with the checks of classify_ode: the conditions are
  * f(x0) = value and f(x).diff(x, k).subs(x, x0) = value (a Subs, or the
@@ -129,33 +154,19 @@ function applyIcs(sol: Expr, fx: UndefFn, x: Sym, ics: [Expr, ExprLike][]): Expr
   const cs = [...sol.freeSymbols()].filter((s) => s instanceof Sym).filter((s) => /^C\d+$/.test(s.name));
   const eqs: Expr[] = [];
   for (const [cond, v] of ics) {
-    const val = sympify(v);
-    if (cond instanceof SubsNode || cond instanceof Derivative) {
-      const deriv = cond instanceof SubsNode ? cond.expr : cond;
-      const old = cond instanceof SubsNode ? first(cond.variables) : x;
-      // Derivative(f(y), y) is f(x).diff(x).subs(x, y); Derivative(f(a), (x, k)) with a free of x also stands for f^(k)(a)
-      const at0 = cond instanceof Derivative && cond.expr instanceof UndefFn && cond.expr.args.length === 1 && !first(cond.expr.args).has(x) && first(cond.variableCount)[0].key === x.key;
-      const point = cond instanceof SubsNode ? first(cond.point) : at0 ? first(cond.expr.args) : first(cond.variableCount)[0];
-      if (
-        !(deriv instanceof Derivative) || !(deriv.expr instanceof UndefFn) || deriv.expr.name !== fx.name || deriv.expr.args.length !== 1 ||
-        deriv.variableCount.length !== 1 || old.key !== x.key || point.has(x) || val.has(x)
-      ) {
-        throw new RangeError('dsolve: invalid boundary conditions for Derivatives');
-      }
-      const k = first(deriv.variableCount)[1];
-      eqs.push(add(xreplace(diff(sol, x, k), [[x, point]]), mul(-1, val)));
-    } else if (cond instanceof UndefFn) {
-      if (cond.name !== fx.name || cond.args.length !== 1 || first(cond.args).has(x) || val.has(x)) {
-        throw new RangeError('dsolve: invalid boundary conditions for Function');
-      }
-      eqs.push(add(xreplace(sol, [[x, first(cond.args)]]), mul(-1, val)));
-    } else {
-      throw new RangeError('dsolve: enter boundary conditions of the form [[f(point), value], [Subs(Derivative(f(x), (x, order)), x, point), value]]');
-    }
+    const [point, k] = initialCondition(fx, x, cond, v);
+    eqs.push(add(xreplace(diff(sol, x, k), [[x, point]]), mul(-1, v)));
   }
   const s = linsolve(eqs, cs);
   if (!s) throw new RangeError("dsolve: couldn't solve for initial conditions");
   return xreplace(sol, cs.map((c, i) => [c, at(s, i)] as const));
+}
+
+/** Classify an ODE after validating any supplied initial conditions. */
+export function classifyOde(eq: ExprLike, fx: UndefFn, opts: Pick<DsolveOptions, 'ics'> = {}): string[] {
+  const x = cast(first(fx.args), Sym, 'independent variable');
+  for (const [condition, value] of opts.ics ?? []) initialCondition(fx, x, condition, value);
+  return classifyOdeHints(eq, fx);
 }
 
 export { homogeneousOrder } from './homogeneous';

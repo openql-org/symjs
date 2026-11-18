@@ -591,3 +591,30 @@ export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike |
 export function checksysodesol(eqs: readonly ExprLike[], sols: readonly ExprLike[]): [boolean, Expr[]] {
   return checkodesol(eqs, sols);
 }
+
+/** A derivative exceeds the requested order of the matrix equation. */
+export class ODEOrderError extends RangeError {}
+/** An ODE system is nonlinear in the dependent functions or their derivatives. */
+export class ODENonlinearError extends RangeError {}
+
+/** Express A_n X^(n) = A_(n-1) X^(n-1) + ... + A_0 X + b. */
+export function linearOdeToMatrix(equations: readonly Expr[], funcs: readonly UndefFn[], t: Sym, order: number): [Matrix[], Matrix] {
+  if (!Number.isInteger(order) || order < 0) throw new RangeError('order must be a nonnegative integer');
+  const jets: Expr[] = [];
+  for (let k = order; k >= 0; k--) for (const f of funcs) jets.push(k === 0 ? f : new Derivative([f, t, mul(S.One, k)]));
+  const check = (e: Expr): void => {
+    if (e instanceof Derivative && funcs.some((f) => f.equals(e.expr)) && e.variableCount.reduce((n, [, k]) => n + k, 0) > order) {
+      throw new ODEOrderError(`Cannot represent system in ${order}-order form`);
+    }
+    e.args.forEach(check);
+  };
+  equations.forEach(check);
+  const variables = jets.map((_, i) => new Dummy(`jet${i}`));
+  const substitutions = jets.map((jet, i): [Expr, Expr] => [jet, at(variables, i)]);
+  const eqs = equations.map((e) => expand(xreplace(asEquation(e), substitutions)));
+  const result = linearEqToMatrix(eqs, variables);
+  if (result === undefined) throw new ODENonlinearError('The system of ODEs is nonlinear.');
+  const [matrix, rhs] = result;
+  const matrices = Array.from({ length: order + 1 }, (_, i) => Matrix.of(Array.from({ length: equations.length }, (_, row) => funcs.map((_, col) => mul(i === 0 ? 1 : -1, matrix.get(row, i * funcs.length + col))))));
+  return [matrices, rhs.map((e) => add(e))];
+}
