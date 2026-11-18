@@ -7,13 +7,14 @@
  */
 
 import type { Expr, ExprLike } from './nodes';
-import { Add, Mul, Rational, S, isNum } from './nodes';
+import { Add, Float, Mul, Rational, S, isNum } from './nodes';
 import { ExprMap } from './exprmap';
 import { add, asBaseExp, mul, neg, pow, sub, sympify } from './ops';
 import { argsCncSplit, asPowersDict, extractAdditively } from './methods';
 import { str } from '../printing/str';
 import { getOrThrow } from './guard';
 import { ordered } from './match';
+import { isNegative } from './assumptions';
 
 const isNumber = (e: Expr): boolean => isNum(e);
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -50,7 +51,7 @@ export class Factors {
     if (isExprMap(input)) {
       const f = new ExprMap<Expr>([...input].map(([k, v]) => [k, sympify(v)] as const));
       // powers of -1 and I are made canonical
-      const handle = [...f.keys()].filter((k) => k.key === S.I.key || k.key === S.NegOne.key || k.key === S.One.key);
+      const handle = [...f.keys()].filter((k) => k.key === S.I.key || k.key === S.NegOne.key || k.key === S.One.key || (k instanceof Float && Math.abs(k.toNumber()) === 1));
       let i1: Expr = S.One;
       for (const k of handle) {
         const v = f.get(k);
@@ -60,7 +61,10 @@ export class Factors {
       }
       if (!isOne(i1)) {
         for (const a of i1 instanceof Mul ? i1.args : [i1]) {
-          if (a.key === S.NegOne.key || a.key === S.I.key) f.set(a, S.One);
+          if (a instanceof Float && a.isNegative) {
+            f.set(neg(a), S.One);
+            f.set(S.NegOne, S.One);
+          } else if (a.key === S.NegOne.key || a.key === S.I.key) f.set(a, S.One);
           else {
             const [b, e] = asBaseExp(a);
             f.set(b, add(f.get(b) ?? S.Zero, e));
@@ -88,6 +92,7 @@ export class Factors {
       }
       return f;
     }
+    if (e.key === S.NegativeInfinity.key || (e instanceof Float && e.isNegative)) return new ExprMap([[S.NegOne, S.One], [neg(e), S.One]]);
     if (isNum(e) || e.args.length === 0) return new ExprMap([[e, S.One]]);
     const [c0, nc] = argsCncSplit(e);
     const nI = c0.filter((x) => x.key === S.I.key).length;
@@ -201,7 +206,7 @@ export class Factors {
               }
             }
             // a numeric exponent of other would have been extracted above, so otherExp is not zero
-            rem.set(factor, otherExp);
+            if (!isZero(otherExp)) rem.set(factor, otherExp);
           }
           continue;
         }
@@ -209,6 +214,55 @@ export class Factors {
       rem.set(factor, e);
     }
     return [new Factors(quo), new Factors(rem)];
+  }
+
+  /** Remove the common factors, allowing a zero denominator (SymPy normal). */
+  normal(other: Factors | ExprLike): [Factors, Factors] {
+    if (!(other instanceof Factors)) {
+      const o = new Factors(other);
+      if (o.isZero) return [new Factors(), o];
+      if (this.isZero) return [new Factors(S.Zero), new Factors()];
+      return this.div(o);
+    }
+    return this.div(other);
+  }
+
+  /** Raise the product to a nonnegative integer power. */
+  pow(other: Factors | ExprLike): Factors {
+    const e = other instanceof Factors ? other.asExpr() : sympify(other);
+    if (!(e instanceof Rational) || !e.isInteger || e.p < 0n) throw new RangeError('expected non-negative integer');
+    return new Factors(new ExprMap(e.isZero ? [] : [...this.factors].map(([b, x]) => [b, mul(x, e)] as const)));
+  }
+
+  /** Common bases with the smaller provable exponent (SymPy gcd). */
+  gcd(other: Factors | ExprLike): Factors {
+    const o = other instanceof Factors ? other : new Factors(other);
+    if (!(other instanceof Factors) && o.isZero) return new Factors(this);
+    const factors = new ExprMap<Expr>();
+    for (const [b, e] of this.factors) {
+      const x = o.factors.get(b);
+      if (x === undefined) continue;
+      const negative = isNegative(sub(e, x));
+      if (negative !== undefined) factors.set(b, negative ? e : x);
+    }
+    return new Factors(factors);
+  }
+
+  /** Union of bases with their larger exponent (SymPy lcm). */
+  lcm(other: Factors | ExprLike): Factors {
+    const o = other instanceof Factors ? other : new Factors(other);
+    if (!(other instanceof Factors) && (this.isZero || o.isZero)) return new Factors(S.Zero);
+    const factors = new ExprMap(this.factors);
+    for (const [b, e] of o.factors) {
+      const x = factors.get(b);
+      if (x === undefined) factors.set(b, e);
+      else {
+        const negative = isNegative(sub(e, x));
+        if (negative === undefined) throw new TypeError('cannot compare symbolic exponents');
+        factors.set(b, negative ? x : e);
+      }
+    }
+    return new Factors(factors);
   }
 
   /** The numerator Factors of self / other (SymPy quo, the / operator). */

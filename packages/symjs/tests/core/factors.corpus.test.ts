@@ -192,7 +192,7 @@ describe("sympy/core/tests/test_exprtools.py", () => {
   it("test_Factors:42", () => {
     expect(sympyStr(new Factors(oo))).toBe('Factors({oo: 1})');
   });
-  it.fails("test_Factors:43", () => {
+  it("test_Factors:43", () => {
     expect(sympyStr(new Factors(S.NegativeInfinity))).toBe('Factors({-1: 1, oo: 1})');
   });
   it("test_Factors:45", () => {
@@ -296,10 +296,10 @@ describe("sympy/core/tests/test_exprtools.py", () => {
   it("test_Factors:84", () => {
     expect(sympyStr(new Factors(new Map([[rational(-1), rational(5, 6)]])).asExpr())).toBe('(-1)**(5/6)');
   });
-  it.fails("test_Factors:86", () => {
+  it("test_Factors:86", () => {
     expect(sympyStr(new Factors(new Float(-1)))).toBe('Factors({1.00000000000000: 1, -1: 1})');
   });
-  it.fails("test_Factors:87", () => {
+  it("test_Factors:87", () => {
     expect(sympyStr(new Factors(new Float(-2)))).toBe('Factors({2.00000000000000: 1, -1: 1})');
   });
   it("test_Factors:88", () => {

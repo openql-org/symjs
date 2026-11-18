@@ -1700,6 +1700,7 @@ function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown
 }
 
 function toQuery(v: unknown): sj.Query {
+  if (v instanceof JsTable) return (e: Expr) => Boolean(v.call(e));
   if (v instanceof FnClass && ['Function', 'AppliedUndef'].includes(v.name)) return { type: v.name };
   if (v instanceof FnClass || v instanceof UFnClass) return { fn: v.name };
   if (v instanceof TypeRef) return { type: v.name };
@@ -3545,10 +3546,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsTuple([e.isNumber ? e : S.Zero, e.isNumber ? S.Zero : e]);
   },
   '.count': (args, kw, self) => (noKw(kw), sj.Rational.of(sj.count(asExpr(self), asExpr(args[0])))),
-  '.normal': exprMethod((e) => {
+  '.normal': (args, kw, self) => self instanceof sj.Factors ? (noKw(kw), new JsTuple(self.normal(plain(args[0]) as sj.Factors | Expr))) : exprMethod((e) => {
     const [n, d] = sj.fraction(sj.together(e));
     return sj.mul(n, sj.pow(d, -1));
-  }),
+  })(args, kw, self),
   '.equals': (args, kw, self) => {
     noKw(kw);
     if (self instanceof Matrix) return (self as Matrix).equals(args[0] as Matrix);
@@ -3716,12 +3717,22 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   gcd_terms: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['clear', 'fraction', 'isprimitive'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    return sj.gcdTerms(asExpr(args[0]), { clear: kw['clear'] as boolean | undefined, fraction: kw['fraction'] as boolean | undefined, isprimitive: kw['isprimitive'] as boolean | undefined });
+    const options = { clear: kw['clear'] as boolean | undefined, fraction: kw['fraction'] as boolean | undefined, isprimitive: kw['isprimitive'] as boolean | undefined };
+    const value = args[0];
+    if (value instanceof JsList || value instanceof JsTuple || value instanceof JsSet) return sj.gcdTerms(new sj.Add(value.items.map(asExpr)), options);
+    return sj.gcdTerms(asExpr(value), options);
   },
   factor_terms: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['clear', 'fraction', 'sign', 'radical'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (kw['radical']) throw new Unsupported('radical');
-    return sj.factorTerms(asExpr(args[0]), { clear: kw['clear'] as boolean | undefined, fraction: kw['fraction'] as boolean | undefined, sign: kw['sign'] as boolean | undefined });
+    const options = { clear: kw['clear'] as boolean | undefined, fraction: kw['fraction'] as boolean | undefined, sign: kw['sign'] as boolean | undefined };
+    const apply = (value: unknown): unknown => {
+      if (value instanceof JsList) return new JsList(value.items.map(apply));
+      if (value instanceof JsTuple) return new JsTuple(value.items.map(apply));
+      if (value instanceof JsSet) return new JsSet(value.items.map(apply));
+      return sj.factorTerms(asExpr(value), options);
+    };
+    return apply(args[0]);
   },
   collect_const: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'Numbers') throw new Unsupported(`kwargs ${k}`);
@@ -3747,8 +3758,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.rewrite(asExpr(self), target, { pattern: pattern.map(name), deep: kw['deep'] === undefined ? true : Boolean(kw['deep']) });
   },
   '.find': (args, kw, self) => {
-    noKw(kw);
-    return new JsSet(sj.find(asExpr(self), toQuery(args[0])));
+    for (const k of Object.keys(kw)) if (k !== 'group') throw new Unsupported(`kwargs ${k}`);
+    const e = asExpr(self);
+    const found = sj.find(e, toQuery(args[0]));
+    return (kw['group'] ?? args[1]) ? new JsDict(found.map((x) => [x, sj.count(e, (v) => v.key === x.key)])) : new JsSet(found);
   },
   count_ops: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'visual') throw new Unsupported(`kwargs ${k}`);
@@ -3856,7 +3869,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsSet(sj.atoms(asExpr(self), pred));
   },
   '.as_ordered_terms': (args, kw, self) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'order') throw new Unsupported(`kwargs ${k}`);
+    if (kw['order'] !== undefined) return new JsList(sj.asOrderedTerms(asExpr(self), String(kw['order']) as sj.TermOrder));
     // with a monomial ordering ('lex', 'rev-lex', 'grlex', ...)
     if (args.length) return new JsList(sj.asOrderedTerms(asExpr(self), args[0] as sj.TermOrder));
     return exprMethod((e) => new JsList(e instanceof sj.Add ? asOrdered(e) : [e]))(args, kw, self);
@@ -4082,9 +4096,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     return p.eval(asExpr(args[1]), asExpr(args[0]));
   },
   '.monic': (_a, kw, self) => (noKw(kw), asPoly(self).monic()),
-  '.gcd': (args, kw, self) => (noKw(kw), asPoly(self).gcd(args[0] as sj.Poly)),
-  '.lcm': (args, kw, self) => (noKw(kw), asPoly(self).lcm(args[0] as sj.Poly)),
-  '.div': (args, kw, self) => new JsTuple(asPoly(self).divAuto(args[0] as sj.Poly, autoKw(kw))),
+  '.gcd': (args, kw, self) => (noKw(kw), self instanceof sj.Factors ? self.gcd(plain(args[0]) as sj.Factors | Expr) : asPoly(self).gcd(args[0] as sj.Poly)),
+  '.lcm': (args, kw, self) => (noKw(kw), self instanceof sj.Factors ? self.lcm(plain(args[0]) as sj.Factors | Expr) : asPoly(self).lcm(args[0] as sj.Poly)),
+  '.div': (args, kw, self) => new JsTuple(self instanceof sj.Factors ? (noKw(kw), self.div(plain(args[0]) as sj.Factors | Expr)) : asPoly(self).divAuto(args[0] as sj.Poly, autoKw(kw))),
   '.rem': (args, kw, self) => asPoly(self).rem(args[0] as sj.Poly, autoKw(kw)),
   '.quo': (args, kw, self) => asPoly(self).quo(args[0] as sj.Poly, autoKw(kw)),
   '.abs': polyM((p) => p.abs()),
@@ -4093,7 +4107,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.add': polyM((p, a) => p.add(polyArg(a[0]))),
   '.sub': polyM((p, a) => p.sub(polyArg(a[0]))),
   '.mul': polyM((p, a) => p.mul(polyArg(a[0]))),
-  '.pow': polyM((p, a) => p.pow(intArg(a[0]))),
+  '.pow': (args, kw, self) => self instanceof sj.Factors ? (noKw(kw), self.pow(plain(args[0]) as sj.Factors | Expr)) : polyM((p, a) => p.pow(intArg(a[0])))(args, kw, self),
   '.add_ground': polyM((p, a) => p.addGround(asExpr(a[0]))),
   '.sub_ground': polyM((p, a) => p.subGround(asExpr(a[0]))),
   '.mul_ground': polyM((p, a) => p.mulGround(asExpr(a[0]))),
@@ -4930,10 +4944,10 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
   '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
   '.__mul__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
-  '.__truediv__': (a, [b]) => (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, ['div', 'truediv', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
+  '.__truediv__': (a, [b]) => a instanceof sj.Factors ? a.quo(b as sj.Factors | Expr) : (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, ['div', 'truediv', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => (a instanceof sj.Poly ? a.quo(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
-  '.__mod__': (a, [b]) => (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
+  '.__mod__': (a, [b]) => a instanceof sj.Factors ? a.rem(b as sj.Factors | Expr) : (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
   '.__matmul__': (a, [b]) => callMethod(a, ['matmul', 'mul'], [b])?.value ?? unsupportedOp('@'),
   '.__neg__': (a) => callMethod(a, ['neg'], [])?.value ?? (isScalar(a) ? sj.neg(a) : unsupportedOp('-')),
   '.__invert__': (a) => callMethod(a, ['invert', 'inv', 'inverse'], [])?.value ?? (a instanceof Expr || typeof a === 'boolean' ? sj.Not(a) : unsupportedOp('~')),

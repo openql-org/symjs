@@ -107,3 +107,32 @@ describe('Mod', () => {
     expect(String(Mod(SymFunction('f')(1), 2))).toBe('Mod(f(1), 2)');
   });
 });
+
+describe('Mod symbolic divisibility and denesting', () => {
+  const k = new Sym('k', { integer: true });
+  const m = new Sym('m', { integer: true, positive: true });
+  it('reduces positive integer powers of divisible bases', () => {
+    expect(String(Mod(new Pow(k, m), k))).toBe('0');
+    expect(String(Mod(new Pow(mul(-2, k), m), k))).toBe('0');
+    expect(String(Mod(new Pow(k, m), 2))).toBe('Mod(k**m, 2)');
+    expect(String(Mod(new Pow(Rational.of(3n), m), 2))).toBe('Mod(3**m, 2)');
+    expect(String(Mod(new Pow(k, n), 2))).toBe('Mod(k**n, 2)');
+  });
+  it('uses the range and divisibility of an inner modulus', () => {
+    for (const sign of [1, -1]) {
+      expect(String(Mod(mul(sign, Mod(x, mul(2, y))), y))).toBe(String(Mod(mul(sign, x), y)));
+    }
+    const t = new Sym('t', { positive: true });
+    expect(String(Mod(Mod(x, t), mul(2, t)))).toBe('Mod(x, t)');
+    expect(String(Mod(mul(-1, Mod(x, t)), mul(-2, t)))).toBe('-Mod(x, t)');
+    expect(String(Mod(mul(-1, Mod(x, t)), mul(2, t)))).toBe('Mod(-Mod(x, t), 2*t)');
+  });
+  it('extracts common integer coefficients and negative signs', () => {
+    expect(String(Mod(mul(12, x), mul(15, y)))).toBe('3*Mod(4*x, 5*y)');
+    expect(String(Mod(mul(-3, x), mul(-2, y)))).toBe('-Mod(3*x, 2*y)');
+    expect(String(Mod(mul(Rational.of(1n, 2n), x), y))).toBe('Mod(x/2, y)');
+    expect(String(Mod(x, mul(Rational.of(1n, 2n), y)))).toBe('Mod(x, y/2)');
+    expect(String(Mod(mul(new Float(0.6), x), y))).toBe('Mod(0.6*x, y)');
+    expect(String(Mod(x, mul(new Float(0.3), y)))).toBe('Mod(x, 0.3*y)');
+  });
+});
