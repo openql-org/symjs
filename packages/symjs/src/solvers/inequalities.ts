@@ -13,9 +13,9 @@ import type { Expr, ExprLike, FnName, RelOp } from '../core/nodes';
 import { Sym } from '../core/nodes';
 import { Add, BoolAtom, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
 import { at, cast, defined, expectType, first } from '../core/guard';
-import { isNegative, isNonNegative, isReal } from '../core/assumptions';
+import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
-import { expandMul } from '../simplify/expand';
+import { expand_log, expandMul } from '../simplify/expand';
 import { factorTerms } from '../simplify/exprtools';
 import { BoolOp, and, not as notB, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
@@ -27,6 +27,7 @@ import { limit } from '../series/limits';
 import { Poly } from '../polys/sympoly';
 import { cancel, fraction } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
+import { integerLog } from '../core/numberutils';
 import { polynomialInGenerator, solve } from './solve';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import {
@@ -283,6 +284,13 @@ function denominatorZeros(e: Expr, x: Sym, domain: SetExpr): SetExpr {
 }
 
 function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
+  if (domain === EmptySet) return EmptySet;
+  if (domain instanceof SetOp && domain.op === 'Union') return union(...domain.args.map((part) => solveSign(f0, op, x, part)));
+  if (domain instanceof FiniteSet) return finiteSet(...domain.args.filter((p) => {
+    const v = numAt(f0, x, p);
+    return v !== undefined && (op === 'Eq' ? v === 0 : holds(op, v));
+  }));
+  if (domain === Integers) return intersection(solveSign(f0, op, x, Reals), Integers);
   // SymPy: solving an inequality with parameters is not implemented
   if ([...f0.freeSymbols()].filter((s) => s instanceof Sym).some((t) => t.key !== x.key)) throw new NotImplementedError('inequalities: the expression has parameters');
   // a finite real expression plus oo or -oo has the sign of the infinity (SymPy: x < oo is True for a real x)
@@ -343,6 +351,7 @@ export function solveUnivariateInequality(
   opts: { relational?: boolean; domain?: SetExpr } = {},
 ): Expr {
   const rel = sympify(relIn);
+  if (rel instanceof BoolAtom) return opts.relational === false ? rel.value ? opts.domain ?? Reals : EmptySet : rel;
   if (!(rel instanceof Rel)) throw new TypeError('solve_univariate_inequality: relational expected');
   const domain = opts.domain ?? Reals;
   const s = solveSign(add(rel.lhs, mul(-1, rel.rhs)), rel.op, x, domain);
@@ -351,6 +360,14 @@ export function solveUnivariateInequality(
 
 /** SymPy solve_poly_inequality: a list of intervals. */
 export function solvePolyInequality(poly: Poly, rel: string): SetExpr[] {
+  if (poly.isGround) {
+    const v = realValue(poly.asExpr());
+    if (v === undefined) throw new NotImplementedError('solvePolyInequality: a real coefficient is required');
+    const ops: Readonly<Record<string, RelOp | undefined>> = { '==': 'Eq', '!=': 'Ne', '>': 'Gt', '>=': 'Ge', '<': 'Lt', '<=': 'Le' };
+    const op = ops[rel];
+    if (op === undefined) throw new TypeError(`solve_poly_inequality: '${rel}' is not a valid relation`);
+    return [(op === 'Eq' ? v === 0 : holds(op, v)) ? Reals : EmptySet];
+  }
   const roots = poly.realRoots();
   const reals: [Expr, number][] = [];
   for (const r of roots) {
@@ -645,6 +662,9 @@ const realRoot = (c: Expr, n: bigint): Expr => mul(pow(fn('abs', [c]), Rational.
 
 function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
   if (domain === Reals || domain instanceof Interval) {
+    if (findAbs(gIn, x)) return solveSign(gIn, 'Eq', x, domain);
+    const exponential = realExponential(gIn, x, domain);
+    if (exponential !== undefined) return exponential;
     const inv = invertReal(gIn, x);
     if (inv !== undefined) return solveset(inv, x, domain);
     const pw = domain === Reals ? invertRealPower(gIn, x) : undefined;
@@ -672,6 +692,45 @@ function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
   const poles = den.has(x) ? solve(den, x) : [];
   const keep = sols.filter((s) => !poles.some((p) => p.key === s.key));
   return complement(intersection(finiteSet(...keep), domain === Complexes ? finiteSet(...keep) : domain), EmptySet);
+}
+
+/** Take logarithms of positive exponential factors, or solve in a common exponential generator. */
+function realExponential(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
+  if (!some(g, (v) => v instanceof Pow && !v.base.has(x) && !v.base.equals(S.E) && v.exp.has(x))) return undefined;
+  const terms = g instanceof Add ? g.args : [g];
+  const parts: [Expr, Expr][] = [];
+  for (const term of terms) {
+    const factors = term instanceof Mul ? term.args : [term];
+    const coefficient: Expr[] = [], exponents: Expr[] = [];
+    for (const factor of factors) {
+      if (!factor.has(x)) coefficient.push(factor);
+      else if (factor instanceof Pow && !factor.base.has(x) && isPositive(factor.base) === true) {
+        if (isReal(xreplace(factor.exp, [[x, new Dummy('x', { real: true })]])) !== true) return undefined;
+        exponents.push(mul(factor.exp, expand_log(log(factor.base))));
+      } else if (factor instanceof Pow && factor.base instanceof Rational && factor.base.isInteger && factor.base.p < -1n && terms.length <= 2) {
+        if (terms.length === 1 && factors.every((a) => a === factor || !a.has(x))) return EmptySet;
+        const other = terms.find((t) => t !== term);
+        if (other === undefined || other.has(x)) return undefined;
+        const rhs = mul(-1, other, pow(mul(...factors.filter((a) => a !== factor)), -1));
+        if (!(rhs instanceof Rational) || !rhs.isInteger || rhs.isZero) return undefined;
+        const [power, exact] = integerLog(rhs.p, factor.base.p);
+        return exact ? solveset(add(factor.exp, -power), x, domain) : EmptySet;
+      } else return undefined;
+    }
+    parts.push([mul(...coefficient), add(...exponents)]);
+  }
+  if (parts.length === 1) return EmptySet;
+  if (parts.length === 2) {
+    const [a, u] = first(parts), [b, v] = at(parts, 1);
+    const ratio = mul(-1, b, pow(a, -1));
+    if (isNegative(ratio) === true) return EmptySet;
+    return solveset(add(u, mul(-1, v), mul(-1, log(ratio))), x, domain);
+  }
+  const rewritten = add(...parts.map(([a, u]) => mul(a, pow(S.E, expandMul(u)))));
+  const polynomial = polynomialInGenerator(rewritten, x);
+  if (!polynomial) return undefined;
+  const exponent = cast(polynomial[0], Pow, 'exponential generator').exp;
+  return union(...polynomial[1].filter((r) => isNonNegative(r) !== false && !r.equals(S.Zero)).map((r) => solveset(add(exponent, mul(-1, log(r))), x, domain)));
 }
 
 /** Union of ImageSet(Lambda(n, P*n + s), Integers) over the solutions s in [0, P), or undefined if g is not periodic. */
@@ -708,7 +767,7 @@ function periodicSolutions(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefine
   }
   const sols = [...base.values()].sort((a, b) => a[1] - b[1]);
   if (!sols.length) return EmptySet;
-  const n = new Dummy('n');
+  const n = new Dummy('n', { integer: true });
   // Union orders its arguments by sort_key (not by value)
   const sets = sols.map(([s]) => imageSet(n, add(mul(P, n), s), Integers)).sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
   return sets.length === 1 ? first(sets) : new SetOp('Union', sets);

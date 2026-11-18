@@ -41,7 +41,7 @@ export {
   invQuick,
   solveLinearSystemLU,
 } from './solvers/solve';
-export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvesetComplex, solvify, invertComplex, invertReal } from './solvers/solveset';
+export { nonlinsolve, substitution, domainCheck, linearCoeffs, solvesetReal, solvesetComplex, solveDecomposition, solvify, invertComplex, invertReal } from './solvers/solveset';
 export { dsolveSystem, canonicalOdes, linodesolveType, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
 export {
   diophantine,

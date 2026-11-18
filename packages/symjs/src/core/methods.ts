@@ -888,7 +888,10 @@ function renamedDummyEq(a: Expr, b: Expr, symbol?: Expr): boolean {
     if (cand.length !== 1) return false;
     target = at(cand, 0);
   }
-  return xreplaceM(a, [[d, target]]).key === b.key;
+  // Renaming a bound variable can change the canonical operand order of a union or intersection.
+  const setKey = (e: Expr): string => mapBottomUpM(e, (v) => v.kind === 'Set' && 'op' in v && (v.op === 'Union' || v.op === 'Intersection')
+    ? rebuildM(v, [...v.args].sort((u, w) => u.key.localeCompare(w.key))) : v).key;
+  return setKey(xreplaceM(a, [[d, target]])) === setKey(b);
 }
 
 /**

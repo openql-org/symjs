@@ -600,11 +600,11 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Add([rational(-3), log(x)]), x))).toBe('{exp(3)}');
   });
-  it.fails("test_solve_invert:425", () => {
+  it("test_solve_invert:425", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Pow(rational(3), new Add([rational(2), x])), x))).toBe('EmptySet');
   });
-  it.fails("test_solve_invert:426", () => {
+  it("test_solve_invert:426", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Pow(rational(3), new Add([rational(2), new Mul([rational(-1), x])])), x))).toBe('EmptySet');
   });
@@ -914,7 +914,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(log(new Mul([new Add([rational(1), x]), new Add([rational(-1), x])])), x))).toBe('{-sqrt(2), sqrt(2)}');
   });
-  it.fails("test_poly_gens:726", () => {
+  it("test_poly_gens:726", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Add([rational(-8), new Pow(rational(4), new Add([new Mul([rational(2), x]), new Mul([rational(2), new Pow(x, rational(2))])]))]), x))).toBe('{-3/2, 1/2}');
   });
@@ -926,15 +926,15 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(dummyEq(new ConditionSet(x, new Contains(new Dummy('n', {}, 1000000), interval(rational(0), oo, false, true)), finiteSet(new Dummy('n', {}, 1000000), new Mul([rational(-1), new Dummy('n', {}, 1000000)]))), new ConditionSet(x, new Contains(new Dummy('n', {}, 1000000), interval(rational(0), oo, false, true)), finiteSet(new Dummy('n', {}, 1000000), new Mul([rational(-1), new Dummy('n', {}, 1000000)])))))).toBe('True');
   });
-  it.fails("test_solve_abs:735", () => {
+  it("test_solve_abs:735", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Add([rational(-2), abs(x)]), x))).toBe('{-2, 2}');
   });
-  it.fails("test_solve_abs:737", () => {
+  it("test_solve_abs:737", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Add([new Mul([rational(-2), abs(new Add([rational(-3), x]))]), abs(new Add([rational(3), x]))]), x))).toBe('{1, 9}');
   });
-  it.fails("test_solve_abs:739", () => {
+  it("test_solve_abs:739", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Add([new Mul([rational(-1), abs(new Add([rational(-1), x]))]), new Mul([rational(2), abs(x)])]), x))).toBe('{-1, 1/3}');
   });
@@ -1040,27 +1040,27 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetComplex(exp(new Mul([rational(-1), x])), x))).toBe('EmptySet');
   });
-  it.fails("test_solveset_real_exp:892", () => {
+  it("test_solveset_real_exp:892", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Pow(rational(-2), x), rational(4), '==', { evaluate: false }), x, Reals))).toBe('{2}');
   });
-  it.fails("test_solveset_real_exp:893", () => {
+  it("test_solveset_real_exp:893", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Mul([rational(-1), new Pow(rational(2), x)]), rational(4), '==', { evaluate: false }), x, Reals))).toBe('EmptySet');
   });
-  it.fails("test_solveset_real_exp:894", () => {
+  it("test_solveset_real_exp:894", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Pow(rational(-3), x), rational(27), '==', { evaluate: false }), x, Reals))).toBe('EmptySet');
   });
-  it.fails("test_solveset_real_exp:895", () => {
+  it("test_solveset_real_exp:895", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Pow(rational(-5), new Add([rational(1), x])), rational(625), '==', { evaluate: false }), x, Reals))).toBe('{3}');
   });
-  it.fails("test_solveset_real_exp:896", () => {
+  it("test_solveset_real_exp:896", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Pow(rational(2), new Add([rational(-3), x])), rational(-16), '==', { evaluate: false }), x, Reals))).toBe('EmptySet');
   });
-  it.fails("test_solveset_real_exp:897", () => {
+  it("test_solveset_real_exp:897", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Pow(rational(-3), new Add([rational(-3), x])), rational(-4052555153018976267n), '==', { evaluate: false }), x, Reals))).toBe('{42}');
   });
@@ -2291,11 +2291,11 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const bn = new Sym('bn', { negative: true });
     expect(sympyStr(solveset(new Add([x, new Mul([new Pow(new Add([new Mul([rational(-2), ap]), new Mul([rational(2), bn])]), rational(-1)), new Add([ap, new Mul([rational(-1), bn])])])]), x, Reals))).toBe('{1/2}');
   });
-  it.fails("test_integer_domain_relational:2619", () => {
+  it("test_integer_domain_relational:2619", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Add([rational(3), new Mul([rational(2), x])]), rational(0), '>', { evaluate: false }), x, Integers))).toBe('Range(-1, oo, 1)');
   });
-  it.fails("test_integer_domain_relational:2620", () => {
+  it("test_integer_domain_relational:2620", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Add([rational(-2), new Pow(x, rational(2)), new Mul([rational(3), x])]), rational(0), '>=', { evaluate: false }), x, Integers))).toBe('Union(Range(-oo, -3, 1), Range(1, oo, 1))');
   });
@@ -2311,11 +2311,11 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Add([new Pow(log(x), rational(-1)), log(x)]), new Add([rational(-2), new Pow(log(x), rational(-1))]), '>', { evaluate: false }), x, Integers))).toBe('Range(2, oo, 1)');
   });
-  it.fails("test_integer_domain_relational:2624", () => {
+  it("test_integer_domain_relational:2624", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Mul([new Pow(x, rational(-1)), log(x)]), rational(0), '<=', { evaluate: false }), x, Integers))).toBe('Range(1, 2, 1)');
   });
-  it.fails("test_integer_domain_relational:2625", () => {
+  it("test_integer_domain_relational:2625", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Mul([new Pow(x, rational(-1)), log(x)]), rational(0), '<', { evaluate: false }), x, Integers))).toBe('EmptySet');
   });
@@ -2327,7 +2327,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Mul([x, new Pow(new Add([rational(-3), new Pow(x, rational(2))]), rational(-1))]), rational(3), '<', { evaluate: false }), x, Range.of(rational(0), rational(5), rational(1))))).toBe('Union(Range(0, 2, 1), Range(2, 5, 1))');
   });
-  it.fails("test_integer_domain_relational:2630", () => {
+  it("test_integer_domain_relational:2630", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(Relational(new Add([rational(2), x]), rational(0), '<', { evaluate: false }), x, Integers))).toBe('Range(-oo, -2, 1)');
   });
@@ -2437,7 +2437,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(solveset(new Add([new Mul([rational(-1), abs(y)]), abs(new Add([rational(-1), x]))]), x, Reals))).toBe('{1 - Abs(y), Abs(y) + 1}');
   });
-  it.fails("test_issue_10158:2765", () => {
+  it("test_issue_10158:2765", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(abs(new Add([x, new Mul([rational(4), abs(new Add([rational(1), x]))])])), x, Reals))).toBe('{-4/3, -4/5}');
   });
@@ -2486,15 +2486,15 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([new Pow(rational(3), new Mul([rational(2), x])), new Mul([rational(-1), new Pow(rational(2), new Add([rational(3), x]))])]), x, Reals))).toBe('{-3*log(2)/(-2*log(3) + log(2))}');
   });
-  it.fails("test_exponential_real:2834", () => {
+  it("test_exponential_real:2834", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([new Pow(rational(4), new Add([rational(5), new Mul([rational(-9), x])])), new Mul([rational(-1), new Pow(rational(8), new Add([rational(2), new Mul([rational(-1), x])]))])]), x, Reals))).toBe('{4/15}');
   });
-  it.fails("test_exponential_real:2835", () => {
+  it("test_exponential_real:2835", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([new Pow(rational(2), x), new Pow(rational(4), x)]), x, Reals))).toBe('EmptySet');
   });
-  it.fails("test_exponential_real:2836", () => {
+  it("test_exponential_real:2836", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([new Mul([rational(-1), new Pow(rational(2), x)]), exp(new Mul([x, log(5)]))]), x, Reals))).toBe('{0}');
   });
@@ -2502,7 +2502,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(solveset(new Add([rational(-2), new Mul([exp(new Mul([x, new Pow(y, rational(-1))])), exp(new Mul([rational(-1), z, new Pow(y, rational(-1))]))])]), x, Reals))).toBe('Intersection({y*log(2*exp(z/y))}, Reals)');
   });
-  it.fails("test_exponential_real:2839", () => {
+  it("test_exponential_real:2839", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([new Pow(rational(5), new Mul([rational(1, 2), x])), new Mul([rational(-1), new Pow(rational(2), new Mul([rational(1, 3), x]))])]), x, Reals))).toBe('{0}');
   });
@@ -2514,7 +2514,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(solveset(new Add([new Mul([rational(-9), exp(new Add([rational(5), new Mul([rational(-2), x])]))]), new Mul([rational(4), exp(new Add([rational(1), new Mul([rational(3), x])]))])]), x, Reals)), '{-2*log(2)/5 + 2*log(3)/5 + 4/5}', [x], { fn: 'solveset', input: '-9*exp(5 - 2*x) + 4*exp(3*x + 1)' })).toBe(true);
   });
-  it.fails("test_exponential_real:2842", () => {
+  it("test_exponential_real:2842", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([rational(-84), new Pow(rational(2), x), new Pow(rational(4), x), new Pow(rational(8), x)]), x, Reals))).toBe('{2}');
   });
@@ -2526,11 +2526,11 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Add([new Pow(rational(2), new Add([rational(1), x])), new Mul([rational(-9), exp(new Add([rational(5), new Mul([rational(-2), x])]))])]), x))).toBe('{-(-5 - 2*log(3) + log(2))/(log(2) + 2)}');
   });
-  it.fails("test_exponential_real:2847", () => {
+  it("test_exponential_real:2847", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Add([new Pow(rational(4), new Mul([rational(1, 2), x])), new Mul([rational(-1), new Pow(rational(2), new Mul([rational(1, 3), x]))])]), x))).toBe('{0}');
   });
-  it.fails("test_exponential_real:2849", () => {
+  it("test_exponential_real:2849", () => {
     const x = new Sym('x');
     expect(sympyStr(solvesetReal(new Add([new Pow(rational(5), new Mul([rational(1, 2), x])), new Mul([rational(-1), new Pow(rational(2), new Mul([rational(3), new Pow(x, rational(-1))]))])]), x))).toBe('{-sqrt(6)*sqrt(log(2))/sqrt(log(5)), sqrt(6)*sqrt(log(2))/sqrt(log(5))}');
   });
@@ -2548,11 +2548,11 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(dummyEq(new ConditionSet(new Dummy('R', { real: true }, 1000000), Relational(new Pow(new Add([rational(1), new Pow(new Dummy('R', { real: true }, 1000000), rational(-1))]), new Add([rational(1), new Dummy('R', { real: true }, 1000000)])), rational(0), '==', { evaluate: false }), Reals), new ConditionSet(x, Relational(new Pow(new Add([rational(1), new Pow(x, rational(-1))]), new Add([rational(1), x])), rational(0), '==', { evaluate: false }), Reals)))).toBe('True');
   });
-  it.fails("test_exponential_real:2862", () => {
+  it("test_exponential_real:2862", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([rational(12), new Pow(rational(2), x), new Mul([rational(-1), new Pow(rational(4), x)])]), x, Reals))).toBe('{2}');
   });
-  it.fails("test_exponential_real:2863", () => {
+  it("test_exponential_real:2863", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([rational(12), new Pow(rational(2), x), new Mul([rational(-1), new Pow(rational(2), new Mul([rational(2), x]))])]), x, Reals))).toBe('{2}');
   });
@@ -2598,7 +2598,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const w = new Sym('w');
     expect(sympyStr(dummyEq(new ConditionSet(new Dummy('R', { real: true }, 1000000), Relational(new Pow(new Dummy('R', { real: true }, 1000000), new Dummy('R', { real: true }, 1000000)), rational(0), '==', { evaluate: false }), interval(rational(0), oo, true, true)), new ConditionSet(w, Relational(new Pow(w, w), rational(0), '==', { evaluate: false }), interval(rational(0), oo, true, true))))).toBe('True');
   });
-  it.fails("test_exponential_symbols:2931", () => {
+  it("test_exponential_symbols:2931", () => {
     const x = new Sym('x', { positive: true });
     const y = new Sym('y', { positive: true });
     expect(sympyStr(solveset(new Add([rational(-1), new Pow(x, y)]), y, Reals))).toBe('{0}');
