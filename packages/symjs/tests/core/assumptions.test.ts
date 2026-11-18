@@ -443,3 +443,17 @@ describe('symbols that are not real', () => {
     expect(isNegative(new sj.Sym('plain151'))).toBe(undefined);
   });
 });
+
+it('answers for an undefined function from the facts it was declared with (SymPy Function(name, **assumptions))', () => {
+  const x = new sj.Sym('x');
+  const f = sj.SymFunction('f', { assumptions: { positive: true } })(x);
+  const g = sj.SymFunction('g')(x);
+  const k = sj.SymFunction('k', { assumptions: { integer: true, negative: true } })(x);
+  expect([isPositive(f), isNegative(f), isNonNegative(f), isReal(f), isZero(f), isNonZero(f)]).toEqual([true, false, true, true, false, true]);
+  expect([isPositive(g), isNegative(g), isNonNegative(g), isReal(g), isZero(g), isIntegerQ(g)]).toEqual([undefined, undefined, undefined, undefined, undefined, undefined]);
+  expect([isIntegerQ(k), isNegative(k), isPositive(k)]).toEqual([true, true, false]);
+  expect(String(sj.sqrt(sj.pow(f, 2)))).toBe('f(x)');
+  expect(String(sj.Abs(f))).toBe('f(x)');
+  expect(String(sj.sign(f))).toBe('1');
+  expect(String(sj.Abs(k))).toBe('-k(x)');
+});

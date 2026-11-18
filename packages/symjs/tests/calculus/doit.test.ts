@@ -65,3 +65,14 @@ it('evaluates convergent numerical sums and rejects a divergent series', async (
   expect(() => evalConcreteValue(sum(sj.pow(k, -1)))).toThrow(RangeError);
   expect(evalConcreteValue(sum(sj.mul(x, k)))).toBeUndefined();
 });
+
+it('evaluates the derivatives left in the result of a derivative (SymPy Derivative.doit)', () => {
+  const x = new sj.Sym('x');
+  const f = sj.SymFunction('f', { assumptions: { real: true } })(x);
+  expect(String(sj.doit(sj.derivative(sj.Abs(f), [[f, 1]])))).toBe('sign(f(x))');
+  // diff leaves the inner derivative
+  expect(String(sj.diff(sj.Abs(f), f))).toBe('sign(f(x))*Derivative(f(x), f(x))');
+  // a derivative that does not evaluate stays
+  const g = sj.SymFunction('g')(x);
+  expect(String(sj.doit(sj.derivative(g, [[x, 1]])))).toBe('Derivative(g(x), x)');
+});

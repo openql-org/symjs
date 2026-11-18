@@ -1738,8 +1738,13 @@ export function deserialize(tree: Tree): unknown {
       // (srepr cases carry SymPy's own index)
       return new sj.Dummy(tree['name'] as string, a, tree['dummyIndex'] === undefined ? 1_000_000 + (tree['index'] as number) : Number(tree['dummyIndex']));
     }
-    case 'UFn':
-      return new sj.UndefFn(String(tree['name']), (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))));
+    case 'UFn': {
+      const operands = (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a)));
+      if (tree['assume'] === undefined) return new sj.UndefFn(String(tree['name']), operands);
+      // a function class declared with assumptions
+      const assumptions = Object.fromEntries(Object.entries(tree['assume'] as Record<string, boolean>).map(([k, v]) => [camel(k), v]));
+      return sj.SymFunction(String(tree['name']), { assumptions })(...operands);
+    }
     case 'Derivative': {
       const expr = deserialize(tree['expr'] as Tree);
       const variables = (tree['vc'] as [Tree, number | Tree][]).map(([v, n]): [Expr | Matrix, number | Expr] => [deserialize(v) as Expr | Matrix, typeof n === 'number' ? n : asExpr(deserialize(n))]);
@@ -6169,6 +6174,8 @@ export interface Case {
   functionPartials?: Tree[];
   randomState?: RandomState;
   latticeOperation?: [Tree, Tree];
+  /** false for a call recorded under `with evaluate(False)`. */
+  globalEvaluate?: boolean;
   fn: string;
   category: string;
   module: string;
@@ -8196,7 +8203,10 @@ function diophantineStateAdapter(c: Case): Adapter | undefined {
   };
 }
 
-export function runCase(c: Case, observe?: (event: CaseObservation) => void): Outcome {
+export function runCase(recorded: Case, observe?: (event: CaseObservation) => void): Outcome {
+  // a call recorded under `with evaluate(False)` is replayed with evaluate=False
+  const c: Case = recorded.globalEvaluate === false && recorded.kwargs?.['evaluate'] === undefined
+    ? { ...recorded, kwargs: { ...recorded.kwargs, evaluate: { t: 'Js', v: false } } } : recorded;
   const replay = () => asDoctest(c, () => c.category === 'printing' ? withPrintingContext(c, () => runCase0(c, observe)) : runCase0(c, observe));
   if (!c.divideError && !c.randomState) return replay();
   const divide = errorSettings.divide;

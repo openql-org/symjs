@@ -194,8 +194,8 @@ describe('helpers', () => {
     // besselj(1, 5) < 0 is not decided by is_negative (SymPy does not know it finite): its value is
     expect(sstr(condsimp(Lt(parse('besselj(1, 5)'), 0)))).toBe('True');
     expect(sstr(condsimp(Gt(parse('besselj(1, 5)'), 0)))).toBe('False');
-    // complex and unevaluable numbers stay
-    expect(sstr(condsimp(Lt(add(1, I), 2)))).toBe('I < 1');
+    // an inequality of a non-real number is no relation (SymPy raises a TypeError); unevaluable numbers stay
+    expect(() => Lt(add(1, I), 2)).toThrow('Invalid comparison of non-real 1 + I');
     expect(sstr(condsimp(Gt(hyper([1, 2, 3], [4], 2), 0)))).toBe('hyper((1, 2, 3), (4,), 2) > 0');
     expect(sstr(condsimp(Eq(arg(y), 0)))).toBe('y > 0');
     expect(sstr(condsimp(Lt(abs(y), 0)))).toBe('False');

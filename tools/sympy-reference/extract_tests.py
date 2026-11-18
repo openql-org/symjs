@@ -617,6 +617,9 @@ class Capture:
             owner = getattr(function, "__self__", None)
             if not name.startswith(".") and isinstance(owner, sympy.MatrixBase):
                 record["boundMatrix"] = extract.ser(owner)
+            # a call made under `with evaluate(False)` builds its result unevaluated
+            if not sympy.core.parameters.global_parameters.evaluate and name in ("Max", "Min"):
+                record["globalEvaluate"] = False
             if name in ("classof", "srepr"):
                 for arg, tree in zip(args, record["args"]):
                     if tree["t"] == "Matrix":
@@ -1262,7 +1265,7 @@ def without_replay_state(value):
         return {k: without_replay_state(v) for k, v in value.items()
                 if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree",
                              "matrixClass", "boundMatrix", "polyReplay", "expectedOperand", "zeroDefault", "divideError",
-                             "functionPartials", "randomState", "latticeOperation")}
+                             "functionPartials", "randomState", "latticeOperation", "dummyIndex", "globalEvaluate")}
     if isinstance(value, list):
         return [without_replay_state(v) for v in value]
     return value

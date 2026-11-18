@@ -1532,7 +1532,9 @@ def _ser(o):
     if isinstance(o, UndefinedFunction):
         return {"t": "UFnClass", "name": o.__name__, **({"nargs": sorted(int(n) for n in o.nargs)} if o.nargs != sympy.S.Naturals0 else {})}
     if isinstance(o, AppliedUndef):
-        return {"t": "UFn", "name": type(o).__name__, "args": [ser(a) for a in o.args]}
+        # the facts the function class was declared with (Function('f', positive=True)), when there are any
+        facts = {k: v for k, v in getattr(type(o), "_kwargs", {}).items() if isinstance(v, bool) and not (k == "commutative" and v)}
+        return {"t": "UFn", "name": type(o).__name__, "args": [ser(a) for a in o.args], **({"assume": facts} if facts else {})}
     if isinstance(o, sympy.Subs):
         return {"t": "Subs", "expr": ser(o.expr), "vars": [ser(v) for v in o.variables], "point": [ser(p) for p in o.point]}
     if isinstance(o, sympy.Derivative):
