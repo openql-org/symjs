@@ -4,16 +4,21 @@
 import type { ComplexValue, Expr, ExprLike } from '../core/nodes';
 import { Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sqrt } from '../core/ops';
+import { freeSymbols } from '../core/traverse';
+import { isNegative } from '../core/assumptions';
+import { PolynomialError } from '../core/errors';
+import { cos, sin } from '../functions/elementary/elementary';
 import { at, cast, first, last } from '../core/guard';
 import { ordered } from '../core/match';
 import { evalf, toComplex } from '../numeric/evalf';
 import { c, cadd, cmul, cneg, cabs } from '../numeric/complex';
 import { expand } from '../simplify/expand';
 import { powsimp } from '../simplify/powsimp';
-import { cancel, together } from '../simplify/rational';
+import { cancel, fraction, together } from '../simplify/rational';
 import { polyHooks, roots } from './poly';
 import { Poly } from './sympoly';
 import { PolyQuintic } from './polyquinticconst';
+import { cyclotomicPoly } from './specialpolys';
 
 /** Linear root factors, with a residual factor when explicit roots are incomplete. */
 export function rootFactors(f: Poly, x?: Sym): Poly[];
@@ -121,3 +126,61 @@ export function rootsQuintic(poly: Poly): Expr[] {
 }
 
 polyHooks.quintic = (e, x) => rootsQuintic(Poly.from(e, [x]));
+
+/** Roots of a binomial, repeated by multiplicity in canonical root order. */
+export function rootsBinomial(f: Poly): Expr[] {
+  const n = f.degree();
+  if (n < 1) throw new PolynomialError('Polynomial has no roots.');
+  const base = mul(-1, cancel(mul(f.nth(0), pow(f.nth(n), -1))));
+  const root = pow(base, Rational.of(1, n));
+  const alpha = freeSymbols(root).size === 0 ? expand(root, { complex: true }) : root;
+  const negative = isNegative(base) === true;
+  const ks: number[] = [];
+  let imax = Math.floor(n / 2);
+  if (n % 2 === 0) { ks.push(imax); imax--; }
+  if (!negative) ks.push(0);
+  for (let i = imax; i > 0; i--) ks.push(...(negative ? [i, -i] : [-i, i]));
+  if (negative) ks.push(0);
+  return ks.map(k => {
+    const angle = mul(Rational.of(2 * k, n), S.Pi);
+    return expand(mul(alpha, add(cos(angle), mul(S.I, sin(angle)))), { powerBase: false });
+  });
+}
+
+/** Roots of a quadratic, including repeated and zero roots. */
+export function rootsQuadratic(f: Poly): Expr[] {
+  return roots(fraction(together(f.asExpr()))[0], cast(f.gen, Sym)).map(r => cancel(r));
+}
+
+/** Roots of a cubic, including repeated roots. */
+export function rootsCubic(f: Poly): Expr[] {
+  return roots(f.asExpr(), cast(f.gen, Sym));
+}
+
+/** Roots of a cyclotomic polynomial, real parts followed by imaginary parts. */
+export function rootsCyclotomic(f: Poly, factor = false): Expr[] {
+  const degree = f.degree();
+  // phi(n) >= sqrt(n/2), so n <= 2*degree**2 bounds the inverse search.
+  let n = 1;
+  for (; n <= 2 * degree ** 2; n++) {
+    if (expand(cyclotomicPoly(n, f.gen)).equals(f.asExpr())) break;
+  }
+  if (n > 2 * degree ** 2) throw new RangeError('expected a cyclotomic polynomial');
+  if (factor) {
+    const extension = pow(-1, Rational.of(1, n));
+    const fs = Poly.from(f.asExpr(), f.gens, { extension }).factorList()[1];
+    return ordered(fs.map(([p]) => p.asExpr())).map(p => mul(-1, Poly.from(p, f.gens).TC()));
+  }
+  const coprime = (aIn: number, bIn: number): boolean => {
+    let a = aIn, b = bIn;
+    while (b !== 0) [a, b] = [b, a % b];
+    return a === 1;
+  };
+  const ks = Array.from({ length: n }, (_, i) => i + 1).filter(k => coprime(k, n));
+  const rank = (k: number): number => k <= n / 2 ? k : n - k;
+  ks.sort((a, b) => rank(a) - rank(b) || a - b).reverse();
+  return ks.map(k => {
+    const angle = mul(Rational.of(2 * k, n), S.Pi);
+    return expand(add(cos(angle), mul(S.I, sin(angle))));
+  });
+}

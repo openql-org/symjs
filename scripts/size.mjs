@@ -57,6 +57,8 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Native field PRS, Trager factorization and certified intervals add about
 // 24 KiB to the root namespace. Automatic algebraic-atom classification also
 // links the assumption engine, adding up to 72 KiB to polynomial consumers.
+// Root helpers and Gaussian integer factorization add up to 4 KiB to
+// polynomial consumers and the root namespace.
 const CASES = [
   ['core', 'Rational', 202],
   ['core', 'parse, str', 219],
@@ -70,7 +72,7 @@ const CASES = [
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
   // methods and the polynomial-ring extensions add to it (measured 694 KiB).
-  ['polys', 'factor', 767],
+  ['polys', 'factor', 771],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 1045],
@@ -105,7 +107,7 @@ const CASES = [
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2781],
+  ['index', '*', 2785],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

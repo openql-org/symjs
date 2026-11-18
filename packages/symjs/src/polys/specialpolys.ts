@@ -121,8 +121,8 @@ export function interpolatingPoly(n: number, xIn: ExprLike, XIn: string | readon
     typeof v === 'string' ? Array.from({ length: n }, (_, i) => new Sym(`${v}${i}`)) : v.map(sympify);
   const X = pts(XIn);
   const Y = pts(YIn);
-  const xs = freeSymbols(x);
-  const clash = (vs: readonly Expr[]) => vs.some((v) => [...freeSymbols(v)].some((s) => xs.has(s)));
+  const xs = new Set([...freeSymbols(x)].map(s => s.key));
+  const clash = (vs: readonly Expr[]) => vs.some((v) => [...freeSymbols(v)].some((s) => xs.has(s.key)));
   if (!xs.size || clash(X) || clash(Y)) {
     throw new RangeError('Expecting symbol for x that does not appear in X or Y. Use `interpolate(list(zip(X, Y)), x)` instead.');
   }

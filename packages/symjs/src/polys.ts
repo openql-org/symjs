@@ -286,3 +286,6 @@ export {
   generateLambdaLookup, getResolventByLookup, sVars, sparseSymmetrizeResolventCoeffs, wrap,
 } from './polys/numberfields/index';
 export type { GaloisGroupOptions, GaloisGroupResult, TschirnhausenOptions, ResolventDefinition, ResolventRootLambda, ResolventTarget } from './polys/numberfields/index';
+
+export { rootsBinomial, rootsQuadratic, rootsCubic, rootsCyclotomic } from './polys/polyroots';
+export { dupCauchyUpperBound, dupCauchyLowerBound, dupMignotteSepBoundSquared } from './polys/rootbounds';

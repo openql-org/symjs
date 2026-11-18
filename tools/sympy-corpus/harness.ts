@@ -208,6 +208,15 @@ const fmtItem = (v: unknown): string => {
 };
 
 export function fmt(v: unknown): string {
+  if (v instanceof sj.PolyElement && (v.ring.domain instanceof sj.GaussianIntegerRing || v.ring.domain instanceof sj.GaussianRationalField)) {
+    const K = v.ring.domain;
+    return v.terms().map(([m, c]) => {
+      const monomial = m.flatMap((n, j) => n === 0 ? [] : [sj.str(v.ring.symbols[j]!) + (n === 1 ? '' : `**${n}`)]).join('*');
+      const coefficient = K.convert(c);
+      const factor = coefficient.equals(K.convert(1)) && monomial ? '' : `(${coefficient.re.toString()} + ${coefficient.im.toString()}*I)`;
+      return factor + (factor && monomial ? '*' : '') + monomial;
+    }).join(' + ') || '(0 + 0*I)';
+  }
   if (v instanceof sj.PolyElement && v.ring.domain instanceof sj.AlgebraicField) {
     // SymPy prints sparse algebraic coefficients in their ANP representation.
     const K = v.ring.domain;
@@ -895,6 +904,10 @@ export function deserialize(tree: Tree): unknown {
       return sj.Relational(asExpr(a), asExpr(b), { Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' }[op], { evaluate: false });
     }
     case 'Fn': {
+      if (tree['name'] === 'IdentityFunction') {
+        const x = new Sym('x');
+        return new JsLambda([x], x);
+      }
       // a factorial too large to evaluate was built with evaluate=False in SymPy
       if (tree['name'] === 'factorial') {
         const a = deserialize((tree['args'] as Tree[])[0]!);
@@ -4819,7 +4832,7 @@ for (const name of Object.keys(sj.Q)) {
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
-const NUMERIC_FUNCTIONS = new Set(['dmp_alg_inject', 'solve_de', 'hyper_algorithm', 'bool_maxterm', 'bool_minterm', 'bool_monomial', 'unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix', 'gauss_legendre', 'gauss_laguerre', 'gauss_hermite', 'gauss_gen_laguerre', 'gauss_jacobi', 'gauss_chebyshev_t', 'gauss_chebyshev_u', 'gauss_lobatto']);
+const NUMERIC_FUNCTIONS = new Set(['.dup_zz_cyclotomic_poly', 'cyclotomic_poly', 'swinnerton_dyer_poly', 'symmetric_poly', 'interpolating_poly', 'dmp_alg_inject', 'solve_de', 'hyper_algorithm', 'bool_maxterm', 'bool_minterm', 'bool_monomial', 'unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix', 'gauss_legendre', 'gauss_laguerre', 'gauss_hermite', 'gauss_gen_laguerre', 'gauss_jacobi', 'gauss_chebyshev_t', 'gauss_chebyshev_u', 'gauss_lobatto']);
 /** Python operators recorded as their special methods (the number-field doctests), and the methods that implement them. */
 /** A value that symjs arithmetic accepts directly (an expression or a JS number). */
 const isScalar = (v: unknown): v is ExprLike => v instanceof Expr || typeof v === 'number' || typeof v === 'bigint';
@@ -5167,6 +5180,18 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.fn === 'RootSum') return (args, kw) => {
+    if (c.args?.[1]?.t === 'JsLambda') throw new RangeError('RootSum requires a symbolic Lambda');
+    const p = args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]));
+    if (args[2] === undefined && kw['x'] === undefined && !p.isUnivariate) throw new sj.MultivariatePolynomialError('RootSum requires a univariate polynomial');
+    const x = args[2] === undefined ? asSym(p.gen) : asSym(args[2]);
+    const fun = args[1];
+    const callback = fun instanceof FnClass ? (sj as unknown as Record<string, (x: Expr) => Expr>)[camel(fun.name)] : undefined;
+    if (fun !== undefined && !(fun instanceof JsLambda) && callback === undefined) throw new RangeError('RootSum requires a symbolic function');
+    const lam = fun instanceof JsLambda ? sj.Lambda(fun.vars, fun.body) : sj.Lambda(x, callback === undefined ? x : callback(x));
+    for (const k of Object.keys(kw)) if (!['auto', 'quadratic', 'x'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    return sj.RootSum(p.asExpr(), kw['x'] === undefined ? x : asSym(kw['x']), lam);
+  };
   if (c.self?.t === 'PolyRing' && c.fn === '.dup_isolate_real_roots_list') return (args, kw, self) => {
     const ring = self as sj.PolyRing;
     if (!['ZZ', 'QQ'].includes(String(ring.domain))) throw new sj.DomainError('root isolation requires ZZ or QQ');
@@ -5308,7 +5333,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (v instanceof Map) return new Map([...v].map(([k, a]) => [rationalInputs(k), rationalInputs(a)]));
       return v;
     };
-    const expressionCoefficients = ['sympy.polys.puiseux', 'sympy.polys.ring_series', 'sympy.polys.densearith', 'sympy.polys.matrices.dense', 'sympy.polys.densebasic', 'sympy.polys.rootisolation'];
+    const expressionCoefficients = ['sympy.polys.puiseux', 'sympy.polys.ring_series', 'sympy.polys.densearith', 'sympy.polys.matrices.dense', 'sympy.polys.densebasic', 'sympy.polys.rootisolation', 'sympy.polys.tests.test_rootisolation'];
     const polynomialInputs = (v: unknown): unknown => {
       if (v instanceof sj.PolyElement) return v.asExpr();
       if (Array.isArray(v)) return v.map(polynomialInputs);
@@ -5440,6 +5465,12 @@ function autoAdapter(c: Case): Adapter | undefined {
           }
         }
         const result = method.call(thisArg, ...placed);
+        if (self instanceof sj.PolyRing && /^(dup|dmp)(ExtFactor|QqIFactor|ZzIFactor|FactorList)$/.test(name) && Array.isArray(result)) {
+          const [coefficient, factors] = result as [Expr, [sj.PolyElement, number][]];
+          const K = self.domain;
+          const ground = K instanceof sj.AlgebraicField || K instanceof sj.GaussianIntegerRing || K instanceof sj.GaussianRationalField ? K.convert(coefficient) : coefficient;
+          return new JsTuple([ground, new JsList(factors.map(([p, k]) => new JsTuple([p, k])))]);
+        }
         // AGCA uses expression coefficients publicly. SymPy prints these as
         // dense DMP objects inside its relation containers; only convert the
         // representation here, using the public sparse-to-dense conversion.
