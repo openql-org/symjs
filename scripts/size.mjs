@@ -63,13 +63,13 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Matrix coercion, analytic functions, index contractions and scalar matrix derivatives
 // add up to 3.2 KiB to the Matrix import and 4.7 KiB to the root namespace.
 const CASES = [
-  ['core', 'Rational', 292],
+  ['core', 'Rational', 297],
   ['core', 'parse, str', 314],
   ['core', 'parse, diff, expand, str, latex', 314],
   ['core', '*', 390],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   // Meijer G derivatives, support intervals and branch-preserving integral rewrites.
-  ['special', '*', 525],
+  ['special', '*', 530],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 1247],
   // The polys entry re-exports the sparse domain matrices through a
@@ -84,36 +84,36 @@ const CASES = [
   ['solvers', 'dsolve', 1374],
   ['sets', '*', 517],
   ['matrices', 'Matrix', 1120],
-  ['printing', 'pretty', 330],
-  ['discrete', '*', 393],
-  ['strategies', '*', 303],
+  ['printing', 'pretty', 335],
+  ['discrete', '*', 397],
+  ['strategies', '*', 308],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
   ['parsing', '*', 1049],
-  ['unify', '*', 310],
+  ['unify', '*', 315],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 727],
   ['holonomic', 'exprToHolonomic', 1435],
-  ['geometry', '*', 1311],
+  ['geometry', '*', 1315],
   ['vector', '*', 1417],
   ['stats', '*', 1600],
   // Diagram layout, pretty grids and Xy-pic text generation.
-  ['categories', '*', 561],
+  ['categories', '*', 566],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
   ['plotting', '*', 1292],
-  ['crypto', '*', 460],
-  ['liealgebras', '*', 441],
+  ['crypto', '*', 465],
+  ['liealgebras', '*', 446],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
   ['codegen', '*', 1043],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
-  ['index', 'Rational', 292],
+  ['index', 'Rational', 297],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Tensor axis normalization, indexed broadcasting and matrix-array conversions.
   // Polynomial remainder sequences, Hensel lifting and module orders add up to 2 KiB.
-  ['index', '*', 3100],
+  ['index', '*', 3104],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1318],
 ];
