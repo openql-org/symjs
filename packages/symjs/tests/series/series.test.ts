@@ -530,3 +530,21 @@ it('normalises multivariate orders whose exponents vanish at 0 like SymPy', () =
   expect(String(sj.O(sj.pow(x, sj.add(y, 1))))).not.toBe('O(1, x, y)');
   expect(String(sj.add(x, sj.O(sj.pow(x, y))))).toBe('O(1, x, y)');
 });
+
+
+it('compares algebraic growth without losing logarithms or mixed directions', () => {
+  const [x, y] = sj.symbols('x y');
+  const mixed = new sj.Order([sj.mul(x, sj.pow(y, -1)), x, y, sj.S.Zero]);
+  expect(mixed.contains(1)).toBe('unknown');
+  expect((sj.O(sj.log(x), x) as sj.Order).contains(1)).toBe(true);
+  expect((sj.O(sj.pow(sj.log(x), -1), x) as sj.Order).contains(1)).toBe(false);
+  expect((sj.O(sj.pow(x, -1), x, sj.oo) as sj.Order).contains(sj.pow(x, -2))).toBe(true);
+  expect((sj.O(sj.pow(x, -1), x, sj.neg(sj.oo)) as sj.Order).contains(sj.pow(x, -2))).toBe(true);
+});
+
+
+it('handles empty orders and inconsistent algebraic and logarithmic growth', () => {
+  const [x, y] = sj.symbols('x y');
+  expect(String(sj.add(x, new sj.Order([sj.S.Zero])))).toBe('x');
+  expect(new sj.Order([sj.mul(x, sj.log(y)), x, y, sj.S.Zero]).contains(1)).toBe('unknown');
+});

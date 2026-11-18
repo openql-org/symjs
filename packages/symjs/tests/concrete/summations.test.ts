@@ -616,3 +616,12 @@ describe('the root test (SymPy Sum.is_convergent)', () => {
     expect(isConvergent(concExpr(Sum(sj.pow(sj.S.Half, sj.floor(sj.mul(n, sj.S.Half))), [n, 1, oo])))).toBe(true);
   });
 });
+
+
+it('extracts central scalar factors from constant noncommutative products', () => {
+  const A = new sj.Sym('A', { commutative: false });
+  const B = new sj.Sym('B', { commutative: false });
+  const k = new sj.Sym('k', { integer: true });
+  const n = new sj.Sym('n', { positive: true, integer: true });
+  expect(String(sj.product(sj.mul(2, A, B), [k, 1, n]))).toBe('2**n*(A*B)**n');
+});

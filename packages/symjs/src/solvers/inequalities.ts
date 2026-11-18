@@ -567,7 +567,10 @@ export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): Se
   if (domain === Complexes && some(g, (e) => e instanceof Fn && ['abs', 'Min', 'Max'].includes(e.name) && e.has(x))) throw new RangeError('solveset: a real domain is required');
   try {
     // a Piecewise: each piece on the part of the domain where its condition holds first (SymPy _solveset)
-    if (g instanceof Piecewise && domain !== Complexes) return solvePiecewise(g, x, domain);
+    if (g instanceof Piecewise) {
+      if (domain === Complexes) return new ConditionSet(x, Eq(g, 0), domain);
+      return solvePiecewise(g, x, domain);
+    }
     // periodic equations: the solutions in one period plus multiples of the period (SymPy ImageSet)
     const periodic = periodicSolutions(g, x, domain);
     if (periodic) return periodic;

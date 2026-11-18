@@ -933,7 +933,7 @@ it('returns sets of permitted function arities', async () => {
   expect(a.nargs(new a.WildFunction('F'))).toBe(a.Naturals0);
   expect(String(a.nargs(a.SymFunction('f',{nargs:1})))).toBe('{1}');
   expect(String(a.nargs(new a.WildFunction('F',[2,1])))).toBe('{1, 2}');
-  expect(a.nargs(a.SymFunction('f',{nargs:[]}))).toBe(a.EmptySet);
+  expect(() => a.SymFunction('f', { nargs: [] })).toThrow(RangeError);
 });
 
 it('evaluates condition-set membership with the base restriction', async () => {

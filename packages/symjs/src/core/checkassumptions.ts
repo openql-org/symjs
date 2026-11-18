@@ -92,9 +92,15 @@ function factsOf(e: Expr): Map<string, boolean> {
       }
     }
     // SymPy Add._eval_is_extended_real: exactly one term that is not extended real makes the sum not extended real
-    if (given['extended_real'] === undefined && e instanceof Add) {
-      const r = fuzzyGroup(e.args.map((a) => factsOf(a).get('extended_real')));
-      if (r !== undefined) given['extended_real'] = r;
+    if (e instanceof Add) {
+      const values = e.args.map((a) => factsOf(a).get('extended_real'));
+      if (values.filter((v) => v === false).length > 1) {
+        for (const k of ['real', 'extended_real', 'nonzero', 'extended_nonzero', 'positive', 'negative', 'nonpositive', 'nonnegative', 'extended_positive', 'extended_negative', 'extended_nonpositive', 'extended_nonnegative']) if (given[k] === false) delete given[k];
+      }
+      if (given['extended_real'] === undefined) {
+        const r = fuzzyGroup(values);
+        if (r !== undefined) given['extended_real'] = r;
+      }
     }
     // SymPy exp._eval_is_extended_real: exp(a) for an imaginary a is real when a/(I*pi) is an integer, -2*a/(I*pi) even
     if (given['extended_real'] === undefined && e instanceof Pow && e.base instanceof Constant && e.base.name === 'E' && factsOf(e.exp).get('imaginary') === true) {

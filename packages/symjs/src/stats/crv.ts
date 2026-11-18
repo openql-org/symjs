@@ -10,10 +10,10 @@
  * come from solving for it.
  */
 
-import { Add, Dummy, Expr, Integral, Order, Rel, S, Special, Sym } from '../core/nodes';
+import { Add, Dummy, Expr, Integral, Order, Pow, Rational, Rel, S, Special, Sym } from '../core/nodes';
 import type { ExprLike } from '../core/nodes';
 import { abs } from '../functions/elementary/elementary';
-import { add, exp, mul, sympify } from '../core/ops';
+import { add, exp, mul, pow, sympify } from '../core/ops';
 import { Eq, Ge, Le, piecewise, rel } from '../core/logic';
 import { BoolOp, and } from '../core/boolalg';
 import { xreplace } from '../core/traverse';
@@ -470,6 +470,14 @@ export class SingleContinuousPSpace extends ContinuousPSpace {
     return this.distribution.expectation(expr, this.value.symbol, { evaluate: opts.evaluate ?? false });
   }
   override computeCdf(expr: Expr): DensityResult {
+    if (expr instanceof Pow && expr.base.key === this.value.key && expr.exp instanceof Rational && expr.exp.isInteger && expr.exp.isPositive && expr.exp.p % 2n === 0n) {
+      // X**(2*n) <= z exactly when -z**(1/(2*n)) <= X <= z**(1/(2*n)).
+      const z = new Dummy('z', { real: true });
+      const positive = new Dummy('z', { positive: true });
+      const root = pow(positive, Rational.of(1n, expr.exp.p));
+      const mass = add(this.distribution.cdf(root), mul(-1, this.distribution.cdf(mul(-1, root))));
+      return Lambda(z, piecewise([mass.subs(positive, z), Ge(z, 0)], [0, true]));
+    }
     if (expr.key !== this.value.key) return super.computeCdf(expr);
     const z = new Dummy('z', { real: true });
     return Lambda(z, this.distribution.cdf(z));

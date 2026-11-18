@@ -562,3 +562,19 @@ it('translates Matrix equalities and solver strategy flags through the public so
   expect(selected).toHaveLength(7);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
+
+
+it('compares Puiseux zero by value without changing its string representation', () => {
+  const R = new sj.PuiseuxRing('x', sj.QQ);
+  expect(matches(R.zero, '0')).toBe(true);
+  expect(matches(R.zero, '')).toBe(true);
+  expect(matches(R.one, '0')).toBe(false);
+  expect(String(R.zero)).toBe('');
+});
+
+it('rejects Python list multiplication by a DomainMatrix', () => {
+  const shard: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const test = shard.find((c) => c.module.endsWith('test_domainmatrix') && c.test === 'test_DomainMatrix_mul' && c.line === 529);
+  if (!test) throw new TypeError('missing domain matrix multiplication reference');
+  expect(runTestCase(test)).toEqual({ status: 'pass' });
+});

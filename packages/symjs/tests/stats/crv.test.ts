@@ -74,9 +74,20 @@ describe('continuous probability spaces (SymPy crv) 2', () => {
 
 describe('continuous probability spaces (SymPy crv) 3', () => {
   it("given domain set", () => expect(show((given(Exponential('e', 1), Lt(Exponential('e', 1), 2)) as RandomSymbol).pspace.domain.set)).toBe("Interval.Ropen(0, 2)"));
-  // SymPy: Piecewise((Integral(exp(-sqrt(_x))/Abs(sqrt(_x)), (_x, 0, z))/2 + Integral(exp(sqrt(_x))/Abs(sqrt(_x)), (_x, 0, z))/2, z >= 0), (0, True));
-  // symjs leaves the same integral, behind the conditions of a Meijer G-function result that cannot hold
-  it("cdf X**2", () => expect(show(ap(cdf(pow(Exponential('e', 1), 2)), z))).toMatch(/\(Integral\(exp\(sqrt\(_x\)\)\/\(2\*sqrt\(Abs\(_x\)\)\) \+ exp\(-sqrt\(_x\)\)\/\(2\*sqrt\(Abs\(_x\)\)\), \(_x, 0, z\)\), True\)\), z >= 0\), \(0, True\)\)$/));
+  // The negative preimage lies outside exponential support; the CDF tends to one.
+  it("cdf X**2", () => {
+    const f = cdf(pow(Exponential('e', 1), 2));
+    expect(show(ap(f, z))).toBe('Piecewise((1 - exp(-sqrt(z)), z >= 0), (0, True))');
+    expect(show(ap(f, -1))).toBe('0');
+    expect(show(ap(f, 0))).toBe('0');
+    expect(ap(f, 100).toNumber()).toBeCloseTo(1 - Math.exp(-10), 12);
+  });
+  it('computes CDFs of even powers from both support endpoints', () => {
+    expect(show(ap(cdf(pow(Exponential('e', 1), 4)), z))).toBe('Piecewise((1 - exp(-z**(1/4)), z >= 0), (0, True))');
+    expect(show(ap(cdf(pow(Xn, 2)), z))).toBe('Piecewise((erf(sqrt(2)*sqrt(z)/2), z >= 0), (0, True))');
+    expect(() => cdf(pow(Exponential('e', 1), -2))).toThrow(RangeError);
+    expect(show(ap(cdf(pow(Exponential('e', 1), 3)), -1))).toBe('0');
+  });
   // SymPy raises ValueError (Can not solve sqrt(e) for e): solveset gives an ImageSet with the condition y >= 0
   it("density sqrt", () => expect(() => density(sqrt(Exponential('e', 1)))).toThrow('Can not solve sqrt(e) for e'));
   // SymPy: sqrt(2)*exp(-z/2)/(2*sqrt(pi)*Abs(sqrt(z))) (the same for a real z)
@@ -178,4 +189,13 @@ describe('the continuous probability spaces (SymPy crv)', () => {
     expect(show(ap(density(add(Xn, c)), z))).toBe('sqrt(2)*exp(-(-c + z)**2/2)/(2*sqrt(pi))');
     expect(show(ap(density(exp(Xn)), z))).toBe('sqrt(2)*exp(-log(z)**2/2)/(2*sqrt(pi)*Abs(z))');
   });
+});
+
+
+it('integrates a shifted normal CDF and disjoint probability intervals', () => {
+  expect(show(ap(cdf(mul(2, Xn)), z))).toBe('erf(sqrt(2)*z/4)/2 + 1/2');
+  expect(show(Xn.pspace.probability(or(Lt(Xn, -1), Gt(Xn, 1))))).toBe('Integral(sqrt(2)*exp(-_z**2/2)/(2*sqrt(pi)), (_z, -oo, -1)) + Integral(sqrt(2)*exp(-_z**2/2)/(2*sqrt(pi)), (_z, 1, oo))');
+  const domain = new SingleContinuousDomain([x, Interval.of(0, 1)]);
+  expect(show(new ConditionalContinuousDomain([domain, Eq(x, S.Half)]).computeExpectation(x))).toBe('Integral(x*DiracDelta(x - 1/2), (x, 0, 1))');
+  expect(show(Xn.pspace.computeExpectation(Xn, []))).toBe('Integral(sqrt(2)*x*exp(-x**2/2)/(2*sqrt(pi)), (x, -oo, oo))');
 });
