@@ -2,11 +2,14 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { expect, it } from 'vitest';
-import { Sym } from '../../src/core/nodes';
-import { Ci } from '../../src/functions/special/special';
+import { Fn, S, Sym } from '../../src/core/nodes';
 import { rewrite } from '../../src/simplify/rewrite';
+import { Ci } from '../../src/functions/special/special';
 
-it('provides the cosine integral rewrite without loading the root entry point', () => {
-  expect(String(rewrite(Ci(new Sym('x')), 'expint')))
-    .toBe('-expint(1, x*polar_lift(-I))/2 - expint(1, x*polar_lift(I))/2');
+it('rewrites Ci without the special functions registration', () => {
+  const x = new Sym('x');
+  const expanded = rewrite(new Fn('Ci', [x]), 'expint');
+  expect(expanded.has(S.I)).toBe(true);
+  expect(expanded.key).not.toBe(new Fn('Ci', [x]).key);
+  expect(String(rewrite(Ci(x), 'expint'))).toBe('-expint(1, x*polar_lift(-I))/2 - expint(1, x*polar_lift(I))/2');
 });

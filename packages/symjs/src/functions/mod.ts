@@ -27,6 +27,8 @@ import type { DefinedFunction, FunctionDefinition } from '../core/defun';
 import { gcd } from '../core/numbers';
 import { count } from '../core/match';
 import { ratMod } from '../core/num';
+import { rationalFromFloat } from '../core/numberutils';
+import { fromRational } from '../numeric/mpf';
 
 /** Closed assumptions supplied by a symbol, without loading the full predicate engine. */
 const symbolFact = (e: Expr, name: string): boolean | undefined => e instanceof Sym ? e.assumptions0.get(name) : undefined;
@@ -34,6 +36,12 @@ const symbolFact = (e: Expr, name: string): boolean | undefined => e instanceof 
 function evalMod(p: Expr, q: Expr): Expr | undefined {
   if (q instanceof Rational && q.isZero) throw new RangeError('Modulo by zero');
   if (p instanceof Rational && q instanceof Rational) return ratMod(p, q);
+  const exactFloat = p instanceof Float && q instanceof Rational && !q.isInteger ? p
+    : q instanceof Float && p instanceof Rational ? q : undefined;
+  if (exactFloat !== undefined) {
+    const r = ratMod(p instanceof Rational ? p : rationalFromFloat(exactFloat), q instanceof Rational ? q : rationalFromFloat(exactFloat));
+    return new Float(fromRational(r.p, r.q, exactFloat.prec), exactFloat.prec);
+  }
   if ((p instanceof Float || p instanceof Rational) && (q instanceof Float || q instanceof Rational)) {
     const a = p.toNumber();
     const b = q.toNumber();

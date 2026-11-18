@@ -261,9 +261,9 @@ class ContentPrinter {
     if (e instanceof Piecewise) return this.piecewise(e);
     if (e instanceof Derivative) {
       const bvar = el('bvar');
-      for (const [x, n] of [...e.variableCount].reverse()) {
+      for (const [x, n] of [...e.variableOrders].reverse()) {
         bvar.append(this.expr(x));
-        if (n > 1) bvar.append(el('degree', this.expr(Rational.of(BigInt(n)))));
+        if (n.key !== '1') bvar.append(el('degree', this.expr(n)));
       }
       return this.apply(requiresPartial(e.expr) ? 'partialdiff' : 'diff', bvar, this.expr(e.expr));
     }
@@ -702,14 +702,10 @@ class PresentationPrinter {
 
   private derivative(e: Derivative): MathMLElement {
     const d = requiresPartial(e.expr) ? '&#x2202;' : '&dd;';
-    const op = (n: number): MathMLElement => (n >= 2 ? el('msup', mo(d), this.expr(Rational.of(BigInt(n)))) : mo(d));
+    const op = (n: Expr): MathMLElement => (n.key === '1' ? mo(d) : el('msup', mo(d), this.expr(n)));
     const den = el('mrow');
-    let dim = 0;
-    for (const [x, n] of [...e.variableCount].reverse()) {
-      dim += n;
-      den.append(op(n), this.expr(x));
-    }
-    return el('mrow', el('mfrac', el('mrow', op(dim)), den), this.expr(e.expr));
+    for (const [x, n] of [...e.variableOrders].reverse()) den.append(op(n), this.expr(x));
+    return el('mrow', el('mfrac', el('mrow', op(e.derivativeOrder)), den), this.expr(e.expr));
   }
 
   private integral(e: Integral): MathMLElement {

@@ -8,9 +8,9 @@
 import type { Expr, ExprLike, FnName } from '../core/nodes';
 import { Add, Constant, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { Concrete, Sum } from '../core/concrete';
-import { minimalPolynomial } from '../polys/numberfields';
-import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
-import { asContentPrimitive, asIndependent, asNumerDenom } from '../core/methods';
+import { AlgebraicNumber, minimalPolynomial } from '../polys/numberfields';
+import { add, couldExtractMinusSign, mul, pow, sub, sympify } from '../core/ops';
+import { asContentPrimitive, asIndependent, asNumerDenom, isConstantTruth, isRationalFunction } from '../core/methods';
 import { countOps as opCount } from '../core/match';
 import { mapBottomUp, piecewiseFold, rebuild, some, subs, xreplace } from '../core/traverse';
 import { combsimp } from './gammasimp';
@@ -26,6 +26,7 @@ import { at, first } from '../core/guard';
 import { nsimplify, nfloat } from '../numeric/nfloat';
 import { simplifyRelation } from '../core/relational';
 import { isNegative } from '../core/assumptions';
+import type { Truth } from '../core/truth';
 import { BoolOp, and } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
 import { ordered } from '../core/match';
@@ -74,10 +75,13 @@ export function inversecombine(expr: ExprLike): Expr {
       const inner = first(e.args);
       if (inner.args.length === 1 && e.inverse()(first(inner.args)).equals(inner)) return first(inner.args);
     }
-    if (e instanceof Fn && e.args.length === 1) {
-      const inner = first(e.args);
-      if (e.name === 'log' && inner instanceof Pow && inner.base.key === S.E.key) return inner.exp;
-      if (inner instanceof Fn && inner.args.length === 1 && inverse[e.name] === inner.name) return first(inner.args);
+    if (e instanceof Fn) {
+      const inner = e.args[0];
+      if (e.name === 'log' && inner instanceof Pow && inner.base.key === S.E.key) {
+        if (e.args.length === 1) return inner.exp;
+        if (e.args.length === 2) return mul(inner.exp, pow(rebuild(e, [at(e.args, 1)]), -1));
+      }
+      if (e.args.length === 1 && inner instanceof Fn && inner.args.length === 1 && inverse[e.name] === inner.name) return first(inner.args);
     }
     if (e instanceof Pow && e.base.key === S.E.key && e.exp instanceof Fn && e.exp.name === 'log') return first(e.exp.args);
     return e;
@@ -280,7 +284,20 @@ function simplifyPiecewise(e: Piecewise, opts: SimplifyOptions): Expr {
  * step keeps the shortest candidate by `measure` (count_ops), and a result longer than `ratio`
  * times the input is rejected.
  */
-export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
+export function simplify(ex: AlgebraicNumber, opts?: SimplifyOptions): AlgebraicNumber;
+export function simplify(ex: ExprLike, opts?: SimplifyOptions): Expr;
+export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions = {}): Expr | AlgebraicNumber {
+  if (ex instanceof AlgebraicNumber) {
+    const measure = opts.measure ?? opCount;
+    const size = (e: Expr): number => {
+      const value = measure(e);
+      return typeof value === 'number' ? value : value.toNumber();
+    };
+    const limit = (opts.ratio ?? 1.7) * size(ex.root);
+    const candidate = ex.minpoly().roots().find((root) => size(root) < limit && exprEquals(root, ex.root) === true);
+    return candidate === undefined || ex.root.equals(candidate) ? ex
+      : new AlgebraicNumber(candidate, ex.coeffList, ex.alias === undefined ? {} : { alias: ex.alias });
+  }
   const input = opts.inverse ? inversecombine(ex) : sympify(ex);
   if (input instanceof BoolOp && input.op === 'And') {
     const terms = input.args.map((a) => simplify(a, opts));
@@ -427,6 +444,11 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   const expr2 = shorter(together(expr, { deep: true }), together(expr1, { deep: true }));
   expr = ratio === Infinity ? expr2 : shorter(expr2, expr1, expr);
   expr = factorTerms(expr, { sign: false });
+  if (some(expr, (sign) => sign instanceof Fn && sign.name === 'sign' &&
+      some(expr, (absolute) => absolute instanceof Fn && absolute.name === 'abs' && first(absolute.args).equals(first(sign.args))))) {
+    const folded = piecewiseFold(expr.rewrite('Abs', { pattern: ['sign'] }));
+    if (folded instanceof Piecewise) return simplifyPiecewise(folded, opts);
+  }
   expr = combineConcrete(expr);
   // the functions it contains
   if (hyperexpand && some(expr, (x) => x instanceof Hyper || x instanceof MeijerG)) expr = hyperexpand(expr);
@@ -605,8 +627,35 @@ impl.simplify = simplify;
 const isAlgebraicNumber = (e: Expr): boolean =>
   e instanceof Rational || e === S.I || ((e instanceof Add || e instanceof Mul) && e.args.every(isAlgebraicNumber)) || (e instanceof Pow && e.exp instanceof Rational && isAlgebraicNumber(e.base));
 
-impl.equalsZero = (e) => {
-  if (simplify(e).key === S.Zero.key) return true;
+/** An exact zero test for closed algebraic expressions. */
+function algebraicZero(e: Expr): boolean {
+  if (!isAlgebraicNumber(e)) return false;
+  if (expandAll(e).equals(S.Zero)) return true;
   const x = new Dummy('x');
-  return isAlgebraicNumber(e) && minimalPolynomial(e, x).key === x.key ? true : undefined;
-};
+  try {
+    return minimalPolynomial(e, x).equals(x);
+  } catch {
+    return false;
+  }
+}
+
+/** SymPy Expr.equals: mathematical equality, with an unknown result when undecidable. */
+export function exprEquals(lhs: ExprLike, rhs: ExprLike): Truth {
+  const a = sympify(lhs), b = sympify(rhs);
+  if (a.equals(b)) return true;
+  const difference = factorTerms(simplify(sub(a, b)));
+  if (difference.equals(S.Zero) || algebraicZero(difference)) return true;
+  if (difference.isNumber) return false;
+  if (!some(difference, (term) => term instanceof Add || term instanceof ExtensionExpr && term.name === 'Mod')) return false;
+  if (difference instanceof Mul) {
+    const factors = difference.args.map((factor) => {
+      const zero = exprEquals(factor, S.Zero);
+      return zero === 'unknown' && isRationalFunction(factor) && isConstantTruth(factor) === false ? false : zero;
+    });
+    if (factors.includes(true)) return true;
+    if (factors.every((value) => value === false)) return false;
+  }
+  return 'unknown';
+}
+
+impl.equalsZero = (e) => algebraicZero(e) || simplify(e).equals(S.Zero) ? true : undefined;

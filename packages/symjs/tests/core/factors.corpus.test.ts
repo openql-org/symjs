@@ -663,7 +663,7 @@ describe("sympy/core/tests/test_exprtools.py", () => {
   it("test_factor_terms:282", () => {
     expect(sympyStr(factorTerms(new Add([new Pow(rational(2), rational(1, 2)), new Pow(rational(10), rational(1, 2))]), { radical: true }))).toBe('sqrt(2)*(1 + sqrt(5))');
   });
-  it.fails("test_factor_terms:284", () => {
+  it("test_factor_terms:284", () => {
     expect(sympyStr(factorTerms(new Add([new Pow(rational(-6), rational(1, 3)), new Pow(rational(6), rational(1, 3))]), { radical: true }))).toBe('6**(1/3)*(1 + (-1)**(1/3))');
   });
   // the arguments do not type-check against the public API

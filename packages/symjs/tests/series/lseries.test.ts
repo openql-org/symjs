@@ -133,7 +133,7 @@ describe('leading terms that depend on the direction (SymPy test_integers, test_
     expect(lt('frac(1/x)')).toBe('AccumBounds(0, 1)');
     expect(lt(sj.frac(sj.mul(x, new Sym('c'))))).toBe('c*x');
     expect(lt(sj.frac(sj.add(x, new Sym('c'))))).toBe('frac(c)');
-    expect(() => lt('frac(sin(x)/x)')).toThrow(sj.NotImplementedError);
+    expect(lt('frac(sin(x)/x)')).toBe('1');
   });
 
   it('gives the accumulation intervals and limits of functions of an infinite argument', () => {
@@ -207,4 +207,11 @@ it('retains nonzero leading terms when removable arguments tend to a branch poin
 
 it('takes periodic accumulation intervals from negative directions', () => {
   expect(sj.sstr(sj.asLeadingTerm(parse('sin(1/x)'), x, { cdir: -1 }))).toBe('AccumBounds(-1, 1)');
+});
+
+it('uses the derivative limit when a user-defined derivative cannot be expanded', () => {
+  const g = sj.SymFunction('g');
+  const f = sj.defineFunction('f', { fdiff: ([t]) => t === undefined ? sj.NoMatch : t.mul(g(t)) });
+  const e = sj.log(x).add(f(x));
+  expect(sj.dir(e, x, 1).key).toBe(sj.limit(sj.diff(e, x), x, 0).key);
 });

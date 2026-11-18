@@ -61,7 +61,8 @@ export {
 } from './core/nodes';
 export { ExprMap } from './core/exprmap';
 export { Indexed, IndexedBase } from './core/indexed';
-export { Factors } from './core/factors';
+export { Factors, Term } from './core/factors';
+export { FactRules } from './core/facts';
 export { AccumBounds, AccumBoundsNode } from './core/accumbounds';
 export {
   isReal,
@@ -155,6 +156,7 @@ export {
   isPolynomial,
   isRationalFunction,
   isConstant,
+  isConstantTruth,
   asRealImag,
   asNumerDenom,
   atoms,
@@ -172,6 +174,8 @@ export {
   asDummy,
   assumptions0,
   canonicalVariables,
+  iterFreeArgs,
+  exprFreeSymbols,
   isScalar,
   asExpr,
   copy,
@@ -198,7 +202,7 @@ export {
   PreorderTraversal,
   piecewiseFold,
 } from './core/traverse';
-export { Tuple, TupleNode, Dict, DictNode } from './core/containers';
+export { iterArgs, Tuple, TupleNode, Dict, DictNode } from './core/containers';
 export {
   replace,
   find,
@@ -253,6 +257,7 @@ export {
   fdiff,
 } from './calculus/diff';
 export {
+  FunctionHead,
   SymFunction,
 } from './core/undef';
 export type { UndefinedFunction, FunctionClassLike } from './core/undef';
@@ -283,7 +288,7 @@ export {
   toComplex,
   lambdify,
 } from './numeric/evalf';
-export type { ScaledZero, RawMpfTuple } from './numeric/evalf';
+export type { RawEvalfResult, ScaledZero, RawMpfTuple } from './numeric/evalf';
 export {
   float,
 } from './numeric/floatctor';
@@ -370,6 +375,7 @@ export {
   numDigits,
   modInverse,
   limitDenominator,
+  mpfNorm,
 } from './core/numberutils';
 export {
   nfloat,
@@ -681,5 +687,7 @@ export const Number = _SymNumber_;
 /** @deprecated Use `SymFunction` (`Function` shadows the JavaScript global); removed in 1.0. */
 export const Function = _SymFunction_;
 
-export { complexAccuracy, getIntegerPart } from './numeric/evalf';
+export { complexAccuracy, evalfRaw, getIntegerPart } from './numeric/evalf';
 export type { EvalfResult } from './numeric/evalf';
+export { LatticeOp } from './core/operations';
+export type { LatticeOperation } from './core/operations';

@@ -262,6 +262,21 @@ describe('numer and denom', () => {
   });
 });
 
+it('cancels scalar factors while preserving the noncommuting word', async () => {
+  const s = await import('../../src');
+  const a = s.symbol('A', { commutative: false }), b = s.symbol('B', { commutative: false });
+  const x = s.symbol('x');
+  const product = s.mul(a, b);
+  expect(String(s.cancel(s.mul(product, x.pow(2).sub(1), x.add(1).pow(-1))))).toBe('(x - 1)*A*B');
+  expect(s.cancel(product).key).toBe(product.key);
+  expect(String(s.cancel(s.mul(x.add(1), x.add(1).pow(-1)), { domain: 'QQ' }))).toBe('1');
+});
+
+it('preserves cancellation ratios that contain Laurent generators after expansion', () => {
+  expect(String(cancel(P('2**(1/2 - a)/(x + 1)')))).toBe('sqrt(2)/(2**a*(x + 1))');
+  expect(String(cancel(P('(x + 1)/(x + 2**(1/2 - a))')))).toBe('(x + 1)/(x + sqrt(2)/2**a)');
+});
+
 it('uses the algebraic coefficient extension when greedy generators are disabled', () => {
   const f = P('(x**2-2)/(x+sqrt(2))');
   expect(String(cancel(f, { greedy: false }))).toBe('x - sqrt(2)');

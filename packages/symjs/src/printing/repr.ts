@@ -149,7 +149,7 @@ function structured(e: Expr, v: (x: Expr) => BasicView): [string, BasicView[], b
     const [f, limits] = integralLimits(e);
     return ['Integral', [v(f), ...limits.map((l) => tuple(l.map(v)))], true];
   }
-  if (e instanceof Derivative) return ['Derivative', [v(e.expr), ...e.variableCount.map(([x, n]) => tuple([v(x), v(Rational.of(BigInt(n)))]))], true];
+  if (e instanceof Derivative) return ['Derivative', [v(e.expr), ...e.variableOrders.map(([x, n]) => tuple([v(x), v(n)]))], true];
   if (e instanceof Limit) return ['Limit', [v(e.expr), v(e.variable), v(e.point), SYMBOL_PLUS(e.dir)], true];
   if (e instanceof Order) {
     // the arguments are the expression, then the variables and the point (all the free symbols at 0 when absent)

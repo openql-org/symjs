@@ -228,6 +228,9 @@ export class MeijerG extends ExtensionExpr {
     super('meijerg', args);
   }
   override get isNumber(): boolean { return this.args.every((a) => a.isNumber); }
+  override searchArgs(): readonly Expr[] {
+    return [Tuple(Tuple(...this.an), Tuple(...this.aother)), Tuple(Tuple(...this.bm), Tuple(...this.bother)), this.argument];
+  }
   private part(i: number): Expr[] {
     const start = 1 + this.sizes.slice(0, i).reduce((s, k) => s + k, 0);
     return this.args.slice(start, start + at(this.sizes, i));

@@ -657,6 +657,8 @@ export function transpose(xx: ExprLike): Expr {
     if (r !== undefined) return r;
   }
   if (x.isCommutative) return x;
+  if (x instanceof Sym && x.assumptions.hermitian === true) return conjugate(x);
+  if (x instanceof Sym && x.assumptions.antihermitian === true) return neg(conjugate(x));
   if (x instanceof Add) return add(...x.args.map(transpose));
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(transpose));
   if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(transpose(x.base), x.exp);

@@ -7,13 +7,28 @@
  * range syntax of symbols().
  */
 
-import { type Constant, Float, Rational, impl } from './nodes';
+import { type Constant, type Expr, Float, Rational, impl } from './nodes';
+import { bitLength, normalize, toRational } from '../numeric/mpf';
+import { numCmp } from './num';
+import { isPositive } from './assumptions';
 import { at, pair } from './guard';
 import { NoMatch } from './truth';
 import type { NoMatchResult } from './truth';
 
+type MpfTuple = readonly [sign: number, mantissa: bigint, exponent: bigint, bits: number];
+
+/** Normalize an mpf tuple to binary precision, preserving the special values. */
+export function mpfNorm(tuple: MpfTuple, precision: number): MpfTuple {
+  const [sign, mantissa, exponent, bits] = tuple;
+  if (mantissa === 0n) return bits === 0 ? [0, 0n, 0n, 0] : tuple;
+  const rounded = normalize(sign === 0 ? mantissa : -mantissa, exponent, precision);
+  const magnitude = rounded.man < 0n ? -rounded.man : rounded.man;
+  return [sign, magnitude, rounded.exp, bitLength(magnitude)];
+}
+
 /** Exact rational value of a double (SymPy Rational(0.2) = 3602879701896397/18014398509481984). */
-export function rationalFromFloat(v: number): Rational {
+export function rationalFromFloat(v: number | Float): Rational {
+  if (v instanceof Float) return Rational.of(...toRational(v.mpf));
   if (!Number.isFinite(v)) throw new RangeError('rationalFromFloat: non-finite value');
   if (Number.isInteger(v)) return Rational.of(BigInt(v));
   const buf = new DataView(new ArrayBuffer(8));
@@ -143,7 +158,7 @@ export function expandSymbolNames(spec: string): string[] {
   }
   return out;
 }
-impl.rationalFromFloat = (f) => rationalFromFloat(f.value);
+impl.rationalFromFloat = rationalFromFloat;
 
 const babs = (n: bigint): bigint => (n < 0n ? -n : n);
 
@@ -244,7 +259,14 @@ export function numDigits(n: bigint, base = 10): number {
 }
 
 /** Inverse of a modulo m (SymPy mod_inverse); for non-integers 1/a when m > 1. */
-export function modInverse(a: Rational, m: Rational): Rational {
+export function modInverse(a: Rational, m: Rational): Rational;
+export function modInverse(a: Expr, m: Expr): Expr;
+export function modInverse(a: Expr, m: Expr): Expr {
+  if (!(a instanceof Rational && m instanceof Rational)) {
+    if (!a.isNumber || !m.isNumber) throw new TypeError('mod_inverse requires numeric arguments');
+    if (m instanceof Rational || m instanceof Float ? numCmp(m, Rational.of(1)) > 0 : isPositive(m.sub(1)) === true) return a.pow(-1);
+    throw new RangeError('mod_inverse: inverse does not exist');
+  }
   if (a.isInteger && m.isInteger) {
     // no inverse modulo 1 or -1 (SymPy); the result has the sign of m (Python's x % m)
     if (babs(m.p) === 1n) throw new RangeError('mod_inverse: inverse does not exist');

@@ -86,6 +86,14 @@ export function splitCoeff(e: Expr): [Num, Expr] {
 /** Return [base, exponent] of e (exponent 1 for non-powers). */
 export function asBaseExp(e: Expr): [Expr, Expr] {
   if (e instanceof Pow) return [e.base, e.exp];
+  if (e instanceof Mul) {
+    const pairs = e.args.map(asBaseExp);
+    const exponent = pairs[0]?.[1];
+    if (exponent instanceof Rational && exponent.isInteger && !exponent.isOne &&
+        pairs.every(([, x]) => x.key === exponent.key) && pairs.filter(([b]) => !b.isCommutative).length <= 1) {
+      return [mul(...pairs.map(([b]) => b)), exponent];
+    }
+  }
   return [e, S.One];
 }
 
@@ -236,8 +244,10 @@ export function add(...xs: ExprLike[]): Expr {
   if (ab && sx.some((e) => ab.is(e) || (e instanceof Add && e.args.some((a) => ab.is(a))))) {
     // interval arithmetic: the intervals absorb a numeric remainder, symbolic terms stay beside them
     const flat = sx.flatMap((e) => (e instanceof Add ? e.args : [e]));
-    const abs = flat.filter((e) => ab.is(e));
+    const complexInfinity = flat.lastIndexOf(S.ComplexInfinity);
+    const abs = flat.filter((e, i) => ab.is(e) && (i > complexInfinity || ab.bounds(e).some((bound) => bound instanceof Special)));
     const rest = add(...flat.filter((e) => !ab.is(e)));
+    if (abs.length === 0) return rest;
     if (rest.freeSymbols().size === 0) return ab.add(abs, rest);
     // like SymPy, the interval absorbs the numeric term: x + 1 + AccumBounds(1, 2) = x + AccumBounds(2, 3)
     const [c, terms] = rest instanceof Add && isNum(at(rest.args, 0)) ? [at(rest.args, 0), rest.args.slice(1)] : [S.Zero, [rest]];
@@ -315,10 +325,10 @@ function perfectPower(n: bigint): [bigint, bigint] | undefined {
  */
 function intPow(n: bigint, e: Rational): [Rational, RatPow[]] {
   if (e.isNegative) {
-    // SymPy Rational._eval_power of 1/n: n**(p*(q - 1)/q) / n**p
-    const ne = numNeg(e);
-    const [c, rads] = intPow(n, Rational.of(ne.p * (ne.q - 1n), ne.q));
-    return [numMul(c, Rational.of(1n, ipow(n, ne.p))), rads];
+    // n**(-p/q) = n**(ceil(p/q) - p/q) / n**ceil(p/q).
+    const whole = (-e.p + e.q - 1n) / e.q;
+    const [c, rads] = intPow(n, Rational.of(whole * e.q + e.p, e.q));
+    return [numMul(c, Rational.of(1n, ipow(n, whole))), rads];
   }
   const root = iroot(n, e.q);
   if (ipow(root, e.q) === n) return [Rational.of(ipow(root, e.p)), []];
@@ -742,6 +752,14 @@ function keepCoeffMul(c: Num, t: Expr): Expr {
 let IPI: Expr | undefined;
 const iPi = (): Expr => (IPI ??= new Mul([S.I, S.Pi]));
 
+// A sum of extended-real terms and exactly one nonreal term cannot be real.
+export function knownNonreal(e: Expr): boolean {
+  const real = (x: Expr) => x instanceof Sym ? x.assumptions0.get('extended_real') : isReal(x);
+  if (!(e instanceof Add)) return real(e) === false;
+  const terms = e.args.map(real);
+  return terms.filter((v) => v === false).length === 1 && !terms.includes(undefined);
+}
+
 export function pow(bx: ExprLike, ex: ExprLike): Expr {
   const b = sympify(bx);
   const e = sympify(ex);
@@ -792,8 +810,14 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   if ((b instanceof Rational || b instanceof Float) && b.isNegative && e instanceof Sym && e.assumptions0.get('odd') === true) return mul(-1, pow(numNeg(b), e));
 
   if (b instanceof Rational && b.isZero) {
+    if (e instanceof Sym && e.assumptions.zero) return S.One;
+    if (knownNonreal(e)) return S.NaN;
     if (isPositive(e)) return S.Zero;
     if (isNegative(e)) return S.ComplexInfinity;
+    if (e instanceof Mul) {
+      const [c, rest] = splitCoeff(e);
+      if (c instanceof Float || !c.isOne) return pow(c.isNegative ? S.ComplexInfinity : S.Zero, rest);
+    }
   }
 
   if (isI(b) && e instanceof Rational && e.isInteger) {
@@ -1091,6 +1115,7 @@ function powSpecial(b: Expr, e: Expr): Expr | undefined {
   if (b instanceof Special) {
     if (b.name === 'oo') return infPow(e);
     if (b.name === 'zoo') {
+      if (e instanceof Sym && e.assumptions.zero) return S.One;
       // SymPy gives zoo**oo = 0; |zoo|**oo is infinite, so zoo**oo = zoo here
       if (e instanceof Special && e.name === 'zoo') return S.NaN;
       if (isPositive(e)) return b;

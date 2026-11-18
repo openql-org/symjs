@@ -8,6 +8,7 @@ import { deserialize, runCase, counterpartFor, matches } from './harness';
 import type { Case, Tree } from './harness';
 import * as dg from '@symjs/symjs/diffgeom';
 import * as sj from '../../packages/symjs/src';
+import { div as divideExpr } from '../../packages/symjs/src/core/ops';
 import type { TestCase } from './tests-harness';
 
 const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'core',
@@ -66,6 +67,7 @@ it('adapts function inverses, numerical derivatives, residue limits and derangem
     expect(String(deserialize(fn(name)))).toBe(unevaluated);
     expect(runTestCase({ ...base, fn: name, args: [x], expected })).toEqual({ status: 'pass' });
     expect(runTestCase({ ...base, fn: name, args: [x], kwargs: { evaluate: { t: 'Js', v: false } }, expected: unevaluated })).toEqual({ status: 'pass' });
+    expect(runTestCase({ ...base, fn: '.rewrite', self: fn(name), args: [{ t: 'Str', v: 'polygamma' }], expected })).toEqual({ status: 'pass' });
   }
   expect(String(deserialize(fn('LeviCivita', [integer(1), integer(2), integer(3)])))).toBe('1');
   expect(runTestCase({ ...base, fn: '.epsilon_eq', self: integer(1), args: [integer(1)], expected: 'True' })).toEqual({ status: 'pass' });
@@ -756,4 +758,102 @@ it('translates matrix rewrite rules, evaluated constructors and reflected arithm
     c.fn === '.applyfunc' && c.raises === 'TypeError');
   expect(selected.length).toBeGreaterThan(25);
   for (const c of selected) expect(runTestCase(c).status, c.src).toBe('pass');
+});
+
+it('uses operand identities when an inequality compares equal-looking values', () => {
+  const dummy = (index: number): Tree => ({ t: 'Dummy', name: 'x', index, assume: {} });
+  const test = { ...base, op: '!=' as const, expected: '_x', expectedOperand: dummy(0) };
+  const outcome = { status: 'pass' as const };
+  expect(assertionOutcome(test, outcome, { value: deserialize(dummy(0)) })).toEqual({ status: 'fail', got: '_x' });
+  expect(assertionOutcome(test, outcome, { value: deserialize(dummy(1)) })).toEqual({ status: 'pass' });
+  const float = { t: 'Float', v: 0.125, man: '1', exp: -3, prec: 20 };
+  const comparison = { ...test, expectedOperand: { ...float, prec: 25 } };
+  expect(assertionOutcome(comparison, outcome, { value: deserialize(float) })).toEqual({ status: 'pass' });
+
+  const invalid = { ...test, expectedOperand: { t: 'Unrecognized' } };
+  expect(runTestCase(invalid)).toEqual({ status: 'error', reason: 'type Unrecognized', phase: 'result' });
+});
+
+it('preserves unavailable results and distinguishes input, call, and operand failures', () => {
+  const missing = { status: 'unsupported' as const, reason: 'no observation' };
+  expect(assertionOutcome({ ...base, op: 'is', expected: 'None' }, missing)).toEqual(missing);
+  expect(assertionOutcome({ ...base, raises: 'string' }, missing, { error: 'custom error' })).toEqual({ status: 'pass' });
+
+  const brokenOperand: Tree = { get t(): string { throw 'unreadable operand'; } };
+  expect(runTestCase({ ...base, op: '!=', expectedOperand: brokenOperand })).toEqual({
+    status: 'error', reason: 'unreadable operand', phase: 'result',
+  });
+  const badInteger: Tree = { t: 'Rational', p: 'invalid', q: '1' };
+  expect(runTestCase({ ...base, args: [badInteger] })).toMatchObject({ status: 'error', phase: 'input' });
+});
+
+it('replays bound matrix methods and random draws with captured state', () => {
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const matrix: Tree = { t: 'Matrix', rows: [[x]] };
+  expect(runTestCase({ ...base, fn: 'diff', boundMatrix: matrix, args: [x], expected: 'Matrix([[1]])' })).toEqual({ status: 'pass' });
+
+  const draws = passingModuleCases('core', 'sympy.core.tests.test_assumptions').filter((c) => c.fn === '.random');
+  expect(draws).toHaveLength(1);
+  for (const draw of draws) {
+    expect(runTestCase(draw)).toEqual({ status: 'pass' });
+    expect(runTestCase({ ...draw, randomState: undefined })).toEqual({
+      status: 'unsupported', reason: 'unrecorded random generator state',
+    });
+  }
+});
+
+it('keeps a stable assertion ID when the replay supplies both core and integration metadata', () => {
+  const one: Tree = { t: 'Rational', p: '1', q: '1' };
+  const tagged: TestCase = {
+    ...base,
+    args: [{ ...one, indexedAssumptions: { integer: true }, matrixClass: 'MutableDenseMatrix' }],
+    comparisonTree: one, expectedOperand: one, polyReplay: { method: 'buchberger' },
+    boundMatrix: { t: 'Matrix', rows: [[one]] }, divideError: true,
+  };
+  expect(testCaseKey(tagged)).toBe(testCaseKey(base));
+});
+
+it('uses numeric nonconstancy when exact expression equality is undecided', () => {
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const self: Tree = { t: 'Add', args: [x, { t: 'Fn', name: 'sin', args: [x] }] };
+  expect(sj.exprEquals(sj.parse('x + sin(x)'), 0)).toBe('unknown');
+  expect(runTestCase({ ...base, fn: '.equals', self, args: [{ t: 'Rational', p: '0', q: '1' }], op: 'is', expected: 'False' })).toEqual({ status: 'pass' });
+});
+
+it('replays recorded polynomial options and right operands from other categories', () => {
+  const replayed = [
+    ['polys', 'sympy.polys.tests.test_galoistools', 468],
+    ['polys', 'sympy.polys.numberfields.tests.test_numbers', 151],
+    ['polys', 'sympy.polys.numberfields.tests.test_modules', 283],
+    ['polys', 'sympy.polys.numberfields.tests.test_utilities', 99],
+    ['polys', 'sympy.polys.tests.test_fields', 23],
+    ['tensor', 'sympy.tensor.tests.test_indexed', 22],
+    ['stats', 'sympy.stats.tests.test_rv', 156],
+  ] as const;
+  for (const [category, module, line] of replayed) {
+    const cases = passingModuleCases(category, module).filter((c) => c.line === line && (c.comparisonTree || c.polyReplay));
+    expect(cases, `${module}:${line}`).not.toHaveLength(0);
+    for (const c of cases) expect(runTestCase(c).status, c.src).toBe('pass');
+  }
+});
+
+it('reports equal operands in recorded inequality assertions', () => {
+  const comparisonTree: Tree = { t: 'Rational', p: '1', q: '1' };
+  const test = { ...base, comparisonTree, op: '!=' as const, expected: 'other' };
+  const outcome = { status: 'fail' as const, got: '1' };
+  const observation = { value: sj.S.One };
+  expect(assertionOutcome(test, outcome, observation)).toEqual(outcome);
+  expect(assertionOutcome({ ...test, category: 'polys' }, outcome, observation)).toEqual(outcome);
+  const text = { ...test, comparisonTree: { t: 'Str', v: 'other' } };
+  expect(assertionOutcome(text, outcome, observation)).toEqual({ status: 'pass' });
+});
+
+it('replays the default mapping and divide-by-zero settings in their original calls', () => {
+  const zero = { t: 'Rational', p: '0', q: '1' };
+  const division: TestCase = { ...base, fn: '.__truediv__', self: zero, args: [zero], expected: 'None', op: 'is', raises: 'ValueError', divideError: true };
+  expect(runTestCase(division)).toEqual({ status: 'pass' });
+  expect(divideExpr(sj.S.Zero, sj.S.Zero)).toBe(sj.S.NaN);
+  const lookup: TestCase = { ...base, fn: '.__getitem__', self: { t: 'Dict', items: [] }, args: [zero], expected: '0', zeroDefault: true };
+  expect(runTestCase(lookup)).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...lookup, zeroDefault: false }).status).toBe('error');
 });

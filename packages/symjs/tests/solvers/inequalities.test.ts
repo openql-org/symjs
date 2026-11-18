@@ -3,7 +3,7 @@
 
 // Tests of src/solvers/inequalities.ts: inequality solving, solveset helpers, singularities, monotonicity and extrema; expected values from SymPy 1.14.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { Abs, And, Eq, Ge, Gt, Lt, Ne, Or, exp, NotImplementedError, Rational, erf, erfc, erfcinv, erfinv, parse, Poly, Reals, S as SS, sin, solveset, symbols } from '../../src';
 import type { Expr } from '../../src';
@@ -12,6 +12,7 @@ import { Piecewise as PW, Sym } from '../../src/core/nodes';
 import { add, mul, pow } from '../../src/core/ops';
 import { Complexes, ConditionSet, finiteSet, Integers, intersection, interval, union } from '../../src/sets/sets';
 import * as Q from '../../src/solvers/inequalities';
+import * as AlgebraicSolver from '../../src/solvers/solve';
 
 const [x, y] = symbols('x y');
 const xr = new Sym('x', { real: true });
@@ -871,4 +872,41 @@ describe('solveset on intervals with parameters (SymPy 1.14)', () => {
     expect(String(solveset(P('x**2 - y'), x, sj.Interval.of(0, 1)))).toBe('Intersection({-sqrt(y), sqrt(y)}, Interval(0, 1))');
     expect(String(solveset(P('(x - l)*(x - y)'), x, sj.Interval.of(0, SS.Infinity)))).toBe('Union({l}, Intersection({y}, Interval(0, oo)))');
   });
+});
+
+it('expresses several disjoint rational-inequality intervals as a union of conditions', () => {
+  const t = sj.symbol('t');
+  expect(String(sj.reduceRationalInequalities([[sj.Ne(t.pow(2), 1)]], t))).toBe('((-oo < t) & (t < -1)) | ((-1 < t) & (t < 1)) | ((1 < t) & (t < oo))');
+});
+
+it('solves homogeneous congruences and tests real parameterized roots on a bounded interval', () => {
+  expect(String(solveset(sj.Mod(x, 3), x, Integers))).toMatch(/3\*/);
+  const a = new Sym('a');
+  const polynomial = add(pow(x, 2), mul(-1, add(a, 1), x), a);
+  expect(String(solveset(polynomial, x, interval(-10, 10)))).toBe('Union({1}, Intersection({a}, Interval(-10, 10)))');
+});
+
+it('checks original equations and domain membership after clearing coupled radicals', () => {
+  const solve = AlgebraicSolver.solve;
+  const cases = [
+    { source: 'sqrt(x)+sqrt(x-1)-1', domain: Reals, expected: '{1}' },
+    { source: 'sqrt(x)+sqrt(x-1)-2', domain: interval(100, 101), expected: 'EmptySet' },
+    { source: 'sqrt(x)+sqrt(x-1)+2', domain: Reals, expected: 'EmptySet' },
+    { source: 'sqrt(x**2)-sqrt((x+1)**2)+1', domain: Reals, expected: undefined },
+    { source: 'sinh(x)+cosh(x)-2', domain: Reals, expected: '{log(2)}' },
+  ];
+  for (const { source, domain, expected } of cases) {
+    const equation = p(source);
+    const fail = vi.spyOn(AlgebraicSolver, 'solve').mockImplementation((candidate, ...args) => {
+      if (candidate instanceof sj.Expr && (candidate.equals(equation) || candidate.equals(sj.cancel(equation)))) return [];
+      return solve(candidate, ...args);
+    });
+    try {
+      const solution = solveset(equation, x, domain);
+      if (expected === undefined) expect(solution).toBeInstanceOf(ConditionSet);
+      else expect(String(solution)).toBe(expected);
+    } finally {
+      fail.mockRestore();
+    }
+  }
 });

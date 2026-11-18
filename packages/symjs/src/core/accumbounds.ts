@@ -127,6 +127,9 @@ function abAdd(abs: readonly Expr[], c: Expr): Expr {
 
 /** The product of intervals and a number; a non-real number stays beside them (SymPy I*AccumBounds(1, 2)). */
 function abMul(abs: readonly Expr[], c: Expr): Expr {
+  // The whole extended real line absorbs products, including an indeterminate scalar factor.
+  const full = abs.find((x) => asAB(x).min === S.NegativeInfinity && asAB(x).max === S.Infinity);
+  if (full !== undefined) return full;
   if (isReal(c) !== true) return new Mul([c, ...abs]);
   let lo: Expr = c;
   let hi: Expr = c;

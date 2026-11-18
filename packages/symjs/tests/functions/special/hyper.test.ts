@@ -513,3 +513,17 @@ it('keeps Meijer G parameter derivatives unevaluated when the Mellin factors can
   expect(sj.diff(unmatched, x)).toBeInstanceOf(sj.Derivative);
   expect(sj.diff(wide, x)).toBeInstanceOf(sj.Derivative);
 });
+
+it('exposes the grouped Meijer G parameters to symbolic pattern searches', () => {
+  const z = sj.symbol('z');
+  const g = sj.meijerg([], [], [sj.S.Zero], [], z);
+  const wildcard = new sj.Wild('a');
+  expect(sj.find(g, wildcard).map(String)).toEqual(expect.arrayContaining(['()', '(0,)', '((), ())', '((0,), ())']));
+  expect(sj.find(g, sj.add(wildcard, new sj.Wild('b'))).map(String)).not.toContain('(0,)');
+});
+
+it('keeps symbolic Kronecker delta real under conjugation', () => {
+  const x = sj.symbol('i'), y = sj.symbol('j');
+  const delta = new sj.Fn('KroneckerDelta', [x, y]);
+  expect(sj.conjugate(delta).equals(delta)).toBe(true);
+});

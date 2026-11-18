@@ -898,7 +898,7 @@ describe("sympy/core/tests/test_power.py", () => {
     const n = new Sym('n', { negative: true });
     expect(sympyStr([I, at(asNumerDenom(new Mul([I, new Pow(new Mul([rational(-1), n]), rational(-1, 2))])), 1)], 't')).toBe('(I, sqrt(-n))');
   });
-  it.fails("test_issue_4362:189", () => {
+  it("test_issue_4362:189", () => {
     const x = new Sym('x');
     const sym1 = new Sym('0 or neg', { nonpositive: true });
     const v1 = asNumerDenom(new Pow(new Mul([x, new Pow(sym1, rational(-1))]), rational(-1, 2)));
@@ -1028,7 +1028,7 @@ describe("sympy/core/tests/test_power.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rewrite(new Pow(new Add([rational(2), new Mul([rational(3), I])]), x), 'exp', { pattern: [], deep: true, hints: {} }))).toBe('exp(x*(log(sqrt(13)) + I*atan(3/2)))');
   });
-  it.fails("test_power_rewrite_exp:253 (2)", () => {
+  it("test_power_rewrite_exp:253 (2)", () => {
     const y = new Sym('y');
     expect(sympyStr(rewrite(new Pow(y, new Add([rational(5), new Mul([rational(6), I])])), 'exp', { pattern: [], deep: true, hints: {} }))).toBe('exp((5 + 6*I)*log(y))');
   });
@@ -1056,11 +1056,11 @@ describe("sympy/core/tests/test_power.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rational(0).pow(new Add([rational(-2), x])))).not.toBe('oo**(2 - x)');
   });
-  it.fails("test_zero:266", () => {
+  it("test_zero:266", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rational(0).pow(new Mul([rational(2), x, y])))).toBe('0**(x*y)');
   });
-  it.fails("test_zero:267", () => {
+  it("test_zero:267", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rational(0).pow(new Mul([rational(-2), x, y])))).toBe('zoo**(x*y)');
   });
@@ -1332,7 +1332,7 @@ describe("sympy/core/tests/test_power.py", () => {
   it("test_better_sqrt:484", () => {
     expect(sympyStr(expandMultinomial(new Pow(new Mul([new Pow(new Add([rational(3), new Mul([rational(-4), I])]), rational(-3)), new Add([rational(3), new Mul([rational(4), I])])]), rational(1, 2))))).toBe('sqrt((-117 + 44*I)*(3 + 4*I))/125');
   });
-  it.fails("test_better_sqrt:485", () => {
+  it("test_better_sqrt:485", () => {
     expect(sympyStr(expand(new Pow(new Mul([new Pow(new Add([rational(3), new Mul([rational(-4), I])]), rational(-3)), new Add([rational(3), new Mul([rational(4), I])])]), rational(1, 2)), {}))).toBe('7/125 - 24*I/125');
   });
   it("test_better_sqrt:489", () => {

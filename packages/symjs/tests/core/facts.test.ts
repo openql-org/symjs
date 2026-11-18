@@ -4,7 +4,7 @@
 // Tests of src/core/facts.ts. Expected values from SymPy 1.14 StdFactKB(facts).
 
 import { describe, expect, it } from 'vitest';
-import { deduceAllFacts } from '../../src/core/facts';
+import { FactRules, deduceAllFacts } from '../../src/core/facts';
 
 const sorted = (m: Map<string, boolean>): [string, boolean][] => [...m].sort(([a], [b]) => (a < b ? -1 : 1));
 
@@ -28,4 +28,20 @@ describe('deduceAllFacts (SymPy FactKB.deduce_all_facts)', () => {
   it('a fact without implications', () => {
     expect(sorted(deduceAllFacts({ unknownfact: true }))).toEqual([['unknownfact', true]]);
   });
+});
+
+it('compiles implications and equivalences and rejects contradictory fact chains', () => {
+  const rules = new FactRules(['a == b & c', 'c -> d | e', 'e -> !f', 'd -> d', '']);
+  expect([...rules.definedFacts].sort()).toEqual(['a', 'b', 'c', 'd', 'e', 'f']);
+  expect(rules.deduce({ b: true, c: true, d: false })).toEqual(new Map([
+    ['a', true], ['b', true], ['c', true], ['d', false], ['e', true], ['f', false],
+  ]));
+  expect(rules.deduce({ f: true }).get('e')).toBe(false);
+  expect(new FactRules('a == b | c').deduce({ a: false }).get('c')).toBe(false);
+  expect(() => rules.deduce({ a: true, b: false })).toThrow(RangeError);
+  expect(() => new FactRules('a -> !a')).toThrow(RangeError);
+  expect(() => new FactRules('a -> b\nb -> !a')).toThrow(RangeError);
+  expect(() => new FactRules('a -> b &')).toThrow(RangeError);
+  expect(() => new FactRules('a -> b xor c')).toThrow(RangeError);
+  expect(() => new FactRules('a != b')).toThrow(RangeError);
 });

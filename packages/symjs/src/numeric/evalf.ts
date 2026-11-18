@@ -6,7 +6,7 @@
  */
 
 import { DeferredVector } from '../core/classes';
-import { isReal } from '../core/assumptions';
+import { isReal, isZero } from '../core/assumptions';
 import type {
   ComplexValue as C,
   ConstantName,
@@ -35,7 +35,7 @@ import {
 } from '../core/nodes';
 import { at } from '../core/guard';
 import { Concrete } from '../core/concrete';
-import { EvalfValueError } from '../core/errors';
+import { PrecisionExhausted, EvalfValueError } from '../core/errors';
 import { add, mul, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
 import type { NoMatchResult } from '../core/truth';
@@ -63,7 +63,7 @@ import {
 } from './complex';
 import * as F from './mpf';
 import { dpsToPrec } from './mpf';
-import { type Mpc, type MpPart, MpSpecialValue, evalAdaptive, fromMpc } from './mpeval';
+import { type Mpc, type MpPart, MpSpecialValue, evalAdaptive, evalMp, fromMpc } from './mpeval';
 import { asRealImag } from '../core/methods';
 import { fn } from '../functions/elementary/elementary';
 import { fromInt } from './mpf';
@@ -132,11 +132,11 @@ const isValueMap = (v: NumericValues): v is ReadonlyMap<Expr | string, Value> =>
 function makeRawLookup(values: NumericValues | undefined): (s: Sym) => Value | undefined {
   if (!values) return () => undefined;
   if (isValueMap(values)) {
-    const byName = new Map<string, Value>();
+    const byKey = new Map<string, Value>();
     for (const [k, v] of values) {
-      byName.set(typeof k === 'string' ? k : k instanceof Sym ? k.name : k.key, v);
+      if (typeof k !== 'string') byKey.set(k.key, v);
     }
-    return (s) => byName.get(s.name);
+    return (s) => byKey.get(s.key) ?? values.get(s.name);
   }
   return (s) => (Object.prototype.hasOwnProperty.call(values, s.name) ? values[s.name] : undefined);
 }
@@ -292,7 +292,7 @@ export function evalf(ex: ExprLike, n?: number | NumericValues, opts: EvalfOptio
   let values = opts.subs;
   if (typeof n === 'number') dps = n;
   else if (n !== undefined) values = n;
-  return evalfPrec(e, dpsToPrec(dps), values, opts.chop);
+  return evalfPrec(e, dpsToPrec(dps), values, opts.chop, opts);
 }
 
 /** A function application (exp is a power of E here, a function in SymPy). */
@@ -313,13 +313,15 @@ function specialPart(p: MpPart, prec: number): Expr {
 }
 
 /** evalf at a binary precision. */
-export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number): Expr {
+export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number, options: Pick<EvalfOptions, 'maxn' | 'strict'> = {}): Expr {
+  const maxPrec = options.maxn === undefined ? Infinity : dpsToPrec(options.maxn);
   const raw = makeRawLookup(values);
   // an exact value is evaluated at the working precision, not the target one
   const lookup = (s: Sym, wp: number): Mpc | undefined => {
     const v = raw(s);
     if (v === undefined) return undefined;
     if (typeof v === 'number') return [F.fromNumber(v), F.ZERO];
+    if (v instanceof Special) return undefined;
     if (v instanceof Expr) return evalAdaptive(v, wp);
     return [F.fromNumber(v.re), F.fromNumber(v.im)];
   };
@@ -336,10 +338,18 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     visit(x);
     if (!ok) return undefined;
     try {
-      return fromMpc(evalAdaptive(x, prec, look), prec, chop);
+      const accuracy = options.strict === true ? { re: prec, im: prec } : undefined;
+      const parts = evalAdaptive(x, prec, look, accuracy, maxPrec);
+      const result = fromMpc(parts, prec, chop);
+      if (accuracy !== undefined && chop !== true &&
+          (complexAccuracy([...parts, accuracy.re, accuracy.im]) < prec ||
+           result === S.Zero && Math.min(accuracy.re, accuracy.im) < prec)) {
+        throw new PrecisionExhausted('could not achieve the requested accuracy');
+      }
+      return result;
     } catch (err) {
       // (SymPy raises the ValueError of mpmath)
-      if (err instanceof EvalfValueError) throw err;
+      if (err instanceof EvalfValueError || err instanceof PrecisionExhausted) throw err;
       // mpmath's inf and nan (SymPy _from_mpmath: Float._new(re) + Float._new(im)*I)
       if (err instanceof MpSpecialValue) return add(specialPart(err.re, prec), mul(specialPart(err.im, prec), S.I));
       // not numerically evaluable
@@ -348,6 +358,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
   };
   /** SymPy _eval_evalf: the numeric parts evaluated, the others kept. */
   const go = (x: Expr): Expr => {
+    if (x instanceof Integral && isZero(x.integrand) === true) return S.Zero;
     const v = numeric(x, noValue);
     if (v !== undefined) return v;
     // SymPy Function._eval_evalf: a function that is not a number keeps its arguments
@@ -402,6 +413,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
   };
   const e2 = sub(e);
   if (e2 instanceof Special) return pole ? e : e2;
+  if (e2.kind === 'Set') return go(e2);
   if (e2 instanceof Add || e2 instanceof Mul || (e2 instanceof Pow && !isFunction(e2))) return go(e2);
   // a node that evaluates its parts itself (SymPy _eval_evalf: vectors evaluate their components)
   const own = e2 instanceof ExtensionExpr ? e2.evalfSelf(go, F.precToDps(prec)) : undefined;
@@ -459,6 +471,40 @@ impl.isComparable = isComparable;
 impl.toComplex = toComplex;
 
 export type EvalfResult = readonly [Mpf, Mpf, number, number];
+
+type RawPart = Mpf | NoMatchResult;
+type RawAccuracy = number | NoMatchResult;
+export type RawEvalfResult = readonly [RawPart, RawPart, RawAccuracy, RawAccuracy];
+
+/** Evaluate a closed number at binary precision and preserve its component accuracies. */
+export function evalfRaw(expression: ExprLike, precision: number): RawEvalfResult | NoMatchResult {
+  const e = sympify(expression);
+  if (!Number.isSafeInteger(precision) || precision < 1) throw new RangeError('precision must be a positive integer');
+  if (isZero(e) === true || e instanceof Concrete && isZero(e.function) === true) return [NoMatch, NoMatch, precision, NoMatch];
+  const accuracy = { re: precision, im: precision };
+  try {
+    const [real, imaginary] = evalAdaptive(e, precision, undefined, accuracy);
+    if (!(e instanceof Add)) return rawParts(real, imaginary, accuracy.re, accuracy.im);
+    // As in evalf_add, retain the relative precision before rounding the reported value.
+    const working = precision + 10;
+    const terms = e.args.map((term) => evalMp(term, working));
+    const estimate = (index: 0 | 1, value: Mpf, fallback: number): number => {
+      const parts = terms.map((term) => term[index]).filter((term) => !F.isZero(term));
+      if (parts.length < 2 || F.isZero(value)) return fallback;
+      const sum = parts.reduce((total, term) => F.add(total, term, working), F.ZERO);
+      return Math.min(Math.max(F.mag(sum) + working - Math.max(...parts.map(F.mag)), 1), working + 1);
+    };
+    return rawParts(real, imaginary, estimate(0, real, accuracy.re), estimate(1, imaginary, accuracy.im));
+  } catch {
+    return NoMatch;
+  }
+}
+
+function rawParts(real: Mpf, imaginary: Mpf, realAccuracy: number, imaginaryAccuracy: number): RawEvalfResult {
+  const r = F.isZero(real);
+  const i = F.isZero(imaginary);
+  return [r ? NoMatch : real, i ? NoMatch : imaginary, r && !i ? NoMatch : realAccuracy, i ? NoMatch : imaginaryAccuracy];
+}
 
 /** Relative accuracy in bits, using SymPy's maximum-norm error estimate. */
 export function complexAccuracy(result: EvalfResult | Expr): number {

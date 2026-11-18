@@ -205,6 +205,11 @@ it('distinguishes native tuples from lists and symbolic Tuple nodes', () => {
   expect(srepr({ tupleItems: [x, { tupleItems: [y, 1] }] })).toBe("(Symbol('x'), (Symbol('y'), 1))");
 });
 
+it('preserves symbolic derivative counts in expression representations', () => {
+  const [x, n] = sj.symbols('x n');
+  expect(srepr(sj.SymFunction('f')(x).diff(x, n))).toContain("(Symbol('x'), Symbol('n'))");
+});
+
 // Replay the serialized algebraic objects that the expression-only test generator cannot reconstruct.
 const algebraicCases = new Set(['test_AlgebraicNumber', 'test_PolyRing', 'test_FracField', 'test_PolyElement', 'test_FracElement', 'test_PolynomialRingBase', 'test_FractionField', 'test_FiniteExtension']);
 for (const c of passingModuleCases('printing', 'sympy.printing.tests.test_repr').filter((c) => algebraicCases.has(c.test))) {

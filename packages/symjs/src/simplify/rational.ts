@@ -255,9 +255,9 @@ function floatsToRationals(e: Expr): [Expr, number] {
 function floatCancel(n: Expr, d: Expr, vars: readonly Expr[]): [Expr, Expr] {
   const [nq, pn] = floatsToRationals(n);
   const [dq, pd] = floatsToRationals(d);
-  // (the Floats are the only factors of the terms that are not generators or rationals)
-  const tn = defined(coeffTable(nq, vars), 'the coefficients of n');
-  const td = defined(coeffTable(dq, vars), 'the coefficients of d');
+  const tn = coeffTable(nq, vars);
+  const td = coeffTable(dq, vars);
+  if (tn === undefined || td === undefined) return [n, d];
   const complex = [...tn.values(), ...td.values()].some(([, c]) => c[1] !== 0n);
   const prec = Math.max(pn, pd);
   let g = gcdOf(nq, dq, vars);
@@ -449,7 +449,7 @@ function leadingUnit(d: Expr, gens: readonly Expr[]): Expr | undefined {
 const lexGreater = (a: readonly number[], b: readonly number[]): boolean =>
   a.reduce<boolean | undefined>((r, v, i) => r ?? (v !== at(b, i) ? v > at(b, i) : undefined), undefined) === true;
 
-impl.fraction = (e) => fraction(e);
+impl.fraction = fraction;
 
 /** SymPy ratsimp: polynomial part plus a cancelled remainder over a single denominator. */
 export function ratsimp(ex: ExprLike): Expr {

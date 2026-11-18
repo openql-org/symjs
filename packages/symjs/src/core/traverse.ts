@@ -6,11 +6,12 @@
  */
 
 import { piecewise, rel } from './logic';
+import { toRational } from '../numeric/mpf';
 import { Concrete } from './concrete';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import type { Key } from '../printing/sortkey';
 import type { ExprLike, Substitution } from './nodes';
-import { Add, Derivative, Dummy, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, asRational, impl, isNum } from './nodes';
+import { Add, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, asRational, impl, isNum } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { isIntegerQ, isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
@@ -45,7 +46,7 @@ export function rebuild(e: Expr, args?: readonly Expr[]): Expr {
   if (e instanceof Integral) return new Integral(args);
   if (e instanceof Limit) return new Limit(args, e.dir);
   if (e instanceof Order) return new Order(args);
-  if (e instanceof UndefFn) return new UndefFn(e.name, args);
+  if (e instanceof UndefFn) return new UndefFn(e.name, args, e.givenFacts);
   if (e instanceof Concrete) return new Concrete(e.kind2, args);
   // SymPy keeps a rebuilt derivative unevaluated: Derivative(f(x), x).subs(f(x), x**2) = Derivative(x**2, x)
   if (e instanceof Derivative) return e.withArgs(args);
@@ -123,6 +124,13 @@ function powerOf(ct1: [Expr, Expr], ct2: [Expr, Expr], old: Pow): Expr | undefin
   if (ct1[1].key !== ct2[1].key) return undefined;
   const k = mul(ct1[0], pow(ct2[0], -1));
   if (k instanceof Rational && k.isInteger) return k;
+  if (k instanceof Float && k.mpf.exp >= 0n && isNum(ct1[0]) && isNum(ct2[0])) {
+    const exact = (n: Float | Rational): Rational => n instanceof Float ? Rational.of(...toRational(n.mpf)) : n;
+    const a = exact(ct1[0]);
+    const b = exact(ct2[0]);
+    const ratio = Rational.of(a.p * b.q, a.q * b.p);
+    if (ratio.isInteger && ratio.key === exact(k).key) return k;
+  }
   const combines = (isPositive(old.base) === true && isReal(old.exp) === true) || (isNonNegative(old.base) === true && isNonNegative(old.exp) === true);
   return combines ? k : undefined;
 }
@@ -162,16 +170,16 @@ function intLog(b: Expr, c: Expr): number | undefined {
 function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
   // Derivative(f, (x, 2)).subs(Derivative(f, x), y) -> Derivative(y, x) (SymPy Derivative._eval_subs)
   if (e instanceof Derivative && old instanceof Derivative && e.expr.key === old.expr.key) {
-    const have = new Map(e.variableCount.map(([v, n]) => [v.key, [v, n] as [Expr, number]]));
-    const remaining = new Map(have);
-    for (const [v, n] of old.variableCount) {
+    const remaining = new Map(e.variableOrders.map((pair) => [pair[0].key, pair] as const));
+    for (const [v, n] of old.variableOrders) {
       const h = remaining.get(v.key);
-      if (!h || h[1] < n) return undefined;
-      remaining.set(v.key, [v, h[1] - n]);
+      if (!h) return undefined;
+      const order = add(h[1], mul(-1, n));
+      if (order.key === S.Zero.key) remaining.delete(v.key);
+      else if (isPositive(order) === true) remaining.set(v.key, [v, order]);
+      else return undefined;
     }
-    const vc = [...remaining.values()].filter(([, n]) => n > 0);
-    if (!vc.length) return nw;
-    return new Derivative([nw, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]);
+    return remaining.size ? new Derivative([nw, ...[...remaining.values()].flat()]) : nw;
   }
   if (e instanceof Add && old.isNumber) {
     const negative = mul(-1, old);
@@ -223,6 +231,16 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
     }
     if (quotient !== 0n) return mul(pow(nw, Rational.of(quotient)), pow(e.base, add(...rest)));
     return e;
+  }
+  // A real logarithm in an exponential pattern identifies the corresponding power.
+  if (e instanceof Pow && old instanceof Pow && old.base.equals(S.E) && !e.base.equals(S.E)) {
+    const factors = old.exp instanceof Mul ? old.exp.args : [old.exp];
+    const logarithm = factors.find((term) => term instanceof Fn && term.name === 'log');
+    if (logarithm instanceof Fn && logarithm.args.length === 1 && isPositive(at(logarithm.args, 0)) === true) {
+      const power = new Pow(at(logarithm.args, 0), mul(...factors.filter((term) => term !== logarithm)));
+      const value = evalSubs(e, power, nw);
+      if (value !== undefined) return value;
+    }
   }
   // SymPy issue 10829: (4**x).subs(2**x, y) -> y**2, for log(4, 2) a number
   if (e instanceof Pow && old instanceof Pow && e.exp.key === old.exp.key) {
@@ -341,20 +359,23 @@ function subsNcRun(e: Mul, old: Mul, nw: Expr): Expr | undefined {
 }
 
 /** The factors of a commutative product as base -> rational exponent (SymPy Mul._eval_subs breakup). */
-function breakup(e: Mul): Map<string, { base: Expr; exp: Rational }> {
-  const out = new Map<string, { base: Expr; exp: Rational }>();
+function breakup(e: Mul): Map<string, { base: Expr; exp: Rational; split?: Pow }> {
+  const out = new Map<string, { base: Expr; exp: Rational; split?: Pow }>();
   for (const a of e.args) {
     let [b, x]: [Expr, Expr] = a instanceof Pow ? [a.base, a.exp] : [a, Rational.of(1n)];
     let co = ratOf(x);
+    let split: Pow | undefined;
     if (!co) {
       // b**(2*y): base b**y, exponent 2
       const c = x instanceof Mul ? ratOf(first(x.args)) : undefined;
       co = c ?? Rational.of(1n);
-      b = pow(b, mul(x, pow(co, -1)));
+      const symbolicPower = pow(b, mul(x, pow(co, -1)));
+      if (symbolicPower instanceof Pow && symbolicPower.base.equals(b)) split = symbolicPower;
+      b = symbolicPower;
     }
     x = co;
     const cur = out.get(b.key);
-    out.set(b.key, { base: b, exp: cur ? asRational(add(cur.exp, x)) : co });
+    out.set(b.key, { base: b, exp: cur ? asRational(add(cur.exp, x)) : co, split: cur === undefined || cur.split !== undefined ? split : undefined });
   }
   return out;
 }
@@ -402,9 +423,11 @@ function subsMul(e: Mul, old: Mul, nw: Expr): Expr | undefined {
   }
   k *= direction;
   const rest: Expr[] = [residual];
-  for (const [key, { base, exp }] of c) {
+  for (const [key, { base, exp, split }] of c) {
     const o = oldC.get(key);
-    rest.push(subsOne(pow(base, o ? add(exp, mul(-k, o.exp)) : exp), old, nw));
+    const exponent = o ? add(exp, mul(-k, o.exp)) : exp;
+    const remaining = split === undefined ? pow(base, exponent) : pow(split.base, mul(split.exp, exponent));
+    rest.push(subsOne(remaining, old, nw));
   }
   return mul(pow(nw, k), ...rest);
 }
@@ -416,14 +439,14 @@ export function subsFunction(expr: Expr, name: string, replacement: (...args: Ex
       let body = e.expr;
       const variables: Expr[] = [];
       const points: [Expr, Expr][] = [];
-      for (const [v, n] of e.variableCount) {
+      for (const [v, n] of e.variableOrders) {
         const value = go(v);
         if (!(value instanceof Sym || value instanceof UndefFn)) {
           const dummy = new Dummy('xi');
           body = xreplace(body, [[v, dummy]]);
-          variables.push(dummy, Rational.of(n));
+          variables.push(dummy, go(n));
           points.push([dummy, value]);
-        } else variables.push(value, Rational.of(n));
+        } else variables.push(value, go(n));
       }
       const result = new Derivative([go(body), ...variables]);
       return points.length ? new SubsNode([result, ...points.map(([v]) => v), ...points.map(([, p]) => p)]) : result;
@@ -438,6 +461,8 @@ export function subsFunction(expr: Expr, name: string, replacement: (...args: Ex
   };
   return go(expr);
 }
+
+impl.subsFunction = subsFunction;
 
 /** Variables bound by a definite Integral or a Sum/Product (SymPy bound_symbols). */
 export function boundSymbols(e: Expr): Expr[] {
@@ -457,12 +482,13 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e.args.length === 0) return e instanceof Sym ? (e.substituteInner((x) => subsOne(x, old, nw)) ?? e) : e;
   // Derivative._eval_subs preserves the independent differentiation variables.
   if (e instanceof Derivative && old instanceof Sym) {
-    const variables = e.variableCount.map(([v]) => v);
+    const variables = e.variableOrders.map(([v]) => v);
     const changingVariable = variables.some((v) => v.key === old.key);
     const validVariable = nw instanceof Sym || nw instanceof UndefFn;
     if (changingVariable && !validVariable) return new SubsNode([e, old, nw]);
     if (changingVariable && nw.key !== old.key && e.expr.has(nw)) return new SubsNode([e, old, nw]);
   }
+  if (e instanceof SubsNode) return e.subsSelf(old, nw, (x) => subsOne(x, old, nw));
   // the variable of an indefinite integral replaced: the antiderivative at that point (SymPy (x, b) limit)
   if (e instanceof Integral && e.args.length === 2 && e.variable.key === old.key && !(nw instanceof Sym)) return new Integral([e.integrand, old, nw]);
   // a bound variable is not free: only the limits are substituted
@@ -513,6 +539,15 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
 }
 
+/** SymPy _nodes, including the order stored in a derivative's variable tuple. */
+function substitutionSize(e: Expr): number {
+  if (e instanceof Derivative) {
+    return substitutionSize(e.expr) + e.variableOrders.reduce((total, [, order]) =>
+      total + (order instanceof Rational ? order.toNumber() : substitutionSize(order)), 0);
+  }
+  return 1 + e.args.reduce((total, arg) => total + substitutionSize(arg), 0);
+}
+
 /**
  * Substitution like SymPy `subs`: pairs are applied in order (unless
  * `simultaneous`), and sums, products and powers are matched algebraically,
@@ -523,7 +558,7 @@ export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } 
   if (!Array.isArray(s)) {
     // unordered mapping (SymPy dict): more complex keys first, then by sort key
     pairs = [...pairs].sort((a, b) => {
-      const d = countOps(b[0]) - countOps(a[0]);
+      const d = substitutionSize(b[0]) - substitutionSize(a[0]);
       return d !== 0 ? d : compareKeys(sortKey(a[0]), sortKey(b[0]));
     });
   }
@@ -559,8 +594,8 @@ export function freeSymbols(e: Expr): Set<Expr> {
         } else go(a);
       });
     } else if (x instanceof Derivative) {
-      // Differentiation variables are not free unless present in the expression.
-      go(at(x.args, 0));
+      go(x.expr);
+      for (const [, order] of x.variableOrders) go(order);
     } else if (x instanceof Integral && x.args.length >= 3) {
       // the integration variable of a definite integral (or one with an upper limit) is bound
       const v = x.variable;

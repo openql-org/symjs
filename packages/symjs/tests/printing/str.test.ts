@@ -151,6 +151,12 @@ describe('precedence of the logic operators (SymPy PRECEDENCE)', () => {
   });
 });
 
+it('prints a condition set over the universal base without showing the base', () => {
+  const x = sj.symbol('x');
+  const condition = new sj.Contains(x, sj.Reals);
+  expect(str(new sj.ConditionSet(x, condition, sj.UniversalSet))).toBe('ConditionSet(x, Contains(x, Reals))');
+});
+
 it('combines the sign of a negative infinity factor with a product coefficient', () => {
   expect(str(new Mul([S.NegativeInfinity, I]))).toBe('-oo*I');
   expect(str(new Mul([S.NegOne, S.NegativeInfinity, I]))).toBe('oo*I');

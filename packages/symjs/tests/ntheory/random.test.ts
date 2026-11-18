@@ -59,3 +59,33 @@ describe('Python floats (random, gauss)', () => {
     expect(g.gauss()).toBeCloseTo(-0.2558802884476004, 14);
   });
 });
+
+it('restores uniform draws and the cached Gaussian from an independent snapshot', () => {
+  const rng = new Random(123);
+  const initial = rng.getState();
+  const first = rng.getrandbits(31);
+  rng.setState(initial);
+  expect(rng.getrandbits(31)).toBe(first);
+  rng.gauss(0, 1);
+  const withGaussian = rng.getState();
+  const saved = rng.gauss(0, 1);
+  rng.setState(withGaussian);
+  expect(rng.gauss(0, 1)).toBe(saved);
+  expect(() => rng.setState({ ...initial, words: [] })).toThrow(RangeError);
+  for (const index of [-1, 625, 0.5]) expect(() => rng.setState({ ...initial, index })).toThrow(RangeError);
+  for (const word of [0.5, -1, 2 ** 32]) {
+    expect(() => rng.setState({ ...initial, words: [word, ...initial.words.slice(1)] })).toThrow(RangeError);
+  }
+});
+
+it('reuses the shared generator for seeded and unseeded integer draws', async () => {
+  const { randintFrom, rng, seed } = await import('../../src/ntheory/random');
+  const snapshot = rng.getState();
+  try {
+    seed(123);
+    expect(randintFrom()(1n, 20n)).toBe(randintFrom(123)(1n, 20n));
+    expect(new Random(0).randbelow(1n)).toBe(0n);
+  } finally {
+    rng.setState(snapshot);
+  }
+});

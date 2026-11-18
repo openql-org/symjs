@@ -24,6 +24,7 @@ import { cmp as compareMpf, fromNumber } from '../numeric/mpf';
 import { cabs } from '../numeric/mpfun';
 import { rationalFromString } from '../core/numberutils';
 import { diff } from '../calculus/diff';
+import { Concrete } from '../core/concrete';
 import { acos, asin, atan, cosh, sinh, tanh, tan, sin, cos, fn, log } from '../functions/elementary/elementary';
 import { polyCoefficients, roots } from '../polys/poly';
 import '../polys/polyroots';
@@ -43,7 +44,7 @@ import { cancel, fraction, together } from '../simplify/rational';
 import { radsimp } from '../simplify/radsimp';
 import { simplify } from '../simplify/simplify';
 import { factorTerms } from '../simplify/exprtools';
-import { asNumerDenom, asRealImag } from '../core/methods';
+import { asNumerDenom, asRealImag, isConstantTruth, isPolynomial } from '../core/methods';
 import { expandFunc } from '../functions/special/special';
 import { perfectPower } from '../ntheory/factor';
 import { powdenest } from '../simplify/powsimp';
@@ -100,6 +101,12 @@ export function checksol(equation: ExprLike | readonly ExprLike[], assignments: 
   const zero = ask(Q.zero(residual));
   if (zero !== 'unknown') return zero;
   if (residual instanceof Sym) return false;
+  const assignedSymbols = reps.map(([key]) => key).filter((key): key is Sym => key instanceof Sym);
+  if (assignedSymbols.length && isConstantTruth(residual, assignedSymbols) === false) return false;
+  if (residual instanceof Concrete) {
+    const evaluated = expandMul(impl.doit?.(residual) ?? residual);
+    if (!evaluated.equals(residual) && isPolynomial(evaluated)) return evaluated.equals(S.Zero);
+  }
   if (options.numerical !== false && !freeSymbols(residual).size) {
     try {
       return compareMpf(cabs(evalMp(residual, 200), 200), fromNumber(1e-9)) < 0;

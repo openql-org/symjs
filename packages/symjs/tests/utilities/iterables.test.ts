@@ -675,3 +675,17 @@ describe('iterables', () => {
     expect(strs(I.postorderTraversal(e, defaultSortKeyOf))).toEqual(['x', '2', '2', 'x', 'x**2', '2*x**2', '2*x**2 + x']);
   });
 });
+
+it('handles integer validation, sliced palindromes and matrix graph edges', async () => {
+  const s = await import('../../src');
+  expect(I.isPalindromic('zabax', -4, -1)).toBe(true);
+  expect(I.isPalindromic('abc', -9)).toBe(false);
+  expect(I.isPalindromic(-121n)).toBe(true);
+  expect(() => I.isPalindromic(2.5)).toThrow(TypeError);
+  expect(() => I.isPalindromic(s.symbol('x'))).toThrow(TypeError);
+  expect(() => I.isPalindromic(21, 1)).toThrow(RangeError);
+  expect(I.flatten(new Set([1, 2]), { levels: 0 })).toEqual([1, 2]);
+  const graph = s.Matrix.of([[0,1,1,0], [1,0,1,0], [1,1,0,0], [0,0,1,0]]);
+  expect(I.connectedComponents(graph)).toEqual([[0, 1, 2, 3]]);
+  expect(I.stronglyConnectedComponents(graph)).toEqual([[0, 1, 2], [3]]);
+});

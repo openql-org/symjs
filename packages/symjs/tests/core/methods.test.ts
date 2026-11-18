@@ -767,6 +767,72 @@ it('optionally includes nonrational numeric coefficients in asCoeffMul', () => {
   expect(sj.asCoeffMul(sj.mul(x, y), [], false).map(String)).toEqual(['1', 'x,y']);
 });
 
+it('respects integral bindings when looking for a free subexpression', () => {
+  const [x, y] = sj.symbols('x y');
+  const pattern = sj.sin(x);
+  const integral = new sj.Integral([pattern, x, sj.S.Zero, y]);
+  expect(sj.hasFree(integral, pattern)).toBe(false);
+  expect(sj.hasFree(integral, integral)).toBe(true);
+  expect(sj.hasFree(sj.add(integral, pattern), pattern)).toBe(true);
+});
+
+it('combines numerators that share only some denominators', () => {
+  const [a, b, x, y] = sj.symbols('a b x y');
+  const expr = sj.add(a.div(x), b.div(x), sj.pow(y, -1));
+  const [num, den] = sj.asNumerDenom(expr);
+  expect(den.key).toBe(x.mul(y).key);
+  expect(num.key).toBe(sj.add(x, sj.mul(y, sj.add(a, b))).key);
+});
+it('splits complex products with a symbolic imaginary factor', () => {
+  const i = sj.symbol('i', { imaginary: true });
+  const x = sj.symbol('x');
+  const [a, b] = sj.asRealImag(sj.mul(i, x));
+  expect(a.key).toBe(sj.mul(sj.I, i, sj.im(x)).key);
+  expect(b.key).toBe(sj.mul(-1, sj.I, i, sj.re(x)).key);
+});
+
+it('keeps a canonical name for each integral limit and respects occurrences in endpoints', () => {
+  const [a, b, t] = sj.symbols('a b t');
+  const inner = new sj.Integral([sj.add(a, b), a, sj.S.Zero, t]);
+  const all = new sj.Integral([inner, b, sj.S.Zero, sj.S.One]);
+  expect([...sj.canonicalVariables(all)].map(([u,v]) => [String(u), String(v)])).toEqual([['a', '_0'], ['b', '_1']]);
+  expect(String(sj.asDummy(all))).toBe('Integral(_0 + _1, (_0, 0, t), (_1, 0, 1))');
+  expect([...sj.iterFreeArgs(all)].map(String)).toEqual([String(all), '0', 't', '0', '1']);
+  expect([...sj.iterFreeArgs(a.add(1))].map(String)).toEqual(['a + 1', '1', 'a']);
+  expect([...sj.exprFreeSymbols(sj.Tuple(a, b))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(sj.Eq(a, b))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(a.add(1))].map(String)).toEqual(['1', 'a']);
+  expect([...sj.exprFreeSymbols(all)].map(String)).toEqual(['a', 'b']);
+  expect([...sj.exprFreeSymbols(sj.Basic(a))]).toEqual([]);
+  expect([...sj.exprFreeSymbols(sj.Subs(a, a, b))]).toEqual([]);
+  const indexed = new sj.Indexed([a, b]);
+  expect([...sj.exprFreeSymbols(indexed)]).toEqual([indexed]);
+});
+it('extracts common radicals of matching degree', () => {
+  const e = sj.parse('6**(1/3) + (-6)**(1/3)');
+  expect(String(sj.asContentPrimitive(e, { radical: true })[1])).toBe('6**(1/3)*(1 + (-1)**(1/3))');
+  expect(sj.asContentPrimitive(sj.parse('sqrt(2) + sqrt(3)'), { radical: true })[1].key).toBe(sj.parse('sqrt(2) + sqrt(3)').key);
+  expect(sj.asContentPrimitive(sj.parse('1 + sqrt(2)'), { radical: true })[1].key).toBe(sj.parse('1 + sqrt(2)').key);
+});
+
+it('keeps free endpoints of sums separate from their bound occurrences', () => {
+  const [x, y] = sj.symbols('x y');
+  const sum = new sj.Concrete('Sum', [x, x, sj.S.Zero, x]);
+  expect(String(sj.asDummy(sum))).toBe('Sum(_0, (_0, 0, x))');
+  expect([...sj.iterFreeArgs(sum)].map(String)).toEqual([String(sum), '0', 'x']);
+  expect(String(sj.asDummy(sj.add(sum, y)))).toBe('y + Sum(_0, (_0, 0, x))');
+  const mixed = new sj.Add([sj.sqrt(2), sj.pow(3, sj.Rational.of(1, 3))]);
+  expect(sj.asContentPrimitive(mixed, { radical: true })[1].key).toBe(mixed.key);
+});
+
+it('extracts additive terms from the remainder of a factored expression', () => {
+  const [x, y] = sj.symbols('x y');
+  const sum = x.add(y);
+  expect(String(sj.extractAdditively(sum.mul(x.add(1)).add(sum).add(3), sum))).toBe('x*(x + y) + 3');
+  expect(String(sj.extractAdditively(sum.mul(x.add(1)).add(sum).add(2).add(x), sum))).toBe('x*(x + y) + x + 2');
+  const partial = sum.mul(x.add(1)).add(sum.mul(2));
+  expect(String(sj.extractAdditively(partial, sum))).toBe('x*(x + y) + x + y');
+});
 describe('Piecewise series and meromorphic branches', () => {
   const [x, y] = sj.symbols('x y', { real: true });
   const p = sj.piecewise([sj.sqrt(sj.sub(1, x)), sj.Gt(x, 0)], [1, true]);
@@ -806,4 +872,38 @@ it('passes directions to the local expansion', () => {
   const step = sj.SingularityFunction(x, 0, 0);
   expect(sj.nseries(step, x, 0, 6, { cdir: 1 })).toBe(sj.S.One);
   expect(sj.nseries(step, x, 0, 6, { cdir: -1 })).toBe(sj.S.Zero);
+});
+
+it('treats a random variable as an atom when checking rational functions', () => {
+  const r = sj.Normal('r', 0, 1);
+  expect(sj.isRationalFunction(r.add(1), [r])).toBe(true);
+  expect(sj.isRationalFunction(r.add(sj.oo), [r])).toBe(false);
+});
+
+it('reports possible poles in the fuzzy constancy test', () => {
+  const x = new sj.Sym('x', { real: true });
+  const z = new sj.Sym('z', { zero: true });
+  const p = new sj.Sym('p', { positive: true });
+  expect(sj.isConstantTruth(x)).toBe(false);
+  expect(sj.isConstantTruth(x, [p])).toBe(true);
+  expect(sj.isConstantTruth(4)).toBe(true);
+  expect(sj.isConstantTruth(sj.add(z, sj.mul(2, z)))).toBe(true);
+  const set = { symbols: { x, p, z } };
+  expect(sj.isConstantTruth(sj.parse('(-1+x)/(1-x)', set))).toBe('unknown');
+  expect(sj.isConstantTruth(sj.parse('tan(x)**2 - 1/cos(x)**2', set))).toBe('unknown');
+  expect(sj.isConstantTruth(sj.parse('sin(x)**2+cos(x)**2', set))).toBe(true);
+});
+
+it('distinguishes a known pole from a denominator known to be nonzero', () => {
+  class ConstantWithArgument extends sj.ExtensionExpr {
+    constructor(argument: sj.Expr) { super('ConstantWithArgument', [argument]); }
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new ConstantWithArgument(args[0] ?? sj.S.Zero); }
+    override diffSelf(): sj.Expr { return sj.S.Zero; }
+  }
+  const t = new sj.Sym('t');
+  const zero = new sj.Sym('z', { zero: true });
+  const v = (denominator: sj.Expr) => new ConstantWithArgument(new sj.Pow(denominator, sj.S.NegOne));
+  expect(sj.isConstantTruth(v(sj.S.Two), [t])).toBe(true);
+  expect(sj.isConstantTruth(v(zero))).toBe(false);
+  expect(sj.isConstantTruth(new ConstantWithArgument(new sj.Mul([t, new sj.Pow(sj.S.Two, sj.S.NegOne)])))).toBe(true);
 });

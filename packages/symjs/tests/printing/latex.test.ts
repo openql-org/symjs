@@ -857,6 +857,12 @@ it('separates compound Levi-Civita indices and groups powers', () => {
   expect(latex(pow(sj.LeviCivita(x, y, z), 2))).toBe('\\left(\\varepsilon_{x y z}\\right)^{2}');
 });
 
+it('prints symbolic derivative orders in LaTeX', () => {
+  const [x, n] = sj.symbols('x n');
+  const f = sj.SymFunction('f')(x);
+  expect(latex(f.diff(x, n))).toContain('^{n}');
+});
+
 // Replay the serialized algebraic objects that the expression-only test generator cannot reconstruct.
 const algebraicCases = new Set(['test_latex_basic', 'test_Modules', 'test_QuotientRing', 'test_PolynomialRingBase', 'test_latex_PolyElement', 'test_latex_FracElement', 'test_latex_Poly', 'test_latex_Poly_order', 'test_latex_numbers', 'test_latex_ordinals', 'test_categories']);
 for (const c of passingModuleCases('printing', 'sympy.printing.tests.test_latex').filter((c) => algebraicCases.has(c.test))) {

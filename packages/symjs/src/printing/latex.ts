@@ -895,12 +895,11 @@ function texOf(e: Expr): string {
     const partial = requiresPartial(e.expr);
     const d = partial ? '\\partial' : settings.diffOperator;
     let tex = '';
-    let dim = 0;
-    for (const [v, n] of [...e.variableCount].reverse()) {
-      dim += n;
-      tex += n === 1 ? `${d} ${texOf(v)}` : `${d} ${parenthesizeSuper(texOf(v))}^{${n}}`;
+    for (const [v, n] of [...e.variableOrders].reverse()) {
+      tex += n.key === '1' ? `${d} ${texOf(v)}` : `${d} ${parenthesizeSuper(texOf(v))}^{${texOf(n)}}`;
     }
-    const head = dim === 1 ? `\\frac{${d}}{${tex}}` : `\\frac{${d}^{${dim}}}{${tex}}`;
+    const dim = e.derivativeOrder;
+    const head = dim.key === '1' ? `\\frac{${d}}{${tex}}` : `\\frac{${d}^{${texOf(dim)}}}{${tex}}`;
     const body = precedence(e.expr) < PREC.MUL ? addParens(texOf(e.expr)) : texOf(e.expr);
     return `${head} ${body}`;
   }

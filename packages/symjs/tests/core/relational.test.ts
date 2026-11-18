@@ -118,3 +118,29 @@ it('orders linear symbols by the symbolic sort key', async () => {
   const a = new Sym('a'), B = new Sym('B');
   expect(String(simplify(new Rel('Ge', add(a, B), S.Zero)))).toBe('B >= -a');
 });
+
+it('rejects ordering of a generic Basic object', async () => {
+  const { Basic } = await import('../../src');
+  expect(() => isLt(Basic(), S.One)).toThrow(TypeError);
+});
+
+it('distinguishes real and nonreal infinities and their signs', async () => {
+  const s = await import('../../src');
+  const a = s.symbol('a'), b = s.symbol('b');
+  const both = [Q.infinite(a), Q.infinite(b)];
+  expect(isEq(a, b, [...both, Q.extended_real(a), s.Not(Q.extended_real(b))])).toBe(false);
+  expect(isEq(a, b, [...both, Q.extended_positive(a), Q.extended_negative(b)])).toBe(false);
+  expect(isEq(a, b, [...both, Q.extended_positive(a), Q.extended_positive(b)])).toBe(true);
+  expect(isEq(a, b, both)).toBe('unknown');
+});
+
+it('keeps equality of two unsigned infinite real symbols undecided', () => {
+  const a = new Sym('a'), b = new Sym('b');
+  expect(isEq(a, b, [Q.infinite(a), Q.infinite(b), Q.extended_real(a), Q.extended_real(b)])).toBe('unknown');
+});
+
+it('drops a positive numeric factor from an expanded linear inequality', async () => {
+  const s = await import('../../src');
+  const [q, r] = s.symbols('q r');
+  expect(s.simplify(s.Le(s.mul(2, s.sqrt(2), r.sub(q)), 0)).key).toBe(s.Ge(q, r).key);
+});

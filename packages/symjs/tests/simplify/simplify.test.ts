@@ -3,7 +3,7 @@
 
 // Tests of src/simplify/simplify.ts.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { UndefFn, SymFunction, piecewise, Eq, Ne, Ge, Gt, Le, Lt, and, I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
 import type { Expr } from '../../src';
 import { clearCoefficients, factorSum, inversecombine, ncSimplify, nthroot, fn, S, Sum, Mul, Pow } from '../../src';
@@ -375,6 +375,84 @@ it('cancels shifted powers of the roots of a characteristic polynomial', () => {
   }
 });
 
+it('decides mathematical equality independently of structural equality', async () => {
+  const sj = await import('../../src');
+  const f = (s: string) => sj.parse(s);
+  expect(sj.exprEquals(f('x'), f('x'))).toBe(true);
+  expect(sj.exprEquals(f('sqrt(x)'), 0)).toBe(false);
+  expect(sj.exprEquals(f('sqrt(3)+sqrt(5)'), 0)).toBe(false);
+  expect(sj.exprEquals(f('sqrt(1+sqrt(3))+sqrt(3+3*sqrt(3))'), f('sqrt(10+6*sqrt(3))'))).toBe(true);
+  expect(sj.exprEquals(f('(9*3**(2/3)+30+27*3**(1/3))**(1/3)'), f('3+3**(1/3)'))).toBe(true);
+  expect(sj.exprEquals(f('x/(1+y)'), 0)).toBe(false);
+  expect(sj.exprEquals(f('sin(x)+y'), 0)).toBe('unknown');
+});
+
+it('chooses an exactly equivalent simpler primitive element for an algebraic number', async () => {
+  const sj = await import('../../src');
+  const root = sj.parse('(41+29*sqrt(2))**(1/5)');
+  const a = new sj.AlgebraicNumber(root);
+  expect(sj.simplify(a).root.equals(sj.parse('1+sqrt(2)'))).toBe(true);
+  expect(sj.simplify(a, { ratio: 0 })).toBe(a);
+  const t = new sj.AlgebraicNumber(sj.sqrt(2));
+  expect(sj.simplify(t, { measure: (e) => sj.Rational.of(sj.countOps(e)) })).toBe(t);
+  const alias = sj.symbol('theta');
+  expect(sj.simplify(new sj.AlgebraicNumber(root, [1, 0], { alias })).alias).toBe(alias);
+  expect(sj.exprEquals(sj.parse('sin(x)+2'), 0)).toBe('unknown');
+  expect(sj.exprEquals(sj.Mod(x, 3), 0)).toBe('unknown');
+  expect(sj.exprEquals(sj.parse('x*sin(x)/(1+y)'), 0)).toBe(false);
+  const zero = sj.parse('(9*3**(2/3)+30+27*3**(1/3))**(1/3)-3-3**(1/3)');
+  expect(sj.exprEquals(sj.mul(zero, x), 0)).toBe(true);
+});
+
+it('leaves symbolic products undecided when a factor may be zero', async () => {
+  const sj = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  expect(sj.exprEquals(sj.parse('(sin(x)+y)*(1+z)'), 0)).toBe('unknown');
+  expect(impl.equalsZero?.(new sj.Pow(sj.S.Zero, sj.S.NegOne))).toBeUndefined();
+});
+
+it('folds the absolute-value rewrite of sign before simplifying products', async () => {
+  const sj = await import('../../src');
+  const r = sj.symbol('r', { real: true });
+  const lhs = sj.parse('2*sign(r+3)/(5*Abs(r+3)**(3/5))', { symbols: { r } });
+  const relation = sj.simplify(sj.Eq(lhs, 0));
+  expect(String(relation)).toContain('Piecewise((0, Eq(r, -3))');
+  expect(sj.subs(relation, [[r, -3]])).toBe(sj.S.true);
+});
+
+it('simplifies an unevaluated integral without extracting a unit coefficient', async () => {
+  const sj = await import('../../src');
+  const v = sj.symbol('v');
+  const integral = new sj.Integral([sj.sin(v), v]);
+  expect(sj.simplify(integral, { doit: false }).equals(integral)).toBe(true);
+});
+
+it('keeps sign intact when no rewrite applies', async () => {
+  const sj = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  const rewrite = Object.getOwnPropertyDescriptor(impl, 'rewrite');
+  const e = sj.parse('sign(x)/Abs(x)**(3/5)');
+  try {
+    impl.rewrite = (input) => input;
+    expect(String(sj.simplify(e))).toContain('sign(x)');
+  } finally {
+    if (rewrite !== undefined) Object.defineProperty(impl, 'rewrite', rewrite);
+  }
+});
+
+it('handles an indeterminate minimal polynomial for an algebraic difference', async () => {
+  const sj = await import('../../src');
+  const numberfields = await import('../../src/polys/numberfields');
+  const mock = vi.spyOn(numberfields, 'minimalPolynomial').mockImplementationOnce(() => {
+    throw new sj.NotImplementedError('minimal polynomial is indeterminate');
+  });
+  try {
+    expect(sj.exprEquals(sj.sqrt(2), 0)).toBe(false);
+  } finally {
+    mock.mockRestore();
+  }
+});
+
 it('honors explicitly requested inverse cancellation for user functions', () => {
   const x = symbol('x'), g = SymFunction('g');
   class F extends UndefFn { inverse() { return g; } }
@@ -383,6 +461,22 @@ it('honors explicitly requested inverse cancellation for user functions', () => 
     const f = new F('f', args);
     expect(inversecombine(f)).toEqual(f);
   }
+});
+
+it('cancels an unevaluated logarithm of an exponential in explicit inverse mode', () => {
+  const x = symbol('x');
+  const raw = { evaluate: false };
+  expect(simplify(fn('log', [exp(x)], raw), { inverse: true })).toEqual(x);
+  const based = fn('log', [exp(x), 2], raw);
+  expect(simplify(based, { inverse: true })).toEqual(x.div(fn('log', [2])));
+  const unmatched = fn('log', [exp(x), 2, 3], raw);
+  expect(inversecombine(unmatched)).toEqual(unmatched);
+});
+
+it('preserves an unevaluated logarithm of a symbolic sum', () => {
+  const [n, x] = symbols('n x');
+  const log = fn('log', [Sum(n, [n, 1, x])], { evaluate: false });
+  expect(simplify(log)).toEqual(log);
 });
 
 it('retains the strongest comparable conjunct and preserves independent conditions', () => {

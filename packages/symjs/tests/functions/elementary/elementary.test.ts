@@ -800,3 +800,12 @@ it('reduces tan of an integer multiple of pi by its period (SymPy _pi_coeff)', (
   // 0.3 has no exact binary form; a non-integer symbol is left alone
   expect([t(0.3, n), t(sj.Rational.of(5n, 2n), x)]).toEqual(['tan(0.3*pi*n)', 'tan(5*pi*x/2)']);
 });
+
+it('transposes noncommutative symbols with Hermitian assumptions', () => {
+  const h = new Sym('H', { commutative: false, hermitian: true });
+  const a = new Sym('A', { commutative: false, antihermitian: true });
+  expect(transpose(h).equals(conjugate(h))).toBe(true);
+  expect(transpose(a).equals(sj.neg(conjugate(a)))).toBe(true);
+  expect(transpose(mul(-1, I, h)).equals(mul(-1, I, conjugate(h)))).toBe(true);
+  expect(transpose(mul(-1, I, a)).equals(mul(I, conjugate(a)))).toBe(true);
+});

@@ -1040,12 +1040,10 @@ export class PrettyPrinter {
   private printDerivative(deriv: Derivative): PrettyForm {
     const derivSymbol = requiresPartial(deriv.expr) && this.useUnicode ? '∂' : 'd';
     let x: PrettyForm | undefined;
-    let countTotal = 0;
-    for (const [sym, num] of [...deriv.variableCount].reverse()) {
+    for (const [sym, num] of [...deriv.variableOrders].reverse()) {
       const s = this.print(sym);
       let ds = PrettyForm.of(s.left(derivSymbol));
-      countTotal += num;
-      if (num > 1) ds = ds.pow(new PrettyForm(`${num}`));
+      if (num.key !== '1') ds = ds.pow(this.print(num));
       if (x === undefined) x = ds;
       else {
         x = PrettyForm.of(x.right(' '));
@@ -1054,7 +1052,8 @@ export class PrettyPrinter {
     }
     const f = PrettyForm.of(this.print(deriv.expr).parens(), Binding.FUNC);
     let pform = new PrettyForm(derivSymbol);
-    if (countTotal > 1) pform = pform.pow(new PrettyForm(`${countTotal}`));
+    const countTotal = deriv.derivativeOrder;
+    if (countTotal.key !== '1') pform = pform.pow(this.print(countTotal));
     pform = PrettyForm.of(pform.below(LINE, defined(x)));
     pform.baseline = pform.baseline + 1;
     pform = PrettyForm.of(StringPict.next(pform, f));

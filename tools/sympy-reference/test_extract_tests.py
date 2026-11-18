@@ -65,6 +65,16 @@ def test_indices():
         self.assertNotIn("comparisonTree", original)
         self.assertNotIn("indexedAssumptions", original["self"])
 
+    def test_replay_metadata_from_both_categories_preserves_assertion_identity(self):
+        value = {"t": "Rational", "p": "1", "q": "1"}
+        original = {"fn": "Integer", "args": [value], "expected": "1"}
+        tagged = {
+            **original, "args": [{**value, "matrixClass": "MutableDenseMatrix", "indexedAssumptions": {"integer": True}}],
+            "comparisonTree": value, "expectedOperand": value, "polyReplay": {"method": "buchberger"},
+            "boundMatrix": {"t": "Matrix", "rows": [[value]]}, "divideError": True,
+        }
+        self.assertEqual(unit.without_replay_state(tagged), original)
+
     def test_custom_class_behavior_is_explicit_and_undefined_functions_are_preserved(self):
         corpus = self.extract('''
             def test_custom():

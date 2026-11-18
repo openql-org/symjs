@@ -215,3 +215,25 @@ describe('literal values, rational square roots and enclosing intervals', () => 
     }
   });
 });
+
+it('inverts a numeric expression only for a modulus greater than one', () => {
+  expect(sj.modInverse(sj.S.Pi, R(2)).key).toBe(sj.pow(sj.S.Pi, -1).key);
+  expect(sj.modInverse(R(2), sj.S.Pi).key).toBe(R(1, 2).key);
+  expect(sj.modInverse(R(3), new sj.Float(1.5)).key).toBe(R(1, 3).key);
+  expect(() => sj.modInverse(sj.S.Pi, R(1))).toThrow(RangeError);
+  expect(() => sj.modInverse(sj.symbol('x'), R(2))).toThrow(TypeError);
+  expect(() => sj.modInverse(R(2), sj.symbol('m'))).toThrow(TypeError);
+});
+
+it('converts a high-precision dyadic float without a binary64 round trip', () => {
+  const exact = new sj.Float({ man: 2n ** 70n + 1n, exp: -70n }, 80);
+  expect(rationalFromString('1').key).not.toBe(sj.rationalFromFloat(exact).key);
+  expect(sj.rationalFromFloat(exact).key).toBe(sj.Rational.of(2n ** 70n + 1n, 2n ** 70n).key);
+});
+
+it('normalizes mpf tuples and keeps the special zero-mantissa encodings', () => {
+  expect(sj.mpfNorm([1, 0n, 1n, 0], 10)).toEqual([0, 0n, 0n, 0]);
+  expect(sj.mpfNorm([0, 0n, -456n, -2], 10)).toEqual([0, 0n, -456n, -2]);
+  expect(sj.mpfNorm([0, 15n, 0n, 4], 3)).toEqual([0, 1n, 4n, 1]);
+  expect(sj.mpfNorm([1, 9n, 0n, 4], 3)).toEqual([1, 1n, 3n, 1]);
+});

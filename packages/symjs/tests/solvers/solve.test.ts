@@ -1053,3 +1053,20 @@ it('inverts reciprocal trigonometric and hyperbolic functions', () => {
     expect(solve(parse(`${name}(x)-1/2`), x)).toHaveLength(1);
   }
 });
+
+it('rejects symbolic substitutions when the resulting expression depends on the unknown or is a nonzero polynomial', () => {
+  expect(checksol(x, x, sj.SymFunction('f')(x))).toBe(false);
+  expect(checksol(x, x, parse('Sum(x,(x,1,n))'))).toBe(false);
+  expect(checksol(x, x, parse('Sum(f(x),(x,1,n))'))).toBe('unknown');
+});
+
+it('uses the symbolic residual if concrete evaluation is unavailable', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const previous = Object.getOwnPropertyDescriptor(impl, 'doit');
+  try {
+    delete impl.doit;
+    expect(checksol(x, x, parse('Sum(f(x),(x,1,n))'))).toBe('unknown');
+  } finally {
+    if (previous !== undefined) Object.defineProperty(impl, 'doit', previous);
+  }
+});

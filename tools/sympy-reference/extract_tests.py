@@ -33,7 +33,7 @@ import time
 import types
 import warnings
 import weakref
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Iterator
 
 import sympy
@@ -623,6 +623,28 @@ class Capture:
                         tree["matrixClass"] = type(arg).__name__
             if name.startswith("."):
                 record["self"] = extract.ser(receiver)
+            if self.category == "core" and name == ".diff" and isinstance(receiver, sympy.core.function.AppliedUndef):
+                if callable(receiver.func._kwargs.get("fdiff")):
+                    variables = [sympy.Dummy(f"arg{index}") for index in range(len(receiver.args))]
+                    formal = receiver.func(*variables)
+                    record["functionPartials"] = [extract.ser(sympy.Lambda(variables, formal.fdiff(index + 1)))
+                                                  for index in range(len(variables))]
+            if self.category == "core" and name == ".make_args":
+                from sympy.core.operations import LatticeOp
+                if isinstance(receiver, type) and issubclass(receiver, LatticeOp):
+                    record["latticeOperation"] = [extract.ser(receiver.identity), extract.ser(receiver.zero)]
+            if self.category == "core" and name == ".random":
+                from sympy.core.random import rng
+                _, state, gaussian = rng.getstate()
+                record["randomState"] = {"words": state[:-1], "index": state[-1]}
+                if gaussian is not None:
+                    record["randomState"]["gaussian"] = gaussian
+            if self.category == "core" and name == ".__getitem__" and isinstance(receiver, defaultdict) and receiver.default_factory is int:
+                record["zeroDefault"] = True
+            if self.category == "core" and name == ".__truediv__":
+                from sympy.core.numbers import _errdict
+                if _errdict["divide"]:
+                    record["divideError"] = True
             if self.category == "polys":
                 from sympy.polys.numberfields.modules import Submodule
                 from sympy.printing.lambdarepr import IntervalPrinter
@@ -660,7 +682,7 @@ class Capture:
             if global_assumptions:
                 record["assume"] = [extract.ser(a) for a in sorted(global_assumptions, key=str)]
             # Shared serializer constructors can include mutable Python lists.
-            return json_numbers(copy.deepcopy(record))
+            return {**json_numbers(copy.deepcopy(record)), '_dummyIds': extract.DUMMY_IDS.copy()}
         except (extract.Timeout, TestDeadline):
             raise
         except extract.PythonRuntime:
@@ -728,7 +750,7 @@ class Capture:
         if re.search(r"<[^<>\n]*\bat 0x[0-9a-fA-F]+>", text):
             self.omit(site, "unstable-result-representation")
             return
-        case = {**self.metadata(site), **record, "expected": text, "op": op, **extra}
+        case = {**self.metadata(site), **{k: v for k, v in record.items() if k != "_dummyIds"}, "expected": text, "op": op, **extra}
         if op == "!=" and self.category == "tensor" and isinstance(expected, (sympy.Idx, sympy.Indexed, sympy.IndexedBase, sympy.tensor.tensor.TensorHead)):
             case["comparisonTree"] = extract.ser(expected)
         if op == "!=" and self.category == "polys":
@@ -746,6 +768,22 @@ class Capture:
             case.pop("exclusion", None)
         if isinstance(expected, str):
             case["text"] = True
+        if self.category == "core" and op == "!=" and case.get("post") is None and not contains_iterator(expected):
+            # Preserve the compared value when two objects print alike.
+            prior = extract.DUMMY_IDS.copy()
+            extract.DUMMY_IDS.clear()
+            extract.DUMMY_IDS.update(record.get("_dummyIds", {}))
+            try:
+                operand = extract.ser(expected)
+            except extract.Unsupported:
+                operand = None
+            finally:
+                extract.DUMMY_IDS.clear()
+                extract.DUMMY_IDS.update(prior)
+            if operand is not None and operand.get("t") == "UFnClass":
+                operand["assume"] = {key: value for key, value in expected._kwargs.items() if isinstance(value, bool)}
+            if operand is not None and operand.get("t") in ("Float", "Rational", "Symbol", "Dummy", "Subs", "Mul", "Add", "Pow", "Fn", "Lambda", "Str", "UFnClass"):
+                case["expectedOperand"] = json_numbers(operand)
         self.events.append((site, case))
 
     def check(self, site, op, lhs, rhs):
@@ -1212,7 +1250,9 @@ def without_replay_state(value):
     """The original assertion identity, independent of replay-only state."""
     if isinstance(value, dict):
         return {k: without_replay_state(v) for k, v in value.items()
-                if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree", "matrixClass", "boundMatrix", "polyReplay")}
+                if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree",
+                             "matrixClass", "boundMatrix", "polyReplay", "expectedOperand", "zeroDefault", "divideError",
+                             "functionPartials", "randomState", "latticeOperation")}
     if isinstance(value, list):
         return [without_replay_state(v) for v in value]
     return value

@@ -7,7 +7,7 @@
  */
 
 import type { Expr, ExprLike, RewriteRule } from '../core/nodes';
-import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Piecewise, Pow, Rational, S, UndefFn, impl, registerRewrite as addRewrite, rewriteRules } from '../core/nodes';
+import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, UndefFn, impl, registerRewrite as addRewrite, rewriteRules } from '../core/nodes';
 import { Eq, Ge, Gt, Lt, Ne, piecewise, rel } from '../core/logic';
 import { BoolOp, and } from '../core/boolalg';
 import { Mod } from '../functions/mod';
@@ -59,6 +59,8 @@ const raw = (name: Fn['name'], ...args: Expr[]): Expr => new Fn(name, args);
 export function className(e: Expr): string {
   if (isExp(e)) return 'exp';
   if (e instanceof Constant && e.name === 'E') return 'Exp1';
+  if (e instanceof Constant && (e.name === 'GoldenRatio' || e.name === 'TribonacciConstant')) return e.name;
+  if (e instanceof Rel && e.op === 'Eq') return 'Equality';
   if (e instanceof Fn) return ({ abs: 'Abs', ff: 'FallingFactorial', rf: 'RisingFactorial' } as Record<string, string>)[e.name] ?? e.name;
   if (e instanceof UndefFn) return e.name;
   if (e instanceof ExtensionExpr) return e.name;
@@ -188,14 +190,13 @@ reg1('exp', 'Pow', (a) => {
 });
 /**
  * SymPy Pow._eval_rewrite_as_exp: b**e as exp(e*log(b)), with log(Abs(b)) + I*arg(b) for a base
- * without symbols. A power with a symbolic base and an exponent without symbols stays a power
- * (SymPy keeps exp(e*log(b)) unevaluated there, which a product turns back into b**e).
+ * without symbols. For a symbolic base, keep the exponential form when evaluation would restore the power.
  */
 reg2('Pow', 'exp', (base, expo) => {
   const hasExp = (x: Expr): boolean => isExp(x) || x.args.some(hasExp);
   if (isZero(base) === true || hasExp(base) || hasExp(expo)) return pow(base, expo);
   if (base.freeSymbols().size === 0) return exp(mul(add(log(abs(base)), mul(I, arg(base))), expo));
-  return expo.freeSymbols().size ? exp(mul(log(base), expo)) : undefined;
+  return new Pow(S.E, mul(log(base), expo));
 });
 reg1('exp', 'sqrt', (a) => {
   if (!(a instanceof Mul)) return undefined;
@@ -205,6 +206,14 @@ reg1('exp', 'sqrt', (a) => {
   const sn = sin(mul(pi, c));
   if (isFunctionOf(cs, 'cos') || isFunctionOf(sn, 'sin')) return undefined;
   return add(cs, mul(I, sn));
+});
+
+reg2('Equality', 'Add', (left, right) => add(left, neg(right)));
+registerRewrite('GoldenRatio', 'sqrt', () => mul(half, add(1, sqrt(5))));
+registerRewrite('TribonacciConstant', 'sqrt', () => {
+  const delta = mul(3, sqrt(33));
+  const cubeRoot = Rational.of(1n, 3n);
+  return mul(cubeRoot, add(1, pow(add(19, neg(delta)), cubeRoot), pow(add(19, delta), cubeRoot)));
 });
 
 // SymPy Exp1._eval_rewrite_as_cos and _eval_rewrite_as_sin

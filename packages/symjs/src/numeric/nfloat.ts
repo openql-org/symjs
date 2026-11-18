@@ -6,9 +6,9 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Special } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Special } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { rebuild, xreplace } from '../core/traverse';
+import { mapBottomUp, rebuild, xreplace } from '../core/traverse';
 import { evalf, toComplex } from './evalf';
 import { float } from './floatctor';
 import { at, pair } from '../core/guard';
@@ -30,6 +30,7 @@ export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
   const back: [Expr, Expr][] = [];
   if (!exponent) {
     const visit = (x: Expr) => {
+      if (x instanceof ExtensionExpr && x.freeSymbols().size === 0) return;
       x.args.forEach(visit);
       if (x instanceof Pow && !reps.some(([p]) => p.key === x.key)) {
         const d = new Dummy('e');
@@ -53,7 +54,7 @@ export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
     };
     rv = fix(rv);
   }
-  return rv;
+  return mapBottomUp(rv, (term) => term instanceof Fn && term.name !== 'Min' && term.name !== 'Max' ? rebuild(term, term.args.map((arg) => nfloat(arg, n, exponent))) : term);
 }
 
 /** Are z1 and z2 equal within tolerance (SymPy comp)? */
@@ -63,6 +64,7 @@ export function comp(z1In: ExprLike, z2In: ExprLike | string, tol?: number | '')
     if (!(z1 instanceof Rational || z1 instanceof Float)) throw new RangeError('when z2 is a string z1 must be a Number');
     return z1.toString() === z2In;
   }
+  if (tol === '' && typeof z2In === 'number') return z1.toString() === String(z2In);
   let z2 = sympify(z2In);
   if (z1 instanceof Rational && z1.isZero) [z1, z2] = [z2, z1];
   if (z1 instanceof Rational && z1.isZero) return true;

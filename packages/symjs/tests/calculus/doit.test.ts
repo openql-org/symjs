@@ -56,3 +56,12 @@ describe('evalConcreteValue', () => {
     expect(evalConcreteValue(c(sj.Sum(k.mul(x), [k, 1, 3])))).toBeUndefined();
   });
 });
+
+it('evaluates convergent numerical sums and rejects a divergent series', async () => {
+  const { evalConcreteValue } = await import('../../src/calculus/doit');
+  const k = sj.symbol('k', { integer: true });
+  const sum = (term: sj.Expr) => sj.Sum(term, [k, 1, sj.S.Infinity]) as sj.Concrete;
+  expect(evalConcreteValue(sum(sj.pow(2, sj.neg(k))))?.key).toBe(sj.S.One.key);
+  expect(() => evalConcreteValue(sum(sj.pow(k, -1)))).toThrow(RangeError);
+  expect(evalConcreteValue(sum(sj.mul(x, k)))).toBeUndefined();
+});

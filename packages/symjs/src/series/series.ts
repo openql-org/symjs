@@ -7,7 +7,7 @@
 
 import { NotImplementedError, PoleError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, Derivative, ExtensionExpr, Float, Integral, Fn, Order, Piecewise, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
+import { Add, Dummy, Derivative, ExtensionExpr, Float, Integral, Fn, Limit, Order, Piecewise, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul, isMulLike } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
@@ -20,6 +20,7 @@ import { isNegative, isPositive, isReal, isZero } from '../core/assumptions';
 import { at, cast, first, getOrThrow, last } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
+import { DefinedFunctionCall } from '../core/defun';
 import { SubsNode } from '../core/subsnode';
 import { powsimp } from '../simplify/powsimp';
 import { together } from '../simplify/rational';
@@ -326,6 +327,11 @@ export function series(ex: ExprLike, variable?: Sym, x0x: ExprLike = 0, n = 6, d
     // SymPy logx: log(x) stands for the given symbol; x**c = exp(c*log(x)) for symbolic c
     e = mapBottomUp(e, (t) => (t instanceof Pow && t.base.key === x.key && !(t.exp instanceof Rational) && !t.exp.has(x) ? exp(mul(t.exp, log(x))) : t));
     const logSymbol = new Dummy('logx');
+    e = mapBottomUp(e, (t) => {
+      if (dir !== '+' || !(t instanceof Fn) || t.name !== 'log') return t;
+      const argument = first(t.args);
+      return argument instanceof Pow && argument.base.key === x.key && argument.exp instanceof Rational ? mul(argument.exp, logSymbol) : t;
+    });
     e = subs(e, [[log(x), logSymbol], [log(pow(x, -1)), neg(logSymbol)]]);
     return subs(series(e, x, x00, n, dir), [[logSymbol, opts.logx], [log(x), opts.logx]]);
   }
@@ -520,8 +526,16 @@ export function leadterm(ex: ExprLike, x: Sym): [Expr, Expr] {
   }
   // powers of x to constant exponents that are not rational (x**(-sqrt(2))) are factored out: the
   // expansion of the rest is a Puiseux series (SymPy: leadterm(x**(1 - sqrt(2))) = (1, 1 - sqrt(2)))
-  const factors = e instanceof Mul ? e.args : [e];
   const irrational = (f: Expr): f is Pow => f instanceof Pow && f.base.key === x.key && !(f.exp instanceof Rational) && !f.exp.has(x);
+  if (e instanceof Add && e.args.some((term) => (term instanceof Mul ? term.args : [term]).some(irrational))) {
+    const leaders = e.args.map((term) => leadterm(term, x));
+    const best = leaders.find(([, p]) => leaders.every(([, q]) => p.key === q.key || isPositive(add(q, neg(p))) === true));
+    if (best !== undefined) {
+      const coefficient = add(...leaders.filter(([, p]) => p.key === best[1].key).map(([c]) => c));
+      if (coefficient.key !== S.Zero.key) return [coefficient, best[1]];
+    }
+  }
+  const factors = e instanceof Mul ? e.args : [e];
   const powers = factors.filter(irrational);
   if (powers.length === 0) {
     try {
@@ -664,6 +678,14 @@ export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike; log
     if (evaluated.key !== e.key) return asLeadingTerm(evaluated, x, opts);
   }
   if (some(e, isSingularity)) e = singularityLocalForm(e, x, sympify(opts.cdir ?? 0).equals(-1));
+  if (e instanceof DefinedFunctionCall) {
+    const bounded = new Order([S.One, x, S.Zero]);
+    if (e.args.some((arg) => {
+      const term = asLeadingTerm(arg, x);
+      return term.has(x) && orderContains(bounded, term) === true;
+    })) throw new NotImplementedError(`leading term of ${e.name}`);
+    return e;
+  }
   const rule = e instanceof Fn ? leadingTermRules[e.name] : undefined;
   const special = rule?.(cast(e, Fn, 'function'), x, sympify(opts.cdir ?? 0));
   const ray = sympify(opts.cdir ?? 1);
@@ -676,16 +698,27 @@ export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike; log
   else if (e instanceof Mul) result = mul(...e.args.map((a) => asLeadingTerm(a, x, opts)));
   else {
     if (ray instanceof Rational && (ray.isZero || ray.key === S.One.key)) {
-      const [c, p] = leadterm(e, x);
-      result = mul(c, pow(x, p));
+      result = directionalLeadingTerm(e, x);
     } else {
       if (isReal(ray) !== true) throw new NotImplementedError('leading term in a nonreal direction');
       const t = new Sym('_leading', { positive: true });
-      const [c, p] = leadterm(subs(e, [[x, mul(ray, t)]]), t);
-      result = expandMul(subs(mul(c, pow(t, p)), [[log(t), add(log(x), neg(log(ray)))], [t, mul(x, pow(ray, -1))]]));
+      const leading = asLeadingTerm(subs(e, [[x, mul(ray, t)]]), t);
+      result = expandMul(subs(leading, [[log(t), add(log(x), neg(log(ray)))], [t, mul(x, pow(ray, -1))]]));
     }
   }
   return opts.logx === undefined ? result : subs(result, [[log(x), sympify(opts.logx)]]);
+}
+
+function directionalLeadingTerm(e: Expr, x: Sym): Expr {
+  try {
+    const [coefficient, exponent] = leadterm(e, x);
+    return mul(coefficient, pow(x, exponent));
+  } catch (error) {
+    if (!(error instanceof SeriesError) || !(e instanceof Fn) || e.name === 'arg') throw error;
+    const value = impl.limit(e, x, S.Zero, '+');
+    if (value instanceof Limit || value instanceof Special || value.key === S.Zero.key || value.has(x)) throw error;
+    return value;
+  }
 }
 
 /** Order of the O term in a sum, or undefined (SymPy getn). */
@@ -866,7 +899,12 @@ export function asExprVariables(o: Order, existing: readonly (readonly [Sym, Exp
   return [o.expr, [...variables.values()].sort(([a], [b]) => Number(a.name > b.name) - Number(a.name < b.name))];
 }
 
-impl.orderContains = (o, e) => {
+impl.rebuildOrder = (args) => {
+  const variables = args.slice(1, -1).filter((v): v is Sym => v instanceof Sym);
+  return O(first(args), variables.length ? variables : undefined, args.length === 1 ? S.Zero : at(args, -1));
+};
+
+function orderContains(o: Order, e: Expr): boolean | 'unknown' {
   let variables = orderVariables(o);
   const point = o.args.length > 1 ? at(o.args, -1) : S.Zero;
   const other = e instanceof Order ? e.expr : e;
@@ -914,7 +952,9 @@ impl.orderContains = (o, e) => {
     result = contained;
   }
   return result;
-};
+}
+
+impl.orderContains = orderContains;
 
 registerArithmetic((op, args) => {
   if (op === 'pow') {

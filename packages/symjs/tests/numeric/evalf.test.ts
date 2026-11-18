@@ -349,6 +349,43 @@ describe('evalf helpers', () => {
   });
 });
 
+it('distinguishes same-name dummies when substituting numeric values', () => {
+  const a = new sj.Dummy('x');
+  const b = new sj.Dummy('x');
+  const expr = sj.add(a, sj.mul(2, b));
+  expect(expr.evalf(20, { subs: new Map([[a, 3], [b, 5]]) }).toNumber()).toBe(13);
+  expect(a.evalf(20, { subs: new Map([[a, S.ComplexInfinity]]) })).toBe(S.ComplexInfinity);
+  expect(sj.Subs(a, a, b).evalf(15, { subs: { x: 2 } }).toNumber()).toBe(2);
+});
+
+it('raises for ambiguous cancellation at the precision limit in strict mode', () => {
+  const uncertain = new sj.Fn('sin', [sj.mul(160, S.Pi)]);
+  expect(() => uncertain.evalf(15, { maxn: 100, strict: true })).toThrow(sj.PrecisionExhausted);
+  expect(uncertain.evalf(15, { chop: true, strict: true })).toBe(S.Zero);
+  expect(sj.sqrt(2).evalf(15, { maxn: 90, strict: true }).toNumber()).toBeCloseTo(Math.SQRT2);
+});
+
+it('evaluates an unevaluated zero integral exactly', () => {
+  const x = sj.symbol('x');
+  expect(new sj.Integral([S.Zero, x, x, x]).evalf()).toBe(S.Zero);
+});
+
+it('reports lost accuracy when inexact terms cancel to a zero mantissa', () => {
+  const e = new sj.Add([sj.S.Pi, sj.neg(sj.S.Pi)]);
+  expect(() => e.evalf(15, { strict: true })).toThrow(sj.PrecisionExhausted);
+});
+
+it('returns raw binary components and retains guarded addition accuracy', async () => {
+  const sj = await import('../../src');
+  expect(sj.evalfRaw(sj.S.Zero, 15)).toEqual([NoMatch, NoMatch, 15, NoMatch]);
+  expect(sj.evalfRaw(parse('Sum(0,(x,1,2))'), 15)).toEqual([NoMatch, NoMatch, 15, NoMatch]);
+  expect(sj.evalfRaw(parse('-8+3*sqrt(3)'), 1)).toEqual([{ man: -1n, exp: 1n }, NoMatch, 9, NoMatch]);
+  expect(sj.evalfRaw(sj.I, 12)).toEqual([NoMatch, { man: 1n, exp: 0n }, NoMatch, 12]);
+  expect(sj.evalfRaw(parse('sqrt(2)+I*sqrt(3)'), 15)).toMatchObject([{ man: expect.any(BigInt) }, { man: expect.any(BigInt) }, 15, 15]);
+  expect(sj.evalfRaw(parse('x'), 12)).toBe(NoMatch);
+  expect(() => sj.evalfRaw(sj.S.One, 0)).toThrow(RangeError);
+});
+
 it('evaluates constant definite integrals and coincident symbolic endpoints', () => {
   expect(String(evalf(sj.integral(f(x), [x, y, y])))).toBe('0');
   expect(evalf(sj.integral(2, [x, 1, 3])).toNumber()).toBe(4);

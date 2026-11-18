@@ -18,6 +18,7 @@ expandHooks.canDistributeIntegral = (e) => hasFiniteLimits(e) !== false;
 
 export {
   simplify,
+  exprEquals,
   clearCoefficients,
   factorSum,
   inversecombine,

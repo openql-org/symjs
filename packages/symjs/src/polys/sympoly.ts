@@ -14,7 +14,7 @@ import { DomainError, ExactQuotientFailed, InvariantError, NotImplementedError, 
 import { parse } from '../parsing/parser';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch, isNoMatch } from '../core/truth';
-import { asRealImag, isPolynomial } from '../core/methods';
+import { asContentPrimitive, asRealImag, isPolynomial } from '../core/methods';
 import { at, defined, expectType, first, getOrThrow, pair } from '../core/guard';
 import { isIntegerQ, isPositive, isReal } from '../core/assumptions';
 import { factorModP } from './zassenhaus';
@@ -3193,12 +3193,33 @@ export function factorNc(ex: ExprLike): Expr {
   const e = sympify(ex);
   if (e.isCommutative) return factor(e);
   const nc = [...freeSymbols(e)].filter((s) => s instanceof Sym).filter((s) => !s.isCommutative);
-  // a non-commutative node without non-commutative symbols (a Quaternion): its arguments are factored (SymPy factor_nc)
+  // A noncommutative operator can evaluate differently when its operands are
+  // made commutative. Replace the application as a whole while factoring.
+  const operators = new Map<string, Expr>();
+  const visit = (term: Expr): void => {
+    if (term instanceof ExtensionExpr && !term.isCommutative && nc.some((symbol) => term.has(symbol))) {
+      operators.set(term.key, term);
+      return;
+    }
+    term.args.forEach(visit);
+  };
+  visit(e);
+  // A noncommutative node without noncommutative symbols (e.g. a quaternion) factors its arguments.
   if (!nc.length) return rebuild(e, e.args.map(factorNc));
-  const reps = nc.map((s) => [s, new Sym(`_nc_${s.name}`)] as [Expr, Expr]);
+  const reps: [Expr, Expr][] = [...nc.map((s): [Expr, Expr] => [s, new Sym(`_nc_${s.name}`)]),
+    ...[...operators.values()].map((op): [Expr, Expr] => [op, new Dummy('operator')])];
   const f = factor(xreplace(e, reps));
   const back = xreplace(f, reps.map(([a, b]) => [b, a] as [Expr, Expr]));
-  return expand(back).key === expand(e).key ? back : e;
+  const valid = expand(back).key === expand(e).key ? back : e;
+  if (!(valid instanceof Add)) return valid;
+  const factors = valid.args.map((term) => term instanceof Mul ? term.args : [term]);
+  const right = first(factors).at(-1);
+  if (right !== undefined && !right.isCommutative && factors.every((term) => term.at(-1)?.equals(right))) {
+    const remaining = add(...factors.map((term) => mul(...term.slice(0, -1))));
+    return mul(factorNc(remaining), right);
+  }
+  const [content, primitive] = asContentPrimitive(valid);
+  return keepCoeff(content, primitive);
 }
 
 /**
@@ -3267,11 +3288,15 @@ function commutativeOnly(e: Expr): Expr {
  * SymPy Expr.as_poly(*gens): e as a polynomial in gens (detected when not
  * given), or NoMatch when it is not one.
  */
-export function asPoly(ex: ExprLike, ...gens: Expr[]): Poly | NoMatchResult {
+export function asPoly(ex: ExprLike, ...generators: (Expr | { extension: true })[]): Poly | NoMatchResult {
   const e = sympify(ex);
+  const gens = generators.filter((arg): arg is Expr => arg instanceof Expr);
+  const options = gens.length === generators.length ? {} : { extension: true as const };
   // SymPy's Poly raises PolynomialError for these (a non-commutative expression, or not a polynomial in gens)
   if (!e.isCommutative || (gens.length > 0 && !isPolynomial(e, gens))) return NoMatch;
-  return Poly.from(e, gens.length ? gens : undefined);
+  if ('extension' in options && !gens.length && !e.freeSymbols().size) return NoMatch;
+  const result = Poly.from(e, gens.length ? gens : undefined, options);
+  return result.gens.length ? result : NoMatch;
 }
 
 /**

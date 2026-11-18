@@ -543,3 +543,65 @@ it('counts large noncommutative power runs exactly', () => {
   expect(subs(mul(pow(x, count), pow(A, count)), [[mul(x, A), B]]).key).toBe(pow(B, count).key);
   expect(subs(mul(pow(x, 3), A), [[mul(x, A), B]]).key).toBe(mul(pow(x, 2), B).key);
 });
+
+it('uses an integral float exponent only when the coefficient ratio is exactly integral', () => {
+  const x = sj.symbol('x');
+  const y = sj.symbol('y');
+  const z = sj.symbol('z');
+  const power = (coefficient: sj.Expr) => sj.pow(x, sj.mul(coefficient, y));
+  expect(power(new sj.Float(6)).subs(power(sj.Rational.of(3)), z).key).toBe(sj.pow(z, new sj.Float(2)).key);
+  expect(power(sj.Rational.of(6)).subs(power(new sj.Float(3)), z).key).toBe(sj.pow(z, new sj.Float(2)).key);
+  const nearSix = sj.Rational.of(6n * 10n ** 20n + 1n, 10n ** 20n);
+  expect(power(nearSix).subs(power(new sj.Float(3)), z).key).toBe(power(nearSix).key);
+});
+
+it('visits limits, piecewise branches and derivative specifications as tuples', () => {
+  const [x, n] = sj.symbols('x n');
+  const limit = new sj.Integral([x, x, sj.S.Zero, sj.S.One]);
+  expect([...sj.iterArgs(limit)].map(String)).toEqual(['Integral(x, (x, 0, 1))', 'x', '(x, 0, 1)', 'x', '0', '1']);
+  const d = sj.derivative(x, [[x,n]]);
+  expect([...sj.iterArgs(d)].map(String)).toContain('(x, n)');
+  expect([...sj.iterArgs(sj.Sum(x, [x, 1, n]))].map(String)).toContain('(x, 1, n)');
+  expect([...sj.iterArgs(sj.Piecewise([x, sj.Lt(x, 0)], [n, true]))].map(String)).toContain('(x, x < 0)');
+});
+
+it('does not replace a derivative with respect to a different independent variable', () => {
+  const [x, y, z] = sj.symbols('x y z');
+  const f = sj.SymFunction('f')(x, y);
+  const a = sj.derivative(f, [[x, 2]]);
+  expect(a.subs(sj.derivative(f, [[y, 1]]), z).key).toBe(a.key);
+});
+
+it('orders derivative replacements by their full orders and restores split symbolic powers', async () => {
+  const sj = await import('../../src');
+  const x = sj.symbol('x'), y = sj.symbol('y'), t = sj.symbol('t');
+  const a = sj.SymFunction('a')(t);
+  const first = a.diff(t);
+  const second = a.diff(t, 2);
+  expect(sj.subs(sj.add(a, first, second), new Map<sj.Expr, sj.Expr>([[a, x], [first, y], [second, sj.S.One]])).equals(sj.add(1, x, y))).toBe(true);
+  const product = sj.parse('x**2*y**(3*x/2)');
+  expect(String(sj.subs(product, [[sj.parse('x*y**(x/2)'), 2]]))).toBe('4*y**(x/2)');
+  const exponential = sj.exp(sj.mul(x, sj.log(2)));
+  expect(sj.subs(sj.pow(2, x), [[exponential, y]]).equals(y)).toBe(true);
+});
+
+it('matches exponential patterns only when the resulting power divides the source', async () => {
+  const sj = await import('../../src');
+  const { countOps } = await import('../../src/core/traverse');
+  const x = sj.symbol('x');
+  const y = sj.symbol('y');
+  const a = sj.symbol('a');
+  const raw = new sj.Mul([new sj.Pow(sj.S.One, x), y]);
+  expect(countOps(raw)).toBe(5);
+  expect(sj.subs(sj.pow(y, x), [[sj.exp(sj.mul(x, sj.log(2))), a]])).toEqual(sj.pow(y, x));
+  const p = new sj.Mul([new sj.Pow(sj.S.One, x), sj.pow(y, x), sj.pow(y, x)]);
+  const pattern = new sj.Mul([sj.pow(y, x), y]);
+  const unmatched = sj.subs(p, [[pattern, a]]);
+  const nested = new sj.Mul([new sj.Pow(new sj.Pow(y, x), sj.S.Half), new sj.Pow(y, sj.mul(2, x)), x]);
+  expect(String(sj.subs(nested, [[sj.mul(sj.pow(y, x), x), 2]]))).toBe('2*(y**x)**(3/2)');
+  expect(unmatched.has(a)).toBe(false);
+  const f = sj.SymFunction('f')(x);
+  const order = sj.symbol('m', { integer: true, nonnegative: true });
+  const derivative = sj.derivative(f, [[x, order]]);
+  expect(sj.subs(sj.add(derivative, f), new Map<sj.Expr, sj.Expr>([[f, x], [derivative, y]])).equals(sj.add(x, y))).toBe(true);
+});

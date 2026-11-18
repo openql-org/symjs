@@ -28,6 +28,22 @@ it('queries the extended log and polar exponential on raw inputs', () => {
   expect(ask(Q.rational(sj.fn('exp_polar', [0], raw)))).toBe(true);
 });
 
+it('recognizes exact rational and algebraic values of unevaluated elementary functions', () => {
+  const raw = { evaluate: false };
+  for (const e of [sj.fn('cos', [0], raw), sj.fn('asin', [0], raw), sj.fn('atan', [0], raw), sj.fn('log', [1], raw), sj.fn('acos', [1], raw)]) {
+    expect(ask(Q.rational(e))).toBe(true);
+    expect(ask(Q.algebraic(e))).toBe(true);
+  }
+  expect(ask(Q.rational(sj.fn('log', [1, 1], raw)))).toBe('unknown');
+  expect(ask(Q.rational(sj.fn('abs', [0], raw)))).toBe(true);
+});
+
+it('rejects an imaginary result when a symbolic sum has a nonzero real part', () => {
+  const p = sj.symbol('p', { positive: true });
+  const j = sj.symbol('j', { imaginary: true });
+  expect(ask(Q.imaginary(p.add(j)))).toBe(false);
+});
+
 it('recognizes a product of three imaginary factors', () => {
   const [u, v, w] = sj.symbols('u v w', { imaginary: true });
   expect(ask(Q.real(sj.mul(u, v, w)))).toBe(false);

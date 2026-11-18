@@ -346,6 +346,25 @@ it('handles unavailable extension and function derivatives and bound indices', a
   expect(() => diff(base.at(x), base.at(x, y))).toThrow('different number of indices');
 });
 
+it('keeps unknown derivative orders and evaluates orders of atomic symbols', async () => {
+  const s = await import('../../src');
+  const [x, y, n] = s.symbols('x y n');
+  const p = s.symbol('p', { integer: true, positive: true });
+  const f = s.SymFunction('f')(x, y);
+  expect(String(f.diff(x, n))).toBe('Derivative(f(x, y), (x, n))');
+  expect(String(x.diff(x, n))).toBe('Piecewise((x, Eq(n, 0)), (1, Eq(n, 1)), (0, True))');
+  expect(String(y.diff(x, n))).toBe('Piecewise((y, Eq(n, 0)), (0, True))');
+  expect(y.diff(x, p)).toBe(s.S.Zero);
+  expect(String(s.doit(f.diff(x, n).subs(n, 2)))).toBe('Derivative(f(x, y), (x, 2))');
+  expect(f.diff(x, n).key).toBe(s.derivative(f, [[x, n]]).key);
+});
+
+it('treats a symbol in a bound summand as independent', async () => {
+  const s = await import('../../src');
+  const x = s.symbol('x');
+  expect(s.diff(new s.Concrete('Sum', [x, x, s.S.One, s.S.Two]), x)).toBe(s.S.Zero);
+});
+
 it('distinguishes a bound summation index from an independent scalar', () => {
   const i = sj.symbol('i');
   expect(sj.diff(sj.Sum(i, [i, 1, 4]), i)).toBe(sj.S.Zero);
@@ -356,4 +375,14 @@ it('differentiates a sum with a bound variable and checks explicit polynomial pa
   const [i, x, n] = symbols('i x n');
   expect(diff(Sum(i, [i, 0, 3]), i).equals(0)).toBe(true);
   expect(() => fdiff(legendre(n, x), 1)).toThrow(RangeError);
+});
+
+it('preserves mixed partials with dependent arguments through evaluation', () => {
+  const f = sj.SymFunction('f');
+  const g = sj.SymFunction('g')(x);
+  const expr = f(x, g);
+  const mixed = sj.diff(sj.diff(expr, x), g);
+  expect(mixed.equals(sj.diff(sj.diff(expr, g), x))).toBe(true);
+  expect(mixed.equals(sj.doit(sj.derivative(expr, [[x, 1], [g, 1]])))).toBe(true);
+  expect(String(mixed)).toContain('Subs(');
 });

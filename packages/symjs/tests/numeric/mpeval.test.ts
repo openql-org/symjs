@@ -288,3 +288,8 @@ describe('functions of arguments with an infinite or undefined part (mpmath inf/
     expect(n('exp(oo*I + 1)')).toBe('nan');
   });
 });
+
+it('evaluates gamma at a rational outside the specialized thirds and quarters', () => {
+  const e = fn('gamma', [Rational.of(1, 2)], { evaluate: false });
+  expect(e.evalf(15).toNumber()).toBeCloseTo(Math.sqrt(Math.PI));
+});

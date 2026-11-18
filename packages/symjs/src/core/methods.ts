@@ -8,15 +8,20 @@
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import type { ExprLike, FnName } from './nodes';
-import { Add, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
+import { Add, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Integral, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { numAdd, numNeg } from './num';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
 import { boundSymbols, freeSymbols, mapBottomUp as mapBottomUpM, rebuild as rebuildM, some, subs as subsM, xreplace as xreplaceM } from './traverse';
 import { Eq, piecewise } from './logic';
+import { iterArgs, traversalArgs } from './containers';
+import { SubsNode } from './subsnode';
+import { BasicNode } from './basic';
+import { Indexed } from './indexed';
 import { at, getOrThrow } from './guard';
 import { ordered } from './match';
+import type { Truth } from './truth';
 import { InvariantError } from './errors';
 
 // Higher layers are reached through impl (docs/architecture.md: the core imports no other layer)
@@ -522,7 +527,10 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
   const diff_ = add(...diffTerms);
   const xa0 = mul(extractAdditively(co, 1) ?? S.Zero, c);
   // e - c = (co - 1)*c + diff, as above
-  if (!isZeroE(xa0)) return add(xa0, diff_);
+  if (!isZeroE(xa0)) {
+    const remainder = extractAdditively(diff_, c);
+    return add(xa0, remainder === undefined || isZeroE(remainder) ? diff_ : remainder);
+  }
   let self = e;
   const coeffs: Expr[] = [];
   for (const a of addArgs(c)) {
@@ -573,7 +581,9 @@ export function isPolynomial(eIn: ExprLike, syms: readonly Expr[] = []): boolean
 /** SymPy `is_rational_function(*syms)`. */
 export function isRationalFunction(eIn: ExprLike, syms: readonly Expr[] = []): boolean {
   const e = sympify(eIn);
-  if (e instanceof Special) return false;
+  // A symbol's metadata, such as a random variable's support, is not part of the rational function.
+  const nonfinite = (x: Expr): boolean => x instanceof Special || (!(x instanceof Sym) && x.args.some(nonfinite));
+  if (nonfinite(e)) return false;
   const s = symsOrAll(e, syms);
   if (s.length === 0) return true;
   const inSyms = (x: Expr) => s.some((y) => y.key === x.key);
@@ -590,12 +600,16 @@ export function isRationalFunction(eIn: ExprLike, syms: readonly Expr[] = []): b
   return go(e);
 }
 
+const knownZeroExpression = (e: Expr): boolean => isZeroQ(e) === true
+  || e instanceof Add && e.args.every(knownZeroExpression)
+  || e instanceof Mul && e.args.every((factor) => factor instanceof Rational || factor instanceof Sym && factor.assumptions0.get('finite') === true) && e.args.some(knownZeroExpression);
+
 /** SymPy `is_constant(*wrt)` (symbolic check via derivatives). */
 export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
   const e = sympify(eIn);
   const free = [...freeSymbols(e)];
   const vars = wrt.length ? free.filter((f) => wrt.some((w) => w.key === f.key)) : free;
-  if (vars.length === 0) return true;
+  if (vars.length === 0 || knownZeroExpression(e)) return true;
   if (e instanceof Sym) return false;
   for (const v of vars) {
     let d: Expr;
@@ -615,6 +629,32 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
   return true;
 }
 
+/**
+ * SymPy's fuzzy constancy check. An undecided zero denominator leaves a
+ * derivative-based proof inconclusive because the original expression can have poles.
+ */
+export function isConstantTruth(eIn: ExprLike, wrt: readonly Sym[] = []): Truth {
+  const e = sympify(eIn);
+  const free = freeSymbols(e);
+  if (!free.size || wrt.length > 0 && !wrt.some((x) => [...free].some((v) => v.key === x.key))) return true;
+  if (!isConstant(e, wrt)) return false;
+  if (knownZeroExpression(e)) return true;
+  let result: Truth = true;
+  some(e, (term) => {
+    if (term instanceof Pow && term.exp instanceof Rational && term.exp.isNegative) {
+      const zero = isZeroQ(term.base);
+      if (zero === true) {
+        result = false;
+        return true;
+      }
+      if (zero === undefined) result = 'unknown';
+    }
+    return false;
+  });
+  return result;
+}
+
+
 /** SymPy `as_real_imag()`. */
 export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   const e0 = sympify(eIn);
@@ -628,6 +668,16 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   if ((e0 instanceof Pow && e0.base instanceof Constant && e0.base.name === 'E') || e0 instanceof Fn) {
     return asRealImagExpand(e0);
   }
+  if (e0 instanceof Mul && e0.isCommutative && e0.args.some((a) => a instanceof Sym && a.assumptions.imaginary)) {
+    let real: Expr = S.One;
+    let imag: Expr = S.Zero;
+    for (const factor of e0.args) {
+      const a = re(factor);
+      const b = im(factor);
+      [real, imag] = [add(mul(real, a), mul(-1, imag, b)), add(mul(real, b), mul(imag, a))];
+    }
+    return [real, imag];
+  }
   const e = expandMul(e0);
   return [re(e), im(e)];
 }
@@ -636,7 +686,7 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
 export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
   const e = sympify(eIn);
   // SymPy Mul.as_numer_denom of a MatMul: the products of the numerators and of the denominators
-  if (!e.isCommutative && !(isMulLike(e) && !(e instanceof Mul))) return [e, S.One];
+  if (!e.isCommutative && !isMulLike(e)) return [e, S.One];
   if (e instanceof Rational) return [Rational.of(e.p), Rational.of(e.q)];
   if (isMulLike(e)) {
     const ns: Expr[] = [];
@@ -665,7 +715,7 @@ export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
       n = base;
       d = S.One;
     }
-    const dnonpos = isNegativeQ(d) === true || isZeroQ(d) === true ? true : isPositive(d) === true ? false : undefined;
+    const dnonpos = (d instanceof Sym && d.assumptions.nonpositive === true) || isNegativeQ(d) === true || isZeroQ(d) === true ? true : isPositive(d) === true ? false : undefined;
     if (dnonpos === true) {
       n = mul(-1, n);
       d = mul(-1, d);
@@ -745,35 +795,35 @@ export function hasFree(eIn: ExprLike, ...patterns: (ExprLike | { fn: string })[
       };
       return [...free].some((s) => s.key === q.key) || differentiationVariable(e);
     }
-    if (e.has(q)) return true;
-    // a sub-sum or sub-product of an Add/Mul also counts (x + y + 1 has y + 1)
-    const qs = q instanceof Add ? q.args : q instanceof Mul ? q.args : undefined;
-    if (!qs) return false;
-    const go = (x: Expr): boolean => {
-      if (x.kind === q.kind && qs.every((a) => x.args.some((b) => b.key === a.key))) return true;
-      return x.args.some(go);
-    };
-    return go(e);
+    if (e.key === q.key) return true;
+    const masked = mapBottomUpM(e, (node) => {
+      if (node.kind !== 'Integral' || node.args.length < 3) return node;
+      const dummy = new Dummy();
+      return rebuildM(node, [xreplaceM(at(node.args, 0), [[at(node.args, 1), dummy]]), dummy, ...node.args.slice(2)]);
+    });
+    return masked.has(q);
   });
 }
 
-/** sqrt(2) + 2*sqrt(10) -> sqrt(2)*(1 + 2*sqrt(5)): the square root of the gcd of the radicands. */
+/** Factor a common positive radical from the terms of a sum. */
 function extractCommonRadical(e: Add): Expr {
-  const radicand = (t: Expr): bigint | undefined => {
-    for (const f of mulArgs(t)) {
-      if (f instanceof Pow && f.base instanceof Rational && f.base.q === 1n && f.exp instanceof Rational && f.exp.p === 1n && f.exp.q === 2n) return f.base.p;
-    }
-    return undefined;
-  };
-  let g = 0n;
-  for (const t of e.args) {
-    const r = radicand(t);
-    if (r === undefined) return e;
-    g = gcd(g, r);
+  const unitRadical = (f: Expr): f is Pow & { base: Rational; exp: Rational } =>
+    f instanceof Pow && f.base instanceof Rational && f.base.isInteger && f.exp instanceof Rational && f.exp.p === 1n && !f.exp.isInteger;
+  const candidates = mulArgs(at(e.args, 0)).filter(unitRadical);
+  for (const root of candidates) {
+    const terms = e.args.map((t) => mulArgs(t));
+    const common = terms.map((args) => args.find((f): f is Pow & { base: Rational; exp: Rational } =>
+      unitRadical(f) && f.exp.key === root.exp.key));
+    if (!common.every((f) => f !== undefined)) continue;
+    const radicand = common.reduce((g, f) => gcd(g, f.base.p), 0n);
+    if (radicand <= 1n) continue;
+    const inner = terms.map((args, i) => {
+      const selected = at(common, i);
+      return mul(...args.map((f) => f === selected ? pow(Rational.of(selected.base.p / radicand), selected.exp) : f));
+    });
+    return mul(pow(Rational.of(radicand), root.exp), add(...inner));
   }
-  if (g <= 1n) return e;
-  const s = pow(Rational.of(g), S.Half);
-  return mul(s, add(...e.args.map((t) => mul(t, pow(s, -1)))));
+  return e;
 }
 
 /** SymPy as_coeff_exponent(x): [c, e] with self = c*x**e and c free of x, else [self, 0]. */
@@ -1047,17 +1097,17 @@ export function equalValued(x: ExprLike, y: ExprLike): boolean {
   return ra !== undefined && rb !== undefined ? ra.key === rb.key : a.key === b.key;
 }
 
-/** Base and integer exponent of a factor (SymPy decompose_power): x**(3/2) -> [sqrt(x), 3]. */
-function decomposePower(e: Expr): [Expr, number] {
-  const [b, ex] = asBaseExp(e);
-  if (ex instanceof Rational) {
-    if (ex.q === 1n) return [b, Number(ex.p)];
-    return [pow(b, Rational.of(1n, ex.q)), Number(ex.p)];
+/** Decompose a power into a base and an exact integer exponent. */
+export function decomposePower(e: Expr): readonly [Expr, bigint] {
+  const [base, exponent] = asBaseExp(e);
+  if (exponent instanceof Rational) {
+    return [exponent.isInteger ? base : pow(base, Rational.of(1n, exponent.q)), exponent.p];
   }
-  // a symbolic exponent c*t: the integer coefficient c moves to the exponent
-  const [c, rest] = splitCoeff(ex);
-  if (c instanceof Rational && c.q === 1n && !(c.p === 1n)) return [pow(b, rest), Number(c.p)];
-  return [e, 1];
+  const [coefficient, rest] = splitCoeff(exponent);
+  if (coefficient instanceof Rational && !coefficient.isOne) {
+    return [pow(base, mul(Rational.of(1n, coefficient.q), rest)), coefficient.p];
+  }
+  return [e, 1n];
 }
 
 /**
@@ -1087,7 +1137,7 @@ export function asTerms(eIn: ExprLike): [[Expr, [[number, number], number[], Exp
         }
         if (f.isCommutative) {
           const [b, k] = decomposePower(f);
-          cpart.set(b.key, [b, k]);
+          cpart.set(b.key, [b, Number(k)]);
           if (!gens.some((g) => g.key === b.key)) gens.push(b);
         } else nc.push(f);
       }
@@ -1118,7 +1168,37 @@ export function asDummy(eIn: ExprLike): Expr {
   const e = sympify(eIn);
   if (e instanceof Sym) return new Dummy(e.name, e.isCommutative ? {} : { commutative: false });
   if (atoms(e, (a) => a instanceof Sym).length === 0) return e;
-  return mapBottomUpM(e, (x) => (boundSymbols(x).length ? canonicalBound(x) : x));
+  const visit = (node: Expr): Expr => {
+    if (node instanceof Integral) return canonicalIntegral(node, visit);
+    if (node.args.length === 0) return node;
+    const args = node.args.map(visit);
+    const rebuilt = args.some((a, i) => a !== node.args[i]) ? rebuildM(node, args) : node;
+    return boundSymbols(rebuilt).length ? canonicalBound(rebuilt) : rebuilt;
+  };
+  return visit(e);
+}
+
+/** Nested integral nodes represent one list of limits, with the innermost limit first. */
+function integralBindings(e: Integral): Expr[] {
+  const variables: Expr[] = [];
+  let body: Expr = e;
+  while (body instanceof Integral) {
+    if (body.args.length >= 3) variables.unshift(body.variable);
+    body = body.integrand;
+  }
+  return variables;
+}
+
+function canonicalIntegral(e: Integral, visit: (subtree: Expr) => Expr): Expr {
+  const canonical = canonicalVariables(e);
+  const rename = (node: Integral, scope: readonly (readonly [Expr, Expr])[]): Expr => {
+    const variable = canonical.get(node.variable);
+    const bounds = node.args.slice(2).map((bound) => visit(xreplaceM(bound, scope)));
+    const inner = variable === undefined ? scope : [...scope.filter(([v]) => v.key !== node.variable.key), [node.variable, variable] as const];
+    const integrand = node.integrand instanceof Integral ? rename(node.integrand, inner) : visit(xreplaceM(node.integrand, inner));
+    return new Integral([integrand, variable ?? node.variable, ...bounds]);
+  };
+  return rename(e, []);
 }
 
 /** SymPy as_dummy `can`: the bound symbols of x replaced by its canonical variables. */
@@ -1148,7 +1228,7 @@ function canonicalBound(xIn: Expr): Expr {
  */
 export function canonicalVariables(eIn: ExprLike): Map<Expr, Sym> {
   const e = sympify(eIn);
-  const bound = boundSymbols(e);
+  const bound = e instanceof Integral ? integralBindings(e) : boundSymbols(e);
   const names = new Set([...freeSymbols(e)].filter((s): s is Sym => s instanceof Sym && !bound.some((b) => b.key === s.key)).map((s) => s.name));
   const reps = new Map<Expr, Sym>();
   let i = 0;
@@ -1158,6 +1238,38 @@ export function canonicalVariables(eIn: ExprLike): Map<Expr, Sym> {
     reps.set(b, new Sym(name));
   }
   return reps;
+}
+
+/** Visit free subexpressions breadth first, masking the variables bound by an enclosing expression. */
+export function* iterFreeArgs(e: Expr): Generator<Expr, void, undefined> {
+  const queue = [e];
+  for (const node of queue) {
+    yield node;
+    if (canonicalVariables(node).size === 0) {
+      queue.push(...traversalArgs(node));
+      continue;
+    }
+    const masked = asDummy(node);
+    const variables = masked instanceof Integral ? integralBindings(masked) : boundSymbols(masked);
+    const args = iterArgs(masked);
+    args.next(); // the binder itself was already yielded
+    for (const arg of args) if (!variables.some((v) => arg.has(v))) yield arg;
+  }
+}
+
+/** The deprecated SymPy Expr.expr_free_symbols query, limited to expression nodes. */
+export function exprFreeSymbols(eIn: ExprLike): Set<Expr> {
+  const e = sympify(eIn);
+  const collect = (node: Expr): Expr[] => {
+    if (node instanceof BasicNode || ['Set', 'Rel', 'Bool', 'BoolOp'].includes(node.kind)) return [];
+    if (node instanceof Indexed) return [node];
+    if (node instanceof SubsNode) return collect(node.expr).filter((a) => !node.variables.some((v) => v.key === a.key));
+    if (node instanceof ExtensionExpr && ['Tuple', 'Dict', 'Str'].includes(node.name)) return [];
+    if (node.args.length === 0) return [node];
+    if (node instanceof Integral) return collect(node.integrand);
+    return node.args.flatMap(collect);
+  };
+  return new Set(new Map(collect(e).map((value) => [value.key, value] as const)).values());
 }
 
 /**

@@ -521,6 +521,9 @@ describe('limits with a small budget of nested limit computations', () => {
     const li = nested('x*li(x+1)');
     expect(String(sj.limit(li, x, 0))).toBe(`Limit(${li}, x, 0, dir='+')`);
     expect(String(sj.limit(P('x*li(x+1)'), x, 0))).toBe('0');
+    const e = nested('x*Si(1/x)');
+    expect(limitWithin(e, x, 0, '+', 1)).toBeInstanceOf(sj.Limit);
+    expect(sj.limit(e, x, 0)).toBe(sj.S.Zero);
   });
 });
 

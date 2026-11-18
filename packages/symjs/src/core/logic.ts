@@ -8,13 +8,13 @@
 import { Special } from './nodes';
 import type { ExprLike, RelOp } from './nodes';
 import { Expr } from './nodes';
-import { Add, BoolAtom, ExtensionExpr, Float, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
+import { Add, BoolAtom, ExtensionExpr, Float, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
 import { numCmp } from './num';
-import { add, couldExtractMinusSign, mul, sympify } from './ops';
+import { add, couldExtractMinusSign, knownNonreal, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { at } from './guard';
-import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 const isSpecial = (name: string) => (x: Expr): boolean => x instanceof Special && x.name === name;
@@ -27,6 +27,14 @@ function isFiniteReal(e: Expr): boolean {
 }
 
 /** Create a relation, evaluating it to True/False when the difference is a number. */
+/** Lower bound on factorial(n) when n is a nonnegative integer. */
+export function factorialLowerBound(e: Expr): Rational | undefined {
+  if (!(e instanceof Fn) || e.name !== 'factorial') return undefined;
+  const n = at(e.args, 0);
+  if (isIntegerQ(n) !== true || isNonNegative(n) !== true) return undefined;
+  return isNonNegative(add(n, -2)) === true ? Rational.of(2) : S.One;
+}
+
 export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   const lhs = sympify(a);
   const rhs = sympify(b);
@@ -48,9 +56,19 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   if (!equality) {
     for (const operand of [lhs, rhs]) {
       if (isBoolean(operand)) throw new TypeError('Can only compare inequalities with expressions');
-      if (isSpecial('zoo')(operand) || (operand instanceof Sym ? operand.assumptions0.get('extended_real') === false : isReal(operand) === false)) {
+      if (isSpecial('zoo')(operand) || knownNonreal(operand)) {
         throw new TypeError(`Invalid comparison of non-real ${String(operand)}`);
       }
+    }
+  }
+  if (equality && lhs instanceof BoolAtom && rhs instanceof BoolAtom) return (lhs.value === rhs.value) === (op === 'Eq') ? S.true : S.false;
+  if (equality) {
+    const symbol = lhs instanceof Sym ? lhs : rhs;
+    const number = lhs instanceof Float ? lhs : rhs;
+    if (symbol instanceof Sym && number instanceof Float) {
+      const integer = number.isZero || number.mpf.exp >= 0n;
+      if (symbol.assumptions0.get('rational') === false || symbol.assumptions.integer === false && integer) return op === 'Eq' ? S.false : S.true;
+      if (symbol.assumptions.integer === true && integer) return new Rel(op, lhs, rhs);
     }
   }
   const decided = impl.relational?.(op, lhs, rhs);
@@ -64,8 +82,21 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     }
   }
   if (!equality && isNum(lhs) && isNum(rhs)) return byCmp(numCmp(lhs, rhs));
+  if (!equality && (lhs instanceof Rational || rhs instanceof Rational)) {
+    const reverse = lhs instanceof Rational;
+    const numeric = reverse ? lhs : rhs;
+    const bound = factorialLowerBound(reverse ? rhs : lhs);
+    if (numeric instanceof Rational && bound !== undefined) {
+      const compared = numCmp(bound, numeric);
+      const test = reverse ? REVERSED[op] : op;
+      if (compared > 0 || compared === 0 && (test === 'Ge' || test === 'Lt')) return test === 'Gt' || test === 'Ge' ? S.true : S.false;
+    }
+  }
   // equal sides (such as oo and oo, whose difference is nan)
-  if (lhs.key === rhs.key) return byCmp(0);
+  if (lhs.key === rhs.key) {
+    if (equality || (lhs instanceof Sym ? lhs.assumptions0.get('extended_real') === true : isReal(lhs) === true)) return byCmp(0);
+    return new Rel(op, lhs, rhs);
+  }
   // SymPy compares bounded integer indices through the extrema of their ranges.
   if (!equality) {
     const interval = (e: Expr): readonly [Expr, Expr] => e instanceof Sym && 'lower' in e && 'upper' in e && e.lower instanceof Expr && e.upper instanceof Expr ? [e.lower, e.upper] : [e, e];
@@ -77,10 +108,7 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     }
   }
   // a relation is not a number: Eq(Eq(F, G), C1) of the exact ODE solution stays unevaluated (SymPy)
-  if (equality && (isBoolean(lhs) || isBoolean(rhs))) {
-    if (lhs instanceof BoolAtom && rhs instanceof BoolAtom) return byCmp(1);
-    return new Rel(op, lhs, rhs);
-  }
+  if (equality && (isBoolean(lhs) || isBoolean(rhs))) return new Rel(op, lhs, rhs);
   const d = add(lhs, mul(-1, rhs));
   if (d instanceof Rational) return byCmp(numCmp(d, S.Zero));
   if (d instanceof Float) return byCmp(numCmp(d, S.Zero));
@@ -92,13 +120,13 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   if (equality && d.freeSymbols().size === 0) {
     try {
       const v = d.toComplex();
-      if (Math.hypot(v.re, v.im) > 1e-9) return op === 'Eq' ? S.false : S.true;
+      if ((v.im === 0 || !hasUnevaluatedComplexPower(d)) && Math.hypot(v.re, v.im) > 1e-9) return op === 'Eq' ? S.false : S.true;
     } catch {
       // not numerically evaluable
     }
     if (lhs.isNumber && rhs.isNumber) {
       for (const [real, other] of [[lhs, rhs], [rhs, lhs]] as const) {
-        if (isReal(real) !== true || isReal(other) === true) continue;
+        if (isReal(real) !== true || isReal(other) === true || hasUnevaluatedComplexPower(other)) continue;
         try {
           if (Math.abs(other.toComplex().im) > 1e-9) return op === 'Eq' ? S.false : S.true;
         } catch { /* The complex part is unknown. */ }
@@ -119,6 +147,12 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     }
   }
   return new Rel(op, lhs, rhs);
+}
+
+/** A branch-bearing power that has not been reduced to real and imaginary parts. */
+function hasUnevaluatedComplexPower(e: Expr): boolean {
+  return e instanceof Pow && e.base instanceof Add && knownNonreal(e.base)
+    || e.args.some(hasUnevaluatedComplexPower);
 }
 
 /**
@@ -149,7 +183,7 @@ const relationHeads = { Eq, Ne, Lt, Le, Gt, Ge } as const;
 registerHeadResolver(Rel, (e) => relationHeads[e.op]);
 
 /** SymPy is_number: an expression without symbols (pi/2, sqrt(2)). */
-const isNumber = (e: Expr): boolean => e.freeSymbols().size === 0;
+const isNumber = (e: Expr): boolean => e.kind !== 'Set' && e.freeSymbols().size === 0;
 
 const REVERSED: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
 

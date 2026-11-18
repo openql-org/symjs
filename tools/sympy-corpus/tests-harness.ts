@@ -4,7 +4,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Expr } from '../../packages/symjs/src/core/nodes';
-import { deserialize, fmt, matchesSympyErratum, pyEquals, runCase } from './harness';
+import { deserialize, equalsSerializedOperand, fmt, matchesSympyErratum, pyEquals, runCase } from './harness';
 import type { Case, CaseObservation, Outcome, Tree } from './harness';
 import { Dyadic, Vector } from '../../packages/symjs/src';
 
@@ -13,6 +13,7 @@ export interface TestCase extends Case {
   line: number;
   op: '==' | '!=' | 'is' | 'is not' | 'truthy' | 'falsy';
   raises?: string;
+  expectedOperand?: Tree;
   comparisonTree?: Tree;
   polyReplay?: {
     method?: string;
@@ -24,9 +25,15 @@ export interface TestCase extends Case {
 
 export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string }; phase?: 'input' | 'invoke' | 'result' };
 
+const REPLAY_STATE = new Set([
+  'tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix', 'polyReplay',
+  'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation',
+]);
+
 export function testCaseKey(c: TestCase): string {
   // Replay state annotates an existing assertion without changing its ratchet identity.
-  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix', 'polyReplay'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
+  const serialized = JSON.stringify(c, (key, value: unknown) => REPLAY_STATE.has(key) ? undefined : value);
+  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(serialized).digest('hex').slice(0, 20)}`;
 }
 
 // The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
@@ -65,6 +72,15 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
   // a truth-value assertion whose SymPy answer is wrong: the registered correct value counts as compatible
   if ((outcome.status === 'fail' || outcome.status === 'equivalent') && outcome.got !== undefined && matchesSympyErratum(c, outcome.got)) return { status: 'equivalent', got: outcome.got };
   if (c.op === '!=') {
+    if (c.expectedOperand !== undefined && observation && 'value' in observation &&
+        outcome.status !== 'error' && outcome.status !== 'unsupported') {
+      try {
+        return equalsSerializedOperand(observation.value, c.expectedOperand)
+          ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
+      } catch (error) {
+        return { status: 'error', reason: error instanceof Error ? error.message : String(error) };
+      }
+    }
     if (c.category === 'polys' && c.comparisonTree && observation && 'value' in observation) {
       const rhs = deserialize(c.comparisonTree);
       return pyEquals(observation.value, rhs) ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
@@ -99,7 +115,7 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
 export function runTestCase(c: TestCase): TestOutcome {
   if (c.exclusion) return { status: 'unsupported', reason: c.exclusion };
   // A draw from Python's seeded random generator cannot be reproduced by the JS methods.
-  if (c.fn === '.random') return { status: 'unsupported', reason: "a draw from Python's seeded random generator" };
+  if (c.fn === '.random' && c.randomState === undefined) return { status: 'unsupported', reason: 'unrecorded random generator state' };
   let observation: CaseObservation | undefined;
   // These established public names capitalize the second word after "Non".
   const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };

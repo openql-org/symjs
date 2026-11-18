@@ -424,7 +424,8 @@ function solveSign(input: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
 
 /** Express a single puncture as an excluded point. */
 function inequalityAsRelational(set: SetExpr, x: Sym): Expr {
-  if (!(set instanceof SetOp) || set.op !== 'Union' || set.args.length !== 2) return asRelational(set, x);
+  if (!(set instanceof SetOp) || set.op !== 'Union') return asRelational(set, x);
+  if (set.args.length !== 2) return orB(...set.args.map((part) => asRelational(part, x)));
   const [a, b] = [first(set.args), at(set.args, 1)];
   if (!(a instanceof Interval) || !(b instanceof Interval)) return asRelational(set, x);
   if (!a.rightOpen || !b.leftOpen || !a.end.equals(b.start)) return asRelational(set, x);
@@ -684,6 +685,7 @@ export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Com
   }));
   if (!g.has(x)) return g instanceof Rational && g.isZero ? domain : EmptySet;
   if (domain === Complexes && some(g, (e) => e instanceof Fn && ['abs', 'Min', 'Max'].includes(e.name) && e.has(x))) throw new RangeError('solveset: a real domain is required');
+  let algebraic: SetExpr | undefined;
   try {
     // a Piecewise: each piece on the part of the domain where its condition holds first (SymPy _solveset)
     if (g instanceof Piecewise) {
@@ -718,19 +720,22 @@ export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Com
       const ex = complexExpSolutions(g, x) ?? complexExpPolynomial(g, x);
       if (ex) return ex;
     }
-    return solvesetAlgebraic(g, x, domain);
+    algebraic = solvesetAlgebraic(g, x, domain);
+    if (algebraic !== EmptySet) return algebraic;
   } catch {
-    const hyperbolic = g.rewrite('exp', { pattern: ['sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch'] });
-    if (!hyperbolic.equals(g)) {
-      const solution = solveset(hyperbolic, x, domain);
-      if (!(solution instanceof ConditionSet)) return solution;
-    }
-    if (domain === Reals || domain instanceof Interval) {
-      const radicals = solveRadicals(g, x, domain);
-      if (radicals !== undefined) return radicals;
-    }
-    return new ConditionSet(x, Eq(g, 0), domain);
+    algebraic = undefined;
   }
+  const hyperbolicHeads = ['sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch'];
+  if (some(g, (term) => term instanceof Fn && hyperbolicHeads.includes(term.name))) {
+    const hyperbolic = g.rewrite('exp', { pattern: hyperbolicHeads });
+    const solution = solveset(hyperbolic, x, domain);
+    if (!(solution instanceof ConditionSet)) return solution;
+  }
+  if (domain === Reals || domain instanceof Interval) {
+    const radicals = solveRadicals(g, x, domain);
+    if (radicals !== undefined) return radicals;
+  }
+  return algebraic ?? new ConditionSet(x, Eq(g, 0), domain);
 }
 
 /** Solve an affine integer congruence with a constant modulus and residue. */
@@ -785,7 +790,7 @@ function solveRadicals(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
       }
       cleared = expandMul(add(pow(even, 2), mul(-1, root.base, pow(odd, 2))));
     }
-    if (cleared.equals(S.Zero)) return undefined;
+    if (cleared.equals(S.Zero)) return new ConditionSet(x, Eq(g, 0), domain);
     const candidates = solve(cleared, x);
     const valid: Expr[] = [];
     for (const point of candidates) {
@@ -826,7 +831,7 @@ function solvePiecewise(
 
 /** SymPy _invert_real for a function with an inverse (erf -> erfinv): a*f(u) + b = 0 becomes u = f^-1(-b/a), or undefined. */
 const INVERSES: Readonly<Record<string, FnName>> = { erf: 'erfinv', erfc: 'erfcinv', erfinv: 'erf', erfcinv: 'erfc', sinh: 'asinh', cosh: 'acosh', tanh: 'atanh', coth: 'acoth', sech: 'asech', csch: 'acsch' };
-function invertReal(g: Expr, x: Sym): Expr | undefined {
+function invertReal(g: Expr, x: Sym, domain: SetExpr): Expr | undefined {
   const terms = g instanceof Add ? g.args : [g];
   const dep = terms.filter((t) => t.has(x));
   if (dep.length !== 1) return undefined;
@@ -841,7 +846,7 @@ function invertReal(g: Expr, x: Sym): Expr | undefined {
     if (adjacent.has(x) || isPositive(adjacent) !== true) return undefined;
     const limit = mul(S.Half, S.Pi);
     const valid = containsQ(interval(mul(-1, limit), limit, true, true), c);
-    if (valid === undefined) return undefined;
+    if (valid === undefined) return new ConditionSet(x, Eq(g, 0), domain);
     return valid ? add(first(f.args), mul(-1, adjacent, fn('tan', [c]))) : S.One;
   }
   if (f.name.endsWith('h')) {
@@ -946,7 +951,8 @@ function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
     if (affineExponential !== undefined) return affineExponential;
     const exponential = realExponential(gIn, x, domain);
     if (exponential !== undefined) return exponential;
-    const inv = invertReal(gIn, x);
+    const inv = invertReal(gIn, x, domain);
+    if (inv instanceof ConditionSet) return inv;
     if (inv !== undefined) return solveset(inv, x, domain);
     const pw = domain === Reals ? invertRealPower(gIn, x) : undefined;
     if (pw) return pw;

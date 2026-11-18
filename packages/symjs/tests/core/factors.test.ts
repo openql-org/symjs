@@ -122,3 +122,35 @@ it('normalizes float units in factor maps without normalizing other bases', () =
   expect(String(make(1, 2))).toBe('Factors({1.00000000000000: 1, I: 1})');
   expect(String(make(2, 2))).toBe('Factors({2.00000000000000: 2, I: 1})');
 });
+
+it('constructs and combines factored terms with exact coefficients', () => {
+  const [x, y] = sj.symbols('x y');
+  const a = new sj.Term(sj.parse('2*(2*x + 2)**3/y'));
+  const b = new sj.Term(sj.parse('6*y/(x + 1)**2'));
+  expect(a.coeff.key).toBe('16');
+  expect(a.mul(b).asExpr().key).toBe(sj.mul(96, x.add(1)).key);
+  expect(a.quo(a).asExpr().key).toBe('1');
+  expect(a.inv().asExpr().key).toBe(a.pow(-1).asExpr().key);
+  expect(a.pow(2).numer.asExpr().key).toBe(sj.pow(x.add(1), 6).key);
+  expect(a.gcd(b).coeff.key).toBe('2');
+  expect(a.lcm(b).coeff.key).toBe('48');
+  expect(a.equals(new sj.Term(a.coeff, a.numer, a.denom))).toBe(true);
+  expect(a.equals(b)).toBe(false);
+  expect(a.equals(new sj.Term(a.coeff, a.numer))).toBe(false);
+  expect(a.equals(new sj.Term(a.coeff, undefined, a.denom))).toBe(false);
+  expect(String(new sj.Term(y.pow(-2)))).toBe('Term(1, Factors({}), Factors({y: 2}))');
+  expect(() => new sj.Term(sj.symbol('A', { commutative: false }))).toThrow(TypeError);
+  expect(() => a.pow(x)).toThrow(TypeError);
+  expect(new sj.Term(-2.5, new sj.Factors()).gcd(a).coeff).toBeInstanceOf(sj.Float);
+  expect(new sj.Term(0.5, new sj.Factors()).lcm(b).coeff.toNumber()).toBe(3);
+  expect(() => new sj.Term(x, new sj.Factors()).gcd(a)).toThrow(TypeError);
+});
+
+it('handles zero powers in unevaluated terms and inexact content on either side', () => {
+  const x = sj.symbol('x');
+  expect(new sj.Term(new sj.Pow(x, sj.S.Zero)).asExpr().key).toBe('1');
+  const exact = new sj.Term(2);
+  const inexact = new sj.Term(1.5, new sj.Factors());
+  expect(exact.gcd(inexact).coeff).toBeInstanceOf(sj.Float);
+  expect(inexact.gcd(exact).coeff).toBeInstanceOf(sj.Float);
+});

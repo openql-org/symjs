@@ -424,13 +424,15 @@ function negligible(x: Mpf, ref: number, wp: number): boolean {
  * and returned as an exact zero when it is rounding noise that shrinks with
  * the working precision (cancellation to zero).
  */
-export function evalAdaptive(e: Expr, prec: number, lookup: SymbolLookup = noValue, accuracy?: { re: number; im: number }): Mpc {
+export function evalAdaptive(e: Expr, prec: number, lookup: SymbolLookup = noValue, accuracy?: { re: number; im: number }, maxPrec = Infinity): Mpc {
   const cancellation = { value: false };
   const evaluate = (p: number): Mpc => evalMp(e, p, lookup, accuracy ? cancellation : undefined);
+  const max = Math.max(prec + 20, maxPrec);
   let wp = prec + 20;
   let prev = evaluate(wp);
   for (let i = 0; i < 8; i++) {
-    const wp2 = prec + 20 + 40 * 2 ** (i + 1);
+    const wp2 = Math.min(max, prec + 20 + 40 * 2 ** (i + 1));
+    if (wp2 <= wp) break;
     const cur = evaluate(wp2);
     const ref = Math.max(F.mag(cur[0]), F.mag(cur[1]));
     const refPrev = Math.max(F.mag(prev[0]), F.mag(prev[1]));
