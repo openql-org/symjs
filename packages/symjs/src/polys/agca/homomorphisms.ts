@@ -5,7 +5,7 @@
 
 import { at } from '../../core/guard';
 import { add, mul } from '../../core/ops';
-import type { Expr } from '../../core/nodes';
+import type { Expr, ExprLike } from '../../core/nodes';
 import { str } from '../../printing/str';
 import { type Module, type ModuleElement, SubModule, QuotientModule, type ModuleInput } from './modules';
 
@@ -57,6 +57,27 @@ export class ModuleHomomorphism {
   }
   quotientCodomain(submodule: SubModule): ModuleHomomorphism {
     return homomorphism(this.domain, this.codomain.quotientModule(submodule), this.matrix);
+  }
+  /** Add maps with the same domain and codomain. */
+  add(other: unknown): ModuleHomomorphism {
+    if (!(other instanceof ModuleHomomorphism) || !this.domain.equals(other.domain) || !this.codomain.equals(other.codomain)) throw new TypeError('homomorphisms must have the same domain and codomain');
+    return homomorphism(this.domain, this.codomain, this.matrix.map((g, i) => g.add(at(other.matrix, i))));
+  }
+  neg(): ModuleHomomorphism { return this.mul(-1); }
+  sub(other: unknown): ModuleHomomorphism {
+    if (!(other instanceof ModuleHomomorphism)) throw new TypeError('expected a homomorphism');
+    return this.add(other.neg());
+  }
+  /** Compose maps, or multiply a map by a scalar. */
+  mul(other: ModuleHomomorphism | ExprLike): ModuleHomomorphism {
+    return other instanceof ModuleHomomorphism ? this.compose(other)
+      : homomorphism(this.domain, this.codomain, this.matrix.map((g) => g.mul(other)));
+  }
+  div(scalar: ExprLike): ModuleHomomorphism {
+    return homomorphism(this.domain, this.codomain, this.matrix.map((g) => g.div(scalar)));
+  }
+  equals(other: unknown): boolean {
+    return other instanceof ModuleHomomorphism && this.domain.equals(other.domain) && this.codomain.equals(other.codomain) && this.sub(other).isZero();
   }
   /** Composition this ∘ other. */
   compose(other: ModuleHomomorphism): ModuleHomomorphism {

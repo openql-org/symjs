@@ -9,6 +9,7 @@ import type { CriticalPair, LabeledPolynomial } from '../../src/polys/groebnerto
 import { QQ, ZZ } from '../../src/polys/domains';
 import { grevlex, grlex, lex } from '../../src/polys/orderings';
 import { PolyElement, PolyRing } from '../../src/polys/rings';
+import * as sjGroebner from '../../src';
 
 const ref = JSON.parse(readFileSync(new URL('./groebnertools.references.json', import.meta.url), 'utf8'));
 const ORDERS = { lex, grlex, grevlex } as const;
@@ -92,4 +93,14 @@ describe('lcm and gcd by Groebner bases', () => {
     expect(() => sj.groebnerLcm(R.gens[0]!, S.gens[0]!)).toThrow(RangeError);
     expect(() => sj.groebnerGcd(R.gens[0]!, S.gens[0]!)).toThrow(RangeError);
   });
+});
+
+it('computes reduced bases over fields and clears denominators over integer rings', () => {
+  for (const domain of [sjGroebner.QQ, sjGroebner.ZZ]) {
+    const ring = new sjGroebner.PolyRing(sjGroebner.symbols('x y'), domain);
+    const basis = sjGroebner.groebnerInRing(['2*x+y', 'x-y'].map((p) => ring.fromExpr(sjGroebner.parse(p))), ring);
+    expect(basis.map(String)).toEqual(['x', 'y']);
+    expect(basis.every((p) => p.ring === ring)).toBe(true);
+    expect(sjGroebner.groebnerInRing([], ring)).toEqual([]);
+  }
 });

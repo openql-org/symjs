@@ -7,7 +7,7 @@ import { NotImplementedError } from '../../core/errors';
 import { at, first, last } from '../../core/guard';
 import { Expr, S, type ExprLike } from '../../core/nodes';
 import { add, mul, neg, pow } from '../../core/ops';
-import { fraction, together } from '../../simplify/rational';
+import { cancel, fraction, together } from '../../simplify/rational';
 import type { IntLike } from '../../ntheory/intutil';
 import { str } from '../../printing/str';
 import { intArg } from '../compatibility';
@@ -42,6 +42,10 @@ export class ModuleElement {
     const c = this.module.ring.fromSympy(scalar);
     return this.module.convert(this.data.map((a) => mul(c, a)));
   }
+  /** Divide every component by a scalar, requiring the quotient to remain in the module. */
+  div(scalar: ExprLike): ModuleElement {
+    return this.module.convert(this.data.map((a) => cancel(mul(a, pow(scalar, -1)))));
+  }
   equals(other: ModuleElement): boolean {
     return sameAmbient(this.module.ambient, other.module.ambient) && this.module.ambient.zeroContains(this.data.map((a, i) => add(a, neg(at(other.data, i)))));
   }
@@ -68,8 +72,8 @@ export abstract class Module {
   }
   subset(elements: Iterable<ModuleInput>): boolean { return [...elements].every((e) => this.contains(e)); }
   /** As in SymPy, tests whether this module CONTAINS other. */
-  isSubmodule(other: Module): boolean {
-    return sameAmbient(this.ambient, other.ambient) && other.gens.every((g) => this.contains(g));
+  isSubmodule(other: unknown): boolean {
+    return other instanceof Module && sameAmbient(this.ambient, other.ambient) && other.gens.every((g) => this.contains(g));
   }
   equals(other: Module): boolean { return this.isSubmodule(other) && other.isSubmodule(this); }
   isZero(): boolean { return this.gens.every((g) => g.isZero()); }
@@ -158,7 +162,7 @@ export class SubModule extends Module {
   }
   toString(): string { return `<${this.gens.map((g) => g.toString()).join(', ')}>`; }
   private sparse(vector: readonly Expr[]): Sdm {
-    if (this.context.order.isGlobal) return sdmFromVector(vector, this.order, this.context.domain, { gens: this.context.symbols });
+    if (this.context.order.isGlobal === true) return sdmFromVector(vector, this.order, this.context.domain, { gens: this.context.symbols });
     const fractions = vector.map((e) => fraction(together(e)));
     const cleared = fractions.map(([n], i) => mul(n, ...fractions.filter((_, j) => i !== j).map(([, d]) => d)));
     return sdmFromVector(cleared, this.order, this.context.domain, { gens: this.context.symbols });
@@ -175,7 +179,7 @@ export class SubModule extends Module {
       const [G, coefficients] = sdmGroebner(lifted.map((g) => this.sparse(g)), sdmNfMora, this.order, this.context.domain, true);
       // Extended coefficients refer to the generators after clearing their denominators.
       const scales = lifted.map((g) => mul(...g.map((e) => fraction(together(e))[1])));
-      this.extendedCache = [G, this.context.order.isGlobal ? coefficients : coefficients.map((c) => sdmFromVector(this.vector(c, lifted.length).map((e, i) => mul(e, at(scales, i))), this.order, this.context.domain, { gens: this.context.symbols }))];
+      this.extendedCache = [G, this.context.order.isGlobal === true ? coefficients : coefficients.map((c) => sdmFromVector(this.vector(c, lifted.length).map((e, i) => mul(e, at(scales, i))), this.order, this.context.domain, { gens: this.context.symbols }))];
     }
     return this.extendedCache;
   }
@@ -195,7 +199,7 @@ export class SubModule extends Module {
   /** Weak normal form, zero exactly for elements in the submodule. */
   reduceElement(element: ModuleInput, fully = false): ModuleElement {
     const vector = this.container.convert(element).data;
-    if (!this.context.order.isGlobal) {
+    if (this.context.order.isGlobal !== true) {
       const G = this.basis();
       // Restore Mora's local-unit multiplier to preserve the original coset.
       const [remainder, multiplier] = sdmNfMora(this.sparse(vector), G, this.order, this.context.domain, [this.sparse([S.One]), G.map(() => [])]);
@@ -206,7 +210,7 @@ export class SubModule extends Module {
     return this.container.convert(this.vector(NF(this.sparse(vector), this.basis(), this.order, this.context.domain), this.rank));
   }
   inTermsOfGenerators(element: ModuleInput): Expr[] {
-    if (!this.context.order.isGlobal) {
+    if (this.context.order.isGlobal !== true) {
       const vector = this.convert(element);
       const relations = this.container.submodule(vector, ...this.gens).syzygyModule();
       const ordered = new SubModule(relations.gens, relations.container, true);

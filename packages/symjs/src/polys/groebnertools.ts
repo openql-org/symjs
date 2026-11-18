@@ -265,3 +265,10 @@ function groebnerOf(seq: readonly PolyElement[], ring: PolyRing): PolyElement[] 
   const field = ring.withDomain(domain.getField());
   return f5b(seq.map((s) => s.setRing(field)), field).map((g) => g.clearDenoms()[1].setRing(ring));
 }
+
+/** A reduced Groebner basis in a sparse polynomial ring, clearing denominators over rings. */
+export function groebnerInRing(seq: readonly PolyElement[], ring: PolyRing): PolyElement[] {
+  const field = ring.domain.isField ? ring : ring.withDomain(ring.domain.getField());
+  const basis = f5b(seq.map((p) => field.fromExpr(p.asExpr())), field);
+  return field === ring ? basis : basis.map((p) => ring.fromExpr(p.clearDenoms()[1].asExpr()));
+}

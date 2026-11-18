@@ -171,3 +171,12 @@ it('propagates computation failures from membership checks', () => {
   expect(() => ambient.contains([0])).toThrow(failure);
   conversion.mockRestore();
 });
+
+it('divides module elements by scalars with exact cancellation', () => {
+  const value = F.convert([p('x**2+x'), p('x+1')]);
+  expect(String(value.div(p('x+1')))).toBe('[x, 1]');
+  expect(() => value.div(x)).toThrow(CoercionFailed);
+  expect(F.isSubmodule(0)).toBe(false);
+  expect(F.submodule([x, 0]).isSubmodule(0)).toBe(false);
+  expect(String(F.convert([2, 4]).div(2))).toBe('[1, 2]');
+});

@@ -60,3 +60,9 @@ describe('product orders', () => {
     expect(() => sj.buildProductOrder([['lex', z]], [x])).toThrow(RangeError);
   });
 });
+
+it('preserves unknown globality through nested product orders', () => {
+  const mixed = new sj.ProductOrder([sj.lex, [0]], [sj.ilex, [1]]);
+  expect(new sj.ProductOrder([mixed, [0, 1]]).isGlobal).toBe('unknown');
+  expect(new sj.ProductOrder([mixed, [0, 1]], [sj.lex, [0]]).isGlobal).toBe('unknown');
+});
