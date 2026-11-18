@@ -20,3 +20,9 @@ it('validates tolerance and the sampling rectangle', () => {
     expect(() => testDerivativeNumerically(z, z, 1e-6, ...bounds)).toThrow(RangeError);
   }
 });
+
+it('preserves numerical domain failures', async () => {
+  const { Gt, piecewise } = await import('../../src');
+  const x = symbol('x', { real: true });
+  expect(() => testDerivativeNumerically(piecewise([x, Gt(x, 10)]), x, 1e-6, 2, 0, 3, 0)).toThrow(RangeError);
+});

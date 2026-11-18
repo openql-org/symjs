@@ -70,3 +70,13 @@ it('preserves Fermi restrictions when eliminating delta indices', async () => {
   expect(i.equals(new a.Sym('i'))).toBe(false);
   expect(u.equals(new a.Sym('u'))).toBe(false);
 });
+
+it('gives the Levi-Civita application its symbolic head and default assumptions', async () => {
+  const sj = await import('../../../src');
+  const [i, j] = symbols('i j');
+  const e = LeviCivita(i, j);
+  if (!(e instanceof sj.ExtensionExpr)) throw new TypeError('Levi-Civita application required');
+  expect(e.func(1, 2).equals(1)).toBe(true);
+  expect(e.isRealSelf()).toBe(true);
+  expect(e.printLatex(String)).toBe('\\varepsilon_{i j}');
+});

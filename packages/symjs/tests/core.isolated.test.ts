@@ -36,3 +36,7 @@ describe('var', () => {
     expect(String(core.var('r')[0])).toBe('r');
   });
 });
+
+it('reports that rewriting is unavailable in the standalone core entry', () => {
+  expect(() => x.rewrite('exp')).toThrow(NotLoadedError);
+});

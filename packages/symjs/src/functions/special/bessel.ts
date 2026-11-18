@@ -485,7 +485,7 @@ for (const name of ['airyai', 'airybi', 'airyaiprime', 'airybiprime'] as const) 
     if (isNegative(re(z)) !== true) return undefined;
     const t = mul(twoThirds, pow(neg(z), threeHalves));
     const factor = prime ? bi ? neg(z) : z : sqrt(neg(z));
-    return mul(scale, factor, add(besselj(neg(nu), t), mul(prime && !bi ? -1 : 1, besselj(nu, t))));
+    return mul(scale, factor, add(besselj(neg(nu), t), mul(prime !== bi ? -1 : 1, besselj(nu, t))));
   });
   registerRewrite(name, 'besseli', (args) => {
     const z = first(args), a = pow(z, threeHalves), t = mul(twoThirds, a);

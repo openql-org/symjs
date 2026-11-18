@@ -989,3 +989,22 @@ it('reads assumption knowledge bases supplied by extension nodes', () => {
   }
   expect(fact(new Known(), 'finite')).toBe(true);
 });
+
+it('infers gamma signs from the floor on negative real intervals', () => {
+  const positiveGamma = (z: Expr) => fact(sj.fn('gamma', [z], { evaluate: false }), 'positive');
+  expect(positiveGamma(sj.rational(-5, 2))).toBe(false);
+  expect(positiveGamma(parse('x + y'))).toBeUndefined();
+  expect(positiveGamma(parse('x + 1/2'))).toBeUndefined();
+  expect(fact(sj.fn('multigamma', [new sj.Float(0.4), 3], { evaluate: false }), 'real')).toBe(true);
+});
+
+it('uses numerical gamma signs when the floor evaluator is unavailable', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const evaluator = Object.getOwnPropertyDescriptor(impl, 'fn');
+  try {
+    delete impl.fn;
+    expect(fact(sj.fn('gamma', [sj.rational(-5, 2)], { evaluate: false }), 'positive')).toBe(false);
+  } finally {
+    if (evaluator) Object.defineProperty(impl, 'fn', evaluator);
+  }
+});

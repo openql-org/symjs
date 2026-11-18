@@ -93,11 +93,6 @@ registerRewrite('li', 'meijerg', (args) => {
   const z = log(first(args));
   return add(neg(log(neg(z))), mul(S.Half, add(log(z), neg(log(pow(z, -1))))), neg(meijerg([], [1], [0, 0], [], neg(z))));
 });
-registerRewrite('Ci', 'expint', (args) => {
-  const z = first(args);
-  const polar = (sign: number) => fn('exp_polar', [mul(sign, S.I, S.Pi, S.Half)]);
-  return mul(S.NegHalf, add(fn('expint', [1, mul(z, polar(1))]), fn('expint', [1, mul(z, polar(-1))])));
-});
 registerRewrite('li', 'uppergamma', (args) => {
   const z = log(first(args));
   return add(neg(fn('expint', [1, neg(z)])), neg(log(neg(z))), mul(S.Half, add(log(z), neg(log(pow(z, -1))))));

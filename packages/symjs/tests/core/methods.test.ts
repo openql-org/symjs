@@ -766,3 +766,13 @@ it('optionally includes nonrational numeric coefficients in asCoeffMul', () => {
   expect(sj.asCoeffMul(x, [], false).map(String)).toEqual(['1', 'x']);
   expect(sj.asCoeffMul(sj.mul(x, y), [], false).map(String)).toEqual(['1', 'x,y']);
 });
+
+it('checks a varying second argument for meromorphicity', () => {
+  expect(sj.isMeromorphic(sj.atan2(y, x), x, 0)).toBe(false);
+});
+
+it('passes directions to the local expansion', () => {
+  const step = sj.SingularityFunction(x, 0, 0);
+  expect(sj.nseries(step, x, 0, 6, { cdir: 1 })).toBe(sj.S.One);
+  expect(sj.nseries(step, x, 0, 6, { cdir: -1 })).toBe(sj.S.Zero);
+});

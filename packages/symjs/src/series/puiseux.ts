@@ -281,9 +281,7 @@ export class Expander {
       const power = at(e.args, 2);
       if (isNegative(power) === true) return PS.constant(S.Zero);
       const shift = add(first(e.args), mul(-1, at(e.args, 1)));
-      const lead = this.leading(shift);
-      if (isNegative(lead.c) === true) return PS.constant(S.Zero);
-      if (isPositive(lead.c) === true) return this.ser(pow(shift, power), n);
+      return isPositive(this.leading(shift).c) === true ? this.ser(pow(shift, power), n) : PS.constant(S.Zero);
     }
     if (e instanceof ExtensionExpr && e.isTaylorExpandable) return this.serTaylor(e, n);
     throw new SeriesError(`cannot expand ${e.toString()}`);

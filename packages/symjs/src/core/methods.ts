@@ -1203,16 +1203,17 @@ export function normal(eIn: ExprLike): Expr {
  * with `series`, which gives exactly the terms below the order (SymPy's
  * _eval_nseries may give fewer).
  */
-export function nseries(eIn: ExprLike, x?: Sym, x0: ExprLike = 0, n = 6): Expr {
+export function nseries(eIn: ExprLike, x?: Sym, x0: ExprLike = 0, n = 6, opts: { dir?: '+' | '-'; logx?: Expr; cdir?: number } = {}): Expr {
   const e = sympify(eIn);
   const fs = [...freeSymbols(e)].filter((s) => s instanceof Sym);
   if (x === undefined) {
     if (fs.length > 1) throw new RangeError('x must be given for multivariate functions.');
     if (fs.length === 0) return e;
-    return impl.series(e, at(fs, 0), x0, n);
+    return impl.series(e, at(fs, 0), x0, n, opts.dir, { logx: opts.logx });
   }
   if (!fs.some((s) => s.key === x.key)) return e;
-  return impl.series(e, x, x0, n);
+  const dir = opts.cdir ? (opts.cdir < 0 ? '-' : '+') : opts.dir;
+  return impl.series(e, x, x0, n, dir, { logx: opts.logx, local: opts.dir !== '-' });
 }
 
 /** An expression that can be applied to arguments (a Lambda, a random process, ...: SymPy callable()). */

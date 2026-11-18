@@ -3002,9 +3002,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     const x0 = asExpr(args[1] ?? kw['x0'] ?? 0);
     const n = intArg(args[2] ?? kw['n'] ?? 6);
     const cdir = intArg(args[5] ?? kw['cdir'] ?? 0);
-    const direction = cdir === 0 ? (args[3] ?? kw['dir'] ?? '+') as '+' | '-' : cdir < 0 ? '-' : '+';
+    const dir = (args[3] ?? kw['dir'] ?? '+') as '+' | '-';
     const logx = args[4] ?? kw['logx'];
-    return sj.series(asExpr(self), x, x0, n, direction, logx === undefined ? {} : { logx: asExpr(logx) });
+    return sj.nseries(asExpr(self), x, x0, n, { dir, cdir, ...(logx === undefined ? {} : { logx: asExpr(logx) }) });
   },
   root: (args, kw) => {
     for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
@@ -7013,9 +7013,6 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   // Their own local expansions of K_2 and Y_2 contain nonzero x**2*log(x) terms.
   "sympy.functions.special.tests.test_bessel:assert besselk(2, x).is_meromorphic(x, 0) == True": 'False',
   "sympy.functions.special.tests.test_bessel:assert bessely(2, x).is_meromorphic(x, 0) == True": 'False',
-  // For x > 0 and l > 0 the defining powers give (x+l)/2 - (x+l/2) + x/2 = 0.
-  "sympy.functions.special.tests.test_singularity_functions:assert (SingularityFunction(x + l, 0, 1)/2\\\n        - SingularityFunction(x + l, l/2, 1)\\\n        + SingularityFunction(x + l, l, 1)/2).as_leading_term(x) == -x/2": '0',
-  "sympy.functions.special.tests.test_singularity_functions:assert (SingularityFunction(x + l, 0, 1)/2\\\n        - SingularityFunction(x + l, l/2, 1)\\\n        + SingularityFunction(x + l, l, 1)/2).nseries(x) == -x/2 + O(x**6)": '0',
   // Substituting exp(±x)*x**(-1/2)*sum(a[k]/x**k) into the modified
   // Bessel equation gives a[k]/a[k-1] = ±(2*k-1)**2/(8*k) for order zero.
   "sympy.functions.special.tests.test_bessel:assert besseli(0,x).series(x, oo, n=4) == sqrt(2)*(sqrt(1/x) - (1/x)**(S(3)/2)/8 - \\\n        3*(1/x)**(S(5)/2)/128 - 15*(1/x)**(S(7)/2)/1024 + O((1/x)**(S(9)/2), (x, oo)))*exp(x)/(2*sqrt(pi))": "sqrt(2)*(sqrt(1/x) + (1/x)**(3/2)/8 + 9*(1/x)**(5/2)/128 + 75*(1/x)**(7/2)/1024 + O((1/x)**(9/2), (x, oo)))*exp(x)/(2*sqrt(pi))",

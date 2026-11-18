@@ -16,7 +16,7 @@ import { cos, fn, log, sin } from '../functions/elementary/elementary';
 import { bernoulliNumber } from '../functions/special/special';
 import { besselLocalExpansion } from '../functions/special/bessel';
 import { EssentialSingularity, Expander, type PS, isE } from './puiseux';
-import { isNegative, isPositive, isReal } from '../core/assumptions';
+import { isNegative, isPositive, isReal, isZero } from '../core/assumptions';
 import { at, cast, first, getOrThrow, last } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
@@ -250,7 +250,21 @@ function specialSeriesAtInfinity(e: Fn, x: Sym, sign: 1 | -1, n: number): Expr |
     neg(mul(si ? sin(phase) : cos(phase), add(...even, order(n)))));
 }
 
-export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr } = {}): Expr {
+const isSingularity = (e: Expr): boolean => e instanceof ExtensionExpr && e.name === 'SingularityFunction';
+
+/** Replace a singularity function by its local form at the expansion point. */
+function singularityLocalForm(e: Expr, x: Sym, fromLeft: boolean): Expr {
+  return mapBottomUp(e, (term) => {
+    if (!isSingularity(term) || !term.has(x)) return term;
+    const shift = add(first(term.args), neg(at(term.args, 1)));
+    const power = at(term.args, 2);
+    const origin = subs(shift, [[x, S.Zero]]);
+    if (isZero(power) === true && isZero(origin) === true) return fromLeft ? S.Zero : S.One;
+    return isNegative(power) !== true && isPositive(origin) === true ? pow(shift, power) : S.Zero;
+  });
+}
+
+export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr; local?: boolean } = {}): Expr {
   // sinc(u) = sin(u)/u has a removable singularity at u = 0
   let e = mapBottomUp(sympify(ex), (t) => {
     if (!(t instanceof Fn && t.name === 'sinc')) return t;
@@ -259,6 +273,12 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   });
   const x00 = sympify(x0x);
   const atZero = x00 instanceof Rational && x00.isZero;
+  if (opts.local && atZero && some(e, isSingularity)) {
+    if (e instanceof Add) return add(...e.args.map((term) => series(term, x, x00, n, dir, opts)));
+    const local = singularityLocalForm(e, x, dir === '-');
+    const expansion = series(local, x, x00, n, dir, { logx: opts.logx });
+    return e instanceof Mul && local.has(x) ? add(expansion, new Order([pow(x, n)])) : expansion;
+  }
   if (opts.logx && atZero) {
     // SymPy logx: log(x) stands for the given symbol; x**c = exp(c*log(x)) for symbolic c
     e = mapBottomUp(e, (t) => (t instanceof Pow && t.base.key === x.key && !(t.exp instanceof Rational) && !t.exp.has(x) ? exp(mul(t.exp, log(x))) : t));
@@ -332,23 +352,14 @@ function besselSeriesAtZero(e: Fn, x: Sym, n: number): Expr | undefined {
   if (name !== 'besselj' && name !== 'besseli' && name !== 'bessely' && name !== 'besselk') return undefined;
   const nu = first(e.args), z = last(e.args);
   if (!(nu instanceof Rational && nu.isInteger && !nu.isNegative && z.has(x))) return undefined;
-  let leading: [Expr, Expr];
-  try {
-    leading = leadterm(z, x);
-  } catch (error) {
-    if (error instanceof NotImplementedError) return undefined;
-    throw error;
-  }
-  const [coefficient, exponent] = leading;
+  const [coefficient, exponent] = leadterm(z, x);
   if (!(exponent instanceof Rational || exponent instanceof Float) || !exponent.isPositive) return undefined;
   const degree = exponent.toNumber();
   if (isPositive(coefficient) !== true) return undefined;
   if (!z.equals(mul(coefficient, pow(x, exponent)))) {
     if (nu.isZero && (name === 'bessely' || name === 'besselk')) return composedOrderZeroBessel(name, z, x, degree, n);
     if ((name === 'besselj' || name === 'besseli') && nu.isPositive && nu.value * degree < n && (nu.value + 2) * degree >= n) {
-      const expanded = series(mul(S.Half, z), x, 0, n);
-      const terms = expanded instanceof Add ? expanded.args : [expanded];
-      const r = add(...terms.filter((term) => !(term instanceof Order)));
+      const r = seriesBody(series(mul(S.Half, z), x, 0, n));
       return add(mul(pow(r, nu), pow(fn('gamma', [add(nu, 1)]), -1)), new Order([pow(x, n)]));
     }
     return undefined;
@@ -357,6 +368,11 @@ function besselSeriesAtZero(e: Fn, x: Sym, n: number): Expr | undefined {
   const body = besselLocalExpansion(name, nu, z, degree, n, monomial);
   const logarithmic = (name === 'bessely' || name === 'besselk') && n >= nu.value * degree;
   return add(body, new Order([mul(pow(x, n), logarithmic ? log(x) : S.One)]));
+}
+
+function seriesBody(expansion: Expr): Expr {
+  const terms = expansion instanceof Add ? expansion.args : [expansion];
+  return add(...terms.filter((term) => !(term instanceof Order)));
 }
 
 /** Compose the logarithmic and digamma parts of the order-zero Frobenius series. */
@@ -380,9 +396,7 @@ function composedOrderZeroBessel(name: 'bessely' | 'besselk', z: Expr, x: Sym, d
   let c = y ? pow(S.Pi, -1) : S.Half;
   for (let k = 0; 2 * k * degree < n; k++) {
     const psi = mul(2, fn('polygamma', [0, k + 1]));
-    const expanded = series(pow(r, 2 * k), x, 0, n);
-    const parts = expanded instanceof Add ? expanded.args : [expanded];
-    const body = expandMul(mul(c, add(...parts.filter((part) => !(part instanceof Order)))));
+    const body = expandMul(mul(c, seriesBody(series(pow(r, 2 * k), x, 0, n))));
     if (body instanceof Add) extra.push(mul(y ? -1 : 1, psi, body));
     else collectTerm(mul(y ? -1 : 1, psi, body), false);
     c = mul(c, Rational.of(y ? -1 : 1, (k + 1) ** 2));
@@ -520,17 +534,12 @@ for (const name of ['erf', 'erfc', 'erfi'] as const) leadingTermRules[name] = (e
  * not given: the side does not matter, or x approaches 0 from above).
  */
 export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike; logx?: ExprLike } = {}): Expr {
-  const e = sympify(ex);
+  let e = sympify(ex);
   if ((e instanceof Derivative || e instanceof Integral) && impl.doit) {
     const evaluated = impl.doit(e);
     if (evaluated.key !== e.key) return asLeadingTerm(evaluated, x, opts);
   }
-  if (some(e, (term) => term instanceof ExtensionExpr && term.name === 'SingularityFunction')) {
-    const t = new Sym('_leading', { positive: true });
-    const direction = isNegative(sympify(opts.cdir ?? 0)) === true ? -1 : 1;
-    const local = new Expander(t).ser(subs(e, [[x, mul(direction, t)]]), S.One);
-    if (local.isExact && local.terms.length === 0) return S.Zero;
-  }
+  if (some(e, isSingularity)) e = singularityLocalForm(e, x, sympify(opts.cdir ?? 0).equals(-1));
   const rule = e instanceof Fn ? leadingTermRules[e.name] : undefined;
   const special = rule?.(cast(e, Fn, 'function'), x, sympify(opts.cdir ?? 0));
   let result: Expr;

@@ -496,3 +496,20 @@ it('reports no finite period when a later lower parameter is symbolic', () => {
 it('accepts a symbolic tuple as a delta support interval', () => {
   expect(sj.KroneckerDelta(-1, x, sj.Tuple(0, 2))).toBe(sj.S.Zero);
 });
+
+it('uses inverse residues for Meijer G at large arguments and leaves symbolic values alone', () => {
+  const g = sj.meijerg([1], [], [1], [], 2);
+  expect(String(sj.evalf(g, 12))).toBe('0.666666666667');
+  expect(String(sj.evalf(sj.meijerg([1], [], [], [0], 2), 12))).toBe('1.00000000000');
+  const symbolic = sj.meijerg([1], [], [1], [], x);
+  if (!(symbolic instanceof sj.MeijerG)) throw new TypeError('Meijer G application required');
+  expect(symbolic.numericValue(12)).toBeUndefined();
+});
+
+it('keeps Meijer G parameter derivatives unevaluated when the Mellin factors cannot be paired', () => {
+  const z = new Sym('z');
+  const unmatched = sj.meijerg([x], [], [], [1], z);
+  const wide = sj.meijerg([x, sj.rational(9007199254740994n)], [], [], [1], z);
+  expect(sj.diff(unmatched, x)).toBeInstanceOf(sj.Derivative);
+  expect(sj.diff(wide, x)).toBeInstanceOf(sj.Derivative);
+});

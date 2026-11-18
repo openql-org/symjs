@@ -293,3 +293,10 @@ describe('rewrites between trigonometric, hyperbolic and inverse functions (SymP
     for (const f of ['sin(x)', 'cos(x)', 'tan(x)', 'cot(x)', 'sec(x)', 'csc(x)']) agrees(f, 'besselj', 0.7);
   });
 });
+
+it('recognizes undefined functions in rewrite patterns and rewrites Ci using E1', async () => {
+  const { SymFunction } = await import('../../src');
+  const f = SymFunction('f')(x);
+  expect(rewrite(f, 'exp', { pattern: ['f'] })).toBe(f);
+  expect(String(rewrite(P('Ci(x)'), 'expint'))).toBe('-expint(1, x*exp_polar(-I*pi/2))/2 - expint(1, x*exp_polar(I*pi/2))/2');
+});

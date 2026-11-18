@@ -263,3 +263,9 @@ it('rewrites the scaled error and exponential integrals in both directions', () 
   expect(String(rewrite(fn('_eis', [z]), 'intractable'))).toBe('exp(-z)*Ei(z)');
   expect(String(series(fn('_erfs', [z.pow(-1)]), z, 0, 4))).toBe('z/sqrt(pi) - z**3/(2*sqrt(pi)) + O(z**4)');
 });
+
+it('keeps logarithmic-integral conjugation on the negative-axis cut', async () => {
+  const { li, neg, conjugate } = await import('../../../src');
+  const p = new Sym('p', { positive: true });
+  expect(String(conjugate(li(neg(p))))).toBe('conjugate(li(-p))');
+});

@@ -309,3 +309,28 @@ describe('func (SymPy Basic.func)', () => {
     expect(sj.func(sj.adjoint(B))).toBe(sj.func(g));
   });
 });
+
+it('delegates fluent queries and preserves the integral limits', () => {
+  expect(x.isComparable).toBe(false);
+  expect(pi.isComparable).toBe(true);
+  expect(x.expand()).toBe(x);
+  expect(x.conjugate().equals(sj.conjugate(x))).toBe(true);
+  expect(x.toLatex()).toBe('x');
+  expect(new sj.Integral([x, x, S.Zero, S.One]).limits).toEqual([S.Zero, S.One]);
+  expect(new sj.Integral([x, x]).limits).toBeUndefined();
+});
+
+it('exposes the default extension hooks', () => {
+  const box = new Box([x]);
+  const identity = (e: Expr) => e;
+  expect(box.key).toBe(new Box([x]).key);
+  expect(box.printLatex(String)).toBe('\\operatorname{Box}\\left(x\\right)');
+  expect(box.trigsimpSelf(identity)).toBeUndefined();
+  expect(box.asRealImagSelf()).toBeUndefined();
+  expect(box.kindSelf()).toBeUndefined();
+  expect(box.expandSelf('complex', {})).toBeUndefined();
+  expect(box.doitSelf()).toBeUndefined();
+  expect(box.matchesSelf(x)).toBeUndefined();
+  expect(box.integrateSelf(x, undefined, identity)).toBeUndefined();
+  expect(box.simplifySelf(identity)).toBeUndefined();
+});

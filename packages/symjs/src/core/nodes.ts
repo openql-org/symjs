@@ -375,7 +375,7 @@ export interface Impl {
   /** SymPy is_hypergeometric (registered by the simplify entry point). */
   isHypergeometric?(e: Expr, k: Expr): boolean;
   limit(e: Expr, z: Sym, z0: ExprLike, dir?: '+' | '-' | '+-'): Expr;
-  series(e: Expr, x: Sym, x0?: ExprLike, n?: number): Expr;
+  series(e: Expr, x: Sym, x0?: ExprLike, n?: number, dir?: '+' | '-', opts?: { logx?: Expr; local?: boolean }): Expr;
 }
 
 /** An implementation provided by a feature area that has not been imported. */

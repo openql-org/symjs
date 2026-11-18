@@ -368,3 +368,34 @@ it('rewrites the Marcum Q function using the requested bound variables', () => {
   expect(String(sj.rewrite(sj.marcumq(-3, -5, -7), 'Sum', { hints: { k } })))
     .toBe('exp(-37)*Sum((5/7)**k*besseli(k, 35), (k, 4, oo))');
 });
+
+it('rewrites Airy functions on the negative real ray and preserves other arguments', () => {
+  const p = new Sym('p', { positive: true });
+  const t = sj.mul(Rational.of(2, 3), sj.pow(p, Rational.of(3, 2)));
+  const r = Rational.of(1, 3), s = Rational.of(2, 3);
+  const negative = sj.neg(p);
+  expect(sj.rewrite(airyai(p), 'besselj')).toEqual(airyai(p));
+  expect(sj.rewrite(airybi(negative), 'besselj').equals(sj.mul(r, sj.sqrt(3), sj.sqrt(p), sj.add(besselj(sj.neg(r), t), sj.neg(besselj(r, t)))))).toBe(true);
+  expect(sj.rewrite(airyaiprime(negative), 'besselj').equals(sj.mul(Rational.of(-1, 3), p, sj.add(besselj(sj.neg(s), t), sj.neg(besselj(s, t)))))).toBe(true);
+  expect(sj.rewrite(airybiprime(negative), 'besselj').equals(sj.mul(r, sj.sqrt(3), p, sj.add(besselj(sj.neg(s), t), besselj(s, t))))).toBe(true);
+});
+
+it('leaves Airy arguments without nested powers unchanged', () => {
+  for (const source of ['(x*y)**(1/3)', 'x + 1', 'x**(1/4)', 'x**(1/3)', '(x+2)**(1/3)', '((x+1)*(x+2))**(1/3)', 'x*(x**2)**(1/3)', '(-2*x**x)**(1/3)']) {
+    const e = airyai(P(source));
+    expect(sj.expandFunc(e).equals(e)).toBe(true);
+  }
+  expect(sj.expandFunc(airyai(P('(-2*x)**(1/3)'))).equals(airyai(P('(-2*x)**(1/3)')))).toBe(false);
+});
+
+it('generates bound variables in the default Marcum Q rewrites', () => {
+  const q = sj.marcumq(2, 3, 4);
+  expect(String(sj.rewrite(q, 'Integral'))).toBe('Integral(_x**2*exp(-_x**2/2 - 9/2)*besseli(1, 3*_x), (_x, 4, oo))/3');
+  expect(String(sj.rewrite(q, 'Sum'))).toBe('exp(-25/2)*Sum((3/4)**_k*besseli(_k, 12), (_k, -1, oo))');
+});
+
+it('leaves an Airy argument with several dependent factors unchanged', () => {
+  const arg = new sj.Mul([sj.pow(sj.pow(x, 5), Rational.of(1, 3)), x]);
+  const e = airyai(arg);
+  expect(sj.expandFunc(e).equals(e)).toBe(true);
+});

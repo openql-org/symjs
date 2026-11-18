@@ -130,3 +130,27 @@ describe('gruntz: the leading monomial with real exponents', () => {
     expect(() => monomialLead(parse('f(x)').subs(x, w), w, L, x, mul(-1, x))).toThrow(GruntzError);
   });
 });
+
+it('takes signed, imaginary and scaled limits', async () => {
+  const sj = await import('../../src');
+  expect(G('2*I*exp(x)')).toBe('oo*I');
+  expect(G('I*x*exp(x)')).toBe('oo*I');
+  expect(G('erfc(x)*exp(x**2)*x')).toBe('1/sqrt(pi)');
+  expect(G('x*tanh(1/x)')).toBe('1');
+  expect(String(new Gruntz().limitinf(sj.fn('tanh', [sj.neg(x)], { evaluate: false }), x))).toBe('-1');
+  expect(() => G('x**y')).toThrow('the sign of the exponent');
+  expect(new Gruntz().mrv(exp(exp(x)), x)[0].size).toBe(1);
+  expect(G('x*log(x/E) - loggamma(x+1)')).toBe('-oo');
+});
+
+it('cancels the logarithm of the most rapidly varying exponential', async () => {
+  const sj = await import('../../src');
+  const scale = exp(sj.neg(x));
+  const logarithm = sj.fn('log', [scale], { evaluate: false });
+  const expression = add(x, logarithm, scale);
+  expect(new Gruntz().mrvLeadterm(expression, x).map(String)).toEqual(['1', '1']);
+});
+
+it('rewrites nested exponentials when combining comparable growth rates', () => {
+  expect(G('(exp(x) + exp(x - exp(-x)))*exp(-x)')).toBe('2');
+});
