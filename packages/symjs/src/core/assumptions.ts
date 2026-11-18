@@ -51,7 +51,16 @@ export function isZero(e: Expr): Tri {
     // a/pi, distributed over the terms of a
     const piMultiple = (): Expr => (a instanceof Add ? impl.add(...a.args.map((t) => impl.mul(t, impl.pow(S.Pi, -1)))) : impl.mul(a, impl.pow(S.Pi, -1)));
     if (e.name === 'sin' && isIntegerQ(piMultiple()) === true) return true;
+    if (e.name === 'sinc') {
+      const z = isZero(a);
+      if (z === true) return false;
+      if (z === false && isIntegerQ(piMultiple()) === true) return true;
+    }
     if (e.name === 'cos' && isIntegerQ(impl.add(piMultiple(), Rational.of(-1n, 2n))) === true) return true;
+    if (e.name === 'cos' && a instanceof Fn && a.name === 'asin') {
+      const value = at(a.args, 0);
+      if (value instanceof Rational && (value.isOne || value.equals(S.NegOne))) return true;
+    }
     // SymPy log._eval_is_zero: log(a) = 0 exactly for a = 1
     if (e.name === 'log') {
       const d = isZero(impl.add(a, -1));
@@ -131,14 +140,26 @@ export function isReal(e: Expr): Tri {
       case 'cot':
       case 'atan':
       case 'sinh':
-      case 'cosh':
-      case 'tanh':
       case 'conjugate':
       case 'asinh':
       case 'acot':
       case 'sech':
-      case 'sinc':
         return isReal(a) ? true : undefined;
+      case 'cosh':
+      case 'tanh': {
+        if (isReal(a) === true) return true;
+        if (e.name === 'tanh' && a instanceof Sym && a.assumptions0.get('extended_real') === true) return true;
+        if (e.name === 'cosh' && isImaginaryValue(a)) return true;
+        const apply = impl.fn;
+        if (apply === undefined) return undefined;
+        const y = apply('im', [a]);
+        const angle = e.name === 'cosh' ? y : impl.mul(2, y);
+        const vanishes = isZero(apply('sin', [angle]));
+        return e.name === 'tanh' && vanishes === true && isZero(apply('re', [a])) !== false
+          ? undefined : vanishes;
+      }
+      case 'sinc':
+        return isReal(a) === true || isReal(impl.mul(S.I, a)) === true ? true : undefined;
       case 'log':
         return isPositive(a) ? true : undefined;
       // SymPy coth and csch: real for a real argument away from the pole at 0
@@ -158,6 +179,13 @@ export function isReal(e: Expr): Tri {
         return realOn(a, [1, 'closed'], undefined);
       case 'asech':
         return realOn(a, [0, 'open'], [1, 'closed']);
+      case 'asec':
+      case 'acsc': {
+        const real = isReal(a);
+        if (real !== true) return real;
+        if (isIntegerQ(a) === true && isNonZero(a) === true) return true;
+        return realOn(impl.pow(a, -1), [-1, 'closed'], [1, 'closed']);
+      }
       case 'acoth': {
         if (isReal(a) !== true) return undefined;
         if (isPositive(add1(a, -1)) === true || isNegative(add1(a, 1)) === true) return true;
@@ -196,7 +224,22 @@ function realOn(a: Expr, lo: readonly [number, 'open' | 'closed'], hi: readonly 
   const inLo = above(lo);
   const inHi = hi === undefined ? true : below(hi);
   if (inLo === true && inHi === true) return true;
-  return inLo === false || inHi === false ? false : undefined;
+  if (inLo === false || inHi === false || isNegative(add1(a, -lo[0])) === true
+    || hi !== undefined && isPositive(add1(a, -hi[0])) === true) return false;
+  return undefined;
+}
+
+/** cosh(a + I*b) is real when sin(b)*sinh(a) vanishes. */
+function coshSign(a: Expr, sign: 1 | -1): Tri {
+  if (isReal(a) === true) return sign === 1;
+  const apply = impl.fn;
+  if (apply === undefined) return undefined;
+  const y = apply('im', [a]);
+  if (isIntegerQ(impl.mul(y, impl.pow(impl.mul(2, S.Pi), -1))) === true) return sign === 1;
+  const cosine = apply('cos', [y]);
+  if (cosine.equals(S.One) || cosine.equals(S.NegOne)) return cosine.equals(S.One) === (sign === 1);
+  if (isZero(apply('re', [a])) === true) return (sign === 1 ? isPositive : isNegative)(cosine);
+  return undefined;
 }
 
 /** Functions with the sign of a real argument (SymPy sinh, tanh, coth, csch, atan and sign _eval_is_positive/_eval_is_negative). */
@@ -453,7 +496,8 @@ export function isPositive(e: Expr): Tri {
     const s = oddSign(e, isPositive) ?? minMaxSign(e, isPositive, 'Max');
     if (s !== undefined) return s;
     // SymPy cosh and sech of a real argument
-    if ((e.name === 'cosh' || e.name === 'sech') && isReal(at(e.args, 0)) === true) return true;
+    if (e.name === 'cosh') return coshSign(at(e.args, 0), 1) ?? fnSign(e, 1);
+    if (e.name === 'sech' && isReal(at(e.args, 0)) === true) return true;
     // SymPy acot._eval_is_positive: acot(0) = pi/2
     if (e.name === 'acot' && isReal(at(e.args, 0)) === true) return isNonNegative(at(e.args, 0));
     return fnSign(e, 1);
@@ -498,7 +542,8 @@ export function isNegative(e: Expr): Tri {
     if (e.name === 'frac') return false;
     const s = oddSign(e, isNegative) ?? minMaxSign(e, isNegative, 'Min');
     if (s !== undefined) return s;
-    if ((e.name === 'cosh' || e.name === 'sech') && isReal(at(e.args, 0)) === true) return false;
+    if (e.name === 'cosh') return coshSign(at(e.args, 0), -1) ?? fnSign(e, -1);
+    if (e.name === 'sech' && isReal(at(e.args, 0)) === true) return false;
     if (e.name === 'acot' && isReal(at(e.args, 0)) === true) return isNegative(at(e.args, 0));
     return fnSign(e, -1);
   }

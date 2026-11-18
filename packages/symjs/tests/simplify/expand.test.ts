@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, I, Sym, add, expPolar, expand, expandComplex, expandLog, expandMultinomial, expandPowerBase, expandTrig, mul, parse, pow, sstr, symbol, symbols } from '../../src';
+import { DiracDelta, Heaviside, I, Sym, abs, add, expPolar, expand, expandComplex, expandLog, expandMultinomial, expandPowerBase, expandTrig, fn, mul, parse, pow, sstr, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 import { expandMulRounds } from '../../src/simplify/expand';
 
@@ -14,6 +14,20 @@ const [x, y] = symbols('x y');
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
 const Qs = (s: string, syms: Sym[]) => parse(s, { symbols: syms, locals: { Heaviside, DiracDelta } });
 const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(String).join(', ')}]` : String(v));
+
+it('factors integer logarithms when requested and cancels common log bases', () => {
+  expect(sstr(expandLog(P('log(12)'), { factor: true }))).toBe('log(3) + 2*log(2)');
+  expect(sstr(expandLog(P('log(21)/log(7)')))).toBe('log(3)/log(7) + 1');
+  expect(sstr(expandLog(P('log(6)/log(35)')))).toBe('log(6)/log(35)');
+  expect(sstr(expandLog(fn('log', [-2], { evaluate: false })))).toBe('log(2) + I*pi');
+  expect(sstr(expandLog(fn('log', [1], { evaluate: false })))).toBe('0');
+});
+
+it('expands a complex modulus and retains a hyperbolic function of an extended real', () => {
+  const t = symbol('t', { extendedReal: true });
+  expect(sstr(expandComplex(abs(x)))).toBe('sqrt(re(x)**2 + im(x)**2)');
+  expect(sstr(expandComplex(fn('cosh', [t], { evaluate: false })))).toBe('cosh(t)');
+});
 type Assume = NonNullable<Parameters<typeof symbol>[1]>;
 const PPolar = (s: string, a: Record<string, Assume> = {}): Expr =>
   parse(s, { locals: { exp_polar: expPolar }, symbols: Object.entries(a).map(([k, v]) => symbol(k, v)) });

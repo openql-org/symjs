@@ -9,12 +9,44 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { isIntegerQ, isMinMax, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal, isZero, torf } from '../../src/core/assumptions';
 import { at } from '../../src/core/guard';
-import { Pow, S } from '../../src/core/nodes';
+import { Pow, S, impl } from '../../src/core/nodes';
 import { add, mul } from '../../src/core/ops';
 
 const [x] = sj.symbols('x');
 
 const { I } = sj;
+
+it('decides the zeros of unevaluated sinc and cosine of inverse sine', () => {
+  const raw = { evaluate: false };
+  expect(isZero(sj.fn('sinc', [0], raw))).toBe(false);
+  for (const value of [-1, 1]) expect(isZero(sj.fn('cos', [sj.fn('asin', [value], raw)], raw))).toBe(true);
+  expect(isZero(sj.fn('cos', [sj.fn('asin', [S.Half], raw)], raw))).toBe(false);
+  expect(isZero(sj.fn('cos', [sj.fn('asin', [x], raw)], raw))).toBeUndefined();
+});
+
+it('uses the hyperbolic phase to determine real values and signs', () => {
+  const raw = { evaluate: false };
+  const c = (factor: sj.ExprLike) => sj.fn('cosh', [mul(factor, I, sj.pi)], raw);
+  expect(isReal(c(1))).toBe(true);
+  expect(isNegative(c(1))).toBe(true);
+  expect(isPositive(c(1))).toBe(false);
+  expect(isPositive(c(sj.rational(1, 3)))).toBe(true);
+  expect(isNegative(c(sj.rational(2, 3)))).toBe(true);
+  expect(isReal(sj.fn('tanh', [mul(I, sj.pi, S.Half)], raw))).toBeUndefined();
+  expect(isReal(sj.fn('tanh', [add(2, mul(I, sj.pi, S.Half))], raw))).toBe(true);
+});
+
+it('leaves phase assumptions undecided without the core function dispatcher', () => {
+  const expression = sj.fn('cosh', [x], { evaluate: false });
+  const apply = impl.fn;
+  delete impl.fn;
+  try {
+    expect(isReal(expression)).toBeUndefined();
+    expect(isPositive(expression)).toBeUndefined();
+  } finally {
+    if (apply) impl.fn = apply;
+  }
+});
 
 describe('assumption queries (SymPy test_assumptions)', () => {
   it('knows that 0 to a negative power is not a real number', () => {

@@ -7,9 +7,9 @@
  */
 
 import type { Expr, ExprLike, RewriteRule } from '../core/nodes';
-import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl, registerRewrite as addRewrite, rewriteRules } from '../core/nodes';
+import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Piecewise, Pow, Rational, S, UndefFn, impl, registerRewrite as addRewrite, rewriteRules } from '../core/nodes';
 import { Eq, Ge, Gt, Lt, Ne, piecewise, rel } from '../core/logic';
-import { and } from '../core/boolalg';
+import { BoolOp, and } from '../core/boolalg';
 import { Mod } from '../functions/mod';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from '../core/assumptions';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
@@ -20,7 +20,7 @@ import { acot, acsc, asec, asinh, atanh, acosh, cot, coth, csc, sec } from '../f
 import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special/special';
 import { factorial2Gamma, factorialRewrites, ff } from '../functions/combinatorial/factorials';
 import { Sum } from '../core/concrete';
-import { first, pair } from '../core/guard';
+import { at, first, pair } from '../core/guard';
 
 export type { RewriteRule };
 export { rewriteRules };
@@ -142,6 +142,7 @@ reg1('sin', 'Pow', (a) => {
   return x === undefined ? undefined : add(div(mul(I, pow(x, neg(I))), 2), neg(div(mul(I, pow(x, I)), 2)));
 });
 reg1('sin', 'sincos', (a) => div(mul(sin(a), cos(a)), cos(a)));
+reg1('sin', 'sinc', (a) => mul(a, fn('sinc', [a])));
 
 reg1('cos', 'exp', (a) => {
   const x = expArg(a);
@@ -229,6 +230,9 @@ reg1('tanh', 'exp', (a) => {
   const pe = exp(a);
   return div(add(pe, neg(ne)), add(pe, ne));
 });
+for (const target of ['exp', 'tractable']) {
+  reg1('coth', target, (a) => div(add(exp(a), exp(neg(a))), add(exp(a), neg(exp(neg(a))))));
+}
 reg1('tanh', 'cosh', (a) => div(mul(I, raw('cosh', add(div(mul(pi, I), 2), neg(a)))), cosh(a)));
 reg1('tanh', 'sinh', (a) => div(mul(I, sinh(a)), raw('sinh', add(div(mul(pi, I), 2), neg(a)))));
 reg1('tanh', 'tan', (a) => neg(mul(I, raw('tan', mul(I, a)))));
@@ -270,6 +274,14 @@ reg1('cot', 'Pow', (a) => {
 });
 reg1('cot', 'sin', (a) => div(sin(mul(2, a)), mul(2, pow(sin(a), 2))));
 reg1('cot', 'cos', (a) => div(cos(a), raw('cos', add(a, neg(div(pi, 2))))));
+for (const [name, inverse] of [['tan', false], ['cot', true]] as const) {
+  reg1(name, 'sqrt', (a) => {
+    const sine = sin(a);
+    const cosine = cos(a);
+    if ([sine, cosine].some((value) => value instanceof Fn && (value.name === 'sin' || value.name === 'cos'))) return undefined;
+    return inverse ? div(cosine, sine) : div(sine, cosine);
+  });
+}
 reg1('cot', 'sincos', (a) => div(cos(a), sin(a)));
 reg1('cot', 'tan', (a) => div(1, tan(a)));
 reg1('cot', 'sec', (a) => div(cosForm(a, 'sec'), sinForm(a, 'sec')));
@@ -410,6 +422,19 @@ reg2('atan2', 'atan', (y, x) =>
 );
 
 // complex functions
+reg1('arg', 'atan2', (a) => fn('atan2', [im(a), re(a)]));
+registerRewrite('Piecewise', 'ITE', (args, self) => {
+  if (!(self instanceof Piecewise) || args.at(-1) !== S.true) return undefined;
+  const boolean = (value: Expr): boolean => value === S.true || value === S.false || value.kind === 'Rel' || value.kind === 'BoolOp';
+  let result = at(args, -2);
+  if (!boolean(result)) return undefined;
+  for (let i = args.length - 4; i >= 0; i -= 2) {
+    const value = at(args, i);
+    if (!boolean(value)) return undefined;
+    result = new BoolOp('ITE', [at(args, i + 1), value, result]);
+  }
+  return result;
+});
 reg1('re', 'im', (a) => add(a, mul(-1, I, im(a))));
 reg1('im', 're', (a) => mul(neg(I), add(a, neg(re(a)))));
 /** SymPy _minmax_as_Piecewise: each argument with the conditions against the later ones. */
