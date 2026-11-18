@@ -48,7 +48,7 @@ export class PolynomialRingBase extends Domain {
   }
   override get dom(): Domain { return this.coefficientDomain; }
   toString(): string {
-    return `${this.dom.toString()}[${this.symbols.map(str).join(',')}]${this.order.isGlobal ? '' : ` order=${this.order.toString()}`}`;
+    return `${this.dom.toString()}[${this.symbols.map(str).join(',')}]${this.order.isGlobal === true ? '' : ` order=${this.order.toString()}`}`;
   }
   override equals(other: Domain): boolean {
     return other instanceof PolynomialRingBase && this.toString() === other.toString() && this.order.toString() === other.order.toString();
@@ -56,7 +56,7 @@ export class PolynomialRingBase extends Domain {
   canon(e: Expr): Expr { return this.fromSympy(e); }
   fromSympy(e: ExprLike): Expr {
     try {
-      if (this.order.isGlobal) return this.polynomialRing.fromExpr(e).asExpr();
+      if (this.order.isGlobal === true) return this.polynomialRing.fromExpr(e).asExpr();
       const [n, d] = fraction(together(sympify(e)));
       const numerator = this.polynomialRing.fromExpr(n), denominator = this.polynomialRing.fromExpr(d);
       if (denominator.isZero) throw new CoercionFailed('denominator is zero');
@@ -82,7 +82,7 @@ export class PolynomialRingBase extends Domain {
   override isUnit(a: unknown): boolean {
     const [n] = fraction(together(this.toSympy(this.convert(a))));
     const p = this.polynomialRing.fromExpr(n);
-    if (this.order.isGlobal && !p.isGround) return false;
+    if (p.LM.some((degree) => degree !== 0)) return false;
     return this.dom.isUnit(this.dom.convert(p.const()));
   }
   protected override get compositeParts(): readonly [Domain, readonly Sym[]] {

@@ -167,6 +167,23 @@ export class JsLambda {
 const lambdaAsNode = (v: unknown): unknown => v instanceof sj.AlgebraicNumber ? (v.alias ?? v.asExpr()) : v instanceof JsLambda ? sj.Lambda(v.vars, expressionContainer(v.body)) : v;
 
 /** A library function passed as an argument (equal_valued, factor, math.isclose, ...). */
+/** Python's multivariate dense polynomial representation backed by the public sparse API. */
+class JsDMP {
+  constructor(readonly value: sj.PolyElement) {}
+  private operand(other: unknown): sj.PolyElement {
+    return other instanceof JsDMP ? this.value.ring.fromExpr(other.value.asExpr()) : this.value.ring.fromExpr(asExpr(other));
+  }
+  add(other: unknown): JsDMP { return new JsDMP(this.value.add(this.operand(other))); }
+  sub(other: unknown): JsDMP { return new JsDMP(this.value.sub(this.operand(other))); }
+  mul(other: unknown): JsDMP { return new JsDMP(this.value.mul(this.operand(other))); }
+  div(other: unknown): JsDMP { return new JsDMP(this.value.exquo(this.operand(other))); }
+  pow(exponent: unknown): JsDMP { return new JsDMP(this.value.pow(intArg(exponent))); }
+  toString(): string {
+    const dense = (v: unknown): unknown => Array.isArray(v) ? new JsList(v.map(dense)) : this.value.ring.domain.convert(v);
+    return `DMP_Python(${fmt(dense(this.value.toDense()))}, ${String(this.value.ring.domain)})`;
+  }
+}
+
 export class JsFunc {
   constructor(readonly name: string) {}
 }
@@ -477,7 +494,12 @@ function deserializeDomain(tree: Tree): sj.Domain | undefined {
   }
   if (tree['ext'] !== undefined) return base.algebraicField(...(tree['gens'] as Tree[]).map((t) => deserialize(t) as Expr));
   const symbols = (tree['symbols'] as Tree[]).map((t) => deserialize(t) as Sym);
-  if (tree['oldPolyRing'] === true) return new sj.PolynomialRingBase(base, symbols, tree['order'] as string);
+  if (tree['oldPolyRing'] === true) {
+    const order = tree['order'] as string;
+    const blocks = /^ProductOrder\(([^)]+)\)$/.exec(order)?.[1]?.split(',').map((v) => v.trim());
+    return new sj.PolynomialRingBase(base, symbols, blocks?.length === symbols.length
+      ? sj.buildProductOrder(blocks.map((name, i) => [name, definedOr(symbols[i], 'ordering generator')]), symbols) : order);
+  }
   return name.endsWith(']') ? base.polyRing(...symbols) : base.fracField(...symbols);
 }
 
@@ -697,9 +719,13 @@ export function deserialize(tree: Tree): unknown {
     case 'ExtensionElement':
       return new sj.FiniteExtension(deserialize(tree['modulus'] as Tree) as sj.Poly).convert(deserialize(tree['expr'] as Tree) as Expr);
     case 'DMP': {
-      if (tree['level'] !== 0) throw new Unsupported('multivariate DMP');
       const domain = deserializeDomain(tree['domain'] as Tree);
       if (!domain) throw new Unsupported('DMP domain');
+      if (tree['level'] !== 0) {
+        const ring = new sj.PolyRing(Array.from({ length: Number(tree['level']) + 1 }, (_, i) => new Sym(`_dmp${i}`)), domain);
+        const dense = (v: unknown): unknown => v instanceof JsTuple ? v.items.map(dense) : v instanceof sj.PythonMPQ ? sj.Rational.of(v.numerator, v.denominator) : v;
+        return new JsDMP(ring.fromList(dense(deserialize(tree['coeffs'] as Tree)) as unknown[]));
+      }
       const ring = domain.oldPolyRing(new Sym('_x'));
       return new sj.DMP((deserialize(tree['coeffs'] as Tree) as JsTuple).items.map((c) => c instanceof sj.PythonMPQ ? sj.Rational.of(c.numerator, c.denominator) : asExpr(c)), ring);
     }
@@ -2262,6 +2288,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   is_zero_dimensional: (args, kw) => {
     noKw(kw);
+    if (args[1] instanceof sj.PolyRing) {
+      const ring = args[1];
+      const polynomials = (args[0] as JsList).items.map((p) => p instanceof sj.PolyElement ? p.setRing(ring) : ring.fromExpr(asExpr(p)));
+      return fromJs(sj.groebnerInRing(polynomials, ring));
+    }
     const F = (args[0] as JsList).items.map(asExpr);
     const gens = args.slice(1).map(asSym);
     const vars = gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]);
@@ -2307,6 +2338,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   groebner: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['order', 'method'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (args[1] instanceof sj.PolyRing) {
+      const ring = args[1];
+      const polynomials = (args[0] as JsList).items.map((p) => p instanceof sj.PolyElement ? p.setRing(ring) : ring.fromExpr(asExpr(p)));
+      return fromJs(sj.groebnerInRing(polynomials, ring));
+    }
     const F = (args[0] as JsList).items.map(asExpr);
     const gens = args.slice(1).map(asSym);
     // a Python ordering object (order=lex) selects the ordering by its alias
@@ -4879,7 +4915,7 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
 const pythonTypeError = (message: string): never => { throw new TypeError(message); };
 
 const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknown>> = {
-  '.__add__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
+  '.__add__': (a, [b]) => (Array.isArray(a) && b instanceof sj.ModuleElement ? b.add(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
   '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
   '.__mul__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
@@ -5180,6 +5216,38 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.fn === 'FreeModulePolyRing') return (args, kw) => {
+    noKw(kw);
+    return new sj.FreeModule(toJs(args[0], false) as sj.Domain, intArg(args[1]));
+  };
+  if (c.fn === '.order' && c.self?.t === 'Domain' && c.args?.length === 1) return (args, kw, self) => {
+    noKw(kw);
+    const domain = toJs(self, false) as sj.PolynomialRingBase;
+    return fromJs(domain.order.key(toJs(args[0], true) as number[]));
+  };
+
+  if (c.fn === 'monomial_key' && (c.args?.length ?? 0) < 2) return (args, kw) => {
+    noKw(kw);
+    const order = args[0] ?? 'lex';
+    if (typeof order !== 'string') throw new RangeError('expected a monomial ordering name');
+    sj.monomialKey(order);
+    return (sj as unknown as Record<string, unknown>)[order];
+  };
+
+  if (['groebner_lcm', 'groebner_gcd'].includes(c.fn)) return (args, kw) => {
+    noKw(kw);
+    const f = args[0] as sj.PolyElement;
+    const g = f.ring.fromExpr((args[1] as sj.PolyElement).asExpr());
+    return c.fn === 'groebner_lcm' ? sj.groebnerLcm(f, g) : sj.groebnerGcd(f, g);
+  };
+
+  if (c.fn === 'sdm_groebner') return (args, kw) => {
+    const nf = args[1];
+    const callback = nf instanceof FnClass || nf instanceof JsFunc ? (sj as unknown as Record<string, unknown>)[camel(nf.name)] : nf;
+    if (typeof callback !== 'function') throw new TypeError('expected a module normal form callback');
+    const inputs: [sj.Sdm[], sj.SdmNormalForm, sj.SdmOrder, sj.Domain] = [toJs(args[0], true) as sj.Sdm[], callback as sj.SdmNormalForm, toJs(args[2], true) as sj.SdmOrder, toJs(args[3], true) as sj.Domain];
+    return fromJs(kw['extended'] === true ? sj.sdmGroebner(...inputs, true) : sj.sdmGroebner(...inputs));
+  };
   if (c.fn === 'RootSum') return (args, kw) => {
     if (c.args?.[1]?.t === 'JsLambda') throw new RangeError('RootSum requires a symbolic Lambda');
     const p = args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]));
@@ -5286,17 +5354,20 @@ function autoAdapter(c: Case): Adapter | undefined {
     if (!Array.isArray(elements)) throw new TypeError('expected converted coefficient list');
     return new JsTuple([domain, new JsDict(input.entries.map(([key], index) => [key, elements[index]]))]);
   };
-  if (c.module.startsWith('sympy.polys.matrices.') && ['.lll', '.lll_transform'].includes(c.fn)) return (args, kw, self) => {
+  if (c.module.startsWith('sympy.polys.matrices.') && ['.lll', '.lll_transform', 'ddm_lll', 'ddm_lll_transform'].includes(c.fn)) return (args, kw, owner) => {
+    const dense = c.fn.startsWith('ddm_');
+    const self = dense ? args[0] : owner;
     if (!(self instanceof sj.DDM || self instanceof sj.SDM || self instanceof sj.DomainMatrix)) throw new TypeError('expected a domain matrix');
     for (const key of Object.keys(kw)) if (key !== 'delta') throw new Unsupported(`kwargs ${key}`);
     const matrix = self instanceof sj.DomainMatrix ? self : sj.DomainMatrix.fromRep(self);
-    const delta = kw['delta'] ?? args[0];
+    const value = kw['delta'] ?? args[dense ? 1 : 0];
+    const delta = value instanceof sj.PythonMPQ ? sj.Rational.of(value.numerator, value.denominator) : value === undefined ? undefined : asExpr(value);
     const wrap = (value: Matrix): unknown => {
       const result = sj.DomainMatrix.fromMatrix(value, { fmt: matrix.rep.fmt }).convertTo(matrix.domain);
       return self instanceof sj.DomainMatrix ? result : result.rep;
     };
-    return c.fn === '.lll' ? wrap(sj.lll(matrix.toMatrix(), delta === undefined ? undefined : asExpr(delta)))
-      : new JsTuple(sj.lllTransform(matrix.toMatrix(), delta === undefined ? undefined : asExpr(delta)).map(wrap));
+    return c.fn === '.lll' || c.fn === 'ddm_lll' ? wrap(sj.lll(matrix.toMatrix(), delta))
+      : new JsTuple(sj.lllTransform(matrix.toMatrix(), delta).map(wrap));
   };
   if (c.fn === '.extract_slice' && c.module.startsWith('sympy.polys.matrices.')) return (args, kw, self) => {
     noKw(kw);
@@ -5349,6 +5420,13 @@ function autoAdapter(c: Case): Adapter | undefined {
   const reflected = reflectedName === undefined ? undefined : DUNDER[reflectedName];
   if (reflected !== undefined && c.self?.t === 'Rational' && c.self['py'] === true) return (args, _kw, self) => fromJs(reflected(plain(conv(args[0])), [self]));
   if (dunder !== undefined) return (args, _kw, self0) => {
+    const right = args[0];
+    if (c.fn === '.__mul__' && (self0 instanceof JsDMP || self0 instanceof sj.DMP) && (right instanceof sj.ModuleElement || right instanceof sj.ModuleImplementedIdeal)) {
+      const ring = right instanceof sj.ModuleElement ? right.module.ring : right.ring;
+      const scalar = self0 instanceof JsDMP ? self0.value.asExpr(...ring.symbols) : sj.subs(self0.toSympy(), [[new Sym('_x'), definedOr(ring.symbols[0], 'polynomial generator')]]);
+      return fromJs(right.mul(scalar));
+    }
+
     if ((self0 instanceof sj.PythonMPQ || args[0] instanceof sj.PythonMPQ) && [self0, ...args].every((v) => v instanceof sj.PythonMPQ || v instanceof sj.Rational)) {
       const rational = (v: unknown): sj.Rational => {
         if (v instanceof sj.PythonMPQ) return sj.Rational.of(v.numerator, v.denominator);
@@ -5703,9 +5781,16 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   const adapter = diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
-    const args = (c.args ?? []).map(deserialize);
-    const kwargs = Object.fromEntries(Object.entries(c.kwargs ?? {}).map(([k, v]) => [k, deserialize(v)]));
     const self = c.self ? deserialize(c.self) : undefined;
+    const ownerRing = self instanceof sj.ModuleElement ? self.module.ring : self instanceof sj.Module || self instanceof sj.ModuleImplementedIdeal ? self.ring : undefined;
+    const coefficient = (v: unknown): unknown => {
+      if (!c.module.startsWith('sympy.polys.agca.') || ownerRing === undefined) return v;
+      if (v instanceof JsDMP) return v.value.asExpr(...ownerRing.symbols);
+      if (v instanceof sj.DMP) return sj.subs(v.toSympy(), [[new Sym('_x'), definedOr(ownerRing.symbols[0], 'polynomial generator')]]);
+      return v;
+    };
+    const args = (c.args ?? []).map((v) => coefficient(deserialize(v)));
+    const kwargs = Object.fromEntries(Object.entries(c.kwargs ?? {}).map(([k, v]) => [k, coefficient(deserialize(v))]));
     const call = (a: Adapter): unknown => (c.assume ? sj.assuming(c.assume.map((t) => deserialize(t) as Expr), () => a(args, kwargs, self)) : a(args, kwargs, self));
     let v: unknown;
     // matrix expressions (MatMul, Trace, BlockMatrix, ...) use their own methods and constructors
