@@ -3993,7 +3993,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_functions:771", () => {
+  it("test_latex_functions:771", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -4002,7 +4002,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_functions:772", () => {
+  it("test_latex_functions:772", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -4011,7 +4011,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_functions:773", () => {
+  it("test_latex_functions:773", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
@@ -4020,7 +4020,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_functions:774", () => {
+  it("test_latex_functions:774", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
@@ -4466,7 +4466,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_indexed:876", () => {
+  it("test_latex_indexed:876", () => {
     const [x3, N] = symbols('x3 N');
     const i = new Sym('i', { integer: true });
     const unicode = pprintUseUnicode(false);
@@ -4476,7 +4476,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_indexed:877", () => {
+  it("test_latex_indexed:877", () => {
     const [x3, N] = symbols('x3 N');
     const i = new Sym('i', { integer: true });
     const unicode = pprintUseUnicode(false);
@@ -4486,7 +4486,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_indexed:878", () => {
+  it("test_latex_indexed:878", () => {
     const [x4, a, b] = symbols('x4 a b');
     const i = new Sym('i', { integer: true });
     const unicode = pprintUseUnicode(false);
@@ -4915,7 +4915,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_SetExpr:1009", () => {
+  it("test_latex_SetExpr:1009", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(latex(SetExpression(interval(rational(1), rational(3), false, false)), {}))).toBe('SetExpr\\left(\\left[1, 3\\right]\\right)');
@@ -5048,7 +5048,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_Range:1035", () => {
+  it("test_latex_Range:1035", () => {
     const n = new Sym('n', { negative: true, integer: true });
     const unicode = pprintUseUnicode(false);
     try {
@@ -5198,7 +5198,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_FourierSeries:1103", () => {
+  it("test_latex_FourierSeries:1103", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -7758,7 +7758,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_RandomDomain:1915", () => {
+  it("test_latex_RandomDomain:1915", () => {
     const x1 = new Sym('x1');
     const unicode = pprintUseUnicode(false);
     try {
@@ -7767,7 +7767,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_RandomDomain:1918", () => {
+  it("test_latex_RandomDomain:1918", () => {
     const d1 = new Sym('d1');
     const unicode = pprintUseUnicode(false);
     try {
@@ -7776,7 +7776,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_RandomDomain:1922", () => {
+  it("test_latex_RandomDomain:1922", () => {
     const [a, b] = symbols('a b');
     const unicode = pprintUseUnicode(false);
     try {
@@ -9937,7 +9937,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_issue_13651:2527", () => {
+  it("test_issue_13651:2527", () => {
     const [c, a, b] = symbols('c a b');
     const unicode = pprintUseUnicode(false);
     try {
@@ -9973,7 +9973,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_UnevaluatedExpr:2535", () => {
+  it("test_latex_UnevaluatedExpr:2535", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -10117,7 +10117,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_WedgeProduct_printing:2713", () => {
+  it("test_WedgeProduct_printing:2713", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(latex(WedgeProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 1))), {}))).toBe('\\operatorname{d}x \\wedge \\operatorname{d}y');
@@ -10688,7 +10688,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_diffgeom:3008", () => {
+  it("test_latex_diffgeom:3008", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(latex(new Manifold('M', 2), {}))).toBe('\\text{M}');
@@ -10696,7 +10696,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_diffgeom:3010", () => {
+  it("test_latex_diffgeom:3010", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(latex(new Patch('P', new Manifold('M', 2)), {}))).toBe('\\text{P}_{\\text{M}}');
@@ -10704,7 +10704,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_diffgeom:3012", () => {
+  it("test_latex_diffgeom:3012", () => {
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
     const unicode = pprintUseUnicode(false);
@@ -11011,7 +11011,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_printing_latex_array_expressions:3146", () => {
+  it("test_printing_latex_array_expressions:3146", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {

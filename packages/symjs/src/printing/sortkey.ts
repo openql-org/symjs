@@ -265,7 +265,7 @@ function lexOrder(terms: readonly Expr[], order = 'lex'): Expr[] {
     const ncpart: Expr[] = [];
     if (!(rest instanceof Rational && rest.isOne)) {
       for (const factor of rest instanceof Mul ? rest.args : [rest]) {
-        if (!factor.isCommutative) {
+        if (!factor.isCommutative || factor instanceof ExtensionExpr && factor.name === 'UnevaluatedExpr') {
           ncpart.push(factor);
           continue;
         }

@@ -10,3 +10,4 @@
  */
 
 export * as gates from './gates';
+export { Tr } from './trace';

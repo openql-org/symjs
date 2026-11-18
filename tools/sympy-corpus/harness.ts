@@ -22,7 +22,8 @@ import { rubik } from '../../packages/symjs/src/combinatorics/generators';
 const publicApi = { ...dg, ...sj, ...parsing };
 import { equivalent } from '../../packages/symjs/tests/sympy-equivalent';
 import { GrowableGrid } from '../../packages/symjs/src/categories/diagram_drawing';
-import { PORTS } from './ports';
+import { Tr } from '../../packages/physics-quantum/src';
+import { PORTS, printingFixtureFunction, withPrintingContext } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../../packages/symjs/src';
 import { latexEscape } from '../../packages/symjs/src/printing/latex';
@@ -230,15 +231,7 @@ const fmtItem = (v: unknown): string => {
 };
 
 export function fmt(v: unknown): string {
-  if (v instanceof sj.PolyElement && (v.ring.domain instanceof sj.GaussianIntegerRing || v.ring.domain instanceof sj.GaussianRationalField)) {
-    const K = v.ring.domain;
-    return v.terms().map(([m, c]) => {
-      const monomial = m.flatMap((n, j) => n === 0 ? [] : [sj.str(v.ring.symbols[j]!) + (n === 1 ? '' : `**${n}`)]).join('*');
-      const coefficient = K.convert(c);
-      const factor = coefficient.equals(K.convert(1)) && monomial ? '' : `(${coefficient.re.toString()} + ${coefficient.im.toString()}*I)`;
-      return factor + (factor && monomial ? '*' : '') + monomial;
-    }).join(' + ') || '(0 + 0*I)';
-  }
+  if (v instanceof sj.FracElement || v instanceof sj.PolyElement && (v.ring.domain instanceof sj.GaussianIntegerRing || v.ring.domain instanceof sj.GaussianRationalField)) return sj.sstr(v);
   if (v instanceof sj.PolyElement && v.ring.domain instanceof sj.AlgebraicField) {
     // SymPy prints sparse algebraic coefficients in their ANP representation.
     const K = v.ring.domain;
@@ -569,7 +562,7 @@ function constructDiffgeom(name: string, args: unknown[], kwargs: Record<string,
 }
 
 export function diffgeomAdapter(c: Case): Adapter | undefined {
-  if (c.category !== 'diffgeom') return undefined;
+  if (c.category !== 'diffgeom' && c.fn !== 'Manifold') return undefined;
   if (!c.fn.startsWith('.') && camel(c.fn) in diffgeomNamespace) return (args, kw) => constructDiffgeom(c.fn, args, kw);
   if ((c.fn.startsWith('.__') && c.fn !== '.__call__') || c.fn.startsWith('.is_')) return undefined;
   if (c.fn === '.rcall' || c.fn === '.__call__')
@@ -736,7 +729,8 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   NonElementaryIntegral: (args) => new sj.NonElementaryIntegral(integralNode(args).args),
   Sum: (args) => concreteNode('Sum', args),
   Product: (args) => concreteNode('Product', args),
-  Limit: (args) => new sj.Limit(args as Expr[]),
+  Limit: ([f, x, point, dir]) => new sj.Limit([f!, x!, point!], dir === undefined ? '+' : String(dir) as '+' | '-' | '+-'),
+  bell: ([n, k, xs]) => sj.bell(n!, k, xs === undefined ? undefined : tupleItems(xs)),
   Order: ([e, ...rest]) => orderNode(e!, rest),
 };
 
@@ -1232,7 +1226,7 @@ export function deserialize(tree: Tree): unknown {
       if (!(lam instanceof JsLambda) || lam.vars.length !== 1 || sets.length !== 1) throw new Unsupported('ImageSet over several sets');
       // A serialized ImageSet already has its chosen representatives. The
       // evaluating imageset factory can shift them modulo the integer period.
-      return new sj.ImageSet(lam.vars[0]!, lam.body, sets[0]!);
+      return new sj.ImageSet(expressionContainer(lam.vars[0]), lam.body, sets[0]!);
     }
     case 'ConditionSet':
       return new sj.ConditionSet(expressionContainer(deserialize(tree['sym'] as Tree)), asExpr(deserialize(tree['condition'] as Tree)), deserialize(tree['base'] as Tree) as sj.SetExpr);
@@ -1518,7 +1512,7 @@ export function deserialize(tree: Tree): unknown {
       return new sj.Dummy(tree['name'] as string, a, 1_000_000 + (tree['index'] as number));
     }
     case 'UFn':
-      return sj.SymFunction(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))));
+      return new sj.UndefFn(String(tree['name']), (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))));
     case 'Derivative': {
       const expr = deserialize(tree['expr'] as Tree) as Expr | Matrix;
       const variables = (tree['vc'] as [Tree, number][]).map(([v, n]): [Expr | Matrix, number] => [deserialize(v) as Expr | Matrix, n]);
@@ -1595,6 +1589,14 @@ function deserializeVector(tree: Tree): unknown {
   }
 }
 
+/** The instantiable SymPy base domain stores its symbols and set in its two Basic arguments. */
+class SerializedRandomDomain extends sj.RandomDomain {
+  constructor(args: readonly Expr[]) { super('RandomDomain', args); }
+  get symbols(): Sym[] { return [...(this.args[0] as sj.FiniteSet).args] as Sym[]; }
+  get set(): sj.SetExpr { return this.args[1] as sj.SetExpr; }
+  override get hasBoolean(): boolean { return false; }
+}
+
 /** A sympy.stats object rebuilt by its class constructor from its arguments. */
 function deserializeStats(tree: Tree): unknown {
   const cls = tree['cls'] as string;
@@ -1610,6 +1612,7 @@ function deserializeStats(tree: Tree): unknown {
   };
   const args = (tree['args'] as Tree[]).map((a) => toArg(deserialize(a)));
   const lib = sj as unknown as Record<string, new (...a: unknown[]) => unknown>;
+  if (cls === 'RandomDomain') return new SerializedRandomDomain(args);
   if (cls === 'RandomSymbol') return new sj.RandomSymbol(args[0] as Sym, args[1] as sj.PSpace);
   if (cls === 'JointRandomSymbol') return new sj.JointRandomSymbol(args[0] as Sym, args[1] as sj.PSpace);
   if (cls === 'RandomIndexedSymbol') return new sj.RandomIndexedSymbol(args[0] as Expr, args[1] as sj.PSpace);
@@ -3299,8 +3302,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     return go(asExpr(self));
   },
   '.fromiter': (args, kw) => (noKw(kw), new JsTuple((args[0] as JsTuple).items)),
+  Xor: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
+    return sj.Xor(...args.map(asExpr));
+  },
   sstr: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'full_prec' && k !== 'perm_cyclic') throw new Unsupported(`kwargs ${k}`);
     // a Cycle prints as its str form
     if (args[0] instanceof sj.Cycle) return args[0].toString();
     const value = (v: unknown): unknown => v instanceof JsTuple && !v.isList ? sj.Tuple(...v.items.map((x) => asExpr(value(x)))) : printable(v);
@@ -3966,7 +3972,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.limit(asExpr(args[0]), asSym(args[1]), asExpr(args[2]), dir as '+' | '-' | '+-');
   },
   Limit: (args, kw) => {
-    const dir = (kw['dir'] as string | undefined) ?? '+';
+    const dir = String(kw['dir'] ?? args[3] ?? '+');
     return new sj.Limit([asExpr(args[0]), asSym(args[1]), asExpr(args[2])], dir as '+' | '-' | '+-');
   },
   series: (args, kw) => {
@@ -4526,6 +4532,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (sj.isNoMatch(result)) return null;
     // Convert only the low-level coefficient representation expected by Python.
     return new JsDict([...result].map(([k,v]) => [k,kw['_raw'] === false || [...v.freeSymbols()].some((s) => ring.symbols.some((g) => g.key === s.key)) ? v : ring.domain.convert(v)]));
+  },
+  Tr: (args, kw) => {
+    noKw(kw);
+    const [operand, indices] = args;
+    const labels = indices instanceof JsTuple || indices instanceof JsList ? indices.items.map(asExpr) : indices === undefined ? [] : asExpr(indices);
+    return Tr(operand instanceof Matrix ? operand : asExpr(operand), labels);
   },
   Poly: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian','field','symmetric'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -5489,11 +5501,13 @@ function printSetting(v: unknown): unknown {
 const printOptions = (kw: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), k === 'mat_delim' && v === null ? '' : printSetting(v)]));
 /** A printable argument: SymPy lists are arrays, dicts Maps, sets Sets. */
 function printable(v: unknown): unknown {
+  if (v instanceof JsFrozenSet) return { frozenItems: new Set(v.items.map(printable)) };
   if (v instanceof JsList || v instanceof JsTuple) return v.items.map(printable);
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [printable(k), printable(x)]));
   if (v instanceof JsSet) return new Set(v.items.map(printable));
   if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
   if (v instanceof FnClass) return Object.assign((...xs: Expr[]) => sj.fn(v.name as sj.FnName, xs), { functionName: v.name });
+  if (v instanceof JsDomain) return v.domain ?? v;
   if (v instanceof JsLambda) return lambdaAsNode(v);
   return v;
 }
@@ -5506,9 +5520,10 @@ function prettyArg(v: unknown): unknown {
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [prettyArg(k), prettyArg(x)]));
   if (v instanceof JsSet && v.items.every((item) => typeof item === 'function' && 'predicateName' in item)) return sj.FiniteSet.of(...v.items.map((item) => sj.symbol(String(item))));
   if (v instanceof JsSet) return new Set(v.items.map(prettyArg));
-  if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
+  if (v instanceof FnClass || v instanceof UFnClass) return printable(v);
   return v;
 }
+ADAPTERS['xstr'] = (args, kw) => (noKw(kw), sj.sstr(printable(args[0]) as sj.StrPrintable));
 ADAPTERS['TableForm'] = (args, kw) => {
   const cell = (v: unknown): sj.TableEntry => v instanceof JsTuple || v instanceof JsList || v instanceof JsDict || v instanceof JsSet ? fmt(v) : v as sj.TableEntry;
   const data = args[0] instanceof Matrix ? args[0] : (args[0] as JsTuple).items.map((r) => (r as JsTuple).items.map(cell));
@@ -6592,7 +6607,8 @@ function autoAdapter(c: Case): Adapter | undefined {
     if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[REL_OPS[x.name] ?? camel(x.name)];
     const headName = String(c.args?.[0]?.['name']);
     if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);
-    if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
+    if (c.fn === '.applyfunc' && c.self?.t === 'MatExpr' && x instanceof JsLambda) return lambdaAsNode(x);
+    if ((c.fn === 'ElementwiseApplyFunction' || c.fn === '.applyfunc') && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
     // The dense tools keep GF(p) coefficients as field elements: a zero-order derivative returns them unchanged.
     const fieldElements = (v: unknown): unknown => v instanceof JsFFElement ? plain(v) : v instanceof JsList ? new JsList(v.items.map(fieldElements)) : v instanceof JsTuple ? new JsTuple(v.items.map(fieldElements)) : v;
     const converted = toJs(c.module === 'sympy.polys.tests.test_densetools' ? fieldElements(x) : x, numbers);
@@ -6659,6 +6675,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       const element = self0 instanceof sj.FracElement ? self0 : args[0];
       if (!(element instanceof sj.FracElement)) throw new TypeError('expected a fraction-field element');
       const normalize = (v: unknown): sj.FracElement => {
+        if (v instanceof sj.GaussianElement) return element.field.groundNew(v.parent().toSympy(v));
         if (v instanceof sj.PythonMPQ) return element.field.fieldNew(sj.Rational.of(v.numerator, v.denominator));
         if (v instanceof sj.FracElement || v instanceof sj.PolyElement || v instanceof Expr || typeof v === 'number' || typeof v === 'bigint') return element.field.fieldNew(v);
         throw new TypeError('expected a fraction-field operand');
@@ -6933,7 +6950,7 @@ function tensorStateAdapter(c: Case): Adapter | undefined {
 }
 
 export function runCase(c: Case, observe?: (event: CaseObservation) => void): Outcome {
-  return asDoctest(c, () => runCase0(c, observe));
+  return asDoctest(c, () => c.category === 'printing' ? withPrintingContext(c, () => runCase0(c, observe)) : runCase0(c, observe));
 }
 
 function isIterableResult(value: unknown): value is Iterable<unknown> {
@@ -7058,14 +7075,22 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       return v;
     };
     self = coefficient(self);
-    const args = (c.args ?? []).map((v) => coefficient(deserialize(v)));
+    const args = (c.args ?? []).map((v) => {
+      const fixture = c.category === 'printing' && v.t === 'Fn' ? printingFixtureFunction(c, String(v['name'])) : undefined;
+      return fixture ? fixture((v['args'] as Tree[]).map((a) => asExpr(deserialize(a)))) : coefficient(deserialize(v));
+    });
     // The extractor serializes a Python range as a list; preserve its constructor when available.
     const rangeCall = c.fn === 'IndexedBase' ? /IndexedBase\(range\(([-\d,\s]+)\)\)/.exec(c.src) : null;
     if (rangeCall && (args[0] instanceof JsList || args[0] instanceof JsTuple)) {
       const bounds = definedOr(rangeCall[1], 'range arguments').split(',').map((s) => sj.Rational.of(BigInt(s.trim())));
       args[0] = sj.Range.of(definedOr(bounds[0], 'range start'), bounds[1], bounds[2]);
     }
+    if (c.fn === 'sstr' && args[0] instanceof JsSet && /\bsstr\(\s*frozenset\(/.test(c.src)) args[0] = new JsFrozenSet(args[0].items);
+    if (c.fn === 'srepr' && typeof args[0] === 'boolean' && /\bsrepr\(\s*(?:true|false)\s*\)/.test(c.src)) args[0] = args[0] ? S.true : S.false;
+    if (c.fn === 'sstrrepr' && typeof args[0] === 'string' && /\bsstrrepr\(\s*Str\(/.test(c.src)) args[0] = new sj.Str(args[0]);
     const kwargs = Object.fromEntries(Object.entries(c.kwargs ?? {}).map(([k, v]) => [k, coefficient(deserialize(v))]));
+    // The entire expression in this assertion is constructed inside SymPy's evaluate(False) context.
+    if (c.module === 'sympy.printing.tests.test_str' && 'line' in c && c.line === 298 && c.fn === 'Mul') kwargs['evaluate'] = false;
     const call = (a: Adapter): unknown => (c.assume ? sj.assuming(c.assume.map((t) => deserialize(t) as Expr), () => a(args, kwargs, self)) : a(args, kwargs, self));
     let v: unknown;
     // matrix expressions (MatMul, Trace, BlockMatrix, ...) use their own methods and constructors

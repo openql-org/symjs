@@ -6,6 +6,10 @@
  * settings (`latex(expr, { mode: 'inline', mulSymbol: 'dot', ... })`).
  */
 
+import type { DiagramGrid } from '../categories';
+import type { RandomDomain } from '../stats';
+import type { Domain, Module, ModuleHomomorphism, ModuleImplementedIdeal, Poly, PolyElement, PolynomialRing, PolynomialRingBase, PrimeIdeal, QuotientModule, QuotientRing } from '../polys';
+import type { OrdinalNode, OmegaPowerNode } from '../sets';
 import { isNegative } from '../core/assumptions';
 import { Add, Expr, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff, sympify } from '../core/ops';
@@ -76,7 +80,7 @@ export interface LatexOptions {
   /** 'bold' prints matrix symbols and the special matrices in bold (default 'plain'). */
   readonly matSymbolStyle?: 'plain' | 'bold';
   /** The order of the terms of sums: 'lex' (default), another monomial order ('grlex', 'rev-lex', ...) or 'none' (as stored, also the factors of products). */
-  readonly order?: TermOrder | 'none';
+  readonly order?: TermOrder | 'none' | 'old';
   /** Floats with an exponent below this are printed in scientific notation (SymPy min). */
   readonly min?: number;
   /** Floats with an exponent from this on are printed in scientific notation (SymPy max). */
@@ -109,7 +113,7 @@ interface Settings {
   readonly matSymbolStyle: 'plain' | 'bold';
   readonly min: number | undefined;
   readonly max: number | undefined;
-  readonly order: TermOrder | 'none' | undefined;
+  readonly order: TermOrder | 'none' | 'old' | undefined;
 }
 
 const MUL_SYMBOLS: Readonly<Record<string, string>> = { ldot: ' \\,.\\, ', dot: ' \\cdot ', times: ' \\times ' };
@@ -166,9 +170,10 @@ function resolveSettings(o: LatexOptions): Settings {
   };
 }
 
-const DEFAULT_SETTINGS = resolveSettings({});
+let globalOptions: LatexOptions = Object.freeze({});
+let defaultSettings = resolveSettings(globalOptions);
 /** The settings of the print in progress (SymPy `self._settings`). */
-let settings: Settings = DEFAULT_SETTINGS;
+let settings: Settings = defaultSettings;
 /** The nesting depth of public calls: a call made while printing (by a node's printLatex) keeps the settings. */
 let depth = 0;
 
@@ -324,6 +329,10 @@ const withExponent = (tex: string, exp?: string): string => (exp !== undefined ?
 const headArgs = (head: string, args: readonly Expr[], exp?: string): string => `${withExponent(head, exp)}\\left(${args.map(texOf).join(', ')}\\right)`;
 /** SymPy `__print_number_polynomial`: B_{n}, or B_{n}\left(x\right) for the polynomial. */
 function numberPolynomial(letter: string, args: readonly Expr[], exp?: string): string {
+  if (letter === 'B' && args.length > 2) {
+    const indices = args.slice(0, 2).map(texOf).join(', ');
+    return `${withExponent(`B_{${indices}}`, exp)}\\left(${args.slice(2).map(texOf).join(', ')}\\right)`;
+  }
   const head = withExponent(`${letter}_{${texOf(at(args, 0))}}`, exp);
   return args.length === 2 ? `${head}\\left(${texOf(at(args, 1))}\\right)` : head;
 }
@@ -378,6 +387,12 @@ function printNamedFunction(name: string, args: readonly Expr[], exp?: string): 
   const l = args.map(texOf);
   const [a, b, c] = [l[0] ?? '', l[1] ?? '', l[2] ?? ''];
   switch (name) {
+    case 'udivisor_sigma':
+      return `\\sigma^*${sup}${args.length > 1 ? '_' + b : ''}\\left(${a}\\right)`;
+    case 'SetExpr':
+      return `SetExpr\\left(${a}\\right)`;
+    case 'WedgeProduct':
+      return l.join(' \\wedge ');
     case 'SingularityFunction': {
       const shift = texOf(impl.add(at(args, 0), impl.mul(-1, at(args, 1))));
       const power = texOf(at(args, 2));
@@ -786,6 +801,7 @@ function printPow(e: Pow): string {
 function orderedTerms(e: Add): readonly Expr[] {
   const order = settings.order;
   if (order === 'none') return e.args;
+  if (order === 'old') return [...e.args].sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
   return asOrderedTerms(e, order === 'lex' ? undefined : order);
 }
 
@@ -799,7 +815,8 @@ function printAdd(e: Add): string {
     if (i > 0) {
       if (startsNegative(term)) {
         tex += ' - ';
-        term = mul(-1, term);
+        const [c, rest] = splitCoeff(term);
+        term = c.equals(S.NegOne) ? rest : mul(-1, term);
       } else tex += ' + ';
     }
     const t = texOf(term);
@@ -821,6 +838,14 @@ function floatLatex(f: Float): string {
 
 function texOf(e: Expr): string {
   if (e instanceof ExtensionExpr) {
+    if (e.name === 'FourierSeries' && 'truncate' in e && typeof e.truncate === 'function') {
+      const sums: Expr = e.truncate();
+      return texOf(sums) + (sums.has(at(e.args, 1)) ? ' + \\ldots' : '');
+    }
+    if (isRandomDomain(e)) {
+      const body = e.hasBoolean ? texOf(e.asBoolean()) : `\\left\\{${e.symbols.map(texOf).join(', ')}\\right\\} \\in ${texOf(e.set)}`;
+      return '\\text{Domain: }' + body;
+    }
     if (e.name === 'LeviCivita') return `\\varepsilon_{${e.args.map(texOf).join(e.args.every((a) => a instanceof Sym) ? ' ' : ', ')}}`;
     const named = printNamedFunction(e.name, e.args);
     if (named !== undefined) return named;
@@ -839,6 +864,7 @@ function texOf(e: Expr): string {
     return settings.foldShortFrac ? `${sign}${p} / ${e.q}` : `${sign}\\frac{${p}}{${e.q}}`;
   }
   if (e instanceof Float) return floatLatex(e);
+  if (e instanceof Sym && e.toLatex !== Expr.prototype.toLatex) return e.toLatex();
   if (e instanceof Sym) return symbolName(e) ?? e.latexForm ?? symbolLatex(e.name);
   if (e instanceof Constant) {
     return { pi: '\\pi', E: 'e', I: settings.imaginaryUnit, EulerGamma: '\\gamma', Catalan: 'G', GoldenRatio: '\\phi', TribonacciConstant: '\\text{TribonacciConstant}' }[e.name];
@@ -970,6 +996,12 @@ function printSet(e: Expr, cls: string): string {
       return `\\left${open(lo) ? '(' : '['}${texOf(a)}, ${texOf(b)}\\right${open(ro) ? ')' : ']'}`;
     }
     case 'Range': {
+      const [start, stop, step] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
+      if (start instanceof Special && stop instanceof Sym && stop.assumptions.integer && step instanceof Rational &&
+          step.isInteger && (start === S.NegativeInfinity && step.isPositive || start === S.Infinity && step.isNegative)) {
+        const last = impl.add(stop, numNeg(step));
+        return `\\left\\{\\ldots, ${texOf(impl.add(last, numNeg(step)))}, ${texOf(last)}\\right\\}`;
+      }
       const shown = rangePrintForm(e, 3);
       // SymPy _print_symbolic_range: a Range whose elements are unknown
       if ('symbolic' in shown) return `\\text{Range}\\left(${shown.symbolic.map(texOf).join(', ')}\\right)`;
@@ -1027,7 +1059,7 @@ const isFractionElement = (v: object): v is { readonly numer: LatexExpression; r
 const isLatexObject = (v: object): v is LatexObject => 'toLatex' in v && typeof v.toLatex === 'function';
 
 /** What `latex` prints: expressions (numbers are sympified), function classes, matrices, objects with their own LaTeX, lists, dicts, sets, strings, booleans and null (Python None). */
-export type LatexPrintable = Expr | number | bigint | boolean | string | null | LatexMatrix | FunctionClassLike | LatexObject | LatexExpression | readonly LatexPrintable[] | ReadonlyMap<LatexPrintable, LatexPrintable> | ReadonlySet<LatexPrintable>;
+export type LatexPrintable = Domain | Module | ModuleHomomorphism | ModuleImplementedIdeal | PrimeIdeal | OrdinalNode | OmegaPowerNode | DiagramGrid | Expr | number | bigint | boolean | string | null | LatexMatrix | FunctionClassLike | LatexObject | LatexExpression | readonly LatexPrintable[] | ReadonlyMap<LatexPrintable, LatexPrintable> | ReadonlySet<LatexPrintable>;
 
 const isMatrixLike = (v: object): v is LatexMatrix => 'rows' in v && 'cols' in v && 'get' in v && typeof v.get === 'function';
 
@@ -1059,6 +1091,91 @@ function sortedItems(items: readonly LatexPrintable[]): LatexPrintable[] {
   return [...exprs, ...items.filter((x) => !(x instanceof Expr))];
 }
 
+/** Print the domain notation stored on Poly, including nested polynomial and fraction fields. */
+function domainTex(domain: string): string {
+  const ground: Readonly<Record<string, string>> = { ZZ: '\\mathbb{Z}', QQ: '\\mathbb{Q}', RR: '\\mathbb{R}', CC: '\\mathbb{C}' };
+  const finite = /^GF\((\d+)\)$/.exec(domain);
+  if (finite) return `\\mathbb{F}_{${at(finite, 1)}}`;
+  const composite = /^(.*)([[(])([^()[\]]+)[\])]$/.exec(domain);
+  if (!composite) return ground[domain] ?? symbolLatex(domain);
+  const [base, open, symbols] = [at(composite, 1), at(composite, 2), at(composite, 3)];
+  return `${domainTex(base)}\\left${open}${symbols.split(',').map((s) => symbolLatex(s.trim())).join(', ')}\\right${open === '[' ? ']' : ')'}`;
+}
+
+/** SymPy _print_Poly uses the polynomial's monomial order and juxtaposes its generators. */
+function printPolynomial(poly: Poly): string {
+  const terms = poly.terms().map(([powers, coeff], i) => {
+    const monomial = powers.map((power, j) => power === 0 ? '' : texOf(pow(at(poly.gens, j), power))).join('');
+    let text = texOf(coeff);
+    if (monomial) {
+      if (coeff.equals(S.One)) text = monomial;
+      else if (coeff.equals(S.NegOne)) text = '-' + monomial;
+      else text = (coeff instanceof Add ? addParens(text) : text) + ' ' + monomial;
+    }
+    if (i === 0) return text;
+    return text.startsWith('-') ? ' - ' + text.slice(1) : ' + ' + text;
+  }).join('');
+  return `\\operatorname{${poly.pure ? 'PurePoly' : 'Poly'}}{\\left( ${terms}, ${poly.gens.map(texOf).join(', ')}, domain=${domainTex(poly.domain)} \\right)}`;
+}
+
+const isPolynomialDomain = (domain: Domain): domain is PolynomialRing => 'gens' in domain && 'domain' in domain && !domain.isField;
+
+/** PolyElement.str prints coefficients recursively over a polynomial coefficient ring. */
+function printRingElement(poly: PolyElement): string {
+  const { ring } = poly;
+  const domain = ring.domain;
+  const coefficients = isPolynomialDomain(domain)
+    ? ring.clone({ symbols: domain.gens, domain: domain.domain, order: 'lex' }) : undefined;
+  return poly.terms().map(([powers, coeff], i) => {
+    const nested = coefficients?.fromExpr(coeff);
+    const negative = nested?.isNegative ?? startsNegative(coeff);
+    const magnitude = negative ? mul(-1, coeff) : coeff;
+    const factors = powers.flatMap((power, j) => {
+      if (power === 0) return [];
+      const symbol = parenthesize(at(ring.symbols, j), PREC.MUL);
+      return power === 1 ? [symbol] : [`{${symbol}}^{${power}}`];
+    });
+    if (!factors.length) {
+      const constant = nested ? printRingElement(nested) : texOf(coeff);
+      factors.push(negative ? constant.replace(/^-\s*/, '') : constant);
+    } else if (!magnitude.equals(S.One)) {
+      const value = nested ? printRingElement(negative ? nested.neg() : nested) : texOf(magnitude);
+      factors.unshift(precedence(magnitude) < PREC.MUL ? addParens(value) : value);
+    }
+    const sign = i === 0 ? (negative ? '-' : '') : negative ? ' - ' : ' + ';
+    return sign + factors.join(settings.mulSymbol);
+  }).join('') || '0';
+}
+
+const isPoly = (v: object): v is Poly => 'termList' in v && 'terms' in v && 'gens' in v;
+const isPolyElement = (v: object): v is PolyElement => 'ring' in v && 'listterms' in v;
+const isOldRing = (v: object): v is PolynomialRingBase => 'coefficientDomain' in v && 'symbols' in v && 'order' in v;
+const isModule = (v: object): v is Module => 'ambient' in v && 'rank' in v && 'ring' in v;
+const isQuotientModule = (v: Module): v is QuotientModule => 'killedModule' in v;
+const generatorsTex = (values: string[]): string => `\\left\\langle ${values.map((v) => `{${v}}`).join(',')} \\right\\rangle`;
+
+function printModule(m: Module): string {
+  if (isQuotientModule(m)) return `\\frac{${printModule(m.base)}}{${printModule(m.killedModule)}}`;
+  if (m !== m.ambient) return generatorsTex(m.gens.map((g) => {
+    const vector = `\\left[ ${g.data.map((x) => `{${texOf(x)}}`).join(',')} \\right]`;
+    return isQuotientModule(m.ambient) ? `{${vector}} + {${printModule(m.ambient.killedModule)}}` : vector;
+  }));
+  return `{${printValue(m.ring)}}^{${m.rank}}`;
+}
+
+const isIdeal = (v: object): v is ModuleImplementedIdeal => 'reduceElement' in v && 'module' in v;
+const isQuotientRing = (v: object): v is QuotientRing => 'baseIdeal' in v && 'ring' in v;
+const isModuleMap = (v: object): v is ModuleHomomorphism => 'matrix' in v && 'restrictDomain' in v;
+const isPrimeIdeal = (v: object): v is PrimeIdeal => 'isInert' in v && 'alpha' in v;
+const isGrid = (v: object): v is DiagramGrid => 'morphisms' in v && 'width' in v && 'get' in v;
+const isRandomDomain = (v: Expr): v is RandomDomain => 'hasBoolean' in v && 'asBoolean' in v;
+const isOrdinal = (v: object): v is OrdinalNode => 'terms' in v && 'isSuccessorOrdinal' in v;
+const isOmegaPower = (v: object): v is OmegaPowerNode => 'exp' in v && 'mult' in v;
+
+function ordinalTerm(t: OmegaPowerNode): string {
+  return (t.mult === 1n ? '' : `${t.mult} `) + '\\omega' + (t.exp.equals(1) ? '' : `^{${String(t.exp)}}`);
+}
+
 /** SymPy `Printer._print` of the LaTeX printer for any printable value. */
 function printValue(v: LatexPrintable): string {
   if (v instanceof Expr) return texOf(v);
@@ -1082,13 +1199,54 @@ function printValue(v: LatexPrintable): string {
   if (v instanceof Set) return `\\left\\{${sortedItems([...v]).map(printValue).join(`${sep} `)}\\right\\}`;
   if (isMatrixLike(v)) return printMatrix(v);
   if (isLatexObject(v)) return v.toLatex(texOf);
+  if (isPoly(v)) return printPolynomial(v);
+  if (isPolyElement(v)) return printRingElement(v);
+  if (isOldRing(v)) return (v.order.isGlobal === true ? '' : 'S_<^{-1}') + domainTex(String(v.dom)) + `\\left[${v.symbols.map(texOf).join(', ')}\\right]`;
+  if (isQuotientRing(v)) return `\\frac{${printValue(v.ring)}}{${printValue(v.baseIdeal)}}`;
+  if (isIdeal(v)) return generatorsTex(v.gens.map(texOf));
+  if (isModule(v)) return printModule(v);
+  if (isModuleMap(v)) {
+    const matrix = printMatrix({ rows: v.codomain.rank, cols: v.domain.rank, get: (i, j) => at(at(v.matrix, j).data, i) });
+    return `{${matrix}} : {${printModule(v.domain)}} \\to {${printModule(v.codomain)}}`;
+  }
+  if (isGrid(v)) {
+    const rows = Array.from({ length: v.height }, (_, i) => Array.from({ length: v.width }, (_, j) => {
+      const cell = v.get(i, j);
+      return cell instanceof Expr ? texOf(cell) : '';
+    }).join(' & ') + ' ');
+    return `\\begin{array}{${'c'.repeat(v.width)}}\n${rows.join('\\\\\n')}\n\\end{array}\n`;
+  }
+  if (isPrimeIdeal(v)) return addParens(String(v.p) + (v.isInert ? '' : ', ' + texOf(v.alpha.asExpr())));
+  if (isOrdinal(v)) return v.terms.map(ordinalTerm).join(' + ');
+  if (isOmegaPower(v)) return ordinalTerm(v);
+  if ('fromSympy' in v) return domainTex(String(v));
   if (isFractionElement(v)) {
     const denom = v.denom.asExpr();
-    if (denom instanceof Rational && denom.isOne) return texOf(v.numer.asExpr());
-    return `\\frac{${texOf(v.numer.asExpr())}}{${texOf(denom)}}`;
+    if (denom instanceof Rational && denom.isOne) return printValue(v.numer);
+    return `\\frac{${printValue(v.numer)}}{${printValue(v.denom)}}`;
   }
   if (isLatexExpression(v)) return texOf(v.asExpr());
   throw new TypeError(`latex: cannot print ${Object.prototype.toString.call(v)}`);
+}
+
+/** SymPy's LatexPrinter, with instance options layered on the current global defaults. */
+export class LatexPrinter {
+  private readonly options: LatexOptions;
+  private readonly settings: Settings;
+
+  constructor(options: LatexOptions = {}) {
+    this.options = { ...globalOptions, ...options };
+    this.settings = resolveSettings(this.options);
+  }
+  static get globalSettings(): LatexOptions { return globalOptions; }
+  static setGlobalSettings(options: LatexOptions): void {
+    const next = { ...globalOptions, ...options };
+    defaultSettings = resolveSettings(next);
+    globalOptions = Object.freeze(next);
+  }
+  doprint(expr: LatexPrintable): string {
+    return renderLatex(expr, this.settings, this.options.permCyclic);
+  }
 }
 
 /**
@@ -1102,11 +1260,16 @@ function printValue(v: LatexPrintable): string {
  */
 export function latex(expr: LatexPrintable, options?: LatexOptions): string {
   if (depth > 0 && options === undefined) return printValue(expr);
+  if (options === undefined) return renderLatex(expr, defaultSettings, globalOptions.permCyclic);
+  return new LatexPrinter(options).doprint(expr);
+}
+
+function renderLatex(expr: LatexPrintable, current: Settings, cyclic?: boolean): string {
   const prev = settings;
-  settings = options === undefined ? DEFAULT_SETTINGS : resolveSettings(options);
+  settings = current;
   depth++;
   try {
-    const tex = withPermCyclic(options?.permCyclic, () => printValue(expr));
+    const tex = withPermCyclic(cyclic, () => printValue(expr));
     const mode = settings.mode;
     if (mode === 'plain') return tex;
     if (mode === 'inline') return `$${tex}$`;

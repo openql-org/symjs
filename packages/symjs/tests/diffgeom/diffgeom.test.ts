@@ -60,9 +60,10 @@ describe('charts and points', () => {
     expect(String(m)).toBe('M');
     expect(String(p)).toBe('P');
     expect(String(c)).toBe('C');
-    expect(latex(m)).toBe('M');
-    expect(latex(p)).toBe('P');
-    expect(latex(c)).toBe('C');
+    expect(latex(new Manifold('M^a_b', 2))).toBe('\\text{M}^{a}_{b}');
+    expect(latex(m)).toBe('\\text{M}');
+    expect(latex(p)).toBe('\\text{P}_{\\text{M}}');
+    expect(latex(c)).toBe('\\text{C}^{\\text{P}}_{\\text{M}}');
     expect(c.dim).toBe(2);
     expect(c.manifold).toBe(m);
     expect(p.dim).toBe(2);
@@ -246,7 +247,7 @@ describe('fields and tensors', () => {
     expect(() => rcall(dx, eX, eY)).toThrow(RangeError);
     expect(() => rcall(df, eX)).toThrow(/Partial contraction/);
     expect(String(Differential(mul(x, y)))).toBe('d(x*y)');
-    expect(latex(dx)).toBe('\\operatorname{d}\\mathbf{x}');
+    expect(latex(dx)).toBe('\\operatorname{d}x');
     expect(String(dx)).toBe('dx');
     expect(latex(Differential(mul(x, y)))).toContain('\\left(');
     expect((dx as ExtensionExpr).withArgs(dx.args).equals(dx)).toBe(true);

@@ -60,58 +60,60 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // 24 KiB to the root namespace. Automatic algebraic-atom classification also
 // links the assumption engine, adding up to 72 KiB to polynomial consumers.
 // The manual integration fallback adds about 4 KiB to consumers of integrate.
+// Recursive printer settings, polynomial and module formatting, and structural representations
+// contribute 5–8 KiB to bundles that include the shared printing layer.
 const CASES = [
-  ['core', 'Rational', 212],
-  ['core', 'parse, str', 229],
-  ['core', 'parse, diff, expand, str, latex', 229],
-  ['core', '*', 349],
+  ['core', 'Rational', 217],
+  ['core', 'parse, str', 235],
+  ['core', 'parse, diff, expand, str, latex', 235],
+  ['core', '*', 355],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   // Meijer G derivatives, support intervals and branch-preserving integral rewrites.
-  ['special', '*', 428],
+  ['special', '*', 433],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1097],
+  ['simplify', 'simplify', 1103],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
   // methods and the polynomial-ring extensions add to it (measured 694 KiB).
-  ['polys', 'factor', 797],
+  ['polys', 'factor', 803],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1098],
-  ['solvers', 'solve', 1185],
-  ['solvers', 'dsolve', 1201],
-  ['sets', '*', 397],
-  ['matrices', 'Matrix', 977],
-  ['printing', 'pretty', 250],
-  ['discrete', '*', 310],
-  ['strategies', '*', 223],
+  ['calculus', 'integrate', 1104],
+  ['solvers', 'solve', 1196],
+  ['solvers', 'dsolve', 1222],
+  ['sets', '*', 403],
+  ['matrices', 'Matrix', 985],
+  ['printing', 'pretty', 256],
+  ['discrete', '*', 315],
+  ['strategies', '*', 228],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
-  ['parsing', '*', 919],
-  ['unify', '*', 257],
+  ['parsing', '*', 925],
+  ['unify', '*', 263],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 668],
-  ['holonomic', 'exprToHolonomic', 1278],
-  ['geometry', '*', 1163],
-  ['vector', '*', 1259],
-  ['stats', '*', 1431],
+  ['algebras', 'Quaternion', 674],
+  ['holonomic', 'exprToHolonomic', 1288],
+  ['geometry', '*', 1168],
+  ['vector', '*', 1265],
+  ['stats', '*', 1442],
   // Diagram layout, pretty grids and Xy-pic text generation.
-  ['categories', '*', 444],
+  ['categories', '*', 449],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1137],
-  ['crypto', '*', 375],
-  ['liealgebras', '*', 356],
+  ['plotting', '*', 1143],
+  ['crypto', '*', 381],
+  ['liealgebras', '*', 361],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
-  ['codegen', '*', 448],
+  ['codegen', '*', 453],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
-  ['index', 'Rational', 212],
+  ['index', 'Rational', 217],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Tensor axis normalization, indexed broadcasting and matrix-array conversions.
   // Polynomial remainder sequences, Hensel lifting and module orders add up to 2 KiB.
-  ['index', '*', 2889],
+  ['index', '*', 2910],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

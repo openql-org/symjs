@@ -4,6 +4,7 @@
 // Tests of src/printing/repr.ts. Expected values from SymPy 1.14 srepr(...).
 
 import { describe, expect, it } from 'vitest';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import * as sj from '../../src';
 import { Dummy, Float, Integral, Limit, Order, Rational, S, Sym, Wild, WildFunction } from '../../src/core/nodes';
 import type { Expr } from '../../src/core/nodes';
@@ -202,4 +203,23 @@ it('distinguishes native tuples from lists and symbolic Tuple nodes', () => {
   expect(srepr({ tupleItems: [] })).toBe('()');
   expect(srepr({ tupleItems: [x] })).toBe("(Symbol('x'),)");
   expect(srepr({ tupleItems: [x, { tupleItems: [y, 1] }] })).toBe("(Symbol('x'), (Symbol('y'), 1))");
+});
+
+// Replay the serialized algebraic objects that the expression-only test generator cannot reconstruct.
+const algebraicCases = new Set(['test_AlgebraicNumber', 'test_PolyRing', 'test_FracField', 'test_PolyElement', 'test_FracElement', 'test_PolynomialRingBase', 'test_FractionField', 'test_FiniteExtension']);
+for (const c of passingModuleCases('printing', 'sympy.printing.tests.test_repr').filter((c) => algebraicCases.has(c.test))) {
+  it(`${c.test}:${c.line}`, () => expect(runTestCase(c), c.src).toEqual({ status: 'pass' }));
+}
+
+it('prints the ordering of localized rings and unapplied predicates', () => {
+  expect(srepr(new sj.PolynomialRingBase(sj.ZZ, [x], 'ilex'))).toBe("GeneralizedPolynomialRing(ZZ, Symbol('x'), order=ilex)");
+  expect(srepr(sj.Q.even)).toBe('Q.even');
+});
+
+it('passes the recursive repr printer to extension hooks', () => {
+  class Wrapped extends sj.ExtensionExpr {
+    withArgs(args: readonly Expr[]): Expr { return new Wrapped(this.name, args); }
+    printRepr(print: (e: Expr) => string): string { return this.args.map(print).join(' | '); }
+  }
+  expect(srepr(new Wrapped('Wrapper', [x, y]))).toBe("Symbol('x') | Symbol('y')");
 });
