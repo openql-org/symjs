@@ -53,6 +53,8 @@ export {
   factorTerms,
   collectConst,
   signsimp,
+  subPre,
+  subPost,
 } from './simplify/exprtools';
 export {
   trigsimp,
@@ -83,7 +85,7 @@ export {
   splitSurds,
   radRationalize,
 } from './simplify/sqrtdenest';
-export { cse } from './simplify/csemain';
+export { cse, preprocessForCse, postprocessForCse, cseSeparate, repsToposort } from './simplify/csemain';
 export type {
   CseOptions,
   CseResult,

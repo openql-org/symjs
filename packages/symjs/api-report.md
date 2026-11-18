@@ -614,7 +614,7 @@ Total: 3244 stable, 27 experimental, 84 deprecated. The root `@symjs/symjs` re-e
 | `yn` | function | stable |
 | `zeta` | function | stable |
 
-## `@symjs/symjs/simplify` (112)
+## `@symjs/symjs/simplify` (118)
 
 | Export | Kind | Level |
 |---|---|---|
@@ -663,6 +663,7 @@ Total: 3244 stable, 27 experimental, 84 deprecated. The root `@symjs/symjs` re-e
 | `combsimp` | function | stable |
 | `compare` | function | stable |
 | `cse` | function | stable |
+| `cseSeparate` | function | stable |
 | `decomposePower` | function | stable |
 | `decomposePowerRat` | function | stable |
 | `denom` | function | stable |
@@ -691,8 +692,10 @@ Total: 3244 stable, 27 experimental, 84 deprecated. The root `@symjs/symjs` re-e
 | `numer` | function | stable |
 | `parseMathematica` | function | stable |
 | `posify` | function | stable |
+| `postprocessForCse` | function | stable |
 | `powdenest` | function | stable |
 | `powsimp` | function | stable |
+| `preprocessForCse` | function | stable |
 | `radRationalize` | function | stable |
 | `radsimp` | function | stable |
 | `ratsimp` | function | stable |
@@ -701,6 +704,7 @@ Total: 3244 stable, 27 experimental, 84 deprecated. The root `@symjs/symjs` re-e
 | `reduceOrder` | function | stable |
 | `reduceOrderMeijer` | function | stable |
 | `registerRewrite` | function | experimental |
+| `repsToposort` | function | stable |
 | `rewrite` | function | stable |
 | `rewriteExp` | function | deprecated |
 | `rewriteRules` | object | deprecated |
@@ -713,6 +717,8 @@ Total: 3244 stable, 27 experimental, 84 deprecated. The root `@symjs/symjs` re-e
 | `sqrtBiquadraticDenest` | function | stable |
 | `sqrtDepth` | function | stable |
 | `sqrtdenest` | function | stable |
+| `subPost` | function | stable |
+| `subPre` | function | stable |
 | `together` | function | stable |
 | `trigSplit` | function | stable |
 | `trigsimp` | function | stable |
