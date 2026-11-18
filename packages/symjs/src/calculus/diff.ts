@@ -36,7 +36,7 @@ export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: n
 export const fnTaylorAtZero: Partial<Record<Fn['name'], (j: number) => Expr>> = {};
 
 /** Late-bound pieces of higher layers: the reduction of an Order to its leading term (set by series/series.ts). */
-export const diffHooks: { order: (e: Expr, variables: readonly Sym[], point: Expr) => Expr } = { order: orderUnreduced };
+export const diffHooks: { order: (e: Expr, variables: readonly Sym[], point: Expr) => Expr; array?: (e: Expr, x: Expr, n: number) => Expr } = { order: orderUnreduced };
 
 /** The Order of e without the reduction to its leading term (when series/series.ts is not loaded). */
 export function orderUnreduced(e: Expr, variables: readonly Sym[], point: Expr): Expr {
@@ -272,6 +272,7 @@ export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
     for (let i = 0; i < n; i++) e = diffIndexed(e, x);
     return e;
   }
+  if (x instanceof ExtensionExpr && !x.isScalar && n > 0 && diffHooks.array) return diffHooks.array(e, x, n);
   // SymPy: a variable that is not a scalar (is_scalar = False) keeps the derivative unevaluated
   if (x instanceof ExtensionExpr && !x.isScalar && e.has(x)) return derivative(e, [[x, n]]);
   // differentiate with respect to an expression such as f(x): treat it as a symbol

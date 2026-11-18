@@ -151,3 +151,10 @@ describe('berkowitz_eigenvals', () => {
     expect([...more.berkowitzEigenvals(M([[2, 1], [0, 2]]))].map(([k, v]) => `${s(k)}: ${v}`)).toEqual(['2: 2']);
   });
 });
+
+it('accepts positional elementary swap and add arguments', () => {
+  const A = Matrix.eye(3);
+  expect(s(more.elementaryRowOp(A, { op: 'n<->m', index: 0, k: 1 }))).toBe('Matrix([[0, 1, 0], [1, 0, 0], [0, 0, 1]])');
+  expect(s(more.elementaryColOp(A, { op: 'n->n+km', index: 0, k: 5, index1: 1 }))).toBe('Matrix([[1, 0, 0], [5, 1, 0], [0, 0, 1]])');
+  expect(() => more.elementaryRowOp(A, { op: 'n<->m', index: 0 })).toThrow('index2 must be given');
+});

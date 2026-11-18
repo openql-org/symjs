@@ -103,6 +103,18 @@ export function rref(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}
   return [fromRows(A, m.cols), pivots];
 }
 
+/** All zero rows follow the nonzero rows and leading entries move strictly right. */
+export function isEchelon(m: Matrix): boolean {
+  let pivotRow = 0;
+  for (let col = 0; col < m.cols && pivotRow < m.rows; col++) {
+    for (let row = pivotRow + 1; row < m.rows; row++) {
+      if (isZero(m.get(row, col)) !== true) return false;
+    }
+    if (isZero(m.get(pivotRow, col)) !== true) pivotRow++;
+  }
+  return true;
+}
+
 /** Echelon form by fraction-free cross-multiplication (SymPy echelon_form). */
 export function echelonForm(m: Matrix): Matrix {
   const A = rowsOf(m);
@@ -556,6 +568,9 @@ function isNotPositive(e: Expr): boolean {
 
 /** LDL^H decomposition: (L, D). */
 export function ldl(m: Matrix, hermitian = true): [Matrix, Matrix] {
+  if (!m.isSquare) throw new NonSquareMatrixError('Matrix must be square.');
+  if (hermitian && m.isHermitian() !== true) throw new MatrixError('Matrix must be Hermitian.');
+  if (!hermitian && !m.equalsSimplified(m.transpose())) throw new MatrixError('Matrix must be symmetric.');
   const n = m.rows;
   const L: Expr[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? S.One : S.Zero) as Expr));
   const D: Expr[] = [];
@@ -570,7 +585,9 @@ export function ldl(m: Matrix, hermitian = true): [Matrix, Matrix] {
     }
     let d: Expr = m.get(i, i);
     for (let k = 0; k < i; k++) d = add(d, mul(-1, at(Li, k), cj(at(Li, k)), at(D, k)));
-    D.push(tidy(d));
+    const pivot = tidy(d);
+    if (hermitian && isPositive(pivot) === false) throw new NonPositiveDefiniteMatrixError('Matrix must be positive-definite');
+    D.push(pivot);
   }
   return [Matrix.of(L), Matrix.diag(...D)];
 }
@@ -746,11 +763,12 @@ export function norm(m: Matrix, ord?: ExprLike | string): Expr {
   throw new RangeError(`norm: unsupported order ${String(ord)}`);
 }
 
-/** Moore-Penrose pseudo-inverse (full rank matrices). */
+/** Moore-Penrose pseudo-inverse via a full rank factorization. */
 export function pinv(m: Matrix): Matrix {
-  const H = m.adjoint();
-  if (m.rows >= m.cols) return H.mul(m).inv().mul(H).map(tidy);
-  return H.mul(m.mul(H).inv()).map(tidy);
+  const [B, C] = rankDecomposition(m);
+  if (B.cols === 0) return Matrix.zeros(m.cols, m.rows);
+  const BH = B.adjoint(), CH = C.adjoint();
+  return CH.mul(C.mul(CH).inv()).mul(BH.mul(B).inv()).mul(BH).map(tidy);
 }
 
 export function jacobian(X: Matrix, Y: Matrix | readonly Expr[]): Matrix {
@@ -848,7 +866,7 @@ export function companion(p: readonly Expr[] | { allCoeffs(): Expr[]; toString()
   return Matrix.fromFunction(n, n, (i, j) => (j === n - 1 ? mul(-1, at(coeffs, n - i)) : i === j + 1 ? 1 : 0));
 }
 
-/** Permanent of a square matrix (Laplace expansion). */
+/** Rectangular permanent by subset dynamic programming of the Laplace recurrence. */
 export function permanent(mIn: Matrix): Expr {
   let m = mIn;
   let [r, c] = m.shape;
@@ -858,9 +876,22 @@ export function permanent(mIn: Matrix): Expr {
   }
   if (r === 0) return S.One;
   if (r === 1) return add(...m.row(0).data);
-  const terms: Expr[] = [];
-  for (let j = 0; j < c; j++) terms.push(mul(m.get(0, j), permanent(m.minor(0, j))));
-  return add(...terms);
+  const cache = new Map<bigint, Expr>();
+  const visit = (row: number, used: bigint): Expr => {
+    if (row === r) return S.One;
+    const cached = cache.get(used);
+    if (cached !== undefined) return cached;
+    const terms: Expr[] = [];
+    for (let col = 0; col < c; col++) {
+      const bit = 1n << BigInt(col), entry = m.get(row, col);
+      if ((used & bit) !== 0n || isExactZero(entry)) continue;
+      terms.push(mul(entry, visit(row + 1, used | bit)));
+    }
+    const result = add(...terms);
+    cache.set(used, result);
+    return result;
+  };
+  return visit(0, 0n);
 }
 
 /** SymPy connected_components / strongly_connected_components of a graph or of a matrix's nonzero pattern (one definition, in utilities). */

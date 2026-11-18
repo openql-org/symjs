@@ -703,3 +703,42 @@ it('matrix norm aliases, zero normalization, vector Jacobians and dependent orth
 it('rejects normalization of a matrix that is not a vector', () => {
   expect(() => L.normalized(Matrix.eye(2))).toThrow(sj.ShapeError);
 });
+
+it('recognizes echelon form including empty shapes and symbolic pivots', () => {
+  for (const m of [Matrix.zeros(0, 3), Matrix.zeros(3, 0), Matrix.zeros(2, 3), M([[0, x, 1], [0, 0, 2], [0, 0, 0]])]) {
+    expect(L.isEchelon(m)).toBe(true);
+  }
+  for (const m of [M([[0, 1], [1, 0]]), M([[1, 0], [x, 1]]), M([[0, 0], [0, 1]])]) {
+    expect(L.isEchelon(m)).toBe(false);
+  }
+});
+
+it('validates LDL symmetry and positive definite Hermitian pivots', () => {
+  expect(() => L.ldl(M([[1, 2]]))).toThrow(NonSquareMatrixError);
+  expect(() => L.ldl(M([[1, 2], [0, 1]]))).toThrow('Hermitian');
+  expect(() => L.ldl(M([[1, 2], [0, 1]]), false)).toThrow('symmetric');
+  expect(() => L.ldl(M([[1, 0], [0, -1]]))).toThrow(NonPositiveDefiniteMatrixError);
+  const tiny = Rational.of(1n, 10n ** 400n);
+  expect(L.ldl(M([[tiny]]))[1].get(0, 0).equals(tiny)).toBe(true);
+  const A = M([[1, sj.I], [sj.I, -1]]);
+  const [lower, diagonal] = L.ldl(A, false);
+  expect(lower.mul(diagonal).mul(lower.T).equals(A)).toBe(true);
+});
+
+it('computes Moore-Penrose inverses of deficient and zero matrices', () => {
+  for (const A of [M([[1, 2], [2, 4]]), M([[1, sj.I], [2, sj.mul(2, sj.I)]]), Matrix.zeros(2, 3), Matrix.zeros(0, 2)]) {
+    const P = L.pinv(A);
+    expect([P.rows, P.cols]).toEqual([A.cols, A.rows]);
+    expect(A.mul(P).mul(A).equalsSimplified(A)).toBe(true);
+    expect(P.mul(A).mul(P).equalsSimplified(P)).toBe(true);
+    expect(A.mul(P).adjoint().equalsSimplified(A.mul(P))).toBe(true);
+    expect(P.mul(A).adjoint().equalsSimplified(P.mul(A))).toBe(true);
+  }
+});
+
+it('evaluates permanents without enumerating every permutation', () => {
+  expect(s(L.permanent(Matrix.ones(12, 12)))).toBe('479001600');
+  expect(s(L.permanent(Matrix.ones(12, 12).sub(Matrix.eye(12))))).toBe('176214841');
+  expect(s(L.permanent(M([[0, 0], [0, 0]])))).toBe('0');
+  expect(s(L.permanent(M([[1, 2, 3], [4, 5, 6]])))).toBe('58');
+});

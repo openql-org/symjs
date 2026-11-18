@@ -233,3 +233,23 @@ it('nests permutations through array sums and normalizes block permutations', ()
 it('preserves symbolic reshape constraints until dimensions are known', () => {
   expect(new Reshape(A, [n, 2]).shape.map(str)).toEqual(['n', '2']);
 });
+
+it('distributes contractions and products over sums and lifts factor permutations', () => {
+  const expressions = [
+    new TP(new ArrayAdd(A, B), M),
+    new C(new ArrayAdd(A, B), [0, 1]),
+    new TP(new P(A, [1, 0]), B),
+    new C(new TP(new P(A, [1, 0]), B), [1, 2]),
+  ];
+  for (const expression of expressions) {
+    const result = explicitArray(expression.doit()), original = expression.asExplicit();
+    if (!(result instanceof SymArray)) {
+      expect(str(expand(sub(result, original)))).toBe('0');
+      continue;
+    }
+    const actual = result;
+    const expected = cast(original, SymArray);
+    expect(actual.shape).toEqual(expected.shape);
+    actual.flatElements().forEach((value, i) => expect(str(expand(sub(value, at(expected.flatElements(), i))))).toBe('0'));
+  }
+});

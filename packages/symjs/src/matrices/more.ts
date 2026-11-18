@@ -429,12 +429,12 @@ function elementary(M: Matrix, o: ElementaryOp, onCols: boolean): Matrix {
     R = Matrix.fromFunction(A.rows, A.cols, (i, j) => (i === r ? mul(k, A.get(i, j)) : A.get(i, j)));
   } else if (op === 'n<->m') {
     const r1 = norm1(o.index1 ?? o.index, 'index1');
-    const r2 = norm1(o.index2, 'index2');
+    const r2 = norm1(o.index2 ?? (o.k === undefined ? undefined : Number(sympify(o.k).toNumber())), 'index2');
     if (r1 === r2) throw new RangeError(`For a ${kind} operation 'n<->m' you must provide two different ${kind}s`);
     R = Matrix.fromFunction(A.rows, A.cols, (i, j) => A.get(i === r1 ? r2 : i === r2 ? r1 : i, j));
   } else {
     const r = norm1(o.index ?? o.index1, 'index');
-    const r2 = norm1(o.index2, 'index2');
+    const r2 = norm1(o.index2 ?? o.index1, 'index2');
     if (r === r2) throw new RangeError(`For a ${kind} operation 'n->n+km' \`${kind}\` and \`${kind}2\` must be different.`);
     const k = sympify(o.k ?? 1);
     R = Matrix.fromFunction(A.rows, A.cols, (i, j) => (i === r ? add(A.get(i, j), mul(k, A.get(r2, j))) : A.get(i, j)));

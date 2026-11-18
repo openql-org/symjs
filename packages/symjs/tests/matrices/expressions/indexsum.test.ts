@@ -72,3 +72,17 @@ describe('remaining branches (SymPy 1.14)', () => {
     expect(() => fromIndexSummation(Sum(mul(An.at(i, j), Bn.at(j, j)), [i, 0, N.sub(1)], [j, 0, N.sub(1)]))).toThrow('unsupported index structure');
   });
 });
+
+it('matches the requested first index by symbolic value', async () => {
+  const { Sym } = await import('../../../src');
+  const row = new Sym('i', { integer: true });
+  const copy = new Sym('i', { integer: true });
+  const column = new Sym('k', { integer: true });
+  const inner = new Sym('j', { integer: true });
+  const A = MatrixSymbol('A', 3, 3), B = MatrixSymbol('B', 3, 3);
+  expect(row).not.toBe(copy);
+  expect(row.key).toBe(copy.key);
+  const entries = Sum(mul(A.at(row, inner), B.at(inner, column)), [inner, 0, 2]);
+  expect(s(fromIndexSummation(entries, copy))).toBe('A*B');
+  expect(s(fromIndexSummation(entries, new Sym('k', { integer: true })))).toBe('B.T*A.T');
+});

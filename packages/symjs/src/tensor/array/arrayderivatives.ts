@@ -9,11 +9,11 @@ import { callableClass } from '../../core/callable';
 import { sympify } from '../../core/ops';
 import { NoMatch, isNoMatch, type NoMatchResult } from '../../core/truth';
 import { NotImplementedError } from '../../core/errors';
-import { diff } from '../../calculus/diff';
+import { diff, diffHooks } from '../../calculus/diff';
 import { Matrix } from '../../matrices/matrix';
 import { Identity, ImmutableMatrixNode, MatrixExpr, MatrixSymbolNode, ZeroMatrixNode } from '../../matrices/expressions/matexpr';
 import { NDimArray, deriveByArray } from '../ndimarray';
-import { ArrayExpr, getShape } from './expressions/arrayexpressions';
+import { ArrayExpr, ArrayContraction, getShape } from './expressions/arrayexpressions';
 import { arrayDerive } from './expressions/arrayexprderivatives';
 import { convertArrayToMatrix } from './expressions/fromarraytomatrix';
 
@@ -52,7 +52,16 @@ function once(expr: Expr, variable: Expr): Expr | NoMatchResult {
   if (variable instanceof MatrixExpr || variable instanceof ArrayExpr) {
     // SymPy retains independent symbolic matrix derivatives unevaluated.
     if (!scalar(expr) && !expr.has(variable)) return NoMatch;
-    try { return convertArrayToMatrix(arrayDerive(expr, variable)); }
+    try {
+      let derived = arrayDerive(expr, variable);
+      const dims = getShape(derived);
+      const singleton = dims.flatMap((dim, i) => dim.key === S.One.key ? [i] : []);
+      if (dims.length > 2 && singleton.length >= dims.length - 2 && dims.length % 2 === 0) {
+        const removed = singleton.slice(-(dims.length - 2));
+        derived = new ArrayContraction(derived, ...Array.from({ length: removed.length / 2 }, (_, i) => [at(removed, 2 * i), at(removed, 2 * i + 1)])).doit();
+      }
+      return convertArrayToMatrix(derived);
+    }
     catch (error) { if (error instanceof NotImplementedError) return NoMatch; throw error; }
   }
   return NoMatch;
@@ -118,3 +127,6 @@ function create(expr: ExprLike | Matrix, ...spec: (ArrayDerivativeVariable | Arr
 /** SymPy ArrayDerivative; use evaluate: true or doit() to compute its value. */
 export const ArrayDerivative = /* @__PURE__ */ callableClass(ArrayDerivativeNode, create);
 export type ArrayDerivative = ArrayDerivativeNode;
+
+// Array derivatives are loaded above scalar calculus and register their dispatch here.
+diffHooks.array = (expr, variable, count) => ArrayDerivative(expr, [variable, count], { evaluate: true });

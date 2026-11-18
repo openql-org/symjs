@@ -95,7 +95,7 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
     const ordered = [...free].sort((x, y) => compareKeys(sortKey(x), sortKey(y)));
     const [o0, o1] = pair(ordered);
     let start = first ?? o0;
-    let stop = start === o0 ? o1 : o0;
+    let stop = same(start, o0) ? o1 : o0;
     if (first === undefined && last !== undefined) {
       stop = last;
       start = same(last, o0) ? o1 : o0;

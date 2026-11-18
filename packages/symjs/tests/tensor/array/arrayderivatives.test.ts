@@ -106,3 +106,15 @@ it('forms Jacobians of explicit vectors of matrix and array entries', () => {
   }
   expect(() => evaluate(SymArray([x]), SymArray([array]))).toThrow('cannot derive by this array');
 });
+
+it('reduces singleton axes in vector Jacobians and scalar matrix gradients', async () => {
+  const { diff, MatPow, Rational, Identity } = await import('../../../src');
+  const v = MatrixSymbol('v', 3, 1), w = MatrixSymbol('w', 3, 1), A = MatrixSymbol('A', 3, 3);
+  expect(str(diff(MatMul(A, v), v))).toBe('A.T');
+  expect(str(diff(MatMul(Transpose(v), w), v))).toBe('w');
+  expect(str(diff(MatMul(Transpose(v), v), v))).toBe('2*v');
+  expect(str(diff(MatMul(A, v), A))).toContain('ArrayTensorProduct');
+  const root = MatPow(MatMul(Transpose(v), w), Rational.of(1, 2));
+  expect(str(diff(root, v))).toBe('(1/2)*w*(v.T*w)**(-1/2)');
+  expect(str(diff(MatMul(Identity(3), v), v))).toBe('I');
+});

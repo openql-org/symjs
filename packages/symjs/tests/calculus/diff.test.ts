@@ -289,3 +289,36 @@ it('differentiates indefinite integrals and special functions with constant para
   expect(() => sj.diff(sj.Sum(a.at(i), [i, a.at(i), 3]), a.at(j))).toThrow(NotImplementedError);
   expect(() => sj.diff(sj.Sum(a.at(i), [i, 0, a.at(i)]), a.at(j))).toThrow(NotImplementedError);
 });
+
+it('retains the scalar-only fallback when the array layer is not registered', async () => {
+  const { diffHooks } = await import('../../src/calculus/diff');
+  const array = diffHooks.array;
+  delete diffHooks.array;
+  try {
+    const A = sj.MatrixSymbol('A', 2, 2);
+    expect(diff(A, A)).toBeInstanceOf(Derivative);
+    expect(diff(x, A)).toBe(sj.S.Zero);
+  } finally {
+    diffHooks.array = array;
+  }
+});
+
+it('handles unavailable extension and function derivatives and bound indices', async () => {
+  class Formal extends sj.ExtensionExpr {
+    constructor() { super('Formal', [x]); }
+    withArgs(): sj.Expr { return this; }
+  }
+  expect(() => diff(new Formal(), x)).toThrow(NotImplementedError);
+  const { fnPartials } = await import('../../src/calculus/diff');
+  const saved = fnPartials.sin;
+  fnPartials.sin = () => undefined;
+  try {
+    expect(diff(new sj.Fn('sin', [sj.S.One, x]), x)).toBeInstanceOf(Derivative);
+  } finally {
+    if (saved) fnPartials.sin = saved;
+    else delete fnPartials.sin;
+  }
+  expect(diff(new Integral([x, x, sj.S.Zero, sj.S.One]), x)).toBe(sj.S.Zero);
+  const base = new sj.IndexedBase('A');
+  expect(() => diff(base.at(x), base.at(x, y))).toThrow('different number of indices');
+});

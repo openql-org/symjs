@@ -57,3 +57,25 @@ it('keeps captured matrix-dependent elementwise parameters in a formal derivativ
   expect(() => arrayDerive(expr, X)).toThrow(NotImplementedError);
   expect(ArrayDerivative(expr, X, { evaluate: true })).toBeInstanceOf(ArrayDerivativeNode);
 });
+
+it('differentiates scalar combinations of traces by the array chain rule', async () => {
+  const { add, pow, diff, cos } = await import('../../../../src');
+  const t = Trace(M), u = Trace(N);
+  expect(str(diff(t, M))).toBe('I');
+  expect(str(diff(Trace(MatMul(M, N)), M))).toBe('N.T');
+  expect(str(diff(Trace(MatMul(M, M)), M))).toBe('2*M.T');
+  for (const expression of [add(t, u), mul(t, t, u), pow(t, 3), sin(t)]) {
+    const actual = explicitArray(arrayDerive(expression, M));
+    const expected = M.asExplicit().map((entry) => diff(expression, entry));
+    expect(str(actual)).toBe(str(new (await import('../../../../src')).SymArray(expected.toArray())));
+  }
+  expect(str(diff(sin(t), M))).toBe(str(mul(cos(t), diff(t, M))));
+  expect(arrayDerive(mul(u, u), M)).toBeInstanceOf(ZeroArray);
+});
+
+it('distributes the derivative of a product with a matrix sum', async () => {
+  const { diff } = await import('../../../../src');
+  const expression = Trace(MatMul(MatAdd(M, N), MatAdd(M, N)));
+  expect(str(diff(expression, M))).toBe('2*M.T + 2*N.T');
+  expect(str(diff(MatAdd(M, MatMul(M, M)), M))).toContain('ArrayAdd');
+});

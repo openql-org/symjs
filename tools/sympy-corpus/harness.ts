@@ -1466,8 +1466,10 @@ const asExpr = (v: unknown): Expr => {
   if (typeof v === 'boolean') return v ? S.true : S.false;
   throw new Unsupported(`expected an expression, got ${fmt(v)}`);
 };
+const asMatrixExpression = (v: unknown): Expr => v instanceof Matrix ? sj.ImmutableMatrix(v) : asExpr(v);
 /** Tuples and dictionaries embedded in expressions need symbolic containers. */
 function expressionContainer(v: unknown): Expr {
+  if (v instanceof Matrix) return sj.ImmutableMatrix(v);
   if (v instanceof JsTuple) return sj.Tuple(...v.items.map(expressionContainer));
   if (v instanceof JsSet) return sj.finiteSet(...v.items.map(expressionContainer));
   if (v instanceof JsDict) return sj.Dict(v.entries.map(([k, x]) => [expressionContainer(k), expressionContainer(x)]));
@@ -1648,15 +1650,15 @@ function diffArgs(e: Expr, rest: unknown[]): Expr {
 }
 
 function subsArgs(e: Expr, args: unknown[]): Expr {
-  if (args.length === 2) return e.subs(asExpr(args[0]), asExpr(args[1]));
+  if (args.length === 2) return e.subs(asMatrixExpression(args[0]), asMatrixExpression(args[1]));
   const a = args[0];
-  if (a instanceof JsDict) return sj.subs(e, new Map(a.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const)));
+  if (a instanceof JsDict) return sj.subs(e, new Map(a.entries.map(([k, v]) => [asMatrixExpression(k), asMatrixExpression(v)] as const)));
   if (a instanceof JsTuple || a instanceof JsIterator) {
     // sequential substitution like SymPy (an iterator of pairs too)
     let out = e;
     for (const p of a.items) {
       if (!(p instanceof JsTuple)) throw new Unsupported('subs pair');
-      out = out.subs(asExpr(p.items[0]), asExpr(p.items[1]));
+      out = out.subs(asMatrixExpression(p.items[0]), asMatrixExpression(p.items[1]));
     }
     return out;
   }
@@ -2252,15 +2254,15 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   Add: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
-    if (kw['evaluate'] === false) return new sj.Add(args.map(asExpr));
-    return sj.add(...args.map(asExpr));
+    if (kw['evaluate'] === false) return new sj.Add(args.map(asMatrixExpression));
+    return sj.add(...args.map(asMatrixExpression));
   },
   Mul: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
     if (kw['evaluate'] === false) {
-      return new sj.Mul(args.map(asExpr));
+      return new sj.Mul(args.map(asMatrixExpression));
     }
-    return sj.mul(...args.map(asExpr));
+    return sj.mul(...args.map(asMatrixExpression));
   },
   Interval: (args, kw) => (noKw(kw), sj.interval(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? false : toJs(args[2], false) as boolean, args[3] === undefined ? false : toJs(args[3], false) as boolean)),
   // a Python set as an element is a FiniteSet (SymPy sympify)
@@ -3544,6 +3546,16 @@ export const ADAPTERS: Record<string, Adapter> = {
     return Matrix.fromFunction(r, c, (i, j) => m.get(`${i},${j}`) ?? 0);
   }, kw),
   '.copy': matrixMethod((m) => m),
+  '.row_list': (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.MutableSparseMatrix || self instanceof sj.ImmutableSparseMatrix)) throw new Unsupported('expected a sparse Matrix');
+    return new JsList(self.RL.map((entry) => new JsTuple(entry)));
+  },
+  '.col_list': (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.MutableSparseMatrix || self instanceof sj.ImmutableSparseMatrix)) throw new Unsupported('expected a sparse Matrix');
+    return new JsList(self.CL.map((entry) => new JsTuple(entry)));
+  },
   '.flat': matrixMethod((m) => new JsList(m.data)),
   '.values': matrixMethod((m) => new JsList(m.data.filter((x) => !(x instanceof sj.Rational && x.isZero)))),
   '.is_Identity': (_a, kw, self) => (noKw(kw), self instanceof sj.ImmutableMatrix ? self.isIdentity : (self as Matrix).isIdentity),
@@ -3615,11 +3627,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.LUsolve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
   '.QRsolve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
   '.LDLsolve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
-  '.cholesky_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.cholesky_solve': matrixMethod((m, [b]) => sj.choleskySolve(m, b as Matrix)),
   '.cramer_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
-  '.upper_triangular_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
-  '.lower_triangular_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
-  '.diagonal_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.upper_triangular_solve': matrixMethod((m, [b]) => sj.upperTriangularSolve(m, b as Matrix)),
+  '.lower_triangular_solve': matrixMethod((m, [b]) => sj.lowerTriangularSolve(m, b as Matrix)),
+  '.diagonal_solve': matrixMethod((m, [b]) => sj.diagonalSolve(m, b as Matrix)),
   '.gauss_jordan_solve': (_args, kw, self) => {
     const b = _args[0] as Matrix;
     return new JsTuple(kw['freevar'] === true ? sj.gaussJordanSolve(self as Matrix, b, { freevar: true }) : sj.gaussJordanSolve(self as Matrix, b));
@@ -4537,8 +4549,24 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
     const test = kw['iszerofunc'];
     const [r, p] = sj.rref(self, test instanceof JsLambda ? { iszerofunc: (e) => test.call(e) === S.true } : {});
-    return new JsTuple([r, new JsTuple(p)]);
+    return kw['pivots'] === false ? r : new JsTuple([r, new JsTuple(p)]);
   },
+  block_collapse: (args, kw) => (noKw(kw), sj.blockCollapse(expressionContainer(args[0]))),
+  only_squares: (args, kw) => {
+    noKw(kw);
+    return new JsList(sj.onlySquares(args.map((arg) => {
+      const matrix = asMatrixExpression(arg);
+      if (!(matrix instanceof sj.MatrixExpr)) throw new TypeError('expected a matrix expression');
+      return matrix;
+    })));
+  },
+  '.identity': (_args, kw, self) => {
+    noKw(kw);
+    if (self instanceof TypeRef && self.name === 'MatAdd') return sj.MatAdd();
+    if (self instanceof TypeRef && self.name === 'MatMul') return sj.MatMul();
+    throw new Unsupported('matrix expression identity');
+  },
+  '.is_echelon': matrixMethod((m) => sj.isEchelon(m)),
   '.echelon_form': matrixMethod((m) => sj.echelonForm(m)),
   '.rank': matrixMethod((m) => sj.rank(m)),
   '.nullspace': matrixMethod((m) => new JsList(sj.nullspace(m))),
@@ -4554,7 +4582,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
     return sj.cholesky(self, kw['hermitian'] === undefined ? true : Boolean(kw['hermitian']));
   },
-  '.LDLdecomposition': matrixMethod((m) => new JsTuple(sj.ldl(m))),
+  '.LDLdecomposition': (args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    return new JsTuple(sj.LDLdecomposition(self, (kw['hermitian'] ?? args[0]) !== false));
+  },
   '.LUdecomposition': matrixMethod((m) => {
     const [L, U, p] = sj.luDecomposition(m);
     return new JsTuple([L, U, new JsList(p.map((x) => new JsList(x)))]);
@@ -4865,7 +4896,7 @@ Object.assign(ADAPTERS, {
     if (!(printer instanceof sj.StrPrinter)) throw new Unsupported('table printer');
     return sj.table(self as Matrix, { ...kw, printer: (e) => printer.doprint(e) } as sj.TableOptions);
   },
-  '.to_DM': (_args, kw, self) => sj.toDM(self as Matrix, { field: Boolean(kw['field']) }),
+  '.to_DM': (args, kw, self) => sj.toDM(self as Matrix, { field: Boolean(kw['field']), ...((kw['domain'] ?? args[0]) instanceof JsDomain ? { domain: ((kw['domain'] ?? args[0]) as JsDomain).domain as sj.Domain } : {}) }),
   '.wilkinson': (args, kw) => (noKw(kw), new JsTuple(sj.wilkinson(intArg(args[0])))),
   MatrixBase: (args, kw) => ADAPTERS['Matrix']!(args, kw),
   randMatrix: (args, kw) => {
