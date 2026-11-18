@@ -7,6 +7,9 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { Sym, parse } from '../../src';
 import { Expr } from '../../src/core/nodes';
+import { readFileSync } from 'node:fs';
+import { runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import type { TestCase } from '../../../../tools/sympy-corpus/tests-harness';
 
 const P = (s: string) => parse(s);
 const V = (s: string): Sym => {
@@ -15,6 +18,20 @@ const V = (s: string): Sym => {
   return v;
 };
 const [x, y] = [V('x'), V('y')];
+
+describe('rationalAlgorithm', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/tests-corpus/series.json', import.meta.url), 'utf8'));
+  it.each(cases.filter((c) => c.fn === 'rational_algorithm'))('matches the upstream coefficient formula at line $line', (c) => {
+    expect(['pass', 'equivalent']).toContain(runTestCase(c).status);
+  });
+  it('separates Laurent terms and rejects finite polynomials', () => {
+    const k = V('k');
+    const result = sj.rationalAlgorithm(P('1/x**2 + 1/(1-x)'), x, k);
+    expect(Array.isArray(result) ? result.map(String) : result).toEqual(['1', 'x**(-2)', '0']);
+    expect(sj.rationalAlgorithm(P('x + 1'), x, k)).toBe(sj.NoMatch);
+    expect(sj.rationalAlgorithm(P('cos(x)'), x, k, 0)).toBe(sj.NoMatch);
+  });
+});
 const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(show).join(', ')}]` : v instanceof Expr ? v.toString() : JSON.stringify(v));
 
 describe('fps without a variable', () => {

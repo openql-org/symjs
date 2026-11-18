@@ -19,6 +19,7 @@ import { isPositive, isReal } from '../core/assumptions';
 import { at, cast, first, getOrThrow } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
+import { asIndependent } from '../core/methods';
 
 /** Array.isArray does not narrow a readonly array union. */
 const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => Array.isArray(v);
@@ -30,6 +31,13 @@ const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => 
 export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): Expr {
   const e = sympify(ex);
   if (e.equals(S.Zero)) return S.Zero;
+  if (e === S.NaN) return e;
+  if (e instanceof Order) {
+    if (xIn === undefined) return e;
+    const previous = e.args.length > 1 ? at(e.args, -1) : S.Zero;
+    if (!previous.equals(sympify(x0))) throw new NotImplementedError('Order at different points');
+    return O(e.expr, [...new Map([...orderVariables(e), ...(isSymList(xIn) ? xIn : [xIn])].map((v) => [v.key, v])).values()], x0);
+  }
   const p = sympify(x0);
   const syms = [...e.freeSymbols()].filter((s) => s instanceof Sym);
   const vars = isSymList(xIn) ? xIn : xIn === undefined && syms.length > 1 ? (sortSyms(syms)) : undefined;
@@ -37,27 +45,40 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
   const x: Sym | undefined = isSymList(xIn) ? xIn[0] : xIn;
   const v = x ?? (syms.length === 1 ? syms[0] : undefined);
   const atZero = p instanceof Rational && p.isZero;
-  if (v !== undefined && p instanceof Special && p.name === 'oo' && syms.length === 1) {
+  if (v !== undefined && e instanceof Pow && e.exp.has(v) && !isE(e.base)) return O(exp(mul(e.exp, log(e.base))), v, p);
+  if (v !== undefined && p instanceof Special && (p.name === 'oo' || p.name === '-oo')) {
     // leading behaviour at infinity: substitute x = 1/t, t -> 0+
     try {
       const t = new Sym('_o', { positive: true });
       // (the coefficients of an expansion are free of t)
-      const lead = new Expander(t).leading(subs(e, [[v, pow(t, -1)]]));
-      return new Order([pow(v, neg(lead.e)), v, p]);
+      const expander = new Expander(t);
+      const lead = expander.leading(subs(e, [[v, mul(p.name === 'oo' ? 1 : -1, pow(t, -1))]]));
+      const logarithms = asIndependent(lead.c, [expander.L], { asAdd: false })[1];
+      return new Order([mul(pow(v, neg(lead.e)), subs(logarithms, [[expander.L, log(pow(v, -1))]])), v, p]);
     } catch {
-      // keep the expression as given
+      if (e instanceof Add) {
+        const combined = add(...e.args.map((term) => O(term, v, p)));
+        if (combined instanceof Order) return combined;
+      }
     }
   }
   if (v === undefined || p instanceof Special) {
-    return new Order(x === undefined || atZero ? [e] : [e, x, p]);
+    const reduced = e.freeSymbols().size === 0 ? S.One : e;
+    return new Order(x === undefined || atZero ? [reduced] : [reduced, x, p]);
   }
   let reduced: Expr = e;
   try {
     const t = new Sym('_o');
-    const lead = new Expander(t).leading(subs(e, [[v, add(p, t)]]));
-    reduced = pow(atZero ? v : add(v, mul(-1, p)), lead.e);
+    const expander = new Expander(t);
+    const lead = expander.leading(subs(e, [[v, add(p, t)]]));
+    const logarithms = asIndependent(lead.c, [expander.L], { asAdd: false })[1];
+    const displacement = atZero ? v : add(v, mul(-1, p));
+    reduced = mul(pow(displacement, lead.e), subs(logarithms, [[expander.L, log(displacement)]]));
   } catch {
-    // keep the expression as given
+    if (e instanceof Add) {
+      const combined = add(...e.args.map((term) => O(term, v, p)));
+      if (combined instanceof Order) return combined;
+    }
   }
   return atZero && reduced.has(v) ? new Order([reduced]) : new Order([reduced, v, p]);
 }
@@ -187,7 +208,19 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   const body = add(...terms);
   if (ps.order.value >= 1e5) return body;
   const lin = x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
-  const ord = x0 instanceof Rational && x0.isZero ? new Order([pow(x, ps.order)]) : new Order([pow(lin, ps.order), x, x0]);
+  let remainder = pow(lin, ps.order);
+  if (ps.terms.some((term) => term.c.has(ex0.L))) {
+    const boundary = ex0.ser(shifted, Rational.of(ps.order.p + ps.order.q, ps.order.q)).terms.find((term) => term.e.equals(ps.order));
+    if (boundary?.c.has(ex0.L)) {
+      let logarithms = asIndependent(boundary.c, [ex0.L], { asAdd: false })[1];
+      if (logarithms instanceof Pow && logarithms.exp instanceof Rational) {
+        if (logarithms.exp.isNegative) logarithms = S.One;
+        else if (e instanceof Pow && isE(e.base) && e.exp.has(x)) logarithms = pow(ex0.L, Math.max(n, logarithms.exp.value));
+      }
+      remainder = mul(remainder, back(logarithms));
+    }
+  }
+  const ord = x0 instanceof Rational && x0.isZero ? new Order([remainder]) : new Order([remainder, x, x0]);
   return add(body, ord);
 }
 
@@ -444,24 +477,58 @@ function orderVariables(o: Order): Sym[] {
 }
 
 impl.orderContains = (o, e) => {
-  const variables = orderVariables(o);
+  let variables = orderVariables(o);
   const point = o.args.length > 1 ? at(o.args, -1) : S.Zero;
   const other = e instanceof Order ? e.expr : e;
   const otherVariables = e instanceof Order ? orderVariables(e) : [...e.freeSymbols()].filter((s) => s instanceof Sym);
-  if (otherVariables.some((v) => !variables.some((w) => w.equals(v)))) return false;
+  if (other.has(S.NaN)) return false;
+  if (!variables.length && other.freeSymbols().size > 0) variables = otherVariables;
+  if (e instanceof Order && variables.length && otherVariables.length && !variables.some((v) => otherVariables.some((w) => w.equals(v)))) return 'unknown';
+  if (!variables.length && otherVariables.length) return false;
   if (e instanceof Order && e.args.length > 1 && !at(e.args, -1).equals(point)) return 'unknown';
   if (other.equals(S.Zero)) return true;
+  if (o.expr.equals(S.Zero)) return false;
   if (!variables.length) return ![S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((v) => other.has(v));
-  if (variables.length > 1) return 'unknown';
-  const ratio = impl.limit(mul(other, pow(o.expr, -1)), first(variables), point, '+');
-  if (ratio instanceof Special) return ratio.name === 'nan' ? 'unknown' : false;
-  return ratio.freeSymbols().size === 0 && ratio.kind !== 'Limit' ? true : 'unknown';
+  let result: boolean | 'unknown' = 'unknown';
+  for (const variable of variables) {
+    const ratio = impl.limit(mul(o.expr, pow(other, -1)), variable, point, '+');
+    if (ratio.has(S.NaN) || ratio.kind === 'Limit') return 'unknown';
+    const contained = !ratio.equals(S.Zero);
+    if (result !== 'unknown' && result !== contained) return 'unknown';
+    result = contained;
+  }
+  return result;
 };
 
 registerArithmetic((op, args) => {
-  if (op !== 'mul') return undefined;
-  const orders = args.filter((a): a is Order => a instanceof Order);
+  if (op === 'pow') {
+    const [base, exponent] = [at(args, 0), at(args, 1)];
+    if (!(base instanceof Order) || !(exponent instanceof Rational) || !exponent.isPositive) return undefined;
+    return O(pow(base.expr, exponent), orderVariables(base), base.args.length > 1 ? at(base.args, -1) : S.Zero);
+  }
+  const flat = op === 'add' ? args.flatMap((a) => a instanceof Add ? [...a.args] : [a]) : args;
+  if (op === 'add' && flat.some((a) => a instanceof Order && a.expr.equals(S.Zero))) return add(...flat.filter((a) => !(a instanceof Order && a.expr.equals(S.Zero))));
+  const orders = flat.filter((a): a is Order => a instanceof Order);
   if (!orders.length) return undefined;
+  if (op === 'add') {
+    const kept: Order[] = [];
+    const contains = (o: Order, e: Expr): boolean => {
+      if (o.key === e.key) return true;
+      const variables = orderVariables(o);
+      const other = e instanceof Order ? orderVariables(e) : [...e.freeSymbols()].filter((s): s is Sym => s instanceof Sym);
+      const query = variables.length === 0 && o.args.length === 1 ? new Order([o.expr, ...other, S.Zero]) : o;
+      return query.contains(e) === true;
+    };
+    for (const o of orders) {
+      if (kept.some((other) => contains(other, o))) continue;
+      for (let i = kept.length - 1; i >= 0; i--) if (contains(o, at(kept, i))) kept.splice(i, 1);
+      kept.push(o);
+    }
+    const body = add(...flat.filter((e) => !(e instanceof Order) && !kept.some((o) => contains(o, e))));
+    const terms = body.equals(S.Zero) ? [] : body instanceof Add ? [...body.args] : [body];
+    return terms.length + kept.length === 1 ? first([...terms, ...kept]) : new Add([...terms, ...kept]);
+  }
+  if (op !== 'mul') return undefined;
   const point = (o: Order): Expr => o.args.length > 1 ? at(o.args, -1) : S.Zero;
   const p = point(first(orders));
   if (orders.some((o) => !point(o).equals(p))) return undefined;

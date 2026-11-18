@@ -111,7 +111,7 @@ export class Gruntz {
   }
 
   /** Compare the growth of two mrv candidates: '<', '>' or '='. */
-  private compare(a: Expr, b: Expr, x: Sym): '<' | '>' | '=' {
+  compare(a: Expr, b: Expr, x: Sym): '<' | '>' | '=' {
     const la = isExp(a) ? a.exp : log(a);
     const lb = isExp(b) ? b.exp : log(b);
     const c = this.limitinf(mul(la, pow(lb, -1)), x);
@@ -216,6 +216,7 @@ export class Gruntz {
     if (isNegative(e)) return S.NegOne;
     if (e instanceof Rational && e.isZero) return S.Zero;
     if (!e.has(x)) return constSign(e);
+    if (e.key === x.key) return S.One;
     if (e instanceof Mul) {
       const [a, ...rest] = e.args;
       return mul(this.sign(defined(a, 'factor'), x), this.sign(mul(...rest), x));

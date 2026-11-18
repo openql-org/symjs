@@ -2800,6 +2800,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       n,
       ((args, kw) => {
         noKw(kw);
+        if (n === 'sign' && args.length === 2) return new sj.Gruntz().sign(asExpr(args[0]), asSym(args[1]));
         return sj.fn(n, args.flatMap((a) => (a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)])));
       }) as Adapter,
     ]),
@@ -5586,6 +5587,16 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.category === 'series') {
+    if (c.fn === 'compare' && c.args?.length === 3) return (args, kw) => {
+      noKw(kw);
+      return new sj.Gruntz().compare(asExpr(args[0]), asExpr(args[1]), asSym(args[2]));
+    };
+    if (c.fn === 'mrv_leadterm') return (args, kw) => {
+      noKw(kw);
+      return new JsTuple(new sj.Gruntz().mrvLeadterm(asExpr(args[0]), asSym(args[1])));
+    };
+  }
   if (c.self?.t === 'Tuple' || c.args?.some((arg) => arg.t === 'Tuple')) {
     // tuple + tuple concatenates and tuple + number raises; an operand with its own addition (a Point plus a
     // coordinate tuple) keeps it
