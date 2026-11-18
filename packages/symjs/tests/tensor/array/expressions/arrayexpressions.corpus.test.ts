@@ -259,7 +259,7 @@ describe("sympy/tensor/array/expressions/tests/test_array_expressions.py", () =>
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_array_expressions_no_canonicalization:629", () => {
+  it("test_array_expressions_no_canonicalization:629", () => {
     const k = new Sym('k');
     expect(sympyStr(doit(new ArrayTensorProduct(new PermuteDims(new ArraySymbol('M', [k, k]), [1, 0]), new ArraySymbol('N', [k, k]))))).toBe('PermuteDims(ArrayTensorProduct(M, N), (3)(0 1))');
   });

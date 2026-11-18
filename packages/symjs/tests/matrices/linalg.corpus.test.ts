@@ -1400,7 +1400,7 @@ describe("sympy/matrices/tests/test_decompositions.py", () => {
   it("test_QR_trivial:276", () => {
     expect(sympyStr(Matrix.of([[rational(0), rational(0), rational(0)], [rational(0), rational(0), rational(0)], [rational(0), rational(0), rational(0)], [rational(1), rational(2), rational(3)]]).T)).toBe('Matrix([[0, 0, 0, 1], [0, 0, 0, 2], [0, 0, 0, 3]])');
   });
-  it.fails("test_LDLdecomposition:324", () => {
+  it("test_LDLdecomposition:324", () => {
     expect(() => LDLdecomposition(Matrix.of([[rational(1)], [rational(2)]]))).toThrow(NonSquareMatrixError);
   });
   // a function that did not come from the library
@@ -1447,7 +1447,7 @@ describe("sympy/matrices/tests/test_decompositions.py", () => {
   it("test_LDLdecomposition:343", () => {
     expect(sympyStr(Matrix.of([[rational(4), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), new Add([rational(11), new Mul([rational(-1), new Add([rational(-1), I, new Mul([rational(-2), I, new Add([rational(1, 2), new Mul([rational(1, 2), I])])])]), new Add([rational(-1), new Mul([rational(-1), I]), new Mul([rational(2), I, new Add([rational(1, 2), new Mul([rational(-1, 2), I])])])])]), new Mul([rational(-4), new Add([rational(1, 2), new Mul([rational(1, 2), I])]), new Add([rational(1, 2), new Mul([rational(-1, 2), I])])])])]]).expand())).toBe('Matrix([[4, 0, 0], [0, 1, 0], [0, 0, 9]])');
   });
-  it.fails("test_LDLdecomposition:345", () => {
+  it("test_LDLdecomposition:345", () => {
     expect(() => LDLdecomposition(new MutableSparseMatrix(2, 1, [[rational(1)], [rational(2)]]))).toThrow(NonSquareMatrixError);
   });
   // a function that did not come from the library
@@ -7082,7 +7082,7 @@ describe("sympy/matrices/tests/test_solvers.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_pinv_rank_deficient:353", () => {
+  it("test_pinv_rank_deficient:353", () => {
     expect(sympyStr(pinvSolve(Matrix.of([[rational(1), rational(0)], [rational(0), rational(0)]]), Matrix.of([[rational(3)], [rational(0)]])))).toBe('Matrix([[3], [_w1_0]])');
   });
   it("test_pinv_rank_deficient:354", () => {
@@ -7096,7 +7096,7 @@ describe("sympy/matrices/tests/test_solvers.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_pinv_rank_deficient:360", () => {
+  it("test_pinv_rank_deficient:360", () => {
     expect(sympyStr(pinvSolve(Matrix.of([[rational(1), rational(0)], [rational(0), rational(0)]]), Matrix.of([[rational(3)], [rational(1)]])))).toBe('Matrix([[3], [_w1_0]])');
   });
   it("test_pinv_rank_deficient:361", () => {

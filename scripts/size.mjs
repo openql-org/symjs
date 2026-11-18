@@ -79,7 +79,8 @@ const CASES = [
   ['solvers', 'solve', 1140],
   ['solvers', 'dsolve', 1155],
   ['sets', '*', 378],
-  ['matrices', 'Matrix', 836],
+  // Matrix differentiation loads the array contraction and derivative engines (906 KiB).
+  ['matrices', 'Matrix', 907],
   ['printing', 'pretty', 241],
   ['discrete', '*', 299],
   ['strategies', '*', 214],
@@ -107,7 +108,8 @@ const CASES = [
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2789],
+  // Array derivative dispatch and matrix reduction helpers add approximately 2 KiB.
+  ['index', '*', 2791],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

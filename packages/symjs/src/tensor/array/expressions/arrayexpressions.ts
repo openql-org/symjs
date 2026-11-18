@@ -113,6 +113,16 @@ export class ArrayTensorProduct extends ArrayExpr {
     const args = this.args.flatMap((a) => a instanceof ArrayTensorProduct ? a.args : [a]);
     if (args.length === 0) return S.One;
     if (args.length === 1) return first(args);
+    if (args.some((a) => a instanceof PermuteDims)) {
+      let offset = 0;
+      const permutation: number[] = [];
+      const factors = args.map((a) => {
+        permutation.push(...(a instanceof PermuteDims ? a.permutation.arrayForm : indices(getRank(a))).map((i) => i + offset));
+        offset += getRank(a);
+        return a instanceof PermuteDims ? a.expr : a;
+      });
+      return new PermuteDims(new ArrayTensorProduct(...factors).doit(), permutation).doit();
+    }
     // Lift contractions out of the product without changing its free axes.
     let offset = 0;
     const groups: number[][] = [];
@@ -159,6 +169,7 @@ export class ArrayContraction extends ArrayExpr {
   asExplicit(): Expr { return this.contractionIndices.length ? tensorcontraction(explicitArray(this.expr), ...this.contractionIndices) : explicitArray(this.expr); }
   override doit(): Expr {
     if (!this.contractionIndices.length) return this.expr;
+    if (this.expr instanceof ArrayAdd) return new ArrayAdd(...this.expr.args.map((a) => new ArrayContraction(a, ...this.contractionIndices).doit()));
     if (this.expr instanceof ArrayContraction) {
       const inner = this.expr, remaining = remainingAxes(getRank(inner.expr), inner.contractionIndices);
       return new ArrayContraction(inner.expr, ...inner.contractionIndices, ...this.contractionIndices.map((g) => g.map((i) => at(remaining, i)))).doit();
@@ -181,6 +192,8 @@ export class ArrayContraction extends ArrayExpr {
       return new PermuteDims(contracted, desired.map((i) => actual.indexOf(i))).doit();
     }
     if (this.expr instanceof ArrayTensorProduct) {
+      const inner = this.expr.doit();
+      if (inner.key !== this.expr.key) return new ArrayContraction(inner, ...this.contractionIndices).doit();
       const taken = new Set(this.contractionIndices.flat()), blocks = factorBlocks(this.expr);
       const order = indices(blocks.length).sort((i, j) => {
         const a = at(blocks, i).every((k) => taken.has(k)), b = at(blocks, j).every((k) => taken.has(k));
