@@ -9,6 +9,7 @@
  * entries (the DomainMatrix class itself is in polys/matrices).
  */
 
+import { constructDomain, type ConstructDomainOptions } from '../polys/constructor';
 import type { Domain } from '../polys/domains';
 import { DomainMatrix } from '../polys/matrices/domainmatrix';
 import { EXRAW } from '../polys/domains/expressionrawdomain';
@@ -21,8 +22,12 @@ export { DomainMatrix } from '../polys/matrices/domainmatrix';
  * over the given domain or the one construct_domain chooses (EXRAW instead
  * of EX), optionally its field of fractions.
  */
-export function toDM(m: Matrix, opts: { field?: boolean; domain?: Domain } = {}): DomainMatrix {
-  const dM = DomainMatrix.fromMatrix(m, { field: opts.field });
-  if (opts.domain) return dM.convertTo(opts.domain);
-  return dM.domain.toString() === 'EX' ? dM.convertTo(EXRAW) : dM;
+export function toDM(m: Matrix, opts: ConstructDomainOptions & { domain?: Domain } = {}): DomainMatrix {
+  const { domain, ...options } = opts;
+  if (domain && Object.keys(options).length) throw new TypeError('Options cannot be used with a domain');
+  const matrix = DomainMatrix.fromMatrix(m, { field: opts.field });
+  if (domain) return matrix.convertTo(domain);
+  const chosen = options.extension !== undefined || options.composite !== undefined
+    ? constructDomain(m.data, options)[0] : matrix.domain;
+  return matrix.convertTo(chosen.toString() === 'EX' ? EXRAW : chosen);
 }

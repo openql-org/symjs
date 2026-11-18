@@ -236,8 +236,7 @@ describe('meijerint_inversion', () => {
     // SymPy: None
     expect(inv(P2('(s + 1)**(-1/2)'))).toBeUndefined();
     expect(inv(P2('exp(-1/s)/sqrt(s)'))).toBeUndefined();
-    // an upper parameter exceeding a lower one by an integer: not a G-function SymPy allows
-    expect(inv(meijerg([2], [], [1], [], s))).toBeUndefined();
+    expect(() => meijerg([2], [], [1], [], s)).toThrow(RangeError);
   });
   it('a delay', () => {
     const r = meijerintInversion(mul(exp(mul(-2, s)), pow(s, R(-3, 2))), s, t);

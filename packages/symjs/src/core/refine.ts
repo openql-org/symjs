@@ -16,7 +16,7 @@
  */
 
 import type { Assumptions, ExprLike } from './nodes';
-import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym } from './nodes';
+import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, functionFactHandlers } from './nodes';
 import { add, couldExtractMinusSign, mul, pow, sympify } from './ops';
 import { mapBottomUp, xreplace } from './traverse';
 import { asRealImag } from './methods';
@@ -577,6 +577,7 @@ class Decider {
     const r = (isMinMax(e) && MIN_MAX_PREDICATES.has(name) ? torf(e.args, (a) => this.q(name, a)) : undefined)
       ?? (e instanceof Piecewise && PIECEWISE_PREDICATES.has(name) ? torf(e.pairs.map(([x]) => x), (a) => this.q(name, a)) : undefined)
       ?? this.exponentialDomain(name, e)
+      ?? (e instanceof Fn ? functionFactHandlers[e.name]?.(name, e.args, (fact, arg) => this.q(fact, arg)) : undefined)
       ?? this.numericDomain(name, e)
       ?? this.builtin(name, e);
     this.memo.set(k, r);
@@ -840,6 +841,9 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      if (isConst(b, 'E') && x instanceof Fn && x.name === 'log' && x.args.length === 1) {
+        return this.q('rational', at(x.args, 0));
+      }
       if (this.q('algebraic', e) === false) return false;
       if (isConst(b, 'E')) return undefined;
       if (isInt(x) && x.p === -1n && this.q('rational', b) === false && this.q('finite', b) === true) return false;

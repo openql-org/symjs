@@ -20,7 +20,7 @@ import { registerTableFormMatrix } from './printing/tableform';
 registerTableFormMatrix((rows) => MatrixClass.of(rows));
 
 export {
-  Matrix,
+  Matrix, classof,
 } from './matrices/matrix';
 export { MutableDenseMatrix, MutableMatrix } from './matrices/mutable';
 export { ImmutableSparseMatrix, MutableSparseMatrix, SparseMatrix } from './matrices/sparse';
@@ -68,6 +68,7 @@ export {
   pinv,
   jacobian,
   blockDiag,
+  blockDiagSized,
   rotAxis1,
   rotAxis2,
   rotAxis3,

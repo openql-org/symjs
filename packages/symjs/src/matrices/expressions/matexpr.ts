@@ -21,7 +21,7 @@ export { ShapeError } from '../../core/errors';
 import { at, cast, last } from '../../core/guard';
 import { LambdaNode } from '../../core/lambda';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
+import { Add, Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
 import { isIntegerQ, isNegative, isZero } from '../../core/assumptions';
 import { and } from '../../core/boolalg';
 import { Eq } from '../../core/logic';
@@ -315,6 +315,14 @@ export abstract class MatrixExpr extends ExtensionExpr {
   override sub(o: MatArg): Expr {
     return MatAddNode.create([this, negate(toExpr(o))]).doit();
   }
+  /** SymPy reflected addition, with the same matrix validation as addition. */
+  radd(o: MatArg): Expr {
+    return this.add(o);
+  }
+  /** SymPy reflected subtraction. */
+  rsub(o: MatArg): Expr {
+    return MatAddNode.create([toExpr(o), negate(this)]).doit();
+  }
   /** this * o (SymPy MatMul(self, other).doit()). */
   override mul(o: MatArg): Expr {
     return matMul(this, toExpr(o));
@@ -327,6 +335,14 @@ export abstract class MatrixExpr extends ExtensionExpr {
   override div(o: MatArg): Expr {
     const e = toExpr(o);
     return this.mul(e instanceof MatrixExpr ? e.pow(-1) : pow(e, -1));
+  }
+  /** SymPy does not define division by a matrix from the left. */
+  rdiv(_o: MatArg): Expr {
+    throw new NotImplementedError('Division by a matrix is not defined');
+  }
+  /** SymPy does not define a scalar raised to a matrix power. */
+  rpow(_o: ExprLike): Expr {
+    throw new NotImplementedError('Matrix Power not defined');
   }
   /** this**o (SymPy MatPow(self, other).doit()). */
   override pow(o: ExprLike): Expr {
@@ -624,6 +640,7 @@ export class MatrixSymbolNode extends MatrixExpr {
   constructor(symbolName: string, rows: ExprLike, cols: ExprLike) {
     super('MatrixSymbol', [new Str(symbolName), dim(rows), dim(cols)]);
   }
+  override freeSymbolsSelf(): ReadonlySet<Expr> { return new Set([this]); }
   /** The name of the matrix (SymPy MatrixSymbol.name). */
   get symbolName(): string {
     return cast(this.args[0], Str).value;
@@ -676,6 +693,7 @@ export function explicitLatexContents(m: Matrix, print: (e: Expr) => string = la
 
 /** SymPy ImmutableMatrix (ImmutableDenseMatrix): an explicit matrix inside matrix expressions. */
 export class ImmutableMatrixNode extends MatrixExpr {
+  get classPriority(): number { return 8; }
   constructor(readonly matrix: Matrix) {
     super('ImmutableDenseMatrix', matrix.data);
   }
@@ -779,6 +797,10 @@ export class MatrixElementNode extends MatScalar {
   get parent(): Expr {
     return at(this.args, 0);
   }
+  /** The matrix owning this entry (SymPy MatrixElement.symbol). */
+  get symbol(): Expr {
+    return this.parent;
+  }
   /** The row index. */
   get i(): Expr {
     return at(this.args, 1);
@@ -813,7 +835,12 @@ export class MatrixElementNode extends MatScalar {
   }
   override diffSelf(v: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     if (v instanceof MatrixElementNode) {
-      if (same(v.parent, this.parent)) return mul(KroneckerDelta(this.i, v.i), KroneckerDelta(this.j, v.j));
+      if (same(v.parent, this.parent)) {
+        const matrix = this.parent;
+        const delta = (a: Expr, b: Expr, axis: 0 | 1): Expr => KroneckerDelta(a, b,
+          matrix instanceof MatrixExpr ? [S.Zero, add(matrix.shape[axis], -1)] : undefined);
+        return mul(delta(this.i, v.i, 0), delta(this.j, v.j, 1));
+      }
       if (!this.parent.has(v.parent)) return S.Zero;
       return undefined;
     }
@@ -1371,8 +1398,8 @@ export class MatMulNode extends MatrixExpr {
       const terms = f instanceof MatAddNode ? f.args : [f];
       products = products.flatMap((p) => terms.map((t) => [...p, t]));
     }
-    if (products.length === 1) return canonicalizeMatMul(MatMulNode.create(at(products, 0)));
-    return MatAddNode.create(products.map((p) => matMul(...p))).doit();
+    if (products.length === 1) return mul(...at(products, 0));
+    return MatAddNode.create(products.map((p) => mul(...p))).doit();
   }
   override strPrecedence(): number {
     return mulCouldExtractMinus(this) ? PRECEDENCE.Add : PRECEDENCE.Mul;
@@ -1432,13 +1459,26 @@ registerArithmetic((op, args) => {
   if (!args.some((a) => a instanceof MatrixExpr)) return undefined;
   switch (op) {
     case 'add':
-      return args.every((a) => a instanceof MatrixExpr) ? MatAddNode.create(args).doit() : undefined;
+      if (args.every((a) => a instanceof MatrixExpr)) return MatAddNode.create(args).doit();
+      {
+        const scalar = add(...args.filter((a) => !(a instanceof MatrixExpr)));
+        const matrix = MatAddNode.create(args.filter((a) => a instanceof MatrixExpr)).doit();
+        return same(scalar, S.Zero) ? matrix : new Add([scalar, matrix]);
+      }
     case 'sub': {
       const [a, b] = [at(args, 0), at(args, 1)];
       return a instanceof MatrixExpr && b instanceof MatrixExpr ? a.sub(b) : undefined;
     }
-    case 'mul':
-      return matMul(...args);
+    case 'mul': {
+      // Mul's constructor postprocessor multiplies scalars into an explicit
+      // matrix. MatMul's own merge rule only absorbs adjacent numbers.
+      const factors = args.flatMap((a) => a instanceof MatMulNode ? a.args : [a]);
+      const firstExplicit = factors.findIndex((a) => a instanceof ImmutableMatrixNode);
+      if (firstExplicit < 0) return matMul(...args);
+      const coefficient = mul(...factors.filter((a) => !(a instanceof MatrixExpr)));
+      if (coefficient !== S.One) factors[firstExplicit] = mulExplicit(coefficient, at(factors, firstExplicit));
+      return matMul(...factors.filter((a) => a instanceof MatrixExpr));
+    }
     case 'pow': {
       const b = at(args, 0);
       return b instanceof MatrixExpr ? b.pow(at(args, 1)) : undefined;
@@ -1484,7 +1524,8 @@ function distributeMonom(e: Expr): Expr {
   return e;
 }
 
-function anyZeros(e: Expr): Expr {
+/** SymPy matmul.any_zeros: a zero matrix absorbs the product. */
+export function anyZeros(e: Expr): Expr {
   if (e.args.some((a) => (a instanceof MatrixExpr ? a.isZeroMatrix : isZero(a) === true))) {
     const ms = e.args.filter((a): a is MatrixExpr => a instanceof MatrixExpr);
     return new ZeroMatrixNode(at(ms, 0).rows, last(ms).cols);
@@ -1492,7 +1533,8 @@ function anyZeros(e: Expr): Expr {
   return e;
 }
 
-function removeIds(e: Expr): Expr {
+/** SymPy matmul.remove_ids: remove identity factors in one rewrite step. */
+export function removeIds(e: Expr): Expr {
   const [factor, mmul] = cast(e, MatMulNode).asCoeffMmul();
   const result = rmId(mmul, (a) => a instanceof MatrixExpr && a.isIdentity === true, (args) => new MatMulNode(args));
   if (!same(result, mmul)) return newmul([factor, ...result.args]);
@@ -1516,7 +1558,8 @@ function combineOneMatrices(e: Expr): Expr {
   return newmul([factor, ...newArgs]);
 }
 
-function combinePowers(e: Expr): Expr {
+/** SymPy matmul.combine_powers: combine adjacent powers and inverse products. */
+export function combinePowers(e: Expr): Expr {
   const [factor, args0] = cast(e, MatMulNode).asCoeffMatrices();
   const args: MatrixExpr[] = [...args0];
   let newArgs: MatrixExpr[] = [at(args, 0)];
@@ -1594,7 +1637,8 @@ function mergeExplicitMul(e: Expr): Expr {
   return MatMulNode.create(newArgs);
 }
 
-function factorInFront(e: Expr): Expr {
+/** SymPy matmul.factor_in_front: collect commutative factors before the matrices. */
+export function factorInFront(e: Expr): Expr {
   const [factor, matrices] = cast(e, MatMulNode).asCoeffMatrices();
   if (!same(factor, S.One)) return newmul([factor, ...matrices]);
   return e;
@@ -2091,7 +2135,7 @@ export class TraceNode extends MatScalar {
 
 /** A symbol name not used in the expression (SymPy uniquely_named_symbol). */
 function uniqueName(base: string, e: Expr): string {
-  const used = new Set([...freeSymbols(e)].filter((s) => s instanceof Sym).map((s) => s.name));
+  const used = new Set([...freeSymbols(e), ...matrixSymbols(e).flatMap((m) => m.shape.flatMap((dim) => [...freeSymbols(dim)]))].filter((s) => s instanceof Sym).map((s) => s.name));
   if (!used.has(base)) return base;
   for (let k = 0; ; k++) if (!used.has(`${base}${k}`)) return `${base}${k}`;
 }

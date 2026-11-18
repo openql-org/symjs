@@ -347,3 +347,10 @@ it('handles unavailable extension and function derivatives and bound indices', a
   const base = new sj.IndexedBase('A');
   expect(() => diff(base.at(x), base.at(x, y))).toThrow('different number of indices');
 });
+
+it('differentiates a sum with a bound variable and checks explicit polynomial partials', async () => {
+  const { diff, fdiff, legendre, Sum, symbols } = await import('../../src');
+  const [i, x, n] = symbols('i x n');
+  expect(diff(Sum(i, [i, 0, 3]), i).equals(0)).toBe(true);
+  expect(() => fdiff(legendre(n, x), 1)).toThrow(RangeError);
+});

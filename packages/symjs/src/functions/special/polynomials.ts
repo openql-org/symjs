@@ -20,7 +20,7 @@ import { Sum } from '../../core/concrete';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sqrt, sympify } from '../../core/ops';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
-import { fnPartials } from '../../calculus/diff';
+import { fnPartials, unavailablePartials } from '../../calculus/diff';
 import { numericFns } from '../../numeric/evalf';
 import { mpFns } from '../../numeric/mpeval';
 import * as MF from '../../numeric/mpf';
@@ -310,6 +310,9 @@ export function jacobiNormalized(n: ExprLike, a: ExprLike, b: ExprLike, x: ExprL
 }
 
 // ---- derivatives (SymPy fdiff) ----------------------------------------------------------
+
+for (const name of ['legendre', 'chebyshevt', 'chebyshevu', 'laguerre', 'assoc_laguerre']) unavailablePartials[name] = [1];
+unavailablePartials.assoc_legendre = [1, 2];
 
 /** d f/d args[i] for an index SymPy has no formula for: Derivative(f, args[i]) for a symbol, else NotImplementedError. */
 function noPartial(name: Parameters<typeof fn>[0], args: readonly Expr[], i: number): Expr {

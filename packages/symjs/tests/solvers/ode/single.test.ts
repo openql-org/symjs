@@ -51,3 +51,18 @@ describe('NthAlgebraic', () => {
     expect(String(dsolve(e('f(x)**2*(Derivative(f(x), x) - 1)'), fx, { hint: 'nth_algebraic' }))).toBe('Eq(f(x), 0),Eq(f(x), C1 + x)');
   });
 });
+
+it('allocates constants across equations and exposes the first-order linear solver', async () => {
+  const { getNumberedConstants, FirstLinear, SingleODESolver, doit } = await import('../../../src');
+  expect(getNumberedConstants(e('C1*C2(x)')).map(String)).toEqual(['C3']);
+  expect(getNumberedConstants([e('k3'), e('k4(x)')], 2, 3, 'k').map(String)).toEqual(['k5', 'k6']);
+  expect(() => Reflect.apply(getNumberedConstants, undefined, [null])).toThrow(RangeError);
+  const problem = new SingleODEProblem(e('Derivative(f(x),x)-f(x)'), fx, x);
+  expect(() => new SingleODESolver(problem).matches()).toThrow('matching is not implemented');
+  class MatchedSolver extends SingleODESolver { protected override matchesImpl() { return true; } }
+  expect(() => new MatchedSolver(problem).getGeneralSolution()).toThrow('general solution is not implemented');
+  const solver = new FirstLinear(problem);
+  expect(solver.matches()).toBe(true);
+  expect(String(doit(solver.getGeneralSolution()[0]!))).toBe('Eq(f(x), C1*exp(x))');
+  expect(new FirstLinear(new SingleODEProblem(e('Derivative(f(x),x,2)'), fx, x)).matches()).toBe(false);
+});

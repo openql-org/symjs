@@ -340,7 +340,7 @@ describe("sympy/solvers/tests/test_pde.py", () => {
   //   assert checkpdesol(eq, sol)[0]
   //   => True
   it.todo("test_pdsolve_variable_coeff:225");
-  it.fails("test_pdsolve_variable_coeff:229", () => {
+  it("test_pdsolve_variable_coeff:229", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(pdsolve(new Add([new Mul([y, derivative((SymFunction('f'))(x, y), [[x, 1]])]), new Mul([y, new Pow(x, rational(2)), (SymFunction('f'))(x, y)]), derivative((SymFunction('f'))(x, y), [[y, 1]])]), undefined, '1st_linear_variable_coeff'))).toBe('Eq(f(x, y), F(-2*x + y**2)*exp(-x**3/3))');
   });
@@ -356,7 +356,7 @@ describe("sympy/solvers/tests/test_pde.py", () => {
   //   assert checkpdesol(eq, sol)[0]
   //   => True
   it.todo("test_pdsolve_variable_coeff:235");
-  it.fails("test_pdsolve_variable_coeff:239", () => {
+  it("test_pdsolve_variable_coeff:239", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(pdsolve(new Add([new Mul([rational(-1), (SymFunction('f'))(x, y)]), new Mul([y, (SymFunction('f'))(x, y)]), new Mul([derivative((SymFunction('f'))(x, y), [[y, 1]]), exp(new Mul([rational(2), x]))])]), undefined, '1st_linear_variable_coeff'))).toBe('Eq(f(x, y), F(x)*exp(-y*(y - 2)*exp(-2*x)/2))');
   });

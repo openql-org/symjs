@@ -355,6 +355,11 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
     if (expr instanceof Fn && expr.name === 'log') expr = shorter(expand_log(expr), expr);
     return done(expr);
   }
+  // Expose a common power of an algebraic base before rational normalization
+  // distributes its denominator. The remaining polynomial coefficient may vanish.
+  if (expr instanceof Add && some(expr, (e) => e instanceof Pow && e.base instanceof Add && isAlgebraicNumber(e.base) && e.exp instanceof Add)) {
+    expr = shorter(expr, expand(expand_power_exp(expr)));
+  }
   // rational-function forms
   expr = mapBottomUp(expr, normal);
   const [c, p] = contentPrimitive(powsimp(expr));

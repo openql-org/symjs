@@ -28,6 +28,9 @@ import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, 
  */
 export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr | undefined>> = {};
 
+/** Argument positions for which a class's explicit fdiff raises. */
+export const unavailablePartials: Partial<Record<string, readonly number[]>> = {};
+
 /**
  * Taylor coefficients at 0 of one-argument functions whose derivatives at 0
  * are 0/0 forms (elliptic_k, elliptic_e): fnTaylorAtZero[name](j) is the
@@ -303,6 +306,7 @@ export function fdiff(f: ExprLike, argindex = 1): Expr {
   const e = sympify(f);
   if (!(e instanceof Fn || e instanceof UndefFn || e instanceof DefinedFunctionCall)) throw new TypeError(`fdiff: ${e.toString()} is not a function application`);
   if (!Number.isInteger(argindex) || argindex < 1 || argindex > e.args.length) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
+  if (unavailablePartials[e.name]?.includes(argindex)) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
   const i = argindex - 1;
   const a = at(e.args, i);
   if (e instanceof Fn && e.name === 'abs') return fn('sign', [a]);

@@ -43,11 +43,15 @@ export {
   validateMatMul,
   mergeExplicitMatAdd,
   mergeExplicitMatMul,
+  anyZeros,
+  removeIds,
+  combinePowers,
+  factorInFront,
   onlySquares,
   toExpr as sympifyMatrix,
 } from './matexpr';
 export type { MatArg, DoitHints, SliceSpec, ElementFunction, EntryContext } from './matexpr';
-export { BlockMatrix, BlockDiagMatrix, blockCollapse, blockcut, bounds, deblock, reblock2x2 } from './blockmatrix';
+export { BlockMatrix, BlockDiagMatrix, bcMatAdd, bcMatMul, bcTranspose, bcBlockPlusIdent, blockCollapse, blockcut, bounds, deblock, reblock2x2 } from './blockmatrix';
 export { HadamardProduct, HadamardPower, hadamardProduct, hadamardPower, canonicalize } from './hadamard';
 export { KroneckerProduct, kroneckerProduct, matrixKroneckerProduct, combineKronecker } from './kronecker';
 export { DiagonalMatrix, DiagonalOf, DiagMatrix, diagonalizeVector } from './diagonal';

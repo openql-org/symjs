@@ -11,17 +11,19 @@ import { NotImplementedError } from '../core/errors';
 import { dsolveSystem, registerSingleOdeSolver } from './odesystem';
 import { SubsNode } from '../core/subsnode';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Derivative, Dummy, Rel, Sym, UndefFn } from '../core/nodes';
+import { Derivative, Dummy, Mul, Pow, S, Sym, UndefFn } from '../core/nodes';
 import { NoMatch } from '../core/truth';
 import { coeff } from '../core/methods';
+import { cancel } from '../simplify/rational';
+import { separatevars } from '../simplify/separatevars';
 import { expand } from '../simplify/expand';
-import { Eq } from '../core/logic';
+import { solveIcs } from './odesimp';
 import { at, cast, first } from '../core/guard';
-import { add, mul, sympify } from '../core/ops';
+import { mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
-import { diff } from '../calculus/diff';
-import { asEquation, linearEqToMatrix, linsolve } from './solve';
-import { classifyOde as classifyOdeHints, dsolveRaw } from './dsolve';
+
+import { asEquation, linearEqToMatrix } from './solve';
+import { allOdeHints, classifyOde as classifyOdeHints, dsolveRaw } from './dsolve';
 
 /** Order of the highest derivative of f in e. */
 export function odeOrder(e: Expr, f: UndefFn): number {
@@ -31,6 +33,22 @@ export function odeOrder(e: Expr, f: UndefFn): number {
     return e.expr.equals(f) ? count : count + Math.max(0, ...e.expr.args.map((arg) => odeOrder(arg, f)));
   }
   return Math.max(0, ...e.args.map((arg) => odeOrder(arg, f)));
+}
+
+/** Classify two canonical first-order velocities, with u and v standing for the functions. */
+function nonlinearType(F: Expr, G: Expr, u: Sym, v: Sym, t: Expr): string | typeof NoMatch {
+  if (!F.has(t) && !G.has(t)) {
+    const factors = F instanceof Mul ? F.args : [F];
+    const commonRatio = cancel(mul(G, pow(F, -1)));
+    const power = factors.find((e) => e.equals(u) || (e instanceof Pow && e.base.equals(u) && !e.exp.has(u) && !e.exp.has(v))) ?? S.One;
+    if (!cancel(mul(power, commonRatio)).has(u)) return 'type1';
+    const exponential = factors.find((e) => e instanceof Pow && e.base.equals(S.E) && !mul(e.exp, pow(u, -1)).has(u) && !e.exp.has(v));
+    if (exponential && !cancel(mul(exponential, commonRatio)).has(u)) return 'type2';
+    return 'type3';
+  }
+  const ratio = cancel(mul(F, pow(G, -1)));
+  if (!ratio.has(t) && separatevars(ratio, { symbols: [u, v], dict: true }) instanceof Map) return 'type4';
+  return NoMatch;
 }
 
 /** Classify a system by its derivative orders, coefficients and linearity. */
@@ -50,10 +68,20 @@ export function classifySysode(eqs: readonly ExprLike[], funcs?: readonly UndefF
   const replacements = jets.map(({ jet }, i): [Expr, Expr] => [jet, at(variables, i)]);
   const substituted = equations.map((e) => xreplace(e, replacements));
   const coefficients = new Map<readonly [number, UndefFn, number], Expr>();
-  for (const [i, equation] of substituted.entries()) for (const [j, { f, k }] of jets.entries()) coefficients.set([i, f, k], coeff(equation, at(variables, j)));
+  const back = replacements.map(([jet, v]): [Expr, Expr] => [v, jet]);
+  for (const [i, equation] of substituted.entries()) for (const [j, { f, k }] of jets.entries()) coefficients.set([i, f, k], xreplace(coeff(equation, at(variables, j)), back));
+  const linear = linearEqToMatrix(substituted, variables) !== undefined;
+  let type: string | typeof NoMatch = NoMatch;
+  if (!linear && functions.length === 2 && equations.length === 2 && [...orders.values()].every((k) => k === 1)) {
+    const system = linearEqToMatrix(substituted, [at(variables, 1), at(variables, 3)]);
+    if (system && !system[0].det().equals(0)) {
+      const rhs = system[0].inv().mul(system[1]);
+      type = nonlinearType(rhs.get(0, 0), rhs.get(1, 0), first(variables), at(variables, 2), first(first(functions).args));
+    }
+  }
   return new Map<string, unknown>([
     ['no_of_equation', equations.length], ['eq', equations], ['func', functions], ['order', orders],
-    ['func_coeff', coefficients], ['is_linear', linearEqToMatrix(substituted, variables) !== undefined], ['type_of_equation', NoMatch],
+    ['func_coeff', coefficients], ['is_linear', linear], ['type_of_equation', type],
   ]);
 }
 
@@ -66,6 +94,8 @@ export interface DsolveOptions {
   hint?: string;
   xi?: ExprLike;
   eta?: ExprLike;
+  n?: number;
+  x0?: ExprLike;
 }
 
 const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Array.isArray(v);
@@ -78,14 +108,18 @@ const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Ar
  * it has several solution families.
  * ics lists initial conditions, e.g. [[f(0), 1], [Subs(Derivative(f(x), x), x, 0), 0]].
  */
-export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: DsolveOptions = {}): Expr | Expr[] | Expr[][] {
+export function dsolve(eqIn: ExprLike, fx: Expr | undefined, opts: DsolveOptions & { hint: 'all' }): ReturnType<typeof allOdeHints>;
+export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts?: DsolveOptions): Expr | Expr[] | Expr[][];
+export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: DsolveOptions = {}): Expr | Expr[] | Expr[][] | ReturnType<typeof allOdeHints> {
   // a system of equations: a list of solutions, or a list of solution lists (SymPy)
   if (isExprList(eqIn)) {
     const solutions = dsolveSystem(eqIn, isExprList(fx) ? fx.map((f) => cast(f, UndefFn, 'unknown function')) : undefined, undefined, opts.ics === undefined ? undefined : new Map(opts.ics));
     return solutions.length === 1 ? first(solutions) : solutions;
   }
   if (isExprList(fx)) throw new TypeError('dsolve: the unknown function f(x) is required');
-  return dsolveSingle(eqIn, fx ?? unknownFunction(asEquation(eqIn)), opts);
+  const dependent = fx ?? unknownFunction(asEquation(eqIn));
+  if (opts.hint === 'all') return allOdeHints(asEquation(eqIn), cast(dependent, UndefFn));
+  return dsolveSingle(eqIn, dependent, opts);
 }
 
 /** SymPy _preprocess: the one function whose derivatives the equation contains. */
@@ -109,11 +143,34 @@ function dsolveSingle(eqIn: ExprLike, fx: Expr, opts: DsolveOptions): Expr | Exp
   const eq = asEquation(eqIn);
   const n = odeOrder(eq, fx);
   if (n === 0) throw new TypeError('dsolve: not a differential equation');
+  if (opts.hint === '1st_power_series') {
+    const ics = opts.ics ?? [];
+    const terms = opts.n ?? 6;
+    if (!Number.isSafeInteger(terms) || terms < 1) throw new RangeError('a positive Taylor series length is required');
+    const condition = ics[0];
+    const point = condition ? initialCondition(fx, x, ...condition)[0] : sympify(opts.x0 ?? 0);
+    if (ics.length > 1 || (condition && !(condition[0] instanceof UndefFn))) throw new RangeError('expected one function value at the expansion point');
+    const value = condition ? sympify(condition[1]) : new Sym('C1');
+    const solutions = dsolveRaw(eq, fx, opts.hint, undefined, { point, value, terms });
+    if (!solutions.length) throw new NotImplementedError('no Taylor series solution at the expansion point');
+    return first(solutions);
+  }
   const viaHints = dsolveRaw(eq, fx, opts.hint, opts.xi !== undefined && opts.eta !== undefined ? { xi: opts.xi, eta: opts.eta } : undefined);
   // SymPy raises NotImplementedError when no hint matches
   if (!viaHints.length) throw new NotImplementedError('dsolve: unsupported equation');
   const ics = opts.ics;
-  const out = ics?.length ? viaHints.map((s) => Eq(fx, applyIcs(cast(s, Rel, 'dsolve solution').rhs, fx, x, ics))) : viaHints;
+  if (!ics?.length) return viaHints.length === 1 ? first(viaHints) : viaHints;
+  for (const [condition, v] of ics) initialCondition(fx, x, condition, v);
+  const out: Expr[] = [];
+  for (const sol of viaHints) {
+    const constants = [...sol.freeSymbols()].filter((s): s is Sym => s instanceof Sym && /^C\d+$/.test(s.name) && !eq.has(s));
+    try {
+      out.push(xreplace(sol, [...solveIcs([sol], [fx], constants, new Map(ics))]));
+    } catch (error) {
+      if (!(error instanceof RangeError) || viaHints.length === 1) throw error;
+    }
+  }
+  if (!out.length) throw new RangeError('no solution satisfies the initial conditions');
   return out.length === 1 ? first(out) : out;
 }
 
@@ -128,13 +185,13 @@ function initialCondition(fx: UndefFn, x: Sym, cond: Expr, v: ExprLike): [Expr, 
     const point = cond instanceof SubsNode ? first(cond.point) : at0 ? first(cond.expr.args) : first(cond.variableCount)[0];
     if (
       !(deriv instanceof Derivative) || !(deriv.expr instanceof UndefFn) || deriv.expr.name !== fx.name || deriv.expr.args.length !== 1 ||
-      deriv.variableCount.length !== 1 || old.key !== x.key || point.has(x) || val.has(x)
+      deriv.variableCount.length !== 1 || old.key !== x.key || point.has(x) || [...val.freeSymbols()].some((s) => s.equals(x))
     ) {
       throw new RangeError('dsolve: invalid boundary conditions for Derivatives');
     }
     return [point, first(deriv.variableCount)[1]];
   } else if (cond instanceof UndefFn) {
-    if (cond.name !== fx.name || cond.args.length !== 1 || first(cond.args).has(x) || val.has(x)) {
+    if (cond.name !== fx.name || cond.args.length !== 1 || first(cond.args).has(x) || [...val.freeSymbols()].some((s) => s.equals(x))) {
       throw new RangeError('dsolve: invalid boundary conditions for Function');
     }
     return [first(cond.args), 0];
@@ -143,27 +200,9 @@ function initialCondition(fx: UndefFn, x: Sym, cond: Expr, v: ExprLike): [Expr, 
   }
 }
 
-/**
- * SymPy solve_ics, with the checks of classify_ode: the conditions are
- * f(x0) = value and f(x).diff(x, k).subs(x, x0) = value (a Subs, or the
- * Derivative that substituting a symbol gives; Derivative(f(x0), (x, k)) is
- * also accepted), with x0 and the value free of x; the constants are found by
- * a linear solve.
- */
-function applyIcs(sol: Expr, fx: UndefFn, x: Sym, ics: [Expr, ExprLike][]): Expr {
-  const cs = [...sol.freeSymbols()].filter((s) => s instanceof Sym).filter((s) => /^C\d+$/.test(s.name));
-  const eqs: Expr[] = [];
-  for (const [cond, v] of ics) {
-    const [point, k] = initialCondition(fx, x, cond, v);
-    eqs.push(add(xreplace(diff(sol, x, k), [[x, point]]), mul(-1, v)));
-  }
-  const s = linsolve(eqs, cs);
-  if (!s) throw new RangeError("dsolve: couldn't solve for initial conditions");
-  return xreplace(sol, cs.map((c, i) => [c, at(s, i)] as const));
-}
-
 /** Classify an ODE after validating any supplied initial conditions. */
 export function classifyOde(eq: ExprLike, fx: UndefFn, opts: Pick<DsolveOptions, 'ics'> = {}): string[] {
+  if (fx.args.length !== 1) throw new RangeError('expected a function of one independent variable');
   const x = cast(first(fx.args), Sym, 'independent variable');
   for (const [condition, value] of opts.ics ?? []) initialCondition(fx, x, condition, value);
   return classifyOdeHints(eq, fx);
