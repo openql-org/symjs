@@ -92,7 +92,7 @@ export function homomorphism(domain: Module, codomain: Module, matrix: readonly 
     const ambient = domain.container;
     // A presentation of a subquotient includes the generators of its kernel.
     const presented = ambient.submodule(...domain.gens, ...ambient.killedModule.gens.map((g) => g.data));
-    return new ModuleHomomorphism(presented, codomain, matrix);
+    return new ModuleHomomorphism(presented, domain === codomain ? presented : codomain, matrix);
   }
   return new ModuleHomomorphism(domain, codomain, matrix);
 }

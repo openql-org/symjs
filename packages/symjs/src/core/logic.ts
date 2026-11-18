@@ -96,6 +96,14 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     } catch {
       // not numerically evaluable
     }
+    if (lhs.isNumber && rhs.isNumber) {
+      for (const [real, other] of [[lhs, rhs], [rhs, lhs]] as const) {
+        if (isReal(real) !== true || isReal(other) === true) continue;
+        try {
+          if (Math.abs(other.toComplex().im) > 1e-9) return op === 'Eq' ? S.false : S.true;
+        } catch { /* The complex part is unknown. */ }
+      }
+    }
   }
   // SymPy is_eq: a difference whose is_zero is known decides the equality (Eq(a, 0) is False for a positive a)
   if (equality) {
@@ -105,6 +113,10 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   if (!equality) {
     const decided = orderTruth(op, d);
     if (decided !== undefined) return decided ? S.true : S.false;
+    if ((lhs instanceof Float || rhs instanceof Float) && d.isComparable) {
+      const numeric = impl.evalf(d, 15);
+      if (isNum(numeric) && !numeric.isZero) return byCmp(numCmp(numeric, S.Zero));
+    }
   }
   return new Rel(op, lhs, rhs);
 }

@@ -8,10 +8,10 @@
  */
 
 import { at, cast, first, pair } from '../core/guard';
-import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, ExtensionExpr, Mul, Rational, S, Sym } from '../core/nodes';
+import type { ExprLike, Substitution } from '../core/nodes';
+import { Add, Dummy, Expr, ExtensionExpr, Mul, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { xreplace } from '../core/traverse';
+import { subs, xreplace } from '../core/traverse';
 import { asIndependent } from '../core/methods';
 import { Lambda, LambdaNode } from '../core/lambda';
 import { SymFunction } from '../core/undef';
@@ -19,12 +19,13 @@ import { diff } from '../calculus/diff';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expandMul } from '../simplify/expand';
 import { roots } from './poly';
-import { Poly, factor, factorListExpr } from './sympoly';
-import { NotImplementedError } from '../core/errors';
+import { Poly, PolificationFailed, factor, factorListExpr, preprocessRoots } from './sympoly';
+import { NotImplementedError, NotInvertible } from '../core/errors';
+import { NoMatch, isNoMatch, type NoMatchResult } from '../core/truth';
 
 /** RootSum(poly, Lambda): args are [poly expression, Lambda, polynomial variable]. */
 export class RootSumNode extends ExtensionExpr {
-  constructor(args: readonly Expr[]) {
+  constructor(args: readonly Expr[], readonly auto = false) {
     super('RootSum', args);
   }
   get poly(): Expr {
@@ -37,7 +38,7 @@ export class RootSumNode extends ExtensionExpr {
     return at(this.args, 2);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new RootSumNode(args);
+    return new RootSumNode(args, this.auto);
   }
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     return { variables: [2], scope: [0] };
@@ -63,21 +64,36 @@ export class RootSumNode extends ExtensionExpr {
     }
   }
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
-    if (this.poly.has(x)) return undefined;
-    return RootSum(this.poly, cast(this.variable, Sym), Lambda(first(this.fun.variables), d(this.fun.expr, x)));
+    if (this.poly.has(x) && this.variable.key !== x.key) return undefined;
+    const fun = this.fun;
+    return RootSum(this.poly, cast(this.variable, Sym), Lambda(first(fun.variables), d(fun.expr, x)), { auto: this.auto });
+  }
+  override subs(s: Substitution): Expr;
+  override subs(from: Expr, to: ExprLike): Expr;
+  override subs(from: Substitution | Expr, to?: ExprLike): Expr {
+    if (!(from instanceof Expr)) return super.subs(from);
+    if (to === undefined) throw new TypeError('subs(from, to) requires a replacement');
+    const replacement = sympify(to);
+    if (from.key === this.variable.key && replacement instanceof Sym) {
+      return new RootSumNode([xreplace(this.poly, [[from, replacement]]), subs(this.fun, [[from, replacement]]), replacement], this.auto);
+    }
+    return super.subs(from, replacement);
   }
 }
+
 
 /**
  * SymPy RootSum(poly, func, auto=False): linear factors of the polynomial are
  * evaluated, constant parts of the function are taken out.
  */
-export function RootSum(polyIn: ExprLike, x: Sym, fun: LambdaNode): Expr {
+export function RootSum(polyIn: ExprLike, x: Sym, fun: LambdaNode, opts: { auto?: boolean; quadratic?: boolean } = {}): Expr {
   const poly = sympify(polyIn);
   const P = Poly.from(poly, [x]);
   const deg = P.degree();
   const v = first(fun.variables);
-  let body = fun.expr;
+  if (deg <= 0) return S.Zero;
+  const [scale, normalized] = opts.auto ? preprocessRoots(P) : [S.One, P];
+  let body = scale.equals(S.One) ? fun.expr : fun.call(mul(v, scale));
   if (!body.has(v)) return mul(deg, body);
   let addConst: Expr = S.Zero;
   if (body.kind === 'Add') {
@@ -94,17 +110,44 @@ export function RootSum(polyIn: ExprLike, x: Sym, fun: LambdaNode): Expr {
   const f = Lambda(v, body);
   const terms: Expr[] = [];
   // the factors over the integers in all symbols (SymPy factors over ZZ[t]); those free of x have no roots
-  for (const [ge, k] of factorListExpr(poly)[1]) {
+  for (const [ge, k] of factorListExpr(normalized.asExpr())[1]) {
     if (!ge.has(x)) continue;
     const g = Poly.from(ge, [x]);
     if (g.degree() === 1) {
       const [c1, c0] = pair(g.allCoeffs());
       terms.push(mul(k, f.call(mul(-1, c0, pow(c1, -1)))));
+    } else if (g.degree() === 2 && opts.quadratic) {
+      terms.push(mul(k, add(...roots(g.asExpr(), x).map((r) => f.call(r)))));
     } else {
-      terms.push(mul(k, new RootSumNode([g.asExpr(), f, x])));
+      const sum = opts.auto ? rationalRootSum(g, f) : NoMatch;
+      terms.push(mul(k, isNoMatch(sum) ? new RootSumNode([g.asExpr(), f, x], opts.auto === true) : sum));
     }
   }
   return add(mul(mulConst, add(...terms)), mul(deg, addConst));
+}
+
+/** Trace of the rational function in the polynomial quotient algebra. */
+function rationalRootSum(g: Poly, fun: LambdaNode): Expr | NoMatchResult {
+  const t = new Dummy('r');
+  const [numerator, denominator] = fraction(together(fun.call(t)));
+  const asPoly = (e: Expr): Poly => Poly.from(e, [t], { domain: 'EX' });
+  let value: Poly;
+  const f = asPoly(xreplace(g.asExpr(), [[g.gen, t]])).monic();
+  try {
+    const p = asPoly(numerator), q = asPoly(denominator);
+    value = q.isGround ? p.mulGround(pow(q.TC(), -1)).rem(f) : p.mul(q.invert(f)).rem(f);
+  } catch (error) {
+    if (error instanceof PolificationFailed || error instanceof NotInvertible) return NoMatch;
+    throw error;
+  }
+  const n = f.degree();
+  const sums: Expr[] = [Rational.of(n)];
+  for (let k = 1; k < n; k++) {
+    const terms = [mul(k, f.nth(n - k))];
+    for (let j = 1; j < k; j++) terms.push(mul(f.nth(n - j), at(sums, k - j)));
+    sums.push(cancel(mul(-1, add(...terms))));
+  }
+  return cancel(add(...value.terms().map(([m, c]) => mul(c, at(sums, first(m))))));
 }
 
 /** A fraction with integer coefficients in numerator and denominator: -t/(2*(t - 1/4)) -> -2*t/(4*t - 1). */

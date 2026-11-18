@@ -104,3 +104,21 @@ it('computes reduced bases over fields and clears denominators over integer ring
     expect(sjGroebner.groebnerInRing([], ring)).toEqual([]);
   }
 });
+
+it('computes sparse Gröbner bases using Buchberger or F5B over rings and fields', () => {
+  const ring = new PolyRing('x y z', QQ);
+  const seq = ['x*y - z', 'y*z - x', 'z*x - y', 'x**2 + y**2 - 1'].map((e) => ring.fromExpr(sj.parse(e)));
+  const expected = sj.groebnerInRing(seq, ring, 'f5b').map(String);
+  expect(sj.groebnerInRing(seq, ring).map(String)).toEqual(expected);
+  const integer = ring.withDomain(ZZ);
+  expect(sj.groebnerInRing(seq.map((p) => p.setRing(integer)), integer).map(String)).toEqual(expected);
+  expect(() => sj.groebnerInRing(seq, ring, 'unknown')).toThrow(RangeError);
+});
+
+it('retains coefficient domains in the public Gröbner basis', () => {
+  const [x, y] = sj.symbols('x y');
+  const seq = ['x**2 - y', 'y**2 - 2'].map((e) => sj.parse(e));
+  for (const opts of [{ extension: true }, { domain: QQ }, { modulus: 5, symmetric: false }, { domain: sj.RR }]) {
+    expect(sj.groebner(seq, [x, y], 'lex', opts).polys).toHaveLength(2);
+  }
+});

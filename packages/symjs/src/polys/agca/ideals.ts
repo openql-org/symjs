@@ -27,7 +27,9 @@ export class ModuleImplementedIdeal {
   equals(other: ModuleImplementedIdeal): boolean { return this.ring.equals(other.ring) && this.module.equals(other.module); }
   isWholeRing(): boolean { return this.module.isFullModule(); }
   isZero(): boolean { return this.module.isZero(); }
-  reduceElement(element: ExprLike): Expr { return first(this.module.reduceElement([element], true).data); }
+  /** Express a member of the ideal as a combination of its generators. */
+  inTermsOfGenerators(element: ExprLike): Expr[] { return this.module.inTermsOfGenerators([element]); }
+  reduceElement(element: ExprLike, fully = false): Expr { return first(this.module.reduceElement([element], fully).data); }
   private checkRing(other: ModuleImplementedIdeal): void {
     if (!this.ring.equals(other.ring)) throw new RangeError('ideals must have the same ring');
   }

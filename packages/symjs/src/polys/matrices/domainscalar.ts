@@ -11,8 +11,8 @@
 import { first } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
 import { Rational } from '../../core/nodes';
-import type { Domain } from '../domains';
-import { ZZ } from '../domains';
+import { Domain, ZZ } from '../domains';
+import { asInt, type IntLike } from '../../ntheory/intutil';
 import { convertFrom, div, domainOfExprs, elemEq, elemRepr, rem } from './domainops';
 
 /** SymPy DomainScalar: an element of a domain. */
@@ -20,7 +20,9 @@ export class DomainScalar {
   constructor(
     readonly element: Expr,
     readonly domain: Domain,
-  ) {}
+  ) {
+    if (!(domain instanceof Domain)) throw new TypeError('expected a coefficient domain');
+  }
   /** A scalar (SymPy DomainScalar.new). */
   static new(element: Expr, domain: Domain): DomainScalar {
     return new DomainScalar(element, domain);
@@ -84,11 +86,16 @@ export class DomainScalar {
     return [new DomainScalar(q, a.domain), new DomainScalar(r, a.domain)];
   }
   /** An integer power (negative powers in a field). */
-  pow(n: number): DomainScalar {
+  pow(exponent: IntLike): DomainScalar {
+    const n = asInt(exponent, 'exponent');
     const K = this.domain;
-    let r = K.one;
-    for (let i = 0; i < Math.abs(n); i++) r = K.mul(r, this.element);
-    return new DomainScalar(n < 0 ? K.quo(K.one, r) : r, K);
+    let result = K.one;
+    let base = this.element;
+    for (let k = n < 0n ? -n : n; k > 0n; k >>= 1n) {
+      if (k & 1n) result = K.mul(result, base);
+      if (k > 1n) base = K.mul(base, base);
+    }
+    return new DomainScalar(n < 0n ? K.quo(K.one, result) : result, K);
   }
   pos(): DomainScalar {
     return this;

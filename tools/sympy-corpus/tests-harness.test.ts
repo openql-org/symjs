@@ -644,7 +644,7 @@ it('replays captured tensor components through public array replacements without
   const c: TestCase = { ...base, category: 'tensor', fn: '.__getitem__', self: tensor(false), args: [integer(1)], tensorData, expected: '-3' };
   expect(runTestCase(c)).toEqual({ status: 'pass' });
   expect(runTestCase({ ...c, tensorData: [[type, integer(2)]] })).toEqual({ status: 'unsupported', reason: 'invalid tensor replacement state' });
-  expect(runTestCase({ ...c, fn: '.__pow__' })).toEqual({ status: 'unsupported', reason: 'legacy tensor norm powers are not exposed by the public tensor API' });
+  expect(runTestCase({ ...c, fn: '.__pow__', expected: 'sqrt(5)*I' })).toEqual({ status: 'pass' });
   expect(testCaseKey(c)).toBe(testCaseKey({ ...c, tensorData: undefined }));
   expect(runTestCase({ ...c, tensorData: undefined }).status).toBe('unsupported');
   expect(runTestCase({ ...c, fn: '.data', args: [], expected: '[2, -3]' })).toEqual({ status: 'pass' });

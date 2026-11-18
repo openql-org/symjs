@@ -29,6 +29,33 @@ const w = sj.symbols('w')[0];
 void [Q, U, G, P, py, xring, sring, vring, lex];
 
 describe('SymPy doctest and suite values', () => {
+  it('computes norm, modular truncation and arithmetic over extended coefficient domains', () => {
+    const alpha = sj.sqrt(2);
+    const [A, u] = ring('u', QQ.algebraicField(alpha)) as [PolyRing, PolyElement];
+    const f = u.sub(alpha);
+    expect(String(A.toGround().domain)).toBe('QQ');
+    expect(String(f.norm())).toBe('u**2 - 2');
+    expect(f.sqfNorm().map(String)).toEqual(['0', 'u - sqrt(2)', 'u**2 - 2']);
+    const Y = new sj.Sym('y');
+    const T = new PolyRing('t', ZZ.polyRing(Y));
+    const p = T.fromExpr(sj.parse('(y**2 + 1)*t + 5'));
+    expect(String(p.truncGround(Y.add(1)))).toBe('2*t + 5');
+    expect(String(p.truncGround(3))).toBe('(y**2 + 1)*t - 1');
+    expect(new PolyRing('t', QQ).one.truncGround(2).isZero).toBe(true);
+    const coefficient = new PolyRing('y', ZZ).fromExpr(Y);
+    const ground = T.groundNew(Y);
+    expect(ground.equals(coefficient)).toBe(true);
+    expect(coefficient.equals(ground)).toBe(true);
+    expect(T.one.equals(new PolyRing('y,z', ZZ).one)).toBe(false);
+    expect(T.one.equals(new PolyRing('y', QQ).one)).toBe(false);
+    expect(T.one.equals(new PolyRing('z', ZZ).one)).toBe(false);
+    expect(String(sring(sj.parse('sqrt(2)*x+1'), {extension: true})[0].domain)).toBe('QQ<sqrt(2)>');
+    expect(String(sring(sj.parse('x/2'), {field: true})[0].domain)).toBe('QQ');
+  });
+  it('rejects invalid generator specifications', () => {
+    expect(() => Reflect.construct(PolyRing, [[1, 'x'], ZZ])).toThrow(sj.GeneratorsError);
+    expect(() => Reflect.construct(PolyRing, [1, ZZ])).toThrow(sj.GeneratorsError);
+  });
   it('converts a polynomial ring to its rational function field', () => {
     const F = R.toField();
     expect(F.toRing().equals(R)).toBe(true);

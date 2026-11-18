@@ -958,7 +958,7 @@
         {
           "file": "polys.json",
           "cases": 12154,
-          "bytes": 12123959
+          "bytes": 12129842
         }
       ],
       "auditFile": "polys.audit.json",

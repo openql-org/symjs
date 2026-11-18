@@ -4,13 +4,12 @@
 // Tests of src/core/logic.ts.
 // Relations and Piecewise. Expected values are SymPy 1.14's (sympy.core.tests.test_relational).
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { and } from '../../src/core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne, piecewise, rel } from '../../src/core/logic';
-import { Expr, Rational, S } from '../../src/core/nodes';
+import { Add, Expr, Rational, S, impl } from '../../src/core/nodes';
 import { add, mul, pow, sub } from '../../src/core/ops';
-import { impl } from '../../src/core/nodes';
 
 const [x, y, z] = sj.symbols('x y z');
 
@@ -55,6 +54,26 @@ it('keeps a relational condition when the folding dispatcher is unavailable', ()
 });
 
 describe('relations (SymPy test_relational)', () => {
+  it('compares numeric root expressions', () => {
+    const root = sj.rootof(sj.parse('x**3 + x + 1'), 0);
+    const complex = new Add([S.One, S.I]);
+    expect(Eq(root, complex)).toBe(S.false);
+    expect(Ne(complex, root)).toBe(S.true);
+    const close = new Add([S.One, mul(R(1, 10 ** 12), S.I)]);
+    expect(String(Eq(root, close))).toBe('Eq(CRootOf(x**3 + x + 1, 0), 1 + I/1000000000000)');
+    const error = sj.abs(sub(new sj.Float(0.8660254037844386), mul(R(1, 2), sj.sqrt(3))));
+    expect(Lt(error, new sj.Float(1e-12))).toBe(S.true);
+    const evalf = vi.spyOn(impl, 'evalf').mockReturnValue(S.Zero);
+    try {
+      expect(Lt(error, new sj.Float(2e-12))).toBeInstanceOf(sj.Rel);
+    } finally {
+      evalf.mockRestore();
+    }
+    const index = sj.Idx('i', [2, 4]);
+    expect(Lt(index, 5)).toBe(S.true);
+    expect(Lt(index, 1)).toBe(S.false);
+    expect(Gt(5, index)).toBe(S.true);
+  });
   it('compares with nan', () => {
     // SymPy: Eq(nan, nan) = False, Ne(nan, 1) = True, Lt(nan, 1) raises TypeError
     expect(Eq(nan, nan)).toBe(S.false);

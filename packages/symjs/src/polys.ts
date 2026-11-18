@@ -35,9 +35,13 @@ export {
   gcdList,
   lcmList,
   sqf,
+  sqfList,
+  toRationalCoeffs,
 } from './polys/sympoly';
 
-export { rootsDict as roots } from './polys/poly';
+export { rootsDict as roots, type RootOptions } from './polys/poly';
+export { dictFromExpr, parallelDictFromExpr } from './polys/polyutils';
+export type { DictFromExprOptions } from './polys/polyutils';
 export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly, dupBernoulli, dupBernoulliC, dupGenocchi, dupEuler, dupAndre } from './polys/appellseqs';
 export { dispersion, dispersionset } from './polys/dispersion';
 export { eqsToMatrix, solveLinSys, sympyEqsToRing } from './polys/solvers';
@@ -105,7 +109,7 @@ export {
   rootOf as rootof,
 } from './polys/rootof';
 export type { RootOfOptions } from './polys/rootof';
-export { ComplexInterval, countComplexRoots, refineRealRoot, isolateRealRoots, isolateRealRootsSqf, isolateRealRootsList } from './polys/rootisolation';
+export { ComplexInterval, countComplexRoots, refineRealRoot, isolateRealRoots, isolateRealRootsSqf, isolateRealRootsList, isolateComplexRootsSqf } from './polys/rootisolation';
 export {
   apart,
 } from './polys/partfrac';
@@ -119,12 +123,12 @@ export {
   viete,
 } from './polys/polyfuncs';
 export {
-  groebner,
   GroebnerBasis,
   reduced,
   isZeroDimensional,
 } from './polys/groebner';
-export type { MonomialOrder } from './polys/groebner';
+export type { GroebnerOptions, MonomialOrder } from './polys/groebner';
+export { groebnerWithDomain as groebner } from './polys/groebnertools';
 export {
   jacobiPoly,
   gegenbauerPoly,
@@ -295,5 +299,5 @@ export { groebnerInRing } from './polys/groebnertools';
 export { sylvester, bezout, backwardEye, res, resQ, resZ, subresultantsSylv, subresultantsBezout, subresultantsPg, subresultantsAmv, subresultantsAmvQ, subresultantsRem, subresultantsVv, subresultantsVv2, modifiedSubresultantsSylv, modifiedSubresultantsBezout, modifiedSubresultantsPg, modifiedSubresultantsAmv, euclidQ, sturmQ, quoZ, remZ, euclidAmv, euclidPg, sturmAmv, sturmPg } from './polys/subresultantsqqzz';
 
 export { DMPJs } from './polys/polyclasses';
-export { dupTrialDivision, dmpZzMignotteBound, dupZzHenselStep, dupZzHenselLift, dmpZzWangNonDivisors } from './polys/factortools';
+export { dupTrialDivision, dmpZzMignotteBound, dupZzHenselStep, dupZzHenselLift, dmpZzWang, dmpZzWangNonDivisors } from './polys/factortools';
 export { dupEuclideanPrs, dupPrimitivePrs } from './polys/euclidtools';

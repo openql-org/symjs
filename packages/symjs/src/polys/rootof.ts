@@ -5,7 +5,7 @@
  * @file Indexed roots of polynomials (SymPy ComplexRootOf / CRootOf).
  */
 
-import { InvariantError, PolynomialError } from '../core/errors';
+import { DomainError, InvariantError, NotImplementedError, PolynomialError } from '../core/errors';
 import { at, defined, expectType, first, getOrThrow, pair } from '../core/guard';
 import { ordered } from '../core/match';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
@@ -20,6 +20,7 @@ import { nroots } from './nroots';
 import type { ComplexInterval } from './rootisolation';
 import { isolateComplexRootsSqf, isolateRealRoots } from './rootisolation';
 import { Poly, rootHooks } from './sympoly';
+import { cancel } from '../simplify/rational';
 
 /**
  * The index-th root of a polynomial with rational coefficients (SymPy
@@ -36,6 +37,23 @@ class CRootOfNode extends ExtensionExpr {
   }
   override freeSymbolsSelf(): ReadonlySet<Sym> {
     return new Set();
+  }
+  override get isNumber(): boolean {
+    return true;
+  }
+  get isAlgebraic(): boolean {
+    return true;
+  }
+  get isImaginary(): boolean {
+    if (this.isRealRoot) return false;
+    const interval = this.getInterval();
+    return interval.ax.p * interval.bx.p <= 0n;
+  }
+  override diffSelf(): Expr {
+    return S.Zero;
+  }
+  static realRoots(p: Poly): Expr[] {
+    return p.realRoots({ radicals: false });
   }
   get poly(): Expr {
     return at(this.args, 0);
@@ -302,8 +320,23 @@ export function rootOf(f: ExprLike | Poly, index: number | Rational, opts: RootO
   if (deg <= 0) throw new PolynomialError('Cannot construct CRootOf for a constant polynomial');
   if (!Number.isInteger(i) || i < -deg || i >= deg) throw new RangeError(`rootof: index ${i} out of range`);
   const radicals = opts.radicals ?? true;
-  const roots = p.allRoots({ radicals });
-  return at(roots, i < 0 ? deg + i : i);
+  if (p.domain === 'ZZ_I' || p.domain === 'QQ_I') throw new NotImplementedError(`root counting not supported over ${p.domain}`);
+  if (!['ZZ', 'QQ'].includes(p.domain)) {
+    const lead = p.LC();
+    const normalized = p.allCoeffs().map((c) => cancel(mul(c, pow(lead, -1))));
+    if (normalized.every((c) => c instanceof Rational)) p = Poly.fromList(normalized, p.gens);
+  }
+  if (radicals && !['ZZ', 'QQ'].includes(p.domain) && (deg <= 2 || p.length() === 2)) {
+    const rr = p.roots();
+    return at(rr, i < 0 ? deg + i : i);
+  }
+  try {
+    const roots = p.allRoots({ radicals });
+    return at(roots, i < 0 ? deg + i : i);
+  } catch (error) {
+    if (error instanceof DomainError) throw new NotImplementedError(`root counting not supported over ${p.domain}`);
+    throw error;
+  }
 }
 
 /** Call to evaluate; new CRootOf constructs the unevaluated node for AST work. */

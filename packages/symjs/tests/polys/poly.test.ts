@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { add, factorPoly, mul, pow, roots, solve, symbols, UPoly } from '../../src';
+import { polyHooks, preprocessRootCoefficients } from '../../src/polys/poly';
 
 const { parse } = sj;
 const [x] = symbols('x');
@@ -305,5 +306,65 @@ describe('polynomials', () => {
       ['x**3 + 3*a*x**2 + 3*a**2*x + x + a**3 + a', ['-a', '-a + I', '-a - I']],
     ];
     for (const [s, r] of cases) expect(keys(s)).toEqual(r);
+  });
+});
+
+describe('explicit root selection', () => {
+  it('filters roots and enforces completeness', () => {
+    const p = E('x**4 - 1');
+    expect(roots(p, x, { multiple: true, filter: 'Z' }).map(String)).toEqual(['-1', '1']);
+    expect(roots(p, x, { multiple: true, filter: 'Q' })).toHaveLength(2);
+    expect(roots(p, x, { multiple: true, filter: 'R' })).toHaveLength(2);
+    expect(roots(p, x, { multiple: true, filter: 'I' })).toHaveLength(2);
+    expect(roots(p, x, { multiple: true, filter: 'C', strict: true })).toHaveLength(4);
+    expect(roots(0, x, { multiple: true })).toEqual([]);
+    expect(roots(E('x**3 + x**2 - x + 1'), x, { multiple: true, cubics: false })).toEqual([]);
+    expect(() => roots(E('x**3 + x**2 - x + 1'), x, { cubics: false, strict: true })).toThrow(sj.NotImplementedError);
+    expect(roots(E('x**4 + x + 1'), x, { multiple: true, quartics: false })).toEqual([]);
+  });
+
+  it('solves cubic formulas and preserves inexact roots', () => {
+    const f = sj.Poly.from(E('x**3-3*x+1'), [x]);
+    expect(roots(f.asExpr(), x, { multiple: true, trig: true })).toHaveLength(3);
+    expect(sj.rootsCubic(sj.Poly.from(E('x**3+x+1'), [x]), true)).toHaveLength(3);
+    expect(sj.rootsCubic(sj.Poly.from(E('x**3-x'), [x])).map(String)).toEqual(['-1', '0', '1']);
+    expect(sj.rootsCubic(sj.Poly.from(E('x**3-3*x**2-x+3'), [x]))).toHaveLength(3);
+    expect(roots(E('x**3+x+1'), x, { multiple: true })).toHaveLength(3);
+    expect(roots(E('x**2-2.0'), x, { multiple: true, skipQuintic: true }).every((r) => r instanceof sj.Float)).toBe(true);
+  });
+
+  it('finds factors over exact algebraic coefficient fields', () => {
+    const p = E('41*x**5 + 29*sqrt(2)*x**5 - 153*x**4 - 108*sqrt(2)*x**4 + 175*x**3 + 125*sqrt(2)*x**3 - 45*x**2 - 30*sqrt(2)*x**2 - 26*sqrt(2)*x - 26*x + 24');
+    expect(roots(p, x, { multiple: true, skipQuintic: true })).toHaveLength(5);
+    expect(roots(E('a*x**3+(a+1)**5'), x, { multiple: true })).toHaveLength(3);
+  });
+
+  it('handles irreducible quartics and disabled symbolic root formulas', () => {
+    expect(roots(E('x**4+x+1'), x, { multiple: true })).toHaveLength(4);
+    expect(roots(E('x**4+a*x+1'), x, { multiple: true, quartics: false })).toEqual([]);
+    expect(roots(E('x**4+a*x**2+x'), x, { multiple: true, cubics: false }).map(String)).toEqual(['0']);
+    expect(roots(E('x**6+a*x**2+x'), x, { multiple: true, skipQuintic: true }).map(String)).toEqual(['0']);
+    expect(() => Reflect.apply(roots, undefined, [E('x-1'), x, { filter: 'invalid' }])).toThrow(RangeError);
+  });
+
+  it('rejects nonaffine scaling exponents and powers of sums', () => {
+    expect(preprocessRootCoefficients(new Map([[2, E('a**2')], [1, E('b')], [0, E('1')]]))).toBeUndefined();
+    expect(preprocessRootCoefficients(new Map([[2, E('(a+b)**2')], [0, E('1')]]))).toBeUndefined();
+  });
+
+  it('extracts square factors from a symbolic discriminant', () => {
+    expect(roots(E('x**2 + (a+b)*x + ((a+b)**2-a**2*b)/4'), x, { multiple: true }).map(String)).toEqual([
+      '-a*sqrt(b)/2 - (a + b)/2', 'a*sqrt(b)/2 - (a + b)/2',
+    ]);
+  });
+
+  it('handles unavailable cyclotomic formulas', () => {
+    const hook = polyHooks.cyclotomic;
+    polyHooks.cyclotomic = undefined;
+    try {
+      expect(roots(E('x**6+x+1'), x, { multiple: true, skipQuintic: true })).toEqual([]);
+    } finally {
+      polyHooks.cyclotomic = hook;
+    }
   });
 });

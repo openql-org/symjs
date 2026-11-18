@@ -891,6 +891,9 @@ it('handles core boolean atoms and relation normalization without optional propo
   await import('../../src/core');
   const nodes = await import('../../src/core/nodes');
   const bool = await import('../../src/core/boolalg');
+  const n = new nodes.Sym('n', { integer: true, positive: true });
+  expect(nodes.functionFactHandlers.factorial).toBeUndefined();
+  expect(core.ask(core.Q.positive(new nodes.Fn('factorial', [n])))).toBe(true);
   expect(core.ask(true)).toBe(true);
   expect(core.ask(false)).toBe(false);
   expect(() => core.ask(bool.or(core.Q.real(new nodes.Sym('u')), core.Q.real(new nodes.Sym('v'))), false)).toThrow(RangeError);
@@ -901,4 +904,12 @@ it('handles core boolean atoms and relation normalization without optional propo
   expect(core.ask(bool.or(core.Q.real(nodes.S.I), core.Q.positive(nodes.S.NegOne)))).toBe(false);
   expect(core.ask(core.Q.eq(a, b), core.Q.eq(b, a))).toBe(true);
   expect(core.ask(bool.or(core.Q.real(a), core.Q.real(b)), bool.and(core.Q.positive(a), core.Q.positive(b)))).toBe(true);
+});
+
+it('classifies unevaluated elementary functions at zero as rational and algebraic', () => {
+  const t = new sj.Fn('tan', [sj.S.Zero]);
+  const e = new sj.Pow(sj.S.E, sj.S.Zero);
+  expect(sj.ask(sj.Q.rational(e))).toBe(true);
+  expect(sj.ask(sj.Q.rational(t))).toBe(true);
+  expect(sj.ask(sj.Q.algebraic(t))).toBe(true);
 });

@@ -167,6 +167,7 @@ describe('DomainMatrix linear algebra', () => {
     const b = DM([[1], [2]], ZZ);
     expect(a.solveDen(b).map(String)).toEqual(['DomainMatrix([[0], [-1]], (2, 1), ZZ)', '-2']);
     expect(a.solveDen(b, 'charpoly').map(String)).toEqual(['DomainMatrix([[0], [-1]], (2, 1), ZZ)', '-2']);
+    expect(() => a.solveDen(b, 'invalid')).toThrow('unknown solve method');
     expect(() => a.solveDen(DM([[1]], ZZ))).toThrow(DMShapeError);
     expect(() => DM([[1, 2]], ZZ).solveDen(DM([[1]], ZZ), 'charpoly')).toThrow(DMNonSquareMatrixError);
     expect(() => a.solveDenRref(DM([[1]], ZZ))).toThrow(DMShapeError);

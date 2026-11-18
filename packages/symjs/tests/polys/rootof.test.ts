@@ -191,3 +191,24 @@ it('increases approximation precision until a unique complex root lies in the ce
     expect(spy.mock.calls.length).toBeGreaterThanOrEqual(2);
   } finally {spy.mockRestore();sj.CRootOf.clearCache();}
 });
+
+it('reports indexed-root properties and symbolic-binomial roots', () => {
+  const x = new sj.Sym('x');
+  const real = new sj.CRootOf(sj.parse('x**3+x+1'), 0);
+  expect(real.isNumber && real.isAlgebraic).toBe(true);
+  expect(real.isImaginary).toBe(false);
+  expect(new sj.CRootOf(sj.parse('x**2+1'), 0).isImaginary).toBe(true);
+  expect(sj.CRootOf.realRoots(sj.Poly.from(sj.parse('x**2-1'), [x])).map(String)).toEqual(['-1', '1']);
+  expect(String(sj.rootof(sj.Poly.from(sj.parse('x**2-y'), [x]), -1))).toBe('sqrt(y)');
+  expect(String(sj.rootof(sj.Poly.from(sj.parse('y*(x**3+x+2)'), [x]), 0))).toBe('-1');
+  expect(() => sj.rootof(sj.parse('x**3-x+I'), 0)).toThrow(sj.NotImplementedError);
+  expect(() => sj.CRootOf(sj.Poly.from(sj.parse('x**3+a*x+1'), [x]), 0)).toThrow(sj.NotImplementedError);
+  const poly = sj.Poly.from(sj.parse('x**3+x+1'), [x]);
+  const error = new RangeError('root isolation precision exhausted');
+  const allRoots = vi.spyOn(poly, 'allRoots').mockImplementation(() => { throw error; });
+  try {
+    expect(() => sj.CRootOf(poly, 0)).toThrow(error);
+  } finally {
+    allRoots.mockRestore();
+  }
+});

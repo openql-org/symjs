@@ -13,6 +13,7 @@ import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { expandMul } from '../simplify/expand';
 import { Poly, sortGens } from './sympoly';
+import { MultivariatePolynomialError } from './polyerrors';
 import { Matrix } from '../matrices/matrix';
 import { nullspace } from '../matrices/linalg';
 // the nullspace of symbolic interpolation data tests its pivots with simplify (late-bound in linalg)
@@ -36,12 +37,13 @@ function elementary(gens: readonly Expr[], k: number): Expr {
  * Symmetric part in terms of s1, s2, ... and the non-symmetric remainder.
  * Returns [symmetric, remainder, [(s_k, e_k)]].
  */
-export function symmetrize(fIn: ExprLike, gensIn: readonly Sym[] = []): [Expr, Expr, [Sym, Expr][]] {
+export function symmetrize(fIn: ExprLike, gensIn: readonly Sym[] = [], symbols?: readonly Sym[]): [Expr, Expr, [Sym, Expr][]] {
   const fe = sympify(fIn);
   const gens = gensIn.length ? [...gensIn] : sortGens([...fe.freeSymbols()]);
   const n = gens.length;
   const polys = Array.from({ length: n }, (_, i) => elementary(gens, i + 1));
-  const syms = Array.from({ length: n }, (_, i) => new Sym(`s${i + 1}`));
+  if (symbols !== undefined && symbols.length < n) throw new RangeError('not enough symbols for symmetric polynomials');
+  const syms = symbols === undefined ? Array.from({ length: n }, (_, i) => new Sym(`s${i + 1}`)) : symbols.slice(0, n);
   const weights = Array.from({ length: n }, (_, i) => n - i);
   let f = Poly.from(fe, gens);
   const symmetric: Expr[] = [];
@@ -104,7 +106,7 @@ export function rationalInterpolate(data: readonly (readonly [ExprLike, ExprLike
  */
 export function viete(fIn: Poly | ExprLike, roots?: readonly Expr[], ...gens: Expr[]): [Expr, Expr][] {
   const f = fIn instanceof Poly ? fIn : Poly.from(sympify(fIn), gens.length ? gens : undefined);
-  if (f.gens.length > 1) throw new RangeError("multivariate polynomials are not allowed");
+  if (f.gens.length > 1) throw new MultivariatePolynomialError("multivariate polynomials are not allowed");
   const n = f.degree();
   if (n < 1) throw new RangeError("Cannot derive Viete's formulas for a constant polynomial");
   const rs = roots ?? Array.from({ length: n }, (_, i) => new Sym(`r${i + 1}`));

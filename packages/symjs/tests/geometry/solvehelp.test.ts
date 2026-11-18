@@ -66,3 +66,14 @@ describe('solveEquations', () => {
     expect(isNonRealNumber(parse('f(1)'))).toBe(false);
   });
 });
+
+it('eliminates a common quadratic part and preserves the linear back substitution', () => {
+  const x = new Sym('x', { real: true }), y = new Sym('y', { real: true });
+  const p = (t: string) => parse(t).subs(new Sym('x'), x).subs(new Sym('y'), y);
+  const circle = p('x**2 + y**2 - 1');
+  expect(s(solveEquations([circle, p('(x-2)**2 + y**2 - 1')], [x, y]))).toBe('[[1, 0]]');
+  expect(s(solveEquations([circle, p('x**2 + (y-2)**2 - 1')], [x, y]))).toBe('[[0, 1]]');
+  expect(s(solveEquations([circle, p('(x-3)**2 + y**2 - 1')], [x, y]))).toBe('[]');
+  const f = p('(x - 3)**2 + (y - sqrt(5))**2 - 25'), g = p('(x - 4)**2 + (y - sqrt(7))**2 - 36');
+  expect(s(solveEquations([f, g], [x, y]))).toContain('(-sqrt(7) + sqrt(5))*');
+});

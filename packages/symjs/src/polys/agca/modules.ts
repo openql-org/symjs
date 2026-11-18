@@ -15,7 +15,7 @@ import { CoercionFailed, type Domain, domainHooks, groundToSympy } from '../doma
 import { polynomialModuleContext, type PolynomialModuleContext } from '../domains/oldpolynomialring';
 import { sdmFromVector, sdmToVector, sdmGroebner, sdmNfMora, sdmNfBuchbergerReduced, type Sdm, type SdmOrder } from '../distributedmodules';
 import type { ModuleImplementedIdeal } from './ideals';
-import { ProductOrder, type MonomialOrdering } from '../orderings';
+import { ProductOrder, lex, monomialKey, type MonomialOrdering } from '../orderings';
 
 /** A product order separating the module index from polynomial exponents. */
 export class ModuleOrder extends ProductOrder {
@@ -182,13 +182,17 @@ export class SubModule extends Module {
   private basisCache?: Sdm[];
   private extendedCache?: [Sdm[], Sdm[]];
   private readonly order: SdmOrder;
-  constructor(gens: readonly ModuleInput[], readonly container: FreeModule | QuotientModule, elimination = false) {
+  constructor(gens: readonly ModuleInput[], readonly container: FreeModule | QuotientModule, elimination = false, private readonly componentOrder: string | MonomialOrdering = lex) {
     super(container.ring, container.rank);
     this.ambient = container;
     this.gens = Object.freeze(gens.map((g) => container.convert(g)));
+    const componentKey = monomialKey(componentOrder);
     this.order = elimination
       ? (m) => [-first(m), this.context.order.key(m.slice(1))]
-      : (m) => [this.context.order.key(m.slice(1)), first(m)];
+      : (m) => [this.context.order.key(m.slice(1)), componentKey([first(m)])];
+  }
+  override equals(other: Module): boolean {
+    return (!(other instanceof SubModule) || String(this.componentOrder) === String(other.componentOrder)) && super.equals(other);
   }
   toString(): string { return `<${this.gens.map((g) => g.toString()).join(', ')}>`; }
   /** The coset of a vector modulo this submodule. */

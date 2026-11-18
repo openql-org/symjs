@@ -11,7 +11,7 @@ import { at } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Dummy } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
-import { Poly, inferDomain } from './sympoly';
+import { Poly, PolificationFailed, inferDomain } from './sympoly';
 
 /** The options SymPy returns with a polynomial: generators and domain. */
 export interface PolyOptions {
@@ -33,6 +33,7 @@ export function parallelPolyFromExpr(exprs: readonly ExprLike[], gens: readonly 
   const es = exprs.map((e) => sympify(e));
   // common generators: those of the polynomial of all expressions together
   const g = gens.length ? [...gens] : [...Poly.from(add(...es.map((e, i) => mul(e, new Dummy(`w${i}`)))), undefined).gens.filter((v) => !(v instanceof Dummy))];
+  if (!g.length) throw new PolificationFailed('polynomial generators are required');
   const first = es.map((e) => Poly.from(e, g, opts));
   const domain = opts.domain ?? inferDomain(first.flatMap((p) => p.coeffs()));
   const polys = first.map((p, i) => (p.domain === domain ? p : Poly.from(at(es, i), g, { domain })));

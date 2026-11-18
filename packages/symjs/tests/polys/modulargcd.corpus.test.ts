@@ -197,11 +197,11 @@ describe("sympy/polys/tests/test_modulargcd.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([rational(2), new Mul([rational(5), new Pow(x, rational(2))]), new Mul([rational(3), x, new Pow(y, rational(2))]), new Mul([rational(4), y, new Pow(x, rational(3))])])).truncGround(rational(5)))).toBe('-x**3*y - 2*x*y**2 + 2');
   });
-  it.fails("test_chinese_remainder:151", () => {
+  it("test_chinese_remainder:151", () => {
     const [z, x, y] = symbols('z x y');
     expect(sympyStr(new PolyRing([z], ZZ.polyRing(x, y), 'lex').fromExpr(new Add([rational(9), new Mul([rational(7), x]), new Mul([z, new Add([new Mul([rational(-6), new Pow(x, rational(2))]), new Mul([rational(-3), y])])]), new Mul([new Pow(z, rational(2)), new Add([rational(7), new Mul([rational(7), x, y])])])])).truncGround(rational(3)))).toBe('(x*y + 1)*z**2 + x');
   });
-  it.fails("test_chinese_remainder:152", () => {
+  it("test_chinese_remainder:152", () => {
     const [z, x, y] = symbols('z x y');
     expect(sympyStr(new PolyRing([z], ZZ.polyRing(x, y), 'lex').fromExpr(new Add([rational(9), new Mul([rational(7), x]), new Mul([z, new Add([new Mul([rational(-6), new Pow(x, rational(2))]), new Mul([rational(-3), y])])]), new Mul([new Pow(z, rational(2)), new Add([rational(7), new Mul([rational(7), x, y])])])])).truncGround(rational(7)))).toBe('(x**2 - 3*y)*z + 2');
   });

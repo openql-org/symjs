@@ -1008,3 +1008,39 @@ it('uses numerical gamma signs when the floor evaluator is unavailable', async (
     if (evaluator) Object.defineProperty(impl, 'fn', evaluator);
   }
 });
+
+it('proves zero after expanding a power of a numeric sum', () => {
+  expect(sj.isZero(sj.parse('-45 + (5 - 2*sqrt(5))**2 + 20*sqrt(5)'))).toBe(true);
+  expect(sj.isZero(sj.parse('-9 + 5*(1 - 2*sqrt(5)/5)**2 + 4*sqrt(5)'))).toBe(true);
+  expect(sj.isZero(sj.parse('1 + (1 + sqrt(2))**2'))).toBe(false);
+  expect(sj.isZero(sj.parse('1 + (1 + sqrt(2))**(-2)'))).toBe(false);
+  expect(sj.isZero(sj.parse('-2*I + (1 + I)**2'))).toBe('unknown');
+});
+
+it('evaluates special-function facts without evaluating the calls', () => {
+  const x = new sj.Sym('x'), r = new sj.Sym('r', { real: true }), p = new sj.Sym('p', { positive: true });
+  const query = (name: ConstructorParameters<typeof sj.Fn>[0], key: string, ...args: Expr[]) => fact(new sj.Fn(name, args), key);
+  expect(query('erf', 'real', r)).toBe(true);
+  expect(query('erf', 'real', x)).toBeUndefined();
+  expect(query('erf', 'imaginary', r)).toBe(false);
+  expect(query('erf', 'finite', sj.oo)).toBe(true);
+  expect(query('erfc', 'real', r)).toBe(true);
+  expect(query('erfc', 'real', x)).toBeUndefined();
+  expect(query('erf2', 'extended_real', r, r)).toBe(true);
+  expect(query('besselj', 'extended_real', x, r)).toBeUndefined();
+  expect(query('betainc', 'real', r, r, r, r)).toBe(true);
+  expect(query('betainc_regularized', 'real', x, r, r, r)).toBeUndefined();
+  expect(query('beta', 'real', r, r)).toBe(true);
+  expect(query('gamma', 'real', new sj.Float(1))).toBe(true);
+  expect(query('gamma', 'real', new sj.Float(-1))).toBe(false);
+  expect(query('gamma', 'real', new sj.Float(-1.125))).toBe(true);
+  expect(query('gamma', 'real', sj.S.NegOne)).toBe(false);
+  expect(query('gamma', 'positive', p)).toBe(true);
+  expect(query('loggamma', 'real', p)).toBe(true);
+  expect(query('loggamma', 'real', x)).toBeUndefined();
+  expect(query('polygamma', 'real', p, p)).toBe(true);
+  expect(query('polygamma', 'positive', sj.rational(3), r)).toBe(true);
+  expect(query('polygamma', 'positive', sj.rational(2), p)).toBe(false);
+  expect(query('polygamma', 'positive', sj.rational(2), x)).toBeUndefined();
+  expect(query('polygamma', 'negative', sj.rational(2), x)).toBeUndefined();
+});

@@ -241,6 +241,7 @@ export function mgcd(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr {
 
 /** lcm of two polynomials. */
 export function mlcm(f: Expr, g: Expr, vars: readonly Expr[]): Expr {
+  if (isZeroE(f) || isZeroE(g)) return S.Zero;
   const d = mgcd(f, g, vars);
   return normalizeSign(expand(mul(defined(divExact(f, d, vars), 'f / gcd'), g)), vars);
 }

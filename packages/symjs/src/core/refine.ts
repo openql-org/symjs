@@ -845,7 +845,7 @@ class Decider {
         return this.q('rational', at(x.args, 0));
       }
       if (this.q('algebraic', e) === false) return false;
-      if (isConst(b, 'E')) return undefined;
+      if (isConst(b, 'E')) return this.q('zero', x) === true ? true : undefined;
       if (isInt(x) && x.p === -1n && this.q('rational', b) === false && this.q('finite', b) === true) return false;
       if (this.q('integer', x) === true && this.q('rational', b) === true) return this.q('nonzero', b) === true || this.q('nonnegative', x) === true ? true : undefined;
       // an unevaluated rational power of a rational number is irrational or not real
@@ -901,6 +901,7 @@ class Decider {
     if (e instanceof Fn) {
       // the functions named below take one argument
       const a = (): Expr => at(e.args, 0);
+      if (e.name === 'tan' && this.q('zero', a()) === true) return true;
       if (['cot', 'acot'].includes(e.name) && this.q('algebraic', a()) === true) return false;
       // trigonometric functions at rational multiples of pi are algebraic (SymPy sin._eval_is_algebraic)
       if (['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(e.name) && this.q('rational', mul(a(), pow(S.Pi, -1))) === true) return e.name === 'sin' || e.name === 'cos' ? true : undefined;

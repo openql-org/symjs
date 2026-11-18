@@ -120,7 +120,7 @@ describe('construction', () => {
     // SymPy: Ray2D(Point2D(1, 1), Point2D(Piecewise((0, (n > 1/2) & (n < 3/2)), (1, True)), 1)); symjs keeps tan(pi*n)
     // (0 for an integer n)
     const rn = Ray([1, 1], { angle: pi.mul(new Sym('n', { integer: true })) });
-    expect(s(rn.p2.coordinate(0))).toBe('Piecewise((-1, (n > 1/2) & (n < 3/2)), (0, True)) + 1');
+    expect(s(rn.p2.coordinate(0))).toBe('Piecewise((0, (n > 1/2) & (n < 3/2)), (1, True))');
   });
 
   it('raises like SymPy (test_raises)', () => {

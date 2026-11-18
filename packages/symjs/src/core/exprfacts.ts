@@ -416,8 +416,15 @@ function addImaginary(e: Expr): V {
   return bz === false ? false : undefined;
 }
 
+function containsPowerOfSum(e: Expr): boolean {
+  if (e instanceof Pow) return e.base instanceof Add && e.exp instanceof Rational && e.exp.isInteger && e.exp.isPositive;
+  return e instanceof Mul && e.args.some(containsPowerOfSum);
+}
+
 function addZero(e: Expr): V {
   if (!e.isCommutative) return undefined;
+  if (e.isNumber && e.args.some(containsPowerOfSum)
+      && e.args.every((term) => is(term, 'extended_real')) && impl.expand(e).equals(S.Zero)) return true;
   const nz: Expr[] = [];
   let z = 0;
   let imOrZ = false;

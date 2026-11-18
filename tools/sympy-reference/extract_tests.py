@@ -614,6 +614,25 @@ class Capture:
                         tree["matrixClass"] = type(arg).__name__
             if name.startswith("."):
                 record["self"] = extract.ser(receiver)
+            if self.category == "polys":
+                from sympy.polys.numberfields.modules import Submodule
+                from sympy.printing.lambdarepr import IntervalPrinter
+                if name in ("gf_irreducible_p", "gf_factor", "gf_factor_sqf", "groebner") and "method" not in kwargs:
+                    from sympy.polys.polyconfig import query
+                    setting = {"gf_irreducible_p": "GF_IRRED_METHOD", "groebner": "GROEBNER"}.get(name, "GF_FACTOR_METHOD")
+                    record["polyReplay"] = {"method": query(setting)}
+                elif name == ".args" and isinstance(receiver, sympy.AlgebraicNumber):
+                    record["polyReplay"] = {"originalCoeffs": [extract.ser(c) for c in receiver.args[1]]}
+                elif name == ".doprint" and isinstance(receiver, IntervalPrinter):
+                    record["polyReplay"] = {"intervalPrinter": True}
+                elif name == ".discard_before" and isinstance(receiver, Submodule):
+                    record["polyReplay"] = {"computedTable": receiver._mult_tab is not None}
+                elif name == ".mult_tab" and isinstance(receiver, Submodule):
+                    for call, _, value, _ in self.bindings.values():
+                        if value() is receiver and call.get("fn") == ".discard_before":
+                            record["polyReplay"] = {"submoduleDiscard": {"original": call["self"],
+                                "index": int(call["args"][0]["p"]), "computedTable": call["polyReplay"]["computedTable"]}}
+                            break
             state = extract.tensor_state((receiver, args, kwargs))
             if state:
                 record["tensorData"] = state
@@ -700,6 +719,14 @@ class Capture:
         case = {**self.metadata(site), **record, "expected": text, "op": op, **extra}
         if op == "!=" and self.category == "tensor" and isinstance(expected, (sympy.Idx, sympy.Indexed, sympy.IndexedBase, sympy.tensor.tensor.TensorHead)):
             case["comparisonTree"] = extract.ser(expected)
+        if op == "!=" and self.category == "polys":
+            try:
+                comparison = extract.ser(expected)
+                if comparison["t"] == "AGCASubModule":
+                    comparison["componentOrder"] = str(expected.order.args[1][0])
+                case["comparisonTree"] = comparison
+            except (extract.Unsupported, extract.PythonRuntime):
+                pass
         if ported_function_case(case):
             case.pop("exclusion", None)
         if isinstance(expected, str):
@@ -1167,7 +1194,7 @@ def without_replay_state(value):
     """The original assertion identity, independent of replay-only state."""
     if isinstance(value, dict):
         return {k: without_replay_state(v) for k, v in value.items()
-                if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree", "matrixClass", "boundMatrix")}
+                if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree", "matrixClass", "boundMatrix", "polyReplay")}
     if isinstance(value, list):
         return [without_replay_state(v) for v in value]
     return value

@@ -14,6 +14,7 @@ import './core';
 export { pretty, pprint, prettyPrint, pagerPrint, pprintUseUnicode, pprintTryUseUnicode, PrettyPrinter, PrettyTuple, prettyHooks, StringPict, PrettyForm } from './printing/pretty/index';
 export type { PrettyOptions, Printable, MatrixLike } from './printing/pretty/index';
 export { LatexPrinter } from './printing/latex';
+export { IntervalPrinter } from './printing/lambdarepr';
 export { srepr } from './printing/repr';
 export type { ReprPrintable, ReprMatrix, ReprObject, SreprOptions } from './printing/repr';
 // SymPy's tree() is not a top-level name; strategies.tree is the module of that name

@@ -9,18 +9,22 @@
 
 import { NotImplementedError, PolynomialError } from '../core/errors';
 import { at, defined } from '../core/guard';
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Constant, Dummy, Mul, Pow, Rational, S, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Constant, Dummy, Mul, Pow, Rational, Rel, S, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { str } from '../printing/str';
 import { cancel, fraction } from '../simplify/rational';
 import { mlcm } from './mpoly';
-import { Poly, sortGens } from './sympoly';
+import { Poly, sortGens, type PolyConstructionOptions } from './sympoly';
 import { matrixFglmBasis, type FglmRing } from './fglmtools';
-import type { OrderLike } from './rings';
+import type { OrderLike, PolyRing } from './rings';
+import { ComputationFailed } from './polyerrors';
 
 export type MonomialOrder = 'lex' | 'grlex' | 'grevlex';
+export type GroebnerOptions = PolyConstructionOptions & { method?: string; polys?: boolean };
+/** @internal Ring-backed computation for callers of the polynomial entry point. */
+export type CoefficientGroebner = (polys: readonly Poly[], gens: readonly Sym[], order: MonomialOrder, opts: GroebnerOptions) => GroebnerBasis;
 
 type Monom = number[];
 /** Sparse polynomial: monomial key -> [monomial, coefficient (a rational or a rational function of parameters)]. */
@@ -221,7 +225,16 @@ export class GroebnerBasis {
     readonly gens: readonly Sym[],
     readonly domain: string,
     readonly order: MonomialOrder,
+    readonly returnPolys = false,
+    private readonly coefficientRing?: PolyRing,
   ) {}
+  get polys(): Poly[] {
+    const domain = this.coefficientRing?.domain ?? this.domain;
+    return this.exprs.map((e) => Poly.from(e, this.gens, { domain }));
+  }
+  [Symbol.iterator](): Iterator<Expr | Poly> {
+    return (this.returnPolys ? this.polys : this.exprs)[Symbol.iterator]();
+  }
   /** Convert this zero-dimensional basis to another monomial order using FGLM. */
   fglm(orderIn: OrderLike): GroebnerBasis {
     const order = fglmOrder(orderIn);
@@ -247,6 +260,11 @@ export class GroebnerBasis {
   }
   /** Division of f by the basis: [quotients, remainder]. */
   reduce(f: ExprLike): [Expr[], Expr] {
+    const ring = this.coefficientRing;
+    if (ring?.domain.isField) {
+      const [q, r] = ring.fromExpr(sympify(f)).div(this.exprs.map((e) => ring.fromExpr(e)));
+      return [q.map((p) => p.asExpr()), r.asExpr()];
+    }
     const G = this.exprs.map((e) => fromExpr(e, this.gens));
     const [qs, r] = divide(fromExpr(sympify(f), this.gens), G, this.order);
     return [qs.map((q) => toExpr(q, this.gens)), toExpr(r, this.gens)];
@@ -329,9 +347,20 @@ function clearDenoms(g: SP, vars: readonly Expr[], overQQ: boolean): SP {
 }
 
 /** Reduced Groebner basis of polynomials (SymPy groebner). */
-export function groebner(F: readonly ExprLike[], gens: readonly Sym[], order: MonomialOrder = 'lex'): GroebnerBasis {
-  const exprs0 = F.map((f) => sympify(f));
-  const coeffs = exprs0.flatMap((f) => Poly.from(f, gens).terms().map(([, c]) => c));
+export function groebner(F: readonly ExprLike[], generators: readonly Sym[], order: MonomialOrder = 'lex', opts: GroebnerOptions = {}, coefficientBasis?: CoefficientGroebner): GroebnerBasis {
+  if (opts.method !== undefined && !['buchberger', 'f5b'].includes(opts.method)) throw new RangeError(`unknown Gröbner basis method: ${opts.method}`);
+  const exprs0 = F.map((f) => {
+    const e = sympify(f);
+    return e instanceof Rel && e.op === 'Eq' ? add(e.lhs, mul(-1, e.rhs)) : e;
+  });
+  const gens = generators.length ? generators : sortGens([...new Map(exprs0.flatMap((f) => Poly.from(f).gens).filter((g) => g instanceof Sym).map((g) => [g.key, g])).values()]);
+  if (!gens.length) throw new ComputationFailed('groebner requires polynomial generators');
+  const polys0 = exprs0.map((f) => Poly.from(f, gens, opts));
+  const coeffs = polys0.flatMap((f) => f.coeffs());
+  const inexact = polys0.find((f) => f.domain === 'CC' || f.domain === 'RR')?.domain;
+  if (coefficientBasis !== undefined && (opts.method === 'f5b' || opts.modulus !== undefined || opts.domain !== undefined || inexact !== undefined)) {
+    return coefficientBasis(polys0, gens, order, { ...opts, domain: opts.domain ?? inexact });
+  }
   if (coeffs.some((c) => !(c instanceof Rational))) {
     // SymPy: the basis over the fraction field of the coefficient ring, with the denominators cleared
     const dom = paramDomain(coeffs);
@@ -348,10 +377,11 @@ export function groebner(F: readonly ExprLike[], gens: readonly Sym[], order: Mo
       gens,
       dom.name,
       order,
+      opts.polys,
     );
   }
   const polys = exprs0.map((f) => fromExpr(f, gens));
-  const domainQQ = exprs0.some((f) => Poly.from(f, gens).domain === 'QQ');
+  const domainQQ = polys0.some((f) => f.domain === 'QQ');
   const G = buchberger(polys, order);
   const exprs = G.map((g) => {
     if (domainQQ) return toExpr(g, gens);
@@ -361,7 +391,7 @@ export function groebner(F: readonly ExprLike[], gens: readonly Sym[], order: Mo
     const [, pp] = prim.primitive();
     return pp.asExpr();
   });
-  return new GroebnerBasis(exprs, gens, domainQQ ? 'QQ' : 'ZZ', order);
+  return new GroebnerBasis(exprs, gens, domainQQ ? 'QQ' : 'ZZ', order, opts.polys);
 }
 
 impl.polyReduce = (f, g, gens) => {

@@ -4,7 +4,7 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { Expr } from '../../packages/symjs/src/core/nodes';
-import { deserialize, fmt, matchesSympyErratum, runCase } from './harness';
+import { deserialize, fmt, matchesSympyErratum, pyEquals, runCase } from './harness';
 import type { Case, CaseObservation, Outcome, Tree } from './harness';
 
 export interface TestCase extends Case {
@@ -13,13 +13,19 @@ export interface TestCase extends Case {
   op: '==' | '!=' | 'is' | 'is not' | 'truthy' | 'falsy';
   raises?: string;
   comparisonTree?: Tree;
+  polyReplay?: {
+    method?: string;
+    originalCoeffs?: Tree[];
+    intervalPrinter?: boolean;
+    submoduleDiscard?: { original: Tree; index: number; computedTable: boolean };
+  };
 }
 
 export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string }; phase?: 'input' | 'invoke' | 'result' };
 
 export function testCaseKey(c: TestCase): string {
   // Replay state annotates an existing assertion without changing its ratchet identity.
-  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
+  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix', 'polyReplay'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
 }
 
 // The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
@@ -58,6 +64,10 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
   // a truth-value assertion whose SymPy answer is wrong: the registered correct value counts as compatible
   if ((outcome.status === 'fail' || outcome.status === 'equivalent') && outcome.got !== undefined && matchesSympyErratum(c, outcome.got)) return { status: 'equivalent', got: outcome.got };
   if (c.op === '!=') {
+    if (c.category === 'polys' && c.comparisonTree && observation && 'value' in observation) {
+      const rhs = deserialize(c.comparisonTree);
+      return pyEquals(observation.value, rhs) ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
+    }
     if (c.comparisonTree && observation && 'value' in observation && observation.value instanceof Expr) {
       const rhs = deserialize(c.comparisonTree);
       if (rhs instanceof Expr) return observation.value.equals(rhs) ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
@@ -91,7 +101,14 @@ export function runTestCase(c: TestCase): TestOutcome {
   // These established public names capitalize the second word after "Non".
   const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };
   const fn = alias[c.fn];
-  const call = c.boundMatrix ? { ...c, fn: '.' + c.fn, self: c.boundMatrix } : fn === undefined ? c : { ...c, fn };
+  const call = c.boundMatrix ? { ...c, fn: '.' + c.fn, self: c.boundMatrix } : { ...c, fn: fn ?? c.fn };
+  if (c.polyReplay?.method !== undefined) call.kwargs = { ...call.kwargs, method: { t: 'Str', v: c.polyReplay.method } };
+  if (c.polyReplay?.originalCoeffs && call.self?.t === 'AlgebraicNumber') call.self = { ...call.self, coeffs: c.polyReplay.originalCoeffs };
+  if (c.polyReplay?.intervalPrinter && call.self?.t === 'StrPrinter') call.self = { ...call.self, t: 'IntervalPrinter' };
+  if (c.polyReplay?.submoduleDiscard) {
+    const { original, index, computedTable } = c.polyReplay.submoduleDiscard;
+    call.self = { ...original, discardBefore: index, computedTable };
+  }
   const outcome = runCase(call, (event) => { observation = event; });
   const result = assertionOutcome(c, outcome, observation);
   return result.status === 'error' ? { ...result, phase: observation === undefined ? 'input' : 'error' in observation ? 'invoke' : 'result' } : result;

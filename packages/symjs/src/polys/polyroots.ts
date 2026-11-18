@@ -6,6 +6,7 @@ import { Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sqrt } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { isNegative } from '../core/assumptions';
+import { fact } from '../core/exprfacts';
 import { PolynomialError } from '../core/errors';
 import { cos, sin } from '../functions/elementary/elementary';
 import { at, cast, first, last } from '../core/guard';
@@ -15,19 +16,19 @@ import { c, cadd, cmul, cneg, cabs } from '../numeric/complex';
 import { expand } from '../simplify/expand';
 import { powsimp } from '../simplify/powsimp';
 import { cancel, fraction, together } from '../simplify/rational';
-import { polyHooks, roots } from './poly';
+import { polyHooks, roots, rootsCubicFormula, type RootOptions } from './poly';
 import { Poly } from './sympoly';
 import { PolyQuintic } from './polyquinticconst';
 import { cyclotomicPoly } from './specialpolys';
 
 /** Linear root factors, with a residual factor when explicit roots are incomplete. */
-export function rootFactors(f: Poly, x?: Sym): Poly[];
-export function rootFactors(f: ExprLike, x?: Sym): Expr[];
-export function rootFactors(f: Poly | ExprLike, x?: Sym): Poly[] | Expr[] {
+export function rootFactors(f: Poly, x?: Sym, filter?: RootOptions['filter']): Poly[];
+export function rootFactors(f: ExprLike, x?: Sym, filter?: RootOptions['filter']): Expr[];
+export function rootFactors(f: Poly | ExprLike, x?: Sym, filter?: RootOptions['filter']): Poly[] | Expr[] {
   const p = f instanceof Poly ? f : Poly.from(f, x === undefined ? undefined : [x]);
   if (p.gens.length !== 1) throw new RangeError('root_factors requires a univariate polynomial');
   const gen = cast(p.gen, Sym);
-  const zeros = ordered(roots(p.asExpr(), gen, { skipQuintic: true }));
+  const zeros = ordered(roots(p.asExpr(), gen, { skipQuintic: true, filter }));
   const factors = zeros.map((r) => Poly.from(add(gen, mul(-1, r)), [gen]));
   if (factors.length === 0) factors.push(p);
   else if (factors.length < p.degree()) factors.push(p.quo(factors.reduce((a,b) => a.mul(b))));
@@ -153,9 +154,19 @@ export function rootsQuadratic(f: Poly): Expr[] {
 }
 
 /** Roots of a cubic, including repeated roots. */
-export function rootsCubic(f: Poly): Expr[] {
-  return roots(f.asExpr(), cast(f.gen, Sym));
+export function rootsCubic(f: Poly, trig = false): Expr[] {
+  if (f.degree() !== 3) throw new PolynomialError('a cubic polynomial is required');
+  return rootsCubicFormula(f.nth(3), f.nth(2), f.nth(1), f.nth(0), trig);
 }
+
+polyHooks.cyclotomic = (e, x) => {
+  const f = Poly.from(e, [x]);
+  const cs = f.allCoeffs();
+  return cs.every((c, i) => c.key === at(cs, -i - 1).key) && f.isCyclotomic ? rootsCyclotomic(f) : [];
+};
+
+const rootDomainFacts = { Z: 'integer', Q: 'rational', I: 'imaginary' } as const;
+polyHooks.matchRootDomain = (root, filter) => fact(root, rootDomainFacts[filter]) === true;
 
 /** Roots of a cyclotomic polynomial, real parts followed by imaginary parts. */
 export function rootsCyclotomic(f: Poly, factor = false): Expr[] {

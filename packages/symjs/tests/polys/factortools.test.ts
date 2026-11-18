@@ -4,8 +4,9 @@ import { NoMatch } from '../../src/core/truth';
 import { expect, it } from 'vitest';
 import { PolyRing } from '../../src/polys/rings';
 import { parse } from '../../src/parsing/parser';
-import { ZZ } from '../../src/polys/domains';
-import { dupTrialDivision, dmpZzMignotteBound, dupZzHenselStep, dupZzHenselLift, dmpZzWangNonDivisors } from '../../src/polys/factortools';
+import { QQ, ZZ } from '../../src/polys/domains';
+import { AlgebraicField } from '../../src/polys/domains/algebraicfield';
+import { dupTrialDivision, dmpZzMignotteBound, dupZzHenselStep, dupZzHenselLift, dmpZzWang, dmpZzWangNonDivisors, sortExtensionFactors } from '../../src/polys/factortools';
 const R = new PolyRing('x', ZZ);
 const x = R.gens[0];
 if (x === undefined) throw new TypeError('missing generator');
@@ -52,6 +53,23 @@ it('extracts the nondivisors needed by Wang factorization', () => {
   expect(dmpZzWangNonDivisors([2n], 2n, 1n)).toBe(NoMatch);
   expect(dmpZzWangNonDivisors([0n], 0n, 1n)).toBe(NoMatch);
   expect(dmpZzWangNonDivisors([], 1n, 1n)).toEqual([]);
+});
+it('restarts Wang factorization after extraneous factors from seeded points', () => {
+  const ring = new PolyRing('x,y,z', ZZ);
+  const f = ring.fromExpr(parse('2*x**2 + y*z - y - z**2 + z'));
+  const seed = [-1, -1, 0, 0, 0, 0, -1, -1, 0, -1, 3, -1, 3, 3, 3, 3, -1, 3];
+  expect(dmpZzWang(f, undefined, seed).map(String)).toEqual([String(f)]);
+  expect(dmpZzWang(f).map(String)).toEqual([String(f)]);
+  expect(() => dmpZzWang(f, 1, [2, 2])).toThrow('sequence exhausted');
+  const a = ring.fromExpr(parse('x*y + 1')), b = ring.fromExpr(parse('x*z + 1'));
+  expect(dmpZzWang(a.mul(b)).map(String).sort()).toEqual([String(a), String(b)].sort());
+});
+it('orders factors with identical dense coefficient lists consistently', () => {
+  const domain = new AlgebraicField(QQ, parse('sqrt(2)'));
+  const ring = new PolyRing('x', domain);
+  const f = ring.fromExpr(parse('x + sqrt(2)'));
+  const copy = ring.fromExpr(f.asExpr());
+  expect(sortExtensionFactors([[f, 2], [copy, 2]], domain, 0)).toEqual([[f, 2], [copy, 2]]);
 });
 it('keeps the largest absolute coefficient when later terms are smaller', () => {
   const R = new PolyRing('x,y', ZZ);

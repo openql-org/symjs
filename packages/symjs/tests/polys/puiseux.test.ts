@@ -149,3 +149,10 @@ it('multiplies rational monomials and iterates sparse keys', () => {
   expect([...R.zero]).toEqual([]);
   expect(String(R.zero)).toBe('');
 });
+
+it('indexes only stored monomials while coefficient lookup extends by zero', () => {
+  const p = P('x**(1/2) + 3*y');
+  expect(String(p.getitem([Rational.of(1n, 2n), 0]))).toBe('1');
+  expect(() => p.getitem([2, 0])).toThrow(RangeError);
+  expect(String(p.get([2, 0]))).toBe('0');
+});

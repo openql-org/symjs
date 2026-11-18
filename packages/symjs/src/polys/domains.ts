@@ -454,6 +454,9 @@ export abstract class Domain {
   protected recompose(_K: Domain, _gens: readonly Sym[]): Domain {
     throw new NotImplementedError(`${this.toString()} is not a composite domain`);
   }
+  /** Whether elements are represented modulo a finite extension's defining polynomial. */
+  get isFiniteExtension(): boolean { return false; }
+
   /** The smallest domain containing this one and K1 (SymPy unify). */
   unify(K1In: Domain): Domain {
     let [K0, K1]: [Domain, Domain] = [this, K1In];
@@ -466,6 +469,7 @@ export abstract class Domain {
       if (K0.unificationKind === kind) return K0;
       if (K1.unificationKind === kind) return K1;
     }
+    if (K1.isFiniteExtension) return K1.unify(K0);
     if (K0.compositeParts !== false || K1.compositeParts !== false) return K0.unifyComposite(K1);
     const kind = (K: Domain): UnificationKind => K.unificationKind;
     if (kind(K1) === 'CC') [K0, K1] = [K1, K0];
