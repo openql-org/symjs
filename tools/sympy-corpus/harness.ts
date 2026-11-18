@@ -1031,7 +1031,7 @@ export function deserialize(tree: Tree): unknown {
       return new sj.ImageSet(lam.vars[0]!, lam.body, sets[0]!);
     }
     case 'ConditionSet':
-      return new sj.ConditionSet(deserialize(tree['sym'] as Tree) as Expr, asExpr(deserialize(tree['condition'] as Tree)), deserialize(tree['base'] as Tree) as sj.SetExpr);
+      return new sj.ConditionSet(expressionContainer(deserialize(tree['sym'] as Tree)), asExpr(deserialize(tree['condition'] as Tree)), deserialize(tree['base'] as Tree) as sj.SetExpr);
     case 'FourierSeries': {
       const [f, x, a, b] = (['f', 'x', 'a', 'b'] as const).map((k) => deserialize(tree[k] as Tree) as Expr);
       return sj.fourierSeries(f!, x as Sym, [a!, b!]);
@@ -1075,7 +1075,7 @@ export function deserialize(tree: Tree): unknown {
     case 'SetOp': {
       const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as sj.SetExpr);
       if (tree['op'] === 'Union') return sj.union(...xs);
-      if (tree['op'] === 'Intersection') return sj.intersection(...xs);
+      if (tree['op'] === 'Intersection') return sj.Intersection(...xs);
       return sj.complement(xs[0]!, xs[1]!);
     }
     case 'Groebner':
@@ -1423,6 +1423,7 @@ const asExpr = (v: unknown): Expr => {
 /** Tuples and dictionaries embedded in expressions need symbolic containers. */
 function expressionContainer(v: unknown): Expr {
   if (v instanceof JsTuple) return sj.Tuple(...v.items.map(expressionContainer));
+  if (v instanceof JsSet) return sj.finiteSet(...v.items.map(expressionContainer));
   if (v instanceof JsDict) return sj.Dict(v.entries.map(([k, x]) => [expressionContainer(k), expressionContainer(x)]));
   return asExpr(v);
 }
@@ -1649,6 +1650,7 @@ function intArg(v: unknown): number {
 
 const asSet = (v: unknown): sj.SetExpr => {
   if (v instanceof sj.SetExpr) return v;
+  if (v instanceof JsSet) return sj.finiteSet(...v.items.map(expressionContainer));
   throw new Unsupported('expected a set');
 };
 const typeMethod = (self: unknown, type: string, f: () => unknown, kw: Record<string, unknown>): unknown => {
@@ -2087,7 +2089,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     return sj.mul(...args.map(asExpr));
   },
-  Interval: (args, kw) => (noKw(kw), sj.interval(asExpr(args[0]), asExpr(args[1]), Boolean(args[2]), Boolean(args[3]))),
+  Interval: (args, kw) => (noKw(kw), sj.interval(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? false : toJs(args[2], false) as boolean, args[3] === undefined ? false : toJs(args[3], false) as boolean)),
   // a Python set as an element is a FiniteSet (SymPy sympify)
   // a Python set as an element is a FiniteSet and a tuple a Tuple (SymPy sympify)
   FiniteSet: (args, kw) => (noKw(kw), sj.finiteSet(...args.map((a) => (a instanceof JsSet ? sj.finiteSet(...a.items.map(asExpr)) : a instanceof JsTuple && !a.isList ? sj.Tuple(...a.items.map(asExpr)) : asExpr(a))))),
@@ -2104,22 +2106,27 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.use(asExpr(args[0]), (x) => (g as (e: Expr) => Expr)(x), kw['level'] === undefined ? 0 : intArg(kw['level']));
   },
   Union: (args, kw) => (noKw(kw), sj.union(...args.map(asSet))),
-  Intersection: (args, kw) => (noKw(kw), sj.intersection(...args.map(asSet))),
+  Intersection: (args, kw) => (noKw(kw), sj.Intersection(...args.map(asSet))),
+  ProductSet: (args, kw) => (noKw(kw), sj.ProductSet(...args.map(asSet))),
   Complement: (args, kw) => (noKw(kw), sj.complement(asSet(args[0]), asSet(args[1]))),
   '.open': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), true, true), kw),
   '.Lopen': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), true, false), kw),
   '.Ropen': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), false, true), kw),
-  '.contains': (args, kw, self) => (noKw(kw), self instanceof sj.GroebnerBasis ? self.contains(asExpr(args[0])) : sj.contains(asSet(self), asExpr(args[0]))),
-  '.intersect': (args, kw, self) => (noKw(kw), sj.intersection(asSet(self), asSet(args[0]))),
+  '.contains': (args, kw, self) => (noKw(kw), self instanceof sj.GroebnerBasis ? self.contains(asExpr(args[0])) : sj.contains(asSet(self), expressionContainer(args[0]))),
+  '.intersect': (args, kw, self) => (noKw(kw), sj.Intersection(asSet(self), asSet(args[0]))),
   '.union': (args, kw, self) => (noKw(kw), sj.union(asSet(self), asSet(args[0]))),
   '.issubset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(self), asSet(args[0])))),
   '.is_Boolean': (_args, kw, self) => (noKw(kw), typeof self === 'boolean' || self instanceof sj.BoolAtom || self instanceof sj.BoolOp || self instanceof sj.LogicGate),
   '.is_subset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(self), asSet(args[0])))),
   // SymPy defines these by is_subset and intersect
+  '.issuperset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(args[0]), asSet(self)))),
+  '.is_empty': (_args, kw, self) => (noKw(kw), none(asSet(self).isEmptyQ)),
+  '.is_left_unbounded': (_args, kw, self) => (noKw(kw), (asSet(self) as sj.Interval).isLeftUnbounded),
+  '.is_right_unbounded': (_args, kw, self) => (noKw(kw), (asSet(self) as sj.Interval).isRightUnbounded),
   '.is_superset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(args[0]), asSet(self)))),
   '.is_proper_subset': (args, kw, self) => (noKw(kw), asSet(self).key === asSet(args[0]).key ? false : none(sj.isSubset(asSet(self), asSet(args[0])))),
   '.is_proper_superset': (args, kw, self) => (noKw(kw), asSet(self).key === asSet(args[0]).key ? false : none(sj.isSubset(asSet(args[0]), asSet(self)))),
-  '.is_disjoint': (args, kw, self) => (noKw(kw), sj.intersection(asSet(self), asSet(args[0])) === sj.EmptySet),
+  '.is_disjoint': (args, kw, self) => (noKw(kw), sj.Intersection(asSet(self), asSet(args[0])) === sj.EmptySet),
   // A.complement(U) is Complement(U, A)
   '.complement': (args, kw, self) => (noKw(kw), sj.complement(asSet(args[0]), asSet(self))),
   imageset: (args, kw) => {
@@ -2138,6 +2145,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.imageset(x, f.call(x), asSet(base));
   },
   ConditionSet: (args, kw) => (noKw(kw), sj.ConditionSet.of(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? sj.UniversalSet : asSet(args[2]))),
+  PowerSet: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`PowerSet kwarg ${k}`);
+    return sj.PowerSet(asSet(args[0]));
+  },
   Contains: (args, kw) => {
     noKw(kw);
     // SymPy Contains evaluates to a truth value when membership is decided
@@ -2149,7 +2160,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const f = args[2];
     return sj.FunctionMatrix(asExpr(args[0]), asExpr(args[1]), typeof f === 'string' ? f : (lambdaAsNode(f) as sj.Lambda));
   },
-  '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), asExpr(args[0]))),
+  '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), expressionContainer(args[0]))),
   solveset: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
     const dom = (kw['domain'] ?? args[2]) as sj.SetExpr | undefined;
@@ -4548,7 +4559,7 @@ Object.assign(ADAPTERS, {
   '.intersection': (args, kw, self) => {
     noKw(kw);
     if (self instanceof sj.AccumBoundsNode) return self.intersection(args[0] instanceof sj.AccumBoundsNode ? args[0] : (asSet(args[0]) as unknown as Expr));
-    return sj.intersection(asSet(self), asSet(args[0]));
+    return sj.Intersection(asSet(self), asSet(args[0]));
   },
   '.union': (args, kw, self) => {
     noKw(kw);
@@ -4767,7 +4778,7 @@ ADAPTERS['Indexed'] = (args, kw) => {
   return new sj.Indexed([label, ...ix.map(asExpr)]);
 };
 
-ADAPTERS['.as_set'] = (_args, kw, self) => (noKw(kw), sj.asSet(self as Expr | boolean));
+ADAPTERS['.as_set'] = (_args, kw, self) => (noKw(kw), self instanceof sj.Contains ? self.asSet() : sj.asSet(self as Expr | boolean));
 
 // K.of_type(a) of a GF(p) element: the element itself, not its integer value
 ADAPTERS['.of_type'] = (args, kw, self0) => {
@@ -4877,9 +4888,9 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__matmul__': (a, [b]) => callMethod(a, ['matmul', 'mul'], [b])?.value ?? unsupportedOp('@'),
   '.__neg__': (a) => callMethod(a, ['neg'], [])?.value ?? (isScalar(a) ? sj.neg(a) : unsupportedOp('-')),
   '.__invert__': (a) => callMethod(a, ['invert', 'inv', 'inverse'], [])?.value ?? (a instanceof Expr || typeof a === 'boolean' ? sj.Not(a) : unsupportedOp('~')),
-  '.__and__': (a, [b]) => callMethod(a, ['and', 'intersect', 'dot'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.And(a, b) : unsupportedOp('&')),
-  '.__or__': (a, [b]) => callMethod(a, ['or', 'union'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Or(a, b) : unsupportedOp('|')),
-  '.__xor__': (a, [b]) => callMethod(a, ['xor', 'cross', 'symmetricDifference'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Xor(a, b) : unsupportedOp('^')),
+  '.__and__': (a, [b]) => a instanceof sj.SetExpr && b instanceof sj.SetExpr ? sj.Intersection(a, b) : callMethod(a, ['and', 'intersect', 'dot'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.And(a, b) : unsupportedOp('&')),
+  '.__or__': (a, [b]) => a instanceof sj.SetExpr && b instanceof sj.SetExpr ? sj.Union(a, b) : callMethod(a, ['or', 'union'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Or(a, b) : unsupportedOp('|')),
+  '.__xor__': (a, [b]) => a instanceof sj.SetExpr && b instanceof sj.SetExpr ? sj.symmetricDifference(a, b) : callMethod(a, ['xor', 'cross', 'symmetricDifference'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Xor(a, b) : unsupportedOp('^')),
   '.__rshift__': (a, [b]) => callMethod(a, ['rshift'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Implies(a, b) : unsupportedOp('>>')),
   '.__lshift__': (a, [b]) => callMethod(a, ['lshift'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Implies(b, a) : unsupportedOp('<<')),
   '.__eq__': (a, [b]) => pyEquals(a, b),
@@ -4890,7 +4901,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__ge__': (a, [b]) => callMethod(a, ['ge'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Ge(a, b) : unsupportedOp('>=')),
   '.__contains__': (a, [b]) => {
     if (a instanceof sj.SetExpr && !(a instanceof sj.MatrixSet)) {
-      const result = sj.contains(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : asExpr(b));
+      const result = sj.contains(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : expressionContainer(b));
       if (result === S.true) return true;
       if (result === S.false) return false;
       throw new TypeError('cannot determine symbolic set membership');
@@ -4899,7 +4910,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     if (a instanceof Map) return [...a.keys()].some((k) => pyEquals(k, b));
     if (a instanceof Set) return [...a].some((k) => pyEquals(k, b));
     if (a instanceof sj.MatrixSet) return a.contains(b as Matrix) === true;
-    if (a instanceof sj.SetExpr) return sj.containsQ(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : asExpr(b)) === true;
+    if (a instanceof sj.SetExpr) return sj.containsQ(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : expressionContainer(b)) === true;
     const r = callMethod(a, ['contains', 'has', 'includes'], [b]);
     if (r === undefined) return unsupportedOp('in');
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
@@ -5235,7 +5246,7 @@ function autoAdapter(c: Case): Adapter | undefined {
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {
     // the evaluating constructors of the arithmetic classes (Python calls the class: Pow(b, e))
-    const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow, RisingFactorial: function RisingFactorial(x: Expr, k: Expr) { return sj.rf(x, k); }, FallingFactorial: function FallingFactorial(x: Expr, k: Expr) { return sj.ff(x, k); } };
+    const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow, RisingFactorial: function RisingFactorial(x: Expr, k: Expr) { return sj.rf(x, k); }, FallingFactorial: function FallingFactorial(x: Expr, k: Expr) { return sj.ff(x, k); }, PowerSet: sj.PowerSet, Contains: (x: Expr, s: sj.SetExpr) => new sj.Contains(x, s) };
     if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[REL_OPS[x.name] ?? camel(x.name)];
     const headName = String(c.args?.[0]?.['name']);
     if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);

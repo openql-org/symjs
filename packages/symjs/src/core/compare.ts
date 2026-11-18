@@ -15,6 +15,7 @@ import type { Expr } from './nodes';
 import { Add, Constant, Dummy, ExtensionExpr, Float, Fn, Mul, Pow, Rational, Rel, Special, Sym, UndefFn, Wild } from './nodes';
 import { BoolAtom } from './nodes';
 import { str } from '../printing/str';
+import { setClass } from '../printing/sets';
 import { at } from './guard';
 
 const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
@@ -26,7 +27,7 @@ function nodeClassName(e: Expr): string {
   if (isExp(e)) return 'exp';
   if (e instanceof Fn) return FN_CLASSES[e.name] ?? e.name;
   if (e instanceof UndefFn || e instanceof ExtensionExpr) return e.name;
-  return e.kind;
+  return setClass(e) ?? e.kind;
 }
 
 const CONSTANT_CLASSES: Readonly<Record<string, string>> = { E: 'Exp1', pi: 'Pi', I: 'ImaginaryUnit' };

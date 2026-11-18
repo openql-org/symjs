@@ -927,10 +927,10 @@ describe("sympy/sets/tests/test_powerset.py", () => {
   it("test_powerset_method:130", () => {
     expect(sympyStr(powerset(interval(rational(0), rational(1), false, false)))).toBe('PowerSet(Interval(0, 1))');
   });
-  it.fails("test_is_subset:139", () => {
+  it("test_is_subset:139", () => {
     expect(sympyStr(isSubset(PowerSet(finiteSet(rational(1))), PowerSet(finiteSet(rational(1), rational(2)))))).toBe('True');
   });
-  it.fails("test_is_subset:141", () => {
+  it("test_is_subset:141", () => {
     expect(sympyStr(isSubset(PowerSet(finiteSet(rational(1), rational(2))), PowerSet(finiteSet(rational(2), rational(3)))))).toBe('False');
   });
 });
@@ -1107,14 +1107,14 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_interval_arguments:122", () => {
     expect(sympyStr(interval(S.NegativeInfinity, S.NegativeInfinity, false, false))).toBe('EmptySet');
   });
-  it.fails("test_interval_arguments:123", () => {
+  it("test_interval_arguments:123", () => {
     const x = new Sym('x');
     expect(sympyStr(interval(oo, x, false, false))).toBe('EmptySet');
   });
   it("test_interval_arguments:124", () => {
     expect(sympyStr(interval(oo, oo, false, false))).toBe('EmptySet');
   });
-  it.fails("test_interval_arguments:125", () => {
+  it("test_interval_arguments:125", () => {
     const x = new Sym('x');
     expect(sympyStr(interval(x, S.NegativeInfinity, false, false))).toBe('EmptySet');
   });
@@ -1137,7 +1137,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_interval_arguments:137", () => {
     expect(sympyStr(interval(rational(1), rational(1), true, true))).toBe('EmptySet');
   });
-  it.fails("test_interval_arguments:141", () => {
+  it("test_interval_arguments:141", () => {
     const a = new Sym('a', { positive: true });
     expect(sympyStr(interval(a, rational(0), false, false))).toBe('EmptySet');
   });
@@ -1327,7 +1327,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_union:244", () => {
     expect(sympyStr(interval(rational(1), rational(3), true, true).add(finiteSet(rational(3))))).toBe('Interval.Lopen(1, 3)');
   });
-  it.fails("test_union:250", () => {
+  it("test_union:250", () => {
     expect(sympyStr(isSubset(Union(interval(rational(1), rational(2), false, false), finiteSet(rational(3))), Union(interval(rational(1), rational(3), false, false), finiteSet(rational(5)))))).toBe('True');
   });
   it("test_union:250 (2)", () => {
@@ -1371,16 +1371,16 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_difference:282", () => {
     expect(sympyStr(interval(rational(0), rational(2), false, false).sub(finiteSet(rational(1))))).toBe('Union(Interval.Ropen(0, 1), Interval.Lopen(1, 2))');
   });
-  it.fails("test_difference:286", () => {
+  it("test_difference:286", () => {
     expect(sympyStr(Reals.sub(finiteSet(I)))).toBe('Reals');
   });
-  it.fails("test_difference:287", () => {
+  it("test_difference:287", () => {
     expect(sympyStr(Reals.sub(finiteSet(I, new Mul([rational(-1), I]))))).toBe('Reals');
   });
-  it.fails("test_difference:288", () => {
+  it("test_difference:288", () => {
     expect(sympyStr(interval(rational(0), rational(10), false, false).sub(finiteSet(I, new Mul([rational(-1), I]))))).toBe('Interval(0, 10)');
   });
-  it.fails("test_difference:289", () => {
+  it("test_difference:289", () => {
     expect(sympyStr(interval(rational(0), rational(10), false, false).sub(finiteSet(rational(1), I)))).toBe('Union(Interval.Ropen(0, 1), Interval.Lopen(1, 10))');
   });
   it.fails("test_difference:291", () => {
@@ -1400,7 +1400,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_difference:299", () => {
     expect(sympyStr(finiteSet(rational(1), rational(2), rational(3), rational(4)).sub(EmptySet))).toBe('{1, 2, 3, 4}');
   });
-  it.fails("test_difference:300", () => {
+  it("test_difference:300", () => {
     expect(sympyStr(Union(interval(rational(0), rational(2), false, false), finiteSet(rational(3), rational(4))).sub(interval(rational(1), rational(3), false, false)))).toBe('Union({4}, Interval.Ropen(0, 1))');
   });
   it("test_Complement:312", () => {
@@ -1424,7 +1424,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_Complement:321", () => {
     expect(sympyStr(Complement(finiteSet(rational(1), rational(3), rational(4)), finiteSet(rational(3), rational(4))))).toBe('{1}');
   });
-  it.fails("test_Complement:322", () => {
+  it("test_Complement:322", () => {
     expect(sympyStr(Complement(Union(interval(rational(0), rational(2), false, false), finiteSet(rational(3), rational(4))), interval(rational(1), rational(3), false, false)))).toBe('Union({4}, Interval.Ropen(0, 1))');
   });
   it("test_Complement:326", () => {
@@ -1445,10 +1445,10 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_Complement:335", () => {
     expect(sympyStr(EmptySet.sub(Integers))).toBe('EmptySet');
   });
-  it.fails("test_Complement:337", () => {
+  it("test_Complement:337", () => {
     expect(sympyStr(Complement(Integers, finiteSet(rational(0))).sub(finiteSet(rational(1))))).toBe('Complement(Integers, {0, 1})');
   });
-  it.fails("test_Complement:339", () => {
+  it("test_Complement:339", () => {
     expect(sympyStr(Reals.sub(Union(Naturals, finiteSet(pi))))).toBe('Union(Complement(Interval.open(-oo, pi), Naturals), Complement(Interval.open(pi, oo), Naturals))');
   });
   it("test_Complement:342", () => {
@@ -1458,11 +1458,11 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it.fails("test_Complement:347", () => {
     expect(sympyStr(isUnsolved(false))).toBe('True');
   });
-  it.fails("test_Complement:351", () => {
+  it("test_Complement:351", () => {
     const [a, b, c, d, e, f] = symbols('a b c d e f');
     expect(sympyStr(ProductSet(finiteSet(a, b, c), finiteSet(a, b, c)).sub(ProductSet(finiteSet(d, e, f), finiteSet(d, e, f), finiteSet(d, e, f))))).toBe('ProductSet({a, b, c}, {a, b, c})');
   });
-  it.fails("test_Complement:352", () => {
+  it("test_Complement:352", () => {
     const [d, e, f, a, b, c] = symbols('d e f a b c');
     expect(sympyStr(ProductSet(finiteSet(d, e, f), finiteSet(d, e, f), finiteSet(d, e, f)).sub(ProductSet(finiteSet(a, b, c), finiteSet(a, b, c))))).toBe('ProductSet({d, e, f}, {d, e, f}, {d, e, f})');
   });
@@ -1528,7 +1528,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_complement:413", () => {
     expect(sympyStr(Complement(Reals, finiteSet(rational(0))))).toBe('Union(Interval.open(-oo, 0), Interval.open(0, oo))');
   });
-  it.fails("test_complement:416", () => {
+  it("test_complement:416", () => {
     expect(sympyStr(Complement(Reals, Union(interval(S.NegativeInfinity, rational(0), true, false), finiteSet(rational(5)))))).toBe('Union(Interval.open(0, 5), Interval.open(5, oo))');
   });
   it("test_complement:420", () => {
@@ -1636,7 +1636,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_intersection_interval_float:536", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(rational(2), rational(3), false, false)))).toBe('Interval(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (2)", () => {
+  it("test_intersection_interval_float:536 (2)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false)))).toBe('Interval(2, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (3)", () => {
@@ -1645,22 +1645,22 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_intersection_interval_float:536 (4)", () => {
     expect(equivalent(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false))), 'Interval(2, 3.00000000000000)', [], { fn: '.intersect', input: 'Interval(2, 3.0)' })).toBe(true);
   });
-  it.fails("test_intersection_interval_float:536 (5)", () => {
+  it("test_intersection_interval_float:536 (5)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false)))).toBe('Interval(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (6)", () => {
+  it("test_intersection_interval_float:536 (6)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false)))).toBe('Interval(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (7)", () => {
+  it("test_intersection_interval_float:536 (7)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false)))).toBe('Interval(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (8)", () => {
+  it("test_intersection_interval_float:536 (8)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false)))).toBe('Interval(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (9)", () => {
     expect(equivalent(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(rational(2), rational(3), false, false))), 'Interval(2.00000000000000, 3)', [], { fn: '.intersect', input: 'Interval(2.0, 3)' })).toBe(true);
   });
-  it.fails("test_intersection_interval_float:536 (10)", () => {
+  it("test_intersection_interval_float:536 (10)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false)))).toBe('Interval(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (11)", () => {
@@ -1672,7 +1672,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_intersection_interval_float:536 (13)", () => {
     expect(equivalent(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false))), 'Interval(2.00000000000000, 3)', [], { fn: '.intersect', input: 'Interval(2.0, 3)' })).toBe(true);
   });
-  it.fails("test_intersection_interval_float:536 (14)", () => {
+  it("test_intersection_interval_float:536 (14)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false)))).toBe('Interval(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (15)", () => {
@@ -1684,433 +1684,433 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_intersection_interval_float:536 (17)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(rational(2), rational(3), true, true)))).toBe('Interval.open(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (18)", () => {
+  it("test_intersection_interval_float:536 (18)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (19)", () => {
+  it("test_intersection_interval_float:536 (19)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), rational(3), true, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (20)", () => {
+  it("test_intersection_interval_float:536 (20)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (21)", () => {
+  it("test_intersection_interval_float:536 (21)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (22)", () => {
+  it("test_intersection_interval_float:536 (22)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (23)", () => {
+  it("test_intersection_interval_float:536 (23)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (24)", () => {
+  it("test_intersection_interval_float:536 (24)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (25)", () => {
+  it("test_intersection_interval_float:536 (25)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(rational(2), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (26)", () => {
+  it("test_intersection_interval_float:536 (26)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (27)", () => {
+  it("test_intersection_interval_float:536 (27)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (28)", () => {
+  it("test_intersection_interval_float:536 (28)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (29)", () => {
+  it("test_intersection_interval_float:536 (29)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (30)", () => {
+  it("test_intersection_interval_float:536 (30)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (31)", () => {
+  it("test_intersection_interval_float:536 (31)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (32)", () => {
+  it("test_intersection_interval_float:536 (32)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (33)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(rational(2), rational(3), true, false)))).toBe('Interval.Lopen(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (34)", () => {
+  it("test_intersection_interval_float:536 (34)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (35)", () => {
+  it("test_intersection_interval_float:536 (35)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), rational(3), true, false)))).toBe('Interval.Lopen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (36)", () => {
+  it("test_intersection_interval_float:536 (36)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (37)", () => {
+  it("test_intersection_interval_float:536 (37)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (38)", () => {
+  it("test_intersection_interval_float:536 (38)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (39)", () => {
+  it("test_intersection_interval_float:536 (39)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (40)", () => {
+  it("test_intersection_interval_float:536 (40)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (41)", () => {
+  it("test_intersection_interval_float:536 (41)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(rational(2), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (42)", () => {
+  it("test_intersection_interval_float:536 (42)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (43)", () => {
+  it("test_intersection_interval_float:536 (43)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (44)", () => {
+  it("test_intersection_interval_float:536 (44)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (45)", () => {
+  it("test_intersection_interval_float:536 (45)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (46)", () => {
+  it("test_intersection_interval_float:536 (46)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (47)", () => {
+  it("test_intersection_interval_float:536 (47)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (48)", () => {
+  it("test_intersection_interval_float:536 (48)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (49)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(rational(2), rational(3), false, true)))).toBe('Interval.Ropen(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (50)", () => {
+  it("test_intersection_interval_float:536 (50)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (51)", () => {
+  it("test_intersection_interval_float:536 (51)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), rational(3), false, true)))).toBe('Interval.Ropen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (52)", () => {
+  it("test_intersection_interval_float:536 (52)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (53)", () => {
+  it("test_intersection_interval_float:536 (53)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (54)", () => {
+  it("test_intersection_interval_float:536 (54)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (55)", () => {
+  it("test_intersection_interval_float:536 (55)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (56)", () => {
+  it("test_intersection_interval_float:536 (56)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (57)", () => {
+  it("test_intersection_interval_float:536 (57)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(rational(2), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (58)", () => {
+  it("test_intersection_interval_float:536 (58)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (59)", () => {
+  it("test_intersection_interval_float:536 (59)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (60)", () => {
+  it("test_intersection_interval_float:536 (60)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (61)", () => {
+  it("test_intersection_interval_float:536 (61)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (62)", () => {
+  it("test_intersection_interval_float:536 (62)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (63)", () => {
+  it("test_intersection_interval_float:536 (63)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (64)", () => {
+  it("test_intersection_interval_float:536 (64)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (65)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(rational(2), rational(3), true, true)))).toBe('Interval.open(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (66)", () => {
+  it("test_intersection_interval_float:536 (66)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (67)", () => {
+  it("test_intersection_interval_float:536 (67)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), rational(3), true, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (68)", () => {
+  it("test_intersection_interval_float:536 (68)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (69)", () => {
+  it("test_intersection_interval_float:536 (69)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (70)", () => {
+  it("test_intersection_interval_float:536 (70)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (71)", () => {
+  it("test_intersection_interval_float:536 (71)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (72)", () => {
+  it("test_intersection_interval_float:536 (72)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (73)", () => {
+  it("test_intersection_interval_float:536 (73)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(rational(2), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (74)", () => {
+  it("test_intersection_interval_float:536 (74)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (75)", () => {
+  it("test_intersection_interval_float:536 (75)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (76)", () => {
+  it("test_intersection_interval_float:536 (76)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (77)", () => {
+  it("test_intersection_interval_float:536 (77)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (78)", () => {
+  it("test_intersection_interval_float:536 (78)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (79)", () => {
+  it("test_intersection_interval_float:536 (79)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (80)", () => {
+  it("test_intersection_interval_float:536 (80)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (81)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(rational(2), rational(3), true, false)))).toBe('Interval.open(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (82)", () => {
+  it("test_intersection_interval_float:536 (82)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (83)", () => {
+  it("test_intersection_interval_float:536 (83)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), rational(3), true, false)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (84)", () => {
+  it("test_intersection_interval_float:536 (84)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (85)", () => {
+  it("test_intersection_interval_float:536 (85)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (86)", () => {
+  it("test_intersection_interval_float:536 (86)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (87)", () => {
+  it("test_intersection_interval_float:536 (87)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (88)", () => {
+  it("test_intersection_interval_float:536 (88)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (89)", () => {
+  it("test_intersection_interval_float:536 (89)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(rational(2), rational(3), true, false)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (90)", () => {
+  it("test_intersection_interval_float:536 (90)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (91)", () => {
+  it("test_intersection_interval_float:536 (91)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), rational(3), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (92)", () => {
+  it("test_intersection_interval_float:536 (92)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (93)", () => {
+  it("test_intersection_interval_float:536 (93)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (94)", () => {
+  it("test_intersection_interval_float:536 (94)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (95)", () => {
+  it("test_intersection_interval_float:536 (95)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (96)", () => {
+  it("test_intersection_interval_float:536 (96)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (97)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(rational(2), rational(3), false, true)))).toBe('Interval.open(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (98)", () => {
+  it("test_intersection_interval_float:536 (98)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (99)", () => {
+  it("test_intersection_interval_float:536 (99)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), rational(3), false, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (100)", () => {
+  it("test_intersection_interval_float:536 (100)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (101)", () => {
+  it("test_intersection_interval_float:536 (101)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (102)", () => {
+  it("test_intersection_interval_float:536 (102)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (103)", () => {
+  it("test_intersection_interval_float:536 (103)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (104)", () => {
+  it("test_intersection_interval_float:536 (104)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (105)", () => {
+  it("test_intersection_interval_float:536 (105)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(rational(2), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (106)", () => {
+  it("test_intersection_interval_float:536 (106)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (107)", () => {
+  it("test_intersection_interval_float:536 (107)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (108)", () => {
+  it("test_intersection_interval_float:536 (108)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (109)", () => {
+  it("test_intersection_interval_float:536 (109)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (110)", () => {
+  it("test_intersection_interval_float:536 (110)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (111)", () => {
+  it("test_intersection_interval_float:536 (111)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (112)", () => {
+  it("test_intersection_interval_float:536 (112)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (113)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, false), interval(rational(2), rational(3), true, false)))).toBe('Interval.Lopen(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (114)", () => {
+  it("test_intersection_interval_float:536 (114)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (115)", () => {
+  it("test_intersection_interval_float:536 (115)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(rational(2), rational(3), true, false)))).toBe('Interval.Lopen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (116)", () => {
+  it("test_intersection_interval_float:536 (116)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (117)", () => {
+  it("test_intersection_interval_float:536 (117)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (118)", () => {
+  it("test_intersection_interval_float:536 (118)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (119)", () => {
+  it("test_intersection_interval_float:536 (119)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (120)", () => {
+  it("test_intersection_interval_float:536 (120)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (121)", () => {
+  it("test_intersection_interval_float:536 (121)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false), interval(rational(2), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (122)", () => {
+  it("test_intersection_interval_float:536 (122)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (123)", () => {
+  it("test_intersection_interval_float:536 (123)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(rational(2), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (124)", () => {
+  it("test_intersection_interval_float:536 (124)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (125)", () => {
+  it("test_intersection_interval_float:536 (125)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (126)", () => {
+  it("test_intersection_interval_float:536 (126)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (127)", () => {
+  it("test_intersection_interval_float:536 (127)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (128)", () => {
+  it("test_intersection_interval_float:536 (128)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false)))).toBe('Interval.Lopen(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (129)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, false), interval(rational(2), rational(3), false, true)))).toBe('Interval.open(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (130)", () => {
+  it("test_intersection_interval_float:536 (130)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (131)", () => {
+  it("test_intersection_interval_float:536 (131)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(rational(2), rational(3), false, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (132)", () => {
+  it("test_intersection_interval_float:536 (132)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (133)", () => {
+  it("test_intersection_interval_float:536 (133)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (134)", () => {
+  it("test_intersection_interval_float:536 (134)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (135)", () => {
+  it("test_intersection_interval_float:536 (135)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (136)", () => {
+  it("test_intersection_interval_float:536 (136)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (137)", () => {
+  it("test_intersection_interval_float:536 (137)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false), interval(rational(2), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (138)", () => {
+  it("test_intersection_interval_float:536 (138)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (139)", () => {
+  it("test_intersection_interval_float:536 (139)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(rational(2), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (140)", () => {
+  it("test_intersection_interval_float:536 (140)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (141)", () => {
+  it("test_intersection_interval_float:536 (141)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (142)", () => {
+  it("test_intersection_interval_float:536 (142)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (143)", () => {
+  it("test_intersection_interval_float:536 (143)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (144)", () => {
+  it("test_intersection_interval_float:536 (144)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), true, false), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.open(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection_interval_float:536 (145)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, true), interval(rational(2), rational(3), false, true)))).toBe('Interval.Ropen(2, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (146)", () => {
+  it("test_intersection_interval_float:536 (146)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (147)", () => {
+  it("test_intersection_interval_float:536 (147)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true), interval(rational(2), rational(3), false, true)))).toBe('Interval.Ropen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (148)", () => {
+  it("test_intersection_interval_float:536 (148)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (149)", () => {
+  it("test_intersection_interval_float:536 (149)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (150)", () => {
+  it("test_intersection_interval_float:536 (150)", () => {
     expect(sympyStr(intersection(interval(rational(2), rational(3), false, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (151)", () => {
+  it("test_intersection_interval_float:536 (151)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (152)", () => {
+  it("test_intersection_interval_float:536 (152)", () => {
     expect(sympyStr(intersection(interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (153)", () => {
+  it("test_intersection_interval_float:536 (153)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true), interval(rational(2), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (154)", () => {
+  it("test_intersection_interval_float:536 (154)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (155)", () => {
+  it("test_intersection_interval_float:536 (155)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true), interval(rational(2), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (156)", () => {
+  it("test_intersection_interval_float:536 (156)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true), interval(rational(2), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (157)", () => {
+  it("test_intersection_interval_float:536 (157)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3)');
   });
-  it.fails("test_intersection_interval_float:536 (158)", () => {
+  it("test_intersection_interval_float:536 (158)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (159)", () => {
+  it("test_intersection_interval_float:536 (159)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true), interval(new Float({ man: 1n, exp: 1n }, 53), rational(3), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
-  it.fails("test_intersection_interval_float:536 (160)", () => {
+  it("test_intersection_interval_float:536 (160)", () => {
     expect(sympyStr(intersection(interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true), interval(new Float({ man: 1n, exp: 1n }, 53), new Float({ man: 3n, exp: 0n }, 53), false, true)))).toBe('Interval.Ropen(2.00000000000000, 3.00000000000000)');
   });
   it("test_intersection:542", () => {
@@ -2298,7 +2298,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_set_evalf:699", () => {
     expect(equivalent(sympyStr(interval(rational(11, 64), rational(1, 2), false, false).evalf(15, {})), 'Interval(0.171875000000000, 0.500000000000000)', [], { fn: '.evalf', input: 'Interval(11/64, 1/2)' })).toBe(true);
   });
-  it.fails("test_set_evalf:701", () => {
+  it("test_set_evalf:701", () => {
     const x = new Sym('x');
     expect(sympyStr(interval(x, rational(1, 2), false, true).evalf(15, {}))).toBe('Interval.Ropen(x, 0.500000000000000)');
   });
@@ -2378,7 +2378,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_is_subset:743", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_subset:744", () => {
+  it("test_is_subset:744", () => {
     expect(sympyStr(isSubset(Union(interval(rational(1), rational(2), false, false), finiteSet(rational(3))), Union(interval(rational(0), rational(2), false, false), finiteSet(rational(3)))))).toBe('True');
   });
   it("test_is_subset:747", () => {
@@ -2432,7 +2432,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_is_subset:770", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_subset:773", () => {
+  it("test_is_subset:773", () => {
     expect(sympyStr(isSubset(Range.of(rational(-3), rational(4), rational(1)), finiteSet(rational(-10), rational(10))))).toBe('False');
   });
   it.fails("test_is_subset:774", () => {
@@ -2493,7 +2493,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_is_superset:799", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_superset:800", () => {
+  it("test_is_superset:800", () => {
     expect(sympyStr(isSubset(Union(interval(rational(0), rational(2), false, false), finiteSet(rational(3))), Union(interval(rational(1), rational(2), false, false), finiteSet(rational(3)))))).toBe('False');
   });
   it.fails("test_is_superset:803", () => {
@@ -3274,7 +3274,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it.fails("test_issue_8257:1480", () => {
     expect(sympyStr(finiteSet(S.NegativeInfinity).add(Reals))).toBe('Union({-oo}, Interval(-oo, oo))');
   });
-  it.fails("test_issue_10931:1484", () => {
+  it("test_issue_10931:1484", () => {
     expect(sympyStr(Integers.sub(Integers))).toBe('EmptySet');
   });
   it.fails("test_issue_10931:1485", () => {
@@ -3456,7 +3456,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it.fails("test_issue_19378:1708", () => {
     expect(sympyStr(isSubset(ProductSet(finiteSet(rational(1), rational(2)), finiteSet(rational(1), rational(2))), finiteSet(Tuple(rational(1), rational(1)), Tuple(rational(1), rational(2)), Tuple(rational(2), rational(1)), Tuple(rational(2), rational(2)))))).toBe('True');
   });
-  it.fails("test_issue_19378:1710", () => {
+  it("test_issue_19378:1710", () => {
     expect(sympyStr(isSubset(ProductSet(finiteSet(rational(1), rational(2)), finiteSet(rational(1), rational(2))), finiteSet(rational(1))))).toBe('False');
   });
   it("test_issue_19378:1713", () => {
