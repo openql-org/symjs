@@ -222,3 +222,7 @@ describe('rsolve', () => {
     expect(sj.str(sj.rsolve(P('y(n+1) + y(n)'), y(n)) as sj.Expr)).toBe('(-1)**n*C0');
   });
 });
+
+it('rejects initial values of another sequence', () => {
+  expect(() => rs('y(n+1)-y(n)', [['g(0)','1']])).toThrow(RangeError);
+});

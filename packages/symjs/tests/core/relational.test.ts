@@ -45,3 +45,76 @@ it('compares values using three-valued logic and explicit assumptions', () => {
   expect(isLe(0, 2)).toBe(true); expect(isGt(0, 2)).toBe(false); expect(isLt(2, 0)).toBe(false);
   expect(isGe(x, 0)).toBe('unknown'); expect(isGe(x, 0, Q.positive(x))).toBe(true);
 });
+
+it('normalizes linear relations without cancelling unknown symbolic signs', async () => {
+  const { simplify, add, mul, pow, sin, finiteSet, relationalEquals } = await import('../../src');
+  const y = new Sym('y');
+  for (const op of ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'] as const) {
+    expect(simplify(new Rel(op, add(mul(2, x), -1), x)).key).toBe(new Rel(op, x, S.One).key);
+  }
+  expect(String(simplify(new Rel('Le', x.neg(), S.One)))).toBe('x >= -1');
+  expect(String(simplify(new Rel('Ge', add(x, y), add(x, y.neg()))))).toBe('y >= 0');
+  expect(String(simplify(new Rel('Eq', add(x, y), S.Zero)))).toBe('Eq(x, -y)');
+  expect(simplify(new Rel('Eq', sin(x), y))).toBeInstanceOf(Rel);
+  expect(simplify(new Rel('Eq', pow(x, 2), y))).toBeInstanceOf(Rel);
+  expect(simplify(new Rel('Eq', new Sym('z', { real: false }), y))).toBeInstanceOf(Rel);
+  expect(simplify(new Rel('Eq', S.One, S.One))).toBe(S.true);
+  expect(simplify(new Rel('Eq', add(x, S.One), x))).toBe(S.false);
+  expect(simplify(new Rel('Eq', S.true, x))).toBeInstanceOf(Rel);
+  const setEquation = new Rel('Eq', finiteSet(1), finiteSet(x));
+  expect(simplify(setEquation).key).toBe(setEquation.key);
+  const eq = new Rel('Eq', x, S.One);
+  expect(relationalEquals(eq, x)).toBe('unknown');
+  expect(relationalEquals(eq, eq)).toBe(true);
+  expect(relationalEquals(eq, new Rel('Eq', S.One, x))).toBe(true);
+  expect(relationalEquals(eq, new Rel('Ne', x, S.One))).toBe(false);
+  expect(relationalEquals(eq, new Rel('Eq', x, S.Zero))).toBe(false);
+  expect(relationalEquals(eq, new Rel('Eq', y, S.One))).toBe(false);
+  expect(relationalEquals(eq, new Rel('Eq', S.Zero, x))).toBe(false);
+  expect(relationalEquals(eq, new Rel('Eq', S.One, y))).toBe(false);
+  expect(relationalEquals(new Rel('Eq', S.One, S.Zero), new Rel('Eq', S.NegOne, S.Half))).toBe(false);
+  expect(relationalEquals(new Rel('Eq', x, y), new Rel('Eq', S.One, S.Zero), true)).toBe(false);
+  expect(relationalEquals(new Rel('Eq', x, y), new Rel('Eq', S.One, S.Zero))).toBe(false);
+  const lt = new Rel('Lt', x, S.One);
+  expect(relationalEquals(lt, new Rel('Gt', S.One, x))).toBe(true);
+  expect(relationalEquals(lt, new Rel('Le', x, S.One))).toBe(false);
+  expect(relationalEquals(lt, new Rel('Lt', S.Zero, S.One))).toBe(false);
+  expect(relationalEquals(lt, new Rel('Lt', x, S.Zero))).toBe(false);
+  expect(relationalEquals(new Rel('Lt', S.One, x), new Rel('Lt', S.Zero, x))).toBe(false);
+  expect(relationalEquals(lt, new Rel('Lt', add(x, 0), y))).toBe(false);
+});
+
+it('returns undecided functional differences when requested', async () => {
+  const { SymFunction, relationalEquals } = await import('../../src');
+  const f = SymFunction('f');
+  const a = f(1), b = f(2), c = f(3), d = f(4);
+  const y = new Sym('y');
+  for (const [left, right] of [
+    [new Rel('Eq', x, a), new Rel('Eq', x, b)],
+    [new Rel('Eq', a, x), new Rel('Eq', b, x)],
+    [new Rel('Eq', x, a), new Rel('Eq', b, x)],
+    [new Rel('Eq', a, x), new Rel('Eq', x, b)],
+    [new Rel('Eq', a, c), new Rel('Eq', b, d)],
+    [new Rel('Lt', x, a), new Rel('Lt', x, b)],
+    [new Rel('Lt', a, x), new Rel('Lt', b, x)],
+  ] as const) {
+    expect(relationalEquals(left, right)).toBe('unknown');
+    expect(String(relationalEquals(left, right, true))).toBe(String(a.sub(b)));
+  }
+  expect(relationalEquals(new Rel('Lt', a, x), new Rel('Gt', y, b))).toBe(false);
+});
+
+it('decides identities that become constant after expanding the difference', async () => {
+  const { simplifyRelation } = await import('../../src/core/relational');
+  const { add, mul } = await import('../../src');
+  const y = new Sym('y');
+  const lhs = mul(x, add(y, 1));
+  const rhs = add(mul(x, y), x);
+  expect(simplifyRelation(new Rel('Eq', lhs, rhs), (e) => e)).toBe(S.true);
+});
+
+it('orders linear symbols by the symbolic sort key', async () => {
+  const { simplify, add } = await import('../../src');
+  const a = new Sym('a'), B = new Sym('B');
+  expect(String(simplify(new Rel('Ge', add(a, B), S.Zero)))).toBe('B >= -a');
+});

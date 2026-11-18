@@ -298,7 +298,7 @@
         {
           "file": "core.json",
           "cases": 9337,
-          "bytes": 4185811
+          "bytes": 4198928
         }
       ],
       "auditFile": "core.audit.json",
@@ -462,7 +462,7 @@
         {
           "file": "functions.json",
           "cases": 10649,
-          "bytes": 5823227
+          "bytes": 5823717
         }
       ],
       "auditFile": "functions.audit.json",
@@ -1415,7 +1415,7 @@
         {
           "file": "tensor.json",
           "cases": 1953,
-          "bytes": 2375370
+          "bytes": 2780778
         }
       ],
       "auditFile": "tensor.audit.json",

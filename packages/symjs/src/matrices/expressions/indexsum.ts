@@ -10,10 +10,12 @@
 import { Concrete } from '../../core/concrete';
 import { NotImplementedError } from '../../core/errors';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Add, Mul, S } from '../../core/nodes';
+import { Add, Mul, Rational, S } from '../../core/nodes';
 import { add, mul, sympify } from '../../core/ops';
 import { compareKeys, sortKey } from '../../printing/sortkey';
-import { MatAddNode, MatMulNode, MatrixElementNode, MatrixExpr, TraceNode, transposeOf } from './matexpr';
+import { hasNode, MatAddNode, MatMulNode, MatrixElementNode, MatrixExpr, TraceNode, transposeOf } from './matexpr';
+import { convertIndexedToArray } from '../../tensor/array/expressions/fromindexedtoarray';
+import { convertArrayToMatrix } from '../../tensor/array/expressions/fromarraytomatrix';
 import { same } from './util';
 import { at, cast, pair } from '../../core/guard';
 
@@ -39,13 +41,22 @@ function peel(e: Expr): [Expr, Limit[]] {
 const prod = (coeff: Expr, mats: readonly Expr[]): Expr => cast(MatMulNode.create([coeff, ...mats]), MatrixExpr).doit();
 
 function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last?: Expr): Expr {
-  const summed = new Map(limits.map((l) => [l[0].key, l]));
-  const factors = body instanceof Mul ? body.args : [body];
+  const allLimits = [...limits];
+  const flattenFactors = (e: Expr): Expr[] => {
+    if (e instanceof Mul) return e.args.flatMap(flattenFactors);
+    if (limits.length > 0 && e instanceof Concrete && e.kind2 === 'Sum') {
+      allLimits.push(...e.limits);
+      return flattenFactors(e.function);
+    }
+    return [e];
+  };
+  const factors = flattenFactors(body);
+  const summed = new Map(allLimits.map((l) => [l[0].key, l]));
   const edges: Edge[] = [];
   const scalars: Expr[] = [];
   for (const f of factors) {
     if (f instanceof MatrixElementNode && f.parent instanceof MatrixExpr) edges.push({ mat: f.parent, a: f.i, b: f.j });
-    else if (limits.some(([v]) => f.has(v))) throw new NotImplementedError(`from_index_summation: cannot convert ${String(f)}`);
+    else if (allLimits.some(([v]) => f.has(v))) throw new NotImplementedError(`from_index_summation: cannot convert ${String(f)}`);
     else scalars.push(f);
   }
   const coeff = mul(...scalars);
@@ -119,17 +130,28 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
  */
 export function fromIndexSummation(exprIn: ExprLike, firstIndex?: Expr, lastIndex?: Expr): Expr {
   const expr = sympify(exprIn);
+  const indexed = (e: Expr): boolean => hasNode(e, (a) => a instanceof MatrixElementNode);
+  const needsArray = hasNode(expr, (e) => e instanceof MatrixElementNode && (e.i instanceof Rational || e.j instanceof Rational)
+    || e instanceof Mul && e.args.some((a) => a instanceof Add && indexed(a)));
+  if (needsArray) {
+    const indices = [firstIndex, lastIndex].filter((i): i is Expr => i !== undefined);
+    return convertArrayToMatrix(convertIndexedToArray(expr, indices));
+  }
   const [body, limits] = peel(expr);
   if (body instanceof Add) {
     const terms = body.args.map((t) => {
       const ls = limits.filter(([v]) => t.has(v));
-      const r = convertProduct(t, ls, firstIndex, lastIndex);
+      const r = limits.length === 0 ? fromIndexSummation(t, firstIndex, lastIndex) : convertProduct(t, ls, firstIndex, lastIndex);
       // a term free of a summation index is summed upper - lower + 1 times (SymPy drops the factor)
       const n = mul(...limits.filter(([v]) => !t.has(v)).map(([, lo, hi]) => add(hi, mul(-1, lo), 1)));
       return r instanceof MatrixExpr ? prod(n, [r]) : mul(n, r);
     });
     if (terms.every((t) => t instanceof MatrixExpr)) return MatAddNode.create(terms).doit();
     return add(...terms);
+  }
+  if (limits.length === 0 && body instanceof Mul && body.args.filter((a) => a instanceof Concrete && a.kind2 === 'Sum').length === 1) {
+    const factors = body.args.map((a) => a instanceof Concrete && a.kind2 === 'Sum' ? fromIndexSummation(a, firstIndex, lastIndex) : a);
+    return factors.some((a) => a instanceof MatrixExpr) ? prod(S.One, factors) : mul(...factors);
   }
   return convertProduct(body, limits, firstIndex, lastIndex);
 }

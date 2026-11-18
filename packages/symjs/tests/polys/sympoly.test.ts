@@ -154,6 +154,7 @@ describe('factor options', () => {
     expect(String(sj.factorNc(sj.add(sj.mul(A, B), sj.mul(B, A))))).toBe('A*B + B*A');
     expect(show(sj.factorList(E('2*x**2 - 2')))).toBe('[2, [[x - 1, 1], [x + 1, 1]]]');
     expect(show(sj.factorList(E('6')))).toBe('[6, []]');
+    expect(show(sj.factorList(E('(x + 1)*(x + y)')))).toBe('[1, [[x + 1, 1], [x + y, 1]]]');
     expect(show(sj.sqfNorm(E('x**2 - 2'), x, [E('sqrt(3)')]))).toBe('[[1], x**2 - 2*sqrt(3)*x + 1, x**4 - 10*x**2 + 1]');
     expect(show(sj.sqfNorm(E('x**2 + 1'), x, [sj.I]))).toBe('[[2], x**2 - 4*I*x - 3, x**4 + 10*x**2 + 9]');
     expect(String(sj.minimalPolynomial(E('sqrt(2) + sqrt(3)'), x))).toBe('x**4 - 10*x**2 + 1');
@@ -1438,6 +1439,8 @@ it('preserves nonsymmetric representatives in top-level finite factorization and
   expect(String(sj.factor(parse('x**2-1'),{modulus:9,symmetric:false}))).toBe('(x + 1)*(x + 8)');
   expect(String(sj.factor(parse('x**2+1'),{domain:sj.GF(5,false)}))).toBe('(x + 2)*(x + 3)');
   expect(String(sj.cancel(parse('(4*x+3)/(x+1)'),{modulus:5,symmetric:false}))).toBe('(4*x + 3)/(x + 1)');
+  expect(sj.cancel(2, { modulus: 5 }).equals(2)).toBe(true);
+  expect(sj.cancel(parse('x/(5*x + 5)'), { modulus: 5 })).toBe(sj.S.ComplexInfinity);
 });
 
 it('rejects multivariate Taylor shifts like SymPy 1.14',()=>{
@@ -1492,11 +1495,21 @@ describe('polynomial construction and comparison options', () => {
     expect(Poly.from(1).intervals()).toEqual([]);
     expect(Poly.from(0).intervals(undefined, { all: true })).toEqual([[], []]);
     const p = Poly.from(parse('x**2-2'), [X]);
+    expect(() => p.intervals(sj.S.Zero)).toThrow(RangeError);
     expect(p.countRoots(sj.S.NegativeInfinity, sj.S.Infinity)).toBe(2);
     expect(p.countRoots(-2, 2)).toBe(2);
     const a = Poly.from(parse('x**2+2*sqrt(2)*x+1'), [X], { extension: parse('sqrt(2)') });
     expect(a.countRoots(-3, 0)).toBe(2);
   });
+});
+
+it('stops finite-field division when the leading coefficient has a remainder', () => {
+  const [x, y] = symbols('x y');
+  const f = Poly.from(parse('x*y + 1'), [x, y], { modulus: 5 });
+  const g = Poly.from(parse('x*(y + 1)'), [x, y], { modulus: 5 });
+  const [quotient, remainder] = f.div(g);
+  expect(quotient.isZero).toBe(true);
+  expect(remainder.equals(f)).toBe(true);
 });
 
 it('validates sparse term transforms and finite-domain isolation', () => {

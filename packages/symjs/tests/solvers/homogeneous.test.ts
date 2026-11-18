@@ -35,3 +35,7 @@ describe('homogeneous_order', () => {
     expect(homogeneousOrder(parse('cos(x + y)'), x, y)).toBe(NoMatch);
   });
 });
+
+it('requires at least one scaling variable', () => {
+  expect(() => homogeneousOrder(parse('x*y'))).toThrow(RangeError);
+});

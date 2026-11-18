@@ -67,10 +67,11 @@ function choose(n: number, k: number): Rational {
 
 /** Closed form of sum_{k=a}^{b} f, or undefined. */
 function sumOne(fIn: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | undefined {
-  const f = powsimp(fIn);
+  const simplified = powsimp(fIn);
+  const f = simplified.has(k) ? fIn : simplified;
   if (isOo(a) && !isOo(b)) {
     const r = sumOne(f, k, add(b, 1), S.Infinity);
-    return r === undefined ? undefined : mul(-1, r);
+    return r === undefined ? undefined : xreplace(r, [[new Concrete('Sum', [f, k, add(b, 1), S.Infinity]), new Concrete('Sum', [f, k, a, b])]]);
   }
   if (!f.has(k)) {
     if (isOo(b) || isNegOo(a)) return f instanceof Rational && f.isZero ? S.Zero : mul(f, S.Infinity);

@@ -616,3 +616,26 @@ describe('the root test (SymPy Sum.is_convergent)', () => {
     expect(isConvergent(concExpr(Sum(sj.pow(sj.S.Half, sj.floor(sj.mul(n, sj.S.Half))), [n, 1, oo])))).toBe(true);
   });
 });
+
+
+it('extracts central scalar factors from constant noncommutative products', () => {
+  const A = new sj.Sym('A', { commutative: false });
+  const B = new sj.Sym('B', { commutative: false });
+  const k = new sj.Sym('k', { integer: true });
+  const n = new sj.Sym('n', { positive: true, integer: true });
+  expect(String(sj.product(sj.mul(2, A, B), [k, 1, n]))).toBe('2**n*(A*B)**n');
+});
+
+it('uses the infinite lower limit convention while retaining finite Karr reversal', () => {
+  expect(String(summation(Pplain('2**(-k)'), [k, oo, -1]))).toBe('2');
+  expect(String(summation(Pplain('1/(k**2+1)'), [k, oo, 0]))).toBe('-1/2 + pi/(2*tanh(pi))');
+  expect(String(summation(Pplain('(-1)**k/k'), [k, oo, 0]))).toBe('-log(2)');
+  expect(String(summation(Pplain('1/k'), [k, oo, 0]))).toBe('oo');
+  expect(String(summation(Pplain('(-1)**k/(2*k+1)'), [k, oo, -1]))).toBe('pi/4');
+  expect(String(summation(Pplain('2**k'), [k, 0, -3]))).toBe('-3/4');
+});
+
+it('separates constant commutative factors in a noncommutative product', () => {
+  const a = new Sym('a', { commutative: false });
+  expect(String(product(sj.mul(x, a), [k, 1, 3]))).toBe('x**3*a**3');
+});

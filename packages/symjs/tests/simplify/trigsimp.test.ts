@@ -377,7 +377,7 @@ const MORE: [string, string, TrigsimpOptions, string][] = [
   ["trigsimp", "sinh(a)*cosh(b) + x*sinh(b)*cosh(a)", { old: true }, "x*sinh(b)*cosh(a) + sinh(a)*cosh(b)"],
   // SymPy: sinh(a)*cosh(b) + sinh(b)*cosh(a) + cosh(b)**2 (equal: the old algorithm's artifact
   // patterns match differently here and leave sinh(b)**2*coth(b)**2 for cosh(b)**2)
-  ["trigsimp", "sinh(a)*cosh(b) + sinh(b)*cosh(a) + cosh(b)**2", { old: true }, "sinh(a)*cosh(b) + sinh(b)**2*coth(b)**2 + sinh(b)*cosh(a)"],
+  ["trigsimp", "sinh(a)*cosh(b) + sinh(b)*cosh(a) + cosh(b)**2", { old: true }, "sinh(a)*cosh(b) + sinh(b)*cosh(a) + cosh(b)**2"],
   ["trigsimp", "sinh(x) + y", { old: true }, "y + sinh(x)"],
   ["trigsimp", "cosh(x)*y + sinh(x)", { old: true }, "y*cosh(x) + sinh(x)"],
   ["trigsimp", "x*(A + sin(x)**2 + cos(x)**2)*B", {}, "x*(1 + A)*B"],

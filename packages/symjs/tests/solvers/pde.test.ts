@@ -87,9 +87,7 @@ it('solves first-order linear PDEs with variable coefficients', () => {
   const cases: [Expr, string][] = [
     [add(mul(x, ux), uy), 'F(y - log(x))'],
     [add(mul(x, u, ux), mul(u, uy)), 'F(y - log(x))'],
-    // SymPy: F(-2*x + y**2); symjs dsolve writes the characteristic as sqrt(2)*sqrt(C1 + x)
-    // instead of sqrt(C1 + 2*x), which gives the same family of solutions
-    [add(mul(y, ux), uy), 'F(-x + y**2/2)'],
+    [add(mul(y, ux), uy), 'F(-2*x + y**2)'],
     [add(mul(x, ux), mul(-1, y, uy), mul(y, y, u), mul(-1, y, y)), 'F(x*y)*exp(y**2/2) + 1'],
     [add(mul(x, ux), mul(y, y, uy), u), 'F(-log(x) - 1/y)/x'],
     [add(ux, mul(x, y, uy)), 'F(y*exp(-x**2/2))'],

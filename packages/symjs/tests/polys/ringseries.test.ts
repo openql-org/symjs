@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
+import '../../src/calculus';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { Rational, Sym, parse, str } from '../../src/core';
@@ -71,7 +72,7 @@ describe('finite and truncated algebra', () => {
     expect(String(rs.rsPow(q('x**(-2)+x'), 3, u, 4))).toBe('x**(-6) + 3*x**(-3) + 3 + x**3');
     expect(String(rs.rsPow(U.zero, 0, u, 3))).toBe('1');
     expect(String(rs.rsPow(U.zero, 2, u, 3))).toBe('');
-    expect(String(rs.rsPow(U.zero, Rational.of(1, 2), u, 3))).toBe('');
+    expect(rs.rsPow(U.zero, Rational.of(1, 2), u, 3).isZero).toBe(true);
     expect(String(rs.rsNthRoot(u, 0, u, 3))).toBe('1');
     expect(rs.rsPow(x, Rational.of(1, 2), x, 3)).toBeInstanceOf(PuiseuxPoly);
   });
@@ -164,4 +165,10 @@ it('returns paired trigonometric and hyperbolic series', () => {
   const x = R.gens[0]!, p = R.fromExpr(parse('x+x*y'));
   expect(rs.rsCosSin(p,x,4).map(String)).toEqual([String(rs.rsCos(p,x,4)), String(rs.rsSin(p,x,4))]);
   expect(rs.rsCoshSinh(p,x,4).map(String)).toEqual([String(rs.rsCosh(p,x,4)), String(rs.rsSinh(p,x,4))]);
+});
+
+it('retains the highest Newton power sum after multiplying the logarithmic derivative by x', () => {
+  const R = new PolyRing('x', QQ), x = first(R.gens), f = R.fromExpr(parse('x**2 - 2'));
+  expect(String(rs.rsNewton(f, x, 4))).toBe('8*x**4 + 4*x**2 + 2');
+  expect(String(rs.rsNewton(f, x, 5))).toBe('8*x**4 + 4*x**2 + 2');
 });

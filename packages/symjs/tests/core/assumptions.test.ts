@@ -393,3 +393,9 @@ describe('function assumptions (SymPy test_miscellaneous, test_integers, test_co
     expect(isMinMax(x)).toBe(false);
   });
 });
+
+
+it('does not infer the magnitude of the negative of a negative symbol', () => {
+  const n = new sj.Sym('n', { negative: true });
+  expect(isPositive(sj.add(sj.neg(n), -1))).toBeUndefined();
+});

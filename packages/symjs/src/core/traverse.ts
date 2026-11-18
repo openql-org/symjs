@@ -10,9 +10,9 @@ import { Concrete } from './concrete';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import type { Key } from '../printing/sortkey';
 import type { ExprLike, Substitution } from './nodes';
-import { Add, Derivative, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, asRational, impl, isNum } from './nodes';
+import { Add, Derivative, Dummy, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, asRational, impl, isNum } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
-import { isNonNegative, isPositive, isReal } from './assumptions';
+import { isIntegerQ, isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
 import { BoolOp, and } from './boolalg';
 import { at, cast, defined, first } from './guard';
@@ -173,6 +173,10 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
     if (!vc.length) return nw;
     return new Derivative([nw, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]);
   }
+  if (e instanceof Add && old.isNumber) {
+    const negative = mul(-1, old);
+    if (e.args.some((term) => term.key === negative.key)) return add(...e.args.filter((term) => term.key !== negative.key), mul(-1, nw));
+  }
   if (e instanceof Add && old instanceof Add) {
     // SymPy Add._eval_subs
     const [cs, ts] = asCoeffAdd(e);
@@ -203,6 +207,23 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
     return undefined;
   }
   if (e instanceof Mul && old instanceof Mul) return subsMul(e, old, nw);
+  // Noncommutative powers admit only integral exponent blocks; fractional roots cannot be chosen.
+  if (e instanceof Pow && old instanceof Pow && !e.base.isCommutative && e.base.key === old.base.key) {
+    if (isIntegerQ(e.exp) !== true || isIntegerQ(old.exp) !== true) return e;
+    const [oc, or] = splitCoeff(old.exp);
+    const terms = e.exp instanceof Add ? e.exp.args : [e.exp];
+    const rest: Expr[] = [];
+    let quotient = 0n;
+    for (const term of terms) {
+      const [ec, er] = splitCoeff(term);
+      if (ec instanceof Rational && oc instanceof Rational && ec.isInteger && oc.isInteger && !oc.isZero && er.key === or.key && isIntegerQ(er) === true) {
+        quotient += ec.p / oc.p;
+        rest.push(mul(Rational.of(ec.p % oc.p), er));
+      } else rest.push(term);
+    }
+    if (quotient !== 0n) return mul(pow(nw, Rational.of(quotient)), pow(e.base, add(...rest)));
+    return e;
+  }
   // SymPy issue 10829: (4**x).subs(2**x, y) -> y**2, for log(4, 2) a number
   if (e instanceof Pow && old instanceof Pow && e.exp.key === old.exp.key) {
     const k = intLog(e.base, old.base);
@@ -260,15 +281,63 @@ function extractRational(a: Rational, b: Rational): Rational | undefined {
   return a.q === 1n && qt.q !== 1n ? undefined : qt;
 }
 
-/** A run of noncommutative factors replaced (SymPy Mul._eval_subs for noncommutative products, without powers). */
+/** Match noncommutative runs with integer powers represented as counted factors. */
 function subsNcRun(e: Mul, old: Mul, nw: Expr): Expr | undefined {
-  // only a purely noncommutative old, matched factor by factor
-  if (old.args.some((a) => a.isCommutative)) return undefined;
-  const n = old.args.length;
-  for (let i = 0; i + n <= e.args.length; i++) {
-    if (old.args.every((a, j) => at(e.args, i + j).key === a.key)) return mul(...e.args.slice(0, i), nw, ...e.args.slice(i + n));
+  const commutative = old.args.filter((a) => a.isCommutative);
+  const sourceCommutative = e.args.filter((a) => a.isCommutative);
+  const commutativeOld = mul(...commutative);
+  const source = mul(...sourceCommutative);
+  let available: bigint | undefined;
+  if (commutative.length) {
+    const counts = breakup(new Mul(sourceCommutative));
+    for (const [key, value] of breakup(new Mul(commutative))) {
+      const have = counts.get(key);
+      if (!have || have.exp.isNegative !== value.exp.isNegative) return undefined;
+      const count = have.exp.p * value.exp.q / (have.exp.q * value.exp.p);
+      available = available === undefined || count < available ? count : available;
+    }
+    if (available !== undefined && available < 1n) return undefined;
   }
-  return undefined;
+  const runs = (m: Mul): [Expr, bigint][] => m.args.filter((a) => !a.isCommutative).map((a) =>
+    a instanceof Pow && a.exp instanceof Rational && a.exp.isInteger && a.exp.isPositive ? [a.base, a.exp.p] : [a, 1n]);
+  const pattern = runs(old);
+  if (!pattern.length) {
+    const replaced = subsOne(source, old, nw);
+    return replaced.key === source.key ? undefined : mul(replaced, ...e.args.filter((a) => !a.isCommutative));
+  }
+  const factors = runs(e);
+  const out: Expr[] = [];
+  let used = 0n;
+  for (let i = 0; i < factors.length;) {
+    const [base, count] = at(factors, i);
+    const matches = (available === undefined || used < available) && pattern.every(([b, n], j) => {
+      const factor = factors[i + j];
+      return factor !== undefined && factor[0].key === b.key && (j === 0 || j === pattern.length - 1 ? factor[1] >= n : factor[1] === n);
+    });
+    if (!matches || count < first(pattern)[1]) {
+      out.push(subsOne(pow(base, Rational.of(count)), old, nw));
+      i++;
+      continue;
+    }
+    const firstCount = first(pattern)[1];
+    if (pattern.length === 1) {
+      const quotient = count / firstCount;
+      const n = available === undefined || quotient < available - used ? quotient : available - used;
+      out.push(pow(nw, n), pow(base, Rational.of(count - n * firstCount)));
+      used += n;
+      i++;
+      continue;
+    }
+    out.push(pow(base, Rational.of(count - firstCount)), nw);
+    used++;
+    const lastIndex = i + pattern.length - 1;
+    const last = at(factors, lastIndex);
+    const remaining = last[1] - at(pattern, pattern.length - 1)[1];
+    i = lastIndex;
+    if (remaining) factors[i] = [last[0], remaining];
+    else i++;
+  }
+  return used ? mul(source, pow(commutativeOld, -used), ...out) : undefined;
 }
 
 /** The factors of a commutative product as base -> rational exponent (SymPy Mul._eval_subs breakup). */
@@ -318,21 +387,56 @@ function subsMul(e: Mul, old: Mul, nw: Expr): Expr | undefined {
   }
   // old has a factor that is not a number, so k becomes finite
   let k = Infinity;
+  let direction = 0;
   for (const [key, { exp: oe }] of oldC) {
     const mine = c.get(key);
-    if (!mine || mine.exp.isNegative !== oe.isNegative) return undefined;
+    if (!mine) return undefined;
+    const sign = mine.exp.isNegative === oe.isNegative ? 1 : -1;
+    if (direction && direction !== sign) return undefined;
+    direction = sign;
     // SymPy ndiv: the number of times oe divides mine.exp when one denominator divides the other
     const a = mine.exp;
     const r = a.q % oe.q === 0n || oe.q % a.q === 0n ? Math.trunc(a.value / oe.value) : 0;
     if (!r) return undefined;
-    k = Math.min(k, r);
+    k = Math.min(k, Math.abs(r));
   }
+  k *= direction;
   const rest: Expr[] = [residual];
   for (const [key, { base, exp }] of c) {
     const o = oldC.get(key);
-    rest.push(pow(base, o ? add(exp, mul(-k, o.exp)) : exp));
+    rest.push(subsOne(pow(base, o ? add(exp, mul(-k, o.exp)) : exp), old, nw));
   }
   return mul(pow(nw, k), ...rest);
+}
+
+/** Substitute a function head while preserving argument arity and differentiation variables. */
+export function subsFunction(expr: Expr, name: string, replacement: (...args: Expr[]) => Expr, arities?: readonly number[]): Expr {
+  const go = (e: Expr): Expr => {
+    if (e instanceof Derivative) {
+      let body = e.expr;
+      const variables: Expr[] = [];
+      const points: [Expr, Expr][] = [];
+      for (const [v, n] of e.variableCount) {
+        const value = go(v);
+        if (!(value instanceof Sym || value instanceof UndefFn)) {
+          const dummy = new Dummy('xi');
+          body = xreplace(body, [[v, dummy]]);
+          variables.push(dummy, Rational.of(n));
+          points.push([dummy, value]);
+        } else variables.push(value, Rational.of(n));
+      }
+      const result = new Derivative([go(body), ...variables]);
+      return points.length ? new SubsNode([result, ...points.map(([v]) => v), ...points.map(([, p]) => p)]) : result;
+    }
+    const args = e.args.map(go);
+    const matches = (e instanceof UndefFn || e instanceof Fn) && e.name === name || e instanceof Pow && e.base.key === S.E.key && name === 'exp';
+    if (matches) {
+      const xs = e instanceof Pow ? [at(args, 1)] : args;
+      if (arities === undefined || arities.includes(xs.length)) return replacement(...xs);
+    }
+    return args.some((a, i) => a.key !== at(e.args, i).key) ? rebuild(e, args) : e;
+  };
+  return go(expr);
 }
 
 /** Variables bound by a definite Integral or a Sum/Product (SymPy bound_symbols). */
@@ -345,10 +449,19 @@ export function boundSymbols(e: Expr): Expr[] {
 
 function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e.key === old.key) return nw;
+  if (e instanceof Sym && old instanceof Pow && e.key === old.base.key) {
+    const power = new Pow(e, S.One);
+    const result = evalSubs(power, old, nw);
+    if (result !== undefined && result !== power) return result;
+  }
   if (e.args.length === 0) return e instanceof Sym ? (e.substituteInner((x) => subsOne(x, old, nw)) ?? e) : e;
-  // a differentiation variable replaced by a non-symbol: the derivative at a point (SymPy Subs)
-  if (e instanceof Derivative && old instanceof Sym && !(nw instanceof Sym) && e.variableCount.some(([v]) => v.key === old.key)) {
-    return new SubsNode([e, old, nw]);
+  // Derivative._eval_subs preserves the independent differentiation variables.
+  if (e instanceof Derivative && old instanceof Sym) {
+    const variables = e.variableCount.map(([v]) => v);
+    const changingVariable = variables.some((v) => v.key === old.key);
+    const validVariable = nw instanceof Sym || nw instanceof UndefFn;
+    if (changingVariable && !validVariable) return new SubsNode([e, old, nw]);
+    if (changingVariable && nw.key !== old.key && e.expr.has(nw)) return new SubsNode([e, old, nw]);
   }
   // the variable of an indefinite integral replaced: the antiderivative at that point (SymPy (x, b) limit)
   if (e instanceof Integral && e.args.length === 2 && e.variable.key === old.key && !(nw instanceof Sym)) return new Integral([e.integrand, old, nw]);
@@ -393,6 +506,10 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     return piecewise(...pairs);
   }
   const args = e.args.map((a) => subsOne(a, old, nw));
+  if (e instanceof Derivative && old instanceof Sym && e.expr.key !== old.key && first(args).key !== e.expr.key) {
+    const introduced = new Set([...nw.freeSymbols()].map((v) => v.key));
+    if (e.variableCount.some(([v]) => introduced.has(v.key) && !old.has(v) && e.expr.has(v))) return new SubsNode([e, old, nw]);
+  }
   return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
 }
 

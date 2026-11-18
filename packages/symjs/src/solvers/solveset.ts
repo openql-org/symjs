@@ -214,7 +214,8 @@ export function nonlinsolve(system: readonly ExprLike[], symbols: readonly Sym[]
     }
   }
   try {
-    return finiteNonlinsolve(eqs, symbols).filter(isFiniteTuple);
+    // Solve over the complex domain even when an unknown has a real assumption.
+    return finiteNonlinsolve(eqs, symbols, { check: false }).filter(isFiniteTuple);
   } catch (error) {
     if (!(error instanceof NotImplementedError)) throw error;
     return substituteFinite(eqs, symbols);

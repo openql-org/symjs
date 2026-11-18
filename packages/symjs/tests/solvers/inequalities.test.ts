@@ -121,6 +121,7 @@ describe('reduceInequalities', () => {
     expect(show(Q.reduceInequalities([p('x**2-4')]))).toBe('Eq(x, -2) | Eq(x, 2)');
     expect(show(Q.reduceInequalities([SS.true, p('x > 1')]))).toBe('(1 < x) & (x < oo)');
     expect(show(Q.reduceInequalities([p('x > 1'), p('y < 2')]))).toBe('(-oo < y) & (1 < x) & (x < oo) & (y < 2)');
+    expect(show(Q.reduceInequalities([p('x + y - 3'), p('x > 3')], [x]))).toBe('(3 < x) & (x < oo) & Eq(x, 3 - y)');
     expect(show(Q.reduceInequalities(p('x + a > 1'), [x]))).toBe('x > 1 - a');
     expect(show(Q.reduceInequalities(p('-2*x + a > 1'), [x]))).toBe('x < a/2 - 1/2');
     expect(show(Q.reduceInequalities(p('2*x + a <= 1'), [x]))).toBe('(-oo < x) & (x <= 1/2 - a/2)');
@@ -169,6 +170,10 @@ describe('solveset with parameters and inverse functions (sympy.stats needs both
       'Union({1}, Interval(-3, 0), Interval(5, 7))',
     );
     expect(String(Q.solveset(new PW([add(xr, -1), Gt(xr, 0)]), xr, Reals))).toBe('{1}');
+    const positive = new Sym('y', { positive: true });
+    const absolute = new PW([add(x, -3), Ge(x, 3), add(3, mul(-1, x)), SS.true]);
+    expect(String(Q.solveset(add(absolute, mul(-1, positive)), x, Reals))).toBe('{3 - y, y + 3}');
+    expect(String(Q.solveset(p('Piecewise((0, Eq(x, pi)), ((x - pi)/sin(x), True))'), x, Complexes))).toBe('{pi}');
     // SymPy raises a ValueError over the complex numbers
     expect(String(Q.solveset(new PW([add(xr, -1), Gt(xr, 0), add(xr, 1), SS.true]), xr))).toBe('ConditionSet(x, Eq(Piecewise((x - 1, x > 0), (x + 1, True)), 0), Complexes)');
   });

@@ -573,21 +573,24 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
   }
   for (const [k, rs] of byGen) {
     const g = defined(gens.find((s) => s.key === k), 'generator');
-    const others = [...new Map(rs.flatMap((r) => [...r.freeSymbols()].filter((s) => s instanceof Sym)).map((s) => [s.key, s])).values()].filter((s) => s.key !== g.key);
-    if (others.length || rs.some((r) => some(r, (term) => term.kind === 'Integral' || term.kind === 'Concrete'))) {
-      for (const r of rs) parts.push(linearInequality(r, g));
-      continue;
-    }
     let set: SetExpr = Reals;
+    const univariate: Rel[] = [];
     for (const r of rs) {
+      if ([...r.freeSymbols()].some((symbol) => symbol instanceof Sym && symbol.key !== g.key)
+        || some(r, (term) => term.kind === 'Integral' || term.kind === 'Concrete')) {
+        parts.push(linearInequality(r, g));
+        continue;
+      }
+      univariate.push(r);
       const solution = cast(solveUnivariateInequality(r, g, { relational: false }), SetExpr);
       set = set === Reals ? solution : intersection(set, solution);
     }
-    // (for a real symbol, -oo < x and x < oo are True already, so SymPy's form needs no clean-up)
-    parts.push(set === Reals && rs.every((r) => {
-      const period = periodicity(add(r.lhs, mul(-1, r.rhs)), g);
-      return period !== undefined && !period.equals(S.Zero);
-    }) ? S.true : inequalityAsRelational(set, g));
+    if (univariate.length) {
+      parts.push(set === Reals && univariate.every((r) => {
+        const period = periodicity(add(r.lhs, mul(-1, r.rhs)), g);
+        return period !== undefined && !period.equals(S.Zero);
+      }) ? S.true : inequalityAsRelational(set, g));
+    }
   }
   return and(...parts);
 }
@@ -949,9 +952,19 @@ function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
       });
       return intersection(finiteSet(...zs), domain);
     } catch (e) {
-      // zeros with parameters (2*x - y = 0): over the whole real line they need not be placed
-      if (!(e instanceof NotImplementedError) || domain !== Reals) throw e;
-      return parametricRealRoots(num, den, x);
+      if (!(e instanceof NotImplementedError)) throw e;
+      if (domain === Reals) return parametricRealRoots(num, den, x);
+      // A polynomial root can satisfy interval bounds by its assumptions. General
+      // equations may have infinitely many zeros outside the principal solutions.
+      Poly.from(num, [x]);
+      const roots = parametricRealRoots(num, den, x);
+      if (roots instanceof FiniteSet) {
+        const members = roots.args.map((root) => asRelational(domain, root));
+        if (members.every((member) => member instanceof BoolAtom)) {
+          return finiteSet(...roots.args.filter((_, i) => at(members, i) === S.true));
+        }
+      }
+      throw e;
     }
   }
   const g = gIn;

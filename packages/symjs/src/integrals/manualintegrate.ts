@@ -37,7 +37,7 @@ const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
 export function manualintegrate(f: ExprLike, x: Sym): Expr {
   const e = sympify(f);
   const assumed = mapBottomUp(e, (t) => t instanceof Sym && t.assumptions.zero === true ? S.Zero : t);
-  if (!assumed.equals(e)) return manualintegrate(assumed, x);
+  if (assumed.key !== e.key) return manualintegrate(assumed, x);
   if (!e.has(x)) return mul(e, x);
   if (e instanceof Add) return add(...e.args.map((t) => manualintegrate(t, x)));
   const [constant, dependent] = asIndependent(e, [x]);

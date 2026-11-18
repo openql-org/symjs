@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { expect, it } from 'vitest';
-import { parse, rewrite } from '../../../src';
+import { parse, rewrite, series, Sym } from '../../../src';
 
 // SymPy 1.14 rewrite identities, including complex arguments and branch factors.
 const cases = [
@@ -241,4 +241,17 @@ it('preserves erfi numerically when rewriting with the exponential integral', as
     expect(actual.re).toBeCloseTo(expected.re, 10);
     expect(actual.im).toBeCloseTo(expected.im, 10);
   }
+});
+
+it('retains branch logarithms when rewriting logarithmic and cosine integrals', () => {
+  expect(String(rewrite(parse('li(z)'), 'hyper'))).toBe('log(z)*hyper((1, 1), (2, 2), log(z)) - log(1/log(z))/2 + log(log(z))/2 + EulerGamma');
+  expect(String(rewrite(parse('li(z)'), 'meijerg'))).toBe('-log(1/log(z))/2 - log(-log(z)) + log(log(z))/2 - meijerg(((), (1,)), ((0, 0), ()), -log(z))');
+  expect(String(rewrite(parse('Ci(z)'), 'expint'))).toBe('-expint(1, z*exp_polar(-I*pi/2))/2 - expint(1, z*exp_polar(I*pi/2))/2');
+});
+
+it('expands sine and hyperbolic sine integrals through their integrated Taylor series', () => {
+  const x = new Sym('x');
+  expect(String(series(parse('Si(x)'), x, 0, 8))).toBe('x - x**3/18 + x**5/600 - x**7/35280 + O(x**8)');
+  expect(String(series(parse('Shi(x)'), x, 0, 8))).toBe('x + x**3/18 + x**5/600 + x**7/35280 + O(x**8)');
+  expect(String(series(parse('Si(2*x)'), x, 0, 5))).toBe('2*x - 4*x**3/9 + O(x**5)');
 });

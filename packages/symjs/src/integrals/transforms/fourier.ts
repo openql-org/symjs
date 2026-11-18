@@ -327,9 +327,9 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
       if (roots.length > 0 && roots.every((x0) => isReal(x0) === true) && slopes.every((d) => isNonZero(d) === true)) return add(...roots.map((x0, i) => value(x0, at(slopes, i))));
     }
   }
-  if (rest.some((g) => isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === x.key)) {
+  if (rest.some((g) => isHeaviside(g) && at(g.args, 0).key === x.key)) {
     // Heaviside(x)*x**n*exp(-c*x)*(sines and cosines): sum of n!/(c - I*B*k)**(n + 1)
-    const others = rest.filter((g) => !(isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === x.key));
+    const others = rest.filter((g) => !(isHeaviside(g) && at(g.args, 0).key === x.key));
     const body = expand(rewrite(mul(pow(x, n), exp(E), ...others), 'exp'));
     const out: Expr[] = [];
     for (const term of addArgs(body)) {

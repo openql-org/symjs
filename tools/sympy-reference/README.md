@@ -59,3 +59,29 @@ Repeated omission records share a `count` in category audit files. Counts retain
 every examined loop observation without repeating identical source metadata.
 `bun run compat:extract-tests --compact-audits` losslessly repacks these audits
 without changing case records or re-executing upstream tests.
+
+`tensorData` snapshots the component replacements needed by a unit-test call:
+head arrays, index-type metrics, and the signatures of the special metric and
+Kronecker-delta heads. Replay uses the public `replaceWithArrays` and `getMatrix`
+APIs; snapshots are local to a case. Legacy tensor norm powers remain explicit
+API gaps.
+
+Test-defined Python classes carry `unsupportedClass` markers instead of losing
+their method behavior under an ordinary class name. Affected assertions carry an
+`exclusion` reason and remain in their shards. Replay reports these separately,
+without comparing them or counting them as successes. Source-level reasons,
+including custom-class calls that were already omitted, are recorded in
+`unit-exclusions.json`. Undefined symbolic functions remain ordinary replayable
+inputs.
+
+To refresh these stateful clusters without replacing unrelated assertions:
+
+```sh
+PYTHONHASHSEED=0 python3 -B tools/sympy-reference/extract_tests.py --refresh-state
+```
+
+This re-executes the tensor, priority, custom-function, and elementary-interface
+test modules in one process. It preserves assertion order, shard boundaries,
+existing omissions, and every unrelated case byte for byte. Replay-only fields
+are excluded from the assertion identity hash so the existing ratchet continues
+to identify the same assertions.

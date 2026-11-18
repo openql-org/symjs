@@ -24,6 +24,7 @@ import { besselj, bessely } from './bessel';
 import { registerRewrite } from '../../simplify/rewrite';
 import { unpolarify } from '../elementary/complexes';
 import { derivative } from '../../core/undef';
+import { Tuple } from '../../core/containers';
 import { evalMp, fromMpc, mpFns } from '../../numeric/mpeval';
 import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
@@ -179,8 +180,8 @@ const orderedParams = (xs: readonly Expr[]): Expr[] => [...xs].sort((u, v) => co
  * is not branched at it loses its polar factors (SymPy hyper.eval).
  */
 export function hyper(ap: readonly ExprLike[], bq: readonly ExprLike[], zIn: ExprLike, opts: { evaluate?: boolean } = {}): Expr {
-  let as = ap.map(sympify);
-  let bs = bq.map(sympify);
+  let as = ap.map((a) => unpolarify(sympify(a)));
+  let bs = bq.map((b) => unpolarify(sympify(b)));
   if (opts.evaluate !== false) {
     // remove the parameters common to ap and bq (with multiplicity)
     const rest = [...bs];
@@ -236,6 +237,29 @@ export class MeijerG extends ExtensionExpr {
   /** The argument z. */
   get argument(): Expr {
     return first(this.args);
+  }
+  /** SymPy meijerg.fdiff: shift an upper or lower numerator parameter. */
+  override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
+    if ([...this.ap, ...this.bq].some((a) => a.has(x))) return derivative(this, [[x, 1]], true);
+    const z = this.argument;
+    let partial: Expr = S.Zero;
+    if (this.an.length) {
+      const [a, ...rest] = this.an;
+      const a0 = defined(a);
+      partial = mul(pow(z, -1), add(mul(add(a0, -1), this), meijerg([...rest, add(a0, -1)], this.aother, this.bm, this.bother, z)));
+    } else if (this.bm.length) {
+      const [b, ...rest] = this.bm;
+      const b0 = defined(b);
+      partial = mul(pow(z, -1), add(mul(b0, this), mul(-1, meijerg(this.an, this.aother, [...rest, add(b0, 1)], this.bother, z))));
+    }
+    return mul(partial, d(z, x));
+  }
+  /** SymPy meijerg.integrand(s): the Mellin-Barnes integrand. */
+  integrand(s: ExprLike): Expr {
+    const v = sympify(s);
+    const g = (a: Expr) => fn('gamma', [a]);
+    return mul(pow(this.argument, v), ...this.bm.map((b) => g(add(b, mul(-1, v)))), ...this.an.map((a) => g(add(1, mul(-1, a), v))),
+      pow(mul(...this.bother.map((b) => g(add(1, mul(-1, b), v))), ...this.aother.map((a) => g(add(a, mul(-1, v))))), -1));
   }
   /** The first n upper parameters (SymPy meijerg.an). */
   get an(): Expr[] {
@@ -307,9 +331,25 @@ export class MeijerG extends ExtensionExpr {
 
 /** SymPy meijerg(((an), (ap)), ((bm), (bq)), z). */
 export function meijerg(an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): Expr {
-  const parts = [an, ap, bm, bq].map((xs) => xs.map(sympify));
+  const parts = [an, ap, bm, bq].map((xs) => xs.map((x) => unpolarify(sympify(x))));
+  if (parts.flat().some((a) => a.has(S.Infinity) || a.has(S.NegativeInfinity) || a.has(S.ComplexInfinity))) throw new RangeError('G-function parameters must be finite');
+  for (const a of at(parts, 0)) for (const b of at(parts, 2)) {
+    const difference = add(a, mul(-1, b));
+    if (difference instanceof Rational && difference.isInteger && difference.isPositive) throw new RangeError('G-function numerator poles must not overlap');
+  }
   const sizes: [number, number, number, number] = [an.length, ap.length, bm.length, bq.length];
   return new MeijerG([sympify(z), ...parts.flat()], sizes);
+}
+
+// SymPy incomplete gamma derivatives with respect to the shape parameter.
+for (const name of ['lowergamma', 'uppergamma'] as const) {
+  const original = fnPartials[name];
+  fnPartials[name] = (args, i) => {
+    if (i !== 0) return defined(original)(args, i);
+    const [a, z] = pair(args);
+    const upper = add(mul(fn('uppergamma', [a, z]), fn('log', [z])), meijerg([], [1, 1], [0, 0, a], [], z));
+    return name === 'uppergamma' ? upper : add(mul(fn('gamma', [a]), fn('polygamma', [0, a])), mul(-1, upper));
+  };
 }
 
 // d/dnu expint(nu, z) (SymPy expint.fdiff(1))
@@ -377,7 +417,7 @@ export function expandJn(n: number, z: Expr, kind: 'jn' | 'yn' = 'jn'): Expr {
 // ---- Kronecker delta ---------------------------------------------------------------
 
 /** SymPy KroneckerDelta(i, j): 1 when equal, 0 for distinct numbers, unevaluated otherwise. */
-export const KroneckerDelta = (i: ExprLike, j: ExprLike): Expr => fn('KroneckerDelta', [i, j]);
+export const KroneckerDelta = (i: ExprLike, j: ExprLike, deltaRange?: ExprLike | [ExprLike, ExprLike]): Expr => fn('KroneckerDelta', deltaRange === undefined ? [i, j] : [i, j, Array.isArray(deltaRange) ? Tuple(...deltaRange) : deltaRange]);
 /** Is d a number (no free symbols) whose value is clearly not 0? */
 function numericallyNonZero(d: Expr): boolean {
   if (d.freeSymbols().size > 0) return false;
@@ -390,15 +430,21 @@ function numericallyNonZero(d: Expr): boolean {
 }
 
 /** SymPy KroneckerDelta.eval: 1 or 0 when i - j is known to be zero or not, else the arguments in canonical order. */
-evaluators.KroneckerDelta = (i, j) => {
+evaluators.KroneckerDelta = (i, j, range?: Expr) => {
+  if (range !== undefined) {
+    const [lower, upper] = pair(range.args);
+    if ([i, j].some((index) => isPositive(add(lower, mul(-1, index))) === true || isPositive(add(index, mul(-1, upper))) === true)) return S.Zero;
+  }
   if (i instanceof Sym && j instanceof Sym && ((i.assumptions.aboveFermi === true && j.assumptions.belowFermi === true) || (i.assumptions.belowFermi === true && j.assumptions.aboveFermi === true))) return S.Zero;
   if (i.key === j.key) return S.One;
   const d = add(i, mul(-1, j));
   if (isZero(d) === true) return S.One;
   if (isNonZero(d) === true || numericallyNonZero(d)) return S.Zero;
-  if (compareKeys(sortKey(j), sortKey(i)) < 0) return new Fn('KroneckerDelta', [j, i]);
+  if (compareKeys(sortKey(j), sortKey(i)) < 0) return new Fn('KroneckerDelta', range === undefined ? [j, i] : [j, i, range]);
   return undefined;
 };
+
+registerRewrite('KroneckerDelta', 'Piecewise', (args) => piecewise([S.Zero, Ne(at(args, 0), at(args, 1))], [S.One, true]));
 
 /**
  * SymPy kroneckersimp: a product of deltas sharing an index with distinct

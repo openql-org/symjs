@@ -220,7 +220,7 @@ export class PuiseuxPoly {
       const monom = m.flatMap((e, i) => e.isZero ? [] : [e.isOne ? str(at(this.ring.symbols, i)) : `${str(at(this.ring.symbols, i))}**${e.isInteger && e.isPositive ? str(e) : `(${str(e)})`}`]).join('*');
       if (!monom) return groundStr(this.ring.domain, c);
       return groundEq(c, this.ring.domain.one) ? monom : `${groundStr(this.ring.domain, c)}*${monom}`;
-    }).join(' + ') || '0';
+    }).join(' + ');
   }
 }
 

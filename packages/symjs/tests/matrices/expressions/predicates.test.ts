@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { type Expr, sstr, symbol } from '../../../src';
-import { Adjoint, askMatrix, BlockDiagMatrix, det, Determinant as Det, DiagMatrix, DiagonalMatrix, Identity, ImmutableMatrix, MatAdd, MatMul, MatPow, MatrixQ, MatrixSymbol, OneMatrix, refineMatrix, Transpose, ZeroMatrix } from '../../../src/matrices/expressions';
+import { Adjoint, askMatrix, BlockDiagMatrix, det, Determinant as Det, DiagMatrix, DiagonalMatrix, DFT, IDFT, Identity, ImmutableMatrix, lu, qr, svd, MatAdd, MatMul, MatPow, MatrixQ, MatrixSymbol, OneMatrix, refineMatrix, Transpose, ZeroMatrix } from '../../../src/matrices/expressions';
 import { askInvertible } from '../../../src/matrices/expressions/predicates';
 
 const s = (e: unknown): string => sstr(e as Expr);
@@ -63,6 +63,19 @@ describe('transpose', () => {
 });
 
 describe('askMatrix', () => {
+  it('queries factorization predicates and Fourier unitarity', () => {
+    const [l, u] = lu(X), [q, r] = qr(X), [left, sigma, right] = svd(X);
+    expect(askMatrix(MatrixQ.lower_triangular(l))).toBe(true);
+    expect(askMatrix(MatrixQ.upper_triangular(u))).toBe(true);
+    expect(askMatrix(MatrixQ.orthogonal(q))).toBe(true);
+    expect(askMatrix(MatrixQ.upper_triangular(r))).toBe(true);
+    expect(askMatrix(MatrixQ.orthogonal(left))).toBe(true);
+    expect(askMatrix(MatrixQ.diagonal(sigma))).toBe(true);
+    expect(askMatrix(MatrixQ.orthogonal(right))).toBe(true);
+    expect(askMatrix(MatrixQ.orthogonal(l))).toBe('unknown');
+    expect(askMatrix(MatrixQ.unitary(DFT(3)))).toBe(true);
+    expect(askMatrix(MatrixQ.unitary(IDFT(3)))).toBe(true);
+  });
   it('prints a predicate like SymPy', () => {
     expect(String(MatrixQ.orthogonal(X))).toBe('Q.orthogonal(X)');
   });

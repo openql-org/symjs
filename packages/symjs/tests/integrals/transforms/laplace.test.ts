@@ -783,3 +783,12 @@ describe('laplace: integration and the LaplaceTransform class', () => {
     expect(String(G.doit())).toBe('LaplaceTransform(2, 2, s)');
   });
 });
+
+
+it('represents an unevaluated Laplace transform as an integral and in LaTeX', async () => {
+  const { latex } = await import('../../../src');
+  const f = SymFunction('f');
+  const transform = new LaplaceTransform(f(t), t, s);
+  expect(String(transform.asIntegral)).toBe('Integral(f(t)*exp(-s*t), (t, 0, oo))');
+  expect(latex(transform)).toBe('\\mathcal{L}_{t}\\left[f{\\left(t \\right)}\\right]\\left(s\\right)');
+});

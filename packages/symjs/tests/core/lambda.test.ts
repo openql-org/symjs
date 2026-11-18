@@ -73,3 +73,18 @@ it('validates nested signatures and substitutes arguments simultaneously', () =>
   const a = new sj.IndexedBase('A').at(0);
   expect(String(sj.Lambda(a, sj.add(a, 1)).call(2))).toBe('3');
 });
+
+
+it('accepts indexed bases and matrix symbols as Lambda variables', () => {
+  const base = new sj.IndexedBase('A');
+  const matrix = sj.MatrixSymbol('M', 2, 2);
+  expect(String(sj.Lambda(base, base).call(x))).toBe('x');
+  expect(String(sj.Lambda(matrix, matrix).call(matrix))).toBe('M');
+});
+
+
+it('protects a Lambda binding during substitution', () => {
+  const f = sj.Lambda(x, sj.add(x, y));
+  expect(String(f.subs(x, 1))).toBe('Lambda(x, x + y)');
+  expect(String(f.subs(y, 2))).toBe('Lambda(x, x + 2)');
+});
