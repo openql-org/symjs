@@ -111,5 +111,13 @@ it('measures rectangles and annular sectors with the polar Jacobian', () => {
   expect(() => cartesian(sj.Integers, I(1, 4)).measure).toThrow(sj.NotImplementedError);
   expect(() => cartesian(I(1, 4), sj.Integers).measure).toThrow(sj.NotImplementedError);
   expect(() => polar(I(-1, 1), th).measure).toThrow(sj.NotImplementedError);
-  expect(() => new sj.CartesianComplexRegion(sj.Union(sj.ProductSet(a, b), sj.ProductSet(b, c))).measure).toThrow(sj.NotImplementedError);
+  expect(String(new sj.CartesianComplexRegion(sj.Union(sj.ProductSet(a, b), sj.ProductSet(b, c))).measure)).toBe('16');
+});
+
+it('requires valid radial intervals when integrating a union in polar coordinates', () => {
+  const region = (r: sj.SetExpr) => new sj.PolarComplexRegion(new sj.SetOp('Union', [sj.ProductSet(r, th), sj.ProductSet(I(1, 3), I(0, sj.pi))]));
+  for (const r of [sj.Integers, I(x, 1), I(sj.symbol('a', { real: true }), 4), I(-1, 1)]) {
+    expect(() => region(r).measure).toThrow(sj.NotImplementedError);
+  }
+  expect(() => new sj.CartesianComplexRegion(sj.Integers).measure).toThrow(sj.NotImplementedError);
 });

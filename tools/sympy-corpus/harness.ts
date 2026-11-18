@@ -359,6 +359,8 @@ export function matches(v: unknown, expectedIn: string): boolean {
 }
 function matches0(v: unknown, expected: string, got: string): boolean {
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
+  // A full real interval serializes as Reals, including when nested in a product or a union.
+  if (v instanceof sj.SetExpr && expected.replace(/\bInterval\(-oo, oo\)/g, 'Reals') === got) return true;
   if (v instanceof sj.NumberFieldModuleElement) {
     const match = /^(\[[\d, -]*\])(?:\/(\d+))?$/.exec(expected);
     if (match) return v.equals(sj.makeModElt(v.module, sj.toCol((JSON.parse(match[1]!.replace(/-?\d+/g, '"$&"')) as string[]).map(BigInt)), BigInt(match[2] ?? '1')));
@@ -1229,10 +1231,11 @@ export function deserialize(tree: Tree): unknown {
     case 'ImageSet': {
       const lam = deserialize(tree['lamda'] as Tree);
       const sets = (tree['sets'] as Tree[]).map((x) => deserialize(x) as sj.SetExpr);
-      if (!(lam instanceof JsLambda) || lam.vars.length !== 1 || sets.length !== 1) throw new Unsupported('ImageSet over several sets');
+      if (!(lam instanceof JsLambda)) throw new Unsupported('ImageSet lambda');
+      const vars = lam.vars.map(expressionContainer);
       // A serialized ImageSet already has its chosen representatives. The
       // evaluating imageset factory can shift them modulo the integer period.
-      return new sj.ImageSet(lam.vars[0]!, lam.body, sets[0]!);
+      return new sj.ImageSet(vars.length === 1 ? vars[0]! : sj.Tuple(...vars), expressionContainer(lam.body), sets[0]!, ...sets.slice(1));
     }
     case 'ConditionSet':
       return new sj.ConditionSet(expressionContainer(deserialize(tree['sym'] as Tree)), asExpr(deserialize(tree['condition'] as Tree)), deserialize(tree['base'] as Tree) as sj.SetExpr);
@@ -1636,6 +1639,8 @@ const asMatrixExpression = (v: unknown): Expr => v instanceof Matrix ? sj.Immuta
 /** Tuples and dictionaries embedded in expressions need symbolic containers. */
 function expressionContainer(v: unknown): Expr {
   if (v instanceof Matrix) return sj.ImmutableMatrix(v);
+  if (Array.isArray(v)) return sj.Tuple(...v.map(expressionContainer));
+  if (v instanceof Set) return sj.FiniteSet.of(...[...v].map(expressionContainer));
   if (v instanceof JsTuple) return sj.Tuple(...v.items.map(expressionContainer));
   if (v instanceof JsSet) return sj.finiteSet(...v.items.map(expressionContainer));
   if (v instanceof JsDict) return sj.Dict(v.entries.map(([k, x]) => [expressionContainer(k), expressionContainer(x)]));
@@ -1909,7 +1914,7 @@ function intArg(v: unknown): number {
 const asSet = (v: unknown): sj.SetExpr => {
   if (v instanceof sj.SetExpr) return v;
   if (v instanceof JsSet) return sj.finiteSet(...v.items.map(expressionContainer));
-  throw new Unsupported('expected a set');
+  throw new TypeError('expected a set');
 };
 const typeMethod = (self: unknown, type: string, f: () => unknown, kw: Record<string, unknown>): unknown => {
   noKw(kw);
@@ -2497,11 +2502,23 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     return sj.mul(...args.map(asMatrixExpression));
   },
-  Interval: (args, kw) => (noKw(kw), sj.interval(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? false : toJs(args[2], false) as boolean, args[3] === undefined ? false : toJs(args[3], false) as boolean)),
+  Interval: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'left_open' && k !== 'right_open') throw new Unsupported(`Interval kwarg ${k}`);
+    return sj.interval(asExpr(args[0]), asExpr(args[1]), toJs(kw['left_open'] ?? args[2] ?? false, false) as boolean, toJs(kw['right_open'] ?? args[3] ?? false, false) as boolean);
+  },
   // a Python set as an element is a FiniteSet (SymPy sympify)
   // a Python set as an element is a FiniteSet and a tuple a Tuple (SymPy sympify)
   FiniteSet: (args, kw) => (noKw(kw), sj.finiteSet(...args.map((a) => (a instanceof JsSet ? sj.finiteSet(...a.items.map(asExpr)) : a instanceof JsTuple && !a.isList ? sj.Tuple(...a.items.map(asExpr)) : asExpr(a))))),
-  Range: (args, kw) => (noKw(kw), args.length === 1 ? sj.Range.of(0, asExpr(args[0])) : sj.Range.of(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 1 : asExpr(args[2]))),
+  Range: (args, kw) => {
+    noKw(kw);
+    return sj.Range.of(expressionContainer(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), args[2] === undefined ? 1 : asExpr(args[2]));
+  },
+  ComplexRegion: (args, kw) => sj.ComplexRegion(asSet(args[0]), (kw['polar'] ?? args[1] ?? false) as boolean),
+  '.to_mpi': (args, kw, self) => {
+    noKw(kw);
+    const ends = (self as sj.Interval).toMpi(args.length ? intArg(args[0]) : undefined);
+    return new JsList(ends.map((e) => e instanceof sj.Float ? new JsFloat(e.value) : e));
+  },
   '.powerset': (_args, kw, self) => (noKw(kw), sj.powerset(asSet(self))),
   '.symmetric_difference': (args, kw, self) => (noKw(kw), sj.symmetricDifference(asSet(self), asSet(args[0]))),
   // squares.lamda(2): the Lambda of an ImageSet applied
@@ -2513,7 +2530,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (typeof g !== 'function') throw new Unsupported('use function');
     return sj.use(asExpr(args[0]), (x) => (g as (e: Expr) => Expr)(x), kw['level'] === undefined ? 0 : intArg(kw['level']));
   },
-  Union: (args, kw) => (noKw(kw), sj.union(...args.map(asSet))),
+  Union: (args, kw) => kw['evaluate'] === false ? new sj.SetOp('Union', args.map(asSet)) : (noKw(kw), sj.union(...args.map(asSet))),
   Intersection: (args, kw) => (noKw(kw), sj.Intersection(...args.map(asSet))),
   ProductSet: (args, kw) => (noKw(kw), sj.ProductSet(...args.map(asSet))),
   Complement: (args, kw) => (noKw(kw), sj.complement(asSet(args[0]), asSet(args[1]))),
@@ -2537,22 +2554,44 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.is_disjoint': (args, kw, self) => (noKw(kw), sj.Intersection(asSet(self), asSet(args[0])) === sj.EmptySet),
   // A.complement(U) is Complement(U, A)
   '.complement': (args, kw, self) => (noKw(kw), sj.complement(asSet(args[0]), asSet(self))),
+  ImageSet: (args, kw) => {
+    noKw(kw);
+    const f = args[0];
+    if (!(f instanceof JsLambda)) throw new RangeError('ImageSet requires a Lambda');
+    return sj.ImageSet.of(sj.Lambda(f.vars.map(expressionContainer), expressionContainer(f.body)), ...args.slice(1).map(asSet));
+  },
   imageset: (args, kw) => {
     noKw(kw);
-    if (args.length === 3) return sj.imageset(asExpr(args[0]), asExpr(args[1]), asSet(args[2]));
-    if (args.length !== 2) throw new Unsupported('imageset over several sets');
-    const [f, base] = args;
+    const f = args[0];
     if (f instanceof FnClass) {
       const x = sj.symbol('x');
-      return sj.imageset(x, applyFn(f.name, [x]), asSet(base));
+      return sj.imageset(x, applyFn(f.name, [x]), asSet(args[1]));
     }
-    if (!(f instanceof JsLambda) || f.vars.length !== 1) throw new Unsupported('imageset function');
-    // a Python lambda's parameter is a symbol of the same name
-    const v = f.vars[0]!;
-    const x = v instanceof sj.Dummy ? sj.symbol(v.name) : v;
-    return sj.imageset(x, f.call(x), asSet(base));
+    let lambda: sj.Lambda;
+    let sets: sj.SetExpr[];
+    if (f instanceof JsLambda) {
+      const vars = f.vars.map((v) => v instanceof sj.Dummy ? sj.symbol(v.name) : expressionContainer(v));
+      lambda = sj.Lambda(vars, f.call(...vars));
+      sets = args.slice(1).map(asSet);
+    } else {
+      if (args.length < 3) throw new TypeError('imageset requires a function and a domain');
+      lambda = sj.Lambda(f instanceof JsTuple ? f.items.map(expressionContainer) : asExpr(f), expressionContainer(args[1]));
+      sets = args.slice(2).map(asSet);
+    }
+    const image = sj.ImageSet.of(lambda, ...sets);
+    return image instanceof sj.ImageSet ? image.doit() : image;
   },
-  ConditionSet: (args, kw) => (noKw(kw), sj.ConditionSet.of(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? sj.UniversalSet : asSet(args[2]))),
+  ConditionSet: (args, kw) => {
+    noKw(kw);
+    if (args.length < 2 || args.length > 3) throw new TypeError('ConditionSet requires two or three arguments');
+    return sj.ConditionSet.of(expressionContainer(args[0]), expressionContainer(args[1]), args[2] === undefined ? sj.UniversalSet : asSet(args[2]));
+  },
+  '.bound_symbols': (_args, kw, self) => {
+    noKw(kw);
+    if (self instanceof sj.ConditionSet) return new JsList(self.boundSymbols);
+    throw new Unsupported('bound symbols');
+  },
+  '.base_sets': (_args, kw, self) => (noKw(kw), new JsTuple((self as sj.ImageSet).baseSets)),
   PowerSet: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`PowerSet kwarg ${k}`);
     return sj.PowerSet(asSet(args[0]));
@@ -2568,7 +2607,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const f = args[2];
     return sj.FunctionMatrix(asExpr(args[0]), asExpr(args[1]), typeof f === 'string' ? f : (lambdaAsNode(f) as sj.Lambda));
   },
-  '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), expressionContainer(args[0]))),
+  '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), args.length > 1 ? sj.Tuple(...args.map(expressionContainer)) : expressionContainer(args[0]))),
   solveset: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
     const dom = (kw['domain'] ?? args[2]) as sj.SetExpr | undefined;
@@ -3006,7 +3045,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.hasXfree(asExpr(self), args[0].items.filter((i) => !(i instanceof UFnClass)).map(asExpr));
   },
   '.is_algebraic_expr': (args, kw, self) => (noKw(kw), sj.isAlgebraicExpr(asExpr(self), args.map(asExpr))),
-  '.dummy_eq': (args, kw, self) => (noKw(kw), sj.dummyEq(asExpr(lambdaAsNode(self)), asExpr(lambdaAsNode(args[0])), args[1] === undefined ? undefined : asExpr(args[1]))),
+  '.dummy_eq': (args, kw, self) => {
+    noKw(kw);
+    const canonical = (v: unknown): Expr => v instanceof sj.ImageSet || v instanceof sj.ConditionSet || v instanceof sj.SetExpressionNode ? v.asDummy() : asExpr(lambdaAsNode(v));
+    return sj.dummyEq(canonical(self), canonical(args[0]), args[1] === undefined ? undefined : asExpr(args[1]));
+  },
   '.compare': (args, kw, self) => (noKw(kw), Math.sign(sj.compareKeys(sj.sortKey(asExpr(self)), sj.sortKey(asExpr(args[0]))))),
   '.could_extract_minus_sign': exprMethod((e) => sj.couldExtractMinusSign(e)),
   '.as_ordered_factors': exprMethod((e) => new JsList(sj.orderedFactors ? sj.orderedFactors(e) : [e])),
@@ -3258,6 +3301,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_dummy': (_args, kw, self) => {
     noKw(kw);
+    if (self instanceof sj.ConditionSet || self instanceof sj.ImageSet) return self.asDummy();
     if (self instanceof Sym && !(self instanceof sj.Dummy)) return new sj.Dummy(self.name, self.assumptions);
     if (self instanceof sj.Integral && self.args.length === 2) return self;
     if (self instanceof sj.Integral) {
@@ -4215,6 +4259,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('doit args');
     // the stats nodes evaluate with their own hints (SymPy Expectation.doit(deep=False)); a Density of a finite distribution is a dict
+    if (self instanceof sj.ImageSet) return self.doit();
     if (self instanceof sj.Density) return fromJs(self.compute());
     if (self instanceof sj.ExpectationNode || self instanceof sj.ProbabilityNode) return self.doit({ deep: kw['deep'] === undefined ? true : Boolean(kw['deep']) });
     // SymPy MatrixBase.doit: the entries evaluated
@@ -5775,10 +5820,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   },
   '.__contains__': (a, [b]) => {
     if (a instanceof sj.SetExpr && !(a instanceof sj.MatrixSet)) {
-      const result = sj.contains(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : expressionContainer(b));
-      if (result === S.true) return true;
-      if (result === S.false) return false;
-      throw new TypeError('cannot determine symbolic set membership');
+      return a.hasElement(expressionContainer(b));
     }
     if (Array.isArray(a)) return a.some((v) => pyEquals(v, b));
     if (a instanceof Map) return [...a.keys()].some((k) => pyEquals(k, b));
@@ -5788,7 +5830,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
       if (result === 'unknown') throw new TypeError('cannot determine symbolic matrix membership');
       return result;
     }
-    if (a instanceof sj.SetExpr) return sj.containsQ(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : expressionContainer(b)) === true;
+    if (a instanceof sj.SetExpr) return sj.containsQ(a, expressionContainer(b)) === true;
     const r = callMethod(a, ['contains', 'has', 'includes'], [b]);
     if (r === undefined) return unsupportedOp('in');
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
@@ -6454,6 +6496,17 @@ function autoAdapter(c: Case): Adapter | undefined {
   };
   if (c.fn === 'given') return (args, kw) => sj.given(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), toJs(v, false)])));
   if (c.fn === '.pdf' && c.self?.t === 'Stats' && c.self['cls'] === 'ContinuousDistributionHandmade') return (args, _kw, self) => args.length === 0 ? (self as sj.ContinuousDistributionHandmade).pdfLambda : (self as sj.ContinuousDistributionHandmade).pdf(asExpr(args[0]));
+  if (c.fn === 'unchanged' && c.args?.[0]?.['name'] === 'ImageSet') return (args, kw) => {
+    noKw(kw);
+    const lambda = args[1];
+    if (!(lambda instanceof JsLambda)) throw new TypeError('ImageSet requires a Lambda');
+    const signature = lambda.vars.map(expressionContainer);
+    const variable = signature.length === 1 ? signature[0]! : sj.Tuple(...signature);
+    const sets = args.slice(2).map(asSet);
+    return sj.unchanged(function ImageSet(v: Expr, expr: Expr, ...bases: sj.SetExpr[]) {
+      return sj.ImageSet.of(sj.Lambda(bases.length === 1 ? v : v.args, expr), ...bases);
+    }, variable, expressionContainer(lambda.body), ...sets);
+  };
   if (c.fn === 'density' && c.category === 'stats') return (args, kw) => fromJs(sj.density(expressionContainer(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), toJs(v, false)]))));
   if (c.fn === 'is_random') return (args) => sj.isRandom(args[0] instanceof Matrix ? sj.ImmutableMatrix(args[0]) : args[0]);
   if (c.fn === 'AppliedPermutation') return (args, kw) => {
@@ -6588,10 +6641,10 @@ function autoAdapter(c: Case): Adapter | undefined {
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {
     // the evaluating constructors of the arithmetic classes (Python calls the class: Pow(b, e))
-    const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow, RisingFactorial: function RisingFactorial(x: Expr, k: Expr) { return sj.rf(x, k); }, FallingFactorial: function FallingFactorial(x: Expr, k: Expr) { return sj.ff(x, k); }, PowerSet: sj.PowerSet, Contains: (x: Expr, s: sj.SetExpr) => new sj.Contains(x, s) };
+    const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow, RisingFactorial: function RisingFactorial(x: Expr, k: Expr) { return sj.rf(x, k); }, FallingFactorial: function FallingFactorial(x: Expr, k: Expr) { return sj.ff(x, k); }, PowerSet: sj.PowerSet, ConditionSet: function ConditionSet(x: Expr, c: Expr, s: sj.SetExpr) { return sj.ConditionSet.of(x, c, s); }, Contains: function Contains(x: Expr, s: sj.SetExpr) { return new sj.Contains(x, s); } };
     if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[REL_OPS[x.name] ?? camel(x.name)];
     const headName = String(c.args?.[0]?.['name']);
-    if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);
+    if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Contains', 'Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);
     if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
     // The dense tools keep GF(p) coefficients as field elements: a zero-order derivative returns them unchanged.
     const fieldElements = (v: unknown): unknown => v instanceof JsFFElement ? plain(v) : v instanceof JsList ? new JsList(v.items.map(fieldElements)) : v instanceof JsTuple ? new JsTuple(v.items.map(fieldElements)) : v;
@@ -6961,6 +7014,7 @@ function pickResult(value: unknown, index: number): unknown {
 
 /** The items of a result that Python iterates (a list, tuple, matrix or other iterable). */
 function resultItems(value: unknown, post: string): readonly unknown[] {
+  if (value === sj.EmptySet) return [];
   if (value instanceof sj.GroebnerBasis) return value.exprs;
   if (value instanceof Matrix) return value.data;
   if (value instanceof JsTuple || value instanceof JsList) return value.items;
@@ -7004,6 +7058,7 @@ function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets
     if (value instanceof sj.NDimArray) return value.length;
     if (value instanceof sj.Range) return value.size;
     if (value instanceof sj.FiniteSet) return value.args.length;
+    if (value instanceof sj.PowerSetNode || value instanceof sj.ProductSetNode || value instanceof sj.DisjointUnionNode) return value.length;
     if (value === sj.EmptySet) return 0;
     if (typeof value === 'string') return value.length;
     if (value instanceof Map || value instanceof Set) return value.size;
@@ -7081,7 +7136,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') ? undefined : auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       // (a DomainMatrix error is the method's own result)
-      if (!auto || (self === undefined && ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'loggamma'].includes(c.fn)) || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (['parse_expr', '.copyin_list', '.applyfunc'].includes(c.fn) && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
+      const setCall = c.category === 'sets' && ['ConditionSet', 'Range', 'ImageSet', 'imageset', 'Union', 'Intersection', 'ProductSet', '.is_subset', '.is_superset', '.is_proper_subset', '.is_proper_superset'].includes(c.fn);
+      if (!auto || (setCall && !(e instanceof Unsupported)) || (self === undefined && ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'loggamma'].includes(c.fn)) || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (['parse_expr', '.copyin_list', '.applyfunc'].includes(c.fn) && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }
@@ -7171,6 +7227,17 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'sympy.functions.elementary.tests.test_hyperbolic:assert asech(sinh(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
   // At z=1 SymPy gives erfi(1)+2*I. E_(1/2)(w)=sqrt(pi)*erfc(sqrt(w))/sqrt(w) requires a negative constant term.
   "sympy.functions.special.tests.test_error_functions:assert erfi(z).rewrite('expint') == sqrt(-z**2)/z - z*expint(S.Half, -z**2)/sqrt(S.Pi)": '-z*erfc(sqrt(-z**2))/sqrt(-z**2) - sqrt(-z**2)/z',
+  // Set.measure is Lebesgue measure. Radii 2..5 cover a full annulus (21*pi);
+  // the remaining radii 5..8 cover a half annulus (39*pi/2).
+  'sympy.sets.tests.test_fancysets:assert c2.measure == 9*pi': '81*pi/2',
+  // Identifying ham with eggs makes the left difference empty, whereas {ham} becomes {eggs}.
+  "sympy.sets.tests.test_sets:assert FiniteSet('ham', 'eggs') - FiniteSet('eggs') == FiniteSet('ham')": 'Complement({ham}, {eggs})',
+  // With x=1 and y=0 the left difference is empty, while {1} minus {y} contains 1.
+  "sympy.sets.tests.test_sets:assert Complement(FiniteSet(1, 2, x), FiniteSet(x, y, 2, 3)) == \\\n        Complement(FiniteSet(1), FiniteSet(y), evaluate=False)": 'Complement({1}, {2, 3, x, y})',
+  // (0, 0) is in the square and cannot be a triple in the cube.
+  'sympy.sets.tests.test_sets:assert not (Interval(-5, 5)**2).is_subset(Interval(-10, 10)**3)': 'False',
+  // The difference (2, 3] contains an interval of positive length and is uncountable.
+  'sympy.sets.tests.test_sets:assert Complement(C, D, evaluate=False).is_iterable is None': 'False',
   // A nonzero numerator divided by a bounded interval cannot approach zero; zero itself is excluded.
   "sympy.sets.tests.test_setexpr:assert i12cc/n32lo == SetExpr(Interval.Ropen(-oo, oo))": "SetExpr(Union(Interval.open(-oo, -1/3), Interval(1/2, oo)))",
   "sympy.sets.tests.test_setexpr:assert SetExpr(Interval(-3, -2))/SetExpr(Interval(-2, 1)) == SetExpr(Interval(-oo, oo))": "SetExpr(Union(Interval(-oo, -2), Interval(1, oo)))",

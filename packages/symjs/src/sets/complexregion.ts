@@ -60,7 +60,18 @@ export abstract class ComplexRegionNode extends SetExpr {
   }
   /** Area of a rectangular product, or of an annular sector in polar coordinates. */
   get measure(): Expr {
-    if (!(this.sets instanceof ProductSetNode)) throw new NotImplementedError('Measure of a union of complex regions');
+    if (this.sets instanceof SetOp && this.sets.op === 'Union') {
+      if (!this.polar) return this.sets.measure;
+      // In the coordinates u = r²/2 and theta the planar area element is du dtheta.
+      const rectangles = this.psets.map((p) => {
+        const radius = at(p.args, 0);
+        if (!(radius instanceof Interval) || isReal(radius.start) !== true || ![0, 1].includes(cmpReal(radius.start, S.Zero) ?? -1)) throw new NotImplementedError('Polar area needs nonnegative radial intervals');
+        const u = (r: Expr): Expr => mul(Rational.of(1n, 2n), pow(r, 2));
+        return productSet(interval(u(radius.start), u(radius.end)), normalizeThetaSet(at(p.args, 1)));
+      });
+      return union(...rectangles).measure;
+    }
+    if (!(this.sets instanceof ProductSetNode)) throw new NotImplementedError('Complex region measure requires products');
     const [a, b] = this.sets.args;
     if (a instanceof FiniteSet || b instanceof FiniteSet) return S.Zero;
     if (!(a instanceof Interval && b instanceof Interval)) throw new NotImplementedError('Complex region measure needs interval factors');
@@ -185,6 +196,7 @@ export function normalizeThetaSet(theta: SetExpr): SetExpr {
  * rectangular form is the finite set of its points.
  */
 export function complexRegion(sets: SetExpr, polar = false): SetExpr {
+  if (typeof polar !== 'boolean') throw new RangeError('polar must be a boolean');
   if (polar) return new PolarComplexRegion(union(...productsOf(sets).map((p) => productSet(at(p.args, 0), normalizeThetaSet(at(p.args, 1))))));
   if (sets instanceof ProductSetNode && sets.args.length === 2 && sets.args.every((a) => a === Reals)) return Complexes;
   if (sets instanceof ProductSetNode && sets.args.length === 2 && sets.args.every((a) => a instanceof FiniteSet)) {

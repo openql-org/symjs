@@ -553,7 +553,7 @@ describe("sympy/sets/tests/test_conditionset.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(xreplace(new ConditionSet(x, Relational(x, rational(2), '<', { evaluate: false }), finiteSet(y, z)), [[x, y]]))).toBe('ConditionSet(y, y < 2, {y, z})');
   });
-  it.fails("test_subs_CondSet:164", () => {
+  it("test_subs_CondSet:164", () => {
     const [x, y, z, w] = symbols('x y z w');
     expect(sympyStr(new ConditionSet(x, Relational(x, y, '<', { evaluate: false }), finiteSet(y, z)).subs(y, w))).toBe('ConditionSet(x, x < w, {w, z})');
   });
@@ -637,17 +637,17 @@ describe("sympy/sets/tests/test_conditionset.py", () => {
   it.todo("test_contains:235");
   it("test_contains:239", () => {
     const x = new Sym('x');
-    expect(() => contains(new ConditionSet(x, Relational(new Pow(x, rational(-1)), rational(0), '>=', { evaluate: false }), Reals), rational(0))).toThrow(TypeError);
+    expect(() => new ConditionSet(x, Relational(new Pow(x, rational(-1)), rational(0), '>=', { evaluate: false }), Reals).hasElement(rational(0))).toThrow(TypeError);
   });
   it("test_contains:240", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(contains(new ConditionSet(x, Relational(y, rational(5), '>', { evaluate: false }), interval(rational(1), rational(7), false, false)), rational(6)))).toBe('y > 5');
   });
-  it.fails("test_contains:244", () => {
+  it("test_contains:244", () => {
     const [x, y, w] = symbols('x y w');
     expect(sympyStr(contains(new ConditionSet(x, Relational(y, rational(5), '>', { evaluate: false }), interval(rational(1), rational(7), false, false)), w))).toBe('(y > 5) & Contains(w, Interval(1, 7))');
   });
-  it.fails("test_contains:249", () => {
+  it("test_contains:249", () => {
     const x = new Sym('x');
     expect(sympyStr(contains(new ConditionSet(x, Relational(new Pow(x, rational(-1)), rational(0), '>=', { evaluate: false }), Reals), rational(0)))).toBe('Contains(0, ConditionSet(x, 1/x >= 0, Reals))');
   });
@@ -679,7 +679,7 @@ describe("sympy/sets/tests/test_conditionset.py", () => {
     const [w, x, y] = symbols('w x y');
     expect(sympyStr(contains(new ConditionSet(Tuple(w, Tuple(x, y)), Relational(new Add([w, x, y]), rational(1), '>', { evaluate: false }), ProductSet(Integers, ProductSet(Integers, Integers))), Tuple(Tuple(rational(1), rational(2)), Tuple(rational(3), rational(4)))))).toBe('False');
   });
-  it.fails("test_contains:260", () => {
+  it("test_contains:260", () => {
     const [w, x, y] = symbols('w x y');
     expect(sympyStr(contains(new ConditionSet(Tuple(w, Tuple(x, y)), Relational(new Add([w, x, y]), rational(1), '>', { evaluate: false }), ProductSet(Integers, ProductSet(Integers, Integers))), Tuple(rational(1), Tuple(rational(3), rational(4)))))).toBe('True');
   });
@@ -793,10 +793,10 @@ describe("sympy/sets/tests/test_powerset.py", () => {
   it("test_powerset_rewrite_FiniteSet:23", () => {
     expect(sympyStr(rewrite(PowerSet(Naturals), 'FiniteSet', { pattern: [], deep: true }))).toBe('PowerSet(Naturals)');
   });
-  it.fails("test_finiteset_rewrite_powerset:27", () => {
+  it("test_finiteset_rewrite_powerset:27", () => {
     expect(sympyStr(rewrite(finiteSet(EmptySet), 'PowerSet', { pattern: [], deep: true }))).toBe('PowerSet(EmptySet)');
   });
-  it.fails("test_finiteset_rewrite_powerset:28", () => {
+  it("test_finiteset_rewrite_powerset:28", () => {
     expect(sympyStr(rewrite(finiteSet(finiteSet(rational(1)), finiteSet(rational(1), rational(2)), finiteSet(rational(2)), EmptySet), 'PowerSet', { pattern: [], deep: true }))).toBe('PowerSet({1, 2})');
   });
   it("test_finiteset_rewrite_powerset:32", () => {
@@ -1386,7 +1386,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_difference:289", () => {
     expect(sympyStr(interval(rational(0), rational(10), false, false).sub(finiteSet(rational(1), I)))).toBe('Union(Interval.Ropen(0, 1), Interval.Lopen(1, 10))');
   });
-  it.fails("test_difference:291", () => {
+  it("test_difference:291", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Reals.sub(finiteSet(rational(1), x, new Pow(y, rational(2)), new Add([rational(2), I]))))).toBe('Complement(Union(Interval.open(-oo, 1), Interval.open(1, oo)), {x, y**2})');
   });
@@ -1542,7 +1542,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const x = new Sym('x');
     expect(sympyStr(Complement(Reals, finiteSet(x)))).toBe('Complement(Reals, {x})');
   });
-  it.fails("test_complement:427", () => {
+  it("test_complement:427", () => {
     const x = new Sym('x');
     expect(sympyStr(Complement(Reals, finiteSet(rational(0), x)))).toBe('Complement(Union(Interval.open(-oo, 0), Interval.open(0, oo)), {x})');
   });
@@ -1597,7 +1597,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const ham = new Sym('ham');
     expect(sympyStr(Intersection(new SetOp('Union', [interval(rational(0), rational(5), false, false), finiteSet(ham)]), finiteSet(rational(2), rational(3), rational(4), rational(5), rational(6))))).toBe('Intersection({2, 3, 4, 5, 6}, Union({ham}, Interval(0, 5)))');
   });
-  it.fails("test_intersect1:479", () => {
+  it("test_intersect1:479", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Intersection(finiteSet(rational(1), rational(2), rational(3)), interval(rational(2), x, false, false), interval(rational(3), y, false, false)))).toBe('Intersection({3}, Interval(2, x), Interval(3, y))');
   });
@@ -1609,7 +1609,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Intersection(finiteSet(rational(1), rational(2), rational(4)), interval(rational(0), rational(3), false, false), interval(x, y, false, false)))).toBe('Intersection({1, 2}, Interval(x, y))');
   });
-  it.fails("test_intersect1:488", () => {
+  it("test_intersect1:488", () => {
     const m = new Sym('m', { real: true });
     const n = new Sym('n', { real: true });
     expect(sympyStr(Intersection(finiteSet(m), finiteSet(m, n), interval(m, new Add([rational(1), m]), false, false)))).toBe('{m}');
@@ -1631,10 +1631,10 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_intersect1:501", () => {
     expect(sympyStr(Intersection(new SetOp('Union', [interval(rational(0), rational(1), false, false), interval(rational(2), rational(3), false, false)]), interval(rational(1), rational(2), false, false)))).toBe('{1, 2}');
   });
-  it.fails("test_intersect1:507", () => {
+  it("test_intersect1:507", () => {
     expect(sympyStr(Intersection(interval(new Pow(new Add([rational(5), new Mul([rational(2), new Pow(rational(6), rational(1, 2))])]), rational(1, 2)), rational(4), false, false), interval(new Add([new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))]), rational(5), false, false)))).toBe('Interval(sqrt(2) + sqrt(3), 4)');
   });
-  it.fails("test_intersect1:508", () => {
+  it("test_intersect1:508", () => {
     expect(sympyStr(Intersection(interval(rational(1), new Pow(new Add([rational(5), new Mul([rational(2), new Pow(rational(6), rational(1, 2))])]), rational(1, 2)), false, false), interval(rational(0), new Add([new Pow(rational(2), rational(1, 2)), new Pow(rational(3), rational(1, 2))]), false, false)))).toBe('Interval(1, sqrt(2) + sqrt(3))');
   });
   it("test_intersection_interval_float:536", () => {
@@ -2421,7 +2421,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const x = new Sym('x');
     expect(sympyStr(isSubset(finiteSet(x), finiteSet(x)))).toBe('True');
   });
-  it.fails("test_is_subset:767", () => {
+  it("test_is_subset:767", () => {
     const x = new Sym('x');
     expect(sympyStr(isSubset(finiteSet(x), finiteSet(new Add([rational(1), x]))))).toBe('False');
   });
@@ -2434,10 +2434,10 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_is_subset:773", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_subset:774", () => {
+  it("test_is_subset:774", () => {
     expect(sympyStr(isSubset(Range.of(rational(0), rational(10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000n), rational(1)), finiteSet(rational(0), rational(1), rational(2))))).toBe('False');
   });
-  it.fails("test_is_subset:775", () => {
+  it("test_is_subset:775", () => {
     expect(sympyStr(isSubset(Range.of(rational(6), rational(0), rational(-2)), finiteSet(rational(2), rational(4), rational(6))))).toBe('True');
   });
   it("test_is_subset:776", () => {
@@ -2450,11 +2450,11 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(isSubset(Range.of(rational(0), rational(3), rational(1)), finiteSet(rational(0), rational(1), n)))).toBe('None');
   });
-  it.fails("test_is_subset:779", () => {
+  it("test_is_subset:779", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(isSubset(Range.of(n, new Add([rational(2), n]), rational(1)), finiteSet(n, new Add([rational(1), n]))))).toBe('True');
   });
-  it.fails("test_is_subset:780", () => {
+  it("test_is_subset:780", () => {
     expect(sympyStr(isSubset(Range.of(rational(0), rational(5), rational(1)), interval(rational(0), rational(4), false, true)))).toBe('False');
   });
   it("test_is_subset:782", () => {
@@ -2495,7 +2495,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_is_superset:800", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_superset:803", () => {
+  it("test_is_superset:803", () => {
     expect(sympyStr(isSubset(new SetOp('Union', [interval(rational(0), rational(1), false, false), interval(rational(2), rational(5), false, false)]), interval(rational(3), rational(4), false, false)))).toBe('False');
   });
   it("test_is_superset:805", () => {
@@ -2941,11 +2941,11 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(imageset(x, new Add([new Mul([rational(-90), x]), new Mul([rational(-26), new Pow(x, rational(3))]), new Mul([rational(3), new Pow(x, rational(4))]), new Mul([rational(78), new Pow(x, rational(2))])]), interval(rational(0), rational(4), false, false)))).toBe('Interval(-35, 0)');
   });
-  it.fails("test_image_interval:1168", () => {
+  it("test_image_interval:1168", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(imageset(x, new Add([x, new Pow(x, rational(-1))]), Reals))).toBe('Union(Interval(-oo, -2), Interval(2, oo))');
   });
-  it.fails("test_image_interval:1170", () => {
+  it("test_image_interval:1170", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(imageset(x, new Add([new Pow(x, rational(-1)), new Pow(new Add([rational(-1), x]), rational(-2))]), interval(rational(0), rational(2), true, false)))).toBe('Interval(3/2, oo)');
   });
@@ -2964,11 +2964,11 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const v1 = x;
     expect(sympyStr(imageset(v1, xreplace(fn('sin', [fn('cos', [x])]), [[v1, v1]]), interval(rational(0), rational(1), false, false)))).toBe('ImageSet(Lambda(x, sin(cos(x))), Interval(0, 1))');
   });
-  it.fails("test_image_piecewise:1186", () => {
+  it("test_image_piecewise:1186", () => {
     const x = new Sym('x');
     expect(sympyStr(imageset(x, piecewise([x, Relational(x, rational(-1), '<=', { evaluate: false })], [new Pow(x, rational(-2)), Relational(x, rational(5), '<=', { evaluate: false })], [new Pow(x, rational(3)), true]), interval(rational(-5), rational(5), false, false)))).toBe('Union(Interval(-5, -1), Interval(1/25, oo))');
   });
-  it.fails("test_image_piecewise:1187", () => {
+  it("test_image_piecewise:1187", () => {
     const x = new Sym('x');
     expect(sympyStr(imageset(x, piecewise([rational(0), Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), Relational(x, rational(2), '<=', { evaluate: false })], [rational(2), true]), interval(rational(1), rational(2), false, false)))).toBe('{0, 1}');
   });
@@ -3051,19 +3051,19 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_Eq:1292", () => {
     expect(sympyStr(Relational(interval(rational(0), rational(1), false, false), interval(rational(0), rational(1), false, false), '==', { evaluate: true }))).toBe('True');
   });
-  it.fails("test_Eq:1293", () => {
+  it("test_Eq:1293", () => {
     expect(sympyStr(Relational(interval(rational(0), rational(1), false, false), interval(rational(0), rational(2), false, false), '==', { evaluate: true }))).toBe('False');
   });
   it("test_Eq:1298", () => {
     expect(sympyStr(Relational(finiteSet(rational(0), rational(1)), finiteSet(rational(0), rational(1)), '==', { evaluate: true }))).toBe('True');
   });
-  it.fails("test_Eq:1299", () => {
+  it("test_Eq:1299", () => {
     expect(sympyStr(Relational(finiteSet(rational(0), rational(1)), finiteSet(rational(1), rational(2)), '==', { evaluate: true }))).toBe('False');
   });
   it("test_Eq:1301", () => {
     expect(sympyStr(Relational(ProductSet(finiteSet(rational(0), rational(1)), finiteSet(rational(1), rational(2))), ProductSet(finiteSet(rational(0), rational(1)), finiteSet(rational(1), rational(2))), '==', { evaluate: true }))).toBe('True');
   });
-  it.fails("test_Eq:1302", () => {
+  it("test_Eq:1302", () => {
     expect(sympyStr(Relational(ProductSet(finiteSet(rational(0), rational(1)), finiteSet(rational(1), rational(2))), ProductSet(finiteSet(rational(1), rational(2)), finiteSet(rational(0), rational(1))), '==', { evaluate: true }))).toBe('False');
   });
   // the arguments do not type-check against the public API
@@ -3101,7 +3101,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const n = new Sym('n');
     expect(sympyStr(Complement(interval(rational(1), rational(3), false, false), finiteSet(n)))).toBe('Complement(Interval(1, 3), {n})');
   });
-  it.fails("test_issue_9637:1357", () => {
+  it("test_issue_9637:1357", () => {
     const n = new Sym('n');
     expect(sympyStr(Complement(interval(rational(1), rational(3), false, false), finiteSet(rational(2), n)))).toBe('Union(Complement(Interval.Ropen(1, 2), {n}), Complement(Interval.Lopen(2, 3), {n}))');
   });
@@ -3124,19 +3124,19 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_issue_9956:1371", () => {
     expect(sympyMatches(Union(Reals, finiteSet(rational(1))), 'Interval(-oo, oo)')).toBe(true);
   });
-  it.fails("test_issue_Symbol_inter:1379", () => {
+  it("test_issue_Symbol_inter:1379", () => {
     const [m, n] = symbols('m n');
     expect(sympyStr(Intersection(Reals, interval(rational(0), oo, false, true), finiteSet(m), finiteSet(m, n)))).toBe('Intersection({m}, Interval(0, oo))');
   });
-  it.fails("test_issue_Symbol_inter:1381", () => {
+  it("test_issue_Symbol_inter:1381", () => {
     const [m, n] = symbols('m n');
     expect(sympyStr(Intersection(finiteSet(rational(1), m, n), finiteSet(rational(2), m, n), interval(rational(0), oo, false, true)))).toBe('Intersection({m, n}, Interval(0, oo))');
   });
-  it.fails("test_issue_Symbol_inter:1383", () => {
+  it("test_issue_Symbol_inter:1383", () => {
     const [m, n, x, z] = symbols('m n x z');
     expect(sympyStr(Intersection(finiteSet(m, n, x), finiteSet(m, z), Reals))).toBe('Intersection({m, z}, {m, n, x}, Reals)');
   });
-  it.fails("test_issue_Symbol_inter:1385", () => {
+  it("test_issue_Symbol_inter:1385", () => {
     const [m, n, x] = symbols('m n x');
     expect(sympyStr(Intersection(finiteSet(rational(3), m, n), finiteSet(m, n, x), Reals))).toBe('Intersection({3, m, n}, {m, n, x}, Reals)');
   });
@@ -3153,19 +3153,19 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const x = new Sym('x');
     expect(sympyStr(Intersection(finiteSet(fn('sin', [x]), fn('cos', [x])), finiteSet(rational(1), fn('sin', [x]), fn('cos', [x])), Reals))).toBe('Intersection({sin(x), cos(x)}, Reals)');
   });
-  it.fails("test_issue_Symbol_inter:1393", () => {
+  it("test_issue_Symbol_inter:1393", () => {
     const x = new Sym('x');
     expect(sympyStr(Intersection(finiteSet(rational(1), fn('sin', [x]), new Pow(x, rational(2))), finiteSet(rational(2), fn('sin', [x]), new Pow(x, rational(2))), Reals))).toBe('Intersection({x**2, sin(x)}, Reals)');
   });
-  it.fails("test_issue_10113:1403", () => {
+  it("test_issue_10113:1403", () => {
     const x = new Sym('x');
     expect(sympyStr(imageset(x, new Mul([new Pow(x, rational(2)), new Pow(new Add([rational(-4), new Pow(x, rational(2))]), rational(-1))]), Reals))).toBe('Union(Interval(-oo, 0), Interval.open(1, oo))');
   });
-  it.fails("test_issue_10113:1404", () => {
+  it("test_issue_10113:1404", () => {
     const x = new Sym('x');
     expect(sympyStr(imageset(x, new Mul([new Pow(x, rational(2)), new Pow(new Add([rational(-4), new Pow(x, rational(2))]), rational(-1))]), interval(rational(-2), rational(2), false, false)))).toBe('Interval(-oo, 0)');
   });
-  it.fails("test_issue_10113:1405", () => {
+  it("test_issue_10113:1405", () => {
     const x = new Sym('x');
     expect(sympyStr(imageset(x, new Mul([new Pow(x, rational(2)), new Pow(new Add([rational(-4), new Pow(x, rational(2))]), rational(-1))]), interval(rational(-2), rational(3), false, false)))).toBe('Union(Interval(-oo, 0), Interval(9/5, oo))');
   });
@@ -3236,7 +3236,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_issue_2799:1464", () => {
     expect(sympyStr(UniversalSet.add(Reals))).toBe('UniversalSet');
   });
-  it.fails("test_issue_2799:1465", () => {
+  it("test_issue_2799:1465", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(Reals.add(interval(a, oo, false, true)))).toBe('Union(Interval(a, oo), Reals)');
   });
@@ -3264,7 +3264,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_issue_10931:1484", () => {
     expect(sympyStr(Integers.sub(Integers))).toBe('EmptySet');
   });
-  it.fails("test_issue_10931:1485", () => {
+  it("test_issue_10931:1485", () => {
     expect(sympyStr(Integers.sub(Reals))).toBe('EmptySet');
   });
   it.fails("test_issue_11174:1490", () => {
@@ -3283,7 +3283,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
     const x = new Sym('x');
     expect(sympyStr(Intersection(finiteSet(S.NegativeInfinity, x), finiteSet(x)))).toBe('{x}');
   });
-  it.fails("test_finite_set_intersection:1509", () => {
+  it("test_finite_set_intersection:1509", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Intersection(finiteSet(rational(1), rational(2), x), finiteSet(rational(2), rational(3), x, y)))).toBe('Intersection({1, 2, x}, {2, x, y})');
   });
@@ -3337,7 +3337,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   //   assert Intersection({1, 2}, {2, 3}) == FiniteSet(2)
   //   => {2}
   it.todo("test_union_intersection_constructor:1541");
-  it.fails("test_Union_contains:1545", () => {
+  it("test_Union_contains:1545", () => {
     expect(sympyStr(contains(new SetOp('Union', [interval(S.NegativeInfinity, rational(0), true, true), interval(rational(0), oo, true, true)]), zoo))).toBe('False');
   });
   it("test_DisjointUnion:1557", () => {
@@ -3425,13 +3425,13 @@ describe("sympy/sets/tests/test_sets.py", () => {
   //   assert 1.0 not in B
   //   => False
   it.todo("test_issue_20089:1692");
-  it.fails("test_issue_20089:1693", () => {
+  it("test_issue_20089:1693", () => {
     expect(sympyStr(Relational(rational(1), finiteSet(rational(1), rational(2)), '==', { evaluate: true }))).toBe('False');
   });
   it("test_issue_20089:1697", () => {
     expect(sympyStr(isSubset(finiteSet(finiteSet(rational(1)), finiteSet(rational(1), rational(2))), finiteSet(finiteSet(rational(1)), finiteSet(rational(1), rational(2)))))).toBe('True');
   });
-  it.fails("test_issue_20089:1698", () => {
+  it("test_issue_20089:1698", () => {
     expect(sympyStr(isSubset(finiteSet(rational(1), rational(2)), finiteSet(finiteSet(rational(1)), finiteSet(rational(1), rational(2)))))).toBe('False');
   });
   it("test_issue_20089:1701", () => {
@@ -3440,7 +3440,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   it("test_issue_20089:1702", () => {
     expect(sympyStr(isSubset(finiteSet(finiteSet(rational(1)), finiteSet(rational(1), rational(2))), finiteSet(finiteSet(rational(1)), finiteSet(rational(1), rational(2)), rational(1), rational(2))))).toBe('True');
   });
-  it.fails("test_issue_19378:1708", () => {
+  it("test_issue_19378:1708", () => {
     expect(sympyStr(isSubset(ProductSet(finiteSet(rational(1), rational(2)), finiteSet(rational(1), rational(2))), finiteSet(Tuple(rational(1), rational(1)), Tuple(rational(1), rational(2)), Tuple(rational(2), rational(1)), Tuple(rational(2), rational(2)))))).toBe('True');
   });
   it("test_issue_19378:1710", () => {

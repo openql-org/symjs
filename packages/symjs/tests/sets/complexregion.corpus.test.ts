@@ -535,7 +535,7 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   it("test_Range_set:260", () => {
     expect(sympyStr(Intersection(Range.of(rational(0), rational(0), rational(1)), Integers))).toBe('Range(0, 0, 1)');
   });
-  it.fails("test_Range_set:261", () => {
+  it("test_Range_set:261", () => {
     expect(sympyStr(Intersection(Range.of(rational(-1), rational(10), rational(1)), Complexes))).toBe('Range(-1, 10, 1)');
   });
   it("test_Range_set:262", () => {
@@ -1430,7 +1430,7 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const i = new Sym('i', { integer: true });
     expect(sympyStr(asRelational(Range.of(i, new Add([rational(20), i]), rational(2)), x))).toBe('(x >= i) & (x <= i + 18) & Eq(Mod(-i + x, 2), 0)');
   });
-  it.fails("test_Range_symbolic:462", () => {
+  it("test_Range_symbolic:462", () => {
     const x = new Sym('x');
     const i = new Sym('i', { integer: true });
     expect(sympyStr(asRelational(Range.of(i, new Mul([rational(10), i]), new Mul([rational(3), i])), x))).toBe('Eq(Mod(-i + x, 3*i), 0) & (((x >= i) & (3*i >= 1) & (x <= 7*i)) | ((x <= i) & (x >= 7*i) & (3*i <= -1)))');
@@ -1472,7 +1472,7 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const i = new Sym('i', { integer: true });
     expect(sympyStr(contains(Range.of(rational(0), rational(8), rational(2)), i))).toBe('Contains(i, Range(0, 8, 2))');
   });
-  it.fails("test_Range_symbolic:481", () => {
+  it("test_Range_symbolic:481", () => {
     const e = new Sym('e', { integer: true, even: true });
     expect(sympyStr(contains(Range.of(rational(0), rational(8), rational(2)), e))).toBe('(e >= 0) & (e <= 6)');
   });
@@ -1480,23 +1480,23 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const i = new Sym('i', { integer: true });
     expect(sympyStr(contains(Range.of(rational(0), rational(8), rational(2)), new Mul([rational(2), i])))).toBe('(2*i >= 0) & (2*i <= 6)');
   });
-  it.fails("test_Range_symbolic:483", () => {
+  it("test_Range_symbolic:483", () => {
     const o = new Sym('o', { integer: true, odd: true });
     expect(sympyStr(contains(Range.of(rational(0), rational(8), rational(2)), o))).toBe('False');
   });
-  it.fails("test_Range_symbolic:484", () => {
+  it("test_Range_symbolic:484", () => {
     const e = new Sym('e', { integer: true, even: true });
     expect(sympyStr(contains(Range.of(rational(1), rational(9), rational(2)), e))).toBe('False');
   });
-  it.fails("test_Range_symbolic:485", () => {
+  it("test_Range_symbolic:485", () => {
     const o = new Sym('o', { integer: true, odd: true });
     expect(sympyStr(contains(Range.of(rational(1), rational(9), rational(2)), o))).toBe('(o >= 1) & (o <= 7)');
   });
-  it.fails("test_Range_symbolic:486", () => {
+  it("test_Range_symbolic:486", () => {
     const o = new Sym('o', { integer: true, odd: true });
     expect(sympyStr(contains(Range.of(rational(8), rational(0), rational(-2)), o))).toBe('False');
   });
-  it.fails("test_Range_symbolic:487", () => {
+  it("test_Range_symbolic:487", () => {
     const o = new Sym('o', { integer: true, odd: true });
     expect(sympyStr(contains(Range.of(rational(9), rational(1), rational(-2)), o))).toBe('(o >= 3) & (o <= 9)');
   });
@@ -1861,7 +1861,7 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   it("test_range_interval_intersection:527", () => {
     expect(sympyStr(Intersection(Range.of(rational(0), rational(4), rational(1)), interval(rational(0), rational(3), true, true)))).toBe('Range(1, 3, 1)');
   });
-  it.fails("test_range_interval_intersection:529", () => {
+  it("test_range_interval_intersection:529", () => {
     expect(sympyStr(Intersection(interval(rational(-1), rational(5), false, false), Complexes))).toBe('Interval(-1, 5)');
   });
   it("test_range_interval_intersection:530", () => {
@@ -2123,10 +2123,10 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   //   assert x + S.ComplexInfinity not in S.Reals
   //   => False
   it.todo("test_Reals:667");
-  it.fails("test_Complex:677", () => {
+  it("test_Complex:677", () => {
     expect(sympyStr(Intersection(Complexes, Reals))).toBe('Reals');
   });
-  it.fails("test_Complex:678", () => {
+  it("test_Complex:678", () => {
     expect(sympyStr(Union(Complexes, Reals))).toBe('Complexes');
   });
   it("test_Complex:680", () => {
@@ -2178,31 +2178,31 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const v1 = n;
     expect(sympyStr(imageset(v1, xreplace(new Add([pi, new Mul([rational(2), n])]), [[v1, v1]]), Integers))).toBe('ImageSet(Lambda(n, 2*n - 2 + pi), Integers)');
   });
-  it.fails("test_imageset_intersect_real:741", () => {
+  it("test_imageset_intersect_real:741", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([n, new Mul([I, new Add([rational(1), n]), new Add([rational(-1), n])])]), Integers), Reals))).toBe('{-1, 1}');
   });
-  it.fails("test_imageset_intersect_real:743", () => {
+  it("test_imageset_intersect_real:743", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([n, new Mul([I, new Add([rational(1, 2), n]), new Add([rational(-1), n])])]), Integers), Reals))).toBe('{1}');
   });
-  it.fails("test_imageset_intersect_real:745", () => {
+  it("test_imageset_intersect_real:745", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([n, new Mul([I, new Add([rational(1), n]), new Add([rational(1, 2), n]), new Add([rational(-1), n])])]), Naturals0), Reals))).toBe('{1}');
   });
-  it.fails("test_imageset_intersect_real:747", () => {
+  it("test_imageset_intersect_real:747", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([new Mul([rational(1, 2), n]), new Mul([I, new Add([rational(-1, 2), new Pow(n, rational(2)), new Mul([rational(-1, 2), n])])])]), Integers), Reals))).toBe('ImageSet(Lambda(x, x/2), ConditionSet(n, Eq(n**2 - n/2 - 1/2, 0), Integers))');
   });
-  it.fails("test_imageset_intersect_real:750", () => {
+  it("test_imageset_intersect_real:750", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([new Mul([n, new Pow(new Add([rational(-1), new Pow(n, rational(-1))]), rational(-1))]), new Mul([I, new Add([rational(1), n]), new Add([rational(1, 2), n]), new Add([rational(-1), n])])]), Integers), Reals))).toBe('{1/2}');
   });
-  it.fails("test_imageset_intersect_real:752", () => {
+  it("test_imageset_intersect_real:752", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([new Mul([n, new Pow(new Add([rational(-6), n]), rational(-1))]), new Mul([I, new Pow(new Add([rational(2), new Mul([rational(2), n])]), rational(-1)), new Add([rational(1), n]), new Add([rational(-3), n])])]), Integers), Reals))).toBe('{-1}');
   });
-  it.fails("test_imageset_intersect_real:763", () => {
+  it("test_imageset_intersect_real:763", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([new Mul([rational(-1, 4), pi]), new Mul([rational(2), pi, n])]), Integers), Reals))).toBe('ImageSet(Lambda(n, 2*pi*n + 7*pi/4), Integers)');
   });
@@ -2231,19 +2231,19 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([new Mul([rational(1, 2), pi]), new Mul([rational(2), pi, n])]), Integers), interval(rational(-5), rational(5), false, false)))).toBe('{-3*pi/2, pi/2}');
   });
-  it.fails("test_imageset_intersect_interval:787", () => {
+  it("test_imageset_intersect_interval:787", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Mul([pi, I, n]), Integers), interval(rational(-1), rational(1), false, false)))).toBe('{0}');
   });
-  it.fails("test_imageset_intersect_interval:788", () => {
+  it("test_imageset_intersect_interval:788", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Mul([pi, I, n]), Integers), interval(rational(1), rational(2), false, false)))).toBe('EmptySet');
   });
-  it.fails("test_imageset_intersect_interval:789", () => {
+  it("test_imageset_intersect_interval:789", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([new Mul([rational(1, 2), pi]), new Mul([rational(2), pi, I, n])]), Integers), interval(rational(0), rational(1), false, false)))).toBe('EmptySet');
   });
-  it.fails("test_imageset_intersect_interval:790", () => {
+  it("test_imageset_intersect_interval:790", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, log(n), Integers), interval(rational(0), rational(1), false, false)))).toBe('{0, log(2)}');
   });
@@ -2267,11 +2267,11 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Mul([rational(2), n]), Integers), new ImageSet(n, new Add([rational(1), new Mul([rational(2), n])]), Integers)))).toBe('EmptySet');
   });
-  it.fails("test_imageset_intersect_diophantine:806", () => {
+  it("test_imageset_intersect_diophantine:806", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([new Mul([rational(9), new Pow(n, rational(-1))]), new Mul([rational(20, 3), n])]), Integers), Integers))).toBe('{-61, -23, 23, 61}');
   });
-  it.fails("test_imageset_intersect_diophantine:809", () => {
+  it("test_imageset_intersect_diophantine:809", () => {
     const n = new Sym('n');
     expect(sympyStr(Intersection(new ImageSet(n, new Pow(new Add([rational(-2), n]), rational(2)), Integers), new ImageSet(n, new Mul([rational(-1), new Pow(new Add([rational(-3), n]), rational(2))]), Integers)))).toBe('{0}');
   });
@@ -2279,7 +2279,7 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const [m, n] = symbols('m n');
     expect(sympyStr(dummyEq(new ImageSet(m, new Add([rational(6), new Mul([rational(4), m]), new Mul([rational(4), new Pow(m, rational(2))])]), Integers), new ImageSet(n, new Add([rational(6), new Mul([rational(4), n]), new Mul([rational(4), new Pow(n, rational(2))])]), Integers)))).toBe('True');
   });
-  it.fails("test_imageset_intersect_diophantine:816", () => {
+  it("test_imageset_intersect_diophantine:816", () => {
     const [n, m] = symbols('n m');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([rational(-9), new Pow(n, rational(2))]), Integers), new ImageSet(m, new Mul([rational(-1), new Pow(m, rational(2))]), Integers)))).toBe('{-9, 0}');
   });
@@ -2287,7 +2287,7 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const [n, m] = symbols('n m');
     expect(sympyStr(dummyEq(new SetOp('Intersection', [new ImageSet(n, new Mul([rational(41), n]), Integers), new ImageSet(m, new Add([rational(40), new Pow(m, rational(2))]), Integers)]), new SetOp('Intersection', [new ImageSet(n, new Mul([rational(41), n]), Integers), new ImageSet(m, new Add([rational(40), new Pow(m, rational(2))]), Integers)])))).toBe('True');
   });
-  it.fails("test_imageset_intersect_diophantine:824", () => {
+  it("test_imageset_intersect_diophantine:824", () => {
     const [n, m] = symbols('n m');
     expect(sympyStr(Intersection(new ImageSet(n, new Add([rational(-16), new Pow(n, rational(4))]), Integers), new ImageSet(m, new Add([rational(81), new Mul([rational(-1), new Pow(m, rational(4))])]), Integers)))).toBe('{0, 65}');
   });
@@ -2326,15 +2326,15 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const v1 = n;
     expect(sympyStr(imageset(v1, xreplace(fn('sin', [n]), [[v1, v1]]), new ImageSet(m, fn('tan', [m]), Integers)))).toBe('ImageSet(Lambda(m, sin(tan(m))), Integers)');
   });
-  it.fails("test_ImageSet_simplification:857", () => {
+  it("test_ImageSet_simplification:857", () => {
     const n = new Sym('n');
     expect(sympyStr(imageset(n, new Add([rational(1), new Mul([rational(2), n])]), Naturals))).toBe('Range(3, oo, 2)');
   });
-  it.fails("test_ImageSet_simplification:858", () => {
+  it("test_ImageSet_simplification:858", () => {
     const n = new Sym('n');
     expect(sympyStr(imageset(n, new Add([rational(1), new Mul([rational(2), n])]), Naturals0))).toBe('Range(1, oo, 2)');
   });
-  it.fails("test_ImageSet_simplification:859", () => {
+  it("test_ImageSet_simplification:859", () => {
     const n = new Sym('n');
     expect(sympyStr(imageset(n, new Add([rational(1), new Mul([rational(-2), n])]), Naturals))).toBe('Range(-1, -oo, -2)');
   });
@@ -2519,61 +2519,61 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     const v1 = symbol('x');
     expect(sympyStr(imageset(v1, xreplace(new Mul([rational(2), new Dummy('x', {}, 1000000)]), [[new Dummy('x', {}, 1000000), v1]]), Range.of(rational(0), n, rational(1))))).toBe('ImageSet(Lambda(x, 2*x), Range(0, n, 1))');
   });
-  it.fails("test_ComplexRegion_intersect:990", () => {
+  it("test_ComplexRegion_intersect:990", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), interval(rational(0), pi, false, false))), new PolarComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(rational(0), new Mul([rational(2), pi]), false, true)))))).toBe('PolarComplexRegion(ProductSet(Interval(0, 1), Interval(0, pi)))');
   });
   it("test_ComplexRegion_intersect:991", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), new SetOp('Union', [interval(rational(0), new Mul([rational(1, 2), pi]), false, false), interval(new Mul([rational(3, 2), pi]), new Mul([rational(2), pi]), false, true)]))), new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), interval(rational(0), new Mul([rational(1, 2), pi]), false, false)))))).toBe('PolarComplexRegion(ProductSet(Interval(0, oo), Interval(0, pi/2)))');
   });
-  it.fails("test_ComplexRegion_intersect:992", () => {
+  it("test_ComplexRegion_intersect:992", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), interval(rational(0), pi, false, false))), new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), new SetOp('Union', [interval(rational(0), new Mul([rational(1, 2), pi]), false, false), interval(new Mul([rational(3, 2), pi]), new Mul([rational(2), pi]), false, true)])))))).toBe('PolarComplexRegion(ProductSet(Interval(0, oo), Interval(0, pi/2)))');
   });
-  it.fails("test_ComplexRegion_intersect:993", () => {
+  it("test_ComplexRegion_intersect:993", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), interval(rational(0), pi, false, false))), new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), new SetOp('Union', [finiteSet(rational(0)), interval(pi, new Mul([rational(2), pi]), false, true)])))))).toBe('PolarComplexRegion(ProductSet(Interval(0, oo), {0, pi}))');
   });
-  it.fails("test_ComplexRegion_intersect:996", () => {
+  it("test_ComplexRegion_intersect:996", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), rational(4), false, false), interval(rational(0), new Mul([rational(2), pi]), false, true))), interval(rational(1), rational(5), false, false)))).toBe('Interval(1, 4)');
   });
-  it.fails("test_ComplexRegion_intersect:997", () => {
+  it("test_ComplexRegion_intersect:997", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), rational(4), false, false), interval(rational(0), new Mul([rational(2), pi]), false, true))), interval(rational(4), rational(9), false, false)))).toBe('{4}');
   });
-  it.fails("test_ComplexRegion_intersect:1010", () => {
+  it("test_ComplexRegion_intersect:1010", () => {
     expect(sympyStr(Intersection(new CartesianComplexRegion(ProductSet(Reals, interval(rational(0), oo, false, true))), new CartesianComplexRegion(ProductSet(interval(rational(-1), rational(1), false, false), interval(rational(-1), rational(1), false, false)))))).toBe('CartesianComplexRegion(ProductSet(Interval(-1, 1), Interval(0, 1)))');
   });
   it("test_ComplexRegion_intersect:1011", () => {
     expect(sympyStr(Intersection(new CartesianComplexRegion(ProductSet(interval(rational(0), oo, false, true), Reals)), new CartesianComplexRegion(ProductSet(interval(rational(0), oo, false, true), interval(rational(0), oo, false, true)))))).toBe('CartesianComplexRegion(ProductSet(Interval(0, oo), Interval(0, oo)))');
   });
-  it.fails("test_ComplexRegion_intersect:1012", () => {
+  it("test_ComplexRegion_intersect:1012", () => {
     expect(sympyStr(Intersection(new CartesianComplexRegion(ProductSet(Reals, interval(rational(0), oo, false, true))), new CartesianComplexRegion(ProductSet(interval(rational(0), oo, false, true), Reals))))).toBe('CartesianComplexRegion(ProductSet(Interval(0, oo), Interval(0, oo)))');
   });
   it.fails("test_ComplexRegion_intersect:1013", () => {
     expect(sympyStr(Intersection(new CartesianComplexRegion(ProductSet(Reals, interval(rational(0), oo, false, true))), new CartesianComplexRegion(ProductSet(Reals, interval(S.NegativeInfinity, rational(0), true, false)))))).toBe('CartesianComplexRegion(ProductSet(Interval(-oo, oo), {0}))');
   });
-  it.fails("test_ComplexRegion_intersect:1016", () => {
+  it("test_ComplexRegion_intersect:1016", () => {
     expect(sympyStr(Intersection(new CartesianComplexRegion(ProductSet(interval(rational(-5), rational(5), false, false), interval(rational(-10), rational(10), false, false))), interval(rational(2), rational(7), false, false)))).toBe('Interval(2, 5)');
   });
-  it.fails("test_ComplexRegion_intersect:1017", () => {
+  it("test_ComplexRegion_intersect:1017", () => {
     expect(sympyStr(Intersection(new CartesianComplexRegion(ProductSet(interval(rational(-5), rational(5), false, false), interval(rational(-10), rational(10), false, false))), interval(rational(5), rational(7), false, false)))).toBe('{5}');
   });
   it("test_ComplexRegion_intersect:1023", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(rational(0), new Mul([rational(2), pi]), false, true))), new CartesianComplexRegion(ProductSet(interval(rational(-1), rational(1), false, false), interval(rational(-1), rational(1), false, false)))))).toBe('Intersection(CartesianComplexRegion(ProductSet(Interval(-1, 1), Interval(-1, 1))), PolarComplexRegion(ProductSet(Interval(0, 1), Interval.Ropen(0, 2*pi))))');
   });
-  it.fails("test_ComplexRegion_union:1036", () => {
+  it("test_ComplexRegion_union:1036", () => {
     expect(sympyStr(Union(new PolarComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(rational(0), new Mul([rational(2), pi]), false, true))), new PolarComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(rational(0), pi, false, false)))))).toBe('PolarComplexRegion(ProductSet(Interval(0, 1), Interval.Ropen(0, 2*pi)))');
   });
-  it.fails("test_ComplexRegion_union:1037", () => {
+  it("test_ComplexRegion_union:1037", () => {
     expect(sympyStr(Union(new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), interval(rational(0), pi, false, false))), new PolarComplexRegion(ProductSet(interval(rational(0), oo, false, true), new SetOp('Union', [finiteSet(rational(0)), interval(pi, new Mul([rational(2), pi]), false, true)])))))).toBe('PolarComplexRegion(ProductSet(Interval(0, oo), Interval.Ropen(0, 2*pi)))');
   });
-  it.fails("test_ComplexRegion_union:1048", () => {
+  it("test_ComplexRegion_union:1048", () => {
     expect(sympyStr(Union(new CartesianComplexRegion(ProductSet(interval(rational(2), rational(5), false, false), interval(rational(6), rational(9), false, false))), new CartesianComplexRegion(ProductSet(interval(rational(4), rational(6), false, false), interval(rational(10), rational(12), false, false)))))).toBe('CartesianComplexRegion(Union(ProductSet(Interval(2, 5), Interval(6, 9)), ProductSet(Interval(4, 6), Interval(10, 12))))');
   });
-  it.fails("test_ComplexRegion_union:1049", () => {
+  it("test_ComplexRegion_union:1049", () => {
     expect(sympyStr(Union(new CartesianComplexRegion(ProductSet(interval(rational(0), rational(10), false, false), interval(rational(-10), rational(0), false, false))), new CartesianComplexRegion(ProductSet(interval(rational(12), rational(16), false, false), interval(rational(14), rational(20), false, false)))))).toBe('CartesianComplexRegion(Union(ProductSet(Interval(0, 10), Interval(-10, 0)), ProductSet(Interval(12, 16), Interval(14, 20))))');
   });
   it("test_ComplexRegion_union:1051", () => {
     expect(sympyStr(Union(new PolarComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(rational(0), new Mul([rational(2), pi]), false, true))), interval(rational(2), rational(4), false, false)))).toBe('Union(Interval(2, 4), PolarComplexRegion(ProductSet(Interval(0, 1), Interval.Ropen(0, 2*pi))))');
   });
-  it.fails("test_ComplexRegion_union:1052", () => {
+  it("test_ComplexRegion_union:1052", () => {
     expect(sympyStr(Union(new CartesianComplexRegion(ProductSet(interval(rational(2), rational(5), false, false), interval(rational(6), rational(9), false, false))), interval(rational(2), rational(4), false, false)))).toBe('CartesianComplexRegion(Union(ProductSet(Interval(2, 4), {0}), ProductSet(Interval(2, 5), Interval(6, 9))))');
   });
   // the generated test does not reproduce the replay
@@ -2685,10 +2685,10 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   it("test_ComplexRegion_FiniteSet:1134", () => {
     expect(sympyStr(ComplexRegion(ProductSet(finiteSet(rational(2)), finiteSet(rational(3)))))).toBe('{2 + 3*I}');
   });
-  it.fails("test_union_RealSubSet:1138", () => {
+  it("test_union_RealSubSet:1138", () => {
     expect(sympyStr(Union(Complexes, interval(rational(1), rational(2), false, false)))).toBe('Complexes');
   });
-  it.fails("test_union_RealSubSet:1139", () => {
+  it("test_union_RealSubSet:1139", () => {
     expect(sympyStr(Union(Complexes, Integers))).toBe('Complexes');
   });
   it("test_issue_9980:1160", () => {
@@ -2744,31 +2744,31 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   //   assert Union(S.Complexes, FiniteSet(eye(4))) != S.Complexes
   //   => Complexes
   it.todo("test_issue_11730:1192");
-  it.fails("test_issue_11730:1193", () => {
+  it("test_issue_11730:1193", () => {
     expect(sympyStr(Union(interval(rational(0), rational(1), false, false), new CartesianComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(rational(0), rational(1), false, false)))))).toBe('CartesianComplexRegion(ProductSet(Interval(0, 1), Interval(0, 1)))');
   });
-  it.fails("test_issue_11730:1194", () => {
+  it("test_issue_11730:1194", () => {
     expect(sympyStr(Intersection(Reals, new CartesianComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(rational(0), rational(1), false, false)))))).toBe('Interval(0, 1)');
   });
-  it.fails("test_issue_11938:1202", () => {
+  it("test_issue_11938:1202", () => {
     expect(sympyStr(Intersection(new CartesianComplexRegion(ProductSet(interval(rational(1), rational(2), false, false), interval(rational(0), rational(1), false, false))), Reals))).toBe('Interval(1, 2)');
   });
-  it.fails("test_issue_11938:1203", () => {
+  it("test_issue_11938:1203", () => {
     expect(sympyStr(Intersection(new CartesianComplexRegion(ProductSet(interval(rational(1), rational(2), false, false), interval(rational(0), rational(1), false, false))), interval(rational(0), rational(1), false, false)))).toBe('{1}');
   });
-  it.fails("test_issue_11938:1212", () => {
+  it("test_issue_11938:1212", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(rational(0), pi, false, false))), Reals))).toBe('Interval(-1, 1)');
   });
-  it.fails("test_issue_11938:1213", () => {
+  it("test_issue_11938:1213", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), finiteSet(pi))), Reals))).toBe('Interval(-1, 0)');
   });
-  it.fails("test_issue_11938:1214", () => {
+  it("test_issue_11938:1214", () => {
     expect(sympyStr(Intersection(new PolarComplexRegion(ProductSet(interval(rational(0), rational(1), false, false), interval(new Mul([rational(1, 4), pi]), new Mul([rational(3, 4), pi]), false, false))), Reals))).toBe('{0}');
   });
   it("test_issue_11914:1225", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_issue_9543:1229", () => {
+  it("test_issue_9543:1229", () => {
     const x = new Sym('x');
     expect(sympyStr(isSubset(new ImageSet(x, new Pow(x, rational(2)), Naturals), Reals))).toBe('True');
   });
@@ -2840,7 +2840,7 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
   //   assert S.Rationals.is_closed == False
   //   => False
   it.todo("test_Rationals:1282");
-  it.fails("test_imageset_intersection:1297", () => {
+  it("test_imageset_intersection:1297", () => {
     expect(sympyStr(Intersection(new ImageSet(new Dummy('Dummy_234772402418727', {}, 1000000), new Add([new Mul([rational(-1, 4), pi]), new Mul([rational(2), pi, new Dummy('Dummy_234772402418727', {}, 1000000)])]), Integers), Reals))).toBe('ImageSet(Lambda(_Dummy_234772402418727, 2*_Dummy_234772402418727*pi + 7*pi/4), Integers)');
   });
   it("test_issue_17858:1304", () => {

@@ -95,6 +95,10 @@ export class SetExpressionNode extends ExtensionExpr {
     return `SetExpr(${p(this.set === Reals ? new Interval(S.NegativeInfinity, S.Infinity, true, true) : this.set)})`;
   }
   withArgs(args: readonly Expr[]): SetExpressionNode { return new SetExpressionNode(cast(first(args), SetExpr)); }
+  /** Canonicalize the bound parameters in the underlying image. */
+  asDummy(): SetExpressionNode {
+    return this.set instanceof ImageSet ? new SetExpressionNode(this.set.asDummy()) : this;
+  }
   /** Map a function over all possible values. */
   applyfunc(fn: (e: Expr) => Expr): SetExpressionNode {
     const x = new Dummy('x');
