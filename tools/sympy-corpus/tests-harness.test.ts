@@ -313,3 +313,20 @@ it('passes Python booleans to symbolic Boolean operators', () => {
     expect(runTestCase({ ...base, category: 'logic', fn, self: { t: 'Js', v: true }, args: [symbol], expected })).toEqual({ status: 'pass' });
   }
 });
+
+it('converts solver varargs, function unknowns and constant variable sets', () => {
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const y: Tree = { t: 'Symbol', name: 'y', assume: {} };
+  const zero: Tree = { t: 'Rational', p: '0', q: '1' };
+  const equation: Tree = { t: 'Add', args: [x, { t: 'Mul', args: [{ t: 'Rational', p: '-1', q: '1' }, y] }] };
+  const c = { ...base, category: 'solvers', module: 'sympy.solvers.tests.test_solveset', fn: 'nonlinsolve' };
+  const eqs: Tree = { t: 'Tuple', items: [equation, zero], list: true };
+  expect(runTestCase({ ...c, args: [eqs, x, y], expected: '{(y, y)}' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, args: [eqs, { t: 'Tuple', items: [x, y], list: true }], expected: '{(y, y)}' })).toEqual({ status: 'pass' });
+  const f: Tree = { t: 'UFn', name: 'f', args: [x] };
+  expect(runTestCase({ ...c, args: [{ t: 'Tuple', items: [f, zero] }, f, y], expected: '{(0, y)}' }).status).toBe('pass');
+  const C2: Tree = { t: 'Symbol', name: 'C2', assume: {} };
+  const product: Tree = { t: 'Mul', args: [C2, x] };
+  expect(runTestCase({ ...c, fn: 'constant_renumber', args: [product], kwargs: { variables: { t: 'JsSet', items: [x] } }, expected: 'C1*x' }).status).toBe('pass');
+  expect(runTestCase({ ...c, fn: 'constant_renumber', args: [{ t: 'Tuple', items: [product], list: true }], kwargs: { variables: { t: 'JsSet', items: [x] } }, expected: '[C1*x]' }).status).toBe('pass');
+});

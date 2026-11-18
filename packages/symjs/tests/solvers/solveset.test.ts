@@ -103,3 +103,13 @@ it('handles unions and non-real periodic representatives', () => {
   expect(sj.solvify(sin(x),x,sj.Integers)).toEqual([S.Zero]);
   expect(sj.solvify(add(exp(mul(S.I,x)),-2),x,sj.Complexes)).toBe(sj.NoMatch);
 });
+
+it('solves polynomial equations over the complex domain explicitly', () => {
+  expect(sj.solvesetComplex(add(pow(x, 2), 1), x)).toEqual(sj.FiniteSet.of(mul(-1, S.I), S.I));
+});
+
+it('handles empty nonlinear systems and rejects missing unknowns', () => {
+  expect(nonlinsolve([], [])).toEqual([]);
+  expect(nonlinsolve([], [x, y])).toEqual([]);
+  expect(() => nonlinsolve([add(pow(x, 2), -1)], [])).toThrow(RangeError);
+});

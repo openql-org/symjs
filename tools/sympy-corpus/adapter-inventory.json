@@ -3050,6 +3050,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "constant_renumber",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": "constantsimp",
   "status": "reviewed-conversion",
   "note": "constantsimp; convert the set of constants to an array"
