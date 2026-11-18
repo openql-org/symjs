@@ -272,3 +272,24 @@ describe('presentation MathML of named functions, matrix expressions and Indexed
     expect(() => mathml(x, { method: 'garbage' } as MathMLPrintOptions)).toThrow(TypeError);
   });
 });
+
+it('prints boolean inputs in both MathML dialects', () => {
+  expect(mathml(true)).toBe('<true/>');
+  expect(mathml(false)).toBe('<false/>');
+  expect(mathml(true, { printer: 'presentation' })).toBe('<mi>True</mi>');
+  expect(mathml(false, { printer: 'presentation' })).toBe('<mi>False</mi>');
+});
+
+it('prints vector components with unit and negative coefficients', () => {
+  const system = sj.CoordSys3D('C', { vectorNames: ['u', 'v', 'w'], variableNames: ['a', 'b', 'c'] });
+  const [i, j] = system.baseVectors();
+  const print = (e: Expr): string => mathml(e, { printer: 'presentation' });
+  const basis = '<msub><mover><mi mathvariant="bold">u</mi><mo>^</mo></mover><mi mathvariant="bold">C</mi></msub>';
+  expect(print(i)).toBe(basis);
+  expect(print(sj.VectorAdd(sj.VectorMul(-1, i), j))).toBe(`<mrow><mo>-</mo>${basis}<mo>+</mo>${print(j)}</mrow>`);
+  expect(print(sj.VectorMul(2, i))).toBe(`<mrow><mrow><mo>(</mo><mn>2</mn><mo>)</mo></mrow><mo>&InvisibleTimes;</mo>${basis}</mrow>`);
+});
+
+it('prints the zero vector as a bold hatted zero', () => {
+  expect(mathml(sj.Vector.zero, { printer: 'presentation' })).toBe('<mover><mi mathvariant="bold">0</mi><mo>^</mo></mover>');
+});

@@ -1074,9 +1074,7 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'SetOp': {
       const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as sj.SetExpr);
-      if (tree['op'] === 'Union') return sj.union(...xs);
-      if (tree['op'] === 'Intersection') return sj.Intersection(...xs);
-      return sj.complement(xs[0]!, xs[1]!);
+      return new sj.SetOp(tree['op'] as 'Union' | 'Intersection' | 'Complement', xs);
     }
     case 'Groebner':
       return new sj.GroebnerBasis(
@@ -2017,8 +2015,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   MutableDenseMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
   MutableMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
   parse_expr: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['transformations', 'evaluate', 'local_dict'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    const tr0 = kw['transformations'];
+    for (const k of Object.keys(kw)) if (!['transformations', 'evaluate', 'local_dict', 'global_dict'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const localDict = args[1] ?? kw['local_dict'];
+    const globalDict = args[3] ?? kw['global_dict'];
+    if (typeof args[0] !== 'string' || (localDict !== undefined && !(localDict instanceof JsDict)) || (globalDict !== undefined && !(globalDict instanceof JsDict))) throw new TypeError('parse_expr expects a string and dictionaries');
+    if (localDict instanceof JsDict && localDict.entries.some(([k]) => k === '')) throw new RangeError('local_dict cannot contain an empty string key');
+    const tr0 = args[2] ?? kw['transformations'];
+    if (tr0 !== undefined && !(tr0 instanceof JsTuple) && typeof tr0 !== 'string') throw new TypeError('transformations must be a tuple or a string');
+    if (tr0 instanceof JsTuple && tr0.items.some((f) => !(f instanceof JsFunc))) throw new TypeError('transformations must be callable');
     // a tuple of SymPy transformations: the implicit ones (multiplication, application, splitting of symbols) and
     // convert_equals_signs map to the parser options
     const names = tr0 instanceof JsTuple ? tr0.items.map((f) => (f as JsFunc).name) : [];
@@ -2032,7 +2036,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const tr = tr0 instanceof JsTuple ? (chosen.length ? chosen : undefined) : tr0;
     if (tr !== undefined && tr !== 'all' && tr !== 'implicit' && !Array.isArray(tr)) throw new Unsupported('transformations');
     // a function class in local_dict is a function of the parser's locals, anything else an expression
-    const locals = kw['local_dict'] instanceof JsDict ? Object.fromEntries(kw['local_dict'].entries.map(([k, v]) => [String(k), v instanceof UFnClass ? sj.SymFunction(v.name) : asExpr(v)])) : undefined;
+    const locals = localDict instanceof JsDict ? Object.fromEntries(localDict.entries.map(([k, v]) => [String(k), v instanceof UFnClass ? sj.SymFunction(v.name) : v instanceof JsLambda ? (...xs: Expr[]) => asExpr(v.call(...xs)) : asExpr(v)])) : undefined;
     return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as sj.ParseOptions['transformations'] } : {}), ...(equals ? { convertEqualsSigns: true } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { locals } : {}) });
   },
   sympify: (args, kw) => {
@@ -4717,7 +4721,7 @@ function printable(v: unknown): unknown {
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [printable(k), printable(x)]));
   if (v instanceof JsSet) return new Set(v.items.map(printable));
   if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
-  if (v instanceof FnClass) return sj.SymFunction(v.name);
+  if (v instanceof FnClass) return Object.assign((...xs: Expr[]) => sj.fn(v.name as sj.FnName, xs), { functionName: v.name });
   if (v instanceof JsLambda) return lambdaAsNode(v);
   return v;
 }
@@ -4762,10 +4766,7 @@ ADAPTERS['multiline_latex'] = (args, kw) => {
   const [lhs, rhs, terms] = args;
   return sj.multilineLatex(lhs as Expr, rhs as Expr, { ...(terms === undefined ? {} : { termsPerLine: printSetting(terms) as number }), ...printOptions(kw) });
 };
-ADAPTERS['srepr'] = (args, kw) => {
-  for (const k of Object.keys(kw)) if (k !== 'perm_cyclic') throw new Unsupported(`kwargs ${k}`);
-  return sj.srepr(printable(args[0]) as sj.ReprPrintable, kw['perm_cyclic'] === undefined ? {} : { permCyclic: kw['perm_cyclic'] as boolean });
-};
+ADAPTERS['srepr'] = (args, kw) => sj.srepr(printable(args[0]) as sj.ReprPrintable, printOptions(kw));
 ADAPTERS['mathml'] = (args, kw) => sj.mathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
 ADAPTERS['print_mathml'] = (args, kw) => sj.printMathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
 ADAPTERS['print_tree'] = (args, kw) => sj.printTree(args[0] as Expr, printOptions(kw));
@@ -5733,7 +5734,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       // (a DomainMatrix error is the method's own result)
-      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError) {
+      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (c.fn === 'parse_expr' && e instanceof TypeError)) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }

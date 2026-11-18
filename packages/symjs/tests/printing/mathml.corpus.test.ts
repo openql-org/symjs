@@ -921,7 +921,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1735", () => {
+  it("test_print_Vector:1735", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(new Cross(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 0), VectorAdd(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 2), VectorMul(rational(3), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 1)))), { printer: 'presentation' }))).toBe('<mrow><msub><mover><mi mathvariant="bold">i</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub><mo>&#xD7;</mo><mrow><mo>(</mo><mrow><mrow><mo>(</mo><mrow><mn>3</mn><mo>&InvisibleTimes;</mo><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub></mrow><mo>)</mo></mrow><mo>&InvisibleTimes;</mo><msub><mover><mi mathvariant="bold">j</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub><mo>+</mo><msub><mover><mi mathvariant="bold">k</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub></mrow><mo>)</mo></mrow></mrow>');
@@ -929,7 +929,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1745", () => {
+  it("test_print_Vector:1745", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(new Cross(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 1)), { printer: 'presentation' }))).toBe('<mrow><msub><mover><mi mathvariant="bold">i</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub><mo>&#xD7;</mo><msub><mover><mi mathvariant="bold">j</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub></mrow>');
@@ -937,7 +937,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1750", () => {
+  it("test_print_Vector:1750", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -946,7 +946,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1756", () => {
+  it("test_print_Vector:1756", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -955,7 +955,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1763", () => {
+  it("test_print_Vector:1763", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(Curl(VectorMul(rational(3), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 1))), { printer: 'presentation' }))).toBe('<mrow><mo>&#x2207;</mo><mo>&#xD7;</mo><mrow><mo>(</mo><mrow><mrow><mo>(</mo><mrow><mn>3</mn><mo>&InvisibleTimes;</mo><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub></mrow><mo>)</mo></mrow><mo>&InvisibleTimes;</mo><msub><mover><mi mathvariant="bold">j</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub></mrow><mo>)</mo></mrow></mrow>');
@@ -963,7 +963,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1769", () => {
+  it("test_print_Vector:1769", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -972,7 +972,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1776", () => {
+  it("test_print_Vector:1776", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -981,7 +981,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1784", () => {
+  it("test_print_Vector:1784", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -990,7 +990,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1793", () => {
+  it("test_print_Vector:1793", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(Divergence(VectorMul(rational(3), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 1))), { printer: 'presentation' }))).toBe('<mrow><mo>&#x2207;</mo><mo>&#xB7;</mo><mrow><mo>(</mo><mrow><mrow><mo>(</mo><mrow><mn>3</mn><mo>&InvisibleTimes;</mo><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub></mrow><mo>)</mo></mrow><mo>&InvisibleTimes;</mo><msub><mover><mi mathvariant="bold">j</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub></mrow><mo>)</mo></mrow></mrow>');
@@ -998,7 +998,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1799", () => {
+  it("test_print_Vector:1799", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1007,7 +1007,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1807", () => {
+  it("test_print_Vector:1807", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1016,7 +1016,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1817", () => {
+  it("test_print_Vector:1817", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(new Dot(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 0), VectorAdd(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 2), VectorMul(rational(3), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 1)))), { printer: 'presentation' }))).toBe('<mrow><msub><mover><mi mathvariant="bold">i</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub><mo>&#xB7;</mo><mrow><mo>(</mo><mrow><mrow><mo>(</mo><mrow><mn>3</mn><mo>&InvisibleTimes;</mo><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub></mrow><mo>)</mo></mrow><mo>&InvisibleTimes;</mo><msub><mover><mi mathvariant="bold">j</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub><mo>+</mo><msub><mover><mi mathvariant="bold">k</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub></mrow><mo>)</mo></mrow></mrow>');
@@ -1024,7 +1024,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1827", () => {
+  it("test_print_Vector:1827", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(new Dot(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseVectors(), 1)), { printer: 'presentation' }))).toBe('<mrow><msub><mover><mi mathvariant="bold">i</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub><mo>&#xB7;</mo><msub><mover><mi mathvariant="bold">j</mi><mo>^</mo></mover><mi mathvariant="bold">A</mi></msub></mrow>');
@@ -1032,7 +1032,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1832", () => {
+  it("test_print_Vector:1832", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1041,7 +1041,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1838", () => {
+  it("test_print_Vector:1838", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1050,7 +1050,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1844", () => {
+  it("test_print_Vector:1844", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(Gradient(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0)), { printer: 'presentation' }))).toBe('<mrow><mo>&#x2207;</mo><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub></mrow>');
@@ -1058,7 +1058,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1847", () => {
+  it("test_print_Vector:1847", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(Gradient(new Add([new Mul([rational(3), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 1)]), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0)])), { printer: 'presentation' }))).toBe('<mrow><mo>&#x2207;</mo><mrow><mo>(</mo><mrow><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub><mo>+</mo><mrow><mn>3</mn><mo>&InvisibleTimes;</mo><msub><mi mathvariant="bold">y</mi><mi mathvariant="bold">A</mi></msub></mrow></mrow><mo>)</mo></mrow></mrow>');
@@ -1066,7 +1066,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1852", () => {
+  it("test_print_Vector:1852", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1075,7 +1075,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1856", () => {
+  it("test_print_Vector:1856", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1084,7 +1084,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1860", () => {
+  it("test_print_Vector:1860", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(new Mul([rational(-1), new Cross(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 2))]), { printer: 'presentation' }))).toBe('<mrow><mo>-</mo><mrow><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub><mo>&#xD7;</mo><msub><mi mathvariant="bold">z</mi><mi mathvariant="bold">A</mi></msub></mrow></mrow>');
@@ -1092,7 +1092,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1864", () => {
+  it("test_print_Vector:1864", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(Laplacian(at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0)), { printer: 'presentation' }))).toBe('<mrow><mo>&#x2206;</mo><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub></mrow>');
@@ -1100,7 +1100,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1867", () => {
+  it("test_print_Vector:1867", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(text(mathml(Laplacian(new Add([new Mul([rational(3), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 1)]), at(CoordSys3D('A', { vectorNames: ['i', 'j', 'k'], variableNames: ['x', 'y', 'z'], rotationMatrix: Matrix.of([[rational(1), rational(0), rational(0)], [rational(0), rational(1), rational(0)], [rational(0), rational(0), rational(1)]]) }).baseScalars(), 0)])), { printer: 'presentation' }))).toBe('<mrow><mo>&#x2206;</mo><mrow><mo>(</mo><mrow><msub><mi mathvariant="bold">x</mi><mi mathvariant="bold">A</mi></msub><mo>+</mo><mrow><mn>3</mn><mo>&InvisibleTimes;</mo><msub><mi mathvariant="bold">y</mi><mi mathvariant="bold">A</mi></msub></mrow></mrow><mo>)</mo></mrow></mrow>');
@@ -1108,7 +1108,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1872", () => {
+  it("test_print_Vector:1872", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1117,7 +1117,7 @@ describe("sympy/printing/tests/test_mathml.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_print_Vector:1876", () => {
+  it("test_print_Vector:1876", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {

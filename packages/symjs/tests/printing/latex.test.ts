@@ -819,3 +819,20 @@ describe('latex: SymPy 1.14 test_latex cases', () => {
     expect(latex(new sj.Permutation([1, 0, 2]), { permCyclic: false })).toBe('\\begin{pmatrix} 0 & 1 & 2 \\\\ 1 & 0 & 2 \\end{pmatrix}');
   });
 });
+
+it('prints expression representations of polynomial and field elements', () => {
+  const ring = new sj.PolyRing([x, y], sj.ZZ);
+  const field = ring.toField();
+  expect(latex(ring.fromExpr(sj.add(x, 1)))).toBe('x + 1');
+  expect(latex(field.fromExpr(mul(sj.add(x, 1), pow(y, -1))))).toBe('\\frac{x + 1}{y}');
+  expect(latex(field.fromExpr(sj.add(x, 1)))).toBe('x + 1');
+  const fallback = { asExpr: () => x };
+  for (const extra of [{}, { numer: 1 }, { numer: 1, denom: y }, { numer: null, denom: y }, { numer: {}, denom: y }, { numer: fallback, denom: 1 }, { numer: fallback, denom: null }, { numer: fallback, denom: {} }]) {
+    expect(latex({ ...fallback, ...extra })).toBe('x');
+  }
+});
+
+it('prints a bold matrix symbol with an explicit LaTeX name and defaults unknown adjoint styles', () => {
+  expect(latex(sj.MatrixSymbol('A{b}', 2, 2), { matSymbolStyle: 'bold' })).toBe('\\mathbf{A{b}}');
+  expect(Reflect.apply(latex, undefined, [sj.adjoint(A), { adjointStyle: 'unknown' }])).toBe('A^{\\dagger}');
+});
