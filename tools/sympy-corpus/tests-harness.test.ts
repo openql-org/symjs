@@ -599,3 +599,26 @@ it('records Python class exclusions without treating them as successful assertio
   expect(() => deserialize({ t: 'Rational', p: '1', q: '1', unsupportedClass: reason })).toThrow(reason);
   expect(testCaseKey(c)).toBe(testCaseKey(base));
 });
+
+it('replays the translated Function subclasses and keeps every excluded assertion out of the ratchet', () => {
+  const gaps: { cases: string[] } = JSON.parse(readFileSync(new URL('./tests-known-gaps.json', import.meta.url), 'utf8'));
+  let translated = 0;
+  let excluded = 0;
+  for (const category of ['core', 'functions', 'concrete']) {
+    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${category}.json`, import.meta.url), 'utf8'));
+    for (const c of cases) {
+      if (c.exclusion) {
+        excluded++;
+        expect(gaps.cases).not.toContain(testCaseKey(c));
+      }
+      if (c.module === 'sympy.core.tests.test_function' && ['test_Function', 'test_nargs_inheritance', 'test_fdiff_argument_index_error'].includes(c.test)
+        || c.module === 'sympy.functions.elementary.tests.test_interface' && ['test_function_series1', 'test_function_series2'].includes(c.test)) {
+        expect(c.exclusion).toBeUndefined();
+        expect(runTestCase(c), testCaseKey(c)).toEqual({ status: 'pass' });
+        translated++;
+      }
+    }
+  }
+  expect(translated).toBe(21);
+  expect(excluded).toBeGreaterThanOrEqual(43);
+});

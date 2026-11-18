@@ -66,7 +66,8 @@ const CASES = [
   ['core', 'parse, diff, expand, str, latex', 227],
   ['core', '*', 346],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
-  ['special', '*', 420],
+  // User-defined eval signature validation includes optional and variadic arities.
+  ['special', '*', 421],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 1086],
   // The polys entry re-exports the sparse domain matrices through a
@@ -79,7 +80,7 @@ const CASES = [
   ['calculus', 'integrate', 1087],
   ['solvers', 'solve', 1175],
   ['solvers', 'dsolve', 1190],
-  ['sets', '*', 388],
+  ['sets', '*', 389],
   ['matrices', 'Matrix', 967],
   ['printing', 'pretty', 248],
   ['discrete', '*', 308],

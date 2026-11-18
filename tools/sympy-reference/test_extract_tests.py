@@ -66,6 +66,22 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertNotIn('exclusion', ordinary)
         self.assertNotIn('unsupportedClass', ordinary['self'])
 
+    def test_ported_function_fixture_is_replayable_and_keeps_its_identity(self):
+        source = """from sympy import *
+def test_Function():
+    class myfunc(Function):
+        @classmethod
+        def eval(cls):
+            return
+    assert myfunc.nargs == FiniteSet(0)
+"""
+        events, _, _ = unit.execute_source(source, "sympy.core.tests.test_function", "core", "test_function.py", 2)
+        case = events[0]
+        self.assertNotIn("exclusion", case)
+        self.assertIn("unsupportedClass", case["self"])
+        self.assertTrue(unit.ported_function_case(case))
+        self.assertFalse(unit.ported_function_case({**case, "test": "test_other"}))
+
     def test_refresh_state_preserves_unrelated_records_and_records_exclusions(self):
         original = {"module": "sympy.core.tests.test_function", "category": "core",
                     "test": "test_custom", "line": 1, "src": "assert f(x).diff(x) == 1",

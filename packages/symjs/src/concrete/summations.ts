@@ -70,7 +70,7 @@ function sumOne(fIn: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | u
   const f = powsimp(fIn);
   if (isOo(a) && !isOo(b)) {
     const r = sumOne(f, k, add(b, 1), S.Infinity);
-    return r === undefined ? undefined : mul(-1, r);
+    return r === undefined ? undefined : xreplace(r, [[new Concrete('Sum', [f, k, add(b, 1), S.Infinity]), new Concrete('Sum', [f, k, a, b])]]);
   }
   if (!f.has(k)) {
     if (isOo(b) || isNegOo(a)) return f instanceof Rational && f.isZero ? S.Zero : mul(f, S.Infinity);

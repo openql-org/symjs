@@ -14,21 +14,21 @@ import { derivative } from './undef';
 import { SubsNode } from './subsnode';
 import { at, defined } from './guard';
 import type { NoMatchResult } from './truth';
-import { NoMatch } from './truth';
+import { NoMatch, isNoMatch } from './truth';
 
 /** The behaviour of a function defined with defineFunction. *
  * @experimental May change in a minor release.
  */
 export interface FunctionDefinition {
-  /** Accepted argument counts (SymPy nargs); any count when omitted. */
+  /** Accepted argument counts (SymPy nargs); inferred from eval when omitted. */
   nargs?: number | readonly number[];
   /**
    * Automatic evaluation (SymPy eval classmethod): a value for these
    * arguments, or undefined to keep the call unevaluated.
    */
   eval?: (...args: Expr[]) => ExprLike | undefined;
-  /** Partial derivative with respect to the argument at `index` (0-based; SymPy fdiff(index + 1)). */
-  fdiff?: (args: readonly Expr[], index: number) => ExprLike;
+  /** Partial derivative at `index` (0-based; SymPy fdiff(index + 1)); NoMatch leaves it unevaluated. */
+  fdiff?: (args: readonly Expr[], index: number) => ExprLike | NoMatchResult;
   /** Rewrites by target name (SymPy _eval_rewrite_as_<target>): rewrite(f(x), 'cos'). */
   rewrite?: Readonly<Record<string, (...args: Expr[]) => ExprLike | undefined>>;
   /**
@@ -75,7 +75,10 @@ export class DefinedFunctionCall extends ExtensionExpr {
     return this.definition.latex ? this.definition.latex(this.args.map(print)) : print(new UndefFn(this.name, this.args));
   }
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
-    const fdiff = this.definition.fdiff ?? ((args: readonly Expr[], i: number) => this.defaultPartial(args, i));
+    const fdiff = (args: readonly Expr[], i: number): ExprLike => {
+      const result = this.definition.fdiff?.(args, i) ?? NoMatch;
+      return isNoMatch(result) ? this.defaultPartial(args, i) : result;
+    };
     return add(...this.args.map((a, i) => (a.has(x) ? mul(sympify(fdiff(this.args, i)), d(a, x)) : 0)));
   }
   /**
@@ -132,13 +135,13 @@ function applyDefined(name: string, def: FunctionDefinition, args: readonly Expr
  */
 export function defineFunction(name: string, def: FunctionDefinition = {}): DefinedFunction {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new SyntaxError(`Invalid function name: ${name}`);
-  const counts = def.nargs === undefined ? undefined : typeof def.nargs === 'number' ? [def.nargs] : def.nargs;
+  const arities = def.nargs ?? (def.eval ? arity(def.eval) : NoMatch);
+  const counts = isNoMatch(arities) ? undefined : typeof arities === 'number' ? [arities] : arities;
   const f = (...args: ExprLike[]): Expr => {
     if (counts && !counts.includes(args.length)) throw new TypeError(`${name} takes ${counts.join(' or ')} argument(s) (${args.length} given)`);
     return applyDefined(name, def, args.map(sympify));
   };
   if (counts) definedCounts.set(f, counts);
-  else if (def.eval) definedCounts.set(f, [def.eval.length]);
   Object.defineProperty(f, 'functionName', { value: name });
   Object.defineProperty(f, 'name', { value: name });
   Object.defineProperty(f, 'isApplied', { value: (e: Expr) => e instanceof DefinedFunctionCall && e.name === name && e.definition === def });

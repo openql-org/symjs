@@ -691,6 +691,8 @@ class Capture:
             self.omit(site, "unstable-result-representation")
             return
         case = {**self.metadata(site), **record, "expected": text, "op": op, **extra}
+        if ported_function_case(case):
+            case.pop("exclusion", None)
         if isinstance(expected, str):
             case["text"] = True
         self.events.append((site, case))
@@ -1139,6 +1141,17 @@ def extract_category(category, paths, timeout, baseline):
     corpus = corpus_from_events(events, tests, source_sites, [category])
     corpus["extraction"].update(seconds=round(time.monotonic() - start, 3), retainedModules=len(retained))
     return corpus
+
+
+def ported_function_case(case):
+    """Function fixtures translated through the public JavaScript function API."""
+    return (case.get("module"), case.get("test")) in {
+        ("sympy.core.tests.test_function", "test_Function"),
+        ("sympy.core.tests.test_function", "test_nargs_inheritance"),
+        ("sympy.core.tests.test_function", "test_fdiff_argument_index_error"),
+        ("sympy.functions.elementary.tests.test_interface", "test_function_series1"),
+        ("sympy.functions.elementary.tests.test_interface", "test_function_series2"),
+    }
 
 
 def without_replay_state(value):

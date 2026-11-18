@@ -111,3 +111,49 @@ describe('func of a defined function', () => {
     expect(sj.func(sj.Mod(x, 3))).toBe(sj.Mod);
   });
 });
+
+it('infers and enforces eval signatures including optional and variadic arguments', () => {
+  const zero = defineFunction('zero', { eval: () => undefined });
+  expect(arity(zero)).toBe(0);
+  expect(String(zero())).toBe('zero()');
+  expect(() => zero(1)).toThrow(TypeError);
+  const optional = defineFunction('optional', { eval: (_a, _b = sj.S.One) => undefined });
+  expect(arity(optional)).toEqual([1, 2]);
+  expect(String(optional(1))).toBe('optional(1)');
+  expect(String(optional(1, 2))).toBe('optional(1, 2)');
+  expect(() => optional()).toThrow(TypeError);
+  const rest = defineFunction('rest', { eval: (..._args) => undefined });
+  expect(arity(rest)).toBe(NoMatch);
+  expect(String(rest())).toBe('rest()');
+  expect(String(rest(1, 2))).toBe('rest(1, 2)');
+});
+
+it('keeps calls unchanged when rewrite and expansion hooks decline or are absent', () => {
+  const f = defineFunction('declining', { rewrite: { sin: () => undefined }, expand: { custom: () => undefined } });
+  const node = f(x);
+  if (!(node instanceof sj.DefinedFunctionCall)) throw new TypeError('a defined function expected');
+  expect(node.rewriteSelf('sin', [x])).toBeUndefined();
+  expect(node.rewriteSelf('cos', [x])).toBeUndefined();
+  expect(node.expandSelf('custom', {})).toBeUndefined();
+  expect(node.expandSelf('missing', {})).toBeUndefined();
+  const plain = defineFunction('plain')(x);
+  if (!(plain instanceof sj.DefinedFunctionCall)) throw new TypeError('a defined function expected');
+  expect(plain.rewriteSelf('sin', [x])).toBeUndefined();
+  expect(plain.expandSelf('custom', {})).toBeUndefined();
+});
+
+it('sympifies values returned by rewrite and expansion hooks', () => {
+  const f = defineFunction('hooked', {
+    rewrite: { cos: (arg) => sj.cos(arg) },
+    expand: { custom: (self) => sj.add(...self.args) },
+  });
+  expect(String(rewrite(f(x), 'cos'))).toBe('cos(x)');
+  expect(String(expand(f(x, y), { custom: true }))).toBe('x + y');
+});
+
+it('leaves declined partial derivatives unevaluated', () => {
+  const f = defineFunction('partial', { nargs: 1, fdiff: () => NoMatch });
+  expect(String(diff(f(x), x))).toBe('Derivative(partial(x), x)');
+  expect(String(diff(f(pow(x, 2)), x))).toBe('2*x*Subs(Derivative(partial(_xi_1), _xi_1), _xi_1, x**2)');
+  expect(() => f(x, x)).toThrow(TypeError);
+});
