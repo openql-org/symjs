@@ -11,12 +11,13 @@
  * elements of that domain.
  */
 
-import { Add, Constant, type Expr, Float, Mul, Pow, Rational, Sym } from '../core/nodes';
+import { Add, Constant, type Expr, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { at, defined, first } from '../core/guard';
 import type { ExprLike } from '../core/nodes';
 import { mul, pow, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { ordered } from '../core/match';
+import { fact } from '../core/exprfacts';
 import { expand } from '../simplify/expand';
 import { fraction } from '../simplify/rational';
 import { CC } from './domains/complexfield';
@@ -47,7 +48,8 @@ function isAlgebraicNumber(e: Expr): boolean {
   if (e instanceof Rational || isI(e)) return true;
   if (e instanceof Add || e instanceof Mul) return e.args.every(isAlgebraicNumber);
   if (e instanceof Pow) return e.exp instanceof Rational && isAlgebraicNumber(e.base);
-  return false;
+  if(e instanceof ExtensionExpr&&e.name==='CRootOf')return true;
+  return freeSymbols(e).size===0&&fact(e,'algebraic')===true;
 }
 
 type Construction = [Domain, unknown[]];
@@ -177,4 +179,9 @@ polyConstructionHooks.domain = (coeffs, options) => {
   const entries = Object.entries(options).filter(([name]) => name !== 'pure');
   const opt = buildOptions([], new Map(entries));
   return opt.domain ?? constructDomain(coeffs, opt.extension === true ? { extension: true } : {})[0];
+};
+
+polyConstructionHooks.algebraic = (domain) => {
+  const K = domain instanceof AlgebraicField ? domain : new AlgebraicField(QQ, S.I);
+  return { generator: K.ext.asExpr(), minpoly: K.ext.minpoly(), coefficients: (c) => K.convert(c).rep.map((q) => Rational.of(q.numerator,q.denominator)) };
 };

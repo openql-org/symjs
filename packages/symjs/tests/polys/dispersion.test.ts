@@ -22,3 +22,16 @@ it('accepts expression inputs and checks the generators',()=>{
   expect(()=>dispersion(parse('x*y'))).toThrow(RangeError);
   expect(()=>dispersion(Poly.from(x,[x]),Poly.from(y,[y]))).toThrow(RangeError);
 });
+
+import continuationRefs from './continuation.references.json';
+import '../../src/polys';
+for(const row of continuationRefs.dispersion) it(`dispersion over QQ<${row.extension}>`,()=>{
+  const extension=row.extension.map((e)=>parse(e)),f=Poly.from(parse(row.a),[x],{extension}),g=Poly.from(parse(row.b),[x],{extension});
+  expect([...dispersionset(f,g)].map(Number).sort((a,b)=>a-b)).toEqual(row.shifts);
+});
+
+import { CRootOf, AlgebraicField, QQ, add, mul } from '../../src';
+it('computes dispersion with indexed coefficients sharing the polynomial variable name',()=>{
+  const r=CRootOf(parse('x**3-x-1'),0),K=new AlgebraicField(QQ,r),f=Poly.from(mul(add(x,mul(-1,r)),add(x,mul(-1,r),-3)),[x],{domain:K});
+  expect([...dispersionset(f,f.shift(-2))].map(Number).sort((a,b)=>a-b)).toEqual([2,5]);
+});

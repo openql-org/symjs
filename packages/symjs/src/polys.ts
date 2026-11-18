@@ -18,6 +18,7 @@ export {
   PolificationFailed,
   factor,
   factorNc,
+  preprocessRoots,
   factorListExpr as factorList,
   polyGcd as gcd,
   polyLcm as lcm,

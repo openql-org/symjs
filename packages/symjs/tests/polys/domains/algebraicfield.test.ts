@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { Dummy, Rational, Sym, parseExpr as P, sqrt } from '../../../src/index';
+import { CRootOf, pow, Dummy, Rational, Sym, parseExpr as P, sqrt } from '../../../src/index';
 import type { Expr } from '../../../src/index';
 import { Poly } from '../../../src/polys/sympoly';
 import '../../../src/polys/numberfields/primes';
@@ -94,7 +94,7 @@ describe('AlgebraicField number-field methods', () => {
       '3*theta**2 - 10*theta + 8',
     ]);
     expect(() => K.convert(P('sqrt(2)*theta'))).toThrow(CoercionFailed);
-    expect(() => K.convert(P('1/theta'))).toThrow(CoercionFailed);
+    expect(K.toSympy(K.convert(P('1/theta'))).equals(P('-theta**2/8-theta/8+1/4'))).toBe(true);
     expect(() => K.convert(P('sqrt(2)'))).toThrow(CoercionFailed);
     const Ka = fields.alpha!();
     expect([String(Ka), Ka.origExt.map(String), String(Ka.toSympy(Ka.convert(P('alpha**2 + alpha')))), String(Ka.toSympy(Ka.convert(P('sqrt(5) + 1'))))]).toEqual(['QQ<alpha>', ['alpha'], 'alpha + 5', 'alpha + 1']);
@@ -117,4 +117,23 @@ describe('AlgebraicField characteristic and unification (SymPy test_Domain_unify
     expect(String(K.unify(QQ.algebraicField(sqrt(3))))).toBe('QQ<sqrt(2) + sqrt(3)>');
     expect(String(K.polyRing(new Sym('x')).unify(K))).toBe('QQ<sqrt(2)>[x]');
   });
+});
+
+it('reduces arbitrary integer powers of an indexed generator in its power basis',()=>{
+  const r=CRootOf(P('x**2+x+1'),0),K=new AlgebraicField(QQ,r);
+  const coefficient=K.convert(pow(r,4294967296n));
+  expect(String(K.toSympy(coefficient))).toBe(String(r));
+  expect(K.toSympy(K.convert(pow(r,-1)).mul(K.convert(r))).equals(1)).toBe(true);
+});
+
+import { Add, Mul, Pow, S, sin } from '../../../src';
+it('distinguishes unsupported rational presentations from division by zero in the field',()=>{
+  const theta=new Sym('theta'),F=new AlgebraicField(QQ,new AlgebraicNumber(theta,[1,0],{minpoly:Poly.from(P('x**2-2'),[new Sym('x')])}));
+  expect(()=>F.convert(sin(theta))).toThrow(CoercionFailed);
+  expect(()=>F.convert(new Pow(new Add([theta,new Mul([S.NegOne,theta])]),S.NegOne))).toThrow(NotInvertible);
+});
+it('converts a native ANP through its explicit source field',()=>{
+  const A=new AlgebraicField(QQ,sqrt(2)),B=new AlgebraicField(QQ,sqrt(3)),C=new AlgebraicField(QQ,P('sqrt(2)+sqrt(3)'));
+  expect(String(C.convert(A.convert(sqrt(2)),A).rep)).toBe('1/2,0,-9/2,0');
+  expect(()=>A.convert(B.convert(sqrt(3)),B)).toThrow(CoercionFailed);
 });

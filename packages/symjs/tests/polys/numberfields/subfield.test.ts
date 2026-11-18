@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Reference values from SymPy 1.14 polys.numberfields.subfield.
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { symbols, sqrt, add, mul, S, AlgebraicNumber, fieldIsomorphism, primitiveElement, toNumberField, isNoMatch, expand, CRootOf, Dummy, parseExpr } from '../../../src';
 const [x] = symbols('x'), a = sqrt(2), b = sqrt(3), theta = add(a, b);
 it('finds and exactly reconstructs embeddings into a radical power basis', () => {
@@ -45,10 +45,34 @@ it('maps a into Q(b) through a root of its minimal polynomial when expansions do
   const X = new Dummy('X');
   const root = (f: string, i: number): AlgebraicNumber => new AlgebraicNumber(CRootOf(parseExpr(f).subs(parseExpr('x'), X), i));
   expect(String(fieldIsomorphism(root('x**2 - 2', 1), root('x**2 - 6*x + 7', 1)))).toBe('1,-3');
-  expect(String(fieldIsomorphism(root('x**3 - 2', 0), root('x**3 - 6*x**2 + 12*x - 10', 1)))).toBe('1,-2');
-  expect(String(fieldIsomorphism(parseExpr('2**(1/3)'), parseExpr('2**(1/3)*(-1 + sqrt(3)*I)/2')))).toBe('1,0');
+  expect(isNoMatch(fieldIsomorphism(root('x**3 - 2', 0), root('x**3 - 6*x**2 + 12*x - 10', 1)))).toBe(true);
+  expect(isNoMatch(fieldIsomorphism(parseExpr('2**(1/3)'), parseExpr('2**(1/3)*(-1 + sqrt(3)*I)/2')))).toBe(true);
   expect(String(fieldIsomorphism(root('x**2 - 2', 1), root('x**4 - 10*x**2 + 1', 3)))).toMatch(/^-?1\/2,0,-?9\/2,0$/);
   expect(isNoMatch(fieldIsomorphism(root('x**4 + 1', 3), root('x**4 + 4*x**2 + 2', 1)))).toBe(true);
   expect(isNoMatch(fieldIsomorphism(root('x**3 - 2', 0), root('x**2 - 2', 1)))).toBe(true);
   expect(String(fieldIsomorphism(root('x**2 - 2', 1), root('x**2 - 8', 1)))).toMatch(/^-?1\/2,0$/);
+});
+
+it('preserves the selected embedding of general RootOf generators',()=>{
+  const r=CRootOf(parseExpr('x**3-x-1'),0),shift=CRootOf(parseExpr('x**3-6*x**2+11*x-7'),0);
+  expect(String(fieldIsomorphism(r,shift))).toBe('1,-2');
+  expect(String(toNumberField(r,shift).coeffs())).toBe('1,-2');
+  const field=new AlgebraicNumber(r);
+  expect(String(toNumberField(mul(r,r,r),field).coeffs())).toBe('1,1');
+  expect(primitiveElement([add(a,b),add(mul(-1,a),sqrt(5))],x)[1]).toEqual([1,2]);
+});
+
+import * as enclosureModule from '../../../src/polys/numberfields/interval';
+it('refines unresolved embedding enclosures and preserves evaluation errors',()=>{
+  const r=CRootOf(parseExpr('x**3-x-1'),0),s=CRootOf(parseExpr('x**3-6*x**2+11*x-7'),0),spy=vi.spyOn(enclosureModule,'algebraicEnclosure');
+  try {
+    spy.mockImplementationOnce(()=>{throw new RangeError('precision insufficient');});
+    expect(String(fieldIsomorphism(r,s))).toBe('1,-2');
+    spy.mockImplementationOnce(()=>{throw new TypeError('invalid algebraic interval');});
+    expect(()=>fieldIsomorphism(r,s)).toThrow(TypeError);
+  } finally {spy.mockRestore();}
+});
+it('resolves an embedding whose root-separation bound requires higher precision',()=>{
+  const a=CRootOf(parseExpr('x**3-x-1'),0),b=CRootOf(parseExpr('x**3-3000*x**2+2999999*x-999999001'),0);
+  expect(String(fieldIsomorphism(a,b))).toBe('1,-1000');
 });

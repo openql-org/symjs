@@ -13,7 +13,7 @@
 import { DomainError } from '../../core/errors';
 import { at, defined, expectType, first } from '../../core/guard';
 import type { ExprLike } from '../../core/nodes';
-import { Expr, Rational, Sym } from '../../core/nodes';
+import { Add, Expr, Mul, Pow, Rational } from '../../core/nodes';
 import { add, mul, pow, sympify } from '../../core/ops';
 import { str } from '../../printing/str';
 import { expand } from '../../simplify/expand';
@@ -23,7 +23,6 @@ import type { Submodule } from '../numberfields/modules';
 import type { PrimeIdeal } from '../numberfields/primes';
 import { toNumberField } from '../numberfields/subfield';
 import { ANP } from '../polyclasses';
-import { Poly } from '../sympoly';
 import { asInt, type IntLike } from '../../ntheory/intutil';
 import type { PythonMPQ } from './pythonrational';
 
@@ -56,6 +55,7 @@ export class AlgebraicField extends Domain {
   /** The minimal polynomial of theta, highest coefficient first (SymPy mod). */
   readonly mod: QP;
   private readonly baseDomain: Domain;
+  private readonly atomRepresentations = new Map<string,ANP>();
   private maximalOrderCache: [Submodule, Rational] | undefined;
   private readonly nilradicalsModP = new Map<bigint, Submodule>();
   protected override get unificationKind(): UnificationKind {
@@ -114,31 +114,41 @@ export class AlgebraicField extends Domain {
   }
   /** An element from a rational, an expression in the field or another element (SymPy convert); throws CoercionFailed. */
   override convert(a: unknown, base?: Domain): ANP {
-    if (a instanceof ANP) return a;
     const v = base !== undefined && !base.equals(this) ? base.toSympy(a) : a;
+    if (v instanceof ANP) return v;
     if (groundRational(v) !== undefined) return this.new([v]);
     if (!(v instanceof Expr)) throw new CoercionFailed(`cannot convert ${String(a)} to ${this.toString()}`);
     const theta = this.generator;
-    if (theta instanceof Sym && v.has(theta)) return this.fromGeneratorPolynomial(v, theta);
+    try { return this.fromGeneratorPolynomial(v, theta); }
+    catch (error) { if (!(error instanceof CoercionFailed)) throw error; }
     try {
       return this.new(toNumberField(v, this.ext).coeffs());
     } catch {
       throw new CoercionFailed(`${str(v)} is not a valid algebraic number in ${this.toString()}`);
     }
   }
-  /** A polynomial with rational coefficients in the symbol of the primitive element. */
-  private fromGeneratorPolynomial(v: Expr, theta: Sym): ANP {
-    const fail = (): CoercionFailed => new CoercionFailed(`${str(v)} is not a valid algebraic number in ${this.toString()}`);
-    let f: Poly;
-    try {
-      f = Poly.from(v, [theta]);
-    } catch {
-      throw fail();
-    }
-    if (f.coeffs().some((c) => !(c instanceof Rational))) throw fail();
-    // Horner's rule with the field operations, which reduce modulo the minimal polynomial
-    const t = this.new([1, 0]);
-    return f.allCoeffs().reduce((acc, c) => acc.mul(t).add(c), this.new([]));
+  /** Evaluate rational expressions in the primitive element in the quotient field. */
+  private fromGeneratorPolynomial(v: Expr, theta: Expr): ANP {
+    const visit = (e: Expr): ANP => {
+      if (e.key === theta.key) return this.new([1,0]);
+      if (e instanceof Rational) return this.new([e]);
+      if (e instanceof Add) return e.args.reduce((a,b) => a.add(visit(b)),this.new([]));
+      if (e instanceof Mul) return e.args.reduce((a,b) => a.mul(visit(b)),this.new([1]));
+      if (e instanceof Pow && e.exp instanceof Rational && e.exp.isInteger) {
+        let b=visit(e.base),k=e.exp.p,r=this.new([1]);
+        if(k<0n){b=r.div(b);k=-k;}
+        for(;k;k>>=1n){if(k&1n)r=r.mul(b);b=b.mul(b);}
+        return r;
+      }
+      const cached=this.atomRepresentations.get(e.key);
+      if(cached!==undefined)return cached;
+      try {
+        const value=this.new(toNumberField(e,this.ext).coeffs());
+        this.atomRepresentations.set(e.key,value);
+        return value;
+      } catch {throw new CoercionFailed(`${str(e)} is not a rational expression in ${str(theta)}`);}
+    };
+    return visit(v);
   }
   override ofType(a: unknown): boolean {
     return a instanceof ANP;

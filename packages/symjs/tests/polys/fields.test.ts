@@ -220,3 +220,13 @@ it('preserves coefficient domains in fraction-field wrappers (SymPy 1.14)', () =
   }
   expect(String(new FracField('x', GF(5)).one.parent())).toBe('GF(5)(x)');
 });
+
+it('cancels multivariate factors over finite, algebraic and nested coefficient fields',()=>{
+  const t=new Sym('t');
+  for(const [K,c] of [[GF(5),'2'],[new AlgebraicField(QQ,p('sqrt(2)')),'sqrt(2)'],[QQ.fracField(t),'1/(t+1)']] as const){
+    const F=new FracField('x y',K);
+    const a=F.fromExpr(p(`((x+${c}*y)*(x+y+1))/((x+${c}*y)*(y+1))`));
+    expect(a.equals(F.fromExpr(p('(x+y+1)/(y+1)')))).toBe(true);
+    expect(a.numer.gcd(a.denom).isOne).toBe(true);
+  }
+});

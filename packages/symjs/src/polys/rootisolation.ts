@@ -456,6 +456,18 @@ export function isolateRealRootsSqf(f0: P, opts: IsolateOptions = {}): [Q, Q][] 
   return isolateRealRoots([[f0, 1]], opts.eps, opts).map(([iv]) => iv);
 }
 
+/** Disjoint real intervals labelled by their pairwise coprime defining polynomial. @internal */
+export function isolateRealRootsTagged(polys: readonly P[]): [[Q,Q],number][] {
+  const factors: [P,number][] = [], zeros: [[Q,Q],number][] = [];
+  polys.forEach((p,i) => {
+    const [j,f] = termsGcd(strip(p));
+    if (j) zeros.push([[QZERO,QZERO],i]);
+    if (degree(f)>0) factors.push([f,i]);
+  });
+  const [neg,pos] = realIsolateAndDisjoin(factors,{strict:true});
+  return sortIntervals([...neg,...pos].map(([iv,i]): [[Q,Q],number] => [iv,i]).concat(zeros));
+}
+
 /** Clear the denominators of a polynomial over QQ (SymPy dup_clear_denoms with convert=True). */
 function clearDenoms(f: QP): P {
   let common = 1n;

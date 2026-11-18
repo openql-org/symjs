@@ -4,14 +4,14 @@
 // (c) 2006-2023 SymPy Development Team, BSD 3-Clause License (see LICENSE).
 
 import type { ExprLike } from '../../core/nodes';
-import { Dummy, Float, Rational } from '../../core/nodes';
+import { Dummy, Rational } from '../../core/nodes';
 import { sympify } from '../../core/ops';
 import { isReal } from '../../core/assumptions';
-import { at, expectType, getOrThrow } from '../../core/guard';
+import { at, getOrThrow } from '../../core/guard';
 import { NotImplementedError } from '../../core/errors';
 import { factorint } from '../../ntheory/factor';
 import { asInt, pmod, type IntLike } from '../../ntheory/intutil';
-import { mag, toRational } from '../../numeric/mpf';
+import { algebraicEnclosure } from './interval';
 import { minimalPolynomial } from '../numberfields';
 import type { Poly } from '../sympoly';
 import { PythonMPQ } from '../domains/pythonrational';
@@ -72,17 +72,14 @@ export function isolate(algIn: ExprLike, eps?: Rational): [Rational, Rational] {
   const p = minimalPolynomial(alg, new Dummy('x'), { polys: true });
   const intervals = p.intervals().map(([ab]) => ab);
   let bounds = intervals.length === 1 ? at(intervals, 0) : undefined;
-  // Root isolation proves each interval contains exactly one root. Refine
-  // the value used to choose that interval until rounding cannot put it on
-  // the wrong side of an endpoint; compare rationals without double conversion.
   const le = (a: Rational, b: Rational): boolean => a.p * b.q <= b.p * a.q;
-  for (let digits = 15; bounds === undefined; digits *= 2) {
-    const v = expectType(alg.evalf(digits), (e): e is Float => e instanceof Float, 'numeric algebraic value');
-    const [n, d] = toRational(v.mpf), exponent = mag(v.mpf) - v.prec + 4;
-    const error = exponent < 0 ? Rational.of(1n, 2n ** BigInt(-exponent)) : Rational.of(2n ** BigInt(exponent));
-    const lo = Rational.of(n * error.q - error.p * d, d * error.q);
-    const hi = Rational.of(n * error.q + error.p * d, d * error.q);
-    bounds = intervals.find(([a, b]) => le(a, lo) && le(hi, b));
+  for (let bits = 32; bounds === undefined; bits *= 2) {
+    try {
+      const [real] = algebraicEnclosure(alg,bits);
+      bounds = intervals.find(([a,b]) => le(a,real[0]) && le(real[1],b));
+    } catch (error) {
+      if (!(error instanceof RangeError)) throw error;
+    }
   }
   return eps === undefined ? bounds : p.refineRoot(bounds[0], bounds[1], eps);
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Reference values independently generated with SymPy 1.14.0.
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { extractFundamentalDiscriminant, isolate, parse, Rational, I, NotImplementedError } from '../../../src';
 import { readFileSync } from 'node:fs';
 import { AlgIntPowers, coeffSearch, supplementASubspace, isRat, isInt, getNumDenom, PythonMPQ, Sym, Poly, QQ, GF, DM, DMRankError } from '../../../src';
@@ -58,4 +58,20 @@ it('increases numeric precision when the first approximation overlaps an endpoin
   // The reference is instead the positive interval from Poly(x**2-2*10**40).intervals().
   // Its positivity selects the unique positive root, 10**20*sqrt(2), exactly.
   expect(isolate(parse('100000000000000000000*sqrt(2)')).map(String)).toEqual(refs.largeInterval);
+});
+
+import continuationRefs from '../continuation.references.json';
+for(const row of continuationRefs.intervals) it(`selects the exact interval for ${row.expr}`,()=>{
+  expect(isolate(parse(row.expr),Rational.of(1,1000)).map(String)).toEqual(row.interval);
+});
+
+import * as enclosureModule from '../../../src/polys/numberfields/interval';
+it('retries undecided interval arithmetic and propagates unsupported algebraic input',()=>{
+  const spy=vi.spyOn(enclosureModule,'algebraicEnclosure');
+  try {
+    spy.mockImplementationOnce(()=>{throw new RangeError('precision insufficient');});
+    expect(isolate(parse('sqrt(2)+sqrt(3)'),Rational.of(1,1000)).map(String)).toEqual(continuationRefs.intervals[0]?.interval);
+    spy.mockImplementationOnce(()=>{throw new NotImplementedError('unsupported interval input');});
+    expect(()=>isolate(parse('sqrt(2)+sqrt(3)'))).toThrow(NotImplementedError);
+  } finally {spy.mockRestore();}
 });

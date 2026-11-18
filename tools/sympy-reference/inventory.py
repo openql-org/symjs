@@ -467,9 +467,6 @@ LIMITATIONS = {
     'sympy.assumptions.wrapper': 'is_infinite/is_extended_real/is_extended_nonnegative; AssumptionsWrapper not ported',
     'sympy.functions.elementary._trigonometric_special': 'migcdex, ipartfrac, fermat_coords; the cos_3..cos_257 tables are not ported',
     'sympy.matrices.kind': 'Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.',
-    'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration remains partial.',
-    'sympy.polys.numberfields.utilities': 'Rigorous interval evaluation of general algebraic expressions remains incomplete; all other module utilities are ported, and complex isolate is unimplemented in SymPy 1.14.',
-    'sympy.polys.rootoftools': 'Full indexed-root preprocessing and ordering at arbitrarily close roots remain incomplete; real and complex rational refinement are ported.',
     'sympy.series.acceleration': 'richardson/shanks of SymPy are symbolic: unassessed beyond the mpmath counterparts',
     'sympy.tensor.functions': 'shape, NoShapeError; TensorProduct not ported',
 }
