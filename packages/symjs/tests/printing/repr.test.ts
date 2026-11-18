@@ -184,3 +184,16 @@ describe('srepr of function classes, permutations and objects with a repr', () =
     expect(srepr(new Set<ReprPrintable>([1]))).toBe('{1}');
   });
 });
+
+it('respects repr term ordering and rejects unknown settings', () => {
+  const sum = new sj.Add([R(1), sj.pow(x, 2)]);
+  expect(srepr(sum, { order: 'old' })).toBe("Add(Integer(1), Pow(Symbol('x'), Integer(2)))");
+  expect(srepr(sum, { order: 'lex' })).toBe("Add(Pow(Symbol('x'), Integer(2)), Integer(1))");
+  const raw = new sj.Mul([new sj.Add([x, R(4)]), R(2), x, R(7)]);
+  expect(srepr(raw, { order: 'none' })).toBe("Mul(Add(Symbol('x'), Integer(4)), Integer(2), Symbol('x'), Integer(7))");
+  expect(srepr(new sj.Mul([R(3), y, sj.pow(x, 3)]), { order: 'old' })).toBe("Mul(Integer(3), Symbol('y'), Pow(Symbol('x'), Integer(3)))");
+  expect(srepr(new sj.Mul([x, y]), { order: 'lex' })).toBe("Mul(Symbol('x'), Symbol('y'))");
+  expect(() => Reflect.apply(srepr, undefined, [x, { method: 'garbage' }])).toThrow(TypeError);
+  expect(srepr(sj.CoordSys3D('C').baseScalars()[0])).toBe('C.x');
+  expect(srepr(sum)).toBe("Add(Pow(Symbol('x'), Integer(2)), Integer(1))");
+});

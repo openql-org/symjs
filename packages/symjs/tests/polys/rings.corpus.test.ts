@@ -86,14 +86,16 @@ describe("doctests of sympy.polys.rings", () => {
     const v1 = new PolyRing([x, y], ZZ, 'lex').fromExpr(add(pow(x, 2), mul(x, y))).div(new PolyRing([x, y], ZZ, 'lex').fromExpr(add(2, mul(2, x))));
     expect(sympyMatches([at(v1, 0), at(v1, 1)], '(0, x**2 + x*y)')).toBe(true);
   });
-  // an equivalent form that the declared symbols do not confirm
-  //   f.pdiv(g, y) # generator is given
-  //   => (2*x**3 + 2*x**2*y + 6*x**2 + 2*x*y + 8*x + 4, 0)
-  it.todo("f.pdiv(g, y) # generator is given");
-  // an equivalent form that the declared symbols do not confirm
-  //   f.pdiv(g, 1) # generator index is given
-  //   => (2*x**3 + 2*x**2*y + 6*x**2 + 2*x*y + 8*x + 4, 0)
-  it.todo("f.pdiv(g, 1) # generator index is given");
+  it("f.pdiv(g, y) # generator is given", () => {
+    const [x, y] = symbols('x y');
+    const v1 = new PolyRing([x, y], ZZ, 'lex').fromExpr(add(pow(x, 2), mul(x, y))).pdiv(new PolyRing([x, y], ZZ, 'lex').fromExpr(add(2, mul(2, x))), new PolyRing([x, y], ZZ, 'lex').fromExpr(y));
+    expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('[2*x**3 + 2*x**2*y + 2*x**2 + 2*x*y, 0]');
+  });
+  it("f.pdiv(g, 1) # generator index is given", () => {
+    const [x, y] = symbols('x y');
+    const v1 = new PolyRing([x, y], ZZ, 'lex').fromExpr(add(pow(x, 2), mul(x, y))).pdiv(new PolyRing([x, y], ZZ, 'lex').fromExpr(add(2, mul(2, x))), rational(1));
+    expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('[2*x**3 + 2*x**2*y + 2*x**2 + 2*x*y, 0]');
+  });
   it("f.pexquo(g)", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(add(pow(x, 2), mul(x, y))).pexquo(new PolyRing([x, y], ZZ, 'lex').fromExpr(add(mul(2, x), mul(2, y)))))).toBe('2*x');
@@ -251,30 +253,30 @@ describe("sympy/polys/tests/test_rings.py", () => {
   it("test_PolyRing___init__:42", () => {
     expect(sympyStr(lex)).toBe('lex');
   });
-  // no adapter for .x
-  //   assert R1.x == R1.gens[0]
-  //   => x
-  it.todo("test_PolyRing___init__:48");
-  // no adapter for .y
-  //   assert R1.y == R1.gens[1]
-  //   => y
-  it.todo("test_PolyRing___init__:49");
-  // no adapter for .x
-  //   assert R1.x == R2.x
-  //   => x
-  it.todo("test_PolyRing___init__:50");
-  // no adapter for .y
-  //   assert R1.y == R2.y
-  //   => y
-  it.todo("test_PolyRing___init__:51");
-  // no adapter for .x
-  //   assert R1.x != R3.x
-  //   => x
-  it.todo("test_PolyRing___init__:52");
-  // no adapter for .y
-  //   assert R1.y != R3.y
-  //   => y
-  it.todo("test_PolyRing___init__:53");
+  it("test_PolyRing___init__:48", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new PolyRing([x, y], ZZ, 'lex').gens, 0))).toBe('x');
+  });
+  it("test_PolyRing___init__:49", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new PolyRing([x, y], ZZ, 'lex').gens, 1))).toBe('y');
+  });
+  it("test_PolyRing___init__:50", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new PolyRing([x, y], ZZ, 'lex').gens, 0))).toBe('x');
+  });
+  it("test_PolyRing___init__:51", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new PolyRing([x, y], ZZ, 'lex').gens, 1))).toBe('y');
+  });
+  it.fails("test_PolyRing___init__:52", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new PolyRing([x, y], ZZ, 'lex').gens, 0))).not.toBe('x');
+  });
+  it.fails("test_PolyRing___init__:53", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new PolyRing([x, y], ZZ, 'lex').gens, 1))).not.toBe('y');
+  });
   it("test_PolyRing___eq__:60", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new PolyRing([x, y, z], QQ, 'lex'))).toBe('Polynomial ring in x, y, z over QQ with lex order');
@@ -366,22 +368,22 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [y, z, x] = symbols('y z x');
     expect(() => new PolyRing([y, z], ZZ, 'lex').drop(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(y))).toThrow(RangeError);
   });
-  // no adapter for the operator []
-  //   assert R[0:] == PolyRing("x,y,z", ZZ, lex)
-  //   => Polynomial ring in x, y, z over ZZ with lex order
-  it.todo("test_PolyRing___getitem__:104");
-  // no adapter for the operator []
-  //   assert R[1:] == PolyRing("y,z", ZZ, lex)
-  //   => Polynomial ring in y, z over ZZ with lex order
-  it.todo("test_PolyRing___getitem__:105");
-  // no adapter for the operator []
-  //   assert R[2:] == PolyRing("z", ZZ, lex)
-  //   => Polynomial ring in z over ZZ with lex order
-  it.todo("test_PolyRing___getitem__:106");
-  // no adapter for the operator []
-  //   assert R[3:] == ZZ
-  //   => ZZ
-  it.todo("test_PolyRing___getitem__:107");
+  it("test_PolyRing___getitem__:104", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(new PolyRing([x, y, z], ZZ, 'lex').slice(0, 3))).toBe('Polynomial ring in x, y, z over ZZ with lex order');
+  });
+  it("test_PolyRing___getitem__:105", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(new PolyRing([x, y, z], ZZ, 'lex').slice(1, 3))).toBe('Polynomial ring in y, z over ZZ with lex order');
+  });
+  it("test_PolyRing___getitem__:106", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(new PolyRing([x, y, z], ZZ, 'lex').slice(2, 3))).toBe('Polynomial ring in z over ZZ with lex order');
+  });
+  it("test_PolyRing___getitem__:107", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(new PolyRing([x, y, z], ZZ, 'lex').slice(3, 3))).toBe('ZZ');
+  });
   it("test_PolyRing_is_:112", () => {
     const x = new Sym('x');
     expect(sympyStr(new PolyRing([x], QQ, 'lex').isUnivariate)).toBe('True');
@@ -1189,27 +1191,25 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), x])])).quo(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(x)))).toBe('x - 1');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: (x**2 - 1)/x)
-  //   => None
-  it.todo("test_PolyElement___truediv__:609");
-  it.fails("test_PolyElement___truediv__:610", () => {
+  it("test_PolyElement___truediv__:609", () => {
     const [x, y, z] = symbols('x y z');
-    const v1 = new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), x])])).div(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(x));
-    expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('x - 1');
+    expect(() => new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([rational(-1), new Pow(x, rational(2))])).truediv(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(x))).toThrow(ExactQuotientFailed);
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: (x**2 - 1)/(2*x))
-  //   => None
-  it.todo("test_PolyElement___truediv__:611");
+  it("test_PolyElement___truediv__:610", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), x])])).truediv(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(x)))).toBe('x - 1');
+  });
+  it("test_PolyElement___truediv__:611", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(() => new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([rational(-1), new Pow(x, rational(2))])).truediv(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Mul([rational(2), x])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:613", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([rational(-1), new Pow(x, rational(2))])).quo(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Mul([rational(2), x]))))).toBe('0');
   });
-  it.fails("test_PolyElement___truediv__:614", () => {
+  it("test_PolyElement___truediv__:614", () => {
     const [x, y, z] = symbols('x y z');
-    const v1 = new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), x])])).div(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([rational(-1), x])));
-    expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('x');
+    expect(sympyStr(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), x])])).truediv(new PolyRing([x, y, z], ZZ, 'lex').fromExpr(new Add([rational(-1), x]))))).toBe('x');
   });
   it("test_PolyElement___truediv__:614 (2)", () => {
     const [x, y, z] = symbols('x y z');
@@ -1224,23 +1224,23 @@ describe("sympy/polys/tests/test_rings.py", () => {
   it.todo("test_PolyElement___truediv__:621");
   it.fails("test_PolyElement___truediv__:628", () => {
     const [u, v, x, y, z] = symbols('u v x y z');
-    expect(() => new PolyRing([u, v], ZZ, 'lex').fromExpr(u).div(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Add([u, new Mul([x, new Pow(u, rational(2))])])))).toThrow(ExactQuotientFailed);
+    expect(() => new PolyRing([u, v], ZZ, 'lex').fromExpr(u).truediv(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(new Add([u, new Mul([x, new Pow(u, rational(2))])])))).toThrow(ExactQuotientFailed);
   });
-  it.fails("test_PolyElement___truediv__:630", () => {
+  it("test_PolyElement___truediv__:630", () => {
     const [t, x, y, z, u, v] = symbols('t x y z u v');
-    expect(() => new PolyRing([t], ZZ, 'lex').fromExpr(t).div(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x))).toThrow(TypeError);
+    expect(() => new PolyRing([t], ZZ, 'lex').fromExpr(t).truediv(new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x))).toThrow(TypeError);
   });
-  it.fails("test_PolyElement___truediv__:631", () => {
+  it("test_PolyElement___truediv__:631", () => {
     const [x, y, z, u, v, t] = symbols('x y z u v t');
-    expect(() => new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x).div(new PolyRing([t], ZZ, 'lex').fromExpr(t))).toThrow(TypeError);
+    expect(() => new PolyRing([x, y, z], ZZ.polyRing(u, v), 'lex').fromExpr(x).truediv(new PolyRing([t], ZZ, 'lex').fromExpr(t))).toThrow(TypeError);
   });
-  it.fails("test_PolyElement___truediv__:632", () => {
+  it("test_PolyElement___truediv__:632", () => {
     const [t, u, v] = symbols('t u v');
-    expect(() => new PolyRing([t], ZZ, 'lex').fromExpr(t).div(new PolyRing([u, v], ZZ, 'lex').fromExpr(u))).toThrow(TypeError);
+    expect(() => new PolyRing([t], ZZ, 'lex').fromExpr(t).truediv(new PolyRing([u, v], ZZ, 'lex').fromExpr(u))).toThrow(TypeError);
   });
-  it.fails("test_PolyElement___truediv__:633", () => {
+  it("test_PolyElement___truediv__:633", () => {
     const [u, v, t] = symbols('u v t');
-    expect(() => new PolyRing([u, v], ZZ, 'lex').fromExpr(u).div(new PolyRing([t], ZZ, 'lex').fromExpr(t))).toThrow(TypeError);
+    expect(() => new PolyRing([u, v], ZZ, 'lex').fromExpr(u).truediv(new PolyRing([t], ZZ, 'lex').fromExpr(t))).toThrow(TypeError);
   });
   it("test_PolyElement___truediv__:638", () => {
     const x = new Sym('x');
@@ -1260,7 +1260,7 @@ describe("sympy/polys/tests/test_rings.py", () => {
   });
   it("test_PolyElement___truediv__:643", () => {
     const x = new Sym('x');
-    expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(3), new Pow(x, rational(2)), new Mul([rational(2), x])])).div(new PolyRing([x], ZZ, 'lex').fromExpr(rational(0)))).toThrow(RangeError);
+    expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(3), new Pow(x, rational(2)), new Mul([rational(2), x])])).truediv(new PolyRing([x], ZZ, 'lex').fromExpr(rational(0)))).toThrow(RangeError);
   });
   it("test_PolyElement___truediv__:644", () => {
     const x = new Sym('x');
@@ -1284,7 +1284,7 @@ describe("sympy/polys/tests/test_rings.py", () => {
   });
   it("test_PolyElement___truediv__:654", () => {
     const [x, y] = symbols('x y');
-    expect(() => new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([rational(3), new Mul([rational(2), x]), new Mul([x, y])])).div(new PolyRing([x, y], ZZ, 'lex').fromExpr(rational(0)))).toThrow(RangeError);
+    expect(() => new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([rational(3), new Mul([rational(2), x]), new Mul([x, y])])).truediv(new PolyRing([x, y], ZZ, 'lex').fromExpr(rational(0)))).toThrow(RangeError);
   });
   it("test_PolyElement___truediv__:655", () => {
     const [x, y] = symbols('x y');
@@ -1307,10 +1307,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Pow(x, rational(2))])).quo(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(-4), new Mul([rational(2), x])]))))).toBe('0');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:665");
+  it("test_PolyElement___truediv__:665", () => {
+    const x = new Sym('x');
+    expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Pow(x, rational(2))])).truediv(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(-4), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:666", () => {
     const x = new Sym('x');
     expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Pow(x, rational(2))])).exquo(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(-4), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
@@ -1332,10 +1332,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(5), x, new Pow(x, rational(2)), new Mul([rational(3), new Pow(x, rational(3))])])).quo(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(-3), x]), new Mul([rational(5), new Pow(x, rational(2))])]))))).toBe('0');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:674");
+  it("test_PolyElement___truediv__:674", () => {
+    const x = new Sym('x');
+    expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(5), x, new Pow(x, rational(2)), new Mul([rational(3), new Pow(x, rational(3))])])).truediv(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(-3), x]), new Mul([rational(5), new Pow(x, rational(2))])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:675", () => {
     const x = new Sym('x');
     expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(5), x, new Pow(x, rational(2)), new Mul([rational(3), new Pow(x, rational(3))])])).exquo(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(-3), x]), new Mul([rational(5), new Pow(x, rational(2))])])))).toThrow(ExactQuotientFailed);
@@ -1357,10 +1357,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(2), x]), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), new Pow(x, rational(3))]), new Mul([rational(5), new Pow(x, rational(4))])])).quo(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(3), new Pow(x, rational(2)), new Mul([rational(2), x])]))))).toBe('5*x**2 - 6*x');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:683");
+  it("test_PolyElement___truediv__:683", () => {
+    const x = new Sym('x');
+    expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(2), x]), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), new Pow(x, rational(3))]), new Mul([rational(5), new Pow(x, rational(4))])])).truediv(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(3), new Pow(x, rational(2)), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:684", () => {
     const x = new Sym('x');
     expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(2), x]), new Mul([rational(3), new Pow(x, rational(2))]), new Mul([rational(4), new Pow(x, rational(3))]), new Mul([rational(5), new Pow(x, rational(4))])])).exquo(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(3), new Pow(x, rational(2)), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
@@ -1382,10 +1382,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(2), new Pow(x, rational(2))]), new Mul([rational(3), new Pow(x, rational(3))]), new Mul([rational(4), new Pow(x, rational(4))]), new Mul([rational(5), new Pow(x, rational(5))])])).quo(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(9), new Pow(x, rational(4)), new Mul([rational(2), new Pow(x, rational(3))])]))))).toBe('5*x - 6');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:692");
+  it("test_PolyElement___truediv__:692", () => {
+    const x = new Sym('x');
+    expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(2), new Pow(x, rational(2))]), new Mul([rational(3), new Pow(x, rational(3))]), new Mul([rational(4), new Pow(x, rational(4))]), new Mul([rational(5), new Pow(x, rational(5))])])).truediv(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(9), new Pow(x, rational(4)), new Mul([rational(2), new Pow(x, rational(3))])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:693", () => {
     const x = new Sym('x');
     expect(() => new PolyRing([x], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(2), new Pow(x, rational(2))]), new Mul([rational(3), new Pow(x, rational(3))]), new Mul([rational(4), new Pow(x, rational(4))]), new Mul([rational(5), new Pow(x, rational(5))])])).exquo(new PolyRing([x], ZZ, 'lex').fromExpr(new Add([rational(9), new Pow(x, rational(4)), new Mul([rational(2), new Pow(x, rational(3))])])))).toThrow(ExactQuotientFailed);
@@ -1407,10 +1407,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(1), new Pow(x, rational(2))])).quo(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(-4), new Mul([rational(2), x])]))))).toBe('1/2*x + 1');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:703");
+  it("test_PolyElement___truediv__:703", () => {
+    const x = new Sym('x');
+    expect(() => new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(1), new Pow(x, rational(2))])).truediv(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(-4), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:704", () => {
     const x = new Sym('x');
     expect(() => new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(1), new Pow(x, rational(2))])).exquo(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(-4), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
@@ -1432,10 +1432,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(5), x, new Pow(x, rational(2)), new Mul([rational(3), new Pow(x, rational(3))])])).quo(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(-3), x]), new Mul([rational(5), new Pow(x, rational(2))])]))))).toBe('3/5*x + 14/25');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:712");
+  it("test_PolyElement___truediv__:712", () => {
+    const x = new Sym('x');
+    expect(() => new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(5), x, new Pow(x, rational(2)), new Mul([rational(3), new Pow(x, rational(3))])])).truediv(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(-3), x]), new Mul([rational(5), new Pow(x, rational(2))])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:713", () => {
     const x = new Sym('x');
     expect(() => new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(5), x, new Pow(x, rational(2)), new Mul([rational(3), new Pow(x, rational(3))])])).exquo(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(1), new Mul([rational(-3), x]), new Mul([rational(5), new Pow(x, rational(2))])])))).toThrow(ExactQuotientFailed);
@@ -1461,10 +1461,9 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])])).exquo(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])]))))).toBe('x + y');
   });
-  it.fails("test_PolyElement___truediv__:723 (2)", () => {
+  it("test_PolyElement___truediv__:723 (2)", () => {
     const [x, y] = symbols('x y');
-    const v1 = new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])])).div(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])])));
-    expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('x + y');
+    expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])])).truediv(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])]))))).toBe('x + y');
   });
   it("test_PolyElement___truediv__:728", () => {
     const [x, y] = symbols('x y');
@@ -1483,10 +1482,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).quo(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])]))))).toBe('x + y');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:731");
+  it("test_PolyElement___truediv__:731", () => {
+    const [x, y] = symbols('x y');
+    expect(() => new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).truediv(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:732", () => {
     const [x, y] = symbols('x y');
     expect(() => new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).exquo(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])])))).toThrow(ExactQuotientFailed);
@@ -1508,10 +1507,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).quo(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([y, new Mul([rational(-1), x])]))))).toBe('-x - y');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:740");
+  it("test_PolyElement___truediv__:740", () => {
+    const [x, y] = symbols('x y');
+    expect(() => new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).truediv(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([y, new Mul([rational(-1), x])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:741", () => {
     const [x, y] = symbols('x y');
     expect(() => new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).exquo(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([y, new Mul([rational(-1), x])])))).toThrow(ExactQuotientFailed);
@@ -1533,10 +1532,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).quo(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Mul([rational(-2), y]), new Mul([rational(2), x])]))))).toBe('0');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:749");
+  it("test_PolyElement___truediv__:749", () => {
+    const [x, y] = symbols('x y');
+    expect(() => new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).truediv(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Mul([rational(-2), y]), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:750", () => {
     const [x, y] = symbols('x y');
     expect(() => new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).exquo(new PolyRing([x, y], ZZ, 'lex').fromExpr(new Add([new Mul([rational(-2), y]), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
@@ -1562,10 +1561,9 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])])).exquo(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])]))))).toBe('x + y');
   });
-  it.fails("test_PolyElement___truediv__:760 (2)", () => {
+  it("test_PolyElement___truediv__:760 (2)", () => {
     const [x, y] = symbols('x y');
-    const v1 = new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])])).div(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])])));
-    expect(sympyStr([at(v1, 0), at(v1, 1)])).toBe('x + y');
+    expect(sympyStr(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Mul([rational(-1), new Pow(y, rational(2))])])).truediv(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])]))))).toBe('x + y');
   });
   it("test_PolyElement___truediv__:765", () => {
     const [x, y] = symbols('x y');
@@ -1584,10 +1582,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).quo(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])]))))).toBe('x + y');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:768");
+  it("test_PolyElement___truediv__:768", () => {
+    const [x, y] = symbols('x y');
+    expect(() => new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).truediv(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:769", () => {
     const [x, y] = symbols('x y');
     expect(() => new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).exquo(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([x, new Mul([rational(-1), y])])))).toThrow(ExactQuotientFailed);
@@ -1609,10 +1607,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).quo(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([y, new Mul([rational(-1), x])]))))).toBe('-x - y');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:777");
+  it("test_PolyElement___truediv__:777", () => {
+    const [x, y] = symbols('x y');
+    expect(() => new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).truediv(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([y, new Mul([rational(-1), x])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:778", () => {
     const [x, y] = symbols('x y');
     expect(() => new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).exquo(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([y, new Mul([rational(-1), x])])))).toThrow(ExactQuotientFailed);
@@ -1634,10 +1632,10 @@ describe("sympy/polys/tests/test_rings.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).quo(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Mul([rational(-2), y]), new Mul([rational(2), x])]))))).toBe('1/2*x + 1/2*y');
   });
-  // a function that did not come from the library
-  //   raises(ExactQuotientFailed, lambda: f / g)
-  //   => None
-  it.todo("test_PolyElement___truediv__:786");
+  it("test_PolyElement___truediv__:786", () => {
+    const [x, y] = symbols('x y');
+    expect(() => new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).truediv(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Mul([rational(-2), y]), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);
+  });
   it("test_PolyElement___truediv__:787", () => {
     const [x, y] = symbols('x y');
     expect(() => new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))])).exquo(new PolyRing([x, y], QQ, 'lex').fromExpr(new Add([new Mul([rational(-2), y]), new Mul([rational(2), x])])))).toThrow(ExactQuotientFailed);

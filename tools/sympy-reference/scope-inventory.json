@@ -298,8 +298,6 @@
       "ConditionSet.sup",
       "ConditionSet.symmetric_difference",
       "ConditionSet.union",
-      "Contains.as_set",
-      "Contains.binary_symbols",
       "Contains.to_nnf",
       "Curve.boundary",
       "Curve.closure",
@@ -1583,10 +1581,8 @@
       "Interval.intersection",
       "Interval.is_disjoint",
       "Interval.is_interval",
-      "Interval.is_left_unbounded",
       "Interval.is_proper_subset",
       "Interval.is_proper_superset",
-      "Interval.is_right_unbounded",
       "Interval.is_subset",
       "Interval.is_superset",
       "Interval.isdisjoint",
@@ -4760,10 +4756,6 @@
       "FiniteField.is_ZZ",
       "FiniteField.is_ZZ_I",
       "FiniteSet.__and__",
-      "FiniteSet.__ge__",
-      "FiniteSet.__gt__",
-      "FiniteSet.__le__",
-      "FiniteSet.__lt__",
       "FiniteSet.__or__",
       "FiniteSet.__xor__",
       "FiniteSet.is_AlgebraicNumber",
@@ -6045,12 +6037,10 @@
       "MatPow.is_Wild",
       "Matrix.__mod__",
       "Matrix.__truediv__",
-      "Matrix.is_Identity",
       "Matrix.is_Matrix",
       "Matrix.is_MatrixExpr",
       "MatrixBase.__mod__",
       "MatrixBase.__truediv__",
-      "MatrixBase.is_Identity",
       "MatrixBase.is_Matrix",
       "MatrixExpr.__floordiv__",
       "MatrixExpr.__rfloordiv__",
@@ -6249,17 +6239,14 @@
       "Mul.is_Wild",
       "MutableDenseMatrix.__mod__",
       "MutableDenseMatrix.__truediv__",
-      "MutableDenseMatrix.is_Identity",
       "MutableDenseMatrix.is_Matrix",
       "MutableDenseMatrix.is_MatrixExpr",
       "MutableMatrix.__mod__",
       "MutableMatrix.__truediv__",
-      "MutableMatrix.is_Identity",
       "MutableMatrix.is_Matrix",
       "MutableMatrix.is_MatrixExpr",
       "MutableSparseMatrix.__mod__",
       "MutableSparseMatrix.__truediv__",
-      "MutableSparseMatrix.is_Identity",
       "MutableSparseMatrix.is_Matrix",
       "Nand.__lshift__",
       "Nand.__rshift__",
@@ -7662,7 +7649,6 @@
       "SingularityFunction.is_Wild",
       "SparseMatrix.__mod__",
       "SparseMatrix.__truediv__",
-      "SparseMatrix.is_Identity",
       "SparseMatrix.is_Matrix",
       "StrictGreaterThan.__lshift__",
       "StrictGreaterThan.__rshift__",
@@ -20063,7 +20049,7 @@
      "testFile": "sympy/assumptions/tests/test_refine.py",
      "inCorpus": true,
      "caseCount": 101,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 2,
@@ -21909,7 +21895,7 @@
      "testFile": "sympy/calculus/tests/test_util.py",
      "inCorpus": true,
      "caseCount": 209,
-     "gapCount": 37,
+     "gapCount": 36,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -23603,8 +23589,10 @@
     "doctests": {
      "pass": false,
      "caseCount": 15,
-     "gapCount": 0,
-     "failingIds": [],
+     "gapCount": 1,
+     "failingIds": [
+      "sympy.combinatorics.fp_groups: f.index([x]) #ac214adb1dc0aa54"
+     ],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "not-exported-api": 5,
@@ -24942,8 +24930,11 @@
     "doctests": {
      "pass": false,
      "caseCount": 155,
-     "gapCount": 0,
-     "failingIds": [],
+     "gapCount": 2,
+     "failingIds": [
+      "sympy.combinatorics.permutations: [0, 1]*a # no change: 2-element identity #0bc188c3b593b95b",
+      "sympy.combinatorics.permutations: [[0, 1]]*a # exchange first two elements #a772ce8dfa3e8cf1"
+     ],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 37,
@@ -28472,7 +28463,7 @@
      "testFile": "sympy/core/tests/test_containers.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 31,
+     "gapCount": 13,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -28868,7 +28859,7 @@
      "testFile": "sympy/core/tests/test_expr.py",
      "inCorpus": true,
      "caseCount": 877,
-     "gapCount": 127,
+     "gapCount": 125,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -29580,7 +29571,7 @@
      "testFile": "sympy/core/tests/test_function.py",
      "inCorpus": true,
      "caseCount": 428,
-     "gapCount": 158,
+     "gapCount": 153,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -31819,7 +31810,7 @@
      "testFile": "sympy/core/tests/test_numbers.py",
      "inCorpus": true,
      "caseCount": 1992,
-     "gapCount": 155,
+     "gapCount": 131,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 58,
@@ -32436,7 +32427,7 @@
      "testFile": "sympy/core/tests/test_power.py",
      "inCorpus": true,
      "caseCount": 256,
-     "gapCount": 23,
+     "gapCount": 11,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 6,
@@ -33062,7 +33053,7 @@
      "testFile": "sympy/core/tests/test_relational.py",
      "inCorpus": true,
      "caseCount": 1063,
-     "gapCount": 206,
+     "gapCount": 84,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 8,
@@ -33532,7 +33523,7 @@
      "testFile": "sympy/core/tests/test_sympify.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 23,
+     "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 20,
@@ -41265,7 +41256,7 @@
      "testFile": "sympy/functions/elementary/tests/test_exponential.py",
      "inCorpus": true,
      "caseCount": 491,
-     "gapCount": 73,
+     "gapCount": 63,
      "timeoutCount": 3,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -42697,7 +42688,7 @@
      "testFile": "sympy/functions/elementary/tests/test_piecewise.py",
      "inCorpus": true,
      "caseCount": 493,
-     "gapCount": 137,
+     "gapCount": 132,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -43369,7 +43360,7 @@
      "testFile": "sympy/functions/elementary/tests/test_trigonometric.py",
      "inCorpus": true,
      "caseCount": 3035,
-     "gapCount": 94,
+     "gapCount": 86,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -44239,7 +44230,7 @@
      "testFile": "sympy/functions/special/tests/test_bessel.py",
      "inCorpus": true,
      "caseCount": 370,
-     "gapCount": 119,
+     "gapCount": 106,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 9,
@@ -52444,7 +52435,7 @@
      "testFile": "sympy/integrals/tests/test_integrals.py",
      "inCorpus": true,
      "caseCount": 569,
-     "gapCount": 198,
+     "gapCount": 193,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 51,
@@ -57592,7 +57583,7 @@
      "testFile": "sympy/logic/tests/test_boolalg.py",
      "inCorpus": true,
      "caseCount": 7484,
-     "gapCount": 105,
+     "gapCount": 92,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 15,
@@ -58701,12 +58692,10 @@
       "MatPow.is_Wild",
       "Matrix.__mod__",
       "Matrix.__truediv__",
-      "Matrix.is_Identity",
       "Matrix.is_Matrix",
       "Matrix.is_MatrixExpr",
       "MatrixBase.__mod__",
       "MatrixBase.__truediv__",
-      "MatrixBase.is_Identity",
       "MatrixBase.is_Matrix",
       "MatrixExpr.__floordiv__",
       "MatrixExpr.__rfloordiv__",
@@ -58826,17 +58815,14 @@
       "MatrixSymbol.is_Wild",
       "MutableDenseMatrix.__mod__",
       "MutableDenseMatrix.__truediv__",
-      "MutableDenseMatrix.is_Identity",
       "MutableDenseMatrix.is_Matrix",
       "MutableDenseMatrix.is_MatrixExpr",
       "MutableMatrix.__mod__",
       "MutableMatrix.__truediv__",
-      "MutableMatrix.is_Identity",
       "MutableMatrix.is_Matrix",
       "MutableMatrix.is_MatrixExpr",
       "MutableSparseMatrix.__mod__",
       "MutableSparseMatrix.__truediv__",
-      "MutableSparseMatrix.is_Identity",
       "MutableSparseMatrix.is_Matrix",
       "OneMatrix.__floordiv__",
       "OneMatrix.__rfloordiv__",
@@ -58904,7 +58890,6 @@
       "PermutationMatrix.is_Wild",
       "SparseMatrix.__mod__",
       "SparseMatrix.__truediv__",
-      "SparseMatrix.is_Identity",
       "SparseMatrix.is_Matrix",
       "Trace.__floordiv__",
       "Trace.__rfloordiv__",
@@ -59704,7 +59689,6 @@
       "DenseMatrix.is_MatrixExpr",
       "MutableDenseMatrix.__mod__",
       "MutableDenseMatrix.__truediv__",
-      "MutableDenseMatrix.is_Identity",
       "MutableDenseMatrix.is_Matrix",
       "MutableDenseMatrix.is_MatrixExpr"
      ],
@@ -59811,7 +59795,7 @@
      "testFile": "sympy/matrices/tests/test_determinant.py",
      "inCorpus": true,
      "caseCount": 174,
-     "gapCount": 16,
+     "gapCount": 11,
      "timeoutCount": 4,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -59860,7 +59844,7 @@
      "inCorpus": true,
      "caseCount": 316,
      "gapCount": 4,
-     "timeoutCount": 1,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
       "non-boolean-assertion": 2,
@@ -62807,7 +62791,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matexpr.py",
      "inCorpus": true,
      "caseCount": 192,
-     "gapCount": 56,
+     "gapCount": 54,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 12,
@@ -63618,7 +63602,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_trace.py",
      "inCorpus": true,
      "caseCount": 37,
-     "gapCount": 2,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 1
@@ -64218,8 +64202,10 @@
     "doctests": {
      "pass": false,
      "caseCount": 5,
-     "gapCount": 0,
-     "failingIds": [],
+     "gapCount": 1,
+     "failingIds": [
+      "sympy.matrices.inverse: B.simplify() #84bc0e4480128e99"
+     ],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -64974,7 +64960,7 @@
      "testFile": "sympy/matrices/tests/test_matrices.py",
      "inCorpus": true,
      "caseCount": 878,
-     "gapCount": 149,
+     "gapCount": 54,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 2,
@@ -65117,7 +65103,6 @@
       "DeferredVector.is_Wild",
       "MatrixBase.__mod__",
       "MatrixBase.__truediv__",
-      "MatrixBase.is_Identity",
       "MatrixBase.is_Matrix"
      ],
      "internalNames": [
@@ -65129,8 +65114,10 @@
     "doctests": {
      "pass": false,
      "caseCount": 399,
-     "gapCount": 0,
-     "failingIds": [],
+     "gapCount": 1,
+     "failingIds": [
+      "sympy.matrices.matrixbase: B.simplify() #84bc0e4480128e99"
+     ],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 9,
@@ -65150,7 +65137,7 @@
      "testFile": "sympy/matrices/tests/test_matrixbase.py",
      "inCorpus": true,
      "caseCount": 1056,
-     "gapCount": 196,
+     "gapCount": 79,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 4,
@@ -65991,7 +65978,6 @@
      "pythonSpecificNames": [
       "MutableSparseMatrix.__mod__",
       "MutableSparseMatrix.__truediv__",
-      "MutableSparseMatrix.is_Identity",
       "MutableSparseMatrix.is_Matrix",
       "SparseRepMatrix.__add__",
       "SparseRepMatrix.__eq__",
@@ -66033,7 +66019,7 @@
      "testFile": "sympy/matrices/tests/test_sparse.py",
      "inCorpus": true,
      "caseCount": 187,
-     "gapCount": 19,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -66968,7 +66954,7 @@
      "testFile": "sympy/ntheory/tests/test_generate.py",
      "inCorpus": true,
      "caseCount": 3570,
-     "gapCount": 4,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1122,
@@ -68792,7 +68778,7 @@
      "testFile": "sympy/parsing/tests/test_sympy_parser.py",
      "inCorpus": true,
      "caseCount": 145,
-     "gapCount": 58,
+     "gapCount": 7,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 37,
@@ -77759,7 +77745,7 @@
      "testFile": "sympy/polys/agca/tests/test_extensions.py",
      "inCorpus": true,
      "caseCount": 100,
-     "gapCount": 17,
+     "gapCount": 13,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -78938,7 +78924,7 @@
      "testFile": "sympy/polys/tests/test_constructor.py",
      "inCorpus": true,
      "caseCount": 59,
-     "gapCount": 24,
+     "gapCount": 11,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -84841,7 +84827,7 @@
      "testFile": "sympy/polys/tests/test_fields.py",
      "inCorpus": true,
      "caseCount": 100,
-     "gapCount": 18,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 22,
@@ -85569,7 +85555,7 @@
      "testFile": "sympy/polys/matrices/tests/test_domainmatrix.py",
      "inCorpus": true,
      "caseCount": 409,
-     "gapCount": 51,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -85732,7 +85718,7 @@
      "testFile": "sympy/polys/matrices/tests/test_domainscalar.py",
      "inCorpus": true,
      "caseCount": 34,
-     "gapCount": 4,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -85966,7 +85952,7 @@
      "testFile": "sympy/polys/matrices/tests/test_lll.py",
      "inCorpus": true,
      "caseCount": 119,
-     "gapCount": 100,
+     "gapCount": 74,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -86781,8 +86767,8 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 23,
-     "timeoutCount": 2,
+     "gapCount": 22,
+     "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 1
      },
@@ -87034,7 +87020,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_primes.py",
      "inCorpus": true,
      "caseCount": 86,
-     "gapCount": 18,
+     "gapCount": 17,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 23
@@ -87213,7 +87199,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_utilities.py",
      "inCorpus": true,
      "caseCount": 34,
-     "gapCount": 6,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -87514,16 +87500,12 @@
       "ANP.exquo",
       "ANP.from_list",
       "ANP.is_ground",
-      "ANP.is_one",
       "ANP.mod",
       "ANP.mod_to_DMP",
-      "ANP.mod_to_list",
       "ANP.mul_ground",
       "ANP.new",
       "ANP.one",
-      "ANP.quo",
       "ANP.quo_ground",
-      "ANP.rem",
       "ANP.rep",
       "ANP.sub_ground",
       "ANP.to_DMP",
@@ -87531,7 +87513,6 @@
       "ANP.to_sympy_dict",
       "ANP.to_sympy_list",
       "ANP.to_tuple",
-      "ANP.unify",
       "ANP.unify_ANP",
       "ANP.zero",
       "DMF.add_ground",
@@ -87983,7 +87964,7 @@
      "testFile": "sympy/polys/tests/test_polyclasses.py",
      "inCorpus": true,
      "caseCount": 171,
-     "gapCount": 132,
+     "gapCount": 117,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -90381,7 +90362,7 @@
      "testFile": "sympy/polys/tests/test_rings.py",
      "inCorpus": true,
      "caseCount": 616,
-     "gapCount": 48,
+     "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -90850,7 +90831,7 @@
      "testFile": "sympy/polys/tests/test_rootoftools.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 42,
+     "gapCount": 41,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 56,
@@ -91861,7 +91842,7 @@
      "testFile": "sympy/printing/tests/test_latex.py",
      "inCorpus": true,
      "caseCount": 1264,
-     "gapCount": 121,
+     "gapCount": 101,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -91995,7 +91976,7 @@
      "testFile": "sympy/printing/tests/test_mathml.py",
      "inCorpus": true,
      "caseCount": 175,
-     "gapCount": 32,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 4,
@@ -92634,7 +92615,7 @@
      "testFile": "sympy/printing/tests/test_repr.py",
      "inCorpus": true,
      "caseCount": 103,
-     "gapCount": 36,
+     "gapCount": 30,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 83,
@@ -92746,7 +92727,7 @@
      "inCorpus": true,
      "caseCount": 438,
      "gapCount": 62,
-     "timeoutCount": 1,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 27,
       "not-executed": 5,
@@ -95295,8 +95276,6 @@
       "ConditionSet.sup",
       "ConditionSet.symmetric_difference",
       "ConditionSet.union",
-      "Contains.as_set",
-      "Contains.binary_symbols",
       "Contains.to_nnf",
       "DisjointUnion.complement",
       "DisjointUnion.contains",
@@ -95395,10 +95374,8 @@
       "Interval.intersection",
       "Interval.is_disjoint",
       "Interval.is_interval",
-      "Interval.is_left_unbounded",
       "Interval.is_proper_subset",
       "Interval.is_proper_superset",
-      "Interval.is_right_unbounded",
       "Interval.is_subset",
       "Interval.is_superset",
       "Interval.isdisjoint",
@@ -95689,10 +95666,6 @@
       "DisjointUnion.is_Vector",
       "DisjointUnion.is_Wild",
       "FiniteSet.__and__",
-      "FiniteSet.__ge__",
-      "FiniteSet.__gt__",
-      "FiniteSet.__le__",
-      "FiniteSet.__lt__",
       "FiniteSet.__or__",
       "FiniteSet.__xor__",
       "FiniteSet.is_AlgebraicNumber",
@@ -96206,7 +96179,7 @@
      "testFile": "sympy/sets/tests/test_conditionset.py",
      "inCorpus": true,
      "caseCount": 77,
-     "gapCount": 39,
+     "gapCount": 34,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 16
@@ -96240,8 +96213,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "Contains.as_set",
-      "Contains.binary_symbols",
       "Contains.to_nnf"
      ],
      "pythonSpecificNames": [
@@ -96288,7 +96259,7 @@
      "testFile": "sympy/sets/tests/test_contains.py",
      "inCorpus": true,
      "caseCount": 14,
-     "gapCount": 7,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 2
@@ -97300,7 +97271,7 @@
      "testFile": "sympy/sets/tests/test_fancysets.py",
      "inCorpus": true,
      "caseCount": 769,
-     "gapCount": 129,
+     "gapCount": 126,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -98234,7 +98205,7 @@
      "testFile": "sympy/sets/tests/test_powerset.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 12,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 12,
@@ -98534,10 +98505,8 @@
       "Interval.intersection",
       "Interval.is_disjoint",
       "Interval.is_interval",
-      "Interval.is_left_unbounded",
       "Interval.is_proper_subset",
       "Interval.is_proper_superset",
-      "Interval.is_right_unbounded",
       "Interval.is_subset",
       "Interval.is_superset",
       "Interval.isdisjoint",
@@ -98823,10 +98792,6 @@
       "EmptySet.is_Vector",
       "EmptySet.is_Wild",
       "FiniteSet.__and__",
-      "FiniteSet.__ge__",
-      "FiniteSet.__gt__",
-      "FiniteSet.__le__",
-      "FiniteSet.__lt__",
       "FiniteSet.__or__",
       "FiniteSet.__xor__",
       "FiniteSet.is_AlgebraicNumber",
@@ -99115,7 +99080,7 @@
      "testFile": "sympy/sets/tests/test_sets.py",
      "inCorpus": true,
      "caseCount": 758,
-     "gapCount": 327,
+     "gapCount": 89,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -100137,7 +100102,7 @@
      "testFile": "sympy/simplify/tests/test_powsimp.py",
      "inCorpus": true,
      "caseCount": 159,
-     "gapCount": 2,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 1
@@ -100328,7 +100293,7 @@
      "testFile": "sympy/simplify/tests/test_simplify.py",
      "inCorpus": true,
      "caseCount": 379,
-     "gapCount": 71,
+     "gapCount": 70,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -100519,7 +100484,7 @@
      "testFile": "sympy/simplify/tests/test_trigsimp.py",
      "inCorpus": true,
      "caseCount": 224,
-     "gapCount": 9,
+     "gapCount": 8,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -101054,7 +101019,7 @@
      "testFile": "sympy/solvers/tests/test_inequalities.py",
      "inCorpus": true,
      "caseCount": 154,
-     "gapCount": 41,
+     "gapCount": 37,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -102290,7 +102255,7 @@
      "testFile": "sympy/solvers/tests/test_solvers.py",
      "inCorpus": true,
      "caseCount": 474,
-     "gapCount": 238,
+     "gapCount": 237,
      "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-skip": 1,
@@ -112347,7 +112312,7 @@
      "testFile": "sympy/tensor/tests/test_tensor.py",
      "inCorpus": true,
      "caseCount": 680,
-     "gapCount": 196,
+     "gapCount": 193,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -115312,7 +115277,7 @@
      "testFile": "sympy/vector/tests/test_dyadic.py",
      "inCorpus": true,
      "caseCount": 54,
-     "gapCount": 9,
+     "gapCount": 8,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -116377,7 +116342,7 @@
      "testFile": "sympy/vector/tests/test_vector.py",
      "inCorpus": true,
      "caseCount": 135,
-     "gapCount": 4,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,

@@ -1439,34 +1439,34 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
   it.fails("test_sympy_parser:60 (26)", () => {
     expect(sympyStr(parse('Q.even(x)', {}))).toBe('Q.even(x)');
   });
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda:
   //           parse_expr('x', standard_transformations))
   //   => None
   it.todo("test_sympy_parser:62");
-  // a function that did not come from the library
+  // the generated test does not reproduce the replay
   //   raises(TypeError, lambda:
   //           parse_expr('x', transformations=lambda x,y: 1))
   //   => None
   it.todo("test_sympy_parser:64");
-  // a function that did not come from the library
+  // the generated test does not reproduce the replay
   //   raises(TypeError, lambda:
   //           parse_expr('x', transformations=(lambda x,y: 1,)))
   //   => None
   it.todo("test_sympy_parser:66");
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda: parse_expr('x', transformations=((),)))
   //   => None
   it.todo("test_sympy_parser:68");
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda: parse_expr('x', {}, [], []))
   //   => None
   it.todo("test_sympy_parser:69");
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda: parse_expr('x', [], [], {}))
   //   => None
   it.todo("test_sympy_parser:70");
-  // a function that did not come from the library
+  // no library call
   //   raises(TypeError, lambda: parse_expr('x', [], [], {}))
   //   => None
   it.todo("test_sympy_parser:71");
@@ -1518,18 +1518,16 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
   it("test_local_dict_symbol_to_fcn:136", () => {
     expect(sympyStr(parse('foo(x)', { locals: { foo: SymFunction('bar') } }))).toBe('bar(x)');
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: parse_expr('foo(x)', local_dict=d))
-  //   => None
-  it.todo("test_local_dict_symbol_to_fcn:138");
-  // a value without provenance ([object Object] TypeRef)
-  //   assert parse_expr(text, global_dict=global_dict) == result
-  //   => Q & S
-  it.todo("test_global_dict:149");
-  // a value without provenance ([object Object] TypeRef)
-  //   assert obj == Symbol(name)
-  //   => __builtins__
-  it.todo("test_no_globals:170");
+  it("test_local_dict_symbol_to_fcn:138", () => {
+    const baz = new Sym('baz');
+    expect(() => parse('foo(x)', { locals: { foo: baz } })).toThrow(TypeError);
+  });
+  it("test_global_dict:149", () => {
+    expect(sympyStr(parse('Q & S', {}))).toBe('Q & S');
+  });
+  it("test_no_globals:170", () => {
+    expect(sympyStr(parse('__builtins__', {}))).toBe('__builtins__');
+  });
   // the error class TokenError is not public
   //   raises(TokenError, lambda: parse_expr('(()'))
   //   => None
@@ -1557,7 +1555,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
   it("test_recursive_evaluate_false_10560:192 (4)", () => {
     expect(equivalent(sympyStr(parse('x*-4*x', { evaluate: false })), 'x*(-4)*x', [], { fn: 'parse_expr', input: '\'x*-4*x\'' })).toBe(true);
   });
-  it.fails("test_function_evaluate_false:206", () => {
+  it("test_function_evaluate_false:206", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('Abs(0)', { evaluate: false }))).not.toBe('0');
@@ -1565,7 +1563,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (2)", () => {
+  it("test_function_evaluate_false:206 (2)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('im(0)', { evaluate: false }))).not.toBe('0');
@@ -1573,7 +1571,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (3)", () => {
+  it("test_function_evaluate_false:206 (3)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('re(0)', { evaluate: false }))).not.toBe('0');
@@ -1581,7 +1579,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (4)", () => {
+  it("test_function_evaluate_false:206 (4)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('sign(0)', { evaluate: false }))).not.toBe('0');
@@ -1589,7 +1587,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (5)", () => {
+  it("test_function_evaluate_false:206 (5)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('arg(0)', { evaluate: false }))).not.toBe('nan');
@@ -1597,7 +1595,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (6)", () => {
+  it("test_function_evaluate_false:206 (6)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('conjugate(0)', { evaluate: false }))).not.toBe('0');
@@ -1605,7 +1603,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (7)", () => {
+  it("test_function_evaluate_false:206 (7)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('acos(0)', { evaluate: false }))).not.toBe('pi/2');
@@ -1613,7 +1611,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (8)", () => {
+  it("test_function_evaluate_false:206 (8)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('acot(0)', { evaluate: false }))).not.toBe('pi/2');
@@ -1621,7 +1619,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (9)", () => {
+  it("test_function_evaluate_false:206 (9)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('acsc(0)', { evaluate: false }))).not.toBe('zoo');
@@ -1629,7 +1627,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (10)", () => {
+  it("test_function_evaluate_false:206 (10)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('asec(0)', { evaluate: false }))).not.toBe('zoo');
@@ -1637,7 +1635,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (11)", () => {
+  it("test_function_evaluate_false:206 (11)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('asin(0)', { evaluate: false }))).not.toBe('0');
@@ -1645,7 +1643,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (12)", () => {
+  it("test_function_evaluate_false:206 (12)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('atan(0)', { evaluate: false }))).not.toBe('0');
@@ -1653,7 +1651,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (13)", () => {
+  it("test_function_evaluate_false:206 (13)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('acosh(0)', { evaluate: false }))).not.toBe('I*pi/2');
@@ -1661,7 +1659,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (14)", () => {
+  it("test_function_evaluate_false:206 (14)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('acoth(0)', { evaluate: false }))).not.toBe('I*pi/2');
@@ -1669,7 +1667,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (15)", () => {
+  it("test_function_evaluate_false:206 (15)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('acsch(0)', { evaluate: false }))).not.toBe('zoo');
@@ -1677,7 +1675,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (16)", () => {
+  it("test_function_evaluate_false:206 (16)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('asech(0)', { evaluate: false }))).not.toBe('oo');
@@ -1685,7 +1683,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (17)", () => {
+  it("test_function_evaluate_false:206 (17)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('asinh(0)', { evaluate: false }))).not.toBe('0');
@@ -1693,7 +1691,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (18)", () => {
+  it("test_function_evaluate_false:206 (18)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('atanh(0)', { evaluate: false }))).not.toBe('0');
@@ -1701,7 +1699,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (19)", () => {
+  it("test_function_evaluate_false:206 (19)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('cos(0)', { evaluate: false }))).not.toBe('1');
@@ -1709,7 +1707,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (20)", () => {
+  it("test_function_evaluate_false:206 (20)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('cot(0)', { evaluate: false }))).not.toBe('zoo');
@@ -1717,7 +1715,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (21)", () => {
+  it("test_function_evaluate_false:206 (21)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('csc(0)', { evaluate: false }))).not.toBe('zoo');
@@ -1725,7 +1723,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (22)", () => {
+  it("test_function_evaluate_false:206 (22)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('sec(0)', { evaluate: false }))).not.toBe('1');
@@ -1733,7 +1731,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (23)", () => {
+  it("test_function_evaluate_false:206 (23)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('sin(0)', { evaluate: false }))).not.toBe('0');
@@ -1741,7 +1739,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (24)", () => {
+  it("test_function_evaluate_false:206 (24)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('tan(0)', { evaluate: false }))).not.toBe('0');
@@ -1749,7 +1747,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (25)", () => {
+  it("test_function_evaluate_false:206 (25)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('cosh(0)', { evaluate: false }))).not.toBe('1');
@@ -1757,7 +1755,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (26)", () => {
+  it("test_function_evaluate_false:206 (26)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('coth(0)', { evaluate: false }))).not.toBe('zoo');
@@ -1765,7 +1763,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (27)", () => {
+  it("test_function_evaluate_false:206 (27)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('csch(0)', { evaluate: false }))).not.toBe('zoo');
@@ -1773,7 +1771,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (28)", () => {
+  it("test_function_evaluate_false:206 (28)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('sech(0)', { evaluate: false }))).not.toBe('1');
@@ -1781,7 +1779,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (29)", () => {
+  it("test_function_evaluate_false:206 (29)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('sinh(0)', { evaluate: false }))).not.toBe('0');
@@ -1789,7 +1787,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (30)", () => {
+  it("test_function_evaluate_false:206 (30)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('tanh(0)', { evaluate: false }))).not.toBe('0');
@@ -1797,7 +1795,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (31)", () => {
+  it("test_function_evaluate_false:206 (31)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('exp(0)', { evaluate: false }))).not.toBe('1');
@@ -1805,7 +1803,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (32)", () => {
+  it("test_function_evaluate_false:206 (32)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('log(0)', { evaluate: false }))).not.toBe('zoo');
@@ -1813,7 +1811,7 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_function_evaluate_false:206 (33)", () => {
+  it("test_function_evaluate_false:206 (33)", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('sqrt(0)', { evaluate: false }))).not.toBe('0');
@@ -1821,11 +1819,15 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a function that did not come from the library
-  //   assert str(parse_expr('ln(0)', evaluate=False)) == 'log(0)'
-  //   => log(0)
-  it.todo("test_function_evaluate_false:207");
-  it.fails("test_function_evaluate_false:208", () => {
+  it("test_function_evaluate_false:207", () => {
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(parse('ln(0)', { evaluate: false }))).toBe('log(0)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_function_evaluate_false:208", () => {
     const unicode = pprintUseUnicode(false);
     try {
       expect(pyStr(parse('cbrt(0)', { evaluate: false }))).toBe('0**(1/3)');
@@ -1915,10 +1917,10 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
   it("test_split_symbols_numeric:306", () => {
     expect(sympyStr(parse('2**n * 3**n', {}))).toBe('6**n');
   });
-  it.fails("test_split_symbols_numeric:306 (2)", () => {
+  it("test_split_symbols_numeric:306 (2)", () => {
     expect(sympyStr(parse('2**n3**n', { transformations: ['implicitMultiplication', 'implicitApplication', 'functionExponentiation', 'splitSymbols'] }))).toBe('6**n');
   });
-  it.fails("test_split_symbols_numeric:309", () => {
+  it("test_split_symbols_numeric:309", () => {
     expect(sympyStr(parse('n12n34', { transformations: ['implicitMultiplication', 'implicitApplication', 'functionExponentiation', 'splitSymbols'] }))).toBe('408*n**2');
   });
   it("test_unicode_names:313", () => {
@@ -1927,31 +1929,31 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
   it("test_python3_features:317", () => {
     expect(sympyStr(parse('123_456', {}))).toBe('123456');
   });
-  it.fails("test_python3_features:318", () => {
+  it("test_python3_features:318", () => {
     expect(sympyStr(parse('1.2[3_4]', {}))).toBe('611/495');
   });
   it("test_python3_features:318 (2)", () => {
     expect(sympyStr(parse('1.2[34]', {}))).toBe('611/495');
   });
-  it.fails("test_python3_features:319", () => {
+  it("test_python3_features:319", () => {
     expect(sympyStr(parse('1.2[012_012]', {}))).toBe('400/333');
   });
   it("test_python3_features:319 (2)", () => {
     expect(sympyStr(parse('1.2[012012]', {}))).toBe('400/333');
   });
-  it.fails("test_python3_features:320", () => {
+  it("test_python3_features:320", () => {
     expect(sympyStr(parse('.[3_4]', {}))).toBe('34/99');
   });
   it("test_python3_features:320 (2)", () => {
     expect(sympyStr(parse('.[34]', {}))).toBe('34/99');
   });
-  it.fails("test_python3_features:321", () => {
+  it("test_python3_features:321", () => {
     expect(sympyStr(parse('.1[3_4]', {}))).toBe('133/990');
   });
   it("test_python3_features:321 (2)", () => {
     expect(sympyStr(parse('.1[34]', {}))).toBe('133/990');
   });
-  it.fails("test_python3_features:322", () => {
+  it("test_python3_features:322", () => {
     expect(sympyStr(parse('123_123.123_123[3_4]', {}))).toBe('12189189189211/99000000');
   });
   it("test_python3_features:322 (2)", () => {
@@ -1987,11 +1989,12 @@ describe("sympy/parsing/tests/test_sympy_parser.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a function that did not come from the library
+  // the generated test does not reproduce the replay
   //   raises(ValueError, lambda: parse_expr('x', {'': 1}))
   //   => None
   it.todo("test_issue_22822:369");
-  it.fails("test_issue_22822:371", () => {
-    expect(sympyStr(parse('some_parameter is None', {}))).toBe('True');
-  });
+  // the arguments do not type-check against the public API
+  //   assert parse_expr('some_parameter is None', data) is True
+  //   => True
+  it.todo("test_issue_22822:371");
 });

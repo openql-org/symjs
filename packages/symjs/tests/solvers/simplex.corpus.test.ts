@@ -20,10 +20,10 @@ describe("doctests of sympy.solvers.simplex", () => {
   //   linprog([1], [-1], [-1])
   //   => (1, [1])
   it.todo("linprog([1], [-1], [-1])");
-  // a callback parameter outside its callback
-  //   Matrix(3, 3, var('a:i'))
-  //   => Matrix([[a, b, c], [d, e, f], [g, h, i]])
-  it.todo("Matrix(3, 3, var('a:i'))");
+  it("Matrix(3, 3, var('a:i'))", () => {
+    const [a, b, c, d, e, f, g, h, i] = symbols('a b c d e f g h i');
+    expect(sympyStr(Matrix.row(a, b, c, d, e, f, g, h, i).reshape(3, 3))).toBe('Matrix([[a, b, c], [d, e, f], [g, h, i]])');
+  });
   it("(C*X - D)[0]", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Matrix.of([[add(1, x, y)]]).get(0, 0))).toBe('x + y + 1');

@@ -37,3 +37,10 @@ describe('mathematical equivalence checks', () => {
     expect(equivalent(`[${Array.from({ length: 5 }, () => roots[0]).join(', ')}]`, expected, [], { fn: 'solve' })).toBe(false);
   });
 });
+
+
+it('compares ordered Piecewise functions at real points while retaining complex probes', () => {
+  expect(equivalent('Piecewise((x + x, x < 0), (1, True))', 'Piecewise((2*x, x < 0), (1, True))')).toBe(true);
+  expect(equivalent('Piecewise((x, x < 0), (1, True))', 'Piecewise((2*x, x < 0), (1, True))')).toBe(false);
+  expect(equivalent('Abs(x)', 'x')).toBe(false);
+});

@@ -401,3 +401,32 @@ it('preserves printed polynomial monomials and checks exponent tuples exactly', 
   const p = { t: 'Poly', expr: x, gens: [x], domain: 'ZZ', pure: false };
   expect(runTestCase({ ...base, fn: '.LM', self: p, args: [], expected: '(2,)' }).status).toBe('fail');
 });
+
+it('replays matrix powers, indexing, identity predicates and matrix differentiation', () => {
+  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8')) as TestCase[];
+  const modules = ['sympy.matrices.tests.test_matrices', 'sympy.matrices.tests.test_matrixbase'];
+  const tests = ['test_diff_by_matrix', 'test_diff', 'test_power', 'test_fancy_index_matrix', 'test_is_Identity', 'test_nonvectorJacobian'];
+  const selected = cases.filter((c) => modules.includes(c.module) && tests.includes(c.test));
+  expect(selected).toHaveLength(233);
+  for (const c of selected) expect(['pass', 'equivalent'], `${c.module}:${c.test}:${c.line}`).toContain(runTestCase(c).status);
+});
+
+it('accepts the registered correct value of a truth-value assertion whose SymPy answer is wrong', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/assumptions.json', import.meta.url), 'utf8'));
+  const pick = (line: number): TestCase => {
+    const c = cases.find((x) => x.module === 'sympy.assumptions.tests.test_matrices' && x.line === line);
+    if (c === undefined) throw new Error(`missing case ${line}`);
+    return c;
+  };
+  // `is True` and truthy assertions answered None, and a falsy assertion answered False
+  expect(runTestCase(pick(86))).toEqual({ status: 'equivalent', got: 'None' });
+  expect(runTestCase(pick(145))).toEqual({ status: 'equivalent', got: 'None' });
+  expect(runTestCase(pick(225))).toEqual({ status: 'equivalent', got: 'False' });
+});
+
+it('treats != as structural: an equivalent but different expression satisfies it', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/core.json', import.meta.url), 'utf8'));
+  const c = cases.find((x) => x.module === 'sympy.core.tests.test_power' && x.test === 'test_Pow_signs' && x.line === 209);
+  if (c === undefined) throw new Error('missing case');
+  expect(runTestCase(c)).toEqual({ status: 'pass' });
+});

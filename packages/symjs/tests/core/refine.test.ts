@@ -748,3 +748,27 @@ it('keeps real powers of a real base sound when the base may be zero or negative
   ];
   for (const c of cases) expect(run(c), `${c[1]} under ${c[2]}`).toBe(c[3]);
 });
+
+it('decides rational, prime and finite facts of powers', () => {
+  const { ask, Q, And } = sj;
+  // fresh symbol names: ask caches its answers by expression
+  const u = new sj.Sym('u_pow'), v = new sj.Sym('v_pow'), w = new sj.Sym('w_pow'), k = new sj.Sym('k_pow');
+  // the reciprocal of a finite irrational number is irrational
+  expect(ask(Q.rational(sj.pow(u, -1)), Q.irrational(u))).toBe(false);
+  // a power of a composite number with an integer exponent is not prime
+  expect(ask(Q.prime(sj.pow(v, k)), And(Q.composite(v), Q.integer(k)))).toBe(false);
+  // a finite power: a nonzero finite base with a finite exponent is finite, 0**negative is not
+  expect(ask(Q.finite(sj.pow(w, k)), And(Q.nonzero(w), Q.finite(w), Q.finite(k)))).toBe(true);
+  expect(ask(Q.finite(sj.pow(u, v)), And(Q.zero(u), Q.negative(v), Q.finite(v)))).toBe(false);
+  expect(ask(Q.finite(sj.pow(v, w)), And(Q.finite(v), Q.finite(w)))).toBe('unknown');
+});
+
+it('an infinite base gives a finite power for a negative exponent and an infinite one for a positive exponent', () => {
+  // symbols with their own assumptions and names no other test uses (ask caches by expression)
+  const base = new sj.Sym('infinite_power_base', { infinite: true });
+  const exponent = new sj.Sym('negative_power_exponent', { negative: true });
+  expect(sj.ask(sj.Q.finite(sj.pow(base, exponent)))).toBe(true);
+  // and with a positive exponent an infinite power
+  const positive = new sj.Sym('positive_power_exponent', { positive: true });
+  expect(sj.ask(sj.Q.finite(sj.pow(base, positive)))).toBe(false);
+});

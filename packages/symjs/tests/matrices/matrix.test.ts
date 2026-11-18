@@ -6,9 +6,10 @@
 // The Matrix class: construction, arithmetic, indexing, slicing and the dense matrix methods. Expected
 // values are SymPy 1.14 results.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { type Expr, type ExprLike, fn, type FnName, I, Matrix, mul, MutableMatrix, NonInvertibleMatrixError, NonSquareMatrixError, parse, pi, Rational, ShapeError, sqrt, symbols } from '../../src';
 import { inspect } from 'node:util';
+import { sympifyMethod } from '../../src/core/sympify';
 
 const [a, b, c, d] = symbols('a b c d');
 const [x, lam] = symbols('x lambda');
@@ -104,15 +105,16 @@ describe('arithmetic', () => {
     expect(s(M.pow(3))).toBe('Matrix([[37, 54], [81, 118]])');
     // SymPy: NonSquareMatrixError
     expect(() => Matrix.row(1, 2, 3).pow(2)).toThrow(RangeError);
-    // non-integer powers are not supported (SymPy computes them from the Jordan form)
-    expect(() => M.pow(0.5)).toThrow(RangeError);
+    const root = Matrix.of([[5, 4], [4, 5]]).pow(Rational.of(1, 2));
+    expect(s(root)).toBe('Matrix([[2, 1], [1, 2]])');
+    expect(root.mul(root).equals(Matrix.of([[5, 4], [4, 5]]))).toBe(true);
     const [n] = symbols('n');
     expect(s(Matrix.diag(2, 3).pow(n))).toBe('Matrix([[2**n, 0], [0, 3**n]])');
     expect(s(Matrix.of([[4]]).pow(Rational.of(1, 2)))).toBe('Matrix([[2]])');
     expect(s(M.pow(Rational.of(1)))).toBe(s(M));
     expect(s(M.pow(Rational.of(2)))).toBe(s(M.pow(2)));
     expect(s(M.pow(parse('2.0')))).toBe(s(M.pow(2)));
-    expect(() => M.pow(n)).toThrow('exponent must be an integer');
+    expect(s(Matrix.of([[1, a], [0, 1]]).pow(n))).toBe('Matrix([[1, a*n], [0, 1]])');
   });
 
   it('products keep their entries unexpanded, powers expand them (SymPy dotprodsimp)', () => {
@@ -381,4 +383,78 @@ it('free symbols and undecidable Hermitian matrices', async () => {
   expect(Matrix.of([[1,I],[I.neg(),1]]).isHermitian()).toBe(true);
   expect(Matrix.of([[1,I],[I,1]]).isHermitian()).toBe(false);
   expect(Matrix.of([[I.mul(2),I],[I.neg(),1]]).isHermitian()).toBe(false);
+});
+
+
+describe('matrix corpus gaps', () => {
+  it('identity detection is structural and square', () => {
+    expect(Matrix.eye(3).isIdentity).toBe(true);
+    expect(Matrix.zeros(0).isIdentity).toBe(true);
+    expect(Matrix.row(1, 0).isIdentity).toBe(false);
+    expect(Matrix.zeros(2).isIdentity).toBe(false);
+    expect(Matrix.of([[1, x], [0, 1]]).isIdentity).toBe(false);
+    expect(Matrix.of([[parse('1.0')]]).isIdentity).toBe(false);
+  });
+
+  it('rejects invalid dimensions and nonintegral indices', () => {
+    for (const [r, c] of [[-1, 2], [2, -1], [0.5, 2], [2, 0.5], [NaN, 1], [1, NaN]] as const) {
+      expect(() => Matrix.zeros(r, c)).toThrow(RangeError);
+      expect(() => Matrix.fromFunction(r, c, () => 0)).toThrow(RangeError);
+    }
+    expect(() => M.get(0.5, 0)).toThrow(RangeError);
+    expect(() => M.get(0, 0.5)).toThrow(RangeError);
+  });
+
+  it('uses repeated eigenvalues for Jordan powers', () => {
+    const [n] = symbols('n');
+    expect(s(Matrix.of([[1, 0], [1, 1]]).pow(Rational.of(1, 2)))).toBe('Matrix([[1, 0], [1/2, 1]])');
+    expect(s(Matrix.of([[b, a], [0, b]]).pow(n))).toBe('Matrix([[b**n, a*b**(n - 1)*n], [0, b**n]])');
+    const jordan = Matrix.of([[1, 1, 0], [0, 1, 1], [0, 0, 1]]);
+    const root = jordan.pow(Rational.of(1, 2));
+    expect(root.mul(root).equals(jordan)).toBe(true);
+    const projector = Matrix.of([[Rational.of(1, 2), Rational.of(1, 2)], [Rational.of(1, 2), Rational.of(1, 2)]]);
+    expect(projector.pow(Rational.of(1, 2)).equals(projector)).toBe(true);
+    expect(() => projector.pow(n)).toThrow(NonInvertibleMatrixError);
+    expect(() => Matrix.of([[0, 1], [0, 0]]).pow(Rational.of(1, 2))).toThrow(NonInvertibleMatrixError);
+  });
+});
+
+it('covers matrix evaluation and polynomial interpolation edge cases', () => {
+  expect(s(M.commutator(Matrix.eye(2)))).toBe('Matrix([[0, 0], [0, 0]])');
+  expect(Matrix.row(1, 0).isUnitary()).toBe(false);
+  expect(Matrix.of([[x]]).lambdify([x])(2)).toEqual([[{ re: 2, im: 0 }]]);
+  const numeric = Matrix.of([[1, 0], [0, 1]]);
+  expect(numeric.pow(parse('1/2')).isIdentity).toBe(true);
+  const [n] = symbols('n', { integer: true, nonnegative: true });
+  const nilpotent = Matrix.of([[0, 1], [0, 0]]);
+  expect(s(nilpotent.pow(n))).toContain('KroneckerDelta(1, n)');
+  const unknown = Matrix.of([[1, 1], [0, 1]]);
+  vi.spyOn(unknown, 'eigenvals').mockReturnValue([]);
+  expect(() => unknown.pow(parse('1/2'))).toThrow('could not determine all eigenvalues');
+  const projection = Matrix.of([[1, 0, 0], [0, Rational.of(1, 2), Rational.of(1, 2)], [0, Rational.of(1, 2), Rational.of(1, 2)]]);
+  expect(projection.pow(Rational.of(1, 2)).equals(projection)).toBe(true);
+  expect(Matrix.of([[1, 2], [3, 4]]).permute([1, 0, 2]).equals(Matrix.of([[3, 4], [1, 2]]))).toBe(true);
+});
+
+it('validates protected construction and implements the matrix sympify protocol', () => {
+  class InvalidMatrix extends Matrix {
+    constructor() { super(1, 1, []); }
+  }
+  expect(() => new InvalidMatrix()).toThrow('data does not match');
+  expect(M[sympifyMethod]()).toBe(M);
+  expect(s(Matrix.of([[1, 0], [1, 1]]).pow(parse('0.5')))).toBe('Matrix([[1, 0], [0.500000000000000, 1]])');
+  const [negative] = symbols('negative', { integer: true, negative: true });
+  expect(() => Matrix.of([[0, 1], [0, 0]]).pow(negative)).toThrow(NonInvertibleMatrixError);
+});
+
+it('tests floating entries for zero and computes unitarity of square matrices', () => {
+  expect(Matrix.of([[parse('0.0'), parse('1.0'), x]]).values().map(String)).toEqual(['1.00000000000000', 'x']);
+  expect(Matrix.eye(2).isUnitary()).toBe(true);
+  expect(M.isUnitary()).toBe(false);
+});
+
+it('validates minor coordinates and insertion positions', () => {
+  expect(() => M.minor(4, 5)).toThrow(RangeError);
+  expect(() => M.minorSubmatrix(4, 5)).toThrow(RangeError);
+  expect(() => M.rowInsert(4.7, M)).toThrow(TypeError);
 });

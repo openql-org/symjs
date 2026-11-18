@@ -422,3 +422,39 @@ describe('parse: SymPy 1.14 sympy_parser cases', () => {
     expect(f(x)).toBeTruthy();
   });
 });
+
+describe('unevaluated function applications', () => {
+  it('preserves elementary calls and root powers', () => {
+    for (const name of ['Abs', 'im', 're', 'sign', 'arg', 'conjugate', 'acos', 'acot', 'acsc', 'asec', 'asin', 'atan', 'acosh', 'acoth', 'acsch', 'asech', 'asinh', 'atanh', 'cos', 'cot', 'csc', 'sec', 'sin', 'tan', 'cosh', 'coth', 'csch', 'sech', 'sinh', 'tanh', 'log']) {
+      expect(s(`${name}(0)`, { evaluate: false })).toBe(`${name}(0)`);
+    }
+    expect(s('ln(0)', { evaluate: false })).toBe('log(0)');
+    expect(s('sqrt(0)', { evaluate: false })).toBe('sqrt(0)');
+    expect(s('cbrt(0)', { evaluate: false })).toBe('0**(1/3)');
+    expect(s('exp(0)', { evaluate: false })).toBe('exp(0)');
+    expect(s('cbrt(8)')).toBe('2');
+    expect(s('sin 0', { evaluate: false, transformations: 'implicit' })).toBe('sin(0)');
+    expect(s('sin**2(0)', { evaluate: false, transformations: 'implicit' })).toBe('sin(0)**2');
+    expect(s('f(0)', { evaluate: false })).toBe('f(0)');
+    expect(s('factorial(3)', { evaluate: false })).toBe('6');
+  });
+});
+
+it('parses cube roots and Python digit separators in repeating decimals', () => {
+  expect(s('exp(0)')).toBe('1');
+  expect(s('123_123.123_123[3_4]')).toBe('12189189189211/99000000');
+  expect(s('1.2[3_4]')).toBe('611/495');
+  expect(s('1.2[012_012]')).toBe('400/333');
+  expect(s('.[3_4]')).toBe('34/99');
+  expect(s('.1[3_4]')).toBe('133/990');
+});
+
+it('splits numeric runs into complete integer factors before parsing powers', () => {
+  expect(s('2**n3**n', { transformations: 'all' })).toBe('6**n');
+  expect(s('n12n34', { transformations: 'all' })).toBe('408*n**2');
+  expect(s('x12', { transformations: 'all', locals: { x12: 5 } })).toBe('5');
+  expect(s('f12(x)', { transformations: 'all', locals: { f12: (x) => x } })).toBe('x');
+  expect(s('x12', { transformations: 'all', splitSymbols: () => false })).toBe('x12');
+  expect(s('x12', { transformations: 'implicit', splitSymbols: () => true })).toBe('12*x');
+  expect(s('x12', { transformations: 'standard' })).toBe('x12');
+});

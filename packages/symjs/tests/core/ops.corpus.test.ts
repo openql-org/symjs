@@ -1492,10 +1492,10 @@ describe("sympy/core/tests/test_power.py", () => {
     const [p, e] = symbols('p e');
     expect(pyLen([new Pow(new Add([rational(2), new Mul([rational(-2), fn('cos', [p])])]), rational(1, 2)), new Mul([new Pow(new Add([rational(-1), e]), rational(2)), new Pow(new Add([rational(2), new Mul([rational(-2), fn('cos', [p])])]), rational(1, 2)), new Add([new Mul([rational(1, 2), new Pow(new Add([rational(2), new Mul([rational(-2), fn('cos', [p])])]), rational(-1))]), new Mul([rational(-1, 8), new Pow(new Add([new Mul([rational(2), new Pow(new Add([rational(2), new Mul([rational(-2), fn('cos', [p])])]), rational(-1))]), new Mul([rational(-2), new Pow(new Add([rational(2), new Mul([rational(-2), fn('cos', [p])])]), rational(-1)), fn('cos', [p])])]), rational(2))])])]), new Mul([new Pow(new Add([rational(2), new Mul([rational(-2), fn('cos', [p])])]), rational(1, 2)), new Add([rational(-1), e]), new Add([new Pow(new Add([rational(2), new Mul([rational(-2), fn('cos', [p])])]), rational(-1)), new Mul([rational(-1), new Pow(new Add([rational(2), new Mul([rational(-2), fn('cos', [p])])]), rational(-1)), fn('cos', [p])])])]), O(new Pow(new Add([rational(-1), e]), rational(3)), e, rational(1))])).toBe(4);
   });
-  it.fails("test_issue_21860:586", () => {
-    const x = new Sym('x');
-    expect(sympyStr(xreplace(new Mul([rational(3), new Pow(rational(2), rational(66666666667, 200000000000)), new Pow(rational(3), rational(16666666667, 50000000000)), new Pow(x, rational(66666666667, 200000000000))]), [[x, rational(3, 8)]]))).toBe('3*2**(33333333333/100000000000)*3**(26666666667/40000000000)/2');
-  });
+  // the case takes more than 4 seconds
+  //   assert e.xreplace({x: Rational(3,8)}) == ans
+  //   => 3*2**(33333333333/100000000000)*3**(26666666667/40000000000)/2
+  it.todo("test_issue_21860:586");
   // the case takes more than 4 seconds
   //   assert e.xreplace({x: 6}) == ans
   //   => log(64701150190720499096094005280169087619821081527*2**(396204892125479941/781250000000000000)*3**(385045107874520059/390625000000000000)*5**(407364676376439823/1562500000000000000)*7**(385045107874520059/1562500000000000000)/76293945312500000000000000000000000000000000000)

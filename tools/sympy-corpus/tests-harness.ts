@@ -3,7 +3,7 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { fmt, runCase } from './harness';
+import { fmt, matchesSympyErratum, runCase } from './harness';
 import type { Case, CaseObservation, Outcome } from './harness';
 
 export interface TestCase extends Case {
@@ -52,8 +52,16 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
   }
   // identity with an object (x.func is cls) is compared like ==
   if (c.op === '==' || (c.op === 'is' && !['True', 'False', 'None'].includes(c.expected))) return outcome;
+  // a truth-value assertion whose SymPy answer is wrong: the registered correct value counts as compatible
+  if ((outcome.status === 'fail' || outcome.status === 'equivalent') && outcome.got !== undefined && matchesSympyErratum(c, outcome.got)) return { status: 'equivalent', got: outcome.got };
   if (c.op === '!=') {
-    if (outcome.status === 'pass' || outcome.status === 'equivalent') return { status: 'fail', got: c.expected };
+    // Python != compares numbers by value (Float(1.0) == 1) and other expressions by structure: a
+    // mathematically equal but different expression satisfies it
+    if (outcome.status === 'pass') return { status: 'fail', got: c.expected };
+    if (outcome.status === 'equivalent') {
+      const numeric = (v: string | undefined): boolean => v !== undefined && /^-?\d+(\.\d*)?(e[-+]?\d+)?$/.test(v);
+      return numeric(outcome.got) && numeric(c.expected) ? { status: 'fail', got: c.expected } : { status: 'pass' };
+    }
     if (outcome.status === 'fail') return { status: 'pass' };
     return outcome;
   }

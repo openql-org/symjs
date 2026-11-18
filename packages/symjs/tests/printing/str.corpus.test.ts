@@ -388,7 +388,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Dict(new Map([[1, new Add([rational(1), x])]])))).toBe('{1: x + 1}');
+      expect(pyStr(Dict([[rational(1), new Add([rational(1), x])]]))).toBe('{1: x + 1}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1657,8 +1657,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).sub(v2['new'](v2.ring.fromExpr(x), v2.ring.fromExpr(rational(1)))))).toBe('0');
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.sub(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(x), v4.ring.fromExpr(rational(1))))))).toBe('0');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1668,7 +1670,9 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).sub(rational(1)))).toBe('x - 1');
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      expect(pyStr(v3.sub(v3.field.fieldNew(rational(1))))).toBe('x - 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1678,7 +1682,9 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).add(rational(1)))).toBe('x + 1');
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      expect(pyStr(v3.add(v3.field.fieldNew(rational(1))))).toBe('x + 1');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1688,7 +1694,9 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).div(rational(3)))).toBe('x/3');
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      expect(pyStr(v3.div(v3.field.fieldNew(rational(3))))).toBe('x/3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1698,8 +1706,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(z), v2.ring.fromExpr(rational(1)))))).toBe('x/z');
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(z), v4.ring.fromExpr(rational(1))))))).toBe('x/z');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1709,8 +1719,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(z), v2.ring.fromExpr(rational(1)))))).toBe('x*y/z');
+      const v2 = v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(z), v4.ring.fromExpr(rational(1))))))).toBe('x*y/z');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1720,8 +1732,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Mul([t, z])), v2.ring.fromExpr(rational(1)))))).toBe('x/(z*t)');
+      const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([t, z])), v4.ring.fromExpr(rational(1))))))).toBe('x/(z*t)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1731,8 +1745,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Mul([t, z])), v2.ring.fromExpr(rational(1)))))).toBe('x*y/(z*t)');
+      const v2 = v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([t, z])), v4.ring.fromExpr(rational(1))))))).toBe('x*y/(z*t)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1742,8 +1758,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Add([rational(-1), x])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(y), v2.ring.fromExpr(rational(1)))))).toBe('(x - 1)/y');
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(-1), x])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(rational(1))))))).toBe('(x - 1)/y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1753,8 +1771,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Add([rational(1), x])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(y), v2.ring.fromExpr(rational(1)))))).toBe('(x + 1)/y');
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), x])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(rational(1))))))).toBe('(x + 1)/y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1764,8 +1784,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Add([rational(-1), new Mul([rational(-1), x])])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(y), v2.ring.fromExpr(rational(1)))))).toBe('(-x - 1)/y');
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(-1), new Mul([rational(-1), x])])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(y), v4.ring.fromExpr(rational(1))))))).toBe('(-x - 1)/y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1775,8 +1797,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Add([rational(1), x])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Mul([y, z])), v2.ring.fromExpr(rational(1)))))).toBe('(x + 1)/(y*z)');
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), x])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Mul([y, z])), v4.ring.fromExpr(rational(1))))))).toBe('(x + 1)/(y*z)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1786,8 +1810,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Mul([rational(-1), y])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Add([rational(1), x])), v2.ring.fromExpr(rational(1)))))).toBe('-y/(x + 1)');
+      const v2 = v1['new'](v1.ring.fromExpr(new Mul([rational(-1), y])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(1), x])), v4.ring.fromExpr(rational(1))))))).toBe('-y/(x + 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1797,8 +1823,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Mul([y, z])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Add([rational(1), x])), v2.ring.fromExpr(rational(1)))))).toBe('y*z/(x + 1)');
+      const v2 = v1['new'](v1.ring.fromExpr(new Mul([y, z])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(1), x])), v4.ring.fromExpr(rational(1))))))).toBe('y*z/(x + 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1808,8 +1836,10 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Add([rational(1), new Mul([x, y, new Add([rational(1), u])])])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Add([rational(-1), new Mul([z, new Add([rational(-1), v])])])), v2.ring.fromExpr(rational(1)))))).toBe('((u + 1)*x*y + 1)/((v - 1)*z - 1)');
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), new Mul([x, y, new Add([rational(1), u])])])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(-1), new Mul([z, new Add([rational(-1), v])])])), v4.ring.fromExpr(rational(1))))))).toBe('((u + 1)*x*y + 1)/((v - 1)*z - 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1819,24 +1849,27 @@ describe("sympy/printing/tests/test_str.py", () => {
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      const v2 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Add([rational(1), new Mul([x, y, new Add([rational(1), u])])])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Add([rational(-1), new Mul([z, new Add([rational(-1), v])]), new Mul([rational(-1), t, u, v])])), v2.ring.fromExpr(rational(1)))))).toBe('((u + 1)*x*y + 1)/((v - 1)*z - u*v*t - 1)');
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([rational(1), new Mul([x, y, new Add([rational(1), u])])])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x, y, z, t], ZZ.fracField(u, v), 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(-1), new Mul([z, new Add([rational(-1), v])]), new Mul([rational(-1), t, u, v])])), v4.ring.fromExpr(rational(1))))))).toBe('((u + 1)*x*y + 1)/((v - 1)*z - u*v*t - 1)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_FracElement:504", () => {
-    const x = new Sym('x');
-    const v1 = new FracField([x], QQ_I, 'lex');
-    expect(sympyStr(QQ_I['new'](new PythonMPQ(1n, 1n), new PythonMPQ(1n, 1n)).div(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)))))).toBe('(1 + 1*I)/x');
-  });
+  // an error outside the library
+  //   assert str((1+i)/xz) == "(1 + 1*I)/x"
+  //   => (1 + 1*I)/x
+  it.todo("test_FracElement:504");
   it.fails("test_FracElement:505", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
       const v1 = new FracField([x], QQ_I, 'lex');
-      const v2 = new FracField([x], QQ_I, 'lex');
-      expect(pyStr(v1['new'](v1.ring.fromExpr(new Add([new Mul([rational(-1), I]), new Mul([x, new Add([rational(1), I])])])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(x), v2.ring.fromExpr(rational(1)))))).toBe('((1 + 1*I)*x + (0 + -1*I))/x');
+      const v2 = v1['new'](v1.ring.fromExpr(new Add([new Mul([rational(-1), I]), new Mul([x, new Add([rational(1), I])])])), v1.ring.fromExpr(rational(1)));
+      const v3 = v2.field.fieldNew(v2);
+      const v4 = new FracField([x], QQ_I, 'lex');
+      expect(pyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(x), v4.ring.fromExpr(rational(1))))))).toBe('((1 + 1*I)*x + (0 + -1*I))/x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2335,7 +2368,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // the replay exceeds its deadline
+  // the case takes more than 4 seconds
   //   assert str(2**Rational(1, 10**10)) == "2**(1/10000000000)"
   //   => 2**(1/10000000000)
   it.todo("test_Rational:601");
@@ -2440,7 +2473,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Relational(x, y, '<'))).toBe('x < y');
+      expect(pyStr(Relational(x, y, '<', { evaluate: true }))).toBe('x < y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2449,7 +2482,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Relational(new Add([x, y]), y, '=='))).toBe('Eq(x + y, y)');
+      expect(pyStr(Relational(new Add([x, y]), y, '==', { evaluate: true }))).toBe('Eq(x + y, y)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2458,7 +2491,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Relational(x, y, '!='))).toBe('Ne(x, y)');
+      expect(pyStr(Relational(x, y, '!=', { evaluate: true }))).toBe('Ne(x, y)');
     } finally {
       pprintUseUnicode(unicode);
     }

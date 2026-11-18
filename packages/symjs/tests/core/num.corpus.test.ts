@@ -1377,70 +1377,54 @@ describe("sympy/core/tests/test_numbers.py", () => {
   it("test_Infinity_inequations:927", () => {
     expect(sympyStr(Lt(new Pow(E, rational(-3)), oo))).toBe('True');
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: oo < I)
-  //   => None
-  it.todo("test_Infinity_inequations:929");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: oo <= I)
-  //   => None
-  it.todo("test_Infinity_inequations:930");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: oo > I)
-  //   => None
-  it.todo("test_Infinity_inequations:931");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: oo >= I)
-  //   => None
-  it.todo("test_Infinity_inequations:932");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: -oo < I)
-  //   => None
-  it.todo("test_Infinity_inequations:933");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: -oo <= I)
-  //   => None
-  it.todo("test_Infinity_inequations:934");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: -oo > I)
-  //   => None
-  it.todo("test_Infinity_inequations:935");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: -oo >= I)
-  //   => None
-  it.todo("test_Infinity_inequations:936");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: I < oo)
-  //   => None
-  it.todo("test_Infinity_inequations:938");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: I <= oo)
-  //   => None
-  it.todo("test_Infinity_inequations:939");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: I > oo)
-  //   => None
-  it.todo("test_Infinity_inequations:940");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: I >= oo)
-  //   => None
-  it.todo("test_Infinity_inequations:941");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: I < -oo)
-  //   => None
-  it.todo("test_Infinity_inequations:942");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: I <= -oo)
-  //   => None
-  it.todo("test_Infinity_inequations:943");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: I > -oo)
-  //   => None
-  it.todo("test_Infinity_inequations:944");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: I >= -oo)
-  //   => None
-  it.todo("test_Infinity_inequations:945");
+  it("test_Infinity_inequations:929", () => {
+    expect(() => Lt(oo, I)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:930", () => {
+    expect(() => Le(oo, I)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:931", () => {
+    expect(() => Gt(oo, I)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:932", () => {
+    expect(() => Ge(oo, I)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:933", () => {
+    expect(() => Lt(S.NegativeInfinity, I)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:934", () => {
+    expect(() => Le(S.NegativeInfinity, I)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:935", () => {
+    expect(() => Gt(S.NegativeInfinity, I)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:936", () => {
+    expect(() => Ge(S.NegativeInfinity, I)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:938", () => {
+    expect(() => Lt(I, oo)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:939", () => {
+    expect(() => Le(I, oo)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:940", () => {
+    expect(() => Gt(I, oo)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:941", () => {
+    expect(() => Ge(I, oo)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:942", () => {
+    expect(() => Lt(I, S.NegativeInfinity)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:943", () => {
+    expect(() => Le(I, S.NegativeInfinity)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:944", () => {
+    expect(() => Gt(I, S.NegativeInfinity)).toThrow(TypeError);
+  });
+  it("test_Infinity_inequations:945", () => {
+    expect(() => Ge(I, S.NegativeInfinity)).toThrow(TypeError);
+  });
   it("test_Infinity_inequations:947", () => {
     expect(sympyStr(Gt(oo, S.NegativeInfinity))).toBe('True');
   });

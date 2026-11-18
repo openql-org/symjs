@@ -131,7 +131,7 @@ export interface MathMLMatrix {
 }
 
 /** What the MathML printers print: expressions (numbers are sympified), matrices and lists. */
-export type MathMLPrintable = Expr | number | bigint | MathMLMatrix | readonly MathMLPrintable[];
+export type MathMLPrintable = Expr | number | bigint | boolean | MathMLMatrix | readonly MathMLPrintable[];
 
 const isList = (v: MathMLPrintable): v is readonly MathMLPrintable[] => Array.isArray(v);
 
@@ -212,6 +212,7 @@ class ContentPrinter {
   constructor(readonly s: Settings) {}
 
   print(v: MathMLPrintable): MathMLElement {
+    if (typeof v === 'boolean') return this.expr(new BoolAtom(v));
     if (typeof v === 'number' || typeof v === 'bigint') return this.expr(sympify(v));
     if (isList(v)) return el('list', ...v.map((x) => this.print(x)));
     if (v instanceof Expr) return this.expr(v);
@@ -394,6 +395,8 @@ const PRESENTATION_TAGS: Readonly<Record<string, string>> = {
 
 /** SymPy `precedence_traditional`. */
 const precedence = (e: Expr): number => {
+  if (e instanceof ExtensionExpr && e.name === 'VectorAdd') return PREC.ADD;
+  if (e instanceof ExtensionExpr && e.name === 'VectorMul') return PREC.MUL;
   if (e instanceof Integral || e instanceof Concrete) return PREC.MUL;
   return declaredPrecedence(e, 'latexPrecedence') ?? strPrecedence(e);
 };
@@ -412,11 +415,21 @@ const sortedArgs = (args: readonly Expr[]): Expr[] => [...args].sort((u, v) => c
 /** SymPy `is_Boolean`: a boolean function or atom (a relation is not one). */
 const isBoolean = (e: Expr): boolean => e instanceof BoolOp || e instanceof BoolAtom;
 
+/** Coordinate basis nodes expose their index and coordinate system to the printers. */
+interface BasisNode extends Expr {
+  readonly index: number;
+  readonly system: { readonly sysName: string; readonly vectorNames: readonly string[]; readonly variableNames: readonly string[] };
+}
+const isBasisNode = (e: Expr): e is BasisNode => e instanceof Sym ? e.sortClass === 'BaseScalar' : e instanceof ExtensionExpr && e.name === 'BaseVector';
+
+const isComponentVector = (e: Expr): e is ExtensionExpr & { readonly components: Iterable<readonly [Expr, Expr]> } => e instanceof ExtensionExpr && (e.name === 'VectorAdd' || e.name === 'VectorMul');
+
 /** SymPy MathMLPresentationPrinter. */
 class PresentationPrinter {
   constructor(readonly s: Settings) {}
 
   print(v: MathMLPrintable): MathMLElement {
+    if (typeof v === 'boolean') return this.expr(new BoolAtom(v));
     if (typeof v === 'number' || typeof v === 'bigint') return this.expr(sympify(v));
     // SymPy prints a list like a tuple (_print_list is not defined: the tuple printer of the base printer)
     if (isList(v)) return this.parenComma(v.map((x) => this.print(x)));
@@ -469,6 +482,35 @@ class PresentationPrinter {
   }
 
   expr(e: Expr): MathMLElement {
+    if (isBasisNode(e)) {
+      const vector = e instanceof ExtensionExpr;
+      const bold = (name: string): MathMLElement => mi(name).set('mathvariant', 'bold');
+      const name = bold(at(vector ? e.system.vectorNames : e.system.variableNames, e.index));
+      return el('msub', vector ? el('mover', name, mo('^')) : name, bold(e.system.sysName));
+    }
+    if (e instanceof ExtensionExpr) {
+      if (e.name === 'VectorZero') return el('mover', mi('0').set('mathvariant', 'bold'), mo('^'));
+      if (isComponentVector(e)) {
+        const row = el('mrow');
+        const components = [...e.components].sort(([a], [b]) => Number(str(a) > str(b)) - Number(str(a) < str(b)));
+        components.forEach(([basis, coeff], i) => {
+          if (coeff instanceof Rational && coeff.p === -1n && coeff.q === 1n) row.append(mo('-'), this.expr(basis));
+          else {
+            if (i) row.append(mo('+'));
+            if (!isOne(coeff)) row.append(el('mrow', mo('('), this.expr(coeff), mo(')')), mo('&InvisibleTimes;'));
+            row.append(this.expr(basis));
+          }
+        });
+        return row;
+      }
+      if (e.name === 'Cross' || e.name === 'Dot') return el('mrow', this.parenthesize(at(e.args, 0), PREC.MUL), mo(e.name === 'Cross' ? '&#xD7;' : '&#xB7;'), this.parenthesize(at(e.args, 1), PREC.MUL));
+      if (['Curl', 'Divergence', 'Gradient', 'Laplacian'].includes(e.name)) {
+        const row = el('mrow', mo(e.name === 'Laplacian' ? '&#x2206;' : '&#x2207;'));
+        if (e.name === 'Curl' || e.name === 'Divergence') row.append(mo(e.name === 'Curl' ? '&#xD7;' : '&#xB7;'));
+        return row.append(this.parenthesize(at(e.args, 0), PREC.MUL));
+      }
+    }
+
     if (e instanceof Rational) return e.q === 1n ? el('mn', String(e.p)) : this.rational(e, this.s.foldShortFrac);
     if (e instanceof Float) return this.float(e);
     if (e instanceof Constant) {

@@ -786,9 +786,9 @@ describe("sympy/simplify/tests/test_powsimp.py", () => {
     const n = new Sym('n', { odd: true });
     expect(sympyStr(powsimp(new Pow(rational(-1), new Mul([rational(1, 2), n])), {}))).toBe('I**n');
   });
-  it.fails("test_issue_10195:324", () => {
+  it("test_issue_10195:324", () => {
     const n = new Sym('n', { odd: true });
-    expect(sympyStr(powsimp(new Pow(rational(-1), new Mul([rational(3, 2), n])), {}))).toBe('-I**n');
+    expect(equivalent(sympyStr(powsimp(new Pow(rational(-1), new Mul([rational(3, 2), n])), {})), '-I**n', [n], { fn: 'powsimp', input: '(-1)**(3*n/2)' })).toBe(true);
   });
   it("test_issue_10195:325", () => {
     const n = new Sym('n', { odd: true });

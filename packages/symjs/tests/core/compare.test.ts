@@ -41,3 +41,14 @@ describe('SymPy args and Basic.compare', () => {
     expect(basicCompare(sj.MatrixSymbol('A', 2, 2).args[0]!, sj.MatrixSymbol('B', 2, 2).args[0]!)).toBe(-1);
   });
 });
+
+it('identifies set constructors used by unchanged', () => {
+  expect(sympyClassName(sj.PowerSet(sj.EmptySet))).toBe('PowerSet');
+  expect(sj.unchanged(sj.PowerSet, sj.EmptySet)).toBe(true);
+});
+
+it('compares equal contents without relying on object identity', () => {
+  expect(basicCompare(new Sym('u'), new Sym('u'))).toBe(0);
+  expect(basicCompare(sj.Rational.of(2n, 3n), sj.Rational.of(3n, 4n))).toBe(-1);
+  expect(basicCompare(new Float(1.5), new Float(1.5))).toBe(0);
+});

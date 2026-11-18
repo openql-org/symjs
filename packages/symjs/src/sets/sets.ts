@@ -37,6 +37,7 @@ import { xreplace } from '../core/traverse';
 import { gcdext } from '../ntheory/intutil';
 import { gcd } from '../core/numbers';
 import { registerRewrite } from '../simplify/rewrite';
+import { floatToString } from '../numeric/mpf';
 
 /** Base class of all sets. */
 export abstract class SetExpr extends Expr {
@@ -46,11 +47,17 @@ export abstract class SetExpr extends Expr {
   override sub(other: ExprLike): SetExpr { return complement(this, cast(sympify(other), SetExpr)); }
   override mul(other: ExprLike): SetExpr { return productSet(this, cast(sympify(other), SetExpr)); }
   abstract get className(): string;
+  /** Set order is inclusion, with strict order excluding equality. */
+  le(other: SetExpr): Truth { return isSubset(this, other) ?? 'unknown'; }
+  ge(other: SetExpr): Truth { return isSubset(other, this) ?? 'unknown'; }
+  lt(other: SetExpr): Truth { return this.key === other.key ? false : this.le(other); }
+  gt(other: SetExpr): Truth { return this.key === other.key ? false : this.ge(other); }
   /** Whether this set has finitely many elements. */
   get isFiniteSet(): Truth { return 'unknown'; }
   get isEmpty(): boolean {
     return false;
   }
+  get isEmptyQ(): Truth { return this.isEmpty; }
   get isIterable(): boolean { return false; }
   /** Topological boundary in the real line. */
   get boundary(): SetExpr { throw new NotImplementedError(`boundary of ${this.className}`); }
@@ -172,6 +179,14 @@ export class Interval extends SetExpr {
     const order = cmpReal(this.start, this.end);
     return order === undefined ? 'unknown' : order >= 0;
   }
+  override get isEmptyQ(): Truth {
+    if (isOo(this.end) && isReal(this.start) === true || isNegOo(this.start) && isReal(this.end) === true) return false;
+    const width = add(this.end, neg(this.start));
+    if (isPositive(width) === true || !this.leftOpen && !this.rightOpen && isNonNegative(width) === true) return false;
+    return 'unknown';
+  }
+  get isLeftUnbounded(): boolean { return isNegOo(this.start); }
+  get isRightUnbounded(): boolean { return isOo(this.end); }
   override get boundary(): SetExpr { return finiteSet(...[this.start, this.end].filter((e) => !isInf(e))); }
   override get measure(): Expr { return add(this.end, neg(this.start)); }
   readonly args: readonly Expr[];
@@ -220,7 +235,8 @@ export class Interval extends SetExpr {
     else if (l && r) m = '.open';
     else if (l) m = '.Lopen';
     else m = '.Ropen';
-    return `Interval${m}(${p(a)}, ${p(b)})`;
+    const endpoint = (e: Expr): string => e instanceof Float ? floatToString(e.mpf, e.prec, false) : p(e);
+    return `Interval${m}(${endpoint(a)}, ${endpoint(b)})`;
   }
 }
 
@@ -230,11 +246,13 @@ export function interval(aIn: ExprLike, bIn: ExprLike, leftOpenIn = false, right
   let rightOpen = rightOpenIn;
   const a = sympify(aIn);
   const b = sympify(bIn);
+  if (isReal(a) === false || isReal(b) === false || isReal(add(b, neg(a))) === false) throw new RangeError('Interval endpoints must be extended real');
+  if (typeof leftOpen !== 'boolean' || typeof rightOpen !== 'boolean') throw new NotImplementedError('Interval openness must be a boolean');
+  if (isOo(a) || isNegOo(b)) return EmptySet;
   const c = cmpReal(a, b);
-  if (c === 1) return EmptySet;
+  if (c === 1 || c === undefined && isPositive(add(a, neg(b))) === true) return EmptySet;
   if (c === 0) {
     if (leftOpen || rightOpen) return EmptySet;
-    if (isInf(a)) return EmptySet;
     return finiteSet(a);
   }
   if (isNegOo(a)) leftOpen = true;
@@ -645,7 +663,9 @@ export class ConditionSet extends SetExpr {
   override elementOf(x: Expr): Truth {
     const inBase = containsQ(this.base, x);
     if (inBase === false) return false;
-    const condition = xreplace(this.condition, [[this.variable, x]]);
+    const replacements: [Expr, Expr][] = this.variable instanceof TupleNode && x instanceof TupleNode && this.variable.args.length === x.args.length
+      ? this.variable.args.map((s, i) => [s, at(x.args, i)]) : [[this.variable, x]];
+    const condition = xreplace(this.condition, replacements);
     const satisfied = condition === S.true ? true : condition === S.false ? false : 'unknown';
     return truthAnd(inBase ?? 'unknown', satisfied);
   }
@@ -846,6 +866,21 @@ export function conditionSet(symIn: Expr, conditionIn: ExprLike | boolean, baseI
 // ---------------------------------------------------------------------------
 
 class SetOp extends SetExpr {
+  /** SymPy: a Union of iterable sets, an Intersection with an iterable set and a Complement of an iterable set iterate. */
+  override get isIterable(): boolean {
+    if (this.op === 'Union') return this.args.every((s) => s.isIterable);
+    if (this.op === 'Intersection') return this.args.some((s) => s.isIterable);
+    return first(this.args).isIterable;
+  }
+  override get isEmptyQ(): Truth {
+    const values = this.args.map((s) => s.isEmptyQ);
+    if (this.op === 'Union') return values.every((v) => v === true) ? true : values.includes(false) ? false : 'unknown';
+    return 'unknown';
+  }
+  override get boundary(): SetExpr {
+    if (this.op !== 'Union') return super.boundary;
+    return complement(union(...this.args.map((s) => s.boundary)), union(...this.args.map((s) => s.interior)));
+  }
   override get isFiniteSet(): Truth {
     const values = this.args.map((s) => s.isFiniteSet);
     if (this.op === 'Union') return truthAnd(...values);
@@ -860,11 +895,14 @@ class SetOp extends SetExpr {
     const b = union(...this.args.slice(1));
     return add(a.measure, b.measure, neg(intersection(a, b).measure));
   }
+  readonly args: readonly SetExpr[];
+  /** Union and Intersection keep their arguments in canonical order, also unevaluated (SymPy orders them in __new__). */
   constructor(
     readonly op: 'Union' | 'Intersection' | 'Complement',
-    readonly args: readonly SetExpr[],
+    args: readonly SetExpr[],
   ) {
     super();
+    this.args = op === 'Complement' ? args : sortSets([...args]);
   }
   get className(): string {
     return this.op;
@@ -884,6 +922,17 @@ export { SetOp };
 
 /** The Cartesian product of sets (SymPy ProductSet); its elements are Tuples. */
 export class ProductSetNode extends SetExpr {
+  override get isEmptyQ(): Truth {
+    const values = this.args.map((s) => s.isEmptyQ);
+    return values.includes(true) ? true : values.every((v) => v === false) ? false : 'unknown';
+  }
+  get length(): number {
+    return this.args.reduce((n, s) => n * (s instanceof FiniteSet ? s.args.length : s instanceof ProductSetNode || s instanceof PowerSetNode ? s.length : (() => { throw new TypeError('ProductSet length requires finite factors'); })()), 1);
+  }
+  override get measure(): Expr { return mul(...this.args.map((s) => s.measure)); }
+  override get boundary(): SetExpr {
+    return union(...this.args.map((_, i) => productSet(...this.args.map((s, j) => i === j ? s.boundary : s.closure))));
+  }
   override get isFiniteSet(): Truth {
     if (this.args.some((s) => s.isEmpty || (s instanceof FiniteSet && s.args.length === 0))) return true;
     const values = this.args.map((s) => s.isFiniteSet);
@@ -947,12 +996,14 @@ export class PowerSetNode extends SetExpr {
   get length(): number {
     if (this.arg === EmptySet) return 1;
     if (this.arg instanceof FiniteSet) return 2 ** this.arg.args.length;
+    if (this.arg instanceof PowerSetNode) return 2 ** this.arg.length;
     throw new TypeError('PowerSet length requires an explicitly finite base set');
   }
   override get isFiniteSet(): Truth { return this.arg.isFiniteSet; }
   readonly args: readonly Expr[];
   constructor(readonly arg: SetExpr) {
     super();
+    if (!(arg instanceof SetExpr)) throw new RangeError('PowerSet base must be a set');
     this.args = [arg];
   }
   get className(): string {
@@ -1177,7 +1228,10 @@ export class Contains extends ExtensionExpr {
     readonly set: SetExpr,
   ) {
     super('Contains', [element, set]);
+    if (!(set instanceof SetExpr)) throw new TypeError('Contains requires a set');
   }
+  get binarySymbols(): Set<Expr> { return new Set(this.set.args.filter((s) => s instanceof Sym)); }
+  asSet(): SetExpr { return this.set; }
   /** Rebuilding evaluates (Contains(x, Integers).subs(x, 2) is true). */
   withArgs(args: readonly Expr[]): Expr {
     return contains(cast(at(args, 1), SetExpr, 'Contains set'), at(args, 0));
@@ -1203,6 +1257,7 @@ export function contains(s: SetExpr, x: Expr): Expr {
     const c = rangeContains(s, x);
     if (c !== undefined) return c;
   }
+  if (s instanceof ProductSetNode && x instanceof TupleNode && s.args.length === x.args.length) return and(...s.args.map((a, i) => contains(a, at(x.args, i))));
   if (s instanceof SetOp) {
     const parts = s.args.map((a) => contains(a, x));
     if (s.op === 'Union') return or(...parts);
@@ -1347,6 +1402,7 @@ function mergeTwo(aIn: Interval, bIn: Interval): Interval | undefined {
 /** Intersection of sets. */
 export function intersection(...sets: SetExpr[]): SetExpr {
   if (sets.some((s) => s === EmptySet)) return EmptySet;
+  if (!sets.length) return UniversalSet;
   let acc: SetExpr = first(sets);
   for (const s of sets.slice(1)) acc = intersectTwo(acc, s);
   return acc;
@@ -1557,15 +1613,27 @@ function intersectIntervals(a: Interval, b: Interval): SetExpr {
   const cs = cmpReal(a.start, b.start);
   const ce = cmpReal(a.end, b.end);
   if (cs === undefined || ce === undefined) return new SetOp('Intersection', sortSets([a, b]));
-  const [start, lo] = cs > 0 ? [a.start, a.leftOpen] : cs < 0 ? [b.start, b.leftOpen] : [a.start, a.leftOpen || b.leftOpen];
-  const [end, ro] = ce < 0 ? [a.end, a.rightOpen] : ce > 0 ? [b.end, b.rightOpen] : [a.end, a.rightOpen || b.rightOpen];
+  const [start, lo] = cs > 0 ? [a.start, a.leftOpen] : cs < 0 ? [b.start, b.leftOpen] : [hasFloat(b.start) && !hasFloat(a.start) ? b.start : a.start, a.leftOpen || b.leftOpen];
+  const [end, ro] = ce < 0 ? [a.end, a.rightOpen] : ce > 0 ? [b.end, b.rightOpen] : [hasFloat(b.end) && !hasFloat(a.end) ? b.end : a.end, a.rightOpen || b.rightOpen];
   return interval(start, end, lo, ro);
 }
 
 /** a \ b. */
 export function complement(a: SetExpr, b: SetExpr): SetExpr {
   if (b === EmptySet) return a;
-  if (a === EmptySet || b === UniversalSet) return EmptySet;
+  if (a === EmptySet || b === UniversalSet || a.key === b.key) return EmptySet;
+  if (a instanceof SetOp && a.op === 'Union') return union(...a.args.map((s) => complement(s, b)));
+  if (a instanceof SetOp && a.op === 'Complement') return new SetOp('Complement', [at(a.args, 0), union(at(a.args, 1), b)]);
+  // remove the finite parts first (SymPy's Union orders FiniteSet before the other sets), so the result does not
+  // depend on the order of the union's arguments
+  if (b instanceof SetOp && b.op === 'Union' && !(intervalParts(a) && intervalParts(b))) {
+    return [...b.args.filter((s) => s instanceof FiniteSet), ...b.args.filter((s) => !(s instanceof FiniteSet))].reduce(complement, a);
+  }
+  if (a instanceof ProductSetNode && b instanceof ProductSetNode && a.args.length !== b.args.length) return a;
+  if (b instanceof FiniteSet) {
+    const relevant = b.args.filter((x) => containsQ(a, x) !== false);
+    if (relevant.length !== b.args.length) return complement(a, finiteSet(...relevant));
+  }
   if (a instanceof FiniteSet) {
     const keep: Expr[] = [];
     const unknown: Expr[] = [];
@@ -1612,6 +1680,7 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
 export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
   if (a === EmptySet || b === UniversalSet || a.key === b.key) return true;
   if (a === UniversalSet) return false;
+  if (a instanceof PowerSetNode && b instanceof PowerSetNode) return isSubset(a.arg, b.arg);
   if (a.isFiniteSet === false && b.isFiniteSet === true) return false;
   if (a instanceof NamedSet && b instanceof NamedSet) {
     const order = [Naturals, Naturals0, Integers, Rationals, Reals, Complexes];
@@ -1655,6 +1724,8 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
   if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(x, a)));
   if (s instanceof SetOp && s.op === 'Union') return or(...s.args.map((a) => asRelational(a, x)));
   if (s instanceof SetOp && s.op === 'Intersection') return and(...s.args.map((a) => asRelational(a, x)));
+  if (s instanceof ProductSetNode && x instanceof TupleNode && s.args.length === x.args.length) return and(...s.args.map((a, i) => asRelational(a, at(x.args, i))));
+  if (s instanceof SetOp && s.op === 'Complement') return and(asRelational(at(s.args, 0), x), not(asRelational(at(s.args, 1), x)));
   if (s instanceof Range) return rangeAsRelational(s, x);
   throw new NotImplementedError('as_relational: unsupported set');
 }

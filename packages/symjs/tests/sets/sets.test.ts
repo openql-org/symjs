@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import * as Sets from '../../src/sets/sets';
+import { impl } from '../../src/core/nodes';
 
 const x = sj.symbol('x');
 const y = sj.symbol('y');
@@ -223,7 +224,7 @@ describe('Range, Integers in an interval and ImageSet membership', () => {
     expect(String(Sets.intersection(Sets.Integers, I(0, n('2.5'))))).toBe('Range(0, 3, 1)');
     // an end that is not a known real number, or a number too close to an integer to place, is left unevaluated
     expect(String(Sets.intersection(Sets.Integers, I(0, y)))).toBe('Intersection(Integers, Interval(0, y))');
-    expect(String(Sets.intersection(Sets.Integers, I(0, n('2.0000000000001'))))).toBe('Intersection(Integers, Interval(0, 2.0000000000001))');
+    expect(String(Sets.intersection(Sets.Integers, I(0, n('2.0000000000001'))))).toBe('Intersection(Integers, Interval(0, 2.00000000000010))');
     expect(Sets.intersection(Sets.Reals, Sets.Integers)).toBe(Sets.Integers);
     expect(Sets.intersection(Sets.Naturals, Sets.Reals)).toBe(Sets.Naturals);
   });
@@ -309,7 +310,7 @@ describe('Rationals, UniversalSet, ProductSet, PowerSet, DisjointUnion and Symme
       'True',
       'False',
       'False',
-      'Contains((x, 2), ProductSet({1, 2, 3}, Interval(0, 5)))',
+      'Eq(1, x) | Eq(2, x) | Eq(3, x)',
       'Contains(x, ProductSet({1, 2, 3}, Interval(0, 5)))',
       'False',
     ]);
@@ -890,6 +891,7 @@ it('keeps membership of a set with no decision procedure unevaluated', () => {
     printStr(): string { return 'UnknownSet'; }
   }
   expect(String(sj.contains(new UnknownSet(), x))).toBe('Contains(x, UnknownSet)');
+  expect(() => new UnknownSet().measure).toThrow(sj.NotImplementedError);
 });
 
 it('exposes topology and measure of real intervals and finite sets', async () => {
@@ -920,10 +922,9 @@ it('exposes topology and measure of real intervals and finite sets', async () =>
   expect(a.FiniteSet.of(1).measure).toBe(a.S.Zero);
   expect(() => a.Complexes.measure).toThrow(a.NotImplementedError);
   expect(() => a.Complexes.boundary).toThrow(a.NotImplementedError);
-  // Unevaluated products and intersections have no implemented real-line measure.
   const product = a.ProductSet(closed,closed);
-  expect(() => product.measure).toThrow(a.NotImplementedError);
-  expect(() => product.boundary).toThrow(a.NotImplementedError);
+  expect(String(product.measure)).toBe('1');
+  expect(product.boundary).toBeInstanceOf(a.SetOp);
 });
 
 it('returns sets of permitted function arities', async () => {
@@ -1067,4 +1068,117 @@ it('keeps product finiteness uncertain when a finite factor may be empty', () =>
   const n = sj.symbol('n', { integer: true });
   expect(Sets.productSet(Sets.Reals, Sets.Range.of(n, 0)).isFiniteSet).toBe('unknown');
   expect(new Sets.ProductSetNode([Sets.Reals, new Sets.FiniteSet([])]).isFiniteSet).toBe(true);
+});
+
+it('orders sets by inclusion and preserves unknown inclusion', () => {
+  const a = F(1), b = F(1, 2), unknown = F(x);
+  expect(a.le(b)).toBe(true);
+  expect(a.ge(b)).toBe(false);
+  expect(a.lt(a)).toBe(false);
+  expect(a.gt(a)).toBe(false);
+  expect(b.gt(a)).toBe(true);
+  expect(a.lt(b)).toBe(true);
+  expect(unknown.le(a)).toBe('unknown');
+  expect(unknown.ge(a)).toBe('unknown');
+});
+
+it('exposes symbolic emptiness and interval unboundedness', () => {
+  expect(Sets.EmptySet.isEmptyQ).toBe(true);
+  const a = Sets.interval(x, 2);
+  expect(a.isEmptyQ).toBe('unknown');
+  expect(I(0, 2).isEmptyQ).toBe(false);
+  const left = new Sets.Interval(sj.S.NegativeInfinity, sj.S.One, true, false);
+  const right = new Sets.Interval(sj.S.Zero, sj.oo, false, true);
+  expect(left.isLeftUnbounded).toBe(true);
+  expect(left.isRightUnbounded).toBe(false);
+  expect(right.isLeftUnbounded).toBe(false);
+  expect(right.isRightUnbounded).toBe(true);
+  expect(new Sets.SetOp('Union', [a, F(3)]).isEmptyQ).toBe(false);
+  expect(new Sets.SetOp('Union', [a]).isEmptyQ).toBe('unknown');
+  expect(new Sets.SetOp('Union', [Sets.EmptySet]).isEmptyQ).toBe(true);
+  expect(new Sets.SetOp('Intersection', [a]).isEmptyQ).toBe('unknown');
+  expect(new Sets.ProductSetNode([Sets.EmptySet, a]).isEmptyQ).toBe(true);
+  expect(new Sets.ProductSetNode([a, F(1)]).isEmptyQ).toBe('unknown');
+  expect(new Sets.ProductSetNode([I(0, 1), F(1)]).isEmptyQ).toBe(false);
+});
+
+it('computes product cardinality and nested powerset cardinality', () => {
+  const p = Sets.PowerSet(Sets.PowerSet(Sets.EmptySet));
+  expect(p.length).toBe(2);
+  expect(new Sets.ProductSetNode([F(1, 2), new Sets.ProductSetNode([F(3, 4)]), p]).length).toBe(8);
+  expect(() => new Sets.ProductSetNode([Sets.Reals]).length).toThrow(TypeError);
+  expect(() => Reflect.construct(Sets.PowerSetNode, [sj.S.One])).toThrow(RangeError);
+  expect(Sets.isSubset(Sets.PowerSet(F(1)), Sets.PowerSet(F(1, 2)))).toBe(true);
+});
+
+it('provides Contains metadata and product membership conditions', () => {
+  const c = new Sets.Contains(x, F(y));
+  expect(c.binarySymbols).toEqual(new Set([y]));
+  expect(c.asSet().key).toBe(F(y).key);
+  expect(() => Reflect.construct(Sets.Contains, [x, sj.S.One])).toThrow(TypeError);
+  const p = Sets.ProductSet(Sets.Integers, Sets.Integers);
+  expect(String(Sets.contains(p, sj.Tuple(x, y)))).toBe('Contains(x, Integers) & Contains(y, Integers)');
+  expect(String(Sets.asRelational(Sets.ProductSet(F(1), F(2)), sj.Tuple(x, y)))).toBe('Eq(x, 1) & Eq(y, 2)');
+  expect(() => Sets.asRelational(p, x)).toThrow(sj.NotImplementedError);
+  expect(String(Sets.asRelational(new Sets.SetOp('Complement', [Sets.Reals, F(1)]), x))).toContain('Ne(x, 1)');
+});
+
+it('computes boundaries of unions and simplifies complements', () => {
+  expect(String(U(I(0, 1), F(2)).boundary)).toBe('{0, 1, 2}');
+  expect(() => new Sets.SetOp('Intersection', [Sets.Reals, Sets.Integers]).boundary).toThrow(sj.NotImplementedError);
+  expect(Sets.complement(I(0, 1), F(sj.I)).key).toBe(I(0, 1).key);
+  expect(Sets.complement(F(1), F(1))).toBe(Sets.EmptySet);
+  expect(Sets.intersection()).toBe(Sets.UniversalSet);
+});
+
+it('rejects nonreal interval bounds and symbolic topology flags', () => {
+  expect(() => I(sj.I, 1)).toThrow(RangeError);
+  expect(() => I(0, sj.I)).toThrow(RangeError);
+  expect(() => I(x, sj.add(x, sj.I))).toThrow(RangeError);
+  expect(() => Reflect.apply(Sets.interval, undefined, [0, 1, x])).toThrow(sj.NotImplementedError);
+  expect(() => Reflect.apply(Sets.interval, undefined, [0, 1, false, x])).toThrow(sj.NotImplementedError);
+});
+
+it('provides set hooks and rebuilds custom and symmetric difference sets', () => {
+  expect(impl.emptySet?.()).toBe(Sets.EmptySet);
+  expect(String(impl.interval?.(sj.S.Zero, sj.S.One))).toBe('Interval(0, 1)');
+  expect(impl.setIntersection?.(F(1), F(2))).toBe(Sets.EmptySet);
+  expect(() => impl.setIntersection?.(x, F(1))).toThrow('intersection operand');
+  expect(() => impl.setIntersection?.(F(1), x)).toThrow('intersection operand');
+  expect(impl.rebuildSet?.(Sets.EmptySet, [])).toBe(Sets.EmptySet);
+  const sd = new Sets.SymmetricDifferenceNode([F(x), F(y)]);
+  expect(impl.rebuildSet?.(sd, [F(1), F(2)])).toBeInstanceOf(Sets.SymmetricDifferenceNode);
+  const ascending = new Sets.Range(sj.S.NegativeInfinity, sj.oo, sj.S.One);
+  const descending = new Sets.Range(sj.oo, sj.S.NegativeInfinity, sj.S.NegOne);
+  expect(ascending.printForm(3)).toEqual({ elements: ['dots', sj.S.NegOne, sj.S.Zero, sj.S.One, 'dots'] });
+  expect(descending.printForm(3)).toEqual({ elements: ['dots', sj.S.One, sj.S.Zero, sj.S.NegOne, 'dots'] });
+  const removed = new Sets.SetOp('Union', [I(0, 1, true, true), I(1, 2, true, true)]);
+  expect(String(Sets.complement(I(0, 2), removed))).toBe('{0, 1, 2}');
+});
+
+it('checks tuple bindings in condition sets', () => {
+  const c = new Sets.ConditionSet(sj.Tuple(x, y), sj.Gt(sj.add(x, y), 1), Sets.ProductSet(Sets.Integers, Sets.Integers));
+  expect(c.elementOf(sj.Tuple(0, 1))).toBe(false);
+  expect(c.elementOf(sj.Tuple(1, 1))).toBe(true);
+  expect(c.elementOf(sj.Tuple(0))).toBe(false);
+});
+
+it('decides nonempty unbounded intervals with real symbolic finite ends', () => {
+  expect(I(r, sj.oo).isEmptyQ).toBe(false);
+  expect(I(sj.S.NegativeInfinity, r).isEmptyQ).toBe(false);
+  expect(I(x, sj.oo).isEmptyQ).toBe('unknown');
+  expect(I(sj.S.NegativeInfinity, x).isEmptyQ).toBe('unknown');
+});
+
+it('iterates unevaluated set operations like SymPy and removes union parts independently of their order', () => {
+  const op = (o: 'Union' | 'Intersection' | 'Complement', ...xs: sj.SetExpr[]) => new sj.SetOp(o, xs);
+  const fin = sj.FiniteSet.of(1, 2);
+  // Union: every part iterable; Intersection: some part iterable; Complement: the first set iterable
+  expect([op('Union', fin, sj.Integers).isIterable, op('Union', fin, sj.Reals).isIterable]).toEqual([true, false]);
+  expect([op('Intersection', sj.Reals, fin).isIterable, op('Intersection', sj.Reals, sj.Interval.of(0, 1)).isIterable]).toEqual([true, false]);
+  expect([op('Complement', fin, sj.Reals).isIterable, op('Complement', sj.Reals, fin).isIterable]).toEqual([true, false]);
+  const pi = sj.FiniteSet.of(sj.pi);
+  const want = 'Union(Complement(Interval.open(-oo, pi), Naturals), Complement(Interval.open(pi, oo), Naturals))';
+  expect(String(Sets.complement(sj.Reals, op('Union', sj.Naturals, pi)))).toBe(want);
+  expect(String(Sets.complement(sj.Reals, op('Union', pi, sj.Naturals)))).toBe(want);
 });

@@ -235,10 +235,9 @@ describe("doctests of sympy.assumptions.predicates.matrices", () => {
   it("ask(Q.square(Identity(3)))", () => {
     expect(sympyStr(ask(Q.square(Identity(rational(3))), true))).toBe('True');
   });
-  // an equivalent form that the declared symbols do not confirm
-  //   ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z))
-  //   => True
-  it.todo("ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z))");
+  it("ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z))", () => {
+    expect(sympyStr(ask(Q.symmetric(MatMul(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2)))), And(Q.symmetric(new MatrixSymbol('X', rational(2), rational(2))), Q.symmetric(new MatrixSymbol('Z', rational(2), rational(2))))))).toBe('None');
+  });
   it("ask(Q.symmetric(X + Z), Q.symmetric(X) & Q.symmetric(Z))", () => {
     expect(sympyStr(ask(Q.symmetric(MatAdd(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2)))), And(Q.symmetric(new MatrixSymbol('X', rational(2), rational(2))), Q.symmetric(new MatrixSymbol('Z', rational(2), rational(2))))))).toBe('True');
   });
@@ -766,8 +765,8 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_symmetric:85", () => {
     expect(sympyStr(ask(Q.symmetric(MatMul(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2)))), Q.symmetric(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('None');
   });
-  it.fails("test_symmetric:86", () => {
-    expect(sympyStr(ask(Q.symmetric(MatMul(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2)))), And(Q.symmetric(new MatrixSymbol('X', rational(2), rational(2))), Q.symmetric(new MatrixSymbol('Z', rational(2), rational(2))))))).toBe('True');
+  it("test_symmetric:86", () => {
+    expect(sympyStr(ask(Q.symmetric(MatMul(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2)))), And(Q.symmetric(new MatrixSymbol('X', rational(2), rational(2))), Q.symmetric(new MatrixSymbol('Z', rational(2), rational(2))))))).toBe('None');
   });
   it("test_symmetric:87", () => {
     expect(sympyStr(ask(Q.symmetric(MatAdd(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2)))), And(Q.symmetric(new MatrixSymbol('X', rational(2), rational(2))), Q.symmetric(new MatrixSymbol('Z', rational(2), rational(2))))))).toBe('True');
@@ -943,17 +942,17 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_positive_definite:144", () => {
     expect(sympyStr(ask(Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2))), true))).toBe('None');
   });
-  it.fails("test_positive_definite:145", () => {
-    expect(sympyStr(ask(Q.positive_definite(MatPow(new MatrixSymbol('X', rational(2), rational(2)), rational(3))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
+  it("test_positive_definite:145", () => {
+    expect(sympyStr(ask(Q.positive_definite(MatPow(new MatrixSymbol('X', rational(2), rational(2)), rational(3))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('None');
   });
-  it.fails("test_positive_definite:146", () => {
-    expect(sympyStr(ask(Q.positive_definite(MatMul(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2)), new MatrixSymbol('X', rational(2), rational(2)))), And(Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2))), Q.positive_definite(new MatrixSymbol('Z', rational(2), rational(2))))))).toBe('True');
+  it("test_positive_definite:146", () => {
+    expect(sympyStr(ask(Q.positive_definite(MatMul(new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Z', rational(2), rational(2)), new MatrixSymbol('X', rational(2), rational(2)))), And(Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2))), Q.positive_definite(new MatrixSymbol('Z', rational(2), rational(2))))))).toBe('None');
   });
-  it.fails("test_positive_definite:148", () => {
-    expect(sympyStr(ask(Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2))), Q.orthogonal(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('True');
+  it("test_positive_definite:148", () => {
+    expect(sympyStr(ask(Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2))), Q.orthogonal(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('None');
   });
-  it.fails("test_positive_definite:149", () => {
-    expect(sympyStr(ask(Q.positive_definite(MatMul(Transpose(new MatrixSymbol('Y', rational(2), rational(3))), new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Y', rational(2), rational(3)))), And(Q.fullrank(new MatrixSymbol('Y', rational(2), rational(3))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2))))))).toBe('True');
+  it("test_positive_definite:149", () => {
+    expect(sympyStr(ask(Q.positive_definite(MatMul(Transpose(new MatrixSymbol('Y', rational(2), rational(3))), new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Y', rational(2), rational(3)))), And(Q.fullrank(new MatrixSymbol('Y', rational(2), rational(3))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2))))))).toBe('None');
   });
   it("test_positive_definite:151", () => {
     expect(sympyStr(ask(Q.positive_definite(MatMul(Transpose(new MatrixSymbol('Y', rational(2), rational(3))), new MatrixSymbol('X', rational(2), rational(2)), new MatrixSymbol('Y', rational(2), rational(3)))), Q.positive_definite(new MatrixSymbol('X', rational(2), rational(2)))))).toBe('None');
@@ -1081,20 +1080,20 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_MatrixSlice:219", () => {
     expect(sympyStr(ask(Q.symmetric(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.symmetric(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_MatrixSlice:220", () => {
-    expect(sympyStr(ask(Q.invertible(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.invertible(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
+  it("test_MatrixSlice:220", () => {
+    expect(sympyStr(ask(Q.invertible(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.invertible(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('None');
   });
   it("test_MatrixSlice:221", () => {
     expect(sympyStr(ask(Q.diagonal(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.diagonal(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_MatrixSlice:222", () => {
-    expect(sympyStr(ask(Q.orthogonal(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.orthogonal(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
+  it("test_MatrixSlice:222", () => {
+    expect(sympyStr(ask(Q.orthogonal(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.orthogonal(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('None');
   });
   it("test_MatrixSlice:223", () => {
     expect(sympyStr(ask(Q.upper_triangular(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(1), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.upper_triangular(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('True');
   });
-  it.fails("test_MatrixSlice:225", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('None');
+  it("test_MatrixSlice:225", () => {
+    expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_MatrixSlice:226", () => {
     expect(sympyStr(ask(Q.invertible(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(0), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.invertible(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('None');
@@ -1102,8 +1101,8 @@ describe("sympy/assumptions/tests/test_matrices.py", () => {
   it("test_MatrixSlice:227", () => {
     expect(sympyStr(ask(Q.diagonal(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(0), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.diagonal(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('None');
   });
-  it.fails("test_MatrixSlice:228", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('None');
+  it("test_MatrixSlice:228", () => {
+    expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_MatrixSlice:229", () => {
     expect(sympyStr(ask(Q.upper_triangular(MatrixSlice(new MatrixSymbol('X', rational(4), rational(4)), [rational(0), rational(3), rational(1)], [rational(1), rational(3), rational(1)])), Q.upper_triangular(new MatrixSymbol('X', rational(4), rational(4)))))).toBe('None');

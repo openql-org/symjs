@@ -361,7 +361,7 @@ describe("doctests of sympy.combinatorics.permutations", () => {
     expect(sympyStr(new Perm([0, 1, 2]).isIdentity)).toBe('True');
   });
   it("p.is_Identity (4)", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('False');
+    expect(sympyStr(new Perm([0, 2, 1]).isIdentity)).toBe('False');
   });
   it("Permutation([0]).is_Singleton", () => {
     expect(sympyStr(new Perm([0]).isSingleton)).toBe('True');

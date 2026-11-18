@@ -111,7 +111,7 @@ describe('ordering relations decided like SymPy (is_lt, is_le, is_gt, is_ge)', (
     const c1 = r('cos(1)');
     expect([Ge(c1, S.Half), Gt(c1, S.Half), Le(c1, S.Half), Lt(c1, S.Half)].map(s)).toEqual(['True', 'True', 'False', 'False']);
     // undecided: complex, near zero, not evaluable
-    expect(s(Lt(r('I + 1'), 2))).toBe('1 + I < 2');
+    expect(s(Lt(r('I*x'), 2))).toBe('I*x < 2');
     expect(s(Lt(r('sqrt(2) + sqrt(3)'), r('sqrt(5 + 2*sqrt(6))')))).toBe('sqrt(2) + sqrt(3) < sqrt(2*sqrt(6) + 5)');
     expect(s(Lt(r('f(1)'), 2))).toBe('f(1) < 2');
     expect(s(Lt(r('oo'), 2))).toBe('False');
@@ -260,4 +260,32 @@ it('orders tiny floating values using their exact binary significands', () => {
   expect(Eq(new sj.Sym('zero', { zero: true }), 0)).toBe(S.true);
   expect(Lt(x, y).func).toBe(Lt);
   expect(Eq(pow(2, x), 0)).toBe(S.false);
+});
+
+
+describe('inequality operand validation', () => {
+  it('rejects known non-real operands before comparing identical sides', () => {
+    const imaginary = sj.symbol('imaginary', { imaginary: true });
+    const nonreal = sj.symbol('nonreal', { extendedReal: false });
+    const nonzero = sj.symbol('nonzero', { real: true, nonzero: true });
+    for (const compare of [Lt, Le, Gt, Ge]) {
+      for (const operand of [sj.I, imaginary, nonreal, mul(sj.I, nonzero), mul(2, sj.I)]) {
+        expect(() => compare(operand, operand)).toThrow(TypeError);
+        expect(() => compare(x, operand)).toThrow(TypeError);
+        expect(() => compare(operand, 0)).toThrow(TypeError);
+      }
+      for (const operand of [S.true, sj.and(x, y), new sj.Rel('Lt', x, y)]) {
+        expect(() => compare(operand, 1)).toThrow(TypeError);
+        expect(() => compare(x, operand)).toThrow(TypeError);
+      }
+      expect(compare(x, y)).toBeInstanceOf(sj.Rel);
+      expect(compare(sj.symbol('possiblyInfinite', { real: false }), 0)).toBeInstanceOf(sj.Rel);
+    }
+    expect(Eq(sj.I, sj.I)).toBe(S.true);
+    expect(sj.Relational(sj.I, sj.I, '<', { evaluate: false })).toBeInstanceOf(sj.Rel);
+  });
+});
+
+it('keeps a symbolic leading coefficient in Piecewise conditions', () => {
+  expect(String(piecewise([1, Lt(mul(x, y), 2)], [0, true]))).toBe('Piecewise((1, x*y < 2), (0, True))');
 });

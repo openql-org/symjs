@@ -110,18 +110,23 @@ function trialValue(s: sj.Sym, k: number): Expr {
   // correlated x and y and incorrectly certified x-y == 0.
   let seed = 2166136261;
   for (const ch of `${s.key}:${k}`) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619) >>> 0;
-  const a = s.assumptions;
+  // the derived facts (a prime is a positive integer, an even number an integer, ...)
+  const facts = sj.assumptions(s);
+  const a = { ...s.assumptions, ...Object.fromEntries(facts) } as Record<string, boolean | undefined>;
   const magnitude = 1 + seed % 97;
   const sign = (seed & 256) === 0 ? -1 : 1;
-  if (a.integer) {
-    if (a.positive || a.nonnegative) return sj.Rational.of(magnitude);
-    if (a.negative || a.nonpositive) return sj.Rational.of(-magnitude);
-    return sj.Rational.of(sign * magnitude);
+  if (a['prime']) return sj.Rational.of([2, 3, 5, 7, 11, 13, 17, 19, 23, 29][seed % 10] ?? 2);
+  if (a['integer']) {
+    const parity = (n: number): number => (a['even'] && n % 2 !== 0) || (a['odd'] && n % 2 === 0) ? n + 1 : n;
+    if (a['positive'] || a['nonnegative']) return sj.Rational.of(parity(magnitude));
+    if (a['negative'] || a['nonpositive']) return sj.Rational.of(-parity(magnitude));
+    return sj.Rational.of(sign * parity(magnitude));
   }
   const real = sj.Rational.of(magnitude, 37);
-  if (a.positive || a.nonnegative) return real;
-  if (a.negative || a.nonpositive) return sj.mul(-1, real);
-  if (a.real) return sj.mul(sign, real);
+  if (a['positive'] || a['nonnegative']) return real;
+  if (a['negative'] || a['nonpositive']) return sj.mul(-1, real);
+  // Supplement complex samples with real points in the domain of inequalities.
+  if (a['real'] || (k >= 4 && a['real'] !== false && a['imaginary'] !== true && a['extended_real'] !== false && a['extendedReal'] !== false)) return sj.mul(sign, real);
   return sj.add(sj.mul(sign, real), sj.mul(sj.Rational.of(1 + (seed >>> 16) % 89, 41), sj.I));
 }
 
@@ -141,7 +146,8 @@ function exprEquivalent(a: Expr, b: Expr): boolean {
   const symbols = new Map([...sj.freeSymbols(a), ...sj.freeSymbols(b)].filter((s) => s instanceof sj.Sym).map((s) => [s.key, s]));
   // Closed algebraic numbers have no independent substitution points. Repeating
   // the same high-precision root evaluation provides no additional evidence.
-  const trials = symbols.size === 0 ? 1 : 4;
+  const hasOrdering = (e: Expr): boolean => (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') || e.args.some(hasOrdering);
+  const trials = symbols.size === 0 ? 1 : hasOrdering(a) || hasOrdering(b) ? 8 : 4;
   let agree = 0;
   for (let k = 0; k < trials; k++) {
     const replacements: [Expr, Expr][] = [...symbols.values()].map((s) => [s, trialValue(s, k)]);

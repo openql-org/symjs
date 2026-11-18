@@ -71,19 +71,16 @@ describe("sympy/core/tests/test_containers.py", () => {
   it("test_Tuple_contains:51", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  // no adapter for the operator +
-  //   assert Tuple(1, 2) + Tuple(3, 4) == Tuple(1, 2, 3, 4)
-  //   => (1, 2, 3, 4)
-  it.todo("test_Tuple_concatenation:55");
-  // no adapter for the operator +
-  //   assert (1, 2) + Tuple(3, 4) == Tuple(1, 2, 3, 4)
-  //   => (1, 2, 3, 4)
-  it.todo("test_Tuple_concatenation:56");
-  // no adapter for the operator +
-  //   assert Tuple(1, 2) + (3, 4) == Tuple(1, 2, 3, 4)
-  //   => (1, 2, 3, 4)
-  it.todo("test_Tuple_concatenation:57");
-  // no adapter for the operator +
+  it("test_Tuple_concatenation:55", () => {
+    expect(sympyStr(Tuple(rational(1), rational(2)).concat(Tuple(rational(3), rational(4))))).toBe('(1, 2, 3, 4)');
+  });
+  it("test_Tuple_concatenation:56", () => {
+    expect(sympyStr(Tuple(rational(1), rational(2)).concat(Tuple(rational(3), rational(4))))).toBe('(1, 2, 3, 4)');
+  });
+  it("test_Tuple_concatenation:57", () => {
+    expect(sympyStr(Tuple(rational(1), rational(2)).concat(Tuple(rational(3), rational(4))))).toBe('(1, 2, 3, 4)');
+  });
+  // the generated test does not reproduce the replay
   //   raises(TypeError, lambda: Tuple(1, 2) + 3)
   //   => None
   it.todo("test_Tuple_concatenation:58");
@@ -91,14 +88,12 @@ describe("sympy/core/tests/test_containers.py", () => {
   //   raises(TypeError, lambda: 1 + Tuple(2, 3))
   //   => None
   it.todo("test_Tuple_concatenation:59");
-  // no adapter for the operator +
-  //   assert Tuple(1, 2) + Tuple2(3, 4) == Tuple(1, 2, 1, 2, 3, 4)
-  //   => (1, 2, 1, 2, 3, 4)
-  it.todo("test_Tuple_concatenation:65");
-  // no adapter for the operator +
-  //   assert Tuple2(1, 2) + Tuple(3, 4) == Tuple(1, 2, 3, 4)
-  //   => (1, 2, 3, 4)
-  it.todo("test_Tuple_concatenation:66");
+  it.fails("test_Tuple_concatenation:65", () => {
+    expect(sympyStr(Tuple(rational(1), rational(2)).concat(Tuple(rational(3), rational(4))))).toBe('(1, 2, 1, 2, 3, 4)');
+  });
+  it("test_Tuple_concatenation:66", () => {
+    expect(sympyStr(Tuple(rational(1), rational(2)).concat(Tuple(rational(3), rational(4))))).toBe('(1, 2, 3, 4)');
+  });
   it("test_Tuple_equality:71", () => {
     expect(sympyStr(rational(2).equals(2))).toBe('True');
   });
@@ -135,65 +130,57 @@ describe("sympy/core/tests/test_containers.py", () => {
   //   assert unchanged(Eq, Tuple(1), f(x))
   //   => True
   it.todo("test_Tuple_Eq:92");
-  // no adapter for .tuple_count
-  //   assert Tuple(0, 1, 2, 3).tuple_count(4) == 0
-  //   => 0
-  it.todo("test_Tuple_tuple_count:104");
-  // no adapter for .tuple_count
-  //   assert Tuple(0, 4, 1, 2, 3).tuple_count(4) == 1
-  //   => 1
-  it.todo("test_Tuple_tuple_count:105");
-  // no adapter for .tuple_count
-  //   assert Tuple(0, 4, 1, 4, 2, 3).tuple_count(4) == 2
-  //   => 2
-  it.todo("test_Tuple_tuple_count:106");
-  // no adapter for .tuple_count
-  //   assert Tuple(0, 4, 1, 4, 2, 4, 3).tuple_count(4) == 3
-  //   => 3
-  it.todo("test_Tuple_tuple_count:107");
+  it("test_Tuple_tuple_count:104", () => {
+    expect(sympyStr(Tuple(rational(0), rational(1), rational(2), rational(3)).count(rational(4)))).toBe('0');
+  });
+  it("test_Tuple_tuple_count:105", () => {
+    expect(sympyStr(Tuple(rational(0), rational(4), rational(1), rational(2), rational(3)).count(rational(4)))).toBe('1');
+  });
+  it("test_Tuple_tuple_count:106", () => {
+    expect(sympyStr(Tuple(rational(0), rational(4), rational(1), rational(4), rational(2), rational(3)).count(rational(4)))).toBe('2');
+  });
+  it("test_Tuple_tuple_count:107", () => {
+    expect(sympyStr(Tuple(rational(0), rational(4), rational(1), rational(4), rational(2), rational(4), rational(3)).count(rational(4)))).toBe('3');
+  });
   it("test_Tuple_index:111", () => {
-    expect(sympyStr(Tuple(rational(4), rational(0), rational(1), rational(2), rational(3)).index(rational(4)))).toBe('0');
+    expect(sympyStr(Tuple(rational(4), rational(0), rational(1), rational(2), rational(3)).index(rational(4), 0, 5))).toBe('0');
   });
   it("test_Tuple_index:112", () => {
-    expect(sympyStr(Tuple(rational(0), rational(4), rational(1), rational(2), rational(3)).index(rational(4)))).toBe('1');
+    expect(sympyStr(Tuple(rational(0), rational(4), rational(1), rational(2), rational(3)).index(rational(4), 0, 5))).toBe('1');
   });
   it("test_Tuple_index:113", () => {
-    expect(sympyStr(Tuple(rational(0), rational(1), rational(4), rational(2), rational(3)).index(rational(4)))).toBe('2');
+    expect(sympyStr(Tuple(rational(0), rational(1), rational(4), rational(2), rational(3)).index(rational(4), 0, 5))).toBe('2');
   });
   it("test_Tuple_index:114", () => {
-    expect(sympyStr(Tuple(rational(0), rational(1), rational(2), rational(4), rational(3)).index(rational(4)))).toBe('3');
+    expect(sympyStr(Tuple(rational(0), rational(1), rational(2), rational(4), rational(3)).index(rational(4), 0, 5))).toBe('3');
   });
   it("test_Tuple_index:115", () => {
-    expect(sympyStr(Tuple(rational(0), rational(1), rational(2), rational(3), rational(4)).index(rational(4)))).toBe('4');
+    expect(sympyStr(Tuple(rational(0), rational(1), rational(2), rational(3), rational(4)).index(rational(4), 0, 5))).toBe('4');
   });
   it("test_Tuple_index:117", () => {
-    expect(() => Tuple(rational(0), rational(1), rational(2), rational(3)).index(rational(4))).toThrow(RangeError);
+    expect(() => Tuple(rational(0), rational(1), rational(2), rational(3)).index(rational(4), 0, 4)).toThrow(RangeError);
   });
-  // a function that did not come from the library
-  //   raises(ValueError, lambda: Tuple(4, 0, 1, 2, 3).index(4, 1))
-  //   => None
-  it.todo("test_Tuple_index:118");
-  // a function that did not come from the library
-  //   raises(ValueError, lambda: Tuple(0, 1, 2, 3, 4).index(4, 1, 4))
-  //   => None
-  it.todo("test_Tuple_index:119");
-  // no adapter for the operator *
-  //   assert Tuple(1, 2, 3)*2 == Tuple(1, 2, 3, 1, 2, 3)
-  //   => (1, 2, 3, 1, 2, 3)
-  it.todo("test_Tuple_mul:123");
+  it("test_Tuple_index:118", () => {
+    expect(() => Tuple(rational(4), rational(0), rational(1), rational(2), rational(3)).index(rational(4), 1, 5)).toThrow(RangeError);
+  });
+  it("test_Tuple_index:119", () => {
+    expect(() => Tuple(rational(0), rational(1), rational(2), rational(3), rational(4)).index(rational(4), 1, 4)).toThrow(RangeError);
+  });
+  it("test_Tuple_mul:123", () => {
+    expect(sympyStr(Tuple(rational(1), rational(2), rational(3)).repeat(2))).toBe('(1, 2, 3, 1, 2, 3)');
+  });
   // the arguments do not type-check against the public API
   //   assert 2*Tuple(1, 2, 3) == Tuple(1, 2, 3, 1, 2, 3)
   //   => (1, 2, 3, 1, 2, 3)
   it.todo("test_Tuple_mul:124");
-  // no adapter for the operator *
-  //   assert Tuple(1, 2, 3)*Integer(2) == Tuple(1, 2, 3, 1, 2, 3)
-  //   => (1, 2, 3, 1, 2, 3)
-  it.todo("test_Tuple_mul:125");
+  it("test_Tuple_mul:125", () => {
+    expect(sympyStr(Tuple(rational(1), rational(2), rational(3)).repeat(2))).toBe('(1, 2, 3, 1, 2, 3)');
+  });
   // the arguments do not type-check against the public API
   //   assert Integer(2)*Tuple(1, 2, 3) == Tuple(1, 2, 3, 1, 2, 3)
   //   => (1, 2, 3, 1, 2, 3)
   it.todo("test_Tuple_mul:126");
-  // no adapter for the operator *
+  // the generated test does not reproduce the replay
   //   raises(TypeError, lambda: Tuple(1, 2, 3)*S.Half)
   //   => None
   it.todo("test_Tuple_mul:128");
@@ -246,7 +233,7 @@ describe("sympy/core/tests/test_containers.py", () => {
   it.todo("test_Dict:175 (2)");
   it("test_Dict:180", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(Dict(new Map([[x, 1], [y, 2], [z, 3]])))).toBe('{x: 1, y: 2, z: 3}');
+    expect(sympyStr(Dict([[x, rational(1)], [y, rational(2)], [z, rational(3)]]))).toBe('{x: 1, y: 2, z: 3}');
   });
   // a function that did not come from the library
   //   raises(TypeError, lambda: Dict(((x, 1), (y, 2), (z, 3))))
@@ -256,14 +243,14 @@ describe("sympy/core/tests/test_containers.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Dict(new Map([[x, 1], [y, 2], [z, 3]])))).toBe('{x: 1, y: 2, z: 3}');
+      expect(pyStr(Dict([[x, rational(1)], [y, rational(2)], [z, rational(3)]]))).toBe('{x: 1, y: 2, z: 3}');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
   it("test_Dict:195", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(Dict(new Map([[x, 1], [y, 2], [z, 3]])))).toBe('{x: 1, y: 2, z: 3}');
+    expect(sympyStr(Dict([[x, rational(1)], [y, rational(2)], [z, rational(3)]]))).toBe('{x: 1, y: 2, z: 3}');
   });
   // an error outside the library
   //   assert d[x] == 0

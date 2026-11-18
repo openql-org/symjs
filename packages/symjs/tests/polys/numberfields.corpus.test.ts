@@ -510,7 +510,7 @@ describe("sympy/polys/numberfields/tests/test_minpoly.py", () => {
     const x = new Sym('x');
     expect(() => minimalPolynomial(fn('tan', [new Mul([pi, new Pow(rational(2), rational(1, 2))])]), x, { compose: true, polys: false })).toThrow(NotAlgebraic);
   });
-  // the replay exceeds its deadline
+  // the case takes more than 4 seconds
   //   assert mp == 1768292677839237920489538677417507171630859375*x**109 - \
   //       2734577732179183863586489182929671773182898498218854181690460140337930774573792597743853652058046464
   //   => 1768292677839237920489538677417507171630859375*x**109 - 2734577732179183863586489182929671773182898498218854181690460140337930774573792597743853652058046464

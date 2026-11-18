@@ -329,35 +329,35 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("Relational(x, 1, \">\")", () => {
     const x = new Sym('x');
-    expect(sympyStr(Relational(x, rational(1), '>'))).toBe('x > 1');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).toBe('x > 1');
   });
   it("Relational(1, x, \"<\")", () => {
     const x = new Sym('x');
-    expect(sympyStr(Relational(rational(1), x, '<'))).toBe('1 < x');
+    expect(sympyStr(Relational(rational(1), x, '<', { evaluate: true }))).toBe('1 < x');
   });
   it("Relational(x, 1, \">\") (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Relational(x, rational(1), '>'))).toBe('x > 1');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).toBe('x > 1');
   });
   it("Relational(1, x, \"<\") (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Relational(rational(1), x, '<'))).toBe('1 < x');
+    expect(sympyStr(Relational(rational(1), x, '<', { evaluate: true }))).toBe('1 < x');
   });
   it("Relational(x, 1, \">\") (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Relational(x, rational(1), '>'))).toBe('x > 1');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).toBe('x > 1');
   });
   it("Relational(1, x, \"<\") (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Relational(rational(1), x, '<'))).toBe('1 < x');
+    expect(sympyStr(Relational(rational(1), x, '<', { evaluate: true }))).toBe('1 < x');
   });
   it("Relational(x, 1, \">\") (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Relational(x, rational(1), '>'))).toBe('x > 1');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).toBe('x > 1');
   });
   it("Relational(1, x, \"<\") (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Relational(rational(1), x, '<'))).toBe('1 < x');
+    expect(sympyStr(Relational(rational(1), x, '<', { evaluate: true }))).toBe('1 < x');
   });
   it("is_eq(S(0), S(0))", () => {
     expect(sympyStr(isEq(rational(0), rational(0)))).toBe('True');
@@ -726,7 +726,7 @@ describe("sympy/core/tests/test_logic.py", () => {
 describe("sympy/core/tests/test_relational.py", () => {
   it("test_rel_ne:66", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Relational(x, y, '!='))).toBe('Ne(x, y)');
+    expect(sympyStr(Relational(x, y, '!=', { evaluate: true }))).toBe('Ne(x, y)');
   });
   it("test_rel_subs:78", () => {
     const z = new Sym('z');
@@ -770,7 +770,7 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_wrappers:118", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Relational(y, new Add([x, new Pow(x, rational(2))]), '=='))).toBe('Eq(y, x**2 + x)');
+    expect(sympyStr(Relational(y, new Add([x, new Pow(x, rational(2))]), '==', { evaluate: true }))).toBe('Eq(y, x**2 + x)');
   });
   it("test_wrappers:119", () => {
     const [y, x] = symbols('y x');
@@ -804,22 +804,18 @@ describe("sympy/core/tests/test_relational.py", () => {
   //   assert Eq(x, 1).as_poly() == Poly(x - 1, x, domain='ZZ')
   //   => Poly(x - 1, x, domain='ZZ')
   it.todo("test_as_poly:164");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Gt(I, 2))
-  //   => None
-  it.todo("test_bool:262");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Ge(I, 2))
-  //   => None
-  it.todo("test_bool:263");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Lt(I, 2))
-  //   => None
-  it.todo("test_bool:264");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Le(I, 2))
-  //   => None
-  it.todo("test_bool:265");
+  it("test_bool:262", () => {
+    expect(() => Relational(I, rational(2), '>', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_bool:263", () => {
+    expect(() => Relational(I, rational(2), '>=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_bool:264", () => {
+    expect(() => Relational(I, rational(2), '<', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_bool:265", () => {
+    expect(() => Relational(I, rational(2), '<=', { evaluate: true })).toThrow(TypeError);
+  });
   it("test_rich_cmp:272", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Lt(x, y))).toBe('x < y');
@@ -1138,395 +1134,395 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_new_relational:393", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ud755')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ud755', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (2)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uf8cb\u9b4b')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uf8cb\u9b4b', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (3)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ub752')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ub752', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (4)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0090')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0090', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (5)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0080')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0080', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (6)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u3291')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u3291', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (7)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uf1bc')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uf1bc', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (8)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ude4b\u68b1')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ude4b\u68b1', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (9)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ue2a8\u1fe3')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ue2a8\u1fe3', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (10)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '/\u0000')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '/\u0000', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (11)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uaa90')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uaa90', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (12)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u203f')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u203f', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (13)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), 'z')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), 'z', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (14)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u2eb3')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u2eb3', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (15)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ufa83')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ufa83', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (16)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u9509')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u9509', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (17)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u680a\ue3d5')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u680a\ue3d5', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (18)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00c5{')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00c5{', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (19)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u5e24')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u5e24', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (20)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0010\u00f3')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0010\u00f3', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (21)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '-')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '-', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (22)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0013')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0013', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (23)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u8d1f')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u8d1f', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (24)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00d6\u00e6')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00d6\u00e6', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (25)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ub6f8')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ub6f8', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (26)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u3b0f\uaba8')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u3b0f\uaba8', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (27)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '|')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '|', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (28)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u3bf9')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u3bf9', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (29)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u5749\uda2d')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u5749\uda2d', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (30)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '3')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '3', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (31)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0017')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0017', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (32)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '?')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '?', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (33)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00c8')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00c8', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (34)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u3b6a')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u3b6a', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (35)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), 'c')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), 'c', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (36)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00f5')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00f5', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (37)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u000b3')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u000b3', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (38)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u23d7')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u23d7', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (39)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u009a\u00df')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u009a\u00df', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (40)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u001f\u0014')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u001f\u0014', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (41)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ub794\u56be')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ub794\u56be', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (42)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u001d')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u001d', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (43)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00af<')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00af<', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (44)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u5981')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u5981', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (45)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ud1df\ub6dc')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ud1df\ub6dc', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (46)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u807a')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u807a', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (47)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00ea')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00ea', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (48)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u1765\u4509')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u1765\u4509', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (49)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00f6\u0093')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00f6\u0093', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (50)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u43c2\uc6aa')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u43c2\uc6aa', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (51)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u2954')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u2954', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (52)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00ab')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00ab', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (53)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), 'r\u00c1')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), 'r\u00c1', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (54)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u1026\ud621')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u1026\ud621', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (55)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), 'T ')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), 'T ', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (56)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u50bc\uf97a')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u50bc\uf97a', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (57)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0013\u00a6')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0013\u00a6', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (58)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uef0c')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uef0c', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (59)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u6041')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u6041', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (60)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0007\u00d5')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0007\u00d5', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (61)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u01bc')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u01bc', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (62)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0001')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0001', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (63)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u8f59')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u8f59', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (64)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00f3)')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00f3)', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (65)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u008c;')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u008c;', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (66)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u444f\u3aef')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u444f\u3aef', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (67)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u008e')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u008e', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (68)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0014')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0014', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (69)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ua122\u1581')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ua122\u1581', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (70)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uead6\ubeb1')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uead6\ubeb1', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (71)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), 'j\u0095')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), 'j\u0095', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (72)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), 'F')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), 'F', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (73)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uaab4\ubc01')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uaab4\ubc01', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (74)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00ad')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00ad', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (75)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u008a')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u008a', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (76)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0094\u00ca')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0094\u00ca', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (77)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0096')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0096', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (78)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u7aba')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u7aba', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (79)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u5bf2')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u5bf2', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (80)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uce6c\u9934')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uce6c\u9934', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (81)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u37a1')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u37a1', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (82)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uf2b0\uaff3')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uf2b0\uaff3', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (83)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uda62')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uda62', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (84)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uab8f')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uab8f', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (85)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00c0')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00c0', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (86)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '+')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '+', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (87)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u001f\u0004')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u001f\u0004', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (88)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00c9\u00e5')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00c9\u00e5', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (89)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u6f3b\u2ad5')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u6f3b\u2ad5', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (90)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u70b5\u554a')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u70b5\u554a', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (91)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u6246\u3ae2')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u6246\u3ae2', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (92)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u000eg')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u000eg', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (93)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00fe\u0083')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00fe\u0083', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (94)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u0015')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u0015', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (95)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '5')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '5', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (96)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\uc18d\u4d7b')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\uc18d\u4d7b', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (97)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\u00f9')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\u00f9', { evaluate: true })).toThrow(RangeError);
   });
   it("test_new_relational:393 (98)", () => {
     const x = new Sym('x');
-    expect(() => Relational(x, rational(1), '\ud8b2\ua519')).toThrow(RangeError);
+    expect(() => Relational(x, rational(1), '\ud8b2\ua519', { evaluate: true })).toThrow(RangeError);
   });
   it("test_relational_arithmetic:406", () => {
     const [x, y] = symbols('x y');
@@ -1858,234 +1854,233 @@ describe("sympy/core/tests/test_relational.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > b)
-  //   => None
-  it.todo("test_imaginary_compare_raises_TypeError:483");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= b)
-  //   => None
-  it.todo("test_imaginary_compare_raises_TypeError:484");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < b)
-  //   => None
-  it.todo("test_imaginary_compare_raises_TypeError:485");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= b)
-  //   => None
-  it.todo("test_imaginary_compare_raises_TypeError:486");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b > a)
-  //   => None
-  it.todo("test_imaginary_compare_raises_TypeError:487");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b >= a)
-  //   => None
-  it.todo("test_imaginary_compare_raises_TypeError:488");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b < a)
-  //   => None
-  it.todo("test_imaginary_compare_raises_TypeError:489");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b <= a)
-  //   => None
-  it.todo("test_imaginary_compare_raises_TypeError:490");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > b)
-  //   => None
-  it.todo("test_complex_compare_not_real:483");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= b)
-  //   => None
-  it.todo("test_complex_compare_not_real:484");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < b)
-  //   => None
-  it.todo("test_complex_compare_not_real:485");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= b)
-  //   => None
-  it.todo("test_complex_compare_not_real:486");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b > a)
-  //   => None
-  it.todo("test_complex_compare_not_real:487");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b >= a)
-  //   => None
-  it.todo("test_complex_compare_not_real:488");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b < a)
-  //   => None
-  it.todo("test_complex_compare_not_real:489");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b <= a)
-  //   => None
-  it.todo("test_complex_compare_not_real:490");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > b)
-  //   => None
-  it.todo("test_complex_compare_not_real:483 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= b)
-  //   => None
-  it.todo("test_complex_compare_not_real:484 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < b)
-  //   => None
-  it.todo("test_complex_compare_not_real:485 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= b)
-  //   => None
-  it.todo("test_complex_compare_not_real:486 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b > a)
-  //   => None
-  it.todo("test_complex_compare_not_real:487 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b >= a)
-  //   => None
-  it.todo("test_complex_compare_not_real:488 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b < a)
-  //   => None
-  it.todo("test_complex_compare_not_real:489 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b <= a)
-  //   => None
-  it.todo("test_complex_compare_not_real:490 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > b)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:483");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= b)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:484");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < b)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:485");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= b)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:486");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b > a)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:487");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b >= a)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:488");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b < a)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:489");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b <= a)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:490");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > b)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:483 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= b)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:484 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < b)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:485 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= b)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:486 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b > a)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:487 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b >= a)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:488 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b < a)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:489 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b <= a)
-  //   => None
-  it.todo("test_imaginary_and_inf_compare_raises_TypeError:490 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: 2*I < 3*I)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:533");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > b)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:483");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= b)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:484");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < b)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:485");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= b)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:486");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b > a)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:487");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b >= a)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:488");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b < a)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:489");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b <= a)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:490");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > b)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:483 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= b)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:484 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < b)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:485 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= b)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:486 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b > a)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:487 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b >= a)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:488 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b < a)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:489 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: b <= a)
-  //   => None
-  it.todo("test_complex_pure_imag_not_ordered:490 (2)");
+  it("test_imaginary_compare_raises_TypeError:483", () => {
+    const x = new Sym('x');
+    expect(() => Gt(I, x)).toThrow(TypeError);
+  });
+  it("test_imaginary_compare_raises_TypeError:484", () => {
+    const x = new Sym('x');
+    expect(() => Ge(I, x)).toThrow(TypeError);
+  });
+  it("test_imaginary_compare_raises_TypeError:485", () => {
+    const x = new Sym('x');
+    expect(() => Lt(I, x)).toThrow(TypeError);
+  });
+  it("test_imaginary_compare_raises_TypeError:486", () => {
+    const x = new Sym('x');
+    expect(() => Le(I, x)).toThrow(TypeError);
+  });
+  it("test_imaginary_compare_raises_TypeError:487", () => {
+    const x = new Sym('x');
+    expect(() => Gt(x, I)).toThrow(TypeError);
+  });
+  it("test_imaginary_compare_raises_TypeError:488", () => {
+    const x = new Sym('x');
+    expect(() => Ge(x, I)).toThrow(TypeError);
+  });
+  it("test_imaginary_compare_raises_TypeError:489", () => {
+    const x = new Sym('x');
+    expect(() => Lt(x, I)).toThrow(TypeError);
+  });
+  it("test_imaginary_compare_raises_TypeError:490", () => {
+    const x = new Sym('x');
+    expect(() => Le(x, I)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:483", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Lt(y, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:484", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Le(y, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:485", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Gt(y, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:486", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Ge(y, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:487", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Gt(y, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:488", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Ge(y, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:489", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Lt(y, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:490", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Le(y, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:483 (2)", () => {
+    const z = new Sym('z', { complex: true, extendedReal: false });
+    expect(() => Lt(z, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:484 (2)", () => {
+    const z = new Sym('z', { complex: true, extendedReal: false });
+    expect(() => Le(z, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:485 (2)", () => {
+    const z = new Sym('z', { complex: true, extendedReal: false });
+    expect(() => Gt(z, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:486 (2)", () => {
+    const z = new Sym('z', { complex: true, extendedReal: false });
+    expect(() => Ge(z, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:487 (2)", () => {
+    const z = new Sym('z', { complex: true, extendedReal: false });
+    expect(() => Gt(z, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:488 (2)", () => {
+    const z = new Sym('z', { complex: true, extendedReal: false });
+    expect(() => Ge(z, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:489 (2)", () => {
+    const z = new Sym('z', { complex: true, extendedReal: false });
+    expect(() => Lt(z, 2)).toThrow(TypeError);
+  });
+  it("test_complex_compare_not_real:490 (2)", () => {
+    const z = new Sym('z', { complex: true, extendedReal: false });
+    expect(() => Le(z, 2)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:483", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Gt(oo, y)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:484", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Ge(oo, y)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:485", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Lt(oo, y)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:486", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Le(oo, y)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:487", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Gt(y, oo)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:488", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Ge(y, oo)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:489", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Lt(y, oo)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:490", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Le(y, oo)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:483 (2)", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Gt(S.NegativeInfinity, y)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:484 (2)", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Ge(S.NegativeInfinity, y)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:485 (2)", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Lt(S.NegativeInfinity, y)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:486 (2)", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Le(S.NegativeInfinity, y)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:487 (2)", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Gt(y, S.NegativeInfinity)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:488 (2)", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Ge(y, S.NegativeInfinity)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:489 (2)", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Lt(y, S.NegativeInfinity)).toThrow(TypeError);
+  });
+  it("test_imaginary_and_inf_compare_raises_TypeError:490 (2)", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Le(y, S.NegativeInfinity)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:533", () => {
+    expect(() => Lt(new Mul([rational(2), I]), new Mul([rational(3), I]))).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:483", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Gt(I, y)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:484", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Ge(I, y)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:485", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Lt(I, y)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:486", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Le(I, y)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:487", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Gt(y, I)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:488", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Ge(y, I)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:489", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Lt(y, I)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:490", () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(() => Le(y, I)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:483 (2)", () => {
+    const x = new Sym('x', { real: true, nonzero: true });
+    expect(() => Lt(new Mul([I, x]), 2)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:484 (2)", () => {
+    const x = new Sym('x', { real: true, nonzero: true });
+    expect(() => Le(new Mul([I, x]), 2)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:485 (2)", () => {
+    const x = new Sym('x', { real: true, nonzero: true });
+    expect(() => Gt(new Mul([I, x]), 2)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:486 (2)", () => {
+    const x = new Sym('x', { real: true, nonzero: true });
+    expect(() => Ge(new Mul([I, x]), 2)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:487 (2)", () => {
+    const x = new Sym('x', { real: true, nonzero: true });
+    expect(() => Gt(new Mul([I, x]), 2)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:488 (2)", () => {
+    const x = new Sym('x', { real: true, nonzero: true });
+    expect(() => Ge(new Mul([I, x]), 2)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:489 (2)", () => {
+    const x = new Sym('x', { real: true, nonzero: true });
+    expect(() => Lt(new Mul([I, x]), 2)).toThrow(TypeError);
+  });
+  it("test_complex_pure_imag_not_ordered:490 (2)", () => {
+    const x = new Sym('x', { real: true, nonzero: true });
+    expect(() => Le(new Mul([I, x]), 2)).toThrow(TypeError);
+  });
   it.fails("test_x_minus_y_not_same_as_x_lt_y:558", () => {
     expect(() => str(new Add([rational(2), I]))).toThrow(TypeError);
   });
@@ -3305,166 +3300,134 @@ describe("sympy/core/tests/test_relational.py", () => {
     const x = new Sym('x');
     expect(sympyStr(Relational(S.NegativeInfinity, x, '<=', { evaluate: false }))).toBe('-oo <= x');
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Gt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:645");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:646");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Lt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:647");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:648");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Ge(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:649");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:650");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Le(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:651");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:652");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Gt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:645 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:646 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Lt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:647 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:648 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Ge(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:649 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:650 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Le(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:651 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:652 (2)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Gt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:645 (3)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:646 (3)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Lt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:647 (3)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:648 (3)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Ge(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:649 (3)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:650 (3)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Le(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:651 (3)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:652 (3)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Gt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:645 (4)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:646 (4)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Lt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:647 (4)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:648 (4)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Ge(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:649 (4)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:650 (4)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Le(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:651 (4)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:652 (4)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Gt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:645 (5)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a > I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:646 (5)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Lt(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:647 (5)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a < I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:648 (5)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Ge(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:649 (5)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a >= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:650 (5)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Le(a, I))
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:651 (5)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: a <= I)
-  //   => None
-  it.todo("test_inequalities_symbol_name_same_complex:652 (5)");
+  it("test_inequalities_symbol_name_same_complex:645", () => {
+    const x = new Sym('x');
+    expect(() => Relational(x, I, '>', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:646", () => {
+    const x = new Sym('x');
+    expect(() => Gt(x, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:647", () => {
+    const x = new Sym('x');
+    expect(() => Relational(x, I, '<', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:648", () => {
+    const x = new Sym('x');
+    expect(() => Lt(x, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:649", () => {
+    const x = new Sym('x');
+    expect(() => Relational(x, I, '>=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:650", () => {
+    const x = new Sym('x');
+    expect(() => Ge(x, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:651", () => {
+    const x = new Sym('x');
+    expect(() => Relational(x, I, '<=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:652", () => {
+    const x = new Sym('x');
+    expect(() => Le(x, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:645 (2)", () => {
+    expect(() => Relational(rational(0), I, '>', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:646 (2)", () => {
+    expect(() => Gt(0, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:647 (2)", () => {
+    expect(() => Relational(rational(0), I, '<', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:648 (2)", () => {
+    expect(() => Lt(0, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:649 (2)", () => {
+    expect(() => Relational(rational(0), I, '>=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:650 (2)", () => {
+    expect(() => Ge(0, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:651 (2)", () => {
+    expect(() => Relational(rational(0), I, '<=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:652 (2)", () => {
+    expect(() => Le(0, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:645 (3)", () => {
+    expect(() => Relational(rational(1, 3), I, '>', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:646 (3)", () => {
+    expect(() => Gt(rational(1, 3), I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:647 (3)", () => {
+    expect(() => Relational(rational(1, 3), I, '<', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:648 (3)", () => {
+    expect(() => Lt(rational(1, 3), I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:649 (3)", () => {
+    expect(() => Relational(rational(1, 3), I, '>=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:650 (3)", () => {
+    expect(() => Ge(rational(1, 3), I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:651 (3)", () => {
+    expect(() => Relational(rational(1, 3), I, '<=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:652 (3)", () => {
+    expect(() => Le(rational(1, 3), I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:645 (4)", () => {
+    expect(() => Relational(pi, I, '>', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:646 (4)", () => {
+    expect(() => Gt(pi, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:647 (4)", () => {
+    expect(() => Relational(pi, I, '<', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:648 (4)", () => {
+    expect(() => Lt(pi, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:649 (4)", () => {
+    expect(() => Relational(pi, I, '>=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:650 (4)", () => {
+    expect(() => Ge(pi, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:651 (4)", () => {
+    expect(() => Relational(pi, I, '<=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:652 (4)", () => {
+    expect(() => Le(pi, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:645 (5)", () => {
+    expect(() => Relational(oo, I, '>', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:646 (5)", () => {
+    expect(() => Gt(oo, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:647 (5)", () => {
+    expect(() => Relational(oo, I, '<', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:648 (5)", () => {
+    expect(() => Lt(oo, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:649 (5)", () => {
+    expect(() => Relational(oo, I, '>=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:650 (5)", () => {
+    expect(() => Ge(oo, I)).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:651 (5)", () => {
+    expect(() => Relational(oo, I, '<=', { evaluate: true })).toThrow(TypeError);
+  });
+  it("test_inequalities_symbol_name_same_complex:652 (5)", () => {
+    expect(() => Le(oo, I)).toThrow(TypeError);
+  });
   it("test_ineq_avoid_wild_symbol_flip:672", () => {
     const x = new Sym('x');
     expect(sympyStr(Relational(x, new Wild('p', { exclude: [] }), '>', { evaluate: true }))).toBe('x > p_');
@@ -4051,26 +4014,26 @@ describe("sympy/core/tests/test_relational.py", () => {
     const x = new Sym('x');
     expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '<')).toThrow(TypeError);
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (11)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (12)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (13)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (14)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (15)");
+  it("test_rel_args:1028 (11)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), new Float(0.1), '<')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (12)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(1), '<')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (13)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(4294967296), '<')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (14)", () => {
+    const [x, y, t] = symbols('x y t');
+    expect(() => Relational(And(x, y), t, '<')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (15)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(1), '<')).toThrow(TypeError);
+  });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Relational(b, v, op))
   //   => None
@@ -4111,26 +4074,26 @@ describe("sympy/core/tests/test_relational.py", () => {
     const x = new Sym('x');
     expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '<=')).toThrow(TypeError);
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (26)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (27)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (28)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (29)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (30)");
+  it("test_rel_args:1028 (26)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), new Float(0.1), '<=')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (27)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(1), '<=')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (28)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(4294967296), '<=')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (29)", () => {
+    const [x, y, t] = symbols('x y t');
+    expect(() => Relational(And(x, y), t, '<=')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (30)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(1), '<=')).toThrow(TypeError);
+  });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Relational(b, v, op))
   //   => None
@@ -4171,26 +4134,26 @@ describe("sympy/core/tests/test_relational.py", () => {
     const x = new Sym('x');
     expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '>')).toThrow(TypeError);
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (41)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (42)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (43)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (44)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (45)");
+  it("test_rel_args:1028 (41)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), new Float(0.1), '>')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (42)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(1), '>')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (43)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(4294967296), '>')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (44)", () => {
+    const [x, y, t] = symbols('x y t');
+    expect(() => Relational(And(x, y), t, '>')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (45)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(1), '>')).toThrow(TypeError);
+  });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Relational(b, v, op))
   //   => None
@@ -4231,26 +4194,26 @@ describe("sympy/core/tests/test_relational.py", () => {
     const x = new Sym('x');
     expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '>=')).toThrow(TypeError);
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (56)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (57)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (58)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (59)");
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: Relational(b, v, op))
-  //   => None
-  it.todo("test_rel_args:1028 (60)");
+  it("test_rel_args:1028 (56)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), new Float(0.1), '>=')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (57)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(1), '>=')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (58)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(4294967296), '>=')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (59)", () => {
+    const [x, y, t] = symbols('x y t');
+    expect(() => Relational(And(x, y), t, '>=')).toThrow(TypeError);
+  });
+  it("test_rel_args:1028 (60)", () => {
+    const [x, y] = symbols('x y');
+    expect(() => Relational(And(x, y), rational(1), '>=')).toThrow(TypeError);
+  });
   it.fails("test_nothing_happens_to_Eq_condition_during_simplify:1034", () => {
     const r = new Sym('r', { real: true });
     expect(sympyStr(simplify(Relational(new Mul([rational(2, 5), new Pow(abs(new Add([rational(3), r])), rational(-3, 5)), fn('sign', [new Add([rational(3), r])])]), rational(0), '==', { evaluate: false })))).toBe('Eq(Piecewise((0, Eq(r, -3)), (2*(r + 3)/(5*Abs((r + 3)**(8/5))), True)), 0)');
@@ -4898,7 +4861,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const x = new Sym('x');
     expect(sympyStr(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [new Pow(x, rational(-1)), true]).subs(x, new Float(0)))).toBe('1');
   });
-  it.fails("test_piecewise1:101", () => {
+  it("test_piecewise1:101", () => {
     const x = new Sym('x');
     expect(sympyStr(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(2), Relational(new Pow(x, rational(-1)), rational(2), '>', { evaluate: false })]).subs(x, new Float(0)))).toBe('1');
   });
@@ -6099,9 +6062,9 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const [x, r1, r2, r3, r4] = symbols('x r1 r2 r3 r4');
     expect(equivalent(sympyStr(Piecewise([rational(1), Relational(x, r1, '<', { evaluate: false })], [piecewise([rational(2), Relational(r1, x, '>', { evaluate: false })], [rational(3), Relational(r2, x, '>', { evaluate: false })], [rational(4), Relational(r3, x, '>', { evaluate: false })], [rational(6), true]), Relational(x, r3, '<', { evaluate: false })], [rational(5), Relational(x, r4, '<', { evaluate: false })])), 'Piecewise((1, r1 > x), (Piecewise((3, r2 > x), (4, r3 > x)), r3 > x), (5, r4 > x))', [x, r1, r2, r3, r4], { fn: 'Piecewise', input: '(1, x < r1)' })).toBe(true);
   });
-  it.fails("test_piecewise_collapse:802", () => {
+  it("test_piecewise_collapse:802", () => {
     const [x, r1, r4, r2, r3] = symbols('x r1 r4 r2 r3');
-    expect(sympyStr(Piecewise([rational(1), Or(Relational(x, r1, '<', { evaluate: false }), Relational(x, r4, '<', { evaluate: false }))], [piecewise([rational(2), Relational(r4, x, '>', { evaluate: false })], [rational(3), Relational(r2, x, '>', { evaluate: false })], [rational(4), Relational(r3, x, '>', { evaluate: false })]), Relational(x, r2, '<', { evaluate: false })], [rational(5), Relational(x, r3, '<', { evaluate: false })]))).toBe('Piecewise((1, (r1 > x) | (r4 > x)), (Piecewise((2, r4 > x), (3, r2 > x)), r2 > x), (5, r3 > x))');
+    expect(equivalent(sympyStr(Piecewise([rational(1), Or(Relational(x, r1, '<', { evaluate: false }), Relational(x, r4, '<', { evaluate: false }))], [piecewise([rational(2), Relational(r4, x, '>', { evaluate: false })], [rational(3), Relational(r2, x, '>', { evaluate: false })], [rational(4), Relational(r3, x, '>', { evaluate: false })]), Relational(x, r2, '<', { evaluate: false })], [rational(5), Relational(x, r3, '<', { evaluate: false })])), 'Piecewise((1, (r1 > x) | (r4 > x)), (Piecewise((2, r4 > x), (3, r2 > x)), r2 > x), (5, r3 > x))', [x, r1, r4, r2, r3], { fn: 'Piecewise', input: '(1, (x < r1) | (x < r4))' })).toBe(true);
   });
   it("test_piecewise_collapse:806", () => {
     const [x, r3] = symbols('x r3');
@@ -6437,9 +6400,9 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([new Mul([rational(-1), fn('Max', [rational(-1), new Add([rational(-1), x])])]), fn('Max', [rational(-1), new Add([rational(-1), x]), fn('Min', [rational(1), new Add([rational(1), x])])])]).subs(x, rational(3)))).toBe('0');
   });
-  it.fails("test_stackoverflow_43852159:1078", () => {
+  it("test_stackoverflow_43852159:1078", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(new Mul([piecewise([rational(1), And(Relational(y, rational(-1), '>=', { evaluate: false }), Relational(y, rational(1), '<=', { evaluate: false }))], [rational(0), true]), piecewise([rational(1), And(Relational(new Add([x, new Mul([rational(-1), y])]), rational(-1), '>=', { evaluate: false }), Relational(new Add([x, new Mul([rational(-1), y])]), rational(1), '<=', { evaluate: false }))], [rational(0), true])]))).toBe('Piecewise((1, (y >= -1) & (y <= 1) & (x - y >= -1) & (x - y <= 1)), (0, True))');
+    expect(equivalent(sympyStr(new Mul([piecewise([rational(1), And(Relational(y, rational(-1), '>=', { evaluate: false }), Relational(y, rational(1), '<=', { evaluate: false }))], [rational(0), true]), piecewise([rational(1), And(Relational(new Add([x, new Mul([rational(-1), y])]), rational(-1), '>=', { evaluate: false }), Relational(new Add([x, new Mul([rational(-1), y])]), rational(1), '<=', { evaluate: false }))], [rational(0), true])])), 'Piecewise((1, (y >= -1) & (y <= 1) & (x - y >= -1) & (x - y <= 1)), (0, True))', [y, x], { fn: 'piecewise_fold', input: 'Piecewise((1, (y >= -1) & (y <= 1)), (0, True))*Piecewise((1, (x - y >= -1) & (x - y <= 1)), (0, True))' })).toBe(true);
   });
   it("test_issue_12557:1115", () => {
     const x = new Sym('x', { real: true });

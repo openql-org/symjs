@@ -86,7 +86,7 @@ function repeatingDecimal(s: string): Rational {
 }
 
 function tokenize(src: string, offset: number, out: Token[]): void {
-  const re = /\s*(?:(\d*\.\d*\[\d+\])|((?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?(?:[eE][+-]?\d(?:_?\d)*)?|\.\d(?:_?\d)*(?:[eE][+-]?\d(?:_?\d)*)?)(?:[jJ](?![A-Za-z0-9_]))?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|==|!=|!+|[-+*/^(),&|~<>=]))/y;
+  const re = /\s*(?:((?:\d(?:_?\d)*)?\.(?:\d(?:_?\d)*)?\[\d(?:_?\d)*\])|((?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?(?:[eE][+-]?\d(?:_?\d)*)?|\.\d(?:_?\d)*(?:[eE][+-]?\d(?:_?\d)*)?)(?:[jJ](?![A-Za-z0-9_]))?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|==|!=|!+|[-+*/^(),&|~<>=]))/y;
   let i = 0;
   while (i < src.length) {
     if (/^\s*$/.test(src.slice(i))) return;
@@ -94,7 +94,7 @@ function tokenize(src: string, offset: number, out: Token[]): void {
     const m = re.exec(src);
     if (!m) throw new SyntaxError(`Unexpected character '${src[i]?.trim() || src.slice(i).trim()[0]}' at ${offset + i}`);
     const pos = offset + i + (m[0].length - m[0].trimStart().length);
-    if (m[1] !== undefined) out.push({ t: 'value', v: repeatingDecimal(m[1]), pos });
+    if (m[1] !== undefined) out.push({ t: 'value', v: repeatingDecimal(m[1].replaceAll('_', '')), pos });
     else if (m[2] !== undefined) out.push({ t: 'num', v: m[2], pos });
     else if (m[3] !== undefined) out.push({ t: 'name', v: m[3], pos });
     else out.push({ t: 'op', v: defined(m[4], 'operator token'), pos });
@@ -242,8 +242,13 @@ const RELATIONS: Record<string, RelOp> = {
   GreaterThan: 'Ge',
 };
 
+const UNEVALUATED_FUNCTIONS: Readonly<Record<string, FnName>> = Object.fromEntries(
+  (['abs', 'im', 're', 'sign', 'arg', 'conjugate', 'acos', 'acot', 'acsc', 'asec', 'asin', 'atan', 'acosh', 'acoth', 'acsch', 'asech', 'asinh', 'atanh', 'cos', 'cot', 'csc', 'sec', 'sin', 'tan', 'cosh', 'coth', 'csch', 'sech', 'sinh', 'tanh', 'log'] as const).map((name) => [name, name]),
+);
+
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   sqrt: (args) => sqrt(argAt(args, 0, 'sqrt')),
+  cbrt: (args) => pow(argAt(args, 0, 'cbrt'), Rational.of(1, 3)),
   exp: (args) => exp(argAt(args, 0, 'exp')),
   ...Object.fromEntries(
     (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 'abs', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as FnName[]).map(
@@ -447,7 +452,7 @@ const TUPLE_FUNCTIONS: Record<string, (args: readonly Arg[]) => Expr> = {
 
 const GREEK = new Set(['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa', 'lamda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega']);
 /** SymPy _token_splittable: a name of letters only, not the name of a Greek letter. */
-export const tokenSplittable = (name: string): boolean => name.length > 1 && /^[A-Za-z]+$/.test(name) && !GREEK.has(name.toLowerCase());
+export const tokenSplittable = (name: string): boolean => name.length > 1 && /^[A-Za-z][A-Za-z0-9]*$/.test(name) && !GREEK.has(name.toLowerCase());
 
 const CONSTANTS: Record<string, Expr> = {
   pi: S.Pi,
@@ -490,6 +495,15 @@ class Parser {
         this.symbols.set(k, sympify(v));
         this.localValues.add(k);
       }
+    }
+    if (this.enabled('splitSymbols') || opts.splitSymbols !== undefined) {
+      const expanded: Token[] = [];
+      for (const token of tokens) {
+        if (token.t === 'name' && /\d/.test(token.v) && (opts.splitSymbols ?? tokenSplittable)(token.v) && !this.symbols.has(token.v) && !this.localFns.has(token.v)) {
+          for (const part of defined(token.v.match(/[0-9]+|[^0-9]/g), 'split symbol')) expanded.push({ t: /[0-9]/.test(part) ? 'num' : 'name', v: part, pos: token.pos });
+        } else expanded.push(token);
+      }
+      tokens.splice(0, tokens.length, ...expanded);
     }
   }
   private readonly localFns = new Map<string, (...args: Expr[]) => ExprLike>();
@@ -730,7 +744,13 @@ class Parser {
         return t.v;
       case 'name': {
         // implicit application: sin x
-        const knownFn = FUNCTIONS[t.v] ?? parserHooks.constructors.get(t.v);
+        const rawName = t.v === 'Abs' ? 'abs' : t.v === 'ln' ? 'log' : t.v;
+        const rawFn = UNEVALUATED_FUNCTIONS[rawName];
+        const knownFn = this.raw && rawFn
+          ? (args: Expr[]) => fn(rawFn, args, { evaluate: false })
+          : this.raw && ['sqrt', 'cbrt', 'exp'].includes(t.v)
+            ? (args: Expr[]) => t.v === 'exp' ? new Pow(S.E, argAt(args, 0, t.v)) : new Pow(argAt(args, 0, t.v), Rational.of(1, t.v === 'sqrt' ? 2 : 3))
+            : FUNCTIONS[t.v] ?? parserHooks.constructors.get(t.v);
         // function exponentiation: sin**2(x) and sin**2 x are sin(x)**2
         if (this.enabled('functionExponentiation') && knownFn && (this.isOp('**') || (this.isOp('^') && this.opts.convertXor !== false))) {
           this.next();

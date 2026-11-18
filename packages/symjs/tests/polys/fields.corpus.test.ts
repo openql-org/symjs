@@ -25,30 +25,30 @@ describe("doctests of sympy.polys.fields", () => {
 });
 
 describe("sympy/polys/tests/test_fields.py", () => {
-  // no adapter for .x
-  //   assert F1.x == F1.gens[0]
-  //   => x
-  it.todo("test_FracField___init__:19");
-  // no adapter for .y
-  //   assert F1.y == F1.gens[1]
-  //   => y
-  it.todo("test_FracField___init__:20");
-  // no adapter for .x
-  //   assert F1.x == F2.x
-  //   => x
-  it.todo("test_FracField___init__:21");
-  // no adapter for .y
-  //   assert F1.y == F2.y
-  //   => y
-  it.todo("test_FracField___init__:22");
-  // no adapter for .x
-  //   assert F1.x != F3.x
-  //   => x
-  it.todo("test_FracField___init__:23");
-  // no adapter for .y
-  //   assert F1.y != F3.y
-  //   => y
-  it.todo("test_FracField___init__:24");
+  it("test_FracField___init__:19", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new FracField([x, y], ZZ, 'lex').gens, 0))).toBe('x');
+  });
+  it("test_FracField___init__:20", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new FracField([x, y], ZZ, 'lex').gens, 1))).toBe('y');
+  });
+  it("test_FracField___init__:21", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new FracField([x, y], ZZ, 'lex').gens, 0))).toBe('x');
+  });
+  it("test_FracField___init__:22", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new FracField([x, y], ZZ, 'lex').gens, 1))).toBe('y');
+  });
+  it.fails("test_FracField___init__:23", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new FracField([x, y], ZZ, 'lex').gens, 0))).not.toBe('x');
+  });
+  it.fails("test_FracField___init__:24", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(at(new FracField([x, y], ZZ, 'lex').gens, 1))).not.toBe('y');
+  });
   it("test_FracField___eq__:31", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new FracField([x, y, z], QQ, 'lex'))).toBe('Rational function field in x, y, z over QQ with lex order');
@@ -87,20 +87,26 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement_copy:66", () => {
     const [x, y, z] = symbols('x y z');
     const v1 = new FracField([x, y, z], ZZ, 'lex');
-    const v2 = new FracField([x, y, z], ZZ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(3))).mul(v2['new'](v2.ring.fromExpr(z), v2.ring.fromExpr(rational(1)))))).toBe('x*y*z/3');
+    const v2 = v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(3)));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y, z], ZZ, 'lex');
+    expect(sympyStr(v3.mul(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(z), v4.ring.fromExpr(rational(1))))))).toBe('x*y*z/3');
   });
   it("test_FracElement_copy:68", () => {
     const [x, y, z] = symbols('x y z');
     const v1 = new FracField([x, y, z], ZZ, 'lex');
-    const v2 = new FracField([x, y, z], ZZ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(3))).mul(v2['new'](v2.ring.fromExpr(z), v2.ring.fromExpr(rational(1)))))).not.toBe('7*x*y*z/3');
+    const v2 = v1['new'](v1.ring.fromExpr(new Mul([x, y])), v1.ring.fromExpr(rational(3)));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y, z], ZZ, 'lex');
+    expect(sympyStr(v3.mul(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(z), v4.ring.fromExpr(rational(1))))))).not.toBe('7*x*y*z/3');
   });
   it.fails("test_FracElement_as_expr:77", () => {
     const [x, y, z] = symbols('x y z');
     const v1 = new FracField([x, y, z], ZZ, 'lex');
-    const v2 = new FracField([x, y, z], ZZ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(new Add([new Mul([rational(3), y, new Pow(x, rational(2))]), new Mul([rational(-1), x, y, z])])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Add([rational(1), new Mul([rational(7), new Pow(z, rational(3))])])), v2.ring.fromExpr(rational(1)))))).not.toBe('(3*x**2*y - x*y*z)/(7*z**3 + 1)');
+    const v2 = v1['new'](v1.ring.fromExpr(new Add([new Mul([rational(3), y, new Pow(x, rational(2))]), new Mul([rational(-1), x, y, z])])), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y, z], ZZ, 'lex');
+    expect(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(1), new Mul([rational(7), new Pow(z, rational(3))])])), v4.ring.fromExpr(rational(1))))))).not.toBe('(3*x**2*y - x*y*z)/(7*z**3 + 1)');
   });
   it("test_FracElement_as_expr:78", () => {
     const [x, y, z] = symbols('x y z');
@@ -110,8 +116,10 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it.fails("test_FracElement_as_expr:83", () => {
     const [x, y, z] = symbols('x y z');
     const v1 = new FracField([x, y, z], ZZ, 'lex');
-    const v2 = new FracField([x, y, z], ZZ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(new Add([new Mul([rational(3), y, new Pow(x, rational(2))]), new Mul([rational(-1), x, y, z])])), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(new Add([rational(1), new Mul([rational(7), new Pow(z, rational(3))])])), v2.ring.fromExpr(rational(1)))))).not.toBe('(3*x**2*y - x*y*z)/(7*z**3 + 1)');
+    const v2 = v1['new'](v1.ring.fromExpr(new Add([new Mul([rational(3), y, new Pow(x, rational(2))]), new Mul([rational(-1), x, y, z])])), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y, z], ZZ, 'lex');
+    expect(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(new Add([rational(1), new Mul([rational(7), new Pow(z, rational(3))])])), v4.ring.fromExpr(rational(1))))))).not.toBe('(3*x**2*y - x*y*z)/(7*z**3 + 1)');
   });
   it("test_FracElement_as_expr:84", () => {
     const [x, y, z] = symbols('x y z');
@@ -290,19 +298,25 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___add__:188", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    const v2 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(x)).add(v2['new'](v2.ring.fromExpr(rational(1)), v2.ring.fromExpr(y))))).toBe('(x + y)/(x*y)');
+    const v2 = v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(x));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], QQ, 'lex');
+    expect(sympyStr(v3.add(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(rational(1)), v4.ring.fromExpr(y)))))).toBe('(x + y)/(x*y)');
   });
   it("test_FracElement___add__:188 (2)", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    const v2 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(y)).add(v2['new'](v2.ring.fromExpr(rational(1)), v2.ring.fromExpr(x))))).toBe('(x + y)/(x*y)');
+    const v2 = v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(y));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], QQ, 'lex');
+    expect(sympyStr(v3.add(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(rational(1)), v4.ring.fromExpr(x)))))).toBe('(x + y)/(x*y)');
   });
   it("test_FracElement___add__:190", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).add(new PolyRing([x, y], QQ, 'lex').fromExpr(x)))).toBe('2*x');
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(sympyStr(v3.add(v3.field.fieldNew(new PolyRing([x, y], QQ, 'lex').fromExpr(x))))).toBe('2*x');
   });
   // the arguments do not type-check against the public API
   //   assert x + F.ring.gens[0] == F.ring.gens[0] + x == 2*x
@@ -311,7 +325,9 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___add__:193", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).add(rational(3)))).toBe('x + 3');
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(sympyStr(v3.add(v3.field.fieldNew(rational(3))))).toBe('x + 3');
   });
   // the arguments do not type-check against the public API
   //   assert x + QQ(3,7) == QQ(3,7) + x == (7*x + 3)/7
@@ -324,13 +340,17 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___sub__:214", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    const v2 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(x)).sub(v2['new'](v2.ring.fromExpr(rational(1)), v2.ring.fromExpr(y))))).toBe('(-x + y)/(x*y)');
+    const v2 = v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(x));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], QQ, 'lex');
+    expect(sympyStr(v3.sub(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(rational(1)), v4.ring.fromExpr(y)))))).toBe('(-x + y)/(x*y)');
   });
   it("test_FracElement___sub__:216", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).sub(new PolyRing([x, y], QQ, 'lex').fromExpr(x)))).toBe('0');
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(sympyStr(v3.sub(v3.field.fieldNew(new PolyRing([x, y], QQ, 'lex').fromExpr(x))))).toBe('0');
   });
   // the arguments do not type-check against the public API
   //   assert x - F.ring.gens[0] == F.ring.gens[0] - x == 0
@@ -339,7 +359,9 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___sub__:219", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).sub(rational(3)))).toBe('x - 3');
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(sympyStr(v3.sub(v3.field.fieldNew(rational(3))))).toBe('x - 3');
   });
   // the arguments do not type-check against the public API
   //   assert x - QQ(3,7) == -(QQ(3,7) - x) == (7*x - 3)/7
@@ -353,19 +375,25 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___mul__:240", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    const v2 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(x)).mul(v2['new'](v2.ring.fromExpr(rational(1)), v2.ring.fromExpr(y))))).toBe('1/(x*y)');
+    const v2 = v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(x));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], QQ, 'lex');
+    expect(sympyStr(v3.mul(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(rational(1)), v4.ring.fromExpr(y)))))).toBe('1/(x*y)');
   });
   it("test_FracElement___mul__:240 (2)", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    const v2 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(y)).mul(v2['new'](v2.ring.fromExpr(rational(1)), v2.ring.fromExpr(x))))).toBe('1/(x*y)');
+    const v2 = v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(y));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], QQ, 'lex');
+    expect(sympyStr(v3.mul(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(rational(1)), v4.ring.fromExpr(x)))))).toBe('1/(x*y)');
   });
   it("test_FracElement___mul__:242", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).mul(new PolyRing([x, y], QQ, 'lex').fromExpr(x)))).toBe('x**2');
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(sympyStr(v3.mul(v3.field.fieldNew(new PolyRing([x, y], QQ, 'lex').fromExpr(x))))).toBe('x**2');
   });
   // the arguments do not type-check against the public API
   //   assert x*F.ring.gens[0] == F.ring.gens[0]*x == x**2
@@ -374,7 +402,9 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___mul__:245", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).mul(rational(3)))).toBe('3*x');
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(sympyStr(v3.mul(v3.field.fieldNew(rational(3))))).toBe('3*x');
   });
   // the arguments do not type-check against the public API
   //   assert x*QQ(3,7) == QQ(3,7)*x == x*Rational(3, 7)
@@ -387,13 +417,17 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___truediv__:266", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    const v2 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(x)).div(v2['new'](v2.ring.fromExpr(rational(1)), v2.ring.fromExpr(y))))).toBe('y/x');
+    const v2 = v1['new'](v1.ring.fromExpr(rational(1)), v1.ring.fromExpr(x));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], QQ, 'lex');
+    expect(sympyStr(v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(rational(1)), v4.ring.fromExpr(y)))))).toBe('y/x');
   });
   it("test_FracElement___truediv__:268", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], QQ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).div(new PolyRing([x, y], QQ, 'lex').fromExpr(x)))).toBe('1');
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(sympyStr(v3.div(v3.field.fieldNew(new PolyRing([x, y], QQ, 'lex').fromExpr(x))))).toBe('1');
   });
   // the arguments do not type-check against the public API
   //   assert x/F.ring.gens[0] == F.ring.gens[0]/x == 1
@@ -402,7 +436,9 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___truediv__:271", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ, 'lex');
-    expect(sympyStr(v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).mul(rational(3)))).toBe('3*x');
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(sympyStr(v3.mul(v3.field.fieldNew(rational(3))))).toBe('3*x');
   });
   // the arguments do not type-check against the public API
   //   assert x/QQ(3,7) == (QQ(3,7)/x)**-1 == x*Rational(7, 3)
@@ -416,7 +452,9 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___truediv__:274", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ, 'lex');
-    expect(() => v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).div(rational(0))).toThrow(RangeError);
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    expect(() => v3.div(v3.field.fieldNew(rational(0)))).toThrow(RangeError);
   });
   // the arguments do not type-check against the public API
   //   raises(ZeroDivisionError, lambda: 1/(x - x))
@@ -425,8 +463,10 @@ describe("sympy/polys/tests/test_fields.py", () => {
   it("test_FracElement___truediv__:276", () => {
     const [x, y] = symbols('x y');
     const v1 = new FracField([x, y], ZZ, 'lex');
-    const v2 = new FracField([x, y], ZZ, 'lex');
-    expect(() => v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1))).div(v2['new'](v2.ring.fromExpr(rational(0)), v2.ring.fromExpr(rational(1))))).toThrow(RangeError);
+    const v2 = v1['new'](v1.ring.fromExpr(x), v1.ring.fromExpr(rational(1)));
+    const v3 = v2.field.fieldNew(v2);
+    const v4 = new FracField([x, y], ZZ, 'lex');
+    expect(() => v3.div(v3.field.fieldNew(v4['new'](v4.ring.fromExpr(rational(0)), v4.ring.fromExpr(rational(1)))))).toThrow(RangeError);
   });
   it("test_FracElement___pow__:305", () => {
     const [x, y] = symbols('x y');

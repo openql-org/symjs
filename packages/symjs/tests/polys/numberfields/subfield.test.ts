@@ -2,8 +2,19 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Reference values from SymPy 1.14 polys.numberfields.subfield.
 import { expect, it, vi } from 'vitest';
-import { symbols, sqrt, add, mul, S, AlgebraicNumber, fieldIsomorphism, primitiveElement, toNumberField, isNoMatch, expand, CRootOf, Dummy, parseExpr } from '../../../src';
+import { symbols, sqrt, add, mul, S, AlgebraicNumber, fieldIsomorphism, primitiveElement, toNumberField, isNoMatch, expand, CRootOf, Dummy, parseExpr, Rational } from '../../../src';
+import * as enclosureModule from '../../../src/polys/numberfields/interval';
 const [x] = symbols('x'), a = sqrt(2), b = sqrt(3), theta = add(a, b);
+// first in the file: later tests cache the enclosures of this generator pair, which would bypass the stub
+it('refines unresolved embedding enclosures and preserves evaluation errors',()=>{
+  const r=CRootOf(parseExpr('x**3-x-1'),0),s=CRootOf(parseExpr('x**3-6*x**2+11*x-7'),0),spy=vi.spyOn(enclosureModule,'algebraicEnclosure');
+  try {
+    spy.mockImplementationOnce(()=>{throw new RangeError('precision insufficient');});
+    expect(String(fieldIsomorphism(r,s))).toBe('1,-2');
+    spy.mockImplementationOnce(()=>{throw new TypeError('invalid algebraic interval');});
+    expect(()=>fieldIsomorphism(r,s)).toThrow(TypeError);
+  } finally {spy.mockRestore();}
+});
 it('finds and exactly reconstructs embeddings into a radical power basis', () => {
   expect(String(fieldIsomorphism(a, theta))).toBe('1/2,0,-9/2,0');
   expect(String(fieldIsomorphism(b, theta))).toBe('-1/2,0,11/2,0');
@@ -62,17 +73,29 @@ it('preserves the selected embedding of general RootOf generators',()=>{
   expect(primitiveElement([add(a,b),add(mul(-1,a),sqrt(5))],x)[1]).toEqual([1,2]);
 });
 
-import * as enclosureModule from '../../../src/polys/numberfields/interval';
-it('refines unresolved embedding enclosures and preserves evaluation errors',()=>{
-  const r=CRootOf(parseExpr('x**3-x-1'),0),s=CRootOf(parseExpr('x**3-6*x**2+11*x-7'),0),spy=vi.spyOn(enclosureModule,'algebraicEnclosure');
-  try {
-    spy.mockImplementationOnce(()=>{throw new RangeError('precision insufficient');});
-    expect(String(fieldIsomorphism(r,s))).toBe('1,-2');
-    spy.mockImplementationOnce(()=>{throw new TypeError('invalid algebraic interval');});
-    expect(()=>fieldIsomorphism(r,s)).toThrow(TypeError);
-  } finally {spy.mockRestore();}
+it('finds no embedding when no candidate root lies near the generator',()=>{
+  // 2**(1/4) and I*2**(1/4) share a minimal polynomial but generate different fields
+  const q=parseExpr('2**(1/4)'),iq=parseExpr('I*2**(1/4)');
+  expect(isNoMatch(fieldIsomorphism(q,iq))).toBe(true);
+  // the numeric search over the norm factors finds no candidate near the generator
+  expect(()=>toNumberField(q,iq)).toThrow('exact embedding was not found');
 });
 it('resolves an embedding whose root-separation bound requires higher precision',()=>{
   const a=CRootOf(parseExpr('x**3-x-1'),0),b=CRootOf(parseExpr('x**3-3000*x**2+2999999*x-999999001'),0);
   expect(String(fieldIsomorphism(a,b))).toBe('1,-1000');
+});
+it('refines the enclosures when the first candidate boxes overlap but are too wide to separate the roots',()=>{
+  // x**3 - 15*x**2 + 74*x - 121 is x**3 - x - 1 shifted by 5; no other test uses it, so nothing is cached
+  const r=CRootOf(parseExpr('x**3-x-1'),0),s=CRootOf(parseExpr('x**3-15*x**2+74*x-121'),0);
+  const original=enclosureModule.algebraicEnclosure;
+  // widen both coordinate intervals by 1 at 32 bits: they still overlap but no longer separate the roots
+  const widen=([lo,hi]:enclosureModule.RationalInterval):enclosureModule.RationalInterval=>[Rational.of(lo.p-lo.q,lo.q),Rational.of(hi.p+hi.q,hi.q)];
+  const spy=vi.spyOn(enclosureModule,'algebraicEnclosure').mockImplementation((e,bits)=>{
+    const box=original(e,bits);
+    return bits===32 ? [widen(box[0]),widen(box[1])] : box;
+  });
+  try {
+    expect(String(fieldIsomorphism(r,s))).toBe('1,-5');
+    expect(spy.mock.calls.some(([,bits])=>bits===64)).toBe(true);
+  } finally {spy.mockRestore();}
 });
