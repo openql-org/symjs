@@ -148,3 +148,14 @@ it('queries recursive structural facts through inverses and transposes', () => {
 it('leaves an inverse with unknown structure undecided', () => {
   expect(ask(Q.diagonal(sj.Inverse(X)))).toBe('unknown');
 });
+
+it('queries the adjoint symmetry of explicit matrices', () => {
+  const m = (rows: sj.ExprLike[][]): sj.Expr => sj.sympifyMatrix(sj.Matrix.of(rows));
+  expect(ask(Q.hermitian(m([[2, sj.S.I], [sj.mul(-1, sj.S.I), 3]])))).toBe(true);
+  expect(ask(Q.hermitian(m([[sj.S.I]])))).toBe(false);
+  expect(ask(Q.hermitian(m([[sj.symbol('unknown')]])))).toBe('unknown');
+  expect(ask(Q.antihermitian(m([[sj.S.I]])))).toBe(true);
+  expect(ask(Q.antihermitian(m([[1]])))).toBe(false);
+  expect(ask(Q.antihermitian(m([[sj.symbol('unknown')]])))).toBe('unknown');
+  expect(ask(Q.antihermitian(X))).toBe('unknown');
+});

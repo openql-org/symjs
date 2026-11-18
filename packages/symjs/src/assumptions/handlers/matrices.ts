@@ -137,3 +137,11 @@ registerHandler('positive', (e: Expr, a: Expr): Truth => {
   if (e instanceof MatrixElementNode && e.i.equals(e.j)) return ask(new AppliedPredicate('positive_definite', [e.parent]), a);
   return 'unknown';
 });
+
+// SymPy HermitianPredicate and AntihermitianPredicate on explicit matrices.
+for (const name of ['hermitian', 'antihermitian'] as const) {
+  registerHandler(name, (e): Truth => {
+    if (!(e instanceof ImmutableMatrixNode)) return 'unknown';
+    return (name === 'hermitian' ? e.matrix : e.matrix.scale(S.I)).isHermitian();
+  });
+}

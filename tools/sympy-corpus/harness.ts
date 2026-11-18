@@ -1288,7 +1288,10 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'Pred': {
       const p = sj.Q[tree['name'] as string] ?? sj.Predicate(String(tree['name']));
-      return p(...(tree['args'] as Tree[]).map((x) => deserialize(x) as Expr));
+      return p(...(tree['args'] as Tree[]).map((x) => {
+        const value = deserialize(x);
+        return value instanceof Matrix ? sj.sympifyMatrix(value) : asExpr(value);
+      }));
     }
     case 'Iterator':
       return new JsIterator((tree['items'] as Tree[]).map(deserialize));
@@ -4743,10 +4746,12 @@ function printable(v: unknown): unknown {
 }
 /** A pretty-printable argument: SymPy tuples are PrettyTuples (printed with parentheses), lists arrays. */
 function prettyArg(v: unknown): unknown {
+  if (typeof v === 'function' && 'predicateName' in v) return sj.symbol(String(v));
   if (v instanceof JsTuple && !v.isList) return new sj.PrettyTuple(...(v.items.map(prettyArg) as sj.Printable[]));
   if (v instanceof JsTuple) return v.items.map(prettyArg);
   if (v instanceof JsList) return v.items.map(prettyArg);
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [prettyArg(k), prettyArg(x)]));
+  if (v instanceof JsSet && v.items.every((item) => typeof item === 'function' && 'predicateName' in item)) return sj.FiniteSet.of(...v.items.map((item) => sj.symbol(String(item))));
   if (v instanceof JsSet) return new Set(v.items.map(prettyArg));
   if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
   return v;
@@ -5827,6 +5832,46 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // If (1 + pi)^2 were algebraic, then its square root minus 1 would make pi algebraic.
+  "sympy.assumptions.tests.test_query:assert ask(Q.algebraic(z)) is None": "False",
+  // The complex base may be zero: 0**(-1) is not complex.
+  "sympy.assumptions.tests.test_query:assert ask(Q.complex(x**y), Q.complex(x) & Q.complex(y)) is True": "None",
+  // Zero is both Hermitian and antihermitian; set the real or Hermitian factor/summand to zero.
+  "sympy.assumptions.tests.test_query:assert ask(Q.hermitian(I*x), Q.hermitian(x)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.hermitian(I*x), Q.real(x)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.antihermitian(x), Q.real(x)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.antihermitian(x + I), Q.real(x)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.antihermitian(x + y), Q.antihermitian(x) & Q.real(y)\n        ) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.antihermitian(x + y), Q.imaginary(x) & Q.real(y)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.antihermitian(I*x), Q.antihermitian(x)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.antihermitian(x + y + z),\n        Q.real(x) & Q.imaginary(y) & Q.imaginary(z)) is False": "None",
+  // Set the real summand to zero, leaving a nonzero imaginary sum.
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary(x + I), Q.real(x)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary(x + y), Q.imaginary(x) & Q.real(y)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary(x + y + z),\n        Q.real(x) & Q.imaginary(y) & Q.imaginary(z)) is False": "None",
+  // Nonzero imaginary summands can cancel: I + (-I) = 0, which is not imaginary.
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary(x + I), Q.imaginary(x)) is True": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary(x + y), Q.imaginary(x) & Q.imaginary(y)) is True": "None",
+  // The real factor may be zero, making the product zero rather than imaginary.
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary(I*x), Q.real(x)) is True": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary(x*y), Q.imaginary(x) & Q.real(y)) is True": "None",
+  // For x = I*pi/(2*log(2)), (2*I)**x has argument pi/2 and is imaginary.
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary((2*I)**x), Q.imaginary(x)) is False": "None",
+  // Take x = -1 and y = 1: 2*y is integral but x**y is real.
+  "sympy.assumptions.tests.test_query:assert ask(Q.imaginary(x**y), Q.negative(x) & Q.rational(y) & Q.integer(2*y)) is True": "None",
+  // The integer multiplier may be zero, making sqrt(2)*x integral.
+  "sympy.assumptions.tests.test_query:assert ask(Q.integer(sqrt(2)*x), Q.integer(x)) is False": "None",
+  // Take x = -1 and y = 1/2: x is nonzero real but x**y is imaginary.
+  "sympy.assumptions.tests.test_query:assert ask(Q.nonzero(x**y), Q.nonzero(x)) is True": "None",
+  // The real factor may be zero, making the whole expression real.
+  "sympy.assumptions.tests.test_query:assert ask(Q.real(x/sqrt(-2)), Q.real(x)) is False": "None",
+  "sympy.assumptions.tests.test_query:assert ask(Q.real(I*x), Q.real(x)) is False": "None",
+  // sin(7) is transcendental; an algebraic square root would make its square algebraic.
+  "sympy.assumptions.tests.test_query:assert ask(Q.algebraic(sqrt(sin(7)))) is None": "False",
+  // The assumptions include x = 1, for which acos(x) = 0 is not positive.
+  "sympy.assumptions.tests.test_query:assert ask(Q.positive(acos(x)), Q.nonnegative(x + 1) & Q.nonpositive(x - 1)) is True": "None",
+  // SymPy uses acot(-1) = -pi/4, so real arguments do not imply positive values.
+  "sympy.assumptions.tests.test_query:assert ask(Q.positive(acot(x)), Q.real(x)) is True": "None",
   // SymPy mixes Poly.gens=(y,x) with Options.gens=(x,y). Neither published
   // result solves the original pair; these tuples satisfy both equations.
   'sympy.solvers.polysys:solve_biquadratic(a, b, NewOption)': [
