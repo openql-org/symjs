@@ -15,8 +15,6 @@ export {
   factorial,
   factorial2,
   binomial,
-  ff,
-  rf,
   subfactorial,
   harmonic,
   catalan,
@@ -148,3 +146,5 @@ export {
 export { migcdex, ipartfrac, fermatCoords, cos3, cos5, cos17, cos257, cosTable } from './functions/elementary/trigonometricspecial';
 export { order, argument } from './functions/special/bessel';
 export { bsplineBasis, bsplineBasisSet, interpolatingSpline } from './functions/special/bsplines';
+
+export { ff, rf } from './functions/combinatorial/factorials';

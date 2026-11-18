@@ -6,6 +6,7 @@
  * evaluation rules, derivatives, conjugation and numeric evaluation.
  */
 
+import '../combinatorial/factorials';
 import { NotImplementedError } from '../../core/errors';
 import { at, defined, first, pair } from '../../core/guard';
 import '../../numeric/mpspecialfns';
@@ -1467,8 +1468,6 @@ forEachEntry(SPECS, (name, spec) => {
 export const factorial = (n: ExprLike): Expr => fn('factorial', [n]);
 export const factorial2 = (n: ExprLike): Expr => fn('factorial2', [n]);
 export const binomial = (n: ExprLike, k: ExprLike): Expr => fn('binomial', [n, k]);
-export const ff = (x: ExprLike, k: ExprLike): Expr => fn('ff', [x, k]);
-export const rf = (x: ExprLike, k: ExprLike): Expr => fn('rf', [x, k]);
 export const subfactorial = (n: ExprLike): Expr => fn('subfactorial', [n]);
 export const harmonic = (n: ExprLike, m?: ExprLike): Expr => (m === undefined ? fn('harmonic', [n]) : fn('harmonic', [n, m]));
 export const catalan = (n: ExprLike): Expr => fn('catalan', [n]);
@@ -1633,8 +1632,6 @@ registerFunctionHeads([
   ['factorial', factorial],
   ['factorial2', factorial2],
   ['binomial', binomial],
-  ['ff', ff],
-  ['rf', rf],
   ['subfactorial', subfactorial],
   ['catalan', catalan],
   ['gamma', gamma],

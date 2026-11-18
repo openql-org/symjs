@@ -55,40 +55,40 @@ const CASES = [
   ['core', 'Rational', 202],
   ['core', 'parse, str', 219],
   ['core', 'parse, diff, expand, str, latex', 219],
-  ['core', '*', 327],
+  ['core', '*', 328],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
-  ['special', '*', 403],
+  ['special', '*', 406],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1039],
+  ['simplify', 'simplify', 1043],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
   // methods and the polynomial-ring extensions add to it (measured 694 KiB).
-  ['polys', 'factor', 764],
+  ['polys', 'factor', 765],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1037],
-  ['solvers', 'solve', 1125],
-  ['solvers', 'dsolve', 1140],
+  ['calculus', 'integrate', 1040],
+  ['solvers', 'solve', 1129],
+  ['solvers', 'dsolve', 1144],
   ['sets', '*', 374],
-  ['matrices', 'Matrix', 816],
+  ['matrices', 'Matrix', 818],
   ['printing', 'pretty', 241],
   ['discrete', '*', 299],
   ['strategies', '*', 214],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
-  ['parsing', '*', 845],
+  ['parsing', '*', 847],
   ['unify', '*', 243],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 642],
-  ['holonomic', 'exprToHolonomic', 1220],
-  ['geometry', '*', 1107],
-  ['vector', '*', 1198],
-  ['stats', '*', 1369],
+  ['holonomic', 'exprToHolonomic', 1223],
+  ['geometry', '*', 1109],
+  ['vector', '*', 1201],
+  ['stats', '*', 1374],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1077],
+  ['plotting', '*', 1081],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
@@ -99,7 +99,7 @@ const CASES = [
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2750],
+  ['index', '*', 2769],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

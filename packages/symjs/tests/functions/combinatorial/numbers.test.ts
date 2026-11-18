@@ -180,7 +180,7 @@ const COMB_CASES: Case[] = [
   ["s", "divisor_sigma(12, 0)", "6"],
   ["s", "divisor_sigma(12, 2)", "210"],
   ["s", "divisor_sigma(x)", "divisor_sigma(x)"],
-  ["s", "divisor_sigma(12, x)", "divisor_sigma(12, x)"],
+  ["s", "divisor_sigma(12, x)", "(3**x + 1)*(2**(2*x) + 2**x + 1)"],
   ["s", "primenu(1)", "0"],
   ["s", "primenu(60)", "3"],
   ["s", "primenu(x)", "primenu(x)"],
@@ -486,4 +486,66 @@ describe('comparisons of floor, ceiling and frac (SymPy test_integers)', () => {
     expect(s(Eq(floor(y), x))).toBe('Eq(floor(y), x)');
     expect(s(Eq(x, sj.add(x, 1)))).toBe('False');
   });
+});
+
+it('validates arithmetic function domains and evaluates prime arguments', () => {
+  const p = new sj.Sym('p', { prime: true });
+  const noPositive = new sj.Sym('m', { positive: false });
+  for (const f of [sj.totient, sj.reducedTotient, sj.mobius, sj.primenu, sj.primeomega, sj.divisorSigma, sj.udivisorSigma]) {
+    expect(() => f(noPositive)).toThrow(RangeError);
+    expect(() => f(sj.rational(3, 2))).toThrow(TypeError);
+    expect(() => f(0)).toThrow(RangeError);
+  }
+  expect(sj.totient(p).equals(add(p, -1))).toBe(true);
+  expect(sj.reducedTotient(p).equals(add(p, -1))).toBe(true);
+  expect(sj.mobius(p)).toEqual(sj.rational(-1));
+  expect(sj.primenu(p)).toBe(S.One);
+  expect(sj.primeomega(p)).toBe(S.One);
+  expect(sj.divisorSigma(p, x).equals(add(1, sj.pow(p, x)))).toBe(true);
+  expect(sj.udivisorSigma(p, x).equals(add(1, sj.pow(p, x)))).toBe(true);
+  expect(sj.divisorSigma(1, x)).toBe(S.One);
+  expect(() => sj.divisorSigma(2, -1)).toThrow(RangeError);
+  expect(() => sj.divisorSigma(2, sj.rational(1, 2))).toThrow(TypeError);
+  expect(sj.divisorSigma(4, x).equals(add(1, sj.pow(2, x), sj.pow(2, mul(2, x))))).toBe(true);
+});
+
+it('accepts prime factorizations as Map inputs', () => {
+  const factors = new Map([[2n, 3n], [17n, 1n], [19n, 2n]]);
+  expect(sj.totient(factors)).toEqual(sj.rational(21888));
+  expect(sj.reducedTotient(factors)).toEqual(sj.rational(2736));
+  expect(sj.totient(new Map())).toEqual(S.One);
+});
+
+it('counts primes for real inputs without trial division to the argument', () => {
+  expect(sj.primepi(sj.rational(101, 2))).toEqual(sj.rational(15));
+  expect(sj.primepi(new sj.Float(50.5))).toEqual(sj.rational(15));
+  expect(sj.primepi(100000000)).toEqual(sj.rational(5761455));
+  expect(sj.primepi(S.Infinity)).toBe(S.Infinity);
+  expect(sj.primepi(S.NegativeInfinity)).toBe(S.Zero);
+  expect(() => sj.primepi(S.I)).toThrow(TypeError);
+  expect(sj.primepi(x)).toBeInstanceOf(sj.Fn);
+});
+
+it('validates Motzkin bounds and combinatorial indices', () => {
+  expect(() => sj.firstMotzkins(-1)).toThrow(RangeError);
+  expect(() => sj.firstMotzkins(1.5)).toThrow(RangeError);
+  expect(() => sj.motzkinNumbersInRange(-1n, 3n)).toThrow(RangeError);
+  expect(() => sj.motzkinNumbersInRange(5n, 3n)).toThrow(RangeError);
+  expect(() => sj.bell(-1)).toThrow(RangeError);
+  expect(sj.bell(S.Infinity)).toBe(S.Infinity);
+  expect(() => sj.bell(S.Infinity, x)).toThrow(RangeError);
+  expect(() => sj.bell(sj.rational(1, 2))).toThrow(RangeError);
+  expect(() => sj.partition(sj.rational(1, 2))).toThrow(TypeError);
+  expect(() => sj.tribonacci(-1)).toThrow(RangeError);
+  expect(sj.tribonacci(S.Infinity)).toBe(S.Infinity);
+  expect(sj.bernoulli(x, 1).equals(sj.bernoulli(x))).toBe(true);
+  const n = new sj.Sym('n', { integer: true, positive: true });
+  expect(sj.bernoulli(add(mul(2, n), 1))).toBe(S.Zero);
+  expect(sj.euler(add(mul(2, n), 1))).toBe(S.Zero);
+});
+
+it('recognizes positive odd Euler indices and impossible partition counts', () => {
+  expect(sj.euler(new sj.Sym('odd', { odd: true, positive: true }))).toBe(S.Zero);
+  expect(sj.nT(0, -1)).toBe(0n);
+  expect(sj.nT([], -1)).toBe(0n);
 });

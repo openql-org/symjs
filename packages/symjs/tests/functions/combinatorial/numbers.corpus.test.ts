@@ -1414,25 +1414,25 @@ describe("sympy/functions/combinatorial/tests/test_comb_factorials.py", () => {
   it("test_ff_eval_apply:201", () => {
     expect(sympyStr(Lt(0, new Float({ man: 704134047952839n, exp: -648n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (2)", () => {
+  it("test_ff_eval_apply:201 (2)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6003122366125805n, exp: -2449n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (3)", () => {
+  it("test_ff_eval_apply:201 (3)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5763004156797165n, exp: -1916n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (4)", () => {
+  it("test_ff_eval_apply:201 (4)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6606438345390331n, exp: -2230n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (5)", () => {
+  it("test_ff_eval_apply:201 (5)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 818950586327365n, exp: -1593n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (6)", () => {
+  it("test_ff_eval_apply:201 (6)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2041908507313561n, exp: -1541n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (7)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2104432545827765n, exp: -1105n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (8)", () => {
+  it("test_ff_eval_apply:201 (8)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5802920658284653n, exp: -2391n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (9)", () => {
@@ -1441,16 +1441,16 @@ describe("sympy/functions/combinatorial/tests/test_comb_factorials.py", () => {
   it("test_ff_eval_apply:201 (10)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 63444854010905n, exp: -396n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (11)", () => {
+  it("test_ff_eval_apply:201 (11)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5296621803694093n, exp: -1195n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (12)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 3141731407115511n, exp: -886n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (13)", () => {
+  it("test_ff_eval_apply:201 (13)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 785744827350297n, exp: -2972n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (14)", () => {
+  it("test_ff_eval_apply:201 (14)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 425646704457453n, exp: -1548n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (15)", () => {
@@ -1462,67 +1462,67 @@ describe("sympy/functions/combinatorial/tests/test_comb_factorials.py", () => {
   it("test_ff_eval_apply:201 (17)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2799761319976137n, exp: -912n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (18)", () => {
+  it("test_ff_eval_apply:201 (18)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8888198228519241n, exp: -3312n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (19)", () => {
+  it("test_ff_eval_apply:201 (19)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5007841863147785n, exp: -1843n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (20)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 7018907635530425n, exp: -922n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (21)", () => {
+  it("test_ff_eval_apply:201 (21)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 700906274023857n, exp: -2255n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (22)", () => {
+  it("test_ff_eval_apply:201 (22)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5411123110499815n, exp: -2542n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (23)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4387849855951881n, exp: -636n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (24)", () => {
+  it("test_ff_eval_apply:201 (24)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 7295008396221739n, exp: -1871n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (25)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8109829475062621n, exp: -241n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (26)", () => {
+  it("test_ff_eval_apply:201 (26)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5547441373237881n, exp: -1684n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (27)", () => {
+  it("test_ff_eval_apply:201 (27)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4566479838559597n, exp: -2850n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (28)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2991951966284521n, exp: -361n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (29)", () => {
+  it("test_ff_eval_apply:201 (29)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2337371598647991n, exp: -1976n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (30)", () => {
+  it("test_ff_eval_apply:201 (30)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5060856225959213n, exp: -1334n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (31)", () => {
+  it("test_ff_eval_apply:201 (31)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 3388607010030163n, exp: -1350n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (32)", () => {
+  it("test_ff_eval_apply:201 (32)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 482606880758191n, exp: -1240n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (33)", () => {
+  it("test_ff_eval_apply:201 (33)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8565529830715395n, exp: -1726n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (34)", () => {
+  it("test_ff_eval_apply:201 (34)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2643233496920003n, exp: -1913n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (35)", () => {
+  it("test_ff_eval_apply:201 (35)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6160859390751249n, exp: -2251n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (36)", () => {
+  it("test_ff_eval_apply:201 (36)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6391978031687137n, exp: -3024n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (37)", () => {
+  it("test_ff_eval_apply:201 (37)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2101400751275561n, exp: -1227n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (38)", () => {
+  it("test_ff_eval_apply:201 (38)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 851127058816099n, exp: -3014n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (39)", () => {
@@ -1534,181 +1534,181 @@ describe("sympy/functions/combinatorial/tests/test_comb_factorials.py", () => {
   it("test_ff_eval_apply:201 (41)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 20206882769005n, exp: -279n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (42)", () => {
+  it("test_ff_eval_apply:201 (42)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2592692419153351n, exp: -1928n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (43)", () => {
+  it("test_ff_eval_apply:201 (43)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2052615254700035n, exp: -2305n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (44)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2746346794227199n, exp: -530n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (45)", () => {
+  it("test_ff_eval_apply:201 (45)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5831380449206931n, exp: -1215n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (46)", () => {
+  it("test_ff_eval_apply:201 (46)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8698112966117683n, exp: -1311n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (47)", () => {
+  it("test_ff_eval_apply:201 (47)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5313366084187115n, exp: -1379n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (48)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2101494218239023n, exp: -255n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (49)", () => {
+  it("test_ff_eval_apply:201 (49)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 7758766535433561n, exp: -3146n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (50)", () => {
+  it("test_ff_eval_apply:201 (50)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2022111391441327n, exp: -1579n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (51)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4296397778519833n, exp: -655n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (52)", () => {
+  it("test_ff_eval_apply:201 (52)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6107403130965145n, exp: -1213n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (53)", () => {
+  it("test_ff_eval_apply:201 (53)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6111014575938141n, exp: -3123n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (54)", () => {
+  it("test_ff_eval_apply:201 (54)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4761720367056621n, exp: -2122n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (55)", () => {
+  it("test_ff_eval_apply:201 (55)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6679970986113793n, exp: -3087n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (56)", () => {
+  it("test_ff_eval_apply:201 (56)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6937925771317959n, exp: -1378n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (57)", () => {
+  it("test_ff_eval_apply:201 (57)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 701711311853419n, exp: -1913n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (58)", () => {
+  it("test_ff_eval_apply:201 (58)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2149348405525181n, exp: -1428n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (59)", () => {
+  it("test_ff_eval_apply:201 (59)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5130941113923643n, exp: -3301n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (60)", () => {
+  it("test_ff_eval_apply:201 (60)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4578943432956141n, exp: -1243n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (61)", () => {
+  it("test_ff_eval_apply:201 (61)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2271054209957339n, exp: -1900n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (62)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 533847911405497n, exp: -178n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (63)", () => {
+  it("test_ff_eval_apply:201 (63)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 767260297387723n, exp: -3706n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (64)", () => {
+  it("test_ff_eval_apply:201 (64)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5889285839928793n, exp: -2938n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (65)", () => {
+  it("test_ff_eval_apply:201 (65)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 790631703087067n, exp: -3134n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (66)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8418522837341477n, exp: -305n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (67)", () => {
+  it("test_ff_eval_apply:201 (67)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5646352034075193n, exp: -2510n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (68)", () => {
+  it("test_ff_eval_apply:201 (68)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5130591153713587n, exp: -3026n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (69)", () => {
+  it("test_ff_eval_apply:201 (69)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 1024647498966267n, exp: -1552n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (70)", () => {
+  it("test_ff_eval_apply:201 (70)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 3005719178572807n, exp: -2764n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (71)", () => {
+  it("test_ff_eval_apply:201 (71)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 1536664782964377n, exp: -3206n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (72)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5269955698521603n, exp: -154n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (73)", () => {
+  it("test_ff_eval_apply:201 (73)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4709282364265793n, exp: -2596n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (74)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 7385527959262733n, exp: -627n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (75)", () => {
+  it("test_ff_eval_apply:201 (75)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 1486412196276405n, exp: -2923n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (76)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4369506463600779n, exp: -226n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (77)", () => {
+  it("test_ff_eval_apply:201 (77)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 322011853614385n, exp: -1488n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (78)", () => {
+  it("test_ff_eval_apply:201 (78)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 661457405754829n, exp: -2117n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (79)", () => {
+  it("test_ff_eval_apply:201 (79)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 3660178240801711n, exp: -1729n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (80)", () => {
+  it("test_ff_eval_apply:201 (80)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5125000125078087n, exp: -2716n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (81)", () => {
+  it("test_ff_eval_apply:201 (81)", () => {
     expect(sympyStr(Lt(new Float({ man: 1n, exp: -1904n }, 53), new Float({ man: 4650177516686113n, exp: -1953n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (82)", () => {
+  it("test_ff_eval_apply:201 (82)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 5545226057679495n, exp: -1566n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (83)", () => {
+  it("test_ff_eval_apply:201 (83)", () => {
     expect(sympyStr(Lt(new Float({ man: 1n, exp: -2386n }, 53), new Float({ man: 513701636601031n, exp: -2432n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (84)", () => {
+  it("test_ff_eval_apply:201 (84)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4954714527743825n, exp: -2482n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (85)", () => {
+  it("test_ff_eval_apply:201 (85)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8513589476536871n, exp: -3320n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (86)", () => {
+  it("test_ff_eval_apply:201 (86)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 7931703237521323n, exp: -2085n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (87)", () => {
+  it("test_ff_eval_apply:201 (87)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8415121519180387n, exp: -3019n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (88)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 3781305161517359n, exp: -299n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (89)", () => {
+  it("test_ff_eval_apply:201 (89)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8513913020631491n, exp: -2449n }, 53)))).toBe('True');
   });
   it("test_ff_eval_apply:201 (90)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 123236333351955n, exp: -317n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (91)", () => {
+  it("test_ff_eval_apply:201 (91)", () => {
     expect(sympyStr(Lt(new Float({ man: 1n, exp: -1170n }, 53), new Float({ man: 8465583125230663n, exp: -1220n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (92)", () => {
+  it("test_ff_eval_apply:201 (92)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6644482402679553n, exp: -1883n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (93)", () => {
+  it("test_ff_eval_apply:201 (93)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 6444703753795295n, exp: -1435n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (94)", () => {
+  it("test_ff_eval_apply:201 (94)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 7776221725477925n, exp: -3366n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (95)", () => {
+  it("test_ff_eval_apply:201 (95)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 2414986537294279n, exp: -2604n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (96)", () => {
+  it("test_ff_eval_apply:201 (96)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4981443629122797n, exp: -1922n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (97)", () => {
+  it("test_ff_eval_apply:201 (97)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 631927458962417n, exp: -1276n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (98)", () => {
+  it("test_ff_eval_apply:201 (98)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8825109456289549n, exp: -2084n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (99)", () => {
+  it("test_ff_eval_apply:201 (99)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 8018952630900715n, exp: -1772n }, 53)))).toBe('True');
   });
-  it.fails("test_ff_eval_apply:201 (100)", () => {
+  it("test_ff_eval_apply:201 (100)", () => {
     expect(sympyStr(Lt(0, new Float({ man: 4044477295338197n, exp: -3207n }, 53)))).toBe('True');
   });
   it("test_rf_ff_eval_hiprec:207", () => {
@@ -2645,11 +2645,11 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_bernoulli:70", () => {
+  it("test_bernoulli:70", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(fn('bernoulli', [new Add([rational(1), new Mul([rational(2), n])])]))).toBe('0');
   });
-  it.fails("test_bernoulli:72", () => {
+  it("test_bernoulli:72", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('bernoulli', [x, rational(1)]))).toBe('bernoulli(x)');
   });
@@ -3272,7 +3272,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
     const n = new Sym('n', { integer: true, nonnegative: true });
     expect(sympyStr(dummyEq(new Mul([I, Sum(new Mul([new Pow(rational(-1), new Dummy('j', { integer: true }, 1000002)), new Pow(rational(2), new Mul([rational(-1), new Dummy('k', { integer: true }, 1000003)])), new Pow(I, new Mul([rational(-1), new Dummy('k', { integer: true }, 1000003)])), new Pow(new Add([new Mul([rational(-2), new Dummy('j', { integer: true }, 1000002)]), new Dummy('k', { integer: true }, 1000003)]), new Add([rational(1), new Mul([rational(2), n])])), new Pow(new Dummy('k', { integer: true }, 1000003), rational(-1)), fn('binomial', [new Dummy('k', { integer: true }, 1000003), new Dummy('j', { integer: true }, 1000002)])]), [new Dummy('j', { integer: true }, 1000002), rational(0), new Dummy('k', { integer: true }, 1000003)], [new Dummy('k', { integer: true }, 1000003), rational(1), new Add([rational(1), new Mul([rational(2), n])])])]), new Mul([I, Sum(new Mul([new Pow(rational(-1), new Dummy('j', {}, 1000000)), new Pow(rational(2), new Mul([rational(-1), new Dummy('k', {}, 1000001)])), new Pow(I, new Mul([rational(-1), new Dummy('k', {}, 1000001)])), new Pow(new Add([new Mul([rational(-2), new Dummy('j', {}, 1000000)]), new Dummy('k', {}, 1000001)]), new Add([rational(1), new Mul([rational(2), n])])), new Pow(new Dummy('k', {}, 1000001), rational(-1)), fn('binomial', [new Dummy('k', {}, 1000001), new Dummy('j', {}, 1000000)])]), [new Dummy('j', {}, 1000000), rational(0), new Dummy('k', {}, 1000001)], [new Dummy('k', {}, 1000001), rational(1), new Add([rational(1), new Mul([rational(2), n])])])])))).toBe('True');
   });
-  it.fails("test_euler_odd:413", () => {
+  it("test_euler_odd:413", () => {
     const n = new Sym('n', { odd: true, positive: true });
     expect(sympyStr(fn('euler', [n]))).toBe('0');
   });
@@ -3842,11 +3842,11 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   //   raises(ValueError, lambda: divisor_sigma(1, -1))
   //   => None
   it.todo("test_divisor_sigma:600");
-  it.fails("test_divisor_sigma:605", () => {
+  it("test_divisor_sigma:605", () => {
     const p = new Sym('p', { prime: true });
     expect(sympyStr(fn('divisor_sigma', [p, rational(1)]))).toBe('p + 1');
   });
-  it.fails("test_divisor_sigma:606", () => {
+  it("test_divisor_sigma:606", () => {
     const p = new Sym('p', { prime: true });
     const k = new Sym('k', { integer: true });
     expect(sympyStr(fn('divisor_sigma', [p, k]))).toBe('p**k + 1');
@@ -3859,11 +3859,11 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(isPositive(fn('divisor_sigma', [n])))).toBe('True');
   });
-  it.fails("test_divisor_sigma:615", () => {
+  it("test_divisor_sigma:615", () => {
     const k = new Sym('k', { integer: true, zero: false });
     expect(sympyStr(fn('divisor_sigma', [rational(4), k]))).toBe('2**(2*k) + 2**k + 1');
   });
-  it.fails("test_divisor_sigma:616", () => {
+  it("test_divisor_sigma:616", () => {
     const k = new Sym('k', { integer: true, zero: false });
     expect(sympyStr(fn('divisor_sigma', [rational(6), k]))).toBe('(2**k + 1)*(3**k + 1)');
   });
@@ -3910,11 +3910,11 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   it("test_udivisor_sigma:638", () => {
     expect(() => udivisorSigma(rational(1), rational(-1))).toThrow(RangeError);
   });
-  it.fails("test_udivisor_sigma:643", () => {
+  it("test_udivisor_sigma:643", () => {
     const p = new Sym('p', { prime: true });
     expect(sympyStr(udivisorSigma(p, rational(1)))).toBe('p + 1');
   });
-  it.fails("test_udivisor_sigma:644", () => {
+  it("test_udivisor_sigma:644", () => {
     const p = new Sym('p', { prime: true });
     const k = new Sym('k', { integer: true });
     expect(sympyStr(udivisorSigma(p, k))).toBe('p**k + 1');
@@ -4902,7 +4902,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   it("test_mobius:792", () => {
     expect(() => fn('mobius', [rational(-3)])).toThrow(RangeError);
   });
-  it.fails("test_mobius:796", () => {
+  it("test_mobius:796", () => {
     const p = new Sym('p', { prime: true });
     expect(sympyStr(fn('mobius', [p]))).toBe('-1');
   });
@@ -5127,7 +5127,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   //   raises(ValueError, lambda: primenu(0))
   //   => None
   it.todo("test_primenu:834");
-  it.fails("test_primenu:838", () => {
+  it("test_primenu:838", () => {
     const p = new Sym('p', { prime: true });
     expect(sympyStr(fn('primenu', [p]))).toBe('1');
   });
@@ -5272,7 +5272,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   //   raises(ValueError, lambda: primeomega(0))
   //   => None
   it.todo("test_primeomega:862");
-  it.fails("test_primeomega:866", () => {
+  it("test_primeomega:866", () => {
     const p = new Sym('p', { prime: true });
     expect(sympyStr(fn('primeomega', [p]))).toBe('1');
   });
@@ -5417,7 +5417,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   //   raises(ValueError, lambda: totient(0))
   //   => None
   it.todo("test_totient:890");
-  it.fails("test_totient:894", () => {
+  it("test_totient:894", () => {
     const p = new Sym('p', { prime: true });
     expect(sympyStr(fn('totient', [p]))).toBe('p - 1');
   });
@@ -5604,7 +5604,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   //   raises(ValueError, lambda: reduced_totient(0))
   //   => None
   it.todo("test_reduced_totient:919");
-  it.fails("test_reduced_totient:923", () => {
+  it("test_reduced_totient:923", () => {
     const p = new Sym('p', { prime: true });
     expect(sympyStr(fn('reduced_totient', [p]))).toBe('p - 1');
   });
@@ -5807,10 +5807,10 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(isNonnegative(fn('primepi', [n])))).toBe('True');
   });
-  it.fails("test_primepi:954", () => {
+  it("test_primepi:954", () => {
     expect(sympyStr(fn('primepi', [oo]))).toBe('oo');
   });
-  it.fails("test_primepi:955", () => {
+  it("test_primepi:955", () => {
     expect(sympyStr(fn('primepi', [S.NegativeInfinity]))).toBe('0');
   });
   it("test_primepi:962", () => {
@@ -5819,301 +5819,301 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   it("test_primepi:967", () => {
     expect(sympyStr(fn('primepi', [rational(1)]))).toBe('0');
   });
-  it.fails("test_primepi:967 (2)", () => {
+  it("test_primepi:967 (2)", () => {
     expect(sympyStr(fn('primepi', [new Float(1.5)]))).toBe('0');
   });
   it("test_primepi:967 (3)", () => {
     expect(sympyStr(fn('primepi', [rational(2)]))).toBe('1');
   });
-  it.fails("test_primepi:967 (4)", () => {
+  it("test_primepi:967 (4)", () => {
     expect(sympyStr(fn('primepi', [new Float(2.5)]))).toBe('1');
   });
   it("test_primepi:967 (5)", () => {
     expect(sympyStr(fn('primepi', [rational(3)]))).toBe('2');
   });
-  it.fails("test_primepi:967 (6)", () => {
+  it("test_primepi:967 (6)", () => {
     expect(sympyStr(fn('primepi', [new Float(3.5)]))).toBe('2');
   });
   it("test_primepi:967 (7)", () => {
     expect(sympyStr(fn('primepi', [rational(4)]))).toBe('2');
   });
-  it.fails("test_primepi:967 (8)", () => {
+  it("test_primepi:967 (8)", () => {
     expect(sympyStr(fn('primepi', [new Float(4.5)]))).toBe('2');
   });
   it("test_primepi:967 (9)", () => {
     expect(sympyStr(fn('primepi', [rational(5)]))).toBe('3');
   });
-  it.fails("test_primepi:967 (10)", () => {
+  it("test_primepi:967 (10)", () => {
     expect(sympyStr(fn('primepi', [new Float(5.5)]))).toBe('3');
   });
   it("test_primepi:967 (11)", () => {
     expect(sympyStr(fn('primepi', [rational(6)]))).toBe('3');
   });
-  it.fails("test_primepi:967 (12)", () => {
+  it("test_primepi:967 (12)", () => {
     expect(sympyStr(fn('primepi', [new Float(6.5)]))).toBe('3');
   });
   it("test_primepi:967 (13)", () => {
     expect(sympyStr(fn('primepi', [rational(7)]))).toBe('4');
   });
-  it.fails("test_primepi:967 (14)", () => {
+  it("test_primepi:967 (14)", () => {
     expect(sympyStr(fn('primepi', [new Float(7.5)]))).toBe('4');
   });
   it("test_primepi:967 (15)", () => {
     expect(sympyStr(fn('primepi', [rational(8)]))).toBe('4');
   });
-  it.fails("test_primepi:967 (16)", () => {
+  it("test_primepi:967 (16)", () => {
     expect(sympyStr(fn('primepi', [new Float(8.5)]))).toBe('4');
   });
   it("test_primepi:967 (17)", () => {
     expect(sympyStr(fn('primepi', [rational(9)]))).toBe('4');
   });
-  it.fails("test_primepi:967 (18)", () => {
+  it("test_primepi:967 (18)", () => {
     expect(sympyStr(fn('primepi', [new Float(9.5)]))).toBe('4');
   });
   it("test_primepi:967 (19)", () => {
     expect(sympyStr(fn('primepi', [rational(10)]))).toBe('4');
   });
-  it.fails("test_primepi:967 (20)", () => {
+  it("test_primepi:967 (20)", () => {
     expect(sympyStr(fn('primepi', [new Float(10.5)]))).toBe('4');
   });
   it("test_primepi:967 (21)", () => {
     expect(sympyStr(fn('primepi', [rational(11)]))).toBe('5');
   });
-  it.fails("test_primepi:967 (22)", () => {
+  it("test_primepi:967 (22)", () => {
     expect(sympyStr(fn('primepi', [new Float(11.5)]))).toBe('5');
   });
   it("test_primepi:967 (23)", () => {
     expect(sympyStr(fn('primepi', [rational(12)]))).toBe('5');
   });
-  it.fails("test_primepi:967 (24)", () => {
+  it("test_primepi:967 (24)", () => {
     expect(sympyStr(fn('primepi', [new Float(12.5)]))).toBe('5');
   });
   it("test_primepi:967 (25)", () => {
     expect(sympyStr(fn('primepi', [rational(13)]))).toBe('6');
   });
-  it.fails("test_primepi:967 (26)", () => {
+  it("test_primepi:967 (26)", () => {
     expect(sympyStr(fn('primepi', [new Float(13.5)]))).toBe('6');
   });
   it("test_primepi:967 (27)", () => {
     expect(sympyStr(fn('primepi', [rational(14)]))).toBe('6');
   });
-  it.fails("test_primepi:967 (28)", () => {
+  it("test_primepi:967 (28)", () => {
     expect(sympyStr(fn('primepi', [new Float(14.5)]))).toBe('6');
   });
   it("test_primepi:967 (29)", () => {
     expect(sympyStr(fn('primepi', [rational(15)]))).toBe('6');
   });
-  it.fails("test_primepi:967 (30)", () => {
+  it("test_primepi:967 (30)", () => {
     expect(sympyStr(fn('primepi', [new Float(15.5)]))).toBe('6');
   });
   it("test_primepi:967 (31)", () => {
     expect(sympyStr(fn('primepi', [rational(16)]))).toBe('6');
   });
-  it.fails("test_primepi:967 (32)", () => {
+  it("test_primepi:967 (32)", () => {
     expect(sympyStr(fn('primepi', [new Float(16.5)]))).toBe('6');
   });
   it("test_primepi:967 (33)", () => {
     expect(sympyStr(fn('primepi', [rational(17)]))).toBe('7');
   });
-  it.fails("test_primepi:967 (34)", () => {
+  it("test_primepi:967 (34)", () => {
     expect(sympyStr(fn('primepi', [new Float(17.5)]))).toBe('7');
   });
   it("test_primepi:967 (35)", () => {
     expect(sympyStr(fn('primepi', [rational(18)]))).toBe('7');
   });
-  it.fails("test_primepi:967 (36)", () => {
+  it("test_primepi:967 (36)", () => {
     expect(sympyStr(fn('primepi', [new Float(18.5)]))).toBe('7');
   });
   it("test_primepi:967 (37)", () => {
     expect(sympyStr(fn('primepi', [rational(19)]))).toBe('8');
   });
-  it.fails("test_primepi:967 (38)", () => {
+  it("test_primepi:967 (38)", () => {
     expect(sympyStr(fn('primepi', [new Float(19.5)]))).toBe('8');
   });
   it("test_primepi:967 (39)", () => {
     expect(sympyStr(fn('primepi', [rational(20)]))).toBe('8');
   });
-  it.fails("test_primepi:967 (40)", () => {
+  it("test_primepi:967 (40)", () => {
     expect(sympyStr(fn('primepi', [new Float(20.5)]))).toBe('8');
   });
   it("test_primepi:967 (41)", () => {
     expect(sympyStr(fn('primepi', [rational(21)]))).toBe('8');
   });
-  it.fails("test_primepi:967 (42)", () => {
+  it("test_primepi:967 (42)", () => {
     expect(sympyStr(fn('primepi', [new Float(21.5)]))).toBe('8');
   });
   it("test_primepi:967 (43)", () => {
     expect(sympyStr(fn('primepi', [rational(22)]))).toBe('8');
   });
-  it.fails("test_primepi:967 (44)", () => {
+  it("test_primepi:967 (44)", () => {
     expect(sympyStr(fn('primepi', [new Float(22.5)]))).toBe('8');
   });
   it("test_primepi:967 (45)", () => {
     expect(sympyStr(fn('primepi', [rational(23)]))).toBe('9');
   });
-  it.fails("test_primepi:967 (46)", () => {
+  it("test_primepi:967 (46)", () => {
     expect(sympyStr(fn('primepi', [new Float(23.5)]))).toBe('9');
   });
   it("test_primepi:967 (47)", () => {
     expect(sympyStr(fn('primepi', [rational(24)]))).toBe('9');
   });
-  it.fails("test_primepi:967 (48)", () => {
+  it("test_primepi:967 (48)", () => {
     expect(sympyStr(fn('primepi', [new Float(24.5)]))).toBe('9');
   });
   it("test_primepi:967 (49)", () => {
     expect(sympyStr(fn('primepi', [rational(25)]))).toBe('9');
   });
-  it.fails("test_primepi:967 (50)", () => {
+  it("test_primepi:967 (50)", () => {
     expect(sympyStr(fn('primepi', [new Float(25.5)]))).toBe('9');
   });
   it("test_primepi:967 (51)", () => {
     expect(sympyStr(fn('primepi', [rational(26)]))).toBe('9');
   });
-  it.fails("test_primepi:967 (52)", () => {
+  it("test_primepi:967 (52)", () => {
     expect(sympyStr(fn('primepi', [new Float(26.5)]))).toBe('9');
   });
   it("test_primepi:967 (53)", () => {
     expect(sympyStr(fn('primepi', [rational(27)]))).toBe('9');
   });
-  it.fails("test_primepi:967 (54)", () => {
+  it("test_primepi:967 (54)", () => {
     expect(sympyStr(fn('primepi', [new Float(27.5)]))).toBe('9');
   });
   it("test_primepi:967 (55)", () => {
     expect(sympyStr(fn('primepi', [rational(28)]))).toBe('9');
   });
-  it.fails("test_primepi:967 (56)", () => {
+  it("test_primepi:967 (56)", () => {
     expect(sympyStr(fn('primepi', [new Float(28.5)]))).toBe('9');
   });
   it("test_primepi:967 (57)", () => {
     expect(sympyStr(fn('primepi', [rational(29)]))).toBe('10');
   });
-  it.fails("test_primepi:967 (58)", () => {
+  it("test_primepi:967 (58)", () => {
     expect(sympyStr(fn('primepi', [new Float(29.5)]))).toBe('10');
   });
   it("test_primepi:967 (59)", () => {
     expect(sympyStr(fn('primepi', [rational(30)]))).toBe('10');
   });
-  it.fails("test_primepi:967 (60)", () => {
+  it("test_primepi:967 (60)", () => {
     expect(sympyStr(fn('primepi', [new Float(30.5)]))).toBe('10');
   });
   it("test_primepi:967 (61)", () => {
     expect(sympyStr(fn('primepi', [rational(31)]))).toBe('11');
   });
-  it.fails("test_primepi:967 (62)", () => {
+  it("test_primepi:967 (62)", () => {
     expect(sympyStr(fn('primepi', [new Float(31.5)]))).toBe('11');
   });
   it("test_primepi:967 (63)", () => {
     expect(sympyStr(fn('primepi', [rational(32)]))).toBe('11');
   });
-  it.fails("test_primepi:967 (64)", () => {
+  it("test_primepi:967 (64)", () => {
     expect(sympyStr(fn('primepi', [new Float(32.5)]))).toBe('11');
   });
   it("test_primepi:967 (65)", () => {
     expect(sympyStr(fn('primepi', [rational(33)]))).toBe('11');
   });
-  it.fails("test_primepi:967 (66)", () => {
+  it("test_primepi:967 (66)", () => {
     expect(sympyStr(fn('primepi', [new Float(33.5)]))).toBe('11');
   });
   it("test_primepi:967 (67)", () => {
     expect(sympyStr(fn('primepi', [rational(34)]))).toBe('11');
   });
-  it.fails("test_primepi:967 (68)", () => {
+  it("test_primepi:967 (68)", () => {
     expect(sympyStr(fn('primepi', [new Float(34.5)]))).toBe('11');
   });
   it("test_primepi:967 (69)", () => {
     expect(sympyStr(fn('primepi', [rational(35)]))).toBe('11');
   });
-  it.fails("test_primepi:967 (70)", () => {
+  it("test_primepi:967 (70)", () => {
     expect(sympyStr(fn('primepi', [new Float(35.5)]))).toBe('11');
   });
   it("test_primepi:967 (71)", () => {
     expect(sympyStr(fn('primepi', [rational(36)]))).toBe('11');
   });
-  it.fails("test_primepi:967 (72)", () => {
+  it("test_primepi:967 (72)", () => {
     expect(sympyStr(fn('primepi', [new Float(36.5)]))).toBe('11');
   });
   it("test_primepi:967 (73)", () => {
     expect(sympyStr(fn('primepi', [rational(37)]))).toBe('12');
   });
-  it.fails("test_primepi:967 (74)", () => {
+  it("test_primepi:967 (74)", () => {
     expect(sympyStr(fn('primepi', [new Float(37.5)]))).toBe('12');
   });
   it("test_primepi:967 (75)", () => {
     expect(sympyStr(fn('primepi', [rational(38)]))).toBe('12');
   });
-  it.fails("test_primepi:967 (76)", () => {
+  it("test_primepi:967 (76)", () => {
     expect(sympyStr(fn('primepi', [new Float(38.5)]))).toBe('12');
   });
   it("test_primepi:967 (77)", () => {
     expect(sympyStr(fn('primepi', [rational(39)]))).toBe('12');
   });
-  it.fails("test_primepi:967 (78)", () => {
+  it("test_primepi:967 (78)", () => {
     expect(sympyStr(fn('primepi', [new Float(39.5)]))).toBe('12');
   });
   it("test_primepi:967 (79)", () => {
     expect(sympyStr(fn('primepi', [rational(40)]))).toBe('12');
   });
-  it.fails("test_primepi:967 (80)", () => {
+  it("test_primepi:967 (80)", () => {
     expect(sympyStr(fn('primepi', [new Float(40.5)]))).toBe('12');
   });
   it("test_primepi:967 (81)", () => {
     expect(sympyStr(fn('primepi', [rational(41)]))).toBe('13');
   });
-  it.fails("test_primepi:967 (82)", () => {
+  it("test_primepi:967 (82)", () => {
     expect(sympyStr(fn('primepi', [new Float(41.5)]))).toBe('13');
   });
   it("test_primepi:967 (83)", () => {
     expect(sympyStr(fn('primepi', [rational(42)]))).toBe('13');
   });
-  it.fails("test_primepi:967 (84)", () => {
+  it("test_primepi:967 (84)", () => {
     expect(sympyStr(fn('primepi', [new Float(42.5)]))).toBe('13');
   });
   it("test_primepi:967 (85)", () => {
     expect(sympyStr(fn('primepi', [rational(43)]))).toBe('14');
   });
-  it.fails("test_primepi:967 (86)", () => {
+  it("test_primepi:967 (86)", () => {
     expect(sympyStr(fn('primepi', [new Float(43.5)]))).toBe('14');
   });
   it("test_primepi:967 (87)", () => {
     expect(sympyStr(fn('primepi', [rational(44)]))).toBe('14');
   });
-  it.fails("test_primepi:967 (88)", () => {
+  it("test_primepi:967 (88)", () => {
     expect(sympyStr(fn('primepi', [new Float(44.5)]))).toBe('14');
   });
   it("test_primepi:967 (89)", () => {
     expect(sympyStr(fn('primepi', [rational(45)]))).toBe('14');
   });
-  it.fails("test_primepi:967 (90)", () => {
+  it("test_primepi:967 (90)", () => {
     expect(sympyStr(fn('primepi', [new Float(45.5)]))).toBe('14');
   });
   it("test_primepi:967 (91)", () => {
     expect(sympyStr(fn('primepi', [rational(46)]))).toBe('14');
   });
-  it.fails("test_primepi:967 (92)", () => {
+  it("test_primepi:967 (92)", () => {
     expect(sympyStr(fn('primepi', [new Float(46.5)]))).toBe('14');
   });
   it("test_primepi:967 (93)", () => {
     expect(sympyStr(fn('primepi', [rational(47)]))).toBe('15');
   });
-  it.fails("test_primepi:967 (94)", () => {
+  it("test_primepi:967 (94)", () => {
     expect(sympyStr(fn('primepi', [new Float(47.5)]))).toBe('15');
   });
   it("test_primepi:967 (95)", () => {
     expect(sympyStr(fn('primepi', [rational(48)]))).toBe('15');
   });
-  it.fails("test_primepi:967 (96)", () => {
+  it("test_primepi:967 (96)", () => {
     expect(sympyStr(fn('primepi', [new Float(48.5)]))).toBe('15');
   });
   it("test_primepi:967 (97)", () => {
     expect(sympyStr(fn('primepi', [rational(49)]))).toBe('15');
   });
-  it.fails("test_primepi:967 (98)", () => {
+  it("test_primepi:967 (98)", () => {
     expect(sympyStr(fn('primepi', [new Float(49.5)]))).toBe('15');
   });
   it("test_primepi:967 (99)", () => {
     expect(sympyStr(fn('primepi', [rational(50)]))).toBe('15');
   });
-  it.fails("test_primepi:967 (100)", () => {
+  it("test_primepi:967 (100)", () => {
     expect(sympyStr(fn('primepi', [new Float(50.5)]))).toBe('15');
   });
   it("test_nC_nP_nT:1003", () => {
@@ -7221,7 +7221,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   it("test_nC_nP_nT:1134", () => {
     expect(sympyStr(nC('aabbaabbaabb', rational(3)))).toBe('4');
   });
-  it.fails("test_PR_14617:1151", () => {
+  it("test_PR_14617:1151", () => {
     expect(sympyStr(nT(rational(0), rational(-1)))).toBe('0');
   });
   it("test_PR_14617:1149", () => {
@@ -7230,7 +7230,7 @@ describe("sympy/functions/combinatorial/tests/test_comb_numbers.py", () => {
   it("test_PR_14617:1151 (2)", () => {
     expect(sympyStr(nT(rational(0), rational(1)))).toBe('0');
   });
-  it.fails("test_PR_14617:1151 (3)", () => {
+  it("test_PR_14617:1151 (3)", () => {
     expect(sympyStr(nT([], rational(-1)))).toBe('0');
   });
   it("test_PR_14617:1149 (2)", () => {
