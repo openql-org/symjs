@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { DiracDelta, Heaviside, Sym, countOps, exptotrig, exptrigsimp, fn, parse, rewriteExp, rewriteTrig, simplify, sub, symbol, trigsimp } from '../../src';
 import type { Expr, TrigsimpOptions } from '../../src';
-import { futrig, trigsimpGroebner, trigsimpInverse } from '../../src/simplify/trigsimp';
+import { hasTrigFunctions, combineExp, rewriteExp as trigToExp, futrig, trigsimpGroebner, trigsimpInverse } from '../../src/simplify/trigsimp';
 
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
 const Qs = (s: string, syms: Sym[]) => parse(s, { symbols: syms, locals: { Heaviside, DiracDelta } });
@@ -307,11 +307,11 @@ const TEST_TRIGSIMP: [string, string, TrigsimpOptions, Record<string, Assume>, s
   ["trigsimp", "sin(x)**2*A + cos(x)**2*A", {}, { A: { commutative: false } }, "A"],
   ["trigsimp", "tan(x)**2*A + A", {}, { A: { commutative: false } }, "A/cos(x)**2"],
   // SymPy: tan(x)**2*A (SymPy factor() factors the commutative part of a non-commutative sum; symjs factor and as_numer_denom leave it)
-  ["trigsimp", "-A + A/cos(x)**2", {}, { A: { commutative: false } }, "-A + A/cos(x)**2"],
+  ["trigsimp", "-A + A/cos(x)**2", {}, { A: { commutative: false } }, "tan(x)**2*A"],
   ["trigsimp", "-tan(x)**2*A + A/cos(x)**2", {}, { A: { commutative: false } }, "A"],
   ["trigsimp", "cot(x)**2*A + A", {}, { A: { commutative: false } }, "A/sin(x)**2"],
   // SymPy: A/tan(x)**2 (as above)
-  ["trigsimp", "-A + A/sin(x)**2", {}, { A: { commutative: false } }, "-A + A/sin(x)**2"],
+  ["trigsimp", "-A + A/sin(x)**2", {}, { A: { commutative: false } }, "A/tan(x)**2"],
   ["trigsimp", "-cot(x)**2*A + A/sin(x)**2", {}, { A: { commutative: false } }, "A"],
   ["trigsimp", "y*sin(x)**2*A + y*cos(x)**2*A", {}, { A: { commutative: false } }, "y*A"],
   ["trigsimp", "sin(x)*A/cos(x)", {}, { A: { commutative: false } }, "tan(x)*A"],
@@ -560,4 +560,17 @@ describe('exponential-form helpers', () => {
     // an exponent that is not imaginary stays (SymPy rewrite(cos) gives -I*sin(I*(x + I*y)) + cos(I*(x + I*y)))
     expect(String(rewriteTrig(parse('exp(x + I*y)')))).toBe('exp(x + I*y)');
   });
+});
+
+it('rewrites circular functions and merges exponential factors of products', () => {
+  for (const name of ['cos', 'sin', 'tan']) {
+    const e = parse(name + '(x)');
+    expect(hasTrigFunctions(e)).toBe(true);
+    expect(trigToExp(e)).toEqual(rewriteExp(e));
+  }
+  const log = parse('log(x)');
+  expect(hasTrigFunctions(log)).toBe(false);
+  expect(trigToExp(log)).toEqual(log);
+  expect(String(combineExp(parse('a*exp(x)*exp(y)/z')))).toBe('a*exp(x + y)/z');
+  expect(String(combineExp(parse('a*exp(x)')))).toBe('a*exp(x)');
 });

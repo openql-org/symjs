@@ -1174,11 +1174,11 @@ export function fu(rvIn: ExprLike, opts: { measure?: (e: Expr) => Measured } = {
  * Apply `doit` to the groups of terms of a sum that share the absolute
  * value of their numeric coefficient (and, with key2, its value).
  */
-export function processCommonAddends(rv: Expr, doit: Rule, key2?: (e: Expr) => string): Expr {
+export function processCommonAddends(rv: Expr, doit: Rule, key2?: (e: Expr) => string, key1 = true): Expr {
+  if (!key1 && !key2) throw new RangeError('At least one group key is required');
   const absc = new Map<string, [Expr, Expr[]]>();
   for (const a0 of rv.args) {
-    // (SymPy's key1=False is not used by the rules)
-    let [c, a] = asCoeffMul(a0);
+    let [c, a] = key1 ? asCoeffMul(a0) : [S.One, a0];
     if (isTrue(isNegative(c))) {
       c = neg(c);
       a = neg(a);
@@ -1192,7 +1192,7 @@ export function processCommonAddends(rv: Expr, doit: Rule, key2?: (e: Expr) => s
   let hit = false;
   for (const [c, v] of absc.values()) {
     if (v.length > 1) {
-      const e = add(...v);
+      const e = new Add(v);
       const nw = doit(e);
       if (!eq(nw, e)) hit = true;
       args.push(mul(c, nw));

@@ -11,6 +11,10 @@ import { impl } from './core/nodes';
 import { isHypergeometric as isHypergeometricOf } from './simplify/gammasimp';
 // simplify's final doit stage also works when this entry is imported by itself.
 import './calculus/doit';
+import { hasFiniteLimits } from './concrete/exprwithlimits';
+import { expandHooks } from './simplify/expand';
+
+expandHooks.canDistributeIntegral = (e) => hasFiniteLimits(e) !== false;
 
 export {
   simplify,
@@ -64,7 +68,7 @@ export {
   type TrigsimpOptions,
 } from './simplify/trigsimp';
 export {
-  fu, FU, L, TR0, TR1, TR2, TR2i, TR3, TR4, TR5, TR6, TR7, TR8, TR9,
+  fu, processCommonAddends, FU, L, TR0, TR1, TR2, TR2i, TR3, TR4, TR5, TR6, TR7, TR8, TR9,
   TR10, TR10i, TR11, TR12, TR12i, TR13, TR14, TR15, TR16, TR22, TR111,
   TRmorrie, TRpower, sincosToSum,
 } from './simplify/fu';

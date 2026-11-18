@@ -1221,6 +1221,9 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
       if (result !== undefined) return result;
     }
   }
+  // an integral that stays unevaluated keeps the integrand as given (SymPy returns Integral(p, (x, a, b)))
+  const given = f;
+  const unevaluatedAsGiven = (result: Expr): Expr => (limits && result instanceof Integral && given !== f ? new Integral([given, x, sympify(limits[0]), sympify(limits[1])]) : result);
   if (limits && some(f, (e) => e instanceof Piecewise)) {
     const [a, b] = [sympify(limits[0]), sympify(limits[1])];
     f = simplifyConditionsOnInterval(decideConditionsOnInterval(f, x, a, b), x, a, b);
@@ -1244,7 +1247,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   if (!limits) return F ?? new Integral([f, x]);
   const a = sympify(limits[0]);
   const b = sympify(limits[1]);
-  if (F === undefined) return definiteWithoutAntiderivative(f, x, a, b, opts);
+  if (F === undefined) return unevaluatedAsGiven(definiteWithoutAntiderivative(f, x, a, b, opts));
   // An antiderivative's endpoint difference is valid only between singularities.
   // Evaluate the two sides independently: this is an improper integral, not a principal value.
   if (a.key === b.key) return S.Zero;

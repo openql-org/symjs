@@ -264,13 +264,13 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x)", () => sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x), "Integral(x + Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2, x < 1), (Integral(x + gamma(x), (x, 1, x)) + 1, True))"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y > 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))"],
     // SymPy raises TypeError
     ["sj.integrate(sj.Piecewise([P('1'), P('y*sin(x) < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*sin(x) < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y*sin(x) < 0), (2, True)), (x, -2, -1))", "ERR TypeError"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y >= 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1]), "Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1))", "Piecewise((Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1)), a < 1), (-Integral(Piecewise((1, x*y < 0), (2, True)), (x, 1, a)), True))"],
     // the limit at oo is left for a symbolic y (SymPy uses the Mellin transform)
@@ -757,4 +757,11 @@ describe('definite integrals with parametric poles and Gaussian factors (SymPy 1
     expect(sstr(integrate(P('1/(x + r)**2'), x, [0, 1]))).toBe('Integral((r + x)**(-2), (x, 0, 1))');
     expect(sstr(integrate(P('1/(x + r)**2'), x, [0, sj.oo]))).toMatch(/^Piecewise\(\(1\/r, /);
   });
+});
+
+it('keeps the given Piecewise integrand in an integral that stays unevaluated (SymPy 1.14)', () => {
+  const x = new Sym('x');
+  const f = sj.SymFunction('f');
+  const p = sj.piecewise([1, sj.Eq(f(x), 1)], [2, sj.Lt(x, 10)], [0, true]);
+  expect(sstr(integrate(p, x, [0, 5]))).toBe('Integral(Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True)), (x, 0, 5))');
 });
