@@ -59,6 +59,7 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Native field PRS, Trager factorization and certified intervals add about
 // 24 KiB to the root namespace. Automatic algebraic-atom classification also
 // links the assumption engine, adding up to 72 KiB to polynomial consumers.
+// The manual integration fallback adds about 4 KiB to consumers of integrate.
 const CASES = [
   ['core', 'Rational', 209],
   ['core', 'parse, str', 227],
@@ -67,7 +68,7 @@ const CASES = [
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 420],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1070],
+  ['simplify', 'simplify', 1076],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
@@ -75,9 +76,9 @@ const CASES = [
   ['polys', 'factor', 782],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1069],
-  ['solvers', 'solve', 1158],
-  ['solvers', 'dsolve', 1173],
+  ['calculus', 'integrate', 1075],
+  ['solvers', 'solve', 1164],
+  ['solvers', 'dsolve', 1179],
   ['sets', '*', 388],
   ['matrices', 'Matrix', 925],
   ['printing', 'pretty', 248],
@@ -89,14 +90,14 @@ const CASES = [
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 659],
-  ['holonomic', 'exprToHolonomic', 1251],
-  ['geometry', '*', 1137],
-  ['vector', '*', 1231],
-  ['stats', '*', 1403],
+  ['holonomic', 'exprToHolonomic', 1257],
+  ['geometry', '*', 1143],
+  ['vector', '*', 1237],
+  ['stats', '*', 1409],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1110],
+  ['plotting', '*', 1116],
   ['crypto', '*', 373],
   ['liealgebras', '*', 353],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).

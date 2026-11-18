@@ -17,9 +17,9 @@
 
 import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ, isReal, isNegative, isPositive } from '../core/assumptions';
 import { AccumBounds } from '../core/accumbounds';
-import { Gt, Ne, piecewise, Le, Lt } from '../core/logic';
+import { Eq, Gt, Ne, piecewise, Le, Lt } from '../core/logic';
 import type { Expr, ExprLike, RelOp } from '../core/nodes';
-import { Add, BoolAtom, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { cmpReal } from '../sets/sets';
 import { numAdd, numInv, numMul, numNeg } from '../core/num';
 import { at, defined, expectType, getOrThrow, pair } from '../core/guard';
@@ -41,7 +41,7 @@ import { singularityIntegral } from './singularityfunctions';
 import { cancelFraction, isRationalIn, ratint } from './rationaltools';
 import { trigintegrate } from './trigonometry';
 import { heurischTrig } from './heurisch';
-import { sqrtQuadraticRule } from './manualintegrate';
+import { manualintegrate, sqrtQuadraticRule } from './manualintegrate';
 import { floor, sign } from '../functions/special/special';
 import { and, or, BoolOp } from '../core/boolalg';
 import { ordered } from '../core/match';
@@ -1009,7 +1009,14 @@ function otherMethods(f: Expr, x: Sym): Expr | undefined {
     const r = some(f, isDiracDelta) ? deltaIntegral(f, x) : undefined;
     if (r !== undefined) return r;
     const s = some(f, isSingularityFunction) ? singularityIntegral(f, x) : undefined;
-    return s ?? risch(f, x);
+    const elementary = s ?? risch(f, x);
+    if (elementary !== undefined) return elementary;
+    // Keep inexact coefficient domains on the elementary integration route.
+    if (some(f, (e) => e instanceof Float)) return undefined;
+    // SymPy tries the manual rules after the elementary algorithms. The active
+    // method guard also lets their unresolved subproblems return unevaluated.
+    const manual = manualintegrate(f, x);
+    return some(manual, (e) => e instanceof Integral) ? undefined : manual;
   } finally {
     activeMethods.delete(key);
   }
@@ -1042,7 +1049,9 @@ function risch(f: Expr, x: Sym): Expr | undefined {
 rischHooks.integrate = (f, x) => new Integrator(x).integrate(f) ?? new Integral([f, x]);
 
 export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none' } = {}): Expr {
+  if (!(x instanceof Sym)) throw new RangeError('integrate: the integration variable must be a symbol');
   let f = sympify(ex);
+  if (f instanceof Rel && f.op === 'Eq') return Eq(integrate(f.lhs, x, limits, opts), integrate(f.rhs, x, limits, opts));
   if (limits || isReal(x) === true) f = realIntegrand(f, x) ?? f;
   if (f instanceof ExtensionExpr) {
     const own = f.integrateSelf(x, limits && [sympify(limits[0]), sympify(limits[1])], (g) => integrate(g, x, limits, opts));

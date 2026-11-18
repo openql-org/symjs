@@ -52,9 +52,13 @@ const I01 = (lo: number, hi: number) => new Integral([x, x, Rational.of(lo), Rat
 
 describe('Integral.transform (SymPy 1.14)', () => {
   it('maps the limits through the positive inverse', () => {
+    const gaussian = new Integral([parse('exp(-x**2)'), x, S.NegativeInfinity, S.Infinity]);
+    expect(sstr(transformIntegral(new Integral([x, x, gaussian, a]), x, mul(2, u)))).toBe('Integral(4*u, (u, Integral(exp(-x**2), (x, -oo, oo))/2, a/2))');
+    expect(sstr(transformIntegral(new Integral([x, x, gaussian]), x, mul(2, u)))).toBe('Integral(4*u, (u, Integral(exp(-x**2), (x, -oo, oo))/2))');
     // Integral(x, (x, 0, 1)).transform(x, u**2) -> Integral(2*u**3, (u, 0, 1))
     expect(sstr(transformIntegral(I01(0, 1), x, parse('u**2')))).toBe('Integral(2*u**3, (u, 0, 1))');
     expect(sstr(transformIntegral(I01(1, 4), x, parse('u**2')))).toBe('Integral(2*u**3, (u, 1, 2))');
+    expect(sstr(transformIntegral(I01(4, 1), x, parse('u**2')))).toBe('Integral(-2*u**3, (u, 1, 2))');
     expect(sstr(transformIntegral(I01(1, 4), x, parse('2*u')))).toBe('Integral(4*u, (u, 1/2, 2))');
     // the limit 0 maps to log(0): SymPy takes the limit, -oo
     expect(sstr(transformIntegral(I01(0, 1), x, parse('exp(u)')))).toBe('Integral(exp(2*u), (u, -oo, 0))');
@@ -66,18 +70,16 @@ describe('Integral.transform (SymPy 1.14)', () => {
     expect(sstr(transformIntegral(new Integral([parse('x**2'), x]), x, parse('2*u')))).toBe('Integral(8*u**2, u)');
   });
 
-  it('swaps reversed limits; x = -u is solved without the positivity assumption', () => {
-    // SymPy raises "no solution for solve(F(x) - f(u), u)" for x = -u (its posify leaves no root);
-    // the substitution is valid: Integral(-u, (u, -1, 0)) = 1/2 = Integral(x, (x, 0, 1))
-    expect(sstr(transformIntegral(I01(0, 1), x, parse('-u')))).toBe('Integral(-u, (u, -1, 0))');
-    expect(sstr(transformIntegral(I01(1, 4), x, parse('-u')))).toBe('Integral(-u, (u, -4, -1))');
+  it('rejects mappings with no positive inverse', () => {
+    expect(() => transformIntegral(I01(0, 1), x, parse('-u'))).toThrow(RangeError);
+    expect(() => transformIntegral(I01(1, 4), x, parse('-u'))).toThrow(RangeError);
   });
 
   it('errors like SymPy (ValueError there)', () => {
     // "The mapping between F(x) and f(u) did not give a unique limit."
     expect(() => transformIntegral(I01(0, 1), x, parse('u**2 - u'))).toThrow(RangeError);
     // "When f(u) has more than one free symbol, the one replacing x must be identified"
-    expect(() => transformIntegral(I01(0, 1), x, parse('u + a'))).toThrow(TypeError);
+    expect(() => transformIntegral(I01(0, 1), x, parse('u + a'))).toThrow(RangeError);
     // u does not occur in f(u)
     expect(() => transformIntegral(I01(0, 1), x, a, u)).toThrow(RangeError);
     expect(() => transformIntegral(I01(0, 1), u, u)).toThrow(TypeError);
@@ -97,6 +99,18 @@ describe('Integral.principal_value (SymPy 1.14)', () => {
 
 describe('Integral.as_sum (SymPy 1.14)', () => {
   const I = new Integral([parse('x**2'), x, S.Zero, Rational.of(2)]);
+  it('validates the dimension, finite interval, number of intervals and method', () => {
+    expect(() => asSum(new Integral([I, y, S.Zero, S.One]), 4)).toThrow(NotImplementedError);
+    for (const endpoint of [S.Infinity, S.NegativeInfinity]) {
+      expect(() => asSum(new Integral([x, x, endpoint, S.One]), 4)).toThrow(RangeError);
+      expect(() => asSum(new Integral([x, x, S.Zero, endpoint]), 4)).toThrow(RangeError);
+    }
+    for (const count of [-1, 0, S.Infinity, S.Half, new Sym('m', { integer: false }), new Sym('m', { finite: false })]) {
+      expect(() => asSum(I, count)).toThrow(RangeError);
+    }
+    // Invalid methods can arrive from untyped JavaScript callers.
+    expect(() => Reflect.apply(asSum, undefined, [I, 3, 'xxxx2'])).toThrow(RangeError);
+  });
   it('left, right and trapezoid rules', () => {
     expect(sstr(asSum(I, 4, 'left'))).toBe('7/4');
     expect(sstr(asSum(I, 4, 'right'))).toBe('15/4');
@@ -115,6 +129,9 @@ describe('Integral.as_sum (SymPy 1.14)', () => {
 });
 
 describe('Curve and line_integrate (SymPy 1.14)', () => {
+  it('integrates a field with respect to arc length using a real parameter', () => {
+    expect(sstr(lineIntegrate(add(x, y), Curve([t, t], [t, S.Zero, S.One]), [x, y]))).toBe('sqrt(2)');
+  });
   it('prints and checks the dimension', () => {
     const C = Curve([parse('exp(t) + 1'), parse('exp(t) - 1')], [t, S.Zero, parse('log(2)')]);
     expect(String(C)).toBe('Curve((exp(t) + 1, exp(t) - 1), (t, 0, log(2)))');
@@ -143,8 +160,8 @@ it('uses an expression for the old variable and rejects ambiguous inverse branch
   expect(String(transformIntegral(input,old,u))).toBe('Integral(cos(u)/2, (u, -1, 0))');
   expect(String(transformIntegral(new Integral([parse('x*cos(x**2 - 1)'),x]),old,u))).toBe('Integral(cos(u)/2, u)');
   expect(String(transformIntegral(new Integral([parse('x**3'),x]),pow(x,2),u))).toBe('Integral(u/2, u)');
-  expect(() => transformIntegral(input,old,pow(u,2))).toThrow(TypeError);
-  expect(() => transformIntegral(input,old,u,u)).toThrow(TypeError);
+  expect(() => transformIntegral(input,old,pow(u,2))).toThrow(RangeError);
+  expect(() => transformIntegral(input,old,u,u)).toThrow(RangeError);
   expect(() => transformIntegral(new Integral([S.One,x]),pow(x,2),u)).toThrow('different integrands');
   expect(() => transformIntegral(new Integral([S.One,x]),parse('x + sin(x)'),u)).toThrow(NotImplementedError);
 });

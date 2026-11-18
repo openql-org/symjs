@@ -3182,6 +3182,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   diff: (args, kw) => args.some((v) => v instanceof Matrix || v instanceof sj.NDimArray) ? ADAPTERS['.diff']!(args.slice(1), kw, args[0]) : (noKw(kw), diffArgs(asExpr(args[0]), args.slice(1))),
   integrate: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['conds', 'meijerg', 'manual'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (args[0] instanceof Matrix) return args[0].map((entry) => asExpr(ADAPTERS['integrate']!([entry, ...args.slice(1)], kw)));
     // a formal power series: its definite integral is that of its function (SymPy FormalPowerSeries.integrate)
     if (args[0] instanceof sj.FormalPowerSeries && args[1] instanceof JsTuple && args[1].items.length === 3) {
       const [v, lo, hi] = args[1].items;
@@ -3206,6 +3207,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       else if (v instanceof JsTuple && v.items.length === 3)
         f = sj.integrate(f, asSym(v.items[0]), [asExpr(v.items[1]), asExpr(v.items[2])], { conds: conds === 'none' ? 'none' : 'piecewise' });
       else if (v instanceof JsTuple && v.items.length === 1) f = sj.integrate(f, asSym(v.items[0]));
+      else if (v instanceof sj.Expr) f = asExpr(Reflect.apply(sj.integrate, undefined, [f, v]));
       else throw new Unsupported('integrate limits');
     }
     if (conds === 'separate') {

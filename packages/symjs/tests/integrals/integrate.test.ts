@@ -25,6 +25,30 @@ const V = (s: string): Sym => {
 };
 const [x, y, z, n, k, a, b, c, m, t] = [V('x'), V('y'), V('z'), V('n'), V('k'), V('a'), V('b'), V('c'), V('m'), V('t')];
 const [pp, qq, rr] = [V('p'), V('q'), V('r')];
+it('validates integration variables and integrates equalities on both sides', () => {
+  expect(() => Reflect.apply(integrate, undefined, [x, sj.add(x, 1)])).toThrow(RangeError);
+  expect(sstr(integrate(sj.Eq(x, y), x))).toBe('Eq(x**2/2, x*y)');
+  expect(sstr(integrate(sj.Eq(x, y), x, [0, 1]))).toBe('Eq(1/2, y)');
+});
+it('integrates sums containing fully integrable piecewise terms', () => {
+  const f = sj.add(x, sj.piecewise([x, sj.Lt(x, 0)], [sj.pow(x, 2), true]));
+  expect(sstr(integrate(f, x))).toBe('x**2/2 + Piecewise((x**2/2, x < 0), (x**3/3, True))');
+});
+it('retains an unresolved inexact Gaussian instead of switching coefficient domains', () => {
+  const f = P('exp(1.2*n*s*z*(-t + z)/t)');
+  expect(integrate(f, z, [0, x])).toBeInstanceOf(sj.Integral);
+});
+it('differentiates primitives from the hyperbolic, trigonometric and special-function tables', () => {
+  for (const source of ['sinh(x)', 'cosh(x)', 'cos(x)**4', 'x*cos(x)', 'x**2*cos(x)', 'x**2*sin(x)', 'acos(x)', 'erf(x)']) {
+    const integrand = P(source);
+    const primitive = integrate(integrand, x);
+    expect(primitive).not.toBeInstanceOf(sj.Integral);
+    for (const point of [sj.rational(1, 4), sj.rational(1, 2)]) {
+      const actual = diff(primitive, x).subs(x, point).toNumber();
+      expect(actual).toBeCloseTo(integrand.subs(x, point).toNumber(), 12);
+    }
+  }
+});
 const show = (v: unknown): string =>
   Array.isArray(v) ? `[${v.map(show).join(', ')}]` : v === undefined ? 'None' : v instanceof Expr || v instanceof NoMatchResult ? v.toString() : typeof v === 'string' ? v : JSON.stringify(v);
 const pw = (e: unknown): sj.Piecewise => {
@@ -161,16 +185,14 @@ describe('results that differ from SymPy 1.14', () => {
   const cases: [string, () => unknown, string, string][] = [
     // the formula assumes a != 0 (SymPy adds the case a = 0)
     ["sj.integrate(P('exp(a*x)*sin(a*x)'), x)", () => sj.integrate(P('exp(a*x)*sin(a*x)'), x), "exp(a*x)*sin(a*x)/(2*a) - exp(a*x)*cos(a*x)/(2*a)", "Piecewise((exp(a*x)*sin(a*x)/(2*a) - exp(a*x)*cos(a*x)/(2*a), Ne(a, 0)), (0, True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('exp(-a*x**2 + x)'), x)", () => sj.integrate(P('exp(-a*x**2 + x)'), x), "Integral(exp(-a*x**2 + x), x)", "sqrt(pi)*exp(1/(4*a))*erfi((-2*a*x + 1)/(2*sqrt(-a)))/(2*sqrt(-a))"],
+    ["sj.integrate(P('exp(-a*x**2 + x)'), x)", () => sj.integrate(P('exp(-a*x**2 + x)'), x), "sqrt(pi)*exp(1/(4*a))*erfi((-2*a*x + 1)/(2*sqrt(-a)))/(2*sqrt(-a))", "sqrt(pi)*exp(1/(4*a))*erfi((-2*a*x + 1)/(2*sqrt(-a)))/(2*sqrt(-a))"],
     // the same cases, with the condition written as Ne(y*z, 0)
     ["sj.integrate(P('exp(-x**2*y*z)'), x)", () => sj.integrate(P('exp(-x**2*y*z)'), x), "Piecewise((sqrt(pi)*erf(x*sqrt(y*z))/(2*sqrt(y*z)), Ne(y*z, 0)), (x, True))", "Piecewise((x, Eq(y, 0) | Eq(z, 0)), (sqrt(pi)*erf(x*sqrt(y*z))/(2*sqrt(y*z)), True))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('exp(x**3)'), x)", () => sj.integrate(P('exp(x**3)'), x), "Integral(exp(x**3), x)", "exp(-I*pi/3)*gamma(1/3)*lowergamma(1/3, x**3*exp_polar(I*pi))/(9*gamma(4/3))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('sin(x**3)'), x)", () => sj.integrate(P('sin(x**3)'), x), "Integral(sin(x**3), x)", "x**4*gamma(2/3)*hyper((2/3,), (3/2, 5/3), -x**6/4)/(6*gamma(5/3))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('cos(x**2 + 1)'), x)", () => sj.integrate(P('cos(x**2 + 1)'), x), "Integral(cos(x**2 + 1), x)", "sqrt(2)*sqrt(pi)*(cos(1)*fresnelc(sqrt(2)*x/sqrt(pi)) - sin(1)*fresnels(sqrt(2)*x/sqrt(pi)))/2"],
+    ["sj.integrate(P('cos(x**2 + 1)'), x)", () => sj.integrate(P('cos(x**2 + 1)'), x), "sqrt(2)*sqrt(pi)*(cos(1)*fresnelc(sqrt(2)*x/sqrt(pi)) - sin(1)*fresnels(sqrt(2)*x/sqrt(pi)))/2", "sqrt(2)*sqrt(pi)*(cos(1)*fresnelc(sqrt(2)*x/sqrt(pi)) - sin(1)*fresnels(sqrt(2)*x/sqrt(pi)))/2"],
     // the same value for q < 0, written with sqrt(-q)
     ["sj.integrate(P('sin(q*x**2)'), x)", () => sj.integrate(P('sin(q*x**2)'), x), "-3*sqrt(2)*sqrt(pi)*fresnels(sqrt(2)*x*sqrt(-q)/sqrt(pi))*gamma(3/4)/(8*sqrt(-q)*gamma(7/4))", "3*sqrt(2)*sqrt(pi)*fresnels(sqrt(2)*sqrt(q)*x/sqrt(pi))*gamma(3/4)/(8*sqrt(q)*gamma(7/4))"],
     // not implemented in symjs (SymPy's result shown)
@@ -238,8 +260,7 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.integrate(P('1/(y*x + 1)'), x)", () => sj.integrate(P('1/(y*x + 1)'), x), "Piecewise((log(x*y + 1)/y, Ne(y, 0)), (x, True))", "log(x*y + 1)/y"],
     // the same cases, with the condition written as Ne(y, 0)
     ["sj.integrate(P('2**(y*x)'), x)", () => sj.integrate(P('2**(y*x)'), x), "Piecewise((2**(x*y)/(y*log(2)), Ne(y, 0)), (x, True))", "Piecewise((2**(x*y)/(y*log(2)), Ne(y*log(2), 0)), (x, True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('sin(x)/x'), x)", () => sj.integrate(P('sin(x)/x'), x), "Integral(sin(x)/x, x)", "Si(x)"],
+    ["sj.integrate(P('sin(x)/x'), x)", () => sj.integrate(P('sin(x)/x'), x), "Si(x)", "Si(x)"],
     // the same value, with the condition written as Ne(y, 0)
     ["sj.integrate(P('x*exp(y*x)'), x)", () => sj.integrate(P('x*exp(y*x)'), x), "Piecewise(((x/y - 1/y**2)*exp(x*y), Ne(y, 0)), (x**2/2, True))", "Piecewise(((x*y - 1)*exp(x*y)/y**2, Ne(y**2, 0)), (x**2/2, True))"],
     // not implemented in symjs (SymPy's result shown)
@@ -437,10 +458,9 @@ describe('square roots of quadratics (SymPy manualintegrate)', () => {
     expect(I('sqrt(x**2)*exp(x)')).toBe('Integral(sqrt(x**2)*exp(x), x)');
     expect(I('sqrt(x**2 + 1)*x**2')).toBe(I('x**2*sqrt(x**2 + 1)'));
     // SymPy: x**3*sqrt(a + x**2)/4 + a*x*sqrt(a + x**2)/8 - a**2*asinh(x/sqrt(a))/8 (with symbolic a)
-    expect(I('x**2*sqrt(x**2 + a)')).toBe('Integral(x**2*sqrt(a + x**2), x)');
-    // symbolic coefficients are not handled by this rule
+    expect(I('x**2*sqrt(x**2 + a)')).toBe('-a**2*Piecewise((log(2*x + 2*sqrt(a + x**2)), Ne(a, 0)), (x*log(x)/sqrt(x**2), True))/8 + sqrt(a + x**2)*(a*x/8 + x**3/4)');
     // (SymPy: sqrt(a)*x*sqrt(1 + x**2/a)/2 + a*asinh(x/sqrt(a))/2)
-    expect(I('sqrt(x**2 + a)')).toBe('Integral(sqrt(a + x**2), x)');
+    expect(I('sqrt(x**2 + a)')).toBe('a*Piecewise((log(2*x + 2*sqrt(a + x**2)), Ne(a, 0)), (x*log(x)/sqrt(x**2), True))/2 + x*sqrt(a + x**2)/2');
     expect(I('sqrt(x**3 + 1)')).toBe('Integral(sqrt(x**3 + 1), x)');
   });
 });
