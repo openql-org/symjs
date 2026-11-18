@@ -6024,12 +6024,12 @@ describe("sympy/core/tests/test_arit.py", () => {
   it("test_Mod:1853", () => {
     expect(sympyStr(Mod)).toBe('Mod');
   });
-  it.fails("test_Mod:1854", () => {
+  it("test_Mod:1854", () => {
     const k = new Sym('k', { integer: true });
     const m = new Sym('m', { integer: true, positive: true });
     expect(sympyStr(Mod(new Pow(k, m), k))).toBe('0');
   });
-  it.fails("test_Mod:1855", () => {
+  it("test_Mod:1855", () => {
     const k = new Sym('k', { integer: true });
     const m = new Sym('m', { integer: true, positive: true });
     expect(sympyStr(Mod(new Pow(new Mul([rational(-2), k]), m), k))).toBe('0');
@@ -6218,32 +6218,32 @@ describe("sympy/core/tests/test_arit.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(Mod(new Add([y, new Mul([rational(3), x])]), rational(9)).subs(x, rational(3)).subs(y, rational(8)))).toBe('8');
   });
-  it.fails("test_Mod:1886", () => {
+  it("test_Mod:1886", () => {
     const x = new Sym('x');
     const t = new Sym('t', { real: true });
     expect(sympyStr(Mod(Mod(x, t), t))).toBe('Mod(x, t)');
   });
-  it.fails("test_Mod:1887", () => {
+  it("test_Mod:1887", () => {
     const x = new Sym('x');
     const t = new Sym('t', { real: true });
     expect(sympyStr(Mod(new Mul([rational(-1), Mod(x, t)]), t))).toBe('Mod(-x, t)');
   });
-  it.fails("test_Mod:1888", () => {
+  it("test_Mod:1888", () => {
     const x = new Sym('x');
     const t = new Sym('t', { real: true });
     expect(sympyStr(Mod(Mod(x, new Mul([rational(2), t])), t))).toBe('Mod(x, t)');
   });
-  it.fails("test_Mod:1889", () => {
+  it("test_Mod:1889", () => {
     const x = new Sym('x');
     const t = new Sym('t', { real: true });
     expect(sympyStr(Mod(new Mul([rational(-1), Mod(x, new Mul([rational(2), t]))]), t))).toBe('Mod(-x, t)');
   });
-  it.fails("test_Mod:1890", () => {
+  it("test_Mod:1890", () => {
     const x = new Sym('x');
     const t = new Sym('t', { real: true });
     expect(sympyStr(Mod(Mod(x, t), new Mul([rational(2), t])))).toBe('Mod(x, t)');
   });
-  it.fails("test_Mod:1891", () => {
+  it("test_Mod:1891", () => {
     const x = new Sym('x');
     const t = new Sym('t', { real: true });
     expect(sympyStr(Mod(new Mul([rational(-1), Mod(x, t)]), new Mul([rational(-2), t])))).toBe('-Mod(x, t)');
@@ -6540,7 +6540,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Mod(new Add([new Mul([rational(12), x]), new Mul([rational(18), y])]), new Mul([rational(3), x])))).toBe('3*(Mod(6*y, x))');
   });
-  it.fails("test_Mod:1936", () => {
+  it("test_Mod:1936", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Mod(new Mul([rational(-3), x]), new Mul([rational(-2), y])))).toBe('-Mod(3*x, 2*y)');
   });
@@ -6648,7 +6648,7 @@ describe("sympy/core/tests/test_arit.py", () => {
     const x1 = new Sym('x1', { integer: true });
     expect(sympyStr(Mod(new Mul([new Add([rational(4), x1]), Mod(new Add([rational(2), x1]), rational(4))]), rational(4)))).toBe('Mod(x1*(x1 + 2), 4)');
   });
-  it.fails("test_Mod:1982", () => {
+  it("test_Mod:1982", () => {
     const x1 = new Sym('x1', { integer: true });
     expect(sympyStr(Mod(new Mul([rational(4), Mod(new Add([rational(2), x1]), rational(4))]), rational(4)))).toBe('0');
   });
@@ -8942,32 +8942,32 @@ describe("sympy/core/tests/test_noncommutative.py", () => {
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(simplify(new Add([new Mul([A, B]), new Mul([rational(-1), B, A])])))).toBe('A*B - B*A');
   });
-  it.fails("test_subs:116", () => {
+  it("test_subs:116", () => {
     const [x, y, z] = symbols('x y z');
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(new Mul([x, y, A]).subs(new Mul([x, y]), z))).toBe('z*A');
   });
-  it.fails("test_subs:117", () => {
+  it("test_subs:117", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     const C = new Sym('C', { commutative: false });
     expect(sympyStr(new Mul([x, A, B]).subs(new Mul([x, A]), C))).toBe('C*B');
   });
-  it.fails("test_subs:118", () => {
+  it("test_subs:118", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const C = new Sym('C', { commutative: false });
     expect(sympyStr(new Mul([new Pow(x, rational(3)), A]).subs(new Mul([new Pow(x, rational(2)), A]), C))).toBe('x*C');
   });
-  it.fails("test_subs:119", () => {
+  it("test_subs:119", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     const C = new Sym('C', { commutative: false });
     expect(sympyStr(new Mul([new Pow(x, rational(2)), A, B]).subs(new Mul([new Pow(x, rational(2)), A]), C))).toBe('C*B');
   });
-  it.fails("test_subs:120", () => {
+  it("test_subs:120", () => {
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     const C = new Sym('C', { commutative: false });
@@ -9398,7 +9398,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new Mul([x, y, z]).subs(new Mul([x, z]), y))).toBe('y**2');
   });
-  it.fails("test_mul:218", () => {
+  it("test_mul:218", () => {
     const [x, z] = symbols('x z');
     expect(sympyStr(new Mul([x, z]).subs(new Pow(x, rational(-1)), z))).toBe('1');
   });
@@ -9426,7 +9426,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new Mul([rational(2), x, y]).subs(new Mul([rational(5), x, y]), z))).not.toBe('2*z/5');
   });
-  it.fails("test_mul:225", () => {
+  it("test_mul:225", () => {
     const [x, y, a] = symbols('x y a');
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(new Mul([x, y, A]).subs(new Mul([x, y]), a))).toBe('a*A');
@@ -9443,13 +9443,13 @@ describe("sympy/core/tests/test_subs.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Pow(x, new Mul([rational(6), y])).subs(new Pow(x, y), rational(2)))).toBe('64');
   });
-  it.fails("test_mul:229", () => {
+  it("test_mul:229", () => {
     const [x, y] = symbols('x y');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(new Mul([x, A, B]).subs(new Mul([x, A]), y))).toBe('y*B');
   });
-  it.fails("test_mul:230", () => {
+  it("test_mul:230", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Mul([x, y, new Add([rational(1), x]), new Add([rational(1), new Mul([x, y])])]).subs(new Mul([x, y]), rational(2)))).toBe('6*x + 6');
   });
@@ -9458,18 +9458,18 @@ describe("sympy/core/tests/test_subs.py", () => {
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(new Mul([a, x, new Pow(z, rational(-1))]).subs(new Mul([x, new Pow(z, rational(-1))]), A))).toBe('a*A');
   });
-  it.fails("test_mul:233", () => {
+  it("test_mul:233", () => {
     const [x, a] = symbols('x a');
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(new Mul([new Pow(x, rational(3)), A]).subs(new Mul([new Pow(x, rational(2)), A]), a))).toBe('a*x');
   });
-  it.fails("test_mul:234", () => {
+  it("test_mul:234", () => {
     const [x, a] = symbols('x a');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(new Mul([new Pow(x, rational(2)), A, B]).subs(new Mul([new Pow(x, rational(2)), B]), a))).toBe('a*A');
   });
-  it.fails("test_mul:235", () => {
+  it("test_mul:235", () => {
     const [x, a] = symbols('x a');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
@@ -9492,47 +9492,47 @@ describe("sympy/core/tests/test_subs.py", () => {
     const [y, x] = symbols('y x');
     expect(equivalent(sympyStr(new Mul([y, exp(new Mul([rational(3, 2), x]))]).subs(new Mul([y, exp(x)]), rational(2))), '2*exp(x/2)', [y, x], { fn: '.subs', input: 'y*exp(3*x/2)' })).toBe(true);
   });
-  it.fails("test_mul:241", () => {
+  it("test_mul:241", () => {
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     const C = new Sym('C', { commutative: false });
     expect(sympyStr(new Mul([new Pow(A, rational(2)), B, new Pow(A, rational(2)), B, new Pow(A, rational(2))]).subs(new Mul([A, B, A]), C))).toBe('A*C**2*A');
   });
-  it.fails("test_mul:242", () => {
+  it("test_mul:242", () => {
     const [x, y] = symbols('x y');
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(new Mul([x, new Pow(A, rational(3))]).subs(new Mul([x, A]), y))).toBe('y*A**2');
   });
-  it.fails("test_mul:243", () => {
+  it("test_mul:243", () => {
     const [x, y] = symbols('x y');
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(new Mul([new Pow(x, rational(2)), new Pow(A, rational(3))]).subs(new Mul([x, A]), y))).toBe('y**2*A');
   });
-  it.fails("test_mul:244", () => {
+  it("test_mul:244", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(new Mul([x, new Pow(A, rational(3))]).subs(new Mul([x, A]), B))).toBe('B*A**2');
   });
-  it.fails("test_mul:245", () => {
+  it("test_mul:245", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(new Mul([x, A, B, A, exp(new Mul([x, A, B]))]).subs(new Mul([x, A]), B))).toBe('B**2*A*exp(B**2)');
   });
-  it.fails("test_mul:246", () => {
+  it("test_mul:246", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(new Mul([new Pow(x, rational(2)), A, B, A, exp(new Mul([x, A, B]))]).subs(new Mul([x, A]), B))).toBe('B**3*exp(B**2)');
   });
-  it.fails("test_mul:247", () => {
+  it("test_mul:247", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(new Mul([new Pow(x, rational(3)), A, exp(new Mul([x, A, B])), A, exp(new Mul([x, A, B]))]).subs(new Mul([x, A]), B))).toBe('x*B*exp(B**2)*B*exp(B**2)');
   });
-  it.fails("test_mul:249", () => {
+  it("test_mul:249", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
@@ -9655,7 +9655,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const y = new Sym('y', { commutative: false });
     expect(sympyStr(new Mul([new Float({ man: 3n, exp: -1n }, 53), x, y]).subs(x, rational(1)))).toBe('1.5*y');
   });
-  it.fails("test_subs_constants:297", () => {
+  it("test_subs_constants:297", () => {
     const x = new Sym('x', { commutative: false });
     const y = new Sym('y', { commutative: false });
     expect(sympyStr(new Mul([rational(2), x, y]).subs(new Mul([rational(2), x]), rational(1)))).toBe('y');
@@ -9722,19 +9722,19 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([w, x, y, z]).subs(new Mul([x, y]), L))).toBe('w*L*z');
   });
-  it.fails("test_subs_noncommutative:323", () => {
+  it("test_subs_noncommutative:323", () => {
     const x = new Sym('x', { commutative: false });
     const y = new Sym('y', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([x, y, x, y]).subs(new Mul([x, y]), L))).toBe('L**2');
   });
-  it.fails("test_subs_noncommutative:324", () => {
+  it("test_subs_noncommutative:324", () => {
     const x = new Sym('x', { commutative: false });
     const y = new Sym('y', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([new Pow(x, rational(2)), y]).subs(new Mul([x, y]), L))).toBe('x*L');
   });
-  it.fails("test_subs_noncommutative:325", () => {
+  it("test_subs_noncommutative:325", () => {
     const x = new Sym('x', { commutative: false });
     const y = new Sym('y', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -9777,19 +9777,19 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([w, x, y, z, x, y]).subs(new Mul([x, y, z]), L))).toBe('w*L*x*y');
   });
-  it.fails("test_subs_noncommutative:331", () => {
+  it("test_subs_noncommutative:331", () => {
     const w = new Sym('w', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const y = new Sym('y', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([w, x, new Pow(y, rational(2)), w, new Pow(x, rational(2)), y, x, new Pow(y, rational(2)), x, y]).subs(new Mul([x, y]), L))).toBe('w*L*y*w*x*L**2*y*L');
   });
-  it.fails("test_subs_noncommutative:336", () => {
+  it("test_subs_noncommutative:336", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(3)).subs(new Pow(x, rational(2)), L))).toBe('L*x');
   });
-  it.fails("test_subs_noncommutative:337", () => {
+  it("test_subs_noncommutative:337", () => {
     const x = new Sym('x', { commutative: false });
     const y = new Sym('y', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -9873,7 +9873,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(2))]).subs(new Pow(x, rational(2)), L))).toBe('y*L');
   });
-  it.fails("test_subs_noncommutative:340 (14)", () => {
+  it("test_subs_noncommutative:340 (14)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -9885,7 +9885,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(4))]).subs(new Pow(x, rational(2)), L))).toBe('y*L**2');
   });
-  it.fails("test_subs_noncommutative:340 (16)", () => {
+  it("test_subs_noncommutative:340 (16)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -9897,7 +9897,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(6))]).subs(new Pow(x, rational(2)), L))).toBe('y*L**3');
   });
-  it.fails("test_subs_noncommutative:340 (18)", () => {
+  it("test_subs_noncommutative:340 (18)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -9909,7 +9909,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(8))]).subs(new Pow(x, rational(2)), L))).toBe('y*L**4');
   });
-  it.fails("test_subs_noncommutative:340 (20)", () => {
+  it("test_subs_noncommutative:340 (20)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -9939,13 +9939,13 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(3))]).subs(new Pow(x, rational(3)), L))).toBe('y*L');
   });
-  it.fails("test_subs_noncommutative:340 (25)", () => {
+  it("test_subs_noncommutative:340 (25)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(4))]).subs(new Pow(x, rational(3)), L))).toBe('y*L*x');
   });
-  it.fails("test_subs_noncommutative:340 (26)", () => {
+  it("test_subs_noncommutative:340 (26)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -9957,13 +9957,13 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(6))]).subs(new Pow(x, rational(3)), L))).toBe('y*L**2');
   });
-  it.fails("test_subs_noncommutative:340 (28)", () => {
+  it("test_subs_noncommutative:340 (28)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(7))]).subs(new Pow(x, rational(3)), L))).toBe('y*L**2*x');
   });
-  it.fails("test_subs_noncommutative:340 (29)", () => {
+  it("test_subs_noncommutative:340 (29)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -10005,19 +10005,19 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(4))]).subs(new Pow(x, rational(4)), L))).toBe('y*L');
   });
-  it.fails("test_subs_noncommutative:340 (36)", () => {
+  it("test_subs_noncommutative:340 (36)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(5))]).subs(new Pow(x, rational(4)), L))).toBe('y*L*x');
   });
-  it.fails("test_subs_noncommutative:340 (37)", () => {
+  it("test_subs_noncommutative:340 (37)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(6))]).subs(new Pow(x, rational(4)), L))).toBe('y*L*x**2');
   });
-  it.fails("test_subs_noncommutative:340 (38)", () => {
+  it("test_subs_noncommutative:340 (38)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -10029,13 +10029,13 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(8))]).subs(new Pow(x, rational(4)), L))).toBe('y*L**2');
   });
-  it.fails("test_subs_noncommutative:340 (40)", () => {
+  it("test_subs_noncommutative:340 (40)", () => {
     const y = new Sym('y', { commutative: false });
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([y, new Pow(x, rational(9))]).subs(new Pow(x, rational(4)), L))).toBe('y*L**2*x');
   });
-  it.fails("test_subs_noncommutative:341", () => {
+  it("test_subs_noncommutative:341", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(3, 2)).subs(new Pow(x, rational(1, 2)), L))).toBe('x**(3/2)');
@@ -10045,7 +10045,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(1, 2)).subs(new Pow(x, rational(1, 2)), L))).toBe('L');
   });
-  it.fails("test_subs_noncommutative:343", () => {
+  it("test_subs_noncommutative:343", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(-1, 2)).subs(new Pow(x, rational(1, 2)), L))).toBe('x**(-1/2)');
@@ -10073,7 +10073,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, new Add([rational(3), new Mul([rational(3), someint])])).subs(new Pow(x, someint), L))).toBe('L**3*x**3');
   });
-  it.fails("test_subs_noncommutative:349", () => {
+  it("test_subs_noncommutative:349", () => {
     const x = new Sym('x', { commutative: false });
     const someint = new Sym('someint', { integer: true });
     const L = new Sym('L', { commutative: false });
@@ -10091,25 +10091,25 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, new Add([rational(1), new Mul([rational(4), someint])])).subs(new Pow(x, new Mul([rational(2), someint])), L))).toBe('L**2*x');
   });
-  it.fails("test_subs_noncommutative:352", () => {
+  it("test_subs_noncommutative:352", () => {
     const x = new Sym('x', { commutative: false });
     const someint = new Sym('someint', { integer: true });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, new Mul([rational(4), someint])).subs(new Pow(x, new Mul([rational(3), someint])), L))).toBe('L*x**someint');
   });
-  it.fails("test_subs_noncommutative:353", () => {
+  it("test_subs_noncommutative:353", () => {
     const x = new Sym('x', { commutative: false });
     const someint = new Sym('someint', { integer: true });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, new Add([rational(1), new Mul([rational(4), someint])])).subs(new Pow(x, new Mul([rational(3), someint])), L))).toBe('L*x**(someint + 1)');
   });
-  it.fails("test_subs_noncommutative:355", () => {
+  it("test_subs_noncommutative:355", () => {
     const alpha = new Sym('alpha');
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, new Mul([rational(2), alpha])).subs(new Pow(x, alpha), L))).toBe('x**(2*alpha)');
   });
-  it.fails("test_subs_noncommutative:356", () => {
+  it("test_subs_noncommutative:356", () => {
     const alpha = new Sym('alpha');
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
@@ -10128,7 +10128,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, new Mul([rational(2), alpha, someint])).subs(new Pow(x, someint), L))).toBe('x**(2*alpha*someint)');
   });
-  it.fails("test_subs_noncommutative:359", () => {
+  it("test_subs_noncommutative:359", () => {
     const alpha = new Sym('alpha');
     const x = new Sym('x', { commutative: false });
     const someint = new Sym('someint', { integer: true });
@@ -10161,12 +10161,12 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(-3)).subs(new Pow(x, rational(3)), L))).toBe('L**(-1)');
   });
-  it.fails("test_subs_noncommutative:373", () => {
+  it("test_subs_noncommutative:373", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(-4)).subs(new Pow(x, rational(3)), L))).toBe('L**(-1)*x**(-1)');
   });
-  it.fails("test_subs_noncommutative:374", () => {
+  it("test_subs_noncommutative:374", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(-5)).subs(new Pow(x, rational(3)), L))).toBe('L**(-1)*x**(-2)');
@@ -10186,12 +10186,12 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(-3)).subs(new Pow(x, rational(-3)), L))).toBe('L');
   });
-  it.fails("test_subs_noncommutative:379", () => {
+  it("test_subs_noncommutative:379", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(-4)).subs(new Pow(x, rational(-3)), L))).toBe('L*x**(-1)');
   });
-  it.fails("test_subs_noncommutative:380", () => {
+  it("test_subs_noncommutative:380", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(-5)).subs(new Pow(x, rational(-3)), L))).toBe('L*x**(-2)');
@@ -10211,12 +10211,12 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(3)).subs(new Pow(x, rational(-3)), L))).toBe('L**(-1)');
   });
-  it.fails("test_subs_noncommutative:385", () => {
+  it("test_subs_noncommutative:385", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(4)).subs(new Pow(x, rational(-3)), L))).toBe('L**(-1)*x');
   });
-  it.fails("test_subs_noncommutative:386", () => {
+  it("test_subs_noncommutative:386", () => {
     const x = new Sym('x', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Pow(x, rational(5)).subs(new Pow(x, rational(-3)), L))).toBe('L**(-1)*x**2');
@@ -10320,13 +10320,13 @@ describe("sympy/core/tests/test_subs.py", () => {
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([a, b, x, y, x]).subs(new Mul([x, y]), L))).toBe('a*b*L*x');
   });
-  it.fails("test_subs_mixed:426", () => {
+  it("test_subs_mixed:426", () => {
     const x = new Sym('x', { commutative: false });
     const y = new Sym('y', { commutative: false });
     const L = new Sym('L', { commutative: false });
     expect(sympyStr(new Mul([new Wild('R', { exclude: [] }), x, y, exp(new Mul([x, y]))]).subs(new Mul([x, y]), L))).toBe('R_*L*exp(L)');
   });
-  it.fails("test_subs_mixed:427", () => {
+  it("test_subs_mixed:427", () => {
     const [a, b] = symbols('a b');
     const x = new Sym('x', { commutative: false });
     const y = new Sym('y', { commutative: false });
@@ -10629,19 +10629,19 @@ describe("sympy/core/tests/test_subs.py", () => {
     const [x, y, a] = symbols('x y a');
     expect(sympyStr(new Add([new Float({ man: 3n, exp: 0n }, 53), x, y]).subs(new Add([new Float({ man: 1n, exp: 1n }, 53), x]), a))).toBe('x + y + 3.0');
   });
-  it.fails("test_issue_5651:611", () => {
+  it("test_issue_5651:611", () => {
     const [a, b, c, K] = symbols('a b c K');
     expect(sympyStr(new Mul([a, new Pow(b, rational(-1)), new Pow(c, rational(-1))]).subs(new Mul([b, c]), K))).toBe('a/K');
   });
-  it.fails("test_issue_5651:612", () => {
+  it("test_issue_5651:612", () => {
     const [a, b, c, K] = symbols('a b c K');
     expect(sympyStr(new Mul([a, new Pow(b, rational(-2)), new Pow(c, rational(-3))]).subs(new Mul([b, c]), K))).toBe('a/(K**2*c)');
   });
-  it.fails("test_issue_5651:613", () => {
+  it("test_issue_5651:613", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Mul([new Pow(x, rational(-1)), new Pow(y, rational(-1))]).subs(new Mul([x, y]), rational(2)))).toBe('1/2');
   });
-  it.fails("test_issue_5651:614", () => {
+  it("test_issue_5651:614", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Mul([new Pow(x, rational(-1)), new Pow(y, rational(-1)), new Add([rational(1), new Mul([x, y])])]).subs(new Mul([x, y]), rational(1)))).toBe('2');
   });
@@ -10649,7 +10649,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new Mul([x, y, z]).subs(new Mul([x, y]), rational(2)))).toBe('2*z');
   });
-  it.fails("test_issue_5651:616", () => {
+  it("test_issue_5651:616", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new Mul([new Pow(x, rational(-1)), new Pow(y, rational(-1)), new Pow(z, rational(-1)), new Add([rational(1), new Mul([x, y])])]).subs(new Mul([x, y]), rational(1)))).toBe('2/z');
   });
@@ -10660,7 +10660,7 @@ describe("sympy/core/tests/test_subs.py", () => {
   //   assert N.subs({"N": 3}) == 3
   //   => 3
   it.todo("test_issue_4680:636");
-  it.fails("test_issue_6158:640", () => {
+  it("test_issue_6158:640", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Add([rational(-1), x]).subs(rational(1), y))).toBe('x - y');
   });
@@ -10668,7 +10668,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Add([rational(-1), x]).subs(rational(-1), y))).toBe('x + y');
   });
-  it.fails("test_issue_6158:642", () => {
+  it("test_issue_6158:642", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Add([S.NegativeInfinity, x]).subs(oo, y))).toBe('x - y');
   });
@@ -10851,7 +10851,7 @@ describe("sympy/core/tests/test_subs.py", () => {
     const y = new Sym('y', { complex: true });
     expect(sympyStr(new Add([rational(3), new Pow(x, rational(4)), new Mul([rational(-4), new Pow(x, rational(3))]), new Mul([rational(-2), x]), new Mul([rational(4), new Pow(x, rational(2))]), new Mul([rational(6), new Pow(x, rational(5))])]).subs(new Pow(x, rational(2)), new Pow(y, rational(2))).subs(new Pow(x, rational(4)), new Pow(y, rational(4))))).toBe('6*x**5 - 4*x**3 - 2*x + y**4 + 4*y**2 + 3');
   });
-  it.fails("test_issue_6976:841", () => {
+  it("test_issue_6976:841", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new Add([x, new Pow(x, rational(1, 2)), new Pow(x, rational(2)), new Pow(x, rational(3, 2))]).subs(new Pow(x, rational(1, 2)), y))).toBe('y**4 + y**3 + y**2 + y');
   });
@@ -10867,7 +10867,7 @@ describe("sympy/core/tests/test_subs.py", () => {
   //   assert x.subs(x**Rational(1, 3), y) == y**3
   //   => y**3
   it.todo("test_issue_6976:846");
-  it.fails("test_issue_6976:850", () => {
+  it("test_issue_6976:850", () => {
     const x = new Sym('x', { nonnegative: true });
     const y = new Sym('y', { nonnegative: true });
     expect(sympyStr(new Add([x, new Pow(x, rational(1, 2)), new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]).subs(new Pow(x, rational(2)), y))).toBe('y**(1/4) + y**(3/2) + sqrt(y) + y**2 + y');
