@@ -72,7 +72,7 @@ const CASES = [
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
   // methods and the polynomial-ring extensions add to it (measured 694 KiB).
-  ['polys', 'factor', 771],
+  ['polys', 'factor', 780],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 1045],
@@ -110,7 +110,7 @@ const CASES = [
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // The root namespace includes Sylvester/Bezout matrices and rational/integer PRS helpers.
   // PSLQ field embeddings and rational polynomial-domain preservation add about 3 KiB.
-  ['index', '*', 2790],
+  ['index', '*', 2800],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

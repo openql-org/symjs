@@ -293,3 +293,5 @@ export { dupCauchyUpperBound, dupCauchyLowerBound, dupMignotteSepBoundSquared } 
 export { groebnerInRing } from './polys/groebnertools';
 
 export { sylvester, bezout, backwardEye, res, resQ, resZ, subresultantsSylv, subresultantsBezout, subresultantsPg, subresultantsAmv, subresultantsAmvQ, subresultantsRem, subresultantsVv, subresultantsVv2, modifiedSubresultantsSylv, modifiedSubresultantsBezout, modifiedSubresultantsPg, modifiedSubresultantsAmv, euclidQ, sturmQ, quoZ, remZ, euclidAmv, euclidPg, sturmAmv, sturmPg } from './polys/subresultantsqqzz';
+
+export { DMPJs } from './polys/polyclasses';

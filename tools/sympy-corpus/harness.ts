@@ -346,6 +346,15 @@ export function matches(v: unknown, expectedIn: string): boolean {
   return matches0(v, expectedIn, got);
 }
 function matches0(v: unknown, expected: string, got: string): boolean {
+  if (v instanceof sj.DMPJs) {
+    const match = /^DMP_Python\((\[.*\]), (ZZ|QQ)\)$/.exec(expected);
+    if (match) {
+      const raw = JSON.parse(match[1]!.replace(/MPQ\((-?\d+),\s*(\d+)\)/g, '$1/$2').replace(/-?\d+(?:\/\d+)?/g, '"$&"'));
+      const convert = (x: unknown): unknown => Array.isArray(x) ? x.map(convert) : typeof x === 'string' ? sj.QQ.convert(sj.parse(x)) : x;
+      return v.equals(new sj.DMPJs(convert(raw) as unknown[], match[2] === 'QQ' ? sj.QQ : sj.ZZ));
+    }
+  }
+
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (normalizeLayout(got) === normalizeLayout(expected)) return true;
   // SymPy Monomial equality accepts its exponent tuple, independently of its printed generators.
@@ -354,7 +363,7 @@ function matches0(v: unknown, expected: string, got: string): boolean {
     const items = topLevelItems(expected);
     return items.length === v.items.length && v.items.every((item, i) => matches(item, definedOr(items[i], 'monomial tuple item')));
   }
-  if (v instanceof sj.GroebnerBasis && expected.startsWith('[')) return matches(new JsList(v.exprs), expected);
+  if (v instanceof sj.GroebnerBasis && (expected.startsWith('[') || expected.startsWith('('))) return matches(new JsList(v.exprs), expected);
   if (v instanceof sj.SDM && expected.startsWith('{')) {
     // The corpus stores dense rows, which cannot preserve explicitly empty
     // sparse rows. Their presence does not change any matrix entry.
@@ -722,9 +731,8 @@ export function deserialize(tree: Tree): unknown {
       const domain = deserializeDomain(tree['domain'] as Tree);
       if (!domain) throw new Unsupported('DMP domain');
       if (tree['level'] !== 0) {
-        const ring = new sj.PolyRing(Array.from({ length: Number(tree['level']) + 1 }, (_, i) => new Sym(`_dmp${i}`)), domain);
-        const dense = (v: unknown): unknown => v instanceof JsTuple ? v.items.map(dense) : v instanceof sj.PythonMPQ ? sj.Rational.of(v.numerator, v.denominator) : v;
-        return new JsDMP(ring.fromList(dense(deserialize(tree['coeffs'] as Tree)) as unknown[]));
+        const dense = (v: unknown): unknown => v instanceof JsTuple || v instanceof JsList ? v.items.map(dense) : v;
+        return new sj.DMPJs(dense(deserialize(tree['coeffs'] as Tree)) as unknown[], domain, Number(tree['level']));
       }
       const ring = domain.oldPolyRing(new Sym('_x'));
       return new sj.DMP((deserialize(tree['coeffs'] as Tree) as JsTuple).items.map((c) => c instanceof sj.PythonMPQ ? sj.Rational.of(c.numerator, c.denominator) : asExpr(c)), ring);
@@ -1484,7 +1492,7 @@ const asPoly = (v: unknown): sj.Poly => {
   throw new Unsupported('expected a Poly');
 };
 const polyOf = (args: unknown[]): sj.Poly =>
-  args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]), args.slice(1).map(asExpr));
+  args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]), args.slice(1).flatMap((g) => g instanceof JsTuple ? g.items.map(asExpr) : [asExpr(g)]));
 /** SymPy parallel_poly_from_expr: n leading arguments as Polys over common gens (rest are gens). */
 const parallelPolys = (args: unknown[], n: number, kw: Record<string, unknown> = {}): { ps: sj.Poly[]; asPolys: boolean } => {
   const fs = args.slice(0, n);
@@ -1707,6 +1715,7 @@ const autoKw = (kw: Record<string, unknown>): boolean => {
   for (const k of Object.keys(kw)) if (k !== 'auto') throw new Unsupported(`kwargs ${k}`);
   return kw['auto'] === undefined ? true : Boolean(kw['auto']);
 };
+const densePoly = (p: sj.Poly, K: sj.Domain): sj.DMPJs => new sj.DMPJs(sj.dmpFromDict(new Map(p.terms().map(([m, c]) => [m, K.convert(c)])), p.gens.length - 1, K), K);
 const polyArg = (v: unknown): sj.Poly | Expr => (v instanceof sj.Poly ? v : asExpr(v));
 const polyM =
   (f: (p: sj.Poly, args: unknown[]) => unknown): Adapter =>
@@ -2266,15 +2275,20 @@ export const ADAPTERS: Record<string, Adapter> = {
     return fold(e);
   },
   invert: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'integer_power') throw new Unsupported(`kwargs ${k}`);
-    const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
-    if (args.length === 2 && !(args[1] instanceof Sym)) {
-      const f = asExpr(args[0]);
-      const g = asExpr(args[1]);
-      const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
-      return sj.Poly.from(f, gens).invert(sj.Poly.from(g, gens)).asExpr();
+    if (args.length === 2 && args.every((a) => a instanceof sj.Rational && a.q === 1n)) return sj.modInverse(args[0] as sj.Rational, args[1] as sj.Rational);
+    if (args.length >= 2 && (args.length > 2 || !(args[1] instanceof Sym)) && kw['integer_power'] === undefined) {
+      const { ps, asPolys } = parallelPolys(args, 2, kw);
+      if (kw['auto'] === false) {
+        const K = new sj.PolyRing([], ps[0]!.domain).domain;
+        const result = densePoly(ps[0]!, K).invert(densePoly(ps[1]!, K), false);
+        const p = sj.Poly.fromDict(new Map([...result.toDict()].map(([m, c]) => [m, K.toSympy(c)])), ps[0]!.gens, { domain: ps[0]!.domain });
+        return (kw['polys'] === undefined ? asPolys : Boolean(kw['polys'])) ? p : p.asExpr();
+      }
+      const r = ps[0]!.invert(ps[1]!);
+      return (kw['polys'] === undefined ? asPolys : Boolean(kw['polys'])) ? r : r.asExpr();
     }
-    return new JsTuple(sj.invertEquation(asExpr(args[0]), syms, { integerPower: Boolean(kw['integer_power']) }));
+    for (const k of Object.keys(kw)) if (k !== 'integer_power') throw new Unsupported(`kwargs ${k}`);
+    return new JsTuple(sj.invertEquation(asExpr(args[0]), args.slice(1).map(asSym), { integerPower: Boolean(kw['integer_power']) }));
   },
   '.invert': (args, kw, self) => {
     noKw(kw);
@@ -2446,19 +2460,19 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.is_meromorphic': (args, kw, self) => (noKw(kw), none(sj.isMeromorphic(asExpr(self), asExpr(args[0]), asExpr(args[1])))),
   ratsimp: exprFn(sj.ratsimp),
   primitive: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'expand') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['expand', 'polys'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     // expand=False: the expression as it is (SymPy treats it as a single term structure)
     if (kw['expand'] === false) return new JsTuple(sj.primitive(asExpr(args[0])));
     const p = polyOf(args);
     const [c, q] = p.primitive();
-    return new JsTuple([c, q.asExpr()]);
+    return new JsTuple([c, (kw['polys'] === undefined ? args[0] instanceof sj.Poly : Boolean(kw['polys'])) ? q : q.asExpr()]);
   },
   content: (args, kw) => (noKw(kw), polyOf(args).content()),
   pdiv: polyFn(2, ([f, g]) => new JsTuple(f!.pdiv(g!))),
   prem: polyFn(2, ([f, g]) => f!.prem(g!)),
   pexquo: polyFn(2, ([f, g]) => f!.pexquo(g!)),
-  gcdex: polyFn(2, ([f, g]) => new JsTuple(f!.gcdex(g!))),
-  half_gcdex: polyFn(2, ([f, g]) => new JsTuple(f!.halfGcdex(g!))),
+  gcdex: (args, kw) => args.length === 2 && args.every((a) => a instanceof sj.Rational && a.q === 1n) ? new JsTuple(sj.igcdex((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)) : polyFn(2, ([f, g]) => new JsTuple(f!.gcdex(g!)))(args, kw),
+  half_gcdex: (args, kw) => args.length === 2 && args.every((a) => a instanceof sj.Rational && a.q === 1n) ? new JsTuple(sj.igcdex((args[0] as sj.Rational).p, (args[1] as sj.Rational).p).filter((_, i) => i !== 1)) : polyFn(2, ([f, g]) => new JsTuple(f!.halfGcdex(g!)))(args, kw),
   sturm: polyFn(1, ([f]) => f!.sturm()),
   sqf_part: polyFn(1, ([f]) => f!.sqfPart()),
   subresultants: polyFn(2, ([f, g]) => f!.subresultants(g!)),
@@ -2485,18 +2499,18 @@ export const ADAPTERS: Record<string, Adapter> = {
     return asPolys ? sj.Poly.from(e, ps[0]!.gens) : e;
   },
   gcd_list: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'polys') throw new Unsupported(`kwargs ${k}`);
     const fs = (args[0] as JsTuple).items;
     const { ps, asPolys } = parallelPolys([...fs, ...args.slice(1)], fs.length);
     const r = ps.reduce((a, b) => a.gcd(b));
-    return asPolys ? r : r.asExpr();
+    return (kw['polys'] === undefined ? asPolys : Boolean(kw['polys'])) ? r : r.asExpr();
   },
   lcm_list: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'polys') throw new Unsupported(`kwargs ${k}`);
     const fs = (args[0] as JsTuple).items;
     const { ps, asPolys } = parallelPolys([...fs, ...args.slice(1)], fs.length);
     const r = ps.reduce((a, b) => a.lcm(b));
-    return asPolys ? r : r.asExpr();
+    return (kw['polys'] === undefined ? asPolys : Boolean(kw['polys'])) ? r : r.asExpr();
   },
   viete: (args, kw) => {
     noKw(kw);
@@ -2717,8 +2731,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.together(asExpr(args[0]), { deep: Boolean(kw['deep']) });
   },
   cancel: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus','extension'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    if (args.length !== 1) throw new Unsupported('arity');
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','polys','greedy'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (args[0] instanceof JsTuple) {
+      if (args[0].items.length !== 2) throw new RangeError('expected a numerator and denominator pair');
+      const { ps, asPolys } = parallelPolys([...args[0].items, ...args.slice(1)], 2, kw);
+      const pair = ADAPTERS['.cancel']!([ps[1]], { include: true }, ps[0]) as JsTuple;
+      const polys = kw['polys'] === undefined ? asPolys : Boolean(kw['polys']);
+      return new JsTuple([S.One, ...pair.items.map((v) => v instanceof sj.Poly && !polys ? v.asExpr() : v)]);
+    }
     return sj.cancel(asExpr(args[0]), polynomialOptions(kw));
   },
   trigsimp: (args, kw) => {
@@ -3570,19 +3590,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.cancel': (args, kw, self) => {
     if (!(self instanceof sj.Poly)) return exprMethod(sj.cancel)(args, kw, self);
     for (const k of Object.keys(kw)) if (k !== 'include') throw new Unsupported(`kwargs ${k}`);
-    // SymPy Poly.cancel over ZZ: f/g = cp/cq * p/q
-    const g = asPoly(args[0]);
-    if (self.domain !== 'ZZ' || g.domain !== 'ZZ') throw new Unsupported('Poly.cancel over a field');
-    const h = self.gcd(g);
-    let P = self.exquo(h);
-    let Q = g.exquo(h);
-    let cp: Expr = S.One;
-    const neg = (q: sj.Poly) => (q.LC() as sj.Rational).isNegative;
-    if (neg(P) && neg(Q)) [P, Q] = [P.neg(), Q.neg()];
-    else if (neg(P)) [cp, P] = [S.NegOne, P.neg()];
-    else if (neg(Q)) [cp, Q] = [S.NegOne, Q.neg()];
-    if (kw['include']) return new JsTuple([P.mul(sj.Poly.from(cp, P.gens)), Q]);
-    return new JsTuple([cp, P, Q]);
+    const g = asPoly(args[0]), K = new sj.PolyRing([], self.domain).domain;
+    const f = densePoly(self, K), h = densePoly(g, K);
+    const wrap = (p: sj.DMPJs) => sj.Poly.fromDict(new Map([...p.toDict()].map(([m, c]) => [m, K.toSympy(c)])), self.gens, { domain: self.domain });
+    if (kw['include'] === true) return new JsTuple(f.cancel(h).map(wrap));
+    const [c, p, q] = f.cancelFraction(h);
+    return new JsTuple([K.getField().toSympy(c), wrap(p), wrap(q)]);
   },
   '.trigsimp': exprMethod(sj.trigsimp),
   '.fdiff': (args, kw, self) => (noKw(kw), sj.fdiff(asExpr(self), args.length ? intArg(args[0]) : 1)),
@@ -3599,6 +3612,11 @@ export const ADAPTERS: Record<string, Adapter> = {
       if (!pairs) throw new Unsupported('subs simultaneous');
       return sj.subs(asExpr(self), pairs.map(([k, v]) => [asExpr(k), asExpr(v)] as const), { simultaneous: true });
     }
+    if (self instanceof sj.Poly && args.length === 2) {
+      const from = asExpr(args[0]), to = asExpr(args[1]);
+      if (self.gens.some((g) => g.key === from.key)) return to instanceof Sym ? self.replace(from, to) : self.eval(to, from);
+      return sj.Poly.from(self.asExpr().subs(from, to), self.gens, { domain: self.domain });
+    }
     if (self instanceof Matrix) {
       if (args.length !== 2) throw new Unsupported('Matrix.subs');
       return self.subs(asExpr(args[0]), asExpr(args[1]));
@@ -3608,16 +3626,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.diff': (args, kw, self) => {
     noKw(kw);
     if (self instanceof sj.Poly) {
-      if (args.length && args.every((a) => a instanceof JsTuple)) {
-        // Poly.diff((gen_index, order), ...)
-        let p: sj.Poly = self;
-        for (const a of args as JsTuple[]) {
-          const gen = p.gens[Number((a.items[0] as sj.Rational).p)]!;
-          for (let i = 0; i < Number((a.items[1] as sj.Rational).p); i++) p = p.diff(gen);
-        }
-        return p;
+      let p = self;
+      for (const spec of args.length ? args : [self.gen]) {
+        const [g, n] = spec instanceof JsTuple ? spec.items : [spec, sj.Rational.of(1)];
+        const gen = g instanceof sj.Rational && g.q === 1n ? p.gens[intArg(g)] : asExpr(g);
+        for (let i = 0; i < intArg(n); i++) p = p.diff(gen);
       }
-      return self.diff(args[0] === undefined ? undefined : asExpr(args[0]));
+      return p;
     }
     if (self instanceof Matrix) {
       // SymPy MatrixBase.diff by a matrix or an array: ArrayDerivative, evaluated by derive_by_array
@@ -3786,8 +3801,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsTuple(sj.primitive(asExpr(self)));
   },
   '.degree': (args, kw, self) => {
-    noKw(kw);
-    return asPoly(self).degree(args[0] === undefined ? undefined : asExpr(args[0]));
+    for (const k of Object.keys(kw)) if (k !== 'gen') throw new Unsupported(`kwargs ${k}`);
+    const gen = kw['gen'] ?? args[0];
+    return asPoly(self).degree(gen === undefined ? undefined : gen instanceof sj.Rational && gen.q === 1n ? intArg(gen) : typeof gen === 'string' ? new Sym(gen) : asExpr(gen));
   },
   '.as_content_primitive': (args, kw, self) => {
     const clear = kw['clear'];
@@ -3909,15 +3925,19 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsDict([...result].map(([k,v]) => [k,kw['_raw'] === false || [...v.freeSymbols()].some((s) => ring.symbols.some((g) => g.key === s.key)) ? v : ring.domain.convert(v)]));
   },
   Poly: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian','field'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    const [e, ...gens] = args;
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian','field','symmetric'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (kw['symmetric'] !== undefined && kw['modulus'] === undefined) throw new sj.OptionError('symmetric requires modulus');
+    const [e, ...rawGens] = args;
+    const gens = rawGens.flatMap((g) => g instanceof JsTuple ? g.items : [g]);
     const extension = kw['extension'];
+    if (e instanceof JsDict) return sj.Poly.fromDict(new Map(e.entries.map(([m, c]) => [m instanceof JsTuple ? m.items.map(intArg) : [intArg(m)], asExpr(c)])), gens.map(asExpr), { ...polynomialOptions(kw), symmetric: kw['symmetric'] as boolean | undefined });
     if (e instanceof JsList || e instanceof JsTuple) return sj.Poly.fromList(e.items.map((v) => v instanceof sj.PythonMPQ ? sj.QQ.toSympy(v) : asExpr(v)), gens.map(asExpr), polynomialOptions(kw));
-    return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), {
+    return sj.Poly.from(typeof e === 'string' ? sj.parse(e) : asExprOrPoly(e), gens.map(asExpr), {
       ...polynomialOptions(kw),
       ...(extension === undefined ? {} : { extension: typeof extension === 'boolean' ? extension : extension instanceof JsTuple ? extension.items.map(asExpr) : asExpr(extension) }),
       ...(kw['gaussian'] === undefined ? {} : { gaussian: Boolean(kw['gaussian']) }),
       ...(kw['field'] === undefined ? {} : { field: Boolean(kw['field']) }),
+      ...(kw['symmetric'] === undefined ? {} : { symmetric: Boolean(kw['symmetric']) }),
     });
   },
   degree: (args, kw) => {
@@ -3939,6 +3959,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.mul(p.LC(opts), p.LM(opts));
   },
   gcd: (args, kw) => {
+    if (args[0] instanceof JsTuple || args[0] instanceof JsList) return ADAPTERS['gcd_list']!(args, kw);
+    if (kw['polys'] !== undefined) {
+      const { ps } = parallelPolys(args, 2, kw), r = ps[0]!.gcd(ps[1]!);
+      return kw['polys'] ? r : r.asExpr();
+    }
     for (const k of Object.keys(kw)) if (!['domain','modulus','extension'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('gcd arity');
     const a = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), b = args[1] instanceof sj.Poly ? args[1] : asExpr(args[1]);
@@ -3948,6 +3973,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.Poly.from(r, a.gens, outputOpts);
   },
   lcm: (args, kw) => {
+    if (args[0] instanceof JsTuple || args[0] instanceof JsList) return ADAPTERS['lcm_list']!(args, kw);
+    if (kw['polys'] !== undefined) {
+      const { ps } = parallelPolys(args, 2, kw), r = ps[0]!.lcm(ps[1]!);
+      return kw['polys'] ? r : r.asExpr();
+    }
     for (const k of Object.keys(kw)) if (!['domain','modulus','extension'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('lcm arity');
     const a = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), b = args[1] instanceof sj.Poly ? args[1] : asExpr(args[1]);
@@ -3960,7 +3990,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   rem: divisionAdapter('rem'),
   quo: divisionAdapter('quo'),
   factor_list: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'frac') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['frac', 'polys'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (args[0] instanceof sj.Poly || kw['polys'] !== undefined) {
+      const p = polyOf(args), [c, fs] = p.factorList();
+      const polys = kw['polys'] === undefined ? args[0] instanceof sj.Poly : Boolean(kw['polys']);
+      return new JsTuple([c, new JsList(fs.map(([f, k]) => new JsTuple([polys ? f : f.asExpr(), k])))]);
+    }
     const gens = args.slice(1).map(asExpr);
     const pairs = (fs: [sj.Expr, sj.Expr][]): JsList => new JsList(fs.map(([f, k]) => new JsTuple([f, k])));
     if (kw['frac'] === true) {
@@ -3996,17 +4031,27 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.xreplace(sj.interpolate(pts as never, t), [[t, at]]);
   },
   resultant: (args, kw) => {
-    noKw(kw);
-    const f = asExprOrPoly(args[0]);
-    const g = asExprOrPoly(args[1]);
-    const x = args[2] ? asSym(args[2]) : (sj.sortGens([...sj.freeSymbols(f), ...sj.freeSymbols(g)])[0] as Sym);
-    return sj.resultant(f, g, x);
+    for (const k of Object.keys(kw)) if (!['polys', 'includePRS'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const { ps, asPolys } = parallelPolys(args, 2);
+    const [p, q] = ps[0]!.unify(ps[1]!);
+    const K = new sj.PolyRing([], p.domain).domain;
+    const f = densePoly(p, K);
+    const g = densePoly(q, K);
+    const result = f.resultant(g);
+    const poly = result instanceof sj.DMPJs ? sj.Poly.fromDict(new Map([...result.toDict()].map(([m, c]) => [m, K.toSympy(c)])), p.gens.slice(1), { domain: p.domain }) : K.toSympy(result);
+    const out = poly instanceof sj.Poly && !(kw['polys'] === undefined ? asPolys : Boolean(kw['polys'])) ? poly.asExpr() : poly;
+    if (!kw['includePRS']) return out;
+    const prs = f.subresultants(g).map((h) => sj.Poly.fromDict(new Map([...h.toDict()].map(([m, c]) => [m, K.toSympy(c)])), p.gens, { domain: p.domain }));
+    return new JsTuple([out, new JsList(prs.map((h) => (kw['polys'] === undefined ? asPolys : Boolean(kw['polys'])) ? h : h.asExpr()))]);
   },
   discriminant: (args, kw) => {
-    noKw(kw);
-    const f = asExprOrPoly(args[0]);
-    const x = args[1] ? asSym(args[1]) : (sj.sortGens([...sj.freeSymbols(f)])[0] as Sym);
-    return sj.discriminant(f, x);
+    for (const k of Object.keys(kw)) if (k !== 'polys') throw new Unsupported(`kwargs ${k}`);
+    const p = polyOf(args), K = new sj.PolyRing([], p.domain).domain;
+    const f = densePoly(p, K);
+    const result = f.discriminant();
+    if (!(result instanceof sj.DMPJs)) return K.toSympy(result);
+    const poly = sj.Poly.fromDict(new Map([...result.toDict()].map(([m, c]) => [m, K.toSympy(c)])), p.gens.slice(1), { domain: p.domain });
+    return (kw['polys'] === undefined ? args[0] instanceof sj.Poly : Boolean(kw['polys'])) ? poly : poly.asExpr();
   },
   '.as_expr': (args, kw, self) => {
     noKw(kw);
@@ -4065,13 +4110,17 @@ export const ADAPTERS: Record<string, Adapter> = {
     return p.coeffMonomial(mono.monoms()[0]!);
   },
   '.eval': (args, kw, self) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'auto') throw new Unsupported(`kwargs ${k}`);
     if (self instanceof FnClass && self.name === 'motzkin') return sj.Rational.of(sj.motzkin(asExpr(args[0]).toNumber()));
     const p = asPoly(self);
-    if (args[0] instanceof JsDict) return p.evalMany(args[0].entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+    if (args.length === 2) {
+      const gen = args[0] instanceof sj.Rational && args[0].q === 1n ? p.gens[intArg(args[0])] : typeof args[0] === 'string' ? new Sym(args[0]) : asExpr(args[0]);
+      if (!gen || !p.gens.some((g) => g.key === gen.key)) throw new sj.PolynomialError('a valid generator expected');
+    }
+    if (args[0] instanceof JsDict) return p.evalMany(args[0].entries.map(([k, v]) => [typeof k === 'string' ? new Sym(k) : asExpr(k), asExpr(v)] as const));
     if (args[0] instanceof JsTuple) return p.evalMany(args[0].items.map((v, i) => [p.gens[i]!, asExpr(v)] as const));
     if (args.length === 1) return p.eval(asExpr(args[0]));
-    return p.eval(asExpr(args[1]), asExpr(args[0]));
+    return p.eval(asExpr(args[1]), args[0] instanceof sj.Rational && args[0].q === 1n ? p.gens[intArg(args[0])] : typeof args[0] === 'string' ? new Sym(args[0]) : asExpr(args[0]));
   },
   '.monic': (_a, kw, self) => (noKw(kw), asPoly(self).monic()),
   '.gcd': (args, kw, self) => (noKw(kw), asPoly(self).gcd(args[0] as sj.Poly)),
@@ -4097,14 +4146,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.cofactors': polyM((p, a) => new JsTuple(p.cofactors(a[0] as sj.Poly))),
   '.compose': polyM((p, a) => p.compose(a[0] as sj.Poly)),
   '.degree_list': polyM((p) => new JsTuple(p.degreeList())),
-  '.discriminant': polyM((p) => p.discriminant()),
-  '.resultant': (args, kw, self) => {
-    for (const k of Object.keys(kw)) if (k !== 'includePRS') throw new Unsupported(`kwargs ${k}`);
-    const p = asPoly(self);
-    const q = args[0] as sj.Poly;
-    if (kw['includePRS']) return new JsTuple([p.resultant(q), new JsList(p.subresultants(q))]);
-    return p.resultant(q);
-  },
+  '.discriminant': (args, kw, self) => ADAPTERS['discriminant']!([self, ...args], kw),
+  '.resultant': (args, kw, self) => ADAPTERS['resultant']!([self, ...args], kw),
   '.make_monic_over_integers_by_scaling_roots': polyM((p) => new JsTuple(p.makeMonicOverIntegersByScalingRoots())),
   sqf_norm: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
@@ -4618,7 +4661,7 @@ Object.assign(ADAPTERS, {
     return new JsTuple([p, new JsDict([['gens', new JsTuple(o.gens)], ['domain', new UFnClass(o.domain)], ['polys', false]])]);
   },
   parallel_poly_from_expr: (args, _kw) => {
-    const [ps, o] = sj.parallelPolyFromExpr((args[0] as JsList).items.map(asExpr), args.slice(1).map(asExpr));
+    const [ps, o] = sj.parallelPolyFromExpr((args[0] as JsList).items.map(asExpr), args.slice(1).flatMap((g) => g instanceof JsTuple ? g.items.map(asExpr) : [asExpr(g)]));
     return new JsTuple([new JsList(ps), new JsDict([['gens', new JsTuple(o.gens)], ['domain', new UFnClass(o.domain)], ['polys', false]])]);
   },
   gff: (args, kw) => (noKw(kw), sj.gff(asExpr(args[0]))),
@@ -4924,12 +4967,12 @@ const pythonTypeError = (message: string): never => { throw new TypeError(messag
 const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknown>> = {
   '.__add__': (a, [b]) => (Array.isArray(a) && b instanceof sj.ModuleElement ? b.add(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
-  '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
+  '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? (isScalar(a) && b instanceof sj.DMPJs ? b.neg().add(a) : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
   '.__mul__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
-  '.__truediv__': (a, [b]) => (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, ['truediv', 'div', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
+  '.__truediv__': (a, [b]) => (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['exquo'] : ['truediv', 'div', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
-  '.__floordiv__': (a, [b]) => (a instanceof sj.Poly ? a.quo(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
-  '.__mod__': (a, [b]) => (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.ANP ? ['rem'] : ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
+  '.__floordiv__': (a, [b]) => (a instanceof sj.Poly ? a.quo(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['quo'] : ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
+  '.__mod__': (a, [b]) => (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.ANP || a instanceof sj.DMPJs ? ['rem'] : ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
   '.__matmul__': (a, [b]) => callMethod(a, ['matmul', 'mul'], [b])?.value ?? unsupportedOp('@'),
   '.__neg__': (a) => callMethod(a, ['neg'], [])?.value ?? (isScalar(a) ? sj.neg(a) : unsupportedOp('-')),
   '.__invert__': (a) => callMethod(a, ['invert', 'inv', 'inverse'], [])?.value ?? (a instanceof Expr || typeof a === 'boolean' ? sj.Not(a) : unsupportedOp('~')),
@@ -5057,6 +5100,10 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     }
     if (a instanceof sj.GroebnerBasis || a instanceof sj.ModuleElement) {
       const values = a instanceof sj.GroebnerBasis ? a.exprs : a.data;
+      if (i instanceof sj.Slice) {
+        const [start, stop, step] = i.indices(values.length);
+        return new JsList(Array.from({ length: Math.max(0, Math.ceil((stop - start) / step)) }, (_, k) => values[start + k * step]));
+      }
       const k = Number(index[0]);
       const value = values[k < 0 ? values.length + k : k];
       if (value === undefined) throw new RangeError('index out of range');
@@ -5224,6 +5271,23 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.self?.t === 'Domain' && ['.is_ZZ', '.is_Frac'].includes(c.fn)) return (_args, kw, self) => (noKw(kw), c.fn === '.is_ZZ' ? String(toJs(self, false)) === 'ZZ' : toJs(self, false) instanceof sj.FractionField);
+  if (c.self?.t === 'Groebner' && ['.polys', '.domain', '.order'].includes(c.fn)) return (_args, kw, self) => {
+    noKw(kw); const g = self as sj.GroebnerBasis;
+    return c.fn === '.polys' ? new JsList(g.exprs.map((e) => sj.Poly.from(e, g.gens, { domain: g.domain }))) : new UFnClass(c.fn === '.domain' ? g.domain : g.order);
+  };
+  if (c.fn === 'DMP') return (args, kw) => (noKw(kw), new sj.DMPJs(toJs(args[0], false) as unknown[], toJs(args[1], false) as sj.Domain, args[2] === undefined ? undefined : intArg(args[2])));
+  if (c.self?.t === 'DMP' && !c.module.startsWith('sympy.polys.agca.') && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel' || Number(c.self['level']) !== 0)) return (args, kw, self0) => {
+    const convert = (v: unknown): unknown => v instanceof sj.DMP ? new sj.DMPJs(v.rep, v.dom, 0) : toJs(v, true);
+    const self = convert(self0) as sj.DMPJs;
+    if (c.fn.startsWith('.__')) return fromJs(DUNDER[c.fn]!(self, args.map(convert)));
+    const name = camel(c.fn.slice(1));
+    const member = (self as unknown as Record<string, unknown>)[name];
+    if (typeof member === 'function') return fromJs(member.apply(self, placeArgs(member as (...a: unknown[]) => unknown, args, kw, convert)));
+    if (member !== undefined) return fromJs(member);
+    throw new Unsupported(`DMP ${name}`);
+  };
+
   if (c.fn === 'FreeModulePolyRing') return (args, kw) => {
     noKw(kw);
     return new sj.FreeModule(toJs(args[0], false) as sj.Domain, intArg(args[1]));
@@ -5461,9 +5525,9 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (right instanceof sj.PuiseuxPoly && ['.__add__', '.__sub__', '.__mul__', '.__truediv__'].includes(c.fn)) return fromJs(dunder(right.ring.ringNew(left as Expr), [right]));
     }
     const right = args[0];
-    if (c.fn === '.__mul__' && (self0 instanceof JsDMP || self0 instanceof sj.DMP) && (right instanceof sj.ModuleElement || right instanceof sj.ModuleImplementedIdeal)) {
+    if (c.fn === '.__mul__' && (self0 instanceof JsDMP || self0 instanceof sj.DMP || self0 instanceof sj.DMPJs) && (right instanceof sj.ModuleElement || right instanceof sj.ModuleImplementedIdeal)) {
       const ring = right instanceof sj.ModuleElement ? right.module.ring : right.ring;
-      const scalar = self0 instanceof JsDMP ? self0.value.asExpr(...ring.symbols) : sj.subs(self0.toSympy(), [[new Sym('_x'), definedOr(ring.symbols[0], 'polynomial generator')]]);
+      const scalar = self0 instanceof sj.DMPJs ? sj.Poly.fromDict(new Map([...self0.toSympyDict()].map(([m, c]) => [m, asExpr(c)])), ring.symbols).asExpr() : self0 instanceof JsDMP ? self0.value.asExpr(...ring.symbols) : sj.subs(self0.toSympy(), [[new Sym('_x'), definedOr(ring.symbols[0], 'polynomial generator')]]);
       return fromJs(right.mul(scalar));
     }
 
@@ -5748,6 +5812,7 @@ function pickResult(value: unknown, index: number): unknown {
 
 /** The items of a result that Python iterates (a list, tuple, matrix or other iterable). */
 function resultItems(value: unknown, post: string): readonly unknown[] {
+  if (value instanceof sj.GroebnerBasis) return value.exprs;
   if (value instanceof Matrix) return value.data;
   if (value instanceof JsTuple || value instanceof JsList) return value.items;
   if (isIterableResult(value) && typeof value !== 'string') return [...value];
@@ -5825,6 +5890,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     const ownerRing = self instanceof sj.ModuleElement ? self.module.ring : self instanceof sj.Module || self instanceof sj.ModuleImplementedIdeal ? self.ring : undefined;
     const coefficient = (v: unknown): unknown => {
       if (!c.module.startsWith('sympy.polys.agca.') || ownerRing === undefined) return v;
+      if (v instanceof sj.DMPJs) return new sj.PolyRing(ownerRing.symbols, v.dom).fromDict(new Map([...v.toDict()].map(([m, c]) => [m, v.dom.toSympy(c)]))).asExpr();
       if (v instanceof JsDMP) return v.value.asExpr(...ownerRing.symbols);
       if (v instanceof sj.DMP) return sj.subs(v.toSympy(), [[new Sym('_x'), definedOr(ownerRing.symbols[0], 'polynomial generator')]]);
       return v;
@@ -5838,15 +5904,15 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // DomainMatrix, DDM and SDM methods (and their classes' static methods) share names with Matrix and Poly adapters
     const isDomainMatrix = (x: unknown) => x instanceof sj.DomainMatrix || x instanceof sj.DDM || x instanceof sj.SDM || (x instanceof TypeRef && ['DomainMatrix', 'DDM', 'SDM'].includes(x.name));
     // (rewrite targets are SymPy classes, which only the rewrite adapter names)
-    const auto0 = (c.fn !== '.rewrite' && (isMatExpr(self) || args.some(isMatExpr))) || isDomainMatrix(self) || self instanceof sj.NDimArray || self instanceof sj.Indexed ? autoAdapter(c) : undefined;
+    const auto0 = (c.fn !== '.rewrite' && (isMatExpr(self) || args.some(isMatExpr))) || self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') || isDomainMatrix(self) || self instanceof sj.NDimArray || self instanceof sj.Indexed ? autoAdapter(c) : undefined;
     try {
       v = call(auto0 ?? adapter);
     } catch (e) {
       // an adapter written for another owner of the same method name (Poly.add, ...): try the generic one
       // (or the adapter, when the generic one was tried first for a matrix expression)
-      const auto = auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
+      const auto = self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') ? undefined : auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       // (a DomainMatrix error is the method's own result)
-      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError) {
+      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }
