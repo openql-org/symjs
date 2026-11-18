@@ -846,15 +846,15 @@ describe("sympy/functions/special/tests/test_beta_functions.py", () => {
     const y = new Sym('y');
     expect(sympyStr(isReal(fn('beta', [rational(3), y])))).toBe('None');
   });
-  it.fails("test_beta:27", () => {
+  it("test_beta:27", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expandFunc(fn('beta', [x, y])))).toBe('gamma(x)*gamma(y)/gamma(x + y)');
   });
-  it.fails("test_beta:28", () => {
+  it("test_beta:28", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(expandFunc(new Add([new Mul([rational(-1), fn('beta', [y, x])]), fn('beta', [x, y])])))).toBe('0');
   });
-  it.fails("test_beta:29", () => {
+  it("test_beta:29", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expandFunc(fn('beta', [x, y])))).toBe('gamma(x)*gamma(y)/gamma(x + y)');
   });
@@ -1805,7 +1805,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(series(fn('expint', [n, x]), x, oo, 3, '+', {}))).toBe('(1 + n*(n + 1)/x**2 - n/x + O(x**(-3), (x, oo)))*exp(-x)/x');
   });
-  it.fails("test_expint:502", () => {
+  it("test_expint:502", () => {
     const [z, y] = symbols('z y');
     expect(sympyStr(series(fn('expint', [z, y]), z, rational(0), 2, '+', {}))).toBe('exp(-y)/y - z*meijerg(((), (1, 1)), ((0, 0, 1), ()), y)/y + O(z**2)');
   });
@@ -1910,7 +1910,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('li', [z]), 'Chi', { pattern: [], deep: true }))).toBe('-log(1/log(z))/2 + log(log(z))/2 + Chi(log(z)) - Shi(log(z))');
   });
-  it.fails("test_li:579", () => {
+  it("test_li:579", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('li', [z]), 'hyper', { pattern: [], deep: true }))).toBe('log(z)*hyper((1, 1), (2, 2), log(z)) - log(1/log(z))/2 + log(log(z))/2 + EulerGamma');
   });
@@ -2961,7 +2961,7 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
   it("test_polygamma_expand_func:414", () => {
     expect(sympyMatches([rational(-1)], '(-1,)')).toBe(true);
   });
-  it.fails("test_digamma:418", () => {
+  it("test_digamma:418", () => {
     expect(sympyStr(digamma(nan, { evaluate: true }))).toBe('nan');
   });
   it("test_digamma:420", () => {
@@ -3057,7 +3057,7 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([x, y])]), { func: true }))).toBe('polygamma(0, x + y)');
   });
-  it.fails("test_trigamma:487", () => {
+  it("test_trigamma:487", () => {
     expect(sympyStr(trigamma(nan, { evaluate: true }))).toBe('nan');
   });
   it("test_trigamma:489", () => {

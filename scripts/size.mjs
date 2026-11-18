@@ -66,7 +66,8 @@ const CASES = [
   ['core', 'parse, diff, expand, str, latex', 227],
   ['core', '*', 346],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
-  ['special', '*', 420],
+  // Meijer G derivatives, support intervals and branch-preserving integral rewrites.
+  ['special', '*', 422],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 1086],
   // The polys entry re-exports the sparse domain matrices through a
