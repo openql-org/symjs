@@ -16,7 +16,7 @@ export {
   doit,
 } from './calculus/doit';
 export {
-  integrate,
+  integral, integrate,
 } from './integrals/integrate';
 export {
   transformIntegral,

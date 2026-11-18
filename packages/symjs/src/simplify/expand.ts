@@ -7,7 +7,7 @@
 
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import { Add, Constant, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { rebuild } from '../core/traverse';
@@ -458,6 +458,20 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     ...hints,
   };
   let e = sympify(ex);
+  if (e instanceof Integral && hints['basic'] !== false) {
+    const limits: (readonly Expr[])[] = [];
+    let body: Expr = e;
+    while (body instanceof Integral) {
+      limits.unshift(body.args.slice(1));
+      body = body.integrand;
+    }
+    const integrand = expand(body, hints);
+    const wrap = (g: Expr): Expr => limits.reduce((f, l) => new Integral([f, ...l]), g);
+    const finiteBound = (v: Expr): boolean => !(v instanceof Special) && (v instanceof Sym ? v.assumptions0.get('finite') !== false : v.args.every(finiteBound));
+    const finite = limits.every((l) => (l.length === 3 ? l.slice(1) : l.slice(0, 1)).every(finiteBound));
+    return integrand instanceof Add && (h.force || integrand.isCommutative && finite)
+      ? add(...integrand.args.map(wrap)) : wrap(integrand);
+  }
   // a node class with its own expand (SymPy Expectation.expand)
   if (e instanceof ExtensionExpr) {
     const own = e.expandTop(hints);

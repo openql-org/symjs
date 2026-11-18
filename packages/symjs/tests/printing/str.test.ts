@@ -150,3 +150,8 @@ describe('precedence of the logic operators (SymPy PRECEDENCE)', () => {
     expect(withPermCyclic(undefined, () => permCyclic())).toBe(true);
   });
 });
+
+it('combines the sign of a negative infinity factor with a product coefficient', () => {
+  expect(str(new Mul([S.NegativeInfinity, I]))).toBe('-oo*I');
+  expect(str(new Mul([S.NegOne, S.NegativeInfinity, I]))).toBe('oo*I');
+});

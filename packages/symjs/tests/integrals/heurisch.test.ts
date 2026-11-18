@@ -187,3 +187,32 @@ it.each(['besseli', 'besselk'])('uses the modified Bessel recurrence of %s', (na
   const sign = name === 'besseli' ? '+' : '-';
   expect(hr(`(nu*${name}(nu, x) ${sign} x*${name}(nu + 1, x))/x`)).toBe(`${name}(nu, x)`);
 });
+
+it('integrates the logarithmic and trigonometric derivatives in the Wright omega tower', () => {
+  const w = 'LambertW(exp(x))';
+  const f = '(1+'+w+'*(2+cos('+w+')*(x+'+w+')))/(1+'+w+')/(x+'+w+')';
+  expect(hr(f)).toBe('log(x + LambertW(exp(x))) + sin(LambertW(exp(x)))');
+  expect(hr('sqrt(x**2/(y**2-x**2))')).toBe('x*sqrt(-x**2/(x**2 - y**2)) - y**2*sqrt(-x**2/(x**2 - y**2))/x');
+});
+
+it('recovers sine and cosine primitives with a Lambert W argument', () => {
+  for (const source of ['cos(LambertW(x))', 'sin(LambertW(x))']) {
+    const f = PX(source);
+    expect(heurisch(diff(f, x), x)?.equals(f)).toBe(true);
+  }
+});
+
+it('rejects a nonconstant trig derivative coefficient in a Lambert W tower', () => {
+  expect(heurisch(PX('x*cos(LambertW(x))'), x, { retries: -1 })).toBeUndefined();
+  expect(heurisch(PX('LambertW(x)*sin(x)/2'), x, { retries: -1 })).toBeUndefined();
+});
+
+it('separates a rational logarithmic derivative from a trigonometric derivative', () => {
+  const g = PX('sin(LambertW(x)) + log(x)/2');
+  expect(heurisch(diff(g, x), x)?.equals(g)).toBe(true);
+});
+
+it('rejects a residual numerator that is not a constant multiple of a logarithmic derivative', () => {
+  const derivative = diff(PX('sin(LambertW(x))'), x);
+  expect(heurisch(derivative.add(PX('x/(2+x)')), x, { retries: -1 })).toBeUndefined();
+});

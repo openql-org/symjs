@@ -7,7 +7,7 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { floatToString } from '../numeric/mpf';
@@ -117,6 +117,11 @@ function printMul(e: Mul): string {
   const a: Expr[] = [];
   const b: Expr[] = [];
   for (const item of expr instanceof Mul ? asOrderedFactors(expr) : [expr]) {
+    if (item === S.NegativeInfinity) {
+      sign = sign === '-' ? '' : '-';
+      a.push(S.Infinity);
+      continue;
+    }
     if (item instanceof Pow && item.isCommutative && !isExp(item) && splitCoeff(item.exp)[0].isNegative) {
       const x = item.exp;
       b.push(x instanceof Rational && x.p === -1n && x.q === 1n ? item.base : new Pow(item.base, mul(-1, x)));

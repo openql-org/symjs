@@ -309,3 +309,9 @@ describe('evalf helpers', () => {
     expect(getIntegerPart(S.Zero, 1)).toEqual([NoMatch, NoMatch, NoMatch, NoMatch]);
   });
 });
+
+it('evaluates constant definite integrals and coincident symbolic endpoints', () => {
+  expect(String(evalf(sj.integral(f(x), [x, y, y])))).toBe('0');
+  expect(evalf(sj.integral(2, [x, 1, 3])).toNumber()).toBe(4);
+  expect(evalf(sj.integral(f(x), [x, 1, 3]))).toBeInstanceOf(sj.Integral);
+});
