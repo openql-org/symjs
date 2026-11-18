@@ -35,6 +35,7 @@ import { rel } from '../core/logic';
 import { Mod } from '../functions/mod';
 import { NotImplementedError } from '../core/errors';
 import { nsimplify } from '../numeric/nfloat';
+import { parserHooks } from '../parsing/parser';
 
 const BOUNDED = Symbol('bounded');
 /** Undetermined, and no other method should be tried (a branch cut crossed at infinity). */
@@ -1103,3 +1104,5 @@ function gammaAsymptotic(e: Expr, n: Sym): Expr | undefined {
 }
 
 impl.limit = limit;
+
+parserHooks.limit = (e, z, z0, dir) => limit(e, z, z0, dir);

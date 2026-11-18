@@ -2253,6 +2253,132 @@ function relationArgs(args: unknown[], kw: Record<string, unknown>, op: string):
   return sj.Relational(asExpr(args[0]), asExpr(args[1]), op, { evaluate: kw['evaluate'] !== false });
 }
 
+/** Split at the commas outside brackets and string literals. */
+function splitPythonArguments(text: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let quote = '';
+  let current = '';
+  for (const ch of text) {
+    if (quote) quote = ch === quote ? '' : quote;
+    else if (ch === '"' || ch === "'") quote = ch;
+    else if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch)) depth--;
+    if (ch === ',' && depth === 0 && !quote) {
+      parts.push(current);
+      current = '';
+    } else current += ch;
+  }
+  if (current.trim()) parts.push(current);
+  return parts.map((part) => part.trim());
+}
+
+/** The index of the bracket closing the one at `open`, or -1. */
+function closingBracket(text: string, open: number): number {
+  let depth = 0;
+  let quote = '';
+  for (let i = open; i < text.length; i++) {
+    const ch = text.charAt(i);
+    if (quote) quote = ch === quote ? '' : quote;
+    else if (ch === '"' || ch === "'") quote = ch;
+    else if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch) && --depth === 0) return i;
+  }
+  return -1;
+}
+
+/** `head.name(args).attribute ...`: an operand followed by attribute accesses and method calls only. */
+function pythonAttributeChain(text: string): { head: string; chain: { name: string; args?: string }[] } | undefined {
+  let depth = 0;
+  let quote = '';
+  let start = -1;
+  for (let i = 0; i < text.length && start < 0; i++) {
+    const ch = text.charAt(i);
+    if (quote) quote = ch === quote ? '' : quote;
+    else if (ch === '"' || ch === "'") quote = ch;
+    else if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch)) depth--;
+    else if (ch === '.' && depth === 0 && /[A-Za-z_]/.test(text.charAt(i + 1))) {
+      const word = /\w+$/.exec(text.slice(0, i))?.[0];
+      if (word === undefined ? /[)\]'"]$/.test(text.slice(0, i)) : !/^\d/.test(word)) start = i;
+    }
+  }
+  if (start <= 0) return undefined;
+  const chain: { name: string; args?: string }[] = [];
+  let i = start;
+  while (i < text.length) {
+    const name = /^\.([A-Za-z_]\w*)/.exec(text.slice(i));
+    if (!name) return undefined;
+    i += name[0].length;
+    if (text.charAt(i) !== '(') {
+      chain.push({ name: definedOr(name[1], 'attribute name') });
+      continue;
+    }
+    const close = closingBracket(text, i);
+    if (close < 0) return undefined;
+    chain.push({ name: definedOr(name[1], 'attribute name'), args: text.slice(i + 1, close) });
+    i = close + 1;
+  }
+  return { head: text.slice(0, start), chain };
+}
+
+/**
+ * Python's eval of the parser output for what lies outside the expression grammar: string literals, keyword
+ * arguments, attribute access and method calls go through the adapters; everything else through `leaf`.
+ */
+function evaluatePythonSource(source: string, leaf: (text: string) => unknown): unknown {
+  const text = source.trim();
+  const literal = /^(['"])([^'"]*)\1$/.exec(text);
+  if (literal) return literal[2];
+  if (text === 'True' || text === 'False') return text === 'True';
+  const evaluate = (part: string): unknown => evaluatePythonSource(part, leaf);
+  const callArguments = (inner: string): [unknown[], Record<string, unknown>] => {
+    const args: unknown[] = [];
+    const kw: Record<string, unknown> = {};
+    for (const part of splitPythonArguments(inner)) {
+      const keyword = /^([A-Za-z_]\w*)\s*=(?!=)(.*)$/s.exec(part);
+      if (keyword) kw[definedOr(keyword[1], 'keyword name')] = evaluate(definedOr(keyword[2], 'keyword value'));
+      else args.push(evaluate(part));
+    }
+    return [args, kw];
+  };
+  const attributes = pythonAttributeChain(text);
+  if (attributes) {
+    let value: unknown = attributes.head === 'Q' ? sj.Q : evaluate(attributes.head);
+    for (const { name, args } of attributes.chain) {
+      if (value === sj.Q) {
+        const predicate = sj.Q[name];
+        if (predicate === undefined || args === undefined) return leaf(text);
+        value = predicate(...callArguments(args)[0].map(asExpr));
+      } else if (args === undefined) {
+        if (name !== 'free_symbols') return leaf(text);
+        value = new JsSet([...asExpr(value).freeSymbols()]);
+      } else {
+        const method = ADAPTERS[`.${name}`];
+        if (method === undefined) return leaf(text);
+        const [positional, kw] = callArguments(args);
+        value = method(positional, kw, value);
+      }
+    }
+    return value;
+  }
+  const call = /^([A-Za-z_]\w*)\(/.exec(text);
+  if (call && closingBracket(text, call[0].length - 1) === text.length - 1) {
+    const inner = text.slice(call[0].length, -1);
+    const name = definedOr(call[1], 'function name');
+    // S(...) is sympify: its value is that of its argument
+    if (name === 'S' && splitPythonArguments(inner).length === 1 && !/^['"]/.test(inner.trim())) return evaluate(inner);
+    if (splitPythonArguments(inner).some((part) => /^['"]|^[A-Za-z_]\w*\s*=(?!=)/.test(part))) {
+      const [args, kw] = callArguments(inner);
+      if (name === 'S' && typeof args[0] === 'string') return evaluate(args[0]);
+      if (name === 'factorint') return fromJs(sj.factorint(asExpr(args[0]), { visual: kw['visual'] === true }));
+      const adapter = ADAPTERS[name];
+      return adapter === undefined ? leaf(text) : adapter(args, kw);
+    }
+  }
+  return leaf(text);
+}
+
 export const ADAPTERS: Record<string, Adapter> = {
   checkodesol: (args, kw) => {
     const [ode, sol] = args;
@@ -2684,7 +2810,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (text.startsWith('[') && text.endsWith(']')) return ADAPTERS['sympify']!([text], {});
     // a function class in local_dict is a function of the parser's locals, anything else an expression
     const locals = localDict instanceof JsDict ? Object.fromEntries(localDict.entries.map(([k, v]) => [String(k), v instanceof UFnClass ? sj.SymFunction(v.name) : v instanceof JsLambda ? (...xs: Expr[]) => asExpr(v.call(...xs)) : asExpr(v)])) : undefined;
-    return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as sj.ParseOptions['transformations'] } : {}), ...(equals ? { convertEqualsSigns: true } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { locals } : {}) });
+    const options = { ...(tr ? { transformations: tr as sj.ParseOptions['transformations'] } : {}), ...(equals ? { convertEqualsSigns: true } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { locals } : {}) };
+    return evaluatePythonSource(String(args[0]), (source) => sj.parse(source, options));
   },
   sympify: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['rational', 'evaluate', 'convert_xor', 'locals'].includes(k)) throw new Unsupported(`kwargs ${k}`);

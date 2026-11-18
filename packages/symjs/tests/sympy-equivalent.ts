@@ -87,6 +87,15 @@ function parseValue(s0: string): V {
       return { t: 'matrix', rows: inner.items.map((r) => (r as { items: V[] }).items) };
     }
   }
+  // an unevaluated product of an explicit matrix and a scalar (MatMul): the matrix of the scaled entries
+  const scaled = /^(Matrix\(\[[\s\S]*\]\))\*(.+)$/.exec(s);
+  if (scaled) {
+    const matrix = parseValue(scaled[1] ?? '');
+    const scalar = parseValue(`1*${scaled[2] ?? ''}`);
+    if (matrix.t === 'matrix' && scalar.t === 'expr') {
+      return { t: 'matrix', rows: matrix.rows.map((row) => row.map((v): V => (v.t === 'expr' ? { t: 'expr', e: sj.mul(scalar.e, v.e) } : v))) };
+    }
+  }
   try {
     return { t: 'expr', e: sj.parse(s, { symbols: symbolTable, locals: { CRootOf: indexedRoot, ComplexRootOf: indexedRoot } }) };
   } catch {

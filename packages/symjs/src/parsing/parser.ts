@@ -14,7 +14,7 @@
  */
 
 import type { Assumptions, Expr, ExprLike, FnName, RelOp, SpecialFnName } from '../core/nodes';
-import { Add, BoolAtom, Float, Integral, Mul, Order, Pow, Rational, Rel, S, Sym, impl } from '../core/nodes';
+import { Add, BoolAtom, Float, Integral, Limit, Mul, Order, Pow, Rational, Rel, S, Sym, impl } from '../core/nodes';
 import { NotImplementedError } from '../core/errors';
 import { Product, Sum } from '../core/concrete';
 import { Subs } from '../core/subsnode';
@@ -72,6 +72,7 @@ type Token =
   | { t: 'name'; v: string; pos: number }
   | { t: 'op'; v: string; pos: number }
   | { t: 'value'; v: Expr; pos: number }
+  | { t: 'str'; v: string; pos: number }
   | { t: 'end'; pos: number };
 
 /** SymPy repeating decimals: '1.2[3]' = 1.2333... = 37/30. */
@@ -86,7 +87,7 @@ function repeatingDecimal(s: string): Rational {
 }
 
 function tokenize(src: string, offset: number, out: Token[]): void {
-  const re = /\s*(?:((?:\d(?:_?\d)*)?\.(?:\d(?:_?\d)*)?\[\d(?:_?\d)*\])|((?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?(?:[eE][+-]?\d(?:_?\d)*)?|\.\d(?:_?\d)*(?:[eE][+-]?\d(?:_?\d)*)?)(?:[jJ](?![A-Za-z0-9_]))?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|==|!=|!+|[-+*/^(),&|~<>=]))/y;
+  const re = /\s*(?:((?:\d(?:_?\d)*)?\.(?:\d(?:_?\d)*)?\[\d(?:_?\d)*\])|((?:\d(?:_?\d)*(?:\.(?:\d(?:_?\d)*)?)?(?:[eE][+-]?\d(?:_?\d)*)?|\.\d(?:_?\d)*(?:[eE][+-]?\d(?:_?\d)*)?)(?:[jJ](?![A-Za-z0-9_]))?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|==|!=|!+|[-+*/^(),&|~<>=])|(?:'([^']*)'|"([^"]*)"))/y;
   let i = 0;
   while (i < src.length) {
     if (/^\s*$/.test(src.slice(i))) return;
@@ -97,7 +98,8 @@ function tokenize(src: string, offset: number, out: Token[]): void {
     if (m[1] !== undefined) out.push({ t: 'value', v: repeatingDecimal(m[1].replaceAll('_', '')), pos });
     else if (m[2] !== undefined) out.push({ t: 'num', v: m[2], pos });
     else if (m[3] !== undefined) out.push({ t: 'name', v: m[3], pos });
-    else out.push({ t: 'op', v: defined(m[4], 'operator token'), pos });
+    else if (m[4] !== undefined) out.push({ t: 'op', v: m[4], pos });
+    else out.push({ t: 'str', v: m[5] ?? defined(m[6], 'string token'), pos });
     i = re.lastIndex;
   }
 }
@@ -388,6 +390,8 @@ function integral(args: readonly Arg[]): Expr {
 export const parserHooks: {
   /** SymPy Order(e, *variables, point), the argument reduced to its leading term. */
   order?: (e: Expr, variables: readonly Sym[], point: Expr) => Expr;
+  /** SymPy limit(e, z, z0, dir), the evaluated limit. */
+  limit?: (e: Expr, z: Sym, z0: Expr, dir: '+' | '-' | '+-') => Expr;
   /** Classes of higher layers called by name, e.g. Quaternion(1, 2, 3, 4) (SymPy sympify of the class name). */
   readonly constructors: Map<string, (args: readonly Expr[]) => Expr>;
 } = { constructors: new Map() };
@@ -726,6 +730,34 @@ class Parser {
     return this.sum();
   }
 
+  /** Limit(e, z, z0[, dir]) and limit(...): the direction is a string, positional or by keyword. */
+  private limitCall(name: string): Expr {
+    const args: Expr[] = [];
+    let dir: string | undefined;
+    for (;;) {
+      const t = this.peek();
+      const after = this.tokens[this.i + 1];
+      const keyword = t.t === 'name' && t.v === 'dir' && after?.t === 'op' && after.v === '=';
+      if (keyword) this.i += 2;
+      const value = this.peek();
+      if (value.t === 'str') {
+        this.next();
+        dir = value.v;
+      } else if (keyword) throw new SyntaxError(`Expected a string at ${value.pos}`);
+      else args.push(this.sum());
+      if (!this.isOp(',')) break;
+      this.next();
+    }
+    this.expect(')');
+    const [e, z, z0] = args;
+    if (e === undefined || z === undefined || z0 === undefined || args.length !== 3) throw new SyntaxError(`${name}() takes an expression, a variable, a point and a direction`);
+    if (dir !== undefined && dir !== '+' && dir !== '-' && dir !== '+-') throw new RangeError(`direction must be one of '+', '-' or '+-', not ${dir}`);
+    if (name === 'limit') return defined(parserHooks.limit, 'limit evaluation')(e, asSym(z, name), z0, dir ?? '+');
+    // SymPy: the direction at an infinite point is fixed by the point
+    const atInfinity = z0.key === S.Infinity.key ? '-' : z0.key === S.NegativeInfinity.key ? '+' : undefined;
+    return new Limit([e, z, z0], atInfinity ?? dir ?? '+');
+  }
+
   /** The symbol (or constant) of a name. */
   private symbolOf(name: string): Expr {
     const known = this.symbols.get(name) ?? CONSTANTS[name];
@@ -779,6 +811,7 @@ class Parser {
           if (this.localValues.has(t.v)) throw new TypeError(`'${t.v}' is an expression, not a function`);
           const f = local ? (args: Expr[]) => sympify(local(...args)) : (knownFn ?? ((args: Expr[]) => SymFunction(t.v)(...args)));
           this.next();
+          if ((t.v === 'Limit' || (t.v === 'limit' && parserHooks.limit)) && !local) return this.limitCall(t.v);
           const args: Arg[] = [this.arg()];
           while (this.isOp(',')) {
             this.next();
@@ -796,6 +829,8 @@ class Parser {
           return e;
         }
         throw new SyntaxError(`Unexpected '${t.v}' at ${t.pos}`);
+      case 'str':
+        throw new SyntaxError(`Unexpected string at ${t.pos}`);
       case 'end':
         throw new SyntaxError('Unexpected end of input');
     }

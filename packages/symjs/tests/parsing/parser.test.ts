@@ -458,3 +458,22 @@ it('splits numeric runs into complete integer factors before parsing powers', ()
   expect(s('x12', { transformations: 'implicit', splitSymbols: () => true })).toBe('12*x');
   expect(s('x12', { transformations: 'standard' })).toBe('x12');
 });
+
+it('reads Limit and limit with a direction given as a string (SymPy sympify)', () => {
+  const show = (s: string) => String(sj.parse(s));
+  expect(show("Limit(1/x, x, oo, dir='-')")).toBe("Limit(1/x, x, oo, dir='-')");
+  expect(show('Limit(sin(x)/x, x, 0)')).toBe("Limit(sin(x)/x, x, 0, dir='+')");
+  expect(show("Limit(1/x, x, 0, '-')")).toBe("Limit(1/x, x, 0, dir='-')");
+  expect(show('Limit(1/x, x, 0, dir="+-")')).toBe("Limit(1/x, x, 0, dir='+-')");
+  // the direction at an infinite point is fixed by the point
+  expect(show('Limit(x, x, oo)')).toBe("Limit(x, x, oo, dir='-')");
+  expect(show("Limit(x, x, -oo, dir='-')")).toBe("Limit(x, x, -oo, dir='+')");
+  expect(show('limit(sin(x)/x, x, 0)')).toBe('1');
+  expect(show("limit(1/x, x, 0, dir='-')")).toBe('-oo');
+  expect(() => sj.parse("Limit(1/x, x, 0, dir='a')")).toThrow(RangeError);
+  expect(() => sj.parse('Limit(1/x, x)')).toThrow(SyntaxError);
+  expect(() => sj.parse('Limit(1/x, x, 0, dir=2)')).toThrow('Expected a string at 21');
+  expect(() => sj.parse("'a' + 1")).toThrow('Unexpected string at 0');
+  // a function of that name in the locals is called as given
+  expect(String(sj.parse('Limit(x, 2)', { locals: { Limit: (a: sj.Expr, b: sj.Expr) => sj.add(a, b) } }))).toBe('x + 2');
+});
