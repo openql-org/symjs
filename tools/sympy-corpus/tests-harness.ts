@@ -73,6 +73,8 @@ export function runTestCase(c: TestCase): TestOutcome {
   // public JS methods have no such input; dropping it would measure a random
   // experiment instead of the captured assertion.
   if (c.kwargs && '_random_prec' in c.kwargs) return { status: 'unsupported', reason: 'upstream private random fixture _random_prec' };
+  // A draw from Python's seeded random generator cannot be reproduced by the JS methods.
+  if (c.fn === '.random') return { status: 'unsupported', reason: "a draw from Python's seeded random generator" };
   let observation: CaseObservation | undefined;
   // These established public names capitalize the second word after "Non".
   const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };
