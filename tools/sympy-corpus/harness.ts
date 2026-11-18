@@ -4556,7 +4556,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof sj.MatrixExpr) return none(self.equalsExplicit(args[0] instanceof Matrix ? sj.ImmutableMatrix(args[0]) : asExpr(args[0])));
     if (self instanceof sj.Rel) return none(sj.relationalEquals(self, asExpr(args[0]), args[1] === true));
     const d = sj.simplify(sj.sub(asExpr(self), asExpr(args[0])));
-    return d instanceof sj.Rational && d.isZero ? true : d.isNumber ? false : null;
+    if (d instanceof sj.Rational && d.isZero) return true;
+    if (d.isNumber) return false;
+    // SymPy Expr.equals: a difference that is not constant is not identically zero
+    return sj.isConstant(d) === false ? false : null;
   },
   '.getO': (_a, kw, self) => {
     noKw(kw);
@@ -4686,6 +4689,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     if (self instanceof sj.Hyper_Function) return args.some((a) => self.has(expressionContainer(a)));
     const e = self instanceof Matrix ? self.data : self instanceof sj.Poly ? [self.asExpr(), ...self.gens] : self instanceof JsTuple ? self.items.map(expressionContainer) : [asExpr(self)];
+    // a set class (sol.has(ImageSet)): a node of that class anywhere in the tree
+    const setClass = (a: unknown): (abstract new (...xs: never[]) => Expr) | undefined => a instanceof TypeRef && ['ImageSet', 'ConditionSet', 'FiniteSet', 'Interval', 'Range'].includes(a.name)
+      ? (sj as unknown as Record<string, abstract new (...xs: never[]) => Expr>)[a.name] : undefined;
+    const hasNode = (x: Expr, cls: abstract new (...xs: never[]) => Expr): boolean => {
+      const isInstance: boolean = x instanceof cls;
+      return isInstance || x.args.some((y) => hasNode(y, cls));
+    };
+    if (args.some((a) => { const cls = setClass(a); return cls !== undefined && e.some((x) => hasNode(x, cls)); })) return true;
     return args.some((a) =>
       a instanceof JsFunc
         ? false
@@ -7943,7 +7954,18 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   const site = c as { test?: string; line?: number | string };
   const arrayFormPrinting: Adapter | undefined = printer !== undefined && c.module === 'sympy.combinatorics.tests.test_permutations' && site.test === 'test_deprecated_print_cyclic' && Number(site.line) >= 505
     ? (args, kw, self) => printer(args, { ...kw, perm_cyclic: false }, self) : undefined;
-  const adapter = randomPrecAdapter(c) ?? arrayFormPrinting ?? cycleRepr ?? inPlaceSimplify ?? solverInvert ?? tensorStateAdapter(c) ?? diophantineStateAdapter(c) ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  // Quaternion.pow returns Python's NotImplemented for an exponent that is not an integer; the symjs method throws TypeError
+  const quaternionPow: Adapter | undefined = c.fn === '.pow' && c.self?.t === 'Quaternion'
+    ? (args, kw, self) => {
+      noKw(kw);
+      try {
+        return (self as sj.Quaternion).pow(asExpr(args[0]));
+      } catch (error) {
+        if (error instanceof TypeError) return { toString: () => 'NotImplemented' };
+        throw error;
+      }
+    } : undefined;
+  const adapter = quaternionPow ?? randomPrecAdapter(c) ?? arrayFormPrinting ?? cycleRepr ?? inPlaceSimplify ?? solverInvert ?? tensorStateAdapter(c) ?? diophantineStateAdapter(c) ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     let self = c.self ? deserialize(c.self) : undefined;
@@ -8083,6 +8105,12 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       }
     };
     const input = self !== undefined ? fmtOrUndefined(self) : args.length ? fmtOrUndefined(args[0]) : undefined;
+    // SymPy HolonomicFunction.__eq__: the same annihilator and variable, and the same initial conditions only
+    // when both functions have them (the assertion compares two functions, one of which has none)
+    if (v instanceof sj.HolonomicFunction && (c as { op?: string }).op === '==') {
+      const [shorter, longer] = got.length <= c.expected.length ? [got, c.expected] : [c.expected, got];
+      if (shorter.endsWith(')') && longer.startsWith(`${shorter.slice(0, -1)}, `)) return { status: 'equivalent', got };
+    }
     if (equivalent(got, c.expected, [...syms.values()], { fn: c.fn, input })) return { status: 'equivalent', got };
     if (c.fn === '.doit' && v instanceof Expr && got.includes('Trace(') && c.expected.includes('Trace(Matrix([')
         && matchesExplicitTrace(v, c.expected)) return { status: 'equivalent', got };

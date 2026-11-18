@@ -13,6 +13,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Mul, Pow, Rational, Sym } from '../core/nodes';
 import { at, defined, first } from '../core/guard';
 import { sympify } from '../core/ops';
+import { Mod } from '../functions/mod';
 import { gcd, lcm } from '../core/numbers';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
@@ -362,13 +363,23 @@ function isNthpowResidueBignPrimePower(aIn: bigint, n: bigint, p: bigint, kIn: b
   return pmod(a, 2n ** c) === 1n;
 }
 
+/**
+ * a mod m as SymPy computes it before taking integers (a % m): a symbolic a whose residue is decided by its
+ * assumptions is accepted (Dummy(even=True) + 3 is 1 modulo 2).
+ */
+function residueOf(a: IntLike, m: bigint): bigint {
+  if (typeof a === 'bigint' || typeof a === 'number') return pmod(asInt(a), m);
+  const e = sympify(a);
+  return e instanceof Rational ? pmod(asInt(e), m) : asInt(Mod(e, Rational.of(m)));
+}
+
 /** a is an nth power residue modulo m (SymPy is_nthpow_residue). */
 export function isNthpowResidue(aIn: IntLike, nIn: IntLike, mIn: IntLike): boolean {
   const m = asInt(mIn);
   const n = asInt(nIn);
   if (m <= 0n) throw new RangeError('m must be > 0');
   if (n < 0n) throw new RangeError('n must be >= 0');
-  const a = pmod(asInt(aIn), m);
+  const a = residueOf(aIn, m);
   if (n === 0n) return m === 1n ? false : a === 1n;
   if (a === 0n) return true;
   if (n === 1n) return true;
@@ -470,7 +481,7 @@ export function nthrootMod(aIn: IntLike, nIn: IntLike, pIn: IntLike, allRoots = 
   const n = asInt(nIn);
   if (n < 1n) throw new RangeError('n should be positive');
   if (p < 1n) throw new RangeError('p should be positive');
-  const a = pmod(asInt(aIn), p);
+  const a = residueOf(aIn, p);
   if (n === 1n) return allRoots ? [a] : a;
   if (n === 2n) return allRoots ? sqrtMod(a, p, true) : sqrtMod(a, p);
   const base: bigint[][] = [];

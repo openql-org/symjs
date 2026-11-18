@@ -656,7 +656,8 @@ it('accepts prime factorizations as Map inputs', () => {
   const factors = new Map([[2n, 3n], [17n, 1n], [19n, 2n]]);
   expect(sj.totient(factors)).toEqual(sj.rational(21888));
   expect(sj.reducedTotient(factors)).toEqual(sj.rational(2736));
-  expect(sj.totient(new Map())).toEqual(S.One);
+  // (compared by value: deep equality would also compare the lazily cached fields of the shared S.One)
+  expect(sj.totient(new Map()).equals(S.One)).toBe(true);
 });
 
 it('counts primes for real inputs without trial division to the argument', () => {
@@ -691,4 +692,9 @@ it('recognizes positive odd Euler indices and impossible partition counts', () =
   expect(sj.euler(new sj.Sym('odd', { odd: true, positive: true }))).toBe(S.Zero);
   expect(sj.nT(0, -1)).toBe(0n);
   expect(sj.nT([], -1)).toBe(0n);
+});
+
+it('requires a positive modulus in binomial_mod (SymPy ValueError)', () => {
+  expect(() => binomialMod(2, 1, -1)).toThrow(RangeError);
+  expect(() => binomialMod(2, 1, 0)).toThrow(RangeError);
 });

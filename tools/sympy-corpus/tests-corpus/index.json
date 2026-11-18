@@ -1322,13 +1322,13 @@
         "optional-dependency": 10,
         "upstream-skip": 2
       },
-      "seconds": 79.348,
+      "seconds": 34.76,
       "retainedModules": 0,
       "shards": [
         {
           "file": "stats.json",
           "cases": 2025,
-          "bytes": 1953182
+          "bytes": 1954509
         }
       ],
       "auditFile": "stats.audit.json",
@@ -2313,5 +2313,5 @@
   ],
   "timeoutSeconds": 120,
   "jobs": 4,
-  "lastRunSeconds": 66.071
+  "lastRunSeconds": 35.017
 }

@@ -727,6 +727,9 @@ class Capture:
                 case["comparisonTree"] = comparison
             except (extract.Unsupported, extract.PythonRuntime):
                 pass
+        # two random symbols of the same name print alike: the right-hand side is kept as a tree
+        if op == "!=" and self.category == "stats" and isinstance(expected, sympy.stats.rv.RandomSymbol):
+            case["comparisonTree"] = extract.ser(expected)
         if ported_function_case(case):
             case.pop("exclusion", None)
         if isinstance(expected, str):
