@@ -265,3 +265,37 @@ it('constructs Sylow subgroups with SymPy 1.14 orders and subgroup membership', 
   expect(() => CyclicGroup(4).sylowSubgroup(4)).toThrow('prime');
   expect(() => CyclicGroup(4).sylowSubgroup(1)).toThrow('prime');
 });
+
+describe('fixed draws in place of random ones (SymPy _random_prec, SymPy 1.14 values)', () => {
+  const P = (array: number[]): Permutation => new Permutation(array);
+  it('replays the product replacement steps', () => {
+    const D = DihedralGroup(6);
+    D.randomPrInit(11, 3, [{ s: 7, t: 3, x: 2, e: -1 }, { s: 5, t: 5, x: 1, e: -1 }, { s: 3, t: 4, x: 2, e: 1 }]);
+    expect(D.randomPr(11, 50, { s: 2, t: 9, x: 1, e: -1 }).arrayForm).toEqual([0, 5, 4, 3, 2, 1]);
+  });
+  it('uses the given element in random_stab', () => {
+    const S = SymmetricGroup(5);
+    expect(S.randomStab(2, undefined, { rand: P([1, 3, 2, 0, 4]) }).arrayForm).toEqual([1, 3, 2, 0, 4]);
+  });
+  it('tests the given candidates in is_alt_sym', () => {
+    const transposition = P([1, 0, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const sevenCycle = P([6, 4, 2, 5, 1, 0, 7, 8, 9, 3]);
+    expect(SymmetricGroup(10).isAltSym(0.05, [transposition, sevenCycle])).toBe(true);
+    expect(AlternatingGroup(10).isAltSym(0.05, [transposition])).toBe(false);
+  });
+  it('strips the given elements in schreier_sims_random', () => {
+    const D = DihedralGroup(3);
+    const [base, strong] = D.schreierSimsRandom([], D.generators, 2, { g: [P([2, 0, 1]), P([1, 2, 0]), P([1, 0, 2])] });
+    expect(base).toEqual([0, 1]);
+    expect(strong.map((p) => p.arrayForm)).toEqual([[1, 2, 0], [2, 1, 0], [0, 2, 1]]);
+  });
+});
+
+describe('the generators of a derived subgroup come in the order of SymPy (a Python set of commutators)', () => {
+  it('orders the commutators as CPython does, also when the set grows', () => {
+    const G = new PermutationGroup([[0, 2, 3, 1], [0, 2, 1, 3]].map((a) => new Permutation(a)));
+    expect(G.derivedSubgroup().generators.map((p) => p.arrayForm)).toEqual([[0, 2, 3, 1], [0, 3, 1, 2]]);
+    const H = new PermutationGroup([[1, 2, 0, 3, 4, 5], [0, 1, 3, 2, 5, 4], [5, 4, 3, 2, 1, 0], [1, 0, 2, 3, 5, 4]].map((a) => new Permutation(a)));
+    expect(H.derivedSubgroup().generators.slice(0, 2).map((p) => p.arrayForm)).toEqual([[1, 2, 0, 4, 5, 3], [1, 0, 2, 3, 5, 4]]);
+  });
+});

@@ -572,7 +572,7 @@ function generate(gens: readonly Af[]): Af[] {
 }
 
 /** SymPy canonicalize_naive: the canonical form by enumerating the double coset (used when no minimal BSGS is found). */
-function canonicalizeNaive(g: Af, dummies: readonly number[][], sym: readonly (0 | 1 | null)[], v: readonly [number[], Af[], number, 0 | 1 | null][]): Af | 0 {
+function canonicalizeNaiveAf(g: Af, dummies: readonly number[][], sym: readonly (0 | 1 | null)[], v: readonly [number[], Af[], number, 0 | 1 | null][]): Af | 0 {
   const [size, , sgens] = gensProductsAf(v.map(([b, gs, n, s]): TensorGens => [b, gs, Array.from({ length: n }, () => []), s]));
   const dgens = sym.flatMap((s, i) => dummySgs(at(dummies, i), s, size - 2));
   const dlist = generate(dgens.length ? dgens : [range(size)]);
@@ -610,7 +610,7 @@ export function canonicalize(g: Af, dummies: readonly number[][], msym: readonly
     if (!isMinimalBsgs(baseI, gensI)) {
       // SymPy get_minimal_bsgs; when Schreier–Sims gives no minimal base, the naive algorithm (with that base)
       bsgs = schreierSimsIncremental(gensI);
-      if (!isMinimalBsgs(...bsgs)) return canonicalizeNaive(g, dummies, msym, v.map(([, gs, n, s]) => [schreierSimsIncremental(gs)[0], gs, n, s]));
+      if (!isMinimalBsgs(...bsgs)) return canonicalizeNaiveAf(g, dummies, msym, v.map(([, gs, n, s]) => [schreierSimsIncremental(gs)[0], gs, n, s]));
     }
     v1.push([bsgs[0], bsgs[1], Array.from({ length: nI }, () => []), symI]);
   }
@@ -691,4 +691,54 @@ export function canonicalizeTensor(g: PermLike | Expr, dummies: readonly number[
   else if (isArrayForm(g)) gAf = [...g];
   else throw new TypeError('canonicalize: g must be a Permutation or an array form');
   return canonicalize(gAf, dummyLists, msyms, ...v.map(([b, gs, n, s]): [number[], Af[], number, MetricSym] => [[...b], gs.map(afOf), n, s]));
+}
+
+/**
+ * SymPy combinatorics.testutil.canonicalize_naive(g, dummies, sym, *v) for one index type: the canonical form of a
+ * tensor found by enumerating the slot and dummy symmetries, 0 when the tensor vanishes. It is the reference
+ * implementation that `canonicalize` is tested against.
+ *
+ * @see sympy.combinatorics.testutil.canonicalize_naive
+ * @example
+ * const [base2, gens2] = getSymmetricGroupSgs(2);
+ * canonicalizeNaive([1, 3, 2, 0, 4, 5], [2, 3], 0, [base2, gens2, 2, 0]); // [0, 2, 1, 3, 4, 5]
+ */
+export function canonicalizeNaive(g: PermLike, dummies: readonly number[], sym: MetricSym, ...v: CanonComponent[]): Af | 0 {
+  return canonicalizeNaiveAf(afOf(g), [[...dummies]], [sym], v.map(([base, gens, n, s]): [number[], Af[], number, MetricSym] => [[...base], gens.map(afOf), n, s]));
+}
+
+/**
+ * SymPy combinatorics.testutil.graph_certificate(gr): a certificate of an unoriented graph without external lines,
+ * given as an adjacency list: the canonical form of the tensor with one symmetric tensor for each vertex and one
+ * contracted index pair for each line. Isomorphic graphs have the same certificate.
+ *
+ * @see sympy.combinatorics.testutil.graph_certificate
+ * @example
+ * graphCertificate(new Map([[0, [1]], [1, [0]]])); // [0, 1, 2, 3]
+ */
+export function graphCertificate(graph: ReadonlyMap<number, readonly number[]>): Af | 0 {
+  // (a stable sort by decreasing degree, as Python's)
+  const items = [...graph].sort((a, b) => b[1].length - a[1].length);
+  const position = afInvert(items.map(([vertex]) => vertex));
+  const vertices: number[][] = items.map(() => []);
+  let index = 0;
+  for (const [vertex, neighbours] of items) {
+    for (const other of neighbours) {
+      // the even index of a line goes to the vertex that comes first, the odd one to the other
+      if (at(position, vertex) < at(position, other)) {
+        at(vertices, at(position, vertex)).push(index);
+        at(vertices, at(position, other)).push(index + 1);
+        index += 2;
+      }
+    }
+  }
+  const numIndices = items.reduce((n, [, neighbours]) => n + neighbours.length, 0);
+  const g = [...vertices.flat(), numIndices, numIndices + 1];
+  const count = new Map<number, number>();
+  for (const indices of vertices) count.set(indices.length, (count.get(indices.length) ?? 0) + 1);
+  const components = [...count].sort((a, b) => b[0] - a[0]).map(([degree, n]): CanonComponent => {
+    const [base, gens] = getSymmetricGroupSgs(degree);
+    return [base, gens, n, 0];
+  });
+  return canonicalizeTensor(g, Array.from({ length: numIndices }, (_, i) => i), 0, ...components);
 }

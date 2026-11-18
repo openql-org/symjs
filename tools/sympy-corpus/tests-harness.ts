@@ -79,10 +79,6 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
 
 export function runTestCase(c: TestCase): TestOutcome {
   if (c.exclusion) return { status: 'unsupported', reason: c.exclusion };
-  // Upstream tests inject exact random draws through a private keyword. The
-  // public JS methods have no such input; dropping it would measure a random
-  // experiment instead of the captured assertion.
-  if (c.kwargs && '_random_prec' in c.kwargs) return { status: 'unsupported', reason: 'upstream private random fixture _random_prec' };
   // A draw from Python's seeded random generator cannot be reproduced by the JS methods.
   if (c.fn === '.random') return { status: 'unsupported', reason: "a draw from Python's seeded random generator" };
   let observation: CaseObservation | undefined;
