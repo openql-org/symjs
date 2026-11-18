@@ -10,6 +10,8 @@ import { Dummy, Integral, Rational, S, Sym, impl } from '../core/nodes';
 import { Concrete, Sum, doitConcrete } from '../concrete/summations';
 import { at, cast, first } from '../core/guard';
 import { isNonNegative, isPositive } from '../core/assumptions';
+import { fact } from '../core/exprfacts';
+import { NotImplementedError } from '../core/errors';
 import { FiniteSet as FiniteSetClass } from '../sets/sets';
 import { singularities } from '../solvers/inequalities';
 import { limit } from '../series/limits';
@@ -33,7 +35,7 @@ import { simplify } from '../simplify/simplify';
 export function transformIntegral(integral: Integral, x: Expr, gIn: ExprLike, uIn?: Sym): Integral {
   const g = sympify(gIn);
   if (!(x instanceof Sym)) {
-    if (!(g instanceof Sym) || uIn !== undefined) throw new TypeError('transform: an expression for the old variable requires a new symbol');
+    if (!(g instanceof Sym) || uIn !== undefined) throw new RangeError('transform: an expression for the old variable requires a new symbol');
     const variable = cast(integral.variable, Sym);
     const jacobian = diff(x, variable);
     if (jacobian.equals(S.Zero)) throw new RangeError('transform: substitution has zero Jacobian');
@@ -49,34 +51,30 @@ export function transformIntegral(integral: Integral, x: Expr, gIn: ExprLike, uI
     return new Integral(limits === undefined ? [transformed, g] : [transformed, g, ...limits.map((p) => subs(x, [[variable, p]]))]);
   }
   const free = [...freeSymbols(g)].filter((s) => s instanceof Sym);
-  if (!uIn && free.length !== 1) throw new TypeError('transform: the new variable must be given');
+  if (!uIn && free.length !== 1) throw new RangeError('transform: the new variable must be given');
   const u = uIn ?? first(free);
+  if (!free.some((s) => s.key === u.key)) throw new RangeError('transform: the new variable must occur in the mapping');
   if (integral.variable.key !== x.key) throw new TypeError('transform: x is not the integration variable');
   let f = mul(subs(integral.integrand, [[x, g]]), diff(g, u));
   const lim = integral.limits;
-  if (!lim) return new Integral([f, u]);
+  if (!lim && integral.args.length !== 3) return new Integral([f, u]);
   // the inverse G(d) of x = g(u), solved for positive u and x first
-  let d = new Dummy('d', { positive: true });
+  const d = new Dummy('d', { positive: true });
   const pu = isPositive(u) === undefined ? new Dummy(u.name, { positive: true }) : u;
-  let inverse = solve(add(subs(g, [[u, pu]]), mul(-1, d)), pu);
-  if (inverse.length === 0) {
-    // x = -u has no positive root: solve without the assumption (SymPy raises here)
-    d = new Dummy('d');
-    inverse = solve(add(g, mul(-1, d)), u);
-  }
+  const inverse = solve(add(subs(g, [[u, pu]]), mul(-1, d)), pu);
   if (inverse.length === 0) throw new RangeError('transform: no solution of x = g(u) for u');
-  const infinite = new Set([S.NaN.key, S.ComplexInfinity.key, S.Infinity.key, S.NegativeInfinity.key]);
   const atLimit = (a: Expr, b: Expr): Expr => {
     const vals = new Map<string, Expr>();
     for (const G of inverse) {
       const v = subs(G, [[d, a]]);
       // G is undefined or infinite at a finite limit: approach it from the side of the other limit
-      const w = some(v, (e) => infinite.has(e.key)) && !infinite.has(a.key) ? limit(mul(sign(b), G), d, a) : v;
+      const w = v === S.NaN || (fact(v, 'finite') === false && fact(a, 'finite') === true) ? limit(mul(sign(b), G), d, a) : v;
       vals.set(w.key, w);
     }
     if (vals.size !== 1) throw new RangeError('transform: the substitution does not give a unique limit');
     return first([...vals.values()]);
   };
+  if (!lim) return new Integral([f, u, atLimit(at(integral.args, 2), S.One)]);
   let a = atLimit(lim[0], lim[1]);
   let b = atLimit(lim[1], lim[0]);
   if (isPositive(add(a, mul(-1, b))) === true) {
@@ -123,10 +121,14 @@ export function principalValue(integral: Integral): Expr {
  * With a symbolic n, or with `evaluate: false`, the result keeps a Sum.
  */
 export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' | 'midpoint' | 'trapezoid' = 'midpoint', opts: { evaluate?: boolean } = {}): Expr {
+  if (integral.integrand instanceof Integral) throw new NotImplementedError('as_sum: multidimensional integrals are not supported');
   const lim = integral.limits;
   if (!lim) throw new TypeError('as_sum: a definite integral is required');
   const N = sympify(n);
   const [a, b] = lim;
+  if (fact(a, 'finite') === false || fact(b, 'finite') === false) throw new RangeError('as_sum: a finite interval is required');
+  if (fact(N, 'positive') === false || fact(N, 'integer') === false || fact(N, 'finite') === false) throw new RangeError('as_sum: n must be a positive integer');
+  if (!['left', 'right', 'midpoint', 'trapezoid'].includes(method)) throw new RangeError('as_sum: unknown method');
   const x = integral.variable;
   const f = integral.integrand;
   const dx = mul(add(b, mul(-1, a)), pow(N, -1));
