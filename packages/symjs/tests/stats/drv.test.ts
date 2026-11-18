@@ -198,7 +198,7 @@ describe('DiscretePSpace.probability', () => {
     const X = Poisson('X', 1);
     const Y = Poisson('Y', 2);
     // SymPy: Sum((sqrt(2)/2)**n*exp(-3)*besseli(n, 2*sqrt(2)), (n, 1, oo)) (its inner sums see n > 0)
-    expect(str(P(Gt(X, Y)))).toBe('Sum(Sum(2**Y*exp(-2)*Piecewise((exp(-1)/factorial(Y + n), Y + n >= 0), (0, True))/factorial(Y), (Y, 0, oo)), (n, 1, oo))');
+    expect(str(P(Gt(X, Y)))).toBe('Sum(Sum(2**Y*Piecewise((exp(-1)/factorial(Y + n), Y + n >= 0), (0, True))*exp(-2)/factorial(Y), (Y, 0, oo)), (n, 1, oo))');
   });
   it('a set it cannot sum over gives an unevaluated Probability', () => {
     // where() gives sets of integers that eval_prob sums over; another set (here an interval) is not summed

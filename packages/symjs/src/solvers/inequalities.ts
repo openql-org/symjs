@@ -49,6 +49,7 @@ import {
   asRelational,
   cmpReal,
   complement,
+  Contains,
   containsQ,
   finiteSet,
   interval,
@@ -642,6 +643,13 @@ export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Com
   const x = target;
   // Interval(-oo, oo) equals Reals in SymPy: solve over the real line
   if (domain !== Reals && isRealLine(domain)) return solveset(f, x, Reals);
+  // SymPy solves over a real domain with a real dummy for the unknown: the equation is evaluated for a real
+  // unknown (sqrt(x**2) is Abs(x))
+  if ((domain === Reals || domain instanceof Interval) && isReal(x) !== true && !(f instanceof BoolAtom)) {
+    const real = new Dummy('R', { real: true });
+    const evaluated = xreplace(xreplace(f, [[x, real]]), [[real, x]]);
+    if (!evaluated.equals(f)) return solveset(evaluated, x, domain);
+  }
   // a decided condition holds everywhere or nowhere (SymPy solveset(True, x) is the domain)
   if (f instanceof BoolAtom) return f.value ? domain : EmptySet;
   if (f instanceof Rel && f.op !== 'Eq') {
@@ -994,8 +1002,12 @@ function invertAbsolute(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
   if (absolute === undefined || factors.filter((a) => a.has(x)).length !== 1) return undefined;
   const rhs = mul(-1, add(...terms.filter((t) => t !== term)), pow(mul(...factors.filter((a) => a !== absolute)), -1));
   if (isNegative(rhs) === true) return EmptySet;
-  if (isNonNegative(rhs) !== true) return undefined;
   const argument = first(absolute.args);
+  if (isNonNegative(rhs) !== true) {
+    // SymPy _invert_abs: a value of unknown sign stays as a condition on the two solutions
+    if (domain !== Reals || argument.key !== x.key || rhs.has(x) || rhs.isNumber) return undefined;
+    return new ConditionSet(x, new Contains(rhs, interval(S.Zero, S.Infinity)), finiteSet(mul(-1, rhs), rhs));
+  }
   const real = new Dummy('x', { real: true });
   if (isReal(xreplace(argument, [[x, real]])) !== true) {
     const [re, im] = asRealImag(xreplace(argument, [[x, real]]));

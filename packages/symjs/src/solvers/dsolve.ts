@@ -10,13 +10,13 @@
 import { NotImplementedError } from '../core/errors';
 import { isPositive, isReal } from '../core/assumptions';
 import type { ExprLike } from '../core/nodes';
-import { Add, Derivative, Dummy, Expr, Fn, Integral, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
+import { Add, Derivative, Dummy, Expr, ExtensionExpr, Fn, Integral, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { SubsNode } from '../core/subsnode';
 import { Unsolved } from '../core/truth';
 import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { freeSymbols, some, subs, xreplace } from '../core/traverse';
+import { freeSymbols, mapBottomUp, some, subs, xreplace } from '../core/traverse';
 import { derivative } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { evalf } from '../numeric/evalf';
@@ -394,6 +394,16 @@ const nthAlgebraic: Solver = (p) => nthAlgebraicOneOrder(p) ?? nthAlgebraicSolut
 
 type Term = [number, Expr, Expr];
 
+/**
+ * All the roots of a characteristic polynomial, the indexed ones in its own variable (SymPy rootof(chareq, k),
+ * where Poly.all_roots names the variable x).
+ */
+function indexedRoots(chareq: Expr, s: Dummy): Expr[] {
+  const named = new Sym('x');
+  return Poly.from(chareq, [s]).allRoots().map((root) =>
+    mapBottomUp(root, (e) => (e instanceof ExtensionExpr && e.name === 'CRootOf' ? e.withArgs([xreplace(at(e.args, 0), [[named, s]]), at(e.args, 1)]) : e)));
+}
+
 /** SymPy _get_const_characteristic_eq_sols: homogeneous solutions and collect terms. */
 function constCharacteristicSols(r: Map<number, Expr>, p: OdeProblem): [Expr[], Term[]] {
   const s = new Dummy('x');
@@ -403,7 +413,7 @@ function constCharacteristicSols(r: Map<number, Expr>, p: OdeProblem): [Expr[], 
   try {
     rs = roots(chareq, s);
   } catch {
-    rs = Poly.from(chareq, [s]).allRoots();
+    rs = indexedRoots(chareq, s);
   }
   const x = p.x;
   const counts = new Map<string, [Expr, number]>();
@@ -654,7 +664,7 @@ function eulerCharacteristicSols(p: OdeProblem, r: Map<number, Expr>): Expr {
   try {
     rs = sortRoots(roots(chareq, s));
   } catch {
-    rs = Poly.from(chareq, [s]).allRoots();
+    rs = indexedRoots(chareq, s);
   }
   const cs = Array.from({ length: rs.length }, (_, i) => C(i + 1)).reverse();
   const counts = new Map<string, [Expr, number]>();

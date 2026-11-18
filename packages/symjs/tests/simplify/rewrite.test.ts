@@ -349,7 +349,7 @@ it('rewrites special functions in unevaluated form', () => {
   for (const [name, args, target, expected] of [
     ['sin', [x], 'sinc', 'x*sinc(x)'],
     ['coth', [x], 'tractable', '(exp(x) + exp(-x))/(exp(x) - exp(-x))'],
-    ['factorial2', [x], 'gamma', '2**(x/2)*gamma(x/2 + 1)*Piecewise((1, Eq(Mod(x, 2), 0)), (sqrt(2)/sqrt(pi), Eq(Mod(x, 2), 1)))'],
+    ['factorial2', [x], 'gamma', '2**(x/2)*Piecewise((1, Eq(Mod(x, 2), 0)), (sqrt(2)/sqrt(pi), Eq(Mod(x, 2), 1)))*gamma(x/2 + 1)'],
     ['beta', [x, y], 'gamma', 'gamma(x)*gamma(y)/gamma(x + y)'],
     ['loggamma', [x], 'intractable', 'log(gamma(x))'],
     ['lowergamma', [x, y], 'uppergamma', 'gamma(x) - uppergamma(x, y)'],

@@ -1544,13 +1544,13 @@
         "completed": 65,
         "marked-xfail": 2
       },
-      "seconds": 20.316,
+      "seconds": 9.031,
       "retainedModules": 0,
       "shards": [
         {
           "file": "vector.json",
           "cases": 694,
-          "bytes": 2099226
+          "bytes": 2103042
         }
       ],
       "auditFile": "vector.audit.json",
@@ -2313,5 +2313,5 @@
   ],
   "timeoutSeconds": 120,
   "jobs": 4,
-  "lastRunSeconds": 35.017
+  "lastRunSeconds": 9.265
 }

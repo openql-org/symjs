@@ -1366,6 +1366,16 @@ export function integral(ex: ExprLike, ...limits: readonly (ExprLike | readonly 
       throw new RangeError('Invalid integration limit');
     }
     if (variable instanceof Derivative) diff(S.Zero, variable);
+    // SymPy Integral.__new__: an integrand with _eval_Integral (vectors, dyadics, quaternions) integrates itself
+    if (result instanceof ExtensionExpr && variable instanceof Sym && parts.length !== 2) {
+      const [lower, upper] = parts.slice(1);
+      const bounds: [Expr, Expr] | undefined = lower !== undefined && upper !== undefined ? [lower, upper] : undefined;
+      const own = result.integrateSelf(variable, bounds, (g) => integrate(g, variable, bounds));
+      if (own !== undefined) {
+        result = own;
+        continue;
+      }
+    }
     result = new Integral([result, ...parts]);
   }
   return result;

@@ -558,6 +558,15 @@ def default_truth(value):
     return not hasattr(type(value), "__bool__") and not hasattr(type(value), "__len__")
 
 
+
+def closure_vector(function):
+    """The vector of the closure returned by Vector.dot(Del), with the call taking it as its last argument."""
+    if getattr(function, "__qualname__", "") != "Vector.dot.<locals>.directional_derivative":
+        return None, function
+    vector = function.__closure__[function.__code__.co_freevars.index("self")].cell_contents
+    return vector, functools.wraps(function)(lambda *args, **kwargs: function(*args[:-1], **kwargs))
+
+
 class Capture:
     def __init__(self, module, category, sites):
         self.module, self.category, self.sites = module, category, sites
@@ -687,6 +696,9 @@ class Capture:
         name = getattr(function, "__name__", "")
         if not name and sympy_object(function):
             return lambda *args, **kw: self.invoke(site, ".__call__", function, function, args, kw)
+        vector, call = closure_vector(function)
+        if vector is not None:
+            return lambda *args, **kw: self.invoke(site, name, None, call, (*args, vector), kw)
         return lambda *args, **kw: self.invoke(site, name, None, function, args, kw)
 
     def method(self, site, receiver, name):
@@ -787,6 +799,9 @@ class Capture:
         name = getattr(function, "__name__", "")
         if not name and sympy_object(function):
             return lambda *args, **kw: self.bound_call(names, ".__call__", function, function, args, kw)
+        vector, call = closure_vector(function)
+        if vector is not None:
+            return lambda *args, **kw: self.bound_call(names, name, None, call, (*args, vector), kw)
         return lambda *args, **kw: self.bound_call(names, name, None, function, args, kw)
 
     def bind_method(self, names, receiver, name):

@@ -496,8 +496,10 @@ describe('solveset over the reals with a parameter (SymPy _invert_real)', () => 
     expect(R('sqrt(2*x + 1) - y')).toBe('ImageSet(Lambda(x, x**2/2 - 1/2), Intersection({y}, Interval(0, oo)))');
     expect(R('sqrt(x**3 + 1) - y')).toBe('ImageSet(Lambda(x, Abs(x**2 - 1)**(1/3)*sign(x**2 - 1)), Intersection({y}, Interval(0, oo)))');
     expect(R('sqrt(x**2 + x) - y')).toBe('ConditionSet(x, Eq(-y + sqrt(x**2 + x), 0), Reals)');
-    // SymPy: ConditionSet(x, Contains(y, Interval(0, oo)), {-y, y})
-    expect(R('sqrt(x**2) - y')).toBe('Intersection({-y, y}, Reals)');
+    expect(R('sqrt(x**2) - y')).toBe('ConditionSet(x, Contains(y, Interval(0, oo)), {-y, y})');
+    expect(R('Abs(x) - y')).toBe('ConditionSet(x, Contains(y, Interval(0, oo)), {-y, y})');
+    // (SymPy gives a union of image sets)
+    expect(R('(x**2)**(1/4) - y')).toBe('ConditionSet(x, Eq(-y + sqrt(Abs(x)), 0), Reals)');
   });
   it('odd roots: real_root', () => {
     expect(R('x**3 - p')).toBe('Intersection({Abs(p)**(1/3)*sign(p)}, Reals)');
@@ -819,7 +821,9 @@ it('rejects inconsistent integer congruences before dividing by the gcd', () => 
 
 it('keeps unsupported equations after a failed radical elimination', () => {
   expect(solveset(p('sin(sqrt(x))+sqrt(x-1)'), x, Reals)).toBeInstanceOf(ConditionSet);
-  expect(solveset(p('sqrt(x**2)-x+sqrt((x+1)**2)-(x+1)'), x, Reals)).toBeInstanceOf(ConditionSet);
+  // over the reals sqrt(x**2) is Abs(x)
+  expect(String(solveset(p('sqrt(x**2)-x+sqrt((x+1)**2)-(x+1)'), x, Reals))).toBe('Interval(0, oo)');
+  expect(String(solveset(p('sqrt(x**2)-x'), x, Reals))).toBe('Interval(0, oo)');
 });
 
 it('handles real and imaginary components of phase and modulus', () => {
@@ -828,7 +832,7 @@ it('handles real and imaginary components of phase and modulus', () => {
   expect(String(solveset(p('atan2(x,2)-pi/3'), x, Reals))).toBe('{2*sqrt(3)}');
   expect(solveset(p('atan2(x,2)-pi'), x, Reals)).toBe(sj.EmptySet);
   expect(solveset(p('atan2(2,x)-y'), x, Reals)).toBeInstanceOf(ConditionSet);
-  expect(solveset(p('atan2(x,2)-y'), x, Reals)).toBeInstanceOf(ConditionSet);
+  expect(String(solveset(p('atan2(x,2)-y'), x, Reals))).toBe('Intersection({2*tan(y)}, Reals)');
 });
 
 it('includes finite domain endpoints of real radicals', () => {

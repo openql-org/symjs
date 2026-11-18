@@ -368,3 +368,22 @@ describe('explicit root selection', () => {
     }
   });
 });
+
+it('takes the powers of sums in the constant term of a binomial out of the root like SymPy', () => {
+  const firstRoot = (e: string) => String([...sj.roots(E(e), x).keys()][0]);
+  // a symbolic leading coefficient stays under the root
+  expect(firstRoot('a*x**3 + (a + 1)**5')).toBe('(-1/a)**(1/3)*(a + 1)**(5/3)');
+  expect(firstRoot('a*x**4 + (a + 1)**4*b')).toBe('-(-b/a)**(1/4)*(a + 1)');
+  expect(firstRoot('4*(a + b)*x**4 + 1')).toBe('-(-1/(4*a + 4*b))**(1/4)');
+  expect(firstRoot('a*x**3 + (a + 1)**5/(b + 1)')).toBe('(-1/a)**(1/3)*(a + 1)**(5/3)/(b + 1)**(1/3)');
+  expect(firstRoot('(b + 1)**2*x**3 + (a + 1)**4')).toBe('(-1/(b**2 + 2*b + 1))**(1/3)*(a + 1)**(4/3)');
+  // a monic binomial: the factors of the constant term
+  expect(firstRoot('x**4 + 1/(4*(a + b))')).toBe('-(-1)**(1/4)*sqrt(2)/(2*(a + b)**(1/4))');
+  expect(firstRoot('x**4 + c/(4*(a + b))')).toBe('-sqrt(2)*(-c)**(1/4)/(2*(a + b)**(1/4))');
+  expect(firstRoot('x**4 - (a + b)**4*c')).toBe('-c**(1/4)*(a + b)');
+  // a power alone under the root comes out only as a perfect power
+  expect(firstRoot('x**4 + 1/(a + b)')).toBe('-(-1/(a + b))**(1/4)');
+  expect(firstRoot('x**3 - (a + b)**(-3)')).toBe('1/(a + b)');
+  expect(firstRoot('x**2 - (a + b)**3')).toBe('-sqrt((a + b)**3)');
+  expect(solve(E('C1 + t + 1/(4*u**4)'), E('u')).map(String)).toEqual(['-(-1/(4*C1 + 4*t))**(1/4)', '(-1/(4*C1 + 4*t))**(1/4)', '-I*(-1/(4*C1 + 4*t))**(1/4)', 'I*(-1/(4*C1 + 4*t))**(1/4)']);
+});

@@ -898,3 +898,18 @@ it('keeps the given Piecewise integrand in an integral that stays unevaluated (S
 it('integrates through the Meijer G-functions when an endpoint limit of the antiderivative is not found', () => {
   expect(sstr(integrate(parse('(besselj(1, x)/x)**2'), new Sym('x'), [0, sj.oo]))).toBe('4/(3*pi)');
 });
+
+it('constructs the Integral of a self-integrating integrand through that integrand (SymPy Integral.__new__)', () => {
+  const C = sj.CoordSys3D('C');
+  const [a, b] = sj.symbols('a b');
+  const [i, j] = C.baseVectors();
+  const v = sj.add(sj.mul(a, i), sj.mul(b, j));
+  expect(String(sj.integral(v, a, b))).toBe('(Integral(a, a, b))*C.i + (Integral(b, a, b))*C.j');
+  expect(String(sj.integral(v, [a, 0, 1], [b, 0, 2]))).toBe('(Integral(a, (a, 0, 1), (b, 0, 2)))*C.i + (Integral(b, (a, 0, 1), (b, 0, 2)))*C.j');
+  expect(String(sj.integral(sj.mul(a, sj.BaseDyadic(i, j)), a))).toBe('(Integral(a, a))*(C.i|C.j)');
+  expect(String(sj.integral(new sj.Quaternion(a, 1, 2, 3), a))).toBe('a**2/2 + a*i + 2*a*j + 3*a*k');
+  expect(sj.integral(sj.Vector.zero, a)).toBe(sj.Vector.zero);
+  // an unevaluated product integrates as any other expression (SymPy raises an AttributeError)
+  expect(sj.integral(sj.Cross(i, j), a).kind).toBe('Integral');
+  expect(sj.integral(i, [a, 0]).kind).toBe('Integral');
+});

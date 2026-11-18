@@ -473,7 +473,7 @@ function findRoots(ex: ExprLike, x: Sym, opts: RootOptions): Expr[] {
     return [...symbolicQuadraticRoots(orig(low + 2), orig(low + 1), orig(low)), ...zeros];
   }
   // SymPy roots(): a binomial a*x**n + b by roots_binomial
-  if (normalized.size === 2) return [...symbolicBinomialRoots(get(low), effDeg), ...zeros];
+  if (normalized.size === 2) return [...symbolicBinomialRoots(get(low), effDeg, coeffs.get(deg) ?? S.One, coeffs.get(low) ?? S.Zero), ...zeros];
   if (effDeg === 3) return opts.cubics === false ? zeros : [...rootsCubicFormula(S.One, get(low + 2), get(low + 1), get(low), opts.trig), ...zeros];
   // a polynomial in x**2 (SymPy's decomposition f = g(x**2)): the square roots of the roots of g
   if ([...normalized.keys()].every((k) => (k - low) % 2 === 0)) {
@@ -723,15 +723,22 @@ function integerBasis(cs: ReadonlyMap<number, bigint>): bigint | undefined {
 
 /** c with the given symbols set to 1. */
 /** SymPy roots_binomial for x**n + c with a symbolic c (in SymPy's order). */
-function symbolicBinomialRoots(c: Expr, n: number): Expr[] {
+function symbolicBinomialRoots(c: Expr, n: number, leading: Expr = S.One, constant: Expr = c): Expr[] {
   const base = neg(c);
   const exponent = Rational.of(1n, BigInt(n));
-  const fs = factorE(base);
-  if (fs instanceof Mul) {
-    const powers = fs.args.filter((f): f is Pow => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isInteger);
-    if (powers.length) {
-      const extracted: readonly Expr[] = powers;
-      const remaining = mul(...fs.args.filter((f) => !extracted.includes(f)));
+  // the powers of sums in the constant term come out of the root; a symbolic leading coefficient stays in it
+  // (a*x**3 + (a + 1)**5: (-1/a)**(1/3)*(a + 1)**(5/3), and 4*(a + b)*x**4 + 1: (-1/(4*a + 4*b))**(1/4))
+  const symbolicLeading = freeSymbols(leading).size > 0;
+  const fs = factorE(symbolicLeading ? constant : base);
+  const factors = fs instanceof Mul ? fs.args : fs instanceof Pow ? [fs] : [];
+  if (factors.length) {
+    const powers = factors.filter((f): f is Pow => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isInteger);
+    const extracted: readonly Expr[] = powers;
+    const rest = mul(...factors.filter((f) => !extracted.includes(f)));
+    const remaining = symbolicLeading ? mul(-1, rest, pow(expand(leading), -1)) : rest;
+    // (a power alone under the root comes out only when it is a perfect power: (-1/(a + b))**(1/4) stays)
+    const alone = remaining.equals(S.One) || remaining.equals(S.NegOne);
+    if (powers.length && !(alone && powers.some((f) => !(f.exp instanceof Rational && f.exp.p % BigInt(n) === 0n)))) {
       const scale = mul(...powers.map((f) => pow(f.base, mul(f.exp, exponent))));
       const alpha = mul(pow(remaining, exponent), scale);
       return binomialOrder(n, isNegative(base) === true, false).map((k) => mul(alpha, unitRoot(k, n)));
