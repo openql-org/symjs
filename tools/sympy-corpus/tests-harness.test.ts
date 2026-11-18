@@ -379,3 +379,25 @@ it('constructs category arrow descriptions with a public NoMatch for Python None
   expect(selected).toHaveLength(6);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
+
+it('replays polynomial keyword options, monomial tuples and sparse constructors', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const lines = new Set([154, 156, 158, 160, 275, 276, 629, 632, 662, 665, 671, 674,
+    698, 699, 701, 702, 704, 705, 707, 708, 710, 1041, 1047, 1055, 1477, 1482,
+    1492, 1502, 1511, 1523, 1835, 1840, 1856, 1857, 1858, 1859, 1860, 1861,
+    1862, 1863, 1866, 1867, 1868, 1869, 1870, 1871, 1872, 1873, 2843, 2887,
+    2904, 2915, 2922, 2931, 2948, 2995, 2996, 2997, 3012, 3019]);
+  const selected = cases.filter((c) => c.module === 'sympy.polys.tests.test_polytools' && lines.has(c.line));
+  expect(new Set(selected.map((c) => c.line)).size).toBe(lines.size);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('preserves printed polynomial monomials and checks exponent tuples exactly', () => {
+  const cases: Case[] = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')).cases;
+  const selected = cases.filter((c) => c.module === 'sympy.polys.polytools' && ['.LM', '.EM', '.LT', '.ET'].includes(c.fn));
+  expect(selected).toHaveLength(4);
+  for (const c of selected) expect(runCase(c), c.src).toEqual({ status: 'pass' });
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const p = { t: 'Poly', expr: x, gens: [x], domain: 'ZZ', pure: false };
+  expect(runTestCase({ ...base, fn: '.LM', self: p, args: [], expected: '(2,)' }).status).toBe('fail');
+});

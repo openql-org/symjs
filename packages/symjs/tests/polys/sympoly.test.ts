@@ -1444,3 +1444,98 @@ it('rejects multivariate Taylor shifts like SymPy 1.14',()=>{
   const x=new Sym('x'),y=new Sym('y');
   expect(()=>Poly.from(add(mul(x,y),pow(y,2)),[x,y],{modulus:5}).shift(2)).toThrow('univariate polynomial expected');
 });
+
+describe('polynomial construction and comparison options', () => {
+  const X = new Sym('x'), Y = new Sym('y');
+  it('constructs from exponent dictionaries and checks their dimensions', () => {
+    expect(Poly.fromDict(new Map([[[2], 3], [[0], 1]]), [X]).asExpr().equals(parse('3*x**2+1'))).toBe(true);
+    expect(Poly.fromDict(new Map([[[1], Y]]), [X], { composite: false }).domain).toBe('EX');
+    expect(Poly.fromDict(new Map([[[1], 2]]), [X], { composite: false }).domain).toBe('ZZ');
+    expect(Poly.fromDict(new Map([[[1], 2]]), [X], { composite: false, modulus: 3 }).domain).toBe('GF(3)');
+    for (const m of [[1, 0], [-1], [0.5]]) expect(() => Poly.fromDict(new Map([[m, 1]]), [X])).toThrow(sj.PolynomialError);
+    expect(() => Poly.fromExpr(1)).toThrow(sj.GeneratorsNeeded);
+    expect(() => Poly.fromDict(new Map(), [])).toThrow(sj.GeneratorsNeeded);
+    expect(Poly.fromExpr(X).gen).toBe(X);
+    expect(Poly.fromExpr(1, [X]).degree()).toBe(0);
+  });
+  it('converts domains and rejects incompatible generators or characteristic', () => {
+    const p = Poly.from(X);
+    expect(p.setDomain('QQ').domain).toBe('QQ');
+    expect(p.setDomain(sj.QQ).domain).toBe('QQ');
+    expect(() => p.setDomain(sj.ZZ.polyRing(X))).toThrow(sj.GeneratorsError);
+    const f = Poly.from(X, [X], { modulus: 3 });
+    expect(f.setDomain('GF(3)').domain).toBe('GF(3)');
+    expect(() => f.setDomain('QQ')).toThrow(sj.CoercionFailed);
+  });
+  it('compares domains strictly and keeps PurePoly generators as placeholders', () => {
+    const p = Poly.from(X), q = p.setDomain('QQ');
+    expect(p.eq(q)).toBe(false);
+    expect(p.eq(q, { strict: false })).toBe(false);
+    expect(p.ne(q)).toBe(true);
+    expect(p.eq(X)).toBe(true);
+    expect(p.eq(X, { strict: true })).toBe(false);
+    const pure = Poly.from(X, [X], { pure: true });
+    const other = Poly.from(Y, [Y], { domain: 'QQ', pure: true });
+    expect(pure.eq(other)).toBe(true);
+    expect(pure.eq(p, { strict: true })).toBe(false);
+    expect(pure.eq(other, { strict: true })).toBe(false);
+    expect(pure.ne(other, { strict: false })).toBe(false);
+  });
+  it('slices exponents in either generator and preserves the coefficient domain', () => {
+    const p = Poly.from(parse('x**3+2*x*y+3*y**2+4'), [X, Y], { domain: 'QQ' });
+    expect(p.slice(0, 2).asExpr().equals(parse('2*x*y+3*y**2+4'))).toBe(true);
+    expect(p.slice(1, 2, Y).asExpr().equals(parse('2*x*y'))).toBe(true);
+    expect(p.slice(2, 2).isZero).toBe(true);
+    expect(p.slice(0, 2).domain).toBe('QQ');
+  });
+  it('isolates constants and counts roots with infinite and algebraic bounds', () => {
+    expect(Poly.from(1).intervals()).toEqual([]);
+    expect(Poly.from(0).intervals(undefined, { all: true })).toEqual([[], []]);
+    const p = Poly.from(parse('x**2-2'), [X]);
+    expect(p.countRoots(sj.S.NegativeInfinity, sj.S.Infinity)).toBe(2);
+    expect(p.countRoots(-2, 2)).toBe(2);
+    const a = Poly.from(parse('x**2+2*sqrt(2)*x+1'), [X], { extension: parse('sqrt(2)') });
+    expect(a.countRoots(-3, 0)).toBe(2);
+  });
+});
+
+it('validates sparse term transforms and finite-domain isolation', () => {
+  const X = new Sym('x'), Y = new Sym('y');
+  expect(() => Poly.from(parse('x+1'), [X]).termwise(() => [[0], 1])).toThrow('generated twice');
+  const finite = Poly.from(parse('x+y'), [X, Y], { modulus: 3 });
+  expect(() => finite.sqfPart()).toThrow(sj.NotImplementedError);
+  const f = Poly.from(X, [X], { modulus: 3 });
+  expect(() => f.intervals()).toThrow(sj.DomainError);
+  expect(() => f.refineRoot(R(0), R(1))).toThrow(sj.DomainError);
+  const names = ['a10', 'a2', 'a1', 'a1'].map((n) => new Sym(n));
+  expect(sj.sortGens(names).map(String)).toEqual(['a1', 'a1', 'a2', 'a10']);
+  expect(sj.sortGens([new Sym('bb'), new Sym('aa')]).map(String)).toEqual(['aa', 'bb']);
+});
+
+it('selects leading and trailing terms with graded monomial orders', () => {
+  const X = new Sym('x'), Y = new Sym('y'), Z = new Sym('z');
+  const p = Poly.from(parse('2*x**2*y**3+x*y**7'), [X, Y]);
+  expect(String(p.LM({ order: 'grlex' }))).toBe('x*y**7');
+  expect(String(p.EM({ order: 'grlex' }))).toBe('x**2*y**3');
+  expect(p.LC({ order: 'grlex' }).equals(1)).toBe(true);
+  expect(p.EC({ order: 'grlex' }).equals(2)).toBe(true);
+  expect(p.LT({ order: 'grlex' })[0]).toEqual([1, 7]);
+  const q = Poly.from(parse('x*y**2+x**2*z+y**4'), [X, Y, Z]);
+  expect(q.LT({ order: 'grevlex' })[0]).toEqual([0, 4, 0]);
+  expect(q.ET({ order: 'grevlex' })[0]).toEqual([2, 0, 1]);
+  expect(q.ET({ order: 'grlex' })[0]).toEqual([1, 2, 0]);
+  expect(Poly.from(0, [X]).ET()).toEqual([[0], sj.S.Zero]);
+});
+
+it('preserves sparse domains and handles unsupported algebraic root domains explicitly', () => {
+  const X = new Sym('x');
+  expect(sj.sortGens([new Sym('a1'), new Sym('a2')]).map(String)).toEqual(['a1', 'a2']);
+  const p = Poly.from(X, [X]).termwise((_m, c) => mul(c, sj.S.I, R(1, 2)));
+  expect(p.toField().domain).toBe('QQ_I');
+  for (const e of ['x**2+pi', 'x**2+sqrt(2)+sqrt(3)+sqrt(5)+sqrt(7)', 'x**2+sqrt(2)*pi']) {
+    expect(() => Poly.from(parse(e), [X]).allRoots()).toThrow(sj.DomainError);
+  }
+  expect(() => sj.lcm(parse('sin(x)'), parse('1.0*x'))).toThrow(sj.PolynomialError);
+  const q = sj.Quaternion(parse('x**2-1'), 0, 0, 0);
+  expect(String(sj.factorNc(q))).toBe(String(sj.Quaternion(parse('(x-1)*(x+1)'), 0, 0, 0)));
+});

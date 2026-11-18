@@ -3020,7 +3020,7 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y] = symbols('x y');
     expect(() => Poly.from(new Add([x, y]), [y], { domain: 'ZZ[x]', pure: false }).toString()).toThrow(PolynomialError);
   });
-  it.fails("test_Poly_reorder:977", () => {
+  it("test_Poly_reorder:977", () => {
     const [x, y, z] = symbols('x y z');
     expect(() => Poly.from(new Add([x, y]), [x, y], { domain: 'ZZ', pure: false }).reorder(x, z)).toThrow(PolynomialError);
   });
@@ -3060,11 +3060,11 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(Poly.from(new Add([new Mul([rational(-1), x]), new Mul([x, y])]), [z, x, y], { domain: 'ZZ', pure: false }).ltrim(1))).toBe('Poly(x*y - x, x, y, domain=\'ZZ\')');
   });
-  it.fails("test_Poly_ltrim:994", () => {
+  it("test_Poly_ltrim:994", () => {
     const [y, x] = symbols('y x');
     expect(() => Poly.from(new Add([new Pow(y, rational(2)), new Mul([x, new Pow(y, rational(2))])]), [x, y], { domain: 'ZZ', pure: false }).ltrim(y)).toThrow(PolynomialError);
   });
-  it.fails("test_Poly_ltrim:995", () => {
+  it("test_Poly_ltrim:995", () => {
     const [x, y] = symbols('x y');
     expect(() => Poly.from(new Add([new Mul([rational(-1), x]), new Mul([x, y])]), [x, y], { domain: 'ZZ', pure: false }).ltrim(rational(-1))).toThrow(PolynomialError);
   });
@@ -6880,10 +6880,10 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Mul([new Pow(new Add([rational(-6), new Mul([rational(3), x])]), rational(-1)), new Add([rational(-10), new Mul([rational(6), x])])]), { deep: false, gaussian: false }))).toBe('2*(3*x - 5)/(3*(x - 2))');
   });
-  it.fails("test_intervals:2840", () => {
+  it("test_intervals:2840", () => {
     expect(sympyStr(Poly.from(rational(0), []).intervals())).toBe('[]');
   });
-  it.fails("test_intervals:2841", () => {
+  it("test_intervals:2841", () => {
     expect(sympyStr(Poly.from(rational(1), []).intervals())).toBe('[]');
   });
   // kwargs sqf
@@ -7312,7 +7312,7 @@ describe("sympy/polys/tests/test_polytools.py", () => {
   it("test_count_roots:3025", () => {
     expect(() => Poly.from(rational(1)).countRoots()).toThrow(PolynomialError);
   });
-  it.fails("test_count_roots_extension:3031", () => {
+  it("test_count_roots_extension:3031", () => {
     const x = new Sym('x');
     expect(sympyStr(Poly.from(new Add([rational(-2), new Mul([new Pow(rational(2), rational(1, 2)), new Pow(x, rational(2))])]), [x], { domain: 'QQ<sqrt(2)>', pure: false }).countRoots())).toBe('2');
   });
@@ -7324,7 +7324,7 @@ describe("sympy/polys/tests/test_polytools.py", () => {
   //   assert p1.count_roots(sup=0) == 1
   //   => 1
   it.todo("test_count_roots_extension:3033");
-  it.fails("test_count_roots_extension:3036", () => {
+  it("test_count_roots_extension:3036", () => {
     const x = new Sym('x');
     expect(sympyStr(Poly.from(new Add([new Pow(rational(2), rational(1, 2)), new Pow(x, rational(2))]), [x], { domain: 'QQ<sqrt(2)>', pure: false }).countRoots())).toBe('0');
   });
