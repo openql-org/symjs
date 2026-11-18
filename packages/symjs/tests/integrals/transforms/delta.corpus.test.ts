@@ -365,19 +365,19 @@ describe("sympy/functions/special/tests/test_delta_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(DiracDelta(x).func())).toBe('DiracDelta');
   });
-  it.fails("test_DiracDelta:42", () => {
+  it("test_DiracDelta:42", () => {
     const x = new Sym('x');
     expect(sympyStr(adjoint(DiracDelta(x)))).toBe('DiracDelta(x)');
   });
-  it.fails("test_DiracDelta:43", () => {
+  it("test_DiracDelta:43", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(adjoint(DiracDelta(new Add([x, new Mul([rational(-1), y])]))))).toBe('DiracDelta(x - y)');
   });
-  it.fails("test_DiracDelta:44", () => {
+  it("test_DiracDelta:44", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('conjugate', [DiracDelta(x)]))).toBe('DiracDelta(x)');
   });
-  it.fails("test_DiracDelta:45", () => {
+  it("test_DiracDelta:45", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(fn('conjugate', [DiracDelta(new Add([x, new Mul([rational(-1), y])]))]))).toBe('DiracDelta(x - y)');
   });
@@ -453,7 +453,7 @@ describe("sympy/functions/special/tests/test_delta_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(DiracDelta(new Mul([rational(-1), x]), rational(1)))).toBe('-DiracDelta(x, 1)');
   });
-  it.fails("test_DiracDelta:69", () => {
+  it("test_DiracDelta:69", () => {
     const x = new Sym('x');
     expect(sympyStr(DiracDelta(new Mul([S.NegativeInfinity, x])))).toBe('DiracDelta(oo*x)');
   });
@@ -545,19 +545,19 @@ describe("sympy/functions/special/tests/test_delta_functions.py", () => {
   //   assert h12.pargs == (x,)
   //   => (x,)
   it.todo("test_heaviside:102");
-  it.fails("test_heaviside:104", () => {
+  it("test_heaviside:104", () => {
     const x = new Sym('x');
     expect(sympyStr(adjoint(Heaviside(x, rational(1, 2))))).toBe('Heaviside(x)');
   });
-  it.fails("test_heaviside:105", () => {
+  it("test_heaviside:105", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(adjoint(Heaviside(new Add([x, new Mul([rational(-1), y])]), rational(1, 2))))).toBe('Heaviside(x - y)');
   });
-  it.fails("test_heaviside:106", () => {
+  it("test_heaviside:106", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('conjugate', [Heaviside(x, rational(1, 2))]))).toBe('Heaviside(x)');
   });
-  it.fails("test_heaviside:107", () => {
+  it("test_heaviside:107", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(fn('conjugate', [Heaviside(new Add([x, new Mul([rational(-1), y])]), rational(1, 2))]))).toBe('Heaviside(x - y)');
   });

@@ -30,6 +30,7 @@ import {
   xreplace,
 } from '../../src';
 import { piecewiseFold } from '../../src/core/traverse';
+import { at } from '../../src/core/guard';
 
 const [x, y, C1, C2, z, w, n] = symbols('x y C1 C2 z w n');
 
@@ -266,6 +267,13 @@ describe('use and preorderTraversal (SymPy sympy.core.traversal)', () => {
 describe('piecewiseFold (SymPy piecewise_fold)', () => {
   const P = sj.Piecewise([x, sj.Gt(x, 0)], [mul(-1, x), true]);
   const Q = sj.Piecewise([1, sj.Gt(y, 0)], [2, true]);
+  it('combines shared branch conditions before expanding independent choices', () => {
+    const c = sj.Gt(x, 0);
+    const terms = Array.from({ length: 40 }, (_, i) => sj.piecewise([i + 1, c], [0, true]));
+    expect(str(piecewiseFold(add(...terms)))).toBe('Piecewise((820, x > 0), (0, True))');
+    expect(str(piecewiseFold(mul(sj.piecewise([2, c], [3, true]), sj.piecewise([5, c], [7, true]))))).toBe('Piecewise((10, x > 0), (21, True))');
+  });
+
   it('folds the Piecewise arguments of an expression', () => {
     expect(str(piecewiseFold(add(P, 1)))).toBe('Piecewise((x + 1, x > 0), (1 - x, True))');
     expect(str(piecewiseFold(mul(P, Q)))).toBe('Piecewise((x, (x > 0) & (y > 0)), (2*x, x > 0), (-x, y > 0), (-2*x, True))');
@@ -313,4 +321,39 @@ it('stops substitution after a true Piecewise branch', () => {
   expect(String(sj.subs(expression, [[x, sj.I]]))).toBe('1');
   const excluded = sj.piecewise([sj.Lt(x, 0), sj.Eq(x, 0)], [1, true]);
   expect(String(sj.subs(excluded, [[x, sj.I]]))).toBe('1');
+});
+
+it('honors substitution and free-symbol hooks of extension expressions', () => {
+  class Container extends sj.ExtensionExpr {
+    constructor(readonly value: Expr) {
+      super('Container', [value]);
+    }
+    withArgs(args: readonly Expr[]): Expr {
+      return new Container(at(args, 0));
+    }
+    override subsSelf(_old: Expr, _nw: Expr, substitute: (e: Expr) => Expr): Expr {
+      return new Container(substitute(this.value));
+    }
+    override freeSymbolsSelf(): ReadonlySet<Expr> {
+      return new Set([y]);
+    }
+  }
+  const wrapped = new Container(x);
+  expect(sj.subs(wrapped, [[x, 3]])).toEqual(new Container(rational(3)));
+  expect([...sj.freeSymbols(wrapped)]).toEqual([y]);
+  expect(sj.subs(sj.finiteSet(x), [[x, 3]])).toEqual(sj.finiteSet(3));
+  const set = new sj.ConditionSet(x, sj.Gt(x, y), sj.Reals);
+  expect(String(sj.subs(set, [[y, z]]))).toBe('ConditionSet(x, x > z, Reals)');
+  expect(sj.subs(set, [[z, 1]])).toBe(set);
+  class InnerSymbol extends sj.Sym {
+    override innerFreeSymbols(): readonly sj.Sym[] {
+      return [y];
+    }
+    override substituteInner(substitute: (e: Expr) => Expr): Expr {
+      return substitute(y);
+    }
+  }
+  const inner = new InnerSymbol('inner');
+  expect(sj.subs(inner, [[y, 3]])).toEqual(rational(3));
+  expect([...sj.freeSymbols(inner)]).toEqual([inner, y]);
 });

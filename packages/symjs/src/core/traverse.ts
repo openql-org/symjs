@@ -554,8 +554,15 @@ export function piecewiseFold(e: Expr): Expr {
   const i = args.findIndex((a) => a instanceof Piecewise);
   if (i < 0 || e instanceof ExtensionExpr || e instanceof BoolOp) return args.some((a, j) => a !== e.args[j]) ? rebuild(e, args) : e;
   const pairs: (readonly [Expr, Expr])[] = [];
-  for (const [ei, ci] of cast(at(args, i), Piecewise).pairs) {
-    const v = piecewiseFold(rebuild(e, args.map((a, j) => (j === i ? ei : a))));
+  const selected = cast(at(args, i), Piecewise);
+  const conditions = selected.pairs.map(([, c]) => c.key).join(";");
+  for (const [index, [ei, ci]] of selected.pairs.entries()) {
+    const v = piecewiseFold(rebuild(e, args.map((a, j) => {
+      if (j === i) return ei;
+      // Equal condition sequences select the same branch, avoiding a Cartesian product.
+      if (a instanceof Piecewise && a.pairs.map(([, c]) => c.key).join(";") === conditions) return at(a.pairs, index)[0];
+      return a;
+    })));
     // a branch that is a Piecewise itself (another argument was one) is flattened into the conditions
     if (v instanceof Piecewise) for (const [ej, cj] of v.pairs) pairs.push([ej, and(ci, cj)]);
     else pairs.push([v, ci]);
