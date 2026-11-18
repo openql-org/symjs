@@ -544,15 +544,15 @@ describe("sympy/core/tests/test_symbol.py", () => {
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (7)");
-  // predicate is_extended_real
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (8)");
-  // predicate is_extended_real
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (9)");
-  // predicate is_extended_real
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (10)");
@@ -598,95 +598,95 @@ describe("sympy/core/tests/test_symbol.py", () => {
     const k = new Sym('k', { integer: true });
     expect(sympyStr(match(new Mul([rational(-1), n]), new Wild('Y', { exclude: [x, p, k, n] }), { old: false }))).toBe('None');
   });
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (17)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (18)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (19)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (20)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (21)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (22)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (23)");
-  // predicate is_integer
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (24)");
-  // predicate is_integer
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (25)");
-  // predicate is_integer
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (26)");
-  // predicate is_integer
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (27)");
-  // predicate is_integer
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (28)");
-  // predicate is_integer
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (29)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (30)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (31)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (32)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (33)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (34)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (35)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (36)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (37)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (38)");
-  // predicate is_positive
+  // a function that did not come from the library
   //   assert d is None
   //   => None
   it.todo("test_Wild_properties:209 (39)");

@@ -15,33 +15,33 @@ describe("doctests of sympy.polys.orderings", () => {
 });
 
 describe("sympy/polys/tests/test_orderings.py", () => {
-  // no adapter for the operator ()
+  // a primitive result that no library call returned
   //   assert lex((1, 2, 3)) == (1, 2, 3)
   //   => (1, 2, 3)
   it.todo("test_lex_order:13");
-  // no adapter for the operator ()
+  // a primitive result that no library call returned
   //   assert lex((1, 2, 3)) == lex((1, 2, 3))
   //   => (1, 2, 3)
   it.todo("test_lex_order:16");
   it("test_lex_order:26", () => {
     expect(sympyStr(lex.isGlobal)).toBe('True');
   });
-  // no adapter for the operator ()
+  // a primitive result that no library call returned
   //   assert grlex((1, 2, 3)) == (6, (1, 2, 3))
   //   => (6, (1, 2, 3))
   it.todo("test_grlex_order:31");
-  // no adapter for the operator ()
+  // a primitive result that no library call returned
   //   assert grlex((1, 2, 3)) == grlex((1, 2, 3))
   //   => (6, (1, 2, 3))
   it.todo("test_grlex_order:34");
   it("test_grlex_order:53", () => {
     expect(sympyStr(grlex.isGlobal)).toBe('True');
   });
-  // no adapter for the operator ()
+  // a primitive result that no library call returned
   //   assert grevlex((1, 2, 3)) == (6, (-3, -2, -1))
   //   => (6, (-3, -2, -1))
   it.todo("test_grevlex_order:56");
-  // no adapter for the operator ()
+  // a primitive result that no library call returned
   //   assert grevlex((1, 2, 3)) == grevlex((1, 2, 3))
   //   => (6, (-3, -2, -1))
   it.todo("test_grevlex_order:59");

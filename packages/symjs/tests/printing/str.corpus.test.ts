@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { CoordSystem, Manifold, Patch } from '../../src/diffgeom';
-import { Add, And, Array, ArrayElement, ArraySymbol, Category, Circle, Complement, CovarianceNode, Cycle, Dict, DieDistribution, Dummy, Ellipse, Equivalent, ExpectationNode, ExponentialDistribution, Float, FracField, Heaviside, I, Identity, IdentityMorphism, IndependentProductPSpace, Integral, Lambda, Limit, MatAdd, MatMul, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mul, MutableSparseMatrix, NamedMorphism, Naturals, NormalDistribution, Not, O, OneMatrix, Or, PSpace, Partition, Perm, Point2D, Poly, PolyRing, Polygon, Pow, ProbabilityNode, Product, PythonMPQ, Q, QQ, QQ_I, Quaternion, RandomSymbol, Reals, Relational, S, SingleContinuousPSpace, SingleFinitePSpace, Str, StrPrinter, Subs, Sum, Sym, SymFunction, SymObject, SymmetricDifference, Triangle, Tuple, UnevaluatedExpr, VarianceNode, Wild, WildFunction, ZZ, ZZ_I, ZeroMatrix, abs, add, derivative, exp, factor, finiteSet, float, fn, groebner, interval, isUnsolved, mul, oo, pi, pow, pprintUseUnicode, precedence, rational, rationalFromString, rel, rootof, round, series, sortGens, sqrt, sstr, sstrrepr, str, symbols, sympify, where } from '../../src';
+import { Add, And, Array, ArrayElement, ArraySymbol, Category, Circle, Complement, CovarianceNode, Cycle, Dict, DieDistribution, Dummy, Ellipse, Equivalent, ExpectationNode, ExponentialDistribution, Float, FracField, Heaviside, I, Identity, IdentityMorphism, IndependentProductPSpace, Integral, Lambda, Limit, MatAdd, MatMul, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mul, MutableSparseMatrix, NamedMorphism, Naturals, NormalDistribution, Not, O, OneMatrix, Or, PSpace, Partition, Perm, Point2D, Poly, PolyRing, Polygon, Pow, ProbabilityNode, Product, PythonMPQ, Q, QQ, QQ_I, Quaternion, RandomSymbol, Reals, Relational, S, SingleContinuousPSpace, SingleFinitePSpace, Str, StrPrinter, Subs, Sum, Sym, SymFunction, SymObject, SymmetricDifference, Triangle, Tuple, UnevaluatedExpr, VarianceNode, Wild, WildFunction, ZZ, ZZ_I, ZeroMatrix, abs, add, derivative, exp, factor, finiteSet, float, fn, groebner, interval, isUnsolved, mul, oo, pi, pow, pprintUseUnicode, precedence, rational, rationalFromString, rootof, round, series, sortGens, sqrt, sstr, sstrrepr, str, symbols, sympify, where } from '../../src';
 import { at, pyStr, sympyStr, text } from '../sympy-str';
 
 describe("doctests of sympy.printing.str", () => {
@@ -13,7 +13,7 @@ describe("doctests of sympy.printing.str", () => {
     const [a, b] = symbols('a b');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(sstr(rel('Eq', add(a, b), 0), {}))).toBe('Eq(a + b, 0)');
+      expect(text(sstr(Relational(add(a, b), rational(0), '==', { evaluate: false }), {}))).toBe('Eq(a + b, 0)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -101,7 +101,7 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_Relational:64", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(precedence(rel('Lt', new Add([x, y]), y)))).toBe('35');
+    expect(sympyStr(precedence(Relational(new Add([x, y]), y, '<', { evaluate: false })))).toBe('35');
   });
   it("test_Sum:68", () => {
     const [x, y] = symbols('x y');
@@ -2463,7 +2463,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Or(rel('Eq', x, 1), rel('Eq', x, 2)))).toBe('Eq(x, 1) | Eq(x, 2)');
+      expect(pyStr(Or(Relational(x, rational(1), '==', { evaluate: false }), Relational(x, rational(2), '==', { evaluate: false })))).toBe('Eq(x, 1) | Eq(x, 2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2472,7 +2472,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(And(rel('Ne', x, 1), rel('Ne', x, 2)))).toBe('Ne(x, 1) & Ne(x, 2)');
+      expect(pyStr(And(Relational(x, rational(1), '!=', { evaluate: false }), Relational(x, rational(2), '!=', { evaluate: false })))).toBe('Ne(x, 1) & Ne(x, 2)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2925,7 +2925,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x1 = new Sym('x1');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(where(rel('Gt', new RandomSymbol(x1, new SingleContinuousPSpace([x1, new NormalDistribution([rational(0), rational(1)])])), 0)))).toBe('Domain: (0 < x1) & (x1 < oo)');
+      expect(pyStr(where(Relational(new RandomSymbol(x1, new SingleContinuousPSpace([x1, new NormalDistribution([rational(0), rational(1)])])), rational(0), '>', { evaluate: false })))).toBe('Domain: (0 < x1) & (x1 < oo)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2934,7 +2934,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const d1 = new Sym('d1');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(where(rel('Gt', new RandomSymbol(d1, new SingleFinitePSpace([d1, new DieDistribution([rational(6)])])), 4)))).toBe('Domain: Eq(d1, 5) | Eq(d1, 6)');
+      expect(pyStr(where(Relational(new RandomSymbol(d1, new SingleFinitePSpace([d1, new DieDistribution([rational(6)])])), rational(4), '>', { evaluate: false })))).toBe('Domain: Eq(d1, 5) | Eq(d1, 6)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3596,7 +3596,7 @@ describe("sympy/printing/tests/test_str.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(new ProbabilityNode([rel('Gt', new RandomSymbol(x, new PSpace([])), 0)]).mul(Identity(rational(2))))).toBe('Probability(x > 0)*I');
+      expect(pyStr(new ProbabilityNode([Relational(new RandomSymbol(x, new PSpace([])), rational(0), '>', { evaluate: false })]).mul(Identity(rational(2))))).toBe('Probability(x > 0)*I');
     } finally {
       pprintUseUnicode(unicode);
     }

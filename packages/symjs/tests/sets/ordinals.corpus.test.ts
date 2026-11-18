@@ -132,10 +132,10 @@ describe("sympy/sets/tests/test_ordinals.py", () => {
     expect(sympyStr(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(), 1n)), 1n), OmegaPower(Ordinal(), 1n)), 1n)).mul(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(), 1n)), 1n))))).toBe('w**(w + 2)');
   });
   it("test_exponentiation:54", () => {
-    expect(sympyStr(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(), 1n)), 1n)).pow(2))).toBe('w**2');
+    expect(sympyStr(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(), 1n)), 1n)).pow(2n))).toBe('w**2');
   });
   it("test_exponentiation:55", () => {
-    expect(sympyStr(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(), 1n)), 1n)).pow(3))).toBe('w**3');
+    expect(sympyStr(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(), 1n)), 1n)).pow(3n))).toBe('w**3');
   });
   it("test_exponentiation:56", () => {
     expect(sympyStr(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(), 1n)), 1n)).pow(Ordinal(OmegaPower(Ordinal(OmegaPower(Ordinal(), 1n)), 1n), OmegaPower(Ordinal(), 1n))))).toBe('w**(w + 1)');

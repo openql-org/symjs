@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { expect, it } from 'vitest';
-import { CompanionMatrix, Poly, unchanged, cos, pi, Piecewise, Sym, S, Gt, SymFunction, Basic } from '../../src';
+import { CompanionMatrix, Poly, unchanged, cos, pi, Piecewise, Sym, S, Eq, Ne, Lt, Le, Gt, Ge, SymFunction, Basic } from '../../src';
+it('recognizes relation constructors by their SymPy class names', () => {
+  const x = new Sym('x');
+  for (const relation of [Eq, Ne, Lt, Le, Gt, Ge]) {
+    expect(unchanged(relation, x, 1)).toBe(true);
+    expect(unchanged(relation, 1, 1)).toBe(false);
+  }
+});
 it('recognizes unevaluated construction and normalized piecewise pairs', () => {
   const x = new Sym('x');
   expect(unchanged(cos, 1)).toBe(true);

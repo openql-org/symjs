@@ -15,7 +15,8 @@ function isPolyLike(a: unknown): a is { asExpr(): Expr; gens: readonly Expr[] } 
 export function unchanged<A extends unknown[]>(func: (...args: A) => Expr, ...args: A): boolean {
   const result = func(...args);
   const name = func.name.replace(/Node$/, '');
-  if (sympyClassName(result).toLowerCase() !== name.toLowerCase()) return false;
+  const relationNames: Readonly<Record<string, string>> = { Eq: 'Equality', Ne: 'Unequality', Lt: 'StrictLessThan', Le: 'LessThan', Gt: 'StrictGreaterThan', Ge: 'GreaterThan' };
+  if (sympyClassName(result).toLowerCase() !== (relationNames[name] ?? name).toLowerCase()) return false;
   // a polynomial argument is held as its SymPy args (the expression and the generators)
   const expected = (result instanceof Piecewise ? args.flat() : args).flatMap((a: unknown) => (isPolyLike(a) ? [a.asExpr(), ...a.gens] : [a]));
   return result.args.length === expected.length && result.args.every((e, i) => {

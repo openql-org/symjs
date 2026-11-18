@@ -280,11 +280,11 @@ describe("sympy/series/tests/test_nseries.py", () => {
   it.todo("test_pow_1:47");
   it("test_pow_1:50", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(new Add([rational(1), new Pow(x, rational(1, 2))]), rational(2)), x, 0, 6, '+', {}))).toBe('2*sqrt(x) + x + 1');
+    expect(sympyStr(series(new Pow(new Add([rational(1), new Pow(x, rational(1, 2))]), rational(2)), x, sympify(0), 6, '+', {}))).toBe('2*sqrt(x) + x + 1');
   });
   it("test_pow_1:51", () => {
     const x = new Sym('x');
-    expect(sympyStr(series(new Pow(new Add([new Pow(x, rational(1, 2)), new Pow(x, rational(1, 3))]), rational(2)), x, 0, 6, '+', {}))).toBe('2*x**(5/6) + x**(2/3) + x');
+    expect(sympyStr(series(new Pow(new Add([new Pow(x, rational(1, 2)), new Pow(x, rational(1, 3))]), rational(2)), x, sympify(0), 6, '+', {}))).toBe('2*x**(5/6) + x**(2/3) + x');
   });
   // the arguments do not type-check against the public API
   //   assert (1/(1 - x)).nseries(x, n=5) == 1 + x + x**2 + x**3 + x**4 + O(x**5)

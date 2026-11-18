@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
-import { ArraySymbol, ArrayTensorProduct as TP, ArrayDiagonal as D, ArrayAdd, ZeroArray, Reshape, MatrixExpr, MatrixSymbol, Trace, Transpose, MatMul, MatAdd, arrayDerive, str, S } from '../../../../src/index';
+import { ArraySymbol, ArrayTensorProduct as TP, ArrayDiagonal as D, ArrayAdd, ZeroArray, Reshape, MatrixExpr, MatrixSymbol, Trace, Transpose, MatMul, MatAdd, arrayDerive, ArrayDerivativeNode, ArrayDerivative, MatPow, Rational, subs, mul, Inverse, ArrayElementwiseApplyFunc, sin, str, S } from '../../../../src/index';
 import { NotImplementedError } from '../../../../src/core/errors';
 import { explicitArray } from '../../../../src/tensor/array/expressions/arrayexpressions';
 const refs: Record<string, string> = JSON.parse(readFileSync(new URL('./references.json', import.meta.url), 'utf8'));
@@ -29,4 +29,31 @@ it('handles constant products, array symbols and unsupported variables', () => {
   expect(str(explicitArray(arrayDerive(new ArrayAdd(M, N), M)))).toBe(refs['derive_sum_explicit']);
   expect(() => arrayDerive(M, S.One)).toThrow(NotImplementedError);
   expect(() => arrayDerive(new Reshape(A, [4]), A)).toThrow(NotImplementedError);
+});
+
+it('differentiates inverse matrices and elementwise functions', () => {
+  const X = MatrixSymbol('X', 1, 1);
+  expect(str(explicitArray(arrayDerive(Inverse(X), X)))).toBe('[[[[-1/X[0, 0]**2]]]]');
+  expect(str(explicitArray(arrayDerive(new ArrayElementwiseApplyFunc(sin, X), X)))).toBe('[[[[cos(X[0, 0])]]]]');
+});
+
+it('preserves matrix fractional powers and their formal derivatives', () => {
+  const expr = MatPow(M, Rational.of(1, 2));
+  const derivative = ArrayDerivative(expr, M, { evaluate: true });
+  expect(derivative).toBeInstanceOf(ArrayDerivativeNode);
+  expect(derivative.args[0]).toBe(expr);
+  expect(() => arrayDerive(expr, M)).toThrow(NotImplementedError);
+});
+
+it('matches every inverse derivative component for a nonsymmetric matrix', () => {
+  const derivative = explicitArray(arrayDerive(Inverse(M), M));
+  const values = new Map([[M.at(0, 0), 2], [M.at(0, 1), 1], [M.at(1, 0), 3], [M.at(1, 1), 4]]);
+  expect(str(subs(derivative, values))).toBe(refs['derive_inverse_2x2_numeric']);
+});
+
+it('keeps captured matrix-dependent elementwise parameters in a formal derivative', () => {
+  const X = MatrixSymbol('X', 1, 1);
+  const expr = new ArrayElementwiseApplyFunc((x) => mul(X.at(0, 0), x), X);
+  expect(() => arrayDerive(expr, X)).toThrow(NotImplementedError);
+  expect(ArrayDerivative(expr, X, { evaluate: true })).toBeInstanceOf(ArrayDerivativeNode);
 });

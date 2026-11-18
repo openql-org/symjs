@@ -278,7 +278,7 @@ describe("sympy/polys/agca/tests/test_modules.py", () => {
     const _x = new Sym('_x');
     expect(sympyStr(new DMP([rational(1), rational(0), rational(0)], QQ.oldPolyRing(_x)))).toBe('DMP_Python([MPQ(1,1), MPQ(0,1), MPQ(0,1)], QQ)');
   });
-  // no adapter for the operator []
+  // the generated test does not reproduce the replay
   //   raises(IndexError, lambda: e[3])
   //   => None
   it.todo("test_FreeModuleElement:18");

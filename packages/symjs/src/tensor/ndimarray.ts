@@ -40,6 +40,8 @@ import { isNoMatch } from '../core/truth';
 import { diff as diffExpr } from '../calculus/diff';
 import { conjugate as conjugateExpr } from '../functions/elementary/elementary';
 import { Matrix } from '../matrices/matrix';
+import { ImmutableMatrixNode } from '../matrices/expressions/matexpr';
+import { MatrixKind } from '../matrices/kind';
 import { evalf as evalfExpr } from '../numeric/evalf';
 import { expand as expandExpr } from '../simplify/expand';
 import { simplify as simplifyExpr } from '../simplify/simplify';
@@ -988,8 +990,13 @@ export class Flatten implements Iterable<Expr> {
   }
 }
 
-/** The kind of an expression (SymPy `expr.kind`): ArrayKind for arrays, BooleanKind, NumberKind or UndefinedKind. */
-export function kindOf(e: Expr): Kind {
+/** The kind of an expression (SymPy `expr.kind`): ArrayKind for arrays, MatrixKind for matrices, BooleanKind, NumberKind or UndefinedKind. */
+export function kindOf(e: Expr | Matrix): Kind {
+  if (e instanceof ImmutableMatrixNode) return kindOf(e.matrix);
+  if (e instanceof Matrix) {
+    const elementKind = e.data.length ? kindOf(at(e.data, 0)) : NumberKind;
+    return MatrixKind(e.data.some((entry) => kindOf(entry) !== elementKind) ? UndefinedKind : elementKind);
+  }
   if (e instanceof NDimArray) return ArrayKindNode.union(e.flatElements().map(kindOf));
   if (e instanceof BoolAtom || e instanceof Rel || e instanceof BoolOp) return BooleanKind;
   if (e instanceof Integral || e instanceof Derivative) return kindOf(at(e.args, 0));

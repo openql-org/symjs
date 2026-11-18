@@ -10,6 +10,8 @@
 import './core';
 
 export { Concrete } from './core/concrete';
+export { testDerivativeNumerically } from './calculus/numerical-derivative';
+
 export {
   doit,
 } from './calculus/doit';
@@ -56,6 +58,7 @@ export {
   reverseOrder,
   eulerMaclaurin,
   telescopicDirect,
+  evalSumResidue,
 } from './concrete/summations';
 export {
   series,

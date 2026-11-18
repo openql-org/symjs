@@ -3,11 +3,77 @@
 
 import { expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { ADAPTERS, JsList, JsTuple, deserialize, matches, runCase, solvesDsolveCase } from './harness';
+import { ADAPTERS, JsList, JsTuple, JsPred, deserialize, matches, runCase, solvesDsolveCase } from './harness';
 import type { Case } from './harness';
 import * as sj from '../../packages/symjs/src';
+import { runTestCase, type TestCase } from './tests-harness';
 
 const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')) as { cases: Case[] };
+
+it('converts ground constants to polynomials for dense ring algorithms', () => {
+  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8')) as TestCase[];
+  const selected = cases.filter((c) => ['.dup_zz_heu_gcd', '.dup_rr_prs_gcd', '.dup_factor_list', '.dmp_factor_list'].includes(c.fn)
+    && c.args?.every((a) => a.t === 'Rational'));
+  expect(selected.length).toBeGreaterThan(20);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('replays rectangular root counts through the public dense root API', () => {
+  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8')) as TestCase[];
+  const selected = cases.filter((c) => c.fn === '.dup_count_complex_roots');
+  expect(selected).toHaveLength(105);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('preserves polynomial indices and optional bases in joint real-root isolation', () => {
+  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8')) as TestCase[];
+  const selected = cases.filter((c) => c.fn === '.dup_isolate_real_roots_list');
+  expect(selected).toHaveLength(21);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('replays real-root isolation, refinement and counting conventions', () => {
+  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8')) as TestCase[];
+  const names = ['.dup_isolate_real_roots_sqf', '.dup_isolate_real_roots', '.dup_refine_real_root', '.dup_count_real_roots'];
+  const selected = cases.filter((c) => names.includes(c.fn));
+  expect(selected).toHaveLength(155);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('converts relation constructor keywords and sign-reversal attributes', () => {
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const y = { t: 'Symbol', name: 'y', assume: {} };
+  const one = { t: 'Rational', p: '1', q: '1' };
+  const base = { module: 'sympy.core.relational', category: 'core', src: '', args: [], kwargs: {} };
+  for (const [fn, expected] of [['.reversed', 'y > x'], ['.reversedsign', '-x > -y'], ['.negated', 'x >= y']] as const) {
+    expect(runCase({ ...base, fn, self: { t: 'Rel', op: 'StrictLessThan', args: [x, y] }, expected })).toEqual({ status: 'pass' });
+  }
+  expect(runCase({ ...base, fn: 'Equality', args: [one, one], kwargs: { evaluate: { t: 'Js', v: false } }, expected: 'Eq(1, 1)' })).toEqual({ status: 'pass' });
+  expect(runCase({ ...base, fn: 'Equality', args: [one, one], kwargs: { invalid: one }, expected: '' })).toEqual({ status: 'unsupported', reason: 'kwargs invalid' });
+  expect(String(deserialize({ t: 'Rel', op: 'Equality', args: [one, one] }))).toBe('Eq(1, 1)');
+  expect(runCase({ ...base, fn: 'unchanged', args: [{ t: 'Type', name: 'Equality' }, x, y], expected: 'True' })).toEqual({ status: 'pass' });
+  for (const name of ['Eq', 'Equality']) expect(runCase({ ...base, fn: 'unchanged', args: [{ t: 'Type', name }, { t: 'Tuple', items: [one, x] }, { t: 'Tuple', items: [one, one] }], expected: 'True' })).toEqual({ status: 'pass' });
+});
+
+it('uses assumption queries for wildcard predicates', () => {
+  expect(new JsPred('is_positive').test(sj.S.One)).toBe(true);
+  expect(new JsPred('is_positive').test(sj.S.NegOne)).toBe(false);
+  expect(new JsPred('is_positive').test(new sj.Sym('x'))).toBe(false);
+  expect(new JsPred('is_integer').test(sj.S.One)).toBe(true);
+  expect(new JsPred('is_integer').test(sj.Rational.of(1, 2))).toBe(false);
+  expect(() => new JsPred('missing').test(sj.S.One)).toThrow('predicate missing');
+});
+
+it('unpacks differentiation variable-order pairs', () => {
+  const x = new sj.Sym('x'), y = new sj.Sym('y');
+  const differentiate = ADAPTERS['.diff'];
+  if (differentiate === undefined) throw new TypeError('missing differentiation adapter');
+  expect(differentiate([new JsTuple([x, sj.sympify(2)]), x], {}, x.pow(2))).toBe(sj.S.Zero);
+  expect(String(differentiate([x, new JsTuple([y, sj.S.Zero])], {}, x.pow(2)))).toBe('2*x');
+  expect(String(differentiate([new JsList([x, sj.S.One])], {}, x.pow(2)))).toBe('2*x');
+  expect(() => differentiate([new JsTuple([x])], {}, x)).toThrow('diff requires a (variable, order) pair');
+  expect(() => differentiate([new JsTuple([x, sj.S.One]), sj.S.Zero], {}, x)).toThrow('diff variable-order pair cannot be followed by a number');
+});
 
 it('converts sequence recurrence counts to integer indices', () => {
   const cases = corpus.cases.filter((c) => c.module === 'sympy.series.sequences' && c.fn === '.find_linear_recurrence');

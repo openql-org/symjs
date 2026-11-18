@@ -260,7 +260,6 @@
       "ComplexRegion.intersect",
       "ComplexRegion.intersection",
       "ComplexRegion.is_disjoint",
-      "ComplexRegion.is_finite_set",
       "ComplexRegion.is_interval",
       "ComplexRegion.is_proper_subset",
       "ComplexRegion.is_proper_superset",
@@ -287,7 +286,6 @@
       "ConditionSet.intersect",
       "ConditionSet.intersection",
       "ConditionSet.is_disjoint",
-      "ConditionSet.is_finite_set",
       "ConditionSet.is_interval",
       "ConditionSet.is_proper_subset",
       "ConditionSet.is_proper_superset",
@@ -347,7 +345,6 @@
       "DisjointUnion.intersect",
       "DisjointUnion.intersection",
       "DisjointUnion.is_disjoint",
-      "DisjointUnion.is_finite_set",
       "DisjointUnion.is_interval",
       "DisjointUnion.is_proper_subset",
       "DisjointUnion.is_proper_superset",
@@ -765,7 +762,6 @@
       "FiniteSet.intersect",
       "FiniteSet.intersection",
       "FiniteSet.is_disjoint",
-      "FiniteSet.is_finite_set",
       "FiniteSet.is_interval",
       "FiniteSet.is_proper_subset",
       "FiniteSet.is_proper_superset",
@@ -1258,7 +1254,6 @@
       "ImageSet.intersect",
       "ImageSet.intersection",
       "ImageSet.is_disjoint",
-      "ImageSet.is_finite_set",
       "ImageSet.is_interval",
       "ImageSet.is_proper_subset",
       "ImageSet.is_proper_superset",
@@ -1587,7 +1582,6 @@
       "Interval.intersect",
       "Interval.intersection",
       "Interval.is_disjoint",
-      "Interval.is_finite_set",
       "Interval.is_interval",
       "Interval.is_left_unbounded",
       "Interval.is_proper_subset",
@@ -2112,7 +2106,6 @@
       "PowerSet.intersect",
       "PowerSet.intersection",
       "PowerSet.is_disjoint",
-      "PowerSet.is_finite_set",
       "PowerSet.is_interval",
       "PowerSet.is_proper_subset",
       "PowerSet.is_proper_superset",
@@ -2151,7 +2144,6 @@
       "ProductSet.intersect",
       "ProductSet.intersection",
       "ProductSet.is_disjoint",
-      "ProductSet.is_finite_set",
       "ProductSet.is_interval",
       "ProductSet.is_proper_subset",
       "ProductSet.is_proper_superset",
@@ -3047,7 +3039,6 @@
       "Set.intersect",
       "Set.intersection",
       "Set.is_disjoint",
-      "Set.is_finite_set",
       "Set.is_interval",
       "Set.is_proper_subset",
       "Set.is_proper_superset",
@@ -3138,7 +3129,6 @@
       "SymmetricDifference.intersect",
       "SymmetricDifference.intersection",
       "SymmetricDifference.is_disjoint",
-      "SymmetricDifference.is_finite_set",
       "SymmetricDifference.is_interval",
       "SymmetricDifference.is_proper_subset",
       "SymmetricDifference.is_proper_superset",
@@ -4095,7 +4085,6 @@
       "ComplexRegion.is_Dummy",
       "ComplexRegion.is_EmptySet",
       "ComplexRegion.is_Equality",
-      "ComplexRegion.is_FiniteSet",
       "ComplexRegion.is_Indexed",
       "ComplexRegion.is_Intersection",
       "ComplexRegion.is_Interval",
@@ -4144,7 +4133,6 @@
       "ConditionSet.is_Dummy",
       "ConditionSet.is_EmptySet",
       "ConditionSet.is_Equality",
-      "ConditionSet.is_FiniteSet",
       "ConditionSet.is_Indexed",
       "ConditionSet.is_Intersection",
       "ConditionSet.is_Interval",
@@ -4407,7 +4395,6 @@
       "DisjointUnion.is_Dummy",
       "DisjointUnion.is_EmptySet",
       "DisjointUnion.is_Equality",
-      "DisjointUnion.is_FiniteSet",
       "DisjointUnion.is_Indexed",
       "DisjointUnion.is_Intersection",
       "DisjointUnion.is_Interval",
@@ -4795,7 +4782,6 @@
       "FiniteSet.is_Dummy",
       "FiniteSet.is_EmptySet",
       "FiniteSet.is_Equality",
-      "FiniteSet.is_FiniteSet",
       "FiniteSet.is_Indexed",
       "FiniteSet.is_Intersection",
       "FiniteSet.is_Interval",
@@ -5280,7 +5266,6 @@
       "ImageSet.is_Dummy",
       "ImageSet.is_EmptySet",
       "ImageSet.is_Equality",
-      "ImageSet.is_FiniteSet",
       "ImageSet.is_Indexed",
       "ImageSet.is_Intersection",
       "ImageSet.is_Interval",
@@ -5570,7 +5555,6 @@
       "Interval.is_Dummy",
       "Interval.is_EmptySet",
       "Interval.is_Equality",
-      "Interval.is_FiniteSet",
       "Interval.is_Indexed",
       "Interval.is_Intersection",
       "Interval.is_Interval",
@@ -6805,7 +6789,6 @@
       "PowerSet.is_Dummy",
       "PowerSet.is_EmptySet",
       "PowerSet.is_Equality",
-      "PowerSet.is_FiniteSet",
       "PowerSet.is_Indexed",
       "PowerSet.is_Intersection",
       "PowerSet.is_Interval",
@@ -6875,7 +6858,6 @@
       "ProductSet.is_Dummy",
       "ProductSet.is_EmptySet",
       "ProductSet.is_Equality",
-      "ProductSet.is_FiniteSet",
       "ProductSet.is_Indexed",
       "ProductSet.is_Intersection",
       "ProductSet.is_Interval",
@@ -7586,7 +7568,6 @@
       "Set.is_Dummy",
       "Set.is_EmptySet",
       "Set.is_Equality",
-      "Set.is_FiniteSet",
       "Set.is_Indexed",
       "Set.is_Intersection",
       "Set.is_Interval",
@@ -7805,7 +7786,6 @@
       "SymmetricDifference.is_Dummy",
       "SymmetricDifference.is_EmptySet",
       "SymmetricDifference.is_Equality",
-      "SymmetricDifference.is_FiniteSet",
       "SymmetricDifference.is_Indexed",
       "SymmetricDifference.is_Intersection",
       "SymmetricDifference.is_Interval",
@@ -25039,7 +25019,7 @@
      "testFile": "sympy/combinatorics/tests/test_permutations.py",
      "inCorpus": true,
      "caseCount": 363,
-     "gapCount": 14,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -26303,8 +26283,8 @@
      "testFile": "sympy/concrete/tests/test_gosper.py",
      "inCorpus": true,
      "caseCount": 63,
-     "gapCount": 6,
-     "timeoutCount": 1,
+     "gapCount": 5,
+     "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
     },
@@ -26506,7 +26486,6 @@
       "eval_sum",
       "eval_sum_direct",
       "eval_sum_hyper",
-      "eval_sum_residue",
       "eval_sum_symbolic",
       "telescopic"
      ],
@@ -28551,7 +28530,7 @@
      "testFile": "sympy/core/tests/test_containers.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 34,
+     "gapCount": 31,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -28947,7 +28926,7 @@
      "testFile": "sympy/core/tests/test_expr.py",
      "inCorpus": true,
      "caseCount": 877,
-     "gapCount": 129,
+     "gapCount": 127,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -29659,7 +29638,7 @@
      "testFile": "sympy/core/tests/test_function.py",
      "inCorpus": true,
      "caseCount": 428,
-     "gapCount": 159,
+     "gapCount": 158,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -32564,7 +32543,6 @@
      "pass": false,
      "missingNames": [
       "random_complex_number",
-      "test_derivative_numerically",
       "verify_numerically"
      ],
      "pythonSpecificNames": [],
@@ -33142,7 +33120,7 @@
      "testFile": "sympy/core/tests/test_relational.py",
      "inCorpus": true,
      "caseCount": 1063,
-     "gapCount": 329,
+     "gapCount": 207,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 8,
@@ -33531,7 +33509,7 @@
      "testFile": "sympy/core/tests/test_symbol.py",
      "inCorpus": true,
      "caseCount": 167,
-     "gapCount": 44,
+     "gapCount": 18,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 10586,
@@ -33612,7 +33590,7 @@
      "testFile": "sympy/core/tests/test_sympify.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 27,
+     "gapCount": 23,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 20,
@@ -34214,7 +34192,6 @@
       "TensorProduct.__floordiv__",
       "TensorProduct.__rfloordiv__",
       "TensorProduct.__rmod__",
-      "TensorProduct.fromiter",
       "TensorProduct.is_AlgebraicNumber",
       "TensorProduct.is_Boolean",
       "TensorProduct.is_Derivative",
@@ -34619,7 +34596,6 @@
       "TensorProduct.__floordiv__",
       "TensorProduct.__rfloordiv__",
       "TensorProduct.__rmod__",
-      "TensorProduct.fromiter",
       "TensorProduct.is_AlgebraicNumber",
       "TensorProduct.is_Boolean",
       "TensorProduct.is_Derivative",
@@ -41075,7 +41051,7 @@
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
      "caseCount": 459,
-     "gapCount": 31,
+     "gapCount": 30,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -41353,7 +41329,7 @@
      "testFile": "sympy/functions/elementary/tests/test_exponential.py",
      "inCorpus": true,
      "caseCount": 491,
-     "gapCount": 78,
+     "gapCount": 73,
      "timeoutCount": 3,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -41982,7 +41958,7 @@
      "testFile": "sympy/functions/elementary/tests/test_hyperbolic.py",
      "inCorpus": true,
      "caseCount": 765,
-     "gapCount": 87,
+     "gapCount": 78,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 1,
@@ -43457,7 +43433,7 @@
      "testFile": "sympy/functions/elementary/tests/test_trigonometric.py",
      "inCorpus": true,
      "caseCount": 3035,
-     "gapCount": 100,
+     "gapCount": 94,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -44327,7 +44303,7 @@
      "testFile": "sympy/functions/special/tests/test_bessel.py",
      "inCorpus": true,
      "caseCount": 370,
-     "gapCount": 129,
+     "gapCount": 119,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 9,
@@ -44830,7 +44806,7 @@
      "testFile": "sympy/functions/special/tests/test_elliptic_integrals.py",
      "inCorpus": true,
      "caseCount": 78,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 8
@@ -45477,7 +45453,7 @@
      "testFile": "sympy/functions/special/tests/test_error_functions.py",
      "inCorpus": true,
      "caseCount": 336,
-     "gapCount": 122,
+     "gapCount": 111,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 33,
@@ -45783,7 +45759,7 @@
      "testFile": "sympy/functions/special/tests/test_gamma_functions.py",
      "inCorpus": true,
      "caseCount": 306,
-     "gapCount": 87,
+     "gapCount": 75,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 28,
@@ -48092,7 +48068,7 @@
      "testFile": "sympy/functions/special/tests/test_tensor_functions.py",
      "inCorpus": true,
      "caseCount": 101,
-     "gapCount": 15,
+     "gapCount": 14,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 13
@@ -48305,7 +48281,7 @@
      "testFile": "sympy/functions/special/tests/test_zeta_functions.py",
      "inCorpus": true,
      "caseCount": 101,
-     "gapCount": 18,
+     "gapCount": 13,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 18,
@@ -57683,7 +57659,7 @@
      "testFile": "sympy/logic/tests/test_boolalg.py",
      "inCorpus": true,
      "caseCount": 7484,
-     "gapCount": 179,
+     "gapCount": 105,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 15,
@@ -58257,7 +58233,6 @@
       "MatrixSet.intersect",
       "MatrixSet.intersection",
       "MatrixSet.is_disjoint",
-      "MatrixSet.is_finite_set",
       "MatrixSet.is_interval",
       "MatrixSet.is_proper_subset",
       "MatrixSet.is_proper_superset",
@@ -58855,7 +58830,6 @@
       "MatrixSet.is_Dummy",
       "MatrixSet.is_EmptySet",
       "MatrixSet.is_Equality",
-      "MatrixSet.is_FiniteSet",
       "MatrixSet.is_Indexed",
       "MatrixSet.is_Intersection",
       "MatrixSet.is_Interval",
@@ -59633,7 +59607,7 @@
      "testFile": "sympy/matrices/tests/test_decompositions.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 20,
+     "gapCount": 15,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 20,
@@ -59952,7 +59926,7 @@
      "testFile": "sympy/matrices/tests/test_eigen.py",
      "inCorpus": true,
      "caseCount": 316,
-     "gapCount": 5,
+     "gapCount": 4,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -60054,7 +60028,6 @@
       "MatrixSet.intersect",
       "MatrixSet.intersection",
       "MatrixSet.is_disjoint",
-      "MatrixSet.is_finite_set",
       "MatrixSet.is_interval",
       "MatrixSet.is_proper_subset",
       "MatrixSet.is_proper_superset",
@@ -60520,7 +60493,6 @@
       "MatrixSet.is_Dummy",
       "MatrixSet.is_EmptySet",
       "MatrixSet.is_Equality",
-      "MatrixSet.is_FiniteSet",
       "MatrixSet.is_Indexed",
       "MatrixSet.is_Intersection",
       "MatrixSet.is_Interval",
@@ -61160,7 +61132,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_blockmatrix.py",
      "inCorpus": true,
      "caseCount": 112,
-     "gapCount": 20,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -63285,7 +63257,6 @@
       "MatrixSet.intersect",
       "MatrixSet.intersection",
       "MatrixSet.is_disjoint",
-      "MatrixSet.is_finite_set",
       "MatrixSet.is_interval",
       "MatrixSet.is_proper_subset",
       "MatrixSet.is_proper_superset",
@@ -63311,7 +63282,6 @@
       "MatrixSet.is_Dummy",
       "MatrixSet.is_EmptySet",
       "MatrixSet.is_Equality",
-      "MatrixSet.is_FiniteSet",
       "MatrixSet.is_Indexed",
       "MatrixSet.is_Intersection",
       "MatrixSet.is_Interval",
@@ -64352,7 +64322,6 @@
    "module": "sympy.matrices.kind",
    "sha256": "109c43743e20160bd57c2de545ec7e6dcce17068f00618257f584f0e4d96cd71",
    "status": "partial",
-   "note": "Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.",
    "sources": [
     "matrices/kind.ts"
    ],
@@ -64393,8 +64362,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -65072,7 +65041,7 @@
      "testFile": "sympy/matrices/tests/test_matrices.py",
      "inCorpus": true,
      "caseCount": 878,
-     "gapCount": 179,
+     "gapCount": 149,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 2,
@@ -65248,7 +65217,7 @@
      "testFile": "sympy/matrices/tests/test_matrixbase.py",
      "inCorpus": true,
      "caseCount": 1056,
-     "gapCount": 240,
+     "gapCount": 196,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 4,
@@ -65564,7 +65533,7 @@
      "testFile": "sympy/matrices/tests/test_reductions.py",
      "inCorpus": true,
      "caseCount": 102,
-     "gapCount": 43,
+     "gapCount": 36,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 22
@@ -65932,7 +65901,7 @@
      "testFile": "sympy/matrices/tests/test_solvers.py",
      "inCorpus": true,
      "caseCount": 132,
-     "gapCount": 28,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2
@@ -74620,7 +74589,7 @@
      "testFile": "sympy/plotting/tests/test_utils.py",
      "inCorpus": true,
      "caseCount": 6,
-     "gapCount": 3,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 4
@@ -78399,7 +78368,7 @@
      "testFile": "sympy/polys/agca/tests/test_modules.py",
      "inCorpus": true,
      "caseCount": 172,
-     "gapCount": 83,
+     "gapCount": 82,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 6,
@@ -84765,7 +84734,7 @@
      "testFile": "sympy/polys/tests/test_euclidtools.py",
      "inCorpus": true,
      "caseCount": 227,
-     "gapCount": 79,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -84896,7 +84865,7 @@
      "testFile": "sympy/polys/tests/test_factortools.py",
      "inCorpus": true,
      "caseCount": 208,
-     "gapCount": 128,
+     "gapCount": 101,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 5,
@@ -85346,10 +85315,8 @@
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "heugcd"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [],
      "internalNames": [],
      "unresolvedBases": []
@@ -85373,7 +85340,7 @@
      "testFile": "sympy/polys/tests/test_heuristicgcd.py",
      "inCorpus": true,
      "caseCount": 34,
-     "gapCount": 18,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -85582,7 +85549,7 @@
      "testFile": "sympy/polys/matrices/tests/test_ddm.py",
      "inCorpus": true,
      "caseCount": 169,
-     "gapCount": 10,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -86366,7 +86333,7 @@
      "testFile": "sympy/polys/matrices/tests/test_sdm.py",
      "inCorpus": true,
      "caseCount": 736,
-     "gapCount": 630,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -87016,7 +86983,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 29,
+     "gapCount": 28,
      "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-slow": 1
@@ -87567,7 +87534,7 @@
      "testFile": "sympy/polys/tests/test_orderings.py",
      "inCorpus": true,
      "caseCount": 22,
-     "gapCount": 11,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -89884,7 +89851,7 @@
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
      "caseCount": 1707,
-     "gapCount": 663,
+     "gapCount": 476,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -90212,7 +90179,7 @@
      "testFile": "sympy/polys/tests/test_polyutils.py",
      "inCorpus": true,
      "caseCount": 44,
-     "gapCount": 43,
+     "gapCount": 15,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -90921,7 +90888,7 @@
      "testFile": "sympy/polys/tests/test_rootisolation.py",
      "inCorpus": true,
      "caseCount": 306,
-     "gapCount": 304,
+     "gapCount": 23,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -91135,7 +91102,7 @@
      "testFile": "sympy/polys/tests/test_rootoftools.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 50,
+     "gapCount": 45,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 56,
@@ -91513,7 +91480,7 @@
      "testFile": "sympy/polys/tests/test_sqfreetools.py",
      "inCorpus": true,
      "caseCount": 66,
-     "gapCount": 13,
+     "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -92165,7 +92132,7 @@
      "testFile": "sympy/printing/tests/test_latex.py",
      "inCorpus": true,
      "caseCount": 1264,
-     "gapCount": 129,
+     "gapCount": 128,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -95571,7 +95538,6 @@
       "ComplexRegion.intersect",
       "ComplexRegion.intersection",
       "ComplexRegion.is_disjoint",
-      "ComplexRegion.is_finite_set",
       "ComplexRegion.is_interval",
       "ComplexRegion.is_proper_subset",
       "ComplexRegion.is_proper_superset",
@@ -95594,7 +95560,6 @@
       "ConditionSet.intersect",
       "ConditionSet.intersection",
       "ConditionSet.is_disjoint",
-      "ConditionSet.is_finite_set",
       "ConditionSet.is_interval",
       "ConditionSet.is_proper_subset",
       "ConditionSet.is_proper_superset",
@@ -95616,7 +95581,6 @@
       "DisjointUnion.intersect",
       "DisjointUnion.intersection",
       "DisjointUnion.is_disjoint",
-      "DisjointUnion.is_finite_set",
       "DisjointUnion.is_interval",
       "DisjointUnion.is_proper_subset",
       "DisjointUnion.is_proper_superset",
@@ -95636,7 +95600,6 @@
       "FiniteSet.intersect",
       "FiniteSet.intersection",
       "FiniteSet.is_disjoint",
-      "FiniteSet.is_finite_set",
       "FiniteSet.is_interval",
       "FiniteSet.is_proper_subset",
       "FiniteSet.is_proper_superset",
@@ -95656,7 +95619,6 @@
       "ImageSet.intersect",
       "ImageSet.intersection",
       "ImageSet.is_disjoint",
-      "ImageSet.is_finite_set",
       "ImageSet.is_interval",
       "ImageSet.is_proper_subset",
       "ImageSet.is_proper_superset",
@@ -95709,7 +95671,6 @@
       "Interval.intersect",
       "Interval.intersection",
       "Interval.is_disjoint",
-      "Interval.is_finite_set",
       "Interval.is_interval",
       "Interval.is_left_unbounded",
       "Interval.is_proper_subset",
@@ -95746,7 +95707,6 @@
       "PowerSet.intersect",
       "PowerSet.intersection",
       "PowerSet.is_disjoint",
-      "PowerSet.is_finite_set",
       "PowerSet.is_interval",
       "PowerSet.is_proper_subset",
       "PowerSet.is_proper_superset",
@@ -95766,7 +95726,6 @@
       "ProductSet.intersect",
       "ProductSet.intersection",
       "ProductSet.is_disjoint",
-      "ProductSet.is_finite_set",
       "ProductSet.is_interval",
       "ProductSet.is_proper_subset",
       "ProductSet.is_proper_superset",
@@ -95807,7 +95766,6 @@
       "Set.intersect",
       "Set.intersection",
       "Set.is_disjoint",
-      "Set.is_finite_set",
       "Set.is_interval",
       "Set.is_proper_subset",
       "Set.is_proper_superset",
@@ -95827,7 +95785,6 @@
       "SymmetricDifference.intersect",
       "SymmetricDifference.intersection",
       "SymmetricDifference.is_disjoint",
-      "SymmetricDifference.is_finite_set",
       "SymmetricDifference.is_interval",
       "SymmetricDifference.is_proper_subset",
       "SymmetricDifference.is_proper_superset",
@@ -95916,7 +95873,6 @@
       "ComplexRegion.is_Dummy",
       "ComplexRegion.is_EmptySet",
       "ComplexRegion.is_Equality",
-      "ComplexRegion.is_FiniteSet",
       "ComplexRegion.is_Indexed",
       "ComplexRegion.is_Intersection",
       "ComplexRegion.is_Interval",
@@ -95945,7 +95901,6 @@
       "ConditionSet.is_Dummy",
       "ConditionSet.is_EmptySet",
       "ConditionSet.is_Equality",
-      "ConditionSet.is_FiniteSet",
       "ConditionSet.is_Indexed",
       "ConditionSet.is_Intersection",
       "ConditionSet.is_Interval",
@@ -95993,7 +95948,6 @@
       "DisjointUnion.is_Dummy",
       "DisjointUnion.is_EmptySet",
       "DisjointUnion.is_Equality",
-      "DisjointUnion.is_FiniteSet",
       "DisjointUnion.is_Indexed",
       "DisjointUnion.is_Intersection",
       "DisjointUnion.is_Interval",
@@ -96026,7 +95980,6 @@
       "FiniteSet.is_Dummy",
       "FiniteSet.is_EmptySet",
       "FiniteSet.is_Equality",
-      "FiniteSet.is_FiniteSet",
       "FiniteSet.is_Indexed",
       "FiniteSet.is_Intersection",
       "FiniteSet.is_Interval",
@@ -96055,7 +96008,6 @@
       "ImageSet.is_Dummy",
       "ImageSet.is_EmptySet",
       "ImageSet.is_Equality",
-      "ImageSet.is_FiniteSet",
       "ImageSet.is_Indexed",
       "ImageSet.is_Intersection",
       "ImageSet.is_Interval",
@@ -96114,7 +96066,6 @@
       "Interval.is_Dummy",
       "Interval.is_EmptySet",
       "Interval.is_Equality",
-      "Interval.is_FiniteSet",
       "Interval.is_Indexed",
       "Interval.is_Intersection",
       "Interval.is_Interval",
@@ -96184,7 +96135,6 @@
       "PowerSet.is_Dummy",
       "PowerSet.is_EmptySet",
       "PowerSet.is_Equality",
-      "PowerSet.is_FiniteSet",
       "PowerSet.is_Indexed",
       "PowerSet.is_Intersection",
       "PowerSet.is_Interval",
@@ -96213,7 +96163,6 @@
       "ProductSet.is_Dummy",
       "ProductSet.is_EmptySet",
       "ProductSet.is_Equality",
-      "ProductSet.is_FiniteSet",
       "ProductSet.is_Indexed",
       "ProductSet.is_Intersection",
       "ProductSet.is_Interval",
@@ -96270,7 +96219,6 @@
       "Set.is_Dummy",
       "Set.is_EmptySet",
       "Set.is_Equality",
-      "Set.is_FiniteSet",
       "Set.is_Indexed",
       "Set.is_Intersection",
       "Set.is_Interval",
@@ -96299,7 +96247,6 @@
       "SymmetricDifference.is_Dummy",
       "SymmetricDifference.is_EmptySet",
       "SymmetricDifference.is_Equality",
-      "SymmetricDifference.is_FiniteSet",
       "SymmetricDifference.is_Indexed",
       "SymmetricDifference.is_Intersection",
       "SymmetricDifference.is_Interval",
@@ -96467,7 +96414,6 @@
       "ConditionSet.intersect",
       "ConditionSet.intersection",
       "ConditionSet.is_disjoint",
-      "ConditionSet.is_finite_set",
       "ConditionSet.is_interval",
       "ConditionSet.is_proper_subset",
       "ConditionSet.is_proper_superset",
@@ -96493,7 +96439,6 @@
       "ConditionSet.is_Dummy",
       "ConditionSet.is_EmptySet",
       "ConditionSet.is_Equality",
-      "ConditionSet.is_FiniteSet",
       "ConditionSet.is_Indexed",
       "ConditionSet.is_Intersection",
       "ConditionSet.is_Interval",
@@ -96661,7 +96606,6 @@
       "CartesianComplexRegion.intersect",
       "CartesianComplexRegion.intersection",
       "CartesianComplexRegion.is_disjoint",
-      "CartesianComplexRegion.is_finite_set",
       "CartesianComplexRegion.is_interval",
       "CartesianComplexRegion.is_proper_subset",
       "CartesianComplexRegion.is_proper_superset",
@@ -96682,7 +96626,6 @@
       "ComplexRegion.intersect",
       "ComplexRegion.intersection",
       "ComplexRegion.is_disjoint",
-      "ComplexRegion.is_finite_set",
       "ComplexRegion.is_interval",
       "ComplexRegion.is_proper_subset",
       "ComplexRegion.is_proper_superset",
@@ -96733,7 +96676,6 @@
       "Complexes.is_extended_positive",
       "Complexes.is_extended_real",
       "Complexes.is_finite",
-      "Complexes.is_finite_set",
       "Complexes.is_hermitian",
       "Complexes.is_hypergeometric",
       "Complexes.is_imaginary",
@@ -96785,7 +96727,6 @@
       "ImageSet.intersect",
       "ImageSet.intersection",
       "ImageSet.is_disjoint",
-      "ImageSet.is_finite_set",
       "ImageSet.is_interval",
       "ImageSet.is_proper_subset",
       "ImageSet.is_proper_superset",
@@ -96832,7 +96773,6 @@
       "Integers.is_extended_positive",
       "Integers.is_extended_real",
       "Integers.is_finite",
-      "Integers.is_finite_set",
       "Integers.is_hermitian",
       "Integers.is_hypergeometric",
       "Integers.is_imaginary",
@@ -96906,7 +96846,6 @@
       "Naturals.is_extended_positive",
       "Naturals.is_extended_real",
       "Naturals.is_finite",
-      "Naturals.is_finite_set",
       "Naturals.is_hermitian",
       "Naturals.is_hypergeometric",
       "Naturals.is_imaginary",
@@ -96980,7 +96919,6 @@
       "Naturals0.is_extended_positive",
       "Naturals0.is_extended_real",
       "Naturals0.is_finite",
-      "Naturals0.is_finite_set",
       "Naturals0.is_hermitian",
       "Naturals0.is_hypergeometric",
       "Naturals0.is_imaginary",
@@ -97027,7 +96965,6 @@
       "PolarComplexRegion.intersect",
       "PolarComplexRegion.intersection",
       "PolarComplexRegion.is_disjoint",
-      "PolarComplexRegion.is_finite_set",
       "PolarComplexRegion.is_interval",
       "PolarComplexRegion.is_proper_subset",
       "PolarComplexRegion.is_proper_superset",
@@ -97097,7 +97034,6 @@
       "Rationals.is_extended_positive",
       "Rationals.is_extended_real",
       "Rationals.is_finite",
-      "Rationals.is_finite_set",
       "Rationals.is_hermitian",
       "Rationals.is_hypergeometric",
       "Rationals.is_imaginary",
@@ -97174,7 +97110,6 @@
       "Reals.is_extended_positive",
       "Reals.is_extended_real",
       "Reals.is_finite",
-      "Reals.is_finite_set",
       "Reals.is_hermitian",
       "Reals.is_hypergeometric",
       "Reals.is_imaginary",
@@ -97236,7 +97171,6 @@
       "CartesianComplexRegion.is_Dummy",
       "CartesianComplexRegion.is_EmptySet",
       "CartesianComplexRegion.is_Equality",
-      "CartesianComplexRegion.is_FiniteSet",
       "CartesianComplexRegion.is_Indexed",
       "CartesianComplexRegion.is_Intersection",
       "CartesianComplexRegion.is_Interval",
@@ -97265,7 +97199,6 @@
       "ComplexRegion.is_Dummy",
       "ComplexRegion.is_EmptySet",
       "ComplexRegion.is_Equality",
-      "ComplexRegion.is_FiniteSet",
       "ComplexRegion.is_Indexed",
       "ComplexRegion.is_Intersection",
       "ComplexRegion.is_Interval",
@@ -97296,7 +97229,6 @@
       "Complexes.is_Dummy",
       "Complexes.is_EmptySet",
       "Complexes.is_Equality",
-      "Complexes.is_FiniteSet",
       "Complexes.is_Float",
       "Complexes.is_Indexed",
       "Complexes.is_Integer",
@@ -97332,7 +97264,6 @@
       "ImageSet.is_Dummy",
       "ImageSet.is_EmptySet",
       "ImageSet.is_Equality",
-      "ImageSet.is_FiniteSet",
       "ImageSet.is_Indexed",
       "ImageSet.is_Intersection",
       "ImageSet.is_Interval",
@@ -97363,7 +97294,6 @@
       "Integers.is_Dummy",
       "Integers.is_EmptySet",
       "Integers.is_Equality",
-      "Integers.is_FiniteSet",
       "Integers.is_Float",
       "Integers.is_Indexed",
       "Integers.is_Integer",
@@ -97401,7 +97331,6 @@
       "Naturals.is_Dummy",
       "Naturals.is_EmptySet",
       "Naturals.is_Equality",
-      "Naturals.is_FiniteSet",
       "Naturals.is_Float",
       "Naturals.is_Indexed",
       "Naturals.is_Integer",
@@ -97439,7 +97368,6 @@
       "Naturals0.is_Dummy",
       "Naturals0.is_EmptySet",
       "Naturals0.is_Equality",
-      "Naturals0.is_FiniteSet",
       "Naturals0.is_Float",
       "Naturals0.is_Indexed",
       "Naturals0.is_Integer",
@@ -97475,7 +97403,6 @@
       "PolarComplexRegion.is_Dummy",
       "PolarComplexRegion.is_EmptySet",
       "PolarComplexRegion.is_Equality",
-      "PolarComplexRegion.is_FiniteSet",
       "PolarComplexRegion.is_Indexed",
       "PolarComplexRegion.is_Intersection",
       "PolarComplexRegion.is_Interval",
@@ -97534,7 +97461,6 @@
       "Rationals.is_Dummy",
       "Rationals.is_EmptySet",
       "Rationals.is_Equality",
-      "Rationals.is_FiniteSet",
       "Rationals.is_Float",
       "Rationals.is_Indexed",
       "Rationals.is_Integer",
@@ -97572,7 +97498,6 @@
       "Reals.is_Dummy",
       "Reals.is_EmptySet",
       "Reals.is_Equality",
-      "Reals.is_FiniteSet",
       "Reals.is_Float",
       "Reals.is_Indexed",
       "Reals.is_Integer",
@@ -97652,7 +97577,7 @@
      "testFile": "sympy/sets/tests/test_fancysets.py",
      "inCorpus": true,
      "caseCount": 769,
-     "gapCount": 165,
+     "gapCount": 129,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -98457,7 +98382,7 @@
      "testFile": "sympy/sets/tests/test_ordinals.py",
      "inCorpus": true,
      "caseCount": 34,
-     "gapCount": 8,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1
@@ -98520,7 +98445,6 @@
       "PowerSet.intersect",
       "PowerSet.intersection",
       "PowerSet.is_disjoint",
-      "PowerSet.is_finite_set",
       "PowerSet.is_interval",
       "PowerSet.is_proper_subset",
       "PowerSet.is_proper_superset",
@@ -98546,7 +98470,6 @@
       "PowerSet.is_Dummy",
       "PowerSet.is_EmptySet",
       "PowerSet.is_Equality",
-      "PowerSet.is_FiniteSet",
       "PowerSet.is_Indexed",
       "PowerSet.is_Intersection",
       "PowerSet.is_Interval",
@@ -98588,7 +98511,7 @@
      "testFile": "sympy/sets/tests/test_powerset.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 36,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 12,
@@ -98744,7 +98667,6 @@
       "DisjointUnion.intersect",
       "DisjointUnion.intersection",
       "DisjointUnion.is_disjoint",
-      "DisjointUnion.is_finite_set",
       "DisjointUnion.is_interval",
       "DisjointUnion.is_proper_subset",
       "DisjointUnion.is_proper_superset",
@@ -98791,7 +98713,6 @@
       "EmptySet.is_extended_positive",
       "EmptySet.is_extended_real",
       "EmptySet.is_finite",
-      "EmptySet.is_finite_set",
       "EmptySet.is_hermitian",
       "EmptySet.is_hypergeometric",
       "EmptySet.is_imaginary",
@@ -98838,7 +98759,6 @@
       "FiniteSet.intersect",
       "FiniteSet.intersection",
       "FiniteSet.is_disjoint",
-      "FiniteSet.is_finite_set",
       "FiniteSet.is_interval",
       "FiniteSet.is_proper_subset",
       "FiniteSet.is_proper_superset",
@@ -98890,7 +98810,6 @@
       "Interval.intersect",
       "Interval.intersection",
       "Interval.is_disjoint",
-      "Interval.is_finite_set",
       "Interval.is_interval",
       "Interval.is_left_unbounded",
       "Interval.is_proper_subset",
@@ -98918,7 +98837,6 @@
       "ProductSet.intersect",
       "ProductSet.intersection",
       "ProductSet.is_disjoint",
-      "ProductSet.is_finite_set",
       "ProductSet.is_interval",
       "ProductSet.is_proper_subset",
       "ProductSet.is_proper_superset",
@@ -98937,7 +98855,6 @@
       "Set.intersect",
       "Set.intersection",
       "Set.is_disjoint",
-      "Set.is_finite_set",
       "Set.is_interval",
       "Set.is_proper_subset",
       "Set.is_proper_superset",
@@ -98958,7 +98875,6 @@
       "SymmetricDifference.intersect",
       "SymmetricDifference.intersection",
       "SymmetricDifference.is_disjoint",
-      "SymmetricDifference.is_finite_set",
       "SymmetricDifference.is_interval",
       "SymmetricDifference.is_proper_subset",
       "SymmetricDifference.is_proper_superset",
@@ -99038,7 +98954,6 @@
       "UniversalSet.is_extended_positive",
       "UniversalSet.is_extended_real",
       "UniversalSet.is_finite",
-      "UniversalSet.is_finite_set",
       "UniversalSet.is_hermitian",
       "UniversalSet.is_hypergeometric",
       "UniversalSet.is_imaginary",
@@ -99130,7 +99045,6 @@
       "DisjointUnion.is_Dummy",
       "DisjointUnion.is_EmptySet",
       "DisjointUnion.is_Equality",
-      "DisjointUnion.is_FiniteSet",
       "DisjointUnion.is_Indexed",
       "DisjointUnion.is_Intersection",
       "DisjointUnion.is_Interval",
@@ -99161,7 +99075,6 @@
       "EmptySet.is_Dummy",
       "EmptySet.is_EmptySet",
       "EmptySet.is_Equality",
-      "EmptySet.is_FiniteSet",
       "EmptySet.is_Float",
       "EmptySet.is_Indexed",
       "EmptySet.is_Integer",
@@ -99201,7 +99114,6 @@
       "FiniteSet.is_Dummy",
       "FiniteSet.is_EmptySet",
       "FiniteSet.is_Equality",
-      "FiniteSet.is_FiniteSet",
       "FiniteSet.is_Indexed",
       "FiniteSet.is_Intersection",
       "FiniteSet.is_Interval",
@@ -99260,7 +99172,6 @@
       "Interval.is_Dummy",
       "Interval.is_EmptySet",
       "Interval.is_Equality",
-      "Interval.is_FiniteSet",
       "Interval.is_Indexed",
       "Interval.is_Intersection",
       "Interval.is_Interval",
@@ -99289,7 +99200,6 @@
       "ProductSet.is_Dummy",
       "ProductSet.is_EmptySet",
       "ProductSet.is_Equality",
-      "ProductSet.is_FiniteSet",
       "ProductSet.is_Indexed",
       "ProductSet.is_Intersection",
       "ProductSet.is_Interval",
@@ -99318,7 +99228,6 @@
       "Set.is_Dummy",
       "Set.is_EmptySet",
       "Set.is_Equality",
-      "Set.is_FiniteSet",
       "Set.is_Indexed",
       "Set.is_Intersection",
       "Set.is_Interval",
@@ -99347,7 +99256,6 @@
       "SymmetricDifference.is_Dummy",
       "SymmetricDifference.is_EmptySet",
       "SymmetricDifference.is_Equality",
-      "SymmetricDifference.is_FiniteSet",
       "SymmetricDifference.is_Indexed",
       "SymmetricDifference.is_Intersection",
       "SymmetricDifference.is_Interval",
@@ -99409,7 +99317,6 @@
       "UniversalSet.is_Dummy",
       "UniversalSet.is_EmptySet",
       "UniversalSet.is_Equality",
-      "UniversalSet.is_FiniteSet",
       "UniversalSet.is_Float",
       "UniversalSet.is_Indexed",
       "UniversalSet.is_Integer",
@@ -99485,7 +99392,7 @@
      "testFile": "sympy/sets/tests/test_sets.py",
      "inCorpus": true,
      "caseCount": 758,
-     "gapCount": 374,
+     "gapCount": 327,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -100698,7 +100605,7 @@
      "testFile": "sympy/simplify/tests/test_simplify.py",
      "inCorpus": true,
      "caseCount": 379,
-     "gapCount": 74,
+     "gapCount": 71,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -101279,8 +101186,8 @@
      "testFile": "sympy/solvers/diophantine/tests/test_diophantine.py",
      "inCorpus": true,
      "caseCount": 2323,
-     "gapCount": 54,
-     "timeoutCount": 1,
+     "gapCount": 53,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 4,
       "non-boolean-assertion": 1,
@@ -102479,7 +102386,7 @@
      "testFile": "sympy/solvers/tests/test_polysys.py",
      "inCorpus": true,
      "caseCount": 110,
-     "gapCount": 22,
+     "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 4
@@ -102669,7 +102576,7 @@
      "testFile": "sympy/solvers/tests/test_solvers.py",
      "inCorpus": true,
      "caseCount": 474,
-     "gapCount": 239,
+     "gapCount": 238,
      "timeoutCount": 3,
      "disallowedOmissions": {
       "marked-skip": 1,
@@ -102753,7 +102660,7 @@
      "testFile": "sympy/solvers/tests/test_solveset.py",
      "inCorpus": true,
      "caseCount": 610,
-     "gapCount": 277,
+     "gapCount": 274,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-skip": 3,
@@ -107907,7 +107814,7 @@
      "testFile": "sympy/stats/tests/test_rv.py",
      "inCorpus": true,
      "caseCount": 109,
-     "gapCount": 8,
+     "gapCount": 7,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 4,
@@ -110727,21 +110634,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111066,7 +110961,7 @@
      "testFile": "sympy/tensor/array/expressions/tests/test_array_expressions.py",
      "inCorpus": true,
      "caseCount": 110,
-     "gapCount": 27,
+     "gapCount": 23,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -111075,21 +110970,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111182,7 +111065,7 @@
      "testFile": "sympy/tensor/array/expressions/tests/test_arrayexpr_derivatives.py",
      "inCorpus": true,
      "caseCount": 7,
-     "gapCount": 4,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 2
@@ -111190,21 +111073,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111218,7 +111089,7 @@
   {
    "module": "sympy.tensor.array.expressions.conv_array_to_indexed",
    "sha256": "048c2542bed1282f1b64dde647c2020b94d8382f6e6ac61c57465cd5534a9a21",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromarraytoindexed.ts"
    ],
@@ -111253,21 +111124,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111278,7 +111137,7 @@
   {
    "module": "sympy.tensor.array.expressions.conv_array_to_matrix",
    "sha256": "f39619053648e28f5d26d2832575ee83f94954b1bc753ff6d804fb97b0caa321",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromarraytomatrix.ts"
    ],
@@ -111313,21 +111172,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111338,7 +111185,7 @@
   {
    "module": "sympy.tensor.array.expressions.conv_indexed_to_array",
    "sha256": "1325b9d93a65071231db99940ef23fe53cdcf0b0fa327a7a5cd5bdc08c3da47e",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromindexedtoarray.ts"
    ],
@@ -111373,21 +111220,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111398,7 +111233,7 @@
   {
    "module": "sympy.tensor.array.expressions.conv_matrix_to_array",
    "sha256": "5d8caab7436c412ae0369124afcc5319e52147b65878d9635457d5105d4aeef0",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/frommatrixtoarray.ts"
    ],
@@ -111433,21 +111268,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111458,7 +111281,7 @@
   {
    "module": "sympy.tensor.array.expressions.from_array_to_indexed",
    "sha256": "dd821cb00cd6556411258412f74b8fbd297674ced9a8b57faadec4f7eb98536f",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromarraytoindexed.ts"
    ],
@@ -111493,21 +111316,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111559,21 +111370,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111589,7 +111388,7 @@
   {
    "module": "sympy.tensor.array.expressions.from_indexed_to_array",
    "sha256": "45470a7a69abc2e2b944546bd7d6123d53023a465f2c05a56db079eaef168b48",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/fromindexedtoarray.ts"
    ],
@@ -111624,21 +111423,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -111651,7 +111438,7 @@
   {
    "module": "sympy.tensor.array.expressions.from_matrix_to_array",
    "sha256": "c8863546ea45f7e1555778d92eca96c59d5c928135f87910c8cf1c4089b8fc6b",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/frommatrixtoarray.ts"
    ],
@@ -111686,21 +111473,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": false,
@@ -111713,7 +111488,7 @@
   {
    "module": "sympy.tensor.array.expressions.utils",
    "sha256": "467e7c6e81c7504a01645b629c3a6bb8b585064341c2091543873d9bb3729b5a",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "tensor/array/expressions/utils.ts"
    ],
@@ -111748,21 +111523,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Array expressions",
-       "remaining": [
-        "General fixed-index slices and shifted-index conversion",
-        "Index-dependent scalar weights and partial summation ranges",
-        "General Hadamard and nonlinear elementwise matrix recognition",
-        "Inverse and noninteger matrix-power derivatives",
-        "Matrix-power expansion beyond 100 factors",
-        "Further canonicalization of mixed diagonal and permutation expressions"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -112134,22 +111897,17 @@
    "module": "sympy.tensor.functions",
    "sha256": "14d6763341c655a01227fd4090fbb5bc5e4d1cd2e605728bb23d10e7028c5fdd",
    "status": "partial",
-   "note": "shape, NoShapeError; TensorProduct not ported",
    "sources": [
     "tensor/functions.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "TensorProduct.rank",
-      "TensorProduct.shape"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [
       "TensorProduct.__floordiv__",
       "TensorProduct.__rfloordiv__",
       "TensorProduct.__rmod__",
-      "TensorProduct.fromiter",
       "TensorProduct.is_AlgebraicNumber",
       "TensorProduct.is_Boolean",
       "TensorProduct.is_Derivative",
@@ -112193,7 +111951,7 @@
      "testFile": "sympy/tensor/tests/test_functions.py",
      "inCorpus": true,
      "caseCount": 3,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 10
@@ -112201,8 +111959,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "shape, NoShapeError; TensorProduct not ported",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },

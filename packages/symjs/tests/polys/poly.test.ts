@@ -267,6 +267,18 @@ describe('polynomials', () => {
     expect(p.gcd(q).toExpr(x).toString()).toBe('x + 1');
     expect(factorPoly(add(pow(x, 3), mul(-1, x)), x).toString()).toBe('x*(x - 1)*(x + 1)');
   });
+  it('computes primitive polynomial gcds over QQ, including zero and negative content', () => {
+    const p = (coeffs: (number | readonly [number, number])[]) => new UPoly(coeffs.map((c) => typeof c === 'number' ? sj.Rational.of(c) : sj.Rational.of(c[0], c[1])));
+    expect(p([]).gcd(p([])).coeffs).toEqual([]);
+    expect(p([]).gcd(p([[-2, 3], [-2, 3]])).coeffs.map(String)).toEqual(['1', '1']);
+    const common = p([[2, 3], [-5, 7], [1, 11]]);
+    const f = common.mul(p([1, 0, 0, 0, 13]));
+    const g = common.mul(p([-7, 0, 0, 0, 0, 17]));
+    expect(f.gcd(g).coeffs).toEqual(common.monic().coeffs);
+    expect(g.gcd(f).coeffs).toEqual(common.monic().coeffs);
+    expect(f.gcd(p([3])).coeffs.map(String)).toEqual(['1']);
+    expect(f.gcd(p([])).coeffs).toEqual(f.monic().coeffs);
+  });
   it('symbolic coefficients removed by scaling x (SymPy preprocess_roots and _integer_basis)', () => {
     // the roots as a set (SymPy returns a dict)
     const keys = (s: string): string[] => [...(sj.roots(E(s), x) as unknown as Map<sj.Expr, number>).keys()].map(String).sort();

@@ -37,19 +37,19 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("StrictGreaterThan(x, 1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 1))).toBe('x > 1');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).toBe('x > 1');
   });
   it("GreaterThan(x, 1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).toBe('x >= 1');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).toBe('x >= 1');
   });
   it("LessThan(x, 1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 1))).toBe('x <= 1');
+    expect(sympyStr(Relational(x, rational(1), '<=', { evaluate: true }))).toBe('x <= 1');
   });
   it("StrictLessThan(x, 1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 1))).toBe('x < 1');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: true }))).toBe('x < 1');
   });
   it("1 < x", () => {
     const x = new Sym('x');
@@ -65,11 +65,11 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("e == e  # neither side is a literal", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', x, 1).equals(rel('Lt', x, 1)))).toBe('True');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: false }).equals(Relational(x, rational(1), '<', { evaluate: false })))).toBe('True');
   });
   it("e == (x < 1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', x, 1).equals(rel('Lt', x, 1)))).toBe('True');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: false }).equals(Relational(x, rational(1), '<', { evaluate: false })))).toBe('True');
   });
   it("e != (x < 1)", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -79,7 +79,7 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("(x < y) & (y < z)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(And(rel('Lt', x, y), rel('Lt', y, z)))).toBe('(x < y) & (y < z)');
+    expect(sympyStr(And(Relational(x, y, '<', { evaluate: false }), Relational(y, z, '<', { evaluate: false })))).toBe('(x < y) & (y < z)');
   });
   it("x >= 2 (2)", () => {
     const x = new Sym('x');
@@ -91,19 +91,19 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("StrictGreaterThan(x, 1) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 1))).toBe('x > 1');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).toBe('x > 1');
   });
   it("GreaterThan(x, 1) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).toBe('x >= 1');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).toBe('x >= 1');
   });
   it("LessThan(x, 1) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 1))).toBe('x <= 1');
+    expect(sympyStr(Relational(x, rational(1), '<=', { evaluate: true }))).toBe('x <= 1');
   });
   it("StrictLessThan(x, 1) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 1))).toBe('x < 1');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: true }))).toBe('x < 1');
   });
   it("1 < x (2)", () => {
     const x = new Sym('x');
@@ -119,11 +119,11 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("e == e  # neither side is a literal (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', x, 1).equals(rel('Lt', x, 1)))).toBe('True');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: false }).equals(Relational(x, rational(1), '<', { evaluate: false })))).toBe('True');
   });
   it("e == (x < 1) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', x, 1).equals(rel('Lt', x, 1)))).toBe('True');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: false }).equals(Relational(x, rational(1), '<', { evaluate: false })))).toBe('True');
   });
   it("e != (x < 1) (2)", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -133,7 +133,7 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("(x < y) & (y < z) (2)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(And(rel('Lt', x, y), rel('Lt', y, z)))).toBe('(x < y) & (y < z)');
+    expect(sympyStr(And(Relational(x, y, '<', { evaluate: false }), Relational(y, z, '<', { evaluate: false })))).toBe('(x < y) & (y < z)');
   });
   it("Rel(y, x + x**2, '==')", () => {
     const [y, x] = symbols('y x');
@@ -225,19 +225,19 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("StrictGreaterThan(x, 1) (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 1))).toBe('x > 1');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).toBe('x > 1');
   });
   it("GreaterThan(x, 1) (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).toBe('x >= 1');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).toBe('x >= 1');
   });
   it("LessThan(x, 1) (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 1))).toBe('x <= 1');
+    expect(sympyStr(Relational(x, rational(1), '<=', { evaluate: true }))).toBe('x <= 1');
   });
   it("StrictLessThan(x, 1) (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 1))).toBe('x < 1');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: true }))).toBe('x < 1');
   });
   it("1 < x (3)", () => {
     const x = new Sym('x');
@@ -253,11 +253,11 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("e == e  # neither side is a literal (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', x, 1).equals(rel('Lt', x, 1)))).toBe('True');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: false }).equals(Relational(x, rational(1), '<', { evaluate: false })))).toBe('True');
   });
   it("e == (x < 1) (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', x, 1).equals(rel('Lt', x, 1)))).toBe('True');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: false }).equals(Relational(x, rational(1), '<', { evaluate: false })))).toBe('True');
   });
   it("e != (x < 1) (3)", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -267,7 +267,7 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("(x < y) & (y < z) (3)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(And(rel('Lt', x, y), rel('Lt', y, z)))).toBe('(x < y) & (y < z)');
+    expect(sympyStr(And(Relational(x, y, '<', { evaluate: false }), Relational(y, z, '<', { evaluate: false })))).toBe('(x < y) & (y < z)');
   });
   it("x >= 2 (4)", () => {
     const x = new Sym('x');
@@ -279,19 +279,19 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("StrictGreaterThan(x, 1) (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 1))).toBe('x > 1');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).toBe('x > 1');
   });
   it("GreaterThan(x, 1) (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).toBe('x >= 1');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).toBe('x >= 1');
   });
   it("LessThan(x, 1) (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 1))).toBe('x <= 1');
+    expect(sympyStr(Relational(x, rational(1), '<=', { evaluate: true }))).toBe('x <= 1');
   });
   it("StrictLessThan(x, 1) (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 1))).toBe('x < 1');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: true }))).toBe('x < 1');
   });
   it("1 < x (4)", () => {
     const x = new Sym('x');
@@ -307,11 +307,11 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("e == e  # neither side is a literal (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', x, 1).equals(rel('Lt', x, 1)))).toBe('True');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: false }).equals(Relational(x, rational(1), '<', { evaluate: false })))).toBe('True');
   });
   it("e == (x < 1) (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', x, 1).equals(rel('Lt', x, 1)))).toBe('True');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: false }).equals(Relational(x, rational(1), '<', { evaluate: false })))).toBe('True');
   });
   it("e != (x < 1) (4)", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -321,7 +321,7 @@ describe("doctests of sympy.core.relational", () => {
   });
   it("(x < y) & (y < z) (4)", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(And(rel('Lt', x, y), rel('Lt', y, z)))).toBe('(x < y) & (y < z)');
+    expect(sympyStr(And(Relational(x, y, '<', { evaluate: false }), Relational(y, z, '<', { evaluate: false })))).toBe('(x < y) & (y < z)');
   });
   it("Ne(y, x+x**2)", () => {
     const [y, x] = symbols('y x');
@@ -420,38 +420,38 @@ describe("doctests of sympy.core.relational", () => {
   it.todo("is_le(a, b)");
   it("e", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).toBe('x >= 1');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).toBe('x >= 1');
   });
   it("e (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).toBe('x >= 1');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).toBe('x >= 1');
   });
   it("e (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).toBe('x >= 1');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).toBe('x >= 1');
   });
   it("e (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).toBe('x >= 1');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).toBe('x >= 1');
   });
 });
 
 describe("doctests of sympy.functions.elementary.piecewise", () => {
   it("p.subs(x,1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(0), rel('Lt', x, -1)], [pow(x, 2), rel('Le', x, 1)], [log(x), true]).subs(x, rational(1)))).toBe('1');
+    expect(sympyStr(piecewise([rational(0), Relational(x, rational(-1), '<', { evaluate: false })], [pow(x, 2), Relational(x, rational(1), '<=', { evaluate: false })], [log(x), true]).subs(x, rational(1)))).toBe('1');
   });
   it("p.subs(x,5)", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(0), rel('Lt', x, -1)], [pow(x, 2), rel('Le', x, 1)], [log(x), true]).subs(x, rational(5)))).toBe('log(5)');
+    expect(sympyStr(piecewise([rational(0), Relational(x, rational(-1), '<', { evaluate: false })], [pow(x, 2), Relational(x, rational(1), '<=', { evaluate: false })], [log(x), true]).subs(x, rational(5)))).toBe('log(5)');
   });
   it("Piecewise((1, folded_cond))", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Piecewise([rational(1), piecewise([rel('Lt', 2, y), rel('Lt', x, 0)], [rel('Lt', 3, y), true])]))).toBe('Piecewise((1, ITE(x < 0, y > 2, y > 3)))');
+    expect(sympyStr(Piecewise([rational(1), piecewise([Relational(rational(2), y, '<', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false })], [Relational(rational(3), y, '<', { evaluate: false }), true])]))).toBe('Piecewise((1, ITE(x < 0, y > 2, y > 3)))');
   });
   it("p.integrate(x)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [rational(1), rel('Lt', x, 1)], [rational(2), true]), x))).toBe('Piecewise((0, x < 0), (x, x < 1), (2*x - 1, True))');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), true]), x))).toBe('Piecewise((0, x < 0), (x, x < 1), (2*x - 1, True))');
   });
   // the arguments do not type-check against the public API
   //   p.piecewise_integrate(x)
@@ -471,19 +471,19 @@ describe("doctests of sympy.functions.elementary.piecewise", () => {
   it.todo("p.piecewise_integrate(x) (2)");
   it("p.integrate(x) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [rational(1), rel('Lt', x, 1)], [rational(2), true]), x))).toBe('Piecewise((0, x < 0), (x, x < 1), (2*x - 1, True))');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), true]), x))).toBe('Piecewise((0, x < 0), (x, x < 1), (2*x - 1, True))');
   });
   it("piecewise_exclusive(p)", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(piecewiseExclusive(piecewise([rational(0), rel('Lt', x, 0)], [rational(1, 2), rel('Le', x, 0)], [rational(1), true]), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
+    expect(sympyStr(piecewiseExclusive(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [rational(1, 2), Relational(x, rational(0), '<=', { evaluate: false })], [rational(1), true]), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
   });
   it("piecewise_exclusive(Piecewise((2, x > 1)))", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(piecewiseExclusive(piecewise([rational(2), rel('Gt', x, 1)]), { skipNan: false }))).toBe('Piecewise((2, x > 1), (nan, x <= 1))');
+    expect(sympyStr(piecewiseExclusive(piecewise([rational(2), Relational(x, rational(1), '>', { evaluate: false })]), { skipNan: false }))).toBe('Piecewise((2, x > 1), (nan, x <= 1))');
   });
   it("piecewise_exclusive(Piecewise((2, x > 1)), skip_nan=True)", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(piecewiseExclusive(piecewise([rational(2), rel('Gt', x, 1)]), { skipNan: true }))).toBe('Piecewise((2, x > 1))');
+    expect(sympyStr(piecewiseExclusive(piecewise([rational(2), Relational(x, rational(1), '>', { evaluate: false })]), { skipNan: true }))).toBe('Piecewise((2, x > 1))');
   });
   // a value without provenance ([object Object] Rel)
   //   piecewise_fold(x*p)
@@ -774,31 +774,31 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_wrappers:119", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Eq(y, new Add([x, new Pow(x, rational(2))])))).toBe('Eq(y, x**2 + x)');
+    expect(sympyStr(Relational(y, new Add([x, new Pow(x, rational(2))]), '==', { evaluate: true }))).toBe('Eq(y, x**2 + x)');
   });
   it("test_wrappers:122", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Lt(y, new Add([x, new Pow(x, rational(2))])))).toBe('y < x**2 + x');
+    expect(sympyStr(Relational(y, new Add([x, new Pow(x, rational(2))]), '<', { evaluate: true }))).toBe('y < x**2 + x');
   });
   it("test_wrappers:125", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Le(y, new Add([x, new Pow(x, rational(2))])))).toBe('y <= x**2 + x');
+    expect(sympyStr(Relational(y, new Add([x, new Pow(x, rational(2))]), '<=', { evaluate: true }))).toBe('y <= x**2 + x');
   });
   it("test_wrappers:128", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Gt(y, new Add([x, new Pow(x, rational(2))])))).toBe('y > x**2 + x');
+    expect(sympyStr(Relational(y, new Add([x, new Pow(x, rational(2))]), '>', { evaluate: true }))).toBe('y > x**2 + x');
   });
   it("test_wrappers:131", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Ge(y, new Add([x, new Pow(x, rational(2))])))).toBe('y >= x**2 + x');
+    expect(sympyStr(Relational(y, new Add([x, new Pow(x, rational(2))]), '>=', { evaluate: true }))).toBe('y >= x**2 + x');
   });
   it("test_wrappers:134", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Ne(y, new Add([x, new Pow(x, rational(2))])))).toBe('Ne(y, x**2 + x)');
+    expect(sympyStr(Relational(y, new Add([x, new Pow(x, rational(2))]), '!=', { evaluate: true }))).toBe('Ne(y, x**2 + x)');
   });
   it("test_Eq_Ne:139", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, x))).toBe('True');
+    expect(sympyStr(Relational(x, x, '==', { evaluate: true }))).toBe('True');
   });
   // the arguments do not type-check against the public API
   //   assert Eq(x, 1).as_poly() == Poly(x - 1, x, domain='ZZ')
@@ -838,135 +838,135 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_doit:286", () => {
     const p = new Sym('p', { positive: true });
-    expect(sympyStr(doit(rel('Gt', p, 1)))).toBe('p > 1');
+    expect(sympyStr(doit(Relational(p, rational(1), '>', { evaluate: false })))).toBe('p > 1');
   });
   it("test_doit:291", () => {
     const nn = new Sym('nn', { nonnegative: true });
-    expect(sympyStr(doit(rel('Gt', nn, 0)))).toBe('nn > 0');
+    expect(sympyStr(doit(Relational(nn, rational(0), '>', { evaluate: false })))).toBe('nn > 0');
   });
   it("test_doit:294", () => {
     const x = new Sym('x');
-    expect(sympyStr(doit(rel('Eq', x, 0)))).toBe('Eq(x, 0)');
+    expect(sympyStr(doit(Relational(x, rational(0), '==', { evaluate: false })))).toBe('Eq(x, 0)');
   });
   it("test_new_relational:300", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, 0))).toBe('Eq(x, 0)');
+    expect(sympyStr(Relational(x, rational(0), '==', { evaluate: true }))).toBe('Eq(x, 0)');
   });
   it("test_new_relational:301", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, 0))).toBe('Eq(x, 0)');
+    expect(sympyStr(Relational(x, rational(0), '==', { evaluate: true }))).toBe('Eq(x, 0)');
   });
   it("test_new_relational:302", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, 0))).toBe('Eq(x, 0)');
+    expect(sympyStr(Relational(x, rational(0), '==', { evaluate: true }))).toBe('Eq(x, 0)');
   });
   it("test_new_relational:303", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, 0))).toBe('Eq(x, 0)');
+    expect(sympyStr(Relational(x, rational(0), '==', { evaluate: true }))).toBe('Eq(x, 0)');
   });
   it("test_new_relational:305", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, 0))).not.toBe('Eq(x, 1)');
+    expect(sympyStr(Relational(x, rational(0), '==', { evaluate: true }))).not.toBe('Eq(x, 1)');
   });
   it("test_new_relational:306", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, 0))).not.toBe('Eq(x, 1)');
+    expect(sympyStr(Relational(x, rational(0), '==', { evaluate: true }))).not.toBe('Eq(x, 1)');
   });
   it("test_new_relational:307", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, 0))).not.toBe('Eq(x, 1)');
+    expect(sympyStr(Relational(x, rational(0), '==', { evaluate: true }))).not.toBe('Eq(x, 1)');
   });
   it("test_new_relational:308", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, 0))).not.toBe('Eq(x, 1)');
+    expect(sympyStr(Relational(x, rational(0), '==', { evaluate: true }))).not.toBe('Eq(x, 1)');
   });
   it("test_new_relational:310", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, -1))).toBe('Eq(x, -1)');
+    expect(sympyStr(Relational(x, rational(-1), '==', { evaluate: true }))).toBe('Eq(x, -1)');
   });
   it("test_new_relational:311", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, -1))).toBe('Eq(x, -1)');
+    expect(sympyStr(Relational(x, rational(-1), '==', { evaluate: true }))).toBe('Eq(x, -1)');
   });
   it("test_new_relational:312", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, -1))).toBe('Eq(x, -1)');
+    expect(sympyStr(Relational(x, rational(-1), '==', { evaluate: true }))).toBe('Eq(x, -1)');
   });
   it("test_new_relational:313", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, -1))).toBe('Eq(x, -1)');
+    expect(sympyStr(Relational(x, rational(-1), '==', { evaluate: true }))).toBe('Eq(x, -1)');
   });
   it("test_new_relational:314", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, -1))).not.toBe('Eq(x, 1)');
+    expect(sympyStr(Relational(x, rational(-1), '==', { evaluate: true }))).not.toBe('Eq(x, 1)');
   });
   it("test_new_relational:315", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, -1))).not.toBe('Eq(x, 1)');
+    expect(sympyStr(Relational(x, rational(-1), '==', { evaluate: true }))).not.toBe('Eq(x, 1)');
   });
   it("test_new_relational:316", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, -1))).not.toBe('Eq(x, 1)');
+    expect(sympyStr(Relational(x, rational(-1), '==', { evaluate: true }))).not.toBe('Eq(x, 1)');
   });
   it("test_new_relational:317", () => {
     const x = new Sym('x');
-    expect(sympyStr(Eq(x, -1))).not.toBe('Eq(x, 1)');
+    expect(sympyStr(Relational(x, rational(-1), '==', { evaluate: true }))).not.toBe('Eq(x, 1)');
   });
   it("test_new_relational:319", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ne(x, 0))).toBe('Ne(x, 0)');
+    expect(sympyStr(Relational(x, rational(0), '!=', { evaluate: true }))).toBe('Ne(x, 0)');
   });
   it("test_new_relational:320", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ne(x, 0))).toBe('Ne(x, 0)');
+    expect(sympyStr(Relational(x, rational(0), '!=', { evaluate: true }))).toBe('Ne(x, 0)');
   });
   it("test_new_relational:321", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ne(x, 0))).toBe('Ne(x, 0)');
+    expect(sympyStr(Relational(x, rational(0), '!=', { evaluate: true }))).toBe('Ne(x, 0)');
   });
   it("test_new_relational:322", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ne(x, 0))).toBe('Ne(x, 0)');
+    expect(sympyStr(Relational(x, rational(0), '!=', { evaluate: true }))).toBe('Ne(x, 0)');
   });
   it("test_new_relational:323", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ne(x, 0))).not.toBe('Ne(x, 1)');
+    expect(sympyStr(Relational(x, rational(0), '!=', { evaluate: true }))).not.toBe('Ne(x, 1)');
   });
   it("test_new_relational:324", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ne(x, 0))).not.toBe('Ne(x, 1)');
+    expect(sympyStr(Relational(x, rational(0), '!=', { evaluate: true }))).not.toBe('Ne(x, 1)');
   });
   it("test_new_relational:325", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ne(x, 0))).not.toBe('Ne(x, 1)');
+    expect(sympyStr(Relational(x, rational(0), '!=', { evaluate: true }))).not.toBe('Ne(x, 1)');
   });
   it("test_new_relational:326", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ne(x, 0))).not.toBe('Ne(x, 1)');
+    expect(sympyStr(Relational(x, rational(0), '!=', { evaluate: true }))).not.toBe('Ne(x, 1)');
   });
   it("test_new_relational:328", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 0))).toBe('x >= 0');
+    expect(sympyStr(Relational(x, rational(0), '>=', { evaluate: true }))).toBe('x >= 0');
   });
   it("test_new_relational:329", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 0))).toBe('x >= 0');
+    expect(sympyStr(Relational(x, rational(0), '>=', { evaluate: true }))).toBe('x >= 0');
   });
   it("test_new_relational:330", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 0))).toBe('x >= 0');
+    expect(sympyStr(Relational(x, rational(0), '>=', { evaluate: true }))).toBe('x >= 0');
   });
   it("test_new_relational:331", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).not.toBe('x >= 0');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).not.toBe('x >= 0');
   });
   it("test_new_relational:332", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).not.toBe('x >= 0');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).not.toBe('x >= 0');
   });
   it("test_new_relational:333", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 1))).not.toBe('x >= 0');
+    expect(sympyStr(Relational(x, rational(1), '>=', { evaluate: true }))).not.toBe('x >= 0');
   });
   it("test_new_relational:334", () => {
     const x = new Sym('x');
@@ -994,27 +994,27 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_new_relational:341", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 0))).toBe('x <= 0');
+    expect(sympyStr(Relational(x, rational(0), '<=', { evaluate: true }))).toBe('x <= 0');
   });
   it("test_new_relational:342", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 0))).toBe('x <= 0');
+    expect(sympyStr(Relational(x, rational(0), '<=', { evaluate: true }))).toBe('x <= 0');
   });
   it("test_new_relational:343", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 0))).toBe('x <= 0');
+    expect(sympyStr(Relational(x, rational(0), '<=', { evaluate: true }))).toBe('x <= 0');
   });
   it("test_new_relational:344", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 1))).not.toBe('x <= 0');
+    expect(sympyStr(Relational(x, rational(1), '<=', { evaluate: true }))).not.toBe('x <= 0');
   });
   it("test_new_relational:345", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 1))).not.toBe('x <= 0');
+    expect(sympyStr(Relational(x, rational(1), '<=', { evaluate: true }))).not.toBe('x <= 0');
   });
   it("test_new_relational:346", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 1))).not.toBe('x <= 0');
+    expect(sympyStr(Relational(x, rational(1), '<=', { evaluate: true }))).not.toBe('x <= 0');
   });
   it("test_new_relational:347", () => {
     const x = new Sym('x');
@@ -1042,27 +1042,27 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_new_relational:354", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 0))).toBe('x > 0');
+    expect(sympyStr(Relational(x, rational(0), '>', { evaluate: true }))).toBe('x > 0');
   });
   it("test_new_relational:355", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 0))).toBe('x > 0');
+    expect(sympyStr(Relational(x, rational(0), '>', { evaluate: true }))).toBe('x > 0');
   });
   it("test_new_relational:356", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 0))).toBe('x > 0');
+    expect(sympyStr(Relational(x, rational(0), '>', { evaluate: true }))).toBe('x > 0');
   });
   it("test_new_relational:357", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 1))).not.toBe('x > 0');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).not.toBe('x > 0');
   });
   it("test_new_relational:358", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 1))).not.toBe('x > 0');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).not.toBe('x > 0');
   });
   it("test_new_relational:359", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 1))).not.toBe('x > 0');
+    expect(sympyStr(Relational(x, rational(1), '>', { evaluate: true }))).not.toBe('x > 0');
   });
   it("test_new_relational:360", () => {
     const x = new Sym('x');
@@ -1090,27 +1090,27 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_new_relational:367", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 0))).toBe('x < 0');
+    expect(sympyStr(Relational(x, rational(0), '<', { evaluate: true }))).toBe('x < 0');
   });
   it("test_new_relational:368", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 0))).toBe('x < 0');
+    expect(sympyStr(Relational(x, rational(0), '<', { evaluate: true }))).toBe('x < 0');
   });
   it("test_new_relational:369", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 0))).toBe('x < 0');
+    expect(sympyStr(Relational(x, rational(0), '<', { evaluate: true }))).toBe('x < 0');
   });
   it("test_new_relational:370", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 1))).not.toBe('x < 0');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: true }))).not.toBe('x < 0');
   });
   it("test_new_relational:371", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 1))).not.toBe('x < 0');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: true }))).not.toBe('x < 0');
   });
   it("test_new_relational:372", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 1))).not.toBe('x < 0');
+    expect(sympyStr(Relational(x, rational(1), '<', { evaluate: true }))).not.toBe('x < 0');
   });
   it("test_new_relational:373", () => {
     const x = new Sym('x');
@@ -1530,19 +1530,19 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_relational_arithmetic:406", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(0).add(rel('Eq', x, y))).toThrow(TypeError);
+    expect(() => rational(0).add(Relational(x, y, '==', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:407", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).mul(rel('Eq', x, y))).toThrow(TypeError);
+    expect(() => rational(1).mul(Relational(x, y, '==', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:408", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).pow(rel('Eq', x, y))).toThrow(TypeError);
+    expect(() => rational(1).pow(Relational(x, y, '==', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:409", () => {
     const [x, y] = symbols('x y');
-    expect(() => rel('Eq', x, y).pow(1)).toThrow(TypeError);
+    expect(() => Relational(x, y, '==', { evaluate: false }).pow(1)).toThrow(TypeError);
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Add(0, rel))
@@ -1554,27 +1554,27 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_relational_arithmetic:411");
   it("test_relational_arithmetic:412", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rational(1), rel('Eq', x, y))).toThrow(TypeError);
+    expect(() => Pow(rational(1), Relational(x, y, '==', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:413", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rel('Eq', x, y), rational(1))).toThrow(TypeError);
+    expect(() => Pow(Relational(x, y, '==', { evaluate: false }), rational(1))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:406 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(0).add(rel('Ne', x, y))).toThrow(TypeError);
+    expect(() => rational(0).add(Relational(x, y, '!=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:407 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).mul(rel('Ne', x, y))).toThrow(TypeError);
+    expect(() => rational(1).mul(Relational(x, y, '!=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:408 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).pow(rel('Ne', x, y))).toThrow(TypeError);
+    expect(() => rational(1).pow(Relational(x, y, '!=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:409 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rel('Ne', x, y).pow(1)).toThrow(TypeError);
+    expect(() => Relational(x, y, '!=', { evaluate: false }).pow(1)).toThrow(TypeError);
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Add(0, rel))
@@ -1586,27 +1586,27 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_relational_arithmetic:411 (2)");
   it("test_relational_arithmetic:412 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rational(1), rel('Ne', x, y))).toThrow(TypeError);
+    expect(() => Pow(rational(1), Relational(x, y, '!=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:413 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rel('Ne', x, y), rational(1))).toThrow(TypeError);
+    expect(() => Pow(Relational(x, y, '!=', { evaluate: false }), rational(1))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:406 (3)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(0).add(rel('Le', x, y))).toThrow(TypeError);
+    expect(() => rational(0).add(Relational(x, y, '<=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:407 (3)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).mul(rel('Le', x, y))).toThrow(TypeError);
+    expect(() => rational(1).mul(Relational(x, y, '<=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:408 (3)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).pow(rel('Le', x, y))).toThrow(TypeError);
+    expect(() => rational(1).pow(Relational(x, y, '<=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:409 (3)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rel('Le', x, y).pow(1)).toThrow(TypeError);
+    expect(() => Relational(x, y, '<=', { evaluate: false }).pow(1)).toThrow(TypeError);
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Add(0, rel))
@@ -1618,27 +1618,27 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_relational_arithmetic:411 (3)");
   it("test_relational_arithmetic:412 (3)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rational(1), rel('Le', x, y))).toThrow(TypeError);
+    expect(() => Pow(rational(1), Relational(x, y, '<=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:413 (3)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rel('Le', x, y), rational(1))).toThrow(TypeError);
+    expect(() => Pow(Relational(x, y, '<=', { evaluate: false }), rational(1))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:406 (4)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(0).add(rel('Lt', x, y))).toThrow(TypeError);
+    expect(() => rational(0).add(Relational(x, y, '<', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:407 (4)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).mul(rel('Lt', x, y))).toThrow(TypeError);
+    expect(() => rational(1).mul(Relational(x, y, '<', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:408 (4)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).pow(rel('Lt', x, y))).toThrow(TypeError);
+    expect(() => rational(1).pow(Relational(x, y, '<', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:409 (4)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rel('Lt', x, y).pow(1)).toThrow(TypeError);
+    expect(() => Relational(x, y, '<', { evaluate: false }).pow(1)).toThrow(TypeError);
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Add(0, rel))
@@ -1650,27 +1650,27 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_relational_arithmetic:411 (4)");
   it("test_relational_arithmetic:412 (4)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rational(1), rel('Lt', x, y))).toThrow(TypeError);
+    expect(() => Pow(rational(1), Relational(x, y, '<', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:413 (4)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rel('Lt', x, y), rational(1))).toThrow(TypeError);
+    expect(() => Pow(Relational(x, y, '<', { evaluate: false }), rational(1))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:406 (5)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(0).add(rel('Ge', x, y))).toThrow(TypeError);
+    expect(() => rational(0).add(Relational(x, y, '>=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:407 (5)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).mul(rel('Ge', x, y))).toThrow(TypeError);
+    expect(() => rational(1).mul(Relational(x, y, '>=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:408 (5)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).pow(rel('Ge', x, y))).toThrow(TypeError);
+    expect(() => rational(1).pow(Relational(x, y, '>=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:409 (5)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rel('Ge', x, y).pow(1)).toThrow(TypeError);
+    expect(() => Relational(x, y, '>=', { evaluate: false }).pow(1)).toThrow(TypeError);
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Add(0, rel))
@@ -1682,27 +1682,27 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_relational_arithmetic:411 (5)");
   it("test_relational_arithmetic:412 (5)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rational(1), rel('Ge', x, y))).toThrow(TypeError);
+    expect(() => Pow(rational(1), Relational(x, y, '>=', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:413 (5)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rel('Ge', x, y), rational(1))).toThrow(TypeError);
+    expect(() => Pow(Relational(x, y, '>=', { evaluate: false }), rational(1))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:406 (6)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(0).add(rel('Gt', x, y))).toThrow(TypeError);
+    expect(() => rational(0).add(Relational(x, y, '>', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:407 (6)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).mul(rel('Gt', x, y))).toThrow(TypeError);
+    expect(() => rational(1).mul(Relational(x, y, '>', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:408 (6)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rational(1).pow(rel('Gt', x, y))).toThrow(TypeError);
+    expect(() => rational(1).pow(Relational(x, y, '>', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:409 (6)", () => {
     const [x, y] = symbols('x y');
-    expect(() => rel('Gt', x, y).pow(1)).toThrow(TypeError);
+    expect(() => Relational(x, y, '>', { evaluate: false }).pow(1)).toThrow(TypeError);
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Add(0, rel))
@@ -1714,120 +1714,150 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_relational_arithmetic:411 (6)");
   it("test_relational_arithmetic:412 (6)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rational(1), rel('Gt', x, y))).toThrow(TypeError);
+    expect(() => Pow(rational(1), Relational(x, y, '>', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_relational_arithmetic:413 (6)", () => {
     const [x, y] = symbols('x y');
-    expect(() => Pow(rel('Gt', x, y), rational(1))).toThrow(TypeError);
+    expect(() => Pow(Relational(x, y, '>', { evaluate: false }), rational(1))).toThrow(TypeError);
   });
   it("test_relational_logic_symbols:428", () => {
     const [x, y, z, t] = symbols('x y z t');
-    expect(sympyStr(And(rel('Lt', x, y), rel('Lt', z, t)))).toBe('(x < y) & (z < t)');
+    expect(sympyStr(And(Relational(x, y, '<', { evaluate: false }), Relational(z, t, '<', { evaluate: false })))).toBe('(x < y) & (z < t)');
   });
   it("test_relational_logic_symbols:429", () => {
     const [x, y, z, t] = symbols('x y z t');
-    expect(sympyStr(Or(rel('Lt', x, y), rel('Lt', z, t)))).toBe('(x < y) | (z < t)');
+    expect(sympyStr(Or(Relational(x, y, '<', { evaluate: false }), Relational(z, t, '<', { evaluate: false })))).toBe('(x < y) | (z < t)');
   });
   it("test_relational_logic_symbols:430", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Not(rel('Lt', x, y)))).toBe('x >= y');
+    expect(sympyStr(Not(Relational(x, y, '<', { evaluate: false })))).toBe('x >= y');
   });
   it("test_relational_logic_symbols:431", () => {
     const [x, y, z, t] = symbols('x y z t');
-    expect(sympyStr(Implies(rel('Lt', x, y), rel('Lt', z, t)))).toBe('Implies(x < y, z < t)');
+    expect(sympyStr(Implies(Relational(x, y, '<', { evaluate: false }), Relational(z, t, '<', { evaluate: false })))).toBe('Implies(x < y, z < t)');
   });
   it("test_relational_logic_symbols:432", () => {
     const [z, t, x, y] = symbols('z t x y');
-    expect(sympyStr(Implies(rel('Lt', z, t), rel('Lt', x, y)))).toBe('Implies(z < t, x < y)');
+    expect(sympyStr(Implies(Relational(z, t, '<', { evaluate: false }), Relational(x, y, '<', { evaluate: false })))).toBe('Implies(z < t, x < y)');
   });
   it("test_relational_logic_symbols:433", () => {
     const [x, y, z, t] = symbols('x y z t');
-    expect(sympyStr(Xor(rel('Lt', x, y), rel('Lt', z, t)))).toBe('(x < y) ^ (z < t)');
+    expect(sympyStr(Xor(Relational(x, y, '<', { evaluate: false }), Relational(z, t, '<', { evaluate: false })))).toBe('(x < y) ^ (z < t)');
   });
   it("test_univariate_relational_as_set:444", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Gt', x, 0)))).toBe('Interval.open(0, oo)');
+    expect(sympyStr(asSet(Relational(x, rational(0), '>', { evaluate: false })))).toBe('Interval.open(0, oo)');
   });
   it("test_univariate_relational_as_set:445", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Ge', x, 0)))).toBe('Interval(0, oo)');
+    expect(sympyStr(asSet(Relational(x, rational(0), '>=', { evaluate: false })))).toBe('Interval(0, oo)');
   });
   it("test_univariate_relational_as_set:446", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Lt', x, 0)))).toBe('Interval.open(-oo, 0)');
+    expect(sympyStr(asSet(Relational(x, rational(0), '<', { evaluate: false })))).toBe('Interval.open(-oo, 0)');
   });
   it("test_univariate_relational_as_set:447", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Le', x, 0)))).toBe('Interval(-oo, 0)');
+    expect(sympyStr(asSet(Relational(x, rational(0), '<=', { evaluate: false })))).toBe('Interval(-oo, 0)');
   });
   it("test_univariate_relational_as_set:448", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Eq', x, 0)))).toBe('{0}');
+    expect(sympyStr(asSet(Relational(x, rational(0), '==', { evaluate: false })))).toBe('{0}');
   });
   it("test_univariate_relational_as_set:449", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Ne', x, 0)))).toBe('Union(Interval.open(-oo, 0), Interval.open(0, oo))');
+    expect(sympyStr(asSet(Relational(x, rational(0), '!=', { evaluate: false })))).toBe('Union(Interval.open(-oo, 0), Interval.open(0, oo))');
   });
   it("test_univariate_relational_as_set:452", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Ge', new Pow(x, rational(2)), 4)))).toBe('Union(Interval(-oo, -2), Interval(2, oo))');
+    expect(sympyStr(asSet(Relational(new Pow(x, rational(2)), rational(4), '>=', { evaluate: false })))).toBe('Union(Interval(-oo, -2), Interval(2, oo))');
   });
   it("test_Not:462", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Not(rel('Eq', x, y)))).toBe('Ne(x, y)');
+    expect(sympyStr(Not(Relational(x, y, '==', { evaluate: false })))).toBe('Ne(x, y)');
   });
   it("test_Not:463", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Not(rel('Ne', x, y)))).toBe('Eq(x, y)');
+    expect(sympyStr(Not(Relational(x, y, '!=', { evaluate: false })))).toBe('Eq(x, y)');
   });
   it("test_Not:464", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Not(rel('Gt', x, y)))).toBe('x <= y');
+    expect(sympyStr(Not(Relational(x, y, '>', { evaluate: false })))).toBe('x <= y');
   });
   it("test_Not:465", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Not(rel('Lt', x, y)))).toBe('x >= y');
+    expect(sympyStr(Not(Relational(x, y, '<', { evaluate: false })))).toBe('x >= y');
   });
   it("test_Not:466", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Not(rel('Ge', x, y)))).toBe('x < y');
+    expect(sympyStr(Not(Relational(x, y, '>=', { evaluate: false })))).toBe('x < y');
   });
   it("test_Not:467", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Not(rel('Le', x, y)))).toBe('x > y');
+    expect(sympyStr(Not(Relational(x, y, '<=', { evaluate: false })))).toBe('x > y');
   });
-  // kwargs evaluate
-  //   assert str(Eq(x, x, evaluate=False)) == 'Eq(x, x)'
-  //   => Eq(x, x)
-  it.todo("test_evaluate:471");
+  it("test_evaluate:471", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(Relational(x, x, '==', { evaluate: false }))).toBe('Eq(x, x)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_evaluate:472", () => {
     const x = new Sym('x');
-    expect(sympyStr(doit(rel('Eq', x, x)))).toBe('True');
+    expect(sympyStr(doit(Relational(x, x, '==', { evaluate: false })))).toBe('True');
   });
-  // kwargs evaluate
-  //   assert str(Ne(x, x, evaluate=False)) == 'Ne(x, x)'
-  //   => Ne(x, x)
-  it.todo("test_evaluate:473");
+  it("test_evaluate:473", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(Relational(x, x, '!=', { evaluate: false }))).toBe('Ne(x, x)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_evaluate:474", () => {
     const x = new Sym('x');
-    expect(sympyStr(doit(rel('Ne', x, x)))).toBe('False');
+    expect(sympyStr(doit(Relational(x, x, '!=', { evaluate: false })))).toBe('False');
   });
-  // kwargs evaluate
-  //   assert str(Ge(x, x, evaluate=False)) == 'x >= x'
-  //   => x >= x
-  it.todo("test_evaluate:476");
-  // kwargs evaluate
-  //   assert str(Le(x, x, evaluate=False)) == 'x <= x'
-  //   => x <= x
-  it.todo("test_evaluate:477");
-  // kwargs evaluate
-  //   assert str(Gt(x, x, evaluate=False)) == 'x > x'
-  //   => x > x
-  it.todo("test_evaluate:478");
-  // kwargs evaluate
-  //   assert str(Lt(x, x, evaluate=False)) == 'x < x'
-  //   => x < x
-  it.todo("test_evaluate:479");
+  it("test_evaluate:476", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(Relational(x, x, '>=', { evaluate: false }))).toBe('x >= x');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_evaluate:477", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(Relational(x, x, '<=', { evaluate: false }))).toBe('x <= x');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_evaluate:478", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(Relational(x, x, '>', { evaluate: false }))).toBe('x > x');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_evaluate:479", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(pyStr(Relational(x, x, '<', { evaluate: false }))).toBe('x < x');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   // a function that did not come from the library
   //   raises(TypeError, lambda: a > b)
   //   => None
@@ -2063,14 +2093,14 @@ describe("sympy/core/tests/test_relational.py", () => {
     expect(sympyStr(Lt(-1, 0))).toBe('True');
   });
   it.fails("test_x_minus_y_not_same_as_x_lt_y:562", () => {
-    expect(() => str(doit(rel('Lt', new Add([rational(2), I]), new Add([rational(3), I]))))).toThrow(TypeError);
+    expect(() => str(Relational(new Add([rational(2), I]), new Add([rational(3), I]), '<', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_x_minus_y_not_same_as_x_lt_y:563", () => {
     expect(sympyStr(Lt(-1, 0))).toBe('True');
   });
   it.fails("test_x_minus_y_not_same_as_x_lt_y:569", () => {
     const t = new Sym('t', { imaginary: true });
-    expect(() => str(doit(rel('Lt', new Add([rational(2), t]), new Add([rational(3), t]))))).toThrow(TypeError);
+    expect(() => str(Relational(new Add([rational(2), t]), new Add([rational(3), t]), '<', { evaluate: false }))).toThrow(TypeError);
   });
   it("test_x_minus_y_not_same_as_x_lt_y:570", () => {
     expect(sympyStr(Lt(-1, 0))).toBe('True');
@@ -2417,115 +2447,115 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_inequalities_symbol_name_same:624");
   it("test_inequalities_symbol_name_same:621 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Gt(x, y))).toBe('x > y');
+    expect(sympyStr(Relational(x, y, '>', { evaluate: true }))).toBe('x > y');
   });
   it("test_inequalities_symbol_name_same:622 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Lt(x, y))).toBe('x < y');
+    expect(sympyStr(Relational(x, y, '<', { evaluate: true }))).toBe('x < y');
   });
   it("test_inequalities_symbol_name_same:623 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Ge(x, y))).toBe('x >= y');
+    expect(sympyStr(Relational(x, y, '>=', { evaluate: true }))).toBe('x >= y');
   });
   it("test_inequalities_symbol_name_same:624 (2)", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Le(x, y))).toBe('x <= y');
+    expect(sympyStr(Relational(x, y, '<=', { evaluate: true }))).toBe('x <= y');
   });
   it("test_inequalities_symbol_name_same:621 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, 0))).toBe('x > 0');
+    expect(sympyStr(Relational(x, rational(0), '>', { evaluate: true }))).toBe('x > 0');
   });
   it("test_inequalities_symbol_name_same:622 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, 0))).toBe('x < 0');
+    expect(sympyStr(Relational(x, rational(0), '<', { evaluate: true }))).toBe('x < 0');
   });
   it("test_inequalities_symbol_name_same:623 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, 0))).toBe('x >= 0');
+    expect(sympyStr(Relational(x, rational(0), '>=', { evaluate: true }))).toBe('x >= 0');
   });
   it("test_inequalities_symbol_name_same:624 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, 0))).toBe('x <= 0');
+    expect(sympyStr(Relational(x, rational(0), '<=', { evaluate: true }))).toBe('x <= 0');
   });
   it("test_inequalities_symbol_name_same:621 (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, rational(1, 3)))).toBe('x > 1/3');
+    expect(sympyStr(Relational(x, rational(1, 3), '>', { evaluate: true }))).toBe('x > 1/3');
   });
   it("test_inequalities_symbol_name_same:622 (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, rational(1, 3)))).toBe('x < 1/3');
+    expect(sympyStr(Relational(x, rational(1, 3), '<', { evaluate: true }))).toBe('x < 1/3');
   });
   it("test_inequalities_symbol_name_same:623 (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, rational(1, 3)))).toBe('x >= 1/3');
+    expect(sympyStr(Relational(x, rational(1, 3), '>=', { evaluate: true }))).toBe('x >= 1/3');
   });
   it("test_inequalities_symbol_name_same:624 (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, rational(1, 3)))).toBe('x <= 1/3');
+    expect(sympyStr(Relational(x, rational(1, 3), '<=', { evaluate: true }))).toBe('x <= 1/3');
   });
   it("test_inequalities_symbol_name_same:621 (5)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, pi))).toBe('x > pi');
+    expect(sympyStr(Relational(x, pi, '>', { evaluate: true }))).toBe('x > pi');
   });
   it("test_inequalities_symbol_name_same:622 (5)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, pi))).toBe('x < pi');
+    expect(sympyStr(Relational(x, pi, '<', { evaluate: true }))).toBe('x < pi');
   });
   it("test_inequalities_symbol_name_same:623 (5)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, pi))).toBe('x >= pi');
+    expect(sympyStr(Relational(x, pi, '>=', { evaluate: true }))).toBe('x >= pi');
   });
   it("test_inequalities_symbol_name_same:624 (5)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, pi))).toBe('x <= pi');
+    expect(sympyStr(Relational(x, pi, '<=', { evaluate: true }))).toBe('x <= pi');
   });
   it("test_inequalities_symbol_name_same:621 (6)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, oo))).toBe('x > oo');
+    expect(sympyStr(Relational(x, oo, '>', { evaluate: true }))).toBe('x > oo');
   });
   it("test_inequalities_symbol_name_same:622 (6)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, oo))).toBe('x < oo');
+    expect(sympyStr(Relational(x, oo, '<', { evaluate: true }))).toBe('x < oo');
   });
   it("test_inequalities_symbol_name_same:623 (6)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, oo))).toBe('x >= oo');
+    expect(sympyStr(Relational(x, oo, '>=', { evaluate: true }))).toBe('x >= oo');
   });
   it("test_inequalities_symbol_name_same:624 (6)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, oo))).toBe('x <= oo');
+    expect(sympyStr(Relational(x, oo, '<=', { evaluate: true }))).toBe('x <= oo');
   });
   it("test_inequalities_symbol_name_same:621 (7)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, S.NegativeInfinity))).toBe('x > -oo');
+    expect(sympyStr(Relational(x, S.NegativeInfinity, '>', { evaluate: true }))).toBe('x > -oo');
   });
   it("test_inequalities_symbol_name_same:622 (7)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, S.NegativeInfinity))).toBe('x < -oo');
+    expect(sympyStr(Relational(x, S.NegativeInfinity, '<', { evaluate: true }))).toBe('x < -oo');
   });
   it("test_inequalities_symbol_name_same:623 (7)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, S.NegativeInfinity))).toBe('x >= -oo');
+    expect(sympyStr(Relational(x, S.NegativeInfinity, '>=', { evaluate: true }))).toBe('x >= -oo');
   });
   it("test_inequalities_symbol_name_same:624 (7)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, S.NegativeInfinity))).toBe('x <= -oo');
+    expect(sympyStr(Relational(x, S.NegativeInfinity, '<=', { evaluate: true }))).toBe('x <= -oo');
   });
   it("test_inequalities_symbol_name_same:621 (8)", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Gt(y, x))).toBe('y > x');
+    expect(sympyStr(Relational(y, x, '>', { evaluate: true }))).toBe('y > x');
   });
   it("test_inequalities_symbol_name_same:622 (8)", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Lt(y, x))).toBe('y < x');
+    expect(sympyStr(Relational(y, x, '<', { evaluate: true }))).toBe('y < x');
   });
   it("test_inequalities_symbol_name_same:623 (8)", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Ge(y, x))).toBe('y >= x');
+    expect(sympyStr(Relational(y, x, '>=', { evaluate: true }))).toBe('y >= x');
   });
   it("test_inequalities_symbol_name_same:624 (8)", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(Le(y, x))).toBe('y <= x');
+    expect(sympyStr(Relational(y, x, '<=', { evaluate: true }))).toBe('y <= x');
   });
   // a function that did not come from the library
   //   assert Gt(a, b) == (a > b)
@@ -2545,736 +2575,736 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_inequalities_symbol_name_same:624 (9)");
   it("test_inequalities_symbol_name_same:621 (10)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(y, 0))).toBe('y > 0');
+    expect(sympyStr(Relational(y, rational(0), '>', { evaluate: true }))).toBe('y > 0');
   });
   it("test_inequalities_symbol_name_same:622 (10)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(y, 0))).toBe('y < 0');
+    expect(sympyStr(Relational(y, rational(0), '<', { evaluate: true }))).toBe('y < 0');
   });
   it("test_inequalities_symbol_name_same:623 (10)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(y, 0))).toBe('y >= 0');
+    expect(sympyStr(Relational(y, rational(0), '>=', { evaluate: true }))).toBe('y >= 0');
   });
   it("test_inequalities_symbol_name_same:624 (10)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(y, 0))).toBe('y <= 0');
+    expect(sympyStr(Relational(y, rational(0), '<=', { evaluate: true }))).toBe('y <= 0');
   });
   it("test_inequalities_symbol_name_same:621 (11)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(y, rational(1, 3)))).toBe('y > 1/3');
+    expect(sympyStr(Relational(y, rational(1, 3), '>', { evaluate: true }))).toBe('y > 1/3');
   });
   it("test_inequalities_symbol_name_same:622 (11)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(y, rational(1, 3)))).toBe('y < 1/3');
+    expect(sympyStr(Relational(y, rational(1, 3), '<', { evaluate: true }))).toBe('y < 1/3');
   });
   it("test_inequalities_symbol_name_same:623 (11)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(y, rational(1, 3)))).toBe('y >= 1/3');
+    expect(sympyStr(Relational(y, rational(1, 3), '>=', { evaluate: true }))).toBe('y >= 1/3');
   });
   it("test_inequalities_symbol_name_same:624 (11)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(y, rational(1, 3)))).toBe('y <= 1/3');
+    expect(sympyStr(Relational(y, rational(1, 3), '<=', { evaluate: true }))).toBe('y <= 1/3');
   });
   it("test_inequalities_symbol_name_same:621 (12)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(y, pi))).toBe('y > pi');
+    expect(sympyStr(Relational(y, pi, '>', { evaluate: true }))).toBe('y > pi');
   });
   it("test_inequalities_symbol_name_same:622 (12)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(y, pi))).toBe('y < pi');
+    expect(sympyStr(Relational(y, pi, '<', { evaluate: true }))).toBe('y < pi');
   });
   it("test_inequalities_symbol_name_same:623 (12)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(y, pi))).toBe('y >= pi');
+    expect(sympyStr(Relational(y, pi, '>=', { evaluate: true }))).toBe('y >= pi');
   });
   it("test_inequalities_symbol_name_same:624 (12)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(y, pi))).toBe('y <= pi');
+    expect(sympyStr(Relational(y, pi, '<=', { evaluate: true }))).toBe('y <= pi');
   });
   it("test_inequalities_symbol_name_same:621 (13)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(y, oo))).toBe('y > oo');
+    expect(sympyStr(Relational(y, oo, '>', { evaluate: true }))).toBe('y > oo');
   });
   it("test_inequalities_symbol_name_same:622 (13)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(y, oo))).toBe('y < oo');
+    expect(sympyStr(Relational(y, oo, '<', { evaluate: true }))).toBe('y < oo');
   });
   it("test_inequalities_symbol_name_same:623 (13)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(y, oo))).toBe('y >= oo');
+    expect(sympyStr(Relational(y, oo, '>=', { evaluate: true }))).toBe('y >= oo');
   });
   it("test_inequalities_symbol_name_same:624 (13)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(y, oo))).toBe('y <= oo');
+    expect(sympyStr(Relational(y, oo, '<=', { evaluate: true }))).toBe('y <= oo');
   });
   it("test_inequalities_symbol_name_same:621 (14)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(y, S.NegativeInfinity))).toBe('y > -oo');
+    expect(sympyStr(Relational(y, S.NegativeInfinity, '>', { evaluate: true }))).toBe('y > -oo');
   });
   it("test_inequalities_symbol_name_same:622 (14)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(y, S.NegativeInfinity))).toBe('y < -oo');
+    expect(sympyStr(Relational(y, S.NegativeInfinity, '<', { evaluate: true }))).toBe('y < -oo');
   });
   it("test_inequalities_symbol_name_same:623 (14)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(y, S.NegativeInfinity))).toBe('y >= -oo');
+    expect(sympyStr(Relational(y, S.NegativeInfinity, '>=', { evaluate: true }))).toBe('y >= -oo');
   });
   it("test_inequalities_symbol_name_same:624 (14)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(y, S.NegativeInfinity))).toBe('y <= -oo');
+    expect(sympyStr(Relational(y, S.NegativeInfinity, '<=', { evaluate: true }))).toBe('y <= -oo');
   });
   it("test_inequalities_symbol_name_same:621 (15)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(0, x))).toBe('0 > x');
+    expect(sympyStr(Relational(rational(0), x, '>', { evaluate: true }))).toBe('0 > x');
   });
   it("test_inequalities_symbol_name_same:622 (15)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(0, x))).toBe('0 < x');
+    expect(sympyStr(Relational(rational(0), x, '<', { evaluate: true }))).toBe('0 < x');
   });
   it("test_inequalities_symbol_name_same:623 (15)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(0, x))).toBe('0 >= x');
+    expect(sympyStr(Relational(rational(0), x, '>=', { evaluate: true }))).toBe('0 >= x');
   });
   it("test_inequalities_symbol_name_same:624 (15)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(0, x))).toBe('0 <= x');
+    expect(sympyStr(Relational(rational(0), x, '<=', { evaluate: true }))).toBe('0 <= x');
   });
   it("test_inequalities_symbol_name_same:621 (16)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(0, y))).toBe('0 > y');
+    expect(sympyStr(Relational(rational(0), y, '>', { evaluate: true }))).toBe('0 > y');
   });
   it("test_inequalities_symbol_name_same:622 (16)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(0, y))).toBe('0 < y');
+    expect(sympyStr(Relational(rational(0), y, '<', { evaluate: true }))).toBe('0 < y');
   });
   it("test_inequalities_symbol_name_same:623 (16)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(0, y))).toBe('0 >= y');
+    expect(sympyStr(Relational(rational(0), y, '>=', { evaluate: true }))).toBe('0 >= y');
   });
   it("test_inequalities_symbol_name_same:624 (16)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(0, y))).toBe('0 <= y');
+    expect(sympyStr(Relational(rational(0), y, '<=', { evaluate: true }))).toBe('0 <= y');
   });
   it("test_inequalities_symbol_name_same:621 (17)", () => {
-    expect(sympyStr(Gt(0, 0))).toBe('False');
+    expect(sympyStr(Relational(rational(0), rational(0), '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (17)", () => {
-    expect(sympyStr(Lt(0, 0))).toBe('False');
+    expect(sympyStr(Relational(rational(0), rational(0), '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (17)", () => {
-    expect(sympyStr(Ge(0, 0))).toBe('True');
+    expect(sympyStr(Relational(rational(0), rational(0), '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (17)", () => {
-    expect(sympyStr(Le(0, 0))).toBe('True');
+    expect(sympyStr(Relational(rational(0), rational(0), '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (18)", () => {
-    expect(sympyStr(Gt(0, rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(rational(0), rational(1, 3), '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (18)", () => {
-    expect(sympyStr(Lt(0, rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(rational(0), rational(1, 3), '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (18)", () => {
-    expect(sympyStr(Ge(0, rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(rational(0), rational(1, 3), '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (18)", () => {
-    expect(sympyStr(Le(0, rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(rational(0), rational(1, 3), '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (19)", () => {
-    expect(sympyStr(Gt(0, pi))).toBe('False');
+    expect(sympyStr(Relational(rational(0), pi, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (19)", () => {
-    expect(sympyStr(Lt(0, pi))).toBe('True');
+    expect(sympyStr(Relational(rational(0), pi, '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (19)", () => {
-    expect(sympyStr(Ge(0, pi))).toBe('False');
+    expect(sympyStr(Relational(rational(0), pi, '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (19)", () => {
-    expect(sympyStr(Le(0, pi))).toBe('True');
+    expect(sympyStr(Relational(rational(0), pi, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (20)", () => {
-    expect(sympyStr(Gt(0, oo))).toBe('False');
+    expect(sympyStr(Relational(rational(0), oo, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (20)", () => {
-    expect(sympyStr(Lt(0, oo))).toBe('True');
+    expect(sympyStr(Relational(rational(0), oo, '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (20)", () => {
-    expect(sympyStr(Ge(0, oo))).toBe('False');
+    expect(sympyStr(Relational(rational(0), oo, '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (20)", () => {
-    expect(sympyStr(Le(0, oo))).toBe('True');
+    expect(sympyStr(Relational(rational(0), oo, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (21)", () => {
-    expect(sympyStr(Gt(0, S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(rational(0), S.NegativeInfinity, '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (21)", () => {
-    expect(sympyStr(Lt(0, S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(rational(0), S.NegativeInfinity, '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (21)", () => {
-    expect(sympyStr(Ge(0, S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(rational(0), S.NegativeInfinity, '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (21)", () => {
-    expect(sympyStr(Le(0, S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(rational(0), S.NegativeInfinity, '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (22)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(rational(1, 3), x))).toBe('1/3 > x');
+    expect(sympyStr(Relational(rational(1, 3), x, '>', { evaluate: true }))).toBe('1/3 > x');
   });
   it("test_inequalities_symbol_name_same:622 (22)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(rational(1, 3), x))).toBe('1/3 < x');
+    expect(sympyStr(Relational(rational(1, 3), x, '<', { evaluate: true }))).toBe('1/3 < x');
   });
   it("test_inequalities_symbol_name_same:623 (22)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(rational(1, 3), x))).toBe('1/3 >= x');
+    expect(sympyStr(Relational(rational(1, 3), x, '>=', { evaluate: true }))).toBe('1/3 >= x');
   });
   it("test_inequalities_symbol_name_same:624 (22)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(rational(1, 3), x))).toBe('1/3 <= x');
+    expect(sympyStr(Relational(rational(1, 3), x, '<=', { evaluate: true }))).toBe('1/3 <= x');
   });
   it("test_inequalities_symbol_name_same:621 (23)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(rational(1, 3), y))).toBe('1/3 > y');
+    expect(sympyStr(Relational(rational(1, 3), y, '>', { evaluate: true }))).toBe('1/3 > y');
   });
   it("test_inequalities_symbol_name_same:622 (23)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(rational(1, 3), y))).toBe('1/3 < y');
+    expect(sympyStr(Relational(rational(1, 3), y, '<', { evaluate: true }))).toBe('1/3 < y');
   });
   it("test_inequalities_symbol_name_same:623 (23)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(rational(1, 3), y))).toBe('1/3 >= y');
+    expect(sympyStr(Relational(rational(1, 3), y, '>=', { evaluate: true }))).toBe('1/3 >= y');
   });
   it("test_inequalities_symbol_name_same:624 (23)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(rational(1, 3), y))).toBe('1/3 <= y');
+    expect(sympyStr(Relational(rational(1, 3), y, '<=', { evaluate: true }))).toBe('1/3 <= y');
   });
   it("test_inequalities_symbol_name_same:621 (24)", () => {
-    expect(sympyStr(Gt(rational(1, 3), 0))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), rational(0), '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (24)", () => {
-    expect(sympyStr(Lt(rational(1, 3), 0))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), rational(0), '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (24)", () => {
-    expect(sympyStr(Ge(rational(1, 3), 0))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), rational(0), '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (24)", () => {
-    expect(sympyStr(Le(rational(1, 3), 0))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), rational(0), '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (25)", () => {
-    expect(sympyStr(Gt(rational(1, 3), rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), rational(1, 3), '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (25)", () => {
-    expect(sympyStr(Lt(rational(1, 3), rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), rational(1, 3), '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (25)", () => {
-    expect(sympyStr(Ge(rational(1, 3), rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), rational(1, 3), '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (25)", () => {
-    expect(sympyStr(Le(rational(1, 3), rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), rational(1, 3), '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (26)", () => {
-    expect(sympyStr(Gt(rational(1, 3), pi))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), pi, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (26)", () => {
-    expect(sympyStr(Lt(rational(1, 3), pi))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), pi, '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (26)", () => {
-    expect(sympyStr(Ge(rational(1, 3), pi))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), pi, '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (26)", () => {
-    expect(sympyStr(Le(rational(1, 3), pi))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), pi, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (27)", () => {
-    expect(sympyStr(Gt(rational(1, 3), oo))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), oo, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (27)", () => {
-    expect(sympyStr(Lt(rational(1, 3), oo))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), oo, '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (27)", () => {
-    expect(sympyStr(Ge(rational(1, 3), oo))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), oo, '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (27)", () => {
-    expect(sympyStr(Le(rational(1, 3), oo))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), oo, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (28)", () => {
-    expect(sympyStr(Gt(rational(1, 3), S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), S.NegativeInfinity, '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (28)", () => {
-    expect(sympyStr(Lt(rational(1, 3), S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), S.NegativeInfinity, '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (28)", () => {
-    expect(sympyStr(Ge(rational(1, 3), S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(rational(1, 3), S.NegativeInfinity, '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (28)", () => {
-    expect(sympyStr(Le(rational(1, 3), S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(rational(1, 3), S.NegativeInfinity, '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (29)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(pi, x))).toBe('pi > x');
+    expect(sympyStr(Relational(pi, x, '>', { evaluate: true }))).toBe('pi > x');
   });
   it("test_inequalities_symbol_name_same:622 (29)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(pi, x))).toBe('pi < x');
+    expect(sympyStr(Relational(pi, x, '<', { evaluate: true }))).toBe('pi < x');
   });
   it("test_inequalities_symbol_name_same:623 (29)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(pi, x))).toBe('pi >= x');
+    expect(sympyStr(Relational(pi, x, '>=', { evaluate: true }))).toBe('pi >= x');
   });
   it("test_inequalities_symbol_name_same:624 (29)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(pi, x))).toBe('pi <= x');
+    expect(sympyStr(Relational(pi, x, '<=', { evaluate: true }))).toBe('pi <= x');
   });
   it("test_inequalities_symbol_name_same:621 (30)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(pi, y))).toBe('pi > y');
+    expect(sympyStr(Relational(pi, y, '>', { evaluate: true }))).toBe('pi > y');
   });
   it("test_inequalities_symbol_name_same:622 (30)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(pi, y))).toBe('pi < y');
+    expect(sympyStr(Relational(pi, y, '<', { evaluate: true }))).toBe('pi < y');
   });
   it("test_inequalities_symbol_name_same:623 (30)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(pi, y))).toBe('pi >= y');
+    expect(sympyStr(Relational(pi, y, '>=', { evaluate: true }))).toBe('pi >= y');
   });
   it("test_inequalities_symbol_name_same:624 (30)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(pi, y))).toBe('pi <= y');
+    expect(sympyStr(Relational(pi, y, '<=', { evaluate: true }))).toBe('pi <= y');
   });
   it("test_inequalities_symbol_name_same:621 (31)", () => {
-    expect(sympyStr(Gt(pi, 0))).toBe('True');
+    expect(sympyStr(Relational(pi, rational(0), '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (31)", () => {
-    expect(sympyStr(Lt(pi, 0))).toBe('False');
+    expect(sympyStr(Relational(pi, rational(0), '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (31)", () => {
-    expect(sympyStr(Ge(pi, 0))).toBe('True');
+    expect(sympyStr(Relational(pi, rational(0), '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (31)", () => {
-    expect(sympyStr(Le(pi, 0))).toBe('False');
+    expect(sympyStr(Relational(pi, rational(0), '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (32)", () => {
-    expect(sympyStr(Gt(pi, rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(pi, rational(1, 3), '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (32)", () => {
-    expect(sympyStr(Lt(pi, rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(pi, rational(1, 3), '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (32)", () => {
-    expect(sympyStr(Ge(pi, rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(pi, rational(1, 3), '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (32)", () => {
-    expect(sympyStr(Le(pi, rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(pi, rational(1, 3), '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (33)", () => {
-    expect(sympyStr(Gt(pi, pi))).toBe('False');
+    expect(sympyStr(Relational(pi, pi, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (33)", () => {
-    expect(sympyStr(Lt(pi, pi))).toBe('False');
+    expect(sympyStr(Relational(pi, pi, '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (33)", () => {
-    expect(sympyStr(Ge(pi, pi))).toBe('True');
+    expect(sympyStr(Relational(pi, pi, '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (33)", () => {
-    expect(sympyStr(Le(pi, pi))).toBe('True');
+    expect(sympyStr(Relational(pi, pi, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (34)", () => {
-    expect(sympyStr(Gt(pi, oo))).toBe('False');
+    expect(sympyStr(Relational(pi, oo, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (34)", () => {
-    expect(sympyStr(Lt(pi, oo))).toBe('True');
+    expect(sympyStr(Relational(pi, oo, '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (34)", () => {
-    expect(sympyStr(Ge(pi, oo))).toBe('False');
+    expect(sympyStr(Relational(pi, oo, '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (34)", () => {
-    expect(sympyStr(Le(pi, oo))).toBe('True');
+    expect(sympyStr(Relational(pi, oo, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (35)", () => {
-    expect(sympyStr(Gt(pi, S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(pi, S.NegativeInfinity, '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (35)", () => {
-    expect(sympyStr(Lt(pi, S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(pi, S.NegativeInfinity, '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (35)", () => {
-    expect(sympyStr(Ge(pi, S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(pi, S.NegativeInfinity, '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (35)", () => {
-    expect(sympyStr(Le(pi, S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(pi, S.NegativeInfinity, '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (36)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(oo, x))).toBe('oo > x');
+    expect(sympyStr(Relational(oo, x, '>', { evaluate: true }))).toBe('oo > x');
   });
   it("test_inequalities_symbol_name_same:622 (36)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(oo, x))).toBe('oo < x');
+    expect(sympyStr(Relational(oo, x, '<', { evaluate: true }))).toBe('oo < x');
   });
   it("test_inequalities_symbol_name_same:623 (36)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(oo, x))).toBe('oo >= x');
+    expect(sympyStr(Relational(oo, x, '>=', { evaluate: true }))).toBe('oo >= x');
   });
   it("test_inequalities_symbol_name_same:624 (36)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(oo, x))).toBe('oo <= x');
+    expect(sympyStr(Relational(oo, x, '<=', { evaluate: true }))).toBe('oo <= x');
   });
   it("test_inequalities_symbol_name_same:621 (37)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(oo, y))).toBe('oo > y');
+    expect(sympyStr(Relational(oo, y, '>', { evaluate: true }))).toBe('oo > y');
   });
   it("test_inequalities_symbol_name_same:622 (37)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(oo, y))).toBe('oo < y');
+    expect(sympyStr(Relational(oo, y, '<', { evaluate: true }))).toBe('oo < y');
   });
   it("test_inequalities_symbol_name_same:623 (37)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(oo, y))).toBe('oo >= y');
+    expect(sympyStr(Relational(oo, y, '>=', { evaluate: true }))).toBe('oo >= y');
   });
   it("test_inequalities_symbol_name_same:624 (37)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(oo, y))).toBe('oo <= y');
+    expect(sympyStr(Relational(oo, y, '<=', { evaluate: true }))).toBe('oo <= y');
   });
   it("test_inequalities_symbol_name_same:621 (38)", () => {
-    expect(sympyStr(Gt(oo, 0))).toBe('True');
+    expect(sympyStr(Relational(oo, rational(0), '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (38)", () => {
-    expect(sympyStr(Lt(oo, 0))).toBe('False');
+    expect(sympyStr(Relational(oo, rational(0), '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (38)", () => {
-    expect(sympyStr(Ge(oo, 0))).toBe('True');
+    expect(sympyStr(Relational(oo, rational(0), '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (38)", () => {
-    expect(sympyStr(Le(oo, 0))).toBe('False');
+    expect(sympyStr(Relational(oo, rational(0), '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (39)", () => {
-    expect(sympyStr(Gt(oo, rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(oo, rational(1, 3), '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (39)", () => {
-    expect(sympyStr(Lt(oo, rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(oo, rational(1, 3), '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (39)", () => {
-    expect(sympyStr(Ge(oo, rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(oo, rational(1, 3), '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (39)", () => {
-    expect(sympyStr(Le(oo, rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(oo, rational(1, 3), '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (40)", () => {
-    expect(sympyStr(Gt(oo, pi))).toBe('True');
+    expect(sympyStr(Relational(oo, pi, '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (40)", () => {
-    expect(sympyStr(Lt(oo, pi))).toBe('False');
+    expect(sympyStr(Relational(oo, pi, '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (40)", () => {
-    expect(sympyStr(Ge(oo, pi))).toBe('True');
+    expect(sympyStr(Relational(oo, pi, '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (40)", () => {
-    expect(sympyStr(Le(oo, pi))).toBe('False');
+    expect(sympyStr(Relational(oo, pi, '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (41)", () => {
-    expect(sympyStr(Gt(oo, oo))).toBe('False');
+    expect(sympyStr(Relational(oo, oo, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (41)", () => {
-    expect(sympyStr(Lt(oo, oo))).toBe('False');
+    expect(sympyStr(Relational(oo, oo, '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (41)", () => {
-    expect(sympyStr(Ge(oo, oo))).toBe('True');
+    expect(sympyStr(Relational(oo, oo, '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (41)", () => {
-    expect(sympyStr(Le(oo, oo))).toBe('True');
+    expect(sympyStr(Relational(oo, oo, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (42)", () => {
-    expect(sympyStr(Gt(oo, S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(oo, S.NegativeInfinity, '>', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:622 (42)", () => {
-    expect(sympyStr(Lt(oo, S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(oo, S.NegativeInfinity, '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (42)", () => {
-    expect(sympyStr(Ge(oo, S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(oo, S.NegativeInfinity, '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (42)", () => {
-    expect(sympyStr(Le(oo, S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(oo, S.NegativeInfinity, '<=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:621 (43)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(S.NegativeInfinity, x))).toBe('-oo > x');
+    expect(sympyStr(Relational(S.NegativeInfinity, x, '>', { evaluate: true }))).toBe('-oo > x');
   });
   it("test_inequalities_symbol_name_same:622 (43)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(S.NegativeInfinity, x))).toBe('-oo < x');
+    expect(sympyStr(Relational(S.NegativeInfinity, x, '<', { evaluate: true }))).toBe('-oo < x');
   });
   it("test_inequalities_symbol_name_same:623 (43)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(S.NegativeInfinity, x))).toBe('-oo >= x');
+    expect(sympyStr(Relational(S.NegativeInfinity, x, '>=', { evaluate: true }))).toBe('-oo >= x');
   });
   it("test_inequalities_symbol_name_same:624 (43)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(S.NegativeInfinity, x))).toBe('-oo <= x');
+    expect(sympyStr(Relational(S.NegativeInfinity, x, '<=', { evaluate: true }))).toBe('-oo <= x');
   });
   it("test_inequalities_symbol_name_same:621 (44)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Gt(S.NegativeInfinity, y))).toBe('-oo > y');
+    expect(sympyStr(Relational(S.NegativeInfinity, y, '>', { evaluate: true }))).toBe('-oo > y');
   });
   it("test_inequalities_symbol_name_same:622 (44)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Lt(S.NegativeInfinity, y))).toBe('-oo < y');
+    expect(sympyStr(Relational(S.NegativeInfinity, y, '<', { evaluate: true }))).toBe('-oo < y');
   });
   it("test_inequalities_symbol_name_same:623 (44)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Ge(S.NegativeInfinity, y))).toBe('-oo >= y');
+    expect(sympyStr(Relational(S.NegativeInfinity, y, '>=', { evaluate: true }))).toBe('-oo >= y');
   });
   it("test_inequalities_symbol_name_same:624 (44)", () => {
     const y = new Sym('y');
-    expect(sympyStr(Le(S.NegativeInfinity, y))).toBe('-oo <= y');
+    expect(sympyStr(Relational(S.NegativeInfinity, y, '<=', { evaluate: true }))).toBe('-oo <= y');
   });
   it("test_inequalities_symbol_name_same:621 (45)", () => {
-    expect(sympyStr(Gt(S.NegativeInfinity, 0))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, rational(0), '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (45)", () => {
-    expect(sympyStr(Lt(S.NegativeInfinity, 0))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, rational(0), '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (45)", () => {
-    expect(sympyStr(Ge(S.NegativeInfinity, 0))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, rational(0), '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (45)", () => {
-    expect(sympyStr(Le(S.NegativeInfinity, 0))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, rational(0), '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (46)", () => {
-    expect(sympyStr(Gt(S.NegativeInfinity, rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, rational(1, 3), '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (46)", () => {
-    expect(sympyStr(Lt(S.NegativeInfinity, rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, rational(1, 3), '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (46)", () => {
-    expect(sympyStr(Ge(S.NegativeInfinity, rational(1, 3)))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, rational(1, 3), '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (46)", () => {
-    expect(sympyStr(Le(S.NegativeInfinity, rational(1, 3)))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, rational(1, 3), '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (47)", () => {
-    expect(sympyStr(Gt(S.NegativeInfinity, pi))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, pi, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (47)", () => {
-    expect(sympyStr(Lt(S.NegativeInfinity, pi))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, pi, '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (47)", () => {
-    expect(sympyStr(Ge(S.NegativeInfinity, pi))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, pi, '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (47)", () => {
-    expect(sympyStr(Le(S.NegativeInfinity, pi))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, pi, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (48)", () => {
-    expect(sympyStr(Gt(S.NegativeInfinity, oo))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, oo, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (48)", () => {
-    expect(sympyStr(Lt(S.NegativeInfinity, oo))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, oo, '<', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:623 (48)", () => {
-    expect(sympyStr(Ge(S.NegativeInfinity, oo))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, oo, '>=', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:624 (48)", () => {
-    expect(sympyStr(Le(S.NegativeInfinity, oo))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, oo, '<=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:621 (49)", () => {
-    expect(sympyStr(Gt(S.NegativeInfinity, S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, S.NegativeInfinity, '>', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:622 (49)", () => {
-    expect(sympyStr(Lt(S.NegativeInfinity, S.NegativeInfinity))).toBe('False');
+    expect(sympyStr(Relational(S.NegativeInfinity, S.NegativeInfinity, '<', { evaluate: true }))).toBe('False');
   });
   it("test_inequalities_symbol_name_same:623 (49)", () => {
-    expect(sympyStr(Ge(S.NegativeInfinity, S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, S.NegativeInfinity, '>=', { evaluate: true }))).toBe('True');
   });
   it("test_inequalities_symbol_name_same:624 (49)", () => {
-    expect(sympyStr(Le(S.NegativeInfinity, S.NegativeInfinity))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, S.NegativeInfinity, '<=', { evaluate: true }))).toBe('True');
   });
-  // kwargs evaluate
-  //   assert Gt(x, b, evaluate=False) == (x > b)
-  //   => x > y
-  it.todo("test_inequalities_symbol_name_same:627");
-  // kwargs evaluate
-  //   assert Lt(x, b, evaluate=False) == (x < b)
-  //   => x < y
-  it.todo("test_inequalities_symbol_name_same:628");
-  // kwargs evaluate
-  //   assert Ge(x, b, evaluate=False) == (x >= b)
-  //   => x >= y
-  it.todo("test_inequalities_symbol_name_same:629");
-  // kwargs evaluate
-  //   assert Le(x, b, evaluate=False) == (x <= b)
-  //   => x <= y
-  it.todo("test_inequalities_symbol_name_same:630");
-  // kwargs evaluate
-  //   assert Gt(x, b, evaluate=False) == (x > b)
-  //   => x > 0
-  it.todo("test_inequalities_symbol_name_same:627 (2)");
-  // kwargs evaluate
-  //   assert Lt(x, b, evaluate=False) == (x < b)
-  //   => x < 0
-  it.todo("test_inequalities_symbol_name_same:628 (2)");
-  // kwargs evaluate
-  //   assert Ge(x, b, evaluate=False) == (x >= b)
-  //   => x >= 0
-  it.todo("test_inequalities_symbol_name_same:629 (2)");
-  // kwargs evaluate
-  //   assert Le(x, b, evaluate=False) == (x <= b)
-  //   => x <= 0
-  it.todo("test_inequalities_symbol_name_same:630 (2)");
-  // kwargs evaluate
-  //   assert Gt(x, b, evaluate=False) == (x > b)
-  //   => x > 1/3
-  it.todo("test_inequalities_symbol_name_same:627 (3)");
-  // kwargs evaluate
-  //   assert Lt(x, b, evaluate=False) == (x < b)
-  //   => x < 1/3
-  it.todo("test_inequalities_symbol_name_same:628 (3)");
-  // kwargs evaluate
-  //   assert Ge(x, b, evaluate=False) == (x >= b)
-  //   => x >= 1/3
-  it.todo("test_inequalities_symbol_name_same:629 (3)");
-  // kwargs evaluate
-  //   assert Le(x, b, evaluate=False) == (x <= b)
-  //   => x <= 1/3
-  it.todo("test_inequalities_symbol_name_same:630 (3)");
-  // kwargs evaluate
-  //   assert Gt(x, b, evaluate=False) == (x > b)
-  //   => x > pi
-  it.todo("test_inequalities_symbol_name_same:627 (4)");
-  // kwargs evaluate
-  //   assert Lt(x, b, evaluate=False) == (x < b)
-  //   => x < pi
-  it.todo("test_inequalities_symbol_name_same:628 (4)");
-  // kwargs evaluate
-  //   assert Ge(x, b, evaluate=False) == (x >= b)
-  //   => x >= pi
-  it.todo("test_inequalities_symbol_name_same:629 (4)");
-  // kwargs evaluate
-  //   assert Le(x, b, evaluate=False) == (x <= b)
-  //   => x <= pi
-  it.todo("test_inequalities_symbol_name_same:630 (4)");
-  // kwargs evaluate
-  //   assert Gt(x, b, evaluate=False) == (x > b)
-  //   => x > oo
-  it.todo("test_inequalities_symbol_name_same:627 (5)");
-  // kwargs evaluate
-  //   assert Lt(x, b, evaluate=False) == (x < b)
-  //   => x < oo
-  it.todo("test_inequalities_symbol_name_same:628 (5)");
-  // kwargs evaluate
-  //   assert Ge(x, b, evaluate=False) == (x >= b)
-  //   => x >= oo
-  it.todo("test_inequalities_symbol_name_same:629 (5)");
-  // kwargs evaluate
-  //   assert Le(x, b, evaluate=False) == (x <= b)
-  //   => x <= oo
-  it.todo("test_inequalities_symbol_name_same:630 (5)");
-  // kwargs evaluate
-  //   assert Gt(x, b, evaluate=False) == (x > b)
-  //   => x > -oo
-  it.todo("test_inequalities_symbol_name_same:627 (6)");
-  // kwargs evaluate
-  //   assert Lt(x, b, evaluate=False) == (x < b)
-  //   => x < -oo
-  it.todo("test_inequalities_symbol_name_same:628 (6)");
-  // kwargs evaluate
-  //   assert Ge(x, b, evaluate=False) == (x >= b)
-  //   => x >= -oo
-  it.todo("test_inequalities_symbol_name_same:629 (6)");
-  // kwargs evaluate
-  //   assert Le(x, b, evaluate=False) == (x <= b)
-  //   => x <= -oo
-  it.todo("test_inequalities_symbol_name_same:630 (6)");
-  // kwargs evaluate
-  //   assert Gt(b, x, evaluate=False) == (b > x)
-  //   => y > x
-  it.todo("test_inequalities_symbol_name_same:633");
-  // kwargs evaluate
-  //   assert Lt(b, x, evaluate=False) == (b < x)
-  //   => y < x
-  it.todo("test_inequalities_symbol_name_same:634");
-  // kwargs evaluate
-  //   assert Ge(b, x, evaluate=False) == (b >= x)
-  //   => y >= x
-  it.todo("test_inequalities_symbol_name_same:635");
-  // kwargs evaluate
-  //   assert Le(b, x, evaluate=False) == (b <= x)
-  //   => y <= x
-  it.todo("test_inequalities_symbol_name_same:636");
-  // kwargs evaluate
-  //   assert Gt(b, x, evaluate=False) == (b > x)
-  //   => 0 > x
-  it.todo("test_inequalities_symbol_name_same:633 (2)");
-  // kwargs evaluate
-  //   assert Lt(b, x, evaluate=False) == (b < x)
-  //   => 0 < x
-  it.todo("test_inequalities_symbol_name_same:634 (2)");
-  // kwargs evaluate
-  //   assert Ge(b, x, evaluate=False) == (b >= x)
-  //   => 0 >= x
-  it.todo("test_inequalities_symbol_name_same:635 (2)");
-  // kwargs evaluate
-  //   assert Le(b, x, evaluate=False) == (b <= x)
-  //   => 0 <= x
-  it.todo("test_inequalities_symbol_name_same:636 (2)");
-  // kwargs evaluate
-  //   assert Gt(b, x, evaluate=False) == (b > x)
-  //   => 1/3 > x
-  it.todo("test_inequalities_symbol_name_same:633 (3)");
-  // kwargs evaluate
-  //   assert Lt(b, x, evaluate=False) == (b < x)
-  //   => 1/3 < x
-  it.todo("test_inequalities_symbol_name_same:634 (3)");
-  // kwargs evaluate
-  //   assert Ge(b, x, evaluate=False) == (b >= x)
-  //   => 1/3 >= x
-  it.todo("test_inequalities_symbol_name_same:635 (3)");
-  // kwargs evaluate
-  //   assert Le(b, x, evaluate=False) == (b <= x)
-  //   => 1/3 <= x
-  it.todo("test_inequalities_symbol_name_same:636 (3)");
-  // kwargs evaluate
-  //   assert Gt(b, x, evaluate=False) == (b > x)
-  //   => pi > x
-  it.todo("test_inequalities_symbol_name_same:633 (4)");
-  // kwargs evaluate
-  //   assert Lt(b, x, evaluate=False) == (b < x)
-  //   => pi < x
-  it.todo("test_inequalities_symbol_name_same:634 (4)");
-  // kwargs evaluate
-  //   assert Ge(b, x, evaluate=False) == (b >= x)
-  //   => pi >= x
-  it.todo("test_inequalities_symbol_name_same:635 (4)");
-  // kwargs evaluate
-  //   assert Le(b, x, evaluate=False) == (b <= x)
-  //   => pi <= x
-  it.todo("test_inequalities_symbol_name_same:636 (4)");
-  // kwargs evaluate
-  //   assert Gt(b, x, evaluate=False) == (b > x)
-  //   => oo > x
-  it.todo("test_inequalities_symbol_name_same:633 (5)");
-  // kwargs evaluate
-  //   assert Lt(b, x, evaluate=False) == (b < x)
-  //   => oo < x
-  it.todo("test_inequalities_symbol_name_same:634 (5)");
-  // kwargs evaluate
-  //   assert Ge(b, x, evaluate=False) == (b >= x)
-  //   => oo >= x
-  it.todo("test_inequalities_symbol_name_same:635 (5)");
-  // kwargs evaluate
-  //   assert Le(b, x, evaluate=False) == (b <= x)
-  //   => oo <= x
-  it.todo("test_inequalities_symbol_name_same:636 (5)");
-  // kwargs evaluate
-  //   assert Gt(b, x, evaluate=False) == (b > x)
-  //   => -oo > x
-  it.todo("test_inequalities_symbol_name_same:633 (6)");
-  // kwargs evaluate
-  //   assert Lt(b, x, evaluate=False) == (b < x)
-  //   => -oo < x
-  it.todo("test_inequalities_symbol_name_same:634 (6)");
-  // kwargs evaluate
-  //   assert Ge(b, x, evaluate=False) == (b >= x)
-  //   => -oo >= x
-  it.todo("test_inequalities_symbol_name_same:635 (6)");
-  // kwargs evaluate
-  //   assert Le(b, x, evaluate=False) == (b <= x)
-  //   => -oo <= x
-  it.todo("test_inequalities_symbol_name_same:636 (6)");
+  it("test_inequalities_symbol_name_same:627", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(Relational(x, y, '>', { evaluate: false }))).toBe('x > y');
+  });
+  it("test_inequalities_symbol_name_same:628", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(Relational(x, y, '<', { evaluate: false }))).toBe('x < y');
+  });
+  it("test_inequalities_symbol_name_same:629", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(Relational(x, y, '>=', { evaluate: false }))).toBe('x >= y');
+  });
+  it("test_inequalities_symbol_name_same:630", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyStr(Relational(x, y, '<=', { evaluate: false }))).toBe('x <= y');
+  });
+  it("test_inequalities_symbol_name_same:627 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, rational(0), '>', { evaluate: false }))).toBe('x > 0');
+  });
+  it("test_inequalities_symbol_name_same:628 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, rational(0), '<', { evaluate: false }))).toBe('x < 0');
+  });
+  it("test_inequalities_symbol_name_same:629 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, rational(0), '>=', { evaluate: false }))).toBe('x >= 0');
+  });
+  it("test_inequalities_symbol_name_same:630 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, rational(0), '<=', { evaluate: false }))).toBe('x <= 0');
+  });
+  it("test_inequalities_symbol_name_same:627 (3)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, rational(1, 3), '>', { evaluate: false }))).toBe('x > 1/3');
+  });
+  it("test_inequalities_symbol_name_same:628 (3)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, rational(1, 3), '<', { evaluate: false }))).toBe('x < 1/3');
+  });
+  it("test_inequalities_symbol_name_same:629 (3)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, rational(1, 3), '>=', { evaluate: false }))).toBe('x >= 1/3');
+  });
+  it("test_inequalities_symbol_name_same:630 (3)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, rational(1, 3), '<=', { evaluate: false }))).toBe('x <= 1/3');
+  });
+  it("test_inequalities_symbol_name_same:627 (4)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, pi, '>', { evaluate: false }))).toBe('x > pi');
+  });
+  it("test_inequalities_symbol_name_same:628 (4)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, pi, '<', { evaluate: false }))).toBe('x < pi');
+  });
+  it("test_inequalities_symbol_name_same:629 (4)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, pi, '>=', { evaluate: false }))).toBe('x >= pi');
+  });
+  it("test_inequalities_symbol_name_same:630 (4)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, pi, '<=', { evaluate: false }))).toBe('x <= pi');
+  });
+  it("test_inequalities_symbol_name_same:627 (5)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, oo, '>', { evaluate: false }))).toBe('x > oo');
+  });
+  it("test_inequalities_symbol_name_same:628 (5)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, oo, '<', { evaluate: false }))).toBe('x < oo');
+  });
+  it("test_inequalities_symbol_name_same:629 (5)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, oo, '>=', { evaluate: false }))).toBe('x >= oo');
+  });
+  it("test_inequalities_symbol_name_same:630 (5)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, oo, '<=', { evaluate: false }))).toBe('x <= oo');
+  });
+  it("test_inequalities_symbol_name_same:627 (6)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, S.NegativeInfinity, '>', { evaluate: false }))).toBe('x > -oo');
+  });
+  it("test_inequalities_symbol_name_same:628 (6)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, S.NegativeInfinity, '<', { evaluate: false }))).toBe('x < -oo');
+  });
+  it("test_inequalities_symbol_name_same:629 (6)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, S.NegativeInfinity, '>=', { evaluate: false }))).toBe('x >= -oo');
+  });
+  it("test_inequalities_symbol_name_same:630 (6)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(x, S.NegativeInfinity, '<=', { evaluate: false }))).toBe('x <= -oo');
+  });
+  it("test_inequalities_symbol_name_same:633", () => {
+    const [y, x] = symbols('y x');
+    expect(sympyStr(Relational(y, x, '>', { evaluate: false }))).toBe('y > x');
+  });
+  it("test_inequalities_symbol_name_same:634", () => {
+    const [y, x] = symbols('y x');
+    expect(sympyStr(Relational(y, x, '<', { evaluate: false }))).toBe('y < x');
+  });
+  it("test_inequalities_symbol_name_same:635", () => {
+    const [y, x] = symbols('y x');
+    expect(sympyStr(Relational(y, x, '>=', { evaluate: false }))).toBe('y >= x');
+  });
+  it("test_inequalities_symbol_name_same:636", () => {
+    const [y, x] = symbols('y x');
+    expect(sympyStr(Relational(y, x, '<=', { evaluate: false }))).toBe('y <= x');
+  });
+  it("test_inequalities_symbol_name_same:633 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(rational(0), x, '>', { evaluate: false }))).toBe('0 > x');
+  });
+  it("test_inequalities_symbol_name_same:634 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(rational(0), x, '<', { evaluate: false }))).toBe('0 < x');
+  });
+  it("test_inequalities_symbol_name_same:635 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(rational(0), x, '>=', { evaluate: false }))).toBe('0 >= x');
+  });
+  it("test_inequalities_symbol_name_same:636 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(rational(0), x, '<=', { evaluate: false }))).toBe('0 <= x');
+  });
+  it("test_inequalities_symbol_name_same:633 (3)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(rational(1, 3), x, '>', { evaluate: false }))).toBe('1/3 > x');
+  });
+  it("test_inequalities_symbol_name_same:634 (3)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(rational(1, 3), x, '<', { evaluate: false }))).toBe('1/3 < x');
+  });
+  it("test_inequalities_symbol_name_same:635 (3)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(rational(1, 3), x, '>=', { evaluate: false }))).toBe('1/3 >= x');
+  });
+  it("test_inequalities_symbol_name_same:636 (3)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(rational(1, 3), x, '<=', { evaluate: false }))).toBe('1/3 <= x');
+  });
+  it("test_inequalities_symbol_name_same:633 (4)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(pi, x, '>', { evaluate: false }))).toBe('pi > x');
+  });
+  it("test_inequalities_symbol_name_same:634 (4)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(pi, x, '<', { evaluate: false }))).toBe('pi < x');
+  });
+  it("test_inequalities_symbol_name_same:635 (4)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(pi, x, '>=', { evaluate: false }))).toBe('pi >= x');
+  });
+  it("test_inequalities_symbol_name_same:636 (4)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(pi, x, '<=', { evaluate: false }))).toBe('pi <= x');
+  });
+  it("test_inequalities_symbol_name_same:633 (5)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(oo, x, '>', { evaluate: false }))).toBe('oo > x');
+  });
+  it("test_inequalities_symbol_name_same:634 (5)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(oo, x, '<', { evaluate: false }))).toBe('oo < x');
+  });
+  it("test_inequalities_symbol_name_same:635 (5)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(oo, x, '>=', { evaluate: false }))).toBe('oo >= x');
+  });
+  it("test_inequalities_symbol_name_same:636 (5)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(oo, x, '<=', { evaluate: false }))).toBe('oo <= x');
+  });
+  it("test_inequalities_symbol_name_same:633 (6)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(S.NegativeInfinity, x, '>', { evaluate: false }))).toBe('-oo > x');
+  });
+  it("test_inequalities_symbol_name_same:634 (6)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(S.NegativeInfinity, x, '<', { evaluate: false }))).toBe('-oo < x');
+  });
+  it("test_inequalities_symbol_name_same:635 (6)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(S.NegativeInfinity, x, '>=', { evaluate: false }))).toBe('-oo >= x');
+  });
+  it("test_inequalities_symbol_name_same:636 (6)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(Relational(S.NegativeInfinity, x, '<=', { evaluate: false }))).toBe('-oo <= x');
+  });
   // a function that did not come from the library
   //   raises(TypeError, lambda: Gt(a, I))
   //   => None
@@ -3437,15 +3467,15 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_inequalities_symbol_name_same_complex:652 (5)");
   it("test_ineq_avoid_wild_symbol_flip:672", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, new Wild('p', { exclude: [] })))).toBe('x > p_');
+    expect(sympyStr(Relational(x, new Wild('p', { exclude: [] }), '>', { evaluate: true }))).toBe('x > p_');
   });
   it("test_ineq_avoid_wild_symbol_flip:675", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(subs(rel('Lt', x, y), new Map([[y, new Wild('p', { exclude: [] })]])))).toBe('x < p_');
+    expect(sympyStr(subs(Relational(x, y, '<', { evaluate: false }), new Map([[y, new Wild('p', { exclude: [] })]])))).toBe('x < p_');
   });
   it("test_ineq_avoid_wild_symbol_flip:678", () => {
     const x = new Sym('x');
-    expect(sympyStr(doit(rel('Ge', x, new Wild('p', { exclude: [] }))))).toBe('x >= p_');
+    expect(sympyStr(doit(Relational(x, new Wild('p', { exclude: [] }), '>=', { evaluate: false })))).toBe('x >= p_');
   });
   it("test_issue_8245:38", () => {
     expect(sympyStr(rational(6506833320952669167898688709329n, 5070602400912917605986812821504n).isNumber)).toBe('True');
@@ -3536,35 +3566,35 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_issue_8449:715", () => {
     const p = new Sym('p', { nonnegative: true });
-    expect(sympyStr(Lt(S.NegativeInfinity, p))).toBe('True');
+    expect(sympyStr(Relational(S.NegativeInfinity, p, '<', { evaluate: true }))).toBe('True');
   });
   it("test_issue_8449:717", () => {
     const p = new Sym('p', { nonnegative: true });
-    expect(sympyStr(Gt(oo, new Mul([rational(-1), p])))).toBe('True');
+    expect(sympyStr(Relational(oo, new Mul([rational(-1), p]), '>', { evaluate: true }))).toBe('True');
   });
   it.fails("test_simplify_relational:722", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(rel('Lt', new Add([rational(1), new Mul([rational(-1), x]), new Mul([x, new Add([rational(1), y])]), new Mul([rational(-1), x, y])]), x)))).toBe('x > 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(1), new Mul([rational(-1), x]), new Mul([x, new Add([rational(1), y])]), new Mul([rational(-1), x, y])]), x, '<', { evaluate: false })))).toBe('x > 1');
   });
   it.fails("test_simplify_relational:723", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(rel('Lt', new Add([rational(-1), new Mul([rational(-1), x]), new Mul([x, new Add([rational(1), y])]), new Mul([rational(-1), x, y])]), x)))).toBe('x > -1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), new Mul([rational(-1), x]), new Mul([x, new Add([rational(1), y])]), new Mul([rational(-1), x, y])]), x, '<', { evaluate: false })))).toBe('x > -1');
   });
   it("test_simplify_relational:724", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(rel('Lt', x, new Add([rational(1), new Mul([rational(-1), x]), new Mul([x, new Add([rational(1), y])]), new Mul([rational(-1), x, y])]))))).toBe('x < 1');
+    expect(sympyStr(simplify(Relational(x, new Add([rational(1), new Mul([rational(-1), x]), new Mul([x, new Add([rational(1), y])]), new Mul([rational(-1), x, y])]), '<', { evaluate: false })))).toBe('x < 1');
   });
   it.fails("test_simplify_relational:726", () => {
     const [q, r] = symbols('q r');
-    expect(sympyStr(simplify(rel('Le', new Add([new Mul([rational(-2), q]), new Mul([rational(2), r])]), 0)))).toBe('q >= r');
+    expect(sympyStr(simplify(Relational(new Add([new Mul([rational(-2), q]), new Mul([rational(2), r])]), rational(0), '<=', { evaluate: false })))).toBe('q >= r');
   });
   it.fails("test_simplify_relational:729", () => {
     const [r, q] = symbols('r q');
-    expect(sympyStr(simplify(rel('Le', new Add([new Mul([new Pow(rational(2), rational(1, 2)), new Add([r, new Mul([rational(-1), q])])]), new Mul([rational(-1), new Pow(rational(2), rational(1, 2)), new Add([q, new Mul([rational(-1), r])])])]), 0)))).toBe('q >= r');
+    expect(sympyStr(simplify(Relational(new Add([new Mul([new Pow(rational(2), rational(1, 2)), new Add([r, new Mul([rational(-1), q])])]), new Mul([rational(-1), new Pow(rational(2), rational(1, 2)), new Add([q, new Mul([rational(-1), r])])])]), rational(0), '<=', { evaluate: false })))).toBe('q >= r');
   });
   it.fails("test_simplify_relational:734", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', 1, x)))).toBe('x > 1');
+    expect(sympyStr(simplify(Relational(rational(1), x, '<', { evaluate: false })))).toBe('x > 1');
   });
   // the arguments do not type-check against the public API
   //   assert simplify(r, ratio=0) != r.canonical
@@ -3572,209 +3602,209 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_simplify_relational:735");
   it.fails("test_simplify_relational:743", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Eq', y, x)))).toBe('Eq(x, y)');
+    expect(sympyStr(simplify(Relational(y, x, '==', { evaluate: false })))).toBe('Eq(x, y)');
   });
   it.fails("test_simplify_relational:744", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Eq', new Add([rational(-1), x]), 0)))).toBe('Eq(x, 1)');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), rational(0), '==', { evaluate: false })))).toBe('Eq(x, 1)');
   });
   it("test_simplify_relational:745", () => {
     expect(sympyStr(simplify(S['false']))).toBe('False');
   });
   it.fails("test_simplify_relational:746", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Eq', new Add([rational(-1), new Mul([rational(2), x])]), x)))).toBe('Eq(x, 1)');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), new Mul([rational(2), x])]), x, '==', { evaluate: false })))).toBe('Eq(x, 1)');
   });
   it.fails("test_simplify_relational:747", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Eq', new Mul([rational(2), x]), 4)))).toBe('Eq(x, 2)');
+    expect(sympyStr(simplify(Relational(new Mul([rational(2), x]), rational(4), '==', { evaluate: false })))).toBe('Eq(x, 2)');
   });
   it("test_simplify_relational:749", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Eq', new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), 0)))).toBe('True');
+    expect(sympyStr(simplify(Relational(new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), rational(0), '==', { evaluate: false })))).toBe('True');
   });
   it.fails("test_simplify_relational:751", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Ne', y, x)))).toBe('Ne(x, y)');
+    expect(sympyStr(simplify(Relational(y, x, '!=', { evaluate: false })))).toBe('Ne(x, y)');
   });
   it.fails("test_simplify_relational:752", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ne', new Add([rational(-1), x]), 0)))).toBe('Ne(x, 1)');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), rational(0), '!=', { evaluate: false })))).toBe('Ne(x, 1)');
   });
   it("test_simplify_relational:753", () => {
     expect(sympyStr(simplify(S['true']))).toBe('True');
   });
   it.fails("test_simplify_relational:754", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ne', new Add([rational(-1), new Mul([rational(2), x])]), x)))).toBe('Ne(x, 1)');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), new Mul([rational(2), x])]), x, '!=', { evaluate: false })))).toBe('Ne(x, 1)');
   });
   it.fails("test_simplify_relational:755", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ne', new Mul([rational(2), x]), 4)))).toBe('Ne(x, 2)');
+    expect(sympyStr(simplify(Relational(new Mul([rational(2), x]), rational(4), '!=', { evaluate: false })))).toBe('Ne(x, 2)');
   });
   it("test_simplify_relational:756", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ne', new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), 0)))).toBe('False');
+    expect(sympyStr(simplify(Relational(new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), rational(0), '!=', { evaluate: false })))).toBe('False');
   });
   it.fails("test_simplify_relational:759", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Ge', y, x)))).toBe('x <= y');
+    expect(sympyStr(simplify(Relational(y, x, '>=', { evaluate: false })))).toBe('x <= y');
   });
   it.fails("test_simplify_relational:760", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', new Add([rational(-1), x]), 0)))).toBe('x >= 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), rational(0), '>=', { evaluate: false })))).toBe('x >= 1');
   });
   it("test_simplify_relational:761", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', new Add([rational(-1), x]), x)))).toBe('False');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), x, '>=', { evaluate: false })))).toBe('False');
   });
   it.fails("test_simplify_relational:762", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', new Add([rational(-1), new Mul([rational(2), x])]), x)))).toBe('x >= 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), new Mul([rational(2), x])]), x, '>=', { evaluate: false })))).toBe('x >= 1');
   });
   it.fails("test_simplify_relational:763", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', new Mul([rational(2), x]), 4)))).toBe('x >= 2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(2), x]), rational(4), '>=', { evaluate: false })))).toBe('x >= 2');
   });
   it("test_simplify_relational:764", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), 0)))).toBe('True');
+    expect(sympyStr(simplify(Relational(new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), rational(0), '>=', { evaluate: false })))).toBe('True');
   });
   it("test_simplify_relational:765", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', x, -2)))).toBe('x >= -2');
+    expect(sympyStr(simplify(Relational(x, rational(-2), '>=', { evaluate: false })))).toBe('x >= -2');
   });
   it.fails("test_simplify_relational:766", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', new Mul([rational(-1), x]), -2)))).toBe('x <= 2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(-1), x]), rational(-2), '>=', { evaluate: false })))).toBe('x <= 2');
   });
   it("test_simplify_relational:767", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', x, 2)))).toBe('x >= 2');
+    expect(sympyStr(simplify(Relational(x, rational(2), '>=', { evaluate: false })))).toBe('x >= 2');
   });
   it.fails("test_simplify_relational:768", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Ge', new Mul([rational(-1), x]), 2)))).toBe('x <= -2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(-1), x]), rational(2), '>=', { evaluate: false })))).toBe('x <= -2');
   });
   it.fails("test_simplify_relational:770", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Le', y, x)))).toBe('x >= y');
+    expect(sympyStr(simplify(Relational(y, x, '<=', { evaluate: false })))).toBe('x >= y');
   });
   it.fails("test_simplify_relational:771", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', new Add([rational(-1), x]), 0)))).toBe('x <= 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), rational(0), '<=', { evaluate: false })))).toBe('x <= 1');
   });
   it("test_simplify_relational:772", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', new Add([rational(-1), x]), x)))).toBe('True');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), x, '<=', { evaluate: false })))).toBe('True');
   });
   it.fails("test_simplify_relational:773", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', new Add([rational(-1), new Mul([rational(2), x])]), x)))).toBe('x <= 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), new Mul([rational(2), x])]), x, '<=', { evaluate: false })))).toBe('x <= 1');
   });
   it.fails("test_simplify_relational:774", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', new Mul([rational(2), x]), 4)))).toBe('x <= 2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(2), x]), rational(4), '<=', { evaluate: false })))).toBe('x <= 2');
   });
   it("test_simplify_relational:775", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), 0)))).toBe('True');
+    expect(sympyStr(simplify(Relational(new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), rational(0), '<=', { evaluate: false })))).toBe('True');
   });
   it("test_simplify_relational:776", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', x, -2)))).toBe('x <= -2');
+    expect(sympyStr(simplify(Relational(x, rational(-2), '<=', { evaluate: false })))).toBe('x <= -2');
   });
   it.fails("test_simplify_relational:777", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', new Mul([rational(-1), x]), -2)))).toBe('x >= 2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(-1), x]), rational(-2), '<=', { evaluate: false })))).toBe('x >= 2');
   });
   it("test_simplify_relational:778", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', x, 2)))).toBe('x <= 2');
+    expect(sympyStr(simplify(Relational(x, rational(2), '<=', { evaluate: false })))).toBe('x <= 2');
   });
   it.fails("test_simplify_relational:779", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Le', new Mul([rational(-1), x]), 2)))).toBe('x >= -2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(-1), x]), rational(2), '<=', { evaluate: false })))).toBe('x >= -2');
   });
   it.fails("test_simplify_relational:781", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Gt', y, x)))).toBe('x < y');
+    expect(sympyStr(simplify(Relational(y, x, '>', { evaluate: false })))).toBe('x < y');
   });
   it.fails("test_simplify_relational:782", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', new Add([rational(-1), x]), 0)))).toBe('x > 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), rational(0), '>', { evaluate: false })))).toBe('x > 1');
   });
   it("test_simplify_relational:783", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', new Add([rational(-1), x]), x)))).toBe('False');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), x, '>', { evaluate: false })))).toBe('False');
   });
   it.fails("test_simplify_relational:784", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', new Add([rational(-1), new Mul([rational(2), x])]), x)))).toBe('x > 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), new Mul([rational(2), x])]), x, '>', { evaluate: false })))).toBe('x > 1');
   });
   it.fails("test_simplify_relational:785", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', new Mul([rational(2), x]), 4)))).toBe('x > 2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(2), x]), rational(4), '>', { evaluate: false })))).toBe('x > 2');
   });
   it("test_simplify_relational:786", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), 0)))).toBe('False');
+    expect(sympyStr(simplify(Relational(new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), rational(0), '>', { evaluate: false })))).toBe('False');
   });
   it("test_simplify_relational:787", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', x, -2)))).toBe('x > -2');
+    expect(sympyStr(simplify(Relational(x, rational(-2), '>', { evaluate: false })))).toBe('x > -2');
   });
   it.fails("test_simplify_relational:788", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', new Mul([rational(-1), x]), -2)))).toBe('x < 2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(-1), x]), rational(-2), '>', { evaluate: false })))).toBe('x < 2');
   });
   it("test_simplify_relational:789", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', x, 2)))).toBe('x > 2');
+    expect(sympyStr(simplify(Relational(x, rational(2), '>', { evaluate: false })))).toBe('x > 2');
   });
   it.fails("test_simplify_relational:790", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Gt', new Mul([rational(-1), x]), 2)))).toBe('x < -2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(-1), x]), rational(2), '>', { evaluate: false })))).toBe('x < -2');
   });
   it.fails("test_simplify_relational:792", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Lt', y, x)))).toBe('x > y');
+    expect(sympyStr(simplify(Relational(y, x, '<', { evaluate: false })))).toBe('x > y');
   });
   it.fails("test_simplify_relational:793", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', new Add([rational(-1), x]), 0)))).toBe('x < 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), rational(0), '<', { evaluate: false })))).toBe('x < 1');
   });
   it("test_simplify_relational:794", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', new Add([rational(-1), x]), x)))).toBe('True');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), x]), x, '<', { evaluate: false })))).toBe('True');
   });
   it.fails("test_simplify_relational:795", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', new Add([rational(-1), new Mul([rational(2), x])]), x)))).toBe('x < 1');
+    expect(sympyStr(simplify(Relational(new Add([rational(-1), new Mul([rational(2), x])]), x, '<', { evaluate: false })))).toBe('x < 1');
   });
   it.fails("test_simplify_relational:796", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', new Mul([rational(2), x]), 4)))).toBe('x < 2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(2), x]), rational(4), '<', { evaluate: false })))).toBe('x < 2');
   });
   it("test_simplify_relational:797", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), 0)))).toBe('False');
+    expect(sympyStr(simplify(Relational(new Mul([x, new Add([rational(-1), new Pow(fn('cos', [rational(1)]), rational(2)), new Pow(fn('sin', [rational(1)]), rational(2))])]), rational(0), '<', { evaluate: false })))).toBe('False');
   });
   it("test_simplify_relational:798", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', x, -2)))).toBe('x < -2');
+    expect(sympyStr(simplify(Relational(x, rational(-2), '<', { evaluate: false })))).toBe('x < -2');
   });
   it.fails("test_simplify_relational:799", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', new Mul([rational(-1), x]), -2)))).toBe('x > 2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(-1), x]), rational(-2), '<', { evaluate: false })))).toBe('x > 2');
   });
   it("test_simplify_relational:800", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', x, 2)))).toBe('x < 2');
+    expect(sympyStr(simplify(Relational(x, rational(2), '<', { evaluate: false })))).toBe('x < 2');
   });
   it.fails("test_simplify_relational:801", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Lt', new Mul([rational(-1), x]), 2)))).toBe('x > -2');
+    expect(sympyStr(simplify(Relational(new Mul([rational(-1), x]), rational(2), '<', { evaluate: false })))).toBe('x > -2');
   });
   it.fails("test_equals:814", () => {
     expect(sympyStr(isUnsolved(false))).toBe('True');
@@ -3818,45 +3848,45 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.fails("test_equals:827", () => {
     expect(sympyStr(isUnsolved(false))).toBe('f(1) - f(2)');
   });
-  // no adapter for .reversed
+  // the arguments do not type-check against the public API
   //   assert (x < y).reversed == (y > x)
   //   => y > x
   it.todo("test_reversed:831");
-  // no adapter for .reversed
+  // the arguments do not type-check against the public API
   //   assert (x <= y).reversed == (y >= x)
   //   => y >= x
   it.todo("test_reversed:832");
-  // no adapter for .reversed
+  // the arguments do not type-check against the public API
   //   assert Eq(x, y, evaluate=False).reversed == Eq(y, x, evaluate=False)
   //   => Eq(y, x)
   it.todo("test_reversed:833");
-  // no adapter for .reversed
+  // the arguments do not type-check against the public API
   //   assert Ne(x, y, evaluate=False).reversed == Ne(y, x, evaluate=False)
   //   => Ne(y, x)
   it.todo("test_reversed:834");
-  // no adapter for .reversed
+  // the arguments do not type-check against the public API
   //   assert (x >= y).reversed == (y <= x)
   //   => y <= x
   it.todo("test_reversed:835");
-  // no adapter for .reversed
+  // the arguments do not type-check against the public API
   //   assert (x > y).reversed == (y < x)
   //   => y < x
   it.todo("test_reversed:836");
   it("test_issue_8444_workingtests:873", () => {
     const x = new Sym('x');
-    expect(sympyStr(Gt(x, fn('floor', [x])))).toBe('x > floor(x)');
+    expect(sympyStr(Relational(x, fn('floor', [x]), '>', { evaluate: true }))).toBe('x > floor(x)');
   });
   it("test_issue_8444_workingtests:874", () => {
     const x = new Sym('x');
-    expect(sympyStr(Ge(x, fn('floor', [x])))).toBe('x >= floor(x)');
+    expect(sympyStr(Relational(x, fn('floor', [x]), '>=', { evaluate: true }))).toBe('x >= floor(x)');
   });
   it("test_issue_8444_workingtests:875", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(x, fn('ceiling', [x])))).toBe('x < ceiling(x)');
+    expect(sympyStr(Relational(x, fn('ceiling', [x]), '<', { evaluate: true }))).toBe('x < ceiling(x)');
   });
   it("test_issue_8444_workingtests:876", () => {
     const x = new Sym('x');
-    expect(sympyStr(Le(x, fn('ceiling', [x])))).toBe('x <= ceiling(x)');
+    expect(sympyStr(Relational(x, fn('ceiling', [x]), '<=', { evaluate: true }))).toBe('x <= ceiling(x)');
   });
   it("test_issue_8444_workingtests:878", () => {
     const i = new Sym('i', { integer: true });
@@ -3871,7 +3901,7 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it.fails("test_issue_18412:891", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(replace(rel('Eq', x, new Mul([pi, new Pow(y, rational(3)), new Add([rational(1, 6), new Mul([rational(1, 4), z, new Pow(y, rational(-1))])])])), new Pow(y, rational(3)), z))).toBe('Eq(x, pi*z*(1/6 + z/(4*y)))');
+    expect(sympyStr(replace(Relational(x, new Mul([pi, new Pow(y, rational(3)), new Add([rational(1, 6), new Mul([rational(1, 4), z, new Pow(y, rational(-1))])])]), '==', { evaluate: false }), new Pow(y, rational(3)), z))).toBe('Eq(x, pi*z*(1/6 + z/(4*y)))');
   });
   // an error outside the library
   //   assert Eq(1/(1/x + 1), 1).func is Eq
@@ -3907,22 +3937,22 @@ describe("sympy/core/tests/test_relational.py", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it.fails("test_issue_10633:957", () => {
-    expect(sympyStr(Eq(S['true'], S['false']))).toBe('False');
+    expect(sympyStr(Relational(S['true'], S['false'], '==', { evaluate: true }))).toBe('False');
   });
   it.fails("test_issue_10633:958", () => {
-    expect(sympyStr(Eq(S['false'], S['true']))).toBe('False');
+    expect(sympyStr(Relational(S['false'], S['true'], '==', { evaluate: true }))).toBe('False');
   });
   it("test_issue_10633:959", () => {
-    expect(sympyStr(Eq(S['true'], S['true']))).toBe('True');
+    expect(sympyStr(Relational(S['true'], S['true'], '==', { evaluate: true }))).toBe('True');
   });
   it("test_issue_10633:960", () => {
-    expect(sympyStr(Eq(S['false'], S['false']))).toBe('True');
+    expect(sympyStr(Relational(S['false'], S['false'], '==', { evaluate: true }))).toBe('True');
   });
   it("test_issue_10927:965", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Eq(x, oo))).toBe('Eq(x, oo)');
+      expect(pyStr(Relational(x, oo, '==', { evaluate: true }))).toBe('Eq(x, oo)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3931,7 +3961,7 @@ describe("sympy/core/tests/test_relational.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(Eq(x, S.NegativeInfinity))).toBe('Eq(x, -oo)');
+      expect(pyStr(Relational(x, S.NegativeInfinity, '==', { evaluate: true }))).toBe('Eq(x, -oo)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3953,28 +3983,28 @@ describe("sympy/core/tests/test_relational.py", () => {
   });
   it("test_issue_18188:1006", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Eq', new Add([new Mul([rational(-3), fn('sin', [x])]), new Mul([x, fn('cos', [x])])]), 0)))).toBe('ConditionSet(x, Eq(x*cos(x) - 3*sin(x), 0), Reals)');
+    expect(sympyStr(asSet(Relational(new Add([new Mul([rational(-3), fn('sin', [x])]), new Mul([x, fn('cos', [x])])]), rational(0), '==', { evaluate: false })))).toBe('ConditionSet(x, Eq(x*cos(x) - 3*sin(x), 0), Reals)');
   });
   it("test_issue_18188:1009", () => {
     const x = new Sym('x');
-    expect(sympyStr(asSet(rel('Eq', new Add([new Pow(x, rational(2)), new Mul([new Pow(rational(2), rational(1, 2)), new Pow(x, rational(1, 2))]), fn('sin', [x])]), 0)))).toBe('ConditionSet(x, Eq(sqrt(2)*sqrt(x) + x**2 + sin(x), 0), Reals)');
+    expect(sympyStr(asSet(Relational(new Add([new Pow(x, rational(2)), new Mul([new Pow(rational(2), rational(1, 2)), new Pow(x, rational(1, 2))]), fn('sin', [x])]), rational(0), '==', { evaluate: false })))).toBe('ConditionSet(x, Eq(sqrt(2)*sqrt(x) + x**2 + sin(x), 0), Reals)');
   });
-  // an error outside the library
+  // a primitive result that no library call returned
   //   assert eq.binary_symbols == ans
   //   => {x}
   it.todo("test_binary_symbols:1016");
-  // an error outside the library
+  // a primitive result that no library call returned
   //   assert eq.reversed.binary_symbols == ans
   //   => {x}
   it.todo("test_binary_symbols:1017");
   it.fails("test_binary_symbols:1018", () => {
     expect(sympyStr(new Map())).toBe('set()');
   });
-  // an error outside the library
+  // a primitive result that no library call returned
   //   assert eq.binary_symbols == ans
   //   => {x}
   it.todo("test_binary_symbols:1016 (2)");
-  // an error outside the library
+  // a primitive result that no library call returned
   //   assert eq.reversed.binary_symbols == ans
   //   => {x}
   it.todo("test_binary_symbols:1017 (2)");
@@ -4003,23 +4033,23 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_rel_args:1028 (5)");
   it("test_rel_args:1028 (6)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), new Float(0.1), '<')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), new Float(0.1), '<')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (7)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(1), '<')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '<')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (8)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(4294967296), '<')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(4294967296), '<')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (9)", () => {
     const [x, t] = symbols('x t');
-    expect(() => Relational(rel('Lt', x, 1), t, '<')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), t, '<')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (10)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(1), '<')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '<')).toThrow(TypeError);
   });
   // a function that did not come from the library
   //   raises(TypeError, lambda: Relational(b, v, op))
@@ -4063,23 +4093,23 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_rel_args:1028 (20)");
   it("test_rel_args:1028 (21)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), new Float(0.1), '<=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), new Float(0.1), '<=')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (22)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(1), '<=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '<=')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (23)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(4294967296), '<=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(4294967296), '<=')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (24)", () => {
     const [x, t] = symbols('x t');
-    expect(() => Relational(rel('Lt', x, 1), t, '<=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), t, '<=')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (25)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(1), '<=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '<=')).toThrow(TypeError);
   });
   // a function that did not come from the library
   //   raises(TypeError, lambda: Relational(b, v, op))
@@ -4123,23 +4153,23 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_rel_args:1028 (35)");
   it("test_rel_args:1028 (36)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), new Float(0.1), '>')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), new Float(0.1), '>')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (37)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(1), '>')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '>')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (38)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(4294967296), '>')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(4294967296), '>')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (39)", () => {
     const [x, t] = symbols('x t');
-    expect(() => Relational(rel('Lt', x, 1), t, '>')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), t, '>')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (40)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(1), '>')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '>')).toThrow(TypeError);
   });
   // a function that did not come from the library
   //   raises(TypeError, lambda: Relational(b, v, op))
@@ -4183,23 +4213,23 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_rel_args:1028 (50)");
   it("test_rel_args:1028 (51)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), new Float(0.1), '>=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), new Float(0.1), '>=')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (52)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(1), '>=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '>=')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (53)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(4294967296), '>=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(4294967296), '>=')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (54)", () => {
     const [x, t] = symbols('x t');
-    expect(() => Relational(rel('Lt', x, 1), t, '>=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), t, '>=')).toThrow(TypeError);
   });
   it("test_rel_args:1028 (55)", () => {
     const x = new Sym('x');
-    expect(() => Relational(rel('Lt', x, 1), rational(1), '>=')).toThrow(TypeError);
+    expect(() => Relational(Relational(x, rational(1), '<', { evaluate: false }), rational(1), '>=')).toThrow(TypeError);
   });
   // a function that did not come from the library
   //   raises(TypeError, lambda: Relational(b, v, op))
@@ -4223,254 +4253,254 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_rel_args:1028 (60)");
   it.fails("test_nothing_happens_to_Eq_condition_during_simplify:1034", () => {
     const r = new Sym('r', { real: true });
-    expect(sympyStr(simplify(rel('Eq', new Mul([rational(2, 5), new Pow(abs(new Add([rational(3), r])), rational(-3, 5)), fn('sign', [new Add([rational(3), r])])]), 0)))).toBe('Eq(Piecewise((0, Eq(r, -3)), (2*(r + 3)/(5*Abs((r + 3)**(8/5))), True)), 0)');
+    expect(sympyStr(simplify(Relational(new Mul([rational(2, 5), new Pow(abs(new Add([rational(3), r])), rational(-3, 5)), fn('sign', [new Add([rational(3), r])])]), rational(0), '==', { evaluate: false })))).toBe('Eq(Piecewise((0, Eq(r, -3)), (2*(r + 3)/(5*Abs((r + 3)**(8/5))), True)), 0)');
   });
   it("test_issue_15847:1041", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(rel('Ne', new Mul([x, new Add([x, y])]), new Add([new Pow(x, rational(2)), new Mul([x, y])]))))).toBe('False');
+    expect(sympyStr(simplify(Relational(new Mul([x, new Add([x, y])]), new Add([new Pow(x, rational(2)), new Mul([x, y])]), '!=', { evaluate: false })))).toBe('False');
   });
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert eq.negated == Ne(x, y)
   //   => Ne(x, y)
   it.todo("test_negated_property:1046");
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert eq.negated == Eq(x, y)
   //   => Eq(x, y)
   it.todo("test_negated_property:1049");
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert eq.negated == Lt(x + y, y - x)
   //   => x + y < -x + y
   it.todo("test_negated_property:1052");
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert f(x, y).negated.negated == f(x, y)
   //   => Eq(x, y)
   it.todo("test_negated_property:1055");
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert f(x, y).negated.negated == f(x, y)
   //   => Ne(x, y)
   it.todo("test_negated_property:1055 (2)");
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert f(x, y).negated.negated == f(x, y)
   //   => x >= y
   it.todo("test_negated_property:1055 (3)");
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert f(x, y).negated.negated == f(x, y)
   //   => x > y
   it.todo("test_negated_property:1055 (4)");
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert f(x, y).negated.negated == f(x, y)
   //   => x <= y
   it.todo("test_negated_property:1055 (5)");
-  // no adapter for .negated
+  // the arguments do not type-check against the public API
   //   assert f(x, y).negated.negated == f(x, y)
   //   => x < y
   it.todo("test_negated_property:1055 (6)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert eq.reversedsign == Eq(-x, -y)
   //   => Eq(-x, -y)
   it.todo("test_reversedsign_property:1060");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert eq.reversedsign == Ne(-x, -y)
   //   => Ne(-x, -y)
   it.todo("test_reversedsign_property:1063");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert eq.reversedsign == Le(-x - y, x - y)
   //   => -x - y <= x - y
   it.todo("test_reversedsign_property:1066");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversedsign.reversedsign == f(x, y)
   //   => Eq(x, y)
   it.todo("test_reversedsign_property:1069");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversedsign.reversedsign == f(x, y)
   //   => Ne(x, y)
   it.todo("test_reversedsign_property:1069 (2)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversedsign.reversedsign == f(x, y)
   //   => x >= y
   it.todo("test_reversedsign_property:1069 (3)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversedsign.reversedsign == f(x, y)
   //   => x > y
   it.todo("test_reversedsign_property:1069 (4)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversedsign.reversedsign == f(x, y)
   //   => x <= y
   it.todo("test_reversedsign_property:1069 (5)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversedsign.reversedsign == f(x, y)
   //   => x < y
   it.todo("test_reversedsign_property:1069 (6)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversedsign.reversedsign == f(-x, y)
   //   => Eq(-x, y)
   it.todo("test_reversedsign_property:1072");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversedsign.reversedsign == f(-x, y)
   //   => Ne(-x, y)
   it.todo("test_reversedsign_property:1072 (2)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversedsign.reversedsign == f(-x, y)
   //   => -x >= y
   it.todo("test_reversedsign_property:1072 (3)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversedsign.reversedsign == f(-x, y)
   //   => -x > y
   it.todo("test_reversedsign_property:1072 (4)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversedsign.reversedsign == f(-x, y)
   //   => -x <= y
   it.todo("test_reversedsign_property:1072 (5)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversedsign.reversedsign == f(-x, y)
   //   => -x < y
   it.todo("test_reversedsign_property:1072 (6)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversedsign.reversedsign == f(x, -y)
   //   => Eq(x, -y)
   it.todo("test_reversedsign_property:1075");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversedsign.reversedsign == f(x, -y)
   //   => Ne(x, -y)
   it.todo("test_reversedsign_property:1075 (2)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversedsign.reversedsign == f(x, -y)
   //   => x >= -y
   it.todo("test_reversedsign_property:1075 (3)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversedsign.reversedsign == f(x, -y)
   //   => x > -y
   it.todo("test_reversedsign_property:1075 (4)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversedsign.reversedsign == f(x, -y)
   //   => x <= -y
   it.todo("test_reversedsign_property:1075 (5)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversedsign.reversedsign == f(x, -y)
   //   => x < -y
   it.todo("test_reversedsign_property:1075 (6)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversedsign.reversedsign == f(-x, -y)
   //   => Eq(-x, -y)
   it.todo("test_reversedsign_property:1078");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversedsign.reversedsign == f(-x, -y)
   //   => Ne(-x, -y)
   it.todo("test_reversedsign_property:1078 (2)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversedsign.reversedsign == f(-x, -y)
   //   => -x >= -y
   it.todo("test_reversedsign_property:1078 (3)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversedsign.reversedsign == f(-x, -y)
   //   => -x > -y
   it.todo("test_reversedsign_property:1078 (4)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversedsign.reversedsign == f(-x, -y)
   //   => -x <= -y
   it.todo("test_reversedsign_property:1078 (5)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversedsign.reversedsign == f(-x, -y)
   //   => -x < -y
   it.todo("test_reversedsign_property:1078 (6)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversed.reversedsign == f(x, y).reversedsign.reversed
   //   => Eq(-y, -x)
   it.todo("test_reversed_reversedsign_property:1083");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversed.reversedsign == f(x, y).reversedsign.reversed
   //   => Ne(-y, -x)
   it.todo("test_reversed_reversedsign_property:1083 (2)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversed.reversedsign == f(x, y).reversedsign.reversed
   //   => -y >= -x
   it.todo("test_reversed_reversedsign_property:1083 (3)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversed.reversedsign == f(x, y).reversedsign.reversed
   //   => -y > -x
   it.todo("test_reversed_reversedsign_property:1083 (4)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversed.reversedsign == f(x, y).reversedsign.reversed
   //   => -y <= -x
   it.todo("test_reversed_reversedsign_property:1083 (5)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, y).reversed.reversedsign == f(x, y).reversedsign.reversed
   //   => -y < -x
   it.todo("test_reversed_reversedsign_property:1083 (6)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversed.reversedsign == f(-x, y).reversedsign.reversed
   //   => Eq(-y, x)
   it.todo("test_reversed_reversedsign_property:1086");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversed.reversedsign == f(-x, y).reversedsign.reversed
   //   => Ne(-y, x)
   it.todo("test_reversed_reversedsign_property:1086 (2)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversed.reversedsign == f(-x, y).reversedsign.reversed
   //   => -y >= x
   it.todo("test_reversed_reversedsign_property:1086 (3)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversed.reversedsign == f(-x, y).reversedsign.reversed
   //   => -y > x
   it.todo("test_reversed_reversedsign_property:1086 (4)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversed.reversedsign == f(-x, y).reversedsign.reversed
   //   => -y <= x
   it.todo("test_reversed_reversedsign_property:1086 (5)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, y).reversed.reversedsign == f(-x, y).reversedsign.reversed
   //   => -y < x
   it.todo("test_reversed_reversedsign_property:1086 (6)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversed.reversedsign == f(x, -y).reversedsign.reversed
   //   => Eq(y, -x)
   it.todo("test_reversed_reversedsign_property:1089");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversed.reversedsign == f(x, -y).reversedsign.reversed
   //   => Ne(y, -x)
   it.todo("test_reversed_reversedsign_property:1089 (2)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversed.reversedsign == f(x, -y).reversedsign.reversed
   //   => y >= -x
   it.todo("test_reversed_reversedsign_property:1089 (3)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversed.reversedsign == f(x, -y).reversedsign.reversed
   //   => y > -x
   it.todo("test_reversed_reversedsign_property:1089 (4)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversed.reversedsign == f(x, -y).reversedsign.reversed
   //   => y <= -x
   it.todo("test_reversed_reversedsign_property:1089 (5)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(x, -y).reversed.reversedsign == f(x, -y).reversedsign.reversed
   //   => y < -x
   it.todo("test_reversed_reversedsign_property:1089 (6)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversed.reversedsign == \
   //               f(-x, -y).reversedsign.reversed
   //   => Eq(y, x)
   it.todo("test_reversed_reversedsign_property:1092");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversed.reversedsign == \
   //               f(-x, -y).reversedsign.reversed
   //   => Ne(y, x)
   it.todo("test_reversed_reversedsign_property:1092 (2)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversed.reversedsign == \
   //               f(-x, -y).reversedsign.reversed
   //   => y >= x
   it.todo("test_reversed_reversedsign_property:1092 (3)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversed.reversedsign == \
   //               f(-x, -y).reversedsign.reversed
   //   => y > x
   it.todo("test_reversed_reversedsign_property:1092 (4)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversed.reversedsign == \
   //               f(-x, -y).reversedsign.reversed
   //   => y <= x
   it.todo("test_reversed_reversedsign_property:1092 (5)");
-  // no adapter for .reversedsign
+  // the arguments do not type-check against the public API
   //   assert f(-x, -y).reversed.reversedsign == \
   //               f(-x, -y).reversedsign.reversed
   //   => y < x
@@ -4561,38 +4591,38 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_set_equality_canonical:1122");
   it("test_trigsimp:1129", () => {
     const x = new Sym('x');
-    expect(sympyStr(trigsimp(rel('Eq', fn('sin', [new Mul([rational(2), x])]), fn('cos', [new Mul([rational(2), x])])), { old: false, deep: false }))).toBe('Eq(sin(2*x), cos(2*x))');
+    expect(sympyStr(trigsimp(Relational(fn('sin', [new Mul([rational(2), x])]), fn('cos', [new Mul([rational(2), x])]), '==', { evaluate: false }), { old: false, deep: false }))).toBe('Eq(sin(2*x), cos(2*x))');
   });
   it.fails("test_multivariate_linear_function_simplification:1146", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(rel('Ge', new Add([x, y]), new Add([x, new Mul([rational(-1), y])]))))).toBe('y >= 0');
+    expect(sympyStr(simplify(Relational(new Add([x, y]), new Add([x, new Mul([rational(-1), y])]), '>=', { evaluate: false })))).toBe('y >= 0');
   });
   it.fails("test_multivariate_linear_function_simplification:1147", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Le', new Add([y, new Mul([rational(-1), x])]), new Add([new Mul([rational(-1), x]), new Mul([rational(-1), y])]))))).toBe('y <= 0');
+    expect(sympyStr(simplify(Relational(new Add([y, new Mul([rational(-1), x])]), new Add([new Mul([rational(-1), x]), new Mul([rational(-1), y])]), '<=', { evaluate: false })))).toBe('y <= 0');
   });
   it("test_multivariate_linear_function_simplification:1148", () => {
     expect(sympyStr(simplify(S['false']))).toBe('False');
   });
   it("test_multivariate_linear_function_simplification:1149", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Gt', new Add([y, new Mul([rational(2), x])]), new Add([rational(-3), y, new Mul([rational(2), x])]))))).toBe('True');
+    expect(sympyStr(simplify(Relational(new Add([y, new Mul([rational(2), x])]), new Add([rational(-3), y, new Mul([rational(2), x])]), '>', { evaluate: false })))).toBe('True');
   });
   it("test_multivariate_linear_function_simplification:1150", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Lt', new Add([y, new Mul([rational(2), x])]), new Add([rational(-3), y, new Mul([rational(2), x])]))))).toBe('False');
+    expect(sympyStr(simplify(Relational(new Add([y, new Mul([rational(2), x])]), new Add([rational(-3), y, new Mul([rational(2), x])]), '<', { evaluate: false })))).toBe('False');
   });
   it("test_multivariate_linear_function_simplification:1151", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(rel('Lt', new Add([y, new Mul([rational(2), x])]), new Add([rational(3), y, new Mul([rational(2), x])]))))).toBe('True');
+    expect(sympyStr(simplify(Relational(new Add([y, new Mul([rational(2), x])]), new Add([rational(3), y, new Mul([rational(2), x])]), '<', { evaluate: false })))).toBe('True');
   });
   it.fails("test_multivariate_linear_function_simplification:1153", () => {
     const [a, b, c, d, g, f] = symbols('a b c d g f');
-    expect(sympyStr(simplify(rel('Lt', new Add([a, b, c, new Mul([rational(2), d])]), new Add([g, new Mul([rational(-1), f]), new Mul([rational(3), d])]))))).toBe('a < -b - c + d - f + g');
+    expect(sympyStr(simplify(Relational(new Add([a, b, c, new Mul([rational(2), d])]), new Add([g, new Mul([rational(-1), f]), new Mul([rational(3), d])]), '<', { evaluate: false })))).toBe('a < -b - c + d - f + g');
   });
   it("test_nonpolymonial_relations:1157", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(rel('Eq', fn('cos', [x]), 0)))).toBe('Eq(cos(x), 0)');
+    expect(sympyStr(simplify(Relational(fn('cos', [x]), rational(0), '==', { evaluate: false })))).toBe('Eq(cos(x), 0)');
   });
   it.fails("test_18778:1160", () => {
     expect(() => str(Basic())).toThrow(TypeError);
@@ -4710,7 +4740,7 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_issue_23731:1259");
   it("test_issue_23731:1261", () => {
     const ni = new Sym('ni', { integer: false });
-    expect(sympyStr(Eq(ni, 1))).toBe('False');
+    expect(sympyStr(Relational(ni, rational(1), '==', { evaluate: true }))).toBe('False');
   });
   // the arguments do not type-check against the public API
   //   assert unchanged(Eq, ni, .1)
@@ -4718,22 +4748,22 @@ describe("sympy/core/tests/test_relational.py", () => {
   it.todo("test_issue_23731:1262");
   it.fails("test_issue_23731:1263", () => {
     const ni = new Sym('ni', { integer: false });
-    expect(sympyStr(Eq(ni, new Float(1)))).toBe('False');
+    expect(sympyStr(Relational(ni, new Float(1), '==', { evaluate: true }))).toBe('False');
   });
   it.fails("test_issue_23731:1265", () => {
     const nr = new Sym('nr', { rational: false });
-    expect(sympyStr(Eq(nr, new Float(0.1)))).toBe('False');
+    expect(sympyStr(Relational(nr, new Float(0.1), '==', { evaluate: true }))).toBe('False');
   });
   it.fails("test_rewrite_Add:1271", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(rewrite(rel('Eq', x, y), 'Add', { pattern: [], deep: true }))).toBe('x - y');
+    expect(sympyStr(rewrite(Relational(x, y, '==', { evaluate: false }), 'Add', { pattern: [], deep: true }))).toBe('x - y');
   });
 });
 
 describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it("test_piecewise1:39", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([x, rel('Lt', x, new Float({ man: 1n, exp: 0n }, 53))]).has(new Float(1)))).toBe('True');
+    expect(sympyStr(piecewise([x, Relational(x, new Float({ man: 1n, exp: 0n }, 53), '<', { evaluate: false })]).has(new Float(1)))).toBe('True');
   });
   // the arguments do not type-check against the public API
   //   assert unchanged(Piecewise, ExprCondPair(x, x < 1), ExprCondPair(0, True))
@@ -4741,31 +4771,31 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise1:40");
   it("test_piecewise1:41", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [rational(0), true]))).toBe('Piecewise((x, x < 1), (0, True))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [rational(0), true]))).toBe('Piecewise((x, x < 1), (0, True))');
   });
   it("test_piecewise1:43", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [rational(0), true], [rational(1), true]))).toBe('Piecewise((x, x < 1), (0, True))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [rational(0), true], [rational(1), true]))).toBe('Piecewise((x, x < 1), (0, True))');
   });
   it("test_piecewise1:45", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [rational(0), false], [rational(-1), false]))).toBe('Piecewise((x, x < 1))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [rational(0), false], [rational(-1), false]))).toBe('Piecewise((x, x < 1))');
   });
   it("test_piecewise1:47", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [rational(0), rel('Lt', x, 1)], [rational(0), true]))).toBe('Piecewise((x, x < 1), (0, True))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [rational(0), Relational(x, rational(1), '<', { evaluate: false })], [rational(0), true]))).toBe('Piecewise((x, x < 1), (0, True))');
   });
   it("test_piecewise1:49", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [rational(0), rel('Lt', x, 2)], [rational(0), true]))).toBe('Piecewise((x, x < 1), (0, True))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [rational(0), Relational(x, rational(2), '<', { evaluate: false })], [rational(0), true]))).toBe('Piecewise((x, x < 1), (0, True))');
   });
   it("test_piecewise1:51", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [x, rel('Lt', x, 2)], [rational(0), true]))).toBe('Piecewise((x, (x < 1) | (x < 2)), (0, True))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [x, Relational(x, rational(2), '<', { evaluate: false })], [rational(0), true]))).toBe('Piecewise((x, (x < 1) | (x < 2)), (0, True))');
   });
   it("test_piecewise1:53", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [x, rel('Lt', x, 2)], [x, true]))).toBe('x');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [x, Relational(x, rational(2), '<', { evaluate: false })], [x, true]))).toBe('x');
   });
   it("test_piecewise1:54", () => {
     const x = new Sym('x');
@@ -4777,7 +4807,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise1:56");
   it("test_piecewise1:58", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([new Mul([rational(2), x]), rel('Lt', x, 0)], [x, false]))).toBe('Piecewise((2*x, x < 0))');
+    expect(sympyStr(Piecewise([new Mul([rational(2), x]), Relational(x, rational(0), '<', { evaluate: false })], [x, false]))).toBe('Piecewise((2*x, x < 0))');
   });
   // the arguments do not type-check against the public API
   //   assert Piecewise((2*x, x < 0), (x, False)) == \
@@ -4815,63 +4845,63 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise1:67");
   it.fails("test_piecewise1:69", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Piecewise([rational(1), rel('Lt', piecewise([rational(1), rel('Lt', x, 0)], [rational(2), true]), y)]))).toBe('Piecewise((1, ITE(x < 0, y > 1, y > 2)))');
+    expect(sympyStr(Piecewise([rational(1), Relational(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [rational(2), true]), y, '<', { evaluate: false })]))).toBe('Piecewise((1, ITE(x < 0, y > 1, y > 2)))');
   });
   it("test_piecewise1:72", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([rational(1), rel('Gt', x, 0)], [rational(2), And(rel('Le', x, 0), rel('Gt', x, -1))]))).toBe('Piecewise((1, x > 0), (2, x > -1))');
+    expect(sympyStr(Piecewise([rational(1), Relational(x, rational(0), '>', { evaluate: false })], [rational(2), And(Relational(x, rational(0), '<=', { evaluate: false }), Relational(x, rational(-1), '>', { evaluate: false }))]))).toBe('Piecewise((1, x > 0), (2, x > -1))');
   });
   it("test_piecewise1:74", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([rational(1), rel('Le', x, 0)], [rational(2), And(rel('Gt', x, -1), rel('Lt', x, 0))]))).toBe('Piecewise((1, x <= 0))');
+    expect(sympyStr(Piecewise([rational(1), Relational(x, rational(0), '<=', { evaluate: false })], [rational(2), And(Relational(x, rational(-1), '>', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false }))]))).toBe('Piecewise((1, x <= 0))');
   });
   it("test_piecewise1:81", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), And(new Contains(x, Integers), rel('Le', x, 6), rel('Gt', x, 1))], [rational(0), true]).subs(x, pi))).toBe('0');
+    expect(sympyStr(piecewise([rational(1), And(new Contains(x, Integers), Relational(x, rational(6), '<=', { evaluate: false }), Relational(x, rational(1), '>', { evaluate: false }))], [rational(0), true]).subs(x, pi))).toBe('0');
   });
   it("test_piecewise1:82", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), And(new Contains(x, Integers), rel('Le', x, 6), rel('Gt', x, 1))], [rational(0), true]).subs(x, rational(2)))).toBe('1');
+    expect(sympyStr(piecewise([rational(1), And(new Contains(x, Integers), Relational(x, rational(6), '<=', { evaluate: false }), Relational(x, rational(1), '>', { evaluate: false }))], [rational(0), true]).subs(x, rational(2)))).toBe('1');
   });
   it("test_piecewise1:83", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), And(new Contains(x, Integers), rel('Le', x, 6), rel('Gt', x, 1))], [rational(0), true]).subs(x, rational(7)))).toBe('0');
+    expect(sympyStr(piecewise([rational(1), And(new Contains(x, Integers), Relational(x, rational(6), '<=', { evaluate: false }), Relational(x, rational(1), '>', { evaluate: false }))], [rational(0), true]).subs(x, rational(7)))).toBe('0');
   });
   it("test_piecewise1:88", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).subs(x, new Pow(x, rational(2))))).toBe('Piecewise((-1, x**2 < -1), (x**4, x**2 < 0), (log(x**2), True))');
+    expect(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).subs(x, new Pow(x, rational(2))))).toBe('Piecewise((-1, x**2 < -1), (x**4, x**2 < 0), (log(x**2), True))');
   });
   it("test_piecewise1:89", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).subs(x, rational(-5)))).toBe('-1');
+    expect(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).subs(x, rational(-5)))).toBe('-1');
   });
   it("test_piecewise1:90", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).subs(x, rational(-1)))).toBe('1');
+    expect(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).subs(x, rational(-1)))).toBe('1');
   });
   it("test_piecewise1:91", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).subs(x, rational(1)))).toBe('0');
+    expect(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).subs(x, rational(1)))).toBe('0');
   });
   it("test_piecewise1:97", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), rel('Lt', x, pi)], [rational(-1), rel('Lt', x, new Mul([rational(2), pi]))], [rational(0), rel('Gt', x, new Mul([rational(2), pi]))]).subs(x, rational(2)))).toBe('1');
+    expect(sympyStr(piecewise([rational(1), Relational(x, pi, '<', { evaluate: false })], [rational(-1), Relational(x, new Mul([rational(2), pi]), '<', { evaluate: false })], [rational(0), Relational(x, new Mul([rational(2), pi]), '>', { evaluate: false })]).subs(x, rational(2)))).toBe('1');
   });
   it("test_piecewise1:98", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), rel('Lt', x, pi)], [rational(-1), rel('Lt', x, new Mul([rational(2), pi]))], [rational(0), rel('Gt', x, new Mul([rational(2), pi]))]).subs(x, rational(4)))).toBe('-1');
+    expect(sympyStr(piecewise([rational(1), Relational(x, pi, '<', { evaluate: false })], [rational(-1), Relational(x, new Mul([rational(2), pi]), '<', { evaluate: false })], [rational(0), Relational(x, new Mul([rational(2), pi]), '>', { evaluate: false })]).subs(x, rational(4)))).toBe('-1');
   });
   it("test_piecewise1:99", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), rel('Lt', x, pi)], [rational(-1), rel('Lt', x, new Mul([rational(2), pi]))], [rational(0), rel('Gt', x, new Mul([rational(2), pi]))]).subs(x, rational(10)))).toBe('0');
+    expect(sympyStr(piecewise([rational(1), Relational(x, pi, '<', { evaluate: false })], [rational(-1), Relational(x, new Mul([rational(2), pi]), '<', { evaluate: false })], [rational(0), Relational(x, new Mul([rational(2), pi]), '>', { evaluate: false })]).subs(x, rational(10)))).toBe('0');
   });
   it("test_piecewise1:100", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), rel('Eq', x, 0)], [new Pow(x, rational(-1)), true]).subs(x, new Float(0)))).toBe('1');
+    expect(sympyStr(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [new Pow(x, rational(-1)), true]).subs(x, new Float(0)))).toBe('1');
   });
   it.fails("test_piecewise1:101", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), rel('Eq', x, 0)], [rational(2), rel('Gt', new Pow(x, rational(-1)), 2)]).subs(x, new Float(0)))).toBe('1');
+    expect(sympyStr(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(2), Relational(new Pow(x, rational(-1)), rational(2), '>', { evaluate: false })]).subs(x, new Float(0)))).toBe('1');
   });
   // the arguments do not type-check against the public API
   //   assert pg.subs(g, f) == pf
@@ -4879,123 +4909,123 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise1:107");
   it("test_piecewise1:109", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), rel('Eq', x, 0)], [rational(0), true]).subs(x, rational(0)))).toBe('1');
+    expect(sympyStr(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(0), true]).subs(x, rational(0)))).toBe('1');
   });
   it("test_piecewise1:110", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), rel('Eq', x, 0)], [rational(0), true]).subs(x, rational(1)))).toBe('0');
+    expect(sympyStr(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(0), true]).subs(x, rational(1)))).toBe('0');
   });
   it("test_piecewise1:111", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(piecewise([rational(1), rel('Eq', x, y)], [rational(0), true]).subs(x, y))).toBe('1');
+    expect(sympyStr(piecewise([rational(1), Relational(x, y, '==', { evaluate: false })], [rational(0), true]).subs(x, y))).toBe('1');
   });
   it("test_piecewise1:112", () => {
     const x = new Sym('x');
     const z = new Sym('z', { nonzero: true });
-    expect(sympyStr(piecewise([rational(1), rel('Eq', x, z)], [rational(0), true]).subs(x, z))).toBe('1');
+    expect(sympyStr(piecewise([rational(1), Relational(x, z, '==', { evaluate: false })], [rational(0), true]).subs(x, z))).toBe('1');
   });
   it("test_piecewise1:113", () => {
     const x = new Sym('x');
     const z = new Sym('z', { nonzero: true });
-    expect(sympyStr(piecewise([rational(1), rel('Eq', exp(x), fn('cos', [z]))], [rational(0), true]).subs(x, z))).toBe('Piecewise((1, Eq(exp(z), cos(z))), (0, True))');
+    expect(sympyStr(piecewise([rational(1), Relational(exp(x), fn('cos', [z]), '==', { evaluate: false })], [rational(0), true]).subs(x, z))).toBe('Piecewise((1, Eq(exp(z), cos(z))), (0, True))');
   });
   it("test_piecewise1:117", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(piecewise([rational(0), rel('Eq', new Add([y, fn('cos', [x])]), 0)], [rational(1), true]).subs(y, rational(0)))).toBe('Piecewise((0, Eq(cos(x), 0)), (1, True))');
+    expect(sympyStr(piecewise([rational(0), Relational(new Add([y, fn('cos', [x])]), rational(0), '==', { evaluate: false })], [rational(1), true]).subs(y, rational(0)))).toBe('Piecewise((0, Eq(cos(x), 0)), (1, True))');
   });
   it("test_piecewise1:119", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', y, 1)], [rational(0), rel('Lt', x, 0)], [rational(1), rel('Eq', x, 0)], [rational(2), true]).subs(x, rational(1)))).toBe('Piecewise((-1, y < 1), (2, True))');
+    expect(sympyStr(piecewise([rational(-1), Relational(y, rational(1), '<', { evaluate: false })], [rational(0), Relational(x, rational(0), '<', { evaluate: false })], [rational(1), Relational(x, rational(0), '==', { evaluate: false })], [rational(2), true]).subs(x, rational(1)))).toBe('Piecewise((-1, y < 1), (2, True))');
   });
   it("test_piecewise1:121", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), rel('Eq', new Pow(x, rational(2)), -1)], [rational(2), rel('Lt', x, 0)]).subs(x, I))).toBe('1');
+    expect(sympyStr(piecewise([rational(1), Relational(new Pow(x, rational(2)), rational(-1), '==', { evaluate: false })], [rational(2), Relational(x, rational(0), '<', { evaluate: false })]).subs(x, I))).toBe('1');
   });
   it("test_piecewise1:125", () => {
     const x = new Sym('x');
     const n = new Sym('n', { negative: true });
-    expect(sympyStr(piecewise([x, rel('Gt', x, 0)]).subs(x, n))).toBe('nan');
+    expect(sympyStr(piecewise([x, Relational(x, rational(0), '>', { evaluate: false })]).subs(x, n))).toBe('nan');
   });
   it("test_piecewise1:128", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).evalf(15, {})), 'Piecewise((-1.0, x < -1), (x**2, x < 0), (log(x), True))', [x], { fn: '.evalf', input: 'Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))' })).toBe(true);
+    expect(equivalent(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).evalf(15, {})), 'Piecewise((-1.0, x < -1), (x**2, x < 0), (log(x), True))', [x], { fn: '.evalf', input: 'Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))' })).toBe(true);
   });
   it("test_piecewise1:129", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).evalf(15, { subs: new Map([[x, rational(-2)]]) })), '-1.0', [x], { fn: '.evalf', input: 'Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))' })).toBe(true);
+    expect(equivalent(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).evalf(15, { subs: new Map([[x, rational(-2)]]) })), '-1.0', [x], { fn: '.evalf', input: 'Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))' })).toBe(true);
   });
   it("test_piecewise1:130", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).evalf(15, { subs: new Map([[x, rational(-1)]]) })), '1.0', [x], { fn: '.evalf', input: 'Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))' })).toBe(true);
+    expect(equivalent(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).evalf(15, { subs: new Map([[x, rational(-1)]]) })), '1.0', [x], { fn: '.evalf', input: 'Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))' })).toBe(true);
   });
   it("test_piecewise1:131", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).evalf(15, { subs: new Map([[x, rational(1)]]) }))).toBe('0');
+    expect(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).evalf(15, { subs: new Map([[x, rational(1)]]) }))).toBe('0');
   });
   it("test_piecewise1:132", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([x, rel('Gt', x, 0)]).evalf(15, { subs: new Map([[x, rational(-5)]]) }))).toBe('nan');
+    expect(sympyStr(piecewise([x, Relational(x, rational(0), '>', { evaluate: false })]).evalf(15, { subs: new Map([[x, rational(-5)]]) }))).toBe('nan');
   });
   it("test_piecewise1:136", () => {
     const x = new Sym('x');
-    expect(sympyStr(doit(piecewise([new Integral([x, x, rational(0), rational(1)]), rel('Lt', x, 1)])))).toBe('Piecewise((1/2, x < 1))');
+    expect(sympyStr(doit(piecewise([new Integral([x, x, rational(0), rational(1)]), Relational(x, rational(1), '<', { evaluate: false })])))).toBe('Piecewise((1/2, x < 1))');
   });
   it("test_piecewise1:143", () => {
     const x = new Sym('x');
-    expect(sympyStr(diff(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]), x))).toBe('Piecewise((0, x < -1), (2*x, x < 0), (1/x, True))');
+    expect(sympyStr(diff(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]), x))).toBe('Piecewise((0, x < -1), (2*x, x < 0), (1/x, True))');
   });
   it("test_piecewise1:144", () => {
     const x = new Sym('x');
-    expect(sympyStr(diff(new Mul([x, piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true])]), x))).toBe('x*Piecewise((0, x < -1), (2*x, x < 0), (1/x, True)) + Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))');
+    expect(sympyStr(diff(new Mul([x, piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true])]), x))).toBe('x*Piecewise((0, x < -1), (2*x, x < 0), (1/x, True)) + Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))');
   });
   it("test_piecewise1:147", () => {
     const x = new Sym('x');
-    expect(sympyStr(x.mul(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true])))).toBe('x*Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))');
+    expect(sympyStr(x.mul(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true])))).toBe('x*Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))');
   });
   it("test_piecewise1:148", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Mul([x, piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true])]).add(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true])))).toBe('x*Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True)) + Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))');
+    expect(sympyStr(new Mul([x, piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true])]).add(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true])))).toBe('x*Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True)) + Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))');
   });
   it("test_piecewise1:149", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).add(x))).toBe('x + Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))');
+    expect(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).add(x))).toBe('x + Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))');
   });
   it("test_piecewise1:150", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).add(piecewise([rational(0), rel('Lt', x, -1)], [new Mul([rational(2), x]), rel('Lt', x, 0)], [new Pow(x, rational(-1)), true])))).toBe('Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True)) + Piecewise((0, x < -1), (2*x, x < 0), (1/x, True))');
+    expect(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).add(piecewise([rational(0), Relational(x, rational(-1), '<', { evaluate: false })], [new Mul([rational(2), x]), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(x, rational(-1)), true])))).toBe('Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True)) + Piecewise((0, x < -1), (2*x, x < 0), (1/x, True))');
   });
   it("test_piecewise1:151", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]).sub(piecewise([rational(0), rel('Lt', x, -1)], [new Mul([rational(2), x]), rel('Lt', x, 0)], [new Pow(x, rational(-1)), true])))).toBe('Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True)) - Piecewise((0, x < -1), (2*x, x < 0), (1/x, True))');
+    expect(sympyStr(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]).sub(piecewise([rational(0), Relational(x, rational(-1), '<', { evaluate: false })], [new Mul([rational(2), x]), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(x, rational(-1)), true])))).toBe('Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True)) - Piecewise((0, x < -1), (2*x, x < 0), (1/x, True))');
   });
   it("test_piecewise1:155", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(piecewise([rational(0), rel('Lt', x, -1)], [new Mul([rational(2), x]), rel('Lt', x, 0)], [new Pow(x, rational(-1)), true]).pow(2)), 'Piecewise((0, x < -1), (4*x**2, x < 0), (x**(-2), True))', [x], { fn: '.__pow__', input: 'Piecewise((0, x < -1), (2*x, x < 0), (1/x, True))' })).toBe(true);
+    expect(equivalent(sympyStr(piecewise([rational(0), Relational(x, rational(-1), '<', { evaluate: false })], [new Mul([rational(2), x]), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(x, rational(-1)), true]).pow(2)), 'Piecewise((0, x < -1), (4*x**2, x < 0), (x**(-2), True))', [x], { fn: '.__pow__', input: 'Piecewise((0, x < -1), (2*x, x < 0), (1/x, True))' })).toBe(true);
   });
   it("test_piecewise1:174", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(equivalent(sympyStr(integrate(piecewise([rational(-1), rel('Lt', x, -1)], [new Pow(x, rational(2)), rel('Lt', x, 0)], [log(x), true]), v1)), 'Piecewise((-x, x < -1), (x**3/3 + 4/3, x < 0), (x*log(x) - x + 4/3, True))', [x], { fn: '.integrate', input: 'Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))' })).toBe(true);
+    expect(equivalent(sympyStr(integrate(piecewise([rational(-1), Relational(x, rational(-1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(0), '<', { evaluate: false })], [log(x), true]), v1)), 'Piecewise((-x, x < -1), (x**3/3 + 4/3, x < 0), (x*log(x) - x + 4/3, True))', [x], { fn: '.integrate', input: 'Piecewise((-1, x < -1), (x**2, x < 0), (log(x), True))' })).toBe(true);
   });
   it.fails("test_piecewise1:179", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([x, rel('Lt', x, 1)], [new Pow(x, rational(2)), rel('Ge', x, -1)], [x, rel('Gt', x, 3)]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('5/6');
+    expect(sympyStr(integrate(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(-1), '>=', { evaluate: false })], [x, Relational(x, rational(3), '>', { evaluate: false })]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('5/6');
   });
   it.fails("test_piecewise1:180", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([x, rel('Lt', x, 1)], [new Pow(x, rational(2)), rel('Ge', x, -1)], [x, rel('Gt', x, 3)]), x, [rational(2), rational(-2)], { conds: 'piecewise' }))).toBe('-5/6');
+    expect(sympyStr(integrate(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(-1), '>=', { evaluate: false })], [x, Relational(x, rational(3), '>', { evaluate: false })]), x, [rational(2), rational(-2)], { conds: 'piecewise' }))).toBe('-5/6');
   });
   it("test_piecewise1:182", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [rational(1), rel('Lt', x, 1)], [rational(0), rel('Lt', x, 2)], [rational(1), rel('Lt', x, 3)], [rational(0), true]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('2');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(0), Relational(x, rational(2), '<', { evaluate: false })], [rational(1), Relational(x, rational(3), '<', { evaluate: false })], [rational(0), true]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('2');
   });
   it.fails("test_piecewise1:184", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([x, rel('Lt', x, -10)], [new Pow(x, rational(2)), rel('Le', x, -1)], [x, rel('Gt', x, 1)]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('nan');
+    expect(sympyStr(integrate(piecewise([x, Relational(x, rational(-10), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(-1), '<=', { evaluate: false })], [x, Relational(x, rational(1), '>', { evaluate: false })]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('nan');
   });
   it("test_piecewise1:187", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([x, rel('Lt', x, -10)], [new Pow(x, rational(2)), rel('Le', x, -1)], [x, rel('Gt', x, 1)]).isCommutative)).toBe('True');
+    expect(sympyStr(piecewise([x, Relational(x, rational(-10), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(-1), '<=', { evaluate: false })], [x, Relational(x, rational(1), '>', { evaluate: false })]).isCommutative)).toBe('True');
   });
   it("test_piecewise_free_symbols:192", () => {
     const [x, a, y] = symbols('x a y');
@@ -5003,203 +5033,203 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it.fails("test_piecewise_integrate1:199", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('14/3');
+    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('14/3');
   });
   it.fails("test_piecewise_integrate1:202", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 4)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('14/3');
+    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(4), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('14/3');
   });
   it.fails("test_piecewise_integrate1:203", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 4)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, [rational(-2), rational(5)], { conds: 'piecewise' }))).toBe('43/6');
+    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(4), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, [rational(-2), rational(5)], { conds: 'piecewise' }))).toBe('43/6');
   });
   it("test_piecewise_integrate1:205", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(Piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 4)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]))).toBe('Piecewise(((x - 5)**5, x >= 4), (Piecewise(((x - 2)**2, x >= 0), (1, True)), True))');
+    expect(sympyStr(Piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(4), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]))).toBe('Piecewise(((x - 5)**5, x >= 4), (Piecewise(((x - 2)**2, x >= 0), (1, True)), True))');
   });
   it.fails("test_piecewise_integrate1:208", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('14/3');
+    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('14/3');
   });
   it.fails("test_piecewise_integrate1:209", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, [rational(-2), rational(5)], { conds: 'piecewise' }))).toBe('-701/6');
+    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, [rational(-2), rational(5)], { conds: 'piecewise' }))).toBe('-701/6');
   });
   it("test_piecewise_integrate1:211", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(Piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), rel('Lt', x, 2)]))).toBe('Piecewise(((x - 5)**5, x >= 2), (Piecewise(((x - 2)**2, x >= 0), (1, True)), True))');
+    expect(sympyStr(Piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), Relational(x, rational(2), '<', { evaluate: false })]))).toBe('Piecewise(((x - 5)**5, x >= 2), (Piecewise(((x - 2)**2, x >= 0), (1, True)), True))');
   });
   it.fails("test_piecewise_integrate1:214", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [new Mul([rational(2), piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true])]), true]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('28/3');
+    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [new Mul([rational(2), piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true])]), true]), x, [rational(-2), rational(2)], { conds: 'piecewise' }))).toBe('28/3');
   });
   it.fails("test_piecewise_integrate1:215", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [new Mul([rational(2), piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true])]), true]), x, [rational(-2), rational(5)], { conds: 'piecewise' }))).toBe('-673/6');
+    expect(sympyStr(integrate(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [new Mul([rational(2), piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true])]), true]), x, [rational(-2), rational(5)], { conds: 'piecewise' }))).toBe('-673/6');
   });
   it.fails("test_piecewise_integrate1b:220", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Gt', x, 0)], [rational(0), rel('Eq', x, 0)], [rational(-1), rel('Lt', x, 0)]), x, [rational(-1), rational(1)], { conds: 'piecewise' }))).toBe('0');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(0), '>', { evaluate: false })], [rational(0), Relational(x, rational(0), '==', { evaluate: false })], [rational(-1), Relational(x, rational(0), '<', { evaluate: false })]), x, [rational(-1), rational(1)], { conds: 'piecewise' }))).toBe('0');
   });
   it.fails("test_piecewise_integrate1b:223", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', new Add([x, new Mul([rational(-1), y])]), 0)], [rational(0), true]), y, [S.NegativeInfinity, rational(0)], { conds: 'piecewise' }))).toBe('-Min(0, x)');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '<', { evaluate: false })], [rational(0), true]), y, [S.NegativeInfinity, rational(0)], { conds: 'piecewise' }))).toBe('-Min(0, x)');
   });
   it.fails("test_piecewise_integrate1b:224", () => {
     const y = new Sym('y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Gt', y, -3)], [rational(0), true]), y, [S.NegativeInfinity, rational(0)], { conds: 'piecewise' }))).toBe('3');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(y, rational(-3), '>', { evaluate: false })], [rational(0), true]), y, [S.NegativeInfinity, rational(0)], { conds: 'piecewise' }))).toBe('3');
   });
   it.fails("test_piecewise_integrate1b:225", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', new Add([x, new Mul([rational(-1), y])]), 0)], [rational(0), true]), y, [rational(0), S.NegativeInfinity], { conds: 'piecewise' }))).toBe('Min(0, x)');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '<', { evaluate: false })], [rational(0), true]), y, [rational(0), S.NegativeInfinity], { conds: 'piecewise' }))).toBe('Min(0, x)');
   });
   it.fails("test_piecewise_integrate1b:226", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', new Add([x, new Mul([rational(-1), y])]), 0)], [rational(0), true]), y, [rational(0), oo], { conds: 'piecewise' }))).toBe('oo');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '<', { evaluate: false })], [rational(0), true]), y, [rational(0), oo], { conds: 'piecewise' }))).toBe('oo');
   });
   it.fails("test_piecewise_integrate1b:227", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', new Add([x, new Mul([rational(-1), y])]), 0)], [rational(0), true]), y, [S.NegativeInfinity, rational(42)], { conds: 'piecewise' }))).toBe('42 - Min(42, x)');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '<', { evaluate: false })], [rational(0), true]), y, [S.NegativeInfinity, rational(42)], { conds: 'piecewise' }))).toBe('42 - Min(42, x)');
   });
   it.fails("test_piecewise_integrate1b:228", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', new Add([x, new Mul([rational(-1), y])]), 0)], [rational(0), true]), y, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('-x + oo');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '<', { evaluate: false })], [rational(0), true]), y, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('-x + oo');
   });
   it("test_piecewise_integrate1b:234", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [x, rel('Le', x, 1)], [rational(1), true]), x, [rational(-1), rational(1)], { conds: 'piecewise' }))).toBe('1/2');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [x, Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), true]), x, [rational(-1), rational(1)], { conds: 'piecewise' }))).toBe('1/2');
   });
   it("test_piecewise_integrate1b:235", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [x, rel('Le', x, 1)], [rational(1), true]), x, [rational(1), rational(-1)], { conds: 'piecewise' }))).toBe('-1/2');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [x, Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), true]), x, [rational(1), rational(-1)], { conds: 'piecewise' }))).toBe('-1/2');
   });
   it("test_piecewise_integrate1b:234 (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [x, rel('Le', x, 1)], [rational(1), true]), x, [rational(1, 2), rational(1)], { conds: 'piecewise' }))).toBe('3/8');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [x, Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), true]), x, [rational(1, 2), rational(1)], { conds: 'piecewise' }))).toBe('3/8');
   });
   it("test_piecewise_integrate1b:235 (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [x, rel('Le', x, 1)], [rational(1), true]), x, [rational(1), rational(1, 2)], { conds: 'piecewise' }))).toBe('-3/8');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [x, Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), true]), x, [rational(1), rational(1, 2)], { conds: 'piecewise' }))).toBe('-3/8');
   });
   it("test_piecewise_integrate1b:234 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [x, rel('Le', x, 1)], [rational(1), true]), x, [rational(2), rational(1)], { conds: 'piecewise' }))).toBe('-1');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [x, Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), true]), x, [rational(2), rational(1)], { conds: 'piecewise' }))).toBe('-1');
   });
   it("test_piecewise_integrate1b:235 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [x, rel('Le', x, 1)], [rational(1), true]), x, [rational(1), rational(2)], { conds: 'piecewise' }))).toBe('1');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [x, Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), true]), x, [rational(1), rational(2)], { conds: 'piecewise' }))).toBe('1');
   });
   it.fails("test_piecewise_integrate1b:236", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [x, rel('Le', x, 1)], [rational(1), true]), x, [y, rational(1)], { conds: 'piecewise' }))).toBe('Piecewise((1/2 - Min(1, Max(0, y))**2/2, y < 1), (1 - y, True))');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [x, Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), true]), x, [y, rational(1)], { conds: 'piecewise' }))).toBe('Piecewise((1/2 - Min(1, Max(0, y))**2/2, y < 1), (1 - y, True))');
   });
   it.fails("test_piecewise_integrate1b:239", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [x, rel('Le', x, 1)], [rational(1), true]), x, [rational(1), y], { conds: 'piecewise' }))).toBe('Piecewise((Min(1, Max(0, y))**2/2 - 1/2, y < 1), (y - 1, True))');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [x, Relational(x, rational(1), '<=', { evaluate: false })], [rational(1), true]), x, [rational(1), y], { conds: 'piecewise' }))).toBe('Piecewise((Min(1, Max(0, y))**2/2 - 1/2, y < 1), (y - 1, True))');
   });
   it.fails("test_piecewise_integrate2:337", () => {
     const [a, x, b, c, d] = symbols('a x b c d');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Gt', a, x)], [rational(2), rel('Lt', b, x)], [rational(3), true]), x, [c, d], { conds: 'piecewise' }))).toBe('Piecewise((-c + 2*d - 2*Min(d, Max(a, c)) + Min(d, Max(a, b, c)), c < d), (-2*c + d + 2*Min(c, Max(a, d)) - Min(c, Max(a, b, d)), True))');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(a, x, '>', { evaluate: false })], [rational(2), Relational(b, x, '<', { evaluate: false })], [rational(3), true]), x, [c, d], { conds: 'piecewise' }))).toBe('Piecewise((-c + 2*d - 2*Min(d, Max(a, c)) + Min(d, Max(a, b, c)), c < d), (-2*c + d + 2*Min(c, Max(a, d)) - Min(c, Max(a, b, d)), True))');
   });
   it("test_piecewise_integrate2:342", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), rel('Gt', x, 2)], [rational(3), true]), x, [rational(3), rational(4)], { conds: 'piecewise' }))).toBe('2');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), Relational(x, rational(2), '>', { evaluate: false })], [rational(3), true]), x, [rational(3), rational(4)], { conds: 'piecewise' }))).toBe('2');
   });
   it("test_piecewise_integrate2:342 (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), rel('Gt', x, 2)], [rational(3), true]), x, [rational(4), rational(3)], { conds: 'piecewise' }))).toBe('-2');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), Relational(x, rational(2), '>', { evaluate: false })], [rational(3), true]), x, [rational(4), rational(3)], { conds: 'piecewise' }))).toBe('-2');
   });
   it.fails("test_piecewise_integrate2:342 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), rel('Gt', x, 3)], [rational(3), true]), x, [rational(2), rational(4)], { conds: 'piecewise' }))).toBe('5');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true]), x, [rational(2), rational(4)], { conds: 'piecewise' }))).toBe('5');
   });
   it.fails("test_piecewise_integrate2:342 (4)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), rel('Gt', x, 3)], [rational(3), true]), x, [rational(4), rational(2)], { conds: 'piecewise' }))).toBe('-5');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true]), x, [rational(4), rational(2)], { conds: 'piecewise' }))).toBe('-5');
   });
   it("test_piecewise_integrate2:342 (5)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), rel('Gt', x, 4)], [rational(3), true]), x, [rational(2), rational(3)], { conds: 'piecewise' }))).toBe('3');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), Relational(x, rational(4), '>', { evaluate: false })], [rational(3), true]), x, [rational(2), rational(3)], { conds: 'piecewise' }))).toBe('3');
   });
   it("test_piecewise_integrate2:342 (6)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), rel('Gt', x, 4)], [rational(3), true]), x, [rational(3), rational(2)], { conds: 'piecewise' }))).toBe('-3');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), Relational(x, rational(4), '>', { evaluate: false })], [rational(3), true]), x, [rational(3), rational(2)], { conds: 'piecewise' }))).toBe('-3');
   });
   it("test_piecewise_integrate2:342 (7)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), rel('Gt', x, 1)], [rational(3), true]), x, [rational(3), rational(4)], { conds: 'piecewise' }))).toBe('2');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), Relational(x, rational(1), '>', { evaluate: false })], [rational(3), true]), x, [rational(3), rational(4)], { conds: 'piecewise' }))).toBe('2');
   });
   it("test_piecewise_integrate2:342 (8)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), rel('Gt', x, 1)], [rational(3), true]), x, [rational(4), rational(3)], { conds: 'piecewise' }))).toBe('-2');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), Relational(x, rational(1), '>', { evaluate: false })], [rational(3), true]), x, [rational(4), rational(3)], { conds: 'piecewise' }))).toBe('-2');
   });
   it.fails("test_piecewise_integrate2:342 (9)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), rel('Gt', x, 3)], [rational(3), true]), x, [rational(1), rational(4)], { conds: 'piecewise' }))).toBe('6');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true]), x, [rational(1), rational(4)], { conds: 'piecewise' }))).toBe('6');
   });
   it.fails("test_piecewise_integrate2:342 (10)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), rel('Gt', x, 3)], [rational(3), true]), x, [rational(4), rational(1)], { conds: 'piecewise' }))).toBe('-6');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true]), x, [rational(4), rational(1)], { conds: 'piecewise' }))).toBe('-6');
   });
   it("test_piecewise_integrate2:342 (11)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), rel('Gt', x, 4)], [rational(3), true]), x, [rational(1), rational(3)], { conds: 'piecewise' }))).toBe('4');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), Relational(x, rational(4), '>', { evaluate: false })], [rational(3), true]), x, [rational(1), rational(3)], { conds: 'piecewise' }))).toBe('4');
   });
   it("test_piecewise_integrate2:342 (12)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), rel('Gt', x, 4)], [rational(3), true]), x, [rational(3), rational(1)], { conds: 'piecewise' }))).toBe('-4');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), Relational(x, rational(4), '>', { evaluate: false })], [rational(3), true]), x, [rational(3), rational(1)], { conds: 'piecewise' }))).toBe('-4');
   });
   it("test_piecewise_integrate2:342 (13)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 3)], [rational(2), rel('Gt', x, 1)], [rational(3), true]), x, [rational(2), rational(4)], { conds: 'piecewise' }))).toBe('3');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(3), '<', { evaluate: false })], [rational(2), Relational(x, rational(1), '>', { evaluate: false })], [rational(3), true]), x, [rational(2), rational(4)], { conds: 'piecewise' }))).toBe('3');
   });
   it("test_piecewise_integrate2:342 (14)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 3)], [rational(2), rel('Gt', x, 1)], [rational(3), true]), x, [rational(4), rational(2)], { conds: 'piecewise' }))).toBe('-3');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(3), '<', { evaluate: false })], [rational(2), Relational(x, rational(1), '>', { evaluate: false })], [rational(3), true]), x, [rational(4), rational(2)], { conds: 'piecewise' }))).toBe('-3');
   });
   it.fails("test_piecewise_integrate2:342 (15)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 3)], [rational(2), rel('Gt', x, 2)], [rational(3), true]), x, [rational(1), rational(4)], { conds: 'piecewise' }))).toBe('4');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(3), '<', { evaluate: false })], [rational(2), Relational(x, rational(2), '>', { evaluate: false })], [rational(3), true]), x, [rational(1), rational(4)], { conds: 'piecewise' }))).toBe('4');
   });
   it.fails("test_piecewise_integrate2:342 (16)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 3)], [rational(2), rel('Gt', x, 2)], [rational(3), true]), x, [rational(4), rational(1)], { conds: 'piecewise' }))).toBe('-4');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(3), '<', { evaluate: false })], [rational(2), Relational(x, rational(2), '>', { evaluate: false })], [rational(3), true]), x, [rational(4), rational(1)], { conds: 'piecewise' }))).toBe('-4');
   });
   it("test_piecewise_integrate2:342 (17)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 3)], [rational(2), rel('Gt', x, 4)], [rational(3), true]), x, [rational(1), rational(2)], { conds: 'piecewise' }))).toBe('1');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(3), '<', { evaluate: false })], [rational(2), Relational(x, rational(4), '>', { evaluate: false })], [rational(3), true]), x, [rational(1), rational(2)], { conds: 'piecewise' }))).toBe('1');
   });
   it("test_piecewise_integrate2:342 (18)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 3)], [rational(2), rel('Gt', x, 4)], [rational(3), true]), x, [rational(2), rational(1)], { conds: 'piecewise' }))).toBe('-1');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(3), '<', { evaluate: false })], [rational(2), Relational(x, rational(4), '>', { evaluate: false })], [rational(3), true]), x, [rational(2), rational(1)], { conds: 'piecewise' }))).toBe('-1');
   });
   it("test_piecewise_integrate2:342 (19)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 4)], [rational(2), rel('Gt', x, 1)], [rational(3), true]), x, [rational(2), rational(3)], { conds: 'piecewise' }))).toBe('1');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(4), '<', { evaluate: false })], [rational(2), Relational(x, rational(1), '>', { evaluate: false })], [rational(3), true]), x, [rational(2), rational(3)], { conds: 'piecewise' }))).toBe('1');
   });
   it("test_piecewise_integrate2:342 (20)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 4)], [rational(2), rel('Gt', x, 1)], [rational(3), true]), x, [rational(3), rational(2)], { conds: 'piecewise' }))).toBe('-1');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(4), '<', { evaluate: false })], [rational(2), Relational(x, rational(1), '>', { evaluate: false })], [rational(3), true]), x, [rational(3), rational(2)], { conds: 'piecewise' }))).toBe('-1');
   });
   it("test_piecewise_integrate2:342 (21)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 4)], [rational(2), rel('Gt', x, 2)], [rational(3), true]), x, [rational(1), rational(3)], { conds: 'piecewise' }))).toBe('2');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(4), '<', { evaluate: false })], [rational(2), Relational(x, rational(2), '>', { evaluate: false })], [rational(3), true]), x, [rational(1), rational(3)], { conds: 'piecewise' }))).toBe('2');
   });
   it("test_piecewise_integrate2:342 (22)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 4)], [rational(2), rel('Gt', x, 2)], [rational(3), true]), x, [rational(3), rational(1)], { conds: 'piecewise' }))).toBe('-2');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(4), '<', { evaluate: false })], [rational(2), Relational(x, rational(2), '>', { evaluate: false })], [rational(3), true]), x, [rational(3), rational(1)], { conds: 'piecewise' }))).toBe('-2');
   });
   it("test_piecewise_integrate2:342 (23)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 4)], [rational(2), rel('Gt', x, 3)], [rational(3), true]), x, [rational(1), rational(2)], { conds: 'piecewise' }))).toBe('1');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(4), '<', { evaluate: false })], [rational(2), Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true]), x, [rational(1), rational(2)], { conds: 'piecewise' }))).toBe('1');
   });
   it("test_piecewise_integrate2:342 (24)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 4)], [rational(2), rel('Gt', x, 3)], [rational(3), true]), x, [rational(2), rational(1)], { conds: 'piecewise' }))).toBe('-1');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(4), '<', { evaluate: false })], [rational(2), Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true]), x, [rational(2), rational(1)], { conds: 'piecewise' }))).toBe('-1');
   });
   it("test_meijer_bypass:348", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 4)], [rational(0), true]), x, [oo, rational(1)], { conds: 'piecewise' }))).toBe('-3');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(4), '<', { evaluate: false })], [rational(0), true]), x, [oo, rational(1)], { conds: 'piecewise' }))).toBe('-3');
   });
   it("test_piecewise_integrate3_inequality_conditions:362", () => {
     const [a, b] = symbols('a b');
@@ -5719,7 +5749,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it("test_piecewise_integrate5_independent_conditions:444", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Eq', y, 0)], [new Mul([x, y]), true]), x, [rational(1), rational(3)], { conds: 'piecewise' }))).toBe('Piecewise((0, Eq(y, 0)), (4*y, True))');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(y, rational(0), '==', { evaluate: false })], [new Mul([x, y]), true]), x, [rational(1), rational(3)], { conds: 'piecewise' }))).toBe('Piecewise((0, Eq(y, 0)), (4*y, True))');
   });
   // a value without provenance ([object Object] Rel)
   //   assert piecewise_fold(p) == Piecewise((2, (x - y > S.Half) | (x - y > 1)),
@@ -5729,173 +5759,173 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_issue_22917:456");
   it.fails("test_issue_22917:459", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(rewrite(piecewise([S['true'], Or(rel('Gt', new Add([x, new Mul([rational(-1), y])]), rational(1, 2)), rel('Gt', new Add([x, new Mul([rational(-1), y])]), 1))], [rel('Gt', new Add([rational(4), new Mul([rational(2), y])]), 1), rel('Gt', new Add([x, new Mul([rational(-1), y])]), 1)], [rel('Gt', new Add([new Mul([rational(2), y]), new Mul([rational(4), x])]), 1), true]), 'ITE', { pattern: [], deep: true }))).toBe('ITE((x - y > 1/2) | (x - y > 1), True, ITE(x - y > 1, 2*y + 4 > 1, 4*x + 2*y > 1))');
+    expect(sympyStr(rewrite(piecewise([S['true'], Or(Relational(new Add([x, new Mul([rational(-1), y])]), rational(1, 2), '>', { evaluate: false }), Relational(new Add([x, new Mul([rational(-1), y])]), rational(1), '>', { evaluate: false }))], [Relational(new Add([rational(4), new Mul([rational(2), y])]), rational(1), '>', { evaluate: false }), Relational(new Add([x, new Mul([rational(-1), y])]), rational(1), '>', { evaluate: false })], [Relational(new Add([new Mul([rational(2), y]), new Mul([rational(4), x])]), rational(1), '>', { evaluate: false }), true]), 'ITE', { pattern: [], deep: true }))).toBe('ITE((x - y > 1/2) | (x - y > 1), True, ITE(x - y > 1, 2*y + 4 > 1, 4*x + 2*y > 1))');
   });
   it.fails("test_piecewise_simplify:466", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([new Mul([new Pow(x, rational(-2)), new Add([rational(1), new Pow(x, rational(2))])]), rel('Eq', new Add([new Pow(x, rational(2)), new Mul([rational(-1), x, new Add([rational(1), x])])]), 0)], [new Mul([rational(-1), new Pow(rational(-1), x)]), true])))).toBe('Piecewise((zoo, Eq(x, 0)), ((-1)**(x + 1), True))');
+    expect(sympyStr(simplify(piecewise([new Mul([new Pow(x, rational(-2)), new Add([rational(1), new Pow(x, rational(2))])]), Relational(new Add([new Pow(x, rational(2)), new Mul([rational(-1), x, new Add([rational(1), x])])]), rational(0), '==', { evaluate: false })], [new Mul([rational(-1), new Pow(rational(-1), x)]), true])))).toBe('Piecewise((zoo, Eq(x, 0)), ((-1)**(x + 1), True))');
   });
   it.fails("test_piecewise_simplify:469", () => {
     const [a, b] = symbols('a b');
-    expect(sympyStr(simplify(piecewise([a, And(rel('Eq', a, 0), rel('Eq', new Add([a, b]), 0))], [rational(1), true])))).toBe('Piecewise((0, Eq(a, 0) & Eq(b, 0)), (1, True))');
+    expect(sympyStr(simplify(piecewise([a, And(Relational(a, rational(0), '==', { evaluate: false }), Relational(new Add([a, b]), rational(0), '==', { evaluate: false }))], [rational(1), true])))).toBe('Piecewise((0, Eq(a, 0) & Eq(b, 0)), (1, True))');
   });
   it.fails("test_piecewise_simplify:473", () => {
     const [x, y, a] = symbols('x y a');
-    expect(sympyStr(simplify(piecewise([new Mul([rational(2), x, new Pow(fn('factorial', [y]), rational(-1)), new Pow(fn('factorial', [new Add([a, new Mul([rational(-1), y])])]), rational(-1)), fn('factorial', [a])]), And(rel('Eq', y, 0), rel('Eq', new Add([a, new Mul([rational(-1), y])]), 0))], [new Mul([rational(2), new Pow(fn('factorial', [y]), rational(-1)), new Pow(fn('factorial', [new Add([a, new Mul([rational(-1), y])])]), rational(-1)), fn('factorial', [a])]), And(rel('Eq', y, 0), rel('Eq', new Add([a, new Mul([rational(-1), y])]), 1))], [rational(0), true])))).toBe('Piecewise((2*x, Eq(a, 0) & Eq(y, 0)), (2, Eq(a, 1) & Eq(y, 0)), (0, True))');
+    expect(sympyStr(simplify(piecewise([new Mul([rational(2), x, new Pow(fn('factorial', [y]), rational(-1)), new Pow(fn('factorial', [new Add([a, new Mul([rational(-1), y])])]), rational(-1)), fn('factorial', [a])]), And(Relational(y, rational(0), '==', { evaluate: false }), Relational(new Add([a, new Mul([rational(-1), y])]), rational(0), '==', { evaluate: false }))], [new Mul([rational(2), new Pow(fn('factorial', [y]), rational(-1)), new Pow(fn('factorial', [new Add([a, new Mul([rational(-1), y])])]), rational(-1)), fn('factorial', [a])]), And(Relational(y, rational(0), '==', { evaluate: false }), Relational(new Add([a, new Mul([rational(-1), y])]), rational(1), '==', { evaluate: false }))], [rational(0), true])))).toBe('Piecewise((2*x, Eq(a, 0) & Eq(y, 0)), (2, Eq(a, 1) & Eq(y, 0)), (0, True))');
   });
   it("test_piecewise_simplify:481", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(piecewise([rational(2), And(rel('Eq', x, 2), rel('Ge', y, 0))], [x, true])))).toBe('Piecewise((2, Eq(x, 2) & (y >= 0)), (x, True))');
+    expect(sympyStr(simplify(piecewise([rational(2), And(Relational(x, rational(2), '==', { evaluate: false }), Relational(y, rational(0), '>=', { evaluate: false }))], [x, true])))).toBe('Piecewise((2, Eq(x, 2) & (y >= 0)), (x, True))');
   });
   it("test_piecewise_simplify:483", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Eq', x, 0)], [new Mul([new Pow(x, rational(-1)), fn('sin', [x])]), true])))).toBe('Piecewise((1, Eq(x, 0)), (sin(x)/x, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [new Mul([new Pow(x, rational(-1)), fn('sin', [x])]), true])))).toBe('Piecewise((1, Eq(x, 0)), (sin(x)/x, True))');
   });
   it.fails("test_piecewise_simplify:484", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(simplify(piecewise([new Add([rational(2), y]), And(rel('Eq', x, 2), rel('Eq', y, 0))], [x, true])))).toBe('x');
+    expect(sympyStr(simplify(piecewise([new Add([rational(2), y]), And(Relational(x, rational(2), '==', { evaluate: false }), Relational(y, rational(0), '==', { evaluate: false }))], [x, true])))).toBe('x');
   });
   it.fails("test_piecewise_simplify:490", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Eq', x, 0)], [new Add([rational(1), x, fn('sin', [x])]), true])))).toBe('x + sin(x) + 1');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(0), '==', { evaluate: false })], [new Add([rational(1), x, fn('sin', [x])]), true])))).toBe('x + sin(x) + 1');
   });
   it.fails("test_piecewise_simplify:491", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Eq', (SymFunction('f'))(x), 0)], [new Add([rational(1), (SymFunction('f'))(x), fn('sin', [(SymFunction('f'))(x)])]), true])))).toBe('f(x) + sin(f(x)) + 1');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational((SymFunction('f'))(x), rational(0), '==', { evaluate: false })], [new Add([rational(1), (SymFunction('f'))(x), fn('sin', [(SymFunction('f'))(x)])]), true])))).toBe('f(x) + sin(f(x)) + 1');
   });
   it("test_piecewise_simplify:498", () => {
     const d = new Sym('d', { integer: true });
     const n = new Sym('n', { integer: true });
     const t = new Sym('t', { positive: true });
-    expect(sympyStr(simplify(piecewise([new Add([new Mul([rational(-1), d]), new Mul([rational(2), n])]), rel('Eq', new Pow(t, rational(-1)), 1)], [new Mul([new Pow(t, new Add([rational(1), new Mul([rational(-4), n])])), new Pow(t, new Add([rational(-1), new Mul([rational(4), n])])), new Add([new Mul([rational(-1), d]), new Mul([rational(2), n])])]), true])))).toBe('-d + 2*n');
+    expect(sympyStr(simplify(piecewise([new Add([new Mul([rational(-1), d]), new Mul([rational(2), n])]), Relational(new Pow(t, rational(-1)), rational(1), '==', { evaluate: false })], [new Mul([new Pow(t, new Add([rational(1), new Mul([rational(-4), n])])), new Pow(t, new Add([rational(-1), new Mul([rational(4), n])])), new Add([new Mul([rational(-1), d]), new Mul([rational(2), n])])]), true])))).toBe('-d + 2*n');
   });
   it.fails("test_piecewise_simplify:521", () => {
     const t = new Sym('t', { positive: true });
-    expect(sympyStr(simplify(new Add([piecewise([new Mul([new Add([rational(1), t]), new Add([rational(1), new Mul([rational(-1), t])]), new Add([rational(1, 2), new Mul([rational(-1, 2), t])])]), rel('Lt', t, 1)], [rational(0), true]), piecewise([new Mul([new Add([rational(1), new Mul([rational(-1), t])]), new Add([new Mul([t, new Add([rational(1), new Mul([rational(-1, 2), t])])]), new Mul([new Add([rational(1), new Mul([rational(-1), t])]), new Add([rational(1, 2), new Mul([rational(1, 2), t])])])])]), rel('Lt', t, 1)], [new Mul([new Add([rational(1), new Mul([rational(-1), t])]), new Add([rational(1), new Mul([rational(-1, 2), t])]), new Add([rational(2), new Mul([rational(-1), t])])]), rel('Lt', t, 2)], [rational(0), true])])))).toBe('Piecewise((3*t**3/2 - 5*t**2/2 + 1, t < 1), ((1 - t)*(t - 2)**2/2, t < 2), (0, True))');
+    expect(sympyStr(simplify(new Add([piecewise([new Mul([new Add([rational(1), t]), new Add([rational(1), new Mul([rational(-1), t])]), new Add([rational(1, 2), new Mul([rational(-1, 2), t])])]), Relational(t, rational(1), '<', { evaluate: false })], [rational(0), true]), piecewise([new Mul([new Add([rational(1), new Mul([rational(-1), t])]), new Add([new Mul([t, new Add([rational(1), new Mul([rational(-1, 2), t])])]), new Mul([new Add([rational(1), new Mul([rational(-1), t])]), new Add([rational(1, 2), new Mul([rational(1, 2), t])])])])]), Relational(t, rational(1), '<', { evaluate: false })], [new Mul([new Add([rational(1), new Mul([rational(-1), t])]), new Add([rational(1), new Mul([rational(-1, 2), t])]), new Add([rational(2), new Mul([rational(-1), t])])]), Relational(t, rational(2), '<', { evaluate: false })], [rational(0), true])])))).toBe('Piecewise((3*t**3/2 - 5*t**2/2 + 1, t < 1), ((1 - t)*(t - 2)**2/2, t < 2), (0, True))');
   });
   it.fails("test_piecewise_simplify:528", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Gt', x, 3)], [rational(2), rel('Lt', x, 2)], [rational(3), rel('Gt', x, 1)])))).toBe('Piecewise((1, x > 3), (2, x < 2), (3, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(3), '>', { evaluate: false })], [rational(2), Relational(x, rational(2), '<', { evaluate: false })], [rational(3), Relational(x, rational(1), '>', { evaluate: false })])))).toBe('Piecewise((1, x > 3), (2, x < 2), (3, True))');
   });
   it.fails("test_piecewise_simplify:530", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), rel('Lt', x, 1)], [rational(3), true])))).toBe('Piecewise((1, x < 2), (3, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), Relational(x, rational(1), '<', { evaluate: false })], [rational(3), true])))).toBe('Piecewise((1, x < 2), (3, True))');
   });
   it.fails("test_piecewise_simplify:532", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Gt', x, 2)])))).toBe('Piecewise((1, x > 2), (nan, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(2), '>', { evaluate: false })])))).toBe('Piecewise((1, x > 2), (nan, True))');
   });
   it.fails("test_piecewise_simplify:534", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), And(rel('Ge', x, 2), rel('Lt', x, oo))])))).toBe('Piecewise((1, (x >= 2) & (x < oo)), (nan, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), And(Relational(x, rational(2), '>=', { evaluate: false }), Relational(x, oo, '<', { evaluate: false }))])))).toBe('Piecewise((1, (x >= 2) & (x < oo)), (nan, True))');
   });
   it.fails("test_piecewise_simplify:536", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), And(rel('Gt', x, 1), rel('Lt', x, 3))], [rational(3), true])))).toBe('Piecewise((1, x < 2), (2, x < 3), (3, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), And(Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false }))], [rational(3), true])))).toBe('Piecewise((1, x < 2), (2, x < 3), (3, True))');
   });
   it.fails("test_piecewise_simplify:538", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), And(rel('Le', x, 3), rel('Gt', x, 1))], [rational(3), true])))).toBe('Piecewise((1, x < 2), (2, x <= 3), (3, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), And(Relational(x, rational(3), '<=', { evaluate: false }), Relational(x, rational(1), '>', { evaluate: false }))], [rational(3), true])))).toBe('Piecewise((1, x < 2), (2, x <= 3), (3, True))');
   });
   it("test_piecewise_simplify:540", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), And(rel('Gt', x, 2), rel('Lt', x, 3))], [rational(3), true])))).toBe('Piecewise((1, x < 2), (2, (x > 2) & (x < 3)), (3, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), And(Relational(x, rational(2), '>', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false }))], [rational(3), true])))).toBe('Piecewise((1, x < 2), (2, (x > 2) & (x < 3)), (3, True))');
   });
   it.fails("test_piecewise_simplify:543", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Lt', x, 2)], [rational(2), And(rel('Ge', x, 1), rel('Le', x, 3))], [rational(3), true])))).toBe('Piecewise((1, x < 2), (2, x <= 3), (3, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })], [rational(2), And(Relational(x, rational(1), '>=', { evaluate: false }), Relational(x, rational(3), '<=', { evaluate: false }))], [rational(3), true])))).toBe('Piecewise((1, x < 2), (2, x <= 3), (3, True))');
   });
   it("test_piecewise_simplify:545", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), And(rel('Ge', x, 2), rel('Le', x, 3))], [rational(3), true])))).toBe('Piecewise((1, x < 1), (2, (x >= 2) & (x <= 3)), (3, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), And(Relational(x, rational(2), '>=', { evaluate: false }), Relational(x, rational(3), '<=', { evaluate: false }))], [rational(3), true])))).toBe('Piecewise((1, x < 1), (2, (x >= 2) & (x <= 3)), (3, True))');
   });
   it("test_piecewise_simplify:549", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([log(x), And(rel('Le', x, 5), rel('Gt', x, 3))], [x, true])))).toBe('Piecewise((log(x), (x <= 5) & (x > 3)), (x, True))');
+    expect(sympyStr(simplify(piecewise([log(x), And(Relational(x, rational(5), '<=', { evaluate: false }), Relational(x, rational(3), '>', { evaluate: false }))], [x, true])))).toBe('Piecewise((log(x), (x <= 5) & (x > 3)), (x, True))');
   });
   it.fails("test_piecewise_simplify:552", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), And(rel('Ge', x, 1), rel('Lt', x, 3))], [rational(2), And(rel('Gt', x, 2), rel('Lt', x, 4))])))).toBe('Piecewise((1, (x >= 1) & (x < 3)), (2, (x >= 3) & (x < 4)), (nan, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), And(Relational(x, rational(1), '>=', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false }))], [rational(2), And(Relational(x, rational(2), '>', { evaluate: false }), Relational(x, rational(4), '<', { evaluate: false }))])))).toBe('Piecewise((1, (x >= 1) & (x < 3)), (2, (x >= 3) & (x < 4)), (nan, True))');
   });
   it.fails("test_piecewise_simplify:555", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(1), And(rel('Ge', x, 1), rel('Le', x, 3))], [rational(2), And(rel('Gt', x, 2), rel('Lt', x, 4))])))).toBe('Piecewise((1, (x >= 1) & (x <= 3)), (2, (x > 3) & (x < 4)), (nan, True))');
+    expect(sympyStr(simplify(piecewise([rational(1), And(Relational(x, rational(1), '>=', { evaluate: false }), Relational(x, rational(3), '<=', { evaluate: false }))], [rational(2), And(Relational(x, rational(2), '>', { evaluate: false }), Relational(x, rational(4), '<', { evaluate: false }))])))).toBe('Piecewise((1, (x >= 1) & (x <= 3)), (2, (x > 3) & (x < 4)), (nan, True))');
   });
   it.fails("test_piecewise_simplify:565", () => {
     const x = new Sym('x');
     const L = new Sym('L', { nonnegative: true });
-    expect(sympyStr(simplify(piecewise([nan, rel('Le', x, 0)], [rational(0), And(rel('Ge', x, 0), rel('Gt', L, x), rel('Le', new Add([L, new Mul([rational(-1), x])]), 0))], [new Add([x, new Mul([rational(-1, 2), L])]), And(rel('Gt', L, x), rel('Le', new Add([L, new Mul([rational(-1), x])]), 0))], [new Add([new Mul([rational(1, 2), L]), new Mul([rational(-1), x])]), And(rel('Ge', x, 0), rel('Gt', L, x))], [rational(0), rel('Gt', L, x)], [nan, true])))).toBe('Piecewise((nan, x <= 0), (L/2 - x, L > x), (nan, True))');
+    expect(sympyStr(simplify(piecewise([nan, Relational(x, rational(0), '<=', { evaluate: false })], [rational(0), And(Relational(x, rational(0), '>=', { evaluate: false }), Relational(L, x, '>', { evaluate: false }), Relational(new Add([L, new Mul([rational(-1), x])]), rational(0), '<=', { evaluate: false }))], [new Add([x, new Mul([rational(-1, 2), L])]), And(Relational(L, x, '>', { evaluate: false }), Relational(new Add([L, new Mul([rational(-1), x])]), rational(0), '<=', { evaluate: false }))], [new Add([new Mul([rational(1, 2), L]), new Mul([rational(-1), x])]), And(Relational(x, rational(0), '>=', { evaluate: false }), Relational(L, x, '>', { evaluate: false }))], [rational(0), Relational(L, x, '>', { evaluate: false })], [nan, true])))).toBe('Piecewise((nan, x <= 0), (L/2 - x, L > x), (nan, True))');
   });
   it.fails("test_piecewise_simplify:567", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(piecewise([nan, rel('Le', x, 0)], [rational(0), And(rel('Ge', x, 0), rel('Lt', x, y), rel('Ge', new Add([x, new Mul([rational(-1), y])]), 0))], [new Add([x, new Mul([rational(-1, 2), y])]), And(rel('Lt', x, y), rel('Ge', new Add([x, new Mul([rational(-1), y])]), 0))], [new Add([new Mul([rational(1, 2), y]), new Mul([rational(-1), x])]), And(rel('Ge', x, 0), rel('Lt', x, y))], [rational(0), rel('Lt', x, y)], [nan, true])))).toBe('Piecewise((nan, x <= 0), (-x + y/2, x < Max(0, y)), (0, x < y), (nan, True))');
+    expect(sympyStr(simplify(piecewise([nan, Relational(x, rational(0), '<=', { evaluate: false })], [rational(0), And(Relational(x, rational(0), '>=', { evaluate: false }), Relational(x, y, '<', { evaluate: false }), Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '>=', { evaluate: false }))], [new Add([x, new Mul([rational(-1, 2), y])]), And(Relational(x, y, '<', { evaluate: false }), Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '>=', { evaluate: false }))], [new Add([new Mul([rational(1, 2), y]), new Mul([rational(-1), x])]), And(Relational(x, rational(0), '>=', { evaluate: false }), Relational(x, y, '<', { evaluate: false }))], [rational(0), Relational(x, y, '<', { evaluate: false })], [nan, true])))).toBe('Piecewise((nan, x <= 0), (-x + y/2, x < Max(0, y)), (0, x < y), (nan, True))');
   });
   it.fails("test_piecewise_solve:574", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(piecewise([new Add([rational(2), new Mul([rational(-1), x])]), rel('Le', x, 2)], [new Add([rational(-2), x]), true]), x, {}))).toBe('[2]');
+    expect(sympyStr(solve(piecewise([new Add([rational(2), new Mul([rational(-1), x])]), Relational(x, rational(2), '<=', { evaluate: false })], [new Add([rational(-2), x]), true]), x, {}))).toBe('[2]');
   });
   it.fails("test_piecewise_solve:575", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(new Add([rational(-1), piecewise([new Add([rational(2), new Mul([rational(-1), x])]), rel('Le', x, 2)], [new Add([rational(-2), x]), true])]), x, {}))).toBe('[1, 3]');
+    expect(sympyStr(solve(new Add([rational(-1), piecewise([new Add([rational(2), new Mul([rational(-1), x])]), Relational(x, rational(2), '<=', { evaluate: false })], [new Add([rational(-2), x]), true])]), x, {}))).toBe('[1, 3]');
   });
   it.fails("test_piecewise_solve:578", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), x, {}))).toBe('[2]');
+    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), x, {}))).toBe('[2]');
   });
   it.fails("test_piecewise_solve:581", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 4)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, {}))).toBe('[2, 5]');
+    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(4), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, {}))).toBe('[2, 5]');
   });
   it.fails("test_piecewise_solve:584", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 4)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, {}))).toBe('[2, 5]');
+    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(4), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, {}))).toBe('[2, 5]');
   });
   it.fails("test_piecewise_solve:587", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, {}))).toBe('[5]');
+    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, {}))).toBe('[5]');
   });
   it.fails("test_piecewise_solve:590", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, {}))).toBe('[5]');
+    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, {}))).toBe('[5]');
   });
   it.fails("test_piecewise_solve:593", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(1), true]), true]), x, {}))).toBe('[5]');
+    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(1), true]), true]), x, {}))).toBe('[5]');
   });
   it.fails("test_piecewise_solve:597", () => {
     const x = new Sym('x');
-    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), rel('Ge', x, 2)], [new Add([rational(2), new Mul([rational(-1), x])]), rel('Le', x, 2)], [new Add([rational(-2), x]), true]), x, {}))).toBe('[5]');
+    expect(sympyStr(solve(piecewise([new Pow(new Add([rational(-5), x]), rational(5)), Relational(x, rational(2), '>=', { evaluate: false })], [new Add([rational(2), new Mul([rational(-1), x])]), Relational(x, rational(2), '<=', { evaluate: false })], [new Add([rational(-2), x]), true]), x, {}))).toBe('[5]');
   });
   it.fails("test_piecewise_solve:600", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(solve(new Add([rational(-3), piecewise([new Add([rational(-2), x]), rel('Gt', x, 2)], [new Add([rational(2), new Mul([rational(-1), v1])]), true])]), v1, {}))).toBe('[-1, 5]');
+    expect(sympyStr(solve(new Add([rational(-3), piecewise([new Add([rational(-2), x]), Relational(x, rational(2), '>', { evaluate: false })], [new Add([rational(2), new Mul([rational(-1), v1])]), true])]), v1, {}))).toBe('[-1, 5]');
   });
   it("test_piecewise_solve:603", () => {
     const x = new Sym('x');
-    expect(() => solve(piecewise([new Pow(new Add([rational(-2), x]), rational(2)), rel('Ge', x, 0)], [rational(0), true]), x, {})).toThrow(NotImplementedError);
+    expect(() => solve(piecewise([new Pow(new Add([rational(-2), x]), rational(2)), Relational(x, rational(0), '>=', { evaluate: false })], [rational(0), true]), x, {})).toThrow(NotImplementedError);
   });
   it.fails("test_piecewise_solve:612", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(solve(piecewise([new Add([rational(-4), new Pow(x, rational(2))]), rel('Lt', x, y)], [new Add([rational(-2), x]), true]), x, {}))).toBe('[Piecewise((-2, y > -2), (nan, True)), Piecewise((2, y <= 2), (nan, True)), Piecewise((2, y > 2), (nan, True))]');
+    expect(sympyStr(solve(piecewise([new Add([rational(-4), new Pow(x, rational(2))]), Relational(x, y, '<', { evaluate: false })], [new Add([rational(-2), x]), true]), x, {}))).toBe('[Piecewise((-2, y > -2), (nan, True)), Piecewise((2, y <= 2), (nan, True)), Piecewise((2, y > 2), (nan, True))]');
   });
   it.fails("test_piecewise_solve:622", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(solve(new Add([new Mul([rational(-1), y]), piecewise([new Add([rational(-3), x]), rel('Ge', x, 3)], [new Add([rational(3), new Mul([rational(-1), x])]), true])]), x, {}))).toBe('[Piecewise((3 - y, y > 0), (nan, True)), Piecewise((y + 3, y >= 0), (nan, True))]');
+    expect(sympyStr(solve(new Add([new Mul([rational(-1), y]), piecewise([new Add([rational(-3), x]), Relational(x, rational(3), '>=', { evaluate: false })], [new Add([rational(3), new Mul([rational(-1), x])]), true])]), x, {}))).toBe('[Piecewise((3 - y, y > 0), (nan, True)), Piecewise((y + 3, y >= 0), (nan, True))]');
   });
   it.fails("test_piecewise_solve:626", () => {
     const x = new Sym('x');
     const p = new Sym('p', { positive: true });
-    expect(sympyStr(solve(new Add([new Mul([rational(-1), p]), piecewise([new Add([rational(-3), x]), rel('Ge', x, 3)], [new Add([rational(3), new Mul([rational(-1), x])]), true])]), x, {}))).toBe('[3 - p, p + 3]');
+    expect(sympyStr(solve(new Add([new Mul([rational(-1), p]), piecewise([new Add([rational(-3), x]), Relational(x, rational(3), '>=', { evaluate: false })], [new Add([rational(3), new Mul([rational(-1), x])]), true])]), x, {}))).toBe('[3 - p, p + 3]');
   });
   it("test_piecewise_solve:630", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr([at(solve(rel('Eq', new Mul([rational(-1), (SymFunction('f'))(x)]), piecewise([rational(1), rel('Gt', x, 0)], [rational(0), true])), (SymFunction('f'))(x), {}), 0)]), '[Piecewise((-1, x > 0), (0, True))]', [x], { fn: 'solve', input: 'Eq(-f(x), Piecewise((1, x > 0), (0, True)))' })).toBe(true);
+    expect(equivalent(sympyStr([at(solve(Relational(new Mul([rational(-1), (SymFunction('f'))(x)]), piecewise([rational(1), Relational(x, rational(0), '>', { evaluate: false })], [rational(0), true]), '==', { evaluate: false }), (SymFunction('f'))(x), {}), 0)]), '[Piecewise((-1, x > 0), (0, True))]', [x], { fn: 'solve', input: 'Eq(-f(x), Piecewise((1, x > 0), (0, True)))' })).toBe(true);
   });
   it.fails("test_piecewise_solve:635", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(solve(new Add([rational(-1), piecewise([new Mul([rational(2), new Pow(x, rational(2))]), And(rel('Gt', x, 0), rel('Lt', x, 1))], [rational(2), true])]), v1, {}))).toBe('[sqrt(2)/2]');
+    expect(sympyStr(solve(new Add([rational(-1), piecewise([new Mul([rational(2), new Pow(x, rational(2))]), And(Relational(x, rational(0), '>', { evaluate: false }), Relational(v1, rational(1), '<', { evaluate: false }))], [rational(2), true])]), v1, {}))).toBe('[sqrt(2)/2]');
   });
   // a value without provenance ([object Object] Rel)
   //   assert piecewise_fold(x*p) == Piecewise((x**2, x < 1), (x, 1 <= x))
@@ -5907,11 +5937,11 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise_fold:642");
   it("test_piecewise_fold:643", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(new Add([piecewise([rational(1), rel('Lt', x, 0)], [rational(2), true]), piecewise([rational(10), rel('Lt', x, 0)], [rational(-10), true])])), 'Piecewise((11, x < 0), (-8, True))', [x], { fn: 'piecewise_fold', input: 'Piecewise((1, x < 0), (2, True)) + Piecewise((10, x < 0), (-10, True))' })).toBe(true);
+    expect(equivalent(sympyStr(new Add([piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [rational(2), true]), piecewise([rational(10), Relational(x, rational(0), '<', { evaluate: false })], [rational(-10), true])])), 'Piecewise((11, x < 0), (-8, True))', [x], { fn: 'piecewise_fold', input: 'Piecewise((1, x < 0), (2, True)) + Piecewise((10, x < 0), (-10, True))' })).toBe(true);
   });
   it("test_piecewise_fold:651", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 0)], [new Add([rational(2), new Mul([rational(2), x])]), rel('Le', x, 1)], [rational(0), true]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('3');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [new Add([rational(2), new Mul([rational(2), x])]), Relational(x, rational(1), '<=', { evaluate: false })], [rational(0), true]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('3');
   });
   // a value without provenance ([object Object] Rel)
   //   assert piecewise_fold(
@@ -5921,55 +5951,55 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise_fold:654");
   it.fails("test_piecewise_fold:658", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(piecewise([x, ITE(rel('Gt', x, 0), rel('Lt', y, 1), rel('Gt', y, 1), { evaluate: false })]))).toBe('Piecewise((x, ((x <= 0) | (y < 1)) & ((x > 0) | (y > 1))))');
+    expect(sympyStr(piecewise([x, ITE(Relational(x, rational(0), '>', { evaluate: false }), Relational(y, rational(1), '<', { evaluate: false }), Relational(y, rational(1), '>', { evaluate: false }), { evaluate: false })]))).toBe('Piecewise((x, ((x <= 0) | (y < 1)) & ((x > 0) | (y > 1))))');
   });
   it("test_piecewise_fold:663", () => {
     const [x, y] = symbols('x y');
-    expect(equivalent(sympyStr(new Mul([piecewise([rational(2), rel('Eq', x, 0)], [rational(0), true]), piecewise([x, rel('Eq', new Add([x, new Mul([rational(-1), y])]), 0)], [rational(1), rel('Eq', new Add([x, new Mul([rational(-1), y])]), -1)], [rational(0), true])])), 'Piecewise((2*x, Eq(x, 0) & Eq(x - y, 0)), (2, Eq(x, 0) & Eq(x - y, -1)), (0, True))', [x, y], { fn: 'piecewise_fold', input: 'Piecewise((2, Eq(x, 0)), (0, True))*Piecewise((x, Eq(x - y, 0)), (1, Eq(x - y, -1)), (0, True))' })).toBe(true);
+    expect(equivalent(sympyStr(new Mul([piecewise([rational(2), Relational(x, rational(0), '==', { evaluate: false })], [rational(0), true]), piecewise([x, Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '==', { evaluate: false })], [rational(1), Relational(new Add([x, new Mul([rational(-1), y])]), rational(-1), '==', { evaluate: false })], [rational(0), true])])), 'Piecewise((2*x, Eq(x, 0) & Eq(x - y, 0)), (2, Eq(x, 0) & Eq(x - y, -1)), (0, True))', [x, y], { fn: 'piecewise_fold', input: 'Piecewise((2, Eq(x, 0)), (0, True))*Piecewise((x, Eq(x - y, 0)), (1, Eq(x - y, -1)), (0, True))' })).toBe(true);
   });
   it("test_piecewise_fold_piecewise_in_cond:670", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(0), ITE(rel('Lt', x, 0), rel('Eq', fn('cos', [x]), 0), true, { evaluate: false })], [new Mul([new Pow(abs(piecewise([fn('cos', [x]), rel('Lt', x, 0)], [rational(0), true])), rational(-1)), piecewise([fn('cos', [x]), rel('Lt', x, 0)], [rational(0), true])]), true]).subs(x, new Mul([rational(-1, 2), pi])))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), ITE(Relational(x, rational(0), '<', { evaluate: false }), Relational(fn('cos', [x]), rational(0), '==', { evaluate: false }), S['true'], { evaluate: false })], [new Mul([new Pow(abs(piecewise([fn('cos', [x]), Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true])), rational(-1)), piecewise([fn('cos', [x]), Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true])]), true]).subs(x, new Mul([rational(-1, 2), pi])))).toBe('0');
   });
   it("test_piecewise_fold_piecewise_in_cond:671", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(0), ITE(rel('Lt', x, 0), rel('Eq', fn('cos', [x]), 0), true, { evaluate: false })], [new Mul([new Pow(abs(piecewise([fn('cos', [x]), rel('Lt', x, 0)], [rational(0), true])), rational(-1)), piecewise([fn('cos', [x]), rel('Lt', x, 0)], [rational(0), true])]), true]).subs(x, rational(1)))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), ITE(Relational(x, rational(0), '<', { evaluate: false }), Relational(fn('cos', [x]), rational(0), '==', { evaluate: false }), S['true'], { evaluate: false })], [new Mul([new Pow(abs(piecewise([fn('cos', [x]), Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true])), rational(-1)), piecewise([fn('cos', [x]), Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true])]), true]).subs(x, rational(1)))).toBe('0');
   });
   it("test_piecewise_fold_piecewise_in_cond:672", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(0), ITE(rel('Lt', x, 0), rel('Eq', fn('cos', [x]), 0), true, { evaluate: false })], [new Mul([new Pow(abs(piecewise([fn('cos', [x]), rel('Lt', x, 0)], [rational(0), true])), rational(-1)), piecewise([fn('cos', [x]), rel('Lt', x, 0)], [rational(0), true])]), true]).subs(x, new Mul([rational(-1, 4), pi])))).toBe('1');
+    expect(sympyStr(piecewise([rational(0), ITE(Relational(x, rational(0), '<', { evaluate: false }), Relational(fn('cos', [x]), rational(0), '==', { evaluate: false }), S['true'], { evaluate: false })], [new Mul([new Pow(abs(piecewise([fn('cos', [x]), Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true])), rational(-1)), piecewise([fn('cos', [x]), Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true])]), true]).subs(x, new Mul([rational(-1, 4), pi])))).toBe('1');
   });
   it("test_piecewise_fold_piecewise_in_cond:676", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(0), Or(rel('Ge', x, 0), rel('Eq', fn('cos', [x]), 0))], [rational(1), true]).subs(x, rational(-1)))).toBe('1');
+    expect(sympyStr(piecewise([rational(0), Or(Relational(x, rational(0), '>=', { evaluate: false }), Relational(fn('cos', [x]), rational(0), '==', { evaluate: false }))], [rational(1), true]).subs(x, rational(-1)))).toBe('1');
   });
   it("test_piecewise_fold_piecewise_in_cond:676 (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(0), Or(rel('Ge', x, 0), rel('Eq', fn('cos', [x]), 0))], [rational(1), true]).subs(x, rational(0)))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), Or(Relational(x, rational(0), '>=', { evaluate: false }), Relational(fn('cos', [x]), rational(0), '==', { evaluate: false }))], [rational(1), true]).subs(x, rational(0)))).toBe('0');
   });
   it("test_piecewise_fold_piecewise_in_cond:681", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([S['false'], rel('Lt', x, 1)], [S['true'], true]).subs(x, rational(0)))).toBe('False');
+    expect(sympyStr(piecewise([S['false'], Relational(x, rational(1), '<', { evaluate: false })], [S['true'], true]).subs(x, rational(0)))).toBe('False');
   });
   it("test_piecewise_fold_piecewise_in_cond:681 (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([S['false'], rel('Lt', x, 1)], [S['true'], true]).subs(x, rational(1)))).toBe('True');
+    expect(sympyStr(piecewise([S['false'], Relational(x, rational(1), '<', { evaluate: false })], [S['true'], true]).subs(x, rational(1)))).toBe('True');
   });
   it("test_piecewise_fold_piecewise_in_cond:688", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), And(rel('Ge', x, 1), rel('Lt', x, 0))], [rational(0), true]).subs(x, rational(-1)))).toBe('0');
+    expect(sympyStr(piecewise([rational(1), And(Relational(x, rational(1), '>=', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false }))], [rational(0), true]).subs(x, rational(-1)))).toBe('0');
   });
   it("test_piecewise_fold_piecewise_in_cond:688 (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), And(rel('Ge', x, 1), rel('Lt', x, 0))], [rational(0), true]).subs(x, rational(0)))).toBe('0');
+    expect(sympyStr(piecewise([rational(1), And(Relational(x, rational(1), '>=', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false }))], [rational(0), true]).subs(x, rational(0)))).toBe('0');
   });
   it("test_piecewise_fold_piecewise_in_cond:688 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(1), And(rel('Ge', x, 1), rel('Lt', x, 0))], [rational(0), true]).subs(x, rational(1)))).toBe('0');
+    expect(sympyStr(piecewise([rational(1), And(Relational(x, rational(1), '>=', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false }))], [rational(0), true]).subs(x, rational(1)))).toBe('0');
   });
   it.fails("test_piecewise_fold_piecewise_in_cond_2:698", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([rational(0), ITE(rel('Lt', x, 0), rel('Eq', fn('cos', [x]), 0), true, { evaluate: false })], [piecewise([new Pow(fn('cos', [x]), rational(-1)), rel('Lt', x, 0)], [zoo, true]), true]))).toBe('Piecewise((0, (x >= 0) | Eq(cos(x), 0)), (1/cos(x), x < 0), (zoo, True))');
+    expect(sympyStr(piecewise([rational(0), ITE(Relational(x, rational(0), '<', { evaluate: false }), Relational(fn('cos', [x]), rational(0), '==', { evaluate: false }), S['true'], { evaluate: false })], [piecewise([new Pow(fn('cos', [x]), rational(-1)), Relational(x, rational(0), '<', { evaluate: false })], [zoo, true]), true]))).toBe('Piecewise((0, (x >= 0) | Eq(cos(x), 0)), (1/cos(x), x < 0), (zoo, True))');
   });
   // the arguments do not type-check against the public API
   //   assert piecewise_fold(expand((1 - x)*p1), evaluate=False
@@ -5991,60 +6021,60 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise_fold_expand:711");
   it("test_piecewise_duplicate:716", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, -10)], [new Pow(x, rational(2)), rel('Le', x, -1)], [x, rel('Gt', x, 1)]))).toBe('Piecewise((x, x < -10), (x**2, x <= -1), (x, x > 1))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(-10), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(-1), '<=', { evaluate: false })], [x, Relational(x, rational(1), '>', { evaluate: false })]))).toBe('Piecewise((x, x < -10), (x**2, x <= -1), (x, x > 1))');
   });
   it("test_doit:722", () => {
     const x = new Sym('x');
-    expect(sympyStr(doit(piecewise([x, rel('Lt', x, 1)], [new Integral([new Mul([rational(2), x]), x]), rel('Ge', x, -1)], [x, rel('Gt', x, 3)])))).toBe('Piecewise((x, x < 1), (x**2, x >= -1), (x, x > 3))');
+    expect(sympyStr(doit(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Integral([new Mul([rational(2), x]), x]), Relational(x, rational(-1), '>=', { evaluate: false })], [x, Relational(x, rational(3), '>', { evaluate: false })])))).toBe('Piecewise((x, x < 1), (x**2, x >= -1), (x, x > 3))');
   });
   it("test_doit:723", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([x, rel('Lt', x, 1)], [new Integral([new Mul([rational(2), x]), x]), rel('Ge', x, -1)], [x, rel('Gt', x, 3)]))).toBe('Piecewise((x, x < 1), (Integral(2*x, x), x >= -1), (x, x > 3))');
+    expect(sympyStr(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Integral([new Mul([rational(2), x]), x]), Relational(x, rational(-1), '>=', { evaluate: false })], [x, Relational(x, rational(3), '>', { evaluate: false })]))).toBe('Piecewise((x, x < 1), (Integral(2*x, x), x >= -1), (x, x > 3))');
   });
   it.fails("test_doit:726", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(doit(piecewise([new Mul([new Pow(y, rational(-1)), new Pow(new Add([rational(1), new Mul([rational(-1), y])]), rational(-1))]), rel('Lt', abs(y), 1)], [Sum(new Pow(y, x), [x, rational(-1), oo]), true])))).toBe('Piecewise((1/(y*(1 - y)), Abs(y) < 1), (Sum(y**x, (x, -1, oo)), True))');
+    expect(sympyStr(doit(piecewise([new Mul([new Pow(y, rational(-1)), new Pow(new Add([rational(1), new Mul([rational(-1), y])]), rational(-1))]), Relational(abs(y), rational(1), '<', { evaluate: false })], [Sum(new Pow(y, x), [x, rational(-1), oo]), true])))).toBe('Piecewise((1/(y*(1 - y)), Abs(y) < 1), (Sum(y**x, (x, -1, oo)), True))');
   });
   it("test_piecewise_interval:731", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewise([x, And(rel('Ge', x, 0), rel('Le', x, 1))], [rational(0), true]).subs(x, new Float(-0.5)))).toBe('0');
+    expect(sympyStr(piecewise([x, And(Relational(x, rational(0), '>=', { evaluate: false }), Relational(x, rational(1), '<=', { evaluate: false }))], [rational(0), true]).subs(x, new Float(-0.5)))).toBe('0');
   });
   it("test_piecewise_interval:732", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(piecewise([x, And(rel('Ge', x, 0), rel('Le', x, 1))], [rational(0), true]).subs(x, new Float(0.5))), '0.5', [x], { fn: '.subs', input: 'Piecewise((x, (x >= 0) & (x <= 1)), (0, True))' })).toBe(true);
+    expect(equivalent(sympyStr(piecewise([x, And(Relational(x, rational(0), '>=', { evaluate: false }), Relational(x, rational(1), '<=', { evaluate: false }))], [rational(0), true]).subs(x, new Float(0.5))), '0.5', [x], { fn: '.subs', input: 'Piecewise((x, (x >= 0) & (x <= 1)), (0, True))' })).toBe(true);
   });
   it("test_piecewise_interval:733", () => {
     const x = new Sym('x');
-    expect(sympyStr(diff(piecewise([x, And(rel('Ge', x, 0), rel('Le', x, 1))], [rational(0), true]), x))).toBe('Piecewise((1, (x >= 0) & (x <= 1)), (0, True))');
+    expect(sympyStr(diff(piecewise([x, And(Relational(x, rational(0), '>=', { evaluate: false }), Relational(x, rational(1), '<=', { evaluate: false }))], [rational(0), true]), x))).toBe('Piecewise((1, (x >= 0) & (x <= 1)), (0, True))');
   });
   it.fails("test_piecewise_interval:734", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([x, And(rel('Ge', x, 0), rel('Le', x, 1))], [rational(0), true]), x))).toBe('Piecewise((0, x <= 0), (x**2/2, x <= 1), (1/2, True))');
+    expect(sympyStr(integrate(piecewise([x, And(Relational(x, rational(0), '>=', { evaluate: false }), Relational(x, rational(1), '<=', { evaluate: false }))], [rational(0), true]), x))).toBe('Piecewise((0, x <= 0), (x**2/2, x <= 1), (1/2, True))');
   });
   it("test_piecewise_exclusive:742", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewiseExclusive(piecewise([rational(0), rel('Lt', x, 0)], [rational(1, 2), rel('Le', x, 0)], [rational(1), true]), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
+    expect(sympyStr(piecewiseExclusive(piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [rational(1, 2), Relational(x, rational(0), '<=', { evaluate: false })], [rational(1), true]), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
   });
   it.fails("test_piecewise_exclusive:744", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewiseExclusive(new Add([rational(2), piecewise([rational(0), rel('Lt', x, 0)], [rational(1, 2), rel('Le', x, 0)], [rational(1), true])]), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0)) + 2');
+    expect(sympyStr(piecewiseExclusive(new Add([rational(2), piecewise([rational(0), Relational(x, rational(0), '<', { evaluate: false })], [rational(1, 2), Relational(x, rational(0), '<=', { evaluate: false })], [rational(1), true])]), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0)) + 2');
   });
   it("test_piecewise_exclusive:746", () => {
     const y = new Sym('y');
-    expect(equivalent(sympyStr(piecewiseExclusive(piecewise([rational(1), rel('Le', y, 0)], [new Mul([rational(-1), piecewise([rational(2), rel('Ge', y, 0)])]), true]), { skipNan: false })), 'Piecewise((1, y <= 0), (-Piecewise((2, y >= 0), (nan, y < 0)), y > 0))', [y], { fn: 'piecewise_exclusive', input: 'Piecewise((1, y <= 0), (-Piecewise((2, y >= 0)), True))' })).toBe(true);
+    expect(equivalent(sympyStr(piecewiseExclusive(piecewise([rational(1), Relational(y, rational(0), '<=', { evaluate: false })], [new Mul([rational(-1), piecewise([rational(2), Relational(y, rational(0), '>=', { evaluate: false })])]), true]), { skipNan: false })), 'Piecewise((1, y <= 0), (-Piecewise((2, y >= 0), (nan, y < 0)), y > 0))', [y], { fn: 'piecewise_exclusive', input: 'Piecewise((1, y <= 0), (-Piecewise((2, y >= 0)), True))' })).toBe(true);
   });
   it("test_piecewise_exclusive:751", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(piecewiseExclusive(piecewise([rational(1), rel('Gt', x, y)]), { skipNan: false }))).toBe('Piecewise((1, x > y), (nan, x <= y))');
+    expect(sympyStr(piecewiseExclusive(piecewise([rational(1), Relational(x, y, '>', { evaluate: false })]), { skipNan: false }))).toBe('Piecewise((1, x > y), (nan, x <= y))');
   });
   it("test_piecewise_exclusive:754", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(piecewiseExclusive(piecewise([rational(1), rel('Gt', x, y)]), { skipNan: true }))).toBe('Piecewise((1, x > y))');
+    expect(sympyStr(piecewiseExclusive(piecewise([rational(1), Relational(x, y, '>', { evaluate: false })]), { skipNan: true }))).toBe('Piecewise((1, x > y))');
   });
   it("test_piecewise_exclusive:766", () => {
     const xr = new Sym('xr', { real: true });
     const yr = new Sym('yr', { real: true });
-    expect(equivalent(sympyStr(piecewiseExclusive(piecewise([piecewise([rational(1), rel('Lt', xr, 0)], [rational(2), true]), rel('Lt', yr, 0)], [rational(3), true]), { skipNan: false })), 'Piecewise((Piecewise((1, xr < 0), (2, xr >= 0)), yr < 0), (3, yr >= 0))', [xr, yr], { fn: 'piecewise_exclusive', input: 'Piecewise((Piecewise((1, xr < 0), (2, True)), yr < 0), (3, True))' })).toBe(true);
+    expect(equivalent(sympyStr(piecewiseExclusive(piecewise([piecewise([rational(1), Relational(xr, rational(0), '<', { evaluate: false })], [rational(2), true]), Relational(yr, rational(0), '<', { evaluate: false })], [rational(3), true]), { skipNan: false })), 'Piecewise((Piecewise((1, xr < 0), (2, xr >= 0)), yr < 0), (3, yr >= 0))', [xr, yr], { fn: 'piecewise_exclusive', input: 'Piecewise((Piecewise((1, xr < 0), (2, True)), yr < 0), (3, True))' })).toBe(true);
   });
   // the arguments do not type-check against the public API
   //   assert piecewise_exclusive(p2, deep=False) == p2x
@@ -6056,31 +6086,31 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it("test_piecewise_collapse:773", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [new Add([rational(1), x]), rel('Lt', x, 1)]))).toBe('Piecewise((x, x < 1))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Add([rational(1), x]), Relational(x, rational(1), '<', { evaluate: false })]))).toBe('Piecewise((x, x < 1))');
   });
   it("test_piecewise_collapse:774", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([x, rel('Lt', x, 1)], [new Add([rational(1), x]), rel('Gt', 1, x)]))).toBe('Piecewise((x, x < 1))');
+    expect(sympyStr(Piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Add([rational(1), x]), Relational(rational(1), x, '>', { evaluate: false })]))).toBe('Piecewise((x, x < 1))');
   });
   it("test_piecewise_collapse:795", () => {
     const [x, r1, r2, r3] = symbols('x r1 r2 r3');
-    expect(equivalent(sympyStr(Piecewise([rational(1), rel('Lt', x, r1)], [piecewise([rational(2), rel('Gt', r1, x)], [rational(3), rel('Gt', r2, x)], [rational(4), rel('Gt', r3, x)]), rel('Lt', x, r2)], [rational(5), rel('Lt', x, r3)])), 'Piecewise((1, r1 > x), (3, r2 > x), (5, r3 > x))', [x, r1, r2, r3], { fn: 'Piecewise', input: '(1, x < r1)' })).toBe(true);
+    expect(equivalent(sympyStr(Piecewise([rational(1), Relational(x, r1, '<', { evaluate: false })], [piecewise([rational(2), Relational(r1, x, '>', { evaluate: false })], [rational(3), Relational(r2, x, '>', { evaluate: false })], [rational(4), Relational(r3, x, '>', { evaluate: false })]), Relational(x, r2, '<', { evaluate: false })], [rational(5), Relational(x, r3, '<', { evaluate: false })])), 'Piecewise((1, r1 > x), (3, r2 > x), (5, r3 > x))', [x, r1, r2, r3], { fn: 'Piecewise', input: '(1, x < r1)' })).toBe(true);
   });
   it("test_piecewise_collapse:798", () => {
     const [x, r1, r2, r3, r4] = symbols('x r1 r2 r3 r4');
-    expect(equivalent(sympyStr(Piecewise([rational(1), rel('Lt', x, r1)], [piecewise([rational(2), rel('Gt', r1, x)], [rational(3), rel('Gt', r2, x)], [rational(4), rel('Gt', r3, x)], [rational(6), true]), rel('Lt', x, r3)], [rational(5), rel('Lt', x, r4)])), 'Piecewise((1, r1 > x), (Piecewise((3, r2 > x), (4, r3 > x)), r3 > x), (5, r4 > x))', [x, r1, r2, r3, r4], { fn: 'Piecewise', input: '(1, x < r1)' })).toBe(true);
+    expect(equivalent(sympyStr(Piecewise([rational(1), Relational(x, r1, '<', { evaluate: false })], [piecewise([rational(2), Relational(r1, x, '>', { evaluate: false })], [rational(3), Relational(r2, x, '>', { evaluate: false })], [rational(4), Relational(r3, x, '>', { evaluate: false })], [rational(6), true]), Relational(x, r3, '<', { evaluate: false })], [rational(5), Relational(x, r4, '<', { evaluate: false })])), 'Piecewise((1, r1 > x), (Piecewise((3, r2 > x), (4, r3 > x)), r3 > x), (5, r4 > x))', [x, r1, r2, r3, r4], { fn: 'Piecewise', input: '(1, x < r1)' })).toBe(true);
   });
   it.fails("test_piecewise_collapse:802", () => {
     const [x, r1, r4, r2, r3] = symbols('x r1 r4 r2 r3');
-    expect(sympyStr(Piecewise([rational(1), Or(rel('Lt', x, r1), rel('Lt', x, r4))], [piecewise([rational(2), rel('Gt', r4, x)], [rational(3), rel('Gt', r2, x)], [rational(4), rel('Gt', r3, x)]), rel('Lt', x, r2)], [rational(5), rel('Lt', x, r3)]))).toBe('Piecewise((1, (r1 > x) | (r4 > x)), (Piecewise((2, r4 > x), (3, r2 > x)), r2 > x), (5, r3 > x))');
+    expect(sympyStr(Piecewise([rational(1), Or(Relational(x, r1, '<', { evaluate: false }), Relational(x, r4, '<', { evaluate: false }))], [piecewise([rational(2), Relational(r4, x, '>', { evaluate: false })], [rational(3), Relational(r2, x, '>', { evaluate: false })], [rational(4), Relational(r3, x, '>', { evaluate: false })]), Relational(x, r2, '<', { evaluate: false })], [rational(5), Relational(x, r3, '<', { evaluate: false })]))).toBe('Piecewise((1, (r1 > x) | (r4 > x)), (Piecewise((2, r4 > x), (3, r2 > x)), r2 > x), (5, r3 > x))');
   });
   it("test_piecewise_collapse:806", () => {
     const [x, r3] = symbols('x r3');
-    expect(sympyStr(Piecewise([rational(1), rel('Lt', x, r3)], [rational(2), rel('Ge', x, r3)], [rational(3), true]))).toBe('Piecewise((1, r3 > x), (2, True))');
+    expect(sympyStr(Piecewise([rational(1), Relational(x, r3, '<', { evaluate: false })], [rational(2), Relational(x, r3, '>=', { evaluate: false })], [rational(3), true]))).toBe('Piecewise((1, r3 > x), (2, True))');
   });
   it("test_piecewise_collapse:808", () => {
     const [x, r3, r2] = symbols('x r3 r2');
-    expect(sympyStr(Piecewise([rational(1), rel('Lt', x, r3)], [rational(2), And(rel('Ge', x, r3), rel('Lt', x, r2))], [rational(3), true]))).toBe('Piecewise((1, r3 > x), (2, r2 > x), (3, True))');
+    expect(sympyStr(Piecewise([rational(1), Relational(x, r3, '<', { evaluate: false })], [rational(2), And(Relational(x, r3, '>=', { evaluate: false }), Relational(x, r2, '<', { evaluate: false }))], [rational(3), true]))).toBe('Piecewise((1, r3 > x), (2, r2 > x), (3, True))');
   });
   // the arguments do not type-check against the public API
   //   assert Piecewise((1, c), (2, Or(~c, b)), (3,True)
@@ -6089,7 +6119,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise_collapse:810");
   it("test_piecewise_collapse:812", () => {
     const [x, r3] = symbols('x r3');
-    expect(sympyStr(Piecewise([rational(1), rel('Lt', x, r3)], [rational(2), rel('Ge', x, r3)]))).toBe('Piecewise((1, r3 > x), (2, True))');
+    expect(sympyStr(Piecewise([rational(1), Relational(x, r3, '<', { evaluate: false })], [rational(2), Relational(x, r3, '>=', { evaluate: false })]))).toBe('Piecewise((1, r3 > x), (2, True))');
   });
   // the arguments do not type-check against the public API
   //   assert p1.nseries(x, n=2) == p2
@@ -6097,97 +6127,97 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_piecewise_series:834");
   it.fails("test_piecewise_as_leading_term:846", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(piecewise([new Pow(x, rational(-1)), rel('Gt', x, 1)], [rational(0), true]), x))).toBe('0');
+    expect(sympyStr(asLeadingTerm(piecewise([new Pow(x, rational(-1)), Relational(x, rational(1), '>', { evaluate: false })], [rational(0), true]), x, {}))).toBe('0');
   });
   it.fails("test_piecewise_as_leading_term:847", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(piecewise([x, rel('Gt', x, 1)], [rational(0), true]), x))).toBe('0');
+    expect(sympyStr(asLeadingTerm(piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [rational(0), true]), x, {}))).toBe('0');
   });
   it.fails("test_piecewise_as_leading_term:848", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(piecewise([new Pow(x, rational(-1)), rel('Gt', x, 1)], [x, true]), x))).toBe('x');
+    expect(sympyStr(asLeadingTerm(piecewise([new Pow(x, rational(-1)), Relational(x, rational(1), '>', { evaluate: false })], [x, true]), x, {}))).toBe('x');
   });
   it.fails("test_piecewise_as_leading_term:849", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(piecewise([x, rel('Gt', x, 1)], [new Pow(x, rational(-1)), true]), x))).toBe('1/x');
+    expect(sympyStr(asLeadingTerm(piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [new Pow(x, rational(-1)), true]), x, {}))).toBe('1/x');
   });
   it.fails("test_piecewise_as_leading_term:850", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(piecewise([new Pow(x, rational(-1)), rel('Gt', x, 1)], [x, true]), x))).toBe('x');
+    expect(sympyStr(asLeadingTerm(piecewise([new Pow(x, rational(-1)), Relational(x, rational(1), '>', { evaluate: false })], [x, true]), x, {}))).toBe('x');
   });
   it.fails("test_piecewise_as_leading_term:851", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(piecewise([new Pow(x, rational(-1)), rel('Lt', x, 1)], [x, true]), x))).toBe('1/x');
+    expect(sympyStr(asLeadingTerm(piecewise([new Pow(x, rational(-1)), Relational(x, rational(1), '<', { evaluate: false })], [x, true]), x, {}))).toBe('1/x');
   });
   it.fails("test_piecewise_as_leading_term:852", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(piecewise([x, rel('Lt', x, 1)], [new Pow(x, rational(-1)), true]), x))).toBe('x');
+    expect(sympyStr(asLeadingTerm(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(-1)), true]), x, {}))).toBe('x');
   });
   it.fails("test_piecewise_as_leading_term:853", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(piecewise([x, rel('Gt', x, 1)], [new Pow(x, rational(-1)), true]), x))).toBe('1/x');
+    expect(sympyStr(asLeadingTerm(piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [new Pow(x, rational(-1)), true]), x, {}))).toBe('1/x');
   });
   it("test_piecewise_complex:862", () => {
     const x = new Sym('x');
-    expect(sympyStr(fn('conjugate', [piecewise([rational(2), rel('Lt', x, 0)], [rational(1), true])]))).toBe('Piecewise((2, x < 0), (1, True))');
+    expect(sympyStr(fn('conjugate', [piecewise([rational(2), Relational(x, rational(0), '<', { evaluate: false })], [rational(1), true])]))).toBe('Piecewise((2, x < 0), (1, True))');
   });
   it("test_piecewise_complex:863", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(fn('conjugate', [piecewise([new Mul([rational(2), I]), rel('Lt', x, 0)], [I, true])])), 'Piecewise((-2*I, x < 0), (-I, True))', [x], { fn: 'conjugate', input: 'Piecewise((2*I, x < 0), (I, True))' })).toBe(true);
+    expect(equivalent(sympyStr(fn('conjugate', [piecewise([new Mul([rational(2), I]), Relational(x, rational(0), '<', { evaluate: false })], [I, true])])), 'Piecewise((-2*I, x < 0), (-I, True))', [x], { fn: 'conjugate', input: 'Piecewise((2*I, x < 0), (I, True))' })).toBe(true);
   });
   it("test_piecewise_complex:864", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(fn('conjugate', [piecewise([new Mul([I, x]), rel('Gt', x, 1)], [new Add([rational(1), I]), true])])), 'Piecewise((-I*conjugate(x), x > 1), (1 - I, True))', [x], { fn: 'conjugate', input: 'Piecewise((I*x, x > 1), (1 + I, True))' })).toBe(true);
+    expect(equivalent(sympyStr(fn('conjugate', [piecewise([new Mul([I, x]), Relational(x, rational(1), '>', { evaluate: false })], [new Add([rational(1), I]), true])])), 'Piecewise((-I*conjugate(x), x > 1), (1 - I, True))', [x], { fn: 'conjugate', input: 'Piecewise((I*x, x > 1), (1 + I, True))' })).toBe(true);
   });
   it("test_piecewise_complex:866", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_piecewise_complex:867", () => {
     const x = new Sym('x');
-    expect(sympyStr(isReal(piecewise([rational(2), rel('Lt', x, 0)], [rational(1), true])))).toBe('True');
+    expect(sympyStr(isReal(piecewise([rational(2), Relational(x, rational(0), '<', { evaluate: false })], [rational(1), true])))).toBe('True');
   });
   it("test_piecewise_complex:868", () => {
     const x = new Sym('x');
-    expect(sympyStr(isImaginary(piecewise([new Mul([rational(2), I]), rel('Lt', x, 0)], [I, true])))).toBe('True');
+    expect(sympyStr(isImaginary(piecewise([new Mul([rational(2), I]), Relational(x, rational(0), '<', { evaluate: false })], [I, true])))).toBe('True');
   });
   it("test_piecewise_complex:869", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_piecewise_complex:870", () => {
     const x = new Sym('x');
-    expect(sympyStr(isImaginary(piecewise([new Mul([I, x]), rel('Gt', x, 1)], [new Add([rational(1), I]), true])))).toBe('None');
+    expect(sympyStr(isImaginary(piecewise([new Mul([I, x]), Relational(x, rational(1), '>', { evaluate: false })], [new Add([rational(1), I]), true])))).toBe('None');
   });
   it("test_piecewise_complex:871", () => {
     const x = new Sym('x');
-    expect(sympyStr(isReal(piecewise([new Mul([I, x]), rel('Gt', x, 1)], [new Add([rational(1), I]), true])))).toBe('None');
+    expect(sympyStr(isReal(piecewise([new Mul([I, x]), Relational(x, rational(1), '>', { evaluate: false })], [new Add([rational(1), I]), true])))).toBe('None');
   });
   it("test_piecewise_complex:873", () => {
     const x = new Sym('x');
-    const v1 = piecewise([rational(2), rel('Lt', x, 0)], [rational(1), true]);
+    const v1 = piecewise([rational(2), Relational(x, rational(0), '<', { evaluate: false })], [rational(1), true]);
     expect(sympyStr([v1, at(asRealImag(v1), 1)], 't')).toBe('(Piecewise((2, x < 0), (1, True)), 0)');
   });
   it("test_piecewise_complex:874", () => {
     const x = new Sym('x');
-    const v1 = asRealImag(piecewise([new Mul([rational(2), I]), rel('Lt', x, 0)], [I, true]));
+    const v1 = asRealImag(piecewise([new Mul([rational(2), I]), Relational(x, rational(0), '<', { evaluate: false })], [I, true]));
     expect(equivalent(sympyStr([at(v1, 0), at(v1, 1)], 't'), '(0, -I*Piecewise((2*I, x < 0), (I, True)))', [x], { fn: '.as_real_imag', input: 'Piecewise((2*I, x < 0), (I, True))' })).toBe(true);
   });
   it.fails("test_conjugate_transpose:880", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
-    expect(sympyStr(adjoint(piecewise([new Mul([A, new Pow(B, rational(2))]), rel('Gt', x, 0)], [new Mul([new Pow(A, rational(2)), B]), true])))).toBe('Piecewise((adjoint(B)**2*adjoint(A), x > 0), (adjoint(B)*adjoint(A)**2, True))');
+    expect(sympyStr(adjoint(piecewise([new Mul([A, new Pow(B, rational(2))]), Relational(x, rational(0), '>', { evaluate: false })], [new Mul([new Pow(A, rational(2)), B]), true])))).toBe('Piecewise((adjoint(B)**2*adjoint(A), x > 0), (adjoint(B)*adjoint(A)**2, True))');
   });
   it("test_conjugate_transpose:882", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
-    expect(equivalent(sympyStr(conjugate(piecewise([new Mul([A, new Pow(B, rational(2))]), rel('Gt', x, 0)], [new Mul([new Pow(A, rational(2)), B]), true]))), 'Piecewise((conjugate(A)*conjugate(B)**2, x > 0), (conjugate(A)**2*conjugate(B), True))', [A, B, x], { fn: '.conjugate', input: 'Piecewise((A*B**2, x > 0), (A**2*B, True))' })).toBe(true);
+    expect(equivalent(sympyStr(conjugate(piecewise([new Mul([A, new Pow(B, rational(2))]), Relational(x, rational(0), '>', { evaluate: false })], [new Mul([new Pow(A, rational(2)), B]), true]))), 'Piecewise((conjugate(A)*conjugate(B)**2, x > 0), (conjugate(A)**2*conjugate(B), True))', [A, B, x], { fn: '.conjugate', input: 'Piecewise((A*B**2, x > 0), (A**2*B, True))' })).toBe(true);
   });
   it.fails("test_conjugate_transpose:884", () => {
     const x = new Sym('x');
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
-    expect(sympyStr(transpose(piecewise([new Mul([A, new Pow(B, rational(2))]), rel('Gt', x, 0)], [new Mul([new Pow(A, rational(2)), B]), true])))).toBe('Piecewise((transpose(B)**2*transpose(A), x > 0), (transpose(B)*transpose(A)**2, True))');
+    expect(sympyStr(transpose(piecewise([new Mul([A, new Pow(B, rational(2))]), Relational(x, rational(0), '>', { evaluate: false })], [new Mul([new Pow(A, rational(2)), B]), true])))).toBe('Piecewise((transpose(B)**2*transpose(A), x > 0), (transpose(B)*transpose(A)**2, True))');
   });
   it("test_piecewise_evaluate:889", () => {
     const x = new Sym('x');
@@ -6200,12 +6230,12 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.fails("test_piecewise_evaluate:891", () => {
     const x = new Sym('x');
     const v1 = rational(1);
-    expect(sympyStr([v1, at(piecewise([v1, rel('Eq', x, 1)]).args, 1)], 't')).toBe('((1, Eq(x, 1)),)');
+    expect(sympyStr([v1, at(piecewise([v1, Relational(x, rational(1), '==', { evaluate: false })]).args, 1)], 't')).toBe('((1, Eq(x, 1)),)');
   });
   it.fails("test_piecewise_evaluate:892", () => {
     const x = new Sym('x');
     const v1 = rational(1);
-    expect(sympyStr([v1, at(piecewise([v1, rel('Eq', 1, x)]).args, 1)], 't')).toBe('((1, Eq(1, x)),)');
+    expect(sympyStr([v1, at(piecewise([v1, Relational(rational(1), x, '==', { evaluate: false })]).args, 1)], 't')).toBe('((1, Eq(1, x)),)');
   });
   // the arguments do not type-check against the public API
   //   assert p == x
@@ -6223,11 +6253,11 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_as_expr_set_pairs:904");
   it("test_S_srepr_is_identity:911", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([rational(10), rel('Eq', x, 0)], [rational(12), true]))).toBe('Piecewise((10, Eq(x, 0)), (12, True))');
+    expect(sympyStr(Piecewise([rational(10), Relational(x, rational(0), '==', { evaluate: false })], [rational(12), true]))).toBe('Piecewise((10, Eq(x, 0)), (12, True))');
   });
   it.fails("test_issue_12587:917", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Gt', x, 4)], [rational(2), Not(And(rel('Le', x, 3), rel('Gt', x, -1)))], [rational(3), true]), x, [rational(-5), rational(5)], { conds: 'piecewise' }))).toBe('23');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(4), '>', { evaluate: false })], [rational(2), Not(And(Relational(x, rational(3), '<=', { evaluate: false }), Relational(x, rational(-1), '>', { evaluate: false })))], [rational(3), true]), x, [rational(-5), rational(5)], { conds: 'piecewise' }))).toBe('23');
   });
   it("test_issue_12587:922", () => {
     const y = new Sym('y');
@@ -6251,92 +6281,94 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it.fails("test_issue_11045:929", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Lt', x, 2), Or(rel('Gt', x, 3), rel('Lt', x, 1)))], [rational(0), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('1');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(x, rational(2), '<', { evaluate: false }), Or(Relational(x, rational(3), '>', { evaluate: false }), Relational(x, rational(1), '<', { evaluate: false })))], [rational(0), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('1');
   });
-  it.fails("test_issue_11045:933", () => {
-    const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Gt', x, 1)], [rational(2), rel('Gt', x, new Add([rational(1), x]))], [rational(3), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('5');
-  });
+  // an error outside the library
+  //   assert Piecewise((1, x > 1), (2, x > x + 1), (3, True)
+  //           ).integrate((x, 0, 3)) == 5
+  //   => 5
+  it.todo("test_issue_11045:933");
   it.fails("test_issue_11045:936", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Gt', x, 1)], [rational(2), rel('Eq', x, 1)], [rational(3), true]), x, [rational(0), rational(4)], { conds: 'piecewise' }))).toBe('6');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '>', { evaluate: false })], [rational(2), Relational(x, rational(1), '==', { evaluate: false })], [rational(3), true]), x, [rational(0), rational(4)], { conds: 'piecewise' }))).toBe('6');
   });
   it.fails("test_issue_11045:939", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Lt', x, 2), rel('Gt', x, new Add([rational(1, 2), new Mul([rational(1, 2), x])])))], [rational(0), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('1');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(x, rational(2), '<', { evaluate: false }), Relational(x, new Add([rational(1, 2), new Mul([rational(1, 2), x])]), '>', { evaluate: false }))], [rational(0), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('1');
   });
   it.fails("test_issue_11045:942", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), Or(rel('Lt', x, 1), rel('Gt', x, new Add([rational(1), new Mul([rational(1, 2), x])])))], [rational(0), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('2');
+    expect(sympyStr(integrate(piecewise([rational(1), Or(Relational(x, rational(1), '<', { evaluate: false }), Relational(x, new Add([rational(1), new Mul([rational(1, 2), x])]), '>', { evaluate: false }))], [rational(0), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('2');
   });
-  it.fails("test_issue_11045:945", () => {
-    const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Gt', x, 1)], [rational(2), rel('Gt', x, new Add([rational(1), x]))], [rational(3), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('5');
-  });
+  // an error outside the library
+  //   assert Piecewise((1, x > 1), (2, x > x + 1), (3, True)
+  //           ).integrate((x, 0, 3)) == 5
+  //   => 5
+  it.todo("test_issue_11045:945");
   it.fails("test_issue_11045:948", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(2), rel('Eq', x, new Add([rational(1), new Mul([rational(-1), x, new Add([rational(-1), new Pow(x, rational(-1))])])]))], [rational(0), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('6');
+    expect(sympyStr(integrate(piecewise([rational(2), Relational(x, new Add([rational(1), new Mul([rational(-1), x, new Add([rational(-1), new Pow(x, rational(-1))])])]), '==', { evaluate: false })], [rational(0), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('6');
   });
   it.fails("test_issue_11045:953", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), Or(rel('Gt', x, 2), rel('Lt', x, 1))], [rational(2), rel('Gt', x, 3)], [rational(3), true]), x, [rational(0), rational(4)], { conds: 'piecewise' }))).toBe('6');
+    expect(sympyStr(integrate(piecewise([rational(1), Or(Relational(x, rational(2), '>', { evaluate: false }), Relational(x, rational(1), '<', { evaluate: false }))], [rational(2), Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true]), x, [rational(0), rational(4)], { conds: 'piecewise' }))).toBe('6');
   });
   it("test_issue_11045:957", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Ne', x, 0)], [rational(2), true]), x, [rational(-1), rational(1)], { conds: 'piecewise' }))).toBe('2');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(0), '!=', { evaluate: false })], [rational(2), true]), x, [rational(-1), rational(1)], { conds: 'piecewise' }))).toBe('2');
   });
   it("test_issue_11045:961", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([x, And(rel('Gt', x, 1), rel('Lt', x, 3))], [rational(1), rel('Lt', x, 4)]), x, [rational(1), rational(4)], { conds: 'piecewise' }))).toBe('5');
+    expect(sympyStr(integrate(piecewise([x, And(Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false }))], [rational(1), Relational(x, rational(4), '<', { evaluate: false })]), x, [rational(1), rational(4)], { conds: 'piecewise' }))).toBe('5');
   });
   it.fails("test_issue_11045:967", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([x, And(rel('Gt', x, 1), rel('Lt', x, 3))], [rational(1), rel('Lt', x, 4)]), x, [rational(1), y], { conds: 'piecewise' }))).toBe('Piecewise((y - 1, y < 1), (Min(3, y)**2/2 - Min(3, y) + Min(4, y) - 1/2, y <= Min(4, y)), (nan, True))');
+    expect(sympyStr(integrate(piecewise([x, And(Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false }))], [rational(1), Relational(x, rational(4), '<', { evaluate: false })]), x, [rational(1), y], { conds: 'piecewise' }))).toBe('Piecewise((y - 1, y < 1), (Min(3, y)**2/2 - Min(3, y) + Min(4, y) - 1/2, y <= Min(4, y)), (nan, True))');
   });
   it("test_issue_11045:972", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([x, And(rel('Gt', x, 1), rel('Lt', x, 3))], [rational(1), rel('Lt', x, 4)]), x, [rational(1), rational(-1)], { conds: 'piecewise' }))).toBe('-2');
+    expect(sympyStr(integrate(piecewise([x, And(Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false }))], [rational(1), Relational(x, rational(4), '<', { evaluate: false })]), x, [rational(1), rational(-1)], { conds: 'piecewise' }))).toBe('-2');
   });
   it("test_issue_11045:973", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([x, And(rel('Gt', x, 1), rel('Lt', x, 3))], [rational(1), rel('Lt', x, 4)]), x, [rational(1), rational(4)], { conds: 'piecewise' }))).toBe('5');
+    expect(sympyStr(integrate(piecewise([x, And(Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false }))], [rational(1), Relational(x, rational(4), '<', { evaluate: false })]), x, [rational(1), rational(4)], { conds: 'piecewise' }))).toBe('5');
   });
   it.fails("test_issue_11045:978", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Gt', x, 1)], [rational(2), Not(And(rel('Gt', x, 1), rel('Lt', x, 3)))], [rational(3), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('4');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '>', { evaluate: false })], [rational(2), Not(And(Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false })))], [rational(3), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('4');
   });
   it.fails("test_issue_11045:985", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Gt', x, 1), rel('Lt', x, 5))], [rational(2), Or(rel('Gt', x, 7), rel('Lt', x, 3))], [rational(4), rel('Lt', x, 8)]), x, [rational(0), rational(10)], { conds: 'piecewise' }))).toBe('20');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(5), '<', { evaluate: false }))], [rational(2), Or(Relational(x, rational(7), '>', { evaluate: false }), Relational(x, rational(3), '<', { evaluate: false }))], [rational(4), Relational(x, rational(8), '<', { evaluate: false })]), x, [rational(0), rational(10)], { conds: 'piecewise' }))).toBe('20');
   });
   it("test_issue_11045:990", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), And(rel('Eq', x, 3), rel('Gt', x, 1))], [rational(3), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('7');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), And(Relational(x, rational(3), '==', { evaluate: false }), Relational(x, rational(1), '>', { evaluate: false }))], [rational(3), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('7');
   });
   it("test_issue_11045:992", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 0)], [rational(2), And(rel('Eq', x, 3), rel('Lt', x, 1))], [rational(3), true]), x, [rational(-1), rational(1)], { conds: 'piecewise' }))).toBe('4');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [rational(2), And(Relational(x, rational(3), '==', { evaluate: false }), Relational(x, rational(1), '<', { evaluate: false }))], [rational(3), true]), x, [rational(-1), rational(1)], { conds: 'piecewise' }))).toBe('4');
   });
   it("test_issue_11045:995", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), And(rel('Eq', x, 3), rel('Gt', x, y))], [rational(3), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('7');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), And(Relational(x, rational(3), '==', { evaluate: false }), Relational(x, y, '>', { evaluate: false }))], [rational(3), true]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('7');
   });
   it("test_holes:1001", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(integrate(piecewise([rational(1), rel('Lt', x, 2)]), x)), 'Piecewise((x, x < 2), (nan, True))', [x], { fn: '.integrate', input: 'Piecewise((1, x < 2))' })).toBe(true);
+    expect(equivalent(sympyStr(integrate(piecewise([rational(1), Relational(x, rational(2), '<', { evaluate: false })]), x)), 'Piecewise((x, x < 2), (nan, True))', [x], { fn: '.integrate', input: 'Piecewise((1, x < 2))' })).toBe(true);
   });
   it.fails("test_holes:1003", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Gt', x, 1), rel('Lt', x, 2))]), x))).toBe('Piecewise((nan, x < 1), (x, x < 2), (nan, True))');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(2), '<', { evaluate: false }))]), x))).toBe('Piecewise((nan, x < 1), (x, x < 2), (nan, True))');
   });
   it("test_holes:1006", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Gt', x, 0), rel('Lt', x, 4))]), x, [rational(1), rational(3)], { conds: 'piecewise' }))).toBe('2');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(x, rational(0), '>', { evaluate: false }), Relational(x, rational(4), '<', { evaluate: false }))]), x, [rational(1), rational(3)], { conds: 'piecewise' }))).toBe('2');
   });
   it("test_holes:1012", () => {
     const [A, x, B] = symbols('A x B');
     const a = new Sym('a', { real: true });
-    expect(equivalent(sympyStr(integrate(piecewise([A, And(rel('Lt', a, 1), rel('Lt', x, 0))], [B, Or(rel('Gt', a, 2), rel('Lt', x, 1))]), x)), 'Piecewise((B*x, a > 2), (Piecewise((A*x, x < 0), (B*x, x < 1), (nan, True)), a < 1), (Piecewise((B*x, x < 1), (nan, True)), True))', [A, a, x, B], { fn: '.integrate', input: 'Piecewise((A, (a < 1) & (x < 0)), (B, (a > 2) | (x < 1)))' })).toBe(true);
+    expect(equivalent(sympyStr(integrate(piecewise([A, And(Relational(a, rational(1), '<', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false }))], [B, Or(Relational(a, rational(2), '>', { evaluate: false }), Relational(x, rational(1), '<', { evaluate: false }))]), x)), 'Piecewise((B*x, a > 2), (Piecewise((A*x, x < 0), (B*x, x < 1), (nan, True)), a < 1), (Piecewise((B*x, x < 1), (nan, True)), True))', [A, a, x, B], { fn: '.integrate', input: 'Piecewise((A, (a < 1) & (x < 0)), (B, (a > 2) | (x < 1)))' })).toBe(true);
   });
   it("test_issue_11922:1024", () => {
     expect(sympyStr(Gt(new Float({ man: 1426890481939n, exp: -51n }, 53), 0))).toBe('True');
@@ -6352,51 +6384,51 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it("test_issue_11922:1033", () => {
     const x = new Sym('x');
     const v1 = x;
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', x, 1)], [rational(10), true]), v1))).toBe('Piecewise((0, x < 1), (10*x - 10, True))');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(v1, rational(1), '<', { evaluate: false })], [rational(10), true]), v1))).toBe('Piecewise((0, x < 1), (10*x - 10, True))');
   });
   it.fails("test_issue_5227:1045", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(new Mul([new Float({ man: 7497128660675069n, exp: -61n }, 53), piecewise([rational(0), rel('Lt', x, new Float({ man: -2844521158874035n, exp: -45n }, 53))], [new Add([new Float({ man: 2999757296994011n, exp: -51n }, 53), new Mul([new Float({ man: -2317361254502341n, exp: -57n }, 53), x])]), rel('Lt', x, 2)], [new Add([piecewise([new Float({ man: 3602879701896397n, exp: -53n }, 53), rel('Gt', x, 2)], [new Float({ man: 5404319552844595n, exp: -53n }, 53), true]), piecewise([new Float({ man: 5404319552844595n, exp: -54n }, 53), rel('Gt', x, 123)], [new Float({ man: 3152519739159347n, exp: -52n }, 53), true])]), rel('Le', x, 123)], [new Add([new Float({ man: 4740970881615653n, exp: -51n }, 53), new Mul([new Float({ man: -4712046489104415n, exp: -59n }, 53), x])]), rel('Lt', x, new Float({ man: 3347541687308877n, exp: -43n }, 53))], [rational(0), true])]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('1.00195081676351');
+    expect(sympyStr(integrate(new Mul([new Float({ man: 7497128660675069n, exp: -61n }, 53), piecewise([rational(0), Relational(x, new Float({ man: -2844521158874035n, exp: -45n }, 53), '<', { evaluate: false })], [new Add([new Float({ man: 2999757296994011n, exp: -51n }, 53), new Mul([new Float({ man: -2317361254502341n, exp: -57n }, 53), x])]), Relational(x, rational(2), '<', { evaluate: false })], [new Add([piecewise([new Float({ man: 3602879701896397n, exp: -53n }, 53), Relational(x, rational(2), '>', { evaluate: false })], [new Float({ man: 5404319552844595n, exp: -53n }, 53), true]), piecewise([new Float({ man: 5404319552844595n, exp: -54n }, 53), Relational(x, rational(123), '>', { evaluate: false })], [new Float({ man: 3152519739159347n, exp: -52n }, 53), true])]), Relational(x, rational(123), '<=', { evaluate: false })], [new Add([new Float({ man: 4740970881615653n, exp: -51n }, 53), new Mul([new Float({ man: -4712046489104415n, exp: -59n }, 53), x])]), Relational(x, new Float({ man: 3347541687308877n, exp: -43n }, 53), '<', { evaluate: false })], [rational(0), true])]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('1.00195081676351');
   });
   it.fails("test_issue_5227:1046", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(integrate(new Mul([new Float({ man: 7497128660675069n, exp: -61n }, 53), piecewise([rational(0), rel('Lt', x, new Float({ man: -2844521158874035n, exp: -45n }, 53))], [new Add([new Float({ man: 2999757296994011n, exp: -51n }, 53), new Mul([new Float({ man: -2317361254502341n, exp: -57n }, 53), x])]), rel('Lt', x, 2)], [new Add([piecewise([new Float({ man: 3602879701896397n, exp: -53n }, 53), rel('Gt', x, 2)], [new Float({ man: 5404319552844595n, exp: -53n }, 53), true]), piecewise([new Float({ man: 5404319552844595n, exp: -54n }, 53), rel('Gt', x, 123)], [new Float({ man: 3152519739159347n, exp: -52n }, 53), true])]), rel('Le', x, 123)], [new Add([new Float({ man: 4740970881615653n, exp: -51n }, 53), new Mul([new Float({ man: -4712046489104415n, exp: -59n }, 53), x])]), rel('Lt', x, new Float({ man: 3347541687308877n, exp: -43n }, 53))], [rational(0), true])]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('1.00195081676351');
+      expect(pyStr(integrate(new Mul([new Float({ man: 7497128660675069n, exp: -61n }, 53), piecewise([rational(0), Relational(x, new Float({ man: -2844521158874035n, exp: -45n }, 53), '<', { evaluate: false })], [new Add([new Float({ man: 2999757296994011n, exp: -51n }, 53), new Mul([new Float({ man: -2317361254502341n, exp: -57n }, 53), x])]), Relational(x, rational(2), '<', { evaluate: false })], [new Add([piecewise([new Float({ man: 3602879701896397n, exp: -53n }, 53), Relational(x, rational(2), '>', { evaluate: false })], [new Float({ man: 5404319552844595n, exp: -53n }, 53), true]), piecewise([new Float({ man: 5404319552844595n, exp: -54n }, 53), Relational(x, rational(123), '>', { evaluate: false })], [new Float({ man: 3152519739159347n, exp: -52n }, 53), true])]), Relational(x, rational(123), '<=', { evaluate: false })], [new Add([new Float({ man: 4740970881615653n, exp: -51n }, 53), new Mul([new Float({ man: -4712046489104415n, exp: -59n }, 53), x])]), Relational(x, new Float({ man: 3347541687308877n, exp: -43n }, 53), '<', { evaluate: false })], [rational(0), true])]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('1.00195081676351');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
   it.fails("test_issue_5227:1047", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Lt', new Add([x, new Mul([rational(-1), y])]), 0)], [rational(0), true]), y))).toBe('Piecewise((0, x >= y), (-x + y, True))');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational(new Add([x, new Mul([rational(-1), y])]), rational(0), '<', { evaluate: false })], [rational(0), true]), y))).toBe('Piecewise((0, x >= y), (-x + y, True))');
   });
   it.fails("test_issue_10137:1058", () => {
     const a = new Sym('a', { real: true });
     const x = new Sym('x', { real: true });
     const b = new Sym('b', { real: true });
     const y = new Sym('y', { real: true });
-    expect(sympyStr(integrate(piecewise([rational(0), Or(rel('Gt', a, x), rel('Lt', b, x))], [rational(1), true]), x, [y, oo], { conds: 'piecewise' }))).toBe('Max(b, y) - Max(y, Min(a, b))');
+    expect(sympyStr(integrate(piecewise([rational(0), Or(Relational(a, x, '>', { evaluate: false }), Relational(b, x, '<', { evaluate: false }))], [rational(1), true]), x, [y, oo], { conds: 'piecewise' }))).toBe('Max(b, y) - Max(y, Min(a, b))');
   });
   it.fails("test_issue_10137:1062", () => {
     const a = new Sym('a', { real: true });
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Gt', a, x), rel('Gt', x, 0))], [rational(0), true]), x))).toBe('Piecewise((0, x <= 0), (x, x <= Max(0, a)), (Max(0, a), True))');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(a, x, '>', { evaluate: false }), Relational(x, rational(0), '>', { evaluate: false }))], [rational(0), true]), x))).toBe('Piecewise((0, x <= 0), (x, x <= Max(0, a)), (Max(0, a), True))');
   });
   it.fails("test_issue_10137:1067", () => {
     const a = new Sym('a', { real: true });
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Gt', a, x), rel('Gt', x, 0))], [rational(0), true]), x))).toBe('Piecewise((0, x <= 0), (x, x <= Max(0, a)), (Max(0, a), True))');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(a, x, '>', { evaluate: false }), Relational(x, rational(0), '>', { evaluate: false }))], [rational(0), true]), x))).toBe('Piecewise((0, x <= 0), (x, x <= Max(0, a)), (Max(0, a), True))');
   });
   it.fails("test_issue_10137:1068", () => {
     const a = new Sym('a', { real: true });
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Gt', a, x), rel('Gt', x, 0))], [rational(0), true]), x, [rational(2), rational(4)], { conds: 'piecewise' }))).toBe('Min(4, Max(2, a)) - 2');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(a, x, '>', { evaluate: false }), Relational(x, rational(0), '>', { evaluate: false }))], [rational(0), true]), x, [rational(2), rational(4)], { conds: 'piecewise' }))).toBe('Min(4, Max(2, a)) - 2');
   });
   it.fails("test_issue_10137:1069", () => {
     const a = new Sym('a', { real: true });
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([rational(1), And(rel('Gt', a, x), rel('Gt', x, 0))], [rational(0), true]), x, [rational(2), rational(4)], { conds: 'piecewise' }))).toBe('Min(4, Max(2, a)) - 2');
+    expect(sympyStr(integrate(piecewise([rational(1), And(Relational(a, x, '>', { evaluate: false }), Relational(x, rational(0), '>', { evaluate: false }))], [rational(0), true]), x, [rational(2), rational(4)], { conds: 'piecewise' }))).toBe('Min(4, Max(2, a)) - 2');
   });
   it("test_stackoverflow_43852159:1076", () => {
     const x = new Sym('x');
@@ -6408,11 +6440,11 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it.fails("test_stackoverflow_43852159:1078", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(new Mul([piecewise([rational(1), And(rel('Ge', y, -1), rel('Le', y, 1))], [rational(0), true]), piecewise([rational(1), And(rel('Ge', new Add([x, new Mul([rational(-1), y])]), -1), rel('Le', new Add([x, new Mul([rational(-1), y])]), 1))], [rational(0), true])]))).toBe('Piecewise((1, (y >= -1) & (y <= 1) & (x - y >= -1) & (x - y <= 1)), (0, True))');
+    expect(sympyStr(new Mul([piecewise([rational(1), And(Relational(y, rational(-1), '>=', { evaluate: false }), Relational(y, rational(1), '<=', { evaluate: false }))], [rational(0), true]), piecewise([rational(1), And(Relational(new Add([x, new Mul([rational(-1), y])]), rational(-1), '>=', { evaluate: false }), Relational(new Add([x, new Mul([rational(-1), y])]), rational(1), '<=', { evaluate: false }))], [rational(0), true])]))).toBe('Piecewise((1, (y >= -1) & (y <= 1) & (x - y >= -1) & (x - y <= 1)), (0, True))');
   });
   it("test_issue_12557:1115", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(integrate(piecewise([new Mul([rational(-1), x]), rel('Le', x, 0)], [x, true]), x, [new Mul([rational(-1), pi]), pi], { conds: 'piecewise' }))).toBe('pi**2');
+    expect(sympyStr(integrate(piecewise([new Mul([rational(-1), x]), Relational(x, rational(0), '<=', { evaluate: false })], [x, true]), x, [new Mul([rational(-1), pi]), pi], { conds: 'piecewise' }))).toBe('pi**2');
   });
   it.fails("test_issue_12557:1117", () => {
     const x = new Sym('x', { real: true });
@@ -6421,23 +6453,23 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it.fails("test_issue_6900:1125", () => {
     const [t, t0, x, t1] = symbols('t t0 x t1');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', t, t0)], [x, rel('Lt', t, t1)], [rational(0), true]), t))).toBe('Piecewise((0, t <= t0), (t*x - t0*x, t <= Max(t0, t1)), (-t0*x + x*Max(t0, t1), True))');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(t, t0, '<', { evaluate: false })], [x, Relational(t, t1, '<', { evaluate: false })], [rational(0), true]), t))).toBe('Piecewise((0, t <= t0), (t*x - t0*x, t <= Max(t0, t1)), (-t0*x + x*Max(t0, t1), True))');
   });
   it("test_issue_6900:1132", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(piecewise([rational(0), rel('Le', t, 0)], [new Mul([t, x]), rel('Le', t, 1)], [x, true]).subs(t, rational(-1)))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), Relational(t, rational(0), '<=', { evaluate: false })], [new Mul([t, x]), Relational(t, rational(1), '<=', { evaluate: false })], [x, true]).subs(t, rational(-1)))).toBe('0');
   });
   it("test_issue_6900:1132 (2)", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(piecewise([rational(0), rel('Le', t, 0)], [new Mul([t, x]), rel('Le', t, 1)], [x, true]).subs(t, rational(0)))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), Relational(t, rational(0), '<=', { evaluate: false })], [new Mul([t, x]), Relational(t, rational(1), '<=', { evaluate: false })], [x, true]).subs(t, rational(0)))).toBe('0');
   });
   it("test_issue_6900:1132 (3)", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(piecewise([rational(0), rel('Le', t, 0)], [new Mul([t, x]), rel('Le', t, 1)], [x, true]).subs(t, rational(1)))).toBe('x');
+    expect(sympyStr(piecewise([rational(0), Relational(t, rational(0), '<=', { evaluate: false })], [new Mul([t, x]), Relational(t, rational(1), '<=', { evaluate: false })], [x, true]).subs(t, rational(1)))).toBe('x');
   });
   it("test_issue_6900:1132 (4)", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(piecewise([rational(0), rel('Le', t, 0)], [new Mul([t, x]), rel('Le', t, 1)], [x, true]).subs(t, rational(2)))).toBe('x');
+    expect(sympyStr(piecewise([rational(0), Relational(t, rational(0), '<=', { evaluate: false })], [new Mul([t, x]), Relational(t, rational(1), '<=', { evaluate: false })], [x, true]).subs(t, rational(2)))).toBe('x');
   });
   it("test_issue_6900:1132 (5)", () => {
     const t = new Sym('t');
@@ -6457,43 +6489,43 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it("test_issue_6900:1142", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', t, 0)], [x, rel('Lt', t, 1)], [rational(0), true]), t, [rational(0), rational(2)], { conds: 'piecewise' }))).toBe('x');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(t, rational(0), '<', { evaluate: false })], [x, Relational(t, rational(1), '<', { evaluate: false })], [rational(0), true]), t, [rational(0), rational(2)], { conds: 'piecewise' }))).toBe('x');
   });
   it("test_issue_6900:1142 (2)", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', t, 0)], [x, rel('Lt', t, 2)], [rational(0), true]), t, [rational(0), rational(1)], { conds: 'piecewise' }))).toBe('x');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(t, rational(0), '<', { evaluate: false })], [x, Relational(t, rational(2), '<', { evaluate: false })], [rational(0), true]), t, [rational(0), rational(1)], { conds: 'piecewise' }))).toBe('x');
   });
   it("test_issue_6900:1142 (3)", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', t, 1)], [x, rel('Lt', t, 0)], [rational(0), true]), t, [rational(1), rational(2)], { conds: 'piecewise' }))).toBe('0');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(t, rational(1), '<', { evaluate: false })], [x, Relational(t, rational(0), '<', { evaluate: false })], [rational(0), true]), t, [rational(1), rational(2)], { conds: 'piecewise' }))).toBe('0');
   });
   it("test_issue_6900:1142 (4)", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', t, 1)], [x, rel('Lt', t, 2)], [rational(0), true]), t, [rational(1), rational(0)], { conds: 'piecewise' }))).toBe('0');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(t, rational(1), '<', { evaluate: false })], [x, Relational(t, rational(2), '<', { evaluate: false })], [rational(0), true]), t, [rational(1), rational(0)], { conds: 'piecewise' }))).toBe('0');
   });
   it("test_issue_6900:1142 (5)", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', t, 2)], [x, rel('Lt', t, 0)], [rational(0), true]), t, [rational(2), rational(1)], { conds: 'piecewise' }))).toBe('0');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(t, rational(2), '<', { evaluate: false })], [x, Relational(t, rational(0), '<', { evaluate: false })], [rational(0), true]), t, [rational(2), rational(1)], { conds: 'piecewise' }))).toBe('0');
   });
   it("test_issue_6900:1142 (6)", () => {
     const [t, x] = symbols('t x');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', t, 2)], [x, rel('Lt', t, 1)], [rational(0), true]), t, [rational(2), rational(0)], { conds: 'piecewise' }))).toBe('0');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(t, rational(2), '<', { evaluate: false })], [x, Relational(t, rational(1), '<', { evaluate: false })], [rational(0), true]), t, [rational(2), rational(0)], { conds: 'piecewise' }))).toBe('0');
   });
   it.fails("test_issue_6900:1143", () => {
     const [t, t0, x, t1, T] = symbols('t t0 x t1 T');
-    expect(sympyStr(integrate(piecewise([rational(0), rel('Lt', t, t0)], [x, rel('Lt', t, t1)], [rational(0), true]), t, [t0, T], { conds: 'piecewise' }))).toBe('Piecewise((-t0*x + x*Min(T, Max(t0, t1)), T > t0), (0, True))');
+    expect(sympyStr(integrate(piecewise([rational(0), Relational(t, t0, '<', { evaluate: false })], [x, Relational(t, t1, '<', { evaluate: false })], [rational(0), true]), t, [t0, T], { conds: 'piecewise' }))).toBe('Piecewise((-t0*x + x*Min(T, Max(t0, t1)), T > t0), (0, True))');
   });
   it("test_issue_10122:1147", () => {
     const x = new Sym('x');
-    expect(sympyStr(reduceInequalities([rel('Gt', new Add([rational(-1), abs(x), abs(new Add([rational(-1), x]))]), 0)], [x]))).toBe('((-oo < x) & (x < 0)) | ((1 < x) & (x < oo))');
+    expect(sympyStr(reduceInequalities([Relational(new Add([rational(-1), abs(x), abs(new Add([rational(-1), x]))]), rational(0), '>', { evaluate: false })], [x]))).toBe('((-oo < x) & (x < 0)) | ((1 < x) & (x < oo))');
   });
   it("test_issue_4313:1155", () => {
     const [x, a, y] = symbols('x a y');
-    expect(sympyStr(expand(piecewise([piecewise([rational(0), rel('Le', x, 0)], [new Add([new Mul([x, new Pow(a, rational(-2))]), new Mul([rational(-1), y, new Pow(a, rational(-2))]), new Mul([rational(-1), new Pow(y, rational(2)), new Pow(new Add([new Mul([x, new Pow(a, rational(2))]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1))]), new Mul([rational(-2), y, new Pow(a, rational(-2)), log(new Mul([rational(-1), y]))]), new Mul([rational(2), y, new Pow(a, rational(-2)), log(new Add([x, new Mul([rational(-1), y])]))])]), rel('Le', x, fn('Max', [rational(0), a]))], [new Add([new Pow(new Add([new Mul([rational(-1), y]), fn('Max', [rational(0), a])]), rational(-1)), new Mul([rational(-1), new Pow(new Add([x, new Mul([rational(-1), y])]), rational(-1))]), new Mul([new Pow(a, rational(-2)), fn('Max', [rational(0), a])]), new Mul([rational(-1), y, new Pow(a, rational(-2))]), new Mul([rational(-1), new Pow(y, rational(2)), new Pow(new Add([new Mul([new Pow(a, rational(2)), fn('Max', [rational(0), a])]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1))]), new Mul([rational(-2), y, new Pow(a, rational(-2)), log(new Mul([rational(-1), y]))]), new Mul([rational(2), y, new Pow(a, rational(-2)), log(new Add([new Mul([rational(-1), y]), fn('Max', [rational(0), a])]))])]), true]), Or(And(rel('Le', a, y), rel('Le', y, 0)), And(rel('Le', y, 0), rel('Gt', y, S.NegativeInfinity)))], [piecewise([new Mul([rational(-1), new Pow(new Add([x, new Mul([rational(-1), y])]), rational(-1))]), rel('Le', x, 0)], [new Add([new Pow(y, rational(-1)), new Mul([x, new Pow(a, rational(-2))]), new Mul([new Pow(new Add([new Mul([x, new Pow(a, rational(2))]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1)), new Add([new Mul([rational(-1), new Pow(a, rational(2))]), new Mul([rational(-1), new Pow(y, rational(2))]), new Mul([rational(2), a, y])])]), new Mul([new Pow(a, rational(-2)), new Pow(y, rational(-1)), new Add([new Mul([rational(-1), new Pow(a, rational(2))]), new Mul([rational(-1), new Pow(y, rational(2))]), new Mul([rational(2), a, y])])]), new Mul([rational(-2), new Pow(a, rational(-2)), new Add([y, new Mul([rational(-1), a])]), log(new Mul([rational(-1), y]))]), new Mul([rational(2), new Pow(a, rational(-2)), new Add([y, new Mul([rational(-1), a])]), log(new Add([x, new Mul([rational(-1), y])]))])]), rel('Le', x, fn('Max', [rational(0), a]))], [new Add([new Pow(y, rational(-1)), new Mul([new Pow(a, rational(-2)), fn('Max', [rational(0), a])]), new Mul([new Pow(new Add([new Mul([new Pow(a, rational(2)), fn('Max', [rational(0), a])]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1)), new Add([new Mul([rational(-1), new Pow(a, rational(2))]), new Mul([rational(-1), new Pow(y, rational(2))]), new Mul([rational(2), a, y])])]), new Mul([new Pow(a, rational(-2)), new Pow(y, rational(-1)), new Add([new Mul([rational(-1), new Pow(a, rational(2))]), new Mul([rational(-1), new Pow(y, rational(2))]), new Mul([rational(2), a, y])])]), new Mul([rational(-2), new Pow(a, rational(-2)), new Add([y, new Mul([rational(-1), a])]), log(new Mul([rational(-1), y]))]), new Mul([rational(2), new Pow(a, rational(-2)), new Add([y, new Mul([rational(-1), a])]), log(new Add([new Mul([rational(-1), y]), fn('Max', [rational(0), a])]))])]), true]), rel('Le', a, y)], [piecewise([new Mul([rational(-1), new Pow(y, rational(2)), new Pow(new Add([new Mul([x, new Pow(a, rational(2))]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1))]), rel('Le', x, 0)], [new Add([new Mul([x, new Pow(a, rational(-2))]), new Mul([y, new Pow(a, rational(-2))])]), rel('Le', x, fn('Max', [rational(0), a]))], [new Add([new Mul([y, new Pow(a, rational(-2))]), new Mul([new Pow(a, rational(-2)), fn('Max', [rational(0), a])]), new Mul([new Pow(new Add([new Mul([new Pow(a, rational(2)), fn('Max', [rational(0), a])]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1)), new Add([new Pow(a, rational(2)), new Pow(y, rational(2)), new Mul([rational(-2), a, y])])]), new Mul([rational(-1), new Pow(new Add([new Mul([x, new Pow(a, rational(2))]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1)), new Add([new Pow(a, rational(2)), new Pow(y, rational(2)), new Mul([rational(-2), a, y])])])]), true]), true]), {}))).toBe('Piecewise((Piecewise((0, x <= 0), (-y**2/(a**2*x - a**2*y) + x/a**2 - 2*y*log(-y)/a**2 + 2*y*log(x - y)/a**2 - y/a**2, x <= Max(0, a)), (-y**2/(-a**2*y + a**2*Max(0, a)) + 1/(-y + Max(0, a)) - 1/(x - y) - 2*y*log(-y)/a**2 + 2*y*log(-y + Max(0, a))/a**2 - y/a**2 + Max(0, a)/a**2, True)), ((a <= y) & (y <= 0)) | ((y > -oo) & (y <= 0))), (Piecewise((-1/(x - y), x <= 0), (-a**2/(a**2*x - a**2*y) + 2*a*y/(a**2*x - a**2*y) - y**2/(a**2*x - a**2*y) + 2*log(-y)/a - 2*log(x - y)/a + 2/a + x/a**2 - 2*y*log(-y)/a**2 + 2*y*log(x - y)/a**2 - y/a**2, x <= Max(0, a)), (-a**2/(-a**2*y + a**2*Max(0, a)) + 2*a*y/(-a**2*y + a**2*Max(0, a)) - y**2/(-a**2*y + a**2*Max(0, a)) + 2*log(-y)/a - 2*log(-y + Max(0, a))/a + 2/a - 2*y*log(-y)/a**2 + 2*y*log(-y + Max(0, a))/a**2 - y/a**2 + Max(0, a)/a**2, True)), a <= y), (Piecewise((-y**2/(a**2*x - a**2*y), x <= 0), (x/a**2 + y/a**2, x <= Max(0, a)), (a**2/(-a**2*y + a**2*Max(0, a)) - a**2/(a**2*x - a**2*y) - 2*a*y/(-a**2*y + a**2*Max(0, a)) + 2*a*y/(a**2*x - a**2*y) + y**2/(-a**2*y + a**2*Max(0, a)) - y**2/(a**2*x - a**2*y) + y/a**2 + Max(0, a)/a**2, True)), True))');
+    expect(sympyStr(expand(piecewise([piecewise([rational(0), Relational(x, rational(0), '<=', { evaluate: false })], [new Add([new Mul([x, new Pow(a, rational(-2))]), new Mul([rational(-1), y, new Pow(a, rational(-2))]), new Mul([rational(-1), new Pow(y, rational(2)), new Pow(new Add([new Mul([x, new Pow(a, rational(2))]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1))]), new Mul([rational(-2), y, new Pow(a, rational(-2)), log(new Mul([rational(-1), y]))]), new Mul([rational(2), y, new Pow(a, rational(-2)), log(new Add([x, new Mul([rational(-1), y])]))])]), Relational(x, fn('Max', [rational(0), a]), '<=', { evaluate: false })], [new Add([new Pow(new Add([new Mul([rational(-1), y]), fn('Max', [rational(0), a])]), rational(-1)), new Mul([rational(-1), new Pow(new Add([x, new Mul([rational(-1), y])]), rational(-1))]), new Mul([new Pow(a, rational(-2)), fn('Max', [rational(0), a])]), new Mul([rational(-1), y, new Pow(a, rational(-2))]), new Mul([rational(-1), new Pow(y, rational(2)), new Pow(new Add([new Mul([new Pow(a, rational(2)), fn('Max', [rational(0), a])]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1))]), new Mul([rational(-2), y, new Pow(a, rational(-2)), log(new Mul([rational(-1), y]))]), new Mul([rational(2), y, new Pow(a, rational(-2)), log(new Add([new Mul([rational(-1), y]), fn('Max', [rational(0), a])]))])]), true]), Or(And(Relational(a, y, '<=', { evaluate: false }), Relational(y, rational(0), '<=', { evaluate: false })), And(Relational(y, rational(0), '<=', { evaluate: false }), Relational(y, S.NegativeInfinity, '>', { evaluate: false })))], [piecewise([new Mul([rational(-1), new Pow(new Add([x, new Mul([rational(-1), y])]), rational(-1))]), Relational(x, rational(0), '<=', { evaluate: false })], [new Add([new Pow(y, rational(-1)), new Mul([x, new Pow(a, rational(-2))]), new Mul([new Pow(new Add([new Mul([x, new Pow(a, rational(2))]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1)), new Add([new Mul([rational(-1), new Pow(a, rational(2))]), new Mul([rational(-1), new Pow(y, rational(2))]), new Mul([rational(2), a, y])])]), new Mul([new Pow(a, rational(-2)), new Pow(y, rational(-1)), new Add([new Mul([rational(-1), new Pow(a, rational(2))]), new Mul([rational(-1), new Pow(y, rational(2))]), new Mul([rational(2), a, y])])]), new Mul([rational(-2), new Pow(a, rational(-2)), new Add([y, new Mul([rational(-1), a])]), log(new Mul([rational(-1), y]))]), new Mul([rational(2), new Pow(a, rational(-2)), new Add([y, new Mul([rational(-1), a])]), log(new Add([x, new Mul([rational(-1), y])]))])]), Relational(x, fn('Max', [rational(0), a]), '<=', { evaluate: false })], [new Add([new Pow(y, rational(-1)), new Mul([new Pow(a, rational(-2)), fn('Max', [rational(0), a])]), new Mul([new Pow(new Add([new Mul([new Pow(a, rational(2)), fn('Max', [rational(0), a])]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1)), new Add([new Mul([rational(-1), new Pow(a, rational(2))]), new Mul([rational(-1), new Pow(y, rational(2))]), new Mul([rational(2), a, y])])]), new Mul([new Pow(a, rational(-2)), new Pow(y, rational(-1)), new Add([new Mul([rational(-1), new Pow(a, rational(2))]), new Mul([rational(-1), new Pow(y, rational(2))]), new Mul([rational(2), a, y])])]), new Mul([rational(-2), new Pow(a, rational(-2)), new Add([y, new Mul([rational(-1), a])]), log(new Mul([rational(-1), y]))]), new Mul([rational(2), new Pow(a, rational(-2)), new Add([y, new Mul([rational(-1), a])]), log(new Add([new Mul([rational(-1), y]), fn('Max', [rational(0), a])]))])]), true]), Relational(a, y, '<=', { evaluate: false })], [piecewise([new Mul([rational(-1), new Pow(y, rational(2)), new Pow(new Add([new Mul([x, new Pow(a, rational(2))]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1))]), Relational(x, rational(0), '<=', { evaluate: false })], [new Add([new Mul([x, new Pow(a, rational(-2))]), new Mul([y, new Pow(a, rational(-2))])]), Relational(x, fn('Max', [rational(0), a]), '<=', { evaluate: false })], [new Add([new Mul([y, new Pow(a, rational(-2))]), new Mul([new Pow(a, rational(-2)), fn('Max', [rational(0), a])]), new Mul([new Pow(new Add([new Mul([new Pow(a, rational(2)), fn('Max', [rational(0), a])]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1)), new Add([new Pow(a, rational(2)), new Pow(y, rational(2)), new Mul([rational(-2), a, y])])]), new Mul([rational(-1), new Pow(new Add([new Mul([x, new Pow(a, rational(2))]), new Mul([rational(-1), y, new Pow(a, rational(2))])]), rational(-1)), new Add([new Pow(a, rational(2)), new Pow(y, rational(2)), new Mul([rational(-2), a, y])])])]), true]), true]), {}))).toBe('Piecewise((Piecewise((0, x <= 0), (-y**2/(a**2*x - a**2*y) + x/a**2 - 2*y*log(-y)/a**2 + 2*y*log(x - y)/a**2 - y/a**2, x <= Max(0, a)), (-y**2/(-a**2*y + a**2*Max(0, a)) + 1/(-y + Max(0, a)) - 1/(x - y) - 2*y*log(-y)/a**2 + 2*y*log(-y + Max(0, a))/a**2 - y/a**2 + Max(0, a)/a**2, True)), ((a <= y) & (y <= 0)) | ((y > -oo) & (y <= 0))), (Piecewise((-1/(x - y), x <= 0), (-a**2/(a**2*x - a**2*y) + 2*a*y/(a**2*x - a**2*y) - y**2/(a**2*x - a**2*y) + 2*log(-y)/a - 2*log(x - y)/a + 2/a + x/a**2 - 2*y*log(-y)/a**2 + 2*y*log(x - y)/a**2 - y/a**2, x <= Max(0, a)), (-a**2/(-a**2*y + a**2*Max(0, a)) + 2*a*y/(-a**2*y + a**2*Max(0, a)) - y**2/(-a**2*y + a**2*Max(0, a)) + 2*log(-y)/a - 2*log(-y + Max(0, a))/a + 2/a - 2*y*log(-y)/a**2 + 2*y*log(-y + Max(0, a))/a**2 - y/a**2 + Max(0, a)/a**2, True)), a <= y), (Piecewise((-y**2/(a**2*x - a**2*y), x <= 0), (x/a**2 + y/a**2, x <= Max(0, a)), (a**2/(-a**2*y + a**2*Max(0, a)) - a**2/(a**2*x - a**2*y) - 2*a*y/(-a**2*y + a**2*Max(0, a)) + 2*a*y/(a**2*x - a**2*y) + y**2/(-a**2*y + a**2*Max(0, a)) - y**2/(a**2*x - a**2*y) + y/a**2 + Max(0, a)/a**2, True)), True))');
   });
   it("test_containment:1208", () => {
     const x = new Sym('x');
-    expect(sympyStr(diff(piecewise([new Mul([rational(15), x]), rel('Le', x, 0)], [new Mul([rational(5), x]), rel('Le', x, 1)], [new Add([rational(1), new Mul([rational(4), x])]), rel('Lt', x, 2)], [new Add([rational(-7), new Mul([rational(8), x])]), rel('Lt', x, 4)], [new Add([rational(-23), new Mul([rational(12), x])]), true]), x))).toBe('Piecewise((15, x <= 0), (5, x <= 1), (4, x < 2), (8, x < 4), (12, True))');
+    expect(sympyStr(diff(piecewise([new Mul([rational(15), x]), Relational(x, rational(0), '<=', { evaluate: false })], [new Mul([rational(5), x]), Relational(x, rational(1), '<=', { evaluate: false })], [new Add([rational(1), new Mul([rational(4), x])]), Relational(x, rational(2), '<', { evaluate: false })], [new Add([rational(-7), new Mul([rational(8), x])]), Relational(x, rational(4), '<', { evaluate: false })], [new Add([rational(-23), new Mul([rational(12), x])]), true]), x))).toBe('Piecewise((15, x <= 0), (5, x <= 1), (4, x < 2), (8, x < 4), (12, True))');
   });
   it("test_piecewise_with_DiracDelta:1218", () => {
     const x = new Sym('x');
@@ -6505,15 +6537,15 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it.fails("test_piecewise_with_DiracDelta:1220", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([DiracDelta(new Add([rational(-1), x])), rel('Eq', x, 2)], [rational(0), true]), x))).toBe('0');
+    expect(sympyStr(integrate(piecewise([DiracDelta(new Add([rational(-1), x])), Relational(x, rational(2), '==', { evaluate: false })], [rational(0), true]), x))).toBe('0');
   });
   it.fails("test_piecewise_with_DiracDelta:1221", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([DiracDelta(new Add([rational(-1), x])), rel('Lt', x, 2)], [rational(0), true]), x))).toBe('Piecewise((Heaviside(x - 1), x < 2), (1, True))');
+    expect(sympyStr(integrate(piecewise([DiracDelta(new Add([rational(-1), x])), Relational(x, rational(2), '<', { evaluate: false })], [rational(0), true]), x))).toBe('Piecewise((Heaviside(x - 1), x < 2), (1, True))');
   });
   it("test_issue_10258:1229", () => {
     const x = new Sym('x');
-    expect(sympyStr(isZero(piecewise([rational(0), rel('Lt', x, 1)], [rational(1), true])))).toBe('None');
+    expect(sympyStr(isZero(piecewise([rational(0), Relational(x, rational(1), '<', { evaluate: false })], [rational(1), true])))).toBe('None');
   });
   it("test_issue_10258:1230", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
@@ -6521,76 +6553,76 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it("test_issue_10258:1232", () => {
     const x = new Sym('x');
     const a = new Sym('a', { zero: true });
-    expect(sympyStr(isZero(piecewise([rational(0), rel('Lt', x, 1)], [a, true])))).toBe('True');
+    expect(sympyStr(isZero(piecewise([rational(0), Relational(x, rational(1), '<', { evaluate: false })], [a, true])))).toBe('True');
   });
   it("test_issue_10258:1233", () => {
     const x = new Sym('x');
     const a = new Sym('a', { zero: true });
-    expect(sympyStr(isZero(piecewise([rational(1), rel('Lt', x, 1)], [a, rel('Lt', x, 3)])))).toBe('None');
+    expect(sympyStr(isZero(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [a, Relational(x, rational(3), '<', { evaluate: false })])))).toBe('None');
   });
   it("test_issue_10258:1235", () => {
     const [x, a] = symbols('x a');
-    expect(sympyStr(isZero(piecewise([rational(0), rel('Lt', x, 1)], [a, true])))).toBe('None');
+    expect(sympyStr(isZero(piecewise([rational(0), Relational(x, rational(1), '<', { evaluate: false })], [a, true])))).toBe('None');
   });
   it("test_issue_10258:1236", () => {
     const x = new Sym('x');
-    expect(sympyStr(isNonzero(piecewise([rational(0), rel('Lt', x, 1)], [rational(1), true])))).toBe('None');
+    expect(sympyStr(isNonzero(piecewise([rational(0), Relational(x, rational(1), '<', { evaluate: false })], [rational(1), true])))).toBe('None');
   });
   it("test_issue_10258:1237", () => {
     const x = new Sym('x');
-    expect(sympyStr(isNonzero(piecewise([rational(1), rel('Lt', x, 1)], [rational(2), true])))).toBe('True');
+    expect(sympyStr(isNonzero(piecewise([rational(1), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), true])))).toBe('True');
   });
   it("test_issue_10258:1238", () => {
     const x = new Sym('x');
-    expect(sympyStr(isFinite(piecewise([rational(0), rel('Lt', x, 1)], [oo, true])))).toBe('None');
+    expect(sympyStr(isFinite(piecewise([rational(0), Relational(x, rational(1), '<', { evaluate: false })], [oo, true])))).toBe('None');
   });
   it("test_issue_10258:1239", () => {
     const x = new Sym('x');
-    expect(sympyStr(isFinite(piecewise([rational(0), rel('Lt', x, 1)], [rational(1), true])))).toBe('True');
+    expect(sympyStr(isFinite(piecewise([rational(0), Relational(x, rational(1), '<', { evaluate: false })], [rational(1), true])))).toBe('True');
   });
   it("test_issue_10258:1241", () => {
     const x = new Sym('x');
-    expect(sympyStr(isFinite(piecewise([Basic(), rel('Lt', x, 1)])))).toBe('None');
+    expect(sympyStr(isFinite(piecewise([Basic(), Relational(x, rational(1), '<', { evaluate: false })])))).toBe('None');
   });
   it("test_issue_10258:1245", () => {
     const x = new Sym('x');
-    expect(sympyStr(Lt(piecewise([rational(1), rel('Lt', x, 0)], [rational(2), true]), 3))).not.toBe('True');
+    expect(sympyStr(Lt(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [rational(2), true]), 3))).not.toBe('True');
   });
   it.fails("test_issue_10258:1246", () => {
     const x = new Sym('x');
-    expect(sympyStr(rel('Lt', piecewise([rational(1), rel('Lt', x, 0)], [rational(2), true]), 3))).toBe('True');
+    expect(sympyStr(Relational(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [rational(2), true]), rational(3), '<', { evaluate: false }))).toBe('True');
   });
   it("test_issue_10087:1254", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Mul([piecewise([x, rel('Gt', x, 1)], [rational(2), true]), piecewise([x, rel('Gt', x, 3)], [rational(3), true])]).subs(x, rational(0)))).toBe('6');
+    expect(sympyStr(new Mul([piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [rational(2), true]), piecewise([x, Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true])]).subs(x, rational(0)))).toBe('6');
   });
   it("test_issue_10087:1254 (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Mul([piecewise([x, rel('Gt', x, 1)], [rational(2), true]), piecewise([x, rel('Gt', x, 3)], [rational(3), true])]).subs(x, rational(2)))).toBe('6');
+    expect(sympyStr(new Mul([piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [rational(2), true]), piecewise([x, Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true])]).subs(x, rational(2)))).toBe('6');
   });
   it("test_issue_10087:1254 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Mul([piecewise([x, rel('Gt', x, 1)], [rational(2), true]), piecewise([x, rel('Gt', x, 3)], [rational(3), true])]).subs(x, rational(4)))).toBe('16');
+    expect(sympyStr(new Mul([piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [rational(2), true]), piecewise([x, Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true])]).subs(x, rational(4)))).toBe('16');
   });
   it("test_issue_10087:1258", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Add([piecewise([x, rel('Gt', x, 1)], [rational(2), true]), piecewise([x, rel('Gt', x, 3)], [rational(3), true])]).subs(x, rational(0)))).toBe('5');
+    expect(sympyStr(new Add([piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [rational(2), true]), piecewise([x, Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true])]).subs(x, rational(0)))).toBe('5');
   });
   it("test_issue_10087:1258 (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Add([piecewise([x, rel('Gt', x, 1)], [rational(2), true]), piecewise([x, rel('Gt', x, 3)], [rational(3), true])]).subs(x, rational(2)))).toBe('5');
+    expect(sympyStr(new Add([piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [rational(2), true]), piecewise([x, Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true])]).subs(x, rational(2)))).toBe('5');
   });
   it("test_issue_10087:1258 (3)", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Add([piecewise([x, rel('Gt', x, 1)], [rational(2), true]), piecewise([x, rel('Gt', x, 3)], [rational(3), true])]).subs(x, rational(4)))).toBe('8');
+    expect(sympyStr(new Add([piecewise([x, Relational(x, rational(1), '>', { evaluate: false })], [rational(2), true]), piecewise([x, Relational(x, rational(3), '>', { evaluate: false })], [rational(3), true])]).subs(x, rational(4)))).toBe('8');
   });
   it.fails("test_issue_8919:1266", () => {
     const [c1, x, c2, c3, c4] = symbols('c1 x c2 c3 c4');
-    expect(sympyStr(integrate(new Mul([piecewise([c1, rel('Lt', x, 1)], [c2, true]), piecewise([c3, rel('Lt', x, rational(1, 3))], [c4, true])]), x, [rational(0), rational(2)], { conds: 'piecewise' }))).toBe('c1*c3/3 + 2*c1*c4/3 + c2*c4');
+    expect(sympyStr(integrate(new Mul([piecewise([c1, Relational(x, rational(1), '<', { evaluate: false })], [c2, true]), piecewise([c3, Relational(x, rational(1, 3), '<', { evaluate: false })], [c4, true])]), x, [rational(0), rational(2)], { conds: 'piecewise' }))).toBe('c1*c3/3 + 2*c1*c4/3 + c2*c4');
   });
   it("test_issue_8919:1270", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(new Mul([piecewise([rational(0), rel('Lt', x, 1)], [rational(2), true]), piecewise([rational(3), rel('Lt', x, 2)], [rational(0), true])]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('6');
+    expect(sympyStr(integrate(new Mul([piecewise([rational(0), Relational(x, rational(1), '<', { evaluate: false })], [rational(2), true]), piecewise([rational(3), Relational(x, rational(2), '<', { evaluate: false })], [rational(0), true])]), x, [rational(0), rational(3)], { conds: 'piecewise' }))).toBe('6');
   });
   it.fails("test_issue_8919:1278", () => {
     const x = new Sym('x', { real: true });
@@ -6599,7 +6631,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const c = new Sym('c', { real: true });
     const a = new Sym('a', { real: true });
     const z = new Sym('z', { real: true });
-    expect(sympyStr(doit(new Integral([piecewise([rational(0), Or(rel('Ge', x, y), rel('Gt', b, c), rel('Lt', x, 0))], [a, true]), x, rational(0), z])))).toBe('Piecewise((0, b > c), (-a*Min(0, z) + a*Min(y, z), True))');
+    expect(sympyStr(doit(new Integral([piecewise([rational(0), Or(Relational(x, y, '>=', { evaluate: false }), Relational(b, c, '>', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false }))], [a, true]), x, rational(0), z])))).toBe('Piecewise((0, b > c), (-a*Min(0, z) + a*Min(y, z), True))');
   });
   it("test_issue_8919:1283", () => {
     const b = new Sym('b', { real: true });
@@ -6607,7 +6639,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const a = new Sym('a', { real: true });
     const y = new Sym('y', { positive: true });
     const z = new Sym('z', { real: true });
-    expect(sympyStr(piecewise([rational(0), rel('Gt', b, c)], [new Add([new Mul([a, fn('Min', [y, z])]), new Mul([rational(-1), a, fn('Min', [rational(0), z])])]), true]).subs(rel('Gt', b, c), S['true']).subs(y, rational(1)).subs(z, rational(-1)))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), Relational(b, c, '>', { evaluate: false })], [new Add([new Mul([a, fn('Min', [y, z])]), new Mul([rational(-1), a, fn('Min', [rational(0), z])])]), true]).subs(Relational(b, c, '>', { evaluate: false }), S['true']).subs(y, rational(1)).subs(z, rational(-1)))).toBe('0');
   });
   it("test_issue_8919:1283 (2)", () => {
     const b = new Sym('b', { real: true });
@@ -6615,7 +6647,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const a = new Sym('a', { real: true });
     const y = new Sym('y', { positive: true });
     const z = new Sym('z', { real: true });
-    expect(sympyStr(piecewise([rational(0), rel('Gt', b, c)], [new Add([new Mul([a, fn('Min', [y, z])]), new Mul([rational(-1), a, fn('Min', [rational(0), z])])]), true]).subs(rel('Gt', b, c), S['true']).subs(y, rational(2)).subs(z, rational(-2)))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), Relational(b, c, '>', { evaluate: false })], [new Add([new Mul([a, fn('Min', [y, z])]), new Mul([rational(-1), a, fn('Min', [rational(0), z])])]), true]).subs(Relational(b, c, '>', { evaluate: false }), S['true']).subs(y, rational(2)).subs(z, rational(-2)))).toBe('0');
   });
   it("test_issue_8919:1283 (3)", () => {
     const b = new Sym('b', { real: true });
@@ -6623,7 +6655,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const a = new Sym('a', { real: true });
     const y = new Sym('y', { positive: true });
     const z = new Sym('z', { real: true });
-    expect(sympyStr(piecewise([rational(0), rel('Gt', b, c)], [new Add([new Mul([a, fn('Min', [y, z])]), new Mul([rational(-1), a, fn('Min', [rational(0), z])])]), true]).subs(rel('Gt', b, c), S['false']).subs(y, rational(1)).subs(z, rational(-1)))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), Relational(b, c, '>', { evaluate: false })], [new Add([new Mul([a, fn('Min', [y, z])]), new Mul([rational(-1), a, fn('Min', [rational(0), z])])]), true]).subs(Relational(b, c, '>', { evaluate: false }), S['false']).subs(y, rational(1)).subs(z, rational(-1)))).toBe('0');
   });
   it("test_issue_8919:1283 (4)", () => {
     const b = new Sym('b', { real: true });
@@ -6631,27 +6663,27 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const a = new Sym('a', { real: true });
     const y = new Sym('y', { positive: true });
     const z = new Sym('z', { real: true });
-    expect(sympyStr(piecewise([rational(0), rel('Gt', b, c)], [new Add([new Mul([a, fn('Min', [y, z])]), new Mul([rational(-1), a, fn('Min', [rational(0), z])])]), true]).subs(rel('Gt', b, c), S['false']).subs(y, rational(2)).subs(z, rational(-2)))).toBe('0');
+    expect(sympyStr(piecewise([rational(0), Relational(b, c, '>', { evaluate: false })], [new Add([new Mul([a, fn('Min', [y, z])]), new Mul([rational(-1), a, fn('Min', [rational(0), z])])]), true]).subs(Relational(b, c, '>', { evaluate: false }), S['false']).subs(y, rational(2)).subs(z, rational(-2)))).toBe('0');
   });
   it("test_unevaluated_integrals:1289", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Eq', (SymFunction('f'))(x), 1)], [rational(2), rel('Lt', x, 10)], [rational(0), true]), x))).toBe('Integral(Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True)), x)');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational((SymFunction('f'))(x), rational(1), '==', { evaluate: false })], [rational(2), Relational(x, rational(10), '<', { evaluate: false })], [rational(0), true]), x))).toBe('Integral(Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True)), x)');
   });
   it("test_unevaluated_integrals:1290", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(integrate(piecewise([rational(1), rel('Eq', (SymFunction('f'))(x), 1)], [rational(2), rel('Lt', x, 10)], [rational(0), true]), x, [rational(0), rational(5)], { conds: 'piecewise' })), 'Integral(Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True)), (x, 0, 5))', [x], { fn: '.integrate', input: 'Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True))' })).toBe(true);
+    expect(equivalent(sympyStr(integrate(piecewise([rational(1), Relational((SymFunction('f'))(x), rational(1), '==', { evaluate: false })], [rational(2), Relational(x, rational(10), '<', { evaluate: false })], [rational(0), true]), x, [rational(0), rational(5)], { conds: 'piecewise' })), 'Integral(Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True)), (x, 0, 5))', [x], { fn: '.integrate', input: 'Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True))' })).toBe(true);
   });
   it.fails("test_unevaluated_integrals:1294", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Integral([piecewise([rational(1), rel('Eq', Mod(x, rational(2)), 1)], [rational(2), rel('Lt', x, 10)], [rational(0), true]), x, rational(0), rational(5)]).evalf(15, {}))).toBe('10.0');
+    expect(sympyStr(new Integral([piecewise([rational(1), Relational(Mod(x, rational(2)), rational(1), '==', { evaluate: false })], [rational(2), Relational(x, rational(10), '<', { evaluate: false })], [rational(0), true]), x, rational(0), rational(5)]).evalf(15, {}))).toBe('10.0');
   });
   it.fails("test_unevaluated_integrals:1298", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(integrate(piecewise([rational(1), rel('Eq', (SymFunction('f'))(x), 1)], [rational(2), rel('Lt', x, 10)], [rational(0), true]), y))).toBe('Piecewise((y, Eq(f(x), 1) | ((x < 10) & Eq(f(x), 1))), (2*y, (x > -oo) & (x < 10)), (0, True))');
+    expect(sympyStr(integrate(piecewise([rational(1), Relational((SymFunction('f'))(x), rational(1), '==', { evaluate: false })], [rational(2), Relational(x, rational(10), '<', { evaluate: false })], [rational(0), true]), y))).toBe('Piecewise((y, Eq(f(x), 1) | ((x < 10) & Eq(f(x), 1))), (2*y, (x > -oo) & (x < 10)), (0, True))');
   });
   it("test_conditions_as_alternate_booleans:1305", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Piecewise([x, piecewise([rel('Lt', y, 1), rel('Gt', x, 0)], [rel('Gt', y, 1), true])]))).toBe('Piecewise((x, ITE(x > 0, y < 1, y > 1)))');
+    expect(sympyStr(Piecewise([x, piecewise([Relational(y, rational(1), '<', { evaluate: false }), Relational(x, rational(0), '>', { evaluate: false })], [Relational(y, rational(1), '>', { evaluate: false }), true])]))).toBe('Piecewise((x, ITE(x > 0, y < 1, y > 1)))');
   });
   // an error outside the library
   //   assert p2.subs(y, 0) == 0
@@ -6685,22 +6717,22 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(piecewise([x, rel('Lt', x, 1)], [rational(58, 7), true]).evalf(15, {}))).toBe('Piecewise((x, x < 1), (8.28571428571429, True))');
+      expect(pyStr(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [rational(58, 7), true]).evalf(15, {}))).toBe('Piecewise((x, x < 1), (8.28571428571429, True))');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
   it.fails("test_issue_8458:1418", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([rational(0), rel('Eq', x, 0)], [fn('sin', [x]), true])))).toBe('sin(x)');
+    expect(sympyStr(simplify(piecewise([rational(0), Relational(x, rational(0), '==', { evaluate: false })], [fn('sin', [x]), true])))).toBe('sin(x)');
   });
   it.fails("test_issue_8458:1421", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(piecewise([x, rel('Eq', x, 0)], [fn('sin', [x]), true])))).toBe('sin(x)');
+    expect(sympyStr(simplify(piecewise([x, Relational(x, rational(0), '==', { evaluate: false })], [fn('sin', [x]), true])))).toBe('sin(x)');
   });
   it.fails("test_issue_8458:1424", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(piecewise([new Add([rational(1), x]), rel('Eq', x, -1)], [new Add([new Pow(new Add([rational(-2), y]), rational(4)), new Mul([rational(4), x])]), And(rel('Eq', x, 0), rel('Eq', new Add([x, y]), 2))], [fn('sin', [x]), true])))).toBe('Piecewise((0, Eq(x, -1)), (sin(x), True))');
+    expect(sympyStr(simplify(piecewise([new Add([rational(1), x]), Relational(x, rational(-1), '==', { evaluate: false })], [new Add([new Pow(new Add([rational(-2), y]), rational(4)), new Mul([rational(4), x])]), And(Relational(x, rational(0), '==', { evaluate: false }), Relational(new Add([x, y]), rational(2), '==', { evaluate: false }))], [fn('sin', [x]), true])))).toBe('Piecewise((0, Eq(x, -1)), (sin(x), True))');
   });
   // the arguments do not type-check against the public API
   //   assert unchanged(Piecewise, (1, Or(Eq(im(z), 0), Gt(re(z), 0))), (2, True))
@@ -6714,32 +6746,32 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   it.todo("test_issue_16417:1432");
   it("test_issue_16417:1439", () => {
     const r = new Sym('r', { real: true });
-    expect(sympyStr(Piecewise([pi, rel('Lt', r, 0)], [rational(0), rel('Gt', r, 0)], [nan, true]))).toBe('Piecewise((pi, r < 0), (0, r > 0), (nan, True))');
+    expect(sympyStr(Piecewise([pi, Relational(r, rational(0), '<', { evaluate: false })], [rational(0), Relational(r, rational(0), '>', { evaluate: false })], [nan, true]))).toBe('Piecewise((pi, r < 0), (0, r > 0), (nan, True))');
   });
   it("test_issue_16417:1453", () => {
     const r = new Sym('r', { real: true });
-    expect(sympyStr(Piecewise([pi, false], [rational(0), rel('Ne', r, 0)], [nan, true]))).toBe('Piecewise((0, Ne(r, 0)), (nan, True))');
+    expect(sympyStr(Piecewise([pi, false], [rational(0), Relational(r, rational(0), '!=', { evaluate: false })], [nan, true]))).toBe('Piecewise((0, Ne(r, 0)), (nan, True))');
   });
   it("test_issue_16417:1455", () => {
     const r = new Sym('r', { real: true });
-    expect(sympyStr(Piecewise([pi, false], [rational(0), rel('Ne', r, 0)], [nan, true]))).toBe('Piecewise((0, Ne(r, 0)), (nan, True))');
+    expect(sympyStr(Piecewise([pi, false], [rational(0), Relational(r, rational(0), '!=', { evaluate: false })], [nan, true]))).toBe('Piecewise((0, Ne(r, 0)), (nan, True))');
   });
   it("test_issue_7370:1548", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(integrate(piecewise([rational(1), rel('Le', x, 2400)]), x, [rational(0), new Float({ man: 9998594109300159404305246532403n, exp: -95n }, 103)], { conds: 'piecewise' }))).toBe('252.400000000000000000000000000');
+      expect(pyStr(integrate(piecewise([rational(1), Relational(x, rational(2400), '<=', { evaluate: false })]), x, [rational(0), new Float({ man: 9998594109300159404305246532403n, exp: -95n }, 103)], { conds: 'piecewise' }))).toBe('252.400000000000000000000000000');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
   it("test_issue_14933:1559", () => {
     const [y, x] = symbols('y x');
-    expect(sympyStr(xreplace(piecewise([rational(1), ITE(rel('Gt', y, 0), rel('Lt', x, 0), true, { evaluate: false })]), [[y, MatrixElement(new MatrixSymbol('inp', rational(1), rational(1)), rational(0), rational(0))], [x, MatrixElement(new MatrixSymbol('inp', rational(1), rational(1)), rational(0), rational(0))]]))).toBe('Piecewise((1, ITE(inp[0, 0] > 0, inp[0, 0] < 0, True)))');
+    expect(sympyStr(xreplace(piecewise([rational(1), ITE(Relational(y, rational(0), '>', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false }), S['true'], { evaluate: false })]), [[y, MatrixElement(new MatrixSymbol('inp', rational(1), rational(1)), rational(0), rational(0))], [x, MatrixElement(new MatrixSymbol('inp', rational(1), rational(1)), rational(0), rational(0))]]))).toBe('Piecewise((1, ITE(inp[0, 0] > 0, inp[0, 0] < 0, True)))');
   });
   it("test_issue_16715:1563", () => {
     const [x, y] = symbols('x y');
-    expect(() => asExprSetPairs(piecewise([x, rel('Lt', x, 0)], [rational(0), rel('Gt', y, 1)]), Reals)).toThrow(NotImplementedError);
+    expect(() => asExprSetPairs(piecewise([x, Relational(x, rational(0), '<', { evaluate: false })], [rational(0), Relational(y, rational(1), '>', { evaluate: false })]), Reals)).toThrow(NotImplementedError);
   });
   it("test_issue_20360:1571", () => {
     const n = new Sym('n', { integer: true });
@@ -6748,40 +6780,40 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it("test_issue_22533:1621", () => {
     const x = new Sym('x', { real: true });
-    expect(equivalent(sympyStr(integrate(piecewise([new Mul([rational(-1), new Pow(x, rational(-1))]), rel('Le', x, 0)], [new Pow(x, rational(-1)), true]), x)), 'Piecewise((-log(x), x <= 0), (log(x), True))', [x], { fn: 'integrate', input: 'Piecewise((-1/x, x <= 0), (1/x, True))' })).toBe(true);
+    expect(equivalent(sympyStr(integrate(piecewise([new Mul([rational(-1), new Pow(x, rational(-1))]), Relational(x, rational(0), '<=', { evaluate: false })], [new Pow(x, rational(-1)), true]), x)), 'Piecewise((-log(x), x <= 0), (log(x), True))', [x], { fn: 'integrate', input: 'Piecewise((-1/x, x <= 0), (1/x, True))' })).toBe(true);
   });
   it("test_issue_24072:1625", () => {
     const x = new Sym('x');
-    expect(sympyStr(Piecewise([rational(1), rel('Gt', x, 1)], [rational(2), rel('Le', x, 1)], [rational(3), rel('Le', x, 1)]))).toBe('Piecewise((1, x > 1), (2, True))');
+    expect(sympyStr(Piecewise([rational(1), Relational(x, rational(1), '>', { evaluate: false })], [rational(2), Relational(x, rational(1), '<=', { evaluate: false })], [rational(3), Relational(x, rational(1), '<=', { evaluate: false })]))).toBe('Piecewise((1, x > 1), (2, True))');
   });
   it("test_piecewise__eval_is_meromorphic:1633", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(isMeromorphic(piecewise([rational(1), rel('Lt', x, 0)], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, I))).toBe('None');
+    expect(sympyStr(isMeromorphic(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, I))).toBe('None');
   });
   it.fails("test_piecewise__eval_is_meromorphic:1634", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(isMeromorphic(piecewise([rational(1), rel('Lt', x, 0)], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, rational(-1)))).toBe('True');
+    expect(sympyStr(isMeromorphic(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, rational(-1)))).toBe('True');
   });
   it("test_piecewise__eval_is_meromorphic:1635", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(isMeromorphic(piecewise([rational(1), rel('Lt', x, 0)], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, rational(0)))).toBe('None');
+    expect(sympyStr(isMeromorphic(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, rational(0)))).toBe('None');
   });
   it.fails("test_piecewise__eval_is_meromorphic:1636", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(isMeromorphic(piecewise([rational(1), rel('Lt', x, 0)], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, rational(1)))).toBe('False');
+    expect(sympyStr(isMeromorphic(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, rational(1)))).toBe('False');
   });
   it.fails("test_piecewise__eval_is_meromorphic:1637", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(isMeromorphic(piecewise([rational(1), rel('Lt', x, 0)], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, rational(2)))).toBe('True');
+    expect(sympyStr(isMeromorphic(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, rational(2)))).toBe('True');
   });
   it("test_piecewise__eval_is_meromorphic:1638", () => {
     const a = new Sym('a');
     const x = new Sym('x', { real: true });
-    expect(sympyStr(isMeromorphic(piecewise([rational(1), rel('Lt', x, 0)], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, a))).toBe('None');
+    expect(sympyStr(isMeromorphic(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, a))).toBe('None');
   });
   it("test_piecewise__eval_is_meromorphic:1639", () => {
     const x = new Sym('x', { real: true });
     const a = new Sym('a', { real: true });
-    expect(sympyStr(isMeromorphic(piecewise([rational(1), rel('Lt', x, 0)], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, a))).toBe('None');
+    expect(sympyStr(isMeromorphic(piecewise([rational(1), Relational(x, rational(0), '<', { evaluate: false })], [new Pow(new Add([rational(1), new Mul([rational(-1), x])]), rational(1, 2)), true]), x, a))).toBe('None');
   });
 });

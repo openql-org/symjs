@@ -114,12 +114,10 @@ describe("sympy/concrete/tests/test_gosper.py", () => {
     const k = new Sym('k');
     expect(sympyStr(gosperSum(new Mul([new Pow(k, rational(-1)), new Pow(new Add([rational(1), k]), rational(-1))]), k))).toBe('-1/k');
   });
-  // the replay exceeds its deadline
-  //   assert gosper_sum(-(27*k**4 + 158*k**3 + 430*k**2 + 678*k + 445)*gamma(2*k
-  //                         + 4)/(3*(3*k + 7)*gamma(3*k + 6)), k) == \
-  //           (3*k + 5)*(k**2 + 2*k + 5)*gamma(2*k + 4)/gamma(3*k + 6)
-  //   => (3*k + 5)*(k**2 + 2*k + 5)*gamma(2*k + 4)/gamma(3*k + 6)
-  it.todo("test_gosper_sum_indefinite:67");
+  it("test_gosper_sum_indefinite:67", () => {
+    const k = new Sym('k');
+    expect(sympyStr(gosperSum(new Mul([new Pow(new Add([rational(21), new Mul([rational(9), k])]), rational(-1)), new Pow(fn('gamma', [new Add([rational(6), new Mul([rational(3), k])])]), rational(-1)), new Add([rational(-445), new Mul([rational(-678), k]), new Mul([rational(-430), new Pow(k, rational(2))]), new Mul([rational(-158), new Pow(k, rational(3))]), new Mul([rational(-27), new Pow(k, rational(4))])]), fn('gamma', [new Add([rational(4), new Mul([rational(2), k])])])]), k))).toBe('(3*k + 5)*(k**2 + 2*k + 5)*gamma(2*k + 4)/gamma(3*k + 6)');
+  });
   // the arguments do not type-check against the public API
   //   assert gosper_sum(binomial(S.Half, m - j + 1)*binomial(S.Half, m + j), (j, 1, n)) == \
   //           n*(1 + m - n)*(-1 + 2*m + 2*n)*binomial(S.Half, 1 + m - n)* \
@@ -267,7 +265,7 @@ describe("sympy/concrete/tests/test_gosper.py", () => {
   //   assert g is None
   //   => None
   it.todo("test_gosper_sum_AeqB_part3:200");
-  // the replay exceeds its deadline
+  // the case takes more than 4 seconds
   //   assert g is not None and simplify(g - g3f) == 0
   //   => None
   it.todo("test_gosper_sum_AeqB_part3:202");

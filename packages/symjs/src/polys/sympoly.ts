@@ -35,7 +35,7 @@ import { ordered as orderedExprs } from '../core/match';
 import { divExact, ffDiv, mfactorList, mgcd, mlcm } from './mpoly';
 import { countComplexRoots, isolateComplexRootsSqf, isolateRealRoots, isolateRealRootsSqf, refineRealRoot } from './rootisolation';
 import { UPoly, polyCoefficients, polyHooks, roots as rootsOf } from './poly';
-import { CoercionFailed, QQ, groundRational } from './domains';
+import { CoercionFailed, QQ, ZZ, groundRational } from './domains';
 import type { Domain } from './domains';
 import { OptionError, UnificationFailed } from './polyerrors';
 import { gfDiv, gfFactor, gfGcd, gfLcm, gfGcdex, gfQuoGround, gfSqfList } from './galoistools';
@@ -393,6 +393,10 @@ export class Poly {
       const real = list.map((t) => ({ monom: t.monom, coeff: impl.evalf(t.coeff, 15) }));
       return new Poly(gs, real, requestedDomain === 'CC' ? 'CC' : 'RR', opts.pure ?? false);
     }
+    if (requestedDomain === 'ZZ' || requestedDomain === 'QQ') {
+      const K = requestedDomain === 'ZZ' ? ZZ : QQ;
+      return new Poly(gs, list.map((t) => ({ monom: t.monom, coeff: K.fromSympy(t.coeff) })), requestedDomain, opts.pure ?? false);
+    }
     const inferred = requestedDomain ?? inferDomain(list.length ? list.map((t) => t.coeff) : [S.Zero]);
     const domain = opts.field === true && requestedDomain === undefined ? fieldDomainName(inferred) : inferred;
     return new Poly(gs, list, domain, opts.pure ?? false);
@@ -634,7 +638,7 @@ export class Poly {
     const field = (d: string) => (d === 'ZZ' ? 'QQ' : d);
     const qp = Poly.from(add(...q), [x]);
     const rp = Poly.from(r, [x]);
-    const dom = field(this.domain === o.domain ? this.domain : 'QQ');
+    const dom = field(this.domain === o.domain ? this.domain : inferDomain([...qp.coeffs(), ...rp.coeffs()]));
     return [Poly.from(qp.asExpr(), [x], { domain: dom }), Poly.from(rp.asExpr(), [x], { domain: dom })];
   }
   /** Multivariate division over the field of fractions (SymPy dmp_ff_div). */
@@ -673,6 +677,11 @@ export class Poly {
   }
   /** Pseudo-remainder: the remainder of LC(g)**(deg f - deg g + 1)*f (SymPy dup_prem). */
   prem(o: Poly): Poly {
+    if (this.gens.length > 1) {
+      const x = first(this.gens);
+      const r = Poly.from(this.asExpr(), [x]).prem(Poly.from(o.asExpr(), [x]));
+      return Poly.from(r.asExpr(), this.gens, { domain: this.domain });
+    }
     const x = this.univariate();
     if (o.isZero) throw new RangeError('prem: division by zero polynomial');
     const dg = o.degree();
@@ -720,6 +729,11 @@ export class Poly {
   }
   /** Pseudo-quotient. */
   pquo(o: Poly): Poly {
+    if (this.gens.length > 1) {
+      const x = first(this.gens);
+      const q = Poly.from(this.asExpr(), [x]).pquo(Poly.from(o.asExpr(), [x]));
+      return Poly.from(q.asExpr(), this.gens, { domain: this.domain });
+    }
     const x = this.univariate();
     const k = this.degree() - o.degree() + 1;
     const scaled = mul(pow(o.LC(), Math.max(0, k)), this.asExpr());
@@ -1210,7 +1224,7 @@ export class Poly {
     const e = expand(mul(Rational.of(l), this.asExpr()));
     return [Rational.of(l), Poly.from(e, this.gens, { domain: convert && this.domain === 'QQ' ? 'ZZ' : this.domain })];
   }
-  /** Extended Euclid: (s, t, h) with s*f + t*g = h = gcd(f, g) (monic, over QQ). */
+  /** Extended Euclid: (s, t, h) with s*f + t*g = h = gcd(f, g) (monic, over the coefficient field). */
   gcdex(o: Poly): [Poly, Poly, Poly] {
     const finite = this.finitePair(o);
     if (finite) {
@@ -1221,9 +1235,10 @@ export class Poly {
       return [a.fromFiniteDense(s), a.fromFiniteDense(t), a.fromFiniteDense(h)];
     }
     const x = this.univariate();
+    const domain = fieldDomainName(this.domain === o.domain ? this.domain : inferDomain([...this.coeffs(), ...o.coeffs()]));
     let [r0, r1] = [this.toField(), o.toField()];
-    let [s0, s1] = [Poly.from(1, [x], { domain: 'QQ' }), Poly.from(0, [x], { domain: 'QQ' })];
-    let [t0, t1] = [Poly.from(0, [x], { domain: 'QQ' }), Poly.from(1, [x], { domain: 'QQ' })];
+    let [s0, s1] = [Poly.from(1, [x], { domain }), Poly.from(0, [x], { domain })];
+    let [t0, t1] = [Poly.from(0, [x], { domain }), Poly.from(1, [x], { domain })];
     while (!r1.isZero) {
       const [q, r] = r0.div(r1);
       [r0, r1] = [r1, r];
@@ -1232,7 +1247,7 @@ export class Poly {
     }
     const lc = r0.LC();
     const inv = pow(lc, -1);
-    const f = (p: Poly) => Poly.from(expand(mul(inv, p.asExpr())), [x], { domain: 'QQ' });
+    const f = (p: Poly) => Poly.from(expand(mul(inv, p.asExpr())), [x], { domain });
     return [f(s0), f(t0), f(r0)];
   }
   halfGcdex(o: Poly): [Poly, Poly] {
@@ -1245,22 +1260,24 @@ export class Poly {
     if (h.degree() !== 0) throw new NotInvertible('invert: zero divisor');
     return s;
   }
-  /** Sturm sequence over QQ. */
+  /** Sturm sequence over the coefficient field. */
   sturm(): Poly[] {
     const x = this.univariate();
-    const seq: Poly[] = [this.toField(), Poly.from(diff(this.asExpr(), x), [x], { domain: 'QQ' })];
+    const f = this.toField();
+    const seq: Poly[] = [f, Poly.from(diff(this.asExpr(), x), [x], { domain: f.domain })];
     for (;;) {
       const r = at(seq, -2).div(at(seq, -1))[1];
       if (r.isZero) break;
-      seq.push(Poly.from(mul(-1, r.asExpr()), [x], { domain: 'QQ' }));
+      seq.push(Poly.from(mul(-1, r.asExpr()), [x], { domain: f.domain }));
     }
     return seq;
   }
   /** Number of real roots in [a, b] (Sturm's theorem). */
   countRoots(a?: ExprLike, b?: ExprLike): number {
+    const x = this.univariate();
+    if (this.degree() <= 0) return 0;
     // over RR the roots of the exact polynomial are counted (SymPy count_roots() over RR gives 2 for x**2 - 2.0)
     if (this.domain === 'RR') return this.toExact().countRoots(a, b);
-    const x = this.univariate();
     const seq = this.sqfPartQQ().sturm();
     const signChanges = (v: Expr | 'inf' | '-inf'): number => {
       const vals = seq.map((p) => {
@@ -1411,8 +1428,8 @@ export class Poly {
     for (let mask = 0; mask < 1 << gl.length; mask++) {
       norm = mul(norm, xreplace(f, gl.map((g, i) => [g, mask & (1 << i) ? mul(-1, g) : g] as [Expr, Expr])));
     }
-    const N = Poly.from(expand(norm), this.gens, { domain: 'QQ' });
-    return N.termList.every((t) => t.coeff instanceof Rational) ? N : undefined;
+    const N = Poly.from(expand(norm), this.gens);
+    return N.termList.every((t) => t.coeff instanceof Rational) ? Poly.from(N.asExpr(), this.gens, { domain: 'QQ' }) : undefined;
   }
   /** SymPy Poly.make_monic_over_integers_by_scaling_roots: [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f). */
   makeMonicOverIntegersByScalingRoots(): [Poly, Expr] {

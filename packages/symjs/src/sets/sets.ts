@@ -16,7 +16,7 @@
 import { NotImplementedError } from '../core/errors';
 import type { Truth } from '../core/truth';
 import type { ExprLike } from '../core/nodes';
-import { Add, Constant, Expr, ExtensionExpr, Float, Mul, Rational, S, Special, Sym, WildFunction, impl } from '../core/nodes';
+import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Float, Mul, Rational, S, Special, Sym, WildFunction, impl } from '../core/nodes';
 import type { UndefinedFunction } from '../core/undef';
 import { isNoMatch, truthAnd } from '../core/truth';
 import { add, div, mul, neg, pow, sympify } from '../core/ops';
@@ -46,6 +46,8 @@ export abstract class SetExpr extends Expr {
   override sub(other: ExprLike): SetExpr { return complement(this, cast(sympify(other), SetExpr)); }
   override mul(other: ExprLike): SetExpr { return productSet(this, cast(sympify(other), SetExpr)); }
   abstract get className(): string;
+  /** Whether this set has finitely many elements. */
+  get isFiniteSet(): Truth { return 'unknown'; }
   get isEmpty(): boolean {
     return false;
   }
@@ -113,6 +115,7 @@ export function cmpReal(a: Expr, b: Expr): number | undefined {
 // ---------------------------------------------------------------------------
 
 class NamedSet extends SetExpr {
+  override get isFiniteSet(): boolean { return this.name === 'EmptySet'; }
   override get isIterable(): boolean { return ['EmptySet', 'Integers', 'Naturals', 'Naturals0'].includes(this.name); }
   override get boundary(): SetExpr {
     if (this.name === 'Reals' || this.name === 'EmptySet') return EmptySet;
@@ -165,6 +168,10 @@ export function nargs(f: UndefinedFunction | WildFunction): SetExpr {
 // ---------------------------------------------------------------------------
 
 export class Interval extends SetExpr {
+  override get isFiniteSet(): Truth {
+    const order = cmpReal(this.start, this.end);
+    return order === undefined ? 'unknown' : order >= 0;
+  }
   override get boundary(): SetExpr { return finiteSet(...[this.start, this.end].filter((e) => !isInf(e))); }
   override get measure(): Expr { return add(this.end, neg(this.start)); }
   readonly args: readonly Expr[];
@@ -245,6 +252,7 @@ export const Ropen = (a: ExprLike, b: ExprLike): SetExpr => interval(a, b, false
 // ---------------------------------------------------------------------------
 
 export class FiniteSet extends SetExpr {
+  override get isFiniteSet(): boolean { return true; }
   override get isIterable(): boolean { return true; }
   override get boundary(): SetExpr { return this; }
   override get measure(): Expr { return S.Zero; }
@@ -312,7 +320,10 @@ const extPositive = (n: Expr): boolean => isPositive(n) === true || infSign(n) =
  * known when the assumptions tell.
  */
 export class Range extends SetExpr {
-  override get isIterable(): boolean { return true; }
+  override get isIterable(): boolean {
+    const n = this.count();
+    return n instanceof Rational && n.isInteger && !n.isNegative && this.args.every((a) => isIntegerQ(a) === true);
+  }
   readonly args: readonly Expr[];
   /** SymPy `Range(stop)` or `Range(start, stop, step)` (canonical, with Range(0, 0, 1) when empty). */
   static of(start: ExprLike, stop?: ExprLike, step: ExprLike = 1): SetExpr {
@@ -354,7 +365,7 @@ export class Range extends SetExpr {
     throw new RangeError(INVALID_SYMBOLIC);
   }
   /** SymPy is_finite_set. */
-  get isFiniteSet(): boolean {
+  override get isFiniteSet(): boolean {
     if (isIntegerQ(this.start) === true && isIntegerQ(this.stop) === true) return true;
     return !(this.size instanceof Special);
   }
@@ -580,6 +591,7 @@ function integersIn(iv: Interval, low: Expr): SetExpr | undefined {
 
 /** { expr(v) : v in base } (SymPy ImageSet(Lambda(v, expr), base)). */
 export class ImageSet extends SetExpr {
+  override get isIterable(): boolean { return this.base.isIterable; }
   readonly args: readonly Expr[];
   constructor(
     readonly variable: Expr,
@@ -834,6 +846,13 @@ export function conditionSet(symIn: Expr, conditionIn: ExprLike | boolean, baseI
 // ---------------------------------------------------------------------------
 
 class SetOp extends SetExpr {
+  override get isFiniteSet(): Truth {
+    const values = this.args.map((s) => s.isFiniteSet);
+    if (this.op === 'Union') return truthAnd(...values);
+    if (this.op === 'Intersection') return values.includes(true) ? true : 'unknown';
+    const a = at(values, 0);
+    return a === true ? true : a === false && at(values, 1) === true ? false : 'unknown';
+  }
   override get measure(): Expr {
     if (this.op !== 'Union') throw new NotImplementedError(`measure of ${this.op}`);
     // Inclusion-exclusion also handles intervals whose overlap is symbolic.
@@ -865,6 +884,16 @@ export { SetOp };
 
 /** The Cartesian product of sets (SymPy ProductSet); its elements are Tuples. */
 export class ProductSetNode extends SetExpr {
+  override get isFiniteSet(): Truth {
+    if (this.args.some((s) => s.isEmpty || (s instanceof FiniteSet && s.args.length === 0))) return true;
+    const values = this.args.map((s) => s.isFiniteSet);
+    if (values.every((v) => v === true)) return true;
+    const nonempty = this.args.every((s, i) => at(values, i) === false
+      || s instanceof FiniteSet
+      || s instanceof PowerSetNode
+      || (s instanceof Range && s.isEmptyQ === false));
+    return values.includes(false) && nonempty ? false : 'unknown';
+  }
   constructor(readonly args: readonly SetExpr[]) {
     super();
   }
@@ -914,6 +943,13 @@ export type ProductSet = ProductSetNode;
 
 /** The set of all subsets of a set (SymPy PowerSet). */
 export class PowerSetNode extends SetExpr {
+  /** Number of subsets of an explicitly finite base set. */
+  get length(): number {
+    if (this.arg === EmptySet) return 1;
+    if (this.arg instanceof FiniteSet) return 2 ** this.arg.args.length;
+    throw new TypeError('PowerSet length requires an explicitly finite base set');
+  }
+  override get isFiniteSet(): Truth { return this.arg.isFiniteSet; }
   readonly args: readonly Expr[];
   constructor(readonly arg: SetExpr) {
     super();
@@ -955,6 +991,8 @@ export function powerset(s: SetExpr): SetExpr {
 
 /** The disjoint union of sets: the pairs (element, index of its set) (SymPy DisjointUnion). */
 export class DisjointUnionNode extends SetExpr {
+  override get isIterable(): boolean { return !this.isEmpty && this.args.every((s) => s.isEmpty || s.isIterable); }
+  override get isFiniteSet(): Truth { return truthAnd(...this.args.map((s) => s.isFiniteSet)); }
   constructor(readonly args: readonly SetExpr[]) {
     super();
   }
@@ -1047,6 +1085,13 @@ const IRRATIONAL = new Set(['pi', 'E', 'GoldenRatio', 'TribonacciConstant']);
 export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
   if (s === EmptySet) return false;
   if (s === UniversalSet) return true;
+  if (s === Complexes && x instanceof TupleNode) {
+    if (x.args.length !== 2) throw new RangeError('expecting Tuple of length 2');
+    const parts = x.args.map((a) => containsQ(Reals, a));
+    return parts.includes(false) ? false : parts.every((a) => a === true) ? true : undefined;
+  }
+  const numericDomain = s instanceof NamedSet || s instanceof Interval;
+  if (numericDomain && (x instanceof SetExpr || x instanceof TupleNode || x instanceof BoolAtom)) return false;
   if (s === Rationals) {
     if (x instanceof Rational || isIntegerQ(x) === true) return true;
     // oo, I and the irrational constants pi, E, GoldenRatio and TribonacciConstant are not rational
@@ -1078,7 +1123,7 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
     return unknown ? undefined : false;
   }
   if (s instanceof Interval) {
-    if (isInf(x)) return false;
+    if (isInf(x) || isReal(x) === false) return false;
     const lo = cmpReal(s.start, x);
     const hi = cmpReal(x, s.end);
     if (lo === undefined || hi === undefined) return undefined;
@@ -1567,9 +1612,11 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
 export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
   if (a === EmptySet || b === UniversalSet || a.key === b.key) return true;
   if (a === UniversalSet) return false;
-  if ((a === Integers || a === Naturals || a === Naturals0) && (b === Rationals || b === Reals || b === Complexes)) return true;
-  if (a === Rationals && (b === Reals || b === Complexes)) return true;
-  if ((a === Naturals || a === Naturals0) && b === Integers) return true;
+  if (a.isFiniteSet === false && b.isFiniteSet === true) return false;
+  if (a instanceof NamedSet && b instanceof NamedSet) {
+    const order = [Naturals, Naturals0, Integers, Rationals, Reals, Complexes];
+    return order.indexOf(a) < order.indexOf(b);
+  }
   if (a instanceof ProductSetNode && b instanceof ProductSetNode) {
     if (a.args.length !== b.args.length) return false;
     const cs = a.args.map((x, i) => isSubset(x, at(b.args, i)));

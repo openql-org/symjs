@@ -2,16 +2,21 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file The shape of array-like objects (SymPy sympy.tensor.functions.shape).
+ * @file Tensor products and shapes of array-like objects (SymPy tensor.functions).
  */
 
-import { Expr, Integral, impl } from '../core/nodes';
-import { cast } from '../core/guard';
+import { Expr, ExtensionExpr, Integral, S, impl, type ExprLike } from '../core/nodes';
+import { at, cast } from '../core/guard';
+import { callableClass } from '../core/callable';
 import { Indexed, IndexedBase } from '../core/indexed';
 import { IdxNode } from './idx';
 import { add, mul } from '../core/ops';
 import { isNoMatch } from '../core/truth';
 import { Matrix } from '../matrices/matrix';
+import { MatrixExpr } from '../matrices/expressions/matexpr';
+import { NDimArray } from './ndimarray';
+import { tensorproduct, type TensorArg } from './arrayop';
+import { ArrayElement } from './array/expressions/arrayexpressions';
 
 /** SymPy NoShapeError: shape() of an object that is not array-like. */
 export class NoShapeError extends TypeError {
@@ -42,3 +47,43 @@ export function shape(expr: unknown): Dimension[] {
   const s = expr instanceof Expr ? impl.str(expr) : String(expr);
   throw new NoShapeError(`${s} does not have shape, or its type is not registered to shape().`);
 }
+
+/** Generic tensor product of explicit arrays and symbolic matrices. */
+export class TensorProductNode extends ExtensionExpr {
+  constructor(args: readonly Expr[]) { super('TensorProduct', args); }
+  withArgs(args: readonly Expr[]): Expr { return new TensorProductNode(args); }
+  get shape(): Dimension[] { return this.args.flatMap((arg) => hasShape(arg) ? [...arg.shape] : []); }
+  rank(): number { return this.shape.length; }
+  at(...indices: ExprLike[]): Expr {
+    if (indices.length !== this.rank()) throw new RangeError('tensor product index rank does not match the shape');
+    let offset = 0;
+    return mul(...this.args.map((arg) => {
+      const size = hasShape(arg) ? arg.shape.length : 0;
+      const index = indices.slice(offset, offset + size);
+      offset += size;
+      if (arg instanceof MatrixExpr) return arg.at(at(index, 0), at(index, 1));
+      if (arg instanceof NDimArray) return arg.get(index);
+      if (arg instanceof TensorProductNode) return arg.at(...index);
+      return size ? new ArrayElement(arg, index) : arg;
+    }));
+  }
+}
+
+/** SymPy TensorProduct; evaluate:false preserves the supplied factors. */
+function createTensorProduct(...args: (TensorArg | { evaluate: boolean })[]): Expr {
+  const options = args.at(-1);
+  const hasOptions = typeof options === 'object' && 'evaluate' in options;
+  const factors = (hasOptions ? args.slice(0, -1) : args).map((arg) => {
+    if (typeof arg === 'object' && 'evaluate' in arg) throw new TypeError('options must follow the tensor factors');
+    return tensorproduct(arg);
+  });
+  if (hasOptions && !options.evaluate) return new TensorProductNode(factors);
+  const flatten = (arg: Expr): readonly Expr[] => arg instanceof TensorProductNode ? arg.args.flatMap(flatten) : [arg];
+  const flat = factors.flatMap(flatten);
+  const matrices = flat.filter((arg) => arg instanceof MatrixExpr);
+  const coefficient = tensorproduct(...flat.filter((arg) => !(arg instanceof MatrixExpr)));
+  return matrices.length ? new TensorProductNode(coefficient.key === S.One.key ? matrices : [coefficient, ...matrices]) : coefficient;
+}
+
+/** Generic tensor product, evaluated unless evaluate:false is supplied. */
+export const TensorProduct = callableClass(TensorProductNode, createTensorProduct);

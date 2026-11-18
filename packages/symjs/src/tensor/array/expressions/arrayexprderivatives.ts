@@ -2,11 +2,13 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Ported from SymPy 1.14.0 (tensor/array/expressions/arrayexpr_derivatives.py),
 // Copyright (c) 2006-2023 SymPy Development Team, BSD 3-Clause (see LICENSE).
+import { mul } from '../../../core/ops';
+import { diff } from '../../../calculus/diff';
 import type { Expr } from '../../../core/nodes';
 import { first } from '../../../core/guard';
 import { NotImplementedError } from '../../../core/errors';
-import { Identity, MatrixSymbolNode } from '../../../matrices/expressions/matexpr';
-import { ArraySymbol, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayTensorProduct, PermuteDims, ZeroArray, getShape, getRank } from './arrayexpressions';
+import { Identity, InverseNode, MatrixSymbolNode } from '../../../matrices/expressions/matexpr';
+import { ArraySymbol, ArrayElementwiseApplyFunc, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayTensorProduct, PermuteDims, ZeroArray, getShape, getRank } from './arrayexpressions';
 import { convertMatrixToArray } from './frommatrixtoarray';
 
 /** Derivative with variable axes first, then the expression's axes. */
@@ -16,6 +18,18 @@ export function arrayDerive(expr: Expr, variable: Expr): Expr {
   if (expr.key === variable.key) {
     const product = new ArrayTensorProduct(...shape.map((d) => Identity(d))).doit();
     return new PermuteDims(product, [...prefix.map((i) => 2 * i), ...prefix.map((i) => 2 * i + 1)]).doit();
+  }
+  if (expr instanceof InverseNode) {
+    const derivative = arrayDerive(expr.arg, variable);
+    const product = new ArrayTensorProduct(mul(-1, expr), derivative, expr).doit();
+    const contracted = new ArrayContraction(product, [1, rank + 2], [rank + 3, rank + 4]).doit();
+    return new PermuteDims(contracted, [...prefix.map((i) => i + 1), 0, rank + 1]).doit();
+  }
+  if (expr instanceof ArrayElementwiseApplyFunc) {
+    if (expr.function.has(variable)) throw new NotImplementedError('array derivatives with array-dependent function parameters require a formal derivative');
+    const factor = new ArrayElementwiseApplyFunc((x) => diff(expr.function.call(x), x), expr.expr);
+    const product = new ArrayTensorProduct(arrayDerive(expr.expr, variable), factor).doit();
+    return new ArrayDiagonal(product, ...expr.shape.map((_, i) => [rank + i, rank + expr.shape.length + i]));
   }
   const converted = convertMatrixToArray(expr);
   if (converted.key !== expr.key) return arrayDerive(converted, variable);

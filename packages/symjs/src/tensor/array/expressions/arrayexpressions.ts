@@ -28,13 +28,13 @@ const integer = (e: Expr): number => {
 };
 const indices = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
 const sameShape = (a: readonly Expr[], b: readonly Expr[]): boolean => a.length === b.length && a.every((s, i) => s.key === at(b, i).key);
-const isExpressionShape = (value: unknown): value is readonly Expr[] => Array.isArray(value) && value.every((d: unknown) => d instanceof Expr);
+const isExpressionShape = (value: unknown): value is readonly (Expr | number)[] => Array.isArray(value) && value.every((d: unknown) => d instanceof Expr || typeof d === 'number');
 
 /** The shape of an array expression, explicit array, matrix or scalar. */
 export function getShape(expr: Expr): readonly Expr[] {
   if (expr instanceof ArrayExpr || expr instanceof MatrixExpr) return expr.shape;
   if (expr instanceof NDimArray) return expr.shape.map((n) => Rational.of(n));
-  if ('shape' in expr && isExpressionShape(expr.shape)) return expr.shape;
+  if ('shape' in expr && isExpressionShape(expr.shape)) return expr.shape.map(sympify);
   return [];
 }
 /** Number of axes (scalars have rank zero). */
@@ -172,6 +172,14 @@ export class ArrayContraction extends ArrayExpr {
       const contracted = new ArrayContraction(inner.expr, ...groups).doit();
       return diagonals.length ? new ArrayDiagonal(contracted, ...diagonals) : contracted;
     }
+    if (this.expr instanceof PermuteDims) {
+      const inner = this.expr, p = inner.permutation.arrayForm;
+      const groups = this.contractionIndices.map((g) => g.map((i) => at(p, i)));
+      const actual = remainingAxes(getRank(inner.expr), groups);
+      const desired = remainingAxes(p.length, this.contractionIndices).map((i) => at(p, i));
+      const contracted = new ArrayContraction(inner.expr, ...groups).doit();
+      return new PermuteDims(contracted, desired.map((i) => actual.indexOf(i))).doit();
+    }
     if (this.expr instanceof ArrayTensorProduct) {
       const taken = new Set(this.contractionIndices.flat()), blocks = factorBlocks(this.expr);
       const order = indices(blocks.length).sort((i, j) => {
@@ -213,6 +221,21 @@ export class ArrayDiagonal extends ArrayExpr {
   }
   withArgs(args: readonly Expr[]): Expr { return new ArrayDiagonal(first(args), ...args.slice(1).map((g) => values(g).map(integer))); }
   asExplicit(): Expr { return this.diagonalIndices.length ? tensordiagonal(explicitArray(this.expr), ...this.diagonalIndices) : explicitArray(this.expr); }
+  override doit(): Expr {
+    if (!this.diagonalIndices.length) return this.expr;
+    if (!(this.expr instanceof ArrayDiagonal || this.expr instanceof PermuteDims)) return this;
+    const inner = this.expr, base = inner.expr;
+    const coordinates = inner instanceof ArrayDiagonal
+      ? [...remainingAxes(getRank(base), inner.diagonalIndices).map((i) => [i]), ...inner.diagonalIndices]
+      : inner.permutation.arrayForm.map((i) => [i]);
+    const desired = [...remainingAxes(coordinates.length, this.diagonalIndices).map((i) => [...at(coordinates, i)]), ...this.diagonalIndices.map((g) => g.flatMap((i) => [...at(coordinates, i)]))];
+    const groups = desired.filter((g) => g.length > 1);
+    const result = new ArrayDiagonal(base, ...groups);
+    const actual = [...remainingAxes(getRank(base), result.diagonalIndices).map((i) => [i]), ...result.diagonalIndices];
+    const permutation = desired.map((g) => actual.findIndex((h) => g.length === h.length && g.every((i) => h.includes(i))));
+    return new PermuteDims(result.doit(), permutation).doit();
+  }
+
 }
 
 /** Array sum with matching shapes. */
@@ -260,6 +283,10 @@ export class PermuteDims extends ArrayExpr {
   asExplicit(): Expr { return permutedims(explicitArray(this.expr), this.permutation); }
   override doit(): Expr {
     const p = this.permutation.arrayForm;
+    if (this.expr instanceof ArrayDiagonal) {
+      const inner = this.expr.doit();
+      if (inner.key !== this.expr.key) return new PermuteDims(inner, p).doit();
+    }
     if (p.every((v, i) => v === i)) return this.expr;
     if (this.expr instanceof PermuteDims) { const inner = this.expr; return new PermuteDims(inner.expr, p.map((i) => at(inner.permutation.arrayForm, i))).doit(); }
     // Whole blocks can be moved into the tensor product itself.

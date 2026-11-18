@@ -4424,7 +4424,7 @@ describe("sympy/matrices/tests/test_matrices.py", () => {
     const [rho, phi] = symbols('rho phi');
     expect(sympyStr(jacobian(Matrix.of([[new Mul([rho, fn('cos', [phi])])], [new Mul([rho, fn('sin', [phi])])]]), Matrix.of([[rho], [phi]])))).toBe('Matrix([[cos(phi), -rho*sin(phi)], [sin(phi), rho*cos(phi)]])');
   });
-  // no adapter for .applyfunc
+  // the arguments do not type-check against the public API
   //   assert g == Matrix([[1, 0], [0, rho**2]])
   //   => Matrix([[1, 0], [0, rho**2]])
   it.todo("test_jacobian_metrics:1400");

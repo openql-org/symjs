@@ -13,6 +13,24 @@ const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'cor
   test: 'test_fixture', line: 1, src: 'assert Integer(1) == 1', fn: 'Integer',
   args: [{ t: 'Rational', p: '1', q: '1' }], kwargs: {}, expected: '1', op: '==' };
 
+it('adapts function inverses, numerical derivatives, residue limits and derangement keywords', () => {
+  const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const fn = (name: string, args: Tree[] = [x]) => ({ t: 'Fn', name, args });
+  expect(runTestCase({ ...base, fn: '.inverse', self: fn('exp'), args: [], expected: 'log' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: '.inverse', self: fn('erf'), args: [], expected: 'erfinv' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'test_derivative_numerically', args: [fn('sin'), x], expected: 'True' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'nD', args: [], kwargs: { n: integer(4) }, expected: '9' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'nD', args: [], kwargs: { m: { t: 'Tuple', items: [integer(2), integer(2)], list: true } }, expected: '1' })).toEqual({ status: 'pass' });
+  const limits = { t: 'Tuple', items: [x, integer(0), integer(5)] };
+  expect(runTestCase({ ...base, fn: 'eval_sum_residue', args: [x, limits], expected: 'None' })).toEqual({ status: 'pass' });
+  for (const [name, expected] of [['digamma', 'polygamma(0, x)'], ['trigamma', 'polygamma(1, x)']] as const) {
+    expect(String(deserialize(fn(name)))).toBe(expected);
+  }
+  expect(String(deserialize(fn('LeviCivita', [integer(1), integer(2), integer(3)])))).toBe('1');
+  expect(runTestCase({ ...base, fn: '.epsilon_eq', self: integer(1), args: [integer(1)], expected: 'True' })).toEqual({ status: 'pass' });
+});
+
 it('replays series indices and slices with the SeriesBase offset semantics', () => {
   const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
   const x = { t: 'Symbol', name: 'x', assume: {} };
@@ -209,4 +227,89 @@ it('keeps differential-geometry and Euclidean Point dispatch distinct', () => {
       expected: 'Point2D(1, 2)',
     }).status,
   ).toBe('pass');
+});
+
+
+it('adapts polynomial construction, dense representations and return type options', () => {
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1' });
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const y: Tree = { t: 'Symbol', name: 'y', assume: {} };
+  const tuple = (...items: Tree[]): Tree => ({ t: 'Tuple', items });
+  const expr: Tree = { t: 'Add', args: [x, integer(1)], evaluate: false };
+  const poly: Tree = { t: 'Poly', expr, gens: [x], domain: 'ZZ', pure: false };
+  const c = { ...base, category: 'polys', module: 'sympy.polys.tests.test_polytools' };
+  expect(runTestCase({ ...c, fn: '.rep', self: poly, args: [], expected: 'DMP_Python([1, 1], ZZ)' })).toEqual({ status: 'pass' });
+  const modulus = '9007199254740997';
+  expect(runTestCase({ ...c, fn: '.rep', self: { ...poly, domain: `GF(${modulus})` }, args: [], expected: `DMP_Python([SymmetricModularIntegerMod${modulus}(1), SymmetricModularIntegerMod${modulus}(1)], GF(${modulus}))` })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.get_domain', self: poly, args: [], expected: 'ZZ' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.from_poly', self: { t: 'Type', name: 'Poly' }, args: [poly], expected: "Poly(x + 1, x, domain='ZZ')" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.from_poly', self: { t: 'Type', name: 'Poly' }, args: [poly], kwargs: { gens: y }, expected: "Poly(x + 1, y, domain='ZZ[x]')" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: 'dict_from_expr', args: [expr], kwargs: { gens: tuple(x, y) }, expected: '({(1, 0): 1, (0, 0): 1}, (x, y))' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: 'compose', args: [expr, expr, tuple(x)], kwargs: { polys: { t: 'Js', v: true } }, expected: "Poly(x + 2, x, domain='ZZ')" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: 'compose', args: [poly, poly], kwargs: { polys: { t: 'Js', v: false } }, expected: 'x + 2' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: 'cofactors', args: [poly, poly], expected: "(Poly(x + 1, x, domain='ZZ'), Poly(1, x, domain='ZZ'), Poly(1, x, domain='ZZ'))" })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.__call__', self: { t: 'MonomialOrder', name: 'grevlex' }, args: [tuple(integer(1), integer(2), integer(3))], expected: '(6, (-3, -2, -1))' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.__call__', self: { t: 'MonomialOrder', name: 'grevlex' }, args: [integer(1)], expected: 'unused' }).status).toBe('unsupported');
+  expect(runTestCase({ ...c, fn: '.__call__', self: poly, args: [integer(2)], expected: '3' })).toEqual({ status: 'pass' });
+});
+
+it('adapts explicit and domain matrix arithmetic, slices and iteration', () => {
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1' });
+  const matrix: Tree = { t: 'Matrix', rows: [[integer(1), integer(2)], [integer(3), integer(4)]], shape: [2, 2] };
+  const domainMatrix = (cls: string): Tree => ({ ...matrix, t: 'DomainMatrix', cls, domain: { t: 'Domain', name: 'ZZ' }, fmt: cls === 'SDM' ? 'sparse' : 'dense' });
+  const c = { ...base, module: 'sympy.polys.matrices.tests.test_xxm', category: 'polys', kwargs: {} };
+  for (const cls of ['DDM', 'SDM']) {
+    const self = domainMatrix(cls);
+    if (cls === 'DDM') expect(runTestCase({ ...c, fn: '.__mul__', self, args: [self], raises: 'TypeError', expected: 'None' }).status).toBe('pass');
+    expect(runTestCase({ ...c, fn: cls === 'DDM' ? '.matmul' : '.__mul__', self, args: [self], expected: cls === 'DDM' ? '[[7, 10], [15, 22]]' : '{0: {0: 7, 1: 10}, 1: {0: 15, 1: 22}}' })).toEqual({ status: 'pass' });
+    const slice: Tree = { t: 'Slice', start: { t: 'Js', v: null }, stop: integer(1), step: { t: 'Js', v: null } };
+    expect(runTestCase({ ...c, fn: '.extract_slice', self, args: [slice, slice], expected: cls === 'DDM' ? '[[1]]' : '{0: {0: 1}}' })).toEqual({ status: 'pass' });
+    const reverse: Tree = { t: 'Slice', start: { t: 'Js', v: null }, stop: { t: 'Js', v: null }, step: integer(-1) };
+    expect(runTestCase({ ...c, fn: '.extract_slice', self, args: [reverse, reverse], expected: cls === 'DDM' ? '[[4, 3], [2, 1]]' : '{0: {0: 4, 1: 3}, 1: {0: 2, 1: 1}}' })).toEqual({ status: 'pass' });
+  }
+  expect(runTestCase({ ...c, fn: '.__pow__', self: matrix, args: [integer(2)], expected: 'Matrix([[7, 10], [15, 22]])' })).toEqual({ status: 'pass' });
+  for (const [post, expected] of [['list', '[1, 2, 3, 4]'], ['tuple', '(1, 2, 3, 4)'], ['len', '4']] as const) {
+    expect(runTestCase({ ...c, fn: 'simplify', args: [matrix], post, expected })).toEqual({ status: 'pass' });
+  }
+  expect(runTestCase({ ...c, fn: '.elementary_row_op', self: matrix, args: [{ t: 'Str', v: 'n->kn' }, integer(0), integer(2)], expected: 'Matrix([[2, 4], [3, 4]])' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.elementary_col_op', self: matrix, args: [{ t: 'Str', v: 'n->kn' }, integer(1), integer(2)], expected: 'Matrix([[1, 4], [3, 8]])' })).toEqual({ status: 'pass' });
+  const symbol: Tree = { t: 'MatrixSymbol', name: 'A', rows: integer(2), cols: integer(2) };
+  for (const [fn, cls] of [['.is_MatMul', 'MatMul'], ['.is_MatAdd', 'MatAdd']] as const) {
+    expect(runTestCase({ ...c, fn, args: [], self: { t: 'MatExpr', cls, args: [symbol, symbol] }, expected: 'True' })).toEqual({ status: 'pass' });
+    expect(runTestCase({ ...c, fn, args: [], self: symbol, expected: 'False' })).toEqual({ status: 'pass' });
+  }
+  for (const fn of ['.lll', '.lll_transform']) {
+    expect(runTestCase({ ...c, fn, self: matrix, args: [], kwargs: { delta: integer(1) }, raises: 'ValueError', expected: 'None' }).status).toBe('pass');
+  }
+});
+
+it('adapts Boolean attributes and rejects Python Boolean arithmetic', () => {
+  const symbol = { t: 'Symbol', name: 'x', assume: {} };
+  const truth = { t: 'Js', v: true };
+  expect(runTestCase({ ...base, category: 'logic', fn: '.is_Boolean', self: truth, args: [], expected: 'True', op: 'is' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'logic', fn: '.is_Boolean', self: symbol, args: [], expected: 'False', op: 'is' })).toEqual({ status: 'pass' });
+  for (const fn of ['.__add__', '.__sub__', '.__mul__', '.__truediv__', '.__pow__', '.__mod__']) {
+    expect(runTestCase({ ...base, category: 'logic', fn, self: truth, args: [symbol], raises: 'TypeError', expected: 'None', op: 'is' })).toEqual({ status: 'pass' });
+    expect(runTestCase({ ...base, category: 'logic', fn, self: symbol, args: [truth], raises: 'TypeError', expected: 'None', op: 'is' })).toEqual({ status: 'pass' });
+  }
+});
+
+it('uses set cardinality and ordinal integer calling conventions', () => {
+  const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const set = { t: 'FiniteSet', items: [integer(1), integer(2)] };
+  expect(runTestCase({ ...base, category: 'sets', fn: 'PowerSet', args: [set], post: 'len', expected: '4' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: 'Range', args: [integer(0), integer(10), integer(3)], post: 'len', expected: '4' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: '.issubset', self: set, args: [set], expected: 'True' })).toEqual({ status: 'pass' });
+  const omega = { t: 'Ordinal', terms: [{ t: 'OmegaPower', exp: { t: 'Ordinal', terms: [{ t: 'OmegaPower', exp: { t: 'Ordinal', terms: [] }, mult: '1' }] }, mult: '1' }] };
+  expect(runTestCase({ ...base, category: 'sets', fn: '.__add__', self: omega, args: [integer(1)], expected: 'w + 1' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: '.__mul__', self: integer(2), args: [omega], expected: 'w' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: '.__eq__', self: omega, args: [{ t: 'Symbol', name: 'x', assume: {} }], expected: 'False' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, category: 'sets', fn: '.__eq__', self: { t: 'OmegaPower', exp: omega, mult: '1' }, args: [{ t: 'Js', v: null }], expected: 'False' })).toEqual({ status: 'pass' });
+});
+
+it('passes Python booleans to symbolic Boolean operators', () => {
+  const symbol = { t: 'Symbol', name: 'x', assume: {} };
+  for (const [fn, expected] of [['.__and__', 'x'], ['.__or__', 'True'], ['.__xor__', '~x'], ['.__lshift__', 'True']] as const) {
+    expect(runTestCase({ ...base, category: 'logic', fn, self: { t: 'Js', v: true }, args: [symbol], expected })).toEqual({ status: 'pass' });
+  }
 });

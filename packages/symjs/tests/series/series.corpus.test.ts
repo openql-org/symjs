@@ -187,23 +187,23 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it.fails("test_issue_11313:105", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(derivative(new Pow(x, rational(3)), [[x, 1]]), x))).toBe('3*x**2');
+    expect(sympyStr(asLeadingTerm(derivative(new Pow(x, rational(3)), [[x, 1]]), x, {}))).toBe('3*x**2');
   });
   it.fails("test_issue_11313:106", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(asLeadingTerm(derivative(new Pow(x, rational(3)), [[y, 1]]), x))).toBe('0');
+    expect(sympyStr(asLeadingTerm(derivative(new Pow(x, rational(3)), [[y, 1]]), x, {}))).toBe('0');
   });
   it.fails("test_issue_11313:107", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(derivative(fn('sin', [x]), [[x, 1]]), x))).toBe('1');
+    expect(sympyStr(asLeadingTerm(derivative(fn('sin', [x]), [[x, 1]]), x, {}))).toBe('1');
   });
   it.fails("test_issue_11313:108", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(derivative(fn('cos', [x]), [[x, 1]]), x))).toBe('-x');
+    expect(sympyStr(asLeadingTerm(derivative(fn('cos', [x]), [[x, 1]]), x, {}))).toBe('-x');
   });
   it.fails("test_issue_11313:112", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(derivative(rational(1), [[x, 1]]), x))).toBe('Derivative(1, x)');
+    expect(sympyStr(asLeadingTerm(derivative(rational(1), [[x, 1]]), x, {}))).toBe('Derivative(1, x)');
   });
   it("test_issue_11313:114", () => {
     const x = new Sym('x');
@@ -290,7 +290,7 @@ describe("sympy/series/tests/test_series.py", () => {
   });
   it("test_issue_6318:190", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(asLeadingTerm(new Add([rational(1), new Pow(new Pow(x, rational(-1)), rational(2, 3))]), x)), '(1/x)**(2/3)', [x], { fn: '.as_leading_term', input: '(1/x)**(2/3) + 1' })).toBe(true);
+    expect(equivalent(sympyStr(asLeadingTerm(new Add([rational(1), new Pow(new Pow(x, rational(-1)), rational(2, 3))]), x, {})), '(1/x)**(2/3)', [x], { fn: '.as_leading_term', input: '(1/x)**(2/3) + 1' })).toBe(true);
   });
   it("test_x_is_base_detection:195", () => {
     const x = new Sym('x');
