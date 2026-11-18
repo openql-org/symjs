@@ -189,3 +189,47 @@ it('normalizes diagonals beneath outer permutations', () => {
   expect(stable.doit()).toBe(stable);
   expect(str(new P(inner, [0, 1]).doit())).toBe('ArrayDiagonal(Q, (0, 1))');
 });
+
+it('normalizes array sums and evaluates explicit reshapes and constant entries', async () => {
+  const { OneArray } = await import('../../../../src');
+  expect(new ArrayAdd(A).doit()).toBe(A);
+  expect(str(new ArrayAdd(A, new ArrayAdd(B, A)).doit())).toBe('ArrayAdd(A, B, A)');
+  expect(str(new ArrayAdd(A, new ZeroArray(2, 2), B).doit())).toBe('ArrayAdd(A, B)');
+  expect(str(new ArrayAdd(new ZeroArray(2, 2)).doit())).toBe('ZeroArray(2, 2)');
+  expect(str(new Reshape(SymArray([1, 2, 3, 4]), [2, 2]).doit())).toBe('[[1, 2], [3, 4]]');
+  const symbolic = new Reshape(A, [4]);
+  expect(symbolic.doit()).toBe(symbolic);
+  expect(new ZeroArray().doit()).toBe(S.Zero);
+  expect(new OneArray().doit()).toBe(S.One);
+  const zero = new ZeroArray(2, 3), one = new OneArray(2, 3);
+  expect(zero.doit()).toBe(zero);
+  expect(one.doit()).toBe(one);
+  expect(zero.at(1, 2)).toBe(S.Zero);
+  expect(one.at(1, 2)).toBe(S.One);
+  expect(() => zero.at(2, 0)).toThrow(RangeError);
+  expect(() => one.at(0)).toThrow(RangeError);
+});
+
+it('lifts local permutations and diagonals into outer tensor products', () => {
+  const expressions = [
+    new TP(new P(A, [1, 0]), B), new TP(A, new P(B, [1, 0])),
+    new TP(new D(A, [0, 1]), B), new TP(A, new D(B, [0, 1])),
+    new TP(new D(A, [0, 1]), new D(B, [0, 1])),
+  ];
+  for (const expression of expressions) {
+    expect(str(explicitArray(expression.doit()))).toBe(str(expression.asExplicit()));
+  }
+  expect(str(at(expressions, 0).doit())).toBe('PermuteDims(ArrayTensorProduct(A, B), (3)(0 1))');
+  expect(str(at(expressions, 2).doit())).toBe('PermuteDims(ArrayDiagonal(ArrayTensorProduct(A, B), (0, 1)), (0 2 1))');
+});
+
+it('nests permutations through array sums and normalizes block permutations', () => {
+  const sum = new P(new ArrayAdd(A, B), [1, 0]).nestPermutation();
+  expect(str(sum)).toBe('ArrayAdd(PermuteDims(A, (0 1)), PermuteDims(B, (0 1)))');
+  expect(str(new P(new TP(A, B), [2, 3, 0, 1]).nestPermutation())).toBe('ArrayTensorProduct(B, A)');
+  expect(str(explicitArray(sum))).toBe(str(new P(new ArrayAdd(A, B), [1, 0]).asExplicit()));
+});
+
+it('preserves symbolic reshape constraints until dimensions are known', () => {
+  expect(new Reshape(A, [n, 2]).shape.map(str)).toEqual(['n', '2']);
+});

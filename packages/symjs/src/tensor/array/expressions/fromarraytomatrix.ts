@@ -6,11 +6,16 @@ import { Mul, Pow, S, type Expr } from '../../../core/nodes';
 import { at, getOrThrow, first } from '../../../core/guard';
 import { HadamardPower, hadamardProduct } from '../../../matrices/expressions/hadamard';
 import { mul } from '../../../core/ops';
-import { ElementwiseApplyFunction, MatAdd, MatMulNode, MatrixExpr, Trace, Transpose } from '../../../matrices/expressions/matexpr';
-import { ArrayExpr, ArraySymbol, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayElementwiseApplyFunc, ArrayTensorProduct, PermuteDims, factorBlocks, getRank, remainingAxes } from './arrayexpressions';
+import { ElementwiseApplyFunction, MatAdd, MatMulNode, MatrixElementNode, MatrixExpr, Trace, Transpose, ZeroMatrix } from '../../../matrices/expressions/matexpr';
+import { ArrayExpr, ArraySymbol, ArrayAdd, ArrayContraction, ArrayDiagonal, ArrayElement, ArrayElementwiseApplyFunc, ArrayTensorProduct, PermuteDims, ZeroArray, factorBlocks, getRank, remainingAxes } from './arrayexpressions';
 
 /** Recognize matrix chains and traces in pairwise tensor contractions. */
 export function convertArrayToMatrix(expr: Expr): Expr {
+  if (expr instanceof ZeroArray && expr.shape.length === 2) return ZeroMatrix(first(expr.shape), at(expr.shape, 1));
+  if (expr instanceof ArrayElement) {
+    const parent = convertArrayToMatrix(expr.parent);
+    return parent instanceof MatrixExpr ? new MatrixElementNode(parent, first(expr.indices), at(expr.indices, 1)) : new ArrayElement(parent, expr.indices);
+  }
   if (expr instanceof ArrayElementwiseApplyFunc) {
     const inner = convertArrayToMatrix(expr.expr);
     if (!(inner instanceof MatrixExpr)) return new ArrayElementwiseApplyFunc(expr.function, inner);
@@ -45,6 +50,20 @@ export function convertArrayToMatrix(expr: Expr): Expr {
   if (expr instanceof PermuteDims) {
     const inner = convertArrayToMatrix(expr.expr);
     if (inner instanceof MatrixExpr) return first(expr.permutation.arrayForm) === 0 ? inner : Transpose(inner).doit();
+    if (inner instanceof ArrayTensorProduct) {
+      const p = expr.permutation.arrayForm, axes: number[] = [];
+      const blocks = factorBlocks(inner);
+      const args = inner.args.map((arg, i) => {
+        const block = at(blocks, i);
+        if (arg instanceof MatrixExpr && p.indexOf(first(block)) > p.indexOf(at(block, 1))) {
+          axes.push(...[...block].reverse());
+          return Transpose(arg).doit();
+        }
+        axes.push(...block);
+        return arg;
+      });
+      return new PermuteDims(new ArrayTensorProduct(...args), p.map((axis) => axes.indexOf(axis))).doit();
+    }
     return new PermuteDims(inner, expr.permutation).doit();
   }
   if (expr instanceof ArrayTensorProduct) {
