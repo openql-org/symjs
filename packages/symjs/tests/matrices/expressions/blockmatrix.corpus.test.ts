@@ -164,11 +164,11 @@ describe("sympy/matrices/expressions/tests/test_blockmatrix.py", () => {
     const k = new Sym('k', { integer: true });
     expect(sympyMatches([at(BlockMatrix(Matrix.of([[Transpose(new MatrixSymbol('A', n, m)), Transpose(new MatrixSymbol('C', l, m))], [Transpose(new MatrixSymbol('B', n, k)), Transpose(new MatrixSymbol('D', l, k))]])).shape, 0), at(BlockMatrix(Matrix.of([[Transpose(new MatrixSymbol('A', n, m)), Transpose(new MatrixSymbol('C', l, m))], [Transpose(new MatrixSymbol('B', n, k)), Transpose(new MatrixSymbol('D', l, k))]])).shape, 1)], '(k + m, l + n)')).toBe(true);
   });
-  // no adapter for .is_MatMul
+  // a primitive result that no library call returned
   //   assert (X*M).is_MatMul
   //   => True
   it.todo("test_BlockMatrix:81");
-  // no adapter for .is_MatMul
+  // a primitive result that no library call returned
   //   assert X._blockmul(M).is_MatMul
   //   => True
   it.todo("test_BlockMatrix:82");
@@ -176,11 +176,11 @@ describe("sympy/matrices/expressions/tests/test_blockmatrix.py", () => {
   //   assert (X*M).shape == (n + l, p)
   //   => (l + n, p)
   it.todo("test_BlockMatrix:83");
-  // no adapter for .is_MatAdd
+  // a primitive result that no library call returned
   //   assert (X + N).is_MatAdd
   //   => True
   it.todo("test_BlockMatrix:84");
-  // no adapter for .is_MatAdd
+  // a primitive result that no library call returned
   //   assert X._blockadd(N).is_MatAdd
   //   => True
   it.todo("test_BlockMatrix:85");
@@ -273,11 +273,11 @@ describe("sympy/matrices/expressions/tests/test_blockmatrix.py", () => {
     const m = new Sym('m', { integer: true });
     expect(sympyMatches(blockCollapse(MatAdd(BlockMatrix(Matrix.of([[new MatrixSymbol('A', n, n), new MatrixSymbol('B', n, m)], [new MatrixSymbol('C', m, n), new MatrixSymbol('D', m, m)]])), Identity(new Add([m, n])))), 'Matrix([\n[I + A,     B],\n[    C, I + D]])')).toBe(true);
   });
-  // no adapter for .is_MatAdd
+  // a primitive result that no library call returned
   //   assert (X + MatrixSymbol('Q', n + m, n + m)).is_MatAdd
   //   => True
   it.todo("test_squareBlockMatrix:157");
-  // no adapter for .is_MatMul
+  // a primitive result that no library call returned
   //   assert (X * MatrixSymbol('Q', n + m, n + m)).is_MatMul
   //   => True
   it.todo("test_squareBlockMatrix:158");
@@ -416,19 +416,19 @@ describe("sympy/matrices/expressions/tests/test_blockmatrix.py", () => {
     const l = new Sym('l', { integer: true });
     expect(sympyMatches(blockCollapse(MatAdd(BlockDiagMatrix(new MatrixSymbol('A', n, n), MatMul(rational(2), new MatrixSymbol('B', m, m)), MatMul(rational(3), new MatrixSymbol('C', l, l))), BlockDiagMatrix(new MatrixSymbol('A', n, n), new MatrixSymbol('B', m, m), new MatrixSymbol('C', l, l)))), 'Matrix([\n[2*A,   0,   0],\n[  0, 3*B,   0],\n[  0,   0, 4*C]])')).toBe(true);
   });
-  // no adapter for .is_MatMul
+  // a primitive result that no library call returned
   //   assert (X*(2*M)).is_MatMul
   //   => True
   it.todo("test_BlockDiagMatrix:287");
-  // no adapter for .is_MatAdd
+  // a primitive result that no library call returned
   //   assert (X + (2*M)).is_MatAdd
   //   => True
   it.todo("test_BlockDiagMatrix:288");
-  // no adapter for .is_MatMul
+  // a primitive result that no library call returned
   //   assert (X._blockmul(M)).is_MatMul
   //   => True
   it.todo("test_BlockDiagMatrix:290");
-  // no adapter for .is_MatAdd
+  // a primitive result that no library call returned
   //   assert (X._blockadd(M)).is_MatAdd
   //   => True
   it.todo("test_BlockDiagMatrix:291");

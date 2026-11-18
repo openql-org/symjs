@@ -1064,7 +1064,7 @@ describe("sympy/solvers/diophantine/tests/test_diophantine.py", () => {
   //   assert diophantine(eq) == base_soln
   //   => {(0, 1, 2, 3, 7, -7), (2, 2, 4, 4, 6, -6), (0, 0, 4, 4, 4, -8), (1, 1, 1, 3, 6, -8), (1, 2, 3, 3, 5, -8), (1, 1, 2, 3, 4, -9), (0, 1, 5, 5, 5, -6), (1, 3, 4, 5, 5, -6), (0, 1, 1, 5, 6, -7), (0, 3, 3, 3, 6, -7), (0, 1, 1, 2, 5, -9), (2, 3, 3, 4, 5, -7), (0, 1, 1, 1, 3, -10), (0, 2, 2, 2, 6, -8), (0, 2, 3, 3, 3, -9), (0, 0, 2, 2, 2, -10), (0, 2, 3, 5, 5, -7), (0, 0, 2, 6, 6, -6), (1, 1, 3, 4, 6, -7)}
   it.todo("test_diop_general_sum_of_squares_quick:614");
-  // the replay exceeds its deadline
+  // the case takes more than 4 seconds
   //   assert len(diophantine(eq, permute=True)) == 196800
   //   => 196800
   it.todo("test_diop_general_sum_of_squares_quick:615");

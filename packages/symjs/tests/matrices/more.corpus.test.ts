@@ -22,33 +22,33 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   it("test_lll:54", () => {
     expect(sympyStr(new DDM([[ZZ.fromSympy(rational(10)), ZZ.fromSympy(rational(-3)), ZZ.fromSympy(rational(-2)), ZZ.fromSympy(rational(8))], [ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(-9)), ZZ.fromSympy(rational(8)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(-3)), ZZ.fromSympy(rational(13)), ZZ.fromSympy(rational(-9)), ZZ.fromSympy(rational(-3))], [ZZ.fromSympy(rational(-12)), ZZ.fromSympy(rational(-7)), ZZ.fromSympy(rational(-11)), ZZ.fromSympy(rational(9))]], [4, 4], ZZ).matmul(new DDM([[ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(-20160))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(33768))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(39578))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(47757))]], [4, 5], ZZ)))).toBe('[[10, -3, -2, 8, -4], [3, -9, 8, 1, -11], [-3, 13, -9, -3, -9], [-12, -7, -11, 9, -1]]');
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep
   //   => [[10, -3, -2, 8, -4], [3, -9, 8, 1, -11], [-3, 13, -9, -3, -9], [-12, -7, -11, 9, -1]]
   it.todo("test_lll:57");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep
   //   => [[10, -3, -2, 8, -4], [3, -9, 8, 1, -11], [-3, 13, -9, -3, -9], [-12, -7, -11, 9, -1]]
   it.todo("test_lll:60");
   it("test_lll:61", () => {
     expect(sympyStr(new DDM([[ZZ.fromSympy(rational(10)), ZZ.fromSympy(rational(-3)), ZZ.fromSympy(rational(-2)), ZZ.fromSympy(rational(8))], [ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(-9)), ZZ.fromSympy(rational(8)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(-3)), ZZ.fromSympy(rational(13)), ZZ.fromSympy(rational(-9)), ZZ.fromSympy(rational(-3))], [ZZ.fromSympy(rational(-12)), ZZ.fromSympy(rational(-7)), ZZ.fromSympy(rational(-11)), ZZ.fromSympy(rational(9))]], [4, 4], ZZ).matmul(new DDM([[ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(-20160))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(33768))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(39578))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(47757))]], [4, 5], ZZ)))).toBe('[[10, -3, -2, 8, -4], [3, -9, 8, 1, -11], [-3, 13, -9, -3, -9], [-12, -7, -11, 9, -1]]');
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep.to_sdm()
   //   => {0: {0: 10, 1: -3, 2: -2, 3: 8, 4: -4}, 1: {0: 3, 1: -9, 2: 8, 3: 1, 4: -11}, 2: {0: -3, 1: 13, 2: -9, 3: -3, 4: -9}, 3: {0: -12, 1: -7, 2: -11, 3: 9, 4: -1}}
   it.todo("test_lll:64");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep.to_sdm()
   //   => {0: {0: 10, 1: -3, 2: -2, 3: 8, 4: -4}, 1: {0: 3, 1: -9, 2: 8, 3: 1, 4: -11}, 2: {0: -3, 1: 13, 2: -9, 3: -3, 4: -9}, 3: {0: -12, 1: -7, 2: -11, 3: 9, 4: -1}}
   it.todo("test_lll:67");
   it("test_lll:68", () => {
     expect(sympyMatches(SDM.fromList([[ZZ.fromSympy(rational(10)), ZZ.fromSympy(rational(-3)), ZZ.fromSympy(rational(-2)), ZZ.fromSympy(rational(8))], [ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(-9)), ZZ.fromSympy(rational(8)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(-3)), ZZ.fromSympy(rational(13)), ZZ.fromSympy(rational(-9)), ZZ.fromSympy(rational(-3))], [ZZ.fromSympy(rational(-12)), ZZ.fromSympy(rational(-7)), ZZ.fromSympy(rational(-11)), ZZ.fromSympy(rational(9))]], [4, 4], ZZ).matmul(SDM.fromList([[ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(-20160))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(33768))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(39578))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(47757))]], [4, 5], ZZ)), '{0: {0: 10, 1: -3, 2: -2, 3: 8, 4: -4}, 1: {0: 3, 1: -9, 2: 8, 3: 1, 4: -11}, 2: {0: -3, 1: 13, 2: -9, 3: -3, 4: -9}, 3: {0: -12, 1: -7, 2: -11, 3: 9, 4: -1}}')).toBe(true);
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm
   //   => DomainMatrix([[10, -3, -2, 8, -4], [3, -9, 8, 1, -11], [-3, 13, -9, -3, -9], [-12, -7, -11, 9, -1]], (4, 5), ZZ)
   it.todo("test_lll:71");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm
   //   => DomainMatrix([[10, -3, -2, 8, -4], [3, -9, 8, 1, -11], [-3, 13, -9, -3, -9], [-12, -7, -11, 9, -1]], (4, 5), ZZ)
   it.todo("test_lll:74");
@@ -69,33 +69,33 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   it("test_lll:54 (2)", () => {
     expect(sympyStr(new DDM([[ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(11)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(13)), ZZ.fromSympy(rational(1))]], [3, 3], ZZ).matmul(new DDM([[ZZ.fromSympy(rational(20)), ZZ.fromSympy(rational(52)), ZZ.fromSympy(rational(3456))], [ZZ.fromSympy(rational(14)), ZZ.fromSympy(rational(31)), ZZ.fromSympy(rational(-1))], [ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(-442)), ZZ.fromSympy(rational(0))]], [3, 3], ZZ)))).toBe('[[14, 31, -1], [188, -101, -11], [236, 13, 3443]]');
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep
   //   => [[14, 31, -1], [188, -101, -11], [236, 13, 3443]]
   it.todo("test_lll:57 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep
   //   => [[14, 31, -1], [188, -101, -11], [236, 13, 3443]]
   it.todo("test_lll:60 (2)");
   it("test_lll:61 (2)", () => {
     expect(sympyStr(new DDM([[ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(11)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(13)), ZZ.fromSympy(rational(1))]], [3, 3], ZZ).matmul(new DDM([[ZZ.fromSympy(rational(20)), ZZ.fromSympy(rational(52)), ZZ.fromSympy(rational(3456))], [ZZ.fromSympy(rational(14)), ZZ.fromSympy(rational(31)), ZZ.fromSympy(rational(-1))], [ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(-442)), ZZ.fromSympy(rational(0))]], [3, 3], ZZ)))).toBe('[[14, 31, -1], [188, -101, -11], [236, 13, 3443]]');
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep.to_sdm()
   //   => {0: {0: 14, 1: 31, 2: -1}, 1: {0: 188, 1: -101, 2: -11}, 2: {0: 236, 1: 13, 2: 3443}}
   it.todo("test_lll:64 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep.to_sdm()
   //   => {0: {0: 14, 1: 31, 2: -1}, 1: {0: 188, 1: -101, 2: -11}, 2: {0: 236, 1: 13, 2: 3443}}
   it.todo("test_lll:67 (2)");
   it("test_lll:68 (2)", () => {
     expect(sympyStr(SDM.fromList([[ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(11)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(13)), ZZ.fromSympy(rational(1))]], [3, 3], ZZ).matmul(SDM.fromList([[ZZ.fromSympy(rational(20)), ZZ.fromSympy(rational(52)), ZZ.fromSympy(rational(3456))], [ZZ.fromSympy(rational(14)), ZZ.fromSympy(rational(31)), ZZ.fromSympy(rational(-1))], [ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(-442)), ZZ.fromSympy(rational(0))]], [3, 3], ZZ)))).toBe('{0: {0: 14, 1: 31, 2: -1}, 1: {0: 188, 1: -101, 2: -11}, 2: {0: 236, 1: 13, 2: 3443}}');
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm
   //   => DomainMatrix([[14, 31, -1], [188, -101, -11], [236, 13, 3443]], (3, 3), ZZ)
   it.todo("test_lll:71 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm
   //   => DomainMatrix([[14, 31, -1], [188, -101, -11], [236, 13, 3443]], (3, 3), ZZ)
   it.todo("test_lll:74 (2)");
@@ -116,33 +116,33 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   it("test_lll:54 (3)", () => {
     expect(sympyStr(new DDM([[ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(6)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(-17)), ZZ.fromSympy(rational(-10)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(-2))]], [4, 4], ZZ).matmul(new DDM([[ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(-1)), ZZ.fromSympy(rational(-86)), ZZ.fromSympy(rational(12))], [ZZ.fromSympy(rational(-54)), ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(55)), ZZ.fromSympy(rational(678))], [ZZ.fromSympy(rational(23)), ZZ.fromSympy(rational(3498)), ZZ.fromSympy(rational(234)), ZZ.fromSympy(rational(6783))], [ZZ.fromSympy(rational(87)), ZZ.fromSympy(rational(49)), ZZ.fromSympy(rational(665)), ZZ.fromSympy(rational(11))]], [4, 4], ZZ)))).toBe('[[34, -1, -86, 12], [291, 43, 149, 83], [-54, 34, 55, 678], [-189, 3077, -184, -223]]');
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep
   //   => [[34, -1, -86, 12], [291, 43, 149, 83], [-54, 34, 55, 678], [-189, 3077, -184, -223]]
   it.todo("test_lll:57 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep
   //   => [[34, -1, -86, 12], [291, 43, 149, 83], [-54, 34, 55, 678], [-189, 3077, -184, -223]]
   it.todo("test_lll:60 (3)");
   it("test_lll:61 (3)", () => {
     expect(sympyStr(new DDM([[ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(6)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(-17)), ZZ.fromSympy(rational(-10)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(-2))]], [4, 4], ZZ).matmul(new DDM([[ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(-1)), ZZ.fromSympy(rational(-86)), ZZ.fromSympy(rational(12))], [ZZ.fromSympy(rational(-54)), ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(55)), ZZ.fromSympy(rational(678))], [ZZ.fromSympy(rational(23)), ZZ.fromSympy(rational(3498)), ZZ.fromSympy(rational(234)), ZZ.fromSympy(rational(6783))], [ZZ.fromSympy(rational(87)), ZZ.fromSympy(rational(49)), ZZ.fromSympy(rational(665)), ZZ.fromSympy(rational(11))]], [4, 4], ZZ)))).toBe('[[34, -1, -86, 12], [291, 43, 149, 83], [-54, 34, 55, 678], [-189, 3077, -184, -223]]');
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep.to_sdm()
   //   => {0: {0: 34, 1: -1, 2: -86, 3: 12}, 1: {0: 291, 1: 43, 2: 149, 3: 83}, 2: {0: -54, 1: 34, 2: 55, 3: 678}, 3: {0: -189, 1: 3077, 2: -184, 3: -223}}
   it.todo("test_lll:64 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm.rep.to_sdm()
   //   => {0: {0: 34, 1: -1, 2: -86, 3: 12}, 1: {0: 291, 1: 43, 2: 149, 3: 83}, 2: {0: -54, 1: 34, 2: 55, 3: 678}, 3: {0: -189, 1: 3077, 2: -184, 3: -223}}
   it.todo("test_lll:67 (3)");
   it("test_lll:68 (3)", () => {
     expect(sympyStr(SDM.fromList([[ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(6)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(-17)), ZZ.fromSympy(rational(-10)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(-2))]], [4, 4], ZZ).matmul(SDM.fromList([[ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(-1)), ZZ.fromSympy(rational(-86)), ZZ.fromSympy(rational(12))], [ZZ.fromSympy(rational(-54)), ZZ.fromSympy(rational(34)), ZZ.fromSympy(rational(55)), ZZ.fromSympy(rational(678))], [ZZ.fromSympy(rational(23)), ZZ.fromSympy(rational(3498)), ZZ.fromSympy(rational(234)), ZZ.fromSympy(rational(6783))], [ZZ.fromSympy(rational(87)), ZZ.fromSympy(rational(49)), ZZ.fromSympy(rational(665)), ZZ.fromSympy(rational(11))]], [4, 4], ZZ)))).toBe('{0: {0: 34, 1: -1, 2: -86, 3: 12}, 1: {0: 291, 1: 43, 2: 149, 3: 83}, 2: {0: -54, 1: 34, 2: 55, 3: 678}, 3: {0: -189, 1: 3077, 2: -184, 3: -223}}');
   });
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm
   //   => DomainMatrix([[34, -1, -86, 12], [291, 43, 149, 83], [-54, 34, 55, 678], [-189, 3077, -184, -223]], (4, 4), ZZ)
   it.todo("test_lll:71 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   assert reduced == reduced_dm
   //   => DomainMatrix([[34, -1, -86, 12], [291, 43, 149, 83], [-54, 34, 55, 678], [-189, 3077, -184, -223]], (4, 4), ZZ)
   it.todo("test_lll:74 (3)");
@@ -249,15 +249,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:109");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:110");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:111");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:112");
@@ -265,15 +265,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll_transform(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:114");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:115");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:116");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:117");
@@ -281,15 +281,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:109 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:110 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:111 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:112 (2)");
@@ -297,15 +297,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll_transform(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:114 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:115 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:116 (2)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:117 (2)");
@@ -313,15 +313,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:109 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:110 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:111 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:112 (3)");
@@ -329,15 +329,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll_transform(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:114 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:115 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:116 (3)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:117 (3)");
@@ -345,15 +345,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:109 (4)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:110 (4)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:111 (4)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:112 (4)");
@@ -361,15 +361,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll_transform(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:114 (4)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:115 (4)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:116 (4)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:117 (4)");
@@ -377,15 +377,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:109 (5)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:110 (5)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:111 (5)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:112 (5)");
@@ -393,15 +393,15 @@ describe("sympy/polys/matrices/tests/test_lll.py", () => {
   //   raises(DMValueError, lambda: ddm_lll_transform(dummy_matrix.rep, delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:114 (5)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:115 (5)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.rep.to_sdm().lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:116 (5)");
-  // kwargs delta
+  // expected a Matrix
   //   raises(DMValueError, lambda: dummy_matrix.lll_transform(delta=wrong_delta))
   //   => None
   it.todo("test_lll_wrong_delta:117 (5)");

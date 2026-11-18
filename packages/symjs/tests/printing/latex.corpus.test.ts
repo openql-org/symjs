@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { BaseScalarField, CoordSystem, Differential, Manifold, Patch, R2R, WedgeProduct } from '../../src/diffgeom';
-import { AccumBounds, Add, Adjoint, AlgebraicNumber, And, Array, ArrayElement, ArraySymbol, BlockMatrix, CRootOf, CartesianComplexRegion, Category, Complement, Complexes, CompositeMorphism, ConditionSet, ConditionalFiniteDomain, Contains, CoordSys3D, CovarianceNode, Cross, Curl, Cycle, DFT, Determinant, Diagram, Dict, DiracDelta, Divergence, Dot, DotProduct, Dummy, E, ElementwiseApplyFunction, EmptySet, Equivalent, ExpectationNode, Float, Gradient, HadamardPower, HadamardProduct, Heaviside, I, IDFT, Identity, IdentityMorphism, Idx, ImageSet, ImmutableSparseNDimArray, Implies, IndexedBase, Integers, Integral, KroneckerDelta, KroneckerProduct, Lambda, LambertW, LaplaceTransform, Laplacian, Limit, MatAdd, MatMul, MatPow, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mod, Mul, MutableDenseNDimArray, MutableSparseNDimArray, NamedMorphism, Naturals, Naturals0, NormalDistribution, Not, O, OneMatrix, Or, PartialDerivative, Perm, PermutationMatrix, PolarComplexRegion, Pow, PowerSet, ProbabilityNode, Product, ProductContinuousDomain, ProductSet, Quaternion, RandomSymbol, Range, Rationals, Reals, RootSumNode, S, SeqAdd, SeqFormula, SeqMul, SeqPer, SetExpression, SingleContinuousDomain, SingleContinuousPSpace, SingleFiniteDomain, SingularityFunction, Str, Subs, Sum, Sym, SymFunction, SymObject, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Trace, Transpose, Tuple, UnevaluatedExpr, Union, UniversalSet, VarianceNode, VectorAdd, VectorMul, Wild, Xor, ZeroMatrix, abs, add, derivative, exp, finiteSet, fn, fourierSeries, fps, frac, hyper, intersection, interval, jn, latex, log, meijerg, mul, multilineLatex, oo, pi, piecewise, pow, pprintUseUnicode, rational, rel, symbols, sympifyMatrix, translate, yn } from '../../src';
+import { AccumBounds, Add, Adjoint, AlgebraicNumber, And, Array, ArrayElement, ArraySymbol, BlockMatrix, CRootOf, CartesianComplexRegion, Category, Complement, Complexes, CompositeMorphism, ConditionSet, ConditionalFiniteDomain, Contains, CoordSys3D, CovarianceNode, Cross, Curl, Cycle, DFT, Determinant, Diagram, Dict, DiracDelta, Divergence, Dot, DotProduct, Dummy, E, ElementwiseApplyFunction, EmptySet, Equivalent, ExpectationNode, Float, Gradient, HadamardPower, HadamardProduct, Heaviside, I, IDFT, Identity, IdentityMorphism, Idx, ImageSet, ImmutableSparseNDimArray, Implies, IndexedBase, Integers, Integral, KroneckerDelta, KroneckerProduct, Lambda, LambertW, LaplaceTransform, Laplacian, LeviCivita, Limit, MatAdd, MatMul, MatPow, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mod, Mul, MutableDenseNDimArray, MutableSparseNDimArray, NamedMorphism, Naturals, Naturals0, NormalDistribution, Not, O, OneMatrix, Or, PartialDerivative, Perm, PermutationMatrix, PolarComplexRegion, Pow, PowerSet, ProbabilityNode, Product, ProductContinuousDomain, ProductSet, Quaternion, RandomSymbol, Range, Rationals, Reals, Relational, RootSumNode, S, SeqAdd, SeqFormula, SeqMul, SeqPer, SetExpression, SingleContinuousDomain, SingleContinuousPSpace, SingleFiniteDomain, SingularityFunction, Str, Subs, Sum, Sym, SymFunction, SymObject, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Trace, Transpose, Tuple, UnevaluatedExpr, Union, UniversalSet, VarianceNode, VectorAdd, VectorMul, Wild, Xor, ZeroMatrix, abs, add, derivative, exp, finiteSet, fn, fourierSeries, fps, frac, hyper, intersection, interval, jn, latex, log, meijerg, mul, multilineLatex, oo, pi, piecewise, pow, pprintUseUnicode, rational, symbols, sympifyMatrix, translate, yn } from '../../src';
 import { at, pyStr, text } from '../sympy-str';
 
 describe("doctests of sympy.printing.latex", () => {
@@ -5562,7 +5562,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new ConditionSet(x, rel('Eq', new Pow(x, rational(2)), 1), Reals), {}))).toBe('\\left\\{x\\; \\middle|\\; x \\in \\mathbb{R} \\wedge x^{2} = 1 \\right\\}');
+      expect(text(latex(new ConditionSet(x, Relational(new Pow(x, rational(2)), rational(1), '==', { evaluate: false }), Reals), {}))).toBe('\\left\\{x\\; \\middle|\\; x \\in \\mathbb{R} \\wedge x^{2} = 1 \\right\\}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5571,7 +5571,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new ConditionSet(x, rel('Eq', new Pow(x, rational(2)), 1), UniversalSet), {}))).toBe('\\left\\{x\\; \\middle|\\; x^{2} = 1 \\right\\}');
+      expect(text(latex(new ConditionSet(x, Relational(new Pow(x, rational(2)), rational(1), '==', { evaluate: false }), UniversalSet), {}))).toBe('\\left\\{x\\; \\middle|\\; x^{2} = 1 \\right\\}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6047,27 +6047,51 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // function LeviCivita
-  //   assert latex(LeviCivita(x, y, z)) == r"\varepsilon_{x y z}"
-  //   => \varepsilon_{x y z}
-  it.todo("test_latex_LeviCivita:1498");
-  // function LeviCivita
-  //   assert latex(LeviCivita(x, y, z)**2) == \
-  //           r"\left(\varepsilon_{x y z}\right)^{2}"
-  //   => \left(\varepsilon_{x y z}\right)^{2}
-  it.todo("test_latex_LeviCivita:1499");
-  // function LeviCivita
-  //   assert latex(LeviCivita(x, y, z + 1)) == r"\varepsilon_{x, y, z + 1}"
-  //   => \varepsilon_{x, y, z + 1}
-  it.todo("test_latex_LeviCivita:1501");
-  // function LeviCivita
-  //   assert latex(LeviCivita(x, y + 1, z)) == r"\varepsilon_{x, y + 1, z}"
-  //   => \varepsilon_{x, y + 1, z}
-  it.todo("test_latex_LeviCivita:1502");
-  // function LeviCivita
-  //   assert latex(LeviCivita(x + 1, y, z)) == r"\varepsilon_{x + 1, y, z}"
-  //   => \varepsilon_{x + 1, y, z}
-  it.todo("test_latex_LeviCivita:1503");
+  it("test_latex_LeviCivita:1498", () => {
+    const [x, y, z] = symbols('x y z');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(LeviCivita(x, y, z), {}))).toBe('\\varepsilon_{x y z}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_latex_LeviCivita:1499", () => {
+    const [x, y, z] = symbols('x y z');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new Pow(LeviCivita(x, y, z), rational(2)), {}))).toBe('\\left(\\varepsilon_{x y z}\\right)^{2}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_latex_LeviCivita:1501", () => {
+    const [x, y, z] = symbols('x y z');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(LeviCivita(x, y, new Add([rational(1), z])), {}))).toBe('\\varepsilon_{x, y, z + 1}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_latex_LeviCivita:1502", () => {
+    const [x, y, z] = symbols('x y z');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(LeviCivita(x, new Add([rational(1), y]), z), {}))).toBe('\\varepsilon_{x, y + 1, z}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_latex_LeviCivita:1503", () => {
+    const [x, y, z] = symbols('x y z');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(LeviCivita(new Add([rational(1), x]), y, z), {}))).toBe('\\varepsilon_{x + 1, y, z}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_mode:1508", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
@@ -6193,7 +6217,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([x, rel('Lt', x, 1)], [new Pow(x, rational(2)), true]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 1 \\\\x^{2} & \\text{otherwise} \\end{cases}');
+      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), true]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 1 \\\\x^{2} & \\text{otherwise} \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6202,7 +6226,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([x, rel('Lt', x, 1)], [new Pow(x, rational(2)), true]), { itex: true }))).toBe('\\begin{cases} x & \\text{for}\\: x \\lt 1 \\\\x^{2} & \\text{otherwise} \\end{cases}');
+      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), true]), { itex: true }))).toBe('\\begin{cases} x & \\text{for}\\: x \\lt 1 \\\\x^{2} & \\text{otherwise} \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6211,7 +6235,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([x, rel('Lt', x, 0)], [rational(0), true]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 0 \\\\0 & \\text{otherwise} \\end{cases}');
+      expect(text(latex(piecewise([x, Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 0 \\\\0 & \\text{otherwise} \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6221,7 +6245,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const B = new Sym('B', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([new Pow(A, rational(2)), rel('Eq', A, B)], [new Mul([A, B]), true]), {}))).toBe('\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}');
+      expect(text(latex(piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true]), {}))).toBe('\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6231,7 +6255,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const B = new Sym('B', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Mul([A, piecewise([new Pow(A, rational(2)), rel('Eq', A, B)], [new Mul([A, B]), true])]), {}))).toBe('A \\left(\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}\\right)');
+      expect(text(latex(new Mul([A, piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true])]), {}))).toBe('A \\left(\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6241,7 +6265,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const B = new Sym('B', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Mul([piecewise([new Pow(A, rational(2)), rel('Eq', A, B)], [new Mul([A, B]), true]), A]), {}))).toBe('\\left(\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}\\right) A');
+      expect(text(latex(new Mul([piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true]), A]), {}))).toBe('\\left(\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}\\right) A');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6250,7 +6274,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([x, rel('Lt', x, 1)], [new Pow(x, rational(2)), rel('Lt', x, 2)]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 1 \\\\x^{2} & \\text{for}\\: x < 2 \\end{cases}');
+      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(2), '<', { evaluate: false })]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 1 \\\\x^{2} & \\text{for}\\: x < 2 \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -7727,7 +7751,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const d1 = new Sym('d1');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new ConditionalFiniteDomain([new SingleFiniteDomain([d1, finiteSet(rational(1), rational(2), rational(3), rational(4), rational(5), rational(6))]), rel('Gt', d1, 4)]), {}))).toBe('\\text{Domain: }d_{1} = 5 \\vee d_{1} = 6');
+      expect(text(latex(new ConditionalFiniteDomain([new SingleFiniteDomain([d1, finiteSet(rational(1), rational(2), rational(3), rational(4), rational(5), rational(6))]), Relational(d1, rational(4), '>', { evaluate: false })]), {}))).toBe('\\text{Domain: }d_{1} = 5 \\vee d_{1} = 6');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -10455,7 +10479,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const sigma = new Sym('sigma', { positive: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new ProbabilityNode([rel('Gt', new RandomSymbol(X, new SingleContinuousPSpace([X, new NormalDistribution([mu, sigma])])), 0)]), {}))).toBe('\\operatorname{P}\\left(X > 0\\right)');
+      expect(text(latex(new ProbabilityNode([Relational(new RandomSymbol(X, new SingleContinuousPSpace([X, new NormalDistribution([mu, sigma])])), rational(0), '>', { evaluate: false })]), {}))).toBe('\\operatorname{P}\\left(X > 0\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }

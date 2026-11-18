@@ -300,7 +300,7 @@ describe("sympy/series/tests/test_formal.py", () => {
   });
   it.fails("test_fps:180", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(fps(log(new Add([rational(1), x])), x, rational(0), '+'), x))).toBe('x');
+    expect(sympyStr(asLeadingTerm(fps(log(new Add([rational(1), x])), x, rational(0), '+'), x, {}))).toBe('x');
   });
   // the arguments do not type-check against the public API
   //   assert f.polynomial(6) == x - x**2/2 + x**3/3 - x**4/4 + x**5/5

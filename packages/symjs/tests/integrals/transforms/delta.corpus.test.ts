@@ -801,15 +801,15 @@ describe("sympy/functions/special/tests/test_singularity_functions.py", () => {
   });
   it.fails("test_leading_term:75", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(3), rational(2)), x))).toBe('0');
+    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(3), rational(2)), x, {}))).toBe('0');
   });
   it.fails("test_leading_term:76", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(-2), rational(1)), x))).toBe('2');
+    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(-2), rational(1)), x, {}))).toBe('2');
   });
   it.fails("test_leading_term:77", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(0)), x))).toBe('1');
+    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(0)), x, {}))).toBe('1');
   });
   it.fails("test_leading_term:78", () => {
     const x = new Sym('x');
@@ -817,24 +817,24 @@ describe("sympy/functions/special/tests/test_singularity_functions.py", () => {
   });
   it.fails("test_leading_term:79", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(-1)), x))).toBe('0');
+    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(-1)), x, {}))).toBe('0');
   });
   it.fails("test_leading_term:80", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(-2)), x))).toBe('0');
+    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(-2)), x, {}))).toBe('0');
   });
   it.fails("test_leading_term:81", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(-3)), x))).toBe('0');
+    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(-3)), x, {}))).toBe('0');
   });
   it.fails("test_leading_term:82", () => {
     const x = new Sym('x');
-    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(-4)), x))).toBe('0');
+    expect(sympyStr(asLeadingTerm(SingularityFunction(x, rational(0), rational(-4)), x, {}))).toBe('0');
   });
   it.fails("test_leading_term:83", () => {
     const x = new Sym('x');
     const l = new Sym('l', { positive: true });
-    expect(sympyStr(asLeadingTerm(new Add([new Mul([rational(1, 2), SingularityFunction(new Add([x, l]), rational(0), rational(1))]), new Mul([rational(1, 2), SingularityFunction(new Add([x, l]), l, rational(1))]), new Mul([rational(-1), SingularityFunction(new Add([x, l]), new Mul([rational(1, 2), l]), rational(1))])]), x))).toBe('-x/2');
+    expect(sympyStr(asLeadingTerm(new Add([new Mul([rational(1, 2), SingularityFunction(new Add([x, l]), rational(0), rational(1))]), new Mul([rational(1, 2), SingularityFunction(new Add([x, l]), l, rational(1))]), new Mul([rational(-1), SingularityFunction(new Add([x, l]), new Mul([rational(1, 2), l]), rational(1))])]), x, {}))).toBe('-x/2');
   });
   it("test_series:90", () => {
     const x = new Sym('x');
