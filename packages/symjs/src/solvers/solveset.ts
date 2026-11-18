@@ -50,6 +50,11 @@ export function solvesetReal(f: ExprLike, symbol: Sym): SetExpr {
   return solveset(f, symbol, Reals);
 }
 
+/** Solve over the complex domain. */
+export function solvesetComplex(f: ExprLike, symbol: Sym): SetExpr {
+  return solveset(f, symbol, Complexes);
+}
+
 function invert(f: ExprLike, y: ExprLike, x: Sym, domain: SetExpr): [Expr, SetExpr] {
   const expression = sympify(f), value = sympify(y);
   if (!expression.has(x) || value.has(x)) throw new RangeError('invert: f must depend on x and y must be independent of x');
@@ -90,6 +95,8 @@ export function solvify(f: ExprLike, symbol: Sym, domain: SetExpr): Expr[] | NoM
  */
 export function nonlinsolve(system: readonly ExprLike[], symbols: readonly Sym[]): Expr[][] {
   const eqs = system.map(asEquation);
+  if (eqs.length === 0) return [];
+  if (symbols.length === 0) throw new RangeError('nonlinsolve: at least one unknown is required');
   if (symbols.length === 2 && eqs.length === 2) {
     const one = eqs.findIndex((e) => symbols.filter((v) => e.has(v)).length === 1);
     if (one >= 0) {

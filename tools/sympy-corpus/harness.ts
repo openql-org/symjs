@@ -3063,10 +3063,29 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   nonlinsolve: (args, kw) => {
     noKw(kw);
-    const eqs = (args[0] as JsTuple).items.map(asExpr);
-    const syms = (args[1] as JsTuple).items.map(asSym);
-    const sols = sj.nonlinsolve(eqs, syms);
-    return sols.length ? new JsSet(sols.map((t) => new JsTuple(t))) : 'EmptySet';
+    const equations = args[0];
+    if (!(equations instanceof JsTuple || equations instanceof JsList)) throw new Unsupported('nonlinsolve equations');
+    const eqs = equations.items.map(asExpr);
+    const targets = args[1] instanceof JsTuple || args[1] instanceof JsList || args[1] instanceof JsSet ? args[1].items : args.slice(1);
+    const originals = targets.map(asExpr);
+    const syms = originals.map((e, i) => e instanceof Sym ? e : new sj.Dummy(`_u${i}`));
+    const replacements = originals.map((e, i): [Expr, Expr] => [e, definedOr(syms[i], 'nonlinear solver unknown')]);
+    const sols = sj.nonlinsolve(eqs.map((e) => sj.xreplace(e, replacements)), syms);
+    const back = replacements.map(([e, d]): [Expr, Expr] => [d, e]);
+    return sols.length ? new JsSet(sols.map((t) => new JsTuple(t.map((e) => sj.xreplace(e, back))))) : 'EmptySet';
+  },
+  constant_renumber: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['variables', 'newconstants'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const variables = kw['variables'] ?? args[1];
+    const constants = kw['newconstants'] ?? args[2];
+    const sequence = (v: unknown): unknown[] => {
+      if (v instanceof JsTuple || v instanceof JsList || v instanceof JsSet) return [...v.items];
+      throw new Unsupported('constant_renumber variables');
+    };
+    const expr = args[0];
+    const list = expr instanceof JsTuple || expr instanceof JsList;
+    const result = sj.constantRenumber(list ? new sj.Tuple(expr.items.map(asExpr)) : asExpr(expr), variables === undefined ? undefined : sequence(variables).map(asExpr), constants === undefined ? undefined : sequence(constants).map(asSym));
+    return list ? new JsList(result.args) : result;
   },
   solve_linear: (args, kw) => {
     const opts: { symbols?: Sym[]; exclude?: Sym[] } = {};
@@ -5265,7 +5284,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
   // a sympy.stats name that symjs exports under another name (stats E is the expectation, not the constant)
-  const adapter = diffgeomAdapter(c) ?? (c.module === 'sympy.integrals.intpoly' ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  const adapter = diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     const args = (c.args ?? []).map(deserialize);

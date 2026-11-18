@@ -52600,7 +52600,7 @@
      "testFile": "sympy/integrals/tests/test_intpoly.py",
      "inCorpus": true,
      "caseCount": 50,
-     "gapCount": 41,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 35
@@ -53718,8 +53718,6 @@
       "no_cancel_b_small",
       "no_cancel_equal",
       "normal_denom",
-      "order_at",
-      "order_at_oo",
       "rischDE",
       "solve_poly_rde",
       "spde",
@@ -53747,7 +53745,7 @@
      "testFile": "sympy/integrals/tests/test_rde.py",
      "inCorpus": true,
      "caseCount": 12,
-     "gapCount": 12,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 33,
@@ -53822,7 +53820,6 @@
       "residue_reduce",
       "residue_reduce_derivation",
       "residue_reduce_to_basic",
-      "risch_integrate",
       "splitfactor",
       "splitfactor_sqf",
       "update_sets"
@@ -53875,7 +53872,7 @@
      "testFile": "sympy/integrals/tests/test_risch.py",
      "inCorpus": true,
      "caseCount": 36,
-     "gapCount": 27,
+     "gapCount": 15,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 31,
@@ -87016,7 +87013,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 29,
+     "gapCount": 28,
      "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-slow": 1
@@ -101465,8 +101462,7 @@
      "pass": false,
      "missingNames": [
       "allhints",
-      "linear_ode_to_matrix",
-      "linodesolve"
+      "linear_ode_to_matrix"
      ],
      "pythonSpecificNames": [],
      "internalNames": [],
@@ -101752,7 +101748,7 @@
      "testFile": "sympy/solvers/ode/tests/test_ode.py",
      "inCorpus": true,
      "caseCount": 172,
-     "gapCount": 68,
+     "gapCount": 66,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-skip": 1,
@@ -102309,7 +102305,6 @@
       "ODENonlinearError",
       "ODEOrderError",
       "linear_ode_to_matrix",
-      "linodesolve",
       "matrix_exp_jordan_form",
       "simpsol"
      ],
@@ -102337,7 +102332,7 @@
      "testFile": "sympy/solvers/ode/tests/test_systems.py",
      "inCorpus": true,
      "caseCount": 286,
-     "gapCount": 113,
+     "gapCount": 69,
      "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-slow": 104,
@@ -102725,8 +102720,7 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "solve_decomposition",
-      "solveset_complex"
+      "solve_decomposition"
      ],
      "pythonSpecificNames": [],
      "internalNames": [],
@@ -102753,7 +102747,7 @@
      "testFile": "sympy/solvers/tests/test_solveset.py",
      "inCorpus": true,
      "caseCount": 610,
-     "gapCount": 277,
+     "gapCount": 238,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-skip": 3,
