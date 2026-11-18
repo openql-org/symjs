@@ -43,7 +43,7 @@ import { trigintegrate } from './trigonometry';
 import { heurischTrig } from './heurisch';
 import { sqrtQuadraticRule } from './manualintegrate';
 import { floor, sign } from '../functions/special/special';
-import { and, or } from '../core/boolalg';
+import { and, or, BoolOp } from '../core/boolalg';
 import { ordered } from '../core/match';
 import { reduceInequalities } from '../solvers/inequalities';
 import { RootSumNode } from '../polys/rootsum';
@@ -740,6 +740,57 @@ function piecewiseBreaks(f: Piecewise, x: Sym): [Expr, Expr | undefined][] | und
   return out;
 }
 
+/** SymPy Piecewise._intervals: split at linear boundaries and use the first matching branch. */
+function definitePiecewise(f: Piecewise, x: Sym, a: Expr, b: Expr): Expr | undefined {
+  const order = cmpReal(a, b);
+  if (order === undefined) return undefined;
+  if (order === 0) return S.Zero;
+  if (order > 0) {
+    const result = definitePiecewise(f, x, b, a);
+    return result === undefined ? undefined : mul(-1, result);
+  }
+  const boundaries = new Map<string, Expr>();
+  const collect = (c: Expr): boolean => {
+    if (c instanceof BoolAtom) return true;
+    if (c instanceof Rel) {
+      const coefficients = polyCoefficients(add(c.lhs, mul(-1, c.rhs)), x);
+      if (!coefficients || [...coefficients.keys()].some((degree) => degree > 1)) return false;
+      const slope = coefficients.get(1);
+      if (slope === undefined || isReal(slope) !== true || isNonZero(slope) !== true) return false;
+      const point = mul(-1, coefficients.get(0) ?? S.Zero, pow(slope, -1));
+      const left = cmpReal(point, a);
+      const right = cmpReal(point, b);
+      if (left === undefined || right === undefined) return false;
+      if (left > 0 && right < 0) boundaries.set(point.key, point);
+      return true;
+    }
+    return c instanceof BoolOp && c.args.every(collect);
+  };
+  if (!f.pairs.every(([, condition]) => collect(condition))) return undefined;
+  const points = [a, ...[...boundaries.values()].sort((p, q) => defined(cmpReal(p, q))), b];
+  const terms: Expr[] = [];
+  for (let i = 1; i < points.length; i++) {
+    const left = at(points, i - 1);
+    const right = at(points, i);
+    const sample = left.key === S.NegativeInfinity.key
+      ? right.key === S.Infinity.key ? S.Zero : add(right, -1)
+      : right.key === S.Infinity.key ? add(left, 1) : mul(S.Half, add(left, right));
+    let branch: Expr = S.NaN;
+    for (const [expression, condition] of f.pairs) {
+      const value = expectType(subs(condition, [[x, sample]]), (value): value is BoolAtom => value instanceof BoolAtom);
+      if (value.value) {
+        branch = expression;
+        break;
+      }
+    }
+    if (branch === S.NaN) return S.NaN;
+    const term = integrate(branch, x, [left, right]);
+    if (term instanceof Integral) return undefined;
+    terms.push(term);
+  }
+  return add(...terms);
+}
+
 /**
  * SymPy Piecewise._handle_irel: the relations of the conditions that do not
  * contain x are replaced by each combination of truth values (all true
@@ -1001,6 +1052,10 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   if (f instanceof Piecewise) {
     const r = handleIrel(f, x, (g) => integrate(g, x, limits, opts));
     if (r !== undefined) return r;
+    if (limits) {
+      const result = definitePiecewise(f, x, sympify(limits[0]), sympify(limits[1]));
+      if (result !== undefined) return result;
+    }
   }
   if (limits && some(f, (e) => e instanceof Piecewise)) {
     const [a, b] = [sympify(limits[0]), sympify(limits[1])];

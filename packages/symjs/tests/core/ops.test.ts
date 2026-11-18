@@ -21,6 +21,27 @@ const R = (p: bigint, q = 1n): sj.Rational => sj.Rational.of(p, q);
 const P = (s: string): sj.Expr => sj.parse(s, { symbols: { x, y, a } } as never);
 
 const f = sj.SymFunction('f');
+it('normalizes unevaluated arithmetic and preserves polar powers', () => {
+  expect(sympify(2n).key).toBe(Rational.of(2n).key);
+  expect(add(new sj.Mul([Rational.of(2n), S.One])).key).toBe(Rational.of(2n).key);
+  expect(mul(new sj.Mul([S.NaN, x]))).toBe(S.NaN);
+  expect(s(pow(new sj.Fn('exp_polar', [x]), y))).toBe('exp_polar(x*y)');
+  expect(Add.fromiter([x, x]).key).toBe(mul(2, x).key);
+  expect(sj.Mul.fromiter([x, x]).key).toBe(pow(x, 2).key);
+  expect(Pow.fromiter([x, S.One])).toBe(x);
+  expect(pow(S.One, S.ComplexInfinity)).toBe(S.NaN);
+  expect(pow(S.NegOne, S.Infinity)).toBe(S.NaN);
+  expect(s(sj.root(x, 3, y))).toBe('(-1)**(2*y/3)*x**(1/3)');
+  expect(add(S.Infinity, x, mul(-1, x))).toBe(S.Infinity);
+  expect(mul(S.ComplexInfinity, new Sym('p', { positive: true }))).toBe(S.ComplexInfinity);
+  expect(mul(new Pow(S.I, rational(1, 3)), new Pow(S.I, rational(2, 3)))).toBe(S.I);
+  expect(exp(add(log(x), log(y))).key).toBe(mul(x, y).key);
+  expect(pow(0, rational(-1, 2))).toBe(S.ComplexInfinity);
+  expect(s(add(S.Infinity, x, y))).toBe('x + y + oo');
+  expect(s(mul(S.ComplexInfinity, x, y))).toBe('zoo*x*y');
+  expect(mul(new Pow(Rational.of(2n), new Float(1)), new Pow(Rational.of(3n), new Float(1))).toNumber()).toBe(6);
+  expect(pow(S.E, new Float(1)).toNumber()).toBeCloseTo(Math.E, 14);
+});
 const P2 = (s: string): sj.Expr => sj.parse(s, { symbols: { x, y }, functions: { f } } as never);
 
 const { oo, zoo, nan } = sj;
@@ -418,6 +439,16 @@ describe('powers with infinities and nan (SymPy Infinity/NegativeInfinity/Comple
 });
 
 describe('root, cbrt and realRoot (SymPy root, cbrt, real_root)', () => {
+  it('converts only principal odd roots when the root order is omitted', () => {
+    const odd = new sj.Pow(sj.rational(-2), sj.rational(1, 3));
+    const even = new sj.Pow(sj.rational(-7), sj.rational(1, 4));
+    const nonprincipal = new sj.Pow(sj.rational(-1), sj.rational(2, 3));
+    expect(s(sj.realRoot(odd))).toBe('-2**(1/3)');
+    expect(s(sj.realRoot(even))).toBe('(-7)**(1/4)');
+    expect(s(sj.realRoot(sj.add(odd, even, nonprincipal)))).toBe('-2**(1/3) + (-1)**(2/3) + (-7)**(1/4)');
+    expect(s(sj.root(4, 2, 0, { evaluate: false }))).toBe('sqrt(4)');
+    expect(s(sj.realRoot(-8, 3, { evaluate: false }))).toBe('-8**(1/3)');
+  });
   it('takes principal and other roots', () => {
     expect(s(sj.root(8, 3))).toBe('2');
     expect(s(sj.root(x, 3, 1))).toBe('(-1)**(2/3)*x**(1/3)');

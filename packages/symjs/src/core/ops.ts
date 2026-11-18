@@ -1207,10 +1207,10 @@ impl.pow = pow;
 impl.couldExtractMinusSign = couldExtractMinusSign;
 
 /** SymPy root(x, n, k): the k-th n-th root, x**(1/n)*(-1)**(2*k/n). */
-export function root(x: ExprLike, n: ExprLike, k: ExprLike = 0): Expr {
+export function root(x: ExprLike, n: ExprLike, k: ExprLike = 0, opts: { evaluate?: boolean } = {}): Expr {
   const nn = sympify(n);
   const kk = sympify(k);
-  const r = pow(x, pow(nn, -1));
+  const r = opts.evaluate === false ? new Pow(sympify(x), pow(nn, -1)) : pow(x, pow(nn, -1));
   if (kk instanceof Rational && kk.isZero) return r;
   return mul(r, pow(S.NegOne, mul(2, kk, pow(nn, -1))));
 }
@@ -1220,16 +1220,28 @@ export function cbrt(x: ExprLike): Expr {
   return pow(x, Rational.of(1n, 3n));
 }
 
-/** SymPy real_root(x, n): the real n-th root for real x and odd n. */
-export function realRoot(xIn: ExprLike, nIn: ExprLike): Expr {
+/** SymPy real_root: real odd roots, or conversion of principal odd roots when n is omitted. */
+export function realRoot(xIn: ExprLike, nIn?: ExprLike, opts: { evaluate?: boolean } = {}): Expr {
   const x = sympify(xIn);
+  if (nIn === undefined) {
+    const replacements: [Expr, Expr][] = [];
+    const visit = (e: Expr): void => {
+      if (e instanceof Pow && isNegative(e.base) === true && e.exp instanceof Rational && e.exp.p === 1n && e.exp.q % 2n !== 0n) {
+        replacements.push([e, mul(-1, pow(mul(-1, e.base), e.exp))]);
+      }
+      e.args.forEach(visit);
+    };
+    visit(x);
+    return impl.xreplace(x, replacements);
+  }
   const n = sympify(nIn);
   if (n instanceof Rational && n.isInteger) {
-    if (n.p === 1n || n.p === -1n) return root(x, n);
+    if (n.p === 1n || n.p === -1n) return root(x, n, 0, opts);
     if (n.p % 2n !== 0n && isReal(x) === true) {
       if (impl.sign === undefined) throw new NotLoadedError("sign is not available: import '@symjs/symjs/core' (or '@symjs/symjs')");
-      return mul(impl.sign(x), root(impl.abs(x), n));
+      const factors = [impl.sign(x), root(impl.abs(x), n, 0, opts)];
+      return opts.evaluate === false ? new Mul(factors) : mul(...factors);
     }
   }
-  return root(x, n);
+  return root(x, n, 0, opts);
 }

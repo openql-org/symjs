@@ -11,7 +11,7 @@
 import { isIntegerQ, isPolar, isPositive, isReal } from '../../core/assumptions';
 import { defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike, Substitution } from '../../core/nodes';
-import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, registerFunctionHeads } from '../../core/nodes';
+import { Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn, registerFunctionHeads } from '../../core/nodes';
 import { BoolOp } from '../../core/boolalg';
 import { add, exp, mul, pow, sympify } from '../../core/ops';
 import { asCoefficient, asIndependent } from '../../core/methods';
@@ -444,6 +444,10 @@ function polarifyInner(eq: Expr, lift: boolean, pause = false): Expr {
   }
   if (eq instanceof Pow && eq.base instanceof Constant && eq.base.name === 'E') return exp(polarifyInner(eq.exp, lift, false));
   if (eq instanceof Fn) return fn(eq.name, eq.args.map((a) => polarifyInner(a, lift, false)));
+  if (eq instanceof UndefFn) return rebuild(eq, eq.args.map((a) => polarifyInner(a, lift, false)));
+  if (eq instanceof Integral) {
+    return new Integral(eq.args.map((a, i) => polarifyInner(a, i === 1 ? false : lift, pause)));
+  }
   return rebuild(eq, eq.args.map((a) => polarifyInner(a, lift, pause)));
 }
 

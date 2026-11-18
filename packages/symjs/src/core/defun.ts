@@ -57,6 +57,9 @@ export interface DefinedFunction {
  * @experimental May change in a minor release.
  */
 export class DefinedFunctionCall extends ExtensionExpr {
+  override get isTaylorExpandable(): boolean {
+    return true;
+  }
   constructor(
     name: string,
     args: readonly Expr[],

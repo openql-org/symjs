@@ -561,6 +561,16 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   jn: ([n, z]) => sj.jn(n!, z!),
   yn: ([n, z]) => sj.yn(n!, z!),
   IdentityFunction: () => new JsLambda([...sj.Id.variables], sj.Id.expr) as unknown as Expr,
+  my_function: (args) => sj.defineFunction('my_function', {
+    nargs: 1,
+    eval: (x) => x.equals(S.Zero) ? S.Zero : undefined,
+    fdiff: (xs) => sj.cos(asExpr(xs[0])),
+  })(...args),
+  my_function2: (args) => sj.defineFunction('my_function2', {
+    nargs: 1,
+    eval: (x) => x.equals(S.Zero) ? S.One : undefined,
+    fdiff: (xs) => sj.neg(sj.sin(asExpr(xs[0]))),
+  })(...args),
   Lambda: ([vs, body]) => new JsLambda((vs as unknown as JsTuple).items as Expr[], body!) as unknown as Expr,
   FallingFactorial: (args) => sj.fn('ff', args),
   exp: ([a]) => sj.exp(a!),
@@ -1633,11 +1643,13 @@ function rootsDict(rs: Expr[]): JsDict {
   return new JsDict([...m.values()].map(([r, k]) => [r, k] as const));
 }
 
-function diffArgs(e: Expr, rest: unknown[]): Expr {
+function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
+  const differentiate = (expression: Expr, variable: Expr, order = 1): Expr => evaluate
+    ? sj.diff(expression, variable, order) : sj.derivative(expression, [[variable, order]]);
   if (!rest.length) {
     const fs = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     if (fs.length !== 1) throw new Unsupported('diff variable');
-    return sj.diff(e, fs[0]!);
+    return differentiate(e, fs[0]!);
   }
   let out = e;
   for (let i = 0; i < rest.length; i++) {
@@ -1645,15 +1657,15 @@ function diffArgs(e: Expr, rest: unknown[]): Expr {
     if (spec instanceof JsTuple || spec instanceof JsList) {
       if (spec.items.length !== 2) throw new TypeError('diff requires a (variable, order) pair');
       if (rest[i + 1] instanceof sj.Rational) throw new TypeError('diff variable-order pair cannot be followed by a number');
-      out = sj.diff(out, asExpr(spec.items[0]), intArg(spec.items[1]));
+      out = differentiate(out, asExpr(spec.items[0]), intArg(spec.items[1]));
       continue;
     }
     const v = asExpr(rest[i]);
     const n = rest[i + 1];
     if (n instanceof sj.Rational && n.isInteger) {
-      out = sj.diff(out, v, Number(n.p));
+      out = differentiate(out, v, Number(n.p));
       i++;
-    } else out = sj.diff(out, v);
+    } else out = differentiate(out, v);
   }
   return out;
 }
@@ -2791,9 +2803,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     const logx = args[4] ?? kw['logx'];
     return sj.series(asExpr(self), x, x0, n, direction, logx === undefined ? {} : { logx: asExpr(logx) });
   },
-  root: (args, kw) => (noKw(kw), sj.root(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 0 : asExpr(args[2]))),
+  root: (args, kw) => {
+    for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
+    return sj.root(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 0 : asExpr(args[2]), { evaluate: kw['evaluate'] !== false });
+  },
   cbrt: exprFn(sj.cbrt),
-  real_root: (args, kw) => (noKw(kw), sj.realRoot(asExpr(args[0]), asExpr(args[1]))),
+  real_root: (args, kw) => {
+    for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
+    return sj.realRoot(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), { evaluate: kw['evaluate'] !== false });
+  },
   '.has_free': (args, kw, self) => {
     noKw(kw);
     return sj.hasFree(asExpr(self), ...args.map((a) => (a instanceof UFnClass ? { fn: a.name } : asExpr(a))));
@@ -3867,6 +3885,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     return subsArgs(asExpr(self), args.map((v, i) => self instanceof sj.Indexed && i === 1 && (v instanceof JsList || v instanceof JsTuple) ? sj.Tuple(...v.items.map(asExpr)) : v));
   },
   '.diff': (args, kw, self) => {
+    if (self instanceof sj.Expr && !(self instanceof sj.MatrixExpr) && kw['evaluate'] === false) {
+      for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
+      return diffArgs(self, args, false);
+    }
     if (args.some((v) => v instanceof Matrix || v instanceof sj.NDimArray || (v instanceof JsTuple && v.items.some((x) => x instanceof JsTuple)))) {
       for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
       const variable = (v: unknown): Expr | Matrix => v instanceof JsTuple || v instanceof JsList ? new sj.ImmutableDenseNDimArray(toJs(v, false) as sj.ArrayInput) : v instanceof Matrix ? v : asExpr(v);
@@ -5659,6 +5681,9 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.fn === '.func' && c.self?.t === 'Fn' && c.self['name'] === 'IdentityFunction') {
+    return () => sj.Id;
+  }
   if (c.category === 'series') {
     if (c.fn === 'compare' && c.args?.length === 3) return (args, kw) => {
       noKw(kw);
