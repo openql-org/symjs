@@ -29,7 +29,7 @@ export type { ParametricCurve } from './integrals/transform';
 export * from './integrals/transforms/index';
 export { asPoly1t, fracIn, gcdexDiophantine } from './integrals/risch';
 export { DifferentialExtension, NonElementaryIntegral, integerPowers, rischIntegrate } from './integrals/risch';
-export { manualintegrate } from './integrals/manualintegrate';
+export { manualintegrate, manualSubs, findSubstitutions } from './integrals/manualintegrate';
 export { singularityintegrate } from './integrals/singularityfunctions';
 // the helpers of SymPy's integrators (rationaltools, trigonometry, deltafunctions, meijerint, heurisch)
 export { ratintRatpart, logToAtan } from './integrals/rationaltools';

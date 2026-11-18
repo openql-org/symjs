@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  type Expr,
+  Expr,
   S,
   add,
   cos,
@@ -29,6 +29,7 @@ import {
   inverseSineTransform,
   parse,
   sineTransform,
+  sin,
   symbol,
   type TransformResult,
   CosineTransform,
@@ -436,4 +437,46 @@ describe('the hyperexpand form of the Hankel transforms', () => {
     expect(sstr(hyperexpandForm(Pf('(a + k)**(1/2)'), k))).toBe('sqrt(a + k)');
     expect(sstr(hyperexpandForm(Pf('(k**2 + (k + 1)**2)**(3/2)'), k))).toBe('(k**2 + (k + 1)**2)**(3/2)');
   });
+});
+
+it('uses the correct half-plane for the simple Fourier pole', () => {
+  const x = new Sym('x'), a = new Sym('a', { positive: true }), k = new Sym('k', { positive: true });
+  const f = pow(add(a, mul(2, pi, S.I, x)), -1);
+  expect(show(inverseFourierTransform(f, x, k, { noconds: false }))).toBe('(exp(-a*k), True)');
+  expect(show(inverseFourierTransform(f, x, mul(-1, k), { noconds: false }))).toBe('(0, True)');
+  expect(show(inverseFourierTransform(f, x, new Sym('k', { negative: true }), { noconds: false }))).toBe('(0, True)');
+  expect(show(fourierTransform(f, x, k, { noconds: false }))).toBe('(0, True)');
+  expect(show(inverseFourierTransform(pow(add(a, mul(-2, pi, S.I, x)), -1), x, mul(-1, k), { noconds: false }))).toBe('(exp(-a*k), True)');
+  expect(inverseFourierTransform(f, x, new Sym('k'))).toBeInstanceOf(InverseFourierTransform);
+  expect(inverseFourierTransform(pow(add(new Sym('a'), mul(S.I, x)), -1), x, k)).toBeInstanceOf(InverseFourierTransform);
+});
+
+import { meijerg } from '../../../src';
+it('applies the cosine transform normalization once to Meijer G inputs', () => {
+  const w = new Sym('w'), t = new Sym('t', { positive: true }), a = new Sym('a', { positive: true });
+  const arg = mul(pow(a, 2), pow(w, 2), pow(4, -1));
+  const first = mul(sqrt(2), meijerg([S.Half, S.Zero], [], [S.Half, S.Zero, S.Zero], [S.Half], arg), pow(mul(2, pi), -1));
+  const second = mul(sqrt(2), meijerg([S.Half], [], [S.Zero, S.Zero], [S.Half], arg), pow(mul(2, sqrt(pi)), -1));
+  expect(String(inverseCosineTransform(first, w, t))).toBe('1/(a + t)');
+  expect(String(inverseCosineTransform(second, w, t))).toBe('1/sqrt(a**2 + t**2)');
+  const input = mul(exp(mul(-1, sqrt(w))), sin(w));
+  const transformed = cosineTransform(input, w, t);
+  if (!(transformed instanceof Expr)) throw new TypeError('unconditional transform expected');
+  expect(String(cosineTransform(mul(3, input), w, t))).toBe(String(mul(3, transformed)));
+});
+
+it('leaves unmatched oscillatory factors and higher-degree poles to the general transform', () => {
+  const x = new Sym('x'), k = new Sym('k', { positive: true });
+  expect(String(cosineTransform(mul(exp(mul(-1, sqrt(x))), parse('log(x)')), x, k))).toContain('CosineTransform');
+  expect(String(inverseFourierTransform(pow(add(1, pow(x, 2)), -1), x, k))).toContain('meijerg');
+});
+
+it('preserves a cosine transform with an unmatched two-function product', () => {
+  const x = new Sym('x'), k = new Sym('k');
+  expect(String(cosineTransform(mul(parse('log(x)'), cos(x)), x, k))).toContain('CosineTransform');
+});
+
+it('preserves a transform with three unmatched functional factors', () => {
+  const x = new Sym('x'), k = new Sym('k');
+  expect(String(cosineTransform(parse('log(x)*sin(x)*cos(x)'), x, k))).toContain('CosineTransform');
 });

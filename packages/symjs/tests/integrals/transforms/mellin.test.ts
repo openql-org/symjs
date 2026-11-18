@@ -368,3 +368,33 @@ describe('the strip from a convergence condition (SymPy _mellin_transform.proces
     expect(processConds(c, s).map((e) => String(e))).toEqual(['-1', '3/2', '(a*re(s) > 1) & (re(s)**2 < 4)']);
   });
 });
+
+it('transforms logarithmic absolute values with their distinct fundamental strips', () => {
+  const x = new Sym('x'), s = new Sym('s');
+  expect(show(mellinTransform(parse('log(abs(x - 1))'), x, s))).toBe('(pi/(s*tan(pi*s)), (-1, 0), True)');
+  expect(show(mellinTransform(parse('log(abs(1 - 1/x))'), x, s))).toBe('(pi/(s*tan(pi*s)), (0, 1), True)');
+  expect(show(mellinTransform(parse('x**2*log(abs(x - 1))'), x, s))).toBe('(pi/((s + 2)*tan(pi*(s + 2))), (-3, -2), True)');
+});
+
+it('transforms algebraic powers and their reciprocal-square-root weight', () => {
+  const x = new Sym('x'), s = new Sym('s'), a = new Sym('a'), b = new Sym('b', { positive: true });
+  const opts = { symbols: [x, s, a, b] };
+  expect(show(mellinTransform(parse('(b + sqrt(b**2 + x))**a', opts), x, s)))
+    .toBe('(-2**(a + 2*s)*a*b**(a + 2*s)*gamma(s)*gamma(-a - 2*s)/gamma(-a - s + 1), (0, -re(a)/2), True)');
+  expect(show(mellinTransform(parse('(b + sqrt(b**2 + x))**a/sqrt(b**2 + x)', opts), x, s)))
+    .toBe('(2**(a + 2*s)*b**(a + 2*s - 1)*gamma(s)*gamma(-a - 2*s + 1)/gamma(-a - s + 1), (0, 1/2 - re(a)/2), True)');
+  expect(show(mellinTransform(parse('(x**a - b**a)/(x - b)', opts), x, s)))
+    .toBe('(pi*b**(a + s - 1)*sin(pi*a)/(sin(pi*s)*sin(pi*(a + s))), (Max(0, -re(a)), Min(1, 1 - re(a))), True)');
+  const unknown = new Sym('b');
+  expect(mellinTransform(parse('(b + sqrt(b**2 + x))**a', { symbols: [x, a, unknown] }), x, s)).toBeInstanceOf(MellinTransform);
+  const conditional = mellinTransform(parse('(x**a - b**a)/(x - b)', { symbols: [x, a, unknown] }), x, s);
+  expect(Array.isArray(conditional)).toBe(true);
+  if (Array.isArray(conditional)) expect(String(conditional[2])).toContain('arg(b)');
+});
+
+it('exposes the Mellin kernel and its LaTeX symbol', () => {
+  const x = new Sym('x'), s = new Sym('s');
+  const transform = new MellinTransform(SymFunction('f')(x), x, s);
+  expect(String(transform.asIntegral)).toBe('Integral(x**(s - 1)*f(x), (x, 0, oo))');
+  expect(latex(transform)).toContain('mathcal{M}');
+});
