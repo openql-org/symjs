@@ -13,6 +13,7 @@ import { NotImplementedError } from '../../src/core/errors';
 import { DifferentialExtension, NonElementaryIntegral, integerPowers, integratePrimitive, integrateHyperexponential, integrateHyperexponentialPolynomial, rischIntegrate } from '../../src/integrals/risch';
 import { decrementLevel } from '../../src/integrals/rischbase';
 import { KPoly } from '../../src/integrals/rischpoly';
+import * as sjRisch from '../../src';
 
 const [x, y, t, t0, t1, z, a, b] = [new Sym('x'), new Sym('y'), new Sym('t'), new Sym('t0'), new Sym('t1'), new Sym('z'), new Sym('a'), new Sym('b')];
 const i = new Sym('i');
@@ -262,5 +263,29 @@ describe('algebraic exponentials', () => {
   it('exp(log(x)/2) is an algebraic extension (SymPy, with evaluate=False)', () => {
     // symjs evaluates exp(log(x)/2) to sqrt(x); the unevaluated power reaches the structure theorem
     expect(() => new DifferentialExtension(new Pow(S.E, mul(Rational.of(1, 2), log(x))), x)).toThrow('Cannot integrate over algebraic extensions.');
+  });
+});
+
+describe('public polynomial forms of the Risch helpers', () => {
+  const x = new sjRisch.Sym('x'), t = new sjRisch.Sym('t'), z = new sjRisch.Sym('z');
+  const p = (s: string) => sjRisch.parse(s, { symbols: [x, t, z] });
+  it('solves the polynomial Bezout equation over QQ', () => {
+    const a = sjRisch.Poly.from(p('x**3 + 6*x + 7'), [x]);
+    const b = sjRisch.Poly.from(p('x**2 + 3*x + 2'), [x]);
+    const c = sjRisch.Poly.from(p('x + 1'), [x]);
+    expect(sjRisch.gcdexDiophantine(a, b, c).map(String)).toEqual(["Poly(1/13, x, domain='QQ')", "Poly(-1/13*x + 3/13, x, domain='QQ')"]);
+  });
+  it('extracts fractions from expressions, polynomials and polynomial pairs', () => {
+    const a = sjRisch.Poly.from(p('(x + 1)*t/x'), [t]);
+    expect(sjRisch.fracIn(a, x).map(String)).toEqual(["Poly(t*x + t, x, domain='ZZ[t]')", "Poly(x, x, domain='ZZ')"]);
+    expect(sjRisch.fracIn(a.asExpr(), x).map(String)).toEqual(sjRisch.fracIn(a, x).map(String));
+    expect(sjRisch.fracIn([a, sjRisch.Poly.from(p('t + 1'), [t])], x).map(String)).toEqual(["Poly(t*x + t, x, domain='ZZ[t]')", "Poly((t + 1)*x, x, domain='ZZ[t]')"]);
+    expect(sjRisch.fracIn(sjRisch.Poly.from(p('(2 + 2*x + x*(1 + x))/(1 + x)**2'), [t]), x, { cancel: true }).map(String)).toEqual(["Poly(x + 2, x, domain='ZZ')", "Poly(x + 1, x, domain='ZZ')"]);
+    expect(() => sjRisch.fracIn(p('t*(x + 1)/log(x)'), x)).toThrow();
+  });
+  it('writes Laurent polynomials in two generators', () => {
+    expect(sjRisch.sstr(sjRisch.asPoly1t(p('t + 2/t + 3/t**2'), t, z).asExpr())).toBe('t + 3*z**2 + 2*z');
+    expect(String(sjRisch.asPoly1t(0, t, z))).toBe("Poly(0, t, z, domain='ZZ')");
+    expect(() => sjRisch.asPoly1t(p('1/(t + 1)'), t, z)).toThrow();
   });
 });

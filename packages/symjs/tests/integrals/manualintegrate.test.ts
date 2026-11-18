@@ -36,7 +36,7 @@ describe('sqrt_quadratic_rule', () => {
     // real coefficients: SymPy chooses asinh (integrate handles them itself)
     expect(M('sqrt(x**2+x+1)')).toBe('None');
     // a numerator of degree below 2 under 1/sqrt (SymPy: inverse_trig_rule)
-    expect(M('1/sqrt(x**2+a*x+b)')).toBe('None');
+    expect(M('1/sqrt(x**2+a*x+b)')).toBe('Piecewise((log(a + 2*x + 2*sqrt(a*x + b + x**2)), Ne(a**2/4 - b, 0)), ((a/2 + x)*log(a/2 + x)/sqrt((a/2 + x)**2), True))');
     expect(M('(x**2+a*x+b)**(3/2)')).toBe('None');
     expect(M('x*sqrt(x**3+a)')).toBe('None');
     expect(M('sin(x)*sqrt(x**2+a*x+1)')).toBe('None');
@@ -58,4 +58,9 @@ it('exposes elementary manual integration through the calculus entry', () => {
     expect(String(sj.trigsimp(sj.simplify(sj.sub(sj.diff(primitive, x), parse(input!)))))).toBe('0');
   }
   expect(String(sj.manualintegrate(sj.tan(sj.pow(x, 2)), x))).toContain('Integral');
+});
+
+it('retains the constant-radicand case when a quadratic coefficient vanishes', () => {
+  const r = sqrtQuadraticRule(parse('1/sqrt(a*x**2 + 1)'), x);
+  expect(String(r)).toBe('Piecewise((log(2*sqrt(a)*sqrt(a*x**2 + 1) + 2*a*x)/sqrt(a), Ne(a, 0)), (x, True))');
 });

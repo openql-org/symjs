@@ -48,3 +48,9 @@ describe('singularityIntegral (the method integrate uses)', () => {
     expect(singularityIntegral(sj.mul(SF(sx!, 0, 1), sj.parse('x**x')), sx!)).toBeUndefined();
   });
 });
+
+it('integrates constant factors before applying the singularity rule', () => {
+  expect(String(singularityIntegral(P('10*SingularityFunction(x, 4, 0)'), x))).toBe('10*SingularityFunction(x, 4, 1)');
+  expect(String(singularityIntegral(P('SingularityFunction(a, 4, 0)'), x))).toBe('x*SingularityFunction(a, 4, 0)');
+  expect(singularityIntegral(P('5*SingularityFunction(x**2, 4, 0)'), x)).toBeUndefined();
+});
