@@ -7227,9 +7227,6 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'sympy.functions.elementary.tests.test_hyperbolic:assert asech(sinh(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
   // At z=1 SymPy gives erfi(1)+2*I. E_(1/2)(w)=sqrt(pi)*erfc(sqrt(w))/sqrt(w) requires a negative constant term.
   "sympy.functions.special.tests.test_error_functions:assert erfi(z).rewrite('expint') == sqrt(-z**2)/z - z*expint(S.Half, -z**2)/sqrt(S.Pi)": '-z*erfc(sqrt(-z**2))/sqrt(-z**2) - sqrt(-z**2)/z',
-  // Set.measure is Lebesgue measure. Radii 2..5 cover a full annulus (21*pi);
-  // the remaining radii 5..8 cover a half annulus (39*pi/2).
-  'sympy.sets.tests.test_fancysets:assert c2.measure == 9*pi': '81*pi/2',
   // Identifying ham with eggs makes the left difference empty, whereas {ham} becomes {eggs}.
   "sympy.sets.tests.test_sets:assert FiniteSet('ham', 'eggs') - FiniteSet('eggs') == FiniteSet('ham')": 'Complement({ham}, {eggs})',
   // With x=1 and y=0 the left difference is empty, while {1} minus {y} contains 1.
@@ -7300,8 +7297,6 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   // The documented TR12i result changes tan(a)*tan(b) to tan(a)+tan(b) in
   // the residual denominator. The product is required by the tangent sum identity.
   'sympy.simplify.fu:TR12i(eq.expand())': '-3*tan(a + b)*tan(a + c)/(2*(tan(a)*tan(b) - 1))',
-  // The polar Jacobian r gives pi*(5**2 - 2**2), not (5 - 2)*2*pi.
-  'sympy.sets.fancysets:c2.measure': '21*pi',
   // SymPy's pdiv with a non-first generator starts the quotient at the generator index (rings.py: `q, r, dr = x, f, df`),
   // so its printed quotient is wrong: m*f != g*q + r for f = x**2 + x*y, g = 2*x + 2, m = (2*x + 2)**2
   'f.pdiv(g, y) # generator is given': '[2*x**3 + 2*x**2*y + 2*x**2 + 2*x*y, 0]',

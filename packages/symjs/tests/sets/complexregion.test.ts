@@ -92,32 +92,34 @@ describe('ComplexRegion (SymPy sympy.sets.fancysets)', () => {
     expect(() => n(sj.Integers)).toThrow(sj.NotImplementedError);
     expect(() => n(sj.Complexes)).toThrow(RangeError);
     // the length of an interval with a symbolic end is not compared
-    expect(() => n(I(0, x))).toThrow(sj.NotImplementedError);
+    expect(() => n(I(0, x))).toThrow(TypeError);
   });
 });
 
-it('measures rectangles and annular sectors with the polar Jacobian', () => {
+it('measures Cartesian and polar regions in their coordinates', () => {
   const cartesian = (u: sj.SetExpr, v: sj.SetExpr) => new sj.CartesianComplexRegion(sj.ProductSet(u, v));
   const polar = (u: sj.SetExpr, v: sj.SetExpr) => new sj.PolarComplexRegion(sj.ProductSet(u, v));
   expect(String(cartesian(I(2, 5), I(4, 8)).measure)).toBe('12');
-  // SymPy 1.14 returns 6*pi by omitting the Jacobian r. The annulus has
-  // area pi*(5**2 - 2**2) = 21*pi, independent of its parametrization.
-  expect(String(polar(I(2, 5), th).measure)).toBe('21*pi');
-  expect(String(polar(I(0, 1), I(0, sj.pi)).measure)).toBe('pi/2');
-  expect(String(polar(I(0, 1), I(0, sj.mul(4, sj.pi))).measure)).toBe('pi');
-  expect(() => polar(I(0, 1), I(0, x)).measure).toThrow(sj.NotImplementedError);
   expect(String(cartesian(sj.FiniteSet.of(2), I(1, 4)).measure)).toBe('0');
   expect(String(cartesian(I(1, 4), sj.FiniteSet.of(2)).measure)).toBe('0');
-  expect(() => cartesian(sj.Integers, I(1, 4)).measure).toThrow(sj.NotImplementedError);
-  expect(() => cartesian(I(1, 4), sj.Integers).measure).toThrow(sj.NotImplementedError);
-  expect(() => polar(I(-1, 1), th).measure).toThrow(sj.NotImplementedError);
   expect(String(new sj.CartesianComplexRegion(sj.Union(sj.ProductSet(a, b), sj.ProductSet(b, c))).measure)).toBe('16');
+
+  expect(String(polar(I(2, 5), th).measure)).toBe('6*pi');
+  expect(String(polar(I(0, 1), I(0, sj.pi)).measure)).toBe('pi');
+  expect(String(polar(I(0, 1), I(0, sj.mul(4, sj.pi))).measure)).toBe('2*pi');
+  expect(String(polar(I(1, 3), I(p('-pi/2'), p('pi/2'))).measure)).toBe('2*pi');
+  expect(String(polar(I(-1, 1), th).measure)).toBe('4*pi');
+  expect(String(polar(sj.FiniteSet.of(2, 4), th).measure)).toBe('0');
+  const radius = sj.symbol('r', { real: true });
+  expect(polar(I(radius, 4), th).measure.key).toBe(sj.mul(2, sj.pi, sj.add(4, sj.neg(radius))).key);
+  expect(() => polar(I(0, 1), I(0, x))).toThrow(TypeError);
 });
 
-it('requires valid radial intervals when integrating a union in polar coordinates', () => {
-  const region = (r: sj.SetExpr) => new sj.PolarComplexRegion(new sj.SetOp('Union', [sj.ProductSet(r, th), sj.ProductSet(I(1, 3), I(0, sj.pi))]));
-  for (const r of [sj.Integers, I(x, 1), I(sj.symbol('a', { real: true }), 4), I(-1, 1)]) {
-    expect(() => region(r).measure).toThrow(sj.NotImplementedError);
+it('measures a polar union through its component sets and their overlap', () => {
+  const halfTurn = sj.ProductSet(I(1, 3), I(0, sj.pi));
+  const region = (radius: sj.SetExpr) => new sj.PolarComplexRegion(sj.Union(sj.ProductSet(radius, th), halfTurn));
+  expect(String(region(I(-1, 1)).measure)).toBe('6*pi');
+  for (const radius of [sj.Integers, I(x, 1), I(sj.symbol('r', { real: true }), 4)]) {
+    expect(() => region(radius).measure).toThrow(sj.NotImplementedError);
   }
-  expect(() => new sj.CartesianComplexRegion(sj.Integers).measure).toThrow(sj.NotImplementedError);
 });

@@ -37,7 +37,7 @@ describe("doctests of sympy.sets.fancysets", () => {
     expect(sympyStr(new CartesianComplexRegion(ProductSet(interval(rational(2), rational(5), false, false), interval(rational(4), rational(8), false, false))).measure)).toBe('12');
   });
   it("c2.measure", () => {
-    expect(sympyStr(new PolarComplexRegion(ProductSet(interval(rational(2), rational(5), false, false), interval(rational(0), mul(2, pi), false, true))).measure)).toBe('21*pi');
+    expect(sympyStr(new PolarComplexRegion(ProductSet(interval(rational(2), rational(5), false, false), interval(rational(0), mul(2, pi), false, true))).measure)).toBe('6*pi');
   });
   it("C1.a_interval", () => {
     expect(sympyStr(interval(rational(2), rational(3), false, false))).toBe('Interval(2, 3)');
@@ -2588,9 +2588,11 @@ describe("sympy/sets/tests/test_fancysets.py", () => {
     expect(sympyStr(new CartesianComplexRegion(ProductSet(interval(rational(2), rational(5), false, false), interval(rational(4), rational(8), false, false))).measure)).toBe('12');
   });
   // an error outside the library
-  //   assert c2.measure == 9*pi
-  //   => 9*pi
-  it.todo("test_ComplexRegion_measure:1069");
+  it("test_ComplexRegion_measure:1069", () => {
+    const full = ProductSet(interval(rational(2), rational(5)), interval(rational(0), mul(2, pi)));
+    const half = ProductSet(interval(rational(4), rational(8)), interval(rational(0), pi));
+    expect(sympyStr(new PolarComplexRegion(Union(full, half)).measure)).toBe('9*pi');
+  });
   it("test_normalize_theta_set:1074", () => {
     expect(sympyStr(normalizeThetaSet(interval(pi, new Mul([rational(2), pi]), false, false)))).toBe('Union({0}, Interval.Ropen(pi, 2*pi))');
   });
