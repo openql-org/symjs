@@ -553,6 +553,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   },
   jn: ([n, z]) => sj.jn(n!, z!),
   yn: ([n, z]) => sj.yn(n!, z!),
+  IdentityFunction: () => new JsLambda([...sj.Id.variables], sj.Id.expr) as unknown as Expr,
   Lambda: ([vs, body]) => new JsLambda((vs as unknown as JsTuple).items as Expr[], body!) as unknown as Expr,
   FallingFactorial: (args) => sj.fn('ff', args),
   exp: ([a]) => sj.exp(a!),
@@ -6331,6 +6332,12 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'sympy.functions.elementary.tests.test_hyperbolic:assert asech(sinh(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
   // At z=1 SymPy gives erfi(1)+2*I. E_(1/2)(w)=sqrt(pi)*erfc(sqrt(w))/sqrt(w) requires a negative constant term.
   "sympy.functions.special.tests.test_error_functions:assert erfi(z).rewrite('expint') == sqrt(-z**2)/z - z*expint(S.Half, -z**2)/sqrt(S.Pi)": '-z*erfc(sqrt(-z**2))/sqrt(-z**2) - sqrt(-z**2)/z',
+  // A nonzero numerator divided by a bounded interval cannot approach zero; zero itself is excluded.
+  "sympy.sets.tests.test_setexpr:assert i12cc/n32lo == SetExpr(Interval.Ropen(-oo, oo))": "SetExpr(Union(Interval.open(-oo, -1/3), Interval(1/2, oo)))",
+  "sympy.sets.tests.test_setexpr:assert SetExpr(Interval(-3, -2))/SetExpr(Interval(-2, 1)) == SetExpr(Interval(-oo, oo))": "SetExpr(Union(Interval(-oo, -2), Interval(1, oo)))",
+  "sympy.sets.tests.test_setexpr:assert SetExpr(Interval(2, 3))/SetExpr(Interval(-2, 2)) == SetExpr(Interval(-oo, oo))": "SetExpr(Union(Interval(-oo, -1), Interval(1, oo)))",
+  // For 0 < |x| <= 3, x**(-2) >= 1/9, attained at x = 3.
+  "sympy.sets.tests.test_setexpr:assert SetExpr(Interval(-1, 3))**(-2) == SetExpr(Interval(0, oo))": "SetExpr(Interval(1/9, oo))",
   // SymPy mixes Poly.gens=(y,x) with Options.gens=(x,y). Neither published
   // result solves the original pair; these tuples satisfy both equations.
   'sympy.solvers.polysys:solve_biquadratic(a, b, NewOption)': [
