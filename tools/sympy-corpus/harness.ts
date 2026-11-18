@@ -8546,6 +8546,10 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // The difference is 0.0058279433...: SymPy's own (pi**400 - (pi**400).round(1)).evalf(2, maxn=300) is 0.0058.
+  // With the default maxn=100 its evaluation of the 199-digit operands stops before the cancellation is
+  // resolved, and the printed -0.e+88 is a value without any correct digit.
+  "sympy.printing.tests.test_str:assert str((pi**400 - (pi**400).round(1)).n(2)) == '-0.e+88'": '0.0058',
   // Both zero and one are rational: asin(0) is zero, whereas asin(1) is pi/2.
   'sympy.core.tests.test_assumptions:assert asin(r).is_rational is False': 'None',
   // Both 1 and -1 are algebraic. Zero to those powers is respectively zero (algebraic) and zoo (not algebraic).
