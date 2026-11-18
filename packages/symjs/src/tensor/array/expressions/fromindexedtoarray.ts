@@ -4,6 +4,8 @@
 // Copyright (c) 2006-2023 SymPy Development Team, BSD 3-Clause (see LICENSE).
 import { Add, Fn, Mul, Rational, Sym, type Expr } from '../../../core/nodes';
 import { ArrayComprehensionNode } from '../../comprehension';
+import { TupleNode } from '../../../core/containers';
+import { Indexed, IndexedBase } from '../../../core/indexed';
 import { Concrete } from '../../../core/concrete';
 import { rebuild } from '../../../core/traverse';
 import { add } from '../../../core/ops';
@@ -34,14 +36,23 @@ function align(result: IndexedResult, requested: readonly Expr[]): IndexedResult
   const permutation = order.map((i) => result.indices.findIndex((j) => i.key === j.key));
   return { expression: permutation.every((v, i) => v === i) ? result.expression : new PermuteDims(result.expression, permutation).doit(), indices: order };
 }
-const hasIndexed = (expr: Expr): boolean => expr instanceof ArrayElement || expr instanceof MatrixElementNode || expr.args.some(hasIndexed);
-const hasShiftedIndices = (expr: Expr): boolean => expr instanceof ArrayElement || expr instanceof MatrixElementNode
+const hasIndexed = (expr: Expr): boolean => expr instanceof Indexed || expr instanceof ArrayElement || expr instanceof MatrixElementNode || expr.args.some(hasIndexed);
+const hasShiftedIndices = (expr: Expr): boolean => expr instanceof Indexed || expr instanceof ArrayElement || expr instanceof MatrixElementNode
   ? expr.indices.some((i) => !(i instanceof Sym || i instanceof Rational && i.isInteger))
   : expr.args.some(hasShiftedIndices);
 function parseIndexed(expr: Expr, ranges: readonly IndexRange[] = []): IndexedResult {
   if (!hasIndexed(expr)) {
     const dependent = ranges.filter(([v]) => expr.has(v));
     return dependent.length ? { expression: new ArrayComprehensionNode(expr, ...dependent).doit(), indices: dependent.map(([v]) => v) } : { expression: expr, indices: [] };
+  }
+  if (expr instanceof Indexed && expr.base instanceof IndexedBase) {
+    if (!ranges.length || getShape(expr.base).length) return { expression: expr.base, indices: expr.indices };
+    const shape = expr.indices.map((i) => {
+      const range = ranges.find(([v]) => v.key === i.key);
+      if (!range || !range[1].equals(0)) throw new NotImplementedError('array conversion requires a complete zero-based index range');
+      return add(range[2], 1);
+    });
+    return { expression: expr.base.withArgs([expr.base.label, new TupleNode(shape)]), indices: expr.indices };
   }
   if (expr instanceof ArrayElement || expr instanceof MatrixElementNode) {
     if (getShape(expr.parent).length !== expr.indices.length) throw new NotImplementedError('array conversion requires a shaped parent');

@@ -49,3 +49,14 @@ it('does not diagonalize repeated fixed coordinates', () => {
   const a = MatrixSymbol('a', 2, 1), b = MatrixSymbol('b', 2, 1);
   expect(str(convertIndexedToArray(Sum(mul(a.at(i, 0), b.at(i, 0)), [i, 0, 1])))).toBe('ArrayContraction(ArrayTensorProduct(a, b), (0, 2))[0, 0]');
 });
+
+it('uses declared dimensions or the complete summation range for indexed bases', async () => {
+  const { IndexedBase } = await import('../../../../src');
+  const base = new IndexedBase('X', { shape: [3] });
+  expect(convertIndexedToArray(base.at(i))).toBe(base);
+  const unshaped = new IndexedBase('X').at(i);
+  expect(convertIndexedToArray(unshaped)).toBe(unshaped.base);
+  expect(() => convertIndexedToArray(Sum(mul(unshaped, new IndexedBase('Y').at(j)), [i, 0, 2]))).toThrow(NotImplementedError);
+  expect(str(convertIndexedToArray(Sum(base.at(i), [i, 0, 2])))).toBe('ArrayContraction(X, (0,))');
+  expect(() => convertIndexedToArray(Sum(unshaped, [i, 1, 3]))).toThrow(NotImplementedError);
+});

@@ -61,14 +61,14 @@ const fnDerivative: Partial<Record<Fn['name'], (u: Expr) => Expr>> = {
 };
 
 /**
- * A matrix element X[i, j] as the variable (told apart by name: the matrix
- * module builds on this one). An expression depends on it through X, as
+ * An array or matrix entry as the variable. Both modules build on calculus.
+ * An expression may depend on an entry through its parent, as
  * Trace(X) does, so it is not replaced by a dummy.
  */
-const isMatrixElement = (x: Expr): x is ExtensionExpr => x instanceof ExtensionExpr && x.name === 'MatrixElement';
+const isIndexedElement = (x: Expr): x is ExtensionExpr => x instanceof ExtensionExpr && (x.name === 'MatrixElement' || x.name === 'ArrayElement');
 
 /** e may depend on x: it contains x, or the matrix of a matrix element x. */
-const dependsOn = (e: Expr, x: Expr): boolean => e.has(x) || (isMatrixElement(x) && e.has(first(x.args)));
+const dependsOn = (e: Expr, x: Expr): boolean => e.has(x) || (isIndexedElement(x) && e.has(first(x.args)));
 
 function d(e: Expr, x: Expr): Expr {
   if (e.key === x.key) return S.One;
@@ -80,7 +80,7 @@ function d(e: Expr, x: Expr): Expr {
     const r = e.diffSelf(x, d);
     if (r !== undefined) return r;
     // SymPy keeps Derivative(Determinant(X), X[0, 0]) unevaluated
-    if (isMatrixElement(x)) return derivative(e, [[x, 1]]);
+    if (isIndexedElement(x)) return derivative(e, [[x, 1]]);
     throw new NotImplementedError(`diff: ${e.name} does not define a derivative`);
   }
 
@@ -284,11 +284,12 @@ export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
     for (let i = 0; i < n; i++) e = diffIndexed(e, x);
     return e;
   }
-  if (x instanceof ExtensionExpr && !x.isScalar && n > 0 && diffHooks.array) return diffHooks.array(e, x, n);
-  // SymPy: a variable that is not a scalar (is_scalar = False) keeps the derivative unevaluated
-  if (x instanceof ExtensionExpr && !x.isScalar && e.has(x)) return derivative(e, [[x, n]]);
+  if (x instanceof ExtensionExpr && !x.isScalar) {
+    if (diffHooks.array) return diffHooks.array(e, x, n);
+    if (e.has(x)) return derivative(e, [[x, n]]);
+  }
   // differentiate with respect to an expression such as f(x): treat it as a symbol
-  if (!(x instanceof Sym) && !isMatrixElement(x)) return diffWrtTerm(e, x, n);
+  if (!(x instanceof Sym) && !isIndexedElement(x)) return diffWrtTerm(e, x, n);
   for (let i = 0; i < n; i++) e = d(e, x);
   return e;
 }

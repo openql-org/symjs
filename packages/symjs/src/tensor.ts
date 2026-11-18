@@ -24,7 +24,7 @@ arrayOperationHooks.symbolic = {
   rank: getRank,
   product: (args) => new ArrayTensorProduct(...args).doit(),
   contraction: (e, axes) => new ArrayContraction(e, ...axes).doit(),
-  diagonal: (e, axes) => new ArrayDiagonal(e, ...axes),
+  diagonal: (e, axes) => new ArrayDiagonal(e, ...axes).doit(),
   permutation: (e, p) => new PermuteDims(e, p).doit(),
 };
 

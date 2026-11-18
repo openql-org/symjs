@@ -1415,7 +1415,7 @@
         {
           "file": "tensor.json",
           "cases": 1953,
-          "bytes": 2780778
+          "bytes": 2793262
         }
       ],
       "auditFile": "tensor.audit.json",

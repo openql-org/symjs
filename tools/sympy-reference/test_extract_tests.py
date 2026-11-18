@@ -47,6 +47,24 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertEqual([x['p'] for x in second['tensorData'][1][1]['flat']], ['5', '7'])
         self.assertEqual(unit.without_replay_state(first).keys(), first.keys() - {'tensorData'})
 
+    def test_indexed_comparison_keeps_base_assumptions_and_bounds(self):
+        source = """from sympy import *
+def test_indices():
+    i = Symbol("i", integer=True)
+    a = Symbol("a")
+    A = IndexedBase(a, positive=True)
+    assert A[i] != Indexed(a, i)
+    assert Idx(i) != Idx(i, 1)
+"""
+        cases, _, _ = unit.execute_source(source, "sympy.tensor.tests.test_fixture", "tensor", "test_fixture.py", 2)
+        entry, index = cases
+        self.assertEqual(entry["self"]["indexedAssumptions"], {"positive": True})
+        self.assertNotIn("indexedAssumptions", entry["comparisonTree"]["base"])
+        self.assertEqual(index["comparisonTree"]["upper"]["p"], "0")
+        original = unit.without_replay_state(entry)
+        self.assertNotIn("comparisonTree", original)
+        self.assertNotIn("indexedAssumptions", original["self"])
+
     def test_custom_class_behavior_is_explicit_and_undefined_functions_are_preserved(self):
         corpus = self.extract('''
             def test_custom():

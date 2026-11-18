@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+import { passingModuleCases, runTestCase } from '../../../../../../tools/sympy-corpus/tests-harness';
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 import { type Expr, ArraySymbol, ArrayTensorProduct as TP, ArrayContraction as C, ArrayAdd, ArrayDiagonal, ArrayElementwiseApplyFunc, sin, mul, pow, add, PermuteDims as P, MatrixSymbol, Rational, SymArray, str, expand, sub, convertArrayToMatrix, convertMatrixToArray } from '../../../../src/index';
@@ -81,4 +82,55 @@ it('converts local transposes, matrix elements and shaped zeros', async () => {
   expect(str(convertArrayToMatrix(mixed))).toBe(str(mixed));
   expect(str(convertArrayToMatrix(new ArrayElement(new C(new TP(M, N), [1, 3]), [0, 1])))).toBe('(M*N.T)[0, 1]');
   expect(str(convertArrayToMatrix(A.at(0, 1)))).toBe('A[0, 1]');
+});
+
+it('replays the upstream test_convert_array_to_matrix assertions', () => {
+  for (const c of passingModuleCases('tensor', 'sympy.tensor.array.expressions.tests.test_convert_array_to_matrix')) {
+    expect(['pass', 'equivalent'], c.src).toContain(runTestCase(c).status);
+  }
+});
+it('replays the upstream test_convert_indexed_to_array assertions', () => {
+  for (const c of passingModuleCases('tensor', 'sympy.tensor.array.expressions.tests.test_convert_indexed_to_array')) {
+    expect(['pass', 'equivalent'], c.src).toContain(runTestCase(c).status);
+  }
+});
+
+it('preserves matrix orientation when combining row vectors and scalars', () => {
+  const row = MatrixSymbol('R', 1, 2), single = MatrixSymbol('X', 1, 1);
+  expect(str(convertArrayToMatrix(new TP(row, single)))).toBe('X*R');
+  expect(str(convertArrayToMatrix(new TP(row, row)))).toBe('R.T*R');
+  expect(str(convertArrayToMatrix(new C(M, [1])))).toBe('M*1');
+  expect(str(convertArrayToMatrix(new C(M, [0])))).toBe('1*M');
+});
+
+it('eliminates traced identity factors with a shared summation index', async () => {
+  const { Identity, identifyRemovableIdentityMatrices } = await import('../../../../src');
+  const trace = new C(M, [0, 1]);
+  expect(identifyRemovableIdentityMatrices(trace)).toBe(trace);
+  expect(str(convertArrayToMatrix(new C(new TP(M, N, Identity(2)), [1, 2, 4, 5])))).toBe('M*N');
+  expect(str(convertArrayToMatrix(new C(new TP(M, N, M, N), [1, 3], [0, 4, 6])))).toBe('ArrayContraction(ArrayTensorProduct(M*N.T, M, N), (0, 2, 4))');
+});
+
+it('tracks retained diagonal axes across singleton removal and permutations', async () => {
+  const { Identity } = await import('../../../../src');
+  const row = MatrixSymbol('R', 1, 2), col = MatrixSymbol('a', 2, 1);
+  const trivial = Identity(1);
+  const retained = new ArrayDiagonal(new TP(trivial, M, N), [2, 4]);
+  expect(str(convertArrayToMatrix(retained))).toBe('ArrayDiagonal(ArrayTensorProduct(M, N), (0, 2))');
+  const permuted = new ArrayDiagonal(new TP(trivial, row, M), [0, 2]);
+  expect(str(convertArrayToMatrix(permuted))).toBe('PermuteDims(ArrayTensorProduct(R.T, M), (1 2 3))');
+  const shared = new ArrayDiagonal(new TP(col, M, N), [0, 2, 4]);
+  expect(convertArrayToMatrix(shared)).toBe(shared);
+});
+
+it('retains unrecognized factors and distributes contraction over tensor sums', async () => {
+  const { Identity, OneArray, identifyRemovableIdentityMatrices } = await import('../../../../src');
+  const identity = Identity(2);
+  expect(str(identifyRemovableIdentityMatrices(new C(new TP(identity, new OneArray(2)), [1])))).toBe('ArrayTensorProduct(OneArray(2), OneArray(2))');
+  expect(str(identifyRemovableIdentityMatrices(new C(new TP(identity, M), [0])))).toBe('ArrayTensorProduct(OneArray(2), M)');
+  expect(str(identifyRemovableIdentityMatrices(new C(new TP(identity, M), [0, 2])))).toBe('ArrayContraction(ArrayTensorProduct(I, M), (0, 2))');
+  expect(str(convertArrayToMatrix(new C(new TP(identity, M, N, A), [1, 3], [0, 4, 6])))).toBe('ArrayContraction(ArrayTensorProduct(M, N, A), (1, 2, 4))');
+  expect(str(convertArrayToMatrix(new C(new TP(M, A, N), [0, 2], [1, 4, 5])))).toBe('ArrayContraction(ArrayTensorProduct(M, N, A), (0, 4), (1, 2, 3))');
+  const pairs = new ArrayAdd(new TP(M, N), new TP(N, M));
+  expect(str(convertArrayToMatrix(new C(new TP(pairs, M), [1, 4], [2, 5])))).toBe('M**2*N + N*M**2');
 });
