@@ -732,9 +732,9 @@ def callback_expr(callback, variable):
         op = instruction.opname
         if op in ("RESUME", "CACHE", "NOP"):
             continue
-        if op == "LOAD_FAST" and instruction.arg == 0:
+        if op in ("LOAD_FAST", "LOAD_FAST_BORROW") and instruction.arg == 0:
             stack.append(variable)
-        elif op in ("LOAD_CONST", "RETURN_CONST"):
+        elif op in ("LOAD_CONST", "LOAD_SMALL_INT", "RETURN_CONST"):
             if not isinstance(instruction.argval, (int, float, bool)):
                 raise Unsupported("Transform callback")
             value = sympy.sympify(instruction.argval)
