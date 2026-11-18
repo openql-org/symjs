@@ -38,7 +38,7 @@ import { ExprMap } from '../core/exprmap';
 import { ordered } from '../core/match';
 import { generateBell } from '../utilities/iterables';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { expand, expandMul, expand_power_exp } from '../simplify/expand';
+import { expand, expandMul, expand_power_exp, withFactoredDenominators } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { radsimp } from '../simplify/radsimp';
 import { simplify } from '../simplify/simplify';
@@ -1363,7 +1363,8 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opt
   const preferConstant = eqs.length > syms.length && opts.manual !== true;
   const go = (system: Expr[], assigned: Map<string, Expr>) => {
     const unchecked = opts.check === false && assigned.size > 0;
-    const pending = uniqueKeys(system.map((e) => expandMul(e)).filter((e) => !isZeroE(e) && !(unchecked && (e instanceof Special || opts.manual && !syms.some((s) => !assigned.has(s.key) && e.has(s))))));
+    // (the equations keep their denominators factored: the branch bookkeeping compares them in that form)
+    const pending = uniqueKeys(system.map((e) => withFactoredDenominators(() => expandMul(e))).filter((e) => !isZeroE(e) && !(unchecked && (e instanceof Special || opts.manual && !syms.some((s) => !assigned.has(s.key) && e.has(s))))));
     const active = syms.filter((s) => !assigned.has(s.key) && pending.some((e) => e.has(s)));
     const unknowns = active.length > pending.length ? [...active].sort((a, b) => compareKeys(sortKey(a), sortKey(b))) : active;
     if (pending.length === 0) {

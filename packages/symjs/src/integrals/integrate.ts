@@ -980,7 +980,12 @@ function singularPoints(f: Expr, x: Sym): Expr[] | undefined {
         // Numerical ordering is used only for constant real roots, never for parameters.
         const real = cmpReal(r, S.Zero);
         if (real !== undefined) points.set(r.key, r);
-        else if (r.freeSymbols().size !== 0) return undefined;
+        else if (r.freeSymbols().size !== 0) {
+          // a parametric root: on the real axis when its assumptions say so, off it when they exclude that
+          const onAxis = isReal(r);
+          if (onAxis === true) points.set(r.key, r);
+          else if (onAxis !== false) return undefined;
+        }
       }
     } catch {
       // Root isolation failed: do not assert that the interval is regular.
@@ -1111,7 +1116,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
       const l = impl.limit(F, x, p, '-');
       const r = impl.limit(F, x, p, '+');
       if (l.key === r.key && !bad(l) && !l.has(x)) continue;
-      return unevaluated;
+      return [a, b].some((e) => e instanceof Special) ? definiteWithoutAntiderivative(f, x, a, b, opts) : unevaluated;
     }
     if (left > 0 && right < 0) interior.push(p);
   }

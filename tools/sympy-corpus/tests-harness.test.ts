@@ -223,6 +223,15 @@ it('does not discard private deterministic random fixtures when replaying public
   expect(runTestCase({ ...c, raises: 'ValueError' }).status).toBe('unsupported');
 });
 
+it('passes the fixed draws of a permutation group method to its randomPrec argument', () => {
+  const perm = (array: number[]) => ({ t: 'Permutation', array });
+  const group = { t: 'PermutationGroup', generators: [perm([1, 2, 3, 4, 0]), perm([4, 3, 2, 1, 0])] };
+  const fixture = { t: 'Dict', items: [[{ t: 'Str', v: 'rand' }, perm([1, 3, 2, 0, 4])]] };
+  expect(runTestCase({ ...base, module: 'sympy.combinatorics.tests.test_perm_groups', category: 'combinatorics', test: 'test_random_stab',
+    src: 'assert g == Permutation([1, 3, 2, 0, 4])', fn: '.random_stab', self: group, args: [{ t: 'Rational', p: '2', q: '1', py: true }],
+    kwargs: { _random_prec: fixture }, expected: '(4)(0 1 3)' })).toEqual({ status: 'pass' });
+});
+
 const chart: Tree = { t: 'Diffgeom', ref: 'R2_r' };
 const field = (cls: string, n: number): Tree => ({
   t: 'Diffgeom',
