@@ -56,6 +56,7 @@ function piCoeff(x: Expr): Rational | undefined {
 /**
  * SymPy _pi_coeff for a product c*x*pi with an integer x: the coefficient of pi reduced modulo 2
  * (a Float c that is an exact binary fraction counts as that rational). Undefined for other arguments.
+ * Integer results are all that tan needs, so even multiples give 0 rather than SymPy's parity marker 2.
  */
 function integerPiCoeff(arg: Expr): Expr | undefined {
   if (!(arg instanceof Mul) || !arg.args.some(isPi)) return undefined;
@@ -73,13 +74,8 @@ function integerPiCoeff(arg: Expr): Expr | undefined {
     }
   }
   if (c === undefined) return undefined;
-  const c2 = ratMod(c, S.Two);
-  if (c2.equals(S.One)) return x;
-  if (c2.isZero) {
-    const half = isIntegerQ(mul(S.Half, x));
-    return half === true || half === false ? S.Zero : S.Two;
-  }
-  return mul(c2, x);
+  // the coefficient modulo 2 (an even multiple gives 0, an odd one x itself)
+  return mul(ratMod(c, S.Two), x);
 }
 
 /** Split x = a + c*pi where c is rational (c may be zero). */

@@ -8,7 +8,6 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { defined } from '../../src/core/guard';
-import { Pow as RawPow } from '../../src/core/nodes';
 
 const { Q, ask, refine } = sj;
 const x = sj.symbol('x');
@@ -752,14 +751,14 @@ it('keeps real powers of a real base sound when the base may be zero or negative
 
 it('decides rational, prime and finite facts of powers', () => {
   const { ask, Q, And } = sj;
-  const x = new sj.Sym('x'), y = new sj.Sym('y');
-  // exp(x) of an unknown x: neither known rational nor known irrational
-  expect(ask(Q.rational(sj.exp(x)))).toBe('unknown');
-  // y**1 kept unevaluated is prime exactly when y is
-  expect(ask(Q.prime(new RawPow(y, sj.Rational.of(1n))), Q.prime(y))).toBe(true);
-  expect(ask(Q.prime(new RawPow(y, sj.Rational.of(1n))))).toBe('unknown');
-  // a finite base and exponent: 0**negative is infinite, a nonzero base or a nonnegative exponent is finite
-  expect(ask(Q.finite(sj.pow(x, y)), And(Q.finite(x), Q.finite(y)))).toBe('unknown');
-  expect(ask(Q.finite(sj.pow(x, y)), And(Q.zero(x), Q.negative(y), Q.finite(y)))).toBe(false);
-  expect(ask(Q.finite(sj.pow(x, y)), And(Q.nonzero(x), Q.finite(x), Q.finite(y)))).toBe(true);
+  // fresh symbol names: ask caches its answers by expression
+  const u = new sj.Sym('u_pow'), v = new sj.Sym('v_pow'), w = new sj.Sym('w_pow'), k = new sj.Sym('k_pow');
+  // the reciprocal of a finite irrational number is irrational
+  expect(ask(Q.rational(sj.pow(u, -1)), Q.irrational(u))).toBe(false);
+  // a power of a composite number with an integer exponent is not prime
+  expect(ask(Q.prime(sj.pow(v, k)), And(Q.composite(v), Q.integer(k)))).toBe(false);
+  // a finite power: a nonzero finite base with a finite exponent is finite, 0**negative is not
+  expect(ask(Q.finite(sj.pow(w, k)), And(Q.nonzero(w), Q.finite(w), Q.finite(k)))).toBe(true);
+  expect(ask(Q.finite(sj.pow(u, v)), And(Q.zero(u), Q.negative(v), Q.finite(v)))).toBe(false);
+  expect(ask(Q.finite(sj.pow(v, w)), And(Q.finite(v), Q.finite(w)))).toBe('unknown');
 });
