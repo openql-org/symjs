@@ -215,7 +215,10 @@ export function nonlinsolve(system: readonly ExprLike[], symbols: readonly Sym[]
   }
   try {
     // Solve over the complex domain even when an unknown has a real assumption.
-    return finiteNonlinsolve(eqs, symbols, { check: false }).filter(isFiniteTuple);
+    const solutions = finiteNonlinsolve(eqs, symbols, { checkAssumptions: false });
+    // A single equation describes a family through its parameter domain.
+    // Elimination in a system represents dependent coordinates directly.
+    return eqs.length === 1 ? excludeFinitePoles(eqs, symbols, solutions) : solutions.filter(isFiniteTuple);
   } catch (error) {
     if (!(error instanceof NotImplementedError)) throw error;
     return substituteFinite(eqs, symbols);
@@ -228,7 +231,6 @@ function isFiniteTuple(values: readonly Expr[]): boolean {
 
 /** Eliminate one unknown at a time using the finite branches of solveset. */
 function substituteFinite(system: readonly Expr[], symbols: readonly Sym[]): Expr[][] {
-  const exclusions = system.flatMap((e) => [...denoms(e, ...symbols)]);
   const solveRemaining = (equations: readonly Expr[], remaining: readonly Sym[], values: readonly Expr[]): Expr[][] => {
     const pending = equations.filter((e) => !e.equals(S.Zero));
     if (!pending.length) return [[...values]];
@@ -251,8 +253,12 @@ function substituteFinite(system: readonly Expr[], symbols: readonly Sym[]): Exp
     }
     throw new NotImplementedError('nonlinsolve: nonlinear substitution has an unresolved solution set');
   };
-  const solutions = solveRemaining(system, symbols, symbols).filter(isFiniteTuple);
-  const withExclusions = solutions.map((values) => {
+  return excludeFinitePoles(system, symbols, solveRemaining(system, symbols, symbols));
+}
+
+function excludeFinitePoles(system: readonly Expr[], symbols: readonly Sym[], solutions: readonly Expr[][]): Expr[][] {
+  const exclusions = system.flatMap((e) => [...denoms(e, ...symbols)]);
+  const withExclusions = solutions.filter(isFiniteTuple).map((values) => {
     const mapping = symbols.map((s, i): [Expr, Expr] => [s, at(values, i)]);
     const forbidden = [...exclusions, ...values.flatMap((v) => [...denoms(v, ...symbols)])].map((d) => cancel(xreplace(d, mapping)));
     return { values, forbidden };

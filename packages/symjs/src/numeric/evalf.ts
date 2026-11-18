@@ -353,6 +353,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     // SymPy Function._eval_evalf: a function that is not a number keeps its arguments
     // (f(1).evalf() == f(1), sin(x + 1).evalf() == sin(x + 1), exp(x + 1).evalf() == exp(x + 1))
     if (x.args.length === 0 || isFunction(x)) return x;
+    if (x instanceof Piecewise) return rebuild(x, x.pairs.flatMap(([value, condition]) => [go(value), condition]));
     // keep integer exponents exact (SymPy: (x**2).evalf() == x**2)
     if (x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger) return rebuild(x, [go(x.base), x.exp]);
     if (x instanceof Mul && x.args[0] instanceof Rational && x.args[0].p === -1n && x.args[0].q === 1n) {
@@ -366,6 +367,11 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     if (x instanceof Concrete) {
       const v = impl.evalConcrete?.(x);
       if (v !== undefined) return go(v);
+    }
+    if (x instanceof Integral && x.args.length === 4 && x.freeSymbols().size === 0) {
+      const value = impl.doit?.(x);
+      const result = value === undefined ? undefined : numeric(value, noValue);
+      if (result !== undefined) return result;
     }
     return rebuild(x, x.args.map(go));
   };

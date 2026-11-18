@@ -10,9 +10,10 @@
  * handmade distribution of the same kind.
  */
 
-import { Dummy, Integral, Sym } from '../core/nodes';
+import { Dummy, Integral, Mul, Pow, S, Sym } from '../core/nodes';
 import type { ExprLike , Expr} from '../core/nodes';
-import { mul } from '../core/ops';
+import { add, exp, mul } from '../core/ops';
+import { expandMul as expand } from '../simplify/expand';
 import { Sum } from '../core/concrete';
 import type { LambdaNode } from '../core/lambda';
 import { Lambda } from '../core/lambda';
@@ -40,6 +41,10 @@ export class CompoundDistribution extends Distribution {
   /** The distribution with random parameters. */
   get dist(): Distribution {
     return cast(at(this.args, 0), Distribution);
+  }
+  /** Rebuilt like SymPy's constructor: the distribution itself once no parameter is random. */
+  override withArgs(args: readonly Expr[]): Expr {
+    return compoundDistribution(cast(at(args, 0), Distribution, 'distribution'));
   }
   get set(): SetExpr {
     return this.dist.set;
@@ -74,8 +79,19 @@ function marginalise(e: Expr, rv: RandomSymbol, evaluate: boolean): Expr {
   const dom = ps.domain.set;
   // SymPy's Integral and Sum fold a Piecewise in their function (AddWithLimits: piecewise_fold)
   const body = piecewiseFold(mul(e, rvDens));
-  const r = ps.isDiscrete || ps.isFinite ? Sum(body, [rv, inf(dom), sup(dom)]) : new Integral([body, rv, inf(dom), sup(dom)]);
-  return evaluate ? doit(r) : r;
+  if (ps.isDiscrete || ps.isFinite) {
+    const sum = Sum(body, [rv, inf(dom), sup(dom)]);
+    return evaluate ? doit(sum) : sum;
+  }
+  return evaluate ? doit(new Integral([combineExponentials(body, rv), rv, inf(dom), sup(dom)])) : new Integral([body, rv, inf(dom), sup(dom)]);
+}
+
+/** exp(a)*exp(b) with the parameter in both exponents as one exponential: a Gaussian mixture is then integrated in closed form. */
+function combineExponentials(body: Expr, rv: RandomSymbol): Expr {
+  if (!(body instanceof Mul)) return body;
+  const exponentials = body.args.filter((g): g is Pow => g instanceof Pow && g.base === S.E && g.exp.has(rv));
+  if (exponentials.length < 2) return body;
+  return mul(...body.args.filter((g) => !exponentials.some((h) => h === g)), exp(expand(add(...exponentials.map((g) => g.exp)))));
 }
 
 /** SymPy CompoundDistribution(dist): the distribution itself when no parameter is random. */
@@ -91,6 +107,10 @@ export function compoundDistribution(dist: Distribution): Distribution {
 export class CompoundPSpace extends PSpace {
   constructor(args: readonly Expr[]) {
     super([symbolConverter(at(args, 0)), cast(at(args, 1), CompoundDistribution, 'compound distribution')], 'CompoundPSpace');
+  }
+  /** Rebuilt like SymPy's constructor: the single space of its kind once the distribution is not compound. */
+  override withArgs(args: readonly Expr[]): Expr {
+    return compoundPSpace(symbolConverter(at(args, 0)), cast(at(args, 1), Distribution, 'distribution'));
   }
   override get isCompound(): boolean {
     return true;

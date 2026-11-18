@@ -22,6 +22,49 @@ describe('Order upstream regressions', () => {
   });
 });
 
+it('propagates accumulation bounds through exponential leading terms', () => {
+  const x = symbol('x');
+  expect(sstr(sj.asLeadingTerm(parse('exp(x*log(cos(1/x) + 2))'), x))).toBe('1');
+  expect(sstr(sj.asLeadingTerm(parse('exp(x*log(sin(1/x)**2))'), x))).toBe('AccumBounds(0, 1)');
+  expect(sj.asLeadingTerm(parse('log(cos(1/x) - 2)'), x)).toBe(sj.S.NaN);
+  expect(sstr(sj.asLeadingTerm(parse('log(2*cos(1/x) + 3)'), x))).toBe('AccumBounds(0, log(5))');
+  expect(sstr(sj.asLeadingTerm(parse('exp(x*log(sin(1/x)**2))'), x, { cdir: -1 }))).toBe('AccumBounds(1, oo)');
+  expect(sstr(sj.asLeadingTerm(parse('exp(x*log(sin(1/x)**2))'), x, { cdir: sj.S.Zero }))).toBe('AccumBounds(0, 1)');
+  const constantPower = new sj.Pow(parse('sin(1/x)'), sj.S.Zero);
+  const rawLog = sj.fn('log', [constantPower], { evaluate: false });
+  expect(sj.asLeadingTerm(new sj.Pow(sj.S.E, new sj.Mul([x, rawLog])), x).equals(sj.S.One)).toBe(true);
+});
+
+it('leaves nonconstant scaling of oscillatory bounds to the general series machinery', () => {
+  const x = symbol('x');
+  for (const source of [
+    'log(cos(1/x) + x)',
+    'log(cos(1/x)**x)',
+    'exp(log(cos(1/x) + 2)/x)',
+    'exp(y*x*log(sin(1/x)**2))',
+  ]) expect(() => sj.asLeadingTerm(parse(source), x)).toThrow(/essential singularity/);
+});
+
+it('uses the direction of an argument and preserves its zero-order remainder', () => {
+  const x = symbol('x');
+  const phase = sj.arg(x);
+  expect(sj.asLeadingTerm(phase, x)).toBe(sj.S.Zero);
+  expect(sj.asLeadingTerm(phase, x, { cdir: sj.S.Zero })).toBe(sj.S.Zero);
+  expect(sj.asLeadingTerm(phase, x, { cdir: -1 })).toBe(sj.pi);
+  expect(sstr(series(phase, x, 0, 0))).toBe('O(1)');
+  expect(series(sj.sign(x), x, 0, 0).equals(sj.S.One)).toBe(true);
+  expect(series(new sj.Add([sj.abs(x), sj.mul(-1, x)]), x, 0, 0).equals(sj.S.Zero)).toBe(true);
+  expect(() => sj.asLeadingTerm(parse('sin(x + x**2)'), x, { cdir: sj.I })).toThrow(/nonreal direction/);
+  const p = sj.Piecewise([1, sj.Lt(x, -1)], [sj.sin(x), true]);
+  expect(sj.asLeadingTerm(p, x).equals(x)).toBe(true);
+});
+
+it('expands logarithms along the positive imaginary ray at infinity', () => {
+  const x = symbol('x');
+  expect(sstr(series(parse('log(1 + x)'), x, sj.mul(sj.S.Infinity, sj.S.I), 2)))
+    .toBe('1/x + I*pi/2 - log(I/x) + O(x**(-2), (x, oo*I))');
+});
+
 // Series, orders and leading terms (series/series.ts, series/more.ts, series/puiseux.ts). Expected values are the str() forms printed by SymPy 1.14
 // (p is a positive, q a negative and r a real symbol).
 
@@ -648,6 +691,11 @@ it('preserves unresolved multivariate orders and checks logarithmic oscillations
   expect(String(sj.aseries(P('exp(x)+exp(-x)'), x))).toBe('exp(x) + exp(-x)');
 });
 
+it('reports a missing leading term when no Piecewise branch holds at zero', () => {
+  const x = new sj.Sym('x');
+  expect(() => sj.asLeadingTerm(sj.piecewise([x, sj.Gt(x, 1)]), x)).toThrow(/cannot expand Piecewise/);
+});
+
 it('uses the expansion point for the local singularity series', () => {
   const F = sj.SingularityFunction;
   const l = new Sym('l', { positive: true });
@@ -734,4 +782,59 @@ it('keeps local Bessel powers and logarithms', () => {
     expect(sj.expandMul(sj.asLeadingTerm(P(source), x)).equals(sj.expandMul(P(expected))), source).toBe(true);
   }
   expect(String(sj.taylorTerm(sj.fresnelc(x), 1, x))).toBe('-pi**2*x**5/40');
+});
+
+it('expands gamma, exponential integrals and oscillatory integrals at infinity', () => {
+  for (const [f, point, n, expected] of [
+    ['lowergamma(x,2)', sj.oo, 3, '2**x*(1 + 2/(x + 1))*exp(-2)/x + O(exp(x*log(2))/x**3, (x, oo))'],
+    ['erfc(x)', sj.oo, 3, '(1/x + O(x**(-3), (x, oo)))*exp(-x**2)/sqrt(pi)'],
+    ['erfi(x)', sj.oo, 3, '(1/x + O(x**(-3), (x, oo)))*exp(x**2)/sqrt(pi) - I'],
+    ['Ei(x)', sj.oo, 3, '(2/x**2 + 1/x + 1 + O(x**(-3), (x, oo)))*exp(x)/x'],
+    ['expint(3,x)', sj.oo, 3, '(12/x**2 - 3/x + 1 + O(x**(-3), (x, oo)))*exp(-x)/x'],
+    ['fresnels(x)', sj.S.NegativeInfinity, 4, '-sin(pi*x**2/2)/(pi**2*x**3) - cos(pi*x**2/2)/(pi*x) - 1/2 + O(x**(-4), (x, -oo))'],
+    ['Ci(x)', sj.S.NegativeInfinity, 3, '-(x**(-2) + O(-1/x**3, (x, -oo)))*cos(x) + (1/x + O(-1/x**3, (x, -oo)))*sin(x) + I*pi'],
+    ['Si(x)', sj.oo, 3, '-(x**(-2) + O(x**(-3), (x, oo)))*sin(x) - (1/x + O(x**(-3), (x, oo)))*cos(x) + pi/2'],
+    ['Li(x)', sj.S.Zero, 2, 'x*(1/log(x) + 1 + O(log(x)**(-2)))/log(x) - li(2)'],
+  ] as const) expect(String(series(P(f), x, point, n))).toBe(expected);
+  expect(() => series(P('lowergamma(x,2)'), x, sj.S.NegativeInfinity, 2)).toThrow(sj.NotImplementedError);
+  expect(() => series(P('lowergamma(y,x)'), x, sj.oo, 2)).toThrow(sj.NotImplementedError);
+  expect(() => series(P('lowergamma(x,x)'), x, sj.oo, 2)).toThrow(sj.NotImplementedError);
+  expect(String(sj.taylorTerm(P('fresnelc(x)'), 1, x))).toBe('-pi**2*x**5/40');
+});
+
+it('uses the appropriate growing or decaying Bessel factors on each real ray', () => {
+  for (const [f, point, expected] of [
+    ['besseli(1,x)', sj.oo, 'sqrt(2)*(sqrt(1/x) + O((1/x)**(3/2), (x, oo)))*exp(x)/(2*sqrt(pi))'],
+    ['besseli(1,x)', sj.S.NegativeInfinity, 'sqrt(2)*(-sqrt(-1/x) + O((-1/x)**(3/2), (x, -oo)))*exp(-x)/(2*sqrt(pi))'],
+    ['besselk(1,x)', sj.oo, 'sqrt(2)*sqrt(pi)*(sqrt(1/x) + O((1/x)**(3/2), (x, oo)))*exp(-x)/2'],
+    ['besselk(1,x)', sj.S.NegativeInfinity, 'sqrt(2)*sqrt(pi)*(-I*sqrt(-1/x) + O((-1/x)**(3/2), (x, -oo)))*exp(-x)/2'],
+  ] as const) expect(String(series(P(f), x, point, 1))).toBe(expected);
+});
+
+it('composes local Bessel series and preserves logarithmic orders', () => {
+  for (const [f, n, expected] of [
+    ['besseli(1,x+x**2)', 3, 'x/2 + x**2/2 + O(x**3)'],
+    ['besselj(1,x+x**2)', 5, 'x/2 + x**2/2 - x**3/16 - 3*x**4/16 + O(x**5)'],
+  ] as const) expect(String(series(P(f), x, 0, n))).toBe(expected);
+  expect(String(series(P('besselk(0,x+x**2)'), x, 0, 6))).toContain('O(x**6*log(x))');
+  expect(String(series(P('bessely(0,x+x**2)'), x, 0, 6))).toContain('O(x**6*log(x))');
+  for (const name of ['besselk', 'bessely'] as const) {
+    expect(String(series(P(`${name}(1,x)`), x, 0, 0))).toContain('O(1)');
+  }
+  expect(String(series(P('besselk(1,x)'), x, 0, 2)))
+    .toBe('1/x + x*(log(x)/2 - log(2)/2 - 1/4 + EulerGamma/2) + O(x**2*log(x))');
+});
+
+it('finds the leading terms of Bessel and error functions at their branch points', () => {
+  for (const [f, expected] of [
+    ['besselj(1,x)', 'x/2'], ['besseli(1,x)', 'x/2'],
+    ['besselk(1,1/x)', 'sqrt(2)*sqrt(pi)*exp(-1/x)/(2*sqrt(1/x))'],
+    ['besselk(0,x)', '-log(x) - EulerGamma + log(2)'],
+    ['bessely(0,x)', '2*(log(x) - log(2) + EulerGamma)/pi'],
+    ['bessely(1,x)', '-2/(pi*x)'], ['besselj(0,x+1)', 'besselj(0, 1)'],
+    ['erfi(1/x)', 'erfi(1/x)'], ['erfc(x)', '1'],
+  ] as const) expect(String(sj.asLeadingTerm(P(f), x))).toBe(expected);
+  const oscillation = new sj.Pow(sj.S.E, new sj.Add([P('log(sin(1/x))'), x]));
+  expect(sj.asLeadingTerm(oscillation, x)).toBe(sj.S.NaN);
+  expect(() => sj.asLeadingTerm(P('besselj(1,x**y)'), x)).toThrow(sj.NotImplementedError);
 });

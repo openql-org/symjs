@@ -43,6 +43,34 @@ class Box extends ExtensionExpr {
   }
 }
 
+it('uses the default printing, expansion, matching and kind hooks of an extension', () => {
+  const box = new Box([x, S.One]);
+  expect(x.toLatex()).toBe('x');
+  expect(box.printLatex(String)).toBe('\\operatorname{Box}\\left(x, 1\\right)');
+  expect(box.kindSelf()).toBeUndefined();
+  expect(box.matchesSelf(x)).toBeUndefined();
+  expect(box.expandSelf('basic', {})).toBeUndefined();
+  expect(box.diffSelf(x, sj.diff)).toBeUndefined();
+});
+
+it('encodes fermionic assumptions in symbol identities', () => {
+  const above = sj.symbol('a', { aboveFermi: true });
+  const below = sj.symbol('a', { belowFermi: true });
+  expect(above.key).not.toBe(below.key);
+  expect(above.assumptions0.get('above_fermi')).toBe(true);
+  expect(below.assumptions0.get('below_fermi')).toBe(true);
+});
+
+it('reports a missing rewrite implementation at the core entry point', () => {
+  const rewrite = nodes.impl.rewrite;
+  delete nodes.impl.rewrite;
+  try {
+    expect(() => x.rewrite('exp')).toThrow(/rewrite/);
+  } finally {
+    if (rewrite) nodes.impl.rewrite = rewrite;
+  }
+});
+
 describe('numeric', () => {
   it('rational objects', () => {
     expect(Rational.of(6, -4).toString()).toBe('-3/2');

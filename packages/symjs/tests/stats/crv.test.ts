@@ -45,9 +45,7 @@ describe('continuous probability spaces (SymPy crv) 1', () => {
   it("E evaluate False doit", () => expect(show(rewrite(Expectation(Xn), 'Integral'))).toBe("Integral(sqrt(2)*x*exp(-x**2/2)/(2*sqrt(pi)), (x, -oo, oo))"));
   it("E exp", () => expect(show(E(exp(neg(Exponential('e', 1)))))).toBe("1/2"));
   it("cdf computed", () => expect(show(ap(cdf(Reciprocal('r', 1, 2)), z))).toBe("Piecewise((log(z)/log(2), z >= 1), (0, True))"));
-  // SymPy: Piecewise((Intersection({-sqrt(p), sqrt(p)}, Interval(0, 1)), (p >= 0) & (p <= 1)), (nan, True));
-  // symjs's solveset does not solve x**2 = p with a parameter
-  it("quantile computed", () => expect(show(ap(quantile(PowerFunction('w', 2, 0, 1)), p))).toBe('Piecewise((ConditionSet(_x, Eq(_x**2 - p, 0), Interval(0, 1)), (p >= 0) & (p <= 1)), (nan, True))'));
+  it("quantile computed", () => expect(show(ap(quantile(PowerFunction('w', 2, 0, 1)), p))).toBe('Piecewise((Intersection({-sqrt(p), sqrt(p)}, Interval(0, 1)), (p >= 0) & (p <= 1)), (nan, True))'));
 });
 
 describe('continuous probability spaces (SymPy crv) 2', () => {
@@ -64,8 +62,8 @@ describe('continuous probability spaces (SymPy crv) 2', () => {
   // Meijer G-function method in another form
   it("conditional mgf", () => expect(show(ap(momentGeneratingFunction(given(Exponential('e', 1), Gt(Exponential('e', 1), 1))), t))).toMatch(/^Piecewise\(\(0, Ne\(t, 1\) & /));
   // SymPy raises AttributeError ('ContinuousPSpace' object has no attribute 'set'); symjs solves in the set of the domain
-  // (it does not solve the Piecewise equation: SymPy's solveset would give {1 - log(1 - p)})
-  it("conditional quantile", () => expect(show(ap(quantile(given(Exponential('e', 1), Gt(Exponential('e', 1), 1))), p))).toBe('ConditionSet(_x, Eq(-p + Piecewise((1 - E*exp(-_x), _x >= 1), (0, True)), 0), Interval.open(1, oo))'));
+  // (the solution equals SymPy's solveset result {1 - log(1 - p)})
+  it("conditional quantile", () => expect(show(ap(quantile(given(Exponential('e', 1), Gt(Exponential('e', 1), 1))), p))).toBe('Intersection({-log(-p*exp(-1) + exp(-1))}, Interval.open(1, oo))'));
   it("domain no variables", () => expect(show(Xn.pspace.domain.computeExpectation(xs, []))).toBe("x"));
   it("domain wrong variable", () => expect(() => Xn.pspace.domain.computeExpectation(xs, [new Sym('y')])).toThrow(RangeError));
   it("domain as_boolean", () => expect(show(Xn.pspace.domain.asBoolean())).toBe("(-oo < x) & (x < oo)"));
@@ -97,8 +95,7 @@ describe('continuous probability spaces (SymPy crv) 3', () => {
   it("cf of 2X", () => expect(show(ap(characteristicFunction(mul(2, Xn)), t))).toBe('sqrt(2)*I*(-sqrt(2)*I*pi*t*exp(-2*t**2)*erf(sqrt(2)*I*t) - sqrt(2)*I*pi*t*exp(-2*t**2))/(4*pi*t) - sqrt(2)*I*(-sqrt(2)*I*pi*t*exp(-2*t**2)*erf(sqrt(2)*I*t) + sqrt(2)*I*pi*t*exp(-2*t**2))/(4*pi*t)'));
   // SymPy: (2 - erfc(sqrt(2)*t))*exp(2*t**2)/2 + exp(2*t**2)*erfc(sqrt(2)*t)/2 (both are exp(2*t**2))
   it("mgf of 2X", () => expect(show(ap(momentGeneratingFunction(mul(2, Xn)), t))).toBe('-sqrt(2)*(-sqrt(2)*pi*t*exp(2*t**2)*erf(sqrt(2)*t) - sqrt(2)*pi*t*exp(2*t**2))/(4*pi*t) + sqrt(2)*(-sqrt(2)*pi*t*exp(2*t**2)*erf(sqrt(2)*t) + sqrt(2)*pi*t*exp(2*t**2))/(4*pi*t)'));
-  // SymPy: Intersection({-2*log(1 - p)}, Interval(0, oo)); symjs's solveset does not solve the Piecewise equation
-  it("quantile of 2X", () => expect(show(ap(quantile(mul(2, Exponential('e', 1))), p))).toBe('ConditionSet(_x, Eq(-p + Piecewise((1 - exp(-_x/2), _x >= 0), (0, True)), 0), Interval(0, oo))'));
+  it("quantile of 2X", () => expect(show(ap(quantile(mul(2, Exponential('e', 1))), p))).toBe('Intersection({-2*log(1 - p)}, Interval(0, oo))'));
   it("P Eq", () => expect(show(P(Eq(Xn, 0)))).toBe("0"));
   it("P empty", () => expect(show(P(Lt(Exponential('e', 1), -1)))).toBe("0"));
   it("P Ne empty", () => expect(show(P(Ne(Exponential('e', 1), -1)))).toBe("1"));
