@@ -6,31 +6,28 @@
  * (SymPy Basic.rewrite and the `_eval_rewrite_as_*` methods).
  */
 
-import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
+import type { Expr, ExprLike, RewriteRule } from '../core/nodes';
+import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl, registerRewrite as addRewrite, rewriteRules } from '../core/nodes';
 import { Eq, Ge, Gt, Lt, Ne, piecewise, rel } from '../core/logic';
 import { and } from '../core/boolalg';
 import { Mod } from '../functions/mod';
-import { isIntegerQ, isNegative, isPositive, isReal, isZero } from '../core/assumptions';
+import { isIntegerQ, isNegative, isNonZero, isPositive, isReal, isZero } from '../core/assumptions';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { isFunctionOf } from '../core/match';
 import { rebuild } from '../core/traverse';
 import { abs, acos, arg, asin, atan, conjugate, cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { acot, acsc, asec, asinh, atanh, acosh, cot, coth, csc, sec } from '../functions/elementary/trigext';
 import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special/special';
-import { ff } from '../functions/combinatorial/factorials';
+import { factorial2Gamma, factorialRewrites, ff } from '../functions/combinatorial/factorials';
 import { Sum } from '../core/concrete';
 import { first, pair } from '../core/guard';
 
-/** A rewrite rule: the (already rewritten) arguments and the original node. */
-export type RewriteRule = (args: Expr[], self: Expr) => Expr | undefined;
-
-/** rewriteRules[functionName][target] (SymPy class names, e.g. 'Abs', 'exp'). */
-export const rewriteRules: Record<string, Record<string, RewriteRule>> = {};
+export type { RewriteRule };
+export { rewriteRules };
 
 /** @experimental May change in a minor release. */
 export function registerRewrite(fnName: string, target: string, rule: RewriteRule): void {
-  (rewriteRules[fnName] ??= {})[target] = rule;
+  addRewrite(fnName, target, rule);
 }
 
 /** A rule on the first argument (a missing argument is an invariant violation). */
@@ -440,6 +437,10 @@ reg1('sign', 'Piecewise', (a) => {
 // ---------------------------------------------------------------------------
 
 reg1('factorial', 'gamma', (n) => gamma(add(n, 1)));
+for (const [head, rules] of Object.entries(factorialRewrites)) {
+  for (const [target, rule] of Object.entries(rules)) registerRewrite(head, target, rule);
+}
+reg1('factorial2', 'gamma', (n) => factorial2Gamma(n, Mod(n, 2)));
 reg1('gamma', 'factorial', (z) => factorial(add(z, -1)));
 reg2('binomial', 'factorial', (n, k) => div(factorial(n), mul(factorial(k), factorial(add(n, neg(k))))));
 reg2('binomial', 'gamma', (n, k) => div(gamma(add(n, 1)), mul(gamma(add(k, 1)), gamma(add(n, neg(k), 1)))));
@@ -459,12 +460,24 @@ const harmonicPolygamma: RewriteRule = (args) => {
   if (!(isIntegerQ(mm) && isPositive(mm))) return undefined;
   return piecewise(
     [add(polygamma(0, add(n, 1)), S.EulerGamma), Eq(mm, 1)],
-    [div(mul(pow(-1, mm), add(polygamma(add(mm, -1), 1), neg(polygamma(add(mm, -1), add(n, 1))))), gamma(mm)), true],
+    [div(mul(pow(-1, mm), add(mul(pow(-1, mm), factorial(add(mm, -1)), zeta(mm)), neg(polygamma(add(mm, -1), add(n, 1))))), gamma(mm)), true],
   );
 };
 registerRewrite('harmonic', 'polygamma', harmonicPolygamma);
 registerRewrite('harmonic', 'digamma', harmonicPolygamma);
 registerRewrite('harmonic', 'trigamma', harmonicPolygamma);
+registerRewrite('harmonic', 'tractable', (args, self) => {
+  const pg = harmonicPolygamma(args, self);
+  const m = args[1] ?? S.One;
+  if (pg !== undefined) return rewrite(pg, 'tractable');
+  if (isNonZero(add(m, -1)) === true) return rewrite(add(zeta(m), neg(zeta(m, add(first(args), 1)))), 'tractable');
+  return undefined;
+});
+registerRewrite('harmonic', 'zeta', (args) => {
+  const n = add(first(args), 1);
+  const m = args[1] ?? S.One;
+  return piecewise([add(polygamma(0, n), S.EulerGamma), Eq(m, 1)], [add(zeta(m), neg(zeta(m, n))), true]);
+});
 reg2('polygamma', 'harmonic', (n, z) => {
   if (!isIntegerQ(n)) return undefined;
   if (n instanceof Rational && n.isZero) return add(harmonic(add(z, -1)), neg(S.EulerGamma));

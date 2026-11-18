@@ -55,6 +55,11 @@ describe('node classes', () => {
     expect(s(pi.n())).toBe('3.14159265358979');
     expect(() => I.toNumber()).toThrow(RangeError);
     expect(inspect(x)).toBe('Expr(x)');
+    expect(pi.isComparable).toBe(true);
+    expect(s(x.sub(1))).toBe('x - 1');
+    expect(s(x.neg())).toBe('-x');
+    expect(s(x.add(1).pow(2).expand())).toBe('x**2 + 2*x + 1');
+    expect(I.conjugate().equals(mul(-1, I))).toBe(true);
     const subs1 = x.subs.bind(x) as unknown as (from: Expr) => Expr;
     expect(() => subs1(x)).toThrow(TypeError);
   });
@@ -107,6 +112,10 @@ describe('node classes', () => {
     expect(s(sj.transpose(b))).toBe('Box(x)');
     // not a function application with a Taylor series
     expect(b.isTaylorExpandable).toBe(false);
+    expect(x.prettyForm).toBeUndefined();
+    expect(b.kindSelf()).toBeUndefined();
+    expect(b.matchesSelf(x)).toBeUndefined();
+    expect(b.expandSelf('custom', {})).toBeUndefined();
     expect(b).toBeInstanceOf(Expr);
     expect(new BoolAtom(true).key).toBe('!true');
     expect(add(x, y)).toBeInstanceOf(Add);
@@ -126,6 +135,16 @@ describe('symbol assumptions zero and integer', () => {
     // Zero cannot also be strictly positive.
     expect(() => new sj.Sym('p', { zero: true, positive: true })).toThrow(RangeError);
   });
+});
+
+it('reports defined function names but leaves anonymous constructors unnamed', () => {
+  expect(nodes.headName(sj.SymFunction('oscillation'))).toBe('oscillation');
+  expect(nodes.headName(() => S.One)).toBeUndefined();
+});
+
+it('distinguishes indefinite integration from explicit bounds', () => {
+  expect(new sj.Integral([x, x]).limits).toBeUndefined();
+  expect(new sj.Integral([x, x, S.Zero, S.One]).limits).toEqual([S.Zero, S.One]);
 });
 
 describe('ExtensionExpr.expandTop', () => {
@@ -233,6 +252,8 @@ it('retains constructor facts, explicit false values and their consequences in s
   expect(extended.assumptions0.get('above_fermi')).toBe(false);
   expect(extended.assumptions0.get('below_fermi')).toBe(false);
   expect(extended.equals(new sj.Sym('x', { extendedPositive: true }))).toBe(false);
+  expect(new sj.Sym('p', { aboveFermi: true }).key).toContain('[A');
+  expect(new sj.Sym('p', { belowFermi: true }).key).toContain('[B');
   expect(() => new sj.Sym('n', { odd: true, even: true })).toThrow(RangeError);
 });
 

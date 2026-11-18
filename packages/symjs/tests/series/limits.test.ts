@@ -4,13 +4,46 @@
 // Tests of src/series/limits.ts.
 // Limits. Expected values are those of SymPy 1.14.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { Sym, limit, parse, DiracDelta, Heaviside, symbol, oo } from '../../src';
+import * as derivatives from '../../src/calculus/diff';
+import * as gruntz from '../../src/series/gruntz';
 import { limitWithin } from '../../src/series/limits';
+import { Expander } from '../../src/series/puiseux';
+import * as rational from '../../src/simplify/rational';
 import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
 import { NotImplementedError } from '../../src/core/errors';
+
+it('preserves a parameter-dependent harmonic limit at infinity', () => {
+  const x0 = new Sym('x');
+  const m = new Sym('m');
+  expect(limit(sj.harmonic(x0, m), x0, oo, '-')).toEqual(sj.harmonic(oo, m));
+  expect(limit(sj.harmonic(x0, 2), x0, oo, '-')).toEqual(sj.zeta(2));
+  expect(limit(sj.harmonic(x0, x0), x0, oo, '-')).toEqual(sj.S.One);
+});
+
+it('retries an indeterminate product after rational simplification when earlier methods are unavailable', () => {
+  const x = new Sym('x');
+  const quotient = sj.mul(sj.add(x, sj.pow(x, 2)), sj.pow(x, -1));
+  const unavailable = () => { throw new NotImplementedError('test method unavailable'); };
+  const series = vi.spyOn(Expander.prototype, 'leading').mockImplementation(unavailable);
+  const derivative = vi.spyOn(derivatives, 'diff').mockImplementation(unavailable);
+  const asymptotic = vi.spyOn(gruntz, 'gruntz').mockImplementation(unavailable);
+  const simplify = vi.spyOn(rational, 'ratsimp');
+  try {
+    expect(limit(quotient, x, 0).equals(sj.S.One)).toBe(true);
+    expect(simplify).toHaveBeenCalled();
+    simplify.mockReturnValueOnce(sj.SymFunction('unknown')(x));
+    expect(limit(quotient, x, 0)).toBeInstanceOf(sj.Limit);
+  } finally {
+    series.mockRestore();
+    derivative.mockRestore();
+    asymptotic.mockRestore();
+    simplify.mockRestore();
+  }
+});
 
 // Limits that reach the branches of series/limits.ts. Expected values are the str() forms
 // printed by SymPy 1.14 (p is a positive, q a negative and r a real symbol; f and g are functions).

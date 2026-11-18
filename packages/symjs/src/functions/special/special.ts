@@ -140,11 +140,11 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
   // SymPy binomial.eval: binomial(n, n) = 1 and binomial(n, n - 1) = n unless n may be a negative integer
   const d = add(n, neg(k));
   const generic = isNonNegative(n) === true || isIntegerQ(n) === false;
+  if (isZero(k) === true) return S.One;
   if (generic && d instanceof Rational && d.isZero) return S.One;
   if (generic && d instanceof Rational && d.isOne) return n;
   if (isInt(k)) {
     if (k.isNegative) return S.Zero;
-    if (k.isZero) return S.One;
     if (isInt(n) && !n.isNegative && k.p > n.p) return S.Zero;
     if (n instanceof Rational) {
       // very large k: keep binomial(n, k) unevaluated instead of looping k times, unless
@@ -166,6 +166,10 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
       return numMul(num, R(1n, factorialBig(k.p)));
     }
     if (k.isOne) return n;
+    return undefined;
+  }
+  if (isIntegerQ(k) === true) {
+    if (isNegative(k) === true || (isNonNegative(n) === true && isIntegerQ(n) === true && isNegative(d) === true)) return S.Zero;
     return undefined;
   }
   if (isNonNegative(n) === false && isIntegerQ(n) === true) return S.ComplexInfinity;
@@ -191,6 +195,7 @@ function evalRF(x: Expr, k: Expr): Expr | undefined {
     if (k.isPositive) return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(x, i)));
     return mul(...Array.from({ length: Number(-k.p) }, (_, i) => pow(add(x, -(i + 1)), -1)));
   }
+  if (isIntegerQ(k) === false && isIntegerQ(x) === true && isNegative(x) === true) return S.Zero;
   return undefined;
 }
 
@@ -1481,7 +1486,10 @@ export const factorial2 = (n: ExprLike): Expr => fn('factorial2', [n]);
 export const binomial = (n: ExprLike, k: ExprLike): Expr => fn('binomial', [n, k]);
 export const subfactorial = (n: ExprLike): Expr => fn('subfactorial', [n]);
 export const harmonic = (n: ExprLike, m?: ExprLike): Expr => (m === undefined ? fn('harmonic', [n]) : fn('harmonic', [n, m]));
-export const catalan = (n: ExprLike): Expr => fn('catalan', [n]);
+export function catalan(n: ExprLike): Expr {
+  if (arguments.length !== 1) throw new TypeError('catalan requires one argument');
+  return fn('catalan', [n]);
+}
 export const gamma = (x: ExprLike): Expr => fn('gamma', [x]);
 export const loggamma = (x: ExprLike): Expr => fn('loggamma', [x]);
 export const polygamma = (n: ExprLike, x: ExprLike): Expr => fn('polygamma', [n, x]);
@@ -1629,10 +1637,17 @@ export function expandFunc(e: Expr): Expr {
     }
     if (y instanceof Fn) {
       if (y.name === 'binomial') {
-        const [n, k] = y.args;
-        if (n !== undefined && k !== undefined && isInt(k) && k.isPositive) {
-          return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(n, -i)), R(1n, factorialBig(k.p)));
+        const [n, k] = pair(y.args);
+        if (isNum(n)) return fnN('binomial', n, k);
+        const difference = add(n, neg(k));
+        // Symbolic expansion uses the complementary index when it is an explicit integer.
+        const order = isInt(difference) ? difference : k;
+        if (isInt(order)) {
+          if (order.isZero) return S.One;
+          if (order.isNegative) return S.Zero;
+          return mul(...Array.from({ length: Number(order.p) }, (_, i) => add(n, -i)), R(1n, factorialBig(order.p)));
         }
+        return fnN('binomial', n, k);
       }
       if (y.name === 'harmonic' && y.args.length === 1) {
         const n = first(y.args);

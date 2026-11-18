@@ -15,6 +15,7 @@ const [x] = core.symbols('x');
 describe('core entry without the other feature areas', () => {
   it('reports that simplification, integration, limits and series are not loaded', () => {
     expect(() => x.simplify()).toThrow("simplify is not available: import '@symjs/symjs/simplify'");
+    expect(() => x.rewrite('exp')).toThrow("rewrite is not available: import '@symjs/symjs/simplify'");
     expect(() => x.limit(x, 0)).toThrow("limit is not available: import '@symjs/symjs/calculus'");
     expect(() => x.series(x)).toThrow("series is not available: import '@symjs/symjs/calculus'");
     expect(() => x.integrate(x)).toThrow(NotLoadedError);
@@ -25,6 +26,10 @@ describe('core entry without the other feature areas', () => {
     const b = core.AccumBounds(3, 4) as core.AccumBoundsNode;
     expect(() => a.intersection(b)).toThrow(NotLoadedError);
     expect(() => a.intersection(x)).toThrow("import '@symjs/symjs/sets'");
+  });
+  it('knows the sign of a held positive-integer factorial', () => {
+    const n = core.symbol('n', { integer: true, positive: true });
+    expect(core.ask(core.Q.positive(core.fn('factorial', [n])))).toBe(true);
   });
 });
 

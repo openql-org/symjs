@@ -5,8 +5,22 @@
 
 // Expected values are the str() forms printed by SymPy 1.14.
 
-import { describe, expect, it } from 'vitest';
-import { add, defineFunction, fn, parse, rational, rewrite, sstr, sub, subs, symbol, symbols, toComplex } from '../../src';
+import { describe, expect, it, vi } from 'vitest';
+import { add, defineFunction, fn, harmonic, mul, parse, rational, rewrite, sstr, sub, subs, symbol, symbols, toComplex, zeta } from '../../src';
+
+it('rewrites harmonic sums to polygamma or zeta where the order allows it', () => {
+  const n = symbol('n');
+  const m = symbol('m', { integer: true, positive: true });
+  const p = symbol('p', { positive: true });
+  const order = add(p, 1);
+  expect(rewrite(harmonic(n), 'tractable')).toEqual(rewrite(harmonic(n), 'polygamma'));
+  expect(rewrite(harmonic(n), 'zeta')).toEqual(rewrite(harmonic(n), 'polygamma'));
+  expect(rewrite(harmonic(n, m), 'tractable')).toEqual(rewrite(harmonic(n, m), 'polygamma'));
+  expect(rewrite(harmonic(n, p), 'tractable')).toEqual(harmonic(n, p));
+  const difference = add(zeta(order), mul(-1, zeta(order, add(n, 1))));
+  expect(rewrite(harmonic(n, order), 'tractable')).toEqual(difference);
+  expect(rewrite(harmonic(n, order), 'zeta')).toEqual(difference);
+});
 
 const [x, y, n, k] = symbols('x y n k');
 const r = symbol('r', { real: true });
@@ -274,4 +288,12 @@ describe('rewrites between trigonometric, hyperbolic and inverse functions (SymP
   it('rewrites trigonometric functions with Bessel functions', () => {
     for (const f of ['sin(x)', 'cos(x)', 'tan(x)', 'cot(x)', 'sec(x)', 'csc(x)']) agrees(f, 'besselj', 0.7);
   });
+});
+
+it('provides the cosine integral rewrite on the standalone simplify entry', async () => {
+  vi.resetModules();
+  const { rewrite } = await import('../../src/simplify/rewrite');
+  const { Ci } = await import('../../src/functions/special/special');
+  const { Sym } = await import('../../src/core/nodes');
+  expect(String(rewrite(Ci(new Sym('x')), 'expint'))).toBe('-expint(1, x*polar_lift(-I))/2 - expint(1, x*polar_lift(I))/2');
 });

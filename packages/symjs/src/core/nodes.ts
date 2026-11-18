@@ -212,6 +212,7 @@ export type SpecialFnName =
   | 'bernoulli'
   | 'euler'
   | 'genocchi'
+  | 'andre'
   | 'bell'
   | 'fibonacci'
   | 'lucas'
@@ -222,6 +223,9 @@ export type SpecialFnName =
   | 'mobius'
   | 'divisor_sigma'
   | 'udivisor_sigma'
+  | 'legendre_symbol'
+  | 'jacobi_symbol'
+  | 'kronecker_symbol'
   | 'primenu'
   | 'primeomega'
   | 'primepi'
@@ -455,6 +459,24 @@ export function registerHeadResolver<T extends Expr>(cls: abstract new (...args:
 export function registerFunctionHeads(heads: readonly (readonly [string, Head])[]): void {
   for (const [name, f] of heads) functionHeads.set(name, f);
 }
+
+/** A rule on the rewritten arguments and the original expression. */
+export type RewriteRule = (args: Expr[], self: Expr) => Expr | undefined;
+
+/** The function rewrites, indexed by the function and target names. */
+export const rewriteRules: Record<string, Record<string, RewriteRule>> = {};
+
+/** @experimental May change in a minor release. */
+export function registerRewrite(fnName: string, target: string, rule: RewriteRule): void {
+  (rewriteRules[fnName] ??= {})[target] = rule;
+}
+
+/** Function facts queried by the predicate engine through its current assumptions. */
+export const functionFactHandlers: Partial<Record<FnName, (
+  fact: string,
+  args: readonly Expr[],
+  query: (fact: string, arg: Expr) => boolean | undefined,
+) => boolean | undefined>> = {};
 
 /** The SymPy name of a function head (`sin`, a function of defineFunction or SymFunction), if it has one. */
 export function headName(head: (...args: never[]) => unknown): string | undefined {
