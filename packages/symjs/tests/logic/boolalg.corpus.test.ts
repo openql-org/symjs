@@ -18606,11 +18606,11 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const [a, b] = symbols('a b');
     expect(() => gateinputcount(new Mul([a, b]))).toThrow(TypeError);
   });
-  it.fails("test_refine:1290", () => {
+  it("test_refine:1290", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '<', { evaluate: false }), Relational(x, rational(0), '>=', { evaluate: false })))).toBe('False');
   });
-  it.fails("test_refine:1291", () => {
+  it("test_refine:1291", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '<', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false })))).toBe('True');
   });
@@ -18618,11 +18618,11 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(Relational(x, rational(0), '<', { evaluate: false }), Relational(y, rational(0), '<', { evaluate: false })))).toBe('x < 0');
   });
-  it.fails("test_refine:1294", () => {
+  it("test_refine:1294", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '<=', { evaluate: false }), Relational(x, rational(0), '>', { evaluate: false })))).toBe('False');
   });
-  it.fails("test_refine:1295", () => {
+  it("test_refine:1295", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '<=', { evaluate: false }), Relational(x, rational(0), '<=', { evaluate: false })))).toBe('True');
   });
@@ -18630,11 +18630,11 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(Relational(x, rational(0), '<=', { evaluate: false }), Relational(y, rational(0), '<=', { evaluate: false })))).toBe('x <= 0');
   });
-  it.fails("test_refine:1298", () => {
+  it("test_refine:1298", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '>', { evaluate: false }), Relational(x, rational(0), '<=', { evaluate: false })))).toBe('False');
   });
-  it.fails("test_refine:1299", () => {
+  it("test_refine:1299", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '>', { evaluate: false }), Relational(x, rational(0), '>', { evaluate: false })))).toBe('True');
   });
@@ -18642,11 +18642,11 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(Relational(x, rational(0), '>', { evaluate: false }), Relational(y, rational(0), '>', { evaluate: false })))).toBe('x > 0');
   });
-  it.fails("test_refine:1302", () => {
+  it("test_refine:1302", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '>=', { evaluate: false }), Relational(x, rational(0), '<', { evaluate: false })))).toBe('False');
   });
-  it.fails("test_refine:1303", () => {
+  it("test_refine:1303", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '>=', { evaluate: false }), Relational(x, rational(0), '>=', { evaluate: false })))).toBe('True');
   });
@@ -18654,11 +18654,11 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(Relational(x, rational(0), '>=', { evaluate: false }), Relational(y, rational(0), '>=', { evaluate: false })))).toBe('x >= 0');
   });
-  it.fails("test_refine:1306", () => {
+  it("test_refine:1306", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '==', { evaluate: false }), Relational(x, rational(0), '!=', { evaluate: false })))).toBe('False');
   });
-  it.fails("test_refine:1307", () => {
+  it("test_refine:1307", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '==', { evaluate: false }), Relational(x, rational(0), '==', { evaluate: false })))).toBe('True');
   });
@@ -18666,11 +18666,11 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(Relational(x, rational(0), '==', { evaluate: false }), Relational(y, rational(0), '==', { evaluate: false })))).toBe('Eq(x, 0)');
   });
-  it.fails("test_refine:1310", () => {
+  it("test_refine:1310", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '!=', { evaluate: false }), Relational(x, rational(0), '==', { evaluate: false })))).toBe('False');
   });
-  it.fails("test_refine:1312", () => {
+  it("test_refine:1312", () => {
     const x = new Sym('x');
     expect(sympyStr(refine(Relational(x, rational(0), '!=', { evaluate: false }), Relational(x, rational(0), '!=', { evaluate: false })))).toBe('True');
   });
@@ -18678,7 +18678,7 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(Relational(x, rational(0), '!=', { evaluate: false }), Relational(y, rational(0), '!=', { evaluate: false })))).toBe('Ne(x, 0)');
   });
-  it.fails("test_refine:1316", () => {
+  it("test_refine:1316", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(refine(And(Relational(x, rational(0), '>', { evaluate: false }), Relational(y, rational(0), '>', { evaluate: false })), Relational(x, rational(0), '>', { evaluate: false })))).toBe('y > 0');
   });

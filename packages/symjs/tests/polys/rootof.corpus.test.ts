@@ -58,7 +58,7 @@ describe("doctests of sympy.polys.rootoftools", () => {
   });
   it("PurePoly(x) == PurePoly(exp(x))", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(x, [x], { domain: 'ZZ', pure: true }).equals(Poly.from(exp(x), [exp(x)], { domain: 'ZZ', pure: true })))).toBe('True');
+    expect(sympyStr(Poly.from(x, [x], { domain: 'ZZ', pure: true }).eq(Poly.from(exp(x), [exp(x)], { domain: 'ZZ', pure: true })))).toBe('True');
   });
   it("CRootOf(x - 1, 0)", () => {
     const x = new Sym('x');

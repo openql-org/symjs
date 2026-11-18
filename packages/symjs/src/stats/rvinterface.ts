@@ -22,7 +22,7 @@ import { cast } from '../core/guard';
 import { SetExpr, finiteSet } from '../sets/sets';
 import { solveset } from '../solvers/inequalities';
 import { log } from '../functions/elementary/elementary';
-import { ff } from '../functions/special/special';
+import { ff } from '../functions/combinatorial/factorials';
 import { rewrite } from '../simplify/rewrite';
 import { Distribution, FiniteDensity, PSpace, density, expectation, isRandom, pspace } from './rv';
 import type { ProbabilityOptions } from './rv';

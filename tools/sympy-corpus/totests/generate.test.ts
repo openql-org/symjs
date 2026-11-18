@@ -226,6 +226,7 @@ it('converts the corpora', async () => {
     };
     if (c.pyFormat !== undefined) return todo('printed with a Python number format');
     if (c.kwargs && '_random_prec' in c.kwargs) return todo('an upstream private random fixture');
+    if (unit && c.fn === '.random') return todo("a draw from Python's seeded random generator");
     if (unit && timeouts.has(T.testCaseKey(c as never))) return todo('the replay exceeds its deadline');
     if (typeErrors.has(id)) return todo('the arguments do not type-check against the public API');
     if (unreproduced.has(id)) return todo('the generated test does not reproduce the replay');

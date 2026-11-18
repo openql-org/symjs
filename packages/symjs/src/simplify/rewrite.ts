@@ -17,7 +17,8 @@ import { isFunctionOf } from '../core/match';
 import { rebuild } from '../core/traverse';
 import { abs, acos, arg, asin, atan, conjugate, cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { acot, acsc, asec, asinh, atanh, acosh, cot, coth, csc, sec } from '../functions/elementary/trigext';
-import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, ff, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special/special';
+import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special/special';
+import { ff } from '../functions/combinatorial/factorials';
 import { Sum } from '../core/concrete';
 import { first, pair } from '../core/guard';
 

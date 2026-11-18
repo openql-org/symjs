@@ -28,7 +28,8 @@ import '../../numeric/mpspecialfns';
 import { chermite, claguerre } from '../../numeric/mporthopoly';
 import { registerRewrite } from '../../simplify/rewrite';
 import { conjugate, conjugateRules, cos, evaluators, fn, re } from '../elementary/elementary';
-import { binomial, factorial, gamma, rf } from './special';
+import { binomial, factorial, gamma } from './special';
+import { rf } from '../combinatorial/factorials';
 import { hyper } from './hyper';
 // the coefficient generators (SymPy dup_jacobi, ... of polys/orthopolys.py)
 import {

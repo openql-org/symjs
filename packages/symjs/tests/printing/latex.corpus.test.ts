@@ -3993,22 +3993,42 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // function udivisor_sigma
-  //   assert latex(udivisor_sigma(x)) == r"\sigma^*\left(x\right)"
-  //   => \sigma^*\left(x\right)
-  it.todo("test_latex_functions:771");
-  // function udivisor_sigma
-  //   assert latex(udivisor_sigma(x)**2) == r"\sigma^*^{2}\left(x\right)"
-  //   => \sigma^*^{2}\left(x\right)
-  it.todo("test_latex_functions:772");
-  // function udivisor_sigma
-  //   assert latex(udivisor_sigma(x, y)) == r"\sigma^*_y\left(x\right)"
-  //   => \sigma^*_y\left(x\right)
-  it.todo("test_latex_functions:773");
-  // function udivisor_sigma
-  //   assert latex(udivisor_sigma(x, y)**2) == r"\sigma^*^{2}_y\left(x\right)"
-  //   => \sigma^*^{2}_y\left(x\right)
-  it.todo("test_latex_functions:774");
+  it.fails("test_latex_functions:771", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(fn('udivisor_sigma', [x]), {}))).toBe('\\sigma^*\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_latex_functions:772", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new Pow(fn('udivisor_sigma', [x]), rational(2)), {}))).toBe('\\sigma^*^{2}\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_latex_functions:773", () => {
+    const [x, y] = symbols('x y');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(fn('udivisor_sigma', [x, y]), {}))).toBe('\\sigma^*_y\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it.fails("test_latex_functions:774", () => {
+    const [x, y] = symbols('x y');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new Pow(fn('udivisor_sigma', [x, y]), rational(2)), {}))).toBe('\\sigma^*^{2}_y\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_latex_functions:776", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);

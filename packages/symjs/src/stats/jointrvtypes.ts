@@ -32,7 +32,8 @@ import { ImmutableMatrixNode, MatrixExpr, MatrixElementNode, MatrixSymbolNode, d
 import { isPositiveDefinite, isPositiveSemidefinite } from '../matrices/linalg';
 import { besselk } from '../functions/special/bessel';
 import { expand } from '../simplify/expand';
-import { factorial, gamma, rf } from '../functions/special/special';
+import { factorial, gamma } from '../functions/special/special';
+import { rf } from '../functions/combinatorial/factorials';
 import { randomSymbols, statsClasses, valueCheck } from './rv';
 import type { MatrixParam, RandomSymbol } from './rv';
 import { GammaDistribution } from './crvtypes';
