@@ -8,7 +8,7 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Float, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
+import { Add, Constant, Float, Integral, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { ordered } from '../core/match';
 import { argsCncSplit, asContentPrimitive, asIndependent, primitive } from '../core/methods';
@@ -331,8 +331,8 @@ export function factorTerms(
       if (newargs.every((a, i) => a.key === expr.args[i]?.key)) return expr;
       return rebuild(expr, newargs);
     }
-    if (expr instanceof Concrete && expr.kind2 === 'Sum') return factorSum(expr, doit);
-    let [cont, p] = asContentPrimitive(expr, { clear }) as [Expr, Expr];
+    if (expr instanceof Integral || (expr instanceof Concrete && expr.kind2 === 'Sum')) return factorSum(expr, doit);
+    let [cont, p] = asContentPrimitive(expr, { clear, radical: opts.radical }) as [Expr, Expr];
     if (p instanceof Add) {
       let listArgs = p.args.map(doit);
       // a common negative sign (if any) is not removed by gcd_terms
@@ -361,16 +361,16 @@ export function factorTerms(
   return doit(sympify(exprIn));
 }
 
-/** SymPy factor_sum: pull terms independent of the summation variables out of a Sum. */
-function factorSum(s: Concrete, doit: (e: Expr) => Expr): Expr {
-  const result = s.function;
+/** SymPy factor_sum: pull terms independent of bound variables out of a Sum or Integral. */
+function factorSum(s: Concrete | Integral, doit: (e: Expr) => Expr): Expr {
+  const result = s instanceof Integral ? s.integrand : s.function;
   if (result instanceof Rational && result.isZero) return S.Zero;
-  const vars = s.limits.map(([k]) => k);
+  const vars = s instanceof Integral ? [s.variable] : s.limits.map(([k]) => k);
   const retv = doit(result);
   const [i, d] = asIndependent(retv, vars);
-  const lims = s.args.slice(1);
-  if (retv instanceof Add) return add(mul(i, new Concrete('Sum', [S.One, ...lims])), new Concrete('Sum', [d, ...lims]));
-  return mul(i, new Concrete('Sum', [d, ...lims]));
+  const bind = (f: Expr): Expr => s instanceof Integral ? new Integral([f, ...s.args.slice(1)]) : new Concrete('Sum', [f, ...s.args.slice(1)]);
+  if (retv instanceof Add) return add(mul(i, bind(S.One)), bind(d));
+  return mul(i, bind(d));
 }
 
 /** SymPy Factors(expr).factors for a product: base -> exponent, rationals split into p and 1/q. */

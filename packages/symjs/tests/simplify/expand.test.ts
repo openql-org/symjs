@@ -343,3 +343,40 @@ describe('multinomial expansion of rational powers of sums (SymPy Pow._eval_expa
     expect(String(expandMultinomial(parse('(x + 1)**(-1/2)')))).toBe('1/sqrt(x + 1)');
   });
 });
+
+describe('core expansion gaps', () => {
+  it('reduces each numeric coefficient modulo a positive integer', () => {
+    expect(String(expand(P('(x+y)**11'), { modulus: 11 }))).toBe('x**11 + y**11');
+    expect(String(expand(P('(x+sqrt(2)*y)**11'), { modulus: 11 }))).toBe('x**11 + 10*sqrt(2)*y**11');
+    expect(String(expand(P('x+y/2'), { modulus: 1 }))).toBe('y/2');
+    expect(String(expand(P('1.5*x+y'), { modulus: 2 }))).toBe('1.5*x + y');
+    for (const modulus of [0, -1, x, P('1/2')]) expect(() => expand(x, { modulus })).toThrow(RangeError);
+  });
+  it('keeps noncommutative exponents together', () => {
+    const A = new Sym('A', { commutative: false });
+    const B = new Sym('B', { commutative: false });
+    expect(String(expand(pow(2, add(A, B))))).toBe('2**(A + B)');
+  });
+  it('expands hyperbolic functions into real and imaginary parts', () => {
+    const locals = { symbols: [new Sym('x', { real: true }), new Sym('y', { real: true })] };
+    expect(String(expand(parse('sinh(x+I*y)', locals), { complex: true }))).toBe('I*sin(y)*cosh(x) + cos(y)*sinh(x)');
+    expect(String(expand(parse('cosh(x+I*y)', locals), { complex: true }))).toBe('I*sin(y)*sinh(x) + cos(y)*cosh(x)');
+  });
+});
+
+it('dispatches expansion hints and top level expansion through extension nodes', async () => {
+  const { ExtensionExpr, S } = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  class Expandable extends ExtensionExpr {
+    constructor(readonly top = false) { super('Expandable', [x]); }
+    withArgs(): Expr { return this; }
+    override expandTop(): Expr | undefined { return this.top ? S.One : undefined; }
+    override expandSelf(hint: string): Expr | undefined { return hint === 'double' ? mul(2, x) : undefined; }
+  }
+  expect(String(expand(new Expandable(true)))).toBe('1');
+  expect(String(expand(new Expandable(), { double: true }))).toBe('2*x');
+  expect(String(expand(new Expandable(), { other: true }))).toBe('Expandable(x)');
+  expect(String(expand(add(x, y), { other: true }))).toBe('x + y');
+  expect(String(impl.expand?.(pow(add(x, 1), 2)))).toBe('x**2 + 2*x + 1');
+  expect(impl.asRealImagExpand?.(x).map(String)).toEqual(['re(x)', 'im(x)']);
+});

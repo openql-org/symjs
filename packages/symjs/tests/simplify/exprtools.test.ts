@@ -252,3 +252,13 @@ describe('decompose_power / decompose_power_rat', () => {
     expect(s(decomposePowerRat(4))).toBe('(4, 1)');
   });
 });
+
+it('extracts factors independent of integral variables and common square roots', async () => {
+  const { Integral, S } = await import('../../src');
+  const integral = (f: Expr) => new Integral([f, y, S.One, parse('10')]);
+  expect(String(factorTerms(integral(x)))).toBe('x*Integral(1, (y, 1, 10))');
+  expect(String(factorTerms(add(x, integral(x))))).toBe('x*(Integral(1, (y, 1, 10)) + 1)');
+  expect(String(factorTerms(integral(add(x, y))))).toBe('x*Integral(1, (y, 1, 10)) + Integral(y, (y, 1, 10))');
+  expect(String(factorTerms(integral(S.Zero)))).toBe('0');
+  expect(String(factorTerms(parse('sqrt(2)+sqrt(10)'), { radical: true }))).toBe('sqrt(2)*(1 + sqrt(5))');
+});

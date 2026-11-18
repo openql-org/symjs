@@ -151,6 +151,7 @@ function initialFacts(e: Expr): Map<string, boolean> {
 /** The handler of a fact for the class of e, bound to e. */
 function handlerFor(e: Expr, f: string): (() => V) | undefined {
   const bind = <T extends Expr>(h: ((x: T) => V) | undefined, x: T): (() => V) | undefined => (h === undefined ? undefined : () => h(x));
+  if (f === 'finite' && e instanceof Fn && (e.name === 'sin' || e.name === 'cos') && is(at(e.args, 0), 'extended_real')) return () => true;
   if (e instanceof Add) return bind(ADD[f], e);
   if (e instanceof Mul) return bind(MUL[f], e);
   if (e instanceof Pow) return bind((isExp(e) ? EXP : POW)[f], e);
