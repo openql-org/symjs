@@ -7,13 +7,18 @@
 
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import { Add, Constant, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { rebuild } from '../core/traverse';
 import { at, defined, first } from '../core/guard';
 import { ratMod } from '../core/num';
 import { integerNthroot } from '../core/numberutils';
+
+/** The core entry can distribute finite numeric limits without loading the full predicate engine. */
+export const expandHooks = {
+  canDistributeIntegral: (e: Integral): boolean => e.args.slice(2).every(isNum),
+};
 
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 
@@ -108,6 +113,7 @@ export interface ExpandHints {
   complex?: boolean;
   trig?: boolean;
   force?: boolean;
+  basic?: boolean;
   /** Expand special functions into simpler ones (SymPy func=True). */
   func?: boolean;
   /** Expand numerator and denominator separately (SymPy frac=True). */
@@ -479,6 +485,9 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     else if (h.multinomial) e = applyBottomUp(e, (x) => expandMulShallow(x, false, true), h.deep);
     if (h.power_base) e = applyBottomUp(e, (x) => powerBase(x, h.force), h.deep);
     if (h.power_exp) e = applyBottomUp(e, (x) => powerExp(x, h.force), h.deep);
+    if (h.basic !== false) e = applyBottomUp(e, (t) => t instanceof Integral && t.integrand instanceof Add &&
+      (h.force || (t.integrand.isCommutative && expandHooks.canDistributeIntegral(t)))
+      ? add(...t.integrand.args.map((a) => new Integral([a, ...t.args.slice(1)]))) : t, h.deep);
     if (h.trig) e = applyBottomUp(e, expandTrigNode, h.deep);
     if (h.mul && e.key !== was.key) e = h.deep ? (h.multinomial ? expandMul(e) : expandMulOnly(e)) : expandMulShallow(e, h.mul, h.multinomial);
     if (e.key === was.key) break;
@@ -517,20 +526,20 @@ export function expandMulOnly(e: Expr): Expr {
 }
 
 export const expand_mul = (e: ExprLike): Expr =>
-  expand(e, { power_exp: false, power_base: false, log: false, multinomial: false });
+  expand(e, { basic: false, power_exp: false, power_base: false, log: false, multinomial: false });
 export const expand_multinomial = (e: ExprLike): Expr =>
-  expand(e, { power_exp: false, power_base: false, log: false, mul: false });
+  expand(e, { basic: false, power_exp: false, power_base: false, log: false, mul: false });
 export const expand_power_exp = (e: ExprLike, force = false): Expr =>
-  expand(e, { power_base: false, log: false, mul: false, multinomial: false, force });
+  expand(e, { basic: false, power_base: false, log: false, mul: false, multinomial: false, force });
 export const expand_power_base = (e: ExprLike, opts: { force?: boolean; deep?: boolean } = {}): Expr =>
-  expand(e, { power_exp: false, log: false, mul: false, multinomial: false, ...opts });
+  expand(e, { basic: false, power_exp: false, log: false, mul: false, multinomial: false, ...opts });
 export const expand_log = (e: ExprLike, force = false): Expr =>
-  expand(e, { power_exp: false, power_base: false, mul: false, multinomial: false, force });
+  expand(e, { basic: false, power_exp: false, power_base: false, mul: false, multinomial: false, force });
 export const expand_trig = (e: ExprLike): Expr =>
-  expand(e, { power_exp: false, power_base: false, log: false, mul: false, multinomial: false, trig: true });
+  expand(e, { basic: false, power_exp: false, power_base: false, log: false, mul: false, multinomial: false, trig: true });
 export const expand_complex = (e: ExprLike): Expr =>
-  expand(e, { complex: true, power_exp: false, power_base: false, log: false, mul: false, multinomial: false });
+  expand(e, { basic: false, complex: true, power_exp: false, power_base: false, log: false, mul: false, multinomial: false });
 
 impl.expand = (e) => expand(e);
-impl.expandMul = (e) => expandMul(e);
+impl.expandMul = expandMul;
 impl.asRealImagExpand = (e) => asRealImagExpand(e);

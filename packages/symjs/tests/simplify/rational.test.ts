@@ -261,3 +261,9 @@ describe('numer and denom', () => {
     expect(String(denom(P('x*y**(-n)'), { exact: true }))).toBe(String(fraction(P('x*y**(-n)'), { exact: true })[1]));
   });
 });
+
+it('retains noncommuting quotients and cancels over a specified polynomial domain', () => {
+  const A = symbol('A', { commutative: false }), B = symbol('B', { commutative: false });
+  expect(cancel(A.mul(B.pow(-1))).equals(A.mul(B.pow(-1)))).toBe(true);
+  expect(String(cancel(parse('(x**2 - 1)/(x - 1)'), { domain: 'QQ' }))).toBe('x + 1');
+});

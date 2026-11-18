@@ -9,16 +9,16 @@
  * (minsolve_linear_system with quick=True).
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Dummy, Rational, S } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Dummy, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { ordered } from '../core/match';
 import { xreplace } from '../core/traverse';
 import { leadingMonomial, reduced, type MonomialOrder } from '../polys/groebner';
-import { Poly } from '../polys/sympoly';
+import { Poly, sortGens } from '../polys/sympoly';
 import { linsolve } from '../matrices/linsys';
 import { cancel, fraction } from './rational';
-import { at, defined, expectType, last } from '../core/guard';
+import { at, defined, expectType, first, last } from '../core/guard';
 import { lcm as ilcm } from '../core/numbers';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
@@ -175,11 +175,32 @@ function minimalSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string
 }
 
 /** SymPy ratsimpmodprime(expr, G, *gens, order=...): a simpler fraction equal to expr modulo the ideal of G (G a Groebner basis of a prime ideal). */
-export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: readonly Sym[], opts: { order?: MonomialOrder; quick?: boolean } = {}): Expr {
+export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], generators: readonly Sym[] = [], opts: { order?: MonomialOrder; quick?: boolean; domain?: string } = {}): Expr {
   const order = opts.order ?? 'grevlex';
   const quick = opts.quick ?? true;
   const Gs = G.map(sympify);
   let [num, denom] = fraction(cancel(sympify(exprIn)));
+  const gens = generators.length ? generators : sortGens([...new Map([num, denom, ...Gs].flatMap((e) => [...e.freeSymbols()]).filter((v) => v instanceof Sym).map((v) => [v.key, v])).values()]);
+  if (opts.domain && /^GF\(\d+\)$/.test(opts.domain)) {
+    if (gens.length !== 1 || Gs.length !== 1) throw new RangeError('Finite-field rational reduction requires a univariate ideal');
+    const poly = (e: Expr) => Poly.from(e, gens, { domain: opts.domain });
+    const ideal = poly(first(Gs));
+    const n = poly(num).rem(ideal), d = poly(denom).rem(ideal);
+    const residue = n.mul(d.invert(ideal)).rem(ideal);
+    // Consecutive Euclidean remainders give all candidates on the degree frontier.
+    let a = ideal, b = residue, u = poly(S.Zero), v = poly(S.One);
+    let best = residue.asExpr(), degree = residue.degree();
+    while (!b.isZero) {
+      if (b.degree() + v.degree() < degree) {
+        best = mul(b.asExpr(), pow(v.asExpr(), -1));
+        degree = b.degree() + v.degree();
+      }
+      const [q, r] = a.div(b);
+      [a, b] = [b, r];
+      [u, v] = [v, u.sub(q.mul(v))];
+    }
+    return best;
+  }
   const lms = Gs.map((g) => leadingMonomial(g, gens, order));
   const tested = new Set<string>();
   const divides = (m: number[], l: number[]) => l.every((k, i) => at(m, i) >= k);
