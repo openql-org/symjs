@@ -943,3 +943,10 @@ describe('facts SymPy decides wrongly or that need unevaluated nodes', () => {
     expect(fact(g(x), 'positive')).toBe(undefined);
   });
 });
+
+
+it('uses the nonempty assumptions of indexed bases', () => {
+  const base = new sj.IndexedBase('A', { positive: true });
+  expect(fact(base, 'positive')).toBe(true);
+  expect(fact(base.at(0), 'real')).toBe(true);
+});

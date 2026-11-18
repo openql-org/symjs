@@ -101,7 +101,7 @@ export function solveEquations(eqs: readonly Expr[], syms: readonly Sym[]): Expr
     sols = found.filter((v) => eqsInOrder.every((e) => e === main || isZeroNumber(simplify(xreplace(e, [[s, v]]))))).map((v) => [v]);
   } else if (system.every((e) => isPolynomial(e, syms))) {
     try {
-      sols = solvePolySystem(system, syms);
+      sols = solvePolySystem(system, syms, { strict: true });
     } catch {
       // NotImplementedError: an eliminant without supported radical roots: there is nothing to give
       // when the eliminant has no real root; else a system with infinitely many solutions

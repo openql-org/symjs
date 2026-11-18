@@ -497,7 +497,22 @@ impl.orderContains = (o, e) => {
   if (!variables.length) return ![S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((v) => other.has(v));
   let result: boolean | 'unknown' = 'unknown';
   for (const variable of variables) {
-    const ratio = impl.limit(mul(o.expr, pow(other, -1)), variable, point, '+');
+    const quotient = mul(o.expr, pow(other, -1));
+    const t = new Sym('_o');
+    try {
+      const expander = new Expander(t);
+      const shifted = point instanceof Special ? mul(point.name === 'oo' ? 1 : -1, pow(t, -1)) : add(point, t);
+      const lead = expander.leading(subs(quotient, [[variable, shifted]]));
+      if (!lead.c.has(t) && !lead.c.has(expander.L)) {
+        const contained = !lead.e.isPositive;
+        if (result !== 'unknown' && result !== contained) return 'unknown';
+        result = contained;
+        continue;
+      }
+    } catch {
+      // Essential singularities require the limit algorithms.
+    }
+    const ratio = impl.limit(quotient, variable, point, '+');
     if (ratio.has(S.NaN) || ratio.kind === 'Limit') return 'unknown';
     const contained = !ratio.equals(S.Zero);
     if (result !== 'unknown' && result !== contained) return 'unknown';

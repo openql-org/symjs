@@ -151,8 +151,8 @@ describe('the summation fallbacks of SingleDiscreteDistribution', () => {
   });
   it('expectations that are not polynomials', () => {
     const X = Geometric('X', S.Half);
-    // SymPy: oo ((1/2)**(X - 1)*2**X is not combined to 2 here)
-    expect(str(expectation(pow(2, X)))).toBe('Sum((1/2)**(X - 1)*2**X/2, (X, 1, oo))');
+    // Every summand is one, so the infinite expectation diverges (SymPy: oo).
+    expect(str(expectation(pow(2, X)))).toBe('oo');
     // SymPy: Sum(2**(1 - X)*cos(X)/2, (X, 1, oo))
     expect(str(expectation(cos(X)))).toBe('Sum((1/2)**(X - 1)*cos(X)/2, (X, 1, oo))');
   });

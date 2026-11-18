@@ -37,7 +37,7 @@ it('differentiates nested discrete limits and retains matrix derivatives', () =>
   expect(String(sj.doit(diff(nested, y)))).toBe('24');
   expect(String(diff(new Integral([x, x, sj.S.Zero, sj.S.One]), x))).toBe('0');
   const A = sj.MatrixSymbol('A', 2, 2);
-  expect(diff(A, A)).toBeInstanceOf(sj.Derivative);
+  expect(String(diff(A, A))).toBe('PermuteDims(ArrayTensorProduct(I, I), (3)(1 2))');
   expect(diff(A, A, 0)).toBe(A);
   class Unknown extends ExtensionExpr {
     constructor(args: readonly sj.Expr[]) { super('Unknown', args); }
@@ -268,10 +268,10 @@ it('validates differentiation variables before evaluating a derivative', () => {
   expect(String(diff(pow(df, 2), df))).toBe('2*Derivative(f(x), x)');
 });
 
-it('keeps derivatives with respect to matrix variables formal', () => {
+it('keeps matrix element derivatives formal and differentiates matrix variables', () => {
   const A = new sj.MatrixSymbol('A', 2, 2);
   expect(String(diff(sj.Determinant(A), A.at(0, 0)))).toBe('Derivative(Determinant(A), A[0, 0])');
-  expect(String(diff(A, A))).toBe('Derivative(A, A)');
+  expect(String(diff(A, A))).toBe('PermuteDims(ArrayTensorProduct(I, I), (3)(1 2))');
   expect(String(diff(x, A))).toBe('0');
   expect(String(diff(new Integral([x, x, rational(0), rational(1)]), x))).toBe('0');
 });
@@ -285,11 +285,11 @@ it('keeps indexed derivative deltas inside summation bounds', () => {
   expect(() => sj.diff(dependent, a.at(j))).toThrow(sj.NotImplementedError);
 });
 
-it('retains nonscalar differentiation and rejects unsupported scalar derivatives', () => {
+it('evaluates nonscalar differentiation and rejects unsupported scalar derivatives', () => {
   const X = sj.MatrixSymbol('X', 2, 2);
-  expect(sj.diff(X, X)).toBeInstanceOf(sj.Derivative);
+  expect(String(sj.diff(X, X))).toBe('PermuteDims(ArrayTensorProduct(I, I), (3)(1 2))');
   expect(sj.diff(X, X, 0)).toBe(X);
-  expect(sj.diff(x, X)).toBe(sj.S.Zero);
+  expect(sj.diff(x, X).equals(sj.ZeroMatrix(2, 2))).toBe(true);
   expect(() => sj.diff(sj.Tuple(x), x)).toThrow(sj.NotImplementedError);
   const inner = new sj.Integral([x, x]);
   expect(String(sj.diff(new sj.Integral([inner, x, y]), y))).toBe('Integral(x, (x, y))');

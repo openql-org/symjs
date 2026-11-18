@@ -368,6 +368,8 @@ function matches0(v: unknown, expected: string, got: string): boolean {
 
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (normalizeLayout(got) === normalizeLayout(expected)) return true;
+  // Puiseux zero prints as an empty string but still compares equal to scalar zero.
+  if (v instanceof sj.PuiseuxPoly && expected === '0') return v.equals(0);
   // SymPy Monomial equality accepts its exponent tuple, independently of its printed generators.
   if (v instanceof sj.Monomial && expected.startsWith('(')) return matches(new JsTuple([...v.exponents]), expected);
   if (v instanceof JsTuple && v.items.some((item) => item instanceof sj.Monomial) && expected.startsWith('(')) {
@@ -5426,7 +5428,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__add__': (a, [b]) => (Array.isArray(a) && b instanceof sj.ModuleElement ? b.add(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
   '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? (isScalar(a) && b instanceof sj.DMPJs ? b.neg().add(a) : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
-  '.__mul__': (a, [b]) => (b instanceof sj.Point && isScalar(a) ? b.mul(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
+  '.__mul__': (a, [b]) => (b instanceof sj.Point && isScalar(a) ? b.mul(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && (b instanceof sj.PolyMatrix || b instanceof sj.DomainMatrix) ? pythonTypeError(`can't multiply sequence by non-int of type '${b.constructor.name}'`) : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
   '.__truediv__': (a, [b]) => a instanceof sj.Factors ? a.quo(b as sj.Factors | Expr) : (a instanceof Matrix && isScalar(b) ? a.scale(sj.pow(b, -1)) : undefined) ?? (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['exquo'] : ['truediv', 'div', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => (a instanceof sj.Poly ? a.quo(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['quo'] : ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
@@ -6174,7 +6176,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       return fromJs(dunder(normalize(self0), args.map(normalize)));
     }
     if (self0 instanceof sj.DomainMatrix || args[0] instanceof sj.DomainMatrix) {
-      const normalize = (v: unknown): unknown => v instanceof sj.PythonMPQ ? sj.Rational.of(v.numerator, v.denominator) : v instanceof sj.DomainScalar ? v.domain.toSympy(v.element) : v;
+      const normalize = (v: unknown): unknown => v instanceof JsTuple || v instanceof JsList ? plain(v) : v instanceof sj.PythonMPQ ? sj.Rational.of(v.numerator, v.denominator) : v instanceof sj.DomainScalar ? v.domain.toSympy(v.element) : v;
       const left = normalize(self0), right = normalize(args[0]);
       if (left instanceof sj.DomainMatrix && right instanceof sj.DomainMatrix && ['.__add__', '.__sub__', '.__mul__'].includes(c.fn)) {
         const [a, b] = left.unifyFmt([right], 'dense');
@@ -6620,9 +6622,9 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
-  // The empty Puiseux polynomial is the additive identity (p - p = 0);
-  // SymPy's empty printed string omits that value.
-  'sympy.polys.tests.test_puiseux:assert R2.zero == PuiseuxPoly(R1.zero, R2)': '0',
+  // For exponential X >= 0, P(X**2 <= z) = P(X <= sqrt(z)). SymPy includes
+  // the negative preimage: its expression at z=1 is exp(1)-exp(-1) > 1.
+  "sympy.stats.tests.test_continuous_rv:cdf(Exponential('e', 1)**2)(z)": 'Piecewise((1 - exp(-sqrt(z)), z >= 0), (0, True))',
   // sin(x)/x = 1 - x**2/6 + O(x**4), sinh(x)/x = 1 + x**2/6 + O(x**4).
   // The inverse functions have square-root branch points at 1, giving nonzero linear
   // leading terms. Substituting the constant leading argument alone incorrectly gives 0.

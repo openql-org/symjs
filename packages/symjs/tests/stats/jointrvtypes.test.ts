@@ -328,3 +328,10 @@ describe('the kinds of the joint distributions (SymPy is_Continuous, is_Discrete
     expect(s(dens(MultivariateBeta('B', [1, 2]), half, half))).toBe('1');
   });
 });
+
+
+it('keeps indexed matrix parameters out of handmade joint variables', () => {
+  const M = MatrixSymbol('M', 2, 2);
+  const X = JointRV('x', mul(new Indexed([x, S.Zero]), new Indexed([M, S.Zero])));
+  expect(s(dens(X, 2))).toBe('2*M[0]');
+});
