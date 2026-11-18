@@ -10,9 +10,11 @@ import { NonInvertibleMatrixError, NotImplementedError } from '../core/errors';
 import { solvePolySystem } from './polysys';
 import { ask, Q } from '../core/refine';
 import type { ExprLike } from '../core/nodes';
-import { Expr, Add, BoolAtom, Constant, Dummy, Float, Fn, Integral, Mul, Pow, Rational, Rel, S, Special, Sym, impl, isNum } from '../core/nodes';
+import { Expr, Add, BoolAtom, Constant, Dummy, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, mapBottomUp, rebuild, subs, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import { freeSymbols, mapBottomUp, piecewiseFold, rebuild, subs, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import { and, not, or } from '../core/boolalg';
+import { piecewise } from '../core/logic';
 import type { Truth } from '../core/truth';
 import { NoMatch, type NoMatchResult } from '../core/truth';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
@@ -824,6 +826,24 @@ export function solve(e: ExprLike, x?: Sym | Expr, opts: { check?: boolean; cubi
   if (v === undefined) {
     if (syms.length === 0) return [];
     throw new TypeError('solve: specify the symbol to solve for');
+  }
+  const folded = piecewiseFold(f);
+  if (folded instanceof Piecewise && folded.pairs.some(([, condition]) => condition.has(v))) {
+    const solutions: Expr[] = [];
+    let previous: Expr = S.false;
+    for (const [expression, condition] of folded.pairs) {
+      const active = and(condition, not(previous));
+      previous = or(previous, condition);
+      if (active instanceof BoolAtom && !active.value) continue;
+      if (isZeroE(expression)) throw new NotImplementedError('solve: Piecewise equation has an interval of solutions');
+      for (const candidate of solve(expression, v, opts)) {
+        const valid = subs(active, [[v, candidate]]);
+        if (valid instanceof BoolAtom) {
+          if (valid.value) solutions.push(candidate);
+        } else solutions.push(piecewise([candidate, valid], [S.NaN, true]));
+      }
+    }
+    return sortExprs(uniqueKeys(solutions));
   }
   const raw0 = solveRaw(f, v);
   // SymPy: high-order root lists (more than two roots) are not simplified

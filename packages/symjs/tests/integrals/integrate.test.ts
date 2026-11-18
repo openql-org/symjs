@@ -11,6 +11,7 @@ import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
 import { heavisideAtInfinity, realIntegrand } from '../../src/integrals/integrate';
 import * as sjReal from '../../src';
+import { rischHooks } from '../../src/integrals/risch';
 
 // Integrals (integrals/integrate.ts). Expected values are the str() forms printed by SymPy 1.14
 // (p is a positive, q a negative and r a real symbol).
@@ -48,6 +49,38 @@ const moo = P('-oo');
 void [x, y, z, n, k, a, b, c, m, t, pp, qq, rr, conv, aconv, moo, pw];
 
 describe('results equal SymPy 1.14', () => {
+  it('keeps an integral unresolved when the rational integrator cannot provide a primitive', () => {
+    const original = rischHooks.integrate;
+    if (original === undefined) throw new TypeError('integrator expected');
+    expect(String(original(P('gamma(x)'), x))).toBe('Integral(gamma(x), x)');
+    try {
+      rischHooks.integrate = (f, v) => new sj.Integral([f, v]);
+      expect(String(integrate(P('log(x)+1/(x**5-x+1)'), x))).toBe('Integral(log(x) + 1/(x**5 - x + 1), x)');
+    } finally {
+      rischHooks.integrate = original;
+    }
+  });
+  it('integrates overlapping and disconnected Piecewise intervals in branch order', () => {
+    expect(String(integrate(P('Piecewise((x, x < 1), (x**2, True))'), x, [0, 0]))).toBe('0');
+    expect(String(integrate(P('Piecewise((x, x < 1), (x**2, x >= -1))'), x, [-2, 4]))).toBe('39/2');
+    const f = P('Piecewise((1, x < 2), (2, x > 3), (3, True))');
+    expect(String(integrate(f, x, [-2, 4]))).toBe('9');
+    expect(String(integrate(f, x, [4, -2]))).toBe('-9');
+    expect(String(integrate(P('Piecewise((1, x > 0), (-1, x < 0))'), x, [-2, 4]))).toBe('2');
+    expect(String(integrate(P('Piecewise((1, (x > 1) & (x < 2)))'), x, [-2, 4]))).toBe('nan');
+    expect(String(integrate(P('Piecewise((1, (x < 1) | (x > 2)), (2, True))'), x, [0, 3]))).toBe('4');
+    expect(String(integrate(P('Piecewise((1, 2*x < x + 1), (2, True))'), x, [0, 3]))).toBe('5');
+    expect(String(integrate(P('Piecewise((1, x > 0), (0, True))'), x, [sj.oo.neg(), 1]))).toBe('1');
+    expect(String(integrate(P('Piecewise((1, x < 0), (0, True))'), x, [-1, sj.oo]))).toBe('1');
+    expect(String(integrate(P('Piecewise((1, Eq(x, 0)), (0, True))'), x, [sj.oo.neg(), sj.oo]))).toBe('0');
+    expect(String(integrate(P('Piecewise((0, x < oo), (1, True))'), x, [sj.oo.neg(), sj.oo]))).toBe('0');
+    expect(String(integrate(P('Piecewise((gamma(x), x < 1), (0, True))'), x, [2, 0]))).toContain('Integral(');
+    expect(String(integrate(P('Piecewise((gamma(x), x < 1), (0, True))'), x, [0, 2]))).toContain('Integral(');
+    const condition = sj.ITE(sj.Lt(x, 1), sj.S.true, sj.S.false, { evaluate: false });
+    expect(String(integrate(new sj.Piecewise([sj.S.One, condition, sj.S.Zero, sj.S.true]), x, [0, 2]))).toContain('Integral(');
+    expect(String(integrate(P('Piecewise((1, x < 4), (2, x**2 < 1), (0, True))'), x, [0, 2]))).toBe('2');
+    expect(String(integrate(P('Piecewise((1, x > 4), (2, x**2 < 1), (0, True))'), x, [0, 2]))).toContain('Integral(');
+  });
   const cases: [string, () => unknown, string][] = [
     ["sj.integrate(P('sin(a*x)'), x)", () => sj.integrate(P('sin(a*x)'), x), "Piecewise((-cos(a*x)/a, Ne(a, 0)), (0, True))"],
     ["sj.integrate(P('exp(-a*x**2)'), x)", () => sj.integrate(P('exp(-a*x**2)'), x), "Piecewise((sqrt(pi)*erf(sqrt(a)*x)/(2*sqrt(a)), Ne(a, 0)), (x, True))"],
@@ -546,6 +579,7 @@ it('integrates special functions, odd cosine powers and extension components', (
   expect(I('Si(x)')).toBe('x*Si(x) + cos(x)');
   expect(I('tanh(2*x)')).toBe('log(cosh(2*x))/2');
   expect(I('sin(x)**2*cos(x)**3')).toBe('-sin(x)**5/5 + sin(x)**3/3');
+  expect(I('sin(x)**3*cos(x)**2')).toBe('cos(x)**5/5 - cos(x)**3/3');
   expect(I('exp(pi*x**3)')).toBe('Integral(exp(pi*x**3), x)');
   expect(String(integrate(new sj.Quaternion(x, 0, 0, 0), x, [0, 1]))).toBe('1/2 + 0*i + 0*j + 0*k');
 });

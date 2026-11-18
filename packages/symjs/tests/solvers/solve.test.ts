@@ -10,9 +10,19 @@ import { detQuick, diff, type Expr, invQuick, Matrix, nonlinsolve, solveLinearSy
 import { xreplace } from '../../src/core/traverse';
 import { invertEquation, nonlinsolve as nonlinsolveCoordinates } from '../../src/solvers/solve';
 import { at } from '../../src/core/guard';
+import { Piecewise, Rel, S } from '../../src/core/nodes';
 
 const [x, y] = symbols('x y');
 const show = (r: readonly Expr[]): string => `[${r.map(String).join(', ')}]`;
+it('solves Piecewise branches with their ordered domains', () => {
+  expect(show(solve(parse('x-Piecewise((1, y > 0), (0, True))'), x))).toBe('[Piecewise((1, y > 0), (0, True))]');
+  expect(show(solve(new Piecewise([x, S.false, x.add(-1), S.true, x, new Rel('Lt', x, S.Zero)]), x))).toBe('[1]');
+  expect(show(solve(parse('Piecewise((2-x, x <= 2), (x-2, True))'), x))).toBe('[2]');
+  expect(show(solve(parse('Piecewise((2-x, x <= 2), (x-2, True))-1'), x))).toBe('[1, 3]');
+  expect(show(solve(parse('Piecewise(((x-5)**5, x >= 2), (Piecewise(((x-2)**2, x >= 0), (1, True)), True))'), x))).toBe('[5]');
+  expect(show(solve(parse('Piecewise((x**2-4, x < y), (x-2, True))'), x))).toBe('[Piecewise((-2, y > -2), (nan, True)), Piecewise((2, y <= 2), (nan, True)), Piecewise((2, y > 2), (nan, True))]');
+  expect(() => solve(parse('Piecewise((0, x < 0), (1, True))'), x)).toThrow(NotImplementedError);
+});
 it('returns radical quintic solutions and preserves the CRootOf fallback', () => {
   const p = Poly.from(parse('x**5-5*x+12'), [x]);
   const rs = solve(p.asExpr(), x, { check: false });

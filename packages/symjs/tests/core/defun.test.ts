@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { runInNewContext } from 'node:vm';
+import { at } from '../../src/core/guard';
 import * as sj from '../../src';
 import {
   type Expr,
@@ -33,6 +34,24 @@ const g = SymFunction('g');
 const s = (e: unknown): string => str(e as Expr);
 
 describe('defineFunction', () => {
+  it('validates names and arities and uses custom numeric and printing hooks', () => {
+    expect(() => defineFunction('bad-name')).toThrow(SyntaxError);
+    const f = defineFunction('custom', { nargs: [1, 2], latex: (args) => `F(${args.join(',')})`, evalf: (a) => a + 1 });
+    expect(() => f()).toThrow(TypeError);
+    expect(latex(f(x))).toBe('F(x)');
+    const value = f(2);
+    if (!(value instanceof sj.DefinedFunctionCall)) throw new TypeError('a defined function expected');
+    expect(String(value.numericValue(15))).toBe('3.00000000000000');
+  });
+  it('constructs Taylor series from evaluation and partial derivatives', () => {
+    const mysin = defineFunction('mysin', {
+      nargs: 1,
+      eval: (a) => a.equals(0) ? 0 : undefined,
+      fdiff: (args) => sj.cos(at(args, 0)),
+    });
+    expect(String(sj.series(mysin(x), x, 0, 10))).toBe('x - x**3/6 + x**5/120 - x**7/5040 + x**9/362880 + O(x**10)');
+    expect(String(sj.limit(sj.mul(mysin(x), sj.pow(x, -1)), x, 0))).toBe('1');
+  });
   const myf = defineFunction('myf', { expand: { twice: () => undefined } });
   it('differentiates without fdiff like SymPy Function.fdiff', () => {
     expect(s(diff(myf(x), x))).toBe('Derivative(myf(x), x)');
