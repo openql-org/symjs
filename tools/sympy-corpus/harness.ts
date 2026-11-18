@@ -1802,6 +1802,66 @@ function relationArgs(args: unknown[], kw: Record<string, unknown>, op: string):
 }
 
 export const ADAPTERS: Record<string, Adapter> = {
+  checksysodesol: (args, kw) => {
+    noKw(kw);
+    const solutions = args[1];
+    const [valid, residuals] = sj.checksysodesol(asExprList(args[0]), solutions instanceof JsSet ? solutions.items.map(asExpr) : asExprList(solutions));
+    return new JsTuple([valid, new JsList(residuals)]);
+  },
+  dsolve_system: (args, kw) => {
+    const value = args[1] ?? kw['funcs'];
+    const funcs = value === undefined || value === null ? undefined : asExprList(value);
+    if (funcs !== undefined && !funcs.every((f): f is sj.UndefFn => f instanceof sj.UndefFn)) throw new TypeError('expected dependent functions');
+    const ics = kw['ics'];
+    if (ics !== undefined && !(ics instanceof JsDict)) throw new TypeError('expected initial conditions mapping');
+    return fromJs(sj.dsolveSystem(asExprList(args[0]), funcs, args[2] === undefined && kw['t'] === undefined ? undefined : asSym(args[2] ?? kw['t']), ics instanceof JsDict ? new Map(ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)])) : undefined));
+  },
+  linear_ode_to_matrix: (args, kw) => {
+    noKw(kw);
+    const funcs = asExprList(args[1]);
+    if (!funcs.every((f): f is sj.UndefFn => f instanceof sj.UndefFn)) throw new TypeError('expected dependent functions');
+    const [matrices, rhs] = sj.linearOdeToMatrix(asExprList(args[0]), funcs, asSym(args[2]), intArg(args[3]));
+    return new JsTuple([new JsList(matrices), rhs]);
+  },
+  matrix_exp: (args, kw) => {
+    noKw(kw);
+    const matrix = args[0];
+    if (!(matrix instanceof Matrix)) throw new TypeError('expected a matrix');
+    if (args[1] === undefined) return sj.matrixExp(matrix);
+    const z = new sj.Dummy('lambda');
+    return sj.analyticFunc(matrix, sj.exp(sj.mul(asExpr(args[1]), z)), z);
+  },
+  power_representation: (args, kw) => fromJs(sj.powerRepresentation(asExpr(args[0]), asExpr(args[1]), asExpr(args[2]), { zeros: (kw['zeros'] ?? args[3]) === true })),
+  sum_of_squares: (args, kw) => fromJs(sj.sumOfSquares(asExpr(args[0]), asExpr(args[1]), { zeros: (kw['zeros'] ?? args[2]) === true })),
+  ldescent: (args, kw) => {
+    noKw(kw);
+    const result = sj.ldescent(asExpr(args[0]), asExpr(args[1]));
+    return Array.isArray(result) ? new JsTuple(result) : null;
+  },
+  sum_of_three_squares: (args, kw) => {
+    noKw(kw);
+    const result = sj.sumOfThreeSquares(asExpr(args[0]));
+    return Array.isArray(result) ? new JsTuple(result) : null;
+  },
+  match_riccati: (args, kw) => {
+    noKw(kw);
+    const x = asSym(args[2]);
+    const f = args[1];
+    if (!(f instanceof UFnClass)) throw new TypeError('expected an undefined function');
+    return fromJs(sj.matchRiccati(asExpr(args[0]), new sj.UndefFn(f.name, [x]), x));
+  },
+  check_necessary_conds: (args, kw) => (noKw(kw), sj.checkNecessaryConds(intArg(args[0]), asExprList(args[1]).map(intArg))),
+  construct_c_case_2: (args, kw) => (noKw(kw), fromJs(sj.constructCCase2(args[0] as sj.Poly, args[1] as sj.Poly, asSym(args[2]), asExpr(args[3]), intArg(args[4])))),
+  construct_d_case_4: (args, kw) => {
+    noKw(kw);
+    if (!(args[0] instanceof JsDict)) throw new TypeError('expected Laurent coefficient mapping');
+    return fromJs(sj.constructDCase4(new Map(args[0].entries.map(([k, v]) => [intArg(k), asExpr(v)])), intArg(args[1])));
+  },
+  construct_d_case_5: (args, kw) => {
+    noKw(kw);
+    if (!(args[0] instanceof JsDict)) throw new TypeError('expected Laurent coefficient mapping');
+    return fromJs(sj.constructDCase5(new Map(args[0].entries.map(([k, v]) => [intArg(k), asExpr(v)]))));
+  },
   // SymPy returns (None, None) when the expression does not match
   match_real_imag: (args, kw) => {
     noKw(kw);
@@ -1830,12 +1890,29 @@ export const ADAPTERS: Record<string, Adapter> = {
   cornacchia: (args, kw) => (noKw(kw), new JsSet(sj.cornacchia(asExpr(args[0]), asExpr(args[1]), asExpr(args[2])).map((t) => new JsTuple(t)))),
   diop_univariate: (args, kw) => (noKw(kw), diophantineSet(sj.diopUnivariate(asExpr(args[0])))),
   diop_quadratic: (args, kw) => (noKw(kw), diophantineSet(sj.diopQuadratic(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1])))),
-  diop_general_sum_of_squares: (args, kw) => (noKw(kw), diophantineSet(sj.diopGeneralSumOfSquares(asExpr(args[0]), args[1] === undefined ? undefined : intArg(args[1])))),
-  diop_general_sum_of_even_powers: (args, kw) => (noKw(kw), diophantineSet(sj.diopGeneralSumOfEvenPowers(asExpr(args[0]), args[1] === undefined ? undefined : intArg(args[1])))),
+  diop_general_sum_of_squares: (args, kw) => {
+    for (const key of Object.keys(kw)) if (key !== 'limit') throw new Unsupported(`kwargs ${key}`);
+    const limit = kw['limit'] ?? args[1];
+    return diophantineSet(sj.diopGeneralSumOfSquares(asExpr(args[0]), limit === undefined ? undefined : asExpr(limit).equals(S.Infinity) ? Infinity : intArg(limit)));
+  },
+  diop_general_sum_of_even_powers: (args, kw) => {
+    for (const key of Object.keys(kw)) if (key !== 'limit') throw new Unsupported(`kwargs ${key}`);
+    const limit = kw['limit'] ?? args[1];
+    return diophantineSet(sj.diopGeneralSumOfEvenPowers(asExpr(args[0]), limit === undefined ? undefined : asExpr(limit).equals(S.Infinity) ? Infinity : intArg(limit)));
+  },
   diop_solve: (args, kw) => {
     noKw(kw);
     const r = sj.diopSolve(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]));
-    return Array.isArray(r) && !Array.isArray(r[0]) ? new JsTuple(r) : diophantineSet(r);
+    if (r === sj.EmptySet) {
+      const [symbols] = sj.classifyDiop(asExpr(args[0]));
+      return new JsTuple(symbols.map(() => null));
+    }
+    return Array.isArray(r) && r.length > 0 && !Array.isArray(r[0]) ? new JsTuple(r) : diophantineSet(r);
+  },
+  diop_ternary_quadratic_normal: (args, kw) => {
+    noKw(kw);
+    const result = sj.diopTernaryQuadraticNormal(asExpr(args[0]), args[1] === true);
+    return result === sj.EmptySet ? new JsTuple([null, null, null]) : Array.isArray(result) ? new JsTuple(result) : none(result);
   },
   prime_as_sum_of_two_squares: (args, kw) => {
     noKw(kw);
@@ -3646,7 +3723,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.aseries(asExpr(self), x, n, Boolean(kw['hir']));
   },
   classify_ode: (args, kw) => {
-    noKw(kw);
+    for (const key of Object.keys(kw)) if (key !== 'ics') throw new Unsupported(`kwargs ${key}`);
+    const ics = kw['ics'];
+    if (ics !== undefined && !(ics instanceof JsDict)) throw new TypeError('expected initial conditions mapping');
     const eq = asExpr(args[0]);
     let fx = args[1] === undefined ? undefined : asExpr(args[1]);
     if (!fx) {
@@ -3658,7 +3737,8 @@ export const ADAPTERS: Record<string, Adapter> = {
       walk(eq);
       fx = [...found.values()][0];
     }
-    return new JsTuple(sj.classifyOde(eq, fx as never));
+    if (!(fx instanceof sj.UndefFn)) throw new TypeError('expected a dependent function');
+    return new JsTuple(sj.classifyOde(eq, fx, ics instanceof JsDict ? { ics: ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)]) } : {}));
   },
   line_integrate: (args, kw) => (noKw(kw), sj.lineIntegrate(asExpr(args[0]), args[1] as sj.Curve, (args[2] as JsList).items.map(asSym))),
   minimal_polynomial: (args, kw) => {
@@ -4050,16 +4130,18 @@ export const ADAPTERS: Record<string, Adapter> = {
   transpose: (args, kw) => (noKw(kw), args[0] instanceof Matrix ? args[0].transpose() : sj.transpose(asExpr(args[0]))),
   homogeneous_order: (args, kw) => (noKw(kw), none(sj.homogeneousOrder(asExpr(args[0]), ...args.slice(1).map(asExpr)))),
   dsolve: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'ics' && k !== 'hint') throw new Unsupported(`kwargs ${k}`);
-    const ics = kw['ics'] instanceof JsDict ? (kw['ics'] as JsDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr]) : undefined;
-    if (args[0] instanceof JsTuple || args[0] instanceof JsList) {
-      // a system of ODEs
-      const fs = args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items.map(asExpr) : undefined;
-      return new JsList(sj.dsolve(args[0].items.map(asExpr), fs) as Expr[]);
-    }
-    const hint = kw['hint'] === undefined ? undefined : String(kw['hint']);
-    const r = sj.dsolve(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), { ...(ics ? { ics } : {}), ...(hint ? { hint } : {}) });
-    return Array.isArray(r) ? new JsList(r) : r;
+    const eqs = args[0];
+    const eq = eqs instanceof JsTuple || eqs instanceof JsList ? eqs.items.map(asExpr) : asExpr(eqs);
+    const value = args[1] ?? kw['func'];
+    const funcs = value === undefined || value === null ? undefined : value instanceof JsTuple || value instanceof JsList ? value.items.map(asExpr) : asExpr(value);
+    const ics = kw['ics'];
+    if (ics !== undefined && !(ics instanceof JsDict)) throw new TypeError('expected initial conditions mapping');
+    const options: sj.DsolveOptions = {};
+    if (ics instanceof JsDict) options.ics = ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)]);
+    if (kw['hint'] !== undefined || args[2] !== undefined) options.hint = String(kw['hint'] ?? args[2]);
+    if (kw['xi'] !== undefined) options.xi = asExpr(kw['xi']);
+    if (kw['eta'] !== undefined) options.eta = asExpr(kw['eta']);
+    return fromJs(sj.dsolve(eq, funcs, options));
   },
 
   // ---- polynomials
@@ -5002,7 +5084,11 @@ ADAPTERS['.print_nonzero'] = (args, kw, self) => (noKw(kw), sj.printNonzero(self
 ADAPTERS['minpoly'] = ADAPTERS['minimal_polynomial']!;
 
 // diophantine returns a Python set of tuples (a list of arrays in symjs)
-ADAPTERS['diophantine'] = (args, kw) => new JsSet(sj.diophantine(asExpr(args[0]), { permute: kw['permute'] === true }).map((t) => new JsTuple(t)));
+ADAPTERS['diophantine'] = (args, kw) => {
+  const syms = kw['syms'];
+  if (syms !== undefined && !(syms instanceof JsTuple || syms instanceof JsList)) throw new TypeError('syms must be a sequence');
+  return new JsSet(sj.diophantine(asExpr(args[0]), { permute: kw['permute'] === true, ...(syms === undefined ? {} : { syms: syms.items.map(asSym) }) }).map((t) => new JsTuple(t)));
+};
 
 ADAPTERS['Indexed'] = (args, kw) => {
   noKw(kw);

@@ -351,3 +351,23 @@ it('classifies commuting linear systems and validates their dimensions', () => {
   expect(() => sj.linodesolveType(A,t,A)).toThrow(RangeError);
   expect(() => sj.linodesolveType(sj.Matrix.of([[t,1],[0,0]]),t)).toThrow(NotImplementedError);
 });
+
+it('extracts all derivative matrices with the leading-order sign convention', () => {
+  const x = new sj.Sym('x'), f = new sj.UndefFn('f', [x]);
+  const d = new sj.Derivative([f, x, sj.S.One]);
+  const [matrices, rhs] = sj.linearOdeToMatrix([sj.Eq(d, sj.add(f, 2))], [f], x, 1);
+  expect(matrices.map(String)).toEqual(['Matrix([[1]])', 'Matrix([[1]])']);
+  expect(String(rhs)).toBe('Matrix([[2]])');
+  expect(() => sj.linearOdeToMatrix([d], [f], x, 0)).toThrow(sj.ODEOrderError);
+  expect(() => sj.linearOdeToMatrix([sj.pow(f, 2)], [f], x, 0)).toThrow(sj.ODENonlinearError);
+  expect(() => sj.linearOdeToMatrix([f], [f], x, -1)).toThrow(RangeError);
+  expect(() => sj.linearOdeToMatrix([f], [f], x, 0.5)).toThrow(RangeError);
+});
+
+import { readFileSync } from 'node:fs';
+import { runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import type { TestCase } from '../../../../tools/sympy-corpus/tests-harness';
+const matrixCases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/tests-corpus/solvers.json', import.meta.url), 'utf8'));
+for (const [i, c] of matrixCases.filter((c) => c.fn === 'linear_ode_to_matrix' || (c.fn === 'matrix_exp' && c.raises === undefined) || (c.fn === 'checksysodesol' && (c.line === 203 || c.line === 2490))).entries()) {
+  it(`${c.test}:${c.line} (${i})`, () => expect(['pass', 'equivalent']).toContain(runTestCase(c).status));
+}
