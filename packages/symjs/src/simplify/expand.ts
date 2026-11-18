@@ -258,7 +258,8 @@ function perfectPower(n: bigint): [bigint, number] | undefined {
 /** SymPy log._eval_expand_log. */
 function expandLogNode(e: Expr, force: boolean, factor: boolean): Expr {
   if (!(e instanceof Fn && e.name === 'log')) return e;
-  const a = first(e.args);
+  const a = first(e.args), base = e.args[1];
+  if (base !== undefined) return mul(expandLogNode(log(a), force, factor), pow(expandLogNode(log(base), force, factor), -1));
   if (a instanceof Rational) {
     // perfect powers are removed (log(8) = 3*log(2)) and a fraction is split
     if (!a.isInteger) return add(log(Rational.of(a.p)), mul(-1, log(Rational.of(a.q))));

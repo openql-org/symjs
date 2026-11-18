@@ -731,7 +731,7 @@
         {
           "file": "matrices.json",
           "cases": 5093,
-          "bytes": 9169026
+          "bytes": 9170375
         }
       ],
       "auditFile": "matrices.audit.json",

@@ -45,6 +45,28 @@ const FACTS = [
   'zero',
 ] as const;
 
+it.each([
+  ['besseli(k, r)', 'extended_real', true], ['bessely(k, p)', 'extended_real', true],
+  ['airyai(r)', 'extended_real', true], ['airybiprime(i)', 'extended_real', false],
+  ['erf(ep)', 'positive', true], ['erf(en)', 'negative', true], ['erf(c)', 'finite', true],
+  ['erfc(I)', 'real', false], ['erf2(I, 0)', 'real', false], ['fresnelc(r)', 'finite', true],
+  ['gamma(ne+1/2)', 'positive', true], ['gamma(ne-1/2)', 'positive', false],
+  ['loggamma(np)', 'real', false], ['polygamma(2, -2.5)', 'negative', true],
+  ['polygamma(-2, -2.5)', 'positive', undefined], ['polygamma(0, I)', 'real', undefined],
+  ['zeta(1+p)', 'finite', true], ['zeta(x)', 'finite', undefined],
+] as const)('finds the %s %s fact', (source, predicate, expected) => {
+  expect(fact(parse(source), predicate)).toBe(expected);
+});
+
+it('distinguishes multivariate gamma poles from regular points', () => {
+  const expression = (a: sj.ExprLike) => sj.fn('multigamma', [a, 3], { evaluate: false });
+  expect(fact(expression(2), 'real')).toBe(true);
+  expect(fact(expression(sj.rational(1, 3)), 'real')).toBe(true);
+  expect(fact(expression(-1), 'real')).toBe(false);
+  expect(fact(expression(new sj.Float(-1)), 'real')).toBe(false);
+  expect(fact(expression(sj.symbol('u')), 'real')).toBeUndefined();
+});
+
 /**
  * Expressions (raw: unevaluated) and SymPy 1.14's value of each fact of FACTS in order, each
  * asked of a new expression: T True, F False, . None.
@@ -1022,4 +1044,82 @@ it('classifies an imaginary floating product before the rational conversion hook
   } finally {
     Object.assign(impl, saved);
   }
+});
+
+it('infers gamma signs from the floor on negative real intervals', () => {
+  const positiveGamma = (z: Expr) => fact(sj.fn('gamma', [z], { evaluate: false }), 'positive');
+  expect(positiveGamma(sj.rational(-5, 2))).toBe(false);
+  expect(positiveGamma(parse('x + y'))).toBeUndefined();
+  expect(positiveGamma(parse('x + 1/2'))).toBeUndefined();
+  expect(fact(sj.fn('multigamma', [new sj.Float(0.4), 3], { evaluate: false }), 'real')).toBe(true);
+});
+
+it('uses numerical gamma signs when the floor evaluator is unavailable', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const evaluator = Object.getOwnPropertyDescriptor(impl, 'fn');
+  try {
+    delete impl.fn;
+    expect(fact(sj.fn('gamma', [sj.rational(-5, 2)], { evaluate: false }), 'positive')).toBe(false);
+  } finally {
+    if (evaluator) Object.defineProperty(impl, 'fn', evaluator);
+  }
+});
+
+it('queries special-function assumptions at real and undetermined arguments', () => {
+  const p = sj.symbol('p', { positive: true });
+  const n = sj.symbol('n', { integer: true });
+  const r = sj.symbol('r', { real: true });
+  const f = sj.symbol('f', { real: true, integer: false });
+  const w = sj.symbol('w');
+  const cases: readonly [sj.FnName, string, readonly sj.ExprLike[], boolean | undefined][] = [
+    ['erf', 'real', [p], true],
+    ['erf', 'real', [w], undefined],
+    ['erf', 'imaginary', [w], undefined],
+    ['erf', 'finite', [S.Infinity], true],
+    ['erfc', 'real', [p], true],
+    ['erfc', 'real', [w], undefined],
+    ['erf2', 'extended_real', [r, p], true],
+    ['erf2', 'extended_real', [w, r], undefined],
+    ['beta', 'real', [r, p], true],
+    ['beta', 'real', [w, r], undefined],
+    ['betainc', 'real', [r, p, 0, 1], true],
+    ['betainc', 'real', [w, r, 0, 1], undefined],
+    ['besselj', 'extended_real', [n, w], undefined],
+    ['gamma', 'real', [-1], false],
+    ['gamma', 'real', [new sj.Float(-1)], false],
+    ['gamma', 'real', [new sj.Float(2)], true],
+    ['gamma', 'real', [new sj.Float(-1.5)], true],
+    ['gamma', 'real', [f], true],
+    ['gamma', 'positive', [p], true],
+    ['loggamma', 'real', [p], true],
+    ['loggamma', 'real', [w], undefined],
+    ['polygamma', 'real', [p, p], true],
+    ['polygamma', 'positive', [1, r], true],
+    ['polygamma', 'positive', [2, p], false],
+    ['polygamma', 'positive', [1, w], undefined],
+    ['polygamma', 'negative', [1, r], false],
+    ['polygamma', 'negative', [2, p], true],
+    ['polygamma', 'negative', [p, w], undefined],
+  ];
+  for (const [name, property, args, expected] of cases) {
+    expect(fact(sj.fn(name, args, { evaluate: false }), property), `${name}.${property}(${args.join(', ')})`).toBe(expected);
+  }
+});
+
+it('recognizes factorials and exact values of unevaluated elementary calls', () => {
+  const k = sj.symbol('k', { integer: true, nonnegative: true });
+  const n = sj.symbol('n', { negative: true, integer: false });
+  const w = sj.symbol('w');
+  expect(fact(new sj.Fn('factorial', [k.add(3)]), 'composite')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [S.Two]), 'composite')).toBe(false);
+  expect(fact(new sj.Fn('factorial', [w]), 'composite')).toBeUndefined();
+  expect(fact(new sj.Fn('factorial', [k]), 'real')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [n]), 'real')).toBe(true);
+  expect(fact(new sj.Fn('factorial', [w]), 'real')).toBeUndefined();
+  expect(fact(new sj.Fn('sinh', [sj.mul(2, S.I, S.Pi)]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('cosh', [sj.mul(Rational.of(5, 2), S.I, S.Pi)]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('acosh', [S.One]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('sinc', [S.Pi]), 'zero')).toBe(true);
+  expect(fact(new sj.Fn('sec', [sj.mul(S.Half, S.Pi)]), 'finite')).toBe(false);
+  expect(fact(new sj.Fn('csc', [S.Zero]), 'finite')).toBe(false);
 });

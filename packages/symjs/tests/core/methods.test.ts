@@ -46,6 +46,18 @@ const f = SymFunction('f');
 const s = (e: unknown): string => (e instanceof Expr ? str(e) : 'None');
 const pairStr = (p: readonly unknown[]): string => `(${p.map(s).join(', ')})`;
 
+it('allows integer-order J and I at zero and rejects the logarithmic Y and K branches', () => {
+  expect(isMeromorphic(sj.besselj(2, x), x, 0)).toBe(true);
+  expect(isMeromorphic(sj.besseli(2, x), x, 0)).toBe(true);
+  expect(isMeromorphic(sj.bessely(2, x), x, 0)).toBe(false);
+  expect(isMeromorphic(sj.besselk(2, x), x, 0)).toBe(false);
+  expect(isMeromorphic(sj.besselk(2, x), x, 1)).toBe(true);
+  expect(isMeromorphic(sj.besselj(x, x), x, 1)).toBe(false);
+  expect(isMeromorphic(sj.besselj(1, x), x, sj.oo)).toBe(false);
+  expect(isMeromorphic(sj.besselj(2, log(x)), x, 0)).toBe('unknown');
+  expect(isMeromorphic(sj.bessely(2, add(x, y)), x, 0)).toBe('unknown');
+});
+
 describe('keepCoeff and argsCnc', () => {
   it('_keep_coeff', () => {
     expect(String(sj.keepCoeff(E('x + 1'), E('2')))).toBe('2*(x + 1)');
@@ -820,4 +832,14 @@ it('extracts additive terms from the remainder of a factored expression', () => 
   expect(String(sj.extractAdditively(sum.mul(x.add(1)).add(sum).add(2).add(x), sum))).toBe('x*(x + y) + x + 2');
   const partial = sum.mul(x.add(1)).add(sum.mul(2));
   expect(String(sj.extractAdditively(partial, sum))).toBe('x*(x + y) + x + y');
+});
+
+it('checks a varying second argument for meromorphicity', () => {
+  expect(sj.isMeromorphic(sj.atan2(y, x), x, 0)).toBe(false);
+});
+
+it('passes directions to the local expansion', () => {
+  const step = sj.SingularityFunction(x, 0, 0);
+  expect(sj.nseries(step, x, 0, 6, { cdir: 1 })).toBe(sj.S.One);
+  expect(sj.nseries(step, x, 0, 6, { cdir: -1 })).toBe(sj.S.Zero);
 });

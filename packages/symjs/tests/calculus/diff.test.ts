@@ -160,9 +160,7 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(cast(sj.MatMul(X, X), sj.MatrixExpr).at(0, 0), X.at(0, 0)))).toBe('2*X[0, 0]');
     expect(s(sj.diff(sj.Trace(sj.MatMul(X, X)), X.at(0, 1)))).toBe('2*X[1, 0]');
     expect(s(sj.diff(sj.pow(X.at(0, 0), 3), X.at(0, 0), 2))).toBe('6*X[0, 0]');
-    // SymPy 1.14: Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1)); symjs has no KroneckerDelta range and keeps delta**2
-    // (a positive power of KroneckerDelta is the delta: SymPy prints Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1)))
-    expect(s(sj.diff(sj.Trace(Z), Z.at(0, 0)))).toBe('Sum(KroneckerDelta(0, i), (i, 0, n - 1))');
+    expect(s(sj.diff(sj.Trace(Z), Z.at(0, 0)))).toBe('Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1))');
   });
 });
 
@@ -355,4 +353,11 @@ it('treats a symbol in a bound summand as independent', async () => {
   const s = await import('../../src');
   const x = s.symbol('x');
   expect(s.diff(new s.Concrete('Sum', [x, x, s.S.One, s.S.Two]), x)).toBe(s.S.Zero);
+});
+
+it('differentiates a sum with a bound variable and checks explicit polynomial partials', async () => {
+  const { diff, fdiff, legendre, Sum, symbols } = await import('../../src');
+  const [i, x, n] = symbols('i x n');
+  expect(diff(Sum(i, [i, 0, 3]), i).equals(0)).toBe(true);
+  expect(() => fdiff(legendre(n, x), 1)).toThrow(RangeError);
 });

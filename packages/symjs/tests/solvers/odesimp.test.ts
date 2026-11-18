@@ -124,3 +124,11 @@ it('solves function and derivative initial conditions', () => {
   expect(() => sj.solveIcs([sol], [fx], [C1], new Map([[fx,1]]))).toThrow(RangeError);
   expect(() => sj.solveIcs([parse('Eq(f(x),C1)')], [fx], [C1], new Map([[f(0),1],[f(1),2]]))).toThrow(RangeError);
 });
+
+it('determines constants in implicit and underdetermined solutions', () => {
+  const implicit = parse('Eq(x*cos(f(x)) + f(x)**3/3, C1)');
+  expect(String(sj.solveIcs([implicit],[fx],[C1],new Map([[f(0),1]])).get(C1))).toBe('1/3');
+  const explicit = parse('Eq(f(x),C1*sin(x)+C2*cos(x))');
+  expect([...sj.solveIcs([explicit],[fx],[C1,C2],new Map([[f(0),1]])).keys()]).toEqual([C2]);
+  expect(() => sj.solveIcs([parse('Eq(f(x),C1)')],[fx],[C1],new Map([[sj.Subs(sj.derivative(fx,[[x,1]]),x,0),0]]))).toThrow(RangeError);
+});

@@ -14,6 +14,44 @@ import * as sj from '../../../src';
 import { acosh, asec, asech, atan, atan2, beta, binomial, catalan, ceiling, diff, digamma, E, E1, erf, erf2, erf2inv, erfc, erfcinv, erfi, erfinv, evalf, expandFunc, factorial, factorial2, ff, Float, float, fresnelc, fresnels, harmonic, LambertW, Li, li, lowergamma, Max, Min, NotImplementedError, parse, polygamma, pow, Rational, Rem, rf, S, subfactorial, Sym, symbols, toComplex, trigamma, uppergamma, zeta } from '../../../src';
 import { impl } from '../../../src/core/nodes';
 
+it('expands binomial coefficients with explicit integer complementary indices', () => {
+  const n = new Sym('n', { integer: true });
+  const x = new Sym('x');
+  const { add, mul } = sj;
+  const xSquared = pow(x, 2);
+  const cases = [
+    [n, add(n, -1), n],
+    [n, add(n, -2), mul(S.Half, n, add(n, -1))],
+    [n, add(n, -3), mul(Rational.of(1, 6), n, add(n, -2), add(n, -1))],
+    [add(x, 1), x, add(x, 1)],
+    [x, add(x, -1), x],
+    [add(x, 1), add(x, -1), mul(S.Half, x, add(x, 1))],
+    [add(xSquared, 1), xSquared, add(xSquared, 1)],
+  ] as const;
+  for (const [upper, lower, expected] of cases) {
+    const expression = binomial(upper, lower);
+    expect(expandFunc(expression).equals(expected), String(expression)).toBe(true);
+  }
+  const heldBinomial = (upper: sj.ExprLike, lower: sj.ExprLike) =>
+    sj.fn('binomial', [upper, lower], { evaluate: false });
+  expect(expandFunc(heldBinomial(x, add(x, 1)))).toBe(S.Zero);
+  expect(expandFunc(heldBinomial(x, -2))).toBe(S.Zero);
+  expect(expandFunc(heldBinomial(x, x))).toBe(S.One);
+  expect(expandFunc(heldBinomial(-1, -2))).toBe(S.Zero);
+  expect(expandFunc(heldBinomial(5, 2)).equals(10)).toBe(true);
+});
+
+it('evaluates symbolic binomial indices and checks Catalan arity', () => {
+  const n = new Sym('n', { integer: true });
+  const m = new Sym('m', { integer: true, nonnegative: true });
+  const neg = new Sym('neg', { integer: true, negative: true });
+  const zero = new Sym('zero', { zero: true });
+  expect(binomial(n, zero)).toBe(S.One);
+  expect(binomial(neg, neg)).toBe(S.Zero);
+  expect(binomial(m, sj.add(m, 2))).toBe(S.Zero);
+  expect(() => Reflect.apply(catalan, undefined, [n, m])).toThrow(TypeError);
+});
+
 const [x] = symbols('x');
 const y = new Sym('y');
 // ---- table harness: each case is [kind, SymPy source, str() of the SymPy 1.14 result or [re, im]] ----
@@ -664,8 +702,8 @@ describe('special functions: cases outside the tables', () => {
   it('represents order derivatives symbolically', () => {
     // SymPy: Derivative(polygamma(x, y), x) and meijerg expressions for the incomplete gamma functions
     expect(String(diff(P('polygamma(x, y)'), x))).toBe('Derivative(polygamma(x, y), x)');
-    expect(String(diff(P('lowergamma(x, y)'), x))).toBe('-log(y)*uppergamma(x, y) + gamma(x)*polygamma(0, x) - meijerg(((), (1, 1)), ((0, 0, x), ()), y)');
-    expect(String(diff(P('uppergamma(x, y)'), x))).toBe('log(y)*uppergamma(x, y) + meijerg(((), (1, 1)), ((0, 0, x), ()), y)');
+    expect(String(diff(P('lowergamma(x, y)'), x))).toBe('-meijerg(((), (1, 1)), ((0, 0, x), ()), y) - log(y)*uppergamma(x, y) + gamma(x)*polygamma(0, x)');
+    expect(String(diff(P('uppergamma(x, y)'), x))).toBe('meijerg(((), (1, 1)), ((0, 0, x), ()), y) + log(y)*uppergamma(x, y)');
   });
 });
 
@@ -1129,4 +1167,15 @@ it('provides argument derivatives without loading the hypergeometric module', as
     expect(() => partial([a, z], 0)).toThrow('w.r.t. s');
     expect(String(partial([a, z], 1))).toContain('exp(-z)');
   }
+});
+
+it('evaluates polygamma continued to nonintegral and complex orders', () => {
+  expect(String(evalf(P('polygamma(pi, 3)'), 10))).toBe('0.1169314564');
+  expect(String(evalf(P('polygamma(I, 1)'), 10))).toBe('-3.109856569 + 1.89089016*I');
+  expect(String(evalf(P('polygamma(I, I)'), 10))).toBe('6.332362889 + 45.92828268*I');
+});
+
+it('differentiates explicitly unevaluated digamma and trigamma calls', () => {
+  expect(diff(digamma(x, { evaluate: false }), x).equals(polygamma(1, x))).toBe(true);
+  expect(diff(trigamma(x, { evaluate: false }), x).equals(polygamma(2, x))).toBe(true);
 });

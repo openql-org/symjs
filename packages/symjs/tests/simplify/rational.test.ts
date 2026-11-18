@@ -271,3 +271,8 @@ it('cancels scalar factors while preserving the noncommuting word', async () => 
   expect(s.cancel(product).key).toBe(product.key);
   expect(String(s.cancel(s.mul(x.add(1), x.add(1).pow(-1)), { domain: 'QQ' }))).toBe('1');
 });
+
+it('preserves cancellation ratios that contain Laurent generators after expansion', () => {
+  expect(String(cancel(P('2**(1/2 - a)/(x + 1)')))).toBe('sqrt(2)/(2**a*(x + 1))');
+  expect(String(cancel(P('(x + 1)/(x + 2**(1/2 - a))')))).toBe('(x + 1)/(x + sqrt(2)/2**a)');
+});

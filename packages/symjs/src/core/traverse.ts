@@ -471,8 +471,6 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     const changingVariable = variables.some((v) => v.key === old.key);
     const validVariable = nw instanceof Sym || nw instanceof UndefFn;
     if (changingVariable && !validVariable) return new SubsNode([e, old, nw]);
-    const introduced = [...nw.freeSymbols()].filter((v) => !old.has(v));
-    if (introduced.some((v) => variables.some((w) => w.key === v.key) && e.expr.has(v))) return new SubsNode([e, old, nw]);
     if (changingVariable && nw.key !== old.key && e.expr.has(nw)) return new SubsNode([e, old, nw]);
   }
   if (e instanceof SubsNode) return e.subsSelf(old, nw, (x) => subsOne(x, old, nw));
@@ -519,6 +517,10 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     return piecewise(...pairs);
   }
   const args = e.args.map((a) => subsOne(a, old, nw));
+  if (e instanceof Derivative && old instanceof Sym && e.expr.key !== old.key && first(args).key !== e.expr.key) {
+    const introduced = new Set([...nw.freeSymbols()].map((v) => v.key));
+    if (e.variableCount.some(([v]) => introduced.has(v.key) && !old.has(v) && e.expr.has(v))) return new SubsNode([e, old, nw]);
+  }
   return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
 }
 

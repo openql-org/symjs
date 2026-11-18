@@ -639,3 +639,13 @@ it('separates constant commutative factors in a noncommutative product', () => {
   const a = new Sym('a', { commutative: false });
   expect(String(product(sj.mul(x, a), [k, 1, 3]))).toBe('x**3*a**3');
 });
+
+it('drops the indicator only when the entire delta range is summed', async () => {
+  const { KroneckerDelta } = await import('../../src');
+  const k = new Sym('k'), m = new Sym('m');
+  const d = KroneckerDelta(k, m, [0, 5]);
+  expect(String(summation(d, [k, 0, 5]))).toBe('1');
+  expect(String(summation(d, [k, -1, 6]))).toBe('1');
+  expect(String(summation(d, [k, 1, 5]))).toContain('Piecewise');
+  expect(String(summation(d, [k, 0, 4]))).toContain('Piecewise');
+});

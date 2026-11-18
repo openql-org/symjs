@@ -60,60 +60,62 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // 24 KiB to the root namespace. Automatic algebraic-atom classification also
 // links the assumption engine, adding up to 72 KiB to polynomial consumers.
 // The manual integration fallback adds about 4 KiB to consumers of integrate.
+// Matrix coercion, analytic functions, index contractions and scalar matrix derivatives
+// add up to 3.2 KiB to the Matrix import and 4.7 KiB to the root namespace.
 const CASES = [
-  ['core', 'Rational', 209],
-  ['core', 'parse, str', 227],
-  ['core', 'parse, diff, expand, str, latex', 227],
-  ['core', '*', 346],
+  ['core', 'Rational', 219],
+  ['core', 'parse, str', 237],
+  ['core', 'parse, diff, expand, str, latex', 237],
+  ['core', '*', 366],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   // Meijer G derivatives, support intervals and branch-preserving integral rewrites.
-  ['special', '*', 422],
+  ['special', '*', 451],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1086],
+  ['simplify', 'simplify', 1133],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
   // methods and the polynomial-ring extensions add to it (measured 694 KiB).
-  ['polys', 'factor', 795],
+  ['polys', 'factor', 812],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1087],
-  ['solvers', 'solve', 1175],
-  ['solvers', 'dsolve', 1190],
-  ['sets', '*', 388],
-  ['matrices', 'Matrix', 967],
-  ['printing', 'pretty', 248],
-  ['discrete', '*', 308],
-  ['strategies', '*', 221],
+  ['calculus', 'integrate', 1134],
+  ['solvers', 'solve', 1232],
+  ['solvers', 'dsolve', 1258],
+  ['sets', '*', 410],
+  ['matrices', 'Matrix', 1013],
+  ['printing', 'pretty', 257],
+  ['discrete', '*', 319],
+  ['strategies', '*', 230],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
-  ['parsing', '*', 908],
-  ['unify', '*', 257],
+  ['parsing', '*', 950],
+  ['unify', '*', 264],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 664],
-  ['holonomic', 'exprToHolonomic', 1267],
-  ['geometry', '*', 1152],
-  ['vector', '*', 1249],
-  ['stats', '*', 1420],
+  ['algebras', 'Quaternion', 686],
+  ['holonomic', 'exprToHolonomic', 1319],
+  ['geometry', '*', 1196],
+  ['vector', '*', 1301],
+  ['stats', '*', 1484],
   // Diagram layout, pretty grids and Xy-pic text generation.
-  ['categories', '*', 442],
+  ['categories', '*', 456],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1127],
-  ['crypto', '*', 373],
-  ['liealgebras', '*', 353],
+  ['plotting', '*', 1179],
+  ['crypto', '*', 386],
+  ['liealgebras', '*', 366],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
-  ['codegen', '*', 441],
+  ['codegen', '*', 462],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
-  ['index', 'Rational', 209],
+  ['index', 'Rational', 219],
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Tensor axis normalization, indexed broadcasting and matrix-array conversions.
   // Polynomial remainder sequences, Hensel lifting and module orders add up to 2 KiB.
-  ['index', '*', 2876],
+  ['index', '*', 2960],
   // Differential geometry includes symbolic inversion and curvature calculations.
-  ['diffgeom', '*', 1200],
+  ['diffgeom', '*', 1202],
 ];
 
 async function measure(entry, names) {

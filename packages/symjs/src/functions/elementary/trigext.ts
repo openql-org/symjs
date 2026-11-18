@@ -28,7 +28,7 @@ import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
 import type { Mpc } from '../../numeric/mpfun';
 import type { Evaluator } from './elementary';
-import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, log, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
+import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, im, log, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
 
 export const cot = (x: ExprLike): Expr => fn('cot', [x]);
 export const sec = (x: ExprLike): Expr => fn('sec', [x]);
@@ -590,7 +590,12 @@ const evalAtanh: Evaluator = (x) => {
   if (couldExtractMinusSign(x)) return neg(atanh(neg(x)));
   if (isFn(x, 'tanh')) {
     const t = first(x.args);
-    return t.freeSymbols().size === 0 && t.kind !== 'Fn' ? t : undefined;
+    if (!t.isNumber) return undefined;
+    if (isReal(t) === true) return t;
+    const strip = fn('floor', [div(mul(2, im(t)), pi)]);
+    if (!(strip instanceof Rational) || !strip.isInteger) return undefined;
+    const turns = strip.p + (strip.p % 2n === 0n ? 0n : 1n);
+    return add(t, mul(Rational.of(-turns, 2), I, pi));
   }
   return undefined;
 };

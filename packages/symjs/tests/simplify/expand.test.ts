@@ -410,3 +410,8 @@ it('retains an irreducible complex square root and handles unevaluated special c
   expect(expandMultinomial(zeroPower)).toBe(s.S.Zero);
   expect(expandLog(new s.Fn('log', [s.S.One])).key).toBe(s.S.Zero.key);
 });
+
+it('expands the base of an unevaluated logarithm', async () => {
+  const { fn } = await import('../../src');
+  expect(String(expandLog(fn('log', [x, 10], { evaluate: false })))).toBe('log(x)/log(10)');
+});

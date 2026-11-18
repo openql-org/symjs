@@ -11,7 +11,7 @@ import { SubsNode } from '../core/subsnode';
 import { NoMatch, type NoMatchResult } from '../core/truth';
 import { NotImplementedError } from '../core/errors';
 import { freeSymbols, rebuild, some, subs, xreplace } from '../core/traverse';
-import { coeff } from '../core/methods';
+import { asNumerDenom, coeff } from '../core/methods';
 import { numAdd, numCmp } from '../core/num';
 import { linearEqToMatrix } from '../matrices/linsys';
 import { diff } from '../calculus/diff';
@@ -86,11 +86,11 @@ export function classifyPde(equation: ExprLike, func?: Expr): string[] {
  * pde_1st_linear_variable_coeff). Higher orders are explicitly unsupported,
  * rather than assigned a partial solution.
  */
-export function pdsolve(equation: ExprLike, func?: Expr, hint = 'default'): Expr {
+export function pdsolve(equation: ExprLike, func?: Expr, hint = 'default', solvefun = SymFunction('F')): Expr {
   const eq = asEquation(equation), f = dependent(eq, func), m = linearPde(eq, f);
   if (!m) throw new NotImplementedError('pdsolve: only first-order linear PDEs are implemented');
   if (hint !== 'default' && !classifyPde(eq, f).includes(hint)) throw new RangeError(`PDE does not match hint ${hint}`);
-  if (!m.constant) return variableCoeff(m);
+  if (!m.constant) return variableCoeff(m, solvefun);
   const { x, y, a, b, c, forcing } = m;
   const norm = simplify(add(pow(a, 2), pow(b, 2)));
   const eta = add(mul(b, x), mul(-1, a, y));
@@ -104,7 +104,7 @@ export function pdsolve(equation: ExprLike, func?: Expr, hint = 'default'): Expr
   const inverse: [Expr, Expr][] = singularChart
     ? [[x, mul(a, t)], [y, add(mul(b, t), mul(-1, eta0, pow(a, -1)))]]
     : [[x, mul(add(mul(a, t), mul(b, eta0)), pow(norm, -1))], [y, mul(add(mul(b, t), mul(-1, a, eta0)), pow(norm, -1))]];
-  let solution = SymFunction('F')(eta);
+  let solution = solvefun(eta);
   if (!forcing.equals(0)) {
     const integrand = mul(exp(mul(rate, t)), xreplace(forcing, inverse), pow(scale, -1));
     const primitive = hint.endsWith('_Integral')
@@ -125,17 +125,17 @@ function newSymbols(a: Expr, ...others: Expr[]): Sym[] {
   return [...freeSymbols(a)].filter((s) => s instanceof Sym).filter((s) => !old.has(s));
 }
 /** SymPy _simplify_variable_coeff: the integration constant becomes F(funcarg). */
-function simplifyVariableCoeff(sol: Expr, constants: readonly Sym[], funcarg: Expr, eta: Sym): Expr {
-  return simplify(subs(subs(sol, [[first(constants), SymFunction('F')(funcarg)]]), [[eta, funcarg]]));
+function simplifyVariableCoeff(sol: Expr, constants: readonly Sym[], funcarg: Expr, eta: Sym, solvefun: ReturnType<typeof SymFunction>): Expr {
+  return simplify(subs(subs(sol, [[first(constants), solvefun(funcarg)]]), [[eta, funcarg]]));
 }
 /**
  * SymPy pde_1st_linear_variable_coeff: a(x,y)*fx + b(x,y)*fy + c(x,y)*f = G(x,y).
  * With xi = x and eta the constant of the characteristic dy/dx = b/a, the
  * PDE becomes the linear ODE a*du/dxi + c*u = G, solved by dsolve.
  */
-function variableCoeff(m: LinearPde): Expr {
+function variableCoeff(m: LinearPde, F: ReturnType<typeof SymFunction>): Expr {
   const { f, x, y, a: b, b: c, c: d, forcing: e } = m;
-  const F = SymFunction('F'), eta = new Sym('eta');
+  const eta = new Sym('eta');
   if (d.equals(0) && (b.equals(0) || c.equals(0))) {
     // b*fx = e or c*fy = e
     return b.equals(0) ? Eq(f, add(F(x), integrate(mul(e, pow(c, -1)), y))) : Eq(f, add(F(y), integrate(mul(e, pow(b, -1)), x)));
@@ -145,19 +145,22 @@ function variableCoeff(m: LinearPde): Expr {
     const [k, v, w] = c.equals(0) ? [b, x, y] : [c, y, x];
     const gv = new UndefFn(f.name, [v]);
     const plode = add(mul(diff(gv, v), k), mul(d, gv), mul(-1, e));
-    const sol = odeSolution(plode, gv).rhs;
-    return Eq(f, simplifyVariableCoeff(sol, newSymbols(sol, plode, x, y), w, eta));
+    const sol = odeSolution(plode, gv, '1st_linear').rhs;
+    return Eq(f, simplifyVariableCoeff(sol, newSymbols(sol, plode, x, y), w, eta, F));
   }
   const dx = new UndefFn('d', [x]);
   const h = subs(mul(c, pow(b, -1)), [[y, dx]]);
   const sol = odeSolution(add(diff(dx, x), mul(-1, h)), dx);
   // (a first-order ODE solution has one integration constant)
-  const etat = subs(first(solve(sol, first(newSymbols(sol, h, x, y)))), [[dx, y]]);
+  const invariant = subs(first(solve(sol, first(newSymbols(sol, h, x, y)))), [[dx, y]]);
+  const [numerator, denominator] = asNumerDenom(invariant);
+  const etat = denominator instanceof Rational ? numerator : invariant;
   const ysub = first(solve(add(eta, mul(-1, etat)), y));
   const fx = new UndefFn(f.name, [x]);
-  const deq = subs(add(mul(b, diff(fx, x)), mul(d, fx), mul(-1, e)), [[y, ysub]]);
+  const characteristic = (coefficient: Expr) => subs(coefficient, [[y, ysub]]);
+  const deq = add(mul(characteristic(b), diff(fx, x)), mul(characteristic(d), fx), mul(-1, characteristic(e)));
   const final = odeSolution(deq, fx, '1st_linear').rhs;
-  return Eq(f, simplifyVariableCoeff(final, newSymbols(final, deq, x, y), etat, eta));
+  return Eq(f, simplifyVariableCoeff(final, newSymbols(final, deq, x, y), etat, eta, F));
 }
 /** Verify an explicit PDE solution by substituting and differentiating it. */
 export function checkpdesol(equation: ExprLike, solutionIn: ExprLike, func?: Expr): [boolean, Expr] {

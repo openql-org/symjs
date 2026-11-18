@@ -2764,9 +2764,9 @@ function factorOverExtension(e: Expr, ext: true | readonly Expr[], domain?:Domai
     return mul(n,pow(d,-1));
   }
   const generator=domain===undefined?undefined:defined(polyConstructionHooks.algebraic,'algebraic field data')(domain).generator;
-  const vars=extensionGenerators([e],generator);
-  if(!vars.length)return e;
-  const p=Poly.from(e,vars,domain?{domain}:{extension:ext===true||ext.some((v)=>v.key===S.true.key)?true:ext});
+  const vars=extensionGenerators([numer],generator);
+  if(!vars.length)return numer;
+  const p=Poly.from(numer,vars,domain?{domain}:{extension:ext===true||ext.some((v)=>v.key===S.true.key)?true:ext});
   const [c,fs] = p.factorList();
   return mul(c,...fs.map(([f,k]) => pow(f.asExpr(),k)));
 }

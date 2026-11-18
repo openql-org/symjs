@@ -453,3 +453,46 @@ describe('period (SymPy TrigonometricFunction.period)', () => {
     expect(() => sj.period(parse('besselj(1, x)'), x)).toThrow(TypeError);
   });
 });
+
+it('reduces a numeric tanh argument to the principal atanh strip', () => {
+  const inverse = (argument: sj.ExprLike): sj.Expr => sj.atanh(sj.fn('tanh', [argument], { evaluate: false }));
+  expect(String(inverse(sj.parse('-11*I')))).toBe('-11*I + 4*I*pi');
+  expect(String(inverse(sj.parse('11*I')))).toBe('-4*I*pi + 11*I');
+  expect(inverse(2).equals(2)).toBe(true);
+  expect(String(inverse(x))).toBe('atanh(tanh(x))');
+  const imaginary = new sj.Integral([sj.SymFunction('h')(x), x, S.Zero, S.One]).mul(S.I);
+  const evaluated = inverse(imaginary);
+  expect(String(evaluated)).toContain('atanh(tanh(');
+});
+
+it('evaluates signed arguments of the inverse hyperbolic and sinc functions', () => {
+  const cases = [
+    ['asinh(-x)', '-asinh(x)'],
+    ['acosh(1/2)', 'I*pi/3'],
+    ['atanh(2*I)', 'I*atan(2)'],
+    ['acoth(0)', 'I*pi/2'],
+    ['acoth(2*I)', '-I*acot(2)'],
+    ['sinc(-x)', 'sinc(x)'],
+  ] as const;
+  for (const [input, expected] of cases) expect(String(parse(input))).toBe(expected);
+});
+
+it('uses the partial derivative registered for each reciprocal or inverse function', () => {
+  const cases = [
+    ['cot', '-cot(x)**2 - 1'],
+    ['sec', 'tan(x)*sec(x)'],
+    ['csc', '-cot(x)*csc(x)'],
+    ['coth', '-1/sinh(x)**2'],
+    ['sech', '-tanh(x)*sech(x)'],
+    ['csch', '-coth(x)*csch(x)'],
+    ['asinh', '1/sqrt(x**2 + 1)'],
+    ['acoth', '1/(1 - x**2)'],
+    ['acot', '-1/(x**2 + 1)'],
+    ['asec', '1/(x**2*sqrt(1 - 1/x**2))'],
+    ['acsc', '-1/(x**2*sqrt(1 - 1/x**2))'],
+    ['asech', '-1/(x*sqrt(1 - x**2))'],
+    ['acsch', '-1/(x**2*sqrt(1 + x**(-2)))'],
+    ['sinc', 'cos(x)/x - sin(x)/x**2'],
+  ] as const;
+  for (const [name, expected] of cases) expect(String(sj.diff(sj.fn(name, [x], { evaluate: false }), x))).toBe(expected);
+});

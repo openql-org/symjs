@@ -317,7 +317,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:93", () => {
+  it("test_Add:93", () => {
     const [w, x, y, z] = symbols('w x y z');
     const unicode = pprintUseUnicode(false);
     try {
@@ -326,7 +326,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:94", () => {
+  it("test_Add:94", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
@@ -335,7 +335,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:95", () => {
+  it("test_Add:95", () => {
     const [x, y, z, t] = symbols('x y z t');
     const unicode = pprintUseUnicode(false);
     try {

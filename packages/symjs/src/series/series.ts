@@ -7,16 +7,17 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Derivative, Integral, Fn, Limit, Order, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
+import { Add, Derivative, ExtensionExpr, Float, Integral, Fn, Limit, Order, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul, isMulLike } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
-import { mapBottomUp, xreplace as subs } from '../core/traverse';
-import { log, sin } from '../functions/elementary/elementary';
+import { mapBottomUp, some, xreplace as subs } from '../core/traverse';
+import { cos, fn, log, sin } from '../functions/elementary/elementary';
 import { bernoulliNumber } from '../functions/special/special';
+import { besselLocalExpansion } from '../functions/special/bessel';
 import { EssentialSingularity, Expander, SeriesError, type PS, isE } from './puiseux';
-import { isPositive, isReal } from '../core/assumptions';
-import { at, cast, first, getOrThrow } from '../core/guard';
+import { isNegative, isPositive, isReal, isZero } from '../core/assumptions';
+import { at, cast, first, getOrThrow, last } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
 import { DefinedFunctionCall } from '../core/defun';
@@ -137,6 +138,10 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
  * the expansion in t written back in x, with O(x**(-n), (x, oo)).
  */
 function seriesAtInfinity(e: Expr, x: Sym, sign: 1 | -1, n: number): Expr {
+  if (e instanceof Fn) {
+    const special = specialSeriesAtInfinity(e, x, sign, n);
+    if (special !== undefined) return special;
+  }
   const t = new Sym('_t_inf', { positive: true });
   const st = series(subs(e, [[x, mul(sign, pow(t, -1))]]), t, 0, n);
   const back = (u: Expr) => subs(u, [[t, mul(sign, pow(x, -1))]]);
@@ -167,7 +172,100 @@ function seriesAtInfinity(e: Expr, x: Sym, sign: 1 | -1, n: number): Expr {
   return new Add([...parts, order]);
 }
 
-export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr } = {}): Expr {
+/** Asymptotic expansions with exponential or oscillatory factors kept outside their series. */
+function specialSeriesAtInfinity(e: Fn, x: Sym, sign: 1 | -1, n: number): Expr | undefined {
+  const z = last(e.args), name = e.name;
+  const point = sign === 1 ? S.Infinity : S.NegativeInfinity;
+  const inverse = mul(sign, pow(x, -1));
+  const order = (power: ExprLike): Order => new Order([pow(inverse, power), x, point]);
+  if (name === 'lowergamma' && sign === 1 && first(e.args).key === x.key && !z.has(x)) {
+    const terms: Expr[] = [];
+    let denominator: Expr = S.One;
+    for (let k = 0; k < n - 1; k++) {
+      terms.push(mul(pow(z, k), pow(denominator, -1)));
+      denominator = mul(denominator, add(x, k + 1));
+    }
+    return add(mul(pow(z, x), exp(neg(z)), pow(x, -1), add(...terms)), new Order([mul(exp(mul(x, log(z))), pow(x, -n)), x, point]));
+  }
+  if (!['besseli', 'besselk', 'erf', 'erfc', 'erfi', 'Ei', 'expint', 'Si', 'Ci', 'fresnelc', 'fresnels'].includes(name)) return undefined;
+  const t = new Sym('_asym', { positive: true });
+  const argument = subs(z, [[x, mul(sign, pow(t, -1))]]);
+  const [coefficient, exponent] = leadtermExact(argument, t);
+  if (!exponent.isNegative || isReal(coefficient) !== true) return undefined;
+  if (!argument.equals(mul(coefficient, pow(t, exponent)))) return undefined;
+  const degree = -exponent.value;
+  const negative = isNegative(coefficient) === true;
+  const inverseZ = mul(pow(coefficient, -1), pow(inverse, neg(exponent)));
+  if (name === 'besseli' || name === 'besselk') {
+    const nu = first(e.args);
+    const reverse = negative && name === 'besseli';
+    const reciprocal = negative ? neg(inverseZ) : inverseZ;
+    const terms: Expr[] = [];
+    let c: Expr = reverse ? exp(mul(S.I, S.Pi, nu)) : negative ? neg(S.I) : S.One;
+    for (let k = 0; k < n; k++) {
+      terms.push(mul(c, pow(reciprocal, Rational.of(2 * k + 1, 2))));
+      const j = Rational.of(2 * k + 1, 2);
+      c = mul(c, add(j, neg(nu)), add(j, nu), Rational.of(name === 'besseli' || negative ? 1 : -1, 2 * (k + 1)));
+    }
+    const front = mul(pow(2, S.NegHalf), pow(S.Pi, name === 'besseli' ? S.NegHalf : S.Half));
+    return mul(front, exp(name === 'besseli' && !reverse ? z : neg(z)), add(...terms, new Order([pow(reciprocal, Rational.of(2 * n + 1, 2)), x, point])));
+  }
+  if (name === 'erf' || name === 'erfc' || name === 'erfi') {
+    if (isPositive(coefficient) !== true) return undefined;
+    const terms: Expr[] = [];
+    let c: Expr = S.One;
+    for (let k = 0; (2 * k + 1) * degree < n; k++) {
+      terms.push(mul(c, pow(inverseZ, 2 * k + 1)));
+      c = mul(c, Rational.of((name === 'erfi' ? 1 : -1) * (2 * k + 1), 2));
+    }
+    const tail = mul(pow(S.Pi, S.NegHalf), exp(mul(name === 'erfi' ? 1 : -1, pow(z, 2))), add(...terms, order(n)));
+    return name === 'erf' ? add(1, neg(tail)) : name === 'erfi' ? add(tail, neg(S.I)) : tail;
+  }
+  if (name === 'Ei' || name === 'expint') {
+    const terms: Expr[] = [];
+    let c: Expr = S.One;
+    for (let k = 0; k * degree < n; k++) {
+      terms.push(mul(c, pow(inverseZ, k)));
+      c = mul(c, name === 'Ei' ? k + 1 : neg(add(first(e.args), k)));
+    }
+    return mul(pow(z, -1), exp(name === 'Ei' ? z : neg(z)), add(...terms, order(n)));
+  }
+  const fresnel = name === 'fresnelc' || name === 'fresnels';
+  const phase = fresnel ? mul(S.Half, S.Pi, pow(z, 2)) : z;
+  const odd: Expr[] = [], even: Expr[] = [];
+  let c: Expr = fresnel ? pow(S.Pi, -1) : S.One;
+  const step = fresnel ? 2 : 1;
+  for (let k = 0; (step * k + 1) * degree < n; k++) {
+    const term = mul(k % 4 < 2 ? 1 : -1, c, pow(inverseZ, step * k + 1));
+    (k % 2 === 0 ? odd : even).push(term);
+    c = mul(c, step * k + 1, fresnel ? pow(S.Pi, -1) : S.One);
+  }
+  if (fresnel) {
+    const sine = name === 'fresnels';
+    return add(negative ? S.NegHalf : S.Half, mul(sine ? cos(phase) : sin(phase), add(...(sine ? odd.map(neg) : odd))),
+      neg(mul(sine ? sin(phase) : cos(phase), add(...even))), order(n));
+  }
+  const si = name === 'Si';
+  return add(si ? mul(negative ? S.NegHalf : S.Half, S.Pi) : negative ? mul(S.I, S.Pi) : S.Zero,
+    mul(si ? -1 : 1, si ? cos(phase) : sin(phase), add(...odd, order(n))),
+    neg(mul(si ? sin(phase) : cos(phase), add(...even, order(n)))));
+}
+
+const isSingularity = (e: Expr): boolean => e instanceof ExtensionExpr && e.name === 'SingularityFunction';
+
+/** Replace a singularity function by its local form at the expansion point. */
+function singularityLocalForm(e: Expr, x: Sym, fromLeft: boolean): Expr {
+  return mapBottomUp(e, (term) => {
+    if (!isSingularity(term) || !term.has(x)) return term;
+    const shift = add(first(term.args), neg(at(term.args, 1)));
+    const power = at(term.args, 2);
+    const origin = subs(shift, [[x, S.Zero]]);
+    if (isZero(power) === true && isZero(origin) === true) return fromLeft ? S.Zero : S.One;
+    return isNegative(power) !== true && isPositive(origin) === true ? pow(shift, power) : S.Zero;
+  });
+}
+
+export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr; local?: boolean } = {}): Expr {
   // sinc(u) = sin(u)/u has a removable singularity at u = 0
   let e = mapBottomUp(sympify(ex), (t) => {
     if (!(t instanceof Fn && t.name === 'sinc')) return t;
@@ -176,6 +274,12 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   });
   const x00 = sympify(x0x);
   const atZero = x00 instanceof Rational && x00.isZero;
+  if (opts.local && atZero && some(e, isSingularity)) {
+    if (e instanceof Add) return add(...e.args.map((term) => series(term, x, x00, n, dir, opts)));
+    const local = singularityLocalForm(e, x, dir === '-');
+    const expansion = series(local, x, x00, n, dir, { logx: opts.logx });
+    return e instanceof Mul && local.has(x) ? add(expansion, new Order([pow(x, n)])) : expansion;
+  }
   if (opts.logx && atZero) {
     // SymPy logx: log(x) stands for the given symbol; x**c = exp(c*log(x)) for symbolic c
     e = mapBottomUp(e, (t) => (t instanceof Pow && t.base.key === x.key && !(t.exp instanceof Rational) && !t.exp.has(x) ? exp(mul(t.exp, log(x))) : t));
@@ -197,6 +301,17 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   if (x0 instanceof Special && x0.name === 'zoo' && isLaurentPolynomial(e, x)) return e;
   if (x0 instanceof Special) throw new NotImplementedError('series: expansion at this point is not supported');
   if (!e.has(x)) return e;
+  if (n >= 0 && atZero && dir === '+' && opts.logx === undefined && e instanceof Fn) {
+    if ((e.name === 'li' || e.name === 'Li') && first(e.args).key === x.key) {
+      // Ei(log(x)) is expanded at negative infinity in powers of 1/log(x).
+      const logarithm = log(x);
+      const terms = Array.from({ length: n }, (_, k) => mul(Rational.of(factorialOf(k)), pow(logarithm, -k)));
+      const tail = mul(x, pow(logarithm, -1), add(...terms, new Order([pow(logarithm, -n), x, S.Zero])));
+      return e.name === 'Li' ? add(tail, neg(fn('li', [2]))) : tail;
+    }
+    const bessel = besselSeriesAtZero(e, x, n);
+    if (bessel !== undefined) return bessel;
+  }
   const t = new Sym('_s', { positive: true });
   const ex0 = new Expander(t);
   // from the left: x = x0 - t with t -> 0+, written in powers of (x0 - x)
@@ -232,9 +347,69 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
       }
       remainder = mul(remainder, back(logarithms));
     }
+    if (e instanceof Fn && ['bessely', 'besselk', '_eis'].includes(e.name)) remainder = mul(pow(lin, ps.order), log(base));
   }
   const ord = x0 instanceof Rational && x0.isZero ? new Order([remainder]) : new Order([remainder, x, x0]);
   return add(body, ord);
+}
+
+/** Preserve the Frobenius powers and logarithmic coefficients of a monomial argument. */
+function besselSeriesAtZero(e: Fn, x: Sym, n: number): Expr | undefined {
+  const name = e.name;
+  if (name !== 'besselj' && name !== 'besseli' && name !== 'bessely' && name !== 'besselk') return undefined;
+  const nu = first(e.args), z = last(e.args);
+  if (!(nu instanceof Rational && nu.isInteger && !nu.isNegative && z.has(x))) return undefined;
+  const [coefficient, exponent] = leadterm(z, x);
+  if (!(exponent instanceof Rational || exponent instanceof Float) || !exponent.isPositive) return undefined;
+  const degree = exponent.toNumber();
+  if (isPositive(coefficient) !== true) return undefined;
+  if (!z.equals(mul(coefficient, pow(x, exponent)))) {
+    if (nu.isZero && (name === 'bessely' || name === 'besselk')) return composedOrderZeroBessel(name, z, x, degree, n);
+    if ((name === 'besselj' || name === 'besseli') && nu.isPositive && nu.value * degree < n && (nu.value + 2) * degree >= n) {
+      const r = seriesBody(series(mul(S.Half, z), x, 0, n));
+      return add(mul(pow(r, nu), pow(fn('gamma', [add(nu, 1)]), -1)), new Order([pow(x, n)]));
+    }
+    return undefined;
+  }
+  const monomial = { base: x, coefficient, exponent };
+  const body = besselLocalExpansion(name, nu, z, degree, n, monomial);
+  const logarithmic = (name === 'bessely' || name === 'besselk') && n >= nu.value * degree;
+  return add(body, new Order([mul(pow(x, n), logarithmic ? log(x) : S.One)]));
+}
+
+function seriesBody(expansion: Expr): Expr {
+  const terms = expansion instanceof Add ? expansion.args : [expansion];
+  return add(...terms.filter((term) => !(term instanceof Order)));
+}
+
+/** Compose the logarithmic and digamma parts of the order-zero Frobenius series. */
+function composedOrderZeroBessel(name: 'bessely' | 'besselk', z: Expr, x: Sym, degree: number, n: number): Expr {
+  const y = name === 'bessely';
+  const r = mul(S.Half, z);
+  const scaled = mul(y ? mul(2, pow(S.Pi, -1)) : -1, log(r), fn(y ? 'besselj' : 'besseli', [0, z]));
+  const logarithmic = series(scaled, x, 0, n);
+  const terms = logarithmic instanceof Add ? logarithmic.args : [logarithmic];
+  const groups = new Map<string, { power: Expr; coefficients: Expr[] }>();
+  const extra: Expr[] = [];
+  function collectTerm(term: Expr, expandCoefficient: boolean): void {
+    const factors = term instanceof Mul ? term.args : [term];
+    const power = factors.find((factor) => factor.key === x.key || factor instanceof Pow && factor.base.key === x.key) ?? S.One;
+    const coefficient = mul(...factors.filter((factor) => factor !== power));
+    const group = groups.get(power.key) ?? { power, coefficients: [] };
+    group.coefficients.push(expandCoefficient ? expandMul(coefficient) : coefficient);
+    groups.set(power.key, group);
+  }
+  for (const term of terms) if (!(term instanceof Order)) collectTerm(term, true);
+  let c = y ? pow(S.Pi, -1) : S.Half;
+  for (let k = 0; 2 * k * degree < n; k++) {
+    const psi = mul(2, fn('polygamma', [0, k + 1]));
+    const body = expandMul(mul(c, seriesBody(series(pow(r, 2 * k), x, 0, n))));
+    if (body instanceof Add) extra.push(mul(y ? -1 : 1, psi, body));
+    else collectTerm(mul(y ? -1 : 1, psi, body), false);
+    c = mul(c, Rational.of(y ? -1 : 1, (k + 1) ** 2));
+  }
+  return add(...extra, ...[...groups.values()].map(({ power, coefficients }) => mul(power, add(...coefficients))),
+    new Order([mul(log(x), pow(x, n))]));
 }
 
 /** A sum of terms c*x**k with c free of x and integers k. */
@@ -329,16 +504,57 @@ function leadtermExact(ex: ExprLike, x: Sym): [Expr, Rational] {
  */
 export const leadingTermRules: Partial<Record<string, (e: Fn, x: Sym, cdir: Expr) => Expr | undefined>> = {};
 
+for (const name of ['besselj', 'besseli', 'bessely', 'besselk'] as const) leadingTermRules[name] = (e, x, cdir) => {
+  const nu = first(e.args), z = last(e.args);
+  if (!z.has(x) || nu.has(x)) return undefined;
+  const [c, power] = leadterm(z, x);
+  if (!(power instanceof Rational) || power.isZero) return undefined;
+  const leading = mul(c, pow(x, power));
+  if (power.isNegative) {
+    if (name !== 'besselk' && name !== 'besseli') return undefined;
+    if (name === 'besseli' && isNegative(mul(c, pow(cdir.equals(0) ? S.One : cdir, power))) === true) return e;
+    return name === 'besselk' ? mul(pow(S.Pi, S.Half), exp(neg(leading)), pow(mul(2, leading), S.NegHalf))
+      : mul(exp(leading), pow(mul(2, S.Pi, leading), S.NegHalf));
+  }
+  if (name === 'besselj' || name === 'besseli') return mul(pow(leading, nu), pow(2, neg(nu)), pow(fn('gamma', [add(nu, 1)]), -1));
+  if (nu.equals(0)) {
+    const logTerm = add(log(leading), S.EulerGamma, neg(log(2)));
+    return name === 'besselk' ? neg(logTerm) : mul(2, pow(S.Pi, -1), logTerm);
+  }
+  if (!(nu instanceof Rational)) return undefined;
+  if (name === 'bessely' && nu.isNegative && !nu.isInteger) {
+    const angle = mul(S.Pi, nu);
+    const cosine = cos(angle);
+    const order = cosine.equals(0) ? neg(nu) : nu;
+    return mul(fn('csc', [angle]), cosine.equals(0) ? -1 : cosine, pow(mul(S.Half, leading), order),
+      pow(fn('gamma', [add(1, order)]), -1));
+  }
+  const absOrder = Rational.of(nu.p < 0n ? -nu.p : nu.p, nu.q);
+  const magnitude = mul(fn('gamma', [absOrder]), pow(mul(S.Half, leading), neg(absOrder)));
+  return name === 'besselk' ? mul(S.Half, magnitude) : mul(-1, pow(S.Pi, -1), magnitude);
+};
+
+for (const name of ['erf', 'erfc', 'erfi'] as const) leadingTermRules[name] = (e, x, cdir) => {
+  const [coefficient, exponent] = leadterm(last(e.args), x);
+  if (isNegative(exponent) !== true) return undefined;
+  if (name === 'erfi') return e;
+  const c = mul(coefficient, pow(cdir.equals(0) ? S.One : cdir, exponent));
+  if (isPositive(c) === true) return name === 'erf' ? S.One : S.Zero;
+  if (isNegative(c) === true) return name === 'erf' ? S.NegOne : S.Two;
+  return undefined;
+};
+
 /**
  * SymPy as_leading_term(x, cdir=...): the leading term as x -> 0 from the direction cdir (0 when
  * not given: the side does not matter, or x approaches 0 from above).
  */
 export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike; logx?: ExprLike } = {}): Expr {
-  const e = sympify(ex);
+  let e = sympify(ex);
   if ((e instanceof Derivative || e instanceof Integral) && impl.doit) {
     const evaluated = impl.doit(e);
     if (evaluated.key !== e.key) return asLeadingTerm(evaluated, x, opts);
   }
+  if (some(e, isSingularity)) e = singularityLocalForm(e, x, sympify(opts.cdir ?? 0).equals(-1));
   if (e instanceof DefinedFunctionCall) {
     const bounded = new Order([S.One, x, S.Zero]);
     if (e.args.some((arg) => {
@@ -371,7 +587,7 @@ function directionalLeadingTerm(e: Expr, x: Sym): Expr {
     const [coefficient, exponent] = leadterm(e, x);
     return mul(coefficient, pow(x, exponent));
   } catch (error) {
-    if (!(error instanceof SeriesError) || !(e instanceof Fn)) throw error;
+    if (!(error instanceof SeriesError) || !(e instanceof Fn) || e.name === 'arg') throw error;
     const value = impl.limit(e, x, S.Zero, '+');
     if (value instanceof Limit || value instanceof Special || value.key === S.Zero.key || value.has(x)) throw error;
     return value;
@@ -440,6 +656,8 @@ const SERIES_TERMS: Readonly<Record<string, (n: number, x: Expr) => Expr>> = {
   acsc: (n, x) => n === 0 ? add(mul(S.Pi, S.Half), mul(neg(S.I), log(2)), mul(S.I, log(x))) : n < 0 || n % 2 === 1 ? S.Zero : mul(S.I, halfRisingTerm(n, x)),
   asech: (n, x) => n === 0 ? log(mul(2, pow(x, -1))) : n < 0 || n % 2 === 1 ? S.Zero : neg(halfRisingTerm(n, x)),
   acsch: (n, x) => n === 0 ? log(mul(2, pow(x, -1))) : n < 0 || n % 2 === 1 ? S.Zero : mul((n / 2) % 2 === 1 ? 1 : -1, halfRisingTerm(n, x)),
+  fresnelc: (n, x) => n < 0 ? S.Zero : mul(pow(mul(S.Half, S.Pi), 2 * n), pow(x, 4 * n + 1),
+    Rational.of(n % 2 === 0 ? 1n : -1n, factorialOf(2 * n) * BigInt(4 * n + 1))),
 };
 
 /**
