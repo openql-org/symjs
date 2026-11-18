@@ -27,7 +27,7 @@ export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; ac
 
 const REPLAY_STATE = new Set([
   'tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix', 'polyReplay',
-  'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation',
+  'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation', 'dummyIndex',
 ]);
 
 export function testCaseKey(c: TestCase): string {

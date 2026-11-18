@@ -1883,3 +1883,12 @@ it('makes a polynomial monic over the field of its coefficient ring (SymPy to_fi
   expect(String(sj.factor(parse('1.5*sin(x)**2 - 2.5')))).toBe('1.5*sin(x)**2 - 2.5');
   expect(String(sj.factor(parse('1.5*sqrt(x) + 1.5*x**pi')))).toContain('1.5');
 });
+
+it('counts powers of a generator that is no symbol and keeps unexpanded generators (SymPy)', () => {
+  const [x, y] = symbols('x y');
+  expect(String(sj.Poly.from(parse('3**(2*x)'), [parse('3**x')]))).toBe("Poly((3**x)**2, 3**x, domain='ZZ')");
+  expect(String(sj.Poly.from(parse('3**(2*x) + 3**x + 1'), [parse('3**x')]))).toBe("Poly((3**x)**2 + (3**x) + 1, 3**x, domain='ZZ')");
+  expect(String(sj.Poly.from(parse('exp(2*x) + exp(x)'), [parse('exp(x)')]))).toBe("Poly((exp(x))**2 + (exp(x)), exp(x), domain='ZZ')");
+  expect(String(sj.Poly.from(pow(add(x, y), 3), [add(x, y)], { expand: false }))).toBe("Poly((x + y)**3, x + y, domain='ZZ')");
+  expect(String(sj.Poly.from(pow(add(x, -1), 2), [add(x, -1)], { expand: false }))).toBe("Poly((x - 1)**2, x - 1, domain='ZZ')");
+});

@@ -617,10 +617,17 @@ class Capture:
             owner = getattr(function, "__self__", None)
             if not name.startswith(".") and isinstance(owner, sympy.MatrixBase):
                 record["boundMatrix"] = extract.ser(owner)
-            if name == "classof":
+            if name in ("classof", "srepr"):
                 for arg, tree in zip(args, record["args"]):
                     if tree["t"] == "Matrix":
                         tree["matrixClass"] = type(arg).__name__
+            if name == "srepr":
+                # srepr shows what the corpus trees leave out: the index of a Dummy and an explicit commutative=True
+                for arg, tree in zip(args, record["args"]):
+                    if isinstance(arg, sympy.Dummy):
+                        tree["dummyIndex"] = str(arg.dummy_index)
+                    if isinstance(arg, sympy.Symbol) and arg._assumptions_orig.get("commutative") is True:
+                        tree["assume"] = {**tree["assume"], "commutative": True}
             if name.startswith("."):
                 record["self"] = extract.ser(receiver)
             if self.category == "core" and name == ".diff" and isinstance(receiver, sympy.core.function.AppliedUndef):

@@ -198,6 +198,10 @@ export class FormalPowerSeries extends SeriesBase {
     return add(...seriesTerms(this.core, this.x, this.x0, k + 1, this.direction).terms.filter((t) => !lower.has(t.key)).map((t) => this.withSymb(t)));
   }
 
+  /** SymPy LatexPrinter._print_FormalPowerSeries: the infinite representation. */
+  printLatex(print: (e: Expr) => string): string {
+    return print(this.infinite);
+  }
   /** The coefficient sum, including the terms before the recurrence starts. */
   get infinite(): Expr {
     const k = new Dummy('k');

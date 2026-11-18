@@ -61,6 +61,8 @@ export interface PolyConstructionOptions extends PolynomialDomainOptions {
   extension?: boolean | ExprLike | readonly ExprLike[];
   gaussian?: boolean;
   pure?: boolean;
+  /** Keep the expression as given instead of expanding it first (SymPy expand=False). */
+  expand?: boolean;
 }
 /** Options of Poly.intervals: the real bounds of the roots and the fast refinement of SymPy. */
 export interface IntervalsOptions {
@@ -447,7 +449,7 @@ export class Poly {
     const modulus = modulusOption(opts);
     const requestedDomain = opts.domain === undefined ? undefined : String(opts.domain);
     if (opts.domain !== undefined && opts.field !== undefined) throw new OptionError("'field' option is not allowed together with 'domain'");
-    const e = expand(sympify(ex));
+    const e = opts.expand === false ? sympify(ex) : expand(sympify(ex));
     // over RR the generators are the symbols (numbers such as sqrt(3) become coefficients)
     const real = requestedDomain === 'R' || requestedDomain === 'RR' || requestedDomain === 'CC';
     const algebraicDomain = /^(?:ZZ|QQ)(?:_I|<)/.test(requestedDomain ?? '');
@@ -464,10 +466,12 @@ export class Poly {
           monom[i] = at(monom, i) + 1;
           continue;
         }
-        if (f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && f.exp.isPositive) {
-          const j = gs.findIndex((g) => g.key === f.base.key);
+        if (f instanceof Pow) {
+          // SymPy decompose_power: the integer part of the exponent counts the generator (3**(2*x) is (3**x)**2)
+          const [base, power] = decomposePower(f);
+          const j = power > 0 ? gs.findIndex((g) => g.key === base.key) : -1;
           if (j >= 0) {
-            monom[j] = at(monom, j) + Number(f.exp.p);
+            monom[j] = at(monom, j) + power;
             continue;
           }
         }

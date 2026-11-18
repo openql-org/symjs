@@ -1010,8 +1010,12 @@ function printSet(e: Expr, cls: string): string {
       // SymPy _print_set: the items separated by ';' with the decimal comma
       return `\\left\\{${[...e.args].sort((u, v) => compareKeys(sortKey(u), sortKey(v))).map(texOf).join(settings.comma ? '; ' : ', ')}\\right\\}`;
     case 'ImageSet': {
-      const [v, expr, base] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
-      return `\\left\\{${texOf(expr)}\\; \\middle|\\; ${texOf(v)} \\in ${texOf(base)}\\right\\}`;
+      // SymPy _print_ImageSet: each variable of the signature with its base set
+      const [v, expr] = [at(e.args, 0), at(e.args, 1)];
+      const bases = e.args.slice(2);
+      const variables = bases.length > 1 ? v.args : [v];
+      const memberships = bases.map((base, i) => `${texOf(at(variables, i))} \\in ${texOf(base)}`).join(', ');
+      return `\\left\\{${texOf(expr)}\\; \\middle|\\; ${memberships}\\right\\}`;
     }
     case 'ConditionSet': {
       const [v, cond, base] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];

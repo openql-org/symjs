@@ -228,3 +228,13 @@ it('passes the recursive repr printer to extension hooks', () => {
   }
   expect(srepr(new Wrapped('Wrapper', [x, y]))).toBe("Symbol('x') | Symbol('y')");
 });
+
+it('shows an explicit commutative=True and the monomial order of a fraction field (SymPy srepr)', () => {
+  expect(sj.srepr(new sj.Sym('x', { commutative: true }))).toBe("Symbol('x', commutative=True)");
+  expect(sj.srepr(new sj.Sym('x'))).toBe("Symbol('x')");
+  expect(sj.srepr(new sj.Sym('x', { commutative: false }))).toBe("Symbol('x', commutative=False)");
+  expect(new sj.Sym('x', { commutative: true }).key).toBe(new sj.Sym('x').key);
+  const [x, y] = sj.symbols('x y');
+  expect(sj.srepr(new sj.FractionField(sj.QQ, [x, y], 'grlex'))).toBe("FractionField(FracField((Symbol('x'), Symbol('y')), QQ, grlex))");
+  expect(sj.srepr(sj.QQ.fracField(x, y))).toBe("FractionField(FracField((Symbol('x'), Symbol('y')), QQ, lex))");
+});

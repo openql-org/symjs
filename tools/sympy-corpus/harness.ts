@@ -766,6 +766,9 @@ function deserializeDomain(tree: Tree): sj.Domain | undefined {
     return new sj.PolynomialRingBase(base, symbols, blocks?.length === symbols.length
       ? sj.buildProductOrder(blocks.map((name, i) => [name, definedOr(symbols[i], 'ordering generator')]), symbols) : order);
   }
+  // (a monomial order other than lex is given to the domain class itself)
+  const order = typeof tree['order'] === 'string' && tree['order'] !== 'lex' ? tree['order'] : undefined;
+  if (order !== undefined && !name.endsWith(']')) return new sj.FractionField(base, symbols, order);
   return name.endsWith(']') ? base.polyRing(...symbols) : base.fracField(...symbols);
 }
 
@@ -1732,7 +1735,8 @@ export function deserialize(tree: Tree): unknown {
       return new sj.WildFunction(tree['name'] as string, (tree['nargs'] as number[] | null) ?? undefined);
     case 'Dummy': {
       const a = Object.fromEntries(Object.entries(tree['assume'] as Record<string, boolean>).map(([k, v]) => [camel(k), v]));
-      return new sj.Dummy(tree['name'] as string, a, 1_000_000 + (tree['index'] as number));
+      // (srepr cases carry SymPy's own index)
+      return new sj.Dummy(tree['name'] as string, a, tree['dummyIndex'] === undefined ? 1_000_000 + (tree['index'] as number) : Number(tree['dummyIndex']));
     }
     case 'UFn':
       return new sj.UndefFn(String(tree['name']), (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))));
@@ -5287,7 +5291,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return Tr(operand instanceof Matrix ? operand : asExpr(operand), labels);
   },
   Poly: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian','field','symmetric'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian','field','symmetric','expand'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (kw['symmetric'] !== undefined && kw['modulus'] === undefined) throw new sj.OptionError('symmetric requires modulus');
     const [e, ...rawGens] = args;
     const gens = rawGens.flatMap((g) => g instanceof JsTuple ? g.items : [g]);
@@ -5298,6 +5302,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       ...polynomialOptions(kw),
       ...(kw['gaussian'] === undefined ? {} : { gaussian: Boolean(kw['gaussian']) }),
       ...(kw['field'] === undefined ? {} : { field: Boolean(kw['field']) }),
+      ...(kw['expand'] === false ? { expand: false } : {}),
     };
     if (e instanceof sj.Poly) return sj.Poly.fromPoly(e, gens.length ? gens.map(asExpr) : e.gens, opts);
     return sj.Poly.fromExpr(typeof e === 'string' ? e : expression(e), gens.map(asExpr), opts);
