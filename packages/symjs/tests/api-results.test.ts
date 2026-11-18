@@ -38,7 +38,7 @@ const MODULES: [string, () => Promise<Record<string, unknown>>][] = [
  * Allowed: the hooks of ExtensionExpr, which extension authors implement and
  * where undefined means "no override", and ExprMap.get and FiniteDensity.get (the Map contract).
  */
-const HOOKS = ['numericValue', 'isRealSelf', 'diffSelf', 'adjointSelf', 'conjugateSelf', 'transposeSelf', 'bindings', 'freeSymbolsSelf', 'doitSelf', 'rewriteSelf', 'expandSelf', 'subsSelf', 'matchesSelf', 'integrateSelf', 'simplifySelf', 'evalfSelf', 'kindSelf', 'asRealImagSelf', 'trigsimpSelf', 'expandTop', 'substituteInner'];
+const HOOKS = ['intersectSelf', 'unionSelf', 'numericValue', 'isRealSelf', 'diffSelf', 'adjointSelf', 'conjugateSelf', 'transposeSelf', 'bindings', 'freeSymbolsSelf', 'doitSelf', 'rewriteSelf', 'expandSelf', 'subsSelf', 'matchesSelf', 'integrateSelf', 'simplifySelf', 'evalfSelf', 'kindSelf', 'asRealImagSelf', 'trigsimpSelf', 'expandTop', 'substituteInner'];
 const ALLOWED: Record<string, string[]> = { ExprMap: ['get'], FiniteDensity: ['get'] };
 
 const PRELUDE = `/* eslint-disable */

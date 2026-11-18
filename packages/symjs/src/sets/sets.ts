@@ -98,11 +98,11 @@ export abstract class SetExpr extends Expr {
     return 'unknown';
   }
   /** SymPy intersection_sets of this class: its intersection with another set, or undefined without a rule. */
-  intersectWith(_other: SetExpr): SetExpr | undefined {
+  intersectSelf(_other: SetExpr): SetExpr | undefined {
     return undefined;
   }
   /** SymPy union_sets of this class: its union with another set, or undefined when the two do not combine. */
-  unionWith(_other: SetExpr): SetExpr | undefined {
+  unionSelf(_other: SetExpr): SetExpr | undefined {
     return undefined;
   }
 }
@@ -1686,10 +1686,10 @@ export function union(...sets0: SetExpr[]): SetExpr {
     }
   }
   // the classes with their own rule combine pairwise (SymPy union_sets)
-  if (sets.some((s) => s.unionWith !== SetExpr.prototype.unionWith)) {
+  if (sets.some((s) => s.unionSelf !== SetExpr.prototype.unionSelf)) {
     for (const [i, a] of sets.entries()) {
       for (const [j, b] of sets.entries()) {
-        const merged = i === j ? undefined : a.unionWith(b);
+        const merged = i === j ? undefined : a.unionSelf(b);
         if (merged !== undefined) return union(merged, ...sets.filter((_, k) => k !== i && k !== j));
       }
     }
@@ -1849,7 +1849,7 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
   if (a === UniversalSet) return b;
   if (b === UniversalSet) return a;
   if (a.key === b.key) return a;
-  const own = a.intersectWith(b) ?? b.intersectWith(a);
+  const own = a.intersectSelf(b) ?? b.intersectSelf(a);
   if (own !== undefined) return own;
   if (a instanceof ConditionSet) return conditionSet(a.variable, a.condition, intersection(a.base, b));
   if (b instanceof ConditionSet) return conditionSet(b.variable, b.condition, intersection(a, b.base));
