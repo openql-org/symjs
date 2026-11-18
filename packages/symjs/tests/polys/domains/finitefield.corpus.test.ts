@@ -18,27 +18,27 @@ describe("doctests of sympy.polys.domains.finitefield", () => {
   it.todo("p2.domain");
   it("factor(x**2 + 1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, pow(x, 2)), { deep: false, gaussian: false }))).toBe('x**2 + 1');
+    expect(sympyStr(factor(add(1, pow(x, 2)), { deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('x**2 + 1');
   });
   it("factor(x**2 + 1, modulus=2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, pow(x, 2)), { modulus: 2n, deep: false, gaussian: false }))).toBe('(x + 1)**2');
+    expect(sympyStr(factor(add(1, pow(x, 2)), { modulus: 2n, deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('(x + 1)**2');
   });
   it("factor(x**2 + 1, domain=GF(2))", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, pow(x, 2)), { domain: 'GF(2)', deep: false, gaussian: false }))).toBe('(x + 1)**2');
+    expect(sympyStr(factor(add(1, pow(x, 2)), { domain: GF(2, true), deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('(x + 1)**2');
   });
   it("factor(x**2 + 1, domain='GF(2)')", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, pow(x, 2)), { domain: 'GF(2)', deep: false, gaussian: false }))).toBe('(x + 1)**2');
+    expect(sympyStr(factor(add(1, pow(x, 2)), { domain: 'GF(2)', deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('(x + 1)**2');
   });
   it("cancel((x**2 + 1)/(x + 1))", () => {
     const x = new Sym('x');
-    expect(sympyStr(cancel(mul(pow(add(1, x), -1), add(1, pow(x, 2))), {}))).toBe('(x**2 + 1)/(x + 1)');
+    expect(sympyStr(cancel(mul(pow(add(1, x), -1), add(1, pow(x, 2))), { greedy: true }))).toBe('(x**2 + 1)/(x + 1)');
   });
   it("cancel((x**2 + 1)/(x + 1), domain=GF(2))", () => {
     const x = new Sym('x');
-    expect(sympyStr(cancel(mul(pow(add(1, x), -1), add(1, pow(x, 2))), { domain: 'GF(2)' }))).toBe('x + 1');
+    expect(sympyStr(cancel(mul(pow(add(1, x), -1), add(1, pow(x, 2))), { domain: GF(2, true), greedy: true }))).toBe('x + 1');
   });
   it("gcd(x**2 + 1, x + 1)", () => {
     const x = new Sym('x');
@@ -46,7 +46,7 @@ describe("doctests of sympy.polys.domains.finitefield", () => {
   });
   it("gcd(x**2 + 1, x + 1, domain=GF(2))", () => {
     const x = new Sym('x');
-    expect(sympyStr(gcd(add(1, pow(x, 2)), add(1, x), { domain: 'GF(2)' }))).toBe('x + 1');
+    expect(sympyStr(gcd(add(1, pow(x, 2)), add(1, x), { domain: GF(2, true) }))).toBe('x + 1');
   });
   it("x * y", () => {
     expect(sympyStr(GF(5n, true)['new'](3n).mul(GF(5n, true)['new'](2n)))).toBe('1 mod 5');
@@ -59,11 +59,11 @@ describe("doctests of sympy.polys.domains.finitefield", () => {
   });
   it("p", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(1, pow(x, 2)), [], {}))).toBe('Poly(x**2 + 1, x, domain=\'ZZ\')');
+    expect(sympyStr(Poly.fromExpr(add(1, pow(x, 2)), [], {}))).toBe('Poly(x**2 + 1, x, domain=\'ZZ\')');
   });
   it("p2", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(1, pow(x, 2)), [], { modulus: 2n }))).toBe('Poly(x**2 + 1, x, modulus=2)');
+    expect(sympyStr(Poly.fromExpr(add(1, pow(x, 2)), [], { modulus: 2n }))).toBe('Poly(x**2 + 1, x, modulus=2)');
   });
   it("K", () => {
     expect(sympyStr(GF(rational(5)))).toBe('GF(5)');

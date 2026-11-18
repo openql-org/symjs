@@ -66,7 +66,7 @@ describe("sympy/parsing/tests/test_latex.py", () => {
     expect(sympyStr(parseLatex('a + b'))).toBe('a + b');
   });
   it("test_parseable:282 (15)", () => {
-    expect(equivalent(sympyStr(parseLatex('a + b - a')), '-a + (a + b)', [], { fn: 'parse_latex', input: '\'a + b - a\'' })).toBe(true);
+    expect(sympyStr(parseLatex('a + b - a'))).toBe('-a + (a + b)');
   });
   it("test_parseable:282 (16)", () => {
     expect(sympyStr(parseLatex('a^2 + b^2 = c^2'))).toBe('Eq(a**2 + b**2, c**2)');
@@ -321,7 +321,7 @@ describe("sympy/parsing/tests/test_latex.py", () => {
     expect(sympyStr(parseLatex('\\int (x+a)'))).toBe('Integral(a + x, x)');
   });
   it("test_parseable:282 (100)", () => {
-    expect(equivalent(sympyStr(parseLatex('\\int a + b + c dx')), 'Integral(c + (a + b), x)', [], { fn: 'parse_latex', input: '\'\\int a + b + c dx\'' })).toBe(true);
+    expect(sympyStr(parseLatex('\\int a + b + c dx'))).toBe('Integral(c + (a + b), x)');
   });
   it("test_parseable:282 (101)", () => {
     expect(sympyStr(parseLatex('\\int \\frac{dz}{z}'))).toBe('Integral(1/z, z)');
@@ -558,7 +558,7 @@ describe("sympy/parsing/tests/test_latex.py", () => {
     expect(sympyStr(parseLatex('\\log_a x'))).toBe('log(x, a)');
   });
   it("test_parseable:282 (179)", () => {
-    expect(equivalent(sympyStr(parseLatex('5^0 - 4^0')), '-1*4**0 + 5**0', [], { fn: 'parse_latex', input: '\'5^0 - 4^0\'' })).toBe(true);
+    expect(sympyStr(parseLatex('5^0 - 4^0'))).toBe('-1*4**0 + 5**0');
   });
   it("test_parseable:282 (180)", () => {
     expect(sympyStr(parseLatex('3x - 1'))).toBe('3*x - 1');

@@ -14,11 +14,11 @@ describe("doctests of sympy.polys.domains.gaussiandomains", () => {
   it.todo("p.domain");
   it("factor(x**2 + 1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, pow(x, 2)), { deep: false, gaussian: false }))).toBe('x**2 + 1');
+    expect(sympyStr(factor(add(1, pow(x, 2)), { deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('x**2 + 1');
   });
   it("factor(x**2 + 1, domain='ZZ_I')", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, pow(x, 2)), { domain: 'ZZ_I', deep: false, gaussian: false }))).toBe('(x - I)*(x + I)');
+    expect(sympyStr(factor(add(1, pow(x, 2)), { domain: 'ZZ_I', deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('(x - I)*(x + I)');
   });
   it("ZZ_I.get_field()", () => {
     expect(sympyStr(ZZ_I.getField())).toBe('QQ_I');
@@ -71,39 +71,39 @@ describe("doctests of sympy.polys.domains.gaussiandomains", () => {
   it.todo("p.domain (2)");
   it("Poly(x**2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(pow(x, 2), [], {}))).toBe('Poly(x**2, x, domain=\'ZZ\')');
+    expect(sympyStr(Poly.fromExpr(pow(x, 2), [], {}))).toBe('Poly(x**2, x, domain=\'ZZ\')');
   });
   it("Poly(x**2 + I)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(I, pow(x, 2)), [], {}))).toBe('Poly(x**2 + I, x, domain=\'ZZ_I\')');
+    expect(sympyStr(Poly.fromExpr(add(I, pow(x, 2)), [], {}))).toBe('Poly(x**2 + I, x, domain=\'ZZ_I\')');
   });
   it("Poly(x**2/2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(mul(rational(1, 2), pow(x, 2)), [], {}))).toBe('Poly(1/2*x**2, x, domain=\'QQ\')');
+    expect(sympyStr(Poly.fromExpr(mul(rational(1, 2), pow(x, 2)), [], {}))).toBe('Poly(1/2*x**2, x, domain=\'QQ\')');
   });
   it("Poly(x**2, gaussian=True)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(pow(x, 2), [], { gaussian: true }))).toBe('Poly(x**2, x, domain=\'QQ_I\')');
+    expect(sympyStr(Poly.fromExpr(pow(x, 2), [], { gaussian: true }))).toBe('Poly(x**2, x, domain=\'QQ_I\')');
   });
   it("Poly(x**2 + I, gaussian=True)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(I, pow(x, 2)), [], { gaussian: true }))).toBe('Poly(x**2 + I, x, domain=\'QQ_I\')');
+    expect(sympyStr(Poly.fromExpr(add(I, pow(x, 2)), [], { gaussian: true }))).toBe('Poly(x**2 + I, x, domain=\'QQ_I\')');
   });
   it("Poly(x**2/2, gaussian=True)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(mul(rational(1, 2), pow(x, 2)), [], { gaussian: true }))).toBe('Poly(1/2*x**2, x, domain=\'QQ_I\')');
+    expect(sympyStr(Poly.fromExpr(mul(rational(1, 2), pow(x, 2)), [], { gaussian: true }))).toBe('Poly(1/2*x**2, x, domain=\'QQ_I\')');
   });
   it("factor(x**2/4 + 1)", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, mul(rational(1, 4), pow(x, 2))), { deep: false, gaussian: false }))).toBe('(x**2 + 4)/4');
+    expect(sympyStr(factor(add(1, mul(rational(1, 4), pow(x, 2))), { deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('(x**2 + 4)/4');
   });
   it("factor(x**2/4 + 1, domain='QQ_I')", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, mul(rational(1, 4), pow(x, 2))), { domain: 'QQ_I', deep: false, gaussian: false }))).toBe('(x - 2*I)*(x + 2*I)/4');
+    expect(sympyStr(factor(add(1, mul(rational(1, 4), pow(x, 2))), { domain: 'QQ_I', deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('(x - 2*I)*(x + 2*I)/4');
   });
   it("factor(x**2/4 + 1, domain=QQ_I)", () => {
     const x = new Sym('x');
-    expect(sympyStr(factor(add(1, mul(rational(1, 4), pow(x, 2))), { domain: 'QQ_I', deep: false, gaussian: false }))).toBe('(x - 2*I)*(x + 2*I)/4');
+    expect(sympyStr(factor(add(1, mul(rational(1, 4), pow(x, 2))), { domain: QQ_I, deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('(x - 2*I)*(x + 2*I)/4');
   });
   it("apart(1/(1 + x**2))", () => {
     const x = new Sym('x');
@@ -164,13 +164,13 @@ describe("doctests of sympy.polys.domains.gaussiandomains", () => {
   });
   it("p", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(I, pow(x, 2)), [], {}))).toBe('Poly(x**2 + I, x, domain=\'ZZ_I\')');
+    expect(sympyStr(Poly.fromExpr(add(I, pow(x, 2)), [], {}))).toBe('Poly(x**2 + I, x, domain=\'ZZ_I\')');
   });
   it("z (2)", () => {
     expect(sympyStr(QQ_I['new'](new PythonMPQ(2n, 3n), new PythonMPQ(4n, 5n)))).toBe('2/3 + 4*I/5');
   });
   it("p (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.from(add(pow(x, 2), mul(rational(1, 2), I)), [], {}))).toBe('Poly(x**2 + I/2, x, domain=\'QQ_I\')');
+    expect(sympyStr(Poly.fromExpr(add(pow(x, 2), mul(rational(1, 2), I)), [], {}))).toBe('Poly(x**2 + I/2, x, domain=\'QQ_I\')');
   });
 });

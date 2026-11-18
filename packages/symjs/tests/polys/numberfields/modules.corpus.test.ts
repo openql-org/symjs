@@ -100,7 +100,7 @@ describe("doctests of sympy.polys.numberfields.modules", () => {
 });
 
 describe("sympy/polys/numberfields/tests/test_modules.py", () => {
-  // no adapter for .is_ZZ
+  // a primitive result that no library call returned
   //   assert m.domain.is_ZZ
   //   => True
   it.todo("test_to_col:20");
@@ -157,9 +157,10 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
   it("test_Module_call:65", () => {
     expect(sympyStr([ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(1)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))])).toBe('[0, 1, 0, 0]');
   });
-  it.fails("test_Module_call:67", () => {
-    expect(sympyStr(toCol([0n, 0n, 1n, 0n]))).toBe('DomainMatrix({2: {0: 1}}, (4, 1), ZZ)');
-  });
+  // the printed result differs (false)
+  //   assert B(col).col == col
+  //   => DomainMatrix({2: {0: 1}}, (4, 1), ZZ)
+  it.todo("test_Module_call:67");
   // the arguments do not type-check against the public API
   //   raises(ValueError, lambda: B(-1))
   //   => None
@@ -376,10 +377,10 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Submodule(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), new DomainMatrix([[ZZ.fromSympy(rational(2)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(2)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(2)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(2))]], [4, 4], ZZ, { fmt: 'sparse' }), 1n).denom)).toBe('1');
   });
-  it.fails("test_Submodule_reduced:271 (2)", () => {
-    const x = new Sym('x');
-    expect(sympyStr(new Submodule(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), new DomainMatrix([[ZZ.fromSympy(rational(6)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(6)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(6)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(6))]], [4, 4], ZZ, { fmt: 'sparse' }), 3n).reduced())).toBe('Submodule[[6, 0, 0, 0], [0, 6, 0, 0], [0, 0, 6, 0], [0, 0, 0, 6]]/3');
-  });
+  // the printed result differs (false)
+  //   assert D.denom == 1 and D == C == B
+  //   => Submodule[[6, 0, 0, 0], [0, 6, 0, 0], [0, 0, 6, 0], [0, 0, 0, 6]]/3
+  it.todo("test_Submodule_reduced:271 (2)");
   // the arguments do not type-check against the public API
   //   assert D.denom == 1 and D == C == B
   //   => Submodule[[2, 0, 0, 0], [0, 2, 0, 0], [0, 0, 2, 0], [0, 0, 0, 2]]
@@ -503,11 +504,11 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
   it("test_is_HNF:453", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_ModuleElement_repr:471", () => {
+  it("test_ModuleElement_repr:471", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyRepr(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })).call(new DomainMatrix([[ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(2))], [ZZ.fromSympy(rational(3))], [ZZ.fromSympy(rational(4))]], [4, 1], ZZ, { fmt: 'dense' })))).toBe('[1, 2, 3, 4]/2');
+      expect(pyRepr(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })).call(new DomainMatrix([[ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(2))], [ZZ.fromSympy(rational(3))], [ZZ.fromSympy(rational(4))]], [4, 1], ZZ, { fmt: 'dense' }), 2n))).toBe('[1, 2, 3, 4]/2');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -516,10 +517,10 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
     const x = new Sym('x');
     expect(sympyStr(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([1n, 2n, 3n, 4n]), 1n).denom)).toBe('1');
   });
-  it.fails("test_ModuleElement_reduced:479 (2)", () => {
-    const x = new Sym('x');
-    expect(sympyStr(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([2n, 4n, 6n, 8n]), 2n).reduced())).toBe('[2, 4, 6, 8]/2');
-  });
+  // the printed result differs (false)
+  //   assert f.denom == 1 and f == e
+  //   => [2, 4, 6, 8]/2
+  it.todo("test_ModuleElement_reduced:479 (2)");
   // a primitive result that no library call returned
   //   assert f.coeffs == [-1, -2, -3, 3]
   //   => [-1, -2, -3, 3]
@@ -536,7 +537,7 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
     const x = new Sym('x');
     expect(sympyStr(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([1n, 0n, 0n, 0n]), 1n).column())).toBe('DomainMatrix([[1], [0], [0], [0]], (4, 1), ZZ)');
   });
-  // no adapter for .is_FF
+  // a primitive result that no library call returned
   //   assert col2.domain.is_FF
   //   => True
   it.todo("test_ModuleElement_column:511");
@@ -587,17 +588,17 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
     const x = new Sym('x');
     expect(() => makeModElt(new Submodule(new Submodule(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), new DomainMatrix([[ZZ.fromSympy(rational(2)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(2)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(2)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(2))]], [4, 4], ZZ, { fmt: 'sparse' }), 1n), new DomainMatrix([[ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3))]], [4, 4], ZZ, { fmt: 'sparse' }), 1n), toCol([1n, 0n, 0n, 0n]), 1n).unify(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4)), new Pow(x, rational(5)), new Pow(x, rational(6))]), [x], { domain: 'ZZ', pure: false })), toCol([0n, 1n, 0n, 0n, 0n, 0n]), 1n))).toThrow(UnificationFailed);
   });
-  it.fails("test_ModuleElement_eq:565", () => {
-    const x = new Sym('x');
-    expect(sympyStr(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })).call(new DomainMatrix([[ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(2))], [ZZ.fromSympy(rational(3))], [ZZ.fromSympy(rational(4))]], [4, 1], ZZ, { fmt: 'dense' })))).toBe('[3, 6, 9, 12]/3');
-  });
+  // the printed result differs (false)
+  //   assert e == f
+  //   => [3, 6, 9, 12]/3
+  it.todo("test_ModuleElement_eq:565");
   it("test_ModuleElement_eq:569", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })).call(new DomainMatrix([[ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(2))], [ZZ.fromSympy(rational(3))], [ZZ.fromSympy(rational(4))]], [4, 1], ZZ, { fmt: 'dense' })))).not.toBe('[1, 0, 0, 0, 0, 0]');
+    expect(sympyStr(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })).call(new DomainMatrix([[ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(2))], [ZZ.fromSympy(rational(3))], [ZZ.fromSympy(rational(4))]], [4, 1], ZZ, { fmt: 'dense' }), 1n))).not.toBe('[1, 0, 0, 0, 0, 0]');
   });
   it("test_ModuleElement_eq:570", () => {
     const x = new Sym('x');
-    expect(sympyStr(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })).call(new DomainMatrix([[ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(2))], [ZZ.fromSympy(rational(3))], [ZZ.fromSympy(rational(4))]], [4, 1], ZZ, { fmt: 'dense' })))).not.toBe('3.14');
+    expect(sympyStr(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })).call(new DomainMatrix([[ZZ.fromSympy(rational(1))], [ZZ.fromSympy(rational(2))], [ZZ.fromSympy(rational(3))], [ZZ.fromSympy(rational(4))]], [4, 1], ZZ, { fmt: 'dense' }), 1n))).not.toBe('3.14');
   });
   it("test_ModuleElement_equiv:578", () => {
     const x = new Sym('x');
@@ -651,10 +652,10 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
     const x = new Sym('x');
     expect(sympyStr(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([0n, 2n, 0n, 0n]), 3n).mul(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([0n, 0n, 0n, 7n]), 5n)))).toBe('[-14, -14, -14, -14]/15');
   });
-  it.fails("test_ModuleElement_mul:621", () => {
-    const x = new Sym('x');
-    expect(sympyStr(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([0n, 2n, 0n, 0n]), 3n).mul(makeModElt(new Submodule(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), new DomainMatrix([[ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3))]], [4, 4], ZZ, { fmt: 'sparse' }), 1n), toCol([0n, 0n, 0n, 1n]), 2n)))).toBe('[-1, -1, -1, -1]');
-  });
+  // the printed result differs (false)
+  //   assert e * g == A(to_col([-1, -1, -1, -1]))
+  //   => [-1, -1, -1, -1]
+  it.todo("test_ModuleElement_mul:621");
   it("test_ModuleElement_mul:622", () => {
     const x = new Sym('x');
     expect(sympyStr(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([0n, 2n, 0n, 0n]), 3n).mul(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([0n, 0n, 3n, 1n]), 7n)))).toBe('[-2, -2, -2, 4]/21');
@@ -695,7 +696,7 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
     const x = new Sym('x');
     expect(sympyStr(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([0n, 2n, 0n, 0n]), 3n).floordiv(makeModElt(new Submodule(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), new DomainMatrix([[ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(3))]], [4, 4], ZZ, { fmt: 'sparse' }), 1n), toCol([1n, 1n, 1n, 1n]), 1n)))).toBe('[0, 0, -2, 0]/9');
   });
-  // no adapter for the operator //
+  // the printed result differs (false)
   //   assert 3 // g == -A(1)
   //   => [0, -1, 0, 0]
   it.todo("test_ModuleElement_div:644");
@@ -755,10 +756,11 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
   //   assert lam.norm() == 5
   //   => 5
   it.todo("test_PowerBasisElement_norm:688");
-  // no adapter for the operator //
-  //   assert 2 // e == -2*A(1)
-  //   => [0, -2, 0, 0]
-  it.todo("test_PowerBasisElement_inverse:695");
+  it("test_PowerBasisElement_inverse:695", () => {
+    const x = new Sym('x');
+    const v1 = makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([1n, 1n, 1n, 1n]), 1n);
+    expect(sympyStr(v1.module.elementFromRational(rational(2)).floordiv(v1))).toBe('[0, -2, 0, 0]');
+  });
   it("test_PowerBasisElement_inverse:696", () => {
     const x = new Sym('x');
     expect(sympyStr(makeModElt(new PowerBasis(Poly.from(new Add([rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), new Pow(x, rational(4))]), [x], { domain: 'ZZ', pure: false })), toCol([1n, 1n, 1n, 1n]), 1n).pow(-3))).toBe('[0, 0, 0, -1]');

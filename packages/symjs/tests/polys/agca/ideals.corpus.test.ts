@@ -82,10 +82,10 @@ describe("sympy/polys/agca/tests/test_ideals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(x).add(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(y)))).toBe('<x,y>');
   });
-  it.fails("test_ideal_operations:20", () => {
-    const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(x).add(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(x, y)))).toBe('<x,y>');
-  });
+  // the printed result differs (false)
+  //   assert I + T == T
+  //   => <x,y>
+  it.todo("test_ideal_operations:20");
   it("test_ideal_operations:22", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
@@ -109,11 +109,11 @@ describe("sympy/polys/agca/tests/test_ideals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(x).mul(y))).toBe('<x*y>');
   });
-  // multivariate DMP
+  // the arguments do not type-check against the public API
   //   assert R.convert(x)*J == S
   //   => <x*y>
   it.todo("test_ideal_operations:29");
-  // multivariate DMP
+  // the generated test does not reproduce the replay
   //   assert I*R.convert(y) == S
   //   => <x*y>
   it.todo("test_ideal_operations:30");
@@ -127,10 +127,10 @@ describe("sympy/polys/agca/tests/test_ideals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(new Add([rational(1), new Pow(x, rational(2))]), x).isWholeRing())).toBe('True');
   });
-  it.fails("test_ideal_operations:36", () => {
-    const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal())).toBe('<0>');
-  });
+  // the printed result differs (false)
+  //   assert R.ideal() == R.ideal(0)
+  //   => <0>
+  it.todo("test_ideal_operations:36");
   it("test_ideal_operations:37", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal().isZero())).toBe('True');
@@ -143,7 +143,7 @@ describe("sympy/polys/agca/tests/test_ideals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(x, y).subset([x, y]))).toBe('True');
   });
-  // no adapter for .in_terms_of_generators
+  // a result object that did not come from the library
   //   assert T.in_terms_of_generators(x) == [R(1), R(0)]
   //   => [DMP_Python([[MPQ(1,1)]], QQ), DMP_Python([[]], QQ)]
   it.todo("test_ideal_operations:42");
@@ -155,10 +155,10 @@ describe("sympy/polys/agca/tests/test_ideals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(x, y).pow(1))).toBe('<x,y>');
   });
-  it.fails("test_ideal_operations:46", () => {
-    const [x, y] = symbols('x y');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(x, y).pow(2))).toBe('<x**2,y**2,x*y>');
-  });
+  // the printed result differs (false)
+  //   assert T**2 == R.ideal(x**2, y**2, x*y)
+  //   => <x**2,y**2,x*y>
+  it.todo("test_ideal_operations:46");
   it("test_ideal_operations:47", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y], 'grevlex').ideal(x).pow(5))).toBe('<x**5>');
@@ -186,27 +186,28 @@ describe("sympy/polys/agca/tests/test_ideals.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new PolynomialRingBase(QQ, [x], 'grevlex').ideal(x))).not.toBe('<1>');
   });
-  it.fails("test_intersection:110", () => {
-    const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x, y, z], 'grevlex').ideal(x, y).intersect(new PolynomialRingBase(QQ, [x, y, z], 'grevlex').ideal(new Pow(y, rational(2)), z)))).toBe('<y**2,y*z,x*z>');
-  });
+  // the printed result differs (false)
+  //   assert R.ideal(x, y).intersect(R.ideal(y**2, z)) == R.ideal(y**2, y*z, x*z)
+  //   => <y**2,y*z,x*z>
+  it.todo("test_intersection:110");
   it("test_intersection:112", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y, z], 'grevlex').ideal().isZero())).toBe('True');
   });
-  it.fails("test_intersection:115", () => {
-    const [x, y, z] = symbols('x y z');
-    expect(sympyStr(new PolynomialRingBase(QQ, [x, y, z], 'ilex').ideal(x, y).intersect(new PolynomialRingBase(QQ, [x, y, z], 'ilex').ideal(new Add([new Pow(y, rational(2)), new Mul([z, new Pow(y, rational(2))])]), new Add([z, new Mul([y, z, new Pow(x, rational(3))])]))))).toBe('<y**2,y*z,x*z>');
-  });
+  // the printed result differs (false)
+  //   assert R.ideal(x, y).intersect(R.ideal(y**2 + y**2*z, z + z*x**3*y)) == \
+  //           R.ideal(y**2, y*z, x*z)
+  //   => <y**2,y*z,x*z>
+  it.todo("test_intersection:115");
   it("test_quotient:122", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(new PolynomialRingBase(QQ, [x, y, z], 'grevlex').ideal(x, y).quotient(new PolynomialRingBase(QQ, [x, y, z], 'grevlex').ideal(new Pow(y, rational(2)), z)))).toBe('<x,y>');
   });
-  // multivariate DMP
+  // a result object that did not come from the library
   //   assert I.reduce_element(e) == e
   //   => DMP_Python([[MPQ(1,1)], [], [], [MPQ(1,1), MPQ(0,1), MPQ(0,1)]], QQ)
   it.todo("test_reduction:130");
-  // multivariate DMP
+  // a result object that did not come from the library
   //   assert I.reduce_element(e, NF=sdm_nf_buchberger_reduced) == R.convert(x**3)
   //   => DMP_Python([[MPQ(1,1)], [], [], []], QQ)
   it.todo("test_reduction:131");

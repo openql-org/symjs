@@ -18,7 +18,7 @@ describe("doctests of sympy.functions.special.mathieu_functions", () => {
   });
   it("diff(mathieuc(a, q, z), z)", () => {
     const [a, q, z] = symbols('a q z');
-    expect(sympyStr(diff(fn('mathieuc', [a, q, z]), z))).toBe('mathieucprime(a, q, z)');
+    expect(sympyStr(diff(fn('mathieuc', [a, q, z]), z, 1))).toBe('mathieucprime(a, q, z)');
   });
   it("mathieucprime(a, q, z)", () => {
     const [a, q, z] = symbols('a q z');
@@ -30,7 +30,7 @@ describe("doctests of sympy.functions.special.mathieu_functions", () => {
   });
   it("diff(mathieucprime(a, q, z), z)", () => {
     const [a, q, z] = symbols('a q z');
-    expect(sympyStr(diff(fn('mathieucprime', [a, q, z]), z))).toBe('(-a + 2*q*cos(2*z))*mathieuc(a, q, z)');
+    expect(sympyStr(diff(fn('mathieucprime', [a, q, z]), z, 1))).toBe('(-a + 2*q*cos(2*z))*mathieuc(a, q, z)');
   });
   it("mathieus(a, q, z)", () => {
     const [a, q, z] = symbols('a q z');
@@ -42,7 +42,7 @@ describe("doctests of sympy.functions.special.mathieu_functions", () => {
   });
   it("diff(mathieus(a, q, z), z)", () => {
     const [a, q, z] = symbols('a q z');
-    expect(sympyStr(diff(fn('mathieus', [a, q, z]), z))).toBe('mathieusprime(a, q, z)');
+    expect(sympyStr(diff(fn('mathieus', [a, q, z]), z, 1))).toBe('mathieusprime(a, q, z)');
   });
   it("mathieusprime(a, q, z)", () => {
     const [a, q, z] = symbols('a q z');
@@ -54,6 +54,6 @@ describe("doctests of sympy.functions.special.mathieu_functions", () => {
   });
   it("diff(mathieusprime(a, q, z), z)", () => {
     const [a, q, z] = symbols('a q z');
-    expect(sympyStr(diff(fn('mathieusprime', [a, q, z]), z))).toBe('(-a + 2*q*cos(2*z))*mathieus(a, q, z)');
+    expect(sympyStr(diff(fn('mathieusprime', [a, q, z]), z, 1))).toBe('(-a + 2*q*cos(2*z))*mathieus(a, q, z)');
   });
 });

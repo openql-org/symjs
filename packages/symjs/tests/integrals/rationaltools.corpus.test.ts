@@ -203,44 +203,44 @@ describe("sympy/integrals/tests/test_rationaltools.py", () => {
     const a = new Sym('a', { positive: true });
     const b = new Sym('b', { positive: true });
     const c = new Sym('c', { positive: true });
-    expect(sympyStr(simplify(new Mul([new Pow(a, rational(1, 2)), new Pow(b, rational(-1, 2)), new Pow(c, rational(-1, 2)), new Pow(new Add([a, b]), rational(-1, 2)), fn('atan', [new Mul([x, new Pow(b, rational(1, 2)), new Pow(c, rational(1, 2)), new Pow(new Add([a, b]), rational(1, 2)), new Pow(new Add([new Pow(a, rational(3, 2)), new Mul([b, new Pow(a, rational(1, 2))])]), rational(-1))])])])))).toBe('sqrt(a)*atan(sqrt(b)*sqrt(c)*x/(sqrt(a)*sqrt(a + b)))/(sqrt(b)*sqrt(c)*sqrt(a + b))');
+    expect(sympyStr(simplify(new Mul([new Pow(a, rational(1, 2)), new Pow(b, rational(-1, 2)), new Pow(c, rational(-1, 2)), new Pow(new Add([a, b]), rational(-1, 2)), fn('atan', [new Mul([x, new Pow(b, rational(1, 2)), new Pow(c, rational(1, 2)), new Pow(new Add([a, b]), rational(1, 2)), new Pow(new Add([new Pow(a, rational(3, 2)), new Mul([b, new Pow(a, rational(1, 2))])]), rational(-1))])])]), { inverse: false, rational: false, doit: true }))).toBe('sqrt(a)*atan(sqrt(b)*sqrt(c)*x/(sqrt(a)*sqrt(a + b)))/(sqrt(b)*sqrt(c)*sqrt(a + b))');
   });
   it("test_issue_5981:142", () => {
     const u = new Sym('u');
     const v1 = u;
-    expect(sympyStr(integrate(new Pow(new Add([rational(1), new Pow(v1, rational(2))]), rational(-1)), v1))).toBe('atan(u)');
+    expect(sympyStr(integrate(new Pow(new Add([rational(1), new Pow(v1, rational(2))]), rational(-1)), v1, undefined, { conds: 'piecewise' }))).toBe('atan(u)');
   });
   it("test_issue_10488:146", () => {
     const x = new Sym('x', { positive: true });
     const b = new Sym('b', { positive: true });
     const a = new Sym('a', { positive: true });
-    expect(sympyStr(integrate(new Mul([x, new Pow(new Add([b, new Mul([a, x])]), rational(-1))]), x))).toBe('x/a - b*log(a*x + b)/a**2');
+    expect(sympyStr(integrate(new Mul([x, new Pow(new Add([b, new Mul([a, x])]), rational(-1))]), x, undefined, { conds: 'piecewise' }))).toBe('x/a - b*log(a*x + b)/a**2');
   });
   it("test_issues_8246_12050_13501_14080:151", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });
-    expect(sympyStr(integrate(new Mul([a, new Pow(new Add([new Pow(x, rational(2)), new Pow(a, rational(2))]), rational(-1))]), x))).toBe('atan(x/a)');
+    expect(sympyStr(integrate(new Mul([a, new Pow(new Add([new Pow(x, rational(2)), new Pow(a, rational(2))]), rational(-1))]), x, undefined, { conds: 'piecewise' }))).toBe('atan(x/a)');
   });
   it("test_issues_8246_12050_13501_14080:152", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });
-    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, rational(2)), new Pow(a, rational(2))]), rational(-1)), x))).toBe('atan(x/a)/a');
+    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, rational(2)), new Pow(a, rational(2))]), rational(-1)), x, undefined, { conds: 'piecewise' }))).toBe('atan(x/a)/a');
   });
   it("test_issues_8246_12050_13501_14080:153", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });
-    expect(sympyStr(integrate(new Pow(new Add([rational(1), new Mul([new Pow(x, rational(2)), new Pow(a, rational(2))])]), rational(-1)), x))).toBe('atan(a*x)/a');
+    expect(sympyStr(integrate(new Pow(new Add([rational(1), new Mul([new Pow(x, rational(2)), new Pow(a, rational(2))])]), rational(-1)), x, undefined, { conds: 'piecewise' }))).toBe('atan(a*x)/a');
   });
   it("test_issue_6308:158", () => {
     const x = new Sym('x');
     const a0 = new Sym('a0', { real: true });
     const k = new Sym('k', { real: true });
-    expect(sympyStr(integrate(new Mul([new Pow(new Add([rational(1), new Pow(x, rational(2)), new Pow(a0, rational(2))]), rational(-1)), new Add([rational(1), new Pow(x, rational(2)), new Mul([rational(-1), new Pow(k, rational(2))])])]), x))).toBe('x - (a0**2 + k**2)*atan(x/sqrt(a0**2 + 1))/sqrt(a0**2 + 1)');
+    expect(sympyStr(integrate(new Mul([new Pow(new Add([rational(1), new Pow(x, rational(2)), new Pow(a0, rational(2))]), rational(-1)), new Add([rational(1), new Pow(x, rational(2)), new Mul([rational(-1), new Pow(k, rational(2))])])]), x, undefined, { conds: 'piecewise' }))).toBe('x - (a0**2 + k**2)*atan(x/sqrt(a0**2 + 1))/sqrt(a0**2 + 1)');
   });
   it("test_issue_5907:164", () => {
     const x = new Sym('x');
     const a = new Sym('a', { nonzero: true });
-    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, rational(2)), new Pow(a, rational(2))]), rational(-2)), x))).toBe('x/(2*a**4 + 2*a**2*x**2) + atan(x/a)/(2*a**3)');
+    expect(sympyStr(integrate(new Pow(new Add([new Pow(x, rational(2)), new Pow(a, rational(2))]), rational(-2)), x, undefined, { conds: 'piecewise' }))).toBe('x/(2*a**4 + 2*a**2*x**2) + atan(x/a)/(2*a**3)');
   });
   it("test_log_to_atan:171", () => {
     const x = new Sym('x');

@@ -27,7 +27,7 @@ describe("doctests of sympy.concrete.expr_with_intlimits", () => {
   });
   it("simplify(Sn.doit())", () => {
     const [u, a, b] = symbols('u a b');
-    expect(sympyStr(simplify(add(u, mul(rational(1, 2), a), mul(rational(1, 2), b), mul(rational(1, 2), pow(b, 2)), mul(rational(-1, 2), pow(a, 2)), mul(b, u), mul(-1, a, u), mul(-1, u, add(1, b, mul(-1, a))))))).toBe('-a**2/2 + a/2 + b**2/2 + b/2');
+    expect(sympyStr(simplify(add(u, mul(rational(1, 2), a), mul(rational(1, 2), b), mul(rational(1, 2), pow(b, 2)), mul(rational(-1, 2), pow(a, 2)), mul(b, u), mul(-1, a, u), mul(-1, u, add(1, b, mul(-1, a)))), { inverse: false, rational: false, doit: true }))).toBe('-a**2/2 + a/2 + b**2/2 + b/2');
   });
   it("Sn.doit() (4)", () => {
     const [u, y, b, a] = symbols('u y b a');
@@ -35,7 +35,7 @@ describe("doctests of sympy.concrete.expr_with_intlimits", () => {
   });
   it("simplify(Sn.doit()) (2)", () => {
     const [u, a, b] = symbols('u a b');
-    expect(sympyStr(simplify(add(u, mul(rational(1, 2), a), mul(rational(1, 2), b), mul(rational(1, 2), pow(b, 2)), mul(rational(-1, 2), pow(a, 2)), mul(b, u), mul(-1, a, u), mul(-1, u, add(1, b, mul(-1, a))))))).toBe('-a**2/2 + a/2 + b**2/2 + b/2');
+    expect(sympyStr(simplify(add(u, mul(rational(1, 2), a), mul(rational(1, 2), b), mul(rational(1, 2), pow(b, 2)), mul(rational(-1, 2), pow(a, 2)), mul(b, u), mul(-1, a, u), mul(-1, u, add(1, b, mul(-1, a)))), { inverse: false, rational: false, doit: true }))).toBe('-a**2/2 + a/2 + b**2/2 + b/2');
   });
   it("Sn.doit() (5)", () => {
     const [u, y, v, b, a] = symbols('u y v b a');
@@ -43,7 +43,7 @@ describe("doctests of sympy.concrete.expr_with_intlimits", () => {
   });
   it("simplify(Sn.doit()) (3)", () => {
     const [u, v, a, b] = symbols('u v a b');
-    expect(sympyStr(simplify(add(mul(pow(u, -1), add(v, mul(rational(1, 2), a, u), mul(rational(1, 2), b, u), mul(rational(1, 2), pow(a, 2), pow(u, 2)), mul(rational(-1, 2), pow(b, 2), pow(u, 2)), mul(a, u, v), mul(-1, b, u, v))), mul(-1, v, pow(u, -1), add(1, mul(a, u), mul(-1, b, u))))))).toBe('a**2*u/2 + a/2 - b**2*u/2 + b/2');
+    expect(sympyStr(simplify(add(mul(pow(u, -1), add(v, mul(rational(1, 2), a, u), mul(rational(1, 2), b, u), mul(rational(1, 2), pow(a, 2), pow(u, 2)), mul(rational(-1, 2), pow(b, 2), pow(u, 2)), mul(a, u, v), mul(-1, b, u, v))), mul(-1, v, pow(u, -1), add(1, mul(a, u), mul(-1, b, u)))), { inverse: false, rational: false, doit: true }))).toBe('a**2*u/2 + a/2 - b**2*u/2 + b/2');
   });
   // the arguments do not type-check against the public API
   //   Sum(m, (m, 1, 0)).has_empty_sequence

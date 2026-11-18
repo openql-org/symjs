@@ -10,54 +10,61 @@ import { sympyStr } from '../sympy-str';
 describe("doctests of sympy.polys.dispersion", () => {
   it("dispersion(fp)", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(add(-9, pow(x, 2)), [x], { domain: 'ZZ', pure: false })))).toBe('6');
+    const v1 = Poly.from(add(-9, pow(x, 2)), [x], { domain: 'ZZ', pure: false }).asExpr();
+    expect(sympyStr(dispersion(v1, v1))).toBe('6');
   });
   it("dispersion(fp, gp)", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(add(1, pow(x, 4), mul(-3, pow(x, 2))), [x], { domain: 'ZZ', pure: false }), Poly.from(add(55, pow(x, 4), mul(-90, x), mul(-12, pow(x, 3)), mul(51, pow(x, 2))), [x], { domain: 'ZZ', pure: false })))).toBe('4');
+    expect(sympyStr(dispersion(Poly.from(add(1, pow(x, 4), mul(-3, pow(x, 2))), [x], { domain: 'ZZ', pure: false }).asExpr(), Poly.from(add(55, pow(x, 4), mul(-90, x), mul(-12, pow(x, 3)), mul(51, pow(x, 2))), [x], { domain: 'ZZ', pure: false }).asExpr()))).toBe('4');
   });
   it("dispersion(gp, fp)", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(add(55, pow(x, 4), mul(-90, x), mul(-12, pow(x, 3)), mul(51, pow(x, 2))), [x], { domain: 'ZZ', pure: false }), Poly.from(add(1, pow(x, 4), mul(-3, pow(x, 2))), [x], { domain: 'ZZ', pure: false })))).toBe('-oo');
+    expect(sympyStr(dispersion(Poly.from(add(55, pow(x, 4), mul(-90, x), mul(-12, pow(x, 3)), mul(51, pow(x, 2))), [x], { domain: 'ZZ', pure: false }).asExpr(), Poly.from(add(1, pow(x, 4), mul(-3, pow(x, 2))), [x], { domain: 'ZZ', pure: false }).asExpr()))).toBe('-oo');
   });
   it("dispersion(fp) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(add(-9, pow(x, 2)), [x], { domain: 'ZZ', pure: false })))).toBe('6');
+    const v1 = Poly.from(add(-9, pow(x, 2)), [x], { domain: 'ZZ', pure: false }).asExpr();
+    expect(sympyStr(dispersion(v1, v1))).toBe('6');
   });
   it("dispersion(fp, gp) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(add(1, pow(x, 4), mul(-3, pow(x, 2))), [x], { domain: 'ZZ', pure: false }), Poly.from(add(55, pow(x, 4), mul(-90, x), mul(-12, pow(x, 3)), mul(51, pow(x, 2))), [x], { domain: 'ZZ', pure: false })))).toBe('4');
+    expect(sympyStr(dispersion(Poly.from(add(1, pow(x, 4), mul(-3, pow(x, 2))), [x], { domain: 'ZZ', pure: false }).asExpr(), Poly.from(add(55, pow(x, 4), mul(-90, x), mul(-12, pow(x, 3)), mul(51, pow(x, 2))), [x], { domain: 'ZZ', pure: false }).asExpr()))).toBe('4');
   });
   it("dispersion(gp, fp) (2)", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(add(55, pow(x, 4), mul(-90, x), mul(-12, pow(x, 3)), mul(51, pow(x, 2))), [x], { domain: 'ZZ', pure: false }), Poly.from(add(1, pow(x, 4), mul(-3, pow(x, 2))), [x], { domain: 'ZZ', pure: false })))).toBe('-oo');
+    expect(sympyStr(dispersion(Poly.from(add(55, pow(x, 4), mul(-90, x), mul(-12, pow(x, 3)), mul(51, pow(x, 2))), [x], { domain: 'ZZ', pure: false }).asExpr(), Poly.from(add(1, pow(x, 4), mul(-3, pow(x, 2))), [x], { domain: 'ZZ', pure: false }).asExpr()))).toBe('-oo');
   });
 });
 
 describe("sympy/polys/tests/test_dispersion.py", () => {
   it("test_dispersion:19", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(new Add([rational(1), x]), [x], { domain: 'ZZ', pure: false })))).toBe('0');
+    const v1 = Poly.from(new Add([rational(1), x]), [x], { domain: 'ZZ', pure: false }).asExpr();
+    expect(sympyStr(dispersion(v1, v1))).toBe('0');
   });
   it("test_dispersion:23", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(3), x])]), [x], { domain: 'ZZ', pure: false })))).toBe('1');
+    const v1 = Poly.from(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(3), x])]), [x], { domain: 'ZZ', pure: false }).asExpr();
+    expect(sympyStr(dispersion(v1, v1))).toBe('1');
   });
   it("test_dispersion:27", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(3), x])]), [x], { domain: 'ZZ', pure: false })))).toBe('3');
+    const v1 = Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(3), x])]), [x], { domain: 'ZZ', pure: false }).asExpr();
+    expect(sympyStr(dispersion(v1, v1))).toBe('3');
   });
   it("test_dispersion:31", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(new Add([rational(-9), new Pow(x, rational(2))]), [x], { domain: 'ZZ', pure: false })))).toBe('6');
+    const v1 = Poly.from(new Add([rational(-9), new Pow(x, rational(2))]), [x], { domain: 'ZZ', pure: false }).asExpr();
+    expect(sympyStr(dispersion(v1, v1))).toBe('6');
   });
   it("test_dispersion:36", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(Poly.from(new Add([rational(1), new Pow(x, rational(4)), new Mul([rational(-3), new Pow(x, rational(2))])]), [x], { domain: 'ZZ', pure: false }), Poly.from(new Add([rational(55), new Pow(x, rational(4)), new Mul([rational(-90), x]), new Mul([rational(-12), new Pow(x, rational(3))]), new Mul([rational(51), new Pow(x, rational(2))])]), [x], { domain: 'ZZ', pure: false })))).toBe('4');
+    expect(sympyStr(dispersion(Poly.from(new Add([rational(1), new Pow(x, rational(4)), new Mul([rational(-3), new Pow(x, rational(2))])]), [x], { domain: 'ZZ', pure: false }).asExpr(), Poly.from(new Add([rational(55), new Pow(x, rational(4)), new Mul([rational(-90), x]), new Mul([rational(-12), new Pow(x, rational(3))]), new Mul([rational(51), new Pow(x, rational(2))])]), [x], { domain: 'ZZ', pure: false }).asExpr()))).toBe('4');
   });
   it("test_dispersion:80", () => {
     const x = new Sym('x');
-    expect(sympyStr(dispersion(new Mul([new Add([rational(1), x]), new Add([rational(2), x])])))).toBe('1');
+    const v1 = new Mul([new Add([rational(1), x]), new Add([rational(2), x])]);
+    expect(sympyStr(dispersion(v1, v1))).toBe('1');
   });
   it("test_dispersion:85", () => {
     const x = new Sym('x');

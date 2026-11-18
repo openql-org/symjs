@@ -38,11 +38,11 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(assoc_laguerre(n, a, x), x)", () => {
     const [n, a, x] = symbols('n a x');
-    expect(sympyStr(diff(fn('assoc_laguerre', [n, a, x]), x))).toBe('-assoc_laguerre(n - 1, a + 1, x)');
+    expect(sympyStr(diff(fn('assoc_laguerre', [n, a, x]), x, 1))).toBe('-assoc_laguerre(n - 1, a + 1, x)');
   });
   it("diff(assoc_laguerre(n, a, x), a)", () => {
     const [n, a, x] = symbols('n a x');
-    expect(sympyStr(diff(fn('assoc_laguerre', [n, a, x]), a))).toBe('Sum(assoc_laguerre(_k, a, x)/(-a + n), (_k, 0, n - 1))');
+    expect(sympyStr(diff(fn('assoc_laguerre', [n, a, x]), a, 1))).toBe('Sum(assoc_laguerre(_k, a, x)/(-a + n), (_k, 0, n - 1))');
   });
   it("assoc_legendre(0,0, x)", () => {
     const x = new Sym('x');
@@ -94,7 +94,7 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(chebyshevt(n, x), x)", () => {
     const [n, x] = symbols('n x');
-    expect(sympyStr(diff(fn('chebyshevt', [n, x]), x))).toBe('n*chebyshevu(n - 1, x)');
+    expect(sympyStr(diff(fn('chebyshevt', [n, x]), x, 1))).toBe('n*chebyshevu(n - 1, x)');
   });
   it("chebyshevt_root(3, 2)", () => {
     expect(sympyStr(chebyshevtRoot(rational(3), rational(2)))).toBe('-sqrt(3)/2');
@@ -136,7 +136,7 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(chebyshevu(n, x), x)", () => {
     const [n, x] = symbols('n x');
-    expect(sympyStr(diff(fn('chebyshevu', [n, x]), x))).toBe('(-x*chebyshevu(n, x) + (n + 1)*chebyshevt(n + 1, x))/(x**2 - 1)');
+    expect(sympyStr(diff(fn('chebyshevu', [n, x]), x, 1))).toBe('(-x*chebyshevu(n, x) + (n + 1)*chebyshevt(n + 1, x))/(x**2 - 1)');
   });
   it("chebyshevu_root(3, 2)", () => {
     expect(sympyStr(chebyshevuRoot(rational(3), rational(2)))).toBe('-sqrt(2)/2');
@@ -182,7 +182,7 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(gegenbauer(n, a, x), x)", () => {
     const [n, a, x] = symbols('n a x');
-    expect(sympyStr(diff(fn('gegenbauer', [n, a, x]), x))).toBe('2*a*gegenbauer(n - 1, a + 1, x)');
+    expect(sympyStr(diff(fn('gegenbauer', [n, a, x]), x, 1))).toBe('2*a*gegenbauer(n - 1, a + 1, x)');
   });
   it("hermite(0, x)", () => {
     const x = new Sym('x');
@@ -202,7 +202,7 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(hermite(n,x), x)", () => {
     const [n, x] = symbols('n x');
-    expect(sympyStr(diff(fn('hermite', [n, x]), x))).toBe('2*n*hermite(n - 1, x)');
+    expect(sympyStr(diff(fn('hermite', [n, x]), x, 1))).toBe('2*n*hermite(n - 1, x)');
   });
   it("hermite(n, -x)", () => {
     const [n, x] = symbols('n x');
@@ -218,7 +218,7 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(hermite_prob(n,x), x)", () => {
     const [n, x] = symbols('n x');
-    expect(sympyStr(diff(fn('hermite_prob', [n, x]), x))).toBe('n*hermite_prob(n - 1, x)');
+    expect(sympyStr(diff(fn('hermite_prob', [n, x]), x, 1))).toBe('n*hermite_prob(n - 1, x)');
   });
   it("hermite_prob(n, -x)", () => {
     const [n, x] = symbols('n x');
@@ -274,7 +274,7 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(jacobi(n,a,b,x), x)", () => {
     const [n, a, b, x] = symbols('n a b x');
-    expect(sympyStr(diff(fn('jacobi', [n, a, b, x]), x))).toBe('(a/2 + b/2 + n/2 + 1/2)*jacobi(n - 1, a + 1, b + 1, x)');
+    expect(sympyStr(diff(fn('jacobi', [n, a, b, x]), x, 1))).toBe('(a/2 + b/2 + n/2 + 1/2)*jacobi(n - 1, a + 1, b + 1, x)');
   });
   it("jacobi_normalized(n, a, b, x)", () => {
     const [n, a, b, x] = symbols('n a b x');
@@ -302,7 +302,7 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(laguerre(n, x), x)", () => {
     const [n, x] = symbols('n x');
-    expect(sympyStr(diff(fn('laguerre', [n, x]), x))).toBe('-assoc_laguerre(n - 1, 1, x)');
+    expect(sympyStr(diff(fn('laguerre', [n, x]), x, 1))).toBe('-assoc_laguerre(n - 1, 1, x)');
   });
   it("legendre(0, x)", () => {
     const x = new Sym('x');
@@ -322,6 +322,6 @@ describe("doctests of sympy.functions.special.polynomials", () => {
   });
   it("diff(legendre(n,x), x)", () => {
     const [n, x] = symbols('n x');
-    expect(sympyStr(diff(fn('legendre', [n, x]), x))).toBe('n*(x*legendre(n, x) - legendre(n - 1, x))/(x**2 - 1)');
+    expect(sympyStr(diff(fn('legendre', [n, x]), x, 1))).toBe('n*(x*legendre(n, x) - legendre(n - 1, x))/(x**2 - 1)');
   });
 });

@@ -43,21 +43,21 @@ describe("doctests of sympy.functions.combinatorial.factorials", () => {
     expect(sympyStr(rf(Poly.from(pow(x, 3), [x], { domain: 'ZZ', pure: false }), rational(2)))).toBe('Poly(x**6 + 3*x**5 + 3*x**4 + x**3, x, domain=\'ZZ\')');
   });
   it("binomial(15, 8)", () => {
-    expect(sympyStr(fn('binomial', [rational(15), rational(8)]))).toBe('6435');
+    expect(sympyStr(fn('binomial', [rational(15), rational(8)], { evaluate: true }))).toBe('6435');
   });
   it("binomial(n, -1)", () => {
     const n = new Sym('n', { integer: true, positive: true });
-    expect(sympyStr(fn('binomial', [n, rational(-1)]))).toBe('0');
+    expect(sympyStr(fn('binomial', [n, rational(-1)], { evaluate: true }))).toBe('0');
   });
   it("binomial(Rational(5, 4), 3)", () => {
-    expect(sympyStr(fn('binomial', [rational(5, 4), rational(3)]))).toBe('-5/128');
+    expect(sympyStr(fn('binomial', [rational(5, 4), rational(3)], { evaluate: true }))).toBe('-5/128');
   });
   it("binomial(Rational(-5, 4), 3)", () => {
-    expect(sympyStr(fn('binomial', [rational(-5, 4), rational(3)]))).toBe('-195/128');
+    expect(sympyStr(fn('binomial', [rational(-5, 4), rational(3)], { evaluate: true }))).toBe('-195/128');
   });
   it("binomial(n, 3)", () => {
     const n = new Sym('n', { integer: true, positive: true });
-    expect(sympyStr(fn('binomial', [n, rational(3)]))).toBe('binomial(n, 3)');
+    expect(sympyStr(fn('binomial', [n, rational(3)], { evaluate: true }))).toBe('binomial(n, 3)');
   });
   it("binomial(n, 3).expand(func=True)", () => {
     const n = new Sym('n', { positive: true, integer: true });
@@ -74,44 +74,44 @@ describe("doctests of sympy.functions.combinatorial.factorials", () => {
     expect(sympyStr(Rational.of(3744312326n))).toBe('3744312326');
   });
   it("factorial(0)", () => {
-    expect(sympyStr(fn('factorial', [rational(0)]))).toBe('1');
+    expect(sympyStr(fn('factorial', [rational(0)], { evaluate: true }))).toBe('1');
   });
   it("factorial(7)", () => {
-    expect(sympyStr(fn('factorial', [rational(7)]))).toBe('5040');
+    expect(sympyStr(fn('factorial', [rational(7)], { evaluate: true }))).toBe('5040');
   });
   it("factorial(-2)", () => {
-    expect(sympyStr(fn('factorial', [rational(-2)]))).toBe('zoo');
+    expect(sympyStr(fn('factorial', [rational(-2)], { evaluate: true }))).toBe('zoo');
   });
   it("factorial(n)", () => {
     const n = new Sym('n', { integer: true });
-    expect(sympyStr(fn('factorial', [n]))).toBe('factorial(n)');
+    expect(sympyStr(fn('factorial', [n], { evaluate: true }))).toBe('factorial(n)');
   });
   it("factorial(2*n)", () => {
     const n = new Sym('n', { integer: true });
-    expect(sympyStr(fn('factorial', [mul(2, n)]))).toBe('factorial(2*n)');
+    expect(sympyStr(fn('factorial', [mul(2, n)], { evaluate: true }))).toBe('factorial(2*n)');
   });
   it("factorial(S(1)/2)", () => {
-    expect(sympyStr(fn('factorial', [rational(1, 2)]))).toBe('factorial(1/2)');
+    expect(sympyStr(fn('factorial', [rational(1, 2)], { evaluate: true }))).toBe('factorial(1/2)');
   });
   it("factorial2(n + 1)", () => {
     const n = new Sym('n');
-    expect(sympyStr(fn('factorial2', [add(1, n)]))).toBe('factorial2(n + 1)');
+    expect(sympyStr(fn('factorial2', [add(1, n)], { evaluate: true }))).toBe('factorial2(n + 1)');
   });
   it("factorial2(5)", () => {
-    expect(sympyStr(fn('factorial2', [rational(5)]))).toBe('15');
+    expect(sympyStr(fn('factorial2', [rational(5)], { evaluate: true }))).toBe('15');
   });
   it("factorial2(-1)", () => {
-    expect(sympyStr(fn('factorial2', [rational(-1)]))).toBe('1');
+    expect(sympyStr(fn('factorial2', [rational(-1)], { evaluate: true }))).toBe('1');
   });
   it("factorial2(-5)", () => {
-    expect(sympyStr(fn('factorial2', [rational(-5)]))).toBe('1/3');
+    expect(sympyStr(fn('factorial2', [rational(-5)], { evaluate: true }))).toBe('1/3');
   });
   it("subfactorial(n + 1)", () => {
     const n = new Sym('n');
-    expect(sympyStr(fn('subfactorial', [add(1, n)]))).toBe('subfactorial(n + 1)');
+    expect(sympyStr(fn('subfactorial', [add(1, n)], { evaluate: true }))).toBe('subfactorial(n + 1)');
   });
   it("subfactorial(5)", () => {
-    expect(sympyStr(fn('subfactorial', [rational(5)]))).toBe('44');
+    expect(sympyStr(fn('subfactorial', [rational(5)], { evaluate: true }))).toBe('44');
   });
   it("n", () => {
     const n = new Sym('n');

@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { BaseScalarField, BaseVectorField, CoordSystem, Differential, Manifold, Patch, Point, R2, R2P, R2R, R3R, TensorProduct, WedgeProduct, metricToRicciComponents } from '../src/diffgeom';
-import { Add, Array, Dummy, Matrix, Mul, Pow, Subs, Sym, SymFunction, derivative, doit, fn, rational, rcall, symbols } from '../src';
+import { Add, AppliedUndef, Array, Dummy, Matrix, Mul, Pow, Subs, Sym, derivative, doit, fn, rational, rcall, symbols } from '../src';
 import { sympyStr } from './sympy-str';
 
 describe("sympy/diffgeom/tests/test_class_structure.py", () => {
@@ -27,15 +27,15 @@ describe("sympy/diffgeom/tests/test_class_structure.py", () => {
   });
   it("test_subs:26", () => {
     const [y, x, a, b] = symbols('y x a b');
-    expect(sympyStr(new Add([y, new Mul([x, (SymFunction('f'))(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0))])]).subs(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0), new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 1)))).toBe('x*f(b) + y');
+    expect(sympyStr(new Add([y, new Mul([x, new AppliedUndef('f', [new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)])])]).subs(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0), new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 1)))).toBe('x*f(b) + y');
   });
   it("test_subs:27", () => {
     const [a, b] = symbols('a b');
-    expect(sympyStr(new Mul([(SymFunction('f'))(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)), new BaseVectorField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)]).subs(new BaseVectorField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0), new BaseVectorField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 1)))).toBe('f(a)*e_b');
+    expect(sympyStr(new Mul([new AppliedUndef('f', [new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)]), new BaseVectorField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)]).subs(new BaseVectorField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0), new BaseVectorField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 1)))).toBe('f(a)*e_b');
   });
   it("test_subs:28", () => {
     const [y, a, b] = symbols('y a b');
-    expect(sympyStr(new Mul([y, (SymFunction('f'))(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)), Differential(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0))]).subs(Differential(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)), Differential(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 1))))).toBe('y*f(a)*db');
+    expect(sympyStr(new Mul([y, new AppliedUndef('f', [new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)]), Differential(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0))]).subs(Differential(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 0)), Differential(new BaseScalarField(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), [a, b], new Map()), 1))))).toBe('y*f(a)*db');
   });
   it("test_deprecated:33", () => {
     expect(sympyStr(new CoordSystem('cs', new Patch('p', new Manifold('m', 2)), ['a', 'b']))).toBe('cs');
@@ -61,12 +61,12 @@ describe("sympy/diffgeom/tests/test_function_diffgeom_book.py", () => {
   it("test_functional_diffgeom_ch2:34", () => {
     const x0 = new Sym('x0', { real: true });
     const y0 = new Sym('y0', { real: true });
-    expect(sympyStr(rcall((SymFunction('f'))(new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('f(x0, y0)');
+    expect(sympyStr(rcall(new AppliedUndef('f', [new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)]), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('f(x0, y0)');
   });
   it("test_functional_diffgeom_ch2:35", () => {
     const x0 = new Sym('x0', { real: true });
     const y0 = new Sym('y0', { real: true });
-    expect(sympyStr(rcall((SymFunction('f'))(new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)), new Point(R2P, Matrix.of([[new Pow(new Add([new Pow(x0, rational(2)), new Pow(y0, rational(2))]), rational(1, 2))], [fn('atan2', [y0, x0])]]))))).toBe('f(x0, y0)');
+    expect(sympyStr(rcall(new AppliedUndef('f', [new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)]), new Point(R2P, Matrix.of([[new Pow(new Add([new Pow(x0, rational(2)), new Pow(y0, rational(2))]), rational(1, 2))], [fn('atan2', [y0, x0])]]))))).toBe('f(x0, y0)');
   });
   it("test_functional_diffgeom_ch2:39", () => {
     const x0 = new Sym('x0', { real: true });
@@ -106,7 +106,7 @@ describe("sympy/diffgeom/tests/test_function_diffgeom_book.py", () => {
   it("test_functional_diffgeom_ch3:60", () => {
     const y0 = new Sym('y0', { real: true });
     const x0 = new Sym('x0', { real: true });
-    expect(sympyStr(doit(new Add([new Mul([Subs(derivative((SymFunction('f'))(new Dummy('xi', {}, 1000000), y0), [[new Dummy('xi', {}, 1000000), 1]]), [new Dummy('xi', {}, 1000000)], [x0]), (SymFunction('b1'))(x0)]), new Mul([Subs(derivative((SymFunction('f'))(x0, new Dummy('xi', {}, 1000001)), [[new Dummy('xi', {}, 1000001), 1]]), [new Dummy('xi', {}, 1000001)], [y0]), (SymFunction('b2'))(y0)])])))).toBe('b1(x0)*Derivative(f(x0, y0), x0) + b2(y0)*Derivative(f(x0, y0), y0)');
+    expect(sympyStr(doit(new Add([new Mul([Subs(derivative(new AppliedUndef('f', [new Dummy('xi', {}, 1000000), y0]), [[new Dummy('xi', {}, 1000000), 1]]), [new Dummy('xi', {}, 1000000)], [x0]), new AppliedUndef('b1', [x0])]), new Mul([Subs(derivative(new AppliedUndef('f', [x0, new Dummy('xi', {}, 1000001)]), [[new Dummy('xi', {}, 1000001), 1]]), [new Dummy('xi', {}, 1000001)], [y0]), new AppliedUndef('b2', [y0])])])))).toBe('b1(x0)*Derivative(f(x0, y0), x0) + b2(y0)*Derivative(f(x0, y0), y0)');
   });
   it("test_functional_diffgeom_ch3:63", () => {
     const rho = new Sym('rho', { nonnegative: true });
@@ -125,22 +125,22 @@ describe("sympy/diffgeom/tests/test_function_diffgeom_book.py", () => {
   it("test_functional_diffgeom_ch4:88", () => {
     const x0 = new Sym('x0', { real: true });
     const y0 = new Sym('y0', { real: true });
-    expect(sympyStr(rcall((SymFunction('b1'))(new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('b1(x0, y0)');
+    expect(sympyStr(rcall(new AppliedUndef('b1', [new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)]), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('b1(x0, y0)');
   });
   it("test_functional_diffgeom_ch4:89", () => {
     const x0 = new Sym('x0', { real: true });
     const y0 = new Sym('y0', { real: true });
-    expect(sympyStr(rcall((SymFunction('b2'))(new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('b2(x0, y0)');
+    expect(sympyStr(rcall(new AppliedUndef('b2', [new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)]), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('b2(x0, y0)');
   });
   it("test_functional_diffgeom_ch4:93", () => {
     const y0 = new Sym('y0', { real: true });
     const x0 = new Sym('x0', { real: true });
-    expect(sympyStr(doit(Subs(derivative((SymFunction('f'))(new Dummy('xi', {}, 1000000), y0), [[new Dummy('xi', {}, 1000000), 1]]), [new Dummy('xi', {}, 1000000)], [x0])))).toBe('Derivative(f(x0, y0), x0)');
+    expect(sympyStr(doit(Subs(derivative(new AppliedUndef('f', [new Dummy('xi', {}, 1000000), y0]), [[new Dummy('xi', {}, 1000000), 1]]), [new Dummy('xi', {}, 1000000)], [x0])))).toBe('Derivative(f(x0, y0), x0)');
   });
   it("test_functional_diffgeom_ch4:94", () => {
     const x0 = new Sym('x0', { real: true });
     const y0 = new Sym('y0', { real: true });
-    expect(sympyStr(doit(Subs(derivative((SymFunction('f'))(x0, new Dummy('xi', {}, 1000000)), [[new Dummy('xi', {}, 1000000), 1]]), [new Dummy('xi', {}, 1000000)], [y0])))).toBe('Derivative(f(x0, y0), y0)');
+    expect(sympyStr(doit(Subs(derivative(new AppliedUndef('f', [x0, new Dummy('xi', {}, 1000000)]), [[new Dummy('xi', {}, 1000000), 1]]), [new Dummy('xi', {}, 1000000)], [y0])))).toBe('Derivative(f(x0, y0), y0)');
   });
   // diffgeom export trigsimp
   //   assert trigsimp(df(R2.e_x).rcall(p_p).doit()) == (
@@ -195,7 +195,7 @@ describe("sympy/diffgeom/tests/test_function_diffgeom_book.py", () => {
     const y = new Sym('y', { real: true });
     const x0 = new Sym('x0', { real: true });
     const y0 = new Sym('y0', { real: true });
-    expect(sympyStr(rcall(new Add([new Mul([new BaseScalarField(R2R, 0), Subs(derivative((SymFunction('f'))(new BaseScalarField(R2R, 0), new Dummy('xi', {}, 1000000)), [[new Dummy('xi', {}, 1000000), 1]]), [new Dummy('xi', {}, 1000000)], [new BaseScalarField(R2R, 1)])]), new Mul([rational(-1), new BaseScalarField(R2R, 1), Subs(derivative((SymFunction('f'))(new Dummy('xi', {}, 1000001), new BaseScalarField(R2R, 1)), [[new Dummy('xi', {}, 1000001), 1]]), [new Dummy('xi', {}, 1000001)], [new BaseScalarField(R2R, 0)])]), new Mul([new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [new Mul([rho, fn('cos', [theta])]), new Mul([rho, fn('sin', [theta])])]]], [['rectangular', 'polar'], [[x, y], [new Pow(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), Subs(derivative((SymFunction('f'))(new Dummy('xi', {}, 1000002), new BaseScalarField(R2R, 1)), [[new Dummy('xi', {}, 1000002), 1]]), [new Dummy('xi', {}, 1000002)], [new BaseScalarField(R2R, 0)]), fn('sin', [new BaseScalarField(R2P, 1)])]), new Mul([rational(-1), new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [new Mul([rho, fn('cos', [theta])]), new Mul([rho, fn('sin', [theta])])]]], [['rectangular', 'polar'], [[x, y], [new Pow(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), Subs(derivative((SymFunction('f'))(new BaseScalarField(R2R, 0), new Dummy('xi', {}, 1000003)), [[new Dummy('xi', {}, 1000003), 1]]), [new Dummy('xi', {}, 1000003)], [new BaseScalarField(R2R, 1)]), fn('cos', [new BaseScalarField(R2P, 1)])])]), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('0');
+    expect(sympyStr(rcall(new Add([new Mul([new BaseScalarField(R2R, 0), Subs(derivative(new AppliedUndef('f', [new BaseScalarField(R2R, 0), new Dummy('xi', {}, 1000000)]), [[new Dummy('xi', {}, 1000000), 1]]), [new Dummy('xi', {}, 1000000)], [new BaseScalarField(R2R, 1)])]), new Mul([rational(-1), new BaseScalarField(R2R, 1), Subs(derivative(new AppliedUndef('f', [new Dummy('xi', {}, 1000001), new BaseScalarField(R2R, 1)]), [[new Dummy('xi', {}, 1000001), 1]]), [new Dummy('xi', {}, 1000001)], [new BaseScalarField(R2R, 0)])]), new Mul([new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [new Mul([rho, fn('cos', [theta])]), new Mul([rho, fn('sin', [theta])])]]], [['rectangular', 'polar'], [[x, y], [new Pow(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), Subs(derivative(new AppliedUndef('f', [new Dummy('xi', {}, 1000002), new BaseScalarField(R2R, 1)]), [[new Dummy('xi', {}, 1000002), 1]]), [new Dummy('xi', {}, 1000002)], [new BaseScalarField(R2R, 0)]), fn('sin', [new BaseScalarField(R2P, 1)])]), new Mul([rational(-1), new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [new Mul([rho, fn('cos', [theta])]), new Mul([rho, fn('sin', [theta])])]]], [['rectangular', 'polar'], [[x, y], [new Pow(new Add([new Pow(x, rational(2)), new Pow(y, rational(2))]), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), Subs(derivative(new AppliedUndef('f', [new BaseScalarField(R2R, 0), new Dummy('xi', {}, 1000003)]), [[new Dummy('xi', {}, 1000003), 1]]), [new Dummy('xi', {}, 1000003)], [new BaseScalarField(R2R, 1)]), fn('cos', [new BaseScalarField(R2P, 1)])])]), new Point(R2R, Matrix.of([[x0], [y0]]))))).toBe('0');
   });
   it("test_functional_diffgeom_ch6:125", () => {
     const u0 = new Sym('u0', { real: true });
@@ -217,7 +217,7 @@ describe("sympy/diffgeom/tests/test_function_diffgeom_book.py", () => {
     expect(sympyStr(rcall(WedgeProduct(Differential(new BaseScalarField(R3R, 0)), Differential(new BaseScalarField(R3R, 1)), Differential(new BaseScalarField(R3R, 2))), new Add([new Mul([u0, new BaseVectorField(R3R, 0)]), new Mul([u1, new BaseVectorField(R3R, 1)]), new Mul([u2, new BaseVectorField(R3R, 2)])]), new Add([new Mul([v0_, new BaseVectorField(R3R, 0)]), new Mul([v1_, new BaseVectorField(R3R, 1)]), new Mul([v2_, new BaseVectorField(R3R, 2)])]), new Add([new Mul([w0, new BaseVectorField(R3R, 0)]), new Mul([w1, new BaseVectorField(R3R, 1)]), new Mul([w2, new BaseVectorField(R3R, 2)])])))).toBe('u0*v1*w2 - u0*v2*w1 - u1*v0*w2 + u1*v2*w0 + u2*v0*w1 - u2*v1*w0');
   });
   it("test_functional_diffgeom_ch6:145", () => {
-    expect(sympyStr(rcall(new Add([new Mul([rational(-1), WedgeProduct(Differential((SymFunction('a'))(new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2))), Differential(new BaseScalarField(R3R, 0)))]), new Mul([rational(-1), WedgeProduct(Differential((SymFunction('b'))(new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2))), Differential(new BaseScalarField(R3R, 1)))]), new Mul([rational(-1), WedgeProduct(Differential((SymFunction('c'))(new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2))), Differential(new BaseScalarField(R3R, 2)))]), Differential(new Add([new Mul([(SymFunction('a'))(new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)), Differential(new BaseScalarField(R3R, 0))]), new Mul([(SymFunction('b'))(new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)), Differential(new BaseScalarField(R3R, 1))]), new Mul([(SymFunction('c'))(new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)), Differential(new BaseScalarField(R3R, 2))])]))]), new BaseVectorField(R3R, 0), new BaseVectorField(R3R, 1)))).toBe('0');
+    expect(sympyStr(rcall(new Add([new Mul([rational(-1), WedgeProduct(Differential(new AppliedUndef('a', [new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)])), Differential(new BaseScalarField(R3R, 0)))]), new Mul([rational(-1), WedgeProduct(Differential(new AppliedUndef('b', [new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)])), Differential(new BaseScalarField(R3R, 1)))]), new Mul([rational(-1), WedgeProduct(Differential(new AppliedUndef('c', [new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)])), Differential(new BaseScalarField(R3R, 2)))]), Differential(new Add([new Mul([new AppliedUndef('a', [new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)]), Differential(new BaseScalarField(R3R, 0))]), new Mul([new AppliedUndef('b', [new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)]), Differential(new BaseScalarField(R3R, 1))]), new Mul([new AppliedUndef('c', [new BaseScalarField(R3R, 0), new BaseScalarField(R3R, 1), new BaseScalarField(R3R, 2)]), Differential(new BaseScalarField(R3R, 2))])]))]), new BaseVectorField(R3R, 0), new BaseVectorField(R3R, 1)))).toBe('0');
   });
 });
 

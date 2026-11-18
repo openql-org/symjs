@@ -48,7 +48,7 @@ describe("doctests of sympy.algebras.quaternion", () => {
   });
   it("q.integrate(x)", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(rational(1), rational(2), rational(3), rational(4), { realField: true }), x))).toBe('x + 2*x*i + 3*x*j + 4*x*k');
+    expect(sympyStr(integrate(Quaternion(rational(1), rational(2), rational(3), rational(4), { realField: true }), x, undefined, { conds: 'piecewise' }))).toBe('x + 2*x*i + 3*x*j + 4*x*k');
   });
   it("q.integrate((x, 1, 5))", () => {
     const x = new Sym('x');
@@ -127,7 +127,7 @@ describe("doctests of sympy.algebras.quaternion", () => {
   });
   it("trigsimp(Quaternion.rotate_point((1, 1, 1), q))", () => {
     const x = new Sym('x');
-    expect(sympyStr([trigsimp(add(mul(add(mul(-1, fn('sin', [mul(rational(1, 2), x)])), fn('cos', [mul(rational(1, 2), x)])), fn('cos', [mul(rational(1, 2), x)])), mul(-1, add(fn('cos', [mul(rational(1, 2), x)]), fn('sin', [mul(rational(1, 2), x)])), fn('sin', [mul(rational(1, 2), x)]))), { old: false, deep: false }), trigsimp(add(mul(add(fn('cos', [mul(rational(1, 2), x)]), fn('sin', [mul(rational(1, 2), x)])), fn('cos', [mul(rational(1, 2), x)])), mul(-1, add(mul(-1, fn('cos', [mul(rational(1, 2), x)])), fn('sin', [mul(rational(1, 2), x)])), fn('sin', [mul(rational(1, 2), x)]))), { old: false, deep: false }), trigsimp(add(pow(fn('cos', [mul(rational(1, 2), x)]), 2), pow(fn('sin', [mul(rational(1, 2), x)]), 2)), { old: false, deep: false })], 't')).toBe('(sqrt(2)*cos(x + pi/4), sqrt(2)*sin(x + pi/4), 1)');
+    expect(sympyStr([trigsimp(add(mul(add(mul(-1, fn('sin', [mul(rational(1, 2), x)])), fn('cos', [mul(rational(1, 2), x)])), fn('cos', [mul(rational(1, 2), x)])), mul(-1, add(fn('cos', [mul(rational(1, 2), x)]), fn('sin', [mul(rational(1, 2), x)])), fn('sin', [mul(rational(1, 2), x)]))), { old: false, deep: false, inverse: false }), trigsimp(add(mul(add(fn('cos', [mul(rational(1, 2), x)]), fn('sin', [mul(rational(1, 2), x)])), fn('cos', [mul(rational(1, 2), x)])), mul(-1, add(mul(-1, fn('cos', [mul(rational(1, 2), x)])), fn('sin', [mul(rational(1, 2), x)])), fn('sin', [mul(rational(1, 2), x)]))), { old: false, deep: false, inverse: false }), trigsimp(add(pow(fn('cos', [mul(rational(1, 2), x)]), 2), pow(fn('sin', [mul(rational(1, 2), x)]), 2)), { old: false, deep: false, inverse: false })], 't')).toBe('(sqrt(2)*cos(x + pi/4), sqrt(2)*sin(x + pi/4), 1)');
   });
   // the arguments do not type-check against the public API
   //   trigsimp(Quaternion.rotate_point((1, 1, 1), (axis, angle)))
@@ -212,7 +212,7 @@ describe("doctests of sympy.algebras.quaternion", () => {
   });
   it("q (9)", () => {
     const x = new Sym('x');
-    expect(sympyStr(trigsimp(Quaternion(mul(rational(1, 2), pow(add(1, pow(add(pow(fn('cos', [x]), 2), pow(fn('sin', [x]), 2)), rational(1, 3)), mul(2, fn('cos', [x]))), rational(1, 2))), rational(0), rational(0), mul(rational(1, 2), pow(add(1, pow(add(pow(fn('cos', [x]), 2), pow(fn('sin', [x]), 2)), rational(1, 3)), mul(-2, fn('cos', [x]))), rational(1, 2)), fn('sign', [fn('sin', [x])])), { realField: true }), { old: false, deep: false }))).toBe('sqrt(2)*sqrt(cos(x) + 1)/2 + 0*i + 0*j + sqrt(2 - 2*cos(x))*sign(sin(x))/2*k');
+    expect(sympyStr(trigsimp(Quaternion(mul(rational(1, 2), pow(add(1, pow(add(pow(fn('cos', [x]), 2), pow(fn('sin', [x]), 2)), rational(1, 3)), mul(2, fn('cos', [x]))), rational(1, 2))), rational(0), rational(0), mul(rational(1, 2), pow(add(1, pow(add(pow(fn('cos', [x]), 2), pow(fn('sin', [x]), 2)), rational(1, 3)), mul(-2, fn('cos', [x]))), rational(1, 2)), fn('sign', [fn('sin', [x])])), { realField: true }), { old: false, deep: false, inverse: false }))).toBe('sqrt(2)*sqrt(cos(x) + 1)/2 + 0*i + 0*j + sqrt(2 - 2*cos(x))*sign(sin(x))/2*k');
   });
   it("q (10)", () => {
     const [a, b, c, d] = symbols('a b c d');
@@ -242,7 +242,7 @@ describe("sympy/algebras/tests/test_quaternion.py", () => {
   });
   it("test_quaternion_construction:34", () => {
     const phi = new Sym('phi');
-    expect(sympyStr(trigsimp(Quaternion(new Mul([rational(1, 2), new Pow(new Add([rational(1), new Pow(new Add([new Pow(fn('cos', [phi]), rational(2)), new Pow(fn('sin', [phi]), rational(2))]), rational(1, 3)), new Mul([rational(2), fn('cos', [phi])])]), rational(1, 2))]), rational(0), rational(0), new Mul([rational(1, 2), new Pow(new Add([rational(1), new Pow(new Add([new Pow(fn('cos', [phi]), rational(2)), new Pow(fn('sin', [phi]), rational(2))]), rational(1, 3)), new Mul([rational(-2), fn('cos', [phi])])]), rational(1, 2)), fn('sign', [fn('sin', [phi])])]), { realField: true }), { old: false, deep: false }))).toBe('sqrt(2)*sqrt(cos(phi) + 1)/2 + 0*i + 0*j + sqrt(2 - 2*cos(phi))*sign(sin(phi))/2*k');
+    expect(sympyStr(trigsimp(Quaternion(new Mul([rational(1, 2), new Pow(new Add([rational(1), new Pow(new Add([new Pow(fn('cos', [phi]), rational(2)), new Pow(fn('sin', [phi]), rational(2))]), rational(1, 3)), new Mul([rational(2), fn('cos', [phi])])]), rational(1, 2))]), rational(0), rational(0), new Mul([rational(1, 2), new Pow(new Add([rational(1), new Pow(new Add([new Pow(fn('cos', [phi]), rational(2)), new Pow(fn('sin', [phi]), rational(2))]), rational(1, 3)), new Mul([rational(-2), fn('cos', [phi])])]), rational(1, 2)), fn('sign', [fn('sin', [phi])])]), { realField: true }), { old: false, deep: false, inverse: false }))).toBe('sqrt(2)*sqrt(cos(phi) + 1)/2 + 0*i + 0*j + sqrt(2 - 2*cos(phi))*sign(sin(phi))/2*k');
   });
   it("test_quaternion_construction:38", () => {
     const [w, x, z] = symbols('w x z');
@@ -422,9 +422,10 @@ describe("sympy/algebras/tests/test_quaternion.py", () => {
   it("test_quaternion_functions:165", () => {
     expect(sympyStr(Quaternion(rational(1), rational(2), rational(3), rational(4), { realField: true }).pow(-2))).toBe('(-7/225) + (-1/225)*i + (-1/150)*j + (-2/225)*k');
   });
-  it.fails("test_quaternion_functions:167", () => {
-    expect(sympyStr(Quaternion(rational(1), rational(2), rational(3), rational(4), { realField: true }).pow(new Float(-0.5)))).toBe('NotImplemented');
-  });
+  // a result object that did not come from the library
+  //   assert q1.pow(-0.5) == NotImplemented
+  //   => NotImplemented
+  it.todo("test_quaternion_functions:167");
   it("test_quaternion_functions:168", () => {
     expect(() => Quaternion(rational(1), rational(2), rational(3), rational(4), { realField: true }).pow(new Float(-0.5))).toThrow(TypeError);
   });
@@ -439,23 +440,23 @@ describe("sympy/algebras/tests/test_quaternion.py", () => {
   });
   it("test_quaternion_functions:187", () => {
     const x = new Sym('x');
-    expect(sympyStr(diff(Quaternion(x, x, x, x, { realField: true }), x))).toBe('1 + 1*i + 1*j + 1*k');
+    expect(sympyStr(diff(Quaternion(x, x, x, x, { realField: true }), x, 1))).toBe('1 + 1*i + 1*j + 1*k');
   });
   it("test_quaternion_functions:189", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(x, x, x, x, { realField: true }), x))).toBe('x**2/2 + x**2/2*i + x**2/2*j + x**2/2*k');
+    expect(sympyStr(integrate(Quaternion(x, x, x, x, { realField: true }), x, undefined, { conds: 'piecewise' }))).toBe('x**2/2 + x**2/2*i + x**2/2*j + x**2/2*k');
   });
   it("test_quaternion_functions:192", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), { realField: true }), x))).toBe('x + x**2/2*i + x**3/3*j + x**4/4*k');
+    expect(sympyStr(integrate(Quaternion(rational(1), x, new Pow(x, rational(2)), new Pow(x, rational(3)), { realField: true }), x, undefined, { conds: 'piecewise' }))).toBe('x + x**2/2*i + x**3/3*j + x**4/4*k');
   });
   it("test_quaternion_functions:195", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(Quaternion(fn('sin', [x]), fn('cos', [x]), fn('sin', [new Mul([rational(2), x])]), fn('cos', [new Mul([rational(2), x])]), { realField: true }), x))).toBe('(-cos(x)) + sin(x)*i + (-cos(2*x)/2)*j + sin(2*x)/2*k');
+    expect(sympyStr(integrate(Quaternion(fn('sin', [x]), fn('cos', [x]), fn('sin', [new Mul([rational(2), x])]), fn('cos', [new Mul([rational(2), x])]), { realField: true }), x, undefined, { conds: 'piecewise' }))).toBe('(-cos(x)) + sin(x)*i + (-cos(2*x)/2)*j + sin(2*x)/2*k');
   });
   it("test_quaternion_functions:198", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(integrate(integrate(Quaternion(new Pow(x, rational(2)), new Pow(y, rational(2)), new Pow(z, rational(2)), new Mul([x, y, z]), { realField: true }), x), y))).toBe('x**3*y/3 + x*y**3/3*i + x*y*z**2*j + x**2*y**2*z/4*k');
+    expect(sympyStr(integrate(integrate(Quaternion(new Pow(x, rational(2)), new Pow(y, rational(2)), new Pow(z, rational(2)), new Mul([x, y, z]), { realField: true }), x, undefined, { conds: 'piecewise' }), y, undefined, { conds: 'piecewise' }))).toBe('x**3*y/3 + x*y**3/3*i + x*y*z**2*j + x**2*y**2*z/4*k');
   });
   it("test_quaternion_functions:201", () => {
     const v1 = Quaternion.rotatePoint([1, 1, 1], Quaternion(rational(1), rational(2), rational(3), rational(4), { realField: true }));

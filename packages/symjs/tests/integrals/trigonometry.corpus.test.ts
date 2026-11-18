@@ -18,11 +18,11 @@ describe("doctests of sympy.integrals.trigonometry", () => {
   });
   it("trigintegrate(tan(x)*sec(x), x)", () => {
     const x = new Sym('x');
-    expect(sympyStr(trigintegrate(mul(fn('sec', [x]), fn('tan', [x])), x))).toBe('1/cos(x)');
+    expect(sympyStr(trigintegrate(mul(fn('sec', [x]), fn('tan', [x], { evaluate: false })), x))).toBe('1/cos(x)');
   });
   it("trigintegrate(sin(x)*tan(x), x)", () => {
     const x = new Sym('x');
-    expect(sympyStr(trigintegrate(mul(fn('sin', [x]), fn('tan', [x])), x))).toBe('-log(sin(x) - 1)/2 + log(sin(x) + 1)/2 - sin(x)');
+    expect(sympyStr(trigintegrate(mul(fn('sin', [x]), fn('tan', [x], { evaluate: false })), x))).toBe('-log(sin(x) - 1)/2 + log(sin(x) + 1)/2 - sin(x)');
   });
 });
 
@@ -161,7 +161,7 @@ describe("sympy/integrals/tests/test_trigonometry.py", () => {
   it.todo("test_trigintegrate_mixed:83");
   it("test_trigintegrate_mixed:84", () => {
     const x = new Sym('x');
-    expect(sympyStr(trigintegrate(new Mul([fn('cot', [x]), fn('sin', [x])]), x))).toBe('sin(x)');
+    expect(sympyStr(trigintegrate(new Mul([fn('cot', [x], { evaluate: false }), fn('sin', [x])]), x))).toBe('sin(x)');
   });
   // the arguments do not type-check against the public API
   //   assert trigintegrate(cos(x)*sec(x), x) == x
@@ -173,15 +173,15 @@ describe("sympy/integrals/tests/test_trigonometry.py", () => {
   });
   it("test_trigintegrate_mixed:88", () => {
     const x = new Sym('x');
-    expect(sympyStr(trigintegrate(new Mul([fn('cos', [x]), fn('tan', [x])]), x))).toBe('-cos(x)');
+    expect(sympyStr(trigintegrate(new Mul([fn('cos', [x]), fn('tan', [x], { evaluate: false })]), x))).toBe('-cos(x)');
   });
   it("test_trigintegrate_mixed:89", () => {
     const x = new Sym('x');
-    expect(sympyStr(trigintegrate(new Mul([fn('cos', [x]), fn('cot', [x])]), x))).toBe('log(cos(x) - 1)/2 - log(cos(x) + 1)/2 + cos(x)');
+    expect(sympyStr(trigintegrate(new Mul([fn('cos', [x]), fn('cot', [x], { evaluate: false })]), x))).toBe('log(cos(x) - 1)/2 - log(cos(x) + 1)/2 + cos(x)');
   });
   it("test_trigintegrate_mixed:91", () => {
     const x = new Sym('x');
-    expect(sympyStr(trigintegrate(new Mul([new Pow(fn('cos', [x]), rational(2)), fn('cot', [x])]), x))).toBe('log(sin(x)) - sin(x)**2/2');
+    expect(sympyStr(trigintegrate(new Mul([new Pow(fn('cos', [x]), rational(2)), fn('cot', [x], { evaluate: false })]), x))).toBe('log(sin(x)) - sin(x)**2/2');
   });
   // the arguments do not type-check against the public API
   //   assert trigintegrate(cos(x)**n, x) is None

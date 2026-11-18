@@ -259,7 +259,7 @@ describe("sympy/polys/tests/test_distributedmodules.py", () => {
   it("test_uncovered_line:201", () => {
     expect(sympyStr([])).toBe('[]');
   });
-  // a value without provenance ([object Object] JsFunc)
+  // a primitive result that no library call returned
   //   assert len(sdm_groebner([f1, f2], sdm_nf_mora, grlex, QQ)) == 2
   //   => 2
   it.todo("test_chain_criterion:208");

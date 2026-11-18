@@ -77,7 +77,7 @@ describe("sympy/polys/numberfields/tests/test_primes.py", () => {
   //   => 0
   it.todo("test_valuation_at_prime_ideal:65");
   it("test_decomp_1:73", () => {
-    expect(() => primeDecomp(rational(7))).toThrow(RangeError);
+    expect(() => primeDecomp(7, {})).toThrow(RangeError);
   });
   // the arguments do not type-check against the public API
   //   assert len(P) == 1

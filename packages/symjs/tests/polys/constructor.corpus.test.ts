@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { EX, Float, Lt, QQ, ZZ, constructDomain, rational } from '../../src';
-import { at, sympyMatches, sympyStr } from '../sympy-str';
+import { at, sympyStr } from '../sympy-str';
 
 describe("doctests of sympy.polys.constructor", () => {
   // a result object that did not come from the library
@@ -31,24 +31,25 @@ describe("doctests of sympy.polys.constructor", () => {
   it("K", () => {
     expect(sympyStr(ZZ)).toBe('ZZ');
   });
-  it("elements", () => {
-    expect(sympyStr([rational(2).p, rational(3).p, rational(4).p])).toBe('[2, 3, 4]');
-  });
+  // a primitive result that no library call returned
+  //   elements
+  //   => [2, 3, 4]
+  it.todo("elements");
 });
 
 describe("sympy/polys/tests/test_constructor.py", () => {
-  it("test_construct_domain:23", () => {
-    const v1 = rational(3);
-    expect(sympyMatches([ZZ, [v1.q, rational(2).p, v1.p]], '(ZZ, [1, 2, 3])')).toBe(true);
-  });
+  // a primitive result that no library call returned
+  //   assert construct_domain([1, 2, 3]) == (ZZ, [ZZ(1), ZZ(2), ZZ(3)])
+  //   => (ZZ, [1, 2, 3])
+  it.todo("test_construct_domain:23");
   // a result object that did not come from the library
   //   assert construct_domain([1, 2, 3], field=True) == (QQ, [QQ(1), QQ(2), QQ(3)])
   //   => (QQ, [MPQ(1,1), MPQ(2,1), MPQ(3,1)])
   it.todo("test_construct_domain:24");
-  it("test_construct_domain:26", () => {
-    const v1 = rational(3);
-    expect(sympyMatches([ZZ, [v1.q, rational(2).p, v1.p]], '(ZZ, [1, 2, 3])')).toBe(true);
-  });
+  // a primitive result that no library call returned
+  //   assert construct_domain([S.One, S(2), S(3)]) == (ZZ, [ZZ(1), ZZ(2), ZZ(3)])
+  //   => (ZZ, [1, 2, 3])
+  it.todo("test_construct_domain:26");
   // a result object that did not come from the library
   //   assert construct_domain([S.One, S(2), S(3)], field=True) == (QQ, [QQ(1), QQ(2), QQ(3)])
   //   => (QQ, [MPQ(1,1), MPQ(2,1), MPQ(3,1)])
@@ -57,11 +58,11 @@ describe("sympy/polys/tests/test_constructor.py", () => {
   //   assert construct_domain([S.Half, S(2)]) == (QQ, [QQ(1, 2), QQ(2)])
   //   => (QQ, [MPQ(1,2), MPQ(2,1)])
   it.todo("test_construct_domain:29");
-  // a result object that did not come from the library
+  // a value without provenance ([object Object] Add)
   //   assert construct_domain([1.0+I]) == (CC, [CC(1.0, 1.0)])
   //   => (CC, [mpc(real='1.0', imag='1.0')])
   it.todo("test_construct_domain:38");
-  // a result object that did not come from the library
+  // a value without provenance ([object Object] Add)
   //   assert construct_domain([2.0+3.0*I]) == (CC, [CC(2.0, 3.0)])
   //   => (CC, [mpc(real='2.0', imag='3.0')])
   it.todo("test_construct_domain:39");
@@ -203,10 +204,10 @@ describe("sympy/polys/tests/test_constructor.py", () => {
   //   => (ZZ, 2)
   it.todo("test_construct_domain:157");
   it("test_construct_domain:158", () => {
-    expect(sympyMatches([QQ, at(constructDomain(rational(2, 3)), 1)], '(QQ, MPQ(2,3))')).toBe(true);
+    expect(sympyStr([QQ, at(constructDomain(rational(2, 3), {}), 1)], 't')).toBe('(QQ, MPQ(2,3))');
   });
   it("test_construct_domain:159", () => {
-    expect(sympyMatches([QQ, at(constructDomain(rational(2, 3)), 1)], '(QQ, MPQ(2,3))')).toBe(true);
+    expect(sympyStr([QQ, at(constructDomain(rational(2, 3), {}), 1)], 't')).toBe('(QQ, MPQ(2,3))');
   });
   // the arguments do not type-check against the public API
   //   assert construct_domain({}) == (ZZ, {})

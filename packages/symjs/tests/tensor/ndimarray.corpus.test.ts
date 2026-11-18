@@ -30,7 +30,7 @@ describe("doctests of sympy.tensor.array.dense_ndim_array", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(1), rational(1), rational(1), rational(1), rational(1), rational(1), rational(1), rational(1), rational(1)], [3, 3]).tomatrix())).toBe('Matrix([[1, 1, 1], [1, 1, 1], [1, 1, 1]])');
   });
   it("a", () => {
-    expect(sympyStr(MutableDenseNDimArray([0, 1, 2, 3], [2, 2]))).toBe('[[0, 1], [2, 3]]');
+    expect(sympyStr(new MutableDenseNDimArray([0, 1, 2, 3], [2, 2]))).toBe('[[0, 1], [2, 3]]');
   });
   it("a[0]", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(0), rational(1), rational(2), rational(3)], [2, 2]).get(0))).toBe('[0, 1]');
@@ -73,22 +73,22 @@ describe("doctests of sympy.tensor.array.ndim_array", () => {
     expect(sympyStr(MutableDenseNDimArray.zeros(2, 3, 4))).toBe('[[[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]], [[0, 0, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0]]]');
   });
   it("m", () => {
-    expect(sympyStr(Array([0, 1, 2, 3], [2, 2]))).toBe('[[0, 1], [2, 3]]');
+    expect(sympyStr(new Array([0, 1, 2, 3], [2, 2]))).toBe('[[0, 1], [2, 3]]');
   });
   it("b", () => {
-    expect(sympyStr(MutableDenseNDimArray([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]]]))).toBe('[[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]]]');
+    expect(sympyStr(new MutableDenseNDimArray([[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]]]))).toBe('[[[1, 2], [3, 4], [5, 6]], [[7, 8], [9, 10], [11, 12]]]');
   });
   it("a (2)", () => {
-    expect(sympyStr(MutableDenseNDimArray([[2, 3], [4, 5]]))).toBe('[[2, 3], [4, 5]]');
+    expect(sympyStr(new MutableDenseNDimArray([[2, 3], [4, 5]]))).toBe('[[2, 3], [4, 5]]');
   });
   it("a (3)", () => {
-    expect(sympyStr(MutableDenseNDimArray([1, 2, 3, 4, 5, 6], [2, 3]))).toBe('[[1, 2, 3], [4, 5, 6]]');
+    expect(sympyStr(new MutableDenseNDimArray([1, 2, 3, 4, 5, 6], [2, 3]))).toBe('[[1, 2, 3], [4, 5, 6]]');
   });
   it("a (4)", () => {
     expect(sympyStr(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]]))).toBe('Matrix([[1, 2], [3, 4]])');
   });
   it("b (2)", () => {
-    expect(sympyStr(MutableDenseNDimArray(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableDenseNDimArray(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
   });
   it("a - b", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(1), rational(1), rational(1), rational(1)], [2, 2]).sub(MutableDenseNDimArray([rational(4), rational(4), rational(4), rational(4)], [2, 2])))).toBe('[[-3, -3], [-3, -3]]');
@@ -97,7 +97,7 @@ describe("doctests of sympy.tensor.array.ndim_array", () => {
     expect(sympyStr(MutableDenseNDimArray.zeros(3, 3))).toBe('[[0, 0, 0], [0, 0, 0], [0, 0, 0]]');
   });
   it("a (6)", () => {
-    expect(sympyStr(MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).toBe('[[1, 2], [3, 4]]');
   });
   it("b (3)", () => {
     expect(sympyStr([[rational(1), rational(2)], [rational(3), rational(4)]])).toBe('[[1, 2], [3, 4]]');
@@ -119,7 +119,7 @@ describe("doctests of sympy.tensor.array.sparse_ndim_array", () => {
     expect(sympyStr(MutableSparseNDimArray([rational(1), rational(1), rational(1), rational(1), rational(1), rational(1), rational(1), rational(1), rational(1)], [3, 3]).tomatrix())).toBe('Matrix([[1, 1, 1], [1, 1, 1], [1, 1, 1]])');
   });
   it("a", () => {
-    expect(sympyStr(MutableSparseNDimArray([0, 1, 2, 3], [2, 2]))).toBe('[[0, 1], [2, 3]]');
+    expect(sympyStr(new MutableSparseNDimArray([0, 1, 2, 3], [2, 2]))).toBe('[[0, 1], [2, 3]]');
   });
   it("a[0]", () => {
     expect(sympyStr(MutableSparseNDimArray([rational(0), rational(1), rational(2), rational(3)], [2, 2]).get(0))).toBe('[0, 1]');
@@ -135,7 +135,7 @@ describe("doctests of sympy.tensor.array.sparse_ndim_array", () => {
 
 describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   it("test_ndim_array_initiation:17", () => {
-    expect(pyLen(MutableDenseNDimArray([23]))).toBe(1);
+    expect(pyLen(new MutableDenseNDimArray([23]))).toBe(1);
   });
   it("test_ndim_array_initiation:18", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(23)], [1]).get(0))).toBe('23');
@@ -148,7 +148,7 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   });
   it("test_ndim_array_initiation:23", () => {
     const x = new Sym('x');
-    expect(pyLen(MutableDenseNDimArray([x]))).toBe(1);
+    expect(pyLen(new MutableDenseNDimArray([x]))).toBe(1);
   });
   it("test_ndim_array_initiation:24", () => {
     const x = new Sym('x');
@@ -181,9 +181,10 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   it("test_ndim_array_initiation:38", () => {
     expect(sympyStr(MutableSparseNDimArray([rational(0), rational(0), rational(0), rational(0), rational(0)], [5]).rank())).toBe('1');
   });
-  it.fails("test_ndim_array_initiation:41", () => {
-    expect(pyLen(MutableDenseNDimArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80], [3, 3, 3, 3]))).toBe(81);
-  });
+  // the printed result differs (3)
+  //   assert len(n_dim_array) == 3 * 3 * 3 * 3
+  //   => 81
+  it.todo("test_ndim_array_initiation:41");
   // a primitive result that no library call returned
   //   assert n_dim_array.shape == (3, 3, 3, 3)
   //   => (3, 3, 3, 3)
@@ -200,9 +201,10 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   it("test_ndim_array_initiation:46", () => {
     expect(() => MutableDenseNDimArray([rational(0), rational(1), rational(2), rational(3), rational(4), rational(5), rational(6), rational(7), rational(8), rational(9), rational(10), rational(11), rational(12), rational(13), rational(14), rational(15), rational(16), rational(17), rational(18), rational(19), rational(20), rational(21), rational(22), rational(23), rational(24), rational(25), rational(26), rational(27), rational(28), rational(29), rational(30), rational(31), rational(32), rational(33), rational(34), rational(35), rational(36), rational(37), rational(38), rational(39), rational(40), rational(41), rational(42), rational(43), rational(44), rational(45), rational(46), rational(47), rational(48), rational(49), rational(50), rational(51), rational(52), rational(53), rational(54), rational(55), rational(56), rational(57), rational(58), rational(59), rational(60), rational(61), rational(62), rational(63), rational(64), rational(65), rational(66), rational(67), rational(68), rational(69), rational(70), rational(71), rational(72), rational(73), rational(74), rational(75), rational(76), rational(77), rational(78), rational(79), rational(80)], [3, 3, 3, 3]).get(81)).toThrow(RangeError);
   });
-  it.fails("test_ndim_array_initiation:51", () => {
-    expect(pyLen(MutableSparseNDimArray.zeros(3, 3, 3, 3))).toBe(81);
-  });
+  // the printed result differs (3)
+  //   assert len(sparse_array) == 3 * 3 * 3 * 3
+  //   => 81
+  it.todo("test_ndim_array_initiation:51");
   // a primitive result that no library call returned
   //   assert n_dim_array.shape == array_shape
   //   => (3, 3, 3, 3)
@@ -211,7 +213,7 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(0), rational(1), rational(2), rational(3), rational(4), rational(5), rational(6), rational(7), rational(8), rational(9), rational(10), rational(11), rational(12), rational(13), rational(14), rational(15), rational(16), rational(17), rational(18), rational(19), rational(20), rational(21), rational(22), rational(23), rational(24), rational(25), rational(26), rational(27), rational(28), rational(29), rational(30), rational(31), rational(32), rational(33), rational(34), rational(35), rational(36), rational(37), rational(38), rational(39), rational(40), rational(41), rational(42), rational(43), rational(44), rational(45), rational(46), rational(47), rational(48), rational(49), rational(50), rational(51), rational(52), rational(53), rational(54), rational(55), rational(56), rational(57), rational(58), rational(59), rational(60), rational(61), rational(62), rational(63), rational(64), rational(65), rational(66), rational(67), rational(68), rational(69), rational(70), rational(71), rational(72), rational(73), rational(74), rational(75), rational(76), rational(77), rational(78), rational(79), rational(80)], [3, 3, 3, 3]).rank())).toBe('4');
   });
   it("test_ndim_array_initiation:56", () => {
-    expect(pyLen(MutableDenseNDimArray([2, 3, 1]))).toBe(3);
+    expect(pyLen(new MutableDenseNDimArray([2, 3, 1]))).toBe(3);
   });
   // a primitive result that no library call returned
   //   assert one_dim_array.shape == (3,)
@@ -223,9 +225,10 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   it("test_ndim_array_initiation:59", () => {
     expect(sympyStr([rational(2), rational(3), rational(1)])).toBe('[2, 3, 1]');
   });
-  it.fails("test_ndim_array_initiation:63", () => {
-    expect(pyLen(MutableSparseNDimArray.zeros(3, 3))).toBe(9);
-  });
+  // the printed result differs (3)
+  //   assert len(array_with_many_args) == 3 * 3
+  //   => 9
+  it.todo("test_ndim_array_initiation:63");
   // a primitive result that no library call returned
   //   assert array_with_many_args.shape == shape
   //   => (3, 3)
@@ -236,9 +239,10 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   it("test_ndim_array_initiation:66", () => {
     expect(sympyStr(MutableSparseNDimArray([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [3, 3]).rank())).toBe('2');
   });
-  it.fails("test_ndim_array_initiation:70", () => {
-    expect(pyLen(MutableSparseNDimArray.zeros(3, 3))).toBe(9);
-  });
+  // the printed result differs (3)
+  //   assert len(array_with_long_shape) == 3 * 3
+  //   => 9
+  it.todo("test_ndim_array_initiation:70");
   // a primitive result that no library call returned
   //   assert array_with_long_shape.shape == shape
   //   => (3, 3)
@@ -264,7 +268,7 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   });
   it("test_ndim_array_initiation:84", () => {
     const x = new Sym('x');
-    expect(pyLen(MutableDenseNDimArray(x))).toBe(1);
+    expect(pyLen(new MutableDenseNDimArray(x))).toBe(1);
   });
   it("test_ndim_array_initiation:85", () => {
     expect(sympyMatches([], '()')).toBe(true);
@@ -283,7 +287,7 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   });
   it("test_ndim_array_initiation:84 (2)", () => {
     const x = new Sym('x');
-    expect(pyLen(MutableSparseNDimArray(x))).toBe(1);
+    expect(pyLen(new MutableSparseNDimArray(x))).toBe(1);
   });
   it("test_ndim_array_initiation:85 (2)", () => {
     expect(sympyMatches([], '()')).toBe(true);
@@ -322,9 +326,10 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   it("test_reshape:105", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(0), rational(1), rational(2), rational(3), rational(4), rational(5), rational(6), rational(7), rational(8), rational(9), rational(10), rational(11), rational(12), rational(13), rational(14), rational(15), rational(16), rational(17), rational(18), rational(19), rational(20), rational(21), rational(22), rational(23), rational(24), rational(25), rational(26), rational(27), rational(28), rational(29), rational(30), rational(31), rational(32), rational(33), rational(34), rational(35), rational(36), rational(37), rational(38), rational(39), rational(40), rational(41), rational(42), rational(43), rational(44), rational(45), rational(46), rational(47), rational(48), rational(49)], [5, 5, 2]).rank())).toBe('3');
   });
-  it.fails("test_reshape:106", () => {
-    expect(pyLen(MutableDenseNDimArray([rational(0), rational(1), rational(2), rational(3), rational(4), rational(5), rational(6), rational(7), rational(8), rational(9), rational(10), rational(11), rational(12), rational(13), rational(14), rational(15), rational(16), rational(17), rational(18), rational(19), rational(20), rational(21), rational(22), rational(23), rational(24), rational(25), rational(26), rational(27), rational(28), rational(29), rational(30), rational(31), rational(32), rational(33), rational(34), rational(35), rational(36), rational(37), rational(38), rational(39), rational(40), rational(41), rational(42), rational(43), rational(44), rational(45), rational(46), rational(47), rational(48), rational(49)], [50]).reshape(5, 5, 2))).toBe(50);
-  });
+  // the printed result differs (5)
+  //   assert len(array) == 50
+  //   => 50
+  it.todo("test_reshape:106");
   it("test_iterator:111", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(0), rational(1), rational(2), rational(3)], [2, 2]).get(0))).toBe('[0, 1]');
   });
@@ -534,13 +539,13 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   //   => (2, 2)
   it.todo("test_ndim_array_converting:216");
   it("test_ndim_array_converting:218", () => {
-    expect(sympyStr(MutableDenseNDimArray(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableDenseNDimArray(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
   });
   it("test_ndim_array_converting:219", () => {
-    expect(sympyStr(MutableDenseNDimArray(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableDenseNDimArray(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
   });
   it("test_ndim_array_converting:220", () => {
-    expect(sympyStr(MutableDenseNDimArray(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableDenseNDimArray(Matrix.of([[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
   });
   it("test_ndim_array_converting:225", () => {
     expect(sympyStr([[rational(1), rational(2)], [rational(3), rational(4)]])).toBe('[[1, 2], [3, 4]]');
@@ -562,13 +567,13 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   //   => (2, 2)
   it.todo("test_ndim_array_converting:232");
   it("test_ndim_array_converting:234", () => {
-    expect(sympyStr(MutableSparseNDimArray(new MutableSparseMatrix(2, 2, [[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableSparseNDimArray(new MutableSparseMatrix(2, 2, [[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
   });
   it("test_ndim_array_converting:235", () => {
-    expect(sympyStr(MutableSparseNDimArray(new MutableSparseMatrix(2, 2, [[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableSparseNDimArray(new MutableSparseMatrix(2, 2, [[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
   });
   it("test_ndim_array_converting:236", () => {
-    expect(sympyStr(MutableSparseNDimArray(new MutableSparseMatrix(2, 2, [[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableSparseNDimArray(new MutableSparseMatrix(2, 2, [[rational(1), rational(2)], [rational(3), rational(4)]])))).toBe('[[1, 2], [3, 4]]');
   });
   it("test_converting_functions:246", () => {
     expect(sympyStr([[rational(1), rational(2)], [rational(3), rational(4)]])).toBe('[[1, 2], [3, 4]]');
@@ -581,16 +586,16 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   //   => (2, 2)
   it.todo("test_converting_functions:252");
   it("test_equality:267", () => {
-    expect(sympyStr(MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).toBe('[[1, 2], [3, 4]]');
   });
   it("test_equality:269", () => {
-    expect(sympyStr(MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).not.toBe('[[0, 2], [3, 4]]');
+    expect(sympyStr(new MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).not.toBe('[[0, 2], [3, 4]]');
   });
   it("test_equality:270", () => {
-    expect(sympyStr(MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).not.toBe('[[4, 3], [2, 1]]');
+    expect(sympyStr(new MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).not.toBe('[[4, 3], [2, 1]]');
   });
   it("test_equality:271", () => {
-    expect(sympyStr(MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).toBe('[[1, 2], [3, 4]]');
+    expect(sympyStr(new MutableDenseNDimArray([1, 2, 3, 4], [2, 2]))).toBe('[[1, 2], [3, 4]]');
   });
   it("test_arithmetic:280", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(3), rational(3), rational(3), rational(3), rational(3), rational(3), rational(3), rational(3), rational(3)], [3, 3]).add(MutableDenseNDimArray([rational(7), rational(7), rational(7), rational(7), rational(7), rational(7), rational(7), rational(7), rational(7)], [3, 3])))).toBe('[[10, 10, 10], [10, 10, 10], [10, 10, 10]]');
@@ -643,16 +648,16 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   it("test_higher_dimenions:322", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(pyStr(MutableDenseNDimArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], [2, 3, 4]))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
+      expect(pyStr(new MutableDenseNDimArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], [2, 3, 4]))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
   it("test_higher_dimenions:325", () => {
-    expect(sympyStr(MutableDenseNDimArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], [2, 3, 4]))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
+    expect(sympyStr(new MutableDenseNDimArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], [2, 3, 4]))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
   });
   it("test_higher_dimenions:329", () => {
-    expect(sympyStr(MutableDenseNDimArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], [2, 3, 4]))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
+    expect(sympyStr(new MutableDenseNDimArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], [2, 3, 4]))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
   });
   it("test_slices:335", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(10), rational(11), rational(12), rational(13), rational(14), rational(15), rational(16), rational(17), rational(18), rational(19), rational(20), rational(21), rational(22), rational(23), rational(24), rational(25), rational(26), rational(27), rational(28), rational(29), rational(30), rational(31), rational(32), rational(33)], [2, 3, 4]).get(slice()))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
@@ -670,7 +675,7 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(10), rational(11), rational(12), rational(13), rational(14), rational(15), rational(16), rational(17), rational(18), rational(19), rational(20), rational(21), rational(22), rational(23), rational(24), rational(25), rational(26), rational(27), rational(28), rational(29), rational(30), rational(31), rational(32), rational(33)], [2, 3, 4]).get(slice(), slice(), slice()))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
   });
   it("test_slices:342", () => {
-    expect(sympyStr(MutableSparseNDimArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], [2, 3, 4]))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
+    expect(sympyStr(new MutableSparseNDimArray([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33], [2, 3, 4]))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
   });
   it("test_slices:344", () => {
     expect(sympyStr(MutableSparseNDimArray([rational(10), rational(11), rational(12), rational(13), rational(14), rational(15), rational(16), rational(17), rational(18), rational(19), rational(20), rational(21), rational(22), rational(23), rational(24), rational(25), rational(26), rational(27), rational(28), rational(29), rational(30), rational(31), rational(32), rational(33)], [2, 3, 4]).get(slice()))).toBe('[[[10, 11, 12, 13], [14, 15, 16, 17], [18, 19, 20, 21]], [[22, 23, 24, 25], [26, 27, 28, 29], [30, 31, 32, 33]]]');
@@ -718,11 +723,11 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   });
   it("test_diff:369", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(diff(MutableDenseNDimArray([x, y, new Mul([x, z]), new Mul([x, y, z])], [2, 2]), x))).toBe('[[1, 0], [z, y*z]]');
+    expect(sympyStr(diff(MutableDenseNDimArray([x, y, new Mul([x, z]), new Mul([x, y, z])], [2, 2]), x, 1))).toBe('[[1, 0], [z, y*z]]');
   });
   it("test_diff:372", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(MutableSparseNDimArray(MutableDenseNDimArray([x, y, new Mul([x, z]), new Mul([x, y, z])], [2, 2])))).toBe('[[x, y], [x*z, x*y*z]]');
+    expect(sympyStr(new MutableSparseNDimArray(MutableDenseNDimArray([x, y, new Mul([x, z]), new Mul([x, y, z])], [2, 2])))).toBe('[[x, y], [x*z, x*y*z]]');
   });
   it("test_diff:373", () => {
     const [x, y, z] = symbols('x y z');
@@ -730,7 +735,7 @@ describe("sympy/tensor/array/tests/test_mutable_ndim_array.py", () => {
   });
   it("test_diff:374", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(diff(MutableSparseNDimArray([x, y, new Mul([x, z]), new Mul([x, y, z])], [2, 2]), x))).toBe('[[1, 0], [z, y*z]]');
+    expect(sympyStr(diff(MutableSparseNDimArray([x, y, new Mul([x, z]), new Mul([x, y, z])], [2, 2]), x, 1))).toBe('[[1, 0], [z, y*z]]');
   });
 });
 
@@ -893,15 +898,15 @@ describe("sympy/tensor/array/tests/test_ndim_array.py", () => {
   });
   it("test_issue_18361:50", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(Array([new Add([new Mul([rational(-2), fn('cos', [x]), fn('sin', [x])]), fn('sin', [new Mul([rational(2), x])])])], [1])))).toBe('[0]');
+    expect(sympyStr(simplify(Array([new Add([new Mul([rational(-2), fn('cos', [x]), fn('sin', [x])]), fn('sin', [new Mul([rational(2), x])])])], [1]), { inverse: false, rational: false, doit: true }))).toBe('[0]');
   });
   it("test_issue_18361:51", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(Array([new Add([new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))]), rational(0)], [2])))).toBe('[1, 0]');
+    expect(sympyStr(simplify(Array([new Add([new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))]), rational(0)], [2]), { inverse: false, rational: false, doit: true }))).toBe('[1, 0]');
   });
   it("test_issue_18361:52", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(Array([new Mul([new Pow(new Add([new Mul([x, new Pow(fn('cos', [y]), rational(2))]), new Mul([x, new Pow(fn('sin', [y]), rational(2))])]), rational(-1)), new Add([x, new Pow(x, rational(2))])]), new Mul([rational(2), fn('cos', [x]), fn('sin', [x])])], [2])))).toBe('[x + 1, sin(2*x)]');
+    expect(sympyStr(simplify(Array([new Mul([new Pow(new Add([new Mul([x, new Pow(fn('cos', [y]), rational(2))]), new Mul([x, new Pow(fn('sin', [y]), rational(2))])]), rational(-1)), new Add([x, new Pow(x, rational(2))])]), new Mul([rational(2), fn('cos', [x]), fn('sin', [x])])], [2]), { inverse: false, rational: false, doit: true }))).toBe('[x + 1, sin(2*x)]');
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: A - B)
@@ -912,28 +917,28 @@ describe("sympy/tensor/array/tests/test_ndim_array.py", () => {
   //   => (0,)
   it.todo("test_issue_17851:65");
   it("test_issue_17851:66", () => {
-    expect(sympyStr(pyItems(Array([])))).toBe('[]');
+    expect(sympyStr(pyItems(new Array([])))).toBe('[]');
   });
   // a primitive result that no library call returned
   //   assert A.shape == (0,)
   //   => (0,)
   it.todo("test_issue_17851:65 (2)");
   it("test_issue_17851:66 (2)", () => {
-    expect(sympyStr(pyItems(ImmutableSparseNDimArray([])))).toBe('[]');
+    expect(sympyStr(pyItems(new ImmutableSparseNDimArray([])))).toBe('[]');
   });
   // a primitive result that no library call returned
   //   assert A.shape == (0,)
   //   => (0,)
   it.todo("test_issue_17851:65 (3)");
   it("test_issue_17851:66 (3)", () => {
-    expect(sympyStr(pyItems(MutableDenseNDimArray([])))).toBe('[]');
+    expect(sympyStr(pyItems(new MutableDenseNDimArray([])))).toBe('[]');
   });
   // a primitive result that no library call returned
   //   assert A.shape == (0,)
   //   => (0,)
   it.todo("test_issue_17851:65 (4)");
   it("test_issue_17851:66 (4)", () => {
-    expect(sympyStr(pyItems(MutableSparseNDimArray([])))).toBe('[]');
+    expect(sympyStr(pyItems(new MutableSparseNDimArray([])))).toBe('[]');
   });
   it("test_issue_and_18715:73", () => {
     expect(sympyStr(MutableDenseNDimArray([rational(5), rational(1), rational(2)], [3]).get(0))).toBe('5');

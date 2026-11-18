@@ -88,7 +88,6 @@
       "AlgebraicNumber.assumptions0",
       "AlgebraicNumber.canonical_variables",
       "AlgebraicNumber.conjugate",
-      "AlgebraicNumber.equals",
       "AlgebraicNumber.func",
       "AlgebraicNumber.has",
       "AlgebraicNumber.is_algebraic",
@@ -114,12 +113,10 @@
       "AlgebraicNumber.is_nonnegative",
       "AlgebraicNumber.is_nonpositive",
       "AlgebraicNumber.is_nonzero",
-      "AlgebraicNumber.is_number",
       "AlgebraicNumber.is_odd",
       "AlgebraicNumber.is_polar",
       "AlgebraicNumber.is_positive",
       "AlgebraicNumber.is_prime",
-      "AlgebraicNumber.is_primitive_element",
       "AlgebraicNumber.is_rational",
       "AlgebraicNumber.is_real",
       "AlgebraicNumber.is_scalar",
@@ -148,7 +145,6 @@
       "BasePolynomialError.new",
       "CRootOf.all_roots",
       "CRootOf.expr",
-      "CRootOf.real_roots",
       "Circle.boundary",
       "Circle.closure",
       "Circle.complement",
@@ -275,10 +271,8 @@
       "ComplexRegion.union",
       "ComplexRootOf.all_roots",
       "ComplexRootOf.expr",
-      "ComplexRootOf.real_roots",
       "ComputationFailed.new",
       "ConditionSet.as_relational",
-      "ConditionSet.bound_symbols",
       "ConditionSet.complement",
       "ConditionSet.condition",
       "ConditionSet.contains",
@@ -1211,7 +1205,6 @@
       "GroebnerBasis.match",
       "GroebnerBasis.matches",
       "GroebnerBasis.order",
-      "GroebnerBasis.polys",
       "GroebnerBasis.rcall",
       "GroebnerBasis.refine",
       "GroebnerBasis.replace",
@@ -1244,7 +1237,6 @@
       "ITE.to_nnf",
       "Idx.label",
       "Idx.name",
-      "ImageSet.base_pset",
       "ImageSet.base_set",
       "ImageSet.complement",
       "ImageSet.contains",
@@ -1596,7 +1588,6 @@
       "Interval.start",
       "Interval.sup",
       "Interval.symmetric_difference",
-      "Interval.to_mpi",
       "Interval.union",
       "IsomorphismFailed.new",
       "KroneckerDelta.delta_range",
@@ -1937,7 +1928,6 @@
       "Poly.as_poly",
       "Poly.assumptions0",
       "Poly.atoms",
-      "Poly.cancel",
       "Poly.canonical_variables",
       "Poly.coeff",
       "Poly.compare",
@@ -1952,11 +1942,9 @@
       "Poly.dummy_eq",
       "Poly.expr",
       "Poly.find",
-      "Poly.from_poly",
       "Poly.func",
       "Poly.galois_group",
       "Poly.gens",
-      "Poly.get_domain",
       "Poly.has",
       "Poly.has_free",
       "Poly.has_xfree",
@@ -2003,11 +1991,8 @@
       "Poly.refine",
       "Poly.rep",
       "Poly.rewrite",
-      "Poly.same_root",
-      "Poly.shift_list",
       "Poly.simplify",
       "Poly.sort_key",
-      "Poly.subs",
       "Poly.xreplace",
       "Poly.zero",
       "Polygon.boundary",
@@ -3059,7 +3044,6 @@
       "SparseMatrix.zero",
       "SparseNDimArray.shape",
       "SparseNDimArray.zeros",
-      "StrPrinter.emptyPrinter",
       "StrPrinter.order",
       "StrPrinter.parenthesize",
       "StrPrinter.printmethod",
@@ -3592,7 +3576,6 @@
       "sinh.inverse",
       "sinh.unbranched",
       "smtlib_code",
-      "sqf_list",
       "sqf_part",
       "sturm",
       "subresultants",
@@ -3701,7 +3684,6 @@
       "AlgebraicField.is_EXRAW",
       "AlgebraicField.is_FF",
       "AlgebraicField.is_Field",
-      "AlgebraicField.is_FiniteExtension",
       "AlgebraicField.is_FiniteField",
       "AlgebraicField.is_Frac",
       "AlgebraicField.is_FractionField",
@@ -4040,7 +4022,6 @@
       "ComplexField.is_EXRAW",
       "ComplexField.is_FF",
       "ComplexField.is_Field",
-      "ComplexField.is_FiniteExtension",
       "ComplexField.is_FiniteField",
       "ComplexField.is_Frac",
       "ComplexField.is_FractionField",
@@ -4409,7 +4390,6 @@
       "Domain.is_EXRAW",
       "Domain.is_FF",
       "Domain.is_Field",
-      "Domain.is_FiniteExtension",
       "Domain.is_FiniteField",
       "Domain.is_Frac",
       "Domain.is_FractionField",
@@ -4611,7 +4591,6 @@
       "ExpressionDomain.is_EXRAW",
       "ExpressionDomain.is_FF",
       "ExpressionDomain.is_Field",
-      "ExpressionDomain.is_FiniteExtension",
       "ExpressionDomain.is_FiniteField",
       "ExpressionDomain.is_Frac",
       "ExpressionDomain.is_FractionField",
@@ -4733,7 +4712,6 @@
       "FiniteField.is_EXRAW",
       "FiniteField.is_FF",
       "FiniteField.is_Field",
-      "FiniteField.is_FiniteExtension",
       "FiniteField.is_FiniteField",
       "FiniteField.is_Frac",
       "FiniteField.is_FractionField",
@@ -4832,7 +4810,6 @@
       "FractionField.is_EXRAW",
       "FractionField.is_FF",
       "FractionField.is_Field",
-      "FractionField.is_FiniteExtension",
       "FractionField.is_FiniteField",
       "FractionField.is_Frac",
       "FractionField.is_FractionField",
@@ -5456,7 +5433,6 @@
       "IntegerRing.is_EXRAW",
       "IntegerRing.is_FF",
       "IntegerRing.is_Field",
-      "IntegerRing.is_FiniteExtension",
       "IntegerRing.is_FiniteField",
       "IntegerRing.is_Frac",
       "IntegerRing.is_FractionField",
@@ -6715,7 +6691,6 @@
       "PolynomialRing.is_EXRAW",
       "PolynomialRing.is_FF",
       "PolynomialRing.is_Field",
-      "PolynomialRing.is_FiniteExtension",
       "PolynomialRing.is_FiniteField",
       "PolynomialRing.is_Frac",
       "PolynomialRing.is_FractionField",
@@ -7093,7 +7068,6 @@
       "RationalField.is_EXRAW",
       "RationalField.is_FF",
       "RationalField.is_Field",
-      "RationalField.is_FiniteExtension",
       "RationalField.is_FiniteField",
       "RationalField.is_Frac",
       "RationalField.is_FractionField",
@@ -7208,7 +7182,6 @@
       "RealField.is_EXRAW",
       "RealField.is_FF",
       "RealField.is_Field",
-      "RealField.is_FiniteExtension",
       "RealField.is_FiniteField",
       "RealField.is_Frac",
       "RealField.is_FractionField",
@@ -12983,7 +12956,7 @@
      "testFile": "sympy/algebras/tests/test_quaternion.py",
      "inCorpus": true,
      "caseCount": 133,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -21659,7 +21632,7 @@
      "testFile": "sympy/calculus/tests/test_accumulationbounds.py",
      "inCorpus": true,
      "caseCount": 201,
-     "gapCount": 54,
+     "gapCount": 30,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 4,
@@ -21727,7 +21700,7 @@
      "testFile": "sympy/calculus/tests/test_euler.py",
      "inCorpus": true,
      "caseCount": 11,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 2
@@ -21837,7 +21810,7 @@
      "testFile": "sympy/calculus/tests/test_singularities.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 3,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -21895,7 +21868,7 @@
      "testFile": "sympy/calculus/tests/test_util.py",
      "inCorpus": true,
      "caseCount": 209,
-     "gapCount": 36,
+     "gapCount": 8,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -22925,7 +22898,9 @@
    "sha256": "d1ddea5f2db36aade2b32925138f253fb34fe4b4c5ed290b5cc1cc6f07951975",
    "status": "excluded",
    "reason": "Source-code generation for other languages is outside the project scope; expressions are evaluated in JavaScript directly (lambdify).",
-   "sources": [],
+   "sources": [
+    "codegen/matrixnodes.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 3,
@@ -23512,7 +23487,7 @@
      "testFile": "sympy/combinatorics/tests/test_coset_table.py",
      "inCorpus": true,
      "caseCount": 81,
-     "gapCount": 10,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 10
@@ -23589,10 +23564,8 @@
     "doctests": {
      "pass": false,
      "caseCount": 15,
-     "gapCount": 1,
-     "failingIds": [
-      "sympy.combinatorics.fp_groups: f.index([x]) #ac214adb1dc0aa54"
-     ],
+     "gapCount": 0,
+     "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "not-exported-api": 5,
@@ -23724,7 +23697,7 @@
      "testFile": "sympy/combinatorics/tests/test_free_groups.py",
      "inCorpus": true,
      "caseCount": 109,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 11,
@@ -23911,13 +23884,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.combinatorics.tests.test_generators",
      "testFile": "sympy/combinatorics/tests/test_generators.py",
      "inCorpus": true,
      "caseCount": 10,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -24074,7 +24047,7 @@
      "testFile": "sympy/combinatorics/tests/test_graycode.py",
      "inCorpus": true,
      "caseCount": 26,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -24541,7 +24514,7 @@
      "testFile": "sympy/combinatorics/tests/test_partitions.py",
      "inCorpus": true,
      "caseCount": 49,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -24756,7 +24729,7 @@
      "testFile": "sympy/combinatorics/tests/test_perm_groups.py",
      "inCorpus": true,
      "caseCount": 361,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 6,
@@ -24930,11 +24903,8 @@
     "doctests": {
      "pass": false,
      "caseCount": 155,
-     "gapCount": 2,
-     "failingIds": [
-      "sympy.combinatorics.permutations: [0, 1]*a # no change: 2-element identity #0bc188c3b593b95b",
-      "sympy.combinatorics.permutations: [[0, 1]]*a # exchange first two elements #a772ce8dfa3e8cf1"
-     ],
+     "gapCount": 0,
+     "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 37,
@@ -24952,7 +24922,7 @@
      "testFile": "sympy/combinatorics/tests/test_permutations.py",
      "inCorpus": true,
      "caseCount": 363,
-     "gapCount": 10,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -25531,7 +25501,7 @@
      "testFile": "sympy/combinatorics/tests/test_tensor_can.py",
      "inCorpus": true,
      "caseCount": 72,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1
@@ -25790,7 +25760,7 @@
      "testFile": "sympy/concrete/tests/test_delta.py",
      "inCorpus": true,
      "caseCount": 187,
-     "gapCount": 5,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -26366,7 +26336,7 @@
      "testFile": "sympy/concrete/tests/test_products.py",
      "inCorpus": true,
      "caseCount": 90,
-     "gapCount": 6,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 9,
@@ -26538,7 +26508,6 @@
       "AlgebraicNumber.assumptions0",
       "AlgebraicNumber.canonical_variables",
       "AlgebraicNumber.conjugate",
-      "AlgebraicNumber.equals",
       "AlgebraicNumber.func",
       "AlgebraicNumber.has",
       "AlgebraicNumber.is_algebraic",
@@ -26564,12 +26533,10 @@
       "AlgebraicNumber.is_nonnegative",
       "AlgebraicNumber.is_nonpositive",
       "AlgebraicNumber.is_nonzero",
-      "AlgebraicNumber.is_number",
       "AlgebraicNumber.is_odd",
       "AlgebraicNumber.is_polar",
       "AlgebraicNumber.is_positive",
       "AlgebraicNumber.is_prime",
-      "AlgebraicNumber.is_primitive_element",
       "AlgebraicNumber.is_rational",
       "AlgebraicNumber.is_real",
       "AlgebraicNumber.is_scalar",
@@ -28046,7 +28013,7 @@
      "testFile": "sympy/core/tests/test_assumptions.py",
      "inCorpus": true,
      "caseCount": 706,
-     "gapCount": 20,
+     "gapCount": 19,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -28279,7 +28246,7 @@
      "testFile": "sympy/core/tests/test_basic.py",
      "inCorpus": true,
      "caseCount": 207,
-     "gapCount": 17,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -28463,7 +28430,7 @@
      "testFile": "sympy/core/tests/test_containers.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 13,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -28619,7 +28586,6 @@
       "check_convergence",
       "check_target",
       "chop_parts",
-      "complex_accuracy",
       "do_integral",
       "evalf_abs",
       "evalf_add",
@@ -28647,7 +28613,6 @@
       "finalize_complex",
       "get_abs",
       "get_complex_part",
-      "get_integer_part",
       "hypsum",
       "iszero",
       "quad_to_mpmath"
@@ -28676,7 +28641,7 @@
      "testFile": "sympy/core/tests/test_evalf.py",
      "inCorpus": true,
      "caseCount": 158,
-     "gapCount": 48,
+     "gapCount": 29,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 110,
@@ -28859,7 +28824,7 @@
      "testFile": "sympy/core/tests/test_expr.py",
      "inCorpus": true,
      "caseCount": 877,
-     "gapCount": 125,
+     "gapCount": 67,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -28999,10 +28964,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "Factors.gcd",
-      "Factors.lcm",
-      "Factors.normal",
-      "Factors.pow",
       "Term",
       "Term.as_expr",
       "Term.gcd",
@@ -29016,7 +28977,6 @@
       "Factors.__eq__",
       "Factors.__mod__",
       "Factors.__ne__",
-      "Factors.__pow__",
       "Term.__eq__",
       "Term.__mul__",
       "Term.__ne__",
@@ -29047,7 +29007,7 @@
      "testFile": "sympy/core/tests/test_exprtools.py",
      "inCorpus": true,
      "caseCount": 231,
-     "gapCount": 55,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 1,
@@ -29571,7 +29531,7 @@
      "testFile": "sympy/core/tests/test_function.py",
      "inCorpus": true,
      "caseCount": 428,
-     "gapCount": 153,
+     "gapCount": 33,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -29672,10 +29632,8 @@
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "igcd_lehmer"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [],
      "internalNames": [],
      "unresolvedBases": []
@@ -30120,7 +30078,6 @@
       "AlgebraicNumber.assumptions0",
       "AlgebraicNumber.canonical_variables",
       "AlgebraicNumber.conjugate",
-      "AlgebraicNumber.equals",
       "AlgebraicNumber.func",
       "AlgebraicNumber.has",
       "AlgebraicNumber.is_algebraic",
@@ -30146,12 +30103,10 @@
       "AlgebraicNumber.is_nonnegative",
       "AlgebraicNumber.is_nonpositive",
       "AlgebraicNumber.is_nonzero",
-      "AlgebraicNumber.is_number",
       "AlgebraicNumber.is_odd",
       "AlgebraicNumber.is_polar",
       "AlgebraicNumber.is_positive",
       "AlgebraicNumber.is_prime",
-      "AlgebraicNumber.is_primitive_element",
       "AlgebraicNumber.is_rational",
       "AlgebraicNumber.is_real",
       "AlgebraicNumber.is_scalar",
@@ -31046,7 +31001,6 @@
       "Zero.q",
       "Zero.subs",
       "all_close",
-      "int_valued",
       "mpf_norm",
       "sympify_complex",
       "sympify_fmpq",
@@ -31810,7 +31764,7 @@
      "testFile": "sympy/core/tests/test_numbers.py",
      "inCorpus": true,
      "caseCount": 1992,
-     "gapCount": 131,
+     "gapCount": 62,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 58,
@@ -32427,7 +32381,7 @@
      "testFile": "sympy/core/tests/test_power.py",
      "inCorpus": true,
      "caseCount": 256,
-     "gapCount": 11,
+     "gapCount": 9,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 6,
@@ -33053,7 +33007,7 @@
      "testFile": "sympy/core/tests/test_relational.py",
      "inCorpus": true,
      "caseCount": 1063,
-     "gapCount": 84,
+     "gapCount": 28,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 8,
@@ -33276,7 +33230,7 @@
      "testFile": "sympy/core/tests/test_sorting.py",
      "inCorpus": true,
      "caseCount": 3,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
@@ -33442,7 +33396,7 @@
      "testFile": "sympy/core/tests/test_symbol.py",
      "inCorpus": true,
      "caseCount": 167,
-     "gapCount": 18,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 10586,
@@ -33523,7 +33477,7 @@
      "testFile": "sympy/core/tests/test_sympify.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 20,
+     "gapCount": 7,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 20,
@@ -33600,7 +33554,7 @@
      "testFile": "sympy/core/tests/test_traversal.py",
      "inCorpus": true,
      "caseCount": 21,
-     "gapCount": 11,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1
@@ -33773,7 +33727,7 @@
      "testFile": "sympy/crypto/tests/test_crypto.py",
      "inCorpus": true,
      "caseCount": 5067,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 6,
@@ -40978,7 +40932,7 @@
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
      "caseCount": 459,
-     "gapCount": 30,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -41256,8 +41210,8 @@
      "testFile": "sympy/functions/elementary/tests/test_exponential.py",
      "inCorpus": true,
      "caseCount": 491,
-     "gapCount": 63,
-     "timeoutCount": 3,
+     "gapCount": 1,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
       "not-exported-api": 10,
@@ -41885,7 +41839,7 @@
      "testFile": "sympy/functions/elementary/tests/test_hyperbolic.py",
      "inCorpus": true,
      "caseCount": 765,
-     "gapCount": 77,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 1,
@@ -42157,7 +42111,7 @@
      "testFile": "sympy/functions/elementary/tests/test_integers.py",
      "inCorpus": true,
      "caseCount": 451,
-     "gapCount": 6,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
@@ -42479,7 +42433,7 @@
      "testFile": "sympy/functions/elementary/tests/test_miscellaneous.py",
      "inCorpus": true,
      "caseCount": 980,
-     "gapCount": 17,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 1,
@@ -42688,7 +42642,7 @@
      "testFile": "sympy/functions/elementary/tests/test_piecewise.py",
      "inCorpus": true,
      "caseCount": 493,
-     "gapCount": 132,
+     "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -43360,7 +43314,7 @@
      "testFile": "sympy/functions/elementary/tests/test_trigonometric.py",
      "inCorpus": true,
      "caseCount": 3035,
-     "gapCount": 86,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -44230,7 +44184,7 @@
      "testFile": "sympy/functions/special/tests/test_bessel.py",
      "inCorpus": true,
      "caseCount": 370,
-     "gapCount": 106,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 9,
@@ -44402,13 +44356,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.functions.special.tests.test_beta_functions",
      "testFile": "sympy/functions/special/tests/test_beta_functions.py",
      "inCorpus": true,
      "caseCount": 46,
-     "gapCount": 12,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -44576,7 +44530,7 @@
      "testFile": "sympy/functions/special/tests/test_delta_functions.py",
      "inCorpus": true,
      "caseCount": 89,
-     "gapCount": 19,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 1
@@ -44769,6 +44723,7 @@
    "sha256": "1af2ab9b97d53296add0889eae1f54b31b1379092727288780cad64be7bb7e1c",
    "status": "partial",
    "sources": [
+    "functions/special/errorfunctions.ts",
     "functions/special/special.ts"
    ],
    "completeness": {
@@ -45380,7 +45335,7 @@
      "testFile": "sympy/functions/special/tests/test_error_functions.py",
      "inCorpus": true,
      "caseCount": 336,
-     "gapCount": 111,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 33,
@@ -45686,7 +45641,7 @@
      "testFile": "sympy/functions/special/tests/test_gamma_functions.py",
      "inCorpus": true,
      "caseCount": 306,
-     "gapCount": 75,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 28,
@@ -46946,7 +46901,7 @@
      "testFile": "sympy/functions/special/tests/test_hyper.py",
      "inCorpus": true,
      "caseCount": 94,
-     "gapCount": 27,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 24,
@@ -47774,7 +47729,7 @@
      "testFile": "sympy/functions/special/tests/test_singularity_functions.py",
      "inCorpus": true,
      "caseCount": 62,
-     "gapCount": 15,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 7
@@ -47995,7 +47950,7 @@
      "testFile": "sympy/functions/special/tests/test_tensor_functions.py",
      "inCorpus": true,
      "caseCount": 101,
-     "gapCount": 14,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 13
@@ -48208,7 +48163,7 @@
      "testFile": "sympy/functions/special/tests/test_zeta_functions.py",
      "inCorpus": true,
      "caseCount": 101,
-     "gapCount": 13,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 18,
@@ -49562,7 +49517,7 @@
      "testFile": "sympy/geometry/tests/test_ellipse.py",
      "inCorpus": true,
      "caseCount": 134,
-     "gapCount": 4,
+     "gapCount": 1,
      "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 150
@@ -49637,8 +49592,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "GeometryEntity.ambient_dimension",
-      "GeometrySet.ambient_dimension",
       "GeometrySet.boundary",
       "GeometrySet.closure",
       "GeometrySet.complement",
@@ -49743,7 +49696,7 @@
      "testFile": "sympy/geometry/tests/test_entity.py",
      "inCorpus": true,
      "caseCount": 21,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -50940,13 +50893,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.geometry.tests.test_parabola",
      "testFile": "sympy/geometry/tests/test_parabola.py",
      "inCorpus": true,
      "caseCount": 73,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -51160,7 +51113,7 @@
      "testFile": "sympy/geometry/tests/test_point.py",
      "inCorpus": true,
      "caseCount": 213,
-     "gapCount": 8,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -51433,7 +51386,7 @@
      "testFile": "sympy/geometry/tests/test_polygon.py",
      "inCorpus": true,
      "caseCount": 88,
-     "gapCount": 3,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 146,
@@ -51681,7 +51634,7 @@
      "testFile": "sympy/holonomic/tests/test_holonomic.py",
      "inCorpus": true,
      "caseCount": 183,
-     "gapCount": 14,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 18
@@ -52342,8 +52295,8 @@
      "testFile": "sympy/integrals/tests/test_heurisch.py",
      "inCorpus": true,
      "caseCount": 97,
-     "gapCount": 15,
-     "timeoutCount": 1,
+     "gapCount": 0,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 5,
       "not-exported-api": 1,
@@ -52435,7 +52388,7 @@
      "testFile": "sympy/integrals/tests/test_integrals.py",
      "inCorpus": true,
      "caseCount": 569,
-     "gapCount": 193,
+     "gapCount": 32,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 51,
@@ -53021,7 +52974,6 @@
       "dirac_delta_rule",
       "exp_rule",
       "fallback_rule",
-      "find_substitutions",
       "heaviside_pattern",
       "heaviside_rule",
       "hyperbolic_rule",
@@ -53029,7 +52981,6 @@
       "inverse_trig_rule",
       "make_wilds",
       "manual_diff",
-      "manual_subs",
       "mul_rule",
       "multiplexer",
       "nested_pow_rule",
@@ -53364,7 +53315,7 @@
      "testFile": "sympy/integrals/tests/test_meijerint.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 31,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 110,
@@ -53694,20 +53645,12 @@
      "pass": false,
      "missingNames": [
       "DecrementLevel",
-      "DifferentialExtension",
-      "DifferentialExtension.decrement_level",
-      "DifferentialExtension.increment_level",
-      "DifferentialExtension.indices",
-      "DifferentialExtension.reset",
       "NonElementaryIntegral.as_sum",
       "NonElementaryIntegral.principal_value",
       "NonElementaryIntegral.transform",
       "NonElementaryIntegralException",
-      "as_poly_1t",
       "canonical_representation",
       "derivation",
-      "frac_in",
-      "gcdex_diophantine",
       "get_case",
       "hermite_reduce",
       "integrate_hyperexponential",
@@ -53775,7 +53718,7 @@
      "testFile": "sympy/integrals/tests/test_risch.py",
      "inCorpus": true,
      "caseCount": 36,
-     "gapCount": 15,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 31,
@@ -54247,7 +54190,7 @@
      "testFile": "sympy/integrals/tests/test_transforms.py",
      "inCorpus": true,
      "caseCount": 83,
-     "gapCount": 20,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 66,
@@ -54858,13 +54801,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.liealgebras.tests.test_root_system",
      "testFile": "sympy/liealgebras/tests/test_root_system.py",
      "inCorpus": true,
      "caseCount": 8,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -55014,13 +54957,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.liealgebras.tests.test_type_A",
      "testFile": "sympy/liealgebras/tests/test_type_A.py",
      "inCorpus": true,
      "caseCount": 9,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -55173,13 +55116,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.liealgebras.tests.test_type_B",
      "testFile": "sympy/liealgebras/tests/test_type_B.py",
      "inCorpus": true,
      "caseCount": 8,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -55495,7 +55438,7 @@
      "testFile": "sympy/liealgebras/tests/test_type_D.py",
      "inCorpus": true,
      "caseCount": 6,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1
@@ -57583,7 +57526,7 @@
      "testFile": "sympy/logic/tests/test_boolalg.py",
      "inCorpus": true,
      "caseCount": 7484,
-     "gapCount": 92,
+     "gapCount": 44,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 15,
@@ -57745,7 +57688,7 @@
      "testFile": "sympy/logic/tests/test_inference.py",
      "inCorpus": true,
      "caseCount": 103,
-     "gapCount": 14,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -59314,8 +59257,7 @@
       "MatrixSpecial.shape",
       "MatrixSpecial.wilkinson",
       "MatrixSpecial.zeros",
-      "a2idx",
-      "classof"
+      "a2idx"
      ],
      "pythonSpecificNames": [
       "MatrixArithmetic.__add__",
@@ -59525,7 +59467,7 @@
      "testFile": "sympy/matrices/tests/test_decompositions.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 15,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 20,
@@ -59765,7 +59707,7 @@
   {
    "module": "sympy.matrices.determinant",
    "sha256": "a434c36022c1496268bff8ff07e6591dda87dfe590feec2165ac2b5f710313d9",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "matrices/linalg.ts",
     "matrices/matrix.ts"
@@ -59789,14 +59731,14 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.tests.test_determinant",
      "testFile": "sympy/matrices/tests/test_determinant.py",
      "inCorpus": true,
      "caseCount": 174,
-     "gapCount": 11,
-     "timeoutCount": 4,
+     "gapCount": 0,
+     "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
     },
@@ -59843,7 +59785,7 @@
      "testFile": "sympy/matrices/tests/test_eigen.py",
      "inCorpus": true,
      "caseCount": 316,
-     "gapCount": 4,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -60965,12 +60907,10 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "bc_block_plus_ident",
       "bc_dist",
       "bc_inverse",
       "bc_matadd",
       "bc_matmul",
-      "bc_transpose",
       "bc_unpack",
       "blockinverse_1x1",
       "blockinverse_2x2"
@@ -61049,7 +60989,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_blockmatrix.py",
      "inCorpus": true,
      "caseCount": 112,
-     "gapCount": 10,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -61269,7 +61209,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_determinant.py",
      "inCorpus": true,
      "caseCount": 21,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 2
@@ -61406,7 +61346,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_diagonal.py",
      "inCorpus": true,
      "caseCount": 58,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2
@@ -62060,13 +62000,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_factorizations",
      "testFile": "sympy/matrices/expressions/tests/test_factorizations.py",
      "inCorpus": true,
      "caseCount": 14,
-     "gapCount": 7,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -62190,7 +62130,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_fourier.py",
      "inCorpus": true,
      "caseCount": 12,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 1
@@ -62271,7 +62211,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_funcmatrix.py",
      "inCorpus": true,
      "caseCount": 21,
-     "gapCount": 3,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 2
@@ -62464,13 +62404,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_inverse",
      "testFile": "sympy/matrices/expressions/tests/test_inverse.py",
      "inCorpus": true,
      "caseCount": 24,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -62554,13 +62494,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_kronecker",
      "testFile": "sympy/matrices/expressions/tests/test_kronecker.py",
      "inCorpus": true,
      "caseCount": 31,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -62656,7 +62596,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matadd.py",
      "inCorpus": true,
      "caseCount": 12,
-     "gapCount": 3,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 1
@@ -62693,7 +62633,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "MatrixElement.symbol",
       "MatrixExpr.shape",
       "MatrixSymbol.name",
       "get_postprocessor"
@@ -62791,7 +62730,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matexpr.py",
      "inCorpus": true,
      "caseCount": 192,
-     "gapCount": 54,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 12,
@@ -62873,16 +62812,12 @@
       "MatMul.as_two_terms",
       "MatMul.flatten",
       "MatMul.identity",
-      "any_zeros",
       "combine_one_matrices",
       "combine_permutations",
-      "combine_powers",
       "distribute_monom",
-      "factor_in_front",
       "merge_explicit",
       "newmul",
-      "refine_MatMul",
-      "remove_ids"
+      "refine_MatMul"
      ],
      "pythonSpecificNames": [
       "MatMul.__floordiv__",
@@ -62934,7 +62869,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matmul.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 15,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 1,
@@ -63030,7 +62965,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matpow.py",
      "inCorpus": true,
      "caseCount": 114,
-     "gapCount": 5,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -63240,7 +63175,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_sets.py",
      "inCorpus": true,
      "caseCount": 11,
-     "gapCount": 4,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 4
@@ -63501,7 +63436,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_special.py",
      "inCorpus": true,
      "caseCount": 80,
-     "gapCount": 4,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 5
@@ -63602,7 +63537,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_trace.py",
      "inCorpus": true,
      "caseCount": 37,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 1
@@ -63683,13 +63618,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_transpose",
      "testFile": "sympy/matrices/expressions/tests/test_transpose.py",
      "inCorpus": true,
      "caseCount": 18,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -64149,7 +64084,7 @@
      "testFile": "sympy/matrices/tests/test_immutable.py",
      "inCorpus": true,
      "caseCount": 27,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -64202,10 +64137,8 @@
     "doctests": {
      "pass": false,
      "caseCount": 5,
-     "gapCount": 1,
-     "failingIds": [
-      "sympy.matrices.inverse: B.simplify() #84bc0e4480128e99"
-     ],
+     "gapCount": 0,
+     "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -64960,7 +64893,7 @@
      "testFile": "sympy/matrices/tests/test_matrices.py",
      "inCorpus": true,
      "caseCount": 878,
-     "gapCount": 54,
+     "gapCount": 10,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 2,
@@ -65075,8 +65008,7 @@
       "MatrixBase.one",
       "MatrixBase.row_del",
       "MatrixBase.zero",
-      "a2idx",
-      "classof"
+      "a2idx"
      ],
      "pythonSpecificNames": [
       "DeferredVector.__floordiv__",
@@ -65114,10 +65046,8 @@
     "doctests": {
      "pass": false,
      "caseCount": 399,
-     "gapCount": 1,
-     "failingIds": [
-      "sympy.matrices.matrixbase: B.simplify() #84bc0e4480128e99"
-     ],
+     "gapCount": 0,
+     "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 9,
@@ -65137,7 +65067,7 @@
      "testFile": "sympy/matrices/tests/test_matrixbase.py",
      "inCorpus": true,
      "caseCount": 1056,
-     "gapCount": 79,
+     "gapCount": 11,
      "timeoutCount": 4,
      "disallowedOmissions": {
       "marked-slow": 4,
@@ -65453,7 +65383,7 @@
      "testFile": "sympy/matrices/tests/test_reductions.py",
      "inCorpus": true,
      "caseCount": 102,
-     "gapCount": 36,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 22
@@ -65739,13 +65669,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.tests.test_repmatrix",
      "testFile": "sympy/matrices/tests/test_repmatrix.py",
      "inCorpus": true,
      "caseCount": 14,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -65821,7 +65751,7 @@
      "testFile": "sympy/matrices/tests/test_solvers.py",
      "inCorpus": true,
      "caseCount": 132,
-     "gapCount": 12,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2
@@ -66019,7 +65949,7 @@
      "testFile": "sympy/matrices/tests/test_sparse.py",
      "inCorpus": true,
      "caseCount": 187,
-     "gapCount": 12,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -66146,7 +66076,7 @@
      "testFile": "sympy/matrices/tests/test_subspaces.py",
      "inCorpus": true,
      "caseCount": 25,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -66850,7 +66780,7 @@
      "testFile": "sympy/ntheory/tests/test_factor_.py",
      "inCorpus": true,
      "caseCount": 10676,
-     "gapCount": 21,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 76,
@@ -66954,7 +66884,7 @@
      "testFile": "sympy/ntheory/tests/test_generate.py",
      "inCorpus": true,
      "caseCount": 3570,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1122,
@@ -68778,7 +68708,7 @@
      "testFile": "sympy/parsing/tests/test_sympy_parser.py",
      "inCorpus": true,
      "caseCount": 145,
-     "gapCount": 7,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 37,
@@ -73504,7 +73434,7 @@
      "testFile": "sympy/plotting/intervalmath/tests/test_interval_membership.py",
      "inCorpus": true,
      "caseCount": 4,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -74508,7 +74438,7 @@
      "testFile": "sympy/plotting/tests/test_utils.py",
      "inCorpus": true,
      "caseCount": 6,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 4
@@ -74590,7 +74520,6 @@
       "BasePolynomialError.new",
       "CRootOf.all_roots",
       "CRootOf.expr",
-      "CRootOf.real_roots",
       "CoercionFailed.new",
       "ComplexField.abs",
       "ComplexField.alg_field_from_poly",
@@ -74644,7 +74573,6 @@
       "ComplexField.zero",
       "ComplexRootOf.all_roots",
       "ComplexRootOf.expr",
-      "ComplexRootOf.real_roots",
       "ComputationFailed.new",
       "Domain.abs",
       "Domain.alg_field_from_poly",
@@ -75388,7 +75316,6 @@
       "GroebnerBasis.match",
       "GroebnerBasis.matches",
       "GroebnerBasis.order",
-      "GroebnerBasis.polys",
       "GroebnerBasis.rcall",
       "GroebnerBasis.refine",
       "GroebnerBasis.replace",
@@ -75468,7 +75395,6 @@
       "Poly.as_poly",
       "Poly.assumptions0",
       "Poly.atoms",
-      "Poly.cancel",
       "Poly.canonical_variables",
       "Poly.coeff",
       "Poly.compare",
@@ -75483,11 +75409,9 @@
       "Poly.dummy_eq",
       "Poly.expr",
       "Poly.find",
-      "Poly.from_poly",
       "Poly.func",
       "Poly.galois_group",
       "Poly.gens",
-      "Poly.get_domain",
       "Poly.has",
       "Poly.has_free",
       "Poly.has_xfree",
@@ -75534,11 +75458,8 @@
       "Poly.refine",
       "Poly.rep",
       "Poly.rewrite",
-      "Poly.same_root",
-      "Poly.shift_list",
       "Poly.simplify",
       "Poly.sort_key",
-      "Poly.subs",
       "Poly.xreplace",
       "Poly.zero",
       "PolynomialDivisionFailed.new",
@@ -76430,7 +76351,6 @@
       "real_roots",
       "refine_root",
       "rem",
-      "sqf_list",
       "sqf_part",
       "sturm",
       "subresultants",
@@ -76447,7 +76367,6 @@
       "AlgebraicField.is_EXRAW",
       "AlgebraicField.is_FF",
       "AlgebraicField.is_Field",
-      "AlgebraicField.is_FiniteExtension",
       "AlgebraicField.is_FiniteField",
       "AlgebraicField.is_Frac",
       "AlgebraicField.is_FractionField",
@@ -76498,7 +76417,6 @@
       "ComplexField.is_EXRAW",
       "ComplexField.is_FF",
       "ComplexField.is_Field",
-      "ComplexField.is_FiniteExtension",
       "ComplexField.is_FiniteField",
       "ComplexField.is_Frac",
       "ComplexField.is_FractionField",
@@ -76549,7 +76467,6 @@
       "Domain.is_EXRAW",
       "Domain.is_FF",
       "Domain.is_Field",
-      "Domain.is_FiniteExtension",
       "Domain.is_FiniteField",
       "Domain.is_Frac",
       "Domain.is_FractionField",
@@ -76580,7 +76497,6 @@
       "ExpressionDomain.is_EXRAW",
       "ExpressionDomain.is_FF",
       "ExpressionDomain.is_Field",
-      "ExpressionDomain.is_FiniteExtension",
       "ExpressionDomain.is_FiniteField",
       "ExpressionDomain.is_Frac",
       "ExpressionDomain.is_FractionField",
@@ -76681,7 +76597,6 @@
       "FiniteField.is_EXRAW",
       "FiniteField.is_FF",
       "FiniteField.is_Field",
-      "FiniteField.is_FiniteExtension",
       "FiniteField.is_FiniteField",
       "FiniteField.is_Frac",
       "FiniteField.is_FractionField",
@@ -76712,7 +76627,6 @@
       "FractionField.is_EXRAW",
       "FractionField.is_FF",
       "FractionField.is_Field",
-      "FractionField.is_FiniteExtension",
       "FractionField.is_FiniteField",
       "FractionField.is_Frac",
       "FractionField.is_FractionField",
@@ -76877,7 +76791,6 @@
       "IntegerRing.is_EXRAW",
       "IntegerRing.is_FF",
       "IntegerRing.is_Field",
-      "IntegerRing.is_FiniteExtension",
       "IntegerRing.is_FiniteField",
       "IntegerRing.is_Frac",
       "IntegerRing.is_FractionField",
@@ -76943,7 +76856,6 @@
       "PolynomialRing.is_EXRAW",
       "PolynomialRing.is_FF",
       "PolynomialRing.is_Field",
-      "PolynomialRing.is_FiniteExtension",
       "PolynomialRing.is_FiniteField",
       "PolynomialRing.is_Frac",
       "PolynomialRing.is_FractionField",
@@ -77136,7 +77048,6 @@
       "RationalField.is_EXRAW",
       "RationalField.is_FF",
       "RationalField.is_Field",
-      "RationalField.is_FiniteExtension",
       "RationalField.is_FiniteField",
       "RationalField.is_Frac",
       "RationalField.is_FractionField",
@@ -77167,7 +77078,6 @@
       "RealField.is_EXRAW",
       "RealField.is_FF",
       "RealField.is_Field",
-      "RealField.is_FiniteExtension",
       "RealField.is_FiniteField",
       "RealField.is_Frac",
       "RealField.is_FractionField",
@@ -77745,7 +77655,7 @@
      "testFile": "sympy/polys/agca/tests/test_extensions.py",
      "inCorpus": true,
      "caseCount": 100,
-     "gapCount": 13,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -77856,11 +77766,6 @@
       "MatrixHomomorphism.__ne__",
       "MatrixHomomorphism.__sub__",
       "MatrixHomomorphism.__truediv__",
-      "ModuleHomomorphism.__add__",
-      "ModuleHomomorphism.__eq__",
-      "ModuleHomomorphism.__ne__",
-      "ModuleHomomorphism.__sub__",
-      "ModuleHomomorphism.__truediv__",
       "SubModuleHomomorphism.__add__",
       "SubModuleHomomorphism.__eq__",
       "SubModuleHomomorphism.__mul__",
@@ -77891,7 +77796,7 @@
      "testFile": "sympy/polys/agca/tests/test_homomorphisms.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 13,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 2
@@ -77963,7 +77868,6 @@
       "Ideal.union",
       "ModuleImplementedIdeal.depth",
       "ModuleImplementedIdeal.height",
-      "ModuleImplementedIdeal.in_terms_of_generators",
       "ModuleImplementedIdeal.is_maximal",
       "ModuleImplementedIdeal.is_primary",
       "ModuleImplementedIdeal.is_prime",
@@ -78001,7 +77905,7 @@
      "testFile": "sympy/polys/agca/tests/test_ideals.py",
      "inCorpus": true,
      "caseCount": 37,
-     "gapCount": 10,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 24
@@ -78095,12 +77999,9 @@
       "FreeModuleQuotientRing.unlift",
       "Module.convert",
       "Module.identity_hom",
-      "ModuleElement.div",
       "ModuleElement.eq",
-      "ModuleOrder",
       "ModuleOrder.alias",
       "ModuleOrder.is_default",
-      "ModuleOrder.is_global",
       "QuotientModule.dtype",
       "QuotientModule.identity_hom",
       "QuotientModule.quotient_hom",
@@ -78168,7 +78069,6 @@
       "SubQuotientModule.union"
      ],
      "pythonSpecificNames": [
-      "FreeModule.__mul__",
       "FreeModuleElement.__add__",
       "FreeModuleElement.__eq__",
       "FreeModuleElement.__mul__",
@@ -78185,11 +78085,6 @@
       "FreeModuleQuotientRing.__mul__",
       "FreeModuleQuotientRing.__ne__",
       "FreeModuleQuotientRing.__truediv__",
-      "Module.__mul__",
-      "ModuleElement.__truediv__",
-      "ModuleOrder.__eq__",
-      "ModuleOrder.__ne__",
-      "QuotientModule.__mul__",
       "QuotientModuleElement.__add__",
       "QuotientModuleElement.__eq__",
       "QuotientModuleElement.__mul__",
@@ -78198,8 +78093,6 @@
       "QuotientModuleElement.__rsub__",
       "QuotientModuleElement.__sub__",
       "QuotientModuleElement.__truediv__",
-      "SubModule.__add__",
-      "SubModule.__mul__",
       "SubModulePolyRing.__add__",
       "SubModulePolyRing.__eq__",
       "SubModulePolyRing.__mul__",
@@ -78236,7 +78129,7 @@
      "testFile": "sympy/polys/agca/tests/test_modules.py",
      "inCorpus": true,
      "caseCount": 172,
-     "gapCount": 81,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 6,
@@ -78367,13 +78260,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_appellseqs",
      "testFile": "sympy/polys/tests/test_appellseqs.py",
      "inCorpus": true,
      "caseCount": 61,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -78417,8 +78310,6 @@
       "IPolys.dmp_degree",
       "IPolys.dmp_degree_in",
       "IPolys.dmp_euclidean_prs",
-      "IPolys.dmp_ext_factor",
-      "IPolys.dmp_factor_list_include",
       "IPolys.dmp_gcdex",
       "IPolys.dmp_gf_factor",
       "IPolys.dmp_gf_sqf_list",
@@ -78429,10 +78320,8 @@
       "IPolys.dmp_invert",
       "IPolys.dmp_norm",
       "IPolys.dmp_primitive_prs",
-      "IPolys.dmp_qq_i_factor",
       "IPolys.dmp_trial_division",
       "IPolys.dmp_zz_diophantine",
-      "IPolys.dmp_zz_i_factor",
       "IPolys.dmp_zz_mignotte_bound",
       "IPolys.dmp_zz_wang",
       "IPolys.dmp_zz_wang_hensel_lifting",
@@ -78447,8 +78336,6 @@
       "IPolys.dup_count_real_roots",
       "IPolys.dup_degree",
       "IPolys.dup_euclidean_prs",
-      "IPolys.dup_ext_factor",
-      "IPolys.dup_factor_list_include",
       "IPolys.dup_gf_factor",
       "IPolys.dup_gf_sqf_list",
       "IPolys.dup_gf_sqf_part",
@@ -78456,7 +78343,6 @@
       "IPolys.dup_inner_isolate_positive_roots",
       "IPolys.dup_inner_isolate_real_roots",
       "IPolys.dup_inner_refine_real_root",
-      "IPolys.dup_irreducible_p",
       "IPolys.dup_isolate_all_roots",
       "IPolys.dup_isolate_all_roots_sqf",
       "IPolys.dup_isolate_complex_roots_sqf",
@@ -78465,21 +78351,15 @@
       "IPolys.dup_isolate_real_roots_sqf",
       "IPolys.dup_outer_refine_real_root",
       "IPolys.dup_primitive_prs",
-      "IPolys.dup_qq_i_factor",
       "IPolys.dup_refine_real_root",
       "IPolys.dup_root_lower_bound",
       "IPolys.dup_root_upper_bound",
       "IPolys.dup_sqf_norm",
       "IPolys.dup_step_refine_real_root",
       "IPolys.dup_trial_division",
-      "IPolys.dup_zz_cyclotomic_factor",
-      "IPolys.dup_zz_cyclotomic_poly",
       "IPolys.dup_zz_diophantine",
-      "IPolys.dup_zz_factor_sqf",
       "IPolys.dup_zz_hensel_lift",
       "IPolys.dup_zz_hensel_step",
-      "IPolys.dup_zz_i_factor",
-      "IPolys.dup_zz_irreducible_p",
       "IPolys.dup_zz_zassenhaus",
       "IPolys.fateman_poly_F_1",
       "IPolys.fateman_poly_F_2",
@@ -78924,7 +78804,7 @@
      "testFile": "sympy/polys/tests/test_constructor.py",
      "inCorpus": true,
      "caseCount": 59,
-     "gapCount": 11,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -79186,7 +79066,7 @@
   {
    "module": "sympy.polys.densetools",
    "sha256": "034675135e9e571e7bef3c3ce26f0a6604f9a3a75b0d75e89d6f13a9f2122596",
-   "status": "partial",
+   "status": "complete",
    "note": "All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result).",
    "sources": [
     "polys/densetools.ts"
@@ -79210,13 +79090,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_densetools",
      "testFile": "sympy/polys/tests/test_densetools.py",
      "inCorpus": true,
      "caseCount": 301,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -79306,7 +79186,7 @@
      "testFile": "sympy/polys/tests/test_dispersion.py",
      "inCorpus": true,
      "caseCount": 9,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 22,
@@ -79360,7 +79240,7 @@
      "testFile": "sympy/polys/tests/test_distributedmodules.py",
      "inCorpus": true,
      "caseCount": 39,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 24
@@ -79965,7 +79845,6 @@
       "AlgebraicField.is_EXRAW",
       "AlgebraicField.is_FF",
       "AlgebraicField.is_Field",
-      "AlgebraicField.is_FiniteExtension",
       "AlgebraicField.is_FiniteField",
       "AlgebraicField.is_Frac",
       "AlgebraicField.is_FractionField",
@@ -79996,7 +79875,6 @@
       "ComplexField.is_EXRAW",
       "ComplexField.is_FF",
       "ComplexField.is_Field",
-      "ComplexField.is_FiniteExtension",
       "ComplexField.is_FiniteField",
       "ComplexField.is_Frac",
       "ComplexField.is_FractionField",
@@ -80027,7 +79905,6 @@
       "Domain.is_EXRAW",
       "Domain.is_FF",
       "Domain.is_Field",
-      "Domain.is_FiniteExtension",
       "Domain.is_FiniteField",
       "Domain.is_Frac",
       "Domain.is_FractionField",
@@ -80058,7 +79935,6 @@
       "ExpressionDomain.is_EXRAW",
       "ExpressionDomain.is_FF",
       "ExpressionDomain.is_Field",
-      "ExpressionDomain.is_FiniteExtension",
       "ExpressionDomain.is_FiniteField",
       "ExpressionDomain.is_Frac",
       "ExpressionDomain.is_FractionField",
@@ -80089,7 +79965,6 @@
       "FiniteField.is_EXRAW",
       "FiniteField.is_FF",
       "FiniteField.is_Field",
-      "FiniteField.is_FiniteExtension",
       "FiniteField.is_FiniteField",
       "FiniteField.is_Frac",
       "FiniteField.is_FractionField",
@@ -80120,7 +79995,6 @@
       "FractionField.is_EXRAW",
       "FractionField.is_FF",
       "FractionField.is_Field",
-      "FractionField.is_FiniteExtension",
       "FractionField.is_FiniteField",
       "FractionField.is_Frac",
       "FractionField.is_FractionField",
@@ -80151,7 +80025,6 @@
       "IntegerRing.is_EXRAW",
       "IntegerRing.is_FF",
       "IntegerRing.is_Field",
-      "IntegerRing.is_FiniteExtension",
       "IntegerRing.is_FiniteField",
       "IntegerRing.is_Frac",
       "IntegerRing.is_FractionField",
@@ -80182,7 +80055,6 @@
       "PolynomialRing.is_EXRAW",
       "PolynomialRing.is_FF",
       "PolynomialRing.is_Field",
-      "PolynomialRing.is_FiniteExtension",
       "PolynomialRing.is_FiniteField",
       "PolynomialRing.is_Frac",
       "PolynomialRing.is_FractionField",
@@ -80213,7 +80085,6 @@
       "RationalField.is_EXRAW",
       "RationalField.is_FF",
       "RationalField.is_Field",
-      "RationalField.is_FiniteExtension",
       "RationalField.is_FiniteField",
       "RationalField.is_Frac",
       "RationalField.is_FractionField",
@@ -80244,7 +80115,6 @@
       "RealField.is_EXRAW",
       "RealField.is_FF",
       "RealField.is_Field",
-      "RealField.is_FiniteExtension",
       "RealField.is_FiniteField",
       "RealField.is_Frac",
       "RealField.is_FractionField",
@@ -80395,7 +80265,6 @@
       "AlgebraicField.is_EXRAW",
       "AlgebraicField.is_FF",
       "AlgebraicField.is_Field",
-      "AlgebraicField.is_FiniteExtension",
       "AlgebraicField.is_FiniteField",
       "AlgebraicField.is_Frac",
       "AlgebraicField.is_FractionField",
@@ -80733,7 +80602,6 @@
       "ComplexField.is_EXRAW",
       "ComplexField.is_FF",
       "ComplexField.is_Field",
-      "ComplexField.is_FiniteExtension",
       "ComplexField.is_FiniteField",
       "ComplexField.is_Frac",
       "ComplexField.is_FractionField",
@@ -81076,7 +80944,6 @@
       "Domain.is_EXRAW",
       "Domain.is_FF",
       "Domain.is_Field",
-      "Domain.is_FiniteExtension",
       "Domain.is_FiniteField",
       "Domain.is_Frac",
       "Domain.is_FractionField",
@@ -81347,7 +81214,6 @@
       "ExpressionDomain.is_EXRAW",
       "ExpressionDomain.is_FF",
       "ExpressionDomain.is_Field",
-      "ExpressionDomain.is_FiniteExtension",
       "ExpressionDomain.is_FiniteField",
       "ExpressionDomain.is_Frac",
       "ExpressionDomain.is_FractionField",
@@ -81499,7 +81365,6 @@
       "ExpressionRawDomain.is_EXRAW",
       "ExpressionRawDomain.is_FF",
       "ExpressionRawDomain.is_Field",
-      "ExpressionRawDomain.is_FiniteExtension",
       "ExpressionRawDomain.is_FiniteField",
       "ExpressionRawDomain.is_Frac",
       "ExpressionRawDomain.is_FractionField",
@@ -81828,7 +81693,6 @@
       "FiniteField.is_EXRAW",
       "FiniteField.is_FF",
       "FiniteField.is_Field",
-      "FiniteField.is_FiniteExtension",
       "FiniteField.is_FiniteField",
       "FiniteField.is_Frac",
       "FiniteField.is_FractionField",
@@ -81987,7 +81851,6 @@
       "FractionField.is_EXRAW",
       "FractionField.is_FF",
       "FractionField.is_Field",
-      "FractionField.is_FiniteExtension",
       "FractionField.is_FiniteField",
       "FractionField.is_Frac",
       "FractionField.is_FractionField",
@@ -82227,7 +82090,6 @@
       "GaussianIntegerRing.is_EXRAW",
       "GaussianIntegerRing.is_FF",
       "GaussianIntegerRing.is_Field",
-      "GaussianIntegerRing.is_FiniteExtension",
       "GaussianIntegerRing.is_FiniteField",
       "GaussianIntegerRing.is_Frac",
       "GaussianIntegerRing.is_FractionField",
@@ -82259,7 +82121,6 @@
       "GaussianRationalField.is_EXRAW",
       "GaussianRationalField.is_FF",
       "GaussianRationalField.is_Field",
-      "GaussianRationalField.is_FiniteExtension",
       "GaussianRationalField.is_FiniteField",
       "GaussianRationalField.is_Frac",
       "GaussianRationalField.is_FractionField",
@@ -82562,7 +82423,6 @@
       "IntegerRing.is_EXRAW",
       "IntegerRing.is_FF",
       "IntegerRing.is_Field",
-      "IntegerRing.is_FiniteExtension",
       "IntegerRing.is_FiniteField",
       "IntegerRing.is_Frac",
       "IntegerRing.is_FractionField",
@@ -82862,7 +82722,6 @@
       "FractionField.is_EXRAW",
       "FractionField.is_FF",
       "FractionField.is_Field",
-      "FractionField.is_FiniteExtension",
       "FractionField.is_FiniteField",
       "FractionField.is_Frac",
       "FractionField.is_FractionField",
@@ -83270,7 +83129,6 @@
       "PolynomialRingBase.is_EXRAW",
       "PolynomialRingBase.is_FF",
       "PolynomialRingBase.is_Field",
-      "PolynomialRingBase.is_FiniteExtension",
       "PolynomialRingBase.is_FiniteField",
       "PolynomialRingBase.is_Frac",
       "PolynomialRingBase.is_FractionField",
@@ -83446,7 +83304,6 @@
       "PolynomialRing.is_EXRAW",
       "PolynomialRing.is_FF",
       "PolynomialRing.is_Field",
-      "PolynomialRing.is_FiniteExtension",
       "PolynomialRing.is_FiniteField",
       "PolynomialRing.is_Frac",
       "PolynomialRing.is_FractionField",
@@ -83489,7 +83346,7 @@
      "testFile": "sympy/polys/domains/tests/test_polynomialring.py",
      "inCorpus": true,
      "caseCount": 22,
-     "gapCount": 11,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 16,
@@ -83691,7 +83548,6 @@
       "QuotientRing.is_EXRAW",
       "QuotientRing.is_FF",
       "QuotientRing.is_Field",
-      "QuotientRing.is_FiniteExtension",
       "QuotientRing.is_FiniteField",
       "QuotientRing.is_Frac",
       "QuotientRing.is_FractionField",
@@ -83744,7 +83600,7 @@
      "testFile": "sympy/polys/domains/tests/test_quotientring.py",
      "inCorpus": true,
      "caseCount": 9,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 13
@@ -83855,7 +83711,6 @@
       "RationalField.is_EXRAW",
       "RationalField.is_FF",
       "RationalField.is_Field",
-      "RationalField.is_FiniteExtension",
       "RationalField.is_FiniteField",
       "RationalField.is_Frac",
       "RationalField.is_FractionField",
@@ -84009,7 +83864,6 @@
       "RealField.is_EXRAW",
       "RealField.is_FF",
       "RealField.is_Field",
-      "RealField.is_FiniteExtension",
       "RealField.is_FiniteField",
       "RealField.is_Frac",
       "RealField.is_FractionField",
@@ -84503,7 +84357,6 @@
       "dmp_zz_modular_resultant",
       "dup_cancel",
       "dup_discriminant",
-      "dup_euclidean_prs",
       "dup_ff_lcm",
       "dup_ff_prs_gcd",
       "dup_gcd",
@@ -84513,7 +84366,6 @@
       "dup_inner_subresultants",
       "dup_invert",
       "dup_lcm",
-      "dup_primitive_prs",
       "dup_prs_resultant",
       "dup_qq_heu_gcd",
       "dup_resultant",
@@ -84540,13 +84392,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_euclidtools",
      "testFile": "sympy/polys/tests/test_euclidtools.py",
      "inCorpus": true,
      "caseCount": 227,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -84613,6 +84465,7 @@
    "sha256": "0aea72722a5e80fd4818260f63d798d93f1fffa878826afaa8877503850326f9",
    "status": "partial",
    "sources": [
+    "polys/factortools.ts",
     "polys/wang.ts",
     "polys/zassenhaus.ts"
    ],
@@ -84630,11 +84483,8 @@
       "dmp_zz_diophantine",
       "dmp_zz_factor",
       "dmp_zz_i_factor",
-      "dmp_zz_mignotte_bound",
-      "dmp_zz_wang",
       "dmp_zz_wang_hensel_lifting",
       "dmp_zz_wang_lead_coeffs",
-      "dmp_zz_wang_non_divisors",
       "dmp_zz_wang_test_points",
       "dup_cyclotomic_p",
       "dup_ext_factor",
@@ -84643,14 +84493,11 @@
       "dup_gf_factor",
       "dup_irreducible_p",
       "dup_qq_i_factor",
-      "dup_trial_division",
       "dup_zz_cyclotomic_factor",
       "dup_zz_cyclotomic_poly",
       "dup_zz_diophantine",
       "dup_zz_factor",
       "dup_zz_factor_sqf",
-      "dup_zz_hensel_lift",
-      "dup_zz_hensel_step",
       "dup_zz_i_factor",
       "dup_zz_irreducible_p",
       "dup_zz_mignotte_bound",
@@ -84677,7 +84524,7 @@
      "testFile": "sympy/polys/tests/test_factortools.py",
      "inCorpus": true,
      "caseCount": 208,
-     "gapCount": 101,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 5,
@@ -84827,7 +84674,7 @@
      "testFile": "sympy/polys/tests/test_fields.py",
      "inCorpus": true,
      "caseCount": 100,
-     "gapCount": 4,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 22,
@@ -84924,13 +84771,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_galoistools",
      "testFile": "sympy/polys/tests/test_galoistools.py",
      "inCorpus": true,
      "caseCount": 324,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -85054,7 +84901,7 @@
      "testFile": "sympy/polys/tests/test_groebnertools.py",
      "inCorpus": true,
      "caseCount": 73,
-     "gapCount": 63,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {
@@ -85127,13 +84974,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_heuristicgcd",
      "testFile": "sympy/polys/tests/test_heuristicgcd.py",
      "inCorpus": true,
      "caseCount": 34,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -85342,7 +85189,7 @@
      "testFile": "sympy/polys/matrices/tests/test_ddm.py",
      "inCorpus": true,
      "caseCount": 169,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -85555,7 +85402,7 @@
      "testFile": "sympy/polys/matrices/tests/test_domainmatrix.py",
      "inCorpus": true,
      "caseCount": 409,
-     "gapCount": 12,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -85718,7 +85565,7 @@
      "testFile": "sympy/polys/matrices/tests/test_domainscalar.py",
      "inCorpus": true,
      "caseCount": 34,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -85946,13 +85793,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.matrices.tests.test_lll",
      "testFile": "sympy/polys/matrices/tests/test_lll.py",
      "inCorpus": true,
      "caseCount": 119,
-     "gapCount": 74,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -85999,13 +85846,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.matrices.tests.test_normalforms",
      "testFile": "sympy/polys/matrices/tests/test_normalforms.py",
      "inCorpus": true,
      "caseCount": 43,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -86061,7 +85908,7 @@
      "testFile": "sympy/polys/matrices/tests/test_rref.py",
      "inCorpus": true,
      "caseCount": 408,
-     "gapCount": 18,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 72,
@@ -86126,7 +85973,7 @@
      "testFile": "sympy/polys/matrices/tests/test_sdm.py",
      "inCorpus": true,
      "caseCount": 736,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -86253,14 +86100,14 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_modulargcd",
      "testFile": "sympy/polys/tests/test_modulargcd.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 5,
-     "timeoutCount": 3,
+     "gapCount": 0,
+     "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
     },
@@ -86331,7 +86178,7 @@
      "testFile": "sympy/polys/tests/test_monomials.py",
      "inCorpus": true,
      "caseCount": 18,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 9,
@@ -86767,8 +86614,8 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 22,
-     "timeoutCount": 1,
+     "gapCount": 0,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1
      },
@@ -86862,7 +86709,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_modules.py",
      "inCorpus": true,
      "caseCount": 174,
-     "gapCount": 15,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 9,
@@ -87020,7 +86867,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_primes.py",
      "inCorpus": true,
      "caseCount": 86,
-     "gapCount": 17,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 23
@@ -87113,9 +86960,7 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "field_isomorphism_factor",
-      "field_isomorphism_pslq",
-      "is_isomorphism_possible"
+      "field_isomorphism_factor"
      ],
      "pythonSpecificNames": [],
      "internalNames": [],
@@ -87134,13 +86979,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.numberfields.tests.test_subfield",
      "testFile": "sympy/polys/numberfields/tests/test_subfield.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 64,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -87199,7 +87044,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_utilities.py",
      "inCorpus": true,
      "caseCount": 34,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -87298,7 +87143,7 @@
      "testFile": "sympy/polys/tests/test_orderings.py",
      "inCorpus": true,
      "caseCount": 22,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -87378,13 +87223,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_orthopolys",
      "testFile": "sympy/polys/tests/test_orthopolys.py",
      "inCorpus": true,
      "caseCount": 90,
-     "gapCount": 71,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -87456,7 +87301,7 @@
      "testFile": "sympy/polys/tests/test_partfrac.py",
      "inCorpus": true,
      "caseCount": 35,
-     "gapCount": 4,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 3,
@@ -87964,7 +87809,7 @@
      "testFile": "sympy/polys/tests/test_polyclasses.py",
      "inCorpus": true,
      "caseCount": 171,
-     "gapCount": 117,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -88509,7 +88354,7 @@
      "testFile": "sympy/polys/tests/test_polyfuncs.py",
      "inCorpus": true,
      "caseCount": 46,
-     "gapCount": 7,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 3
@@ -88926,7 +88771,7 @@
      "testFile": "sympy/polys/tests/test_polyoptions.py",
      "inCorpus": true,
      "caseCount": 9,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 23,
@@ -89090,11 +88935,7 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "roots_binomial",
-      "roots_cubic",
-      "roots_cyclotomic",
       "roots_linear",
-      "roots_quadratic",
       "roots_quartic"
      ],
      "pythonSpecificNames": [],
@@ -89121,7 +88962,7 @@
      "testFile": "sympy/polys/tests/test_polyroots.py",
      "inCorpus": true,
      "caseCount": 189,
-     "gapCount": 96,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 2,
@@ -89227,7 +89068,6 @@
       "GroebnerBasis.match",
       "GroebnerBasis.matches",
       "GroebnerBasis.order",
-      "GroebnerBasis.polys",
       "GroebnerBasis.rcall",
       "GroebnerBasis.refine",
       "GroebnerBasis.replace",
@@ -89246,7 +89086,6 @@
       "Poly.as_poly",
       "Poly.assumptions0",
       "Poly.atoms",
-      "Poly.cancel",
       "Poly.canonical_variables",
       "Poly.coeff",
       "Poly.compare",
@@ -89261,11 +89100,9 @@
       "Poly.dummy_eq",
       "Poly.expr",
       "Poly.find",
-      "Poly.from_poly",
       "Poly.func",
       "Poly.galois_group",
       "Poly.gens",
-      "Poly.get_domain",
       "Poly.has",
       "Poly.has_free",
       "Poly.has_xfree",
@@ -89312,11 +89149,8 @@
       "Poly.refine",
       "Poly.rep",
       "Poly.rewrite",
-      "Poly.same_root",
-      "Poly.shift_list",
       "Poly.simplify",
       "Poly.sort_key",
-      "Poly.subs",
       "Poly.xreplace",
       "Poly.zero",
       "PurePoly.EC",
@@ -89475,11 +89309,9 @@
       "real_roots",
       "refine_root",
       "rem",
-      "sqf_list",
       "sqf_part",
       "sturm",
       "subresultants",
-      "to_rational_coeffs",
       "total_degree",
       "trunc"
      ],
@@ -89602,7 +89434,7 @@
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
      "caseCount": 1707,
-     "gapCount": 278,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -89874,7 +89706,8 @@
    "sha256": "33c57e0f83647cc96c25ee0b780673963acce012a9d7442fbaebad77c926a771",
    "status": "partial",
    "sources": [
-    "polys/fromexpr.ts"
+    "polys/fromexpr.ts",
+    "polys/polyutils.ts"
    ],
    "completeness": {
     "publicApi": {
@@ -89882,9 +89715,7 @@
      "missingNames": [
       "IntegerPowerable",
       "PicklableWithSlots",
-      "dict_from_expr",
-      "expr_from_dict",
-      "parallel_dict_from_expr"
+      "expr_from_dict"
      ],
      "pythonSpecificNames": [
       "IntegerPowerable.__pow__"
@@ -89905,13 +89736,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_polyutils",
      "testFile": "sympy/polys/tests/test_polyutils.py",
      "inCorpus": true,
      "caseCount": 44,
-     "gapCount": 15,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -89974,7 +89805,7 @@
      "testFile": "sympy/polys/tests/test_puiseux.py",
      "inCorpus": true,
      "caseCount": 171,
-     "gapCount": 51,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3
@@ -90112,7 +89943,7 @@
      "testFile": "sympy/polys/tests/test_ring_series.py",
      "inCorpus": true,
      "caseCount": 180,
-     "gapCount": 17,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 15
@@ -90189,9 +90020,7 @@
       "PolyElement.itermonoms",
       "PolyElement.iterterms",
       "PolyElement.new",
-      "PolyElement.norm",
       "PolyElement.sort_key",
-      "PolyElement.sqf_norm",
       "PolyElement.str",
       "PolyElement.strip_zero",
       "PolyRing.dmp_LC",
@@ -90199,8 +90028,6 @@
       "PolyRing.dmp_degree",
       "PolyRing.dmp_degree_in",
       "PolyRing.dmp_euclidean_prs",
-      "PolyRing.dmp_ext_factor",
-      "PolyRing.dmp_factor_list_include",
       "PolyRing.dmp_gcdex",
       "PolyRing.dmp_gf_factor",
       "PolyRing.dmp_gf_sqf_list",
@@ -90211,10 +90038,8 @@
       "PolyRing.dmp_invert",
       "PolyRing.dmp_norm",
       "PolyRing.dmp_primitive_prs",
-      "PolyRing.dmp_qq_i_factor",
       "PolyRing.dmp_trial_division",
       "PolyRing.dmp_zz_diophantine",
-      "PolyRing.dmp_zz_i_factor",
       "PolyRing.dmp_zz_mignotte_bound",
       "PolyRing.dmp_zz_wang",
       "PolyRing.dmp_zz_wang_hensel_lifting",
@@ -90227,8 +90052,6 @@
       "PolyRing.dup_count_real_roots",
       "PolyRing.dup_degree",
       "PolyRing.dup_euclidean_prs",
-      "PolyRing.dup_ext_factor",
-      "PolyRing.dup_factor_list_include",
       "PolyRing.dup_gf_factor",
       "PolyRing.dup_gf_sqf_list",
       "PolyRing.dup_gf_sqf_part",
@@ -90236,7 +90059,6 @@
       "PolyRing.dup_inner_isolate_positive_roots",
       "PolyRing.dup_inner_isolate_real_roots",
       "PolyRing.dup_inner_refine_real_root",
-      "PolyRing.dup_irreducible_p",
       "PolyRing.dup_isolate_all_roots",
       "PolyRing.dup_isolate_all_roots_sqf",
       "PolyRing.dup_isolate_complex_roots_sqf",
@@ -90245,21 +90067,15 @@
       "PolyRing.dup_isolate_real_roots_sqf",
       "PolyRing.dup_outer_refine_real_root",
       "PolyRing.dup_primitive_prs",
-      "PolyRing.dup_qq_i_factor",
       "PolyRing.dup_refine_real_root",
       "PolyRing.dup_root_lower_bound",
       "PolyRing.dup_root_upper_bound",
       "PolyRing.dup_sqf_norm",
       "PolyRing.dup_step_refine_real_root",
       "PolyRing.dup_trial_division",
-      "PolyRing.dup_zz_cyclotomic_factor",
-      "PolyRing.dup_zz_cyclotomic_poly",
       "PolyRing.dup_zz_diophantine",
-      "PolyRing.dup_zz_factor_sqf",
       "PolyRing.dup_zz_hensel_lift",
       "PolyRing.dup_zz_hensel_step",
-      "PolyRing.dup_zz_i_factor",
-      "PolyRing.dup_zz_irreducible_p",
       "PolyRing.dup_zz_zassenhaus",
       "PolyRing.fateman_poly_F_1",
       "PolyRing.fateman_poly_F_2",
@@ -90362,7 +90178,7 @@
      "testFile": "sympy/polys/tests/test_rings.py",
      "inCorpus": true,
      "caseCount": 616,
-     "gapCount": 20,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -90569,8 +90385,6 @@
       "RealInterval.refine_disjoint",
       "RealInterval.refine_size",
       "RealInterval.refine_step",
-      "dup_cauchy_lower_bound",
-      "dup_cauchy_upper_bound",
       "dup_count_complex_roots",
       "dup_count_real_roots",
       "dup_inner_isolate_negative_roots",
@@ -90583,7 +90397,6 @@
       "dup_isolate_real_roots",
       "dup_isolate_real_roots_list",
       "dup_isolate_real_roots_sqf",
-      "dup_mignotte_sep_bound_squared",
       "dup_outer_refine_real_root",
       "dup_refine_real_root",
       "dup_root_lower_bound",
@@ -90618,7 +90431,7 @@
      "testFile": "sympy/polys/tests/test_rootisolation.py",
      "inCorpus": true,
      "caseCount": 306,
-     "gapCount": 23,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -90707,10 +90520,8 @@
      "missingNames": [
       "CRootOf.all_roots",
       "CRootOf.expr",
-      "CRootOf.real_roots",
       "ComplexRootOf.all_roots",
       "ComplexRootOf.expr",
-      "ComplexRootOf.real_roots",
       "RootSum.expr",
       "RootSum.new"
      ],
@@ -90831,7 +90642,7 @@
      "testFile": "sympy/polys/tests/test_rootoftools.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 41,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 56,
@@ -91105,7 +90916,7 @@
      "testFile": "sympy/polys/tests/test_specialpolys.py",
      "inCorpus": true,
      "caseCount": 36,
-     "gapCount": 20,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 7,
@@ -91184,13 +90995,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_sqfreetools",
      "testFile": "sympy/polys/tests/test_sqfreetools.py",
      "inCorpus": true,
      "caseCount": 66,
-     "gapCount": 6,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -91229,49 +91040,24 @@
    "sha256": "54529301ede218c0a298b91cf467aec06e68e12074c764f9911c317b8039043a",
    "status": "partial",
    "sources": [
+    "polys/subresultantsqqzz.ts",
     "polys/sympoly.ts"
    ],
    "completeness": {
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "backward_eye",
-      "bezout",
       "compute_sign",
       "correct_sign",
       "create_ma",
-      "euclid_amv",
-      "euclid_pg",
-      "euclid_q",
       "final_touches",
       "find_degree",
-      "modified_subresultants_amv",
-      "modified_subresultants_bezout",
-      "modified_subresultants_pg",
-      "modified_subresultants_sylv",
       "pivot",
       "process_matrix_output",
-      "quo_z",
-      "rem_z",
-      "res",
-      "res_q",
-      "res_z",
       "rotate_l",
       "rotate_r",
       "row2poly",
-      "sign_seq",
-      "sturm_amv",
-      "sturm_pg",
-      "sturm_q",
-      "subresultants_amv",
-      "subresultants_amv_q",
-      "subresultants_bezout",
-      "subresultants_pg",
-      "subresultants_rem",
-      "subresultants_sylv",
-      "subresultants_vv",
-      "subresultants_vv_2",
-      "sylvester"
+      "sign_seq"
      ],
      "pythonSpecificNames": [],
      "internalNames": [],
@@ -91288,13 +91074,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.polys.tests.test_subresultants_qq_zz",
      "testFile": "sympy/polys/tests/test_subresultants_qq_zz.py",
      "inCorpus": true,
      "caseCount": 112,
-     "gapCount": 79,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -91359,7 +91145,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "StrPrinter.emptyPrinter",
       "StrPrinter.order",
       "StrPrinter.parenthesize",
       "StrPrinter.printmethod",
@@ -91784,7 +91569,9 @@
    "sha256": "042c78792746f0c43c652515d655847770b36d9e0888c89df934f13e857a1475",
    "status": "excluded",
    "reason": "Generates or compiles Python code.",
-   "sources": [],
+   "sources": [
+    "printing/lambdarepr.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -91811,14 +91598,11 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "LatexPrinter",
-      "LatexPrinter.doprint",
       "LatexPrinter.emptyPrinter",
       "LatexPrinter.order",
       "LatexPrinter.parenthesize",
       "LatexPrinter.parenthesize_super",
       "LatexPrinter.printmethod",
-      "LatexPrinter.set_global_settings",
       "latex_escape"
      ],
      "pythonSpecificNames": [],
@@ -91842,7 +91626,7 @@
      "testFile": "sympy/printing/tests/test_latex.py",
      "inCorpus": true,
      "caseCount": 1264,
-     "gapCount": 101,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -92074,13 +91858,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.printing.tests.test_precedence",
      "testFile": "sympy/printing/tests/test_precedence.py",
      "inCorpus": true,
      "caseCount": 32,
-     "gapCount": 4,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -92198,7 +91982,7 @@
      "testFile": "sympy/printing/pretty/tests/test_pretty.py",
      "inCorpus": true,
      "caseCount": 56,
-     "gapCount": 8,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -92615,7 +92399,7 @@
      "testFile": "sympy/printing/tests/test_repr.py",
      "inCorpus": true,
      "caseCount": 103,
-     "gapCount": 30,
+     "gapCount": 6,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 83,
@@ -92688,7 +92472,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "StrPrinter.emptyPrinter",
       "StrPrinter.order",
       "StrPrinter.parenthesize",
       "StrPrinter.printmethod",
@@ -92726,7 +92509,7 @@
      "testFile": "sympy/printing/tests/test_str.py",
      "inCorpus": true,
      "caseCount": 438,
-     "gapCount": 62,
+     "gapCount": 10,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 27,
@@ -93307,7 +93090,7 @@
   {
    "module": "sympy.series.aseries",
    "sha256": "7075464506b36b86b2a88ea38ba38736475010c57b064a387f8bee8366ee1106",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "series/series.ts"
    ],
@@ -93330,13 +93113,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.series.tests.test_aseries",
      "testFile": "sympy/series/tests/test_aseries.py",
      "inCorpus": true,
      "caseCount": 10,
-     "gapCount": 4,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -93483,7 +93266,6 @@
       "FormalPowerSeries.coeff_bell",
       "FormalPowerSeries.function",
       "FormalPowerSeries.ind",
-      "FormalPowerSeries.infinite",
       "FormalPowerSeries.x",
       "FormalPowerSeries.x0",
       "FormalPowerSeries.xk",
@@ -93693,7 +93475,6 @@
       "FormalPowerSeriesProduct.xk",
       "FormalPowerSeriesProduct.zero_coeff",
       "compute_fps",
-      "rational_algorithm",
       "rsolve_hypergeometric"
      ],
      "pythonSpecificNames": [
@@ -93910,7 +93691,7 @@
      "testFile": "sympy/series/tests/test_formal.py",
      "inCorpus": true,
      "caseCount": 133,
-     "gapCount": 38,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -94067,7 +93848,6 @@
       "FiniteFourierSeries.x",
       "FourierSeries.L",
       "FourierSeries.function",
-      "FourierSeries.period",
       "FourierSeries.x",
       "finite_check",
       "fourier_cos_seq",
@@ -94155,7 +93935,7 @@
      "testFile": "sympy/series/tests/test_fourier.py",
      "inCorpus": true,
      "caseCount": 42,
-     "gapCount": 10,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 12,
@@ -94253,7 +94033,7 @@
      "testFile": "sympy/series/tests/test_gruntz.py",
      "inCorpus": true,
      "caseCount": 102,
-     "gapCount": 53,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 30,
@@ -94357,8 +94137,7 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "Limit.pow_heuristics",
-      "heuristics"
+      "Limit.pow_heuristics"
      ],
      "pythonSpecificNames": [
       "Limit.__floordiv__",
@@ -94405,7 +94184,7 @@
      "testFile": "sympy/series/tests/test_limits.py",
      "inCorpus": true,
      "caseCount": 571,
-     "gapCount": 47,
+     "gapCount": 12,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 2,
@@ -94466,7 +94245,7 @@
      "testFile": "sympy/series/tests/test_limitseq.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 1
@@ -94548,7 +94327,7 @@
      "testFile": "sympy/series/tests/test_order.py",
      "inCorpus": true,
      "caseCount": 257,
-     "gapCount": 110,
+     "gapCount": 16,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
@@ -94610,7 +94389,7 @@
      "testFile": "sympy/series/tests/test_residues.py",
      "inCorpus": true,
      "caseCount": 39,
-     "gapCount": 2,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -94977,7 +94756,7 @@
      "testFile": "sympy/series/tests/test_sequences.py",
      "inCorpus": true,
      "caseCount": 111,
-     "gapCount": 7,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 12,
@@ -95092,7 +94871,7 @@
      "testFile": "sympy/series/tests/test_series.py",
      "inCorpus": true,
      "caseCount": 97,
-     "gapCount": 31,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -95256,7 +95035,6 @@
       "ComplexRegion.symmetric_difference",
       "ComplexRegion.union",
       "ConditionSet.as_relational",
-      "ConditionSet.bound_symbols",
       "ConditionSet.complement",
       "ConditionSet.condition",
       "ConditionSet.contains",
@@ -95313,7 +95091,6 @@
       "FiniteSet.sup",
       "FiniteSet.symmetric_difference",
       "FiniteSet.union",
-      "ImageSet.base_pset",
       "ImageSet.base_set",
       "ImageSet.complement",
       "ImageSet.contains",
@@ -95389,7 +95166,6 @@
       "Interval.start",
       "Interval.sup",
       "Interval.symmetric_difference",
-      "Interval.to_mpi",
       "Interval.union",
       "OmegaPower.exp",
       "OmegaPower.mult",
@@ -96102,7 +95878,6 @@
      "pass": false,
      "missingNames": [
       "ConditionSet.as_relational",
-      "ConditionSet.bound_symbols",
       "ConditionSet.complement",
       "ConditionSet.condition",
       "ConditionSet.contains",
@@ -96179,7 +95954,7 @@
      "testFile": "sympy/sets/tests/test_conditionset.py",
      "inCorpus": true,
      "caseCount": 77,
-     "gapCount": 34,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 16
@@ -96259,7 +96034,7 @@
      "testFile": "sympy/sets/tests/test_contains.py",
      "inCorpus": true,
      "caseCount": 14,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 2
@@ -96413,7 +96188,6 @@
       "Complexes.union",
       "Complexes.variables",
       "Complexes.xreplace",
-      "ImageSet.base_pset",
       "ImageSet.base_set",
       "ImageSet.complement",
       "ImageSet.contains",
@@ -97271,7 +97045,7 @@
      "testFile": "sympy/sets/tests/test_fancysets.py",
      "inCorpus": true,
      "caseCount": 769,
-     "gapCount": 126,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -98205,7 +97979,7 @@
      "testFile": "sympy/sets/tests/test_powerset.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 12,
@@ -98281,13 +98055,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.sets.tests.test_setexpr",
      "testFile": "sympy/sets/tests/test_setexpr.py",
      "inCorpus": true,
      "caseCount": 154,
-     "gapCount": 81,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -98520,7 +98294,6 @@
       "Interval.start",
       "Interval.sup",
       "Interval.symmetric_difference",
-      "Interval.to_mpi",
       "Interval.union",
       "ProductSet.as_relational",
       "ProductSet.complement",
@@ -99080,7 +98853,7 @@
      "testFile": "sympy/sets/tests/test_sets.py",
      "inCorpus": true,
      "caseCount": 758,
-     "gapCount": 89,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -99420,12 +99193,8 @@
       "Unevaluated.as_unevaluated_basic",
       "Unevaluated.free_symbols",
       "cse_release_variables",
-      "cse_separate",
       "match_common_args",
       "opt_cse",
-      "postprocess_for_cse",
-      "preprocess_for_cse",
-      "reps_toposort",
       "tree_cse"
      ],
      "pythonSpecificNames": [],
@@ -99492,18 +99261,15 @@
   {
    "module": "sympy.simplify.cse_opts",
    "sha256": "65309a39d3ab82d89f5b1426173ca782b2eaf6ec3307205d8924b9984f830e81",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "simplify/csemain.ts",
     "simplify/exprtools.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "sub_post",
-      "sub_pre"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [],
      "internalNames": [],
      "unresolvedBases": []
@@ -99576,7 +99342,7 @@
      "testFile": "sympy/simplify/tests/test_epathtools.py",
      "inCorpus": true,
      "caseCount": 45,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2
@@ -99610,8 +99376,7 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "hyper_as_trig",
-      "process_common_addends"
+      "hyper_as_trig"
      ],
      "pythonSpecificNames": [],
      "internalNames": [],
@@ -99638,7 +99403,7 @@
      "testFile": "sympy/simplify/tests/test_fu.py",
      "inCorpus": true,
      "caseCount": 191,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 32,
@@ -99693,7 +99458,7 @@
   {
    "module": "sympy.simplify.gammasimp",
    "sha256": "cb37e40ffab5671bb578c099ba9ae603757365785e717dcad3175995475895c6",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "simplify/gammasimp.ts"
    ],
@@ -99716,13 +99481,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.simplify.tests.test_gammasimp",
      "testFile": "sympy/simplify/tests/test_gammasimp.py",
      "inCorpus": true,
      "caseCount": 48,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -99798,14 +99563,11 @@
       "G_Function.n",
       "G_Function.signature",
       "G_Function.subs",
-      "Hyper_Function.args",
       "Hyper_Function.assumptions0",
       "Hyper_Function.canonical_variables",
       "Hyper_Function.conjugate",
       "Hyper_Function.difficulty",
-      "Hyper_Function.equals",
       "Hyper_Function.func",
-      "Hyper_Function.has",
       "Hyper_Function.is_algebraic",
       "Hyper_Function.is_antihermitian",
       "Hyper_Function.is_commutative",
@@ -99841,7 +99603,6 @@
       "Hyper_Function.is_transcendental",
       "Hyper_Function.is_zero",
       "Hyper_Function.n",
-      "Hyper_Function.sizes",
       "Hyper_Function.subs",
       "MeijerFormula",
       "MeijerFormula.closed_form",
@@ -99978,7 +99739,7 @@
      "testFile": "sympy/simplify/tests/test_hyperexpand.py",
      "inCorpus": true,
      "caseCount": 66,
-     "gapCount": 21,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 102,
@@ -100102,7 +99863,7 @@
      "testFile": "sympy/simplify/tests/test_powsimp.py",
      "inCorpus": true,
      "caseCount": 159,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 1
@@ -100162,7 +99923,7 @@
      "testFile": "sympy/simplify/tests/test_radsimp.py",
      "inCorpus": true,
      "caseCount": 162,
-     "gapCount": 14,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unsupported-assertion": 2
@@ -100227,7 +99988,7 @@
      "testFile": "sympy/simplify/tests/test_ratsimp.py",
      "inCorpus": true,
      "caseCount": 13,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 4,
@@ -100293,7 +100054,7 @@
      "testFile": "sympy/simplify/tests/test_simplify.py",
      "inCorpus": true,
      "caseCount": 379,
-     "gapCount": 70,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -100484,7 +100245,7 @@
      "testFile": "sympy/simplify/tests/test_trigsimp.py",
      "inCorpus": true,
      "caseCount": 224,
-     "gapCount": 8,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -100841,12 +100602,10 @@
       "InhomogeneousTernaryQuadratic.name",
       "Linear.name",
       "Univariate.name",
-      "check_param",
       "divisible",
       "is_solution_quad",
       "merge_solution",
       "pow_rep_recursive",
-      "reconstruct",
       "transformation_to_normal"
      ],
      "pythonSpecificNames": [],
@@ -100874,7 +100633,7 @@
      "testFile": "sympy/solvers/diophantine/tests/test_diophantine.py",
      "inCorpus": true,
      "caseCount": 2323,
-     "gapCount": 53,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 4,
@@ -101019,7 +100778,7 @@
      "testFile": "sympy/solvers/tests/test_inequalities.py",
      "inCorpus": true,
      "caseCount": 154,
-     "gapCount": 37,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -101059,8 +100818,7 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "allhints",
-      "linear_ode_to_matrix"
+      "allhints"
      ],
      "pythonSpecificNames": [],
      "internalNames": [],
@@ -101215,7 +100973,7 @@
      "testFile": "sympy/solvers/ode/tests/test_lie_group.py",
      "inCorpus": true,
      "caseCount": 15,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1
@@ -101312,7 +101070,6 @@
       "check_nonlinear_2eq_order2",
       "check_nonlinear_3eq_order1",
       "check_nonlinear_3eq_order2",
-      "get_numbered_constants",
       "iter_numbered_constants",
       "ode_1st_power_series",
       "ode_2nd_power_series_ordinary",
@@ -101346,7 +101103,7 @@
      "testFile": "sympy/solvers/ode/tests/test_ode.py",
      "inCorpus": true,
      "caseCount": 172,
-     "gapCount": 66,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-skip": 1,
@@ -101400,35 +101157,22 @@
    "sha256": "dd9ae40b2dee7d70b20b1f2025f02ec7208e81b38b107b6f4e1d95809840ecc9",
    "status": "partial",
    "sources": [
-    "solvers/dsolve.ts"
+    "solvers/dsolve.ts",
+    "solvers/ode/riccati.ts"
    ],
    "completeness": {
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "check_necessary_conds",
       "compute_m_ybar",
-      "construct_c",
-      "construct_c_case_1",
-      "construct_c_case_2",
-      "construct_c_case_3",
-      "construct_d",
-      "construct_d_case_4",
-      "construct_d_case_5",
-      "construct_d_case_6",
       "get_gen_sol_from_part_sol",
-      "inverse_transform_poly",
-      "limit_at_inf",
       "linsolve_dict",
-      "match_riccati",
-      "rational_laurent_series",
       "remove_redundant_sols",
       "riccati_inverse_normal",
       "riccati_normal",
       "riccati_reduced",
       "solve_aux_eq",
-      "solve_riccati",
-      "val_at_inf"
+      "solve_riccati"
      ],
      "pythonSpecificNames": [],
      "internalNames": [],
@@ -101451,7 +101195,7 @@
      "testFile": "sympy/solvers/ode/tests/test_riccati.py",
      "inCorpus": true,
      "caseCount": 50,
-     "gapCount": 45,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 28,
@@ -101543,11 +101287,8 @@
       "FirstExact.order",
       "FirstExact.wilds",
       "FirstExact.wilds_match",
-      "FirstLinear",
-      "FirstLinear.get_general_solution",
       "FirstLinear.has_integral",
       "FirstLinear.hint",
-      "FirstLinear.matches",
       "FirstLinear.ode_problem",
       "FirstLinear.order",
       "FirstLinear.wilds",
@@ -101766,7 +101507,7 @@
      "testFile": "sympy/solvers/ode/tests/test_single.py",
      "inCorpus": true,
      "caseCount": 13,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 17,
@@ -101865,7 +101606,7 @@
      "testFile": "sympy/solvers/ode/tests/test_subscheck.py",
      "inCorpus": true,
      "caseCount": 20,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 22
@@ -101900,9 +101641,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "ODENonlinearError",
-      "ODEOrderError",
-      "linear_ode_to_matrix",
       "matrix_exp_jordan_form",
       "simpsol"
      ],
@@ -101930,7 +101668,7 @@
      "testFile": "sympy/solvers/ode/tests/test_systems.py",
      "inCorpus": true,
      "caseCount": 286,
-     "gapCount": 69,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 104,
@@ -102001,7 +101739,7 @@
      "testFile": "sympy/solvers/tests/test_pde.py",
      "inCorpus": true,
      "caseCount": 60,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 1
@@ -102065,7 +101803,7 @@
      "testFile": "sympy/solvers/tests/test_polysys.py",
      "inCorpus": true,
      "caseCount": 110,
-     "gapCount": 20,
+     "gapCount": 1,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 4
@@ -102125,7 +101863,7 @@
      "testFile": "sympy/solvers/tests/test_recurr.py",
      "inCorpus": true,
      "caseCount": 127,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -102224,8 +101962,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "det_minor",
-      "det_perm",
       "minsolve_linear_system",
       "recast_to_symbols"
      ],
@@ -102255,8 +101991,8 @@
      "testFile": "sympy/solvers/tests/test_solvers.py",
      "inCorpus": true,
      "caseCount": 474,
-     "gapCount": 237,
-     "timeoutCount": 2,
+     "gapCount": 0,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-skip": 1,
       "marked-slow": 219,
@@ -102309,10 +102045,8 @@
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "solve_decomposition"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [],
      "internalNames": [],
      "unresolvedBases": []
@@ -102338,8 +102072,8 @@
      "testFile": "sympy/solvers/tests/test_solveset.py",
      "inCorpus": true,
      "caseCount": 610,
-     "gapCount": 235,
-     "timeoutCount": 1,
+     "gapCount": 51,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-skip": 3,
       "marked-slow": 2,
@@ -103174,7 +102908,7 @@
      "testFile": "sympy/stats/tests/test_compound_rv.py",
      "inCorpus": true,
      "caseCount": 30,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 6
@@ -106212,7 +105946,7 @@
      "testFile": "sympy/stats/tests/test_joint_rv.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 3,
@@ -106860,13 +106594,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.stats.tests.test_random_matrix",
      "testFile": "sympy/stats/tests/test_random_matrix.py",
      "inCorpus": true,
      "caseCount": 22,
-     "gapCount": 7,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -107492,7 +107226,7 @@
      "testFile": "sympy/stats/tests/test_rv.py",
      "inCorpus": true,
      "caseCount": 109,
-     "gapCount": 7,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 4,
@@ -107796,7 +107530,7 @@
      "testFile": "sympy/stats/tests/test_stochastic_process.py",
      "inCorpus": true,
      "caseCount": 299,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 5,
@@ -109191,7 +108925,7 @@
      "testFile": "sympy/strategies/tests/test_tree.py",
      "inCorpus": true,
      "caseCount": 2,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 13,
@@ -109738,7 +109472,7 @@
      "testFile": "sympy/tensor/array/tests/test_array_comprehension.py",
      "inCorpus": true,
      "caseCount": 40,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 1
@@ -110031,7 +109765,6 @@
       "ArrayContraction.free_indices",
       "ArrayContraction.free_indices_to_position",
       "ArrayContraction.shape",
-      "ArrayContraction.split_multiple_contractions",
       "ArrayContraction.subrank",
       "ArrayDiagonal.diagonal_indices",
       "ArrayDiagonal.expr",
@@ -110051,7 +109784,6 @@
       "ArrayTensorProduct.subrank",
       "OneArray.shape",
       "PermuteDims.expr",
-      "PermuteDims.nest_permutation",
       "PermuteDims.permutation",
       "PermuteDims.shape",
       "PermuteDims.subrank",
@@ -110359,7 +110091,6 @@
       "ArrayContraction.free_indices",
       "ArrayContraction.free_indices_to_position",
       "ArrayContraction.shape",
-      "ArrayContraction.split_multiple_contractions",
       "ArrayContraction.subrank",
       "ArrayDiagonal.diagonal_indices",
       "ArrayDiagonal.expr",
@@ -110379,7 +110110,6 @@
       "ArrayTensorProduct.subrank",
       "OneArray.shape",
       "PermuteDims.expr",
-      "PermuteDims.nest_permutation",
       "PermuteDims.permutation",
       "PermuteDims.shape",
       "PermuteDims.subrank",
@@ -110639,7 +110369,7 @@
      "testFile": "sympy/tensor/array/expressions/tests/test_array_expressions.py",
      "inCorpus": true,
      "caseCount": 110,
-     "gapCount": 23,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -110743,7 +110473,7 @@
      "testFile": "sympy/tensor/array/expressions/tests/test_arrayexpr_derivatives.py",
      "inCorpus": true,
      "caseCount": 7,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 2
@@ -111018,7 +110748,6 @@
      "pass": false,
      "missingNames": [
       "identify_hadamard_products",
-      "identify_removable_identity_matrices",
       "remove_identity_matrices"
      ],
      "pythonSpecificNames": [],
@@ -111266,7 +110995,7 @@
      "testFile": "sympy/tensor/array/tests/test_mutable_ndim_array.py",
      "inCorpus": true,
      "caseCount": 187,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 14,
@@ -111824,7 +111553,7 @@
      "testFile": "sympy/tensor/tests/test_indexed.py",
      "inCorpus": true,
      "caseCount": 213,
-     "gapCount": 71,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 3,
@@ -111892,18 +111621,13 @@
       "TensMul.flatten",
       "TensMul.free_in_args",
       "TensMul.free_indices",
-      "TensMul.from_data",
       "TensMul.identity",
-      "TensMul.index_types",
       "TensMul.perm2tensor",
       "Tensor.data",
       "Tensor.dum_in_args",
       "Tensor.free_in_args",
       "Tensor.free_indices",
-      "Tensor.index_types",
       "Tensor.perm2tensor",
-      "TensorElement.dum",
-      "TensorElement.free",
       "TensorHead.data",
       "TensorHead.name",
       "TensorIndex.name",
@@ -111981,7 +111705,6 @@
       "WildTensor.dum_in_args",
       "WildTensor.free_in_args",
       "WildTensor.free_indices",
-      "WildTensor.index_types",
       "WildTensor.perm2tensor",
       "WildTensorHead.data",
       "WildTensorHead.name",
@@ -112312,7 +112035,7 @@
      "testFile": "sympy/tensor/tests/test_tensor.py",
      "inCorpus": true,
      "caseCount": 680,
-     "gapCount": 193,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -113504,7 +113227,7 @@
      "testFile": "sympy/utilities/tests/test_iterables.py",
      "inCorpus": true,
      "caseCount": 252,
-     "gapCount": 13,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 137,
@@ -115010,7 +114733,7 @@
      "testFile": "sympy/vector/tests/test_coordsysrect.py",
      "inCorpus": true,
      "caseCount": 132,
-     "gapCount": 8,
+     "gapCount": 3,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -115277,7 +115000,7 @@
      "testFile": "sympy/vector/tests/test_dyadic.py",
      "inCorpus": true,
      "caseCount": 54,
-     "gapCount": 8,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}

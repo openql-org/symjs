@@ -81,10 +81,11 @@ describe("sympy/polys/matrices/tests/test_normalforms.py", () => {
     const v1 = smithNormalDecomp(new DomainMatrix([[ZZ.fromSympy(rational(1))]], [1, 1], ZZ, { fmt: 'dense' }));
     expect(sympyMatches([at(v1, 0), at(v1, 1), at(v1, 2)], '(DomainMatrix([[1]], (1, 1), ZZ), DomainMatrix([[1]], (1, 1), ZZ), DomainMatrix([[1]], (1, 1), ZZ))')).toBe(true);
   });
-  it.fails("test_smith_normal:91", () => {
+  it("test_smith_normal:91", () => {
     const x = new Sym('x');
     const v1 = QQ.polyRing(x);
-    expect(sympyStr(invariantFactors(new DomainMatrix([[v1.fromSympy(new Add([rational(-1), x])), v1.fromSympy(rational(1)), v1.fromSympy(rational(-1))], [v1.fromSympy(rational(0)), v1.fromSympy(x), v1.fromSympy(rational(-1))], [v1.fromSympy(rational(0)), v1.fromSympy(rational(-1)), v1.fromSympy(x)]], [3, 3], v1, { fmt: 'dense' })))).toBe('(1, x - 1, x**2 - 1)');
+    const v2 = invariantFactors(new DomainMatrix([[v1.fromSympy(new Add([rational(-1), x])), v1.fromSympy(rational(1)), v1.fromSympy(rational(-1))], [v1.fromSympy(rational(0)), v1.fromSympy(x), v1.fromSympy(rational(-1))], [v1.fromSympy(rational(0)), v1.fromSympy(rational(-1)), v1.fromSympy(x)]], [3, 3], v1, { fmt: 'dense' }));
+    expect(sympyMatches([at(v2, 0), at(v2, 1), at(v2, 2)], '(1, x - 1, x**2 - 1)')).toBe(true);
   });
   it("test_smith_normal:95", () => {
     expect(sympyStr(new DomainMatrix([], [0, 2], ZZ, { fmt: 'sparse' }).toDense())).toBe('DomainMatrix([], (0, 2), ZZ)');

@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { BaseCovarDerivativeOp, BaseScalarField, BaseVectorField, Commutator, CoordSystem, CoordinateSymbol, CovarDerivativeOp, Differential, LieDerivative, Manifold, Patch, Point, R2, R2Origin, R2P, R2R, TensorProduct, WedgeProduct, contravariantOrder, covariantOrder, intcurveDiffequ, intcurveSeries, metricToChristoffel1st, metricToChristoffel2nd, metricToRicciComponents, metricToRiemannComponents, twoformToMatrix, vectorsInBasis } from '../../src/diffgeom';
-import { Add, Array, Matrix, Mul, NotImplementedError, Pow, Sym, SymFunction, add, exp, expand, fn, isReal, mul, pi, pow, pprintUseUnicode, rational, rcall, simplify, slice, symbols } from '../../src';
+import { Add, AppliedUndef, Array, E, Matrix, Mul, NotImplementedError, Pow, Sym, add, expand, fn, isReal, mul, pi, pow, pprintUseUnicode, rational, rcall, simplify, slice, symbols } from '../../src';
 import { at, sympyMatches, sympyStr, text } from '../sympy-str';
 import { equivalent } from '../sympy-equivalent';
 
@@ -29,7 +29,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(rcall(add(pow(new BaseScalarField(R2R, 0), 2), pow(new BaseScalarField(R2R, 1), 2)), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [rational(0)]]))))).toBe('rho**2');
   });
   it("fg.rcall(point)", () => {
-    expect(sympyStr(rcall((SymFunction('g'))(add(mul(-1, pi), new BaseScalarField(R2R, 1))), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [rational(0)]]))))).toBe('g(-pi)');
+    expect(sympyStr(rcall(new AppliedUndef('g', [add(mul(-1, pi), new BaseScalarField(R2R, 1))]), new Point(R2P, Matrix.of([[new CoordinateSymbol(R2P, 0)], [rational(0)]]))))).toBe('g(-pi)');
   });
   // diffgeom export pprint
   //   pprint(v(s_field))
@@ -194,7 +194,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(rcall(new CovarDerivativeOp(mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0)), Array([rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2])), mul(new BaseScalarField(R2R, 0), new BaseVectorField(R2R, 0))))).toBe('x*e_x');
   });
   it("dg", () => {
-    expect(sympyStr(Differential((SymFunction('g'))(new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1))))).toBe('d(g(x, y))');
+    expect(sympyStr(Differential(new AppliedUndef('g', [new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)])))).toBe('d(g(x, y))');
   });
   // diffgeom export pprint
   //   pprint(dg(e_x))
@@ -209,7 +209,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
   //   \dxi          /|xi=y
   it.todo("pprint(dg(e_y))");
   it("Differential(dg)", () => {
-    expect(sympyStr(Differential(Differential((SymFunction('g'))(new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)))))).toBe('0');
+    expect(sympyStr(Differential(Differential(new AppliedUndef('g', [new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)]))))).toBe('0');
   });
   it("LieDerivative(e_x, fy)", () => {
     expect(sympyStr(LieDerivative(new BaseVectorField(R2R, 0), new BaseScalarField(R2R, 1)))).toBe('0');
@@ -375,7 +375,7 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     expect(sympyStr(metricToRicciComponents(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('[[0, 0], [0, 0]]');
   });
   it("metric_to_Ricci_components(non_trivial_metric)", () => {
-    expect(sympyStr(metricToRicciComponents(add(mul(pow(new BaseScalarField(R2P, 0), 2), TensorProduct(Differential(new BaseScalarField(R2P, 1)), Differential(new BaseScalarField(R2P, 1)))), mul(exp(mul(2, new BaseScalarField(R2P, 0))), TensorProduct(Differential(new BaseScalarField(R2P, 0)), Differential(new BaseScalarField(R2P, 0)))))))).toBe('[[1/rho, 0], [0, exp(-2*rho)*rho]]');
+    expect(sympyStr(metricToRicciComponents(add(mul(pow(new BaseScalarField(R2P, 0), 2), TensorProduct(Differential(new BaseScalarField(R2P, 1)), Differential(new BaseScalarField(R2P, 1)))), mul(new Pow(E, mul(2, new BaseScalarField(R2P, 0))), TensorProduct(Differential(new BaseScalarField(R2P, 0)), Differential(new BaseScalarField(R2P, 0)))))))).toBe('[[1/rho, 0], [0, exp(-2*rho)*rho]]');
   });
   it("metric_to_Riemann_components(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))", () => {
     expect(sympyStr(metricToRiemannComponents(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('[[[[0, 0], [0, 0]], [[0, 0], [0, 0]]], [[[0, 0], [0, 0]], [[0, 0], [0, 0]]]]');
@@ -385,14 +385,14 @@ describe("doctests of sympy.diffgeom.diffgeom", () => {
     const theta = new Sym('theta', { nonnegative: true });
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
-    expect(sympyStr(Array([rational(0), rational(0), rational(0), rational(0), rational(0), mul(new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), exp(mul(-2, new BaseScalarField(R2P, 0)))), mul(-1, new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), exp(mul(-2, new BaseScalarField(R2P, 0)))), rational(0), rational(0), mul(-1, pow(new BaseScalarField(R2P, 0), -1)), pow(new BaseScalarField(R2P, 0), -1), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2, 2]).get(0, slice(), slice(), slice()))).toBe('[[[0, 0], [0, 0]], [[0, exp(-2*rho)*rho], [-exp(-2*rho)*rho, 0]]]');
+    expect(sympyStr(Array([rational(0), rational(0), rational(0), rational(0), rational(0), mul(new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(-2, new BaseScalarField(R2P, 0)))), mul(-1, new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(-2, new BaseScalarField(R2P, 0)))), rational(0), rational(0), mul(-1, pow(new BaseScalarField(R2P, 0), -1)), pow(new BaseScalarField(R2P, 0), -1), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2, 2]).get(0, slice(), slice(), slice()))).toBe('[[[0, 0], [0, 0]], [[0, exp(-2*rho)*rho], [-exp(-2*rho)*rho, 0]]]');
   });
   it("riemann[1, :, :, :]", () => {
     const rho = new Sym('rho', { nonnegative: true });
     const theta = new Sym('theta', { nonnegative: true });
     const x = new Sym('x', { real: true });
     const y = new Sym('y', { real: true });
-    expect(sympyStr(Array([rational(0), rational(0), rational(0), rational(0), rational(0), mul(new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), exp(mul(-2, new BaseScalarField(R2P, 0)))), mul(-1, new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), exp(mul(-2, new BaseScalarField(R2P, 0)))), rational(0), rational(0), mul(-1, pow(new BaseScalarField(R2P, 0), -1)), pow(new BaseScalarField(R2P, 0), -1), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2, 2]).get(1, slice(), slice(), slice()))).toBe('[[[0, -1/rho], [1/rho, 0]], [[0, 0], [0, 0]]]');
+    expect(sympyStr(Array([rational(0), rational(0), rational(0), rational(0), rational(0), mul(new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(-2, new BaseScalarField(R2P, 0)))), mul(-1, new BaseScalarField(new CoordSystem('polar', new Patch('origin', new Manifold('R^2', 2)), [rho, theta], new Map([[['polar', 'rectangular'], [[rho, theta], [mul(rho, fn('cos', [theta])), mul(rho, fn('sin', [theta]))]]], [['rectangular', 'polar'], [[x, y], [pow(add(pow(x, 2), pow(y, 2)), rational(1, 2)), fn('atan2', [y, x])]]]])), 0), new Pow(E, mul(-2, new BaseScalarField(R2P, 0)))), rational(0), rational(0), mul(-1, pow(new BaseScalarField(R2P, 0), -1)), pow(new BaseScalarField(R2P, 0), -1), rational(0), rational(0), rational(0), rational(0), rational(0)], [2, 2, 2, 2]).get(1, slice(), slice(), slice()))).toBe('[[[0, -1/rho], [1/rho, 0]], [[0, 0], [0, 0]]]');
   });
   it("twoform_to_matrix(TP(R2.dx, R2.dx) + TP(R2.dy, R2.dy))", () => {
     expect(sympyStr(twoformToMatrix(add(TensorProduct(Differential(new BaseScalarField(R2R, 0)), Differential(new BaseScalarField(R2R, 0))), TensorProduct(Differential(new BaseScalarField(R2R, 1)), Differential(new BaseScalarField(R2R, 1))))))).toBe('Matrix([[1, 0], [0, 1]])');

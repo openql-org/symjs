@@ -151,7 +151,7 @@ describe("doctests of sympy.stats.rv_interface", () => {
   });
   it("simplify(std(B))", () => {
     const p = new Sym('p');
-    expect(sympyStr(simplify(pow(add(mul(p, pow(add(1, mul(-1, p)), 2)), mul(pow(p, 2), add(1, mul(-1, p)))), rational(1, 2))))).toBe('sqrt(p*(1 - p))');
+    expect(sympyStr(simplify(pow(add(mul(p, pow(add(1, mul(-1, p)), 2)), mul(pow(p, 2), add(1, mul(-1, p)))), rational(1, 2)), { inverse: false, rational: false, doit: true }))).toBe('sqrt(p*(1 - p))');
   });
   it("variance(2*X)", () => {
     const X = new Sym('X');
@@ -159,6 +159,6 @@ describe("doctests of sympy.stats.rv_interface", () => {
   });
   it("simplify(variance(B))", () => {
     const p = new Sym('p');
-    expect(sympyStr(simplify(add(mul(p, pow(add(1, mul(-1, p)), 2)), mul(pow(p, 2), add(1, mul(-1, p))))))).toBe('p*(1 - p)');
+    expect(sympyStr(simplify(add(mul(p, pow(add(1, mul(-1, p)), 2)), mul(pow(p, 2), add(1, mul(-1, p)))), { inverse: false, rational: false, doit: true }))).toBe('p*(1 - p)');
   });
 });

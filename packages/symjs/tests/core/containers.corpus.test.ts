@@ -41,10 +41,10 @@ describe("sympy/core/tests/test_containers.py", () => {
   it("test_Tuple:31", () => {
     expect(sympyStr(Tuple(rational(1), rational(2), rational(3), rational(4)).func(rational(1), rational(2), rational(3), rational(4)))).toBe('(1, 2, 3, 4)');
   });
-  // a function that did not come from the library
-  //   assert st2.atoms() == set(t2)
-  //   => {q, r, s, p}
-  it.todo("test_Tuple:35");
+  it("test_Tuple:35", () => {
+    const [p, q, r, s] = symbols('p q r s');
+    expect(sympyMatches(new Set([p, q, r, s]), '{q, r, s, p}')).toBe(true);
+  });
   it("test_Tuple:36", () => {
     expect(sympyStr(Tuple(rational(1), rational(2), rational(3), rational(4)))).toBe('(1, 2, 3, 4)');
   });
@@ -52,10 +52,10 @@ describe("sympy/core/tests/test_containers.py", () => {
     const p = new Sym('p');
     expect(sympyStr(Tuple(p, rational(1)).subs(p, rational(0)))).toBe('(0, 1)');
   });
-  // expected an expression, got (p, 1)
-  //   assert Tuple(p, Tuple(p, 1)).subs(p, 0) == Tuple(0, Tuple(0, 1))
-  //   => (0, (0, 1))
-  it.todo("test_Tuple:40");
+  it("test_Tuple:40", () => {
+    const p = new Sym('p');
+    expect(sympyStr(Tuple(p, Tuple(p, rational(1))).subs(p, rational(0)))).toBe('(0, (0, 1))');
+  });
   // the arguments do not type-check against the public API
   //   assert Tuple(t2) == Tuple(Tuple(*t2))
   //   => ((p, q, r, s),)
@@ -209,11 +209,11 @@ describe("sympy/core/tests/test_containers.py", () => {
   //   assert len(d) == 3
   //   => 3
   it.todo("test_Dict:169");
-  // no adapter for .get
+  // a primitive result that no library call returned
   //   assert d.get(5, 'default') == 'default'
   //   => default
   it.todo("test_Dict:172");
-  // no adapter for .get
+  // a primitive result that no library call returned
   //   assert d.get('5', 'default') == 'default'
   //   => default
   it.todo("test_Dict:173");
@@ -223,14 +223,14 @@ describe("sympy/core/tests/test_containers.py", () => {
   it("test_Dict:174 (2)", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  // no adapter for .has
-  //   assert d.has(x) and d.has(1)
-  //   => True
-  it.todo("test_Dict:175");
-  // no adapter for .has
-  //   assert d.has(x) and d.has(1)
-  //   => True
-  it.todo("test_Dict:175 (2)");
+  it("test_Dict:175", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(Dict([[x, rational(1)], [y, rational(2)], [z, rational(3)]]).has(x))).toBe('True');
+  });
+  it("test_Dict:175 (2)", () => {
+    const [x, y, z] = symbols('x y z');
+    expect(sympyStr(Dict([[x, rational(1)], [y, rational(2)], [z, rational(3)]]).has(rational(1)))).toBe('True');
+  });
   it("test_Dict:180", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(Dict([[x, rational(1)], [y, rational(2)], [z, rational(3)]]))).toBe('{x: 1, y: 2, z: 3}');

@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { BaseScalarField, CoordSystem, Differential, Manifold, Patch, R2R, WedgeProduct } from '../../src/diffgeom';
-import { AccumBounds, Add, Adjoint, AlgebraicNumber, And, Array, ArrayElement, ArraySymbol, BlockMatrix, CRootOf, CartesianComplexRegion, Category, Complexes, CompositeMorphism, ConditionSet, ConditionalFiniteDomain, Contains, CoordSys3D, CovarianceNode, Cross, Curl, Cycle, DFT, Determinant, Diagram, Dict, DiracDelta, Divergence, Dot, DotProduct, Dummy, E, ElementwiseApplyFunction, EmptySet, Equivalent, ExpectationNode, Float, Gradient, HadamardPower, HadamardProduct, Heaviside, I, IDFT, Identity, IdentityMorphism, Idx, ImageSet, ImmutableSparseNDimArray, Implies, IndexedBase, Integers, Integral, KroneckerDelta, KroneckerProduct, Lambda, LambertW, LaplaceTransform, Laplacian, LeviCivita, Limit, MatAdd, MatMul, MatPow, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mod, Mul, MutableDenseNDimArray, MutableSparseNDimArray, NamedMorphism, Naturals, Naturals0, NormalDistribution, Not, O, OneMatrix, Or, PartialDerivative, Perm, PermutationMatrix, PolarComplexRegion, Pow, PowerSet, ProbabilityNode, Product, ProductContinuousDomain, ProductSet, Quaternion, RandomSymbol, Range, Rationals, Reals, Relational, RootSumNode, S, SeqAdd, SeqFormula, SeqMul, SeqPer, SetExpression, SetOp, SingleContinuousDomain, SingleContinuousPSpace, SingleFiniteDomain, SingularityFunction, Str, Subs, Sum, Sym, SymFunction, SymObject, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Trace, Transpose, Tuple, UnevaluatedExpr, UniversalSet, VarianceNode, VectorAdd, VectorMul, Wild, Xor, ZeroMatrix, abs, add, derivative, exp, finiteSet, fn, fourierSeries, fps, frac, hyper, interval, jn, latex, log, meijerg, mul, multilineLatex, oo, pi, piecewise, pow, pprintUseUnicode, rational, symbols, sympifyMatrix, translate, yn } from '../../src';
+import { AccumBounds, Add, Adjoint, AlgebraicNumber, And, AppliedUndef, Array, ArrayElement, ArraySymbol, BlockMatrix, CRootOf, CartesianComplexRegion, Category, Complexes, CompositeMorphism, ConditionSet, ConditionalFiniteDomain, Contains, CoordSys3D, CosineTransform, CovarianceNode, Cross, Curl, Cycle, DFT, Determinant, Diagram, Dict, DiracDelta, Divergence, Dot, DotProduct, Dummy, E, ElementwiseApplyFunction, EmptySet, Equivalent, ExpectationNode, Float, FourierTransform, Gradient, HadamardPower, HadamardProduct, Heaviside, I, IDFT, Identity, IdentityMorphism, Idx, ImageSet, ImmutableSparseNDimArray, Implies, IndexedBase, Integers, InverseCosineTransform, InverseFourierTransform, InverseLaplaceTransform, InverseMellinTransform, InverseSineTransform, KroneckerDelta, KroneckerProduct, Lambda, LambertW, LaplaceTransform, Laplacian, LeviCivita, Limit, MatAdd, MatMul, MatPow, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, MellinTransform, Mod, Mul, MutableDenseNDimArray, MutableSparseNDimArray, NamedMorphism, Naturals, Naturals0, NormalDistribution, Not, O, OneMatrix, Or, PartialDerivative, Perm, PermutationMatrix, PolarComplexRegion, Pow, PowerSet, ProbabilityNode, Product, ProductContinuousDomain, ProductSet, Quaternion, RandomSymbol, Range, Rationals, Reals, Relational, RootSumNode, S, SeqAddNode, SeqFormula, SeqMulNode, SeqPer, SetExpression, SetOp, SineTransform, SingleContinuousDomain, SingleContinuousPSpace, SingleFiniteDomain, SingularityFunction, Str, Subs, Sum, Sym, SymFunction, SymObject, TensAdd, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Trace, Transpose, Tuple, UnevaluatedExpr, UniversalSet, VarianceNode, VectorAdd, VectorMul, Wild, Xor, ZeroMatrix, add, bell, derivative, finiteSet, fn, fourierSeries, fps, frac, hyper, integral, interval, jn, latex, log, meijerg, mul, multilineLatex, oo, pi, piecewise, pow, pprintUseUnicode, rational, symbols, sympifyMatrix, translate, yn } from '../../src';
 import { at, pyStr, text } from '../sympy-str';
 
 describe("doctests of sympy.printing.latex", () => {
@@ -175,7 +175,7 @@ describe("doctests of sympy.printing.latex", () => {
     const r = new Sym('r');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(mul(rational(1, 2), pow(pi, -1), new Integral([r, r])), { longFracRatio: 2 }))).toBe('\\frac{\\int r\\, dr}{2 \\pi}');
+      expect(text(latex(mul(rational(1, 2), pow(pi, -1), integral(r, [r])), { longFracRatio: 2 }))).toBe('\\frac{\\int r\\, dr}{2 \\pi}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -184,7 +184,7 @@ describe("doctests of sympy.printing.latex", () => {
     const r = new Sym('r');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(mul(rational(1, 2), pow(pi, -1), new Integral([r, r])), { longFracRatio: 0 }))).toBe('\\frac{1}{2 \\pi} \\int r\\, dr');
+      expect(text(latex(mul(rational(1, 2), pow(pi, -1), integral(r, [r])), { longFracRatio: 0 }))).toBe('\\frac{1}{2 \\pi} \\int r\\, dr');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -299,7 +299,7 @@ describe("doctests of sympy.printing.latex", () => {
     const [x, y, alpha] = symbols('x y alpha');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(multilineLatex(x, add(mul(-1, fn('cos', [log(y)])), exp(mul(I, alpha)), fn('sin', [mul(alpha, y)])), {}))).toBe('\\begin{align*}\nx = & e^{i \\alpha} \\\\\n& + \\sin{\\left(\\alpha y \\right)} \\\\\n& - \\cos{\\left(\\log{\\left(y \\right)} \\right)} \n\\end{align*}');
+      expect(text(multilineLatex(x, add(mul(-1, fn('cos', [log(y)])), new Pow(E, mul(I, alpha)), fn('sin', [mul(alpha, y)])), {}))).toBe('\\begin{align*}\nx = & e^{i \\alpha} \\\\\n& + \\sin{\\left(\\alpha y \\right)} \\\\\n& - \\cos{\\left(\\log{\\left(y \\right)} \\right)} \n\\end{align*}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -308,7 +308,7 @@ describe("doctests of sympy.printing.latex", () => {
     const [x, y, alpha] = symbols('x y alpha');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(multilineLatex(x, add(mul(-1, fn('cos', [log(y)])), exp(mul(I, alpha)), fn('sin', [mul(alpha, y)])), { termsPerLine: 2 }))).toBe('\\begin{align*}\nx = & e^{i \\alpha} + \\sin{\\left(\\alpha y \\right)} \\\\\n& - \\cos{\\left(\\log{\\left(y \\right)} \\right)} \n\\end{align*}');
+      expect(text(multilineLatex(x, add(mul(-1, fn('cos', [log(y)])), new Pow(E, mul(I, alpha)), fn('sin', [mul(alpha, y)])), { termsPerLine: 2 }))).toBe('\\begin{align*}\nx = & e^{i \\alpha} + \\sin{\\left(\\alpha y \\right)} \\\\\n& - \\cos{\\left(\\log{\\left(y \\right)} \\right)} \n\\end{align*}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -317,7 +317,7 @@ describe("doctests of sympy.printing.latex", () => {
     const [x, y, alpha] = symbols('x y alpha');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(multilineLatex(x, add(mul(-1, fn('cos', [log(y)])), exp(mul(I, alpha)), fn('sin', [mul(alpha, y)])), { termsPerLine: 2, environment: 'eqnarray', useDots: true }))).toBe('\\begin{eqnarray}\nx & = & e^{i \\alpha} + \\sin{\\left(\\alpha y \\right)} \\dots\\nonumber\\\\\n& & - \\cos{\\left(\\log{\\left(y \\right)} \\right)} \n\\end{eqnarray}');
+      expect(text(multilineLatex(x, add(mul(-1, fn('cos', [log(y)])), new Pow(E, mul(I, alpha)), fn('sin', [mul(alpha, y)])), { termsPerLine: 2, environment: 'eqnarray', useDots: true }))).toBe('\\begin{eqnarray}\nx & = & e^{i \\alpha} + \\sin{\\left(\\alpha y \\right)} \\dots\\nonumber\\\\\n& & - \\cos{\\left(\\log{\\left(y \\right)} \\right)} \n\\end{eqnarray}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -326,7 +326,7 @@ describe("doctests of sympy.printing.latex", () => {
     const [x, y, alpha] = symbols('x y alpha');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(multilineLatex(x, add(mul(-1, fn('cos', [log(y)])), exp(mul(I, alpha)), fn('sin', [mul(alpha, y)])), { environment: 'IEEEeqnarray' }))).toBe('\\begin{IEEEeqnarray}{rCl}\nx & = & e^{i \\alpha} \\nonumber\\\\\n& & + \\sin{\\left(\\alpha y \\right)} \\nonumber\\\\\n& & - \\cos{\\left(\\log{\\left(y \\right)} \\right)} \n\\end{IEEEeqnarray}');
+      expect(text(multilineLatex(x, add(mul(-1, fn('cos', [log(y)])), new Pow(E, mul(I, alpha)), fn('sin', [mul(alpha, y)])), { environment: 'IEEEeqnarray' }))).toBe('\\begin{IEEEeqnarray}{rCl}\nx & = & e^{i \\alpha} \\nonumber\\\\\n& & + \\sin{\\left(\\alpha y \\right)} \\nonumber\\\\\n& & - \\cos{\\left(\\log{\\left(y \\right)} \\right)} \n\\end{IEEEeqnarray}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -342,11 +342,11 @@ describe("doctests of sympy.printing.latex", () => {
 });
 
 describe("sympy/printing/tests/test_latex.py", () => {
-  // function R
+  // the arguments do not type-check against the public API
   //   assert latex(R(x)) == r"foo(x)"
   //   => foo(x)
   it.todo("test_printmethod:110");
-  // function R
+  // the arguments do not type-check against the public API
   //   assert latex(R(x)) == r"foo"
   //   => foo
   it.todo("test_printmethod:115");
@@ -787,7 +787,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const sym0 = new Sym('x^*');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(derivative((SymFunction('f'))(sym0), [[sym0, 2]]), {}))).toBe('\\frac{d^{2}}{d \\left(x^{*}\\right)^{2}} f{\\left(x^{*} \\right)}');
+      expect(text(latex(derivative(new AppliedUndef('f', [sym0]), [[sym0, 2]]), {}))).toBe('\\frac{d^{2}}{d \\left(x^{*}\\right)^{2}} f{\\left(x^{*} \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -796,7 +796,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const sym0 = new Sym('x^*');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(derivative((SymFunction('f'))(sym0), [[sym0, 2]]), { parenthesizeSuper: false }))).toBe('\\frac{d^{2}}{d {x^{*}}^{2}} f{\\left(x^{*} \\right)}');
+      expect(text(latex(derivative(new AppliedUndef('f', [sym0]), [[sym0, 2]]), { parenthesizeSuper: false }))).toBe('\\frac{d^{2}}{d {x^{*}}^{2}} f{\\left(x^{*} \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -805,7 +805,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Mul([rational(2, 3), new Integral([x, x])]), {}))).toBe('\\frac{2 \\int x\\, dx}{3}');
+      expect(text(latex(new Mul([rational(2, 3), integral(x, [x])]), {}))).toBe('\\frac{2 \\int x\\, dx}{3}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -814,7 +814,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Mul([rational(2, 3), new Integral([x, x])]), { foldShortFrac: true }))).toBe('\\left(2 \\int x\\, dx\\right) / 3');
+      expect(text(latex(new Mul([rational(2, 3), integral(x, [x])]), { foldShortFrac: true }))).toBe('\\left(2 \\int x\\, dx\\right) / 3');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1242,7 +1242,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const p = new Sym('p', { positive: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Mul([exp(new Mul([rational(-1), p])), log(p)]), {}))).toBe('e^{- p} \\log{\\left(p \\right)}');
+      expect(text(latex(new Mul([new Pow(E, new Mul([rational(-1), p])), log(p)]), {}))).toBe('e^{- p} \\log{\\left(p \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1525,14 +1525,11 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_permutation:336", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(new Perm([1, 0, 3, 2]), {}))).toBe('\\begin{pmatrix} 0 & 1 & 2 & 3 \\\\ 1 & 0 & 3 & 2 \\end{pmatrix}');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // the generated test does not reproduce the replay
+  //   assert latex(Permutation(0, 1)(2, 3)) == \
+  //               r"\begin{pmatrix} 0 & 1 & 2 & 3 \\ 1 & 0 & 3 & 2 \end{pmatrix}"
+  //   => \begin{pmatrix} 0 & 1 & 2 & 3 \\ 1 & 0 & 3 & 2 \end{pmatrix}
+  it.todo("test_latex_permutation:336");
   it("test_latex_Float:341", () => {
     const unicode = pprintUseUnicode(false);
     try {
@@ -1967,7 +1964,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('f'))(x), {}))).toBe('f{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('f', [x]), {}))).toBe('f{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1984,7 +1981,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('g'))(x, y), {}))).toBe('g{\\left(x,y \\right)}');
+      expect(text(latex(new AppliedUndef('g', [x, y]), {}))).toBe('g{\\left(x,y \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2001,7 +1998,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('h'))(x, y, z), {}))).toBe('h{\\left(x,y,z \\right)}');
+      expect(text(latex(new AppliedUndef('h', [x, y, z]), {}))).toBe('h{\\left(x,y,z \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2026,7 +2023,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('Li'))(x), {}))).toBe('\\operatorname{Li}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('Li', [x]), {}))).toBe('\\operatorname{Li}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2035,7 +2032,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('beta'))(x, y, z), {}))).toBe('\\beta{\\left(x,y,z \\right)}');
+      expect(text(latex(new AppliedUndef('beta', [x, y, z]), {}))).toBe('\\beta{\\left(x,y,z \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2071,7 +2068,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('beta'))(x), {}))).toBe('\\beta{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('beta', [x]), {}))).toBe('\\beta{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2088,7 +2085,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('gamma'))(x, y, z), {}))).toBe('\\gamma{\\left(x,y,z \\right)}');
+      expect(text(latex(new AppliedUndef('gamma', [x, y, z]), {}))).toBe('\\gamma{\\left(x,y,z \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2097,7 +2094,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('gamma'))(x), {}))).toBe('\\gamma{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('gamma', [x]), {}))).toBe('\\gamma{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2122,7 +2119,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('a_1'))(x), {}))).toBe('a_{1}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('a_1', [x]), {}))).toBe('a_{1}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2195,7 +2192,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('ab'))(x), {}))).toBe('\\operatorname{ab}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('ab', [x]), {}))).toBe('\\operatorname{ab}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2204,7 +2201,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('ab1'))(x), {}))).toBe('\\operatorname{ab}_{1}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('ab1', [x]), {}))).toBe('\\operatorname{ab}_{1}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2213,7 +2210,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('ab12'))(x), {}))).toBe('\\operatorname{ab}_{12}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('ab12', [x]), {}))).toBe('\\operatorname{ab}_{12}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2222,7 +2219,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('ab_1'))(x), {}))).toBe('\\operatorname{ab}_{1}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('ab_1', [x]), {}))).toBe('\\operatorname{ab}_{1}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2231,7 +2228,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('ab_c'))(x), {}))).toBe('\\operatorname{ab}_{c}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('ab_c', [x]), {}))).toBe('\\operatorname{ab}_{c}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2240,7 +2237,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('ab_cd'))(x), {}))).toBe('\\operatorname{ab}_{cd}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('ab_cd', [x]), {}))).toBe('\\operatorname{ab}_{cd}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2248,7 +2245,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:504", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab'))(), rational(2)), {}))).toBe('\\operatorname{ab}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab', []), rational(2)), {}))).toBe('\\operatorname{ab}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2256,7 +2253,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:505", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab1'))(), rational(2)), {}))).toBe('\\operatorname{ab}_{1}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab1', []), rational(2)), {}))).toBe('\\operatorname{ab}_{1}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2264,7 +2261,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:506", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab12'))(), rational(2)), {}))).toBe('\\operatorname{ab}_{12}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab12', []), rational(2)), {}))).toBe('\\operatorname{ab}_{12}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2272,7 +2269,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:507", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab_1'))(), rational(2)), {}))).toBe('\\operatorname{ab}_{1}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab_1', []), rational(2)), {}))).toBe('\\operatorname{ab}_{1}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2280,7 +2277,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:508", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab_12'))(), rational(2)), {}))).toBe('\\operatorname{ab}_{12}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab_12', []), rational(2)), {}))).toBe('\\operatorname{ab}_{12}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2289,7 +2286,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab'))(x), rational(2)), {}))).toBe('\\operatorname{ab}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab', [x]), rational(2)), {}))).toBe('\\operatorname{ab}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2298,7 +2295,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab1'))(x), rational(2)), {}))).toBe('\\operatorname{ab}_{1}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab1', [x]), rational(2)), {}))).toBe('\\operatorname{ab}_{1}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2307,7 +2304,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab12'))(x), rational(2)), {}))).toBe('\\operatorname{ab}_{12}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab12', [x]), rational(2)), {}))).toBe('\\operatorname{ab}_{12}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2316,7 +2313,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab_1'))(x), rational(2)), {}))).toBe('\\operatorname{ab}_{1}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab_1', [x]), rational(2)), {}))).toBe('\\operatorname{ab}_{1}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2325,7 +2322,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('ab_12'))(x), rational(2)), {}))).toBe('\\operatorname{ab}_{12}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('ab_12', [x]), rational(2)), {}))).toBe('\\operatorname{ab}_{12}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2373,7 +2370,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:525", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('a'))(), {}))).toBe('a{\\left( \\right)}');
+      expect(text(latex(new AppliedUndef('a', []), {}))).toBe('a{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2381,7 +2378,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:526", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('a1'))(), {}))).toBe('a_{1}{\\left( \\right)}');
+      expect(text(latex(new AppliedUndef('a1', []), {}))).toBe('a_{1}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2389,7 +2386,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:527", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('a12'))(), {}))).toBe('a_{12}{\\left( \\right)}');
+      expect(text(latex(new AppliedUndef('a12', []), {}))).toBe('a_{12}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2397,7 +2394,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:528", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('a_1'))(), {}))).toBe('a_{1}{\\left( \\right)}');
+      expect(text(latex(new AppliedUndef('a_1', []), {}))).toBe('a_{1}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2405,7 +2402,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:529", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('a_12'))(), {}))).toBe('a_{12}{\\left( \\right)}');
+      expect(text(latex(new AppliedUndef('a_12', []), {}))).toBe('a_{12}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2413,7 +2410,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:535", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a'))(), rational(2)), {}))).toBe('a^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a', []), rational(2)), {}))).toBe('a^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2421,7 +2418,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:536", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a1'))(), rational(2)), {}))).toBe('a_{1}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a1', []), rational(2)), {}))).toBe('a_{1}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2429,7 +2426,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:537", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a12'))(), rational(2)), {}))).toBe('a_{12}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a12', []), rational(2)), {}))).toBe('a_{12}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2437,7 +2434,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:538", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_1'))(), rational(2)), {}))).toBe('a_{1}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_1', []), rational(2)), {}))).toBe('a_{1}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2445,7 +2442,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:539", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_12'))(), rational(2)), {}))).toBe('a_{12}^{2}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_12', []), rational(2)), {}))).toBe('a_{12}^{2}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2454,7 +2451,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a'))(x), rational(2)), {}))).toBe('a^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a', [x]), rational(2)), {}))).toBe('a^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2463,7 +2460,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a1'))(x), rational(2)), {}))).toBe('a_{1}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a1', [x]), rational(2)), {}))).toBe('a_{1}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2472,7 +2469,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a12'))(x), rational(2)), {}))).toBe('a_{12}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a12', [x]), rational(2)), {}))).toBe('a_{12}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2481,7 +2478,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_1'))(x), rational(2)), {}))).toBe('a_{1}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_1', [x]), rational(2)), {}))).toBe('a_{1}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2490,7 +2487,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_12'))(x), rational(2)), {}))).toBe('a_{12}^{2}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_12', [x]), rational(2)), {}))).toBe('a_{12}^{2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2498,7 +2495,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:546", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a'))(), rational(32)), {}))).toBe('a^{32}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a', []), rational(32)), {}))).toBe('a^{32}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2506,7 +2503,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:547", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a1'))(), rational(32)), {}))).toBe('a_{1}^{32}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a1', []), rational(32)), {}))).toBe('a_{1}^{32}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2514,7 +2511,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:548", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a12'))(), rational(32)), {}))).toBe('a_{12}^{32}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a12', []), rational(32)), {}))).toBe('a_{12}^{32}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2522,7 +2519,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:549", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_1'))(), rational(32)), {}))).toBe('a_{1}^{32}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_1', []), rational(32)), {}))).toBe('a_{1}^{32}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2530,7 +2527,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:550", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_12'))(), rational(32)), {}))).toBe('a_{12}^{32}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_12', []), rational(32)), {}))).toBe('a_{12}^{32}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2539,7 +2536,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a'))(x), rational(32)), {}))).toBe('a^{32}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a', [x]), rational(32)), {}))).toBe('a^{32}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2548,7 +2545,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a1'))(x), rational(32)), {}))).toBe('a_{1}^{32}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a1', [x]), rational(32)), {}))).toBe('a_{1}^{32}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2557,7 +2554,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a12'))(x), rational(32)), {}))).toBe('a_{12}^{32}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a12', [x]), rational(32)), {}))).toBe('a_{12}^{32}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2566,7 +2563,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_1'))(x), rational(32)), {}))).toBe('a_{1}^{32}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_1', [x]), rational(32)), {}))).toBe('a_{1}^{32}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2575,7 +2572,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_12'))(x), rational(32)), {}))).toBe('a_{12}^{32}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_12', [x]), rational(32)), {}))).toBe('a_{12}^{32}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2584,7 +2581,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a'))(), a), {}))).toBe('a^{a}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a', []), a), {}))).toBe('a^{a}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2593,7 +2590,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a1'))(), a), {}))).toBe('a_{1}^{a}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a1', []), a), {}))).toBe('a_{1}^{a}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2602,7 +2599,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a12'))(), a), {}))).toBe('a_{12}^{a}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a12', []), a), {}))).toBe('a_{12}^{a}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2611,7 +2608,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_1'))(), a), {}))).toBe('a_{1}^{a}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_1', []), a), {}))).toBe('a_{1}^{a}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2620,7 +2617,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_12'))(), a), {}))).toBe('a_{12}^{a}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_12', []), a), {}))).toBe('a_{12}^{a}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2629,7 +2626,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, a] = symbols('x a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a'))(x), a), {}))).toBe('a^{a}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a', [x]), a), {}))).toBe('a^{a}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2638,7 +2635,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, a] = symbols('x a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a1'))(x), a), {}))).toBe('a_{1}^{a}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a1', [x]), a), {}))).toBe('a_{1}^{a}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2647,7 +2644,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, a] = symbols('x a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a12'))(x), a), {}))).toBe('a_{12}^{a}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a12', [x]), a), {}))).toBe('a_{12}^{a}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2656,7 +2653,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, a] = symbols('x a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_1'))(x), a), {}))).toBe('a_{1}^{a}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_1', [x]), a), {}))).toBe('a_{1}^{a}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2665,7 +2662,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, a] = symbols('x a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_12'))(x), a), {}))).toBe('a_{12}^{a}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_12', [x]), a), {}))).toBe('a_{12}^{a}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2674,7 +2671,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const ab = new Sym('ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a'))(), ab), {}))).toBe('a^{ab}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a', []), ab), {}))).toBe('a^{ab}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2683,7 +2680,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const ab = new Sym('ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a1'))(), ab), {}))).toBe('a_{1}^{ab}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a1', []), ab), {}))).toBe('a_{1}^{ab}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2692,7 +2689,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const ab = new Sym('ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a12'))(), ab), {}))).toBe('a_{12}^{ab}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a12', []), ab), {}))).toBe('a_{12}^{ab}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2701,7 +2698,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const ab = new Sym('ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_1'))(), ab), {}))).toBe('a_{1}^{ab}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_1', []), ab), {}))).toBe('a_{1}^{ab}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2710,7 +2707,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const ab = new Sym('ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_12'))(), ab), {}))).toBe('a_{12}^{ab}{\\left( \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_12', []), ab), {}))).toBe('a_{12}^{ab}{\\left( \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2719,7 +2716,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, ab] = symbols('x ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a'))(x), ab), {}))).toBe('a^{ab}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a', [x]), ab), {}))).toBe('a^{ab}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2728,7 +2725,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, ab] = symbols('x ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a1'))(x), ab), {}))).toBe('a_{1}^{ab}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a1', [x]), ab), {}))).toBe('a_{1}^{ab}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2737,7 +2734,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, ab] = symbols('x ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a12'))(x), ab), {}))).toBe('a_{12}^{ab}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a12', [x]), ab), {}))).toBe('a_{12}^{ab}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2746,7 +2743,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, ab] = symbols('x ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_1'))(x), ab), {}))).toBe('a_{1}^{ab}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_1', [x]), ab), {}))).toBe('a_{1}^{ab}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2755,24 +2752,34 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, ab] = symbols('x ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a_12'))(x), ab), {}))).toBe('a_{12}^{ab}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a_12', [x]), ab), {}))).toBe('a_{12}^{ab}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  // an error outside the library
-  //   assert latex(Function('a^12')(x)) == R"a^{12}{\left(x \right)}"
-  //   => a^{12}{\left(x \right)}
-  it.todo("test_latex_functions:580");
-  // an error outside the library
-  //   assert latex(Function('a^12')(x) ** ab) == R"\left(a^{12}\right)^{ab}{\left(x \right)}"
-  //   => \left(a^{12}\right)^{ab}{\left(x \right)}
-  it.todo("test_latex_functions:581");
+  it("test_latex_functions:580", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new AppliedUndef('a^12', [x]), {}))).toBe('a^{12}{\\left(x \\right)}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_latex_functions:581", () => {
+    const [x, ab] = symbols('x ab');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new Pow(new AppliedUndef('a^12', [x]), ab), {}))).toBe('\\left(a^{12}\\right)^{ab}{\\left(x \\right)}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_latex_functions:582", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('a__12'))(x), {}))).toBe('a^{12}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('a__12', [x]), {}))).toBe('a^{12}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2781,7 +2788,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, ab] = symbols('x ab');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow((SymFunction('a__12'))(x), ab), {}))).toBe('\\left(a^{12}\\right)^{ab}{\\left(x \\right)}');
+      expect(text(latex(new Pow(new AppliedUndef('a__12', [x]), ab), {}))).toBe('\\left(a^{12}\\right)^{ab}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2790,7 +2797,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('a_1__1_2'))(x), {}))).toBe('a^{1}_{1 2}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('a_1__1_2', [x]), {}))).toBe('a^{1}_{1 2}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -2807,7 +2814,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('omega1'))(x), {}))).toBe('\\omega_{1}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('omega1', [x]), {}))).toBe('\\omega_{1}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3077,7 +3084,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(fn('Min', [rational(2), x, new Pow(x, rational(3))]), {}))).toBe('\\min\\left(2, x, x^{3}\\right)');
+      expect(text(latex(fn('Min', [rational(2), x, new Pow(x, rational(3))], { evaluate: false }), {}))).toBe('\\min\\left(2, x, x^{3}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3086,7 +3093,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(fn('Min', [x, y]), rational(2)), {}))).toBe('\\min\\left(x, y\\right)^{2}');
+      expect(text(latex(new Pow(fn('Min', [x, y], { evaluate: false }), rational(2)), {}))).toBe('\\min\\left(x, y\\right)^{2}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3095,7 +3102,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(fn('Max', [rational(2), x, new Pow(x, rational(3))]), {}))).toBe('\\max\\left(2, x, x^{3}\\right)');
+      expect(text(latex(fn('Max', [rational(2), x, new Pow(x, rational(3))], { evaluate: false }), {}))).toBe('\\max\\left(2, x, x^{3}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3104,7 +3111,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(fn('Max', [x, y]), rational(2)), {}))).toBe('\\max\\left(x, y\\right)^{2}');
+      expect(text(latex(new Pow(fn('Max', [x, y], { evaluate: false }), rational(2)), {}))).toBe('\\max\\left(x, y\\right)^{2}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3113,7 +3120,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(abs(x), {}))).toBe('\\left|{x}\\right|');
+      expect(text(latex(fn('abs', [x], { evaluate: false }), {}))).toBe('\\left|{x}\\right|');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3122,7 +3129,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(abs(x), rational(2)), {}))).toBe('\\left|{x}\\right|^{2}');
+      expect(text(latex(new Pow(fn('abs', [x], { evaluate: false }), rational(2)), {}))).toBe('\\left|{x}\\right|^{2}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3274,7 +3281,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(fn('lowergamma', [x, y]), {}))).toBe('\\gamma\\left(x, y\\right)');
+      expect(text(latex(fn('lowergamma', [x, y], { evaluate: false }), {}))).toBe('\\gamma\\left(x, y\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3283,7 +3290,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(fn('lowergamma', [x, y]), rational(2)), {}))).toBe('\\gamma^{2}\\left(x, y\\right)');
+      expect(text(latex(new Pow(fn('lowergamma', [x, y], { evaluate: false }), rational(2)), {}))).toBe('\\gamma^{2}\\left(x, y\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3292,7 +3299,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(fn('uppergamma', [x, y]), {}))).toBe('\\Gamma\\left(x, y\\right)');
+      expect(text(latex(fn('uppergamma', [x, y], { evaluate: false }), {}))).toBe('\\Gamma\\left(x, y\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3301,7 +3308,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(fn('uppergamma', [x, y]), rational(2)), {}))).toBe('\\Gamma^{2}\\left(x, y\\right)');
+      expect(text(latex(new Pow(fn('uppergamma', [x, y], { evaluate: false }), rational(2)), {}))).toBe('\\Gamma^{2}\\left(x, y\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -3310,7 +3317,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(fn('cot', [x]), {}))).toBe('\\cot{\\left(x \\right)}');
+      expect(text(latex(fn('cot', [x], { evaluate: false }), {}))).toBe('\\cot{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4209,7 +4216,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('fjlkd'))(x), {}))).toBe('\\operatorname{fjlkd}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('fjlkd', [x]), {}))).toBe('\\operatorname{fjlkd}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4226,7 +4233,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(exp(x), {}))).toBe('e^{x}');
+      expect(text(latex(new Pow(E, x), {}))).toBe('e^{x}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4234,7 +4241,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_functions:444 (2)", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Add([E, exp(2)]), {}))).toBe('e + e^{2}');
+      expect(text(latex(new Add([E, new Pow(E, rational(2))]), {}))).toBe('e + e^{2}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4243,7 +4250,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   //   assert latex(mygamma) == r"\operatorname{mygamma}"
   //   => \operatorname{mygamma}
   it.todo("test_function_subclass_different_name:811");
-  // function mygamma
+  // a function that did not come from the library
   //   assert latex(mygamma(x)) == r"\operatorname{mygamma}{\left(x \right)}"
   //   => \operatorname{mygamma}{\left(x \right)}
   it.todo("test_function_subclass_different_name:812");
@@ -4269,7 +4276,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, z] = symbols('x z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(hyper([rational(2), x], [rational(3)], z), {}))).toBe('{{}_{2}F_{1}\\left(\\begin{matrix} 2, x \\\\ 3 \\end{matrix}\\middle| {z} \\right)}');
+      expect(text(latex(hyper([rational(2), x], [rational(3)], z, { evaluate: false }), {}))).toBe('{{}_{2}F_{1}\\left(\\begin{matrix} 2, x \\\\ 3 \\end{matrix}\\middle| {z} \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4278,7 +4285,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const z = new Sym('z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(hyper([], [rational(1)], z), {}))).toBe('{{}_{0}F_{1}\\left(\\begin{matrix}  \\\\ 1 \\end{matrix}\\middle| {z} \\right)}');
+      expect(text(latex(hyper([], [rational(1)], z, { evaluate: false }), {}))).toBe('{{}_{0}F_{1}\\left(\\begin{matrix}  \\\\ 1 \\end{matrix}\\middle| {z} \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4599,7 +4606,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(derivative((SymFunction('f'))(x, y), [[x, 1], [y, 1]]), {}))).toBe('\\frac{\\partial^{2}}{\\partial y\\partial x} f{\\left(x,y \\right)}');
+      expect(text(latex(derivative(new AppliedUndef('f', [x, y]), [[x, 1], [y, 1]]), {}))).toBe('\\frac{\\partial^{2}}{\\partial y\\partial x} f{\\left(x,y \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4608,7 +4615,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(derivative((SymFunction('f'))(x, y), [[x, 2], [y, 1]]), {}))).toBe('\\frac{\\partial^{3}}{\\partial y\\partial x^{2}} f{\\left(x,y \\right)}');
+      expect(text(latex(derivative(new AppliedUndef('f', [x, y]), [[x, 2], [y, 1]]), {}))).toBe('\\frac{\\partial^{3}}{\\partial y\\partial x^{2}} f{\\left(x,y \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4635,7 +4642,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(derivative(new Integral([exp(new Mul([rational(-1), x, y])), x, rational(0), oo]), [[y, 1]]), {}))).toBe('\\frac{d}{d y} \\int\\limits_{0}^{\\infty} e^{- x y}\\, dx');
+      expect(text(latex(derivative(integral(new Pow(E, new Mul([rational(-1), x, y])), [x, rational(0), oo]), [[y, 1]]), {}))).toBe('\\frac{d}{d y} \\int\\limits_{0}^{\\infty} e^{- x y}\\, dx');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4653,7 +4660,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(derivative((SymFunction('f'))(x), [[x, 1]]), rational(2)), {}))).toBe('\\left(\\frac{d}{d x} f{\\left(x \\right)}\\right)^{2}');
+      expect(text(latex(new Pow(derivative(new AppliedUndef('f', [x]), [[x, 1]]), rational(2)), {}))).toBe('\\left(\\frac{d}{d x} f{\\left(x \\right)}\\right)^{2}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4662,7 +4669,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x1, x2] = symbols('x1 x2');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(derivative((SymFunction('f'))(x1, x2), [[x1, 1]]), {}))).toBe('\\frac{\\partial}{\\partial x_{1}} f{\\left(x_{1},x_{2} \\right)}');
+      expect(text(latex(derivative(new AppliedUndef('f', [x1, x2]), [[x1, 1]]), {}))).toBe('\\frac{\\partial}{\\partial x_{1}} f{\\left(x_{1},x_{2} \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4671,7 +4678,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(derivative((SymFunction('f'))(x), [[x, 1]]), { diffOperator: 'rd' }))).toBe('\\frac{\\mathrm{d}}{\\mathrm{d} x} f{\\left(x \\right)}');
+      expect(text(latex(derivative(new AppliedUndef('f', [x]), [[x, 1]]), { diffOperator: 'rd' }))).toBe('\\frac{\\mathrm{d}}{\\mathrm{d} x} f{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4689,7 +4696,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([log(x), x]), {}))).toBe('\\int \\log{\\left(x \\right)}\\, dx');
+      expect(text(latex(integral(log(x), [x]), {}))).toBe('\\int \\log{\\left(x \\right)}\\, dx');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4698,7 +4705,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Pow(x, rational(2)), x, rational(0), rational(1)]), {}))).toBe('\\int\\limits_{0}^{1} x^{2}\\, dx');
+      expect(text(latex(integral(new Pow(x, rational(2)), [x, rational(0), rational(1)]), {}))).toBe('\\int\\limits_{0}^{1} x^{2}\\, dx');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4707,7 +4714,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Pow(x, rational(2)), x, rational(10), rational(20)]), {}))).toBe('\\int\\limits_{10}^{20} x^{2}\\, dx');
+      expect(text(latex(integral(new Pow(x, rational(2)), [x, rational(10), rational(20)]), {}))).toBe('\\int\\limits_{10}^{20} x^{2}\\, dx');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4716,7 +4723,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Integral([new Mul([y, new Pow(x, rational(2))]), x, rational(0), rational(1)]), y]), {}))).toBe('\\int\\int\\limits_{0}^{1} x^{2} y\\, dx\\, dy');
+      expect(text(latex(integral(new Mul([y, new Pow(x, rational(2))]), [x, rational(0), rational(1)], [y]), {}))).toBe('\\int\\int\\limits_{0}^{1} x^{2} y\\, dx\\, dy');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4725,7 +4732,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Integral([new Mul([y, new Pow(x, rational(2))]), x, rational(0), rational(1)]), y]), { mode: 'equation*' }))).toBe('\\begin{equation*}\\int\\int\\limits_{0}^{1} x^{2} y\\, dx\\, dy\\end{equation*}');
+      expect(text(latex(integral(new Mul([y, new Pow(x, rational(2))]), [x, rational(0), rational(1)], [y]), { mode: 'equation*' }))).toBe('\\begin{equation*}\\int\\int\\limits_{0}^{1} x^{2} y\\, dx\\, dy\\end{equation*}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4734,7 +4741,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Integral([new Mul([y, new Pow(x, rational(2))]), x, rational(0), rational(1)]), y]), { mode: 'equation*', itex: true }))).toBe('$$\\int\\int_{0}^{1} x^{2} y\\, dx\\, dy$$');
+      expect(text(latex(integral(new Mul([y, new Pow(x, rational(2))]), [x, rational(0), rational(1)], [y]), { mode: 'equation*', itex: true }))).toBe('$$\\int\\int_{0}^{1} x^{2} y\\, dx\\, dy$$');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4743,7 +4750,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([x, x, rational(0)]), {}))).toBe('\\int\\limits^{0} x\\, dx');
+      expect(text(latex(integral(x, [x, rational(0)]), {}))).toBe('\\int\\limits^{0} x\\, dx');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4752,7 +4759,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Integral([new Mul([x, y]), x]), y]), {}))).toBe('\\iint x y\\, dx\\, dy');
+      expect(text(latex(integral(new Mul([x, y]), [x], [y]), {}))).toBe('\\iint x y\\, dx\\, dy');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4761,7 +4768,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Integral([new Integral([new Mul([x, y, z]), x]), y]), z]), {}))).toBe('\\iiint x y z\\, dx\\, dy\\, dz');
+      expect(text(latex(integral(new Mul([x, y, z]), [x], [y], [z]), {}))).toBe('\\iiint x y z\\, dx\\, dy\\, dz');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4770,7 +4777,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [t, x, y, z] = symbols('t x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Integral([new Integral([new Integral([new Mul([t, x, y, z]), x]), y]), z]), t]), {}))).toBe('\\iiiint t x y z\\, dx\\, dy\\, dz\\, dt');
+      expect(text(latex(integral(new Mul([t, x, y, z]), [x], [y], [z], [t]), {}))).toBe('\\iiiint t x y z\\, dx\\, dy\\, dz\\, dt');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4779,7 +4786,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Integral([new Integral([new Integral([new Integral([new Integral([x, x]), x]), x]), x]), x]), x]), {}))).toBe('\\int\\int\\int\\int\\int\\int x\\, dx\\, dx\\, dx\\, dx\\, dx\\, dx');
+      expect(text(latex(integral(x, [x], [x], [x], [x], [x], [x]), {}))).toBe('\\int\\int\\int\\int\\int\\int x\\, dx\\, dx\\, dx\\, dx\\, dx\\, dx');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4788,7 +4795,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Integral([new Integral([x, x]), y]), z, rational(0), rational(1)]), {}))).toBe('\\int\\limits_{0}^{1}\\int\\int x\\, dx\\, dy\\, dz');
+      expect(text(latex(integral(x, [x], [y], [z, rational(0), rational(1)]), {}))).toBe('\\int\\limits_{0}^{1}\\int\\int x\\, dx\\, dy\\, dz');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4797,7 +4804,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Mul([rational(-1), new Integral([new Pow(y, rational(2)), x])]), x]), {}))).toBe('\\int \\left(- \\int y^{2}\\, dx\\right)\\, dx');
+      expect(text(latex(integral(new Mul([rational(-1), integral(new Pow(y, rational(2)), [x])]), [x]), {}))).toBe('\\int \\left(- \\int y^{2}\\, dx\\right)\\, dx');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4806,7 +4813,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [y, x] = symbols('y x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Mul([rational(-1), new Integral([new Mul([rational(-1), new Integral([y, x])]), x])]), x]), {}))).toBe('\\int \\left(- \\int \\left(- \\int y\\, dx\\right)\\, dx\\right)\\, dx');
+      expect(text(latex(integral(new Mul([rational(-1), integral(new Mul([rational(-1), integral(y, [x])]), [x])]), [x]), {}))).toBe('\\int \\left(- \\int \\left(- \\int y\\, dx\\right)\\, dx\\right)\\, dx');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4815,7 +4822,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const z = new Sym('z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(new Integral([z, z]), rational(2)), {}))).toBe('\\left(\\int z\\, dz\\right)^{2}');
+      expect(text(latex(new Pow(integral(z, [z]), rational(2)), {}))).toBe('\\left(\\int z\\, dz\\right)^{2}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4824,7 +4831,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, z] = symbols('x z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Add([x, z]), z]), {}))).toBe('\\int \\left(x + z\\right)\\, dz');
+      expect(text(latex(integral(new Add([x, z]), [z]), {}))).toBe('\\int \\left(x + z\\right)\\, dz');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4833,7 +4840,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, z] = symbols('x z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Add([x, new Mul([rational(1, 2), z])]), z]), {}))).toBe('\\int \\left(x + \\frac{z}{2}\\right)\\, dz');
+      expect(text(latex(integral(new Add([x, new Mul([rational(1, 2), z])]), [z]), {}))).toBe('\\int \\left(x + \\frac{z}{2}\\right)\\, dz');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4842,7 +4849,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([new Pow(x, y), z]), {}))).toBe('\\int x^{y}\\, dz');
+      expect(text(latex(integral(new Pow(x, y), [z]), {}))).toBe('\\int x^{y}\\, dz');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4851,7 +4858,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([x, x]), { diffOperator: 'rd' }))).toBe('\\int x\\, \\mathrm{d}x');
+      expect(text(latex(integral(x, [x]), { diffOperator: 'rd' }))).toBe('\\int x\\, \\mathrm{d}x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -4860,7 +4867,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Integral([x, x, rational(0), rational(1)]), { diffOperator: 'rd' }))).toBe('\\int\\limits_{0}^{1} x\\, \\mathrm{d}x');
+      expect(text(latex(integral(x, [x, rational(0), rational(1)]), { diffOperator: 'rd' }))).toBe('\\int\\limits_{0}^{1} x\\, \\mathrm{d}x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5130,7 +5137,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(SeqAdd(SeqFormula(new Pow(a, rational(2)), [a, rational(0), oo]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), rational(0), oo])), {}))).toBe('\\left[1, 3, 5, 11, \\ldots\\right]');
+      expect(text(latex(new SeqAddNode([SeqFormula(new Pow(a, rational(2)), [a, rational(0), oo]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), rational(0), oo])]), {}))).toBe('\\left[1, 3, 5, 11, \\ldots\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5139,7 +5146,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(SeqAdd(SeqFormula(new Pow(a, rational(2)), [a, rational(0), rational(2)]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), rational(0), rational(2)])), {}))).toBe('\\left[1, 3, 5\\right]');
+      expect(text(latex(new SeqAddNode([SeqFormula(new Pow(a, rational(2)), [a, rational(0), rational(2)]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), rational(0), rational(2)])]), {}))).toBe('\\left[1, 3, 5\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5148,7 +5155,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(SeqAdd(SeqFormula(new Pow(a, rational(2)), [a, S.NegativeInfinity, rational(0)]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), S.NegativeInfinity, rational(0)])), {}))).toBe('\\left[\\ldots, 11, 5, 3, 1\\right]');
+      expect(text(latex(new SeqAddNode([SeqFormula(new Pow(a, rational(2)), [a, S.NegativeInfinity, rational(0)]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), S.NegativeInfinity, rational(0)])]), {}))).toBe('\\left[\\ldots, 11, 5, 3, 1\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5157,7 +5164,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(SeqMul(SeqFormula(new Pow(a, rational(2)), [a, rational(0), oo]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), rational(0), oo])), {}))).toBe('\\left[0, 2, 4, 18, \\ldots\\right]');
+      expect(text(latex(new SeqMulNode([SeqFormula(new Pow(a, rational(2)), [a, rational(0), oo]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), rational(0), oo])]), {}))).toBe('\\left[0, 2, 4, 18, \\ldots\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5166,7 +5173,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(SeqMul(SeqFormula(new Pow(a, rational(2)), [a, rational(0), rational(2)]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), rational(0), rational(2)])), {}))).toBe('\\left[0, 2, 4\\right]');
+      expect(text(latex(new SeqMulNode([SeqFormula(new Pow(a, rational(2)), [a, rational(0), rational(2)]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), rational(0), rational(2)])]), {}))).toBe('\\left[0, 2, 4\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5175,7 +5182,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const a = new Sym('a');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(SeqMul(SeqFormula(new Pow(a, rational(2)), [a, S.NegativeInfinity, rational(0)]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), S.NegativeInfinity, rational(0)])), {}))).toBe('\\left[\\ldots, 18, 4, 2, 0\\right]');
+      expect(text(latex(new SeqMulNode([SeqFormula(new Pow(a, rational(2)), [a, S.NegativeInfinity, rational(0)]), SeqPer([rational(1), rational(2)], [new Dummy('k', {}, 1000000), S.NegativeInfinity, rational(0)])]), {}))).toBe('\\left[\\ldots, 18, 4, 2, 0\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5277,15 +5284,24 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // an error outside the library
-  //   assert latex(AccumBounds(0, a)) == r"\left\langle 0, a\right\rangle"
-  //   => \left\langle 0, a\right\rangle
-  it.todo("test_latex_AccumuBounds:1124");
-  // an error outside the library
-  //   assert latex(AccumBounds(a + 1, a + 2)) == \
-  //           r"\left\langle a + 1, a + 2\right\rangle"
-  //   => \left\langle a + 1, a + 2\right\rangle
-  it.todo("test_latex_AccumuBounds:1125");
+  it("test_latex_AccumuBounds:1124", () => {
+    const a = new Sym('a', { real: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(AccumBounds(rational(0), a), {}))).toBe('\\left\\langle 0, a\\right\\rangle');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_latex_AccumuBounds:1125", () => {
+    const a = new Sym('a', { real: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(AccumBounds(new Add([rational(1), a]), new Add([rational(2), a])), {}))).toBe('\\left\\langle a + 1, a + 2\\right\\rangle');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_latex_emptyset:1130", () => {
     const unicode = pprintUseUnicode(false);
     try {
@@ -5568,16 +5584,24 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // ImageSet over several sets
-  //   assert latex(imgset) == \
-  //           r"\left\{x + y\; \middle|\; x \in \left\{1, 2, 3\right\}, y \in \left\{3, 4\right\}\right\}"
-  //   => \left\{x + y\; \middle|\; x \in \left\{1, 2, 3\right\}, y \in \left\{3, 4\right\}\right\}
-  it.todo("test_latex_ImageSet:1333");
-  // a value without provenance ([object Object] JsTuple)
-  //   assert latex(imgset) == \
-  //           r"\left\{x + y\; \middle|\; \left( x, \  y\right) \in \left\{1, 2, 3\right\} \times \left\{3, 4\right\}\right\}"
-  //   => \left\{x + y\; \middle|\; \left( x, \  y\right) \in \left\{1, 2, 3\right\} \times \left\{3, 4\right\}\right\}
-  it.todo("test_latex_ImageSet:1337");
+  it.fails("test_latex_ImageSet:1333", () => {
+    const [x, y] = symbols('x y');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new ImageSet(Tuple(x, y), new Add([x, y]), finiteSet(rational(1), rational(2), rational(3)), finiteSet(rational(3), rational(4))), {}))).toBe('\\left\\{x + y\\; \\middle|\\; x \\in \\left\\{1, 2, 3\\right\\}, y \\in \\left\\{3, 4\\right\\}\\right\\}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_latex_ImageSet:1337", () => {
+    const [x, y] = symbols('x y');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new ImageSet(Tuple(x, y), new Add([x, y]), ProductSet(finiteSet(rational(1), rational(2), rational(3)), finiteSet(rational(3), rational(4)))), {}))).toBe('\\left\\{x + y\\; \\middle|\\; \\left( x, \\  y\\right) \\in \\left\\{1, 2, 3\\right\\} \\times \\left\\{3, 4\\right\\}\\right\\}');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_latex_ConditionSet:1343", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
@@ -5698,7 +5722,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const sym1 = new Sym('-');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Limit([x, x, oo, sym1]), {}))).toBe('\\lim_{x \\to \\infty} x');
+      expect(text(latex(new Limit([x, x, oo, sym1], '-'), {}))).toBe('\\lim_{x \\to \\infty} x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5708,17 +5732,17 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const sym1 = new Sym('+');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Limit([(SymFunction('f'))(x), x, rational(0), sym1]), {}))).toBe('\\lim_{x \\to 0^+} f{\\left(x \\right)}');
+      expect(text(latex(new Limit([new AppliedUndef('f', [x]), x, rational(0), sym1], '+'), {}))).toBe('\\lim_{x \\to 0^+} f{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_limits:1391", () => {
+  it("test_latex_limits:1391", () => {
     const x = new Sym('x');
     const sym1 = new Sym('-');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Limit([(SymFunction('f'))(x), x, rational(0), sym1]), {}))).toBe('\\lim_{x \\to 0^-} f{\\left(x \\right)}');
+      expect(text(latex(new Limit([new AppliedUndef('f', [x]), x, rational(0), sym1], '-'), {}))).toBe('\\lim_{x \\to 0^-} f{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -5728,17 +5752,17 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const sym1 = new Sym('+');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(new Limit([(SymFunction('f'))(x), x, rational(0), sym1]), rational(2)), {}))).toBe('\\left(\\lim_{x \\to 0^+} f{\\left(x \\right)}\\right)^{2}');
+      expect(text(latex(new Pow(new Limit([new AppliedUndef('f', [x]), x, rational(0), sym1], '+'), rational(2)), {}))).toBe('\\left(\\lim_{x \\to 0^+} f{\\left(x \\right)}\\right)^{2}');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_latex_limits:1398", () => {
+  it("test_latex_limits:1398", () => {
     const x = new Sym('x');
     const sym1 = new Sym('+-');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Limit([(SymFunction('f'))(x), x, rational(0), sym1]), {}))).toBe('\\lim_{x \\to 0} f{\\left(x \\right)}');
+      expect(text(latex(new Limit([new AppliedUndef('f', [x]), x, rational(0), sym1], '+-'), {}))).toBe('\\lim_{x \\to 0} f{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6237,7 +6261,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), true]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 1 \\\\x^{2} & \\text{otherwise} \\end{cases}');
+      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), true], { evaluate: false }), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 1 \\\\x^{2} & \\text{otherwise} \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6246,7 +6270,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), true]), { itex: true }))).toBe('\\begin{cases} x & \\text{for}\\: x \\lt 1 \\\\x^{2} & \\text{otherwise} \\end{cases}');
+      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), true], { evaluate: false }), { itex: true }))).toBe('\\begin{cases} x & \\text{for}\\: x \\lt 1 \\\\x^{2} & \\text{otherwise} \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6255,7 +6279,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([x, Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 0 \\\\0 & \\text{otherwise} \\end{cases}');
+      expect(text(latex(piecewise([x, Relational(x, rational(0), '<', { evaluate: false })], [rational(0), true], { evaluate: false }), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 0 \\\\0 & \\text{otherwise} \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6265,7 +6289,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const B = new Sym('B', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true]), {}))).toBe('\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}');
+      expect(text(latex(piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true], { evaluate: false }), {}))).toBe('\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6275,7 +6299,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const B = new Sym('B', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Mul([A, piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true])]), {}))).toBe('A \\left(\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}\\right)');
+      expect(text(latex(new Mul([A, piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true], { evaluate: false })]), {}))).toBe('A \\left(\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6285,7 +6309,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const B = new Sym('B', { commutative: false });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Mul([piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true]), A]), {}))).toBe('\\left(\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}\\right) A');
+      expect(text(latex(new Mul([piecewise([new Pow(A, rational(2)), Relational(A, B, '==', { evaluate: false })], [new Mul([A, B]), true], { evaluate: false }), A]), {}))).toBe('\\left(\\begin{cases} A^{2} & \\text{for}\\: A = B \\\\A B & \\text{otherwise} \\end{cases}\\right) A');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6294,7 +6318,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(2), '<', { evaluate: false })]), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 1 \\\\x^{2} & \\text{for}\\: x < 2 \\end{cases}');
+      expect(text(latex(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), Relational(x, rational(2), '<', { evaluate: false })], { evaluate: false }), {}))).toBe('\\begin{cases} x & \\text{for}\\: x < 1 \\\\x^{2} & \\text{for}\\: x < 2 \\end{cases}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6356,7 +6380,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const t = new Sym('t');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Matrix.of([[fn('sin', [(SymFunction('theta1'))(t)]), fn('cos', [(SymFunction('theta1'))(t)])], [fn('cos', [derivative((SymFunction('theta1'))(t), [[t, 1]])]), fn('sin', [derivative((SymFunction('theta1'))(t), [[t, 1]])])]]), {}))).toBe('\\left[\\begin{matrix}\\sin{\\left(\\theta_{1}{\\left(t \\right)} \\right)} & \\cos{\\left(\\theta_{1}{\\left(t \\right)} \\right)}\\\\\\cos{\\left(\\frac{d}{d t} \\theta_{1}{\\left(t \\right)} \\right)} & \\sin{\\left(\\frac{d}{d t} \\theta_{1}{\\left(t \\right)} \\right)}\\end{matrix}\\right]');
+      expect(text(latex(Matrix.of([[fn('sin', [new AppliedUndef('theta1', [t])]), fn('cos', [new AppliedUndef('theta1', [t])])], [fn('cos', [derivative(new AppliedUndef('theta1', [t]), [[t, 1]])]), fn('sin', [derivative(new AppliedUndef('theta1', [t]), [[t, 1]])])]]), {}))).toBe('\\left[\\begin{matrix}\\sin{\\left(\\theta_{1}{\\left(t \\right)} \\right)} & \\cos{\\left(\\theta_{1}{\\left(t \\right)} \\right)}\\\\\\cos{\\left(\\frac{d}{d t} \\theta_{1}{\\left(t \\right)} \\right)} & \\sin{\\left(\\frac{d}{d t} \\theta_{1}{\\left(t \\right)} \\right)}\\end{matrix}\\right]');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -6941,10 +6965,16 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // function IdentityFunction
-  //   assert latex(Lambda(x, x)) == r"\left( x \mapsto x \right)"
-  //   => \left( x \mapsto x \right)
-  it.todo("test_latex_Lambda:1705");
+  it("test_latex_Lambda:1705", () => {
+    const x = new Sym('x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      const v1 = x;
+      expect(text(latex(Lambda([v1], v1), {}))).toBe('\\left( x \\mapsto x \\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   // the arguments do not type-check against the public API
   //   assert latex(x - x) == r"0"
   //   => 0
@@ -7100,7 +7130,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new RootSumNode([new Add([rational(3), x, new Pow(x, rational(5))]), Lambda([x], fn('sin', [x])), x]), {}))).toBe('\\operatorname{RootSum} {\\left(x^{5} + x + 3, \\left( x \\mapsto \\sin{\\left(x \\right)} \\right)\\right)}');
+      expect(text(latex(new RootSumNode([new Add([rational(3), x, new Pow(x, rational(5))]), Lambda([x], fn('sin', [x])), x], true), {}))).toBe('\\operatorname{RootSum} {\\left(x^{5} + x + 3, \\left( x \\mapsto \\sin{\\left(x \\right)} \\right)\\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -7207,7 +7237,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(fn('bell', [n]), {}))).toBe('B_{n}');
+      expect(text(latex(bell(n), {}))).toBe('B_{n}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -7217,20 +7247,27 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(fn('bell', [n, x]), {}))).toBe('B_{n}\\left(x\\right)');
+      expect(text(latex(bell(n, x), {}))).toBe('B_{n}\\left(x\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  // an error outside the library
-  //   assert latex(bell(n, m, (x, y))) == r"B_{n, m}\left(x, y\right)"
-  //   => B_{n, m}\left(x, y\right)
-  it.todo("test_latex_numbers:1806");
+  it("test_latex_numbers:1806", () => {
+    const [x, y] = symbols('x y');
+    const n = new Sym('n', { integer: true });
+    const m = new Sym('m', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(bell(n, m, [x, y]), {}))).toBe('B_{n, m}\\left(x, y\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_latex_numbers:1807", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(fn('bell', [n]), rational(2)), {}))).toBe('B_{n}^{2}');
+      expect(text(latex(new Pow(bell(n), rational(2)), {}))).toBe('B_{n}^{2}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -7240,15 +7277,22 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new Pow(fn('bell', [n, x]), rational(2)), {}))).toBe('B_{n}^{2}\\left(x\\right)');
+      expect(text(latex(new Pow(bell(n, x), rational(2)), {}))).toBe('B_{n}^{2}\\left(x\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  // an error outside the library
-  //   assert latex(bell(n, m, (x, y))**2) == r"B_{n, m}^{2}\left(x, y\right)"
-  //   => B_{n, m}^{2}\left(x, y\right)
-  it.todo("test_latex_numbers:1809");
+  it("test_latex_numbers:1809", () => {
+    const [x, y] = symbols('x y');
+    const n = new Sym('n', { integer: true });
+    const m = new Sym('m', { integer: true });
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new Pow(bell(n, m, [x, y]), rational(2)), {}))).toBe('B_{n, m}^{2}\\left(x, y\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   it("test_latex_numbers:1810", () => {
     const n = new Sym('n', { integer: true });
     const unicode = pprintUseUnicode(false);
@@ -7798,60 +7842,96 @@ describe("sympy/printing/tests/test_latex.py", () => {
   //   assert latex(R.convert(x + y)) == latex(x + y)
   //   => x + y
   it.todo("test_PrettyPoly:1935");
-  // function MellinTransform
-  //   assert latex(MellinTransform(f(x), x, k)) == \
-  //           r"\mathcal{M}_{x}\left[f{\left(x \right)}\right]\left(k\right)"
-  //   => \mathcal{M}_{x}\left[f{\left(x \right)}\right]\left(k\right)
-  it.todo("test_integral_transforms:1945");
-  // function InverseMellinTransform
-  //   assert latex(InverseMellinTransform(f(k), k, x, a, b)) == \
-  //           r"\mathcal{M}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)"
-  //   => \mathcal{M}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)
-  it.todo("test_integral_transforms:1947");
-  it("test_integral_transforms:1950", () => {
+  it("test_integral_transforms:1945", () => {
     const [x, k] = symbols('x k');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(new LaplaceTransform((SymFunction('f'))(x), x, k), {}))).toBe('\\mathcal{L}_{x}\\left[f{\\left(x \\right)}\\right]\\left(k\\right)');
+      expect(text(latex(new MellinTransform(new AppliedUndef('f', [x]), x, k), {}))).toBe('\\mathcal{M}_{x}\\left[f{\\left(x \\right)}\\right]\\left(k\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
   });
-  // an error outside the library
-  //   assert latex(InverseLaplaceTransform(f(k), k, x, (a, b))) == \
-  //           r"\mathcal{L}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)"
-  //   => \mathcal{L}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)
-  it.todo("test_integral_transforms:1952");
-  // function FourierTransform
-  //   assert latex(FourierTransform(f(x), x, k)) == \
-  //           r"\mathcal{F}_{x}\left[f{\left(x \right)}\right]\left(k\right)"
-  //   => \mathcal{F}_{x}\left[f{\left(x \right)}\right]\left(k\right)
-  it.todo("test_integral_transforms:1955");
-  // function InverseFourierTransform
-  //   assert latex(InverseFourierTransform(f(k), k, x)) == \
-  //           r"\mathcal{F}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)"
-  //   => \mathcal{F}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)
-  it.todo("test_integral_transforms:1957");
-  // function CosineTransform
-  //   assert latex(CosineTransform(f(x), x, k)) == \
-  //           r"\mathcal{COS}_{x}\left[f{\left(x \right)}\right]\left(k\right)"
-  //   => \mathcal{COS}_{x}\left[f{\left(x \right)}\right]\left(k\right)
-  it.todo("test_integral_transforms:1960");
-  // function InverseCosineTransform
-  //   assert latex(InverseCosineTransform(f(k), k, x)) == \
-  //           r"\mathcal{COS}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)"
-  //   => \mathcal{COS}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)
-  it.todo("test_integral_transforms:1962");
-  // function SineTransform
-  //   assert latex(SineTransform(f(x), x, k)) == \
-  //           r"\mathcal{SIN}_{x}\left[f{\left(x \right)}\right]\left(k\right)"
-  //   => \mathcal{SIN}_{x}\left[f{\left(x \right)}\right]\left(k\right)
-  it.todo("test_integral_transforms:1965");
-  // function InverseSineTransform
-  //   assert latex(InverseSineTransform(f(k), k, x)) == \
-  //           r"\mathcal{SIN}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)"
-  //   => \mathcal{SIN}^{-1}_{k}\left[f{\left(k \right)}\right]\left(x\right)
-  it.todo("test_integral_transforms:1967");
+  it("test_integral_transforms:1947", () => {
+    const [k, x, a, b] = symbols('k x a b');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new InverseMellinTransform(new AppliedUndef('f', [k]), k, x, a, b), {}))).toBe('\\mathcal{M}^{-1}_{k}\\left[f{\\left(k \\right)}\\right]\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_integral_transforms:1950", () => {
+    const [x, k] = symbols('x k');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new LaplaceTransform(new AppliedUndef('f', [x]), x, k), {}))).toBe('\\mathcal{L}_{x}\\left[f{\\left(x \\right)}\\right]\\left(k\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_integral_transforms:1952", () => {
+    const [k, x, a, b] = symbols('k x a b');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new InverseLaplaceTransform(new AppliedUndef('f', [k]), k, x, Tuple(a, b)), {}))).toBe('\\mathcal{L}^{-1}_{k}\\left[f{\\left(k \\right)}\\right]\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_integral_transforms:1955", () => {
+    const [x, k] = symbols('x k');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new FourierTransform(new AppliedUndef('f', [x]), x, k), {}))).toBe('\\mathcal{F}_{x}\\left[f{\\left(x \\right)}\\right]\\left(k\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_integral_transforms:1957", () => {
+    const [k, x] = symbols('k x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new InverseFourierTransform(new AppliedUndef('f', [k]), k, x), {}))).toBe('\\mathcal{F}^{-1}_{k}\\left[f{\\left(k \\right)}\\right]\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_integral_transforms:1960", () => {
+    const [x, k] = symbols('x k');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new CosineTransform(new AppliedUndef('f', [x]), x, k), {}))).toBe('\\mathcal{COS}_{x}\\left[f{\\left(x \\right)}\\right]\\left(k\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_integral_transforms:1962", () => {
+    const [k, x] = symbols('k x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new InverseCosineTransform(new AppliedUndef('f', [k]), k, x), {}))).toBe('\\mathcal{COS}^{-1}_{k}\\left[f{\\left(k \\right)}\\right]\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_integral_transforms:1965", () => {
+    const [x, k] = symbols('x k');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new SineTransform(new AppliedUndef('f', [x]), x, k), {}))).toBe('\\mathcal{SIN}_{x}\\left[f{\\left(x \\right)}\\right]\\left(k\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
+  it("test_integral_transforms:1967", () => {
+    const [k, x] = symbols('k x');
+    const unicode = pprintUseUnicode(false);
+    try {
+      expect(text(latex(new InverseSineTransform(new AppliedUndef('f', [k]), k, x), {}))).toBe('\\mathcal{SIN}^{-1}_{k}\\left[f{\\left(k \\right)}\\right]\\left(x\\right)');
+    } finally {
+      pprintUseUnicode(unicode);
+    }
+  });
   // the arguments do not type-check against the public API
   //   assert latex(QQ.old_poly_ring(x, y)) == r"\mathbb{Q}\left[x, y\right]"
   //   => \mathbb{Q}\left[x, y\right]
@@ -8544,7 +8624,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('Alpha'))(x), {}))).toBe('\\mathrm{A}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('Alpha', [x]), {}))).toBe('\\mathrm{A}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -8569,7 +8649,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('Eta'))(x), {}))).toBe('\\mathrm{H}{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('Eta', [x]), {}))).toBe('\\mathrm{H}{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -8586,7 +8666,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('chi'))(x), {}))).toBe('\\chi{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('chi', [x]), {}))).toBe('\\chi{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -9730,7 +9810,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex((SymFunction('Pi'))(x), {}))).toBe('\\Pi{\\left(x \\right)}');
+      expect(text(latex(new AppliedUndef('Pi', [x]), {}))).toBe('\\Pi{\\left(x \\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -10296,7 +10376,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const dim_L = new Sym('dim_L');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(add(mul(3, new Tensor(TensorHead('B', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), true)])), new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), true)])), {}))).toBe('3B{}^{i} + A{}^{i}');
+      expect(text(latex(new TensAdd([mul(3, new Tensor(TensorHead('B', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), true)])), new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), true)])]), {}))).toBe('3B{}^{i} + A{}^{i}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -10386,7 +10466,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const dim_L = new Sym('dim_L');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(PartialDerivative(add(new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)]), new Tensor(TensorHead('B', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)])), new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('j', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)]), new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('n', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)])), {}))).toBe('\\frac{\\partial^{2}}{\\partial {A{}_{j}} \\partial {A{}_{n}}}{\\left(A{}_{i} + B{}_{i}\\right)}');
+      expect(text(latex(PartialDerivative(new TensAdd([new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)]), new Tensor(TensorHead('B', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('i', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)])]), new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('j', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)]), new Tensor(TensorHead('A', [TensorIndexType('L', { dim: dim_L, dummyName: 'L' })], new TensorSymmetry(1, 0)), [TensorIndex('n', TensorIndexType('L', { dim: dim_L, dummyName: 'L' }), false)])), {}))).toBe('\\frac{\\partial^{2}}{\\partial {A{}_{j}} \\partial {A{}_{n}}}{\\left(A{}_{i} + B{}_{i}\\right)}');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -10727,7 +10807,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
   it("test_latex_diffgeom:3018", () => {
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Differential((SymFunction('g'))(new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1))), {}))).toBe('\\operatorname{d}\\left(g{\\left(\\mathbf{x},\\mathbf{y} \\right)}\\right)');
+      expect(text(latex(Differential(new AppliedUndef('g', [new BaseScalarField(R2R, 0), new BaseScalarField(R2R, 1)])), {}))).toBe('\\operatorname{d}\\left(g{\\left(\\mathbf{x},\\mathbf{y} \\right)}\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -10955,7 +11035,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // no adapter for latex_escape
+  // a primitive result that no library call returned
   //   assert latex_escape(r"~^\&%$#_{}") == "".join([
   //           r'\textasciitilde',
   //           r'\textasciicircum',
@@ -10978,14 +11058,10 @@ describe("sympy/printing/tests/test_latex.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_global_settings:3126", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(text(latex(I, {}))).toBe('j');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // the generated test does not reproduce the replay
+  //   assert latex(I) == r'j'
+  //   => j
+  it.todo("test_global_settings:3126");
   it("test_global_settings:3134", () => {
     const unicode = pprintUseUnicode(false);
     try {

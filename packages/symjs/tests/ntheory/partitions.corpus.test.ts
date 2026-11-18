@@ -9,7 +9,7 @@ import { sympyStr } from '../sympy-str';
 
 describe("doctests of sympy.ntheory.partitions_", () => {
   it("partition(25)", () => {
-    expect(sympyStr(fn('partition', [rational(25)]))).toBe('1958');
+    expect(sympyStr(fn('partition', [rational(25)], { evaluate: true }))).toBe('1958');
   });
 });
 

@@ -46,9 +46,10 @@ describe("doctests of sympy.liealgebras.root_system", () => {
 });
 
 describe("sympy/liealgebras/tests/test_root_system.py", () => {
-  it.fails("test_root_system:7", () => {
-    expect(sympyStr(CartanType('A3'))).toBe('TypeA()');
-  });
+  // a result object that did not come from the library
+  //   assert c.cartan_type == TypeA(3)
+  //   => TypeA()
+  it.todo("test_root_system:7");
   // a primitive result that no library call returned
   //   assert c.simple_roots() ==  {1: [1, -1, 0, 0], 2: [0, 1, -1, 0], 3: [0, 0, 1, -1]}
   //   => {1: [1, -1, 0, 0], 2: [0, 1, -1, 0], 3: [0, 0, 1, -1]}

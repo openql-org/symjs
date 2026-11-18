@@ -132,7 +132,7 @@ describe("doctests of sympy.polys.matrices.sdm", () => {
   });
   it("p", () => {
     const x = new Sym('x');
-    expect(sympyStr(Poly.fromList([QQ.toSympy(new PythonMPQ(1n, 1n)), QQ.toSympy(new PythonMPQ(-5n, 1n)), QQ.toSympy(new PythonMPQ(-2n, 1n))], [x], { domain: 'QQ' }))).toBe('Poly(x**2 - 5*x - 2, x, domain=\'QQ\')');
+    expect(sympyStr(Poly.fromList([QQ.toSympy(new PythonMPQ(1n, 1n)), QQ.toSympy(new PythonMPQ(-5n, 1n)), QQ.toSympy(new PythonMPQ(-2n, 1n))], [x], { domain: QQ }))).toBe('Poly(x**2 - 5*x - 2, x, domain=\'QQ\')');
   });
   // the printed result differs (false)
   //   B
@@ -380,10 +380,9 @@ describe("sympy/polys/matrices/tests/test_sdm.py", () => {
   it("test_SDM_mul:204", () => {
     expect(sympyStr(SDM.fromList([[ZZ.fromSympy(rational(2)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))]], [2, 2], ZZ).mul(rational(2)))).toBe('{0: {0: 4}}');
   });
-  // a function that did not come from the library
-  //   raises(TypeError, lambda: A*QQ(1, 2))
-  //   => None
-  it.todo("test_SDM_mul:207");
+  it("test_SDM_mul:207", () => {
+    expect(() => SDM.fromList([[ZZ.fromSympy(rational(2)), ZZ.fromSympy(rational(0))], [ZZ.fromSympy(rational(0)), ZZ.fromSympy(rational(0))]], [2, 2], ZZ).mul(rational(1, 2))).toThrow(TypeError);
+  });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: QQ(1, 2)*A)
   //   => None

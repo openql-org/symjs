@@ -111,9 +111,10 @@ describe("sympy/polys/tests/test_monomials.py", () => {
   //   assert n == (1, 2, 0)
   //   => (1, 2, 0)
   it.todo("test_Monomial:224");
-  it.fails("test_Monomial:256", () => {
-    expect(sympyStr(new Monomial([0, 0, 0]))).toBe('x**0*y**0*z**0');
-  });
+  // the printed result differs (false)
+  //   assert _a == m**n
+  //   => x**0*y**0*z**0
+  it.todo("test_Monomial:256");
   it("test_Monomial:263", () => {
     const unicode = pprintUseUnicode(false);
     try {

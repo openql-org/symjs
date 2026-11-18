@@ -59,7 +59,7 @@ describe("doctests of sympy.ntheory.generate", () => {
     expect(sympyStr(prime(rational(100000)))).toBe('1299709');
   });
   it("primepi(25)", () => {
-    expect(sympyStr(fn('primepi', [rational(25)]))).toBe('9');
+    expect(sympyStr(fn('primepi', [rational(25)], { evaluate: true }))).toBe('9');
   });
   it("isprime(25)", () => {
     expect(sympyStr(isprime(rational(25)))).toBe('False');
@@ -10834,6 +10834,6 @@ describe("sympy/ntheory/tests/test_generate.py", () => {
   //   => None
   it.todo("test_sieve_slice:265");
   it("test_deprecated_ntheory_symbolic_functions:285", () => {
-    expect(sympyStr(fn('primepi', [rational(0)]))).toBe('0');
+    expect(sympyStr(fn('primepi', [rational(0)], { evaluate: true }))).toBe('0');
   });
 });

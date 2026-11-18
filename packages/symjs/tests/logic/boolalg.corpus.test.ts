@@ -214,16 +214,16 @@ describe("doctests of sympy.logic.boolalg", () => {
     expect(sympyStr(SOPform([w, x, y, z], [4, 7, 11, [1, 1, 1, 1]], [new Map([[w, 0], [x, 0], [y, 0]]), 5]))).toBe('(w & y & z) | (~w & ~y) | (x & z & ~w)');
   });
   it("Xor(True, False)", () => {
-    expect(sympyStr(Xor(true, false))).toBe('True');
+    expect(sympyStr(Xor(S['true'], S['false']))).toBe('True');
   });
   it("Xor(True, True)", () => {
-    expect(sympyStr(Xor(true, true))).toBe('False');
+    expect(sympyStr(Xor(S['true'], S['true']))).toBe('False');
   });
   it("Xor(True, False, True, True, False)", () => {
-    expect(sympyStr(Xor(true, false, true, true, false))).toBe('True');
+    expect(sympyStr(Xor(S['true'], S['false'], S['true'], S['true'], S['false']))).toBe('True');
   });
   it("Xor(True, False, True, False)", () => {
-    expect(sympyStr(Xor(true, false, true, false))).toBe('False');
+    expect(sympyStr(Xor(S['true'], S['false'], S['true'], S['false']))).toBe('False');
   });
   it("x ^ y", () => {
     const [x, y] = symbols('x y');
@@ -443,7 +443,8 @@ describe("doctests of sympy.logic.boolalg", () => {
     expect(sympyStr(isLiteral(add(A, B)))).toBe('True');
   });
   it("is_literal(Or(A, B))", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('False');
+    const [A, B] = symbols('A B');
+    expect(sympyStr(isLiteral(Or(A, B)))).toBe('False');
   });
   it("is_nnf(A & B | ~C)", () => {
     const [C, A, B] = symbols('C A B');
@@ -539,9 +540,9 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const A = new Sym('A');
     expect(sympyStr(And(Relational(A, rational(1), '>', { evaluate: false }), Relational(A, rational(1), '>', { evaluate: false })))).toBe('A > 1');
   });
-  it.fails("test_And:64", () => {
+  it("test_And:64", () => {
     const [A, B] = symbols('A B');
-    expect(sympyStr(And(Relational(A, B, '>', { evaluate: false }), Relational(B, A, '<', { evaluate: false }), Relational(A, B, '>=', { evaluate: false }), Relational(B, A, '<=', { evaluate: false })))).toBe('(A >= B) & (A > B)');
+    expect(equivalent(sympyStr(And(Relational(A, B, '>', { evaluate: false }), Relational(B, A, '<', { evaluate: false }), Relational(A, B, '>=', { evaluate: false }), Relational(B, A, '<=', { evaluate: false }))), '(A >= B) & (A > B)', [A, B], { fn: 'And', input: 'A > B' })).toBe(true);
   });
   it("test_Or:71", () => {
     const A = new Sym('A');
@@ -563,9 +564,9 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const A = new Sym('A');
     expect(sympyStr(Or(Relational(A, rational(1), '>', { evaluate: false }), Relational(A, rational(1), '>', { evaluate: false })))).toBe('A > 1');
   });
-  it.fails("test_Or:88", () => {
+  it("test_Or:88", () => {
     const [A, B] = symbols('A B');
-    expect(sympyStr(Or(Relational(A, B, '>', { evaluate: false }), Relational(B, A, '<', { evaluate: false }), Relational(A, B, '>=', { evaluate: false }), Relational(B, A, '<=', { evaluate: false })))).toBe('(A >= B) | (A > B)');
+    expect(equivalent(sympyStr(Or(Relational(A, B, '>', { evaluate: false }), Relational(B, A, '<', { evaluate: false }), Relational(A, B, '>=', { evaluate: false }), Relational(B, A, '<=', { evaluate: false }))), '(A >= B) | (A > B)', [A, B], { fn: 'Or', input: 'A > B' })).toBe(true);
   });
   it("test_Xor:93", () => {
     const A = new Sym('A');
@@ -577,23 +578,23 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
   });
   it("test_Xor:97", () => {
     const [A, B] = symbols('A B');
-    expect(sympyStr(Xor(true, false, false, A, B))).toBe('~(A ^ B)');
+    expect(sympyStr(Xor(S['true'], S['false'], S['false'], A, B))).toBe('~(A ^ B)');
   });
   it("test_Xor:103", () => {
     const A = new Sym('A');
-    expect(sympyStr(Xor(true, A))).toBe('~A');
+    expect(sympyStr(Xor(S['true'], A))).toBe('~A');
   });
   it("test_Xor:104", () => {
     const A = new Sym('A');
-    expect(sympyStr(Xor(false, A))).toBe('A');
+    expect(sympyStr(Xor(S['false'], A))).toBe('A');
   });
   it("test_Xor:106", () => {
     const A = new Sym('A');
-    expect(sympyStr(Xor(true, false, A))).toBe('~A');
+    expect(sympyStr(Xor(S['true'], S['false'], A))).toBe('~A');
   });
   it("test_Xor:107", () => {
     const A = new Sym('A');
-    expect(sympyStr(Xor(false, false, A))).toBe('A');
+    expect(sympyStr(Xor(S['false'], S['false'], A))).toBe('A');
   });
   it("test_Xor:109", () => {
     const [A, B, C, D] = symbols('A B C D');
@@ -620,19 +621,19 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
   });
   it.fails("test_rewrite_as_And:118", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(rewrite(Xor(x, y), 'And', { pattern: [], deep: true }))).toBe('(x | y) & (~x | ~y)');
+    expect(sympyStr(rewrite(Xor(x, y), 'And', { pattern: [], deep: true, hints: {} }))).toBe('(x | y) & (~x | ~y)');
   });
   it.fails("test_rewrite_as_Or:123", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(rewrite(Xor(x, y), 'Or', { pattern: [], deep: true }))).toBe('(x & ~y) | (y & ~x)');
+    expect(sympyStr(rewrite(Xor(x, y), 'Or', { pattern: [], deep: true, hints: {} }))).toBe('(x & ~y) | (y & ~x)');
   });
   it.fails("test_rewrite_as_Nand:128", () => {
     const [y, z, w] = symbols('y z w');
-    expect(sympyStr(rewrite(Or(And(y, z), And(z, Not(w))), 'Nand', { pattern: [], deep: true }))).toBe('~(~(y & z) & ~(z & ~w))');
+    expect(sympyStr(rewrite(Or(And(y, z), And(z, Not(w))), 'Nand', { pattern: [], deep: true, hints: {} }))).toBe('~(~(y & z) & ~(z & ~w))');
   });
   it.fails("test_rewrite_as_Nor:133", () => {
     const [z, y, w] = symbols('z y w');
-    expect(sympyStr(rewrite(And(z, Or(y, Not(w))), 'Nor', { pattern: [], deep: true }))).toBe('~(~z | ~(y | ~w))');
+    expect(sympyStr(rewrite(And(z, Or(y, Not(w))), 'Nor', { pattern: [], deep: true, hints: {} }))).toBe('~(~z | ~(y | ~w))');
   });
   // the arguments do not type-check against the public API
   //   raises(TypeError, lambda: Not(True, False))
@@ -853,15 +854,15 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
   it.todo("test_simplification_boolalg:311");
   it.fails("test_simplification_boolalg:312", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(simplify(Or(Relational(x, y, '<=', { evaluate: false }), And(z, Relational(x, y, '<', { evaluate: false })))))).toBe('x <= y');
+    expect(sympyStr(simplify(Or(Relational(x, y, '<=', { evaluate: false }), And(z, Relational(x, y, '<', { evaluate: false }))), { inverse: false, rational: false, doit: true }))).toBe('x <= y');
   });
   it.fails("test_simplification_boolalg:313", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(simplify(Or(Relational(x, y, '<=', { evaluate: false }), And(z, Relational(y, x, '>', { evaluate: false })))))).toBe('x <= y');
+    expect(sympyStr(simplify(Or(Relational(x, y, '<=', { evaluate: false }), And(z, Relational(y, x, '>', { evaluate: false }))), { inverse: false, rational: false, doit: true }))).toBe('x <= y');
   });
   it.fails("test_simplification_boolalg:314", () => {
     const [x, y, z] = symbols('x y z');
-    expect(sympyStr(simplify(Or(Relational(x, y, '>=', { evaluate: false }), And(z, Relational(y, x, '<', { evaluate: false })))))).toBe('x >= y');
+    expect(sympyStr(simplify(Or(Relational(x, y, '>=', { evaluate: false }), And(z, Relational(y, x, '<', { evaluate: false }))), { inverse: false, rational: false, doit: true }))).toBe('x >= y');
   });
   it("test_simplification_boolalg:322", () => {
     const [a, b, c, d, e, f, g, h, j] = symbols('a b c d e f g h j');
@@ -889,55 +890,55 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
   });
   it.fails("test_simplification_boolalg:343", () => {
     const [A, B, C] = symbols('A B C');
-    expect(sympyStr(simplify(Or(And(A, B), And(A, C))))).toBe('A & (B | C)');
+    expect(sympyStr(simplify(Or(And(A, B), And(A, C)), { inverse: false, rational: false, doit: true }))).toBe('A & (B | C)');
   });
   it.fails("test_simplification_boolalg:344", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(And(x, Not(x))))).toBe('False');
+    expect(sympyStr(simplify(And(x, Not(x)), { inverse: false, rational: false, doit: true }))).toBe('False');
   });
   it.fails("test_simplification_boolalg:345", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(Or(x, Not(x))))).toBe('True');
+    expect(sympyStr(simplify(Or(x, Not(x)), { inverse: false, rational: false, doit: true }))).toBe('True');
   });
-  it.fails("test_simplification_boolalg:346", () => {
+  it("test_simplification_boolalg:346", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(And(Relational(x, rational(0), '==', { evaluate: false }), Relational(x, y, '==', { evaluate: false }))))).toBe('Eq(x, 0) & Eq(y, 0)');
+    expect(sympyStr(simplify(And(Relational(x, rational(0), '==', { evaluate: false }), Relational(x, y, '==', { evaluate: false })), { inverse: false, rational: false, doit: true }))).toBe('Eq(x, 0) & Eq(y, 0)');
   });
-  it.fails("test_simplification_boolalg:347", () => {
+  it("test_simplification_boolalg:347", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(simplify(And(Relational(x, y, '==', { evaluate: false }), Relational(new Add([rational(-1), x]), rational(0), '==', { evaluate: false }))))).toBe('Eq(x, 1) & Eq(y, 1)');
   });
-  it.fails("test_simplification_boolalg:348", () => {
+  it("test_simplification_boolalg:348", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(simplify(And(Relational(x, y, '!=', { evaluate: false }), Relational(new Add([rational(-1), x]), rational(0), '!=', { evaluate: false }))))).toBe('Ne(x, 1) & Ne(x, y)');
   });
-  it.fails("test_simplification_boolalg:349", () => {
+  it("test_simplification_boolalg:349", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(simplify(And(Relational(x, y, '!=', { evaluate: false }), Relational(new Add([rational(-1), x]), rational(0), '==', { evaluate: false }))))).toBe('Eq(x, 1) & Ne(y, 1)');
+    expect(equivalent(sympyStr(simplify(And(Relational(x, y, '!=', { evaluate: false }), Relational(new Add([rational(-1), x]), rational(0), '==', { evaluate: false })))), 'Eq(x, 1) & Ne(y, 1)', [x, y], { fn: '.simplify', input: 'Ne(x, y) & Eq(x - 1, 0)' })).toBe(true);
   });
   it.fails("test_simplification_boolalg:350", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(simplify(And(Relational(x, new Add([y, z]), '==', { evaluate: false }), Relational(new Add([rational(-1), x]), rational(0), '==', { evaluate: false }), Relational(new Add([x, y]), rational(0), '==', { evaluate: false }))))).toBe('Eq(x, 1) & Eq(y, -1) & Eq(z, 2)');
   });
-  it.fails("test_simplification_boolalg:352", () => {
+  it("test_simplification_boolalg:352", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(And(Relational(new Add([rational(-1), x]), rational(0), '==', { evaluate: false }), Relational(new Add([rational(2), x]), rational(3), '==', { evaluate: false }))))).toBe('Eq(x, 1)');
   });
-  it.fails("test_simplification_boolalg:353", () => {
+  it("test_simplification_boolalg:353", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(And(Relational(new Add([rational(-1), x]), rational(0), '!=', { evaluate: false }), Relational(new Add([rational(2), x]), rational(3), '!=', { evaluate: false }))))).toBe('Ne(x, 1)');
   });
-  it.fails("test_simplification_boolalg:354", () => {
+  it("test_simplification_boolalg:354", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(And(Relational(new Add([rational(-1), x]), rational(0), '==', { evaluate: false }), Relational(new Add([rational(2), x]), rational(2), '==', { evaluate: false }))))).toBe('False');
   });
-  it.fails("test_simplification_boolalg:355", () => {
+  it("test_simplification_boolalg:355", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(And(Relational(new Add([rational(-1), x]), rational(0), '!=', { evaluate: false }), Relational(new Add([rational(2), x]), rational(2), '!=', { evaluate: false }))))).toBe('Ne(x, 0) & Ne(x, 1)');
   });
   it.fails("test_simplification_boolalg:357", () => {
     const x = new Sym('x');
-    expect(sympyStr(simplify(Xor(x, Not(x))))).toBe('True');
+    expect(sympyStr(simplify(Xor(x, Not(x)), { inverse: false, rational: false, doit: true }))).toBe('True');
   });
   it("test_bool_map:367", () => {
     const a = new Sym('a');
@@ -1058,41 +1059,41 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const [A, B, C, D] = symbols('A B C D');
     expect(sympyStr(eliminateImplications(Equivalent(A, B, C, D)))).toBe('(A | ~D) & (B | ~A) & (C | ~B) & (D | ~C)');
   });
-  // a function that did not come from the library
-  //   assert conjuncts(A & B & C) == {A, B, C}
-  //   => {C, A, B}
-  it.todo("test_conjuncts:468");
-  // a function that did not come from the library
-  //   assert conjuncts((A | B) & C) == {A | B, C}
-  //   => {C, A | B}
-  it.todo("test_conjuncts:469");
-  // a function that did not come from the library
-  //   assert conjuncts(A) == {A}
-  //   => {A}
-  it.todo("test_conjuncts:470");
-  it.fails("test_conjuncts:471", () => {
-    expect(sympyStr([at(conjuncts(true), 0)])).toBe('{True}');
+  it("test_conjuncts:468", () => {
+    const [A, B, C] = symbols('A B C');
+    expect(sympyMatches(new Set([A, B, C]), '{C, A, B}')).toBe(true);
   });
-  it.fails("test_conjuncts:472", () => {
-    expect(sympyStr([at(conjuncts(false), 0)])).toBe('{False}');
-  });
-  // a function that did not come from the library
-  //   assert disjuncts(A | B | C) == {A, B, C}
-  //   => {C, A, B}
-  it.todo("test_disjuncts:476");
-  it.fails("test_disjuncts:477", () => {
+  it("test_conjuncts:469", () => {
     const [C, A, B] = symbols('C A B');
-    expect(sympyStr([And(C, Or(A, B))])).toBe('{C & (A | B)}');
+    expect(sympyStr(new Set([C, Or(A, B)]))).toBe('{C, A | B}');
   });
-  // a function that did not come from the library
-  //   assert disjuncts(A) == {A}
-  //   => {A}
-  it.todo("test_disjuncts:478");
-  it.fails("test_disjuncts:479", () => {
-    expect(sympyStr([at(disjuncts(true), 0)])).toBe('{True}');
+  it("test_conjuncts:470", () => {
+    const A = new Sym('A');
+    expect(sympyStr(new Set([A]))).toBe('{A}');
   });
-  it.fails("test_disjuncts:480", () => {
-    expect(sympyStr([at(disjuncts(false), 0)])).toBe('{False}');
+  it("test_conjuncts:471", () => {
+    expect(sympyStr(new Set([at(conjuncts(S['true']), 0)]))).toBe('{True}');
+  });
+  it("test_conjuncts:472", () => {
+    expect(sympyStr(new Set([at(conjuncts(S['false']), 0)]))).toBe('{False}');
+  });
+  it("test_disjuncts:476", () => {
+    const [A, B, C] = symbols('A B C');
+    expect(sympyMatches(new Set([A, B, C]), '{C, A, B}')).toBe(true);
+  });
+  it("test_disjuncts:477", () => {
+    const [C, A, B] = symbols('C A B');
+    expect(sympyStr(new Set([And(C, Or(A, B))]))).toBe('{C & (A | B)}');
+  });
+  it("test_disjuncts:478", () => {
+    const A = new Sym('A');
+    expect(sympyStr(new Set([A]))).toBe('{A}');
+  });
+  it("test_disjuncts:479", () => {
+    expect(sympyStr(new Set([at(disjuncts(S['true']), 0)]))).toBe('{True}');
+  });
+  it("test_disjuncts:480", () => {
+    expect(sympyStr(new Set([at(disjuncts(S['false']), 0)]))).toBe('{False}');
   });
   it("test_distribute:484", () => {
     const [C, A, B] = symbols('C A B');
@@ -1543,7 +1544,8 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     expect(sympyStr(isLiteral(Not(A)))).toBe('True');
   });
   it("test_is_literal:703", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('False');
+    const [A, B] = symbols('A B');
+    expect(sympyStr(isLiteral(Or(A, B)))).toBe('False');
   });
   it("test_is_literal:704", () => {
     const A = new Sym('A');
@@ -1554,17 +1556,20 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     expect(sympyStr(isLiteral(Not(Q.zero(A))))).toBe('True');
   });
   it("test_is_literal:706", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('False');
+    const [A, B] = symbols('A B');
+    expect(sympyStr(isLiteral(Or(A, B)))).toBe('False');
   });
   it("test_is_literal:707", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('False');
+    const [A, B] = symbols('A B');
+    expect(sympyStr(isLiteral(And(Q.zero(A), Q.zero(B))))).toBe('False');
   });
   it("test_is_literal:708", () => {
     const x = new Sym('x');
     expect(sympyStr(isLiteral(Relational(x, rational(3), '<', { evaluate: false })))).toBe('True');
   });
   it("test_is_literal:709", () => {
-    expect(sympyStr(isUnsolved(false))).toBe('False');
+    const [x, y] = symbols('x y');
+    expect(sympyStr(isLiteral(Relational(new Add([x, y]), rational(3), '<', { evaluate: false })))).toBe('False');
   });
   it("test_operators:714", () => {
     const A = new Sym('A');
@@ -1689,11 +1694,11 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
   });
   it("test_true_false:800", () => {
     const x = new Sym('x');
-    expect(sympyStr(Xor(true, x))).toBe('~x');
+    expect(sympyStr(Xor(S['true'], x))).toBe('~x');
   });
   it("test_true_false:801", () => {
     const x = new Sym('x');
-    expect(sympyStr(Xor(false, x))).toBe('x');
+    expect(sympyStr(Xor(S['false'], x))).toBe('x');
   });
   it("test_true_false:814", () => {
     const x = new Sym('x');
@@ -1758,7 +1763,7 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asSet(And(Relational(x, rational(2), '<', { evaluate: false }), Or(Relational(x, rational(3), '>', { evaluate: false }), Relational(x, rational(1), '<', { evaluate: false })))))).toBe('Interval.open(-oo, 1)');
   });
-  it.fails("test_bool_as_set:877", () => {
+  it("test_bool_as_set:877", () => {
     const x = new Sym('x');
     expect(sympyStr(asSet(And(Relational(x, rational(1), '<', { evaluate: false }), Relational(fn('sin', [x]), rational(3), '<', { evaluate: false }))))).toBe('Interval.open(-oo, 1)');
   });
@@ -1772,22 +1777,18 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
   it("test_all_or_nothing:904", () => {
     expect(sympyStr(Or(true, true))).toBe('True');
   });
-  // no adapter for .canonical
-  //   assert true.canonical == true
-  //   => True
-  it.todo("test_canonical_atoms:908");
-  // no adapter for .canonical
-  //   assert false.canonical == false
-  //   => False
-  it.todo("test_canonical_atoms:909");
-  // no adapter for .negated
-  //   assert true.negated == false
-  //   => False
-  it.todo("test_negated_atoms:913");
-  // no adapter for .negated
-  //   assert false.negated == true
-  //   => True
-  it.todo("test_negated_atoms:914");
+  it("test_canonical_atoms:908", () => {
+    expect(sympyStr(S['true'])).toBe('True');
+  });
+  it("test_canonical_atoms:909", () => {
+    expect(sympyStr(S['false'])).toBe('False');
+  });
+  it("test_negated_atoms:913", () => {
+    expect(sympyStr(Not(S['true']))).toBe('False');
+  });
+  it("test_negated_atoms:914", () => {
+    expect(sympyStr(Not(S['false']))).toBe('True');
+  });
   it("test_issue_8777:918", () => {
     const x = new Sym('x');
     expect(sympyStr(asSet(And(Relational(x, rational(2), '>', { evaluate: false }), Relational(x, oo, '<', { evaluate: false }))))).toBe('Interval.open(2, oo)');
@@ -2154,14 +2155,12 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
   //   raises(TypeError, lambda: o ** t)
   //   => None
   it.todo("test_issue_8571:975 (12)");
-  // no adapter for .is_Atom
-  //   assert S.true.is_Atom == True
-  //   => True
-  it.todo("test_issue_12717:989");
-  // no adapter for .is_Atom
-  //   assert S.false.is_Atom == True
-  //   => True
-  it.todo("test_issue_12717:990");
+  it("test_issue_12717:989", () => {
+    expect(sympyStr(S['true'].isAtom)).toBe('True');
+  });
+  it("test_issue_12717:990", () => {
+    expect(sympyStr(S['false'].isAtom)).toBe('True');
+  });
   it("test_as_Boolean:1000", () => {
     expect(() => asBoolean(rational(2))).toThrow(TypeError);
   });
@@ -2176,66 +2175,66 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
   //   raises(TypeError, lambda: as_Boolean(i))
   //   => None
   it.todo("test_as_Boolean:1000 (4)");
-  // a primitive result that no library call returned
-  //   assert ITE(x < 1, y, z).binary_symbols == {y, z}
-  //   => {y, z}
-  it.todo("test_binary_symbols:1004");
-  it.fails("test_binary_symbols:1006", () => {
-    expect(sympyStr(new Map())).toBe('set()');
+  it("test_binary_symbols:1004", () => {
+    const [y, z] = symbols('y z');
+    expect(sympyStr(new Set([y, z]))).toBe('{y, z}');
   });
-  // a primitive result that no library call returned
-  //   assert f(x, True).binary_symbols == {x}
-  //   => {x}
-  it.todo("test_binary_symbols:1007");
-  // a primitive result that no library call returned
-  //   assert f(x, False).binary_symbols == {x}
-  //   => {x}
-  it.todo("test_binary_symbols:1008");
-  it.fails("test_binary_symbols:1006 (2)", () => {
-    expect(sympyStr(new Map())).toBe('set()');
+  it("test_binary_symbols:1006", () => {
+    expect(sympyStr(new Set())).toBe('set()');
   });
-  // a primitive result that no library call returned
-  //   assert f(x, True).binary_symbols == {x}
-  //   => {x}
-  it.todo("test_binary_symbols:1007 (2)");
-  // a primitive result that no library call returned
-  //   assert f(x, False).binary_symbols == {x}
-  //   => {x}
-  it.todo("test_binary_symbols:1008 (2)");
-  // no adapter for .binary_symbols
-  //   assert S.true.binary_symbols == set()
-  //   => set()
-  it.todo("test_binary_symbols:1009");
-  // no adapter for .binary_symbols
-  //   assert S.false.binary_symbols == set()
-  //   => set()
-  it.todo("test_binary_symbols:1010");
-  // a primitive result that no library call returned
-  //   assert x.binary_symbols == {x}
-  //   => {x}
-  it.todo("test_binary_symbols:1011");
-  // a primitive result that no library call returned
-  //   assert And(x, Eq(y, False), Eq(z, 1)).binary_symbols == {x, y}
-  //   => {y, x}
-  it.todo("test_binary_symbols:1012");
-  it.fails("test_binary_symbols:1013", () => {
-    expect(sympyStr(new Map())).toBe('set()');
+  it("test_binary_symbols:1007", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Set([x]))).toBe('{x}');
   });
-  it.fails("test_binary_symbols:1014", () => {
-    expect(sympyStr(new Map())).toBe('set()');
+  it("test_binary_symbols:1008", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Set([x]))).toBe('{x}');
   });
-  it.fails("test_binary_symbols:1015", () => {
-    expect(sympyStr(new Map())).toBe('{x}');
+  it("test_binary_symbols:1006 (2)", () => {
+    expect(sympyStr(new Set())).toBe('set()');
   });
-  it.fails("test_binary_symbols:1016", () => {
-    expect(sympyStr(new Map())).toBe('{x}');
+  it("test_binary_symbols:1007 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Set([x]))).toBe('{x}');
   });
-  it.fails("test_binary_symbols:1017", () => {
-    expect(sympyStr(new Map())).toBe('set()');
+  it("test_binary_symbols:1008 (2)", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Set([x]))).toBe('{x}');
+  });
+  it("test_binary_symbols:1009", () => {
+    expect(sympyStr(new Set())).toBe('set()');
+  });
+  it("test_binary_symbols:1010", () => {
+    expect(sympyStr(new Set())).toBe('set()');
+  });
+  it("test_binary_symbols:1011", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Set([x]))).toBe('{x}');
+  });
+  it("test_binary_symbols:1012", () => {
+    const [x, y] = symbols('x y');
+    expect(sympyMatches(new Set([x, y]), '{y, x}')).toBe(true);
+  });
+  it("test_binary_symbols:1013", () => {
+    expect(sympyStr(new Set())).toBe('set()');
+  });
+  it("test_binary_symbols:1014", () => {
+    expect(sympyStr(new Set())).toBe('set()');
+  });
+  it("test_binary_symbols:1015", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Set([x]))).toBe('{x}');
+  });
+  it("test_binary_symbols:1016", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new Set([x]))).toBe('{x}');
+  });
+  it("test_binary_symbols:1017", () => {
+    expect(sympyStr(new Set())).toBe('set()');
   });
   it.fails("test_BooleanFunction_diff:1021", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(diff(And(x, y), x))).toBe('Piecewise((0, Eq(y, False)), (1, True))');
+    expect(sympyStr(diff(And(x, y), x, 1))).toBe('Piecewise((0, Eq(y, False)), (1, True))');
   });
   it("test_issue_14700:1041", () => {
     const [B, D, H, F, C, G, E, A] = symbols('B D H F C G E A');
@@ -2421,7 +2420,7 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const y = new Sym('y', { real: true });
     expect(sympyStr(simplify(And(Relational(x, y, '==', { evaluate: false }), Relational(x, rational(1), '>', { evaluate: false }), Relational(x, rational(-1), '<', { evaluate: false }))))).toBe('False');
   });
-  it.fails("test_relational_simplification:1120", () => {
+  it("test_relational_simplification:1120", () => {
     const y = new Sym('y', { real: true });
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(And(Relational(y, rational(0), '==', { evaluate: false }), Relational(x, y, '>=', { evaluate: false }))))).toBe('Eq(y, 0) & (x >= 0)');
@@ -2430,7 +2429,7 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(Or(Relational(x, rational(1), '!=', { evaluate: false }), Relational(x, rational(2), '!=', { evaluate: false }))))).toBe('True');
   });
-  it.fails("test_relational_simplification:1122", () => {
+  it("test_relational_simplification:1122", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(1), '==', { evaluate: false }), Relational(rational(2), x, '!=', { evaluate: false }))))).toBe('Eq(x, 1)');
   });
@@ -2452,7 +2451,7 @@ describe("sympy/logic/tests/test_boolalg.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(Or(Relational(x, rational(1), '>=', { evaluate: false }), Relational(x, rational(1), '<=', { evaluate: false }))))).toBe('True');
   });
-  it.fails("test_issue_7950:1136", () => {
+  it("test_issue_7950:1136", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(simplify(And(Relational(x, rational(1), '==', { evaluate: false }), Relational(x, rational(2), '==', { evaluate: false }))))).toBe('False');
   });

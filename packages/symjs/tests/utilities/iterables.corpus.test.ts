@@ -75,7 +75,7 @@ describe("doctests of sympy.utilities.iterables", () => {
   //   => None
   it.todo("a.sort()");
   it("factorial(len('banana'))", () => {
-    expect(sympyStr(fn('factorial', [rational(6)]))).toBe('720');
+    expect(sympyStr(fn('factorial', [rational(6)], { evaluate: true }))).toBe('720');
   });
   // the arguments do not type-check against the public API
   //   reshape(seq, [4]) # lists of 4
@@ -925,10 +925,9 @@ describe("sympy/utilities/tests/test_iterables.py", () => {
   //   assert list(partitions(1, 0, size=i)) == ans[i]
   //   => [{}]
   it.todo("test_partitions:472");
-  // a primitive result that no library call returned
-  //   assert list(partitions(6, 2, 2, size=i)) == ans[i]
-  //   => [{}]
-  it.todo("test_partitions:473");
+  it("test_partitions:473", () => {
+    expect(sympyStr(pyItems([new Map()]))).toBe('[{}]');
+  });
   // a primitive result that no library call returned
   //   assert list(partitions(6, 2, None, size=i)) != ans[i]
   //   => [{}]
@@ -937,13 +936,13 @@ describe("sympy/utilities/tests/test_iterables.py", () => {
   //   assert list(partitions(6, None, 2, size=i)) != ans[i]
   //   => [{}]
   it.todo("test_partitions:475");
-  // a primitive result that no library call returned
-  //   assert list(partitions(6, 2, 0, size=i)) == ans[i]
-  //   => [{}]
-  it.todo("test_partitions:476");
-  it.fails("test_partitions:471 (2)", () => {
-    expect(sympyStr(pyItems([new Map()]))).toBe('[(0, {})]');
+  it("test_partitions:476", () => {
+    expect(sympyStr(pyItems([new Map()]))).toBe('[{}]');
   });
+  // a primitive result that no library call returned
+  //   assert list(partitions(0, size=i)) == ans[i]
+  //   => [(0, {})]
+  it.todo("test_partitions:471 (2)");
   // a primitive result that no library call returned
   //   assert list(partitions(1, 0, size=i)) == ans[i]
   //   => [(0, {})]

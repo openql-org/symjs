@@ -125,7 +125,7 @@ describe("sympy/geometry/tests/test_util.py", () => {
   it("test_idiff:37", () => {
     const y = new Sym('y', { real: true });
     const x = new Sym('x', { real: true });
-    expect(sympyStr(idiff(new Add([y, new Mul([rational(-1), new Pow(fn('tan', [x]), rational(2))]), new Mul([rational(-2), fn('cosh', [new Mul([rational(1, 10), x])])]), new Mul([rational(10), new Pow(new Add([new Pow(x, rational(-1)), new Mul([rational(-1), fn('sin', [x])])]), rational(2))])]), y, x))).toBe('-20*sin(x)*cos(x) + 2*tan(x)**3 + 2*tan(x) + sinh(x/10)/5 + 20*cos(x)/x - 20*sin(x)/x**2 + 20/x**3');
+    expect(sympyStr(idiff(new Add([y, new Mul([rational(-1), new Pow(fn('tan', [x], { evaluate: false }), rational(2))]), new Mul([rational(-2), fn('cosh', [new Mul([rational(1, 10), x])])]), new Mul([rational(10), new Pow(new Add([new Pow(x, rational(-1)), new Mul([rational(-1), fn('sin', [x])])]), rational(2))])]), y, x))).toBe('-20*sin(x)*cos(x) + 2*tan(x)**3 + 2*tan(x) + sinh(x/10)/5 + 20*cos(x)/x - 20*sin(x)/x**2 + 20/x**3');
   });
   it("test_intersection:42", () => {
     expect(sympyStr([])).toBe('[]');

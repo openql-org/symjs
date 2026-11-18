@@ -125,7 +125,7 @@ describe("sympy/polys/tests/test_multivariate_resultants.py", () => {
   });
   it("test_get_KSY_Dixon_resultant_example_two:217", () => {
     const A = new Sym('A');
-    expect(sympyStr(factor(new Mul([rational(8), A, new Pow(new Add([rational(-3), new Mul([rational(2), A])]), rational(2)), new Pow(new Add([rational(-4), A, new Mul([rational(2), new Pow(A, rational(2))])]), rational(-1)), new Pow(new Add([rational(9), new Mul([rational(-12), A]), new Mul([rational(4), new Pow(A, rational(2))])]), rational(-1)), new Add([rational(-4), new Mul([rational(-4), new Pow(A, rational(3))]), new Mul([rational(9), A])]), new Add([rational(2), new Pow(A, rational(2)), new Mul([rational(-5), A]), new Mul([rational(2), new Pow(A, rational(3))])])]), { deep: false, gaussian: false }))).toBe('-8*A*(A - 1)*(A + 2)*(2*A - 1)**2');
+    expect(sympyStr(factor(new Mul([rational(8), A, new Pow(new Add([rational(-3), new Mul([rational(2), A])]), rational(2)), new Pow(new Add([rational(-4), A, new Mul([rational(2), new Pow(A, rational(2))])]), rational(-1)), new Pow(new Add([rational(9), new Mul([rational(-12), A]), new Mul([rational(4), new Pow(A, rational(2))])]), rational(-1)), new Add([rational(-4), new Mul([rational(-4), new Pow(A, rational(3))]), new Mul([rational(9), A])]), new Add([rational(2), new Pow(A, rational(2)), new Mul([rational(-5), A]), new Mul([rational(2), new Pow(A, rational(3))])])]), { deep: false, gaussian: false, fraction: true, expand: true, gens: [] }))).toBe('-8*A*(A - 1)*(A + 2)*(2*A - 1)**2');
   });
   it("test_macaulay_resultant_init:222", () => {
     const [y, a, x, b] = symbols('y a x b');
