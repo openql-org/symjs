@@ -1611,7 +1611,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_infinity:191", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_infinity:192", () => {
+  it("test_infinity:192", () => {
     expect(sympyStr(ask(Q.hermitian(oo), true))).toBe('False');
   });
   it.fails("test_infinity:193", () => {
@@ -1677,7 +1677,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_neg_infinity:217", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_neg_infinity:218", () => {
+  it("test_neg_infinity:218", () => {
     expect(sympyStr(ask(Q.hermitian(S.NegativeInfinity), true))).toBe('False');
   });
   it.fails("test_neg_infinity:219", () => {
@@ -1746,7 +1746,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_complex_infinity:243", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_complex_infinity:244", () => {
+  it("test_complex_infinity:244", () => {
     expect(sympyStr(ask(Q.hermitian(zoo), true))).toBe('False');
   });
   it.fails("test_complex_infinity:245", () => {
@@ -4682,7 +4682,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(x), Q.antihermitian(x)))).toBe('None');
   });
-  it.fails("test_hermitian:1451", () => {
+  it("test_hermitian:1451", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(x), Q.imaginary(x)))).toBe('False');
   });

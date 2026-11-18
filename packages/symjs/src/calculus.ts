@@ -173,3 +173,5 @@ export { SeriesBase } from './series/series_class';
 
 export { orderAt, orderAtOo } from './integrals/orders';
 export { gruntz } from './series/gruntz';
+
+export { richardson, shanks } from './series/acceleration';

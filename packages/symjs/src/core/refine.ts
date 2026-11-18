@@ -676,8 +676,9 @@ class Decider {
       case 'imaginary':
         return this.imaginary(e);
       case 'hermitian':
-        if (this.q('real', e) === true) return true;
-        return this.q('imaginary', e) === true && this.q('nonzero', mul(-1, S.I, e)) === true ? false : undefined;
+        // A noncommutative symbol can denote a Hermitian operator.
+        if (!e.isCommutative) return undefined;
+        return this.q('real', e);
       case 'antihermitian':
         if (this.q('imaginary', e) === true) return true;
         if (this.q('zero', e) === true) return true;

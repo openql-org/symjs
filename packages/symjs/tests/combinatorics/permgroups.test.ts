@@ -241,3 +241,27 @@ it('recognizes the trivial permutation group as a group', async () => {
   const a = await import('../../src');
   expect(a.PermutationGroup(new a.Permutation([0])).isGroup).toBe(true);
 });
+
+it('constructs Sylow subgroups with SymPy 1.14 orders and subgroup membership', async () => {
+  const { CyclicGroup, DihedralGroup, SymmetricGroup, AlternatingGroup, PermutationGroup, Permutation } = await import('../../src/combinatorics');
+  const cases = [
+    [DihedralGroup(6), 2, 4n], [SymmetricGroup(6), 5, 5n],
+    [AlternatingGroup(3), 3, 3n], [AlternatingGroup(5), 3, 3n],
+    [SymmetricGroup(4), 2, 8n], [AlternatingGroup(4), 2, 4n],
+    [CyclicGroup(12), 2, 4n], [CyclicGroup(12), 3, 3n],
+    [CyclicGroup(4), 2, 4n], [CyclicGroup(4), 3, 1n],
+    [SymmetricGroup(10), 2, 256n], [SymmetricGroup(10), 3, 81n], [SymmetricGroup(10), 5, 25n],
+    [AlternatingGroup(10), 2, 128n], [AlternatingGroup(10), 3, 81n], [AlternatingGroup(10), 5, 25n],
+    [AlternatingGroup(9), 3, 81n],
+    [new PermutationGroup(SymmetricGroup(4).generators.map((g) => g.resize(5))), 2, 8n],
+    [new PermutationGroup([new Permutation([1, 0, 2, 4, 3])]), 2, 2n],
+  ] as const;
+  for (const [group, p, order] of cases) {
+    const sylow = group.sylowSubgroup(p);
+    expect(sylow.order()).toBe(order);
+    expect(sylow.isSubgroup(group)).toBe(true);
+    expect(group.sylowSubgroup(BigInt(p)).order()).toBe(order);
+  }
+  expect(() => CyclicGroup(4).sylowSubgroup(4)).toThrow('prime');
+  expect(() => CyclicGroup(4).sylowSubgroup(1)).toThrow('prime');
+});
