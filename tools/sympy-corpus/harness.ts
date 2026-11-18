@@ -594,7 +594,7 @@ const REL_OPS: Record<string, sj.RelOp> = {
   GreaterThan: 'Ge',
 };
 
-const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'udivisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
+const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'udivisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', '_eis', '_erfs', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
 /** Functions of the zeta, beta, elliptic and Appell families (functions/special/zetafunctions.ts, special.ts, ellipticintegrals.ts, hyper.ts). */
 const ZETA_FAMILY_NAMES = ['polylog', 'lerchphi', 'dirichlet_eta', 'riemann_xi', 'stieltjes', 'betainc', 'betainc_regularized', 'elliptic_k', 'elliptic_e', 'elliptic_f', 'elliptic_pi', 'appellf1'] as const;
 const definedOr = <T>(v: T | undefined, what: string): T => {
@@ -675,7 +675,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Rem: ([p, q]) => sj.Rem(p!, q!),
   KroneckerDelta: ([i, j, range]) => sj.KroneckerDelta(i!, j!, range === undefined ? undefined : sj.Tuple(...tupleItems(range))),
   ...Object.fromEntries(ZETA_FAMILY_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
-  hyper: ([ap, bq, z]) => sj.hyper(tupleItems(ap), tupleItems(bq), z!),
+  hyper: ([ap, bq, z]) => sj.hyper(tupleItems(ap), tupleItems(bq), z!, { evaluate: false }),
   meijerg: ([a, b, z]) => {
     const [an, ap] = (a as unknown as JsTuple).items;
     const [bm, bq] = (b as unknown as JsTuple).items;
@@ -1089,6 +1089,10 @@ export function deserialize(tree: Tree): unknown {
         if (a instanceof sj.Rational && a.q === 1n && a.p > 100000n) return new Fn('factorial', [a]);
       }
       if (tree['name'] === 'Min' || tree['name'] === 'Max') {
+        return sj.fn(tree['name'], (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))), { evaluate: false });
+      }
+      if (tree['name'] === 'lowergamma' || tree['name'] === 'uppergamma' || tree['name'] === 'appellf1' || tree['name'] === 'multigamma'
+        || tree['name'] === 'digamma' || tree['name'] === 'trigamma') {
         return sj.fn(tree['name'], (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))), { evaluate: false });
       }
       const f = FUNCTIONS[tree['name'] as string];
@@ -1778,7 +1782,7 @@ function rootsDict(rs: Expr[]): JsDict {
 function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
   const differentiate = (expression: Expr, variable: Expr, order = 1): Expr => evaluate
     ? sj.diff(expression, variable, order) : sj.derivative(expression, [[variable, order]]);
-  if (!evaluate) {
+  if (!evaluate && rest.length !== 0) {
     const variables: [Expr, number][] = [];
     for (let i = 0; i < rest.length; i++) {
       const spec = rest[i];
@@ -4010,11 +4014,21 @@ export const ADAPTERS: Record<string, Adapter> = {
     const a = (args[0] as JsTuple).items, b = (args[1] as JsTuple).items;
     return sj.meijerg(asExprList(a[0]), asExprList(a[1]), asExprList(b[0]), asExprList(b[1]), asExpr(args[2]));
   },
+  '.ap': (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.Hyper || self instanceof sj.MeijerG)) throw new TypeError('expected a hypergeometric function');
+    return new JsTuple(self.ap);
+  },
+  '.bq': (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.Hyper || self instanceof sj.MeijerG)) throw new TypeError('expected a hypergeometric function');
+    return new JsTuple(self.bq);
+  },
   '.delta_range': (_args, kw, self) => (noKw(kw), (self as sj.Fn).args[2] === undefined ? null : new JsTuple(((self as sj.Fn).args[2] as Expr).args)),
   '.integrand': (args, kw, self) => (noKw(kw), (self as sj.MeijerG).integrand(asExpr(args[0]))),
   hyper: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
-    return sj.hyper((args[0] as JsTuple).items.map(asExpr), (args[1] as JsTuple).items.map(asExpr), asExpr(args[2]), { evaluate: kw['evaluate'] !== false });
+    return sj.hyper(asExprList(args[0]), asExprList(args[1]), asExpr(args[2]), { evaluate: kw['evaluate'] !== false });
   },
   ...Object.fromEntries(ZETA_FAMILY_NAMES.map((n) => [n, ((args, kw) => (noKw(kw), sj.fn(n, args.map(asExpr)))) as Adapter])),
   ...Object.fromEntries((['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn'] as const).map((name) => [name, ((args, kw) => {
@@ -4257,7 +4271,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.is_Piecewise': (_args, kw, self) => (noKw(kw), self instanceof sj.Piecewise),
   '.rewrite': (args, kw, self) => {
-    for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
+    const hints: Record<string, Expr> = {};
+    for (const [key, value] of Object.entries(kw)) {
+      if (key === 'deep') continue;
+      if (!(self instanceof sj.Fn && self.name === 'marcumq' && ['k', 'x'].includes(key))) throw new Unsupported(`kwargs ${key}`);
+      hints[key] = asSym(value);
+    }
     const name = (v: unknown): string => {
       if (v instanceof FnClass || v instanceof UFnClass || v instanceof TypeRef) return v.name;
       // a target that SymPy defines as a function (sqrt) rather than a class
@@ -4269,7 +4288,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const target = name(args[args.length - 1]);
     let pattern = args.slice(0, -1);
     if (pattern.length === 1 && (pattern[0] instanceof JsList || pattern[0] instanceof JsTuple)) pattern = [...(pattern[0] as JsList).items];
-    return sj.rewrite(asExpr(self), target, { pattern: pattern.map(name), deep: kw['deep'] === undefined ? true : Boolean(kw['deep']) });
+    return sj.rewrite(asExpr(self), target, { pattern: pattern.map(name), deep: kw['deep'] === undefined ? true : Boolean(kw['deep']), hints });
   },
   '.find': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'group') throw new Unsupported(`kwargs ${k}`);
@@ -6422,6 +6441,10 @@ function autoAdapter(c: Case): Adapter | undefined {
   const conv = (x: unknown): unknown => {
     // the evaluating constructors of the arithmetic classes (Python calls the class: Pow(b, e))
     const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow, RisingFactorial: function RisingFactorial(x: Expr, k: Expr) { return sj.rf(x, k); }, FallingFactorial: function FallingFactorial(x: Expr, k: Expr) { return sj.ff(x, k); }, PowerSet: sj.PowerSet, Contains: (x: Expr, s: sj.SetExpr) => new sj.Contains(x, s) };
+    if (c.fn === 'unchanged' && x instanceof FnClass) {
+      if (x.name === 'hermite_prob') return function hermite_prob(n: Expr, z: Expr) { return sj.hermiteProb(n, z); };
+      if (x.name === 'betainc_regularized') return function betainc_regularized(a: Expr, b: Expr, x1: Expr, x2: Expr) { return sj.betaincRegularized(a, b, x1, x2); };
+    }
     if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[REL_OPS[x.name] ?? camel(x.name)];
     const headName = String(c.args?.[0]?.['name']);
     if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);
@@ -6529,7 +6552,7 @@ function autoAdapter(c: Case): Adapter | undefined {
         const cls = HEAD_CLASSES.get(head);
         if (cls !== undefined) return new TypeRef(cls);
         if (typeof (head as { functionName?: unknown }).functionName === 'string') return head;
-        if (self instanceof sj.AppliedFunction) return new FnClass(self.name);
+        if (self instanceof sj.AppliedFunction || self instanceof sj.Hyper || self instanceof sj.MeijerG) return new FnClass(self.name);
       }
       // expr.func(*expr.args): a Lambda argument stays the same Lambda node (SymPy passes the arg itself)
       if (name === 'func' && args.length > 0 && self instanceof sj.Expr) {
@@ -6987,6 +7010,33 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'sympy.functions.elementary.tests.test_trigonometric:assert asec(sin(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
   'sympy.functions.elementary.tests.test_hyperbolic:assert acosh(sin(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
   'sympy.functions.elementary.tests.test_hyperbolic:assert asech(sinh(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
+  // Their own local expansions of K_2 and Y_2 contain nonzero x**2*log(x) terms.
+  "sympy.functions.special.tests.test_bessel:assert besselk(2, x).is_meromorphic(x, 0) == True": 'False',
+  "sympy.functions.special.tests.test_bessel:assert bessely(2, x).is_meromorphic(x, 0) == True": 'False',
+  // For x > 0 and l > 0 the defining powers give (x+l)/2 - (x+l/2) + x/2 = 0.
+  "sympy.functions.special.tests.test_singularity_functions:assert (SingularityFunction(x + l, 0, 1)/2\\\n        - SingularityFunction(x + l, l/2, 1)\\\n        + SingularityFunction(x + l, l, 1)/2).as_leading_term(x) == -x/2": '0',
+  "sympy.functions.special.tests.test_singularity_functions:assert (SingularityFunction(x + l, 0, 1)/2\\\n        - SingularityFunction(x + l, l/2, 1)\\\n        + SingularityFunction(x + l, l, 1)/2).nseries(x) == -x/2 + O(x**6)": '0',
+  // Substituting exp(±x)*x**(-1/2)*sum(a[k]/x**k) into the modified
+  // Bessel equation gives a[k]/a[k-1] = ±(2*k-1)**2/(8*k) for order zero.
+  "sympy.functions.special.tests.test_bessel:assert besseli(0,x).series(x, oo, n=4) == sqrt(2)*(sqrt(1/x) - (1/x)**(S(3)/2)/8 - \\\n        3*(1/x)**(S(5)/2)/128 - 15*(1/x)**(S(7)/2)/1024 + O((1/x)**(S(9)/2), (x, oo)))*exp(x)/(2*sqrt(pi))": "sqrt(2)*(sqrt(1/x) + (1/x)**(3/2)/8 + 9*(1/x)**(5/2)/128 + 75*(1/x)**(7/2)/1024 + O((1/x)**(9/2), (x, oo)))*exp(x)/(2*sqrt(pi))",
+  "sympy.functions.special.tests.test_bessel:assert besseli(0,x).series(x,-oo, n=4) == sqrt(2)*(sqrt(-1/x) - (-1/x)**(S(3)/2)/8 - 3*(-1/x)**(S(5)/2)/128 - \\\n        15*(-1/x)**(S(7)/2)/1024 + O((-1/x)**(S(9)/2), (x, -oo)))*exp(-x)/(2*sqrt(pi))": "sqrt(2)*(sqrt(-1/x) + (-1/x)**(3/2)/8 + 9*(-1/x)**(5/2)/128 + 75*(-1/x)**(7/2)/1024 + O((-1/x)**(9/2), (x, -oo)))*exp(-x)/(2*sqrt(pi))",
+  "sympy.functions.special.tests.test_bessel:assert besselk(0,x).series(x, oo, n=4) == sqrt(2)*sqrt(pi)*(sqrt(1/x) + (1/x)**(S(3)/2)/8 - \\\n            3*(1/x)**(S(5)/2)/128 + 15*(1/x)**(S(7)/2)/1024 + O((1/x)**(S(9)/2), (x, oo)))*exp(-x)/2": "sqrt(2)*sqrt(pi)*(sqrt(1/x) - (1/x)**(3/2)/8 + 9*(1/x)**(5/2)/128 - 75*(1/x)**(7/2)/1024 + O((1/x)**(9/2), (x, oo)))*exp(-x)/2",
+  "sympy.functions.special.tests.test_bessel:assert besselk(0,x).series(x, -oo, n=4) == sqrt(2)*sqrt(pi)*(-I*sqrt(-1/x) + I*(-1/x)**(S(3)/2)/8 + \\\n            3*I*(-1/x)**(S(5)/2)/128 + 15*I*(-1/x)**(S(7)/2)/1024 + O((-1/x)**(S(9)/2), (x, -oo)))*exp(-x)/2": "sqrt(2)*sqrt(pi)*(-I*sqrt(-1/x) - I*(-1/x)**(3/2)/8 - 9*I*(-1/x)**(5/2)/128 - 75*I*(-1/x)**(7/2)/1024 + O((-1/x)**(9/2), (x, -oo)))*exp(-x)/2",
+  // On the positive ray the rewrite with order -1/3 tends to zero at z=0.
+  // The continuous derivative airyaiprime(0) is -1/(3**(1/3)*gamma(1/3)).
+  "sympy.functions.special.tests.test_bessel:assert airyaiprime(z).rewrite(besseli) == (\n        z**2*besseli(Rational(2, 3), 2*z**Rational(3, 2)/3)/(3*(z**Rational(3, 2))**Rational(2, 3)) -\n        (z**Rational(3, 2))**Rational(2, 3)*besseli(Rational(-1, 3), 2*z**Rational(3, 2)/3)/3)": "z**2*besseli(2/3, 2*z**(3/2)/3)/(3*(z**(3/2))**(2/3)) - (z**(3/2))**(2/3)*besseli(-2/3, 2*z**(3/2)/3)/3",
+  // li(z) = Ei(log(z)) tends to zero as z -> 0+ and Li(z) differs by li(2).
+  // The claimed Taylor polynomial in log(z) instead diverges on that ray.
+  "sympy.functions.special.tests.test_error_functions:assert li(z).series(z) == log(z)**5/600 + log(z)**4/96 + log(z)**3/18 + log(z)**2/4 + \\\n            log(z) + log(log(z)) + EulerGamma": "z*(120/log(z)**5 + 24/log(z)**4 + 6/log(z)**3 + 2/log(z)**2 + 1/log(z) + 1 + O(log(z)**(-6)))/log(z)",
+  "sympy.functions.special.tests.test_error_functions:assert Li(z).series(z) == \\\n        log(z)**5/600 + log(z)**4/96 + log(z)**3/18 + log(z)**2/4 + log(z) + log(log(z)) - li(2) + EulerGamma": "z*(120/log(z)**5 + 24/log(z)**4 + 6/log(z)**3 + 2/log(z)**2 + 1/log(z) + 1 + O(log(z)**(-6)))/log(z) - li(2)",
+  // Compose the local Y_1, Y_2 and K_2 series with sin(x) before truncating.
+  // Subtracting the claimed series leaves x**3/(60*pi), 2*x**2/(5*pi), and
+  // -x**2/30, respectively. The reciprocal terms need the x**5 term of sin(x).
+  "sympy.functions.special.tests.test_bessel:assert bessely(1, sin(x)).series(x, n=4) == -1/(pi*(-x**3/12 + x/2)) - \\\n        (1 - 2*S.EulerGamma)*(-x**3/12 + x/2)/pi + x*(log(x)/pi - log(2)/pi) + \\\n        x**3*(-7*log(x)/(24*pi) - 1/(6*pi) + (S(5)/2 - 2*S.EulerGamma)/(16*pi) +\n        7*log(2)/(24*pi)) + O(x**4*log(x))": "-2/(pi*x) + x*((log(x) - log(2) - 1/2 + EulerGamma)/pi - 1/(3*pi)) + x**3*((-log(x)/8 - EulerGamma/8 + log(2)/8 + 5/32)/pi - (log(x) - log(2) - 1/2 + EulerGamma)/(6*pi) - 37/(180*pi)) + O(x**4*log(x))",
+  "sympy.functions.special.tests.test_bessel:assert bessely(-2, sin(x)).series(x, n=4) == bessely(2, sin(x)).series(x, n=4)": "-4/(pi*x**2) - 7/(3*pi) + x**2*((log(x)/4 - 3/16 - log(2)/4 + EulerGamma/4)/pi - 4/(15*pi)) + O(x**4*log(x))",
+  "sympy.functions.special.tests.test_bessel:assert besselk(-2, sin(x)).series(x, n=4) == besselk(2, sin(x)).series(x, n=4)": "2/x**2 + 1/6 + x**2*(-log(x)/8 - EulerGamma/8 + log(2)/8 + 109/480) + O(x**4*log(x))",
+  // SymPy at 60 digits gives Im = 0.2202857710572745...; rounding its high-precision result to 10 digits agrees.
+  "sympy.functions.special.tests.test_zeta_functions:assert str(dirichlet_eta(I, I).evalf(n=10)) == '3.462349253 + 0.220285771*I'": '3.462349253 + 0.2202857711*I',
   // At z=1 SymPy gives erfi(1)+2*I. E_(1/2)(w)=sqrt(pi)*erfc(sqrt(w))/sqrt(w) requires a negative constant term.
   "sympy.functions.special.tests.test_error_functions:assert erfi(z).rewrite('expint') == sqrt(-z**2)/z - z*expint(S.Half, -z**2)/sqrt(S.Pi)": '-z*erfc(sqrt(-z**2))/sqrt(-z**2) - sqrt(-z**2)/z',
   // A nonzero numerator divided by a bounded interval cannot approach zero; zero itself is excluded.

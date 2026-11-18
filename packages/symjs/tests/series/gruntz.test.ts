@@ -38,6 +38,8 @@ describe('gruntz: limits as in SymPy 1.14', () => {
     ['besselk(1, x)*exp(x)*sqrt(x)', 'oo', 'sqrt(2)*sqrt(pi)/2'],
     ['besselk(0, x)*besseli(0, x)*x', 'oo', '1/2'],
     ['besseli(0, x + 1)/besseli(0, x)', 'oo', 'E'],
+    ['Ei(x + exp(-x))*exp(-x)*x', 'oo', '1'],
+    ['exp(x + x**2)*(erf(x + exp(-x)) - erf(x))', 'oo', '2/sqrt(pi)'],
     ['(x**(-x - 1)*(x**(x + 1) + (x + 1)**x))**x', 'oo', 'exp(E)'],
   ])('gruntz(%s, x, %s) = %s', (e, z0, expected) => {
     expect(G(e, z0)).toBe(expected);

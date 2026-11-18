@@ -282,9 +282,9 @@ describe('hyper: cases outside the table', () => {
       expect(at(hyper([1, y], [3], sj.Rational.of(1, 2)))).toBe('1.54517744447956');
     });
   });
-  it('derivatives with respect to a parameter are not implemented', () => {
+  it('keeps the hypergeometric parameter derivative unevaluated', () => {
     // SymPy: Derivative(hyper((b, x), (c,), z), x)
-    expect(() => diff(hyper([x, 2], [3], z), x)).toThrow(NotImplementedError);
+    expect(diff(hyper([x, 2], [3], z), x)).toBeInstanceOf(sj.Derivative);
     // SymPy: Derivative(jn(x, z), x)
     expect(() => diff(jn(x, z), x)).toThrow(NotImplementedError);
   });
@@ -310,7 +310,7 @@ describe('meijerg accessors (SymPy an, aother, bm, bother, nu, delta, get_period
     const [a, b, zz] = [new Sym('a'), new Sym('b'), new Sym('z')];
     const g = sj.meijerg([a], [1], [b, 2], [], zz);
     if (!(g instanceof sj.MeijerG)) throw new TypeError('meijerg');
-    expect([g.an, g.aother, g.bm, g.bother, g.ap, g.bq].map((l) => l.map(String).join(','))).toEqual(['a', '1', 'b,2', '', 'a,1', 'b,2']);
+    expect([g.an, g.aother, g.bm, g.bother, g.ap, g.bq].map((l) => l.map(String).join(','))).toEqual(['a', '1', '2,b', '', 'a,1', '2,b']);
     expect(String(g.argument)).toBe('z');
     expect(String(g.nu)).toBe('-a + b + 1');
     expect(String(g.delta)).toBe('1');
@@ -457,7 +457,9 @@ it('sets deltas across disjoint Fermi sectors to zero', async () => {
   const h = sj.meijerg([], [], [b], [], x);
   expect(String(diff(h, x))).toBe('(b*meijerg(((), ()), ((b,), ()), x) - meijerg(((), ()), ((b + 1,), ()), x))/x');
   expect(diff(sj.meijerg([], [a], [], [b], x), x)).toBe(sj.S.Zero);
-  expect(String(diff(sj.meijerg([x], [], [], [], x), x))).toContain('Derivative(');
+  const both = sj.meijerg([x], [], [], [], x);
+  const shifted = sj.meijerg([sj.add(x, -1)], [], [], [], x);
+  expect(diff(both, x).equals(sj.add(sj.mul(both, sj.log(x)), sj.mul(sj.add(sj.mul(sj.add(x, -1), both), shifted), sj.pow(x, -1))))).toBe(true);
   const integrand = sj.meijerg([a], [1], [b], [2], x);
   if (!(integrand instanceof sj.MeijerG)) throw new TypeError('meijerg');
   expect(String(integrand.integrand(z))).toBe('x**z*gamma(b - z)*gamma(-a + z + 1)/(gamma(1 - z)*gamma(z - 1))');

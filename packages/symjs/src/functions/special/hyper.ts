@@ -17,7 +17,7 @@ import { Ge, Gt, Le, Lt, Ne, canonicalRelation, piecewise, rel } from '../../cor
 import { BoolOp, and, or } from '../../core/boolalg';
 import { add, mul, pow, sympify } from '../../core/ops';
 import { fnPartials } from '../../calculus/diff';
-import { abs, cos, evaluators, fn, re, sin } from '../elementary/elementary';
+import { abs, conjugateRules, cos, evaluators, fn, re, sin } from '../elementary/elementary';
 import { numericFns } from '../../numeric/evalf';
 import { c as cx, cmul } from '../../numeric/complex';
 import { besselj, bessely } from './bessel';
@@ -30,7 +30,7 @@ import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
 import type { Mpc } from '../../numeric/mpfun';
 import { chyp2f1 } from '../../numeric/mporthopoly';
-import { HyperInfinity, hyper as mpHyper } from '../../numeric/mphyper';
+import { HyperInfinity, hyper as mpHyper, hypercomb, type HyperTerm } from '../../numeric/mphyper';
 
 const gcdBig = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcdBig(b, a % b));
 
@@ -126,7 +126,7 @@ export class Hyper extends ExtensionExpr {
   }
   /** d/dz hyper(a, b, z) = prod(a)/prod(b) * hyper(a + 1, b + 1, z). */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
-    if ([...this.ap, ...this.bq].some((e) => e.has(x))) return undefined;
+    if ([...this.ap, ...this.bq].some((e) => e.has(x))) return derivative(this, [[x, 1]]);
     const dz = d(this.argument, x);
     const c = mul(mul(...this.ap), pow(mul(...this.bq), -1));
     return mul(c, hyper(this.ap.map((a) => add(a, 1)), this.bq.map((b) => add(b, 1)), this.argument), dz);
@@ -227,6 +227,7 @@ export class MeijerG extends ExtensionExpr {
   ) {
     super('meijerg', args);
   }
+  override get isNumber(): boolean { return this.args.every((a) => a.isNumber); }
   private part(i: number): Expr[] {
     const start = 1 + this.sizes.slice(0, i).reduce((s, k) => s + k, 0);
     return this.args.slice(start, start + at(this.sizes, i));
@@ -240,19 +241,73 @@ export class MeijerG extends ExtensionExpr {
   }
   /** SymPy meijerg.fdiff: shift an upper or lower numerator parameter. */
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
-    if ([...this.ap, ...this.bq].some((a) => a.has(x))) return derivative(this, [[x, 1]], true);
-    const z = this.argument;
-    let partial: Expr = S.Zero;
-    if (this.an.length) {
-      const [a, ...rest] = this.an;
-      const a0 = defined(a);
-      partial = mul(pow(z, -1), add(mul(add(a0, -1), this), meijerg([...rest, add(a0, -1)], this.aother, this.bm, this.bother, z)));
-    } else if (this.bm.length) {
-      const [b, ...rest] = this.bm;
-      const b0 = defined(b);
-      partial = mul(pow(z, -1), add(mul(b0, this), mul(-1, meijerg(this.an, this.aother, [...rest, add(b0, 1)], this.bother, z))));
+    const terms: Expr[] = [];
+    const parts = [this.an, this.aother, this.bm, this.bother] as const;
+    for (const [group, part] of parts.entries()) {
+      for (const [index, a] of part.entries()) {
+        const da = d(a, x);
+        if (da.key === S.Zero.key) continue;
+        const partial = this.parameterDerivative(group, index);
+        if (partial === undefined) return derivative(this, [[x, 1]]);
+        terms.push(mul(partial, da));
+      }
     }
-    return mul(partial, d(z, x));
+    const z = this.argument;
+    const dz = d(z, x);
+    if (dz.key === S.Zero.key) return add(...terms);
+    if (this.an.length) {
+      const [a, ...rest] = this.an, a0 = defined(a);
+      terms.push(mul(dz, pow(z, -1), add(mul(add(a0, -1), this), meijerg([...rest, add(a0, -1)], this.aother, this.bm, this.bother, z))));
+    } else if (this.bm.length) {
+      const [b, ...rest] = this.bm, b0 = defined(b);
+      terms.push(mul(dz, pow(z, -1), add(mul(b0, this), mul(-1, meijerg(this.an, this.aother, [...rest, add(b0, 1)], this.bother, z)))));
+    }
+    return add(...terms);
+  }
+  /** Differentiate the Mellin integrand after pairing gamma factors that differ by integers. */
+  private parameterDerivative(group: number, index: number): Expr | undefined {
+    const parts = [this.an, this.aother, this.bm, this.bother] as const;
+    at(parts, group).splice(index, 1);
+    const [an, ap, bm, bq] = parts;
+    const z = this.argument;
+    const terms = [mul(fn('log', [z]), this)];
+    for (const [upper, lower, numerator] of [[an, bq, true], [bm, ap, false]] as const) {
+      for (const u of upper) {
+        const j = lower.findIndex((l) => {
+          const difference = add(u, mul(-1, l));
+          return difference instanceof Rational && difference.isInteger;
+        });
+        if (j < 0) return undefined;
+        const [l] = lower.splice(j, 1);
+        const v = defined(l);
+        const difference = asRational(add(u, mul(-1, v)));
+        const count = Number(difference.p);
+        if (!Number.isSafeInteger(count)) return undefined;
+        const start = count < 0 ? u : v;
+        for (let k = 0; k < Math.abs(count); k++) {
+          const b = add(start, k), a = add(b, 1);
+          const correction = numerator ? meijerg([...this.an, a], this.aother, this.bm, [...this.bother, b], z)
+            : meijerg(this.an, [...this.aother, a], [...this.bm, b], this.bother, z);
+          terms.push(mul(-Math.sign(count), correction));
+        }
+      }
+      if (lower.length) return undefined;
+    }
+    return add(...terms);
+  }
+  override numericValue(dps: number): Expr | undefined {
+    if (!this.isNumber) return undefined;
+    const prec = F.dpsToPrec(dps), wp = prec + 10;
+    const [n, r, m, s] = this.sizes;
+    const p = n + r, q = m + s;
+    const z = evalMp(this.argument, wp);
+    const params = this.args.slice(1).map((e) => evalMp(e, wp));
+    const invert = p > q || p === q && m + n === p && mpAbs(z) > 1;
+    // Inversion interchanges the two residue expansions: G(z | a; b) = G(1/z | 1-b; 1-a).
+    const value = invert
+      ? mpMeijerResidues(params.slice(p).map((b) => M.csub(M.C1, b, wp)), params.slice(0, p).map((a) => M.csub(M.C1, a, wp)), M.cdiv(M.C1, z, wp), m, n, prec)
+      : mpMeijerResidues(params.slice(0, p), params.slice(p), z, n, m, prec);
+    return fromMpc(value, prec);
   }
   /** SymPy meijerg.integrand(s): the Mellin-Barnes integrand. */
   integrand(s: ExprLike): Expr {
@@ -329,6 +384,22 @@ export class MeijerG extends ExtensionExpr {
   }
 }
 
+/** Slater's residue expansion at zero, with hypercomb taking limits at coincident poles. */
+function mpMeijerResidues(a: readonly Mpc[], b: readonly Mpc[], z: Mpc, n: number, m: number, prec: number): Mpc {
+  const p = a.length, q = b.length;
+  const hz = (p - m - n) % 2 === 0 ? z : M.cneg(z);
+  return hypercomb((parameters, wp) => {
+    const upper = parameters.slice(0, p), lower = parameters.slice(p);
+    return lower.slice(0, m).map((bk, k): HyperTerm => {
+      const nu = upper.map((aj) => M.cadd(M.C1, M.csub(bk, aj, wp), wp));
+      const differences = lower.map((bj) => M.csub(bj, bk, wp));
+      const de = differences.map((bj) => M.csub(M.C1, bj, wp));
+      return [[z], [bk], [...differences.slice(0, m).filter((_, j) => j !== k), ...nu.slice(0, n)],
+        [...upper.slice(n).map((aj) => M.csub(aj, bk, wp)), ...de.slice(m)], nu, de.filter((_, j) => j !== k && j < q), hz];
+    });
+  }, [...a, ...b], prec);
+}
+
 /** SymPy meijerg(((an), (ap)), ((bm), (bq)), z). */
 export function meijerg(an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): Expr {
   const parts = [an, ap, bm, bq].map((xs) => xs.map((x) => unpolarify(sympify(x))));
@@ -338,7 +409,7 @@ export function meijerg(an: readonly ExprLike[], ap: readonly ExprLike[], bm: re
     if (difference instanceof Rational && difference.isInteger && difference.isPositive) throw new RangeError('G-function numerator poles must not overlap');
   }
   const sizes: [number, number, number, number] = [an.length, ap.length, bm.length, bq.length];
-  return new MeijerG([sympify(z), ...parts.flat()], sizes);
+  return new MeijerG([sympify(z), ...parts.flatMap(orderedParams)], sizes);
 }
 
 // SymPy incomplete gamma derivatives with respect to the shape parameter.
@@ -430,6 +501,7 @@ function numericallyNonZero(d: Expr): boolean {
 }
 
 /** SymPy KroneckerDelta.eval: 1 or 0 when i - j is known to be zero or not, else the arguments in canonical order. */
+conjugateRules.KroneckerDelta = (args) => new Fn('KroneckerDelta', args);
 evaluators.KroneckerDelta = (i, j, range?: Expr) => {
   if (range !== undefined) {
     const [lower, upper] = pair(range.args);

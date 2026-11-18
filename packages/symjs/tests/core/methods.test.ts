@@ -46,6 +46,18 @@ const f = SymFunction('f');
 const s = (e: unknown): string => (e instanceof Expr ? str(e) : 'None');
 const pairStr = (p: readonly unknown[]): string => `(${p.map(s).join(', ')})`;
 
+it('allows integer-order J and I at zero and rejects the logarithmic Y and K branches', () => {
+  expect(isMeromorphic(sj.besselj(2, x), x, 0)).toBe(true);
+  expect(isMeromorphic(sj.besseli(2, x), x, 0)).toBe(true);
+  expect(isMeromorphic(sj.bessely(2, x), x, 0)).toBe(false);
+  expect(isMeromorphic(sj.besselk(2, x), x, 0)).toBe(false);
+  expect(isMeromorphic(sj.besselk(2, x), x, 1)).toBe(true);
+  expect(isMeromorphic(sj.besselj(x, x), x, 1)).toBe(false);
+  expect(isMeromorphic(sj.besselj(1, x), x, sj.oo)).toBe(false);
+  expect(isMeromorphic(sj.besselj(2, log(x)), x, 0)).toBe('unknown');
+  expect(isMeromorphic(sj.bessely(2, add(x, y)), x, 0)).toBe('unknown');
+});
+
 describe('keepCoeff and argsCnc', () => {
   it('_keep_coeff', () => {
     expect(String(sj.keepCoeff(E('x + 1'), E('2')))).toBe('2*(x + 1)');

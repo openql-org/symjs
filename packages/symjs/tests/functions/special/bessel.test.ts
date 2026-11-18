@@ -348,3 +348,23 @@ it('rewrites the six trigonometric functions as half-order Bessel functions', as
     expect(String(result)).toContain('besselj');
   }
 });
+
+it('preserves the order and branches in Airy rewrites', () => {
+  const p = new Sym('p', { positive: true });
+  const negative = new Sym('t', { negative: true });
+  const order = Rational.of(2, 3);
+  expect(String(sj.rewrite(airyai(negative), 'besselj'))).toContain('besselj(-1/3,');
+  expect(String(sj.rewrite(airybi(p), 'besseli'))).toContain('besseli(1/3,');
+  expect(sj.find(sj.rewrite(airyaiprime(z), 'besseli'), { fn: 'besseli' })
+    .some((application) => sj.order(application).equals(sj.neg(order)))).toBe(true);
+  const arg = sj.mul(2, sj.pow(sj.pow(z, 5), Rational.of(1, 3)));
+  expect(sj.find(sj.expandFunc(airybiprime(arg)), { fn: 'airyaiprime' })).toHaveLength(1);
+});
+
+it('rewrites the Marcum Q function using the requested bound variables', () => {
+  const k = new Sym('k');
+  expect(String(sj.marcumq(2, 3, 4).rewrite('Integral', { hints: { x } })))
+    .toBe('Integral(x**2*exp(-x**2/2 - 9/2)*besseli(1, 3*x), (x, 4, oo))/3');
+  expect(String(sj.rewrite(sj.marcumq(-3, -5, -7), 'Sum', { hints: { k } })))
+    .toBe('exp(-37)*Sum((5/7)**k*besseli(k, 35), (k, 4, oo))');
+});

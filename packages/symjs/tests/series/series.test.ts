@@ -48,6 +48,42 @@ const run = (f: () => unknown): string => {
     return e instanceof Error ? `ERR ${e.constructor.name}: ${e.message}` : 'ERR';
   }
 };
+
+describe('special-function local and asymptotic series', () => {
+  it.each([
+    ['besselj(0, x**1.1)', 4, '1 - x**2.2/4 + O(x**4)'],
+    ['besselj(2, sin(x))', 4, '(-x**3/12 + x/2)**2/2 + O(x**4)'],
+    ['besselk(1/2, x**2)', 2, 'sqrt(2)*sqrt(pi)/(2*x) - sqrt(2)*sqrt(pi)*x/2 + O(x**2)'],
+    ['besselk(2, x)', 1, '2/x**2 - 1/2 + O(x)'],
+    ['bessely(0, log(1+x))', 3, '2*EulerGamma/pi - 2*log(2)/pi + 2*log(x)/pi - x/pi + x**2*(-log(x)/(2*pi) + (2 - 2*EulerGamma)/(4*pi) + log(2)/(2*pi) + 5/(12*pi)) + O(x**3*log(x))'],
+    ['expint(1, x)', 4, '-EulerGamma - log(x) + x - x**2/4 + x**3/18 + O(x**4)'],
+    ['polylog(3/2, -x)', 4, '-x + sqrt(2)*x**2/4 - sqrt(3)*x**3/9 + O(x**4)'],
+    ['polygamma(3, 1/x)', 4, '2*x**3 + O(x**4)'],
+    ['li(x)', 2, 'x*(1/log(x) + 1 + O(log(x)**(-2)))/log(x)'],
+  ] as const)('expands %s at zero', (f, n, expected) => {
+    expect(String(series(P(f), x, 0, n))).toBe(expected);
+  });
+
+  it.each([
+    ['besseli(0, x)', 2, 'sqrt(2)*(sqrt(1/x) + (1/x)**(3/2)/8 + O((1/x)**(5/2), (x, oo)))*exp(x)/(2*sqrt(pi))'],
+    ['erf(x)', 4, '-(-1/(2*x**3) + 1/x + O(x**(-4), (x, oo)))*exp(-x**2)/sqrt(pi) + 1'],
+    ['erfi(x)', 4, '(1/(2*x**3) + 1/x + O(x**(-4), (x, oo)))*exp(x**2)/sqrt(pi) - I'],
+    ['Ci(x)', 4, '-(x**(-2) + O(x**(-4), (x, oo)))*cos(x) + (-2/x**3 + 1/x + O(x**(-4), (x, oo)))*sin(x)'],
+    ['fresnelc(x)', 4, '-cos(pi*x**2/2)/(pi**2*x**3) + sin(pi*x**2/2)/(pi*x) + 1/2 + O(x**(-4), (x, oo))'],
+  ] as const)('expands %s at infinity', (f, n, expected) => {
+    expect(String(series(P(f), x, sj.oo, n))).toBe(expected);
+  });
+
+  it('finds leading terms across singular points', () => {
+    expect(sj.asLeadingTerm(P('besselk(1, sin(x))'), x).equals(P('1/x'))).toBe(true);
+    expect(sj.asLeadingTerm(P('bessely(-1/2, x)'), x).equals(P('sqrt(2)*sqrt(x)/sqrt(pi)'))).toBe(true);
+    expect(sj.asLeadingTerm(P('erf(1/x)'), x).equals(1)).toBe(true);
+    expect(sj.asLeadingTerm(P('erfc(1/x)'), x).equals(0)).toBe(true);
+    expect(sj.asLeadingTerm(sj.SingularityFunction(x, 3, 2), x).equals(0)).toBe(true);
+    expect(sj.asLeadingTerm(sj.SingularityFunction(x, 0, 0), x).equals(1)).toBe(true);
+    expect(sj.asLeadingTerm(sj.SingularityFunction(x, 0, 0), x, { cdir: -1 }).equals(0)).toBe(true);
+  });
+});
 const conc = (e: unknown): sj.Concrete => {
   if (!(e instanceof sj.Concrete)) throw new TypeError('a Sum or Product expected');
   return e;

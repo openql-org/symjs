@@ -5,7 +5,7 @@
 // The Levi-Civita symbol. Expected values are SymPy 1.14's.
 
 import { describe, expect, it } from 'vitest';
-import { Eijk, LeviCivita, latex, symbols } from '../../../src';
+import { Eijk, KroneckerDelta, LeviCivita, adjoint, conjugate, doit, isIntegerValued, latex, symbols } from '../../../src';
 
 describe('LeviCivita', () => {
   const [i, j, k, x, y, a] = symbols('i j k x y a');
@@ -31,6 +31,16 @@ describe('LeviCivita', () => {
   it('Eijk is LeviCivita', () => {
     expect(String(Eijk(1, 3, 2))).toBe('-1');
     expect(String(Eijk(i, j, k))).toBe('LeviCivita(i, j, k)');
+  });
+  it('evaluates the Vandermonde product and keeps both discrete symbols real under conjugation', () => {
+    const symbol = LeviCivita(i, j, k);
+    expect(String(doit(symbol))).toBe('(-i + j)*(-i + k)*(-j + k)/2');
+    for (const expression of [symbol, KroneckerDelta(i, j)]) {
+      expect(isIntegerValued(expression)).toBe(true);
+      expect(conjugate(expression).equals(expression)).toBe(true);
+      expect(adjoint(expression).equals(expression)).toBe(true);
+    }
+    expect(symbol.subs([[k, j]]).equals(0)).toBe(true);
   });
 });
 

@@ -965,6 +965,16 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
       return !isZoo(subsAt(t.exp));
     }
     if (t instanceof Fn) {
+      if (BESSEL_FUNCTIONS.has(t.name)) {
+        const order = at(t.args, 0), argument = at(t.args, 1);
+        if (order.has(x)) return false;
+        if (go(argument) !== true) return undefined;
+        const value = subsAt(argument);
+        if (isZoo(value)) return false;
+        const zero = isZeroValue(value);
+        if (isIntegerQ(order) === true && BESSEL_INTEGER_MEROMORPHIC.has(t.name)) return true;
+        return zero === undefined ? undefined : !zero;
+      }
       if (t.args.slice(1).some((u) => u.has(x))) return false;
       const arg0 = at(t.args, 0);
       if (!go(arg0)) return undefined;
@@ -986,6 +996,9 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
   };
   return go(e);
 }
+
+const BESSEL_FUNCTIONS = new Set(['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'hn1', 'hn2']);
+const BESSEL_INTEGER_MEROMORPHIC = new Set(['besselj', 'besseli', 'jn', 'yn', 'hn1', 'hn2']);
 
 /**
  * SymPy Basic.is_same(a, b, approx): structural equality where the numbers
