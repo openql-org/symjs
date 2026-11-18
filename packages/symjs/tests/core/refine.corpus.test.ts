@@ -1614,7 +1614,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_infinity:192", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_infinity:193", () => {
+  it("test_infinity:193", () => {
     expect(sympyStr(ask(Q.antihermitian(oo), true))).toBe('False');
   });
   it("test_infinity:194", () => {
@@ -1680,7 +1680,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_neg_infinity:218", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_neg_infinity:219", () => {
+  it("test_neg_infinity:219", () => {
     expect(sympyStr(ask(Q.antihermitian(S.NegativeInfinity), true))).toBe('False');
   });
   it("test_neg_infinity:220", () => {
@@ -1749,7 +1749,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_complex_infinity:244", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_complex_infinity:245", () => {
+  it("test_complex_infinity:245", () => {
     expect(sympyStr(ask(Q.antihermitian(zoo), true))).toBe('False');
   });
   it("test_complex_infinity:246", () => {
@@ -2112,10 +2112,10 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_pi:401", () => {
     expect(sympyStr(ask(Q.commutative(new Pow(pi, rational(2))), true))).toBe('True');
   });
-  it.fails("test_pi:402", () => {
+  it("test_pi:402", () => {
     expect(sympyStr(ask(Q.integer(new Pow(pi, rational(2))), true))).toBe('False');
   });
-  it.fails("test_pi:403", () => {
+  it("test_pi:403", () => {
     expect(sympyStr(ask(Q.rational(new Pow(pi, rational(2))), true))).toBe('False');
   });
   it("test_pi:404", () => {
@@ -2127,7 +2127,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_pi:406", () => {
     expect(sympyStr(ask(Q.complex(new Pow(pi, rational(2))), true))).toBe('True');
   });
-  it.fails("test_pi:407", () => {
+  it("test_pi:407", () => {
     expect(sympyStr(ask(Q.irrational(new Pow(pi, rational(2))), true))).toBe('True');
   });
   it("test_pi:408", () => {
@@ -2139,19 +2139,19 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_pi:410", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_pi:411", () => {
+  it("test_pi:411", () => {
     expect(sympyStr(ask(Q.even(new Pow(pi, rational(2))), true))).toBe('False');
   });
-  it.fails("test_pi:412", () => {
+  it("test_pi:412", () => {
     expect(sympyStr(ask(Q.odd(new Pow(pi, rational(2))), true))).toBe('False');
   });
   it("test_pi:413", () => {
     expect(sympyStr(ask(Q.finite(new Pow(pi, rational(2))), true))).toBe('True');
   });
-  it.fails("test_pi:414", () => {
+  it("test_pi:414", () => {
     expect(sympyStr(ask(Q.prime(new Pow(pi, rational(2))), true))).toBe('False');
   });
-  it.fails("test_pi:415", () => {
+  it("test_pi:415", () => {
     expect(sympyStr(ask(Q.composite(new Pow(pi, rational(2))), true))).toBe('False');
   });
   it("test_pi:416", () => {
@@ -2163,10 +2163,10 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_pi:420", () => {
     expect(sympyStr(ask(Q.commutative(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('True');
   });
-  it.fails("test_pi:421", () => {
+  it("test_pi:421", () => {
     expect(sympyStr(ask(Q.integer(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('False');
   });
-  it.fails("test_pi:422", () => {
+  it("test_pi:422", () => {
     expect(sympyStr(ask(Q.rational(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('False');
   });
   it.fails("test_pi:423", () => {
@@ -2178,7 +2178,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_pi:425", () => {
     expect(sympyStr(ask(Q.complex(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('True');
   });
-  it.fails("test_pi:426", () => {
+  it("test_pi:426", () => {
     expect(sympyStr(ask(Q.irrational(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('True');
   });
   it("test_pi:427", () => {
@@ -2190,19 +2190,19 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_pi:429", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_pi:430", () => {
+  it("test_pi:430", () => {
     expect(sympyStr(ask(Q.even(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('False');
   });
-  it.fails("test_pi:431", () => {
+  it("test_pi:431", () => {
     expect(sympyStr(ask(Q.odd(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('False');
   });
   it("test_pi:432", () => {
     expect(sympyStr(ask(Q.finite(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('True');
   });
-  it.fails("test_pi:433", () => {
+  it("test_pi:433", () => {
     expect(sympyStr(ask(Q.prime(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('False');
   });
-  it.fails("test_pi:434", () => {
+  it("test_pi:434", () => {
     expect(sympyStr(ask(Q.composite(new Pow(new Add([rational(1), pi]), rational(2))), true))).toBe('False');
   });
   it("test_pi:435", () => {
@@ -2427,13 +2427,13 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_I:526", () => {
     expect(sympyStr(ask(Q.algebraic(new Add([rational(1), I])), true))).toBe('True');
   });
-  it.fails("test_I:527", () => {
+  it("test_I:527", () => {
     expect(sympyStr(ask(Q.real(new Add([rational(1), I])), true))).toBe('False');
   });
   it("test_I:528", () => {
     expect(sympyStr(ask(Q.complex(new Add([rational(1), I])), true))).toBe('True');
   });
-  it.fails("test_I:529", () => {
+  it("test_I:529", () => {
     expect(sympyStr(ask(Q.irrational(new Add([rational(1), I])), true))).toBe('False');
   });
   it("test_I:530", () => {
@@ -2460,10 +2460,10 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_I:537", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_I:538", () => {
+  it("test_I:538", () => {
     expect(sympyStr(ask(Q.hermitian(new Add([rational(1), I])), true))).toBe('False');
   });
-  it.fails("test_I:539", () => {
+  it("test_I:539", () => {
     expect(sympyStr(ask(Q.antihermitian(new Add([rational(1), I])), true))).toBe('False');
   });
   it("test_I:542", () => {
@@ -2517,16 +2517,16 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it.fails("test_I:558", () => {
     expect(sympyStr(ask(Q.antihermitian(new Mul([I, new Add([rational(1), I])])), true))).toBe('False');
   });
-  it.fails("test_I:561", () => {
+  it("test_I:561", () => {
     expect(sympyStr(ask(Q.imaginary(new Pow(I, I)), true))).toBe('False');
   });
-  it.fails("test_I:562", () => {
+  it("test_I:562", () => {
     expect(sympyStr(ask(Q.real(new Pow(I, I)), true))).toBe('True');
   });
-  it.fails("test_I:565", () => {
+  it("test_I:565", () => {
     expect(sympyStr(ask(Q.imaginary(new Pow(new Mul([rational(-1), I]), I)), true))).toBe('False');
   });
-  it.fails("test_I:566", () => {
+  it("test_I:566", () => {
     expect(sympyStr(ask(Q.real(new Pow(new Mul([rational(-1), I]), I)), true))).toBe('True');
   });
   it.fails("test_I:569", () => {
@@ -2541,10 +2541,10 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_I:574", () => {
     expect(sympyStr(ask(Q.real(rational(1)), true))).toBe('True');
   });
-  it.fails("test_I:577", () => {
+  it("test_I:577", () => {
     expect(sympyStr(ask(Q.imaginary(new Pow(rational(-1), I)), true))).toBe('False');
   });
-  it.fails("test_I:578", () => {
+  it("test_I:578", () => {
     expect(sympyStr(ask(Q.real(new Pow(rational(-1), I)), true))).toBe('True');
   });
   it.fails("test_I:581", () => {
@@ -2710,7 +2710,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Add([x, y])), And(Q.positive_infinite(y), Not(Q.finite(x)))))).toBe('None');
   });
-  it.fails("test_bounded:665", () => {
+  it("test_bounded:665", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Add([x, y])), And(Q.positive_infinite(x), Q.positive_infinite(y))))).toBe('False');
   });
@@ -2738,7 +2738,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Add([x, y])), Q.positive_infinite(y)))).toBe('None');
   });
-  it.fails("test_bounded:678", () => {
+  it("test_bounded:678", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Add([x, y])), And(Q.extended_positive(x), Q.positive_infinite(y))))).toBe('False');
   });
@@ -2869,7 +2869,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.negative(x), Q.positive(y))))).toBe('None');
   });
-  it.fails("test_bounded:748", () => {
+  it("test_bounded:748", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.negative_infinite(y), Q.negative_infinite(z), Q.negative(x))))).toBe('False');
   });
@@ -2881,7 +2881,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.negative_infinite(y), Q.negative(x), Q.positive_infinite(z))))).toBe('None');
   });
-  it.fails("test_bounded:754", () => {
+  it("test_bounded:754", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_negative(z), Q.negative_infinite(y), Q.negative(x))))).toBe('False');
   });
@@ -2913,7 +2913,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.negative(x), Not(Q.finite(y)))))).toBe('None');
   });
-  it.fails("test_bounded:769", () => {
+  it("test_bounded:769", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.negative(x), Q.positive_infinite(y), Q.positive_infinite(z))))).toBe('False');
   });
@@ -2925,7 +2925,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.negative(x), Q.positive_infinite(y))))).toBe('None');
   });
-  it.fails("test_bounded:775", () => {
+  it("test_bounded:775", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.negative(x), Q.positive_infinite(y))))).toBe('False');
   });
@@ -3007,7 +3007,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.finite(x), Q.positive(y))))).toBe('None');
   });
-  it.fails("test_bounded:816", () => {
+  it("test_bounded:816", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.finite(x), Q.negative_infinite(y), Q.negative_infinite(z))))).toBe('False');
   });
@@ -3019,7 +3019,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.finite(x), Q.negative_infinite(y), Q.positive_infinite(z))))).toBe('None');
   });
-  it.fails("test_bounded:822", () => {
+  it("test_bounded:822", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_negative(z), Q.finite(x), Q.negative_infinite(y))))).toBe('False');
   });
@@ -3051,7 +3051,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.finite(x), Not(Q.finite(y)))))).toBe('None');
   });
-  it.fails("test_bounded:837", () => {
+  it("test_bounded:837", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.finite(x), Q.positive_infinite(y), Q.positive_infinite(z))))).toBe('False');
   });
@@ -3063,7 +3063,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.finite(x), Q.positive_infinite(y))))).toBe('None');
   });
-  it.fails("test_bounded:843", () => {
+  it("test_bounded:843", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.finite(x), Q.positive_infinite(y))))).toBe('False');
   });
@@ -3116,7 +3116,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.positive(x), Q.positive(y))))).toBe('None');
   });
-  it.fails("test_bounded:869", () => {
+  it("test_bounded:869", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.negative_infinite(y), Q.negative_infinite(z), Q.positive(x))))).toBe('False');
   });
@@ -3128,7 +3128,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.negative_infinite(y), Q.positive_infinite(z), Q.positive(x))))).toBe('None');
   });
-  it.fails("test_bounded:875", () => {
+  it("test_bounded:875", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_negative(z), Q.negative_infinite(y), Q.positive(x))))).toBe('False');
   });
@@ -3160,7 +3160,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.positive(x), Not(Q.finite(y)))))).toBe('None');
   });
-  it.fails("test_bounded:890", () => {
+  it("test_bounded:890", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.positive_infinite(y), Q.positive_infinite(z), Q.positive(x))))).toBe('False');
   });
@@ -3172,7 +3172,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.positive_infinite(y), Q.positive(x))))).toBe('None');
   });
-  it.fails("test_bounded:896", () => {
+  it("test_bounded:896", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.positive_infinite(y), Q.positive(x))))).toBe('False');
   });
@@ -3200,7 +3200,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(y), Q.extended_positive(z), Q.positive(x))))).toBe('None');
   });
-  it.fails("test_bounded:909", () => {
+  it("test_bounded:909", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.negative_infinite(x), Q.negative_infinite(y), Q.negative_infinite(z))))).toBe('False');
   });
@@ -3212,7 +3212,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.negative_infinite(x), Q.negative_infinite(y), Q.positive_infinite(z))))).toBe('None');
   });
-  it.fails("test_bounded:915", () => {
+  it("test_bounded:915", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_negative(z), Q.negative_infinite(x), Q.negative_infinite(y))))).toBe('False');
   });
@@ -3260,7 +3260,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.negative_infinite(x), Q.positive_infinite(y))))).toBe('None');
   });
-  it.fails("test_bounded:939", () => {
+  it("test_bounded:939", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_negative(y), Q.extended_negative(z), Q.negative_infinite(x))))).toBe('False');
   });
@@ -3344,7 +3344,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(y), Q.extended_positive(z), Not(Q.finite(x)))))).toBe('None');
   });
-  it.fails("test_bounded:978", () => {
+  it("test_bounded:978", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.positive_infinite(x), Q.positive_infinite(y), Q.positive_infinite(z))))).toBe('False');
   });
@@ -3356,7 +3356,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.positive_infinite(x), Q.positive_infinite(y))))).toBe('None');
   });
-  it.fails("test_bounded:984", () => {
+  it("test_bounded:984", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.positive_infinite(x), Q.positive_infinite(y))))).toBe('False');
   });
@@ -3380,7 +3380,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(z), Q.positive_infinite(x))))).toBe('None');
   });
-  it.fails("test_bounded:995", () => {
+  it("test_bounded:995", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Add([x, y, z])), And(Q.extended_positive(y), Q.extended_positive(z), Q.positive_infinite(x))))).toBe('False');
   });
@@ -3436,7 +3436,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Mul([x, y])), And(Q.finite(x), Q.finite(y))))).toBe('True');
   });
-  it.fails("test_bounded:1022", () => {
+  it("test_bounded:1022", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Mul([x, y])), And(Q.finite(x), Not(Q.finite(y)), Not(Q.zero(x)))))).toBe('False');
   });
@@ -3444,11 +3444,11 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Mul([x, y])), Q.finite(x)))).toBe('None');
   });
-  it.fails("test_bounded:1024", () => {
+  it("test_bounded:1024", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Mul([x, y])), And(Q.finite(y), Not(Q.finite(x)), Not(Q.zero(y)))))).toBe('False');
   });
-  it.fails("test_bounded:1025", () => {
+  it("test_bounded:1025", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Mul([x, y])), And(Not(Q.finite(x)), Not(Q.finite(y)))))).toBe('False');
   });
@@ -3472,7 +3472,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(x), Q.finite(y), Q.finite(z))))).toBe('True');
   });
-  it.fails("test_bounded:1034", () => {
+  it("test_bounded:1034", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(x), Q.finite(y), Not(Q.finite(z)), Not(Q.zero(x)), Not(Q.zero(y)))))).toBe('False');
   });
@@ -3480,11 +3480,11 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(x), Q.finite(y))))).toBe('None');
   });
-  it.fails("test_bounded:1037", () => {
+  it("test_bounded:1037", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(x), Q.finite(z), Not(Q.finite(y)), Not(Q.zero(x)), Not(Q.zero(z)))))).toBe('False');
   });
-  it.fails("test_bounded:1039", () => {
+  it("test_bounded:1039", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(x), Not(Q.finite(y)), Not(Q.finite(z)), Not(Q.zero(x)))))).toBe('False');
   });
@@ -3504,11 +3504,11 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), Q.finite(x)))).toBe('None');
   });
-  it.fails("test_bounded:1045", () => {
+  it("test_bounded:1045", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(y), Q.finite(z), Not(Q.finite(x)), Not(Q.zero(y)), Not(Q.zero(z)))))).toBe('False');
   });
-  it.fails("test_bounded:1047", () => {
+  it("test_bounded:1047", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(y), Not(Q.finite(x)), Not(Q.finite(z)), Not(Q.zero(x)), Not(Q.zero(y)))))).toBe('False');
   });
@@ -3516,11 +3516,11 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(y), Not(Q.finite(x)))))).toBe('None');
   });
-  it.fails("test_bounded:1050", () => {
+  it("test_bounded:1050", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.finite(z), Not(Q.finite(x)), Not(Q.finite(y)), Not(Q.zero(z)))))).toBe('False');
   });
-  it.fails("test_bounded:1052", () => {
+  it("test_bounded:1052", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Not(Q.finite(x)), Not(Q.finite(y)), Not(Q.finite(z)))))).toBe('False');
   });
@@ -3576,7 +3576,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.extended_nonzero(x), Q.extended_nonzero(y), Q.extended_nonzero(z), Not(Q.finite(z)))))).toBe('None');
   });
-  it.fails("test_bounded:1068", () => {
+  it("test_bounded:1068", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.finite(new Mul([x, y, z])), And(Q.extended_nonzero(x), Q.extended_nonzero(y), Q.extended_nonzero(z), Not(Q.finite(y)), Not(Q.finite(z)))))).toBe('False');
   });
@@ -3600,7 +3600,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.finite(new Pow(rational(1, 2), x)), true))).toBe('None');
   });
-  it.fails("test_bounded:1078", () => {
+  it("test_bounded:1078", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.finite(new Pow(rational(1, 2), x)), Q.extended_positive(x)))).toBe('True');
   });
@@ -3608,7 +3608,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.finite(new Pow(rational(1, 2), x)), Q.extended_negative(x)))).toBe('None');
   });
-  it.fails("test_bounded:1080", () => {
+  it("test_bounded:1080", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.finite(new Pow(rational(2), x)), Q.extended_negative(x)))).toBe('True');
   });
@@ -3620,7 +3620,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.finite(new Pow(rational(2), x)), Not(Q.finite(x))))).toBe('False');
   });
-  it.fails("test_bounded:1083", () => {
+  it("test_bounded:1083", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.finite(new Pow(x, rational(2))), Not(Q.finite(x))))).toBe('False');
   });
@@ -3632,7 +3632,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Pow(x, y)), And(Q.negative(y), Q.real(x))))).toBe('None');
   });
-  it.fails("test_bounded:1088", () => {
+  it("test_bounded:1088", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.finite(new Pow(x, y)), And(Q.negative(y), Q.zero(x))))).toBe('False');
   });
@@ -3723,16 +3723,16 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.finite(new Add([fn('cos', [x]), fn('sin', [x])])), true))).toBe('True');
   });
-  it.fails("test_unbounded:1120", () => {
+  it("test_unbounded:1120", () => {
     expect(sympyStr(ask(Q.infinite(new Mul([oo, I])), true))).toBe('True');
   });
-  it.fails("test_unbounded:1121", () => {
+  it("test_unbounded:1121", () => {
     expect(sympyStr(ask(Q.infinite(new Add([rational(1), new Mul([oo, I])])), true))).toBe('True');
   });
-  it.fails("test_unbounded:1122", () => {
+  it("test_unbounded:1122", () => {
     expect(sympyStr(ask(Q.infinite(new Mul([oo, I])), true))).toBe('True');
   });
-  it.fails("test_unbounded:1123", () => {
+  it("test_unbounded:1123", () => {
     expect(sympyStr(ask(Q.infinite(new Mul([S.NegativeInfinity, I])), true))).toBe('True');
   });
   it("test_unbounded:1124", () => {
@@ -3741,7 +3741,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_unbounded:1125", () => {
     expect(sympyStr(ask(Q.infinite(zoo), true))).toBe('True');
   });
-  it.fails("test_unbounded:1126", () => {
+  it("test_unbounded:1126", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.infinite(new Mul([x, new Pow(y, rational(-1))])), And(Q.finite(y), Q.infinite(x), Not(Q.zero(y)))))).toBe('True');
   });
@@ -3752,7 +3752,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.infinite(new Mul([oo, I, x])), true))).toBe('None');
   });
-  it.fails("test_unbounded:1129", () => {
+  it("test_unbounded:1129", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.infinite(new Pow(x, rational(-1))), And(Q.finite(x), Not(Q.zero(x)))))).toBe('False');
   });
@@ -3826,7 +3826,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.commutative(new Mul([rational(2), x])), true))).toBe('True');
   });
-  it.fails("test_commutative:1184", () => {
+  it("test_commutative:1184", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.commutative(new Mul([rational(2), x])), Not(Q.commutative(x))))).toBe('False');
   });
@@ -3834,7 +3834,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.commutative(new Add([rational(1), x])), true))).toBe('True');
   });
-  it.fails("test_commutative:1187", () => {
+  it("test_commutative:1187", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.commutative(new Add([rational(1), x])), Not(Q.commutative(x))))).toBe('False');
   });
@@ -3842,7 +3842,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.commutative(new Pow(x, rational(2))), true))).toBe('True');
   });
-  it.fails("test_commutative:1190", () => {
+  it("test_commutative:1190", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.commutative(new Pow(x, rational(2))), Not(Q.commutative(x))))).toBe('False');
   });
@@ -4412,7 +4412,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.rational(new Pow(x, rational(-1))), Q.odd(x)))).toBe('True');
   });
-  it.fails("test_rational:1395", () => {
+  it("test_rational:1395", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.rational(new Pow(x, rational(-1))), Q.irrational(x)))).toBe('False');
   });
@@ -4432,7 +4432,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.rational(new Mul([rational(2), new Pow(x, rational(-1))])), Q.odd(x)))).toBe('True');
   });
-  it.fails("test_rational:1401", () => {
+  it("test_rational:1401", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.rational(new Mul([rational(2), new Pow(x, rational(-1))])), Q.irrational(x)))).toBe('False');
   });
@@ -4459,7 +4459,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(ask(Q.rational(new Mul([y, new Pow(x, rational(-1))])), And(Q.odd(x), Q.rational(y))))).toBe('True');
   });
-  it.fails("test_rational:1411", () => {
+  it("test_rational:1411", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(ask(Q.rational(new Mul([y, new Pow(x, rational(-1))])), And(Q.irrational(x), Q.nonzero(y), Q.rational(y))))).toBe('False');
   });
@@ -4572,7 +4572,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.rational(log(x)), Q.rational(x)))).toBe('None');
   });
-  it.fails("test_rational:1425", () => {
+  it("test_rational:1425", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.rational(log(x)), And(Q.rational(x), Q.nonzero(new Add([rational(-1), x])))))).toBe('False');
   });
@@ -4705,11 +4705,11 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Add([rational(1), x])), Q.complex(x)))).toBe('None');
   });
-  it.fails("test_hermitian:1458", () => {
+  it("test_hermitian:1458", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Add([rational(1), x])), Q.hermitian(x)))).toBe('True');
   });
-  it.fails("test_hermitian:1459", () => {
+  it("test_hermitian:1459", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Add([rational(1), x])), Q.imaginary(x)))).toBe('False');
   });
@@ -4725,7 +4725,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Add([I, x])), Q.complex(x)))).toBe('None');
   });
-  it.fails("test_hermitian:1463", () => {
+  it("test_hermitian:1463", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Add([I, x])), Q.hermitian(x)))).toBe('False');
   });
@@ -4733,7 +4733,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Add([I, x])), Q.imaginary(x)))).toBe('None');
   });
-  it.fails("test_hermitian:1465", () => {
+  it("test_hermitian:1465", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Add([I, x])), Q.real(x)))).toBe('False');
   });
@@ -4761,15 +4761,15 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y])), And(Q.complex(y), Q.hermitian(x))))).toBe('None');
   });
-  it.fails("test_hermitian:1474", () => {
+  it("test_hermitian:1474", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y])), And(Q.hermitian(x), Q.hermitian(y))))).toBe('True');
   });
-  it.fails("test_hermitian:1475", () => {
+  it("test_hermitian:1475", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y])), And(Q.hermitian(x), Q.imaginary(y))))).toBe('False');
   });
-  it.fails("test_hermitian:1476", () => {
+  it("test_hermitian:1476", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y])), And(Q.hermitian(x), Q.real(y))))).toBe('True');
   });
@@ -4781,7 +4781,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y])), And(Q.imaginary(x), Q.imaginary(y))))).toBe('None');
   });
-  it.fails("test_hermitian:1479", () => {
+  it("test_hermitian:1479", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y])), And(Q.imaginary(x), Q.real(y))))).toBe('False');
   });
@@ -4793,7 +4793,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y])), And(Q.real(x), Q.real(y))))).toBe('True');
   });
-  it.fails("test_hermitian:1483", () => {
+  it("test_hermitian:1483", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Mul([I, x])), Q.antihermitian(x)))).toBe('True');
   });
@@ -4805,7 +4805,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Mul([I, x])), Q.hermitian(x)))).toBe('False');
   });
-  it.fails("test_hermitian:1486", () => {
+  it("test_hermitian:1486", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Mul([I, x])), Q.imaginary(x)))).toBe('True');
   });
@@ -4813,7 +4813,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.hermitian(new Mul([I, x])), Q.real(x)))).toBe('False');
   });
-  it.fails("test_hermitian:1488", () => {
+  it("test_hermitian:1488", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.hermitian(new Mul([x, y])), And(Q.hermitian(x), Q.real(y))))).toBe('True');
   });
@@ -4821,7 +4821,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y, z])), And(Q.real(x), Q.real(y), Q.real(z))))).toBe('True');
   });
-  it.fails("test_hermitian:1492", () => {
+  it("test_hermitian:1492", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.hermitian(new Add([x, y, z])), And(Q.imaginary(z), Q.real(x), Q.real(y))))).toBe('False');
   });
@@ -4844,7 +4844,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_hermitian:1501", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_hermitian:1503", () => {
+  it("test_hermitian:1503", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Add([rational(1), x])), Q.antihermitian(x)))).toBe('False');
   });
@@ -4856,7 +4856,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Add([rational(1), x])), Q.hermitian(x)))).toBe('None');
   });
-  it.fails("test_hermitian:1506", () => {
+  it("test_hermitian:1506", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Add([rational(1), x])), Q.imaginary(x)))).toBe('False');
   });
@@ -4864,7 +4864,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Add([rational(1), x])), Q.real(x)))).toBe('None');
   });
-  it.fails("test_hermitian:1508", () => {
+  it("test_hermitian:1508", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Add([I, x])), Q.antihermitian(x)))).toBe('True');
   });
@@ -4876,7 +4876,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Add([I, x])), Q.hermitian(x)))).toBe('None');
   });
-  it.fails("test_hermitian:1511", () => {
+  it("test_hermitian:1511", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Add([I, x])), Q.imaginary(x)))).toBe('True');
   });
@@ -4888,7 +4888,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(x), Q.zero(x)))).toBe('True');
   });
-  it.fails("test_hermitian:1515", () => {
+  it("test_hermitian:1515", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.antihermitian(new Add([x, y])), And(Q.antihermitian(x), Q.antihermitian(y))))).toBe('True');
   });
@@ -4900,7 +4900,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.antihermitian(new Add([x, y])), And(Q.antihermitian(x), Q.hermitian(y))))).toBe('None');
   });
-  it.fails("test_hermitian:1522", () => {
+  it("test_hermitian:1522", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.antihermitian(new Add([x, y])), And(Q.antihermitian(x), Q.imaginary(y))))).toBe('True');
   });
@@ -4928,7 +4928,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.antihermitian(new Add([x, y])), And(Q.complex(y), Q.imaginary(x))))).toBe('None');
   });
-  it.fails("test_hermitian:1533", () => {
+  it("test_hermitian:1533", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.antihermitian(new Add([x, y])), And(Q.imaginary(x), Q.imaginary(y))))).toBe('True');
   });
@@ -4944,7 +4944,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.antihermitian(new Add([x, y])), And(Q.real(x), Q.real(y))))).toBe('None');
   });
-  it.fails("test_hermitian:1538", () => {
+  it("test_hermitian:1538", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Mul([I, x])), Q.real(x)))).toBe('True');
   });
@@ -4956,7 +4956,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.antihermitian(new Mul([I, x])), Q.complex(x)))).toBe('None');
   });
-  it.fails("test_hermitian:1541", () => {
+  it("test_hermitian:1541", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.antihermitian(new Mul([x, y])), And(Q.antihermitian(x), Q.real(y))))).toBe('True');
   });
@@ -4972,7 +4972,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.antihermitian(new Add([x, y, z])), And(Q.imaginary(y), Q.imaginary(z), Q.real(x))))).toBe('False');
   });
-  it.fails("test_hermitian:1549", () => {
+  it("test_hermitian:1549", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.antihermitian(new Add([x, y, z])), And(Q.imaginary(x), Q.imaginary(y), Q.imaginary(z))))).toBe('True');
   });
@@ -5052,15 +5052,15 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.imaginary(new Pow(I, x)), Q.positive(x)))).toBe('None');
   });
-  it.fails("test_imaginary:1582", () => {
+  it("test_imaginary:1582", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.imaginary(new Pow(I, x)), Q.even(x)))).toBe('False');
   });
-  it.fails("test_imaginary:1583", () => {
+  it("test_imaginary:1583", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.imaginary(new Pow(I, x)), Q.odd(x)))).toBe('True');
   });
-  it.fails("test_imaginary:1584", () => {
+  it("test_imaginary:1584", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.imaginary(new Pow(I, x)), Q.imaginary(x)))).toBe('False');
   });
@@ -5095,7 +5095,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.imaginary(new Pow(x, y)), And(Q.imaginary(y), Q.integer(x))))).toBe('None');
   });
-  it.fails("test_imaginary:1593", () => {
+  it("test_imaginary:1593", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.imaginary(new Pow(x, y)), And(Q.imaginary(x), Q.odd(y))))).toBe('True');
   });
@@ -5103,7 +5103,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.imaginary(new Pow(x, y)), And(Q.imaginary(x), Q.rational(y))))).toBe('None');
   });
-  it.fails("test_imaginary:1595", () => {
+  it("test_imaginary:1595", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.imaginary(new Pow(x, y)), And(Q.even(y), Q.imaginary(x))))).toBe('False');
   });
@@ -5268,11 +5268,11 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.integer(new Mul([x, new Pow(rational(2), rational(1, 2))])), Q.irrational(x)))).toBe('None');
   });
-  it.fails("test_integer:1649", () => {
+  it("test_integer:1649", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.integer(new Mul([rational(1, 2), x])), Q.odd(x)))).toBe('False');
   });
-  it.fails("test_integer:1650", () => {
+  it("test_integer:1650", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.integer(new Mul([rational(1, 2), x])), Q.even(x)))).toBe('True');
   });
@@ -5319,7 +5319,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_integer:1665", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_integer:1666", () => {
+  it("test_integer:1666", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.integer(new Pow(x, y)), And(Q.nonzero(x), Q.zero(y))))).toBe('True');
   });
@@ -5339,11 +5339,11 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.integer(new Pow(x, y)), And(Q.integer(y), Q.positive(y), Q.zero(x))))).toBe('True');
   });
-  it.fails("test_integer:1671", () => {
+  it("test_integer:1671", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.integer(new Pow(pi, x)), Q.zero(x)))).toBe('True');
   });
-  it.fails("test_integer:1672", () => {
+  it("test_integer:1672", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.integer(new Pow(x, y)), And(Q.imaginary(x), Q.zero(y))))).toBe('True');
   });
@@ -5863,15 +5863,15 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_prime:1877", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_prime:1880", () => {
+  it("test_prime:1880", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.prime(new Pow(rational(4), x)), Q.integer(x)))).toBe('False');
   });
-  it.fails("test_prime:1881", () => {
+  it("test_prime:1881", () => {
     const [p, x] = symbols('p x');
     expect(sympyStr(ask(Q.prime(new Pow(p, x)), And(Q.integer(x), Q.prime(p), Q.ne(x, rational(1)))))).toBe('False');
   });
-  it.fails("test_prime:1882", () => {
+  it("test_prime:1882", () => {
     const [n, x] = symbols('n x');
     expect(sympyStr(ask(Q.prime(new Pow(n, x)), And(Q.composite(n), Q.integer(x))))).toBe('False');
   });
@@ -5895,7 +5895,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.prime(new Pow(x, y)), And(Q.integer(y), Q.prime(x), Q.gt(y, rational(0)), Q.lt(y, rational(2)))))).toBe('None');
   });
-  it.fails("test_prime:1892", () => {
+  it("test_prime:1892", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.prime(new Pow(x, rational(1))), Q.prime(x)))).toBe('True');
   });
@@ -5932,7 +5932,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.positive(new Add([x, y])), And(Q.negative(y), Q.positive(x))))).toBe('None');
   });
-  it.fails("test_positive:1908", () => {
+  it("test_positive:1908", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.positive(new Add([x, y])), And(Q.imaginary(y), Q.positive(x))))).toBe('False');
   });
@@ -6165,7 +6165,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.real(new Add([rational(1), x])), Q.real(x)))).toBe('True');
   });
-  it.fails("test_real_basic:1988", () => {
+  it("test_real_basic:1988", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.real(new Add([I, x])), Q.real(x)))).toBe('False');
   });
@@ -6181,7 +6181,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.real(new Mul([I, x])), Q.real(x)))).toBe('False');
   });
-  it.fails("test_real_basic:1993", () => {
+  it("test_real_basic:1993", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.real(new Mul([I, x])), Q.imaginary(x)))).toBe('True');
   });
@@ -6196,7 +6196,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_real_pow:1999", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_real_pow:2000", () => {
+  it("test_real_pow:2000", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.real(new Pow(x, y)), And(Q.integer(y), Q.real(x))))).toBe('None');
   });
@@ -6236,15 +6236,15 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.real(new Pow(x, y)), And(Q.imaginary(x), Q.integer(y))))).toBe('None');
   });
-  it.fails("test_real_pow:2010", () => {
+  it("test_real_pow:2010", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.real(new Pow(x, y)), And(Q.imaginary(x), Q.odd(y))))).toBe('False');
   });
-  it.fails("test_real_pow:2011", () => {
+  it("test_real_pow:2011", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(ask(Q.real(new Pow(x, y)), And(Q.even(y), Q.imaginary(x))))).toBe('True');
   });
-  it.fails("test_real_pow:2012", () => {
+  it("test_real_pow:2012", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.real(new Pow(x, new Mul([y, new Pow(z, rational(-1))]))), And(Q.even(z), Q.positive(x), Q.real(x), Q.rational(new Mul([y, new Pow(z, rational(-1))])), Q.real(new Mul([y, new Pow(z, rational(-1))])))))).toBe('True');
   });
@@ -6256,7 +6256,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.real(new Pow(x, new Mul([y, new Pow(z, rational(-1))]))), And(Q.real(x), Q.integer(new Mul([y, new Pow(z, rational(-1))])))))).toBe('None');
   });
-  it.fails("test_real_pow:2015", () => {
+  it("test_real_pow:2015", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.real(new Pow(x, new Mul([y, new Pow(z, rational(-1))]))), And(Q.positive(x), Q.real(x), Q.real(new Mul([y, new Pow(z, rational(-1))])))))).toBe('True');
   });
@@ -6264,11 +6264,11 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(ask(Q.real(new Pow(x, new Mul([y, new Pow(z, rational(-1))]))), And(Q.negative(x), Q.real(x), Q.real(new Mul([y, new Pow(z, rational(-1))])))))).toBe('None');
   });
-  it.fails("test_real_pow:2017", () => {
+  it("test_real_pow:2017", () => {
     const i = new Sym('i');
     expect(sympyStr(ask(Q.real(new Pow(new Mul([rational(-1), I]), i)), Q.imaginary(i)))).toBe('True');
   });
-  it.fails("test_real_pow:2018", () => {
+  it("test_real_pow:2018", () => {
     const i = new Sym('i');
     expect(sympyStr(ask(Q.real(new Pow(I, i)), Q.imaginary(i)))).toBe('True');
   });
@@ -6288,7 +6288,7 @@ describe("sympy/assumptions/tests/test_query.py", () => {
     const [n, p] = symbols('n p');
     expect(sympyStr(ask(Q.real(new Pow(n, p)), And(Q.negative(n), Q.positive(p))))).toBe('None');
   });
-  it.fails("test_real_pow:2027", () => {
+  it("test_real_pow:2027", () => {
     const x = new Sym('x');
     expect(sympyStr(ask(Q.real(new Pow(abs(x), rational(-1))), true))).toBe('None');
   });
@@ -6340,10 +6340,10 @@ describe("sympy/assumptions/tests/test_query.py", () => {
   it("test_real_functions:2049", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_real_functions:2050", () => {
+  it("test_real_functions:2050", () => {
     expect(sympyStr(ask(Q.real(new Add([new Mul([rational(1, 2), pi, I]), log(2)])), true))).toBe('False');
   });
-  it.fails("test_real_functions:2051", () => {
+  it("test_real_functions:2051", () => {
     expect(sympyStr(ask(Q.real(new Add([new Mul([rational(1, 4), pi, I]), log(new Pow(rational(2), rational(1, 2)))])), true))).toBe('False');
   });
   it("test_real_functions:2052", () => {
