@@ -251,6 +251,10 @@ export function fmt(v: unknown): string {
     });
     return terms.join('') || K.convert(0).repr();
   }
+  if (v instanceof sj.TupleNode && v.args.some((a) => a instanceof sj.TensorIndexType)) {
+    const items = v.args.map((a) => a instanceof sj.TensorIndexType ? `TensorIndexType(${a.args.map(fmt).join(', ')})` : fmt(a));
+    return `(${items.join(', ')}${items.length === 1 ? ',' : ''})`;
+  }
   if (v instanceof Expr) return sj.str(v);
   if (v instanceof sj.usympy.ExprOp) {
     const name = String(v);
@@ -1043,7 +1047,7 @@ export function deserialize(tree: Tree): unknown {
       return base instanceof sj.NDimArray ? base.get(...indices) : new sj.Indexed([asExpr(base), ...indices]);
     }
     case 'IndexedBase':
-      return new sj.IndexedBase(deserialize(tree['label'] as Tree) as Sym, tree['shape'] === undefined ? {} : { shape: (tree['shape'] as Tree[]).map((t) => asExpr(deserialize(t))) });
+      return new sj.IndexedBase(deserialize(tree['label'] as Tree) as Sym, { ...tree['indexedAssumptions'] as Record<string, boolean>, ...(tree['shape'] === undefined ? {} : { shape: (tree['shape'] as Tree[]).map((t) => asExpr(deserialize(t))) }) });
     case 'StrategySubs': {
       const mapping = deserialize(tree['mapping'] as Tree) as JsDict;
       return sj.tools.subs(new Map(mapping.entries.map(([k, v]) => [asExpr(k), asExpr(v)])));
@@ -1375,7 +1379,7 @@ export function deserialize(tree: Tree): unknown {
     case 'WildTensorIndex': return sj.WildTensorIndex(String(tree['name']), deserialize(tree['type'] as Tree) as sj.TensorIndexType, Boolean(tree['up']), Boolean(tree['ignoreUpdown']));
     case 'WildTensorHead': return sj.WildTensorHead(String(tree['name']), { indexTypes: (tree['types'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndexType), unorderedIndices: Boolean(tree['unordered']) });
     case 'WildTensor': return (deserialize(tree['head'] as Tree) as sj.WildTensorHead).at(...(tree['indices'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndex));
-    case 'TensAdd': return sj.add(...(tree['args'] as Tree[]).map((t) => deserialize(t) as Expr));
+    case 'TensAdd': return new sj.TensAdd((tree['args'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'TensorElement': return sj.TensorElement(deserialize(tree['expr'] as Tree) as Expr, new Map((deserialize(tree['indexMap'] as Tree) as JsDict).entries as [Expr, Expr][]));
     case 'SymmetricPermutationGroup': return sj.SymmetricPermutationGroup(Number(tree['deg']));
     case 'DifferentialOperatorAlgebra':
@@ -6694,6 +6698,14 @@ function autoAdapter(c: Case): Adapter | undefined {
       // a static method called on the class (Permutation.unrank_lex, ...)
       const self = self0 instanceof JsTuple ? sj.Tuple(...self0.items.map(asExpr)) : self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0 instanceof JsLambda ? sj.Lambda(self0.vars, self0.body) : self0;
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
+      if (name === 'name' && self instanceof sj.TensorHead) return self.tensorName;
+      if (name === 'boundSymbols' && self instanceof sj.ArrayComprehension) return new JsList(self.variables);
+      if (name === 'func' && (self instanceof sj.Tensor || self instanceof sj.TensorHead || self instanceof sj.TensorIndex || self instanceof sj.TensorSymmetry))
+        return self.withArgs(args.map((a) => typeof a === 'boolean' ? (a ? S.true : S.false) : expressionContainer(a)));
+      if ((self instanceof sj.IndexedBase || self instanceof sj.Indexed) && c.fn.startsWith('.is_')) {
+        const assumption = c.fn.slice(4);
+        if (self.assumptions0.has(assumption)) return self.assumptions0.get(assumption);
+      }
       if (name === 'arguments' && self instanceof sj.AppliedPredicate) return new JsTuple(self.arguments);
       if ((name === 'free' || name === 'dum') && (self instanceof sj.TensorElement || self instanceof sj.Tensor)) return new JsList(self[name].map((pair) => new JsTuple(pair)));
       if (name === 'name' && self instanceof sj.Indexed) return String(self);
@@ -6922,8 +6934,8 @@ function tensorStateAdapter(c: Case): Adapter | undefined {
   const rows = c.tensorData;
   if (!rows || !['.data', '.__getitem__', '.get_matrix', '.__pow__'].includes(c.fn)) return undefined;
   return (args, _kw, self) => {
-    if (c.fn === '.__pow__') throw new Unsupported('legacy tensor norm powers are not exposed by the public tensor API');
     const replacements = tensorReplacements(rows);
+    if (c.fn === '.__pow__' && (self instanceof sj.TensorHead || self instanceof sj.TensExpr)) return self.pow(asExpr(args[0]), replacements);
     if (!(self instanceof sj.TensExpr)) throw new Unsupported('tensor component receiver is not a tensor expression');
     if (c.fn === '.get_matrix') return self.getMatrix(replacements);
     const data = self.replaceWithArrays(replacements);

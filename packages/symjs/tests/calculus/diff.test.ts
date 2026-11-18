@@ -337,3 +337,8 @@ it('handles unavailable extension and function derivatives and bound indices', a
   const base = new sj.IndexedBase('A');
   expect(() => diff(base.at(x), base.at(x, y))).toThrow('different number of indices');
 });
+
+it('distinguishes a bound summation index from an independent scalar', () => {
+  const i = sj.symbol('i');
+  expect(sj.diff(sj.Sum(i, [i, 1, 4]), i)).toBe(sj.S.Zero);
+});

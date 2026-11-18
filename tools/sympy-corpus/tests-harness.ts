@@ -3,21 +3,23 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { fmt, matchesSympyErratum, runCase } from './harness';
-import type { Case, CaseObservation, Outcome } from './harness';
+import { Expr } from '../../packages/symjs/src/core/nodes';
+import { deserialize, fmt, matchesSympyErratum, runCase } from './harness';
+import type { Case, CaseObservation, Outcome, Tree } from './harness';
 
 export interface TestCase extends Case {
   test: string;
   line: number;
   op: '==' | '!=' | 'is' | 'is not' | 'truthy' | 'falsy';
   raises?: string;
+  comparisonTree?: Tree;
 }
 
 export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string }; phase?: 'input' | 'invoke' | 'result' };
 
 export function testCaseKey(c: TestCase): string {
   // Replay state annotates an existing assertion without changing its ratchet identity.
-  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
+  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
 }
 
 // The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
@@ -56,6 +58,10 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
   // a truth-value assertion whose SymPy answer is wrong: the registered correct value counts as compatible
   if ((outcome.status === 'fail' || outcome.status === 'equivalent') && outcome.got !== undefined && matchesSympyErratum(c, outcome.got)) return { status: 'equivalent', got: outcome.got };
   if (c.op === '!=') {
+    if (c.comparisonTree && observation && 'value' in observation && observation.value instanceof Expr) {
+      const rhs = deserialize(c.comparisonTree);
+      if (rhs instanceof Expr) return observation.value.equals(rhs) ? { status: 'fail', got: fmt(observation.value) } : { status: 'pass' };
+    }
     // Python != compares numbers by value (Float(1.0) == 1) and other expressions by structure: a
     // mathematically equal but different expression satisfies it
     if (outcome.status === 'pass') return { status: 'fail', got: c.expected };

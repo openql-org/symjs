@@ -1247,7 +1247,9 @@ def _ser(o):
     if isinstance(o, sympy.Indexed):
         return {"t": "Indexed", "base": ser(o.base), "indices": [ser(i) for i in o.indices]}
     if isinstance(o, sympy.IndexedBase):
+        extra = {k: v for k, v in o._assumptions.generator.items() if o.label.assumptions0.get(k) != v}
         return {"t": "IndexedBase", "label": ser(o.label),
+                **({"indexedAssumptions": extra} if extra else {}),
                 **({"shape": [ser(d) for d in o.shape]} if o.shape is not None else {})}
     from sympy.polys.rootoftools import _pure_key_dict
     if isinstance(o, _pure_key_dict):
