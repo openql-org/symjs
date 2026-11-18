@@ -99,10 +99,16 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
   if (atZero || atOo) {
     const ex = expandMul(e);
     const terms = ex instanceof Add ? ex.args : [ex];
+    // SymPy scales every variable by t -> 0: a power v**k whose exponent k (in the order variables, without a constant
+    // term) also vanishes at 0 has the leading term 1 (O(x**y) is O(1, x, y))
+    const vanishingPower = (f: Expr): boolean => atZero && f instanceof Pow && vars.some((v) => v.key === f.base.key)
+      && !(f.exp instanceof Rational) && [...f.exp.freeSymbols()].every((s) => vars.some((v) => v.key === s.key))
+      && subs(f.exp, vars.map((v) => [v, S.Zero] as [Expr, Expr])).equals(S.Zero);
     /** The exponents of the variables in a monomial (undefined if a variable is inside a function). */
     const degs = (t: Expr): number[] | undefined => {
       const d = vars.map(() => 0);
       for (const f of t instanceof Mul ? t.args : [t]) {
+        if (vanishingPower(f)) continue;
         const [base, k] = f instanceof Pow && f.exp instanceof Rational ? [f.base, f.exp.value] : [f, 1];
         const i = vars.findIndex((v) => v.key === base.key);
         if (i >= 0) d[i] = at(d, i) + k;
@@ -114,7 +120,7 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
     if (ds.every((d) => d !== undefined)) {
       // a dominates b near the point when a is larger there: smaller exponents at 0, larger at oo
       const dominates = (a: number[], b: number[]) => a.some((u, i) => u !== at(b, i)) && a.every((u, i) => (atZero ? u <= at(b, i) : u >= at(b, i)));
-      const strip = (t: Expr) => mul(...(t instanceof Mul ? t.args : [t]).filter((f) => f.freeSymbols().size !== 0));
+      const strip = (t: Expr) => mul(...(t instanceof Mul ? t.args : [t]).filter((f) => f.freeSymbols().size !== 0 && !vanishingPower(f)));
       reduced = add(...terms.filter((_, i) => !ds.some((o) => dominates(o, at(ds, i)))).map(strip));
     }
   }

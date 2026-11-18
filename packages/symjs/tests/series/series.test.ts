@@ -521,3 +521,12 @@ it('retains the logarithmic bound of omitted series terms', () => {
   expect(String(sj.series(sj.parse('sin(x*log(x))'), x, 0, 3))).toBe('x*log(x) + O(x**3*log(x)**3)');
   expect(String(sj.series(sj.parse('log(x) + exp(x)'), x, 0, 2))).toBe('1 + log(x) + x + O(x**2)');
 });
+
+it('normalises multivariate orders whose exponents vanish at 0 like SymPy', () => {
+  const x = new sj.Sym('x'), y = new sj.Sym('y');
+  // the scaled leading term of x**y is 1; an exponent with a constant term keeps its power
+  expect(String(sj.O(sj.pow(x, y)))).toBe('O(1, x, y)');
+  expect(String(sj.O(sj.mul(x, sj.pow(x, y))))).toBe('O(x, x, y)');
+  expect(String(sj.O(sj.pow(x, sj.add(y, 1))))).not.toBe('O(1, x, y)');
+  expect(String(sj.add(x, sj.O(sj.pow(x, y))))).toBe('O(1, x, y)');
+});
