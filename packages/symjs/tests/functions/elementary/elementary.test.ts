@@ -743,3 +743,16 @@ describe('adjoint of hermitian and antihermitian symbols (SymPy test_adjoint, te
     expect(sj.sstr(conjugate(adjoint(A)))).toBe('transpose(A)');
   });
 });
+
+it('reduces tan of an integer multiple of pi by its period (SymPy _pi_coeff)', () => {
+  const o = new Sym('o', { odd: true }), n = new Sym('n', { integer: true }), e = new Sym('e', { even: true });
+  const t = (c: sj.ExprLike, s: sj.Expr): string => String(sj.tan(sj.mul(c, s, sj.pi)));
+  // a Float that is an exact binary fraction counts as that rational
+  expect(t(4.5, o)).toBe('tan(pi*o/2)');
+  expect(t(3, n)).toBe('0');
+  // an even multiple: the parity of the symbol does not matter
+  expect([t(2, n), t(4, e)]).toEqual(['0', '0']);
+  expect(t(sj.Rational.of(5n, 2n), n)).toBe('tan(pi*n/2)');
+  // 0.3 has no exact binary form; a non-integer symbol is left alone
+  expect([t(0.3, n), t(sj.Rational.of(5n, 2n), x)]).toEqual(['tan(0.3*pi*n)', 'tan(5*pi*x/2)']);
+});

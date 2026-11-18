@@ -313,6 +313,10 @@ it('converts the corpora', async () => {
           if (typeof value !== 'string') throw new P.Unprintable('text that is not a string');
           check = { call: (e) => `text(${e}${ws ? ', true' : ''})`, actual: () => helpers.text(value, ws), expected: helpers.text(c.expected, ws) };
           p.helpers.add('text');
+        } else if (equivalentForm && outcome.got !== undefined && H.matchesSympyErratum(c as never, outcome.got)) {
+          // SymPy's expected value is wrong (SYMPY_ERRATA): the test checks the registered correct value
+          const k = kinds.join('').replace(/l+$/, '');
+          check = { call: (e) => `sympyStr(${e}${k ? `, ${P.quote(k)}` : ''})`, actual: () => helpers.sympyStr(value, kinds.join('')), expected: outcome.got };
         } else if (equivalentForm) {
           // the same value in another form (equal at sample points, or simplify(a - b) == 0)
           const k = kinds.join('').replace(/l+$/, '');

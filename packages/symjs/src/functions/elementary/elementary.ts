@@ -53,6 +53,35 @@ function piCoeff(x: Expr): Rational | undefined {
   return undefined;
 }
 
+/**
+ * SymPy _pi_coeff for a product c*x*pi with an integer x: the coefficient of pi reduced modulo 2
+ * (a Float c that is an exact binary fraction counts as that rational). Undefined for other arguments.
+ */
+function integerPiCoeff(arg: Expr): Expr | undefined {
+  if (!(arg instanceof Mul) || !arg.args.some(isPi)) return undefined;
+  const cx = mul(...arg.args.filter((a) => !isPi(a)));
+  const [c0, x] = splitCoeff(cx);
+  if (isNum(x) || isIntegerQ(x) !== true) return undefined;
+  let c: Rational | undefined = c0 instanceof Rational ? c0 : undefined;
+  if (c0 instanceof Float) {
+    const v = Number(c0.value);
+    const f = Math.abs(v) % 1;
+    if (f === 0) c = Rational.of(BigInt(Math.trunc(v)));
+    else {
+      const m = 2 ** -Math.round(Math.log2(f));
+      if (Number.isInteger(v * m)) c = Rational.of(BigInt(v * m), BigInt(m));
+    }
+  }
+  if (c === undefined) return undefined;
+  const c2 = ratMod(c, S.Two);
+  if (c2.equals(S.One)) return x;
+  if (c2.isZero) {
+    const half = isIntegerQ(mul(S.Half, x));
+    return half === true || half === false ? S.Zero : S.Two;
+  }
+  return mul(c2, x);
+}
+
 /** Split x = a + c*pi where c is rational (c may be zero). */
 export function splitPiTerm(x: Expr): [Expr, Rational] {
   const c = piCoeff(x);
@@ -201,6 +230,12 @@ const evalTan: Evaluator = (x) => {
     const m = ratMod(c, S.One);
     if (m.isZero) return tan(rest);
     if (!m.equals(c)) return tan(add(rest, mul(m, S.Pi)));
+  }
+  const ic = integerPiCoeff(x);
+  if (ic !== undefined) {
+    if (isIntegerQ(ic) === true) return S.Zero;
+    const narg = mul(ic, S.Pi);
+    if (narg.key !== x.key) return tan(narg);
   }
   if (couldExtractMinusSign(x)) return neg(tan(neg(x)));
   if (x instanceof Fn && x.name === 'atan') return x.args[0];

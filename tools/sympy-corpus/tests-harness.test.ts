@@ -423,3 +423,10 @@ it('accepts the registered correct value of a truth-value assertion whose SymPy 
   expect(runTestCase(pick(145))).toEqual({ status: 'equivalent', got: 'None' });
   expect(runTestCase(pick(225))).toEqual({ status: 'equivalent', got: 'False' });
 });
+
+it('treats != as structural: an equivalent but different expression satisfies it', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/core.json', import.meta.url), 'utf8'));
+  const c = cases.find((x) => x.module === 'sympy.core.tests.test_power' && x.test === 'test_Pow_signs' && x.line === 209);
+  if (c === undefined) throw new Error('missing case');
+  expect(runTestCase(c)).toEqual({ status: 'pass' });
+});
