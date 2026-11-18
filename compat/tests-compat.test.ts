@@ -25,6 +25,7 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
   const result: CategoryResult = { category, seconds: 0, total: emptyCounts(), modules: {}, failureGroups: {}, apiGroups: {}, failures: [], exceptionMismatches: [] };
   for (const module of audit.modules) result.modules[module] = emptyCounts();
   const ids = new Set<string>();
+  const excluded = new Map<string, string>();
   // vm interrupts synchronous library calls too; vitest's asynchronous test timeout cannot.
   const context = createContext({ runTestCase, current: undefined });
   const script = new Script('runTestCase(current)');
@@ -37,6 +38,7 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
       const id = testCaseKey(c);
       if (ids.has(id)) throw new TypeError(`Duplicate case ${id}`);
       ids.add(id);
+      if (c.exclusion) { excluded.set(id, c.exclusion); continue; }
       const progress = process.env['COMPAT_TESTS_PROGRESS'];
       if (progress) appendFileSync(`${progress}.${category}`, `${ids.size} ${id} ${c.fn}\n`);
       let o: TestOutcome;
@@ -59,6 +61,7 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
       }
     }
   }
+  result.exclusions = [...excluded].map(([id, reason]) => ({ id, reason }));
   result.seconds = (performance.now() - start) / 1000;
   writeFileSync(join(directory, `${category}.json`), JSON.stringify(result));
   mkdirSync(new URL('./tests-results/', import.meta.url), { recursive: true });
@@ -66,7 +69,7 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
   expect(ids.size).toBe(audit.cases);
   expect(audit.examined).toBe(ids.size + Object.values(audit.reasons).reduce((a, b) => a + b, 0));
   const gaps: TestGaps = JSON.parse(readFileSync(new URL('../tools/sympy-corpus/tests-known-gaps.json', import.meta.url), 'utf8'));
-  const known = { ...gaps, cases: gaps.cases.filter((id) => id.startsWith(`sympy.${category}.`)) };
+  const known = { ...gaps, cases: gaps.cases.filter((id) => id.startsWith(`sympy.${category}.`) && !excluded.has(id)) };
   const failing = result.failures.map((f) => f.id);
   const timeouts = result.failures.filter((f) => f.outcome.status === 'error' && f.outcome.reason.startsWith('Replay deadline')).map((f) => f.id);
   if (!process.env['UPDATE_KNOWN_GAPS']) {

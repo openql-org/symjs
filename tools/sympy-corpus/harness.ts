@@ -676,6 +676,7 @@ function orderNode(e: unknown, rest: unknown[]): Expr {
 }
 
 export function deserialize(tree: Tree): unknown {
+  if (tree['unsupportedClass']) throw new Unsupported(String(tree['unsupportedClass']));
   switch (tree.t) {
     case 'Diffgeom': {
       if ('ref' in tree) {
@@ -5065,6 +5066,10 @@ export interface Case {
   /** For str()/repr(): the Python lists ('l') and tuples ('t') of the result in preorder (JS arrays are either). */
   brackets?: string;
   unsupportedArg?: string;
+  /** Head components, index-type metrics and special metric signatures captured before the call. */
+  tensorData?: [Tree, Tree][];
+  /** A Python test class whose behavior requires Python method execution. */
+  exclusion?: string;
   assume?: Tree[];
   /** printed output (print(f(...)), pprint(...), a str result): compared as text */
   text?: boolean;
@@ -6412,6 +6417,30 @@ let occurrenceCorpus: Case[] | undefined;
 /** Optional observation for assertion corpora; deserialization failures are not API exceptions. */
 export type CaseObservation = { value: unknown } | { error: unknown };
 
+function tensorReplacements(rows: readonly [Tree, Tree][]): Map<Expr, sj.ArrayInput> {
+  return new Map(rows.map(([key, value]): [Expr, sj.ArrayInput] => {
+    const tensor = deserialize(key);
+    const data = deserialize(value);
+    if (!(tensor instanceof Expr) || !(data instanceof sj.NDimArray || data instanceof Matrix)) throw new Unsupported('invalid tensor replacement state');
+    return [tensor, data];
+  }));
+}
+
+/** Adapt the deprecated global tensor data API to explicit public array replacements. */
+function tensorStateAdapter(c: Case): Adapter | undefined {
+  const rows = c.tensorData;
+  if (!rows || !['.data', '.__getitem__', '.get_matrix', '.__pow__'].includes(c.fn)) return undefined;
+  return (args, _kw, self) => {
+    if (c.fn === '.__pow__') throw new Unsupported('legacy tensor norm powers are not exposed by the public tensor API');
+    const replacements = tensorReplacements(rows);
+    if (!(self instanceof sj.TensExpr)) throw new Unsupported('tensor component receiver is not a tensor expression');
+    if (c.fn === '.get_matrix') return self.getMatrix(replacements);
+    const data = self.replaceWithArrays(replacements);
+    if (c.fn === '.data') return data;
+    return definedOr(DUNDER['.__getitem__'], 'tensor component indexing')(data, args);
+  };
+}
+
 export function runCase(c: Case, observe?: (event: CaseObservation) => void): Outcome {
   return asDoctest(c, () => runCase0(c, observe));
 }
@@ -6513,7 +6542,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
   // a sympy.stats name that symjs exports under another name (stats E is the expectation, not the constant)
-  const adapter = diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  const adapter = tensorStateAdapter(c) ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     const self = c.self ? deserialize(c.self) : undefined;
@@ -6558,6 +6587,12 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
         if (!(fallbackError instanceof Unsupported)) observe?.({ error: fallbackError });
         throw fallbackError;
       }
+    }
+    if (c.tensorData && v instanceof sj.TensExpr && ['list', 'tuple', 'str-items'].includes(c.post ?? '')) {
+      const replacements = tensorReplacements(c.tensorData);
+      const data = v.replaceWithArrays(replacements);
+      if (!(data instanceof sj.NDimArray)) throw new TypeError('scalar tensor data is not iterable');
+      v = new JsList([...data]);
     }
     if (c.pick !== undefined) v = pickResult(v, c.pick);
     if (c.post !== undefined) v = projectResult(v, c.post, c.brackets);
