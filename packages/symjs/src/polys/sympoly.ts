@@ -35,9 +35,9 @@ import { ordered as orderedExprs } from '../core/match';
 import { divExact, ffDiv, mfactorList, mgcd, mlcm } from './mpoly';
 import { countComplexRoots, isolateComplexRootsSqf, isolateRealRoots, isolateRealRootsSqf, isolateRealRootsTagged, refineRealRoot } from './rootisolation';
 import { UPoly, polyCoefficients, polyHooks, preprocessRootCoefficients, roots as rootsOf } from './poly';
-import { CoercionFailed, QQ, ZZ, groundRational } from './domains';
+import { CoercionFailed, EX, QQ, ZZ, groundRational } from './domains';
 import type { Domain } from './domains';
-import { OptionError, UnificationFailed } from './polyerrors';
+import { GeneratorsError, GeneratorsNeeded, OptionError, UnificationFailed } from './polyerrors';
 import { gfDiv, gfFactor, gfFactorSqf, gfGcd, gfLcm, gfGcdex, gfQuoGround, gfSqfList, gfSqfPart } from './galoistools';
 import { isprime } from '../ntheory/primetest';
 import { fact } from '../core/exprfacts';
@@ -356,6 +356,47 @@ export class Poly {
     this.pure = pure;
   }
 
+  /** Build from exponent tuples and coefficients (SymPy Poly.from_dict). */
+  static fromDict(terms: ReadonlyMap<readonly number[], ExprLike>, gens: readonly Expr[], opts: PolyConstructionOptions & { composite?: boolean } = {}): Poly {
+    if (!gens.length) throw new GeneratorsNeeded('polynomial generators are required');
+    for (const m of terms.keys()) {
+      if (m.length !== gens.length || m.some((e) => !Number.isInteger(e) || e < 0)) throw new PolynomialError('invalid polynomial monomial');
+    }
+    const p = Poly.from(add(...[...terms].map(([m, c]) => mul(c, ...m.map((e, i) => pow(at(gens, i), e))))), gens, opts);
+    return opts.composite === false && /^(?:ZZ|QQ)[[(]/.test(p.domain) ? p.setDomain('EX') : p;
+  }
+
+  /** Construct from an expression, requiring at least one generator. */
+  static fromExpr(expr: ExprLike, gens?: readonly Expr[], opts: PolyConstructionOptions = {}): Poly {
+    const p = Poly.from(expr, gens, opts);
+    if (!p.gens.length) throw new GeneratorsNeeded('polynomial generators are required');
+    return p;
+  }
+
+  /** Change the coefficient domain, converting each coefficient in that domain. */
+  setDomain(domain: string | Domain): Poly {
+    if (this.finiteModulus !== undefined && String(domain) !== this.domain) throw new CoercionFailed('cannot convert a finite-field polynomial to characteristic zero');
+    const K = typeof domain === 'string' ? domain === 'EX' ? EX : defined(polyConstructionHooks.domain, 'polynomial domain construction')([], { domain }) : domain;
+    if (K.symbols.some((s) => this.gens.some((g) => g.key === s.key))) throw new GeneratorsError('coefficient domain and polynomial generators overlap');
+    return Poly.from(this.asExpr(), this.gens, { domain: K, pure: this.pure });
+  }
+
+  /** Equality with an optional strict comparison of coefficient domains. */
+  eq(other: Poly | ExprLike, opts: { strict?: boolean } = {}): boolean {
+    if (!(other instanceof Poly)) return opts.strict !== true && this.equals(other);
+    if (opts.strict && this.pure !== other.pure) return false;
+    return (this.pure && !opts.strict || this.domain === other.domain) && this.equals(other);
+  }
+  ne(other: Poly | ExprLike, opts: { strict?: boolean } = {}): boolean {
+    return !this.eq(other, opts);
+  }
+
+  /** Retain terms whose exponent in gen belongs to [start, stop). */
+  slice(start: number, stop: number, gen: Expr = first(this.gens)): Poly {
+    const i = this.genIndex(gen);
+    return new Poly(this.gens, this.termList.filter((t) => at(t.monom, i) >= start && at(t.monom, i) < stop).map((t) => ({ monom: [...t.monom], coeff: t.coeff })), this.domain, this.pure, this.coefficientDomain, this.finiteSymmetric);
+  }
+
   /** Build a univariate polynomial from descending coefficients (SymPy from_list). */
   static fromList(coeffs: readonly ExprLike[], gens: readonly Expr[], opts: PolyConstructionOptions = {}): Poly {
     if (gens.length !== 1) throw new PolynomialError('from_list requires exactly one generator');
@@ -525,15 +566,27 @@ export class Poly {
   coeffMonomial(monom: number[]): Expr {
     return this.termList.find((t) => monomCmp(t.monom, monom) === 0)?.coeff ?? S.Zero;
   }
-  LC(): Expr {
-    return this.termList[0]?.coeff ?? S.Zero;
+  /** Terms ordered by the selected admissible monomial ordering. */
+  private orderedTerms(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): readonly Term[] {
+    const order = opts.order ?? 'lex';
+    if (order === 'lex') return this.termList;
+    const degree = (m: readonly number[]) => m.reduce((s, e) => s + e, 0);
+    return [...this.termList].sort((a, b) => degree(b.monom) - degree(a.monom) || (order === 'grlex' ? monomCmp(b.monom, a.monom) : monomCmp([...a.monom].reverse(), [...b.monom].reverse())));
   }
-  LM(): Expr {
-    const t = this.termList[0];
+  LC(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
+    return this.orderedTerms(opts)[0]?.coeff ?? S.Zero;
+  }
+  LM(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
+    const t = this.orderedTerms(opts)[0];
     return t ? mul(...t.monom.map((k, i) => pow(at(this.gens, i), k))) : S.One;
   }
-  LT(): [number[], Expr] {
-    const t = this.termList[0];
+  LT(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): [number[], Expr] {
+    const t = this.orderedTerms(opts)[0];
+    return t ? [t.monom, t.coeff] : [this.gens.map(() => 0), S.Zero];
+  }
+  /** The trailing monomial and coefficient in the selected ordering. */
+  ET(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): [number[], Expr] {
+    const t = this.orderedTerms(opts).at(-1);
     return t ? [t.monom, t.coeff] : [this.gens.map(() => 0), S.Zero];
   }
   /** The index of a generator (SymPy _gen_to_level): PolynomialError for an expression that is not one. */
@@ -991,6 +1044,7 @@ export class Poly {
   intervals(eps?: Rational, opts: IntervalsOptions & { all?: boolean } = {}): [[Rational, Rational], number][] | [[[Rational, Rational], number][], [[Expr, Expr], number][]] {
     if(this.finiteModulus!==undefined)throw new DomainError('isolation of roots not supported over finite domains');
     if (eps !== undefined && !eps.isPositive) throw new RangeError("'eps' must be a positive rational");
+    if (this.isGround) return opts.all ? [[], []] : [];
     const [, fs] = this.sqfList();
     const iso = { eps, inf: opts.inf, sup: opts.sup, fast: opts.fast };
     if (!opts.all) return isolateRealRoots(fs.map(([f, k]) => [f.denseInts(), k] as [bigint[], number]), eps, iso);
@@ -1115,13 +1169,12 @@ export class Poly {
     return resultant(this.asExpr(), o.asExpr(), this.univariate());
   }
   /** Last coefficient in term order. */
-  EC(): Expr {
-    return this.termList[this.termList.length - 1]?.coeff ?? S.Zero;
+  EC(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
+    return this.ET(opts)[1];
   }
   /** Last monomial in lexicographic term order (SymPy Poly.EM). */
-  EM(): Expr {
-    const terms = this.monoms();
-    return mul(...at(terms,terms.length-1).map((n,i) => pow(at(this.gens,i),n)));
+  EM(opts: { order?: 'lex' | 'grlex' | 'grevlex' } = {}): Expr {
+    return mul(...this.ET(opts)[0].map((n, i) => pow(at(this.gens, i), n)));
   }
   /** Constant term. */
   TC(): Expr {
@@ -1447,12 +1500,12 @@ export class Poly {
     const signChanges = (v: Expr | 'inf' | '-inf'): number => {
       const vals = seq.map((p) => {
         if (v === 'inf' || v === '-inf') {
-          const lc = numValue(p.LC());
+          const sign = p.LC() instanceof Rational ? Math.sign(numValue(p.LC())) : compareAlgebraicReal(p.LC(), S.Zero);
           const d = p.degree();
-          return v === 'inf' ? Math.sign(lc) : Math.sign(lc) * (d % 2 === 0 ? 1 : -1);
+          return v === 'inf' ? sign : sign * (d % 2 === 0 ? 1 : -1);
         }
         const r = xreplace(p.asExpr(), [[x, v]]);
-        return Math.sign(numValue(r));
+        return r instanceof Rational ? Math.sign(numValue(r)) : compareAlgebraicReal(r, S.Zero);
       }).filter((s) => s !== 0);
       let n = 0;
       for (let i = 1; i < vals.length; i++) if (vals[i] !== vals[i - 1]) n++;
@@ -1467,13 +1520,15 @@ export class Poly {
     };
     // a bound with an imaginary part: the roots in the rectangle of the two corners (SymPy dup_count_complex_roots)
     const corner = (v: ExprLike | undefined): [Rational, Rational] | undefined => (v === undefined ? undefined : pair(asRealImag(sympify(v)).map(bound)));
-    const [ca, cb] = [corner(a), corner(b)];
+    const lower = a !== undefined && sympify(a).key === S.NegativeInfinity.key ? undefined : a;
+    const upper = b !== undefined && sympify(b).key === S.Infinity.key ? undefined : b;
+    const [ca, cb] = [corner(lower), corner(upper)];
     if ([ca, cb].some((c) => c !== undefined && !c[1].isZero)) return countComplexRoots(this.denseInts(), ca, cb);
-    const lo = a === undefined ? '-inf' : bound(a);
-    const hi = b === undefined ? 'inf' : bound(b);
+    const lo = lower === undefined ? '-inf' : bound(lower);
+    const hi = upper === undefined ? 'inf' : bound(upper);
     let n = signChanges(lo) - signChanges(hi);
     if (lo !== '-inf') {
-      if (numValue(xreplace(this.asExpr(), [[x, lo]])) === 0) n += 1;
+      if (expandFull(xreplace(this.asExpr(), [[x, lo]])).equals(0)) n += 1;
     }
     return n;
   }
