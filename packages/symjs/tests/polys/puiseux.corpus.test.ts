@@ -147,7 +147,7 @@ describe("sympy/polys/tests/test_puiseux.py", () => {
   });
   it("test_puiseux_ring_attributes:37", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(new PuiseuxRing([x, y], QQ).zero)).toBe('');
+    expect(sympyStr(new PuiseuxRing([x, y], QQ).zero)).toBe('0');
   });
   it("test_puiseux_ring_attributes:38", () => {
     const [x, y] = symbols('x y');
@@ -531,7 +531,7 @@ describe("sympy/polys/tests/test_puiseux.py", () => {
   //   assert p + QQ(1,2) == QQ(1,2) + p == x**2 + QQ(3,2)
   //   => 3/2 + x**2
   it.todo("test_puiseux_poly_arit:140 (2)");
-  it.fails("test_puiseux_poly_arit:141", () => {
+  it("test_puiseux_poly_arit:141", () => {
     const x = new Sym('x');
     expect(sympyStr(new PuiseuxRing([x], QQ).fromDict([[[rational(2)], rational(1)], [[rational(0)], rational(1)]]).sub(new PuiseuxRing([x], QQ).fromDict([[[rational(2)], rational(1)], [[rational(0)], rational(1)]])))).toBe('0');
   });
@@ -798,7 +798,7 @@ describe("sympy/polys/tests/test_puiseux.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PuiseuxRing([x, y], QQ).fromDict([[[rational(2), rational(0)], rational(1)], [[rational(0), rational(0)], rational(1)]]).diff(new PuiseuxRing([x, y], QQ).fromDict([[[rational(1), rational(0)], rational(1)]])))).toBe('2*x');
   });
-  it.fails("test_puiseux_poly_diff:201", () => {
+  it("test_puiseux_poly_diff:201", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(new PuiseuxRing([x, y], QQ).fromDict([[[rational(2), rational(0)], rational(1)], [[rational(0), rational(0)], rational(1)]]).diff(new PuiseuxRing([x, y], QQ).fromDict([[[rational(0), rational(1)], rational(1)]])))).toBe('0');
   });

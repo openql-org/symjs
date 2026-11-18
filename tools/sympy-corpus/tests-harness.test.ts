@@ -401,3 +401,25 @@ it('preserves printed polynomial monomials and checks exponent tuples exactly', 
   const p = { t: 'Poly', expr: x, gens: [x], domain: 'ZZ', pure: false };
   expect(runTestCase({ ...base, fn: '.LM', self: p, args: [], expected: '(2,)' }).status).toBe('fail');
 });
+
+it('translates polynomial degrees, algebraic representations and rational Puiseux operands', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const selected = [
+    ['test_jacobi_poly', 30],
+    ['test_AlgebraicNumber', 21],
+    ['test_AlgebraicNumber', 23],
+    ['test_AlgebraicNumber', 140],
+    ['test_field_isomorphism_pslq', 38],
+    ['test_field_isomorphism', 113],
+    ['test_puiseux_ring_methods', 52],
+    ['test_puiseux_poly_repr', 108],
+    ['test_puiseux_ring_methods', 56],
+    ['test_Options_clone', 24],
+  ] as const;
+  for (const [test, line] of selected) {
+    const c = cases.find((c) => c.test === test && c.line === line);
+    expect(c, `${test}:${line}`).toBeDefined();
+    if (c === undefined) throw new TypeError('missing polynomial fixture');
+    expect(runTestCase(c), `${test}:${line}`).toEqual({ status: 'pass' });
+  }
+});

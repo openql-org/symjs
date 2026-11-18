@@ -407,6 +407,8 @@ function groundOf(ex: Expr, domain: string | Domain | undefined): Ground {
   const symbols = [...groundSymbols(ex)],name=domain?.toString();
   if(name==='QQ'&&symbols.length)throw notAlgebraic(ex);
   if (name === undefined || name === 'QQ') return { symbols, extension: [] };
+  const fraction = /^QQ\((.*)\)$/.exec(name);
+  if (fraction) return { symbols: topLevel(defined(fraction[1], 'domain generators')).map((g) => new Sym(g.trim())), extension: [] };
   const m = /^QQ<(.*)>$/.exec(name);
   if((m || name==='QQ_I') && typeof domain==='object')return {symbols,extension:[defined(polyConstructionHooks.algebraic,'algebraic field data')(domain).generator],coefficientDomain:domain};
   if(name==='QQ_I')return {symbols,extension:[S.I]};
@@ -453,7 +455,7 @@ export function minimalPolynomial(exIn: ExprLike, xIn?: Sym, opts: MinimalPolyno
     try {result=normalize(add(x,mul(-1,dom.coefficientDomain.toSympy(dom.coefficientDomain.convert(ex)))),x);}
     catch(error){if(!(error instanceof CoercionFailed))throw error;result=minimalPolynomialOf(ex,x,dom);}
   }else result=minimalPolynomialOf(ex,x,dom);
-  return opts.polys ? Poly.from(result, [x], { pure: xIn === undefined, domain:dom.coefficientDomain }) : collect(result, x);
+  return opts.polys ? Poly.from(result, [x], { pure: xIn === undefined, domain: dom.coefficientDomain ?? (opts.domain?.toString() === 'QQ' ? 'QQ' : dom.symbols.length ? `ZZ(${dom.symbols.map((s) => s.name).join(',')})` : undefined) }) : collect(result, x);
 }
 
 
@@ -527,8 +529,22 @@ export class AlgebraicNumber {
   }
 
   /** The value as an expression (SymPy as_expr). */
-  asExpr(): Expr {
-    return expandMul(this.asPolyExpr());
+  asExpr(x?: ExprLike): Expr {
+    return x === undefined ? expandMul(this.asPolyExpr()) : expandMul(horner(this.coeffList, sympify(x)));
+  }
+
+  /** The coefficient polynomial in an explicit generator or the field alias. */
+  asPoly(x?: ExprLike): Poly {
+    const generator = x === undefined ? this.alias ?? new Dummy('x') : sympify(x);
+    return Poly.from(horner(this.coeffList, generator), [generator], { domain: 'QQ', pure: x === undefined && this.alias === undefined });
+  }
+
+  /** An algebraic field element is a number even when its root is represented symbolically. */
+  get isNumber(): boolean { return true; }
+
+  /** Structural equality includes the primitive element and its coefficient representation. */
+  equals(other: unknown): boolean {
+    return other instanceof AlgebraicNumber && this.root.equals(other.root) && this.alias?.key === other.alias?.key && this.coeffList.length === other.coeffList.length && this.coeffList.every((c, i) => c.equals(at(other.coeffList, i)));
   }
 
   /** SymPy LatexPrinter._print_AlgebraicNumber: the polynomial in the alias when there is one, else the value. */

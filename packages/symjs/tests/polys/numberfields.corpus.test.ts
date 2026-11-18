@@ -279,7 +279,7 @@ describe("sympy/polys/numberfields/tests/test_minpoly.py", () => {
   //   assert minimal_polynomial(I, x, domain=QQ) == x**2 + 1
   //   => x**2 + 1
   it.todo("test_minimal_polynomial:162");
-  it.fails("test_minimal_polynomial:163", () => {
+  it("test_minimal_polynomial:163", () => {
     const x = new Sym('x');
     expect(sympyStr(minimalPolynomial(I, x, { domain: 'QQ(y)' }))).toBe('x**2 + 1');
   });
@@ -567,19 +567,19 @@ describe("sympy/polys/numberfields/tests/test_minpoly.py", () => {
     const [x, z, y] = symbols('x z y');
     expect(sympyStr(minimalPolynomial(new Mul([new Pow(x, rational(1, 2)), new Pow(new Add([rational(1), z]), rational(-1))]), y, { compose: true, polys: false }))).toBe('-x + y**2*(z**2 + 2*z + 1)');
   });
-  it.fails("test_minpoly_fraction_field:387", () => {
+  it("test_minpoly_fraction_field:387", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(minimalPolynomial(new Pow(x, rational(-1)), y, { compose: true, polys: true }))).toBe('Poly(-x*y + 1, y, domain=\'ZZ(x)\')');
   });
-  it.fails("test_minpoly_fraction_field:388", () => {
+  it("test_minpoly_fraction_field:388", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(minimalPolynomial(new Pow(new Add([rational(1), x]), rational(-1)), y, { compose: true, polys: true }))).toBe('Poly((x + 1)*y - 1, y, domain=\'ZZ(x)\')');
   });
-  it.fails("test_minpoly_fraction_field:390", () => {
+  it("test_minpoly_fraction_field:390", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(minimalPolynomial(new Pow(x, rational(1, 2)), y, { compose: true, polys: true }))).toBe('Poly(y**2 - x, y, domain=\'ZZ(x)\')');
   });
-  it.fails("test_minpoly_fraction_field:391", () => {
+  it("test_minpoly_fraction_field:391", () => {
     const [x, z, y] = symbols('x z y');
     expect(sympyStr(minimalPolynomial(new Mul([new Pow(x, rational(1, 2)), new Pow(z, rational(-1))]), y, { compose: true, polys: true }))).toBe('Poly(z**2*y**2 - x, y, domain=\'ZZ(x,z)\')');
   });

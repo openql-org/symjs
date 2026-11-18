@@ -12,7 +12,7 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Dummy, Rational } from '../core/nodes';
+import { Dummy } from '../core/nodes';
 import { sympify } from '../core/ops';
 import {
   type Coeffs,
@@ -27,6 +27,7 @@ import {
   legendreCoeffs,
 } from '../functions/special/orthocoeffs';
 import { Poly } from './sympoly';
+import { constructDomain } from './constructor';
 
 /** Options of the polynomial generators. */
 export interface NamedPolyOptions {
@@ -41,27 +42,26 @@ export type NamedPolyResult<O extends NamedPolyOptions> = O extends { polys: tru
  * SymPy named_poly: the polynomial of index n in x, or in a dummy variable
  * (a PurePoly) when x is not given.
  */
-function namedPoly(n: number, gen: (n: number) => Coeffs, name: string, x: ExprLike | undefined, opts: NamedPolyOptions, field = true): Expr | Poly {
+function namedPoly(n: number, gen: (n: number) => Coeffs, name: string, x: ExprLike | undefined, opts: NamedPolyOptions, field = true, parameters: readonly ExprLike[] = []): Expr | Poly {
   if (!Number.isInteger(n) || n < 0) throw new RangeError(`Cannot generate ${name} of index ${n}`);
   const v = x === undefined ? new Dummy('x') : sympify(x);
   const cs = gen(n);
   const e = coeffsExpr(cs, v);
   if (!opts.polys) return e;
-  // the domain is QQ (SymPy named_poly over a field), or ZZ for the integer families
-  const rational = field && cs.every((c) => c instanceof Rational);
-  return Poly.from(e, [v], rational ? { pure: x === undefined, domain: 'QQ' } : { pure: x === undefined });
+  const domain = field ? constructDomain(parameters, { field: true })[0] : 'ZZ';
+  return Poly.from(e, [v], { pure: x === undefined, domain });
 }
 
 /** SymPy jacobi_poly(n, a, b, x): the Jacobi polynomial P_n^(a,b)(x). */
 export function jacobiPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, a: ExprLike, b: ExprLike, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function jacobiPoly(n: number, a: ExprLike, b: ExprLike, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
-  return namedPoly(n, (k) => jacobiCoeffs(k, sympify(a), sympify(b)), 'Jacobi polynomial', x, opts);
+  return namedPoly(n, (k) => jacobiCoeffs(k, sympify(a), sympify(b)), 'Jacobi polynomial', x, opts, true, [a, b]);
 }
 
 /** SymPy gegenbauer_poly(n, a, x): the Gegenbauer polynomial C_n^(a)(x). */
 export function gegenbauerPoly<O extends NamedPolyOptions = Record<never, never>>(n: number, a: ExprLike, x?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function gegenbauerPoly(n: number, a: ExprLike, x?: ExprLike, opts: NamedPolyOptions = {}): Expr | Poly {
-  return namedPoly(n, (k) => gegenbauerCoeffs(k, sympify(a)), 'Gegenbauer polynomial', x, opts);
+  return namedPoly(n, (k) => gegenbauerCoeffs(k, sympify(a)), 'Gegenbauer polynomial', x, opts, true, [a]);
 }
 
 /** SymPy chebyshevt_poly(n, x): the Chebyshev polynomial of the first kind T_n(x). */
@@ -97,5 +97,5 @@ export function legendrePoly(n: number, x?: ExprLike, opts: NamedPolyOptions = {
 /** SymPy laguerre_poly(n, x, alpha): the generalized Laguerre polynomial L_n^(alpha)(x). */
 export function laguerrePoly<O extends NamedPolyOptions = Record<never, never>>(n: number, x?: ExprLike, alpha?: ExprLike, opts?: O): NamedPolyResult<O>;
 export function laguerrePoly(n: number, x?: ExprLike, alpha: ExprLike = 0, opts: NamedPolyOptions = {}): Expr | Poly {
-  return namedPoly(n, (k) => laguerreCoeffs(k, sympify(alpha)), 'Laguerre polynomial', x, opts);
+  return namedPoly(n, (k) => laguerreCoeffs(k, sympify(alpha)), 'Laguerre polynomial', x, opts, true, [alpha]);
 }

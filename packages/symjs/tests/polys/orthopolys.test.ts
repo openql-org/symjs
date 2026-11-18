@@ -47,3 +47,10 @@ describe('orthogonal polynomials as Poly objects', () => {
     expect(String(sj.gegenbauerPoly(1, a, x, { polys: true }).asExpr())).toBe('2*a*x');
   });
 });
+
+
+it('constructs coefficient fields from the orthogonal polynomial parameters', () => {
+  expect(sj.jacobiPoly(1, a, b, x, { polys: true }).domain).toBe('ZZ(a,b)');
+  expect(sj.gegenbauerPoly(1, a, x, { polys: true }).domain).toBe('ZZ(a)');
+  expect(sj.laguerrePoly(1, x, a, { polys: true }).domain).toBe('ZZ(a)');
+});

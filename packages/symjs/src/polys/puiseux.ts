@@ -60,6 +60,10 @@ export class PuiseuxRing {
   equals(other: unknown): boolean {
     return other instanceof PuiseuxRing && this.polyRing.equals(other.polyRing);
   }
+  /** Multiply rational exponent vectors componentwise as monomials. */
+  monomialMul(a: readonly ExprLike[], b: readonly ExprLike[]): Rational[] {
+    return a.map((e, i) => addExponents(rationalExponent(e), rationalExponent(at(b, i))));
+  }
   get zero(): PuiseuxPoly { return this.fromDict([]); }
   get one(): PuiseuxPoly { return this.groundNew(this.domain.one); }
   fromPoly(p: PolyElement): PuiseuxPoly { return new PuiseuxPoly(p.setRing(this.polyRing), this); }
@@ -144,6 +148,8 @@ export class PuiseuxPoly {
   get isTerm(): boolean { return this.length === 1; }
   get isOne(): boolean { return this.equals(this.ring.one); }
   get(monom: readonly ExprLike[]): Expr { return this.data.get(monomKey(monom.map(rationalExponent)))?.[1] ?? this.ring.domain.zero; }
+  /** Iterate over the exponent vectors, as over the keys of a sparse polynomial. */
+  *[Symbol.iterator](): IterableIterator<PuiseuxMonom> { yield* this.monoms(); }
   terms(): [PuiseuxMonom, Expr][] { return [...this.data.values()].map(([m, c]) => [[...m], c]); }
   monoms(): PuiseuxMonom[] { return this.terms().map(([m]) => m); }
   toDict(): Map<PuiseuxMonom, Expr> { return new Map(this.terms()); }
@@ -214,7 +220,7 @@ export class PuiseuxPoly {
       const monom = m.flatMap((e, i) => e.isZero ? [] : [e.isOne ? str(at(this.ring.symbols, i)) : `${str(at(this.ring.symbols, i))}**${e.isInteger && e.isPositive ? str(e) : `(${str(e)})`}`]).join('*');
       if (!monom) return groundStr(this.ring.domain, c);
       return groundEq(c, this.ring.domain.one) ? monom : `${groundStr(this.ring.domain, c)}*${monom}`;
-    }).join(' + ');
+    }).join(' + ') || '0';
   }
 }
 

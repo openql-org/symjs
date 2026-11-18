@@ -96,7 +96,8 @@ const CASES = [
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1083],
+  // Algebraic-number polynomial conversion adds under 1 KiB to symbolic mesh consumers.
+  ['plotting', '*', 1084],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
@@ -108,7 +109,8 @@ const CASES = [
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // The root namespace includes Sylvester/Bezout matrices and rational/integer PRS helpers.
-  ['index', '*', 2787],
+  // PSLQ field embeddings and rational polynomial-domain preservation add about 3 KiB.
+  ['index', '*', 2790],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];
