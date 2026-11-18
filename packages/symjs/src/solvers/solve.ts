@@ -206,6 +206,10 @@ function invertFn(f: Fn | Pow, y: Expr, x: Sym): [Expr, Expr[]] | undefined {
       }
       return [n, [log(y)]];
     }
+    // SymPy _tsolve: a positive constant base is inverted by its real logarithm.
+    if (!b.has(x) && n.has(x) && ask(Q.positive(b)) === true) {
+      return [n, isZeroE(y) ? [] : [mul(log(y), pow(log(b), -1))]];
+    }
     // b**n = y with n free of x  ->  b = y**(1/n) (SymPy solve(x**y - 2, x) = [2**(1/y)])
     if (!(n instanceof Rational)) return n.has(x) ? undefined : [b, [pow(y, pow(n, -1))]];
     if (n.isInteger) {
@@ -227,6 +231,23 @@ function invertFn(f: Fn | Pow, y: Expr, x: Sym): [Expr, Expr[]] | undefined {
       return [u, [acos(y), add(mul(2, S.Pi), mul(-1, acos(y)))]];
     case 'tan':
       return [u, [atan(y)]];
+    case 'cot':
+      return [u, [isZeroE(y) ? mul(S.Half, S.Pi) : atan(pow(y, -1))]];
+    case 'sec':
+    case 'csc':
+    case 'sech':
+    case 'csch': {
+      if (isZeroE(y)) return [u, []];
+      const reciprocal = { sec: 'cos', csc: 'sin', sech: 'cosh', csch: 'sinh' } as const;
+      return invertFn(new Fn(reciprocal[f.name], f.args), pow(y, -1), x);
+    }
+    case 'tanh':
+    case 'coth': {
+      if (y.equals(S.One) || y.equals(S.NegOne)) return [u, []];
+      const denominator = f.name === 'tanh' ? add(1, mul(-1, y)) : add(y, -1);
+      return [u, [mul(S.Half, log(mul(add(y, 1), pow(denominator, -1))))]];
+    }
+
     case 'cosh': {
       const r = pow(add(pow(y, 2), -1), S.Half);
       return [u, [log(add(y, mul(-1, r))), log(add(y, r))]];
@@ -363,6 +384,20 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
           return ys.flatMap((yy) => solveRaw(add(u, mul(-1, yy)), x, depth + 1));
         }
       }
+    }
+  }
+  // SymPy _tsolve takes logarithms when both exponential terms have positive bases.
+  if (terms.length === 2) {
+    const exponential = (term: Expr): [Expr, Expr] | undefined => {
+      const factors = term instanceof Mul ? term.args : [term];
+      const dependent = factors.filter((a) => a.has(x));
+      if (!dependent.length || !dependent.every((a): a is Pow => a instanceof Pow && !a.base.has(x) && ask(Q.positive(a.base)) === true)) return undefined;
+      return [mul(...factors.filter((a) => !a.has(x))), add(...dependent.map((a) => mul(a.exp, log(a.base))))];
+    };
+    const lhs = exponential(at(terms, 0)), rhs = exponential(at(terms, 1));
+    if (lhs && rhs) {
+      const ratio = mul(-1, rhs[0], pow(lhs[0], -1));
+      if (ask(Q.positive(ratio)) === true) return solveRaw(add(lhs[1], mul(-1, rhs[1]), mul(-1, log(ratio))), x, depth + 1);
     }
   }
   const rad = singleRadical(num, x, depth);
@@ -964,6 +999,23 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Expr[], opt
         );
       }
       return;
+    }
+    // An equation with constant leading coefficient leaves the other coordinates as parameters.
+    if (pending.length === 1) {
+      const equation = first(pending);
+      for (const u of unknowns) {
+        const coefficients = polyCoefficients(numerOf(equation), u);
+        if (!coefficients || coefficients.size < 2) continue;
+        const leading = getOrThrow(coefficients, Math.max(...coefficients.keys()));
+        if (unknowns.some((v) => leading.has(v))) continue;
+        for (const value of solve(equation, u, { check: false })) {
+          const next = new Map(assigned);
+          for (const [k, w] of next) next.set(k, simplifyBack(xreplace(w, [[u, value]])));
+          next.set(u.key, value);
+          go([], next);
+        }
+        return;
+      }
     }
     // a polynomial system: Groebner basis and back substitution
     const numers = pending.map(numerOf);

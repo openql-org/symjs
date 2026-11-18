@@ -544,3 +544,21 @@ it('compares dense polynomial domains without rounding large coefficients', () =
   expect(matches(f, `DMP_Python([${n + 1n}], QQ)`)).toBe(false);
   expect(matches(new sj.DMPJs([sj.QQ.convert(sj.Rational.of(1, 3))], sj.QQ), 'DMP_Python([MPQ(2,3)], QQ)')).toBe(false);
 });
+
+it('supplies anonymous unknowns for augmented linsolve matrices and accepts equation lists', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/solvers.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.fn === 'linsolve' && c.args?.length === 1 && c.args[0]?.t === 'Matrix');
+  expect(selected.length).toBeGreaterThanOrEqual(4);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const one: Tree = { t: 'Rational', p: '1', q: '1' };
+  expect(runTestCase({ ...base, fn: 'linsolve', args: [{ t: 'Tuple', list: true, items: [{ t: 'Add', args: [x, one] }] }, x], expected: '{(-1,)}' })).toEqual({ status: 'pass' });
+});
+
+it('translates Matrix equalities and solver strategy flags through the public solvers', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/solvers.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.test === 'test_solve_Matrix' && [720, 726, 727, 728].includes(c.line)
+    || c.test === 'test_minsolve_linear_system' && [1754, 1755, 1792].includes(c.line));
+  expect(selected).toHaveLength(7);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});

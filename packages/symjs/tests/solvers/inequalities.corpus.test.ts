@@ -773,15 +773,15 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Add([rational(-1), x, new Pow(x, rational(3)), new Mul([rational(-1), new Pow(x, rational(2))])]), rational(0), '>', { evaluate: false }), x, { relational: false }))).toBe('Interval.open(1, oo)');
   });
-  it.fails("test_solve_univariate_inequality:296", () => {
+  it("test_solve_univariate_inequality:296", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Mul([new Add([I, x]), new Add([x, new Mul([rational(2), I])])]), rational(0), '<', { evaluate: false }), x, { relational: true }))).toBe('Eq(x, 0)');
   });
-  it.fails("test_solve_univariate_inequality:297", () => {
+  it("test_solve_univariate_inequality:297", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Mul([new Add([I, new Mul([new Add([rational(-1), x]), new Add([rational(-2), x])])]), new Add([new Mul([rational(2), I]), new Mul([new Add([rational(-1), x]), new Add([rational(-2), x])])])]), rational(0), '<', { evaluate: false }), x, { relational: true }))).toBe('Eq(x, 1) | Eq(x, 2)');
   });
-  it.fails("test_solve_univariate_inequality:298", () => {
+  it("test_solve_univariate_inequality:298", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(new Mul([new Pow(new Add([rational(-2), x]), rational(-1)), new Add([I, new Mul([new Add([rational(-1), x]), new Add([rational(-2), x])])]), new Add([new Mul([rational(2), I]), new Mul([new Add([rational(-1), x]), new Add([rational(-2), x])])])]), rational(0), '>', { evaluate: false }), x, { relational: true }))).toBe('Eq(x, 1)');
   });
@@ -859,7 +859,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(fn('cos', [x]), rational(0), '>=', { evaluate: false }), x, { relational: false }))).toBe('Union(Interval(0, pi/2), Interval.Ropen(3*pi/2, 2*pi))');
   });
-  it.fails("test_trig_inequalities:350", () => {
+  it("test_trig_inequalities:350", () => {
     const x = new Sym('x');
     expect(sympyStr(solveUnivariateInequality(Relational(fn('tan', [x]), rational(1), '<', { evaluate: false }), x, { relational: false }))).toBe('Union(Interval.Ropen(0, pi/4), Interval.open(pi/2, pi))');
   });
