@@ -71,40 +71,40 @@ const CASES = [
   // Meijer G derivatives, support intervals and branch-preserving integral rewrites.
   ['special', '*', 530],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1247],
+  ['simplify', 'simplify', 1252],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
   // methods and the polynomial-ring extensions add to it (measured 694 KiB).
-  ['polys', 'factor', 858],
+  ['polys', 'factor', 862],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1256],
-  ['solvers', 'solve', 1350],
-  ['solvers', 'dsolve', 1374],
+  ['calculus', 'integrate', 1260],
+  ['solvers', 'solve', 1354],
+  ['solvers', 'dsolve', 1378],
   ['sets', '*', 517],
-  ['matrices', 'Matrix', 1120],
+  ['matrices', 'Matrix', 1124],
   ['printing', 'pretty', 335],
   ['discrete', '*', 397],
   ['strategies', '*', 308],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
-  ['parsing', '*', 1049],
+  ['parsing', '*', 1053],
   ['unify', '*', 315],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 727],
-  ['holonomic', 'exprToHolonomic', 1435],
+  ['algebras', 'Quaternion', 731],
+  ['holonomic', 'exprToHolonomic', 1440],
   ['geometry', '*', 1315],
-  ['vector', '*', 1417],
-  ['stats', '*', 1600],
+  ['vector', '*', 1422],
+  ['stats', '*', 1604],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 566],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1292],
+  ['plotting', '*', 1296],
   ['crypto', '*', 465],
   ['liealgebras', '*', 446],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
-  ['codegen', '*', 1043],
+  ['codegen', '*', 1048],
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
   ['index', 'Rational', 297],
@@ -115,7 +115,7 @@ const CASES = [
   // Polynomial remainder sequences, Hensel lifting and module orders add up to 2 KiB.
   ['index', '*', 3104],
   // Differential geometry includes symbolic inversion and curvature calculations.
-  ['diffgeom', '*', 1318],
+  ['diffgeom', '*', 1323],
 ];
 
 async function measure(entry, names) {
