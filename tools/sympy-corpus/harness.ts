@@ -4892,10 +4892,10 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
   '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
   '.__mul__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
-  '.__truediv__': (a, [b]) => (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, ['div', 'truediv', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
+  '.__truediv__': (a, [b]) => (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, ['truediv', 'div', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => (a instanceof sj.Poly ? a.quo(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
-  '.__mod__': (a, [b]) => (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
+  '.__mod__': (a, [b]) => (a instanceof sj.Poly ? a.rem(b instanceof sj.Poly ? b : sj.Poly.from(asExpr(b), a.gens)) : undefined) ?? callMethod(a, a instanceof sj.ANP ? ['rem'] : ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
   '.__matmul__': (a, [b]) => callMethod(a, ['matmul', 'mul'], [b])?.value ?? unsupportedOp('@'),
   '.__neg__': (a) => callMethod(a, ['neg'], [])?.value ?? (isScalar(a) ? sj.neg(a) : unsupportedOp('-')),
   '.__invert__': (a) => callMethod(a, ['invert', 'inv', 'inverse'], [])?.value ?? (a instanceof Expr || typeof a === 'boolean' ? sj.Not(a) : unsupportedOp('~')),
@@ -4927,6 +4927,33 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
+    if (a instanceof sj.PolyRing && i instanceof sj.Slice) {
+      const [start, stop, step] = i.indices(a.ngens);
+      if (step === 1) return a.slice(start, stop);
+      return a.clone({ symbols: Array.from({ length: Math.max(0, Math.ceil((stop - start) / step)) }, (_, k) => definedOr(a.symbols[start + k * step], 'ring generator')) });
+    }
+    if (a instanceof sj.DomainMatrix) {
+      const pair = i instanceof JsTuple ? i.items : Array.isArray(i) ? i : [i];
+      if (pair.length !== 2) throw new TypeError('DomainMatrix indices must be a pair');
+      const [row, col] = pair;
+      const indices = (v: unknown, size: number): number[] => {
+        if (v instanceof sj.Slice) {
+          const [start, stop, step] = v.indices(size);
+          return Array.from({ length: Math.max(0, Math.ceil((stop - start) / step)) }, (_, k) => start + k * step);
+        }
+        const k = Number(v);
+        if (!Number.isInteger(k) || k < -size || k >= size) throw new RangeError('matrix index out of range');
+        return [k < 0 ? k + size : k];
+      };
+      const rows = indices(row, a.shape[0]), cols = indices(col, a.shape[1]);
+      return row instanceof sj.Slice || col instanceof sj.Slice ? a.extract(rows, cols) : a.getitem(definedOr(rows[0], 'row'), definedOr(cols[0], 'column'));
+    }
+    if (a instanceof sj.PolyElement && Array.isArray(i)) return a.get(i.map(Number));
+    if (a instanceof sj.Domain) {
+      const symbols = (i instanceof JsTuple ? i.items : Array.isArray(i) ? i : [i]).map(asExpr);
+      if (symbols.every((symbol) => symbol instanceof Sym)) return a.polyRing(...symbols);
+      throw new TypeError('polynomial ring generators must be symbols');
+    }
     if (a instanceof sj.FreeGroup) {
       if (i instanceof sj.Slice) {
         const [start, stop, step] = i.toString().split(':').map((part) => part === '' ? undefined : Number(part));
@@ -4985,7 +5012,8 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     }
     if (Array.isArray(a) && index.length === 1) {
       const k = Number(index[0]);
-      return a[k < 0 ? a.length + k : k];
+      const value = a[k < 0 ? a.length + k : k];
+      return value instanceof JsDomain ? value.domain ?? value : value;
     }
     if (a instanceof Map) {
       const key = [...a.keys()].find((k) => pyEquals(k, i));
@@ -5259,6 +5287,35 @@ function autoAdapter(c: Case): Adapter | undefined {
     const opts = { ...(kw['m'] === undefined ? {} : { m: intArg(kw['m']) }), power: flag(kw['power']) };
     return fromJs(flag(kw['visual']) ? sj.smoothnessP(asExpr(args[0]), { ...opts, visual: true }) : sj.smoothnessP(asExpr(args[0]), opts));
   };
+  if (c.fn === '.div' && c.self?.t === 'ANP') return (args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.ANP)) throw new TypeError('expected an algebraic number');
+    return fromJs(self.divmod(args[0]));
+  };
+  if (c.fn === 'MonogenicFiniteExtension') return (args, kw) => {
+    noKw(kw);
+    if (!(args[0] instanceof sj.Poly)) throw new TypeError('expected a polynomial modulus');
+    return new sj.FiniteExtension(args[0]);
+  };
+  if (c.fn === 'construct_domain' && c.args?.[0]?.t === 'Dict') return (args, kw) => {
+    const input = args[0];
+    if (!(input instanceof JsDict)) throw new TypeError('expected a coefficient dictionary');
+    const [domain, elements] = sj.constructDomain(input.entries.map(([, value]) => asExpr(value)), Object.fromEntries(Object.entries(kw).map(([key, value]) => [camel(key), toJs(value, false)])));
+    if (!Array.isArray(elements)) throw new TypeError('expected converted coefficient list');
+    return new JsTuple([domain, new JsDict(input.entries.map(([key], index) => [key, elements[index]]))]);
+  };
+  if (c.module.startsWith('sympy.polys.matrices.') && ['.lll', '.lll_transform'].includes(c.fn)) return (args, kw, self) => {
+    if (!(self instanceof sj.DDM || self instanceof sj.SDM || self instanceof sj.DomainMatrix)) throw new TypeError('expected a domain matrix');
+    for (const key of Object.keys(kw)) if (key !== 'delta') throw new Unsupported(`kwargs ${key}`);
+    const matrix = self instanceof sj.DomainMatrix ? self : sj.DomainMatrix.fromRep(self);
+    const delta = kw['delta'] ?? args[0];
+    const wrap = (value: Matrix): unknown => {
+      const result = sj.DomainMatrix.fromMatrix(value, { fmt: matrix.rep.fmt }).convertTo(matrix.domain);
+      return self instanceof sj.DomainMatrix ? result : result.rep;
+    };
+    return c.fn === '.lll' ? wrap(sj.lll(matrix.toMatrix(), delta === undefined ? undefined : asExpr(delta)))
+      : new JsTuple(sj.lllTransform(matrix.toMatrix(), delta === undefined ? undefined : asExpr(delta)).map(wrap));
+  };
   if (c.fn === '.extract_slice' && c.module.startsWith('sympy.polys.matrices.')) return (args, kw, self) => {
     noKw(kw);
     if (!(self instanceof sj.DomainMatrix || self instanceof sj.DDM || self instanceof sj.SDM)) throw new Unsupported('expected a domain matrix');
@@ -5310,6 +5367,37 @@ function autoAdapter(c: Case): Adapter | undefined {
   const reflected = reflectedName === undefined ? undefined : DUNDER[reflectedName];
   if (reflected !== undefined && c.self?.t === 'Rational' && c.self['py'] === true) return (args, _kw, self) => fromJs(reflected(plain(conv(args[0])), [self]));
   if (dunder !== undefined) return (args, _kw, self0) => {
+    if ((self0 instanceof sj.PythonMPQ || args[0] instanceof sj.PythonMPQ) && [self0, ...args].every((v) => v instanceof sj.PythonMPQ || v instanceof sj.Rational)) {
+      const rational = (v: unknown): sj.Rational => {
+        if (v instanceof sj.PythonMPQ) return sj.Rational.of(v.numerator, v.denominator);
+        if (v instanceof sj.Rational) return v;
+        throw new TypeError('expected a rational number');
+      };
+      const self = rational(self0);
+      if (c.fn === '.__truediv__' && rational(args[0]).isZero) throw new RangeError('Zero divisor');
+      return fromJs(dunder(self, args.map(rational)));
+    }
+    if (['.__add__', '.__sub__', '.__mul__', '.__truediv__'].includes(c.fn) && (self0 instanceof sj.FracElement || args[0] instanceof sj.FracElement)) {
+      const element = self0 instanceof sj.FracElement ? self0 : args[0];
+      if (!(element instanceof sj.FracElement)) throw new TypeError('expected a fraction-field element');
+      const normalize = (v: unknown): sj.FracElement => {
+        if (v instanceof sj.PythonMPQ) return element.field.fieldNew(sj.Rational.of(v.numerator, v.denominator));
+        if (v instanceof sj.FracElement || v instanceof sj.PolyElement || v instanceof Expr || typeof v === 'number' || typeof v === 'bigint') return element.field.fieldNew(v);
+        throw new TypeError('expected a fraction-field operand');
+      };
+      return fromJs(dunder(normalize(self0), args.map(normalize)));
+    }
+    if (self0 instanceof sj.DomainMatrix || args[0] instanceof sj.DomainMatrix) {
+      const normalize = (v: unknown): unknown => v instanceof sj.PythonMPQ ? sj.Rational.of(v.numerator, v.denominator) : v instanceof sj.DomainScalar ? v.domain.toSympy(v.element) : v;
+      const left = normalize(self0), right = normalize(args[0]);
+      if (left instanceof sj.DomainMatrix && right instanceof sj.DomainMatrix && ['.__add__', '.__sub__', '.__mul__'].includes(c.fn)) {
+        const [a, b] = left.unifyFmt([right], 'dense');
+        return fromJs(dunder(definedOr(a, 'left matrix'), [definedOr(b, 'right matrix')]));
+      }
+      if (c.fn === '.__mul__' && left instanceof sj.DomainMatrix && right instanceof Expr) return left.scalarmul(right);
+      if (c.fn === '.__mul__' && right instanceof sj.DomainMatrix && left instanceof Expr) return right.rscalarmul(left);
+      return fromJs(dunder(left, [right]));
+    }
     const arithmetic = ['.__add__', '.__sub__', '.__mul__', '.__truediv__', '.__pow__', '.__mod__', '.__neg__'];
     if (arithmetic.includes(c.fn) && [self0, ...args].some((v) => typeof v === 'boolean' || v instanceof sj.BoolAtom)) {
       throw new TypeError('Boolean atoms do not support arithmetic');
@@ -5340,6 +5428,10 @@ function autoAdapter(c: Case): Adapter | undefined {
       }
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
       if (name === 'name' && typeof self === 'function' && 'predicateName' in self) return new Sym(String(self.predicateName));
+      if (self instanceof sj.PolyRing || self instanceof sj.FracField) {
+        const index = self.symbols.findIndex((symbol) => String(symbol) === c.fn.slice(1));
+        if (index >= 0) return self.gens[index];
+      }
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);
       let m = (self as Record<string, unknown>)[name] ?? (self as Record<string, unknown>)[upper];
       if (self instanceof sj.Poly && (name === 'domain' || name === 'getDomain')) return (noKw(kw), new UFnClass(self.domain));
