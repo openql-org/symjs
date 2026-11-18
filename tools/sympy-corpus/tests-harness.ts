@@ -16,7 +16,8 @@ export interface TestCase extends Case {
 export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string }; phase?: 'input' | 'invoke' | 'result' };
 
 export function testCaseKey(c: TestCase): string {
-  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c)).digest('hex').slice(0, 20)}`;
+  // Replay state annotates an existing assertion without changing its ratchet identity.
+  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
 }
 
 // The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
@@ -24,7 +25,7 @@ export function passingModuleCases(shard: string, module: string): TestCase[] {
   const gaps: { cases: string[] } = JSON.parse(readFileSync(new URL('./tests-known-gaps.json', import.meta.url), 'utf8'));
   const failing = new Set(gaps.cases);
   const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${shard}.json`, import.meta.url), 'utf8'));
-  return cases.filter((c) => c.module === module && !failing.has(testCaseKey(c)));
+  return cases.filter((c) => c.module === module && !c.exclusion && !failing.has(testCaseKey(c)));
 }
 
 // Python ValueError/ZeroDivisionError correspond to range violations in JS.
@@ -77,6 +78,7 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
 }
 
 export function runTestCase(c: TestCase): TestOutcome {
+  if (c.exclusion) return { status: 'unsupported', reason: c.exclusion };
   // Upstream tests inject exact random draws through a private keyword. The
   // public JS methods have no such input; dropping it would measure a random
   // experiment instead of the captured assertion.

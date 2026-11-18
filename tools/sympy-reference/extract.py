@@ -757,7 +757,80 @@ def callback_expr(callback, variable):
     raise Unsupported("Transform callback")
 
 
+def custom_class_reason(o):
+    """Identify test-defined behavior which a class name cannot reproduce."""
+    cls = o if isinstance(o, type) else type(o)
+    for base in getattr(cls, "__mro__", ()):
+        if ".tests." in (getattr(base, "__module__", "") or ""):
+            return f"Python test class {base.__module__}.{base.__qualname__} requires Python method execution"
+    return None
+
+
 def ser(o):
+    """Keep an explicit marker when legacy serialization erases custom behavior."""
+    reason = custom_class_reason(o)
+    try:
+        tree = _ser(o)
+    except Unsupported as error:
+        if reason:
+            raise Unsupported(reason) from error
+        raise
+    if reason:
+        tree["unsupportedClass"] = reason
+    return tree
+
+
+def tensor_state(values):
+    """Snapshot head components, metrics and special metric-head signatures from inputs."""
+    from sympy.tensor.tensor import TensorHead, TensorIndexType, TensorIndex, Tensor
+    from sympy.tensor.tensor import _tensor_data_substitution_dict as state
+    heads, types, seen = set(), set(), set()
+    signatures = {}
+    def visit(value):
+        if id(value) in seen:
+            return
+        seen.add(id(value))
+        if isinstance(value, TensorHead):
+            heads.add(value)
+            for index_type in value.index_types:
+                visit(index_type)
+        elif isinstance(value, TensorIndexType):
+            types.add(value)
+        elif isinstance(value, dict):
+            for key, item in value.items():
+                visit(key)
+                visit(item)
+        elif isinstance(value, (tuple, list)):
+            for item in value:
+                visit(item)
+        elif isinstance(value, sympy.Basic):
+            if isinstance(value, Tensor):
+                signatures.setdefault(value.component, tuple(i.is_up for i in value.get_indices()))
+            for item in value.args:
+                visit(item)
+    visit(values)
+    entries = []
+    for index_type in sorted(types, key=str):
+        metric = state._substitutions_dict.get(index_type)
+        if metric is not None:
+            # Ordinary heads lower indices with the stored metric. Special metric
+            # heads keep their independently stored signature instead.
+            entries.append([ser(index_type), ser(metric)])
+            heads.add(index_type.metric)
+    for head in sorted(heads, key=str):
+        signature = signatures.get(head, (True,) * len(head.index_types))
+        data = state._substitutions_dict_tensmul.get((head,) + signature)
+        if data is None:
+            signature = (True,) * len(head.index_types)
+            data = state._substitutions_dict.get(head)
+        if data is None:
+            continue
+        indices = [TensorIndex(f"component_{i}", t, signature[i]) for i, t in enumerate(head.index_types)]
+        entries.append([ser(Tensor(head, indices)), ser(data)])
+    return entries
+
+
+def _ser(o):
     """Serialize a SymPy object (or Python value) into a JSON tree."""
     from sympy import Float, Integer, Rational, Symbol, Tuple
     from sympy.core.relational import Relational

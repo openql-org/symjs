@@ -578,3 +578,40 @@ it('rejects Python list multiplication by a DomainMatrix', () => {
   if (!test) throw new TypeError('missing domain matrix multiplication reference');
   expect(runTestCase(test)).toEqual({ status: 'pass' });
 });
+
+it('replays captured tensor components through public array replacements without leaking state', () => {
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1' });
+  const type: Tree = { t: 'TensorIndexType', name: 'Captured', dim: integer(2), dummyName: 'C' };
+  const index = (name: string, up = true): Tree => ({ t: 'TensorIndex', name, type, up });
+  const head: Tree = { t: 'TensorHead', name: 'A', types: [type], symmetry: { t: 'TensorSymmetry', rank: 1, sign: 0 } };
+  const tensor = (up = true): Tree => ({ t: 'Tensor', head, indices: [index('i', up)] });
+  const array = (values: number[], shape: number[]): Tree => ({ t: 'NDimArray', cls: 'ImmutableDenseNDimArray', flat: values.map(integer), shape });
+  const tensorData: [Tree, Tree][] = [
+    [type, array([1, 0, 0, -1], [2, 2])],
+    [{ t: 'Tensor', head, indices: [index('component_0')] }, array([2, 3], [2])],
+  ];
+  const c: TestCase = { ...base, category: 'tensor', fn: '.__getitem__', self: tensor(false), args: [integer(1)], tensorData, expected: '-3' };
+  expect(runTestCase(c)).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, tensorData: [[type, integer(2)]] })).toEqual({ status: 'unsupported', reason: 'invalid tensor replacement state' });
+  expect(runTestCase({ ...c, fn: '.__pow__' })).toEqual({ status: 'unsupported', reason: 'legacy tensor norm powers are not exposed by the public tensor API' });
+  expect(testCaseKey(c)).toBe(testCaseKey({ ...c, tensorData: undefined }));
+  expect(runTestCase({ ...c, tensorData: undefined }).status).toBe('unsupported');
+  expect(runTestCase({ ...c, fn: '.data', args: [], expected: '[2, -3]' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.get_matrix', args: [], expected: 'Matrix([[2], [-3]])' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.__call__', self: head, args: [index('i')], post: 'list', expected: '[2, 3]' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.data', self: { t: 'TensMul', args: [tensor(), tensor(false)] }, args: [], expected: '-5' })).toEqual({ status: 'pass' });
+  const metric: Tree = { t: 'Tensor', head: { t: 'TensorHead', name: 'metric', types: [type, type], symmetry: { t: 'TensorSymmetry', rank: 2, sign: 1 } }, indices: [index('i'), index('j', false)] };
+  const identity: Tree = { t: 'Matrix', rows: [[integer(1), integer(0)], [integer(0), integer(1)]], shape: [2, 2] };
+  expect(runTestCase({ ...c, self: metric, args: [{ t: 'Tuple', items: [integer(1), integer(1)] }], tensorData: [[type, array([1, 2, 2, 3], [2, 2])], [metric, identity]], expected: '1' })).toEqual({ status: 'pass' });
+  const changed: [Tree, Tree][] = [[type, array([1, 0, 0, -1], [2, 2])], [{ t: 'Tensor', head, indices: [index('component_0')] }, array([5, 7], [2])]];
+  expect(runTestCase({ ...c, tensorData: changed, expected: '-7' })).toEqual({ status: 'pass' });
+  expect(runTestCase(c)).toEqual({ status: 'pass' });
+});
+
+it('records Python class exclusions without treating them as successful assertions or changing identity', () => {
+  const reason = 'Python test class sympy.core.tests.test_fixture.Local requires Python method execution';
+  const c = { ...base, exclusion: reason, args: [{ ...base.args?.[0], t: 'Rational', unsupportedClass: reason }] };
+  expect(runTestCase(c)).toEqual({ status: 'unsupported', reason });
+  expect(() => deserialize({ t: 'Rational', p: '1', q: '1', unsupportedClass: reason })).toThrow(reason);
+  expect(testCaseKey(c)).toBe(testCaseKey(base));
+});
