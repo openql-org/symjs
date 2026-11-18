@@ -34,6 +34,8 @@ import {
 } from './matexpr';
 import { isInt, same, sameList } from './util';
 import { at, first } from '../../core/guard';
+import { FactorizationNode } from './misc';
+import { DFTNode } from './funcmatrix';
 
 /** Names of the matrix predicates (SymPy Q.<name>). */
 export type MatrixPredicateName =
@@ -133,6 +135,8 @@ function askPred(name: MatrixPredicateName, m: Expr, as: readonly MatrixPredicat
   if (!(m instanceof MatrixExpr)) return false;
   const a = assumed(name, m, as);
   if (a !== 'unknown') return a;
+  if (m instanceof FactorizationNode && m.predicates.includes(name)) return true;
+  if (name === 'unitary' && m instanceof DFTNode) return true;
   switch (name) {
     case 'square':
       return m.isSquare;

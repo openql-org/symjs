@@ -414,7 +414,7 @@ export class Matrix {
    */
   charpolyCoeffs(): Expr[] {
     if (!this.isSquare) throw new NonSquareMatrixError('charpoly: matrix must be square');
-    return berkowitz(this);
+    return berkowitz(this).map(simplify);
   }
 
   /** Characteristic polynomial det(λI - A) as an expression in `lambda`. */
@@ -725,8 +725,12 @@ export class Matrix {
   /** SymPy is_symmetric(simplify=True): equal to its transpose (the differences simplified unless `simplify` is false). */
   isSymmetric(simplifyEntries = true): boolean {
     if (!this.isSquare) return false;
-    const d = this.sub(this.transpose());
-    return d.data.every((e) => isZeroE(simplifyEntries ? simplify(e) : e));
+    for (let i = 0; i < this.rows; i++) for (let j = i + 1; j < this.cols; j++) {
+      const a = this.get(i, j);
+      const b = this.get(j, i);
+      if (simplifyEntries ? !isZeroE(simplify(add(a, mul(-1, b)))) : !a.equals(b)) return false;
+    }
+    return true;
   }
   /**
    * SymPy is_anti_symmetric(simplify=True): equal to minus its transpose;
