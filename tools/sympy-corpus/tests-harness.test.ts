@@ -14,6 +14,28 @@ const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'cor
   test: 'test_fixture', line: 1, src: 'assert Integer(1) == 1', fn: 'Integer',
   args: [{ t: 'Rational', p: '1', q: '1' }], kwargs: {}, expected: '1', op: '==' };
 
+it('translates nested containers, lambda syntax and numeric constructor arguments', () => {
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const text = (v: string): Tree => ({ t: 'Str', v });
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const tuple: Tree = { t: 'Tuple', items: [x, { t: 'Tuple', items: [x, integer(1)] }] };
+  const cases: Partial<TestCase>[] = [
+    { fn: 'sympify', args: [{ t: 'Tuple', list: true, items: [text('1'), { t: 'Tuple', list: true, items: [text('2')] }] }], expected: '[1, [2]]' },
+    { fn: 'sympify', args: [{ t: 'Dict', items: [[text('x'), text('2')]] }], expected: '{x: 2}' },
+    { fn: 'sympify', args: [text('lambda x, y: 2*x+y')], expected: 'Lambda((x, y), 2*x + y)' },
+    { fn: 'sympify', args: [text('lambda *args: args')], raises: 'SympifyError' },
+    { fn: 'Float', args: [{ t: 'Float', v: 0.125, py: true }], expected: '0.125000000000000' },
+    { fn: 'Integer', args: [{ t: 'Rational', p: '-7', q: '3' }], expected: '-2' },
+    { fn: '.subs', self: tuple, args: [x, integer(0)], expected: '(0, (0, 1))' },
+    { fn: '.atoms', self: tuple, args: [], expected: '{1, x}' },
+    { fn: '.get', self: { t: 'Dict', items: [[x, integer(1)]] }, args: [integer(5), text('missing')], expected: 'missing', text: true },
+    { fn: 'scaled_zero', args: [integer(7)], expected: '(([0], 1, 7, 1), -1)' },
+    { fn: 'scaled_zero', args: [{ t: 'Tuple', items: [integer(1), integer(5), integer(1), integer(3)] }], raises: 'ValueError' },
+    { fn: '.__call__', self: x, args: [integer(1)], raises: 'TypeError' },
+  ];
+  for (const c of cases) expect(runTestCase({ ...base, ...c }), String(c.fn)).toEqual({ status: 'pass' });
+});
+
 it('preserves extrema calls and distribution arguments when translating Python attributes', () => {
   const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
   const x = { t: 'Symbol', name: 'x', assume: {} };

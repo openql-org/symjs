@@ -27,6 +27,7 @@ import { constantCount, solvesOdeSystem } from './ode-checks';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../../packages/symjs/src';
 import { latexEscape } from '../../packages/symjs/src/printing/latex';
 import { Fn, headName } from '../../packages/symjs/src/core/nodes';
+import { orderedValues } from '../../packages/symjs/src/utilities/values';
 
 // ---------------------------------------------------------------------------
 // Python-like containers for formatting results
@@ -1791,7 +1792,7 @@ function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown
   if (chop !== undefined) opts.chop = typeof chop === "boolean" ? chop : asExpr(chop).toNumber();
   if (self instanceof Matrix) return self.evalf(n, opts);
   if (self instanceof sj.AlgebraicNumber) return self.asExpr().evalf(n, opts);
-  return asExpr(self).evalf(n, opts);
+  return (typeof self === 'string' ? sj.parse(self) : asExpr(self)).evalf(n, opts);
 }
 
 function toQuery(v: unknown): sj.Query {
@@ -2002,7 +2003,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     const d = args[1] ?? kw['dps'];
     const dps = d === undefined ? undefined : typeof d === 'string' ? (d as '') : intArg(d);
     const precision = kw['precision'] !== undefined ? intArg(kw['precision']) : undefined;
-    if (typeof num === 'string' || num instanceof Expr) return sj.float(num, dps, precision);
+    if (num instanceof JsFloat) return sj.float(num.v, dps, precision);
+    if (typeof num === 'string' || typeof num === 'number' || num instanceof Expr) return sj.float(num, dps, precision);
     throw new Unsupported('Float argument');
   },
   // ---- core constructors
@@ -2085,6 +2087,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsTuple([sj.Rational.of(e), t]);
   },
   Symbol: (args, kw) => {
+    if (typeof args[0] !== 'string') throw new TypeError('Symbol requires a string name');
     const a: Record<string, boolean> = {};
     for (const [k, v] of Object.entries(kw)) {
       if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative'].includes(k) || v !== true) throw new Unsupported(`Symbol ${k}`);
@@ -2259,6 +2262,15 @@ export const ADAPTERS: Record<string, Adapter> = {
       return sj.parse(v, { ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(kw['convert_xor'] === false ? { convertXor: false } : {}), ...(symbols ? { symbols } : {}) });
     }
     if (typeof v === 'string') {
+      if (['False', 'None', 'True'].includes(v)) return v === 'None' ? null : v === 'True';
+      if (['if', 'else', 'elif', 'for', 'while', 'lambda', 'def', 'class', 'return', 'import', 'from', 'try', 'except', 'finally', 'with', 'as', 'pass', 'break', 'continue', 'raise', 'yield', 'global', 'nonlocal', 'assert', 'del', 'in', 'is', 'and', 'or', 'not', 'async', 'await'].includes(v.trim())) throw new sj.SympifyError('invalid Python expression', v);
+      const lambda = /^lambda\s*([^:]*):\s*(.+)$/.exec(v.trim());
+      if (lambda) {
+        const names = lambda[1]!.trim();
+        if (names && !/^[A-Za-z_]\w*(?:\s*,\s*[A-Za-z_]\w*)*$/.test(names)) throw new sj.SympifyError('invalid lambda parameters', v);
+        const vars = names === '' ? [] : names.split(',').map((name) => new Sym(name.trim()));
+        return sj.Lambda(vars, sj.parse(lambda[2]!));
+      }
       if (kw['rational'] === true) {
         // decimal literals become exact rationals
         return sj.parse(v.replace(/\d*\.\d+(?:[eE][+-]?\d+)?/g, (m) => `(${sj.str(sj.rationalFromString(m))})`));
@@ -2282,7 +2294,12 @@ export const ADAPTERS: Record<string, Adapter> = {
       }
       return sj.parse(v);
     }
-    if (v instanceof JsTuple) return new JsList(v.items.map((i) => (typeof i === 'string' ? sj.parse(i) : asExpr(i))));
+    const convert = (x: unknown): unknown => ADAPTERS['sympify']!([x], {});
+    if (v instanceof JsTuple) return v.isList ? new JsList(v.items.map(convert)) : new JsTuple(v.items.map(convert));
+    if (v instanceof JsList) return new JsList(v.items.map(convert));
+    if (v instanceof JsDict) return new JsDict(v.entries.map(([k, x]) => [convert(k), convert(x)]));
+    if (v instanceof JsSet) return sj.finiteSet(...v.items.map((x) => asExpr(convert(x))));
+    if (v instanceof UFnClass) return v;
     return asExpr(v);
   },
   S: (args, kw) => ADAPTERS['sympify']!(args, kw),
@@ -2296,7 +2313,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   Integer: (args, kw) => {
     noKw(kw);
     const v = args[0];
-    if (typeof v === 'string') return sj.Rational.of(BigInt(v));
+    if (typeof v === 'string') return sj.Rational.of(BigInt(v.replace(/ /g, '')));
     const e = asExpr(v);
     if (e instanceof sj.Float) return sj.Rational.of(BigInt(Math.trunc(e.value)));
     if (!(e instanceof sj.Rational && e.isInteger)) throw new Unsupported('Integer');
@@ -2785,7 +2802,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   int_valued: (args, kw) => (noKw(kw), sj.intValued(args[0])),
   igcdex: (args, kw) => (noKw(kw), sj.igcdex((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
   isqrt: (args, kw) => (noKw(kw), sj.isqrt(args[0] as sj.Rational)),
-  ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),
+  ilcm: (args, kw) => {
+    noKw(kw);
+    if (args.length < 2) throw new TypeError('ilcm requires at least two arguments');
+    return sj.Rational.of(sj.ilcm(...args.map(integerBigArg)));
+  },
   integer_nthroot: (args, kw) => {
     noKw(kw);
     const [r, ok] = sj.integerNthroot(integerBigArg(args[0]), integerBigArg(args[1]));
@@ -3910,7 +3931,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.conjugate': exprMethod(sj.conjugate),
   '.subs': (args, kw, self0) => {
     // a SymPy Tuple substitutes like any expression
-    const self = self0 instanceof JsTuple && !self0.isList ? sj.Tuple(...self0.items.map(asExpr)) : self0;
+    const self = self0 instanceof JsTuple && !self0.isList ? expressionContainer(self0) : self0;
     const simultaneous = Boolean(kw['simultaneous']);
     for (const k of Object.keys(kw)) if (k !== 'simultaneous') throw new Unsupported(`kwargs ${k}`);
     if (simultaneous) {
@@ -4207,7 +4228,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (args.some((a) => a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass)) {
       return new JsSet(sj.find(asExpr(self), pred));
     }
-    return new JsSet(sj.atoms(asExpr(self), pred));
+    return new JsSet(sj.atoms(self instanceof JsTuple ? expressionContainer(self) : asExpr(self), pred));
   },
   '.as_ordered_terms': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'order') throw new Unsupported(`kwargs ${k}`);
@@ -5401,6 +5422,7 @@ function plain(v: unknown): unknown {
 function pyEquals(a0: unknown, b0: unknown): boolean {
   const a = plain(a0);
   const b = plain(b0);
+  if (a instanceof TypeRef && b instanceof TypeRef) return a.name === b.name;
   if (a instanceof Set && b instanceof Set) return a.size === b.size && [...a].every((x) => [...b].some((y) => pyEquals(x, y)));
   if (a instanceof Map && b instanceof Map) return a.size === b.size && [...a].every(([k, x]) => [...b].some(([l, y]) => pyEquals(k, l) && pyEquals(x, y)));
   if (a instanceof sj.GeometryEntity && b instanceof sj.GeometryEntity) return a.key === b.key;
@@ -5408,6 +5430,7 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
   if (a instanceof sj.OrdinalNode && !(b instanceof sj.OrdinalNode) && typeof b !== 'number' && typeof b !== 'bigint') return false;
   if (a instanceof sj.OmegaPowerNode && !(b instanceof sj.OmegaPowerNode) && typeof b !== 'number' && typeof b !== 'bigint') return false;
   if (a instanceof sj.Poly) return (b instanceof sj.Poly || isScalar(b)) && a.eq(b);
+  if (a instanceof Expr && b instanceof Expr) return a.equals(b);
   if (a instanceof Expr && !isScalar(b)) return false;
   const r = callMethod(a, ['equals', 'eq'], [b]);
   if (r !== undefined) return r.value === true || (r.value instanceof Expr && String(r.value) === 'True');
@@ -5769,6 +5792,94 @@ function fromPolyAdapter(args: unknown[], kw: Record<string, unknown>, self?: un
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.fn === 'ordered') return (args, kw) => {
+    for (const name of Object.keys(kw)) if (!['keys', 'default', 'warn'].includes(name)) throw new Unsupported(`ordered ${name}`);
+    const sequence = toJs(args[0], false);
+    if (!Array.isArray(sequence)) throw new TypeError('ordered requires a sequence');
+    const key = kw['keys'] ?? args[1];
+    if (key !== undefined && key !== null) throw new Unsupported('ordered key');
+    return fromJs(orderedValues(sequence, undefined, kw['default'] !== false));
+  };
+  if (c.fn === 'kernS') return (args, kw) => {
+    noKw(kw);
+    const convert = (value: unknown): unknown => {
+      if (value instanceof JsTuple) return value.isList ? new JsList(value.items.map(convert)) : new JsTuple(value.items.map(convert));
+      if (value instanceof JsList) return new JsList(value.items.map(convert));
+      if (typeof value !== 'string') throw new TypeError('kernS requires a string or sequence');
+      return sj.kernS(value);
+    };
+    return convert(args[0]);
+  };
+  if (c.fn === 'preorder_traversal') return (args, kw) => {
+    const keys = kw['keys'] ?? args[1];
+    if (keys instanceof JsFunc && keys.name !== 'default_sort_key') throw new Unsupported('traversal key');
+    const walk = (value: unknown): unknown[] => {
+      if (value instanceof JsTuple || value instanceof JsList) return [value, ...value.items.flatMap(walk)];
+      if (typeof value === 'string') return [value];
+      return [...sj.preorderTraversal(asExpr(value), keys instanceof JsFunc ? true : keys as boolean | undefined)];
+    };
+    return new JsList(walk(args[0]));
+  };
+  if (c.fn === 'scaled_zero') return (args, kw) => {
+    noKw(kw);
+    const value = args[0];
+    if (value instanceof JsTuple) {
+      if (value.items.length !== 4 || !(value.items[0] instanceof JsTuple || value.items[0] instanceof JsList)) throw new RangeError('expected a scaled zero tuple');
+      return new JsTuple(sj.scaledZero(toJs(value, true) as sj.ScaledZero));
+    }
+    const [zero, accuracy] = sj.scaledZero(intArg(value), args[1] === undefined ? 1 : intArg(args[1]));
+    return new JsTuple([new JsTuple([new JsList(zero[0]), ...zero.slice(1)]), accuracy]);
+  };
+  if (c.fn === 'Integer') return (args, kw) => {
+    noKw(kw);
+    const value = args[0];
+    if (typeof value === 'string') return sj.Rational.of(BigInt(value.replace(/ /g, '')));
+    const number = asExpr(value);
+    if (number instanceof sj.Rational) return sj.Rational.of(number.p / number.q);
+    if (number instanceof sj.Float) return sj.Rational.of(BigInt(Math.trunc(number.value)));
+    throw new TypeError('Integer requires a numeric argument');
+  };
+  if (c.fn === 'Symbol') return (args, kw) => {
+    if (typeof args[0] !== 'string') throw new TypeError('Symbol requires a string name');
+    return new Sym(args[0], kw);
+  };
+  if (c.fn === 'Rational') return (args, kw) => {
+    noKw(kw);
+    if (args.some((arg) => !(arg instanceof sj.Rational || arg instanceof sj.Float || typeof arg === 'string'))) throw new TypeError('Rational requires numeric arguments');
+    return ADAPTERS['Rational']!(args, kw);
+  };
+  if (c.fn === 'igcd' || c.fn === 'ilcm') return (args, kw) => {
+    noKw(kw);
+    if (args.length < 2) throw new TypeError('at least two integers required');
+    return (c.fn === 'igcd' ? sj.igcd : sj.ilcm)(...args.map(integerBigArg));
+  };
+  if (c.fn === 'uniquely_named_symbol') return (args, kw) => {
+    const name = args[0] instanceof JsTuple ? args[0].items as [string | Sym, Sym] : args[0] as string | Sym;
+    const expressions = args[1] instanceof JsTuple ? args[1].items.map(asExpr) : args[1] === undefined ? [] : asExpr(args[1]);
+    return sj.uniquelyNamedSymbol(name, expressions, kw);
+  };
+  if (c.fn === 'postorder_traversal') return (args, kw) => {
+    const node = (value: unknown): unknown => value instanceof JsTuple ? value.items.map(node) : value;
+    const keys = kw['keys'] ?? args[1];
+    if (keys instanceof JsFunc && keys.name !== 'default_sort_key') throw new Unsupported('traversal key');
+    return fromJs(sj.postorderTraversal(node(args[0]), keys instanceof JsFunc ? sj.defaultSortKey : keys as boolean | undefined));
+  };
+  if (c.fn === '.__call__' && c.self && (['Symbol', 'Rational', 'Float'].includes(c.self.t) || c.self.t === 'Fn' && c.self['name'] !== 'Lambda')) return () => {
+    throw new TypeError('expression is not callable');
+  };
+  if (c.fn === '.numerator' || c.fn === '.denominator') return (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.Rational)) throw new Unsupported('rational attribute');
+    return sj.Rational.of(c.fn === '.numerator' ? self.p : self.q);
+  };
+  if (c.self?.t === 'Dict' && ['.get', '.has'].includes(c.fn)) return (args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof JsDict)) throw new Unsupported('dictionary');
+    const dict = expressionContainer(self) as sj.Dict;
+    if (c.fn === '.has') return args.some((arg) => dict.has(asExpr(arg)));
+    const key = typeof args[0] === 'string' ? sj.parse(args[0]) : asExpr(args[0]);
+    return dict.containsKey(key) ? dict.get(key) : args[1] ?? null;
+  };
   if (c.fn === '.func' && c.self?.t === 'Fn' && c.self['name'] === 'IdentityFunction') {
     return () => sj.Id;
   }
@@ -6479,6 +6590,7 @@ function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets
   if (post === 'str') return typeof value === 'string' ? value : fmt(withBrackets(value, brackets));
   if (post === 'repr') return fmtItem(withBrackets(value, brackets));
   if (post === 'len') {
+    if (value instanceof sj.Dict) return value.size;
     if (value instanceof sj.NDimArray) return value.length;
     if (value instanceof sj.Range) return value.size;
     if (value instanceof sj.FiniteSet) return value.args.length;

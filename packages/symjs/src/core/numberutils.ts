@@ -35,7 +35,7 @@ export function rationalFromFloat(v: number): Rational {
 
 /** Exact rational from a decimal string, e.g. '1.23' -> 123/100, '1e-2' -> 1/100, '1e-2/3.2' -> 1/320. */
 export function rationalFromString(s0: string): Rational {
-  const s = s0.trim();
+  const s = s0.trim().replace(/ /g, '');
   const slash = s.indexOf('/');
   if (slash >= 0) {
     const a = rationalFromString(s.slice(0, slash));
@@ -95,7 +95,8 @@ export function expandSymbolNames(spec: string): string[] {
   const literal = (t: string) => literals.reduce((acc, [c, l]) => acc.split(c).join(l), t);
   names = names.trim();
   if (names.endsWith(',')) names = names.slice(0, -1).trimEnd();
-  if (!names) return [];
+  if (!names) throw new RangeError('no symbols given');
+  if (names.split(',').some((name) => !name.trim())) throw new RangeError('missing symbol');
   const parts = names
     .split(',')
     .map((n) => n.trim())

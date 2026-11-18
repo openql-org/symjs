@@ -36,6 +36,7 @@ function decimalIsInteger(s: string): boolean {
  * - `precision` gives the binary precision instead of `dps`.
  */
 export function float(num: number | bigint | string | Expr, dpsIn?: number | '', precision?: number): Expr {
+  if (dpsIn !== undefined && precision !== undefined) throw new RangeError('Both decimal and binary precision supplied');
   let dps = dpsIn;
   let n: number | string | Expr = typeof num === 'bigint' ? String(num) : num;
   if (n instanceof Rational && n.isInteger) n = String(n.p);
@@ -47,7 +48,7 @@ export function float(num: number | bigint | string | Expr, dpsIn?: number | '',
     else if (t === 'inf' || t === '+inf') return S.Infinity;
     else if (t === '-inf') return S.NegativeInfinity;
     else if (t === 'nan') return S.NaN;
-    if (!/^[+-]?(\d[\d_]*)?(\.(\d[\d_]*)?)?(e[+-]?\d+)?$/.test(t) || !/\d/.test(t)) {
+    if (!/^[+-]?(\d(?:_?\d)*)?(\.(\d(?:_?\d)*)?)?(e[+-]?\d+)?$/.test(t) || !/\d/.test(t)) {
       throw new SyntaxError(`string-float not recognized: ${n}`);
     }
     n = t;
