@@ -43,6 +43,10 @@ export {
   validateMatMul,
   mergeExplicitMatAdd,
   mergeExplicitMatMul,
+  anyZeros,
+  removeIds,
+  combinePowers,
+  factorInFront,
   onlySquares,
   toExpr as sympifyMatrix,
 } from './matexpr';

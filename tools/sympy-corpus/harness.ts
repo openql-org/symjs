@@ -395,6 +395,19 @@ function matches0(v: unknown, expected: string, got: string): boolean {
     } catch { /* A specialized coefficient domain uses the ordinary comparison. */ }
   }
   if (v instanceof sj.DMP && expected.startsWith('DMP_Python(')) return matches(new sj.DMPJs(v.rep, v.dom), expected);
+  if (v instanceof sj.Poly && /^(?:Pure)?Poly\(/.test(expected)) {
+    const pure = expected.startsWith('PurePoly(');
+    const body = expected.slice(expected.indexOf('(') + 1, -1);
+    const items = topLevelItems(`(${body})`);
+    if (items.length >= 2) {
+      try {
+        const other = sj.Poly.from(sj.parse(items[0]!), [sj.parse(items[1]!)], { pure });
+        if (v.eq(other)) return true;
+      } catch {
+        // Fall through to printed comparison for unsupported polynomial syntax.
+      }
+    }
+  }
   if (v instanceof sj.DMPJs) {
     const match = /^DMP_Python\((\[.*\]), (ZZ|QQ)\)$/.exec(expected);
     if (match) {
@@ -1329,6 +1342,8 @@ export function deserialize(tree: Tree): unknown {
       return new sj.SingleODEProblem(deserialize(tree['eq'] as Tree) as Expr, deserialize(tree['func'] as Tree) as sj.UndefFn, deserialize(tree['sym'] as Tree) as Sym);
     case 'SingleODESolver': {
       const problem = deserialize(tree['problem'] as Tree) as sj.SingleODEProblem;
+      if (tree['cls'] === 'SingleODESolver') return new sj.SingleODESolver(problem);
+      if (tree['cls'] === 'FirstLinear') return new sj.FirstLinear(problem);
       if (tree['cls'] === 'NthAlgebraic') return new sj.NthAlgebraic(problem);
       throw new Unsupported(`ODE solver ${String(tree['cls'])}`);
     }
@@ -1779,6 +1794,11 @@ function rootsDict(rs: Expr[]): JsDict {
 }
 
 function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
+  if (!rest.length) {
+    const fs = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
+    if (fs.length !== 1) throw new Unsupported('diff variable');
+    return evaluate ? sj.diff(e, fs[0]!) : sj.derivative(e, [[fs[0]!, 1]]);
+  }
   const differentiate = (expression: Expr, variable: Expr, order = 1): Expr => evaluate
     ? sj.diff(expression, variable, order) : sj.derivative(expression, [[variable, order]]);
   if (!evaluate) {
@@ -1793,11 +1813,6 @@ function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
       }
     }
     return sj.derivative(e, variables);
-  }
-  if (!rest.length) {
-    const fs = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
-    if (fs.length !== 1) throw new Unsupported('diff variable');
-    return differentiate(e, fs[0]!);
   }
   let out = e;
   for (let i = 0; i < rest.length; i++) {
@@ -1855,6 +1870,11 @@ function expandHints(kw: Record<string, unknown>): sj.ExpandHints {
   // wrt (the variable of the diracdelta hint) is an expression
   return Object.fromEntries(Object.entries(kw).map(([k, v]) => [k, k === 'wrt' || k === 'modulus' ? v : Boolean(v)])) as sj.ExpandHints;
 }
+
+const invertEquationAdapter: Adapter = (args, kw) => {
+  for (const k of Object.keys(kw)) if (k !== 'integer_power') throw new Unsupported(`kwargs ${k}`);
+  return new JsTuple(sj.invertEquation(asExpr(args[0]), args.slice(1).map(asSym), { integerPower: Boolean(kw['integer_power']) }));
+};
 
 function asOrdered(e: Expr): Expr[] {
   return sj.orderedTerms(e);
@@ -1992,6 +2012,16 @@ function relationArgs(args: unknown[], kw: Record<string, unknown>, op: string):
 }
 
 export const ADAPTERS: Record<string, Adapter> = {
+  checkodesol: (args, kw) => {
+    const [ode, sol] = args;
+    if (ode instanceof JsTuple || ode instanceof JsList) {
+      const [ok, residuals] = sj.checksysodesol(asExprList(ode), asExprList(sol));
+      return new JsTuple([ok, new JsList(residuals)]);
+    }
+    const func = args[2] ?? kw['func'];
+    if (sol instanceof JsTuple || sol instanceof JsList) return new JsList(sj.checkodesol(asExpr(ode), asExprList(sol), func == null ? undefined : asExpr(func)).map((row) => new JsTuple(row)));
+    return new JsTuple(sj.checkodesol(asExpr(ode), asExpr(sol), func == null ? undefined : asExpr(func)));
+  },
   checksysodesol: (args, kw) => {
     noKw(kw);
     const solutions = args[1];
@@ -2004,7 +2034,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (funcs !== undefined && !funcs.every((f): f is sj.UndefFn => f instanceof sj.UndefFn)) throw new TypeError('expected dependent functions');
     const ics = kw['ics'];
     if (ics !== undefined && !(ics instanceof JsDict)) throw new TypeError('expected initial conditions mapping');
-    return fromJs(sj.dsolveSystem(asExprList(args[0]), funcs, args[2] === undefined && kw['t'] === undefined ? undefined : asSym(args[2] ?? kw['t']), ics instanceof JsDict ? new Map(ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)])) : undefined));
+    return fromJs(sj.dsolveSystem(asExprList(args[0]), funcs, args[2] === undefined && kw['t'] === undefined ? undefined : asSym(args[2] ?? kw['t']), ics instanceof JsDict ? new Map(ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)])) : undefined, { simplify: kw['simplify'] !== false, doit: kw['doit'] !== false }));
   },
   linear_ode_to_matrix: (args, kw) => {
     noKw(kw);
@@ -2018,8 +2048,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const matrix = args[0];
     if (!(matrix instanceof Matrix)) throw new TypeError('expected a matrix');
     if (args[1] === undefined) return sj.matrixExp(matrix);
-    const z = new sj.Dummy('lambda');
-    return sj.analyticFunc(matrix, sj.exp(sj.mul(asExpr(args[1]), z)), z);
+    return sj.odeMatrixExp(matrix, asSym(args[1]));
   },
   power_representation: (args, kw) => fromJs(sj.powerRepresentation(asExpr(args[0]), asExpr(args[1]), asExpr(args[2]), { zeros: (kw['zeros'] ?? args[3]) === true })),
   sum_of_squares: (args, kw) => fromJs(sj.sumOfSquares(asExpr(args[0]), asExpr(args[1]), { zeros: (kw['zeros'] ?? args[2]) === true })),
@@ -2620,8 +2649,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       const r = ps[0]!.invert(ps[1]!);
       return (kw['polys'] === undefined ? asPolys : Boolean(kw['polys'])) ? r : r.asExpr();
     }
-    for (const k of Object.keys(kw)) if (k !== 'integer_power') throw new Unsupported(`kwargs ${k}`);
-    return new JsTuple(sj.invertEquation(asExpr(args[0]), args.slice(1).map(asSym), { integerPower: Boolean(kw['integer_power']) }));
+    return invertEquationAdapter(args, kw);
   },
   '.invert': (args, kw, self) => {
     noKw(kw);
@@ -3087,7 +3115,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.expand(asExpr(args[0]), expandHints(kw));
   },
   numer_expand: (args, kw) => sj.expand(asExpr(args[0]), { ...expandHints(kw), numer: true }),
-  expand_mul: exprFn(sj.expand_mul),
+  expand_mul: (args, kw) => (noKw(kw), args[0] instanceof Matrix ? args[0].map(sj.expand_mul) : sj.expand_mul(asMatrixExpression(args[0]))),
   expand_multinomial: exprFn(sj.expand_multinomial),
   expand_log: (args, kw) => sj.expand_log(asExpr(args[0]), Boolean(kw['force'])),
   expand_power_exp: exprFn((e) => sj.expand_power_exp(e)),
@@ -3467,9 +3495,11 @@ export const ADAPTERS: Record<string, Adapter> = {
       const targets = (args[1] instanceof JsTuple || args[1] instanceof JsList || args[1] instanceof JsSet ? args[1].items : args.slice(1)).map(asExpr);
       const syms = targets;
       const back = (v: Expr) => v;
-      // like SymPy, equations free of the requested symbols are dropped
+      // SymPy drops equations that are independent of the requested unknowns.
       if (!first.items.length || first.items.some((v) => v === false || v instanceof sj.BoolAtom && !v.value)) return new JsList([]);
-      const eqs = first.items.filter((v) => v !== true && !(v instanceof sj.BoolAtom)).map((e) => sj.asEquation(asExprOrPoly(e))).filter((e) => !syms.length || syms.some((s) => e.has(s)));
+      const compound = syms.filter((s) => !(s instanceof Sym)).map((s, i) => [s, new sj.Dummy(`unknown${i}`)] as const);
+      const dependsOnTarget = (e: Expr): boolean => !syms.length || syms.some((s) => e.has(s)) || compound.some(([target, dummy]) => sj.subs(e, [[target, dummy]]).has(dummy));
+      const eqs = first.items.filter((v) => v !== true && !(v instanceof sj.BoolAtom)).map((e) => sj.asEquation(asExprOrPoly(e))).filter(dependsOnTarget);
       const vars = syms.length ? syms : allSymbols(eqs);
       if (!eqs.length || !vars.length) return new JsList([]);
       if (vars.every((v) => v instanceof Sym) && isLinearSystem(eqs, vars)) {
@@ -3736,10 +3766,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const a = args[0];
     if (a instanceof Matrix) return a;
+    if (a instanceof sj.MatrixExpr) return a.asExplicit();
+    if (a instanceof JsList) return ADAPTERS['Matrix']!([new JsTuple(a.items), ...args.slice(1)], kw);
     if (a instanceof JsTuple && a.items.every((r) => r instanceof JsTuple)) {
-      return Matrix.of(a.items.map((r) => (r as JsTuple).items.map((x) => (x instanceof Matrix ? x : asExpr(x)))));
+      return Matrix.of(a.items.map((r) => (r as JsTuple).items.map((x) => (x instanceof Matrix ? x : x instanceof sj.MatrixExpr ? x.asExplicit() : asExpr(x)))));
     }
-    if (a instanceof JsTuple) return Matrix.of(a.items.map((x) => [x instanceof Matrix ? x : x instanceof sj.ImmutableMatrix ? x.matrix : asExpr(x)]));
+    if (a instanceof JsTuple) return Matrix.of(a.items.map((x) => [x instanceof Matrix ? x : x instanceof sj.MatrixExpr ? x.asExplicit() : asExpr(x)]));
     if (a === undefined) return Matrix.zeros(0, 0);
     if (a instanceof sj.Rational && args[1] instanceof sj.Rational && args[2] instanceof JsLambda) {
       const f = args[2];
@@ -3761,10 +3793,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   matrix_multiply_elementwise: (args, kw) => (noKw(kw), sj.multiplyElementwise(args[0] as Matrix, args[1] as Matrix)),
   '.diag': (args, kw, self) => {
     if (!(self instanceof TypeRef)) throw new Unsupported('diag on instance');
-    return ADAPTERS['diag']!(args, kw);
+    return ADAPTERS['diag']!([...args, self], kw);
   },
-  '.hstack': (args, kw, self) => typeMethod(self, 'Matrix', () => (args[0] as Matrix).hstack(...(args.slice(1) as Matrix[])), kw),
-  '.vstack': (args, kw, self) => typeMethod(self, 'Matrix', () => (args[0] as Matrix).vstack(...(args.slice(1) as Matrix[])), kw),
+  '.hstack': (args, kw) => (noKw(kw), args.length === 0 ? Matrix.zeros(0, 0) : (args[0] as Matrix).hstack(...(args.slice(1) as Matrix[]))),
+  '.vstack': (args, kw) => (noKw(kw), args.length === 0 ? Matrix.zeros(0, 0) : (args[0] as Matrix).vstack(...(args.slice(1) as Matrix[]))),
   '.jordan_block': (args, kw, self) => {
     if (!(self instanceof TypeRef)) throw new Unsupported('jordan_block');
     for (const k of Object.keys(kw)) if (!['size', 'eigenvalue', 'eigenval', 'band'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -3806,7 +3838,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.vee': matrixMethod((m) => Matrix.col(m.get(2, 1), m.get(0, 2), m.get(1, 0))),
   '.per': matrixMethod((m) => sj.permanent(m)),
   '.charpoly': matrixMethod((m, a) => {
-    const lam = a[0] instanceof Sym ? a[0] : new Sym('lambda');
+    const requested = a[0] instanceof Sym ? a[0].name : typeof a[0] === 'string' ? a[0] : 'lambda';
+    const names = new Set(m.data.flatMap((entry) => [...sj.freeSymbols(entry)]).filter((s): s is Sym => s instanceof Sym).map((s) => s.name));
+    let name = requested;
+    while (names.has(name)) name = `_${name}`;
+    const lam = new Sym(name);
     return sj.Poly.from(m.charpoly(lam), [lam], { pure: true });
   }),
   '.todok': matrixMethod((m) => {
@@ -3849,13 +3885,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.ones': (args, kw) => ADAPTERS['ones']!(args, kw),
   GramSchmidt: (args, kw) => {
     noKw(kw);
-    const vs = (args[0] as JsList).items.map((v) => v instanceof sj.ImmutableMatrix ? v.matrix : v) as Matrix[];
+    const values = args[0] instanceof sj.FiniteSet ? args[0].args : (args[0] as JsList).items;
+    const vs = values.map((v) => v instanceof sj.ImmutableMatrix ? v.matrix : v) as Matrix[];
     return new JsList(sj.GramSchmidt(vs, Boolean(args[1])));
   },
   hessian: (args, kw) => {
     noKw(kw);
     const vs = args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items.map(asExpr) : args[1] instanceof Matrix ? args[1].data : [asExpr(args[1])];
-    return sj.hessian(asExpr(args[0]), vs);
+    return sj.hessian(asExpr(args[0]), vs, args[2] === undefined ? [] : asExprList(args[2]));
   },
   wronskian: (args, kw) => (noKw(kw), sj.wronskian((args[0] as JsList).items.map(asExpr), asExpr(args[1]))),
   casoratian: (args, kw) => {
@@ -3900,22 +3937,31 @@ export const ADAPTERS: Record<string, Adapter> = {
     return Matrix.zeros(r!, c ?? r!);
   },
   diag: (args, kw) => {
-    const unpack = Boolean(kw['unpack']);
+    for (const k of Object.keys(kw)) if (!['strict', 'unpack', 'rows', 'cols'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const classCall = args[args.length - 1] instanceof TypeRef;
+    if (classCall) args = args.slice(0, -1);
+    const unpack = kw['unpack'] === undefined ? classCall : Boolean(kw['unpack']);
+    const strict = kw['strict'] === undefined ? !classCall && kw['unpack'] !== false : Boolean(kw['strict']);
+    if (unpack && args.length === 1 && (args[0] instanceof JsTuple || args[0] instanceof JsList)) args = [...args[0].items];
     const blocks: (Matrix | Expr)[] = [];
     for (const a of args) {
       if (a instanceof Matrix) blocks.push(a);
-      else if (a instanceof JsTuple) {
-        if (unpack && args.length === 1) a.items.forEach((x) => blocks.push(asExpr(x)));
-        else if (a.items.every((r) => r instanceof JsTuple)) {
-          // SymPy pads ragged rows with zeros
-          const rows = a.items.map((r) => (r as JsTuple).items.map(asExpr));
+      else if (a instanceof JsTuple || a instanceof JsList) {
+        const nested = a.items.some((r) => r instanceof JsTuple || r instanceof JsList);
+        if (nested) {
+          if (strict && !a.items.every((r) => r instanceof JsTuple || r instanceof JsList)) throw new RangeError('Matrix is not a list of lists');
+          const rows = a.items.map((r) => r instanceof JsTuple || r instanceof JsList ? r.items.map(asExpr) : [asExpr(r)]);
           const w = Math.max(...rows.map((r) => r.length));
+          if (strict && rows.some((r) => r.length !== w)) throw new RangeError('Matrix is ragged');
           blocks.push(Matrix.of(rows.map((r) => [...r, ...Array.from({ length: w - r.length }, () => S.Zero)])));
         }
         else blocks.push(Matrix.col(...a.items.map(asExpr)));
       } else blocks.push(asExpr(a));
     }
-    return sj.blockDiag(...blocks);
+    return sj.blockDiagSized(blocks, {
+      ...(kw['rows'] === undefined ? {} : { rows: intArg(kw['rows']) }),
+      ...(kw['cols'] === undefined ? {} : { cols: intArg(kw['cols']) }),
+    });
   },
   limit: (args, kw) => {
     const dir = (kw['dir'] as string | undefined) ?? (typeof args[3] === 'string' ? (args[3] as string) : '+');
@@ -3983,7 +4029,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.aseries(asExpr(self), x, n, Boolean(kw['hir']));
   },
   classify_ode: (args, kw) => {
-    for (const key of Object.keys(kw)) if (key !== 'ics') throw new Unsupported(`kwargs ${key}`);
+    for (const key of Object.keys(kw)) if (!['ics', 'prep', 'dict'].includes(key)) throw new Unsupported(`kwargs ${key}`);
     const ics = kw['ics'];
     if (ics !== undefined && !(ics instanceof JsDict)) throw new TypeError('expected initial conditions mapping');
     const eq = asExpr(args[0]);
@@ -3998,7 +4044,12 @@ export const ADAPTERS: Record<string, Adapter> = {
       fx = [...found.values()][0];
     }
     if (!(fx instanceof sj.UndefFn)) throw new TypeError('expected a dependent function');
-    return new JsTuple(sj.classifyOde(eq, fx, ics instanceof JsDict ? { ics: ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)]) } : {}));
+    const hints = sj.classifyOde(eq, fx, ics instanceof JsDict ? { ics: ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)]) } : {});
+    if (kw['dict'] === true) {
+      if (hints.length) throw new Unsupported('ODE solver hint dictionary');
+      return new JsDict([['order', sj.odeOrder(eq, fx)], ['default', null], ['ordered_hints', new JsTuple([])]]);
+    }
+    return new JsTuple(hints);
   },
   line_integrate: (args, kw) => (noKw(kw), sj.lineIntegrate(asExpr(args[0]), args[1] as sj.Curve, (args[2] as JsList).items.map(asSym))),
   minimal_polynomial: (args, kw) => {
@@ -4365,6 +4416,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (kw['cset'] && kw['warn'] !== false && new Set(c.map((e) => e.key)).size !== c.length) throw new RangeError('repeated commutative arguments');
     return new JsList([kw['cset'] ? new JsSet(c) : new JsList(c), new JsList(nc)]);
   },
+  factor_in_front: (args, kw) => (noKw(kw), sj.factorInFront(asExpr(args[0]))),
+  remove_ids: (args, kw) => (noKw(kw), sj.removeIds(asExpr(args[0]))),
+  combine_powers: (args, kw) => (noKw(kw), sj.combinePowers(asExpr(args[0]))),
+  any_zeros: (args, kw) => (noKw(kw), sj.anyZeros(asExpr(args[0]))),
   '.xreplace': (args, kw, self) => {
     noKw(kw);
     const d = args[0];
@@ -4405,6 +4460,19 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
 
   // ---- ODEs
+  filldedent: (args, kw) => (noKw(kw), sj.filldedent(String(args[0]), args[1] === undefined ? 70 : intArg(args[1]))),
+  get_numbered_constants: (args, kw) => {
+    const eq = args[0];
+    if (eq === null) throw new RangeError('expected an expression or sequence');
+    const num = intArg(args[1] ?? kw['num'] ?? 1);
+    const cs = sj.getNumberedConstants(eq instanceof Expr ? eq : asExprList(eq), num, intArg(args[2] ?? kw['start'] ?? 1), String(args[3] ?? kw['prefix'] ?? 'C'));
+    return num === 1 ? cs[0] : new JsTuple(cs);
+  },
+  pdsolve: (args, kw) => {
+    const solvefun = kw['solvefun'] ?? args[3];
+    const func = args[1] ?? kw['func'];
+    return sj.pdsolve(asExpr(args[0]), func == null ? undefined : asExpr(func), String(kw['hint'] ?? args[2] ?? 'default'), solvefun instanceof UFnClass ? sj.SymFunction(solvefun.name) : undefined);
+  },
   rsolve_poly: (args, kw) => (noKw(kw), first0(sj.rsolvePoly((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
   rsolve_ratio: (args, kw) => (noKw(kw), first0(sj.rsolveRatio((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
   rsolve_hyper: (args, kw) => (noKw(kw), first0(sj.rsolveHyper((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
@@ -4432,6 +4500,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     const options: sj.DsolveOptions = {};
     if (ics instanceof JsDict) options.ics = ics.entries.map(([k, v]) => [asExpr(k), asExpr(v)]);
     if (kw['hint'] !== undefined || args[2] !== undefined) options.hint = String(kw['hint'] ?? args[2]);
+    if (kw['n'] !== undefined) options.n = intArg(kw['n']);
+    if (kw['x0'] !== undefined) options.x0 = asExpr(kw['x0']);
     if (kw['xi'] !== undefined) options.xi = asExpr(kw['xi']);
     if (kw['eta'] !== undefined) options.eta = asExpr(kw['eta']);
     return fromJs(sj.dsolve(eq, funcs, options));
@@ -4839,7 +4909,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.rref': (_args, kw, self) => {
     if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
     const test = kw['iszerofunc'];
-    const [r, p] = sj.rref(self, test instanceof JsLambda ? { iszerofunc: (e) => test.call(e) === S.true } : {});
+    const [r, p] = sj.rref(self, test instanceof JsLambda ? { iszerofunc: (e) => {
+      const value = test.call(e);
+      return value instanceof sj.BoolAtom && value.value;
+    } } : {});
     return kw['pivots'] === false ? r : new JsTuple([r, new JsTuple(p)]);
   },
   block_collapse: (args, kw) => (noKw(kw), sj.blockCollapse(expressionContainer(args[0]))),
@@ -4859,7 +4932,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.is_echelon': matrixMethod((m) => sj.isEchelon(m)),
   '.echelon_form': matrixMethod((m) => sj.echelonForm(m)),
-  '.rank': matrixMethod((m) => sj.rank(m)),
+  '.rank': (_args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    const zero = kw['iszerofunc'];
+    return sj.rank(self, zero instanceof JsLambda ? { iszerofunc: (e) => {
+      const value = zero.call(e);
+      return value instanceof sj.BoolAtom && value.value;
+    } } : {});
+  },
   '.nullspace': matrixMethod((m) => new JsList(sj.nullspace(m))),
   '.columnspace': matrixMethod((m) => new JsList(sj.columnspace(m))),
   '.rowspace': matrixMethod((m) => new JsList(sj.rowspace(m))),
@@ -4915,10 +4995,25 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.vech': (_args, kw, self) => sj.linalg.vech(self as Matrix, kw['diagonal'] === undefined ? true : Boolean(kw['diagonal'])),
   '.vec': matrixMethod((m) => sj.linalg.vec(m)),
   '.minor': matrixMethod((m, [i, j]) => sj.linalg.minorDet(m, Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
-  '.minor_submatrix': matrixMethod((m, [i, j]) => m.minor(Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
+  '.minor_submatrix': matrixMethod((m, [i, j]) => m.minorSubmatrix(intArg(i), intArg(j))),
   '.cofactor': matrixMethod((m, [i, j]) => sj.linalg.cofactor(m, Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
   '.cofactor_matrix': matrixMethod((m) => m.cofactorMatrix()),
-  '.is_anti_symmetric': (_args, kw, self) => fromJs(sj.linalg.isAntiSymmetric(self as Matrix, kw['simplify'] === undefined ? true : Boolean(kw['simplify']))),
+  '.is_anti_symmetric': (_args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    const simp = kw['simplify'];
+    if (simp instanceof JsLambda) {
+      if (!self.isSquare) return false;
+      let unknown = false;
+      for (let i = 0; i < self.rows; i++) for (let j = i; j < self.cols; j++) {
+        const e = simp.call(new sj.Add([self.get(i, j), self.get(j, i)]));
+        if (e.equals(sj.S.Zero)) continue;
+        if (e instanceof sj.Rational || e instanceof sj.Float) return false;
+        unknown = true;
+      }
+      return unknown ? null : true;
+    }
+    return none(sj.linalg.isAntiSymmetric(self, simp === undefined ? true : Boolean(simp)));
+  },
   '.is_diagonal': matrixMethod((m) => sj.linalg.isDiagonal(m)),
   '.is_upper': matrixMethod((m) => sj.linalg.isUpper(m)),
   '.is_lower': matrixMethod((m) => sj.linalg.isLower(m)),
@@ -4959,7 +5054,16 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.adjugate': matrixMethod((m) => m.adjugate()),
   '.trace': matrixMethod((m) => m.trace()),
   '.eigenvals': matrixMethod((m) => rootsDict(m.eigenvals())),
-  '.is_symmetric': (_args, _kw, self) => sj.linalg.isSymmetric(self as Matrix),
+  '.is_symmetric': (_args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    const simp = kw['simplify'];
+    if (simp instanceof JsLambda) {
+      if (!self.isSquare) return false;
+      for (let i = 0; i < self.rows; i++) for (let j = i + 1; j < self.cols; j++) if (!sj.isZero(simp.call(sj.add(self.get(i, j), sj.mul(-1, self.get(j, i)))))) return false;
+      return true;
+    }
+    return sj.linalg.isSymmetric(self, simp === undefined ? true : Boolean(simp));
+  },
   '.tolist': matrixMethod((m) => new JsList(m.toArray().map((r) => new JsList(r)))),
 };
 
@@ -5028,11 +5132,30 @@ Object.assign(ADAPTERS, {
   ask: (args, kw) => {
     const { context, ...rest } = kw;
     noKw(rest);
-    const query = () => none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
+    const matrixPred = (x: unknown): sj.MatrixPredicate | undefined => {
+      if (x instanceof sj.MatrixPredicate) return x;
+      if (!(x instanceof sj.AppliedPredicate) || !(x.arg instanceof sj.MatrixExpr)) return undefined;
+      const make = sj.MatrixQ[x.predicate as keyof typeof sj.MatrixQ];
+      return make?.(x.arg);
+    };
+    const query = () => {
+      const predicate = matrixPred(args[0]);
+      return predicate
+        ? none(sj.askMatrix(predicate, matrixPred(args[1])))
+        : none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
+    };
     return context instanceof sj.AssumptionsContext ? sj.assuming([...context], query) : query();
   },
   lra_satask: (args, kw) => (noKw(kw), none(sj.lraSatask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)))),
-  refine: (args, kw) => (noKw(kw), sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean))),
+  refine: (args, kw) => {
+    noKw(kw);
+    const assumption = args[1] instanceof sj.AppliedPredicate && args[1].arg instanceof sj.MatrixExpr
+      ? sj.MatrixQ[args[1].predicate as keyof typeof sj.MatrixQ]?.(args[1].arg)
+      : args[1] instanceof sj.MatrixPredicate ? args[1] : undefined;
+    return assumption && args[0] instanceof Expr
+      ? sj.refineMatrix(args[0], assumption)
+      : sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean));
+  },
   '.refine': (args, kw, self) => {
     noKw(kw);
     const a = args[0] === undefined ? true : (args[0] as Expr | boolean);
@@ -5145,8 +5268,8 @@ Object.assign(ADAPTERS, {
     }),
   '.permuteFwd': matrixMethod((m, [p]) => sj.permuteFwd(m, (p as JsList).items.map((i) => (i instanceof JsList || i instanceof JsTuple ? (i.items.map(intArg) as [number, number]) : intArg(i))) as never)),
   '.permuteBkwd': matrixMethod((m, [p]) => sj.permuteBkwd(m, (p as JsList).items.map((i) => (i instanceof JsList || i instanceof JsTuple ? (i.items.map(intArg) as [number, number]) : intArg(i))) as never)),
-  '.row_del': mutating((m, [i]) => void sj.rowDel(m, intArg(i))),
-  '.col_del': mutating((m, [j]) => void sj.colDel(m, intArg(j))),
+  '.row_del': matrixMethod((m, [i]) => sj.rowDel(m, intArg(i))),
+  '.col_del': matrixMethod((m, [j]) => sj.colDel(m, intArg(j))),
   '.row_swap': mutating((m, [i, j]) => m.rowSwap(intArg(i), intArg(j))),
   '.col_swap': mutating((m, [i, j]) => m.colSwap(intArg(i), intArg(j))),
   '.row_op': mutating((m, [i, f]) => m.rowOp(intArg(i), (v, j) => lambdaArg(f)(v, sj.Rational.of(j)))),
@@ -5160,8 +5283,9 @@ Object.assign(ADAPTERS, {
     m.copyinMatrix(i!, j!, v as Matrix);
   }),
   '.copyin_list': mutating((m, [key, v]) => {
+    if (!(v instanceof JsList || v instanceof JsTuple)) throw new TypeError('value must be an ordered iterable');
     const [i, j] = (key as JsTuple).items.map(intArg);
-    const vals = (v as JsList).items.map((r) => (r instanceof JsList ? r.items.map(asExpr) : asExpr(r)));
+    const vals = v.items.map((r) => (r instanceof JsList || r instanceof JsTuple ? r.items.map(asExpr) : asExpr(r)));
     m.copyinList(i!, j!, vals as Expr[]);
   }),
   '.get_diag_blocks': matrixMethod((m) => new JsList(sj.getDiagBlocks(m))),
@@ -5662,7 +5786,11 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     if (Array.isArray(a)) return a.some((v) => pyEquals(v, b));
     if (a instanceof Map) return [...a.keys()].some((k) => pyEquals(k, b));
     if (a instanceof Set) return [...a].some((k) => pyEquals(k, b));
-    if (a instanceof sj.MatrixSet) return a.contains(b as Matrix) === true;
+    if (a instanceof sj.MatrixSet) {
+      const result = a.contains(b as Matrix);
+      if (result === 'unknown') throw new TypeError('cannot determine symbolic matrix membership');
+      return result;
+    }
     if (a instanceof sj.SetExpr) return sj.containsQ(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : expressionContainer(b)) === true;
     const r = callMethod(a, ['contains', 'has', 'includes'], [b]);
     if (r === undefined) return unsupportedOp('in');
@@ -6031,7 +6159,17 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === 'uniquely_named_symbol') return (args, kw) => {
     const name = args[0] instanceof JsTuple ? args[0].items as [string | Sym, Sym] : args[0] as string | Sym;
     const expressions = args[1] instanceof JsTuple ? args[1].items.map(asExpr) : args[1] === undefined ? [] : asExpr(args[1]);
-    return sj.uniquelyNamedSymbol(name, expressions, kw);
+    const { compare, modify, ...assumptions } = kw;
+    const callback = (value: unknown): ((input: string) => string) | undefined => {
+      if (value === undefined || value === null) return undefined;
+      if (!(value instanceof JsLambda)) throw new Unsupported('symbol name callback');
+      return (input) => {
+        const output = value.callStrings(input);
+        if (typeof output !== 'string') throw new TypeError('symbol name callback must return a string');
+        return output;
+      };
+    };
+    return sj.uniquelyNamedSymbol(name, expressions, { ...assumptions, compare: callback(compare), modify: callback(modify) });
   };
   if (c.fn === 'postorder_traversal') return (args, kw) => {
     const node = (value: unknown): unknown => value instanceof JsTuple ? value.items.map(node) : value;
@@ -6042,8 +6180,14 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.__call__' && c.self && (['Symbol', 'Rational', 'Float'].includes(c.self.t) || c.self.t === 'Fn' && c.self['name'] !== 'Lambda')) return () => {
     throw new TypeError('expression is not callable');
   };
-  if (c.fn === '.numerator' || c.fn === '.denominator') return (_args, kw, self) => {
+  if (c.fn === '.numerator' && c.self?.t === 'ModuleElement') return (args, kw, self) => {
+    if (!(self instanceof sj.PowerBasisElement)) throw new Unsupported('power basis numerator');
+    const x = args[0] ?? kw['x'];
+    return self.numerator(x === undefined || x === null ? undefined : asExpr(x));
+  };
+  if ((c.fn === '.numerator' || c.fn === '.denominator') && c.self?.t === 'Rational') return (_args, kw, self) => {
     noKw(kw);
+    if (self instanceof sj.PythonMPQ) return sj.Rational.of(c.fn === '.numerator' ? self.numerator : self.denominator);
     if (!(self instanceof sj.Rational)) throw new Unsupported('rational attribute');
     return sj.Rational.of(c.fn === '.numerator' ? self.p : self.q);
   };
@@ -6055,6 +6199,25 @@ function autoAdapter(c: Case): Adapter | undefined {
     const key = typeof args[0] === 'string' ? sj.parse(args[0]) : asExpr(args[0]);
     return dict.containsKey(key) ? dict.get(key) : args[1] ?? null;
   };
+  if (['Add', 'Mul', '.hstack', '.vstack', '.args_cnc'].includes(c.fn)) return ADAPTERS[c.fn];
+  if (c.fn === 'MatAdd' || c.fn === 'MatMul') return (args, kw) => {
+    const { evaluate, ...rest } = kw;
+    noKw(rest);
+    const expression = c.fn === 'MatAdd' ? sj.MatAdd(...args.map(asMatrixExpression)) : sj.MatMul(...args.map(asMatrixExpression));
+    return evaluate === true && expression instanceof sj.MatrixExpr ? expression.doit({ deep: false }) : expression;
+  };
+  if (c.fn === '.name' && c.self?.t === 'MatrixSymbol') return (_args, kw, self) => (noKw(kw), (self as sj.MatrixSymbol).symbolName);
+  if (['Matrix', 'MutableDenseMatrix', 'MutableMatrix'].includes(c.fn) && ['MatrixSymbol', 'MatExpr'].includes(c.args?.[0]?.t ?? '')) return ADAPTERS[c.fn];
+  if (c.fn === 'MatrixSet') return (args, kw) => {
+    noKw(kw);
+    if (!(args[2] instanceof sj.SetExpr)) throw new TypeError('MatrixSet requires a set');
+    return sj.MatrixSet(asExpr(args[0]), asExpr(args[1]), args[2]);
+  };
+  if (c.fn === '.from_index_summation') return (args, kw) => {
+    noKw(kw);
+    return sj.fromIndexSummation(asExpr(args[0]), args[1] === undefined || args[1] === null ? undefined : asExpr(args[1]), args[2] === undefined || args[2] === null ? undefined : asExpr(args[2]));
+  };
+
   if (c.fn === '.func' && c.self?.t === 'Fn' && c.self['name'] === 'IdentityFunction') {
     return () => sj.Id;
   }
@@ -6305,7 +6468,11 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.func' && c.self?.t === 'Vec' && c.self['cls'] === 'Point') return (args) => sj.VectorPoint(args[0] as string, args[1] as Expr, args[2] as sj.VectorPoint);
   if (c.fn === 'GeometryEntity') return (args) => new sj.GeometryEntity('GeometryEntity', args.map(asExpr));
   if (c.fn === '.cut_section' && c.category === 'geometry') return (args, _kw, self) => new JsTuple((self as sj.Polygon).cutSection(args[0] as sj.Line2D).map((part) => part === sj.EmptySet ? null : part));
-  if (c.fn === '.is_collinear' && c.category === 'geometry') return (args) => sj.Point3D.areCollinear(...args.map((v) => v instanceof JsTuple ? v.items.map(asExpr) : asExpr(v)));
+  if (c.fn === '.is_collinear' && c.category === 'geometry') return (args, kw, self) => {
+    noKw(kw);
+    const points = args.map((v) => v instanceof JsTuple || v instanceof JsList ? v.items.map(asExpr) : asExpr(v));
+    return self instanceof sj.Point ? self.isCollinear(...points) : sj.Point3D.areCollinear(...points);
+  };
   if (c.fn === '.isNonZero' && c.self?.t === 'Geom') return (_args, _kw, self) => fromJs((self as sj.Point).isNonzero);
   if (c.fn === 'Parabola') return (args, kw) => sj.Parabola((args[0] ?? kw['focus']) as sj.Point, (args[1] ?? kw['directrix']) as sj.Line);
   if (c.fn === '.cartan_type') return (_args, _kw, self) => ({ toString: () => `Type${(self as sj.RootSystem).cartanType.series}()` });
@@ -6457,6 +6624,9 @@ function autoAdapter(c: Case): Adapter | undefined {
   const reflected = reflectedName === undefined ? undefined : DUNDER[reflectedName];
   if (reflected !== undefined && c.self?.t === 'Rational' && c.self['py'] === true) return (args, _kw, self) => fromJs(reflected(plain(conv(args[0])), [self]));
   if (dunder !== undefined) return (args, _kw, self0) => {
+    if (c.fn === '.__mul__' && (self0 instanceof JsList || self0 instanceof JsTuple) && args[0] instanceof Matrix) {
+      throw new TypeError('a sequence cannot multiply a matrix');
+    }
     if (c.fn === '.__floordiv__' && self0 instanceof sj.Rational && args[0] instanceof sj.NumberFieldModuleElement) return args[0].module.elementFromRational(self0).floordiv(args[0]);
     if (self0 instanceof sj.PuiseuxPoly || args[0] instanceof sj.PuiseuxPoly) {
       const left = self0 instanceof sj.PythonMPQ ? sj.Rational.of(self0.numerator, self0.denominator) : self0;
@@ -6466,6 +6636,13 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (right instanceof sj.PuiseuxPoly && ['.__add__', '.__sub__', '.__mul__', '.__truediv__'].includes(c.fn)) return fromJs(dunder(right.ring.ringNew(left as Expr), [right]));
     }
     const right = args[0];
+    if (!(self0 instanceof sj.MatrixExpr) && right instanceof sj.MatrixExpr) {
+      if (c.fn === '.__add__') return right.radd(asMatrixExpression(self0));
+      if (c.fn === '.__sub__') return right.rsub(asMatrixExpression(self0));
+      if (c.fn === '.__truediv__') return right.rdiv(asMatrixExpression(self0));
+      if (c.fn === '.__pow__') return right.rpow(asExpr(self0));
+    }
+    if (c.fn === '.__mul__' && self0 instanceof JsTuple && right instanceof Matrix) throw new TypeError('cannot multiply a list by a matrix');
     if (c.fn === '.__mul__' && (self0 instanceof JsDMP || self0 instanceof sj.DMP || self0 instanceof sj.DMPJs) && (right instanceof sj.ModuleElement || right instanceof sj.ModuleImplementedIdeal)) {
       const ring = right instanceof sj.ModuleElement ? right.module.ring : right.ring;
       const scalar = self0 instanceof sj.DMPJs ? sj.Poly.fromDict(new Map([...self0.toSympyDict()].map(([m, c]) => [m, asExpr(c)])), ring.symbols).asExpr() : self0 instanceof JsDMP ? self0.value.asExpr(...ring.symbols) : sj.subs(self0.toSympy(), [[new Sym('_x'), definedOr(ring.symbols[0], 'polynomial generator')]]);
@@ -6866,7 +7043,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   // a doctest's Matrix is mutable: simplify() works in place and returns None
   const inPlaceSimplify: Adapter | undefined = c.fn === '.simplify' && c.self?.t === 'Matrix' && !c.module.includes('.tests.')
     ? (_args, kw, self) => { noKw(kw); if (self instanceof Matrix) self.simplify(); return null; } : undefined;
-  const adapter = inPlaceSimplify ?? tensorStateAdapter(c) ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  const solverInvert = c.fn === 'invert' && c.module === 'sympy.solvers.solvers' ? invertEquationAdapter : undefined;
+  const adapter = inPlaceSimplify ?? solverInvert ?? tensorStateAdapter(c) ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     let self = c.self ? deserialize(c.self) : undefined;
@@ -6899,7 +7077,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // DomainMatrix, DDM and SDM methods (and their classes' static methods) share names with Matrix and Poly adapters
     const isDomainMatrix = (x: unknown) => x instanceof sj.DomainMatrix || x instanceof sj.DDM || x instanceof sj.SDM || (x instanceof TypeRef && ['DomainMatrix', 'DDM', 'SDM'].includes(x.name));
     // (rewrite targets are SymPy classes, which only the rewrite adapter names)
-    const auto0 = (c.fn !== '.rewrite' && (isMatExpr(self) || args.some(isMatExpr))) || self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') || isDomainMatrix(self) || self instanceof sj.NDimArray || (self instanceof sj.Indexed && c.fn !== '.is_constant') ? autoAdapter(c) : undefined;
+    const auto0 = (c.fn !== '.rewrite' && !['ask', 'refine'].includes(c.fn) && (isMatExpr(self) || args.some(isMatExpr))) || self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') || isDomainMatrix(self) || self instanceof sj.NDimArray || (self instanceof sj.Indexed && c.fn !== '.is_constant') ? autoAdapter(c) : undefined;
     try {
       v = call(auto0 ?? adapter);
     } catch (e) {
@@ -6907,7 +7085,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') ? undefined : auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       // (a DomainMatrix error is the method's own result)
-      if (!auto || (self === undefined && ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'loggamma'].includes(c.fn)) || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (c.fn === 'parse_expr' && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
+      if (!auto || (self === undefined && ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'loggamma'].includes(c.fn)) || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (['parse_expr', '.copyin_list', '.applyfunc'].includes(c.fn) && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }
@@ -6987,6 +7165,10 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'sympy.stats.tests.test_mix:assert P(E + Y > 2, evaluate=False).rewrite(Integral).dummy_eq(expr2)': 'False',
   // P(X1 = 1)P(X2 = 2) + P(X1 = 2)P(X2 = 1) = (1/2)(2/9) + (1/4)(1/3) = 7/36 with SymPy's own densities.
   'sympy.stats.tests.test_discrete_rv:assert P(Eq(X1 + X2, 3)) == Rational(1, 12)': '7/36',
+  // y' = sin(x*y) implies y'(0) = 0. The upstream quadratic has derivative
+  // sin(4) - 4*(1 + sin(4))*cos(4) at zero (about -0.121). Its Taylor
+  // remainder is cubic at the initial point x = 2.
+  "sympy.solvers.ode.tests.test_ode:assert dsolve(eq, hint='1st_power_series', ics={f(2): 2}, n=3) == sol": 'Eq(f(x), 2 + (x - 2)*sin(4) + (x - 2)**2*(sin(4) + 1)*cos(4) + O((x - 2)**3, (x, 2)))',
   // For exponential X >= 0, P(X**2 <= z) = P(X <= sqrt(z)). SymPy includes
   // the negative preimage: its expression at z=1 is exp(1)-exp(-1) > 1.
   "sympy.stats.tests.test_continuous_rv:cdf(Exponential('e', 1)**2)(z)": 'Piecewise((1 - exp(-sqrt(z)), z >= 0), (0, True))',

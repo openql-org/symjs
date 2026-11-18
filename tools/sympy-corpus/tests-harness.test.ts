@@ -693,3 +693,38 @@ it('preserves polynomial object and expression conventions in algebraic-number c
   expect(selected.length).toBeGreaterThan(20);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
+
+it('translates matrix classmethods, explicit conversion, deletion and set validation', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) =>
+    (c.test === 'test_hstack' || c.test === 'test_vstack' || c.test === 'test_row_col_del' || c.test === 'test_dense_conversion') ||
+    c.fn === 'MatrixSet' || c.test === 'test_issue_13774');
+  expect(selected.length).toBeGreaterThan(20);
+  for (const c of selected) expect(runTestCase(c).status, c.src).toBe('pass');
+});
+
+it('translates matrix diagonal sizes, ragged rows and callback predicates', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) =>
+    c.test === 'test_diag_make' || c.test === 'test_diag' && c.fn === 'diag' ||
+    c.test === 'test_diagonal_symmetrical' && c.fn === '.is_symmetric' ||
+    c.test === 'test_anti_symmetric' && c.fn === '.is_anti_symmetric' && c.kwargs?.simplify !== undefined ||
+    c.test === 'test_errors' && c.fn === '.copyin_list').filter((c) => !c.expected.startsWith('_MinimalMatrix'));
+  expect(selected.length).toBeGreaterThan(28);
+  for (const c of selected) expect(runTestCase(c).status, c.src).toBe('pass');
+});
+
+it('translates matrix rewrite rules, evaluated constructors and reflected arithmetic', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) =>
+    ['factor_in_front', 'remove_ids', 'combine_powers', 'any_zeros', 'MatAdd', 'MatMul'].includes(c.fn) ||
+    c.module.endsWith('test_matmul') && c.fn === '.args_cnc' ||
+    c.module.endsWith('test_matexpr') && c.test === 'test_matexpr_properties' && ['.symbol', '.name'].includes(c.fn) ||
+    c.module.endsWith('test_matexpr') && [118, 119, 139].includes(c.line) ||
+    c.test === 'test_no_exponentiation' ||
+    c.fn === 'hessian' && [1056, 1838].includes(c.line) ||
+    c.fn === 'GramSchmidt' && [2403, 3110].includes(c.line) ||
+    c.fn === '.applyfunc' && c.raises === 'TypeError');
+  expect(selected.length).toBeGreaterThan(25);
+  for (const c of selected) expect(runTestCase(c).status, c.src).toBe('pass');
+});

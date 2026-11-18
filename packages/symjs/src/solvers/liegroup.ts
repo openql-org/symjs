@@ -330,7 +330,8 @@ function abaco2UniqueUnknown(m: LieMatch): Inf[] {
   walk(h);
   const unique = [...new Map(funcs.map((f) => [f.key, f])).values()];
   for (const f of unique) {
-    const frac = cancel(mul(d(f, y), pow(d(f, x), -1)));
+    const argument = f instanceof UndefFn && f.args.length === 1 ? first(f.args) : f;
+    const frac = cancel(mul(d(argument, y), pow(d(argument, x), -1)));
     const sep = sepDict(frac, x, y);
     // [xi, eta, expand before simplify] in SymPy's order: xi = X(x), eta = Y(y) when frac = R(y)/X(x) separates,
     // else eta/xi = -1/frac
@@ -342,7 +343,7 @@ function abaco2UniqueUnknown(m: LieMatch): Inf[] {
     } else tries = [[S.One, mul(-1, pow(frac, -1)), false], [mul(-1, frac), S.One, true]];
     for (const [xi, eta, ex] of tries) {
       const pde = determiningPde(xi, eta, h, x, y);
-      if (isZero(simplify(ex ? expand(pde) : pde))) return [inf(xreplace(xi, [[y, func]]), xreplace(eta, [[y, func]]))];
+      if (isZero(simplify(ex ? expand(pde) : pde)) || isZero(simplify(expand(pde)))) return [inf(xreplace(xi, [[y, func]]), xreplace(eta, [[y, func]]))];
     }
   }
   return [];
@@ -623,10 +624,16 @@ function solveByCoordinates(xiinf: Expr, etainf: Expr, m: LieMatch, dsolveFn: Od
   const scoord = lieGroupRemove(pdsolveLinear(xiinf, etainf, S.One, x, y, dsolveFn));
   const r = new Dummy('r');
   const s = new Dummy('s');
-  const [xsub, ysub] = solveCoords([add(r, mul(-1, rcoord)), add(s, mul(-1, scoord))], x, y);
   const num = simplify(add(d(scoord, x), mul(d(scoord, y), h)));
   // s is constant along the solutions (r is not: the symmetry is not the trivial one)
-  if (isZero(num)) return { explicit: solve(add(scoord, mul(-1, C1)), y).map((v) => Eq(func, v)) };
+  if (isZero(num) || isZero(cancel(together(num)))) {
+    // A square-root first integral can be squared: its value is an
+    // arbitrary constant, and the square removes both half-powers.
+    const invariant = some(scoord, (v) => v instanceof Pow && v.exp instanceof Rational && v.exp.q === 2n)
+      ? cancel(pow(scoord, 2)) : scoord;
+    return { explicit: solve(add(invariant, mul(-1, C1)), y).map((v) => Eq(func, v)) };
+  }
+  const [xsub, ysub] = solveCoords([add(r, mul(-1, rcoord)), add(s, mul(-1, scoord))], x, y);
   const denom = simplify(add(d(rcoord, x), mul(d(rcoord, y), h)));
   const diffeq = simplify(xreplace(mul(num, pow(denom, -1)), [[x, xsub], [y, ysub]]));
   // separable in r and s (an invariant error, caught by the caller, when simplification does not show it)

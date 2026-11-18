@@ -24,7 +24,7 @@ export type FreeGroupSymbols = string | Expr | readonly (string | Expr)[];
 const isSymbolList = (s: FreeGroupSymbols): s is readonly (string | Expr)[] => Array.isArray(s);
 
 function parseSymbols(symbols: FreeGroupSymbols): Expr[] {
-  if (typeof symbols === 'string') return expandSymbolNames(symbols).map((n) => new Sym(n));
+  if (typeof symbols === 'string') return symbols === '' ? [] : expandSymbolNames(symbols).map((n) => new Sym(n));
   if (!isSymbolList(symbols)) return [symbols];
   const names = symbols.filter((s): s is string => typeof s === 'string');
   if (names.length === symbols.length) return names.flatMap((s) => expandSymbolNames(s).map((n) => new Sym(n)));

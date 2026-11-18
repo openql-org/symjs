@@ -520,15 +520,16 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
   }
   for (const [k, rs] of byGen) {
     const g = defined(gens.find((s) => s.key === k), 'generator');
-    const others = [...new Map(rs.flatMap((r) => [...r.freeSymbols()].filter((s) => s instanceof Sym)).map((s) => [s.key, s])).values()].filter((s) => s.key !== g.key);
-    if (others.length) {
-      for (const r of rs) parts.push(linearInequality(r, g));
-      continue;
-    }
     let set: SetExpr = Reals;
-    for (const r of rs) set = intersection(set, solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, g, Reals_()));
-    // (for a real symbol, -oo < x and x < oo are True already, so SymPy's form needs no clean-up)
-    parts.push(asRelational(set, g));
+    let hasUnivariate = false;
+    for (const r of rs) {
+      if ([...r.freeSymbols()].some((s) => s instanceof Sym && s.key !== g.key)) parts.push(linearInequality(r, g));
+      else {
+        hasUnivariate = true;
+        set = intersection(set, solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, g, Reals_()));
+      }
+    }
+    if (hasUnivariate) parts.push(asRelational(set, g));
   }
   return and(...parts);
 }

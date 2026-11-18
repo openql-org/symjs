@@ -21,7 +21,7 @@ export { ShapeError } from '../../core/errors';
 import { at, cast, last } from '../../core/guard';
 import { LambdaNode } from '../../core/lambda';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
+import { Add, Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
 import { isIntegerQ, isNegative, isZero } from '../../core/assumptions';
 import { and } from '../../core/boolalg';
 import { Eq } from '../../core/logic';
@@ -315,6 +315,14 @@ export abstract class MatrixExpr extends ExtensionExpr {
   override sub(o: MatArg): Expr {
     return MatAddNode.create([this, negate(toExpr(o))]).doit();
   }
+  /** SymPy reflected addition, with the same matrix validation as addition. */
+  radd(o: MatArg): Expr {
+    return this.add(o);
+  }
+  /** SymPy reflected subtraction. */
+  rsub(o: MatArg): Expr {
+    return MatAddNode.create([toExpr(o), negate(this)]).doit();
+  }
   /** this * o (SymPy MatMul(self, other).doit()). */
   override mul(o: MatArg): Expr {
     return matMul(this, toExpr(o));
@@ -327,6 +335,14 @@ export abstract class MatrixExpr extends ExtensionExpr {
   override div(o: MatArg): Expr {
     const e = toExpr(o);
     return this.mul(e instanceof MatrixExpr ? e.pow(-1) : pow(e, -1));
+  }
+  /** SymPy does not define division by a matrix from the left. */
+  rdiv(_o: MatArg): Expr {
+    throw new NotImplementedError('Division by a matrix is not defined');
+  }
+  /** SymPy does not define a scalar raised to a matrix power. */
+  rpow(_o: ExprLike): Expr {
+    throw new NotImplementedError('Matrix Power not defined');
   }
   /** this**o (SymPy MatPow(self, other).doit()). */
   override pow(o: ExprLike): Expr {
@@ -779,6 +795,10 @@ export class MatrixElementNode extends MatScalar {
   /** The matrix. */
   get parent(): Expr {
     return at(this.args, 0);
+  }
+  /** The matrix owning this entry (SymPy MatrixElement.symbol). */
+  get symbol(): Expr {
+    return this.parent;
   }
   /** The row index. */
   get i(): Expr {
@@ -1458,7 +1478,12 @@ registerArithmetic((op, args) => {
   if (!args.some((a) => a instanceof MatrixExpr)) return undefined;
   switch (op) {
     case 'add':
-      return args.every((a) => a instanceof MatrixExpr) ? MatAddNode.create(args).doit() : undefined;
+      if (args.every((a) => a instanceof MatrixExpr)) return MatAddNode.create(args).doit();
+      {
+        const scalar = add(...args.filter((a) => !(a instanceof MatrixExpr)));
+        const matrix = MatAddNode.create(args.filter((a) => a instanceof MatrixExpr)).doit();
+        return same(scalar, S.Zero) ? matrix : new Add([scalar, matrix]);
+      }
     case 'sub': {
       const [a, b] = [at(args, 0), at(args, 1)];
       return a instanceof MatrixExpr && b instanceof MatrixExpr ? a.sub(b) : undefined;
@@ -1510,7 +1535,8 @@ function distributeMonom(e: Expr): Expr {
   return e;
 }
 
-function anyZeros(e: Expr): Expr {
+/** SymPy matmul.any_zeros: a zero matrix absorbs the product. */
+export function anyZeros(e: Expr): Expr {
   if (e.args.some((a) => (a instanceof MatrixExpr ? a.isZeroMatrix : isZero(a) === true))) {
     const ms = e.args.filter((a): a is MatrixExpr => a instanceof MatrixExpr);
     return new ZeroMatrixNode(at(ms, 0).rows, last(ms).cols);
@@ -1518,7 +1544,8 @@ function anyZeros(e: Expr): Expr {
   return e;
 }
 
-function removeIds(e: Expr): Expr {
+/** SymPy matmul.remove_ids: remove identity factors in one rewrite step. */
+export function removeIds(e: Expr): Expr {
   const [factor, mmul] = cast(e, MatMulNode).asCoeffMmul();
   const result = rmId(mmul, (a) => a instanceof MatrixExpr && a.isIdentity === true, (args) => new MatMulNode(args));
   if (!same(result, mmul)) return newmul([factor, ...result.args]);
@@ -1542,7 +1569,8 @@ function combineOneMatrices(e: Expr): Expr {
   return newmul([factor, ...newArgs]);
 }
 
-function combinePowers(e: Expr): Expr {
+/** SymPy matmul.combine_powers: combine adjacent powers and inverse products. */
+export function combinePowers(e: Expr): Expr {
   const [factor, args0] = cast(e, MatMulNode).asCoeffMatrices();
   const args: MatrixExpr[] = [...args0];
   let newArgs: MatrixExpr[] = [at(args, 0)];
@@ -1597,20 +1625,19 @@ function combinePowers(e: Expr): Expr {
 
 const asMat = (e: Expr): MatrixExpr => cast(e, MatrixExpr);
 
-function mulExplicit(a: Expr, b: Expr): Expr {
-  if (a instanceof ImmutableMatrixNode && b instanceof ImmutableMatrixNode) return new ImmutableMatrixNode(a.matrix.mul(b.matrix));
-  if (a instanceof ImmutableMatrixNode) return new ImmutableMatrixNode(a.matrix.scale(b));
-  if (b instanceof ImmutableMatrixNode) return new ImmutableMatrixNode(b.matrix.scale(a));
-  return mul(a, b);
-}
-
 function mergeExplicitMul(e: Expr): Expr {
   if (!e.args.some((a) => a instanceof ImmutableMatrixNode)) return e;
-  const ok = (x: Expr) => x instanceof ImmutableMatrixNode || isNumber(x);
+  const scalars = e.args.filter((a) => !(a instanceof MatrixExpr));
+  const matrices: Expr[] = e.args.filter((a) => a instanceof MatrixExpr);
+  const firstExplicit = matrices.findIndex((a) => a instanceof ImmutableMatrixNode);
+  if (scalars.length) {
+    const explicit = cast(at(matrices, firstExplicit), ImmutableMatrixNode);
+    matrices[firstExplicit] = new ImmutableMatrixNode(explicit.matrix.scale(mul(...scalars)));
+  }
   const newArgs: Expr[] = [];
-  let cur = at(e.args, 0);
-  for (const arg of e.args.slice(1)) {
-    if (ok(arg) && ok(cur)) cur = mulExplicit(cur, arg);
+  let cur = at(matrices, 0);
+  for (const arg of matrices.slice(1)) {
+    if (arg instanceof ImmutableMatrixNode && cur instanceof ImmutableMatrixNode) cur = new ImmutableMatrixNode(cur.matrix.mul(arg.matrix));
     else {
       newArgs.push(cur);
       cur = arg;
@@ -1620,7 +1647,8 @@ function mergeExplicitMul(e: Expr): Expr {
   return MatMulNode.create(newArgs);
 }
 
-function factorInFront(e: Expr): Expr {
+/** SymPy matmul.factor_in_front: collect commutative factors before the matrices. */
+export function factorInFront(e: Expr): Expr {
   const [factor, matrices] = cast(e, MatMulNode).asCoeffMatrices();
   if (!same(factor, S.One)) return newmul([factor, ...matrices]);
   return e;

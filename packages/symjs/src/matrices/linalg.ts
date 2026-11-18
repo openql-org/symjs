@@ -143,8 +143,8 @@ export function echelonForm(m: Matrix): Matrix {
   return fromRows(A, m.cols);
 }
 
-export function rank(m: Matrix): number {
-  return rref(m)[1].length;
+export function rank(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}): number {
+  return rref(m, opts)[1].length;
 }
 
 export function nullspace(m: Matrix): Matrix[] {
@@ -810,9 +810,22 @@ export const colInsert = (m: Matrix, pos: number, o: Matrix): Matrix => m.colIns
 
 /** Block-diagonal matrix from scalars and matrices (SymPy diag). */
 export function blockDiag(...blocks: (Matrix | ExprLike)[]): Matrix {
+  return blockDiagSized(blocks);
+}
+
+export interface BlockDiagOptions {
+  readonly rows?: number;
+  readonly cols?: number;
+}
+
+/** SymPy Matrix.diag block placement with optional result dimensions. */
+export function blockDiagSized(blocks: readonly (Matrix | ExprLike)[], opts: BlockDiagOptions = {}): Matrix {
   const ms = blocks.map((b) => (b instanceof Matrix ? b : Matrix.of([[b]])));
-  const rows = ms.reduce((s, m) => s + m.rows, 0);
-  const cols = ms.reduce((s, m) => s + m.cols, 0);
+  const minimumRows = ms.reduce((s, m) => s + m.rows, 0);
+  const minimumCols = ms.reduce((s, m) => s + m.cols, 0);
+  const rows = opts.rows ?? opts.cols ?? minimumRows;
+  const cols = opts.cols ?? opts.rows ?? minimumCols;
+  if (rows < minimumRows || cols < minimumCols) throw new RangeError(`The constructed matrix is ${minimumRows} x ${minimumCols} but a size of ${rows} x ${cols} was specified.`);
   const out = Matrix.zeros(rows, cols).toArray();
   let r0 = 0;
   let c0 = 0;
@@ -975,10 +988,17 @@ export function normalized(v: Matrix): Matrix {
   return v.map((e) => mul(e, pow(n, -1)));
 }
 
-/** SymPy hessian(f, varlist): the matrix of second derivatives. */
-export function hessian(f: ExprLike, vars: readonly Expr[]): Matrix {
+/** SymPy hessian(f, varlist, constraints): the optionally bordered Hessian. */
+export function hessian(f: ExprLike, vars: readonly Expr[], constraints: readonly ExprLike[] = []): Matrix {
+  if (!vars.length) throw new ShapeError('hessian: variable list must not be empty');
   const e = sympify(f);
-  return Matrix.fromFunction(vars.length, vars.length, (i, j) => diff(diff(e, at(vars, i)), at(vars, j)));
+  const gs = constraints.map(sympify), m = gs.length;
+  return Matrix.fromFunction(m + vars.length, m + vars.length, (i, j) => {
+    if (i < m && j < m) return S.Zero;
+    if (i < m) return diff(at(gs, i), at(vars, j - m));
+    if (j < m) return diff(at(gs, j), at(vars, i - m));
+    return diff(diff(e, at(vars, i - m)), at(vars, j - m));
+  });
 }
 
 /** SymPy wronskian(functions, var): det of the derivatives 0..n-1 of the functions. */

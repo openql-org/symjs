@@ -121,6 +121,7 @@ describe('reduceInequalities', () => {
     expect(show(Q.reduceInequalities([p('x**2-4')]))).toBe('Eq(x, -2) | Eq(x, 2)');
     expect(show(Q.reduceInequalities([SS.true, p('x > 1')]))).toBe('(1 < x) & (x < oo)');
     expect(show(Q.reduceInequalities([p('x > 1'), p('y < 2')]))).toBe('(-oo < y) & (1 < x) & (x < oo) & (y < 2)');
+    expect(show(Q.reduceInequalities([p('x + y - 3'), p('x > 3')], [x]))).toBe('(3 < x) & (x < oo) & Eq(x, 3 - y)');
     expect(show(Q.reduceInequalities(p('x + a > 1'), [x]))).toBe('x > 1 - a');
     expect(show(Q.reduceInequalities(p('-2*x + a > 1'), [x]))).toBe('x < a/2 - 1/2');
     expect(show(Q.reduceInequalities(p('2*x + a <= 1'), [x]))).toBe('(-oo < x) & (x <= 1/2 - a/2)');

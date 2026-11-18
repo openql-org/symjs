@@ -10,10 +10,10 @@
  * functions of `solvers/dsolve.ts`, which `dsolve` runs.
  */
 
-import type { Expr } from '../../core/nodes';
+import { Expr } from '../../core/nodes';
 import { Derivative, Dummy, Integral, Mul, Pow, Rational, S, Sym, UndefFn } from '../../core/nodes';
-import { at, cast, first } from '../../core/guard';
-import { add } from '../../core/ops';
+import { at, cast, expectType, first, getOrThrow } from '../../core/guard';
+import { add, exp, mul, pow } from '../../core/ops';
 import { Eq } from '../../core/logic';
 import { NotImplementedError } from '../../core/errors';
 import { xreplace } from '../../core/traverse';
@@ -43,6 +43,25 @@ function orderIn(e: Expr, f: UndefFn): number {
 
 /** The k-th derivative of f(x) in x (f(x) itself for k = 0). */
 const nthDerivative = (f: UndefFn, x: Sym, k: number): Expr => (k === 0 ? f : derivative(f, [[x, k]]));
+
+function iterNumberedConstants(equations: readonly Expr[], start: number, prefix: string): Generator<Sym, never, undefined> {
+  const exclude = equations.flatMap((eq) => [...eq.freeSymbols()]);
+  const names = new Set<string>();
+  const visit = (e: Expr): void => {
+    if (e instanceof UndefFn) names.add(e.name);
+    e.args.forEach(visit);
+  };
+  equations.forEach(visit);
+  return numberedSymbols(prefix, { start, exclude: [...exclude, ...[...names].map((n) => new Sym(n))] });
+}
+
+/** Allocate integration constants distinct from symbols and functions in the input. */
+export function getNumberedConstants(eq: Expr | readonly Expr[], num = 1, start = 1, prefix = 'C'): Sym[] {
+  const equations = eq instanceof Expr ? [eq] : eq;
+  if (!Array.isArray(equations)) throw new RangeError('expected an expression or sequence');
+  const it = iterNumberedConstants(equations, start, prefix);
+  return Array.from({ length: num }, () => it.next().value);
+}
 
 /**
  * SymPy SingleODEProblem: an ODE eq in the unknown function func of the
@@ -75,14 +94,7 @@ export class SingleODEProblem {
 
   /** SymPy iter_numbered_constants: C1, C2, ... skipping the symbols and function names of the equation. */
   iterNumberedConstants(start = 1, prefix = 'C'): Generator<Sym, never, undefined> {
-    const exclude: Expr[] = [...this.eq.freeSymbols()];
-    const names = new Set<string>();
-    const visit = (e: Expr): void => {
-      if (e instanceof UndefFn) names.add(e.name);
-      e.args.forEach(visit);
-    };
-    visit(this.eq);
-    return numberedSymbols(prefix, { start, exclude: [...exclude, ...[...names].map((n) => new Sym(n))] });
+    return iterNumberedConstants([this.eq], start, prefix);
   }
 
   /** SymPy get_numbered_constants: the first num constants of iterNumberedConstants. */
@@ -113,11 +125,11 @@ export class SingleODEProblem {
 }
 
 /** SymPy SingleODESolver: the base class of the solvers of one ODE. */
-export abstract class SingleODESolver {
+export class SingleODESolver {
   /** The hint name (the argument of dsolve). */
-  abstract readonly hint: string;
+  readonly hint: string = '';
   /** Whether the solver has an _Integral hint. */
-  abstract readonly hasIntegral: boolean;
+  readonly hasIntegral: boolean = false;
   #matched: boolean | undefined;
 
   constructor(readonly odeProblem: SingleODEProblem) {}
@@ -134,8 +146,27 @@ export abstract class SingleODESolver {
     return this.generalSolution(opts.simplify ?? true);
   }
 
-  protected abstract matchesImpl(): boolean;
-  protected abstract generalSolution(simplifyFlag: boolean): Expr[];
+  protected matchesImpl(): boolean { throw new NotImplementedError('solver matching is not implemented'); }
+  protected generalSolution(_simplifyFlag: boolean): Expr[] { throw new NotImplementedError('general solution is not implemented'); }
+}
+
+/** The integrating-factor solution of y' + P(x)*y = Q(x). */
+export class FirstLinear extends SingleODESolver {
+  override readonly hint = '1st_linear';
+  override readonly hasIntegral = true;
+  protected override matchesImpl(): boolean {
+    const { eqExpanded, func, order } = this.odeProblem;
+    return order === 1 && this.odeProblem.getLinearCoefficients(eqExpanded, func, order) instanceof Map;
+  }
+  protected override generalSolution(): Expr[] {
+    const { eqExpanded, func, sym } = this.odeProblem;
+    const cs = this.odeProblem.getLinearCoefficients(eqExpanded, func, 1);
+    const coefficients = expectType(cs, (v): v is Map<number, Expr> => v instanceof Map, 'linear coefficients');
+    const inv = pow(getOrThrow(coefficients, 1), -1);
+    const factor = exp(new Integral([mul(getOrThrow(coefficients, 0), inv), sym]));
+    const integral = new Integral([mul(-1, getOrThrow(coefficients, -1), inv, factor), sym]);
+    return [Eq(func, mul(add(first(this.odeProblem.getNumberedConstants()), integral), pow(factor, -1)))];
+  }
 }
 
 /**
@@ -180,11 +211,11 @@ function solveDifferentiationAlgebraically(eq: Expr, func: UndefFn, x: Sym): Exp
  * the general solution are Dummy('C') symbols.
  */
 export class NthAlgebraic extends SingleODESolver {
-  readonly hint = 'nth_algebraic';
-  readonly hasIntegral = true;
+  override readonly hint = 'nth_algebraic';
+  override readonly hasIntegral = true;
   #solutions: Expr[] = [];
 
-  protected matchesImpl(): boolean {
+  protected override matchesImpl(): boolean {
     const { eq, func, sym } = this.odeProblem;
     let solns: Expr[];
     try {
@@ -197,7 +228,7 @@ export class NthAlgebraic extends SingleODESolver {
     return this.#solutions.length > 0;
   }
 
-  protected generalSolution(): Expr[] {
+  protected override generalSolution(): Expr[] {
     return this.#solutions;
   }
 }

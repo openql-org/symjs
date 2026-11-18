@@ -499,3 +499,45 @@ it('integrates autonomous acceleration by conservation of energy', () => {
   }
   expect(show(dsolve(parse('Derivative(f(x),x,x)'), fx, { hint }))).toContain('sqrt(C1)');
 });
+
+it('compares solution families when selecting the simplest hint', () => {
+  const solutions = dsolve(parse('Derivative(f(x),x)**2-1'),fx,{hint:'best'});
+  expect(Array.isArray(solutions)).toBe(true);
+  expect(classifyOde(parse('Derivative(f(x),x)**2'),fx)).toContain('factorable');
+});
+
+it('classifies repeated factors and rejects a cancelled leading derivative', () => {
+  expect(classifyOde(parse('x*(Derivative(f(x),x) + f(x))**2'),fx)).toContain('factorable');
+  const d1 = diff(fx,x), d2 = diff(fx,x,2);
+  const equation = new sj.Add([new sj.Mul([sj.S.Zero,d2]),d1]);
+  expect(() => dsolve(equation,fx,{hint:'Liouville'})).toThrow(NotImplementedError);
+});
+
+it('ranks an implicit energy quadrature when it is the simplest available solution', () => {
+  const solution = dsolve(parse('Derivative(f(x),x,2)-exp(f(x)**2)'),fx,{hint:'best'});
+  expect(String(solution)).toContain('Integral');
+});
+
+it('returns all classified methods, their quadratures and the simplest solution', () => {
+  const hints = dsolve(diff(fx,x),fx,{hint:'all'});
+  expect(hints.get('order')).toBe(1);
+  expect(hints.get('default')).toBe('nth_algebraic');
+  expect(hints.get('best_hint')).toBe('nth_algebraic');
+  expect(String(hints.get('best'))).toBe('Eq(f(x), C1)');
+  expect(String(hints.get('separable_Integral'))).toContain('Integral(1, (_y, f(x)))');
+  expect(String(hints.get('1st_exact_Integral'))).toContain('Subs(Integral(0, x) + Integral(1, _y)');
+  const multiple = dsolve(parse('Derivative(f(x),x)**2-1'),fx,{hint:'all'});
+  expect(multiple.get('nth_algebraic')).toHaveLength(2);
+  expect(() => dsolve(parse('Derivative(f(x),x)-exp(x)'),fx,{hint:'1st_homogeneous_coeff_subs_dep_div_indep'})).toThrow(NotImplementedError);
+  expect(() => dsolve(parse('x*Derivative(f(x),x)-f(x)'),fx,{hint:'1st_homogeneous_coeff_subs_dep_div_indep'})).toThrow(NotImplementedError);
+  expect(() => dsolve(parse('Derivative(f(x),x,3)**3+f(x)**4+sin(x)'),fx,{hint:'all'})).toThrow(NotImplementedError);
+  const nonlinear = dsolve(parse('Derivative(f(x),x)-f(x)**2*x+f(x)'),fx,{hint:'all'});
+  expect(String(nonlinear.get('Bernoulli_Integral'))).toContain('Integral');
+});
+
+it('retains the quadrature for the independent-over-dependent substitution', () => {
+  const equation = parse('x*Derivative(f(x),x)+2*f(x)');
+  const solution = dsolve(equation,fx,{hint:'1st_homogeneous_coeff_subs_indep_div_dep_Integral'});
+  expect(String(solution)).toContain('Eq(log(f(x)), C1 + Integral(');
+  expect(() => dsolve(equation,fx,{hint:'unknown_Integral'})).toThrow(NotImplementedError);
+});

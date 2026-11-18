@@ -562,7 +562,7 @@ describe("sympy/solvers/ode/tests/test_ode.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(dsolve(derivative((SymFunction('f'))(x), [[x, 1]]), undefined, { hint: 'all' }))).toBe('{\'Bernoulli_Integral\': Eq(f(x), C1 + Integral(0, x)), \'1st_homogeneous_coeff_best\': Eq(f(x), C1), \'Bernoulli\': Eq(f(x), C1), \'nth_algebraic\': Eq(f(x), C1), \'nth_linear_euler_eq_homogeneous\': Eq(f(x), C1), \'nth_linear_constant_coeff_homogeneous\': Eq(f(x), C1), \'separable\': Eq(f(x), C1), \'1st_homogeneous_coeff_subs_indep_div_dep\': Eq(f(x), C1), \'nth_algebraic_Integral\': Eq(f(x), C1), \'1st_linear\': Eq(f(x), C1), \'1st_linear_Integral\': Eq(f(x), C1 + Integral(0, x)), \'1st_exact\': Eq(f(x), C1), \'1st_exact_Integral\': Eq(Subs(Integral(0, x) + Integral(1, _y), _y, f(x)), C1), \'lie_group\': Eq(f(x), C1), \'1st_homogeneous_coeff_subs_dep_div_indep\': Eq(f(x), C1), \'1st_homogeneous_coeff_subs_dep_div_indep_Integral\': Eq(log(x), C1 + Integral(-1/_u1, (_u1, f(x)/x))), \'1st_power_series\': Eq(f(x), C1), \'separable_Integral\': Eq(Integral(1, (_y, f(x))), C1 + Integral(0, x)), \'1st_homogeneous_coeff_subs_indep_div_dep_Integral\': Eq(f(x), C1), \'best\': Eq(f(x), C1), \'best_hint\': \'nth_algebraic\', \'default\': \'nth_algebraic\', \'order\': 1}');
   });
-  it.fails("test_dsolve_all_hint:88", () => {
+  it("test_dsolve_all_hint:88", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(dsolve(derivative((SymFunction('f'))(x), [[x, 1]]), undefined, { hint: 'best' }))).toBe('Eq(f(x), C1)');
   });
@@ -835,11 +835,11 @@ describe("sympy/solvers/ode/tests/test_ode.py", () => {
   //           [f(x), g(x)], ics={f(0): 1, g(0): 0}) == [Eq(f(x), exp(x)*cos(x)), Eq(g(x), exp(x)*sin(x))]
   //   => [Eq(f(x), exp(x)*cos(x)), Eq(g(x), exp(x)*sin(x))]
   it.todo("test_solve_ics:491");
-  it.fails("test_solve_ics:496", () => {
+  it("test_solve_ics:496", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(dsolve(new Add([rational(-1), new Mul([rational(2), x, new Pow((SymFunction('f'))(x), rational(2))]), new Mul([rational(2), new Pow(x, rational(2)), derivative((SymFunction('f'))(x), [[x, 1]]), (SymFunction('f'))(x)])]), (SymFunction('f'))(x), { ics: [[(SymFunction('f'))(rational(1)), rational(0)]] }))).toBe('[Eq(f(x), -sqrt(x - 1)/x), Eq(f(x), sqrt(x - 1)/x)]');
   });
-  it.fails("test_solve_ics:498", () => {
+  it("test_solve_ics:498", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(dsolve(new Add([rational(-1), new Mul([rational(2), x, new Pow((SymFunction('f'))(x), rational(2))]), new Mul([rational(2), new Pow(x, rational(2)), derivative((SymFunction('f'))(x), [[x, 1]]), (SymFunction('f'))(x)])]), (SymFunction('f'))(x), { ics: [[Subs(derivative((SymFunction('f'))(x), [[x, 1]]), [x], [rational(1)]), rational(0)]] }))).toBe('[Eq(f(x), -sqrt(x - 1/2)/x), Eq(f(x), sqrt(x - 1/2)/x)]');
   });
@@ -880,7 +880,7 @@ describe("sympy/solvers/ode/tests/test_ode.py", () => {
   //           {C2: 1}
   //   => {C2: 1}
   it.todo("test_solve_ics:514");
-  it.fails("test_solve_ics:526", () => {
+  it("test_solve_ics:526", () => {
     const [r, K, f0] = symbols('r K f0');
     const x = new Sym('x', { real: true });
     expect(sympyStr(dsolve(Relational(derivative((SymFunction('f'))(x), [[x, 1]]), new Mul([r, new Add([rational(1), new Mul([rational(-1), new Pow(K, rational(-1)), (SymFunction('f'))(x)])]), (SymFunction('f'))(x)]), '==', { evaluate: false }), (SymFunction('f'))(x), { ics: [[(SymFunction('f'))(rational(0)), f0]] }))).toBe('Eq(f(x), K*f0*exp(r*x)/((-K + f0)*(f0*exp(r*x)/(-K + f0) - 1)))');
@@ -918,7 +918,7 @@ describe("sympy/solvers/ode/tests/test_ode.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(dsolve(new Add([new Mul([rational(-1), (SymFunction('f'))(x)]), derivative((SymFunction('f'))(x), [[x, 1]])]), (SymFunction('f'))(x), { ics: [[(SymFunction('f'))(rational(0)), (SymFunction('f'))(rational(0))]] }))).toBe('Eq(f(x), f(0)*exp(x))');
   });
-  it.fails("test_solve_ics:571", () => {
+  it("test_solve_ics:571", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(dsolve(new Add([derivative((SymFunction('f'))(x), [[x, 2]]), (SymFunction('f'))(x)]), (SymFunction('f'))(x), { ics: [[Subs(derivative((SymFunction('f'))(x), [[x, 1]]), [x], [rational(0)]), Subs(derivative((SymFunction('f'))(x), [[x, 1]]), [x], [rational(0)])], [(SymFunction('f'))(rational(0)), (SymFunction('f'))(rational(0))]] }))).toBe('Eq(f(x), f(0)*cos(x) + sin(x)*Subs(Derivative(f(x), x), x, 0))');
   });
@@ -1373,7 +1373,7 @@ describe("sympy/solvers/ode/tests/test_ode.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr([isUnsolved(at(checkodesol(new Add([new Mul([x, derivative((SymFunction('f'))(x), [[x, 2]])]), new Mul([rational(-1), a, x, (SymFunction('f'))(x)]), derivative((SymFunction('f'))(x), [[x, 1]])]), Relational((SymFunction('f'))(x), new Add([new Mul([C1, new Add([rational(1), new Mul([rational(1, 4), a, new Pow(x, rational(2))]), new Mul([rational(1, 64), new Pow(a, rational(2)), new Pow(x, rational(4))])])]), O(new Pow(x, rational(6)), x, rational(0))]), '==', { evaluate: false })), 1)), at(checkodesol(new Add([new Mul([x, derivative((SymFunction('f'))(x), [[x, 2]])]), new Mul([rational(-1), a, x, (SymFunction('f'))(x)]), derivative((SymFunction('f'))(x), [[x, 1]])]), Relational((SymFunction('f'))(x), new Add([new Mul([C1, new Add([rational(1), new Mul([rational(1, 4), a, new Pow(x, rational(2))]), new Mul([rational(1, 64), new Pow(a, rational(2)), new Pow(x, rational(4))])])]), O(new Pow(x, rational(6)), x, rational(0))]), '==', { evaluate: false })), 1)])).toBe('(True, 0)');
   });
-  it.fails("test_2nd_power_series_regular:1001", () => {
+  it("test_2nd_power_series_regular:1001", () => {
     const a = new Sym('a');
     const x = new Sym('x', { real: true });
     expect(sympyStr(dsolve(new Add([new Mul([a, new Pow(x, rational(-1)), (SymFunction('f'))(x)]), new Mul([new Pow(x, rational(-1)), new Add([rational(1), new Mul([rational(-1), x])]), derivative((SymFunction('f'))(x), [[x, 1]])]), derivative((SymFunction('f'))(x), [[x, 2]])]), (SymFunction('f'))(x), { hint: '2nd_power_series_regular' }))).toBe('Eq(f(x), C1*(-a*x**5*(a - 4)*(a - 3)*(a - 2)*(a - 1)/14400 + a*x**4*(a - 3)*(a - 2)*(a - 1)/576 - a*x**3*(a - 2)*(a - 1)/36 + a*x**2*(a - 1)/4 - a*x + 1) + O(x**6))');

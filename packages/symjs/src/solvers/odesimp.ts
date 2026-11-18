@@ -8,6 +8,7 @@
 
 import { Expr, Add, Constant, Derivative, Dummy, Fn, Integral, Mul, Order, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import type { ExprLike } from '../core/nodes';
+import { TupleNode } from '../core/containers';
 import { SubsNode } from '../core/subsnode';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
@@ -22,7 +23,7 @@ import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand } from '../simplify/expand';
 import { logcombine, powsimp } from '../simplify/powsimp';
 import { simplify } from '../simplify/simplify';
-import { linsolve, solve } from './solve';
+import { linearEqToMatrix, linsolve, solve } from './solve';
 
 /** Rank ODE solutions: explicit (-2), solvable (-1), string length, or infinity for integrals. */
 export function odeSolSimplicity(sol: Expr | readonly Expr[], func: Expr, trysolving = true): number | Expr {
@@ -52,16 +53,28 @@ export function solveIcs(sols: readonly Expr[], funcs: readonly Expr[], constant
     const func = funcs.find((f) => f instanceof UndefFn && f.name === fn.name);
     if (func === undefined) throw new RangeError('solveIcs: condition refers to an unknown function');
     const x = cast(first(func.args), Sym);
-    const solution = sols.find((s) => s instanceof Rel && s.lhs.equals(func));
-    if (!(solution instanceof Rel)) throw new TypeError('solveIcs: explicit solutions are required');
+    const solution = sols.find((s) => s instanceof Rel && s.has(func));
+    if (!(solution instanceof Rel)) throw new TypeError('solveIcs: solution equation required');
     const order = conditionExpr instanceof Derivative ? conditionExpr.variableCount.reduce((s, [, n]) => s + n, 0) : 0;
     const point = condition instanceof SubsNode ? first(condition.point) : first(fn.args);
     if (point.has(x)) throw new RangeError('solveIcs: initial point must be independent of the variable');
-    equations.push(add(subs(diff(solution.rhs, x, order), [[x, point]]), mul(-1, value)));
+    if (solution.lhs.equals(func)) equations.push(add(subs(diff(solution.rhs, x, order), [[x, point]]), mul(-1, value)));
+    else {
+      const residual = diff(add(solution.lhs, mul(-1, solution.rhs)), x, order);
+      equations.push(subs(subs(residual, [[diff(func, x, order), value]]), [[x, point]]));
+    }
+  }
+  if (equations.length && equations.every((e) => e.equals(0))) throw new RangeError('initial conditions do not determine any constants');
+  if (constants.length === 1 && !linearEqToMatrix(equations, constants)) {
+    const c = first(constants);
+    const equation = first(equations.filter((e) => e.has(c)));
+    const values = solve(equation, c).filter((v) => equations.every((e) => simplify(subs(e, [[c, v]])).equals(0)));
+    if (values.length !== 1) throw new RangeError('initial conditions do not determine a unique solution');
+    return new Map([[c, first(values)]]);
   }
   const values = linsolve(equations, constants);
   if (values === undefined) throw new RangeError('solveIcs: inconsistent initial conditions');
-  return new Map(constants.map((c, i) => [c, at(values, i)]));
+  return new Map(constants.map((c, i): [Sym, Expr] => [c, at(values, i)]).filter(([c,v]) => !c.equals(v)));
 }
 
 const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
@@ -233,7 +246,7 @@ export function constantRenumber(expr: Expr, variables?: readonly Expr[], newcon
       if (!found.some((c) => c.key === e.key)) found.push(cast(e, Sym));
       return;
     }
-    if (e instanceof Fn || e instanceof UndefFn || e instanceof Pow) {
+    if (e instanceof TupleNode || e instanceof Fn || e instanceof UndefFn || e instanceof Pow) {
       e.args.forEach(walk);
       return;
     }
