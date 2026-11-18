@@ -9,7 +9,9 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import * as Sets from '../../src/sets/sets';
+import rangeSlices from './range-slices.json';
 import { impl } from '../../src/core/nodes';
+import { cast } from '../../src/core/guard';
 
 const x = sj.symbol('x');
 const y = sj.symbol('y');
@@ -613,7 +615,7 @@ describe('ConditionSet and imageset evaluation', () => {
       'EmptySet',
       '{1, 3, 5, 7, 9}',
       '{2}',
-      '{2, 4, 6, 8, 10, 12, 14, 16, 18, 20}',
+      'Range(2, 22, 2)',
       'EmptySet',
       'Intersection(ImageSet(Lambda(n, n**2), Integers), Interval(0, 10))',
       // SymPy: {0}, which holds only for y = 0 or |y| > 10
@@ -622,7 +624,7 @@ describe('ConditionSet and imageset evaluation', () => {
       'ImageSet(Lambda(n, 2*n), Range(0, oo, 1))',
       'Interval(0, 1)',
       'Intersection(ImageSet(Lambda(m, 2*m), Integers), ImageSet(Lambda(n, n*y), Integers))',
-      'Intersection(ImageSet(Lambda(m, 2*m), Integers), ImageSet(Lambda(n, 2*n), Naturals))',
+      'Intersection(ImageSet(Lambda(m, 2*m), Integers), Range(2, oo, 2))',
     ]);
     expect(String(X(I(-1, 1), im('pi*n')))).toBe('{0}');
   });
@@ -933,7 +935,7 @@ it('returns sets of permitted function arities', async () => {
   expect(a.nargs(new a.WildFunction('F'))).toBe(a.Naturals0);
   expect(String(a.nargs(a.SymFunction('f',{nargs:1})))).toBe('{1}');
   expect(String(a.nargs(new a.WildFunction('F',[2,1])))).toBe('{1, 2}');
-  expect(a.nargs(a.SymFunction('f',{nargs:[]}))).toBe(a.EmptySet);
+  expect(() => a.SymFunction('f',{nargs:[]})).toThrow(RangeError);
 });
 
 it('evaluates condition-set membership with the base restriction', async () => {
@@ -980,7 +982,7 @@ it('intersects nested complex regions using containment of their parameter sets'
   expect(sj.Intersection(c, c)).toBe(c);
   expect(String(sj.Intersection(full, c))).toContain('Intersection');
   const far = new sj.PolarComplexRegion(sj.ProductSet(sj.Interval.of(2, 3), sj.Interval.of(0, sj.pi)));
-  expect(String(sj.Intersection(half, far))).toContain('Intersection');
+  expect(sj.Intersection(half, far)).toBe(sj.EmptySet);
 });
 
 it('decides finite cardinality without treating symbolic intervals as nonempty', () => {
@@ -1181,4 +1183,89 @@ it('iterates unevaluated set operations like SymPy and removes union parts indep
   const want = 'Union(Complement(Interval.open(-oo, pi), Naturals), Complement(Interval.open(pi, oo), Naturals))';
   expect(String(Sets.complement(sj.Reals, op('Union', sj.Naturals, pi)))).toBe(want);
   expect(String(Sets.complement(sj.Reals, op('Union', pi, sj.Naturals)))).toBe(want);
+});
+
+
+it('slices finite and infinite ranges against SymPy reference results', () => {
+  const bound = (value: unknown): number | undefined => typeof value === 'number' ? value : undefined;
+  for (const row of rangeSlices) {
+    const [a, b, d, start, stop, step, expected] = row;
+    const r = cast(Sets.range(sj.parse(String(a)), sj.parse(String(b)), sj.parse(String(d))), Sets.Range);
+    const run = () => r.slice(bound(start), bound(stop), bound(step));
+    if (expected === 'error') expect(run, JSON.stringify(row)).toThrow(RangeError);
+    else expect(String(run()), JSON.stringify(row)).toBe(expected);
+  }
+  const r = cast(Sets.range(5), Sets.Range);
+  expect(() => r.slice(0.5)).toThrow(TypeError);
+  expect(() => r.slice(undefined, undefined, 0)).toThrow(RangeError);
+});
+
+it('returns boundaries of dense and discrete standard sets', () => {
+  for (const set of [Sets.Integers, Sets.Naturals, Sets.Naturals0, Sets.range(5)]) expect(set.boundary).toBe(set);
+  expect(Sets.Rationals.boundary).toBe(Sets.Reals);
+  expect(Sets.UniversalSet.boundary).toBe(Sets.EmptySet);
+});
+
+it('maps affine integer functions on natural numbers to ranges', () => {
+  for (const [expr, base, result] of [
+    ['2*x+1', Sets.Naturals, 'Range(3, oo, 2)'],
+    ['2*x+1', Sets.Naturals0, 'Range(1, oo, 2)'],
+    ['1-2*x', Sets.Naturals, 'Range(-1, -oo, -2)'],
+    ['x/2', Sets.Naturals, 'ImageSet(Lambda(x, x/2), Naturals)'],
+    ['x+y', Sets.Naturals, 'ImageSet(Lambda(x, x + y), Naturals)'],
+    ['x**2+x', Sets.Naturals, 'ImageSet(Lambda(x, x**2 + x), Naturals)'],
+  ] as const) expect(String(Sets.imageSet(x, sj.parse(expr), base))).toBe(result);
+});
+
+it('intersects rectangular regions and their real cross sections', () => {
+  const region = (a: Sets.SetExpr, b: Sets.SetExpr) => sj.ComplexRegion(sj.ProductSet(a, b));
+  const a = region(I(-2, 2), I(-2, 2));
+  const b = region(I(0, 3), I(-3, 0));
+  expect(String(sj.Intersection(a, b))).toBe('CartesianComplexRegion(ProductSet(Interval(0, 2), Interval(-2, 0)))');
+  expect(sj.Intersection(a, region(I(4, 5), I(4, 5)))).toBe(sj.EmptySet);
+  expect(String(sj.Intersection(a, I(1, 4)))).toBe('Interval(1, 2)');
+  expect(sj.Intersection(region(I(1, 2), I(1, 2)), sj.Reals)).toBe(sj.EmptySet);
+  const disconnected = sj.ComplexRegion(sj.Union(sj.ProductSet(I(1, 2), I(-1, 1)), sj.ProductSet(I(3, 4), I(2, 3))));
+  expect(String(sj.Intersection(disconnected, sj.Reals))).toBe('Interval(1, 2)');
+});
+
+it('intersects polar sectors including their shared origin and real axes', () => {
+  const sector = (a: number, b: number, lo: sj.ExprLike, hi: sj.ExprLike) => sj.ComplexRegion(sj.ProductSet(I(a, b), I(lo, hi)), true);
+  const north = sector(0, 2, 0, sj.pi);
+  const east = sector(0, 3, sj.mul(-1, sj.pi, sj.S.Half), sj.mul(sj.pi, sj.S.Half));
+  expect(String(sj.Intersection(north, east))).toContain('PolarComplexRegion');
+  const upper = sector(0, 1, sj.mul(sj.pi, sj.Rational.of(1n, 4n)), sj.mul(3, sj.pi, sj.Rational.of(1n, 4n)));
+  const lower = sector(0, 1, sj.mul(5, sj.pi, sj.Rational.of(1n, 4n)), sj.mul(7, sj.pi, sj.Rational.of(1n, 4n)));
+  expect(String(sj.Intersection(upper, lower))).toBe('{0}');
+  expect(String(sj.Intersection(north, sj.Reals))).toBe('Interval(-2, 2)');
+  expect(String(sj.Intersection(upper, sj.Reals))).toBe('{0}');
+  expect(sj.Intersection(sector(1, 2, sj.mul(sj.pi, sj.Rational.of(1n, 4n)), sj.mul(3, sj.pi, sj.Rational.of(1n, 4n))), sj.Reals)).toBe(sj.EmptySet);
+});
+
+it('unions complex regions in their coordinate space', () => {
+  const a = sj.ComplexRegion(sj.ProductSet(I(0, 1), I(0, 1)));
+  const b = sj.ComplexRegion(sj.ProductSet(I(1, 2), I(0, 1)));
+  expect(String(sj.Union(a, b))).toBe('CartesianComplexRegion(ProductSet(Interval(0, 2), Interval(0, 1)))');
+  expect(String(sj.Union(a, I(2, 3)))).toContain('CartesianComplexRegion');
+  const polar = sj.ComplexRegion(sj.ProductSet(I(0, 2), I(0, sj.pi)), true);
+  expect(String(sj.Union(a, polar))).toContain('Union');
+  expect(String(sj.Union(sj.ProductSet(I(0, 1), I(2, 3)), sj.ProductSet(I(0, 1), I(2, 3))))).toBe('ProductSet(Interval(0, 1), Interval(2, 3))');
+  expect(String(sj.Union(sj.ProductSet(I(0, 1)), sj.ProductSet(I(0, 1), I(0, 1))))).toContain('Union');
+});
+
+
+it('restricts condition sets symmetrically under intersection', () => {
+  const condition = Sets.conditionSet(x, sj.Gt(sj.pow(x, 2), 4), I(1, 4));
+  const expected = 'ConditionSet(x, x**2 > 4, Interval(1, 3))';
+  expect(String(sj.Intersection(condition, I(0, 3)))).toBe(expected);
+  expect(String(sj.Intersection(I(0, 3), condition))).toBe(expected);
+});
+
+
+it('slices ranges with exact bounds beyond machine integer precision', () => {
+  const end = sj.Rational.of(10n ** 30n);
+  const range = cast(Sets.range(end), Sets.Range);
+  expect(range.slice().stop.key).toBe(end.key);
+  expect(String(range.slice(-2))).toBe('Range(999999999999999999999999999998, 1000000000000000000000000000000, 1)');
+  expect(String(range.slice(undefined, undefined, -1).start)).toBe('999999999999999999999999999999');
 });
