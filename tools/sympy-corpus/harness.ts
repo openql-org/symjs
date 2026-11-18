@@ -4784,7 +4784,7 @@ Object.assign(ADAPTERS, {
   residue: (args, kw) => (noKw(kw), sj.residue(asExpr(args[0]), asSym(args[1]), asExpr(args[2]))),
   euler_equations: (args, kw) => {
     noKw(kw);
-    const items = (a: unknown): Expr[] => (a instanceof JsTuple || a instanceof JsList ? a.items.map(asExpr) : a === undefined ? [] : [asExpr(a)]);
+    const items = (a: unknown): Expr[] => (a instanceof JsTuple || a instanceof JsList || a instanceof JsSet ? a.items.map(asExpr) : a === undefined ? [] : [asExpr(a)]);
     return new JsList(sj.eulerEquations(asExpr(args[0]), items(args[1]), items(args[2])));
   },
   apply_finite_diff: (args, kw) => {
@@ -5158,6 +5158,53 @@ ADAPTERS['IndexedBase'] = (args, kw) => {
   return new sj.IndexedBase(typeof name === 'string' ? name : asSym(name), { ...assumptions, ...(shape === undefined ? {} : { shape: shape instanceof JsTuple || shape instanceof JsList ? shape.items.map(asExpr) : [asExpr(shape)] }) });
 };
 
+// Python Boolean helpers return sets and tuples even when the public API uses arrays or NoMatch.
+ADAPTERS['conjuncts'] = (args, kw) => (noKw(kw), new JsSet(sj.conjuncts(asExpr(args[0]))));
+ADAPTERS['disjuncts'] = (args, kw) => (noKw(kw), new JsSet(sj.disjuncts(asExpr(args[0]))));
+ADAPTERS['.binary_symbols'] = (_args, kw, self) => {
+  noKw(kw);
+  const e = asExpr(self);
+  const symbols = 'binarySymbols' in e ? e.binarySymbols : sj.binarySymbols(e);
+  return new JsSet(symbols instanceof Map ? [...symbols.values()] : symbols instanceof Set ? [...symbols] : []);
+};
+ADAPTERS['.canonical'] = (_args, kw, self) => {
+  noKw(kw);
+  const e = asExpr(self);
+  if (e instanceof sj.BoolAtom) return e;
+  if (!(e instanceof sj.Rel)) throw new Unsupported('canonical requires a Boolean atom or relation');
+  return sj.canonicalRelation(e);
+};
+ADAPTERS['.negated'] = (_args, kw, self) => {
+  noKw(kw);
+  const e = asExpr(self);
+  if (e instanceof sj.BoolAtom) return sj.Not(e);
+  if (!(e instanceof sj.Rel)) throw new Unsupported('negated requires a Boolean atom or relation');
+  return sj.negated(e);
+};
+ADAPTERS['.is_Atom'] = (_args, kw, self) => (noKw(kw), asExpr(self).isAtom);
+ADAPTERS['is_literal'] = (args, kw) => (noKw(kw), sj.isLiteral(asExpr(args[0])));
+ADAPTERS['pl_true'] = (args, kw) => {
+  for (const key of Object.keys(kw)) if (key !== 'deep' && key !== 'model') throw new Unsupported(`kwargs ${key}`);
+  const input = args[1] ?? kw['model'];
+  const model = new Map<Expr, sj.BoolLike>();
+  if (input instanceof JsDict) for (const [key, value] of input.entries) {
+    if (value !== null) model.set(asExpr(key), asExpr(value));
+  }
+  return fromJs(sj.plTrue(asExpr(args[0]), model, (args[2] ?? kw['deep']) === true));
+};
+for (const name of ['find_pure_symbol', 'find_pure_symbol_int_repr'] as const) {
+  ADAPTERS[name] = (args, kw) => {
+    noKw(kw);
+    const items = (value: unknown): readonly unknown[] => {
+      if (value instanceof JsList || value instanceof JsTuple || value instanceof JsSet) return value.items;
+      throw new Unsupported('a sequence or set is required');
+    };
+    const result = name === 'find_pure_symbol'
+      ? sj.findPureSymbol(items(args[0]).map(asExpr), items(args[1]).map(asExpr))
+      : sj.findPureSymbolIntRepr(new Set(items(args[0]).map(intArg)), items(args[1]).map((clause) => new Set(items(clause).map(intArg))));
+    return sj.isNoMatch(result) ? new JsTuple([null, null]) : new JsTuple(result);
+  };
+}
 ADAPTERS['.as_set'] = (_args, kw, self) => (noKw(kw), self instanceof sj.Contains ? self.asSet() : sj.asSet(self as Expr | boolean));
 
 // K.of_type(a) of a GF(p) element: the element itself, not its integer value
@@ -5281,6 +5328,8 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   },
   '.__le__': (a, [b]) => {
     if (a === null || b === null) throw new TypeError('cannot order None');
+    // Python set <= set is the subset test
+    if (a instanceof Set && b instanceof Set) return [...a].every((x) => [...b].some((y) => pyEquals(x, y)));
     return callMethod(a, ['le'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Le(a, b) : unsupportedOp('<='));
   },
   '.__gt__': (a, [b]) => {

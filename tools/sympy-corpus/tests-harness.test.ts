@@ -490,3 +490,21 @@ it('translates named CSE callbacks and preserves None in separatevars options', 
   expect(runTestCase({ ...simplify, fn: 'separatevars', args: [e], kwargs: { dict: { t: 'Js', v: true }, symbols: { t: 'Js', v: null } }, expected: "{'coeff': x + y}" })).toEqual({ status: 'pass' });
   expect(runTestCase({ ...simplify, fn: '.is_Piecewise', self: x, args: [], expected: 'False' })).toEqual({ status: 'pass' });
 });
+
+it('translates Python Boolean set attributes and partial truth assignments', () => {
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const y = { t: 'Symbol', name: 'y', assume: {} };
+  const boolean = (v: boolean | null): Tree => ({ t: 'Js', v });
+  const expression = { t: 'BoolOp', op: 'And', args: [x, y] };
+  for (const fn of ['conjuncts', 'disjuncts']) {
+    expect(runTestCase({ ...base, fn, args: [x], expected: '{x}' })).toEqual({ status: 'pass' });
+  }
+  expect(runTestCase({ ...base, fn: '.binary_symbols', self: expression, args: [], expected: '{x, y}' })).toEqual({ status: 'pass' });
+  for (const fn of ['.canonical', '.is_Atom']) {
+    expect(runTestCase({ ...base, fn, self: boolean(true), args: [], expected: 'True' })).toEqual({ status: 'pass' });
+  }
+  expect(runTestCase({ ...base, fn: '.negated', self: boolean(true), args: [], expected: 'False' })).toEqual({ status: 'pass' });
+  const model = { t: 'Dict', items: [[x, boolean(null)], [y, boolean(true)]] };
+  expect(runTestCase({ ...base, fn: 'pl_true', args: [expression, model], expected: 'None' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'pl_true', args: [{ ...expression, op: 'Or' }, model], expected: 'True' })).toEqual({ status: 'pass' });
+});

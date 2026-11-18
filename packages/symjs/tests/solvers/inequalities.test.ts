@@ -4,6 +4,7 @@
 // Tests of src/solvers/inequalities.ts: inequality solving, solveset helpers, singularities, monotonicity and extrema; expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
+import * as sj from '../../src';
 import { Abs, And, Eq, Ge, Gt, Lt, Ne, Or, exp, NotImplementedError, Rational, erf, erfc, erfcinv, erfinv, parse, Poly, Reals, S as SS, sin, solveset, symbols } from '../../src';
 import type { Expr } from '../../src';
 import { BoolOp, xor } from '../../src/core/boolalg';
@@ -598,4 +599,39 @@ it('preserves decided inequalities in relational and set forms', () => {
   const domain = interval(0, 1);
   expect(Q.solveUnivariateInequality(SS.true, x, { relational: false, domain })).toBe(domain);
   expect(Q.solveUnivariateInequality(SS.false, x, { relational: false })).toBe(finiteSet());
+});
+
+it('handles modulo periods, unsupported variables and singular powers', () => {
+  expect(String(Q.periodicity(sj.Mod(x, 4), x))).toBe('4');
+  expect(String(Q.periodicity(sj.Mod(sj.sin(x), 4), x))).toBe('2*pi');
+  expect(Q.periodicity(new sj.DefinedFunctionCall('Mod', [p('x**2+1'), x], { nargs: 2 }), x)).toBeUndefined();
+  expect(Q.periodicity(new sj.DefinedFunctionCall('Mod', [p('x**2'), sj.Rational.of(4)], { nargs: 2 }), x)).toBeUndefined();
+  // @ts-expect-error Invalid scalar variable.
+  expect(() => Q.periodicity(x, sj.S.One)).toThrow(NotImplementedError);
+  expect(() => Q.singularities(sj.pow(x, sj.S.NegativeInfinity), x)).toThrow(NotImplementedError);
+  // @ts-expect-error Invalid scalar variable.
+  expect(() => Q.maximum(x, sj.S.One)).toThrow(RangeError);
+  expect(() => Q.maximum(x, x, sj.EmptySet)).toThrow(RangeError);
+});
+
+it('finds extrema of absolute values including a zero crossing', () => {
+  expect(String(Q.minimum(p('Abs(x)'), x, interval(-1, 2)))).toBe('0');
+  expect(String(Q.minimum(p('Abs(x)'), x, interval(1, 2)))).toBe('1');
+  expect(String(Q.minimum(p('Abs(x)'), x, interval(-2, -1)))).toBe('1');
+});
+
+it('finds nonempty domains for finite sets, empty sets and unions', () => {
+  expect(Q.notEmptyIn(sj.EmptySet, x)).toBe(sj.EmptySet);
+  expect(Q.notEmptyIn(sj.finiteSet(x), x)).toBe(sj.Reals);
+  expect(Q.notEmptyIn(sj.union(sj.finiteSet(x), sj.finiteSet(2)), x)).toBe(sj.Reals);
+  expect(() => Q.notEmptyIn(sj.finiteSet(x), x, x)).toThrow(NotImplementedError);
+  // @ts-expect-error Invalid scalar variable.
+  expect(() => Q.notEmptyIn(sj.finiteSet(x), sj.S.One)).toThrow(RangeError);
+  expect(() => Q.notEmptyIn(new sj.SetOp('Intersection', [sj.finiteSet(x), sj.Integers]), x)).toThrow(NotImplementedError);
+  expect(Q.notEmptyIn(new sj.SetOp('Intersection', [sj.finiteSet(0), interval(1, 2)]), x)).toBe(sj.EmptySet);
+  expect(Q.notEmptyIn(new sj.SetOp('Union', [sj.finiteSet(x), sj.finiteSet(2)]), x)).toBe(sj.Reals);
+});
+
+it('leaves absolute-value extrema with undecidable zero crossings unsupported', () => {
+  expect(() => Q.minimum(p('Abs(x*y)'), x, interval(1, 2))).toThrow(NotImplementedError);
 });

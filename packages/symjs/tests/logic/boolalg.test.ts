@@ -357,3 +357,36 @@ describe('boolalg', () => {
     expect(boolalg.binarySymbols(sj.S.true).size).toBe(0);
   });
 });
+
+it('flattens nested unevaluated XORs and finds Boolean predicate symbols', () => {
+  const nested = new BoolOp('Xor', [x, new BoolOp('Xor', [y, z])]);
+  expect(s(boolalg.xorFn([x, nested]))).toBe('y ^ z');
+  expect([...L.binarySymbols(sj.Q.is_true(x)).values()]).toEqual([x]);
+  expect([...L.binarySymbols(sj.Q.eq(x, true)).values()]).toEqual([x]);
+  expect([...L.binarySymbols(sj.Q.ne(x, true)).values()]).toEqual([x]);
+  expect(L.binarySymbols(sj.Q.prime(x)).size).toBe(0);
+});
+
+it('refines relations with direct, complementary and unrelated assumptions', () => {
+  const p = sj.Lt(x, 0);
+  expect(s(sj.refine(p, p))).toBe('True');
+  expect(s(sj.refine(p, sj.Ge(x, 0)))).toBe('False');
+  expect(s(sj.refine(p, sj.Q.real(x)))).toBe('x < 0');
+  expect(s(sj.refine(p, true))).toBe('x < 0');
+  expect(s(sj.refine(p, [sj.Q.real(x), sj.Lt(y, 0)]))).toBe('x < 0');
+});
+
+it('registers parser constructors for Boolean gates', async () => {
+  const { parserHooks } = await import('../../src/parsing/parser');
+  const build = (name: string, args: Expr[]): Expr => {
+    const constructor = parserHooks.constructors.get(name);
+    if (constructor === undefined) throw new TypeError('Missing Boolean constructor');
+    return constructor(args);
+  };
+  expect(s(build('Implies', [x, y]))).toBe('Implies(x, y)');
+  expect(s(build('Equivalent', [x, y]))).toBe('Equivalent(x, y)');
+  expect(s(build('Nand', [x, y]))).toBe('~(x & y)');
+  expect(s(build('Nor', [x, y]))).toBe('~(x | y)');
+  expect(s(build('ITE', [x, y, z]))).toBe('ITE(x, y, z)');
+  expect(() => build('ITE', [x, y])).toThrow(SyntaxError);
+});

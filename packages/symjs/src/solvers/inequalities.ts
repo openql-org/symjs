@@ -11,7 +11,7 @@
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike, FnName, RelOp } from '../core/nodes';
 import { Sym } from '../core/nodes';
-import { Add, BoolAtom, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
+import { Add, BoolAtom, Constant, Dummy, ExtensionExpr, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
 import { at, cast, defined, expectType, first } from '../core/guard';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
@@ -121,9 +121,10 @@ function lcim(ps: Expr[]): Expr | undefined {
 
 /** Period of f in x, 0 when f does not depend on x, undefined when not periodic. */
 export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
+  if (!(x instanceof Sym)) throw new NotImplementedError('periodicity requires a scalar symbol');
   let f = sympify(fIn);
   if (f instanceof Rel) f = add(f.lhs, mul(-1, f.rhs));
-  f = simplify(f);
+  if (!(f instanceof ExtensionExpr && f.name === 'Mod')) f = simplify(mapBottomUp(f, (node) => node instanceof Fn && node.name === 're' && first(node.args).equals(x) ? x : node));
   if (!f.has(x)) return S.Zero;
   const linCoeff = (a: Expr): Expr | undefined => {
     const p = (() => {
@@ -136,6 +137,12 @@ export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
     // the leading coefficient of a polynomial in x does not contain x
     return p?.degree() === 1 ? p.LC() : undefined;
   };
+  if (f instanceof ExtensionExpr && f.name === 'Mod') {
+      const [argument, modulus] = [at(f.args, 0), at(f.args, 1)];
+      if (modulus.has(x)) return undefined;
+      const coefficient = linCoeff(argument);
+      return coefficient === undefined ? periodicity(argument, x) : impl.abs(mul(modulus, pow(coefficient, -1)));
+  }
   if (f instanceof Fn) {
     const P = trigPeriod(f.name);
     if (P) {
@@ -824,6 +831,7 @@ function complexExpSolutions(g: Expr, x: Sym, n: Dummy = new Dummy('n')): SetExp
 /** Points where the expression is singular (SymPy singularities). */
 export function singularities(eIn: ExprLike, x: Sym, domain?: SetExpr): SetExpr {
   const e = sympify(eIn);
+  if (some(e, (node) => node instanceof Pow && (node.exp === S.NegativeInfinity || node.exp === S.Infinity))) throw new NotImplementedError('Singularities of infinite powers are not supported');
   const dom = domain ?? (x.assumptions.real ? Reals : Complexes);
   let sings: SetExpr = EmptySet;
   const visit = (t: Expr) => {
@@ -904,6 +912,18 @@ export function isConvex(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): boolea
 
 /** Range of f over a real domain: [min, max] candidates at critical points and ends. */
 function extremeValues(f: Expr, x: Sym, domain: SetExpr): Expr[] {
+  if (!(x instanceof Sym)) throw new RangeError('The variable must be a symbol');
+  if (domain === EmptySet) throw new RangeError('Cannot find extrema on an empty domain');
+  if (f instanceof Fn && f.name === 'abs') {
+    const values = extremeValues(first(f.args), x, domain);
+    const signs = values.map((value) => {
+      const sign = cmpReal(value, S.Zero);
+      if (sign === undefined) throw new NotImplementedError('Cannot determine whether the absolute value crosses zero');
+      return sign;
+    });
+    const crossesZero = signs.some((sign) => sign <= 0) && signs.some((sign) => sign >= 0);
+    return [...values.map((value) => impl.abs(value)), ...(crossesZero ? [S.Zero] : [])];
+  }
   let dom = domain;
   if (domain === Reals) {
     const P = periodicity(f, x);
@@ -1071,19 +1091,26 @@ function piecewiseExclusiveLogic(pairs: readonly (readonly [Expr, Expr])[], skip
  * SymPy not_empty_in: the values of x for which the intersection of a
  * FiniteSet of expressions with an Interval is not empty (over the reals).
  */
-export function notEmptyIn(setIn: SetExpr, x: Sym): SetExpr {
-  const parts: readonly Expr[] = setIn.className === 'Intersection' ? setIn.args : [];
+export function notEmptyIn(setIn: SetExpr, x: Sym, ...otherSymbols: Sym[]): SetExpr {
+  if (otherSymbols.length) throw new NotImplementedError('not_empty_in supports one variable');
+  if (!(x instanceof Sym)) throw new RangeError('A symbol must be given');
+  if (setIn === EmptySet) return EmptySet;
+  if (setIn instanceof SetOp && setIn.op === 'Union') return union(...setIn.args.map((part) => notEmptyIn(part, x)));
+  const parts: readonly SetExpr[] = setIn instanceof SetOp && setIn.op === 'Intersection' ? setIn.args : [setIn];
   const fset = parts.find((p): p is FiniteSet => p instanceof FiniteSet);
-  const ivals = parts.filter((p): p is Interval => p instanceof Interval);
-  if (!fset || ivals.length !== 1) throw new NotImplementedError('not_empty_in: FiniteSet intersected with an Interval expected');
-  const iv = first(ivals);
-  const solveRel = (r: Expr): SetExpr => cast(solveUnivariateInequality(r, x, { relational: false }), SetExpr, 'solution set');
+  if (!fset) throw new NotImplementedError('not_empty_in: FiniteSet intersected with an Interval expected');
+  const target = intersection(...parts.filter((part) => part !== fset));
+  const targets = target instanceof SetOp && target.op === 'Union' ? target.args : [target];
+  const solveRel = (r: Expr): SetExpr => r instanceof BoolAtom ? r.value ? Reals : EmptySet : cast(solveUnivariateInequality(r, x, { relational: false }), SetExpr, 'solution set');
   let out: SetExpr = EmptySet;
-  for (const f of fset.args) {
-    let s: SetExpr = Reals;
-    if (!(iv.start instanceof Special)) s = intersection(s, solveRel(iv.leftOpen ? Gt(f, iv.start) : Ge(f, iv.start)));
-    if (!(iv.end instanceof Special)) s = intersection(s, solveRel(iv.rightOpen ? Lt(f, iv.end) : Le(f, iv.end)));
-    out = union(out, s);
+  for (const f of fset.args) for (const targetPart of targets) {
+    if (targetPart !== Reals && targetPart !== UniversalSet && !(targetPart instanceof Interval)) throw new NotImplementedError('not_empty_in: an interval is required');
+    let domain: SetExpr = Reals;
+    if (targetPart instanceof Interval) {
+      if (!(targetPart.start instanceof Special)) domain = intersection(domain, solveRel(targetPart.leftOpen ? Gt(f, targetPart.start) : Ge(f, targetPart.start)));
+      if (!(targetPart.end instanceof Special)) domain = intersection(domain, solveRel(targetPart.rightOpen ? Lt(f, targetPart.end) : Le(f, targetPart.end)));
+    }
+    out = union(out, complement(domain, denominatorZeros(f, x, Reals)));
   }
   return out;
 }
