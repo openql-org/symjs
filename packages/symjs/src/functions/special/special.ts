@@ -330,6 +330,7 @@ function evalLoggamma(x: Expr): Expr | undefined {
 
 /** SymPy polygamma.eval. */
 function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
+  if (isSpecial(n, 'nan') || isSpecial(x, 'nan')) return S.NaN;
   const n0 = n instanceof Rational && n.isZero;
   // polygamma(n, oo) is 0 for n != 0 (SymPy also returns 0 for an n that may be 0; keep that unevaluated)
   if (isOo(x) && (n0 || isPositive(n) === true || isNegative(n) === true)) return n0 ? S.Infinity : S.Zero;
@@ -1315,7 +1316,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     eval: evalPolygamma,
     partials: binary((n, x, i) => {
       if (i === 1) return fnN('polygamma', add(n, 1), x);
-      throw new NotImplementedError('diff: polygamma w.r.t. its order');
+      return noPartial('polygamma', [n, x], 0);
     }),
     numeric: binary((n, z) => cpolygamma(n.re, z)),
     conjugate: true,
@@ -1492,7 +1493,7 @@ export const trigamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =
   opts.evaluate === false ? new Fn('trigamma', [sympify(x)]) : fn('polygamma', [1, x]);
 export const lowergamma = (s: ExprLike, x: ExprLike): Expr => fn('lowergamma', [s, x]);
 export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [s, x]);
-export const beta = (a: ExprLike, b: ExprLike): Expr => fn('beta', [a, b]);
+export const beta = (a: ExprLike, b: ExprLike = a): Expr => fn('beta', [a, b]);
 /** SymPy betainc(a, b, x1, x2): the generalized incomplete beta function, the integral of t**(a - 1)*(1 - t)**(b - 1) from x1 to x2. */
 export const betainc = (a: ExprLike, b: ExprLike, x1: ExprLike, x2: ExprLike): Expr => fn('betainc', [a, b, x1, x2]);
 /** SymPy betainc_regularized(a, b, x1, x2): betainc(a, b, x1, x2)/beta(a, b). */
@@ -1540,6 +1541,12 @@ export const Max = (...xs: ExprLike[]): Expr => fn('Max', xs);
  * @internal
  */
 export const funcExpanders: Partial<Record<FnName, (args: readonly Expr[]) => Expr | undefined>> = {};
+
+/** SymPy beta._eval_expand_func: the quotient of gamma functions. */
+funcExpanders.beta = (args) => {
+  const [a, b] = pair(args);
+  return mul(gamma(a), gamma(b), pow(gamma(add(a, b)), -1));
+};
 
 /** SymPy polygamma._eval_expand_func: recurrence and multiplication theorem. */
 funcExpanders.polygamma = (args) => {

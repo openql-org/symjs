@@ -184,9 +184,12 @@ describe('minimalPolynomial (SymPy minimal_polynomial by composition)', () => {
   });
   it('as a Poly, and compose=False', () => {
     expect(String(sj.minimalPolynomial(parse('sqrt(2)'), undefined, { polys: true }))).toBe("PurePoly(_x**2 - 2, _x, domain='ZZ')");
-    expect(String(sj.minimalPolynomial(parse('sqrt(2)'), x, { polys: true }))).toBe("Poly(x**2 - 2, x, domain='ZZ')");
+    expect(String(sj.minimalPolynomial(parse('sqrt(2)'), x, { polys: true }))).toBe("Poly(x**2 - 2, x, domain='QQ')");
     expect(String(sj.minimalPolynomial(parse('sqrt(2)'), undefined))).toMatch(/^_x\*\*2 - 2$/);
     expect(mp('sqrt(2) + 3*1/3', { compose: false })).toBe('x**2 - 2*x - 1');
+    expect(() => mp('sqrt(y)', { compose: false })).toThrow(sj.NotImplementedError);
+    const alpha = new sj.AlgebraicNumber(parse('sqrt(2)'));
+    expect(String(sj.minimalPolynomial(alpha, x))).toBe('x**2 - 2');
   });
   it('a sum of four square roots (the Swinnerton-Dyer polynomial of order 4)', () => {
     expect(mp('sqrt(2) + sqrt(3) + sqrt(5) + sqrt(7)')).toBe(

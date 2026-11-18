@@ -372,7 +372,7 @@ describe("sympy/simplify/tests/test_simplify.py", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(new Add([new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2)), new Mul([new Pow(fn('gamma', [x]), rational(-1)), fn('factorial', [x])])])))).toBe('x + 1');
   });
-  it.fails("test_simplify_other:162", () => {
+  it("test_simplify_other:162", () => {
     const x = new Sym('x');
     expect(sympyStr(simplify(Relational(new Add([new Pow(fn('cos', [x]), rational(2)), new Pow(fn('sin', [x]), rational(2))]), new Mul([new Pow(fn('gamma', [x]), rational(-1)), fn('factorial', [x])]), '==', { evaluate: false })))).toBe('Eq(x, 1)');
   });

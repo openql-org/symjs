@@ -20,6 +20,7 @@ it('computes ideal operations using rank-one modules', () => {
   expect(R.ideal().isZero()).toBe(true);
   expect(I.isZero()).toBe(false);
   expect(str(R.ideal(p('x*x-y')).reduceElement(p('x*x+y')))).toBe('2*y'); // SymPy 1.14.0
+  expect(R.ideal(x, y).inTermsOfGenerators(p('x+y')).map(str)).toEqual(['1', '1']);
   const other = new PolynomialRingBase(QQ, [x]).ideal(x);
   expect(I.equals(other)).toBe(false);
   expect(() => I.intersect(other)).toThrow(RangeError);

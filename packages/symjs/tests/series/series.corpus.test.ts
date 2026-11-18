@@ -185,19 +185,19 @@ describe("sympy/series/tests/test_series.py", () => {
     const x = new Sym('x');
     expect(sympyStr(doit(new Add([derivative(x, [[x, 1]]), derivative(new Mul([rational(-1, 6), new Pow(x, rational(3))]), [[x, 1]]), O(new Pow(x, rational(3)), x, rational(0))])))).toBe('1 - x**2/2 + O(x**3)');
   });
-  it.fails("test_issue_11313:105", () => {
+  it("test_issue_11313:105", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(derivative(new Pow(x, rational(3)), [[x, 1]]), x, {}))).toBe('3*x**2');
   });
-  it.fails("test_issue_11313:106", () => {
+  it("test_issue_11313:106", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(asLeadingTerm(derivative(new Pow(x, rational(3)), [[y, 1]]), x, {}))).toBe('0');
   });
-  it.fails("test_issue_11313:107", () => {
+  it("test_issue_11313:107", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(derivative(fn('sin', [x]), [[x, 1]]), x, {}))).toBe('1');
   });
-  it.fails("test_issue_11313:108", () => {
+  it("test_issue_11313:108", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(derivative(fn('cos', [x]), [[x, 1]]), x, {}))).toBe('-x');
   });

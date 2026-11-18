@@ -449,3 +449,48 @@ it('sets deltas across disjoint Fermi sectors to zero', async () => {
   expect(a.KroneckerDelta(u,p)).toBeInstanceOf(a.Fn);
   expect(a.KroneckerDelta(p,1)).toBeInstanceOf(a.Fn);
 });
+
+ it('differentiates the Mellin-Barnes function by shifting numerator parameters', () => {
+  const a = new Sym('a'), b = new Sym('b'), z = new Sym('z');
+  const g = sj.meijerg([a], [], [], [], x);
+  expect(String(diff(g, x))).toBe('((a - 1)*meijerg(((a,), ()), ((), ()), x) + meijerg(((a - 1,), ()), ((), ()), x))/x');
+  const h = sj.meijerg([], [], [b], [], x);
+  expect(String(diff(h, x))).toBe('(b*meijerg(((), ()), ((b,), ()), x) - meijerg(((), ()), ((b + 1,), ()), x))/x');
+  expect(diff(sj.meijerg([], [a], [], [b], x), x)).toBe(sj.S.Zero);
+  expect(String(diff(sj.meijerg([x], [], [], [], x), x))).toContain('Derivative(');
+  const integrand = sj.meijerg([a], [1], [b], [2], x);
+  if (!(integrand instanceof sj.MeijerG)) throw new TypeError('meijerg');
+  expect(String(integrand.integrand(z))).toBe('x**z*gamma(b - z)*gamma(-a + z + 1)/(gamma(1 - z)*gamma(z - 1))');
+});
+
+it('enforces the support interval of a Kronecker delta before equality', () => {
+  const i = new Sym('i'), j = new Sym('j');
+  expect(sj.KroneckerDelta(-1, -1, [0, 2])).toBe(sj.S.Zero);
+  expect(sj.KroneckerDelta(i, -1, [0, 2])).toBe(sj.S.Zero);
+  expect(sj.KroneckerDelta(i, 3, [0, 2])).toBe(sj.S.Zero);
+  expect(sj.KroneckerDelta(3, j, [0, 2])).toBe(sj.S.Zero);
+  expect(sj.KroneckerDelta(1, 1, [0, 2])).toBe(sj.S.One);
+  expect(String(sj.KroneckerDelta(j, i, [0, i]))).toBe('KroneckerDelta(i, j, (0, i))');
+  expect(String(sj.KroneckerDelta(i, j, [0, i]))).toBe('KroneckerDelta(i, j, (0, i))');
+  expect(String(sj.rewrite(sj.KroneckerDelta(i, j), 'Piecewise'))).toBe('Piecewise((0, Ne(i, j)), (1, True))');
+  expect(sj.diff(sj.meijerg([], [], [1], [], sj.pow(x, 2)), x).has(x)).toBe(true);
+});
+
+it('rejects infinite parameters and intersecting numerator pole sequences', () => {
+  for (const a of [sj.S.Infinity, sj.S.NegativeInfinity, sj.S.ComplexInfinity]) expect(() => sj.meijerg([], [a], [], [], x)).toThrow(RangeError);
+  expect(() => sj.meijerg([3], [], [1], [], x)).toThrow(RangeError);
+  expect(String(sj.meijerg([sj.S.Half], [], [1], [], x))).toContain('meijerg');
+  const g = sj.meijerg([], [], [], [], x);
+  if (!(g instanceof sj.MeijerG)) throw new TypeError('meijerg');
+  expect(String(g.integrand(x))).toBe('x**x');
+});
+
+it('reports no finite period when a later lower parameter is symbolic', () => {
+  const g = sj.meijerg([], [], [1, new Sym('a')], [], x);
+  if (!(g instanceof sj.MeijerG)) throw new TypeError('meijerg');
+  expect(g.getPeriod()).toBe(sj.S.Infinity);
+});
+
+it('accepts a symbolic tuple as a delta support interval', () => {
+  expect(sj.KroneckerDelta(-1, x, sj.Tuple(0, 2))).toBe(sj.S.Zero);
+});

@@ -530,3 +530,56 @@ it('normalises multivariate orders whose exponents vanish at 0 like SymPy', () =
   expect(String(sj.O(sj.pow(x, sj.add(y, 1))))).not.toBe('O(1, x, y)');
   expect(String(sj.add(x, sj.O(sj.pow(x, y))))).toBe('O(1, x, y)');
 });
+
+
+it('compares algebraic growth without losing logarithms or mixed directions', () => {
+  const [x, y] = sj.symbols('x y');
+  const mixed = new sj.Order([sj.mul(x, sj.pow(y, -1)), x, y, sj.S.Zero]);
+  expect(mixed.contains(1)).toBe('unknown');
+  expect((sj.O(sj.log(x), x) as sj.Order).contains(1)).toBe(true);
+  expect((sj.O(sj.pow(sj.log(x), -1), x) as sj.Order).contains(1)).toBe(false);
+  expect((sj.O(sj.pow(x, -1), x, sj.oo) as sj.Order).contains(sj.pow(x, -2))).toBe(true);
+  expect((sj.O(sj.pow(x, -1), x, sj.neg(sj.oo)) as sj.Order).contains(sj.pow(x, -2))).toBe(true);
+});
+
+
+it('handles empty orders and inconsistent algebraic and logarithmic growth', () => {
+  const [x, y] = sj.symbols('x y');
+  expect(String(sj.add(x, new sj.Order([sj.S.Zero])))).toBe('x');
+  expect(new sj.Order([sj.mul(x, sj.log(y)), x, y, sj.S.Zero]).contains(1)).toBe('unknown');
+});
+
+it('evaluates derivatives and integrals before extracting their leading term', () => {
+  const x = new sj.Sym('x');
+  const y = new sj.Sym('y');
+  const cube = sj.pow(x, 3);
+  const examples: [sj.Expr, string][] = [
+    [sj.derivative(cube, [[x, 1]]), '3*x**2'],
+    [sj.derivative(cube, [[y, 1]]), '0'],
+    [new sj.Integral([cube, x]), 'x**4/4'],
+    [new sj.Integral([cube, y]), 'x**3*y'],
+    [sj.derivative(sj.exp(x), [[x, 1]]), '1'],
+    [sj.derivative(sj.log(x), [[x, 1]]), '1/x'],
+  ];
+  for (const [expr, expected] of examples) expect(String(sj.asLeadingTerm(expr, x))).toBe(expected);
+});
+
+it('retains unevaluated integrals independent of the expansion variable', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const x = new sj.Sym('x');
+  const y = new sj.Sym('y');
+  const unknown = new sj.Integral([sj.SymFunction('f')(y), y]);
+  expect(sj.asLeadingTerm(unknown, x).key).toBe(unknown.key);
+  const saved = { ...impl };
+  try {
+    impl.doit = undefined;
+    expect(sj.asLeadingTerm(unknown, x)).toBe(unknown);
+  } finally {
+    Object.assign(impl, saved);
+  }
+});
+
+it('removes explicit zero order terms when adding expressions', () => {
+  const x = new sj.Sym('x');
+  expect(sj.add(x, new sj.Order([sj.S.Zero, x, sj.S.Zero])).key).toBe(x.key);
+});

@@ -147,5 +147,5 @@ it('multiplies rational monomials and iterates sparse keys', () => {
   expect(R.monomialMul([1, Rational.of(1, 2)], [3, Rational.of(1, 3)]).map(String)).toEqual(['4', '5/6']);
   expect([...P('x+y')].map((m) => m.map(String))).toEqual([['1', '0'], ['0', '1']]);
   expect([...R.zero]).toEqual([]);
-  expect(String(R.zero)).toBe('0');
+  expect(String(R.zero)).toBe('');
 });

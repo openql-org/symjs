@@ -318,7 +318,7 @@ describe("sympy/solvers/tests/test_recurr.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(rsolve(Relational((SymFunction('y'))(n), new Add([(SymFunction('y'))(new Add([rational(-1), n])), (SymFunction('y'))(new Add([rational(-2), n]))]), '==', { evaluate: false }), (SymFunction('y'))(n), [[sympify(0), rational(0)], [sympify(1), rational(5)]]))).toBe('-sqrt(5)*(1/2 - sqrt(5)/2)**n + sqrt(5)*(1/2 + sqrt(5)/2)**n');
   });
-  it.fails("test_rsolve:130", () => {
+  it("test_rsolve:130", () => {
     const [C0, C1] = symbols('C0 C1');
     const n = new Sym('n', { integer: true });
     expect(sympyStr(simplify(new Add([new Mul([C0, new Pow(new Add([rational(1, 2), new Mul([rational(-1, 2), new Pow(rational(5), rational(1, 2))])]), new Add([rational(2), n]))]), new Mul([C1, new Pow(new Add([rational(1, 2), new Mul([rational(1, 2), new Pow(rational(5), rational(1, 2))])]), new Add([rational(2), n]))]), new Mul([rational(-1), C0, new Pow(new Add([rational(1, 2), new Mul([rational(-1, 2), new Pow(rational(5), rational(1, 2))])]), n)]), new Mul([rational(-1), C0, new Pow(new Add([rational(1, 2), new Mul([rational(-1, 2), new Pow(rational(5), rational(1, 2))])]), new Add([rational(1), n]))]), new Mul([rational(-1), C1, new Pow(new Add([rational(1, 2), new Mul([rational(1, 2), new Pow(rational(5), rational(1, 2))])]), n)]), new Mul([rational(-1), C1, new Pow(new Add([rational(1, 2), new Mul([rational(1, 2), new Pow(rational(5), rational(1, 2))])]), new Add([rational(1), n]))])])))).toBe('0');

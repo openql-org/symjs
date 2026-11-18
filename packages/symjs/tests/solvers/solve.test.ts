@@ -142,6 +142,8 @@ const SOLVE_FOR_EXPR: [string, string][] = [
   ['x - 1 | x + 1', '[2]'],
   ['x + y + 2*a + 1 | x + y', '[-2*a - 1]'],
   ['x + 3 | 2*y', '[]'],
+  ['x + exp(2*x) | exp(x)', '[-sqrt(-x), sqrt(-x)]'],
+  ['exp(x) - 1 | exp(y)', '[]'],
 ];
 const SOLVE_LINEAR: [string, { symbols?: string[]; exclude?: string[] }, string][] = [
   ['y + sin(x)**2 + cos(x)**2', {}, '(y, -sin(x)**2 - cos(x)**2)'],
@@ -675,6 +677,8 @@ it('checks evaluated inequalities and retains symbolic coordinates in finite sys
   expect(String(nsolve(parse('Integral(x*y, (x,0,5))'), y, 2))).toBe('0');
   expect(solveLinear(parse('x+Derivative(2*x,x)')).map(String)).toEqual(['x','-2']);
   expect(solveLinear(parse('x+Integral(x,y)-2'), { symbols: [x] }).map(String)).toEqual(['x','2/(y + 1)']);
+  expect(solveLinear(parse('Integral(2, (x, 0, x)) - 6'), { symbols: [x] }).map(String)).toEqual(['x', '3']);
+  expect(solveLinear(parse('Integral(2, x) + x - 6'), { symbols: [x] }).map(String)).toEqual(['x', '2']);
 });
 it('supports coefficient inference, expression targets, and numeric checking flags', async () => {
   const { checksol, S, solveSystem, detPerm, detMinor } = await import('../../src');
@@ -736,6 +740,7 @@ it('takes logarithms of two positive exponential terms', () => {
   expect(solutions).toHaveLength(2);
   for (const value of solutions) expect(Math.abs(value.toComplex().re)).toBeCloseTo(Math.sqrt(6 * Math.log(2) / Math.log(5)), 12);
   expect(() => solve(parse('2**x+x'), x)).toThrow(NotImplementedError);
+  expect(() => solve(parse('5**(x/2) + 2**(x/3)'), x)).toThrow(NotImplementedError);
 });
 
 it('keeps free coordinates in monic positive-dimensional systems', () => {

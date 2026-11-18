@@ -201,10 +201,15 @@ export function primitiveElement(extension: readonly AlgebraicInput[], x: Sym = 
   if (!extension.length) throw new RangeError('At least one extension is required');
   const maxCandidates = options.maxCandidates ?? Infinity;
   if (options.maxCandidates !== undefined && (!Number.isInteger(maxCandidates) || maxCandidates < 1)) throw new RangeError('maxCandidates must be a positive integer');
-  const generators = extension.map(value), coeffs = generators.map(() => 0);
-  let theta: Expr = S.Zero;
-  let representations: Rational[][] = [];
-  for (const [i, generator] of generators.entries()) {
+  const generators = extension.map(value), coeffs: number[] = generators.map((_, index) => index === 0 ? 1 : 0);
+  if (options.ex && generators.every((g) => g instanceof Rational)) {
+    return [x, generators.map(() => 0), generators.map((g) => g.isZero ? [] : [g])];
+  }
+  const basis = (g: Expr): Rational[] => g instanceof Rational ? g.isZero ? [] : [g] : [S.One, S.Zero];
+  let theta: Expr = at(generators, 0);
+  let representations: Rational[][] = [basis(theta)];
+  for (const [index, generator] of generators.slice(1).entries()) {
+    const i = index + 1;
     const existing = representation(generator, theta);
     if (!isNoMatch(existing)) { representations.push(existing); continue; }
     let found = false;
@@ -219,7 +224,7 @@ export function primitiveElement(extension: readonly AlgebraicInput[], x: Sym = 
   }
   const polynomial = minimalPolynomial(theta, x);
   if (!options.ex) return [polynomial, coeffs];
-  return [polynomial, coeffs, representations];
+  return [polynomial, coeffs, representations.map((coefficients) => coefficients.length === 1 && at(coefficients, 0).isZero ? [] : coefficients)];
 }
 
 /** Embed one or several algebraic values in an explicitly represented number field. */

@@ -7671,8 +7671,10 @@ describe("sympy/polys/tests/test_polytools.py", () => {
   it("test_which_real_roots:3255", () => {
     expect(sympyStr([rational(1)])).toBe('[1]');
   });
-  it.fails("test_which_real_roots:3259", () => {
-    expect(sympyStr([])).toBe('[0, 2]');
+  it("test_which_real_roots:3259", () => {
+    const x = new Sym('x');
+    const f = Poly.from(pow(x, 2).sub(1), [x]);
+    expect(sympyStr(f.whichRealRoots([rational(0), rational(2)]))).toBe('[0, 2]');
   });
   it("test_which_all_roots:3264", () => {
     expect(sympyStr([rational(1), rational(-1), I, new Mul([rational(-1), I])])).toBe('[1, -1, I, -I]');
@@ -7686,8 +7688,10 @@ describe("sympy/polys/tests/test_polytools.py", () => {
   it("test_which_all_roots:3272", () => {
     expect(sympyStr([I])).toBe('[I]');
   });
-  it.fails("test_which_all_roots:3276", () => {
-    expect(sympyStr([])).toBe('[I/2, -I/2]');
+  it("test_which_all_roots:3276", () => {
+    const x = new Sym('x');
+    const f = Poly.from(pow(x, 2).add(1), [x]);
+    expect(sympyStr(f.whichAllRoots([I.mul(rational(1, 2)), I.mul(rational(-1, 2))]))).toBe('[I/2, -I/2]');
   });
   // no adapter for .same_root
   //   raises(PolynomialError,

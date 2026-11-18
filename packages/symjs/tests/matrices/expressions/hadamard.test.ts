@@ -117,3 +117,16 @@ describe('remaining branches (SymPy 1.14)', () => {
     expect(latex(HadamardPower(X, x.mul(2)))).toBe('X^{\\circ {2 x}}');
   });
 });
+
+it('differentiates Hadamard products by a scalar using the product rule', async () => {
+  const { add, diff, symbol, OneMatrix, hadamardProduct } = await import('../../../src');
+  const t = symbol('t');
+  const A = MatrixSymbol('A', 2, 2), B = MatrixSymbol('B', 2, 2);
+  expect(s(diff(hadamardProduct(OneMatrix(2, 2).mul(t), A, B), t))).toBe('HadamardProduct(A, B)');
+  expect(s(diff(HadamardProduct(A.mul(t), B.mul(t)), t))).toBe(s(add(hadamardProduct(A, B.mul(t)), hadamardProduct(A.mul(t), B))));
+  expect(s(M(HadamardProduct(A, B)).diffSelf(t, diff))).toBe('0');
+});
+
+it('constructs an elementwise matrix power without evaluating it', () => {
+  expect(s(hadamardPower(X, 2))).toBe('HadamardPower(X, 2)');
+});

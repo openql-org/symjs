@@ -171,11 +171,11 @@ describe("sympy/polys/numberfields/tests/test_minpoly.py", () => {
   it.fails("test_minimal_polynomial:87", () => {
     expect(sympyStr(minimalPolynomial(new Pow(rational(2), rational(1, 2)), undefined, { compose: true, polys: true }))).toBe('Poly(x**2 - 2, x, domain=\'ZZ\')');
   });
-  it.fails("test_minimal_polynomial:88", () => {
+  it("test_minimal_polynomial:88", () => {
     const x = new Sym('x');
     expect(sympyStr(minimalPolynomial(new Pow(rational(2), rational(1, 2)), x, { compose: true, polys: true }))).toBe('Poly(x**2 - 2, x, domain=\'QQ\')');
   });
-  it.fails("test_minimal_polynomial:89", () => {
+  it("test_minimal_polynomial:89", () => {
     const x = new Sym('x');
     expect(sympyStr(minimalPolynomial(new Pow(rational(2), rational(1, 2)), x, { compose: false, polys: true }))).toBe('Poly(x**2 - 2, x, domain=\'QQ\')');
   });

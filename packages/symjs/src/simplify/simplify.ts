@@ -6,7 +6,7 @@
  */
 
 import type { Expr, ExprLike, FnName, Sym } from '../core/nodes';
-import { Add, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, impl, isNum } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, Rel, S, impl, isNum } from '../core/nodes';
 import { Concrete, Sum } from '../core/concrete';
 import { minimalPolynomial } from '../polys/numberfields';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
@@ -24,6 +24,7 @@ import { cancel, fraction, together } from './rational';
 import { exptrigsimp, trigsimp } from './trigsimp';
 import { at, first } from '../core/guard';
 import { nsimplify, nfloat } from '../numeric/nfloat';
+import { simplifyRelation } from '../core/relational';
 import { isNegative } from '../core/assumptions';
 
 /** Strip rational coefficients from an equation, applying the same operations to its right side. */
@@ -186,6 +187,12 @@ export const simplifyHooks: { hyperexpand?: (e: Expr) => Expr } = {};
  */
 export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   const input = sympify(ex);
+  if (input instanceof Rel) {
+    const result = simplifyRelation(input, (e) => simplify(e, opts));
+    const measure = opts.measure ?? ((e: Expr) => opCount(e) + (e instanceof Rel ? 1 : 0));
+    const value = (e: Expr): number => { const n = measure(e); return typeof n === 'number' ? n : n.toNumber(); };
+    return value(result) < (opts.ratio ?? 1.7) * value(input) ? result : input;
+  }
   const rationalized = opts.rational !== undefined && opts.rational !== false && some(input, (e) => e instanceof Float);
   const sympified = rationalized ? nsimplify(input, { rational: true }) : input;
   if (sympified instanceof ExtensionExpr) {
@@ -244,6 +251,11 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
     // SymPy log._eval_simplify: the logarithm expanded when that is not longer
     if (expr instanceof Fn && expr.name === 'log') expr = shorter(expand_log(expr), expr);
     return done(expr);
+  }
+  // Expose a common power of an algebraic base before rational normalization
+  // distributes its denominator. The remaining polynomial coefficient may vanish.
+  if (expr instanceof Add && some(expr, (e) => e instanceof Pow && e.base instanceof Add && isAlgebraicNumber(e.base) && e.exp instanceof Add)) {
+    expr = shorter(expr, expand(expand_power_exp(expr)));
   }
   // rational-function forms
   expr = mapBottomUp(expr, normal);

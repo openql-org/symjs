@@ -15,6 +15,12 @@ import { DMBadInputError, DMDomainError, DMShapeError } from '../../../src/polys
 
 const q = (p: number, d = 1) => Rational.of(BigInt(p), BigInt(d));
 const s = (v: unknown): string => (Array.isArray(v) ? `[${v.map(s).join(', ')}]` : v instanceof Map ? `{${[...v].sort(([a], [b]) => a - b).map(([k, w]) => `${k}: ${s(w)}`).join(', ')}}` : String(v));
+it('computes the sparse reduced echelon form over the fraction field', () => {
+  const [rref, pivots] = SDM.fromList([[q(2), q(1)], [q(0), q(0)]], [2, 2], ZZ).rref();
+  expect(rref.domain.equals(QQ)).toBe(true);
+  expect(rref.toList().map((row) => row.map(String))).toEqual([['1', '1/2'], ['0', '0']]);
+  expect(pivots).toEqual([0]);
+});
 const S = (d: Record<number, Record<number, number>>, shape: [number, number], K: Domain = QQ) =>
   new SDM(new Map(Object.entries(d).map(([i, r]) => [Number(i), new Map(Object.entries(r).map(([j, e]) => [Number(j), q(e)] as const))] as const)), shape, K);
 const ss = (m: SDM): string => s(m.data);

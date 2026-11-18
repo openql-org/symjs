@@ -155,6 +155,7 @@ describe('factor options', () => {
     expect(String(sj.factorNc(sj.add(sj.mul(A, B), sj.mul(B, A))))).toBe('A*B + B*A');
     expect(show(sj.factorList(E('2*x**2 - 2')))).toBe('[2, [[x - 1, 1], [x + 1, 1]]]');
     expect(show(sj.factorList(E('6')))).toBe('[6, []]');
+    expect(show(sj.factorList(E('(x + 1)*(x + y)')))).toBe('[1, [[x + 1, 1], [x + y, 1]]]');
     expect(show(sj.sqfNorm(E('x**2 - 2'), x, [E('sqrt(3)')]))).toBe('[[1], x**2 - 2*sqrt(3)*x + 1, x**4 - 10*x**2 + 1]');
     expect(show(sj.sqfNorm(E('x**2 + 1'), x, [sj.I]))).toBe('[[2], x**2 - 4*I*x - 3, x**4 + 10*x**2 + 9]');
     expect(String(sj.minimalPolynomial(E('sqrt(2) + sqrt(3)'), x))).toBe('x**4 - 10*x**2 + 1');
@@ -438,17 +439,36 @@ describe('factorization, roots and decomposition', () => {
     expect(show(P('x**2 - 2*I*x - 2', x).allRoots({ extension: true }))).toBe('[-1 + I, 1 + I]');
     expect(show(P('x**2 + 1', x).realRoots({ extension: true }))).toBe('[]');
     expect(String(P('x**3 - x', x).root(1))).toBe('0');
-    const cands = [parse('-1'), parse('1'), sj.I, parse('2'), parse('1')];
-    // SymPy raises OverflowError (which_real_roots) and keeps the non-root 2 (which_all_roots);
-    // the exact roots among the candidates are returned
+    const cands = [parse('-1'), parse('1'), parse('2'), parse('1')];
     expect(show(P('x**4 - 1', x).whichRealRoots(cands))).toBe('[-1, 1]');
-    expect(show(P('x**4 - 1', x).whichAllRoots(cands))).toBe('[-1, 1, I]');
+    expect(show(P('x**4 - 1', x).whichAllRoots(cands))).toBe('[-1, 1, 2]');
+    expect(() => P('x**2 - 1.0', x).whichRealRoots(cands)).toThrow('root counting not supported');
     const r = sj.rootof(parse('x**3 - x - 1'), 0);
     expect(show(P('x**3 - x - 1', x).whichRealRoots([r, parse('1')]))).toBe(show([r]));
   });
 });
 
 describe('isolating intervals', () => {
+  it('finds the roots of a polynomial in an expression generator', () => {
+    const g = sj.sin(x);
+    expect(show(Poly.from(g.pow(2).sub(1), [g]).allRoots())).toBe('[-1, 1]');
+  });
+  it('delegates numerical and algebraic roots to the polynomial implementations', () => {
+    const numeric = polyHooks.numericRoots;
+    const factors = polyHooks.algebraicFactors;
+    if (!numeric || !factors) throw new TypeError('missing polynomial root hooks');
+    expect(numeric(parse('x**2 - 2.0'), x).length).toBe(2);
+    expect(factors(parse('x**2 - 2'), x)).toEqual([]);
+    expect(factors(parse('x**2 + I*x/2 + 1'), x).length).toBeGreaterThan(0);
+    expect(factors(parse('x**2 + sqrt(2)*x + 1'), x).length).toBeGreaterThan(0);
+    const unsupported = vi.spyOn(Poly, 'from').mockImplementationOnce(() => { throw new sj.DomainError('unsupported domain'); });
+    try {
+      expect(factors(x, x)).toEqual([]);
+      expect(() => factors(sj.sin(x), x)).toThrow(sj.PolynomialError);
+    } finally {
+      unsupported.mockRestore();
+    }
+  });
   it('Poly.intervals', () => {
     expect(show(P('(x**2 - 2)*(x - 1)**2*x', x).intervals())).toBe('[[[-2, -1], 1], [[0, 0], 1], [[1, 1], 2], [[1, 2], 1]]');
     expect(show(P('x**3 - 3*x + 1', x).intervals())).toBe('[[[-2, -1], 1], [[0, 1], 1], [[1, 2], 1]]');
@@ -535,7 +555,7 @@ describe('further Poly cases', () => {
       '[-sqrt(2)*re(sqrt(1 - 2*I))/2 + sqrt(2)/2 - sqrt(2)*I*im(sqrt(1 - 2*I))/2, sqrt(2)/2 + sqrt(2)*re(sqrt(1 - 2*I))/2 + sqrt(2)*I*im(sqrt(1 - 2*I))/2]',
     );
     const r = sj.rootof(parse('x**3 - x - 2'), 0);
-    expect(show(P('x**3 - x - 1', x).whichAllRoots([r]))).toBe('[]');
+    expect(show(P('x**3 - x - 1', x).whichAllRoots([r, parse('1'), parse('2'), parse('3')]))).toBe('[]');
   });
 });
 
@@ -1447,6 +1467,8 @@ it('preserves nonsymmetric representatives in top-level finite factorization and
   expect(String(sj.factor(parse('x**2-1'),{modulus:9,symmetric:false}))).toBe('(x + 1)*(x + 8)');
   expect(String(sj.factor(parse('x**2+1'),{domain:sj.GF(5,false)}))).toBe('(x + 2)*(x + 3)');
   expect(String(sj.cancel(parse('(4*x+3)/(x+1)'),{modulus:5,symmetric:false}))).toBe('(4*x + 3)/(x + 1)');
+  expect(sj.cancel(2, { modulus: 5 }).equals(2)).toBe(true);
+  expect(sj.cancel(parse('x/(5*x + 5)'), { modulus: 5 })).toBe(sj.S.ComplexInfinity);
 });
 
 it('rejects multivariate Taylor shifts like SymPy 1.14',()=>{
@@ -1501,11 +1523,21 @@ describe('polynomial construction and comparison options', () => {
     expect(Poly.from(1).intervals()).toEqual([]);
     expect(Poly.from(0).intervals(undefined, { all: true })).toEqual([[], []]);
     const p = Poly.from(parse('x**2-2'), [X]);
+    expect(() => p.intervals(sj.S.Zero)).toThrow(RangeError);
     expect(p.countRoots(sj.S.NegativeInfinity, sj.S.Infinity)).toBe(2);
     expect(p.countRoots(-2, 2)).toBe(2);
     const a = Poly.from(parse('x**2+2*sqrt(2)*x+1'), [X], { extension: parse('sqrt(2)') });
     expect(a.countRoots(-3, 0)).toBe(2);
   });
+});
+
+it('stops finite-field division when the leading coefficient has a remainder', () => {
+  const [x, y] = symbols('x y');
+  const f = Poly.from(parse('x*y + 1'), [x, y], { modulus: 5 });
+  const g = Poly.from(parse('x*(y + 1)'), [x, y], { modulus: 5 });
+  const [quotient, remainder] = f.div(g);
+  expect(quotient.isZero).toBe(true);
+  expect(remainder.equals(f)).toBe(true);
 });
 
 it('validates sparse term transforms and finite-domain isolation', () => {

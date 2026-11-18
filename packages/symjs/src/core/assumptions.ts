@@ -128,6 +128,7 @@ export function isReal(e: Expr): Tri {
       case 'sin':
       case 'cos':
       case 'tan':
+      case 'cot':
       case 'atan':
       case 'sinh':
       case 'cosh':

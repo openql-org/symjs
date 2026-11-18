@@ -23,6 +23,122 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertEqual(audit["categories"]["core"]["examined"], audit["examined"])
         return result
 
+    def test_tensor_state_is_captured_before_mutation(self):
+        corpus = self.extract('''
+            from sympy.tensor.tensor import TensorIndexType, TensorHead, tensor_indices
+            from sympy.testing.pytest import warns_deprecated_sympy
+            def test_components():
+                with warns_deprecated_sympy():
+                    L = TensorIndexType('Snapshot', dim=2)
+                    L.data = [1, -1]
+                    i = tensor_indices('i', L)
+                    A = TensorHead('A', [L])
+                    A.data = [2, 3]
+                    assert A(-i)[1] == -3
+                    A.data = [5, 7]
+                    assert A(-i)[1] == -7
+        ''')
+        first, second = corpus['cases']
+        self.assertEqual(first['fn'], '.__getitem__')
+        state = first['tensorData']
+        self.assertEqual(state[0][0]['t'], 'TensorIndexType')
+        self.assertEqual([x['p'] for x in state[0][1]['flat']], ['1', '0', '0', '-1'])
+        self.assertEqual([x['p'] for x in state[1][1]['flat']], ['2', '3'])
+        self.assertEqual([x['p'] for x in second['tensorData'][1][1]['flat']], ['5', '7'])
+        self.assertEqual(unit.without_replay_state(first).keys(), first.keys() - {'tensorData'})
+
+    def test_custom_class_behavior_is_explicit_and_undefined_functions_are_preserved(self):
+        corpus = self.extract('''
+            def test_custom():
+                class Local(Function):
+                    @classmethod
+                    def eval(cls, x):
+                        if x == 0:
+                            return 1
+                x = Symbol('x')
+                assert Local(x).diff(x) == Derivative(Local(x), x)
+                assert Function('ordinary')(x).diff(x) == Derivative(Function('ordinary')(x), x)
+        ''')
+        custom, ordinary = corpus['cases']
+        self.assertIn('Python test class', custom['exclusion'])
+        self.assertIn('Local', custom['exclusion'])
+        self.assertIn('unsupportedClass', custom['self'])
+        self.assertNotIn('exclusion', ordinary)
+        self.assertNotIn('unsupportedClass', ordinary['self'])
+
+    def test_ported_function_fixture_is_replayable_and_keeps_its_identity(self):
+        source = """from sympy import *
+def test_Function():
+    class myfunc(Function):
+        @classmethod
+        def eval(cls):
+            return
+    assert myfunc.nargs == FiniteSet(0)
+"""
+        events, _, _ = unit.execute_source(source, "sympy.core.tests.test_function", "core", "test_function.py", 2)
+        case = events[0]
+        self.assertNotIn("exclusion", case)
+        self.assertIn("unsupportedClass", case["self"])
+        self.assertTrue(unit.ported_function_case(case))
+        self.assertFalse(unit.ported_function_case({**case, "test": "test_other"}))
+
+    def test_refresh_state_preserves_unrelated_records_and_records_exclusions(self):
+        original = {"module": "sympy.core.tests.test_function", "category": "core",
+                    "test": "test_custom", "line": 1, "src": "assert f(x).diff(x) == 1",
+                    "fn": ".diff", "args": [], "kwargs": {}, "self": {"t": "Fn", "name": "f", "args": []},
+                    "expected": "1", "op": "=="}
+        reason = "Python test class sympy.core.tests.test_function.Local requires Python method execution"
+        modified = {**original, "self": {**original['self'], "unsupportedClass": reason}, "exclusion": reason}
+        unrelated = {**original, "module": "sympy.core.tests.test_other"}
+        omitted = {**original, "test": "test_constructor", "reason": reason}
+        def execute(source, module, category, filename, timeout):
+            return ([modified, omitted] if module == original['module'] else []), [], 0
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory)
+            index = {"categories": {}}
+            for category in ('tensor', 'core', 'functions'):
+                shard = destination / f"{category}.json"
+                unit.write_array(shard, [original, unrelated] if category == 'core' else [])
+                index['categories'][category] = {"shards": [{"file": shard.name, "cases": 2 if category == 'core' else 0, "bytes": shard.stat().st_size}]}
+            (destination / 'index.json').write_text(json.dumps(index))
+            manifest = destination / 'unit-exclusions.json'
+            with patch.dict(os.environ, {'PYTHONHASHSEED': '0'}), patch.object(unit, 'execute_source', side_effect=execute), patch.object(unit, '__file__', str(destination / 'extract_tests.py')):
+                unit.refresh_replay_state(destination)
+                first = (destination / 'core.json').read_bytes()
+                unit.refresh_replay_state(destination)
+            self.assertEqual((destination / 'core.json').read_bytes(), first)
+            cases = json.loads(first)
+            self.assertEqual(len(cases), 2)
+            self.assertEqual(cases[0], modified)
+            self.assertEqual(unit.without_replay_state(cases[0]), original)
+            self.assertEqual(cases[1], unrelated)
+            self.assertEqual(len(json.loads(manifest.read_text())), 2)
+
+    def test_metric_state_keeps_nondiagonal_metric_and_special_signatures(self):
+        corpus = self.extract('''
+            from sympy.tensor.tensor import TensorIndexType, tensor_indices
+            from sympy.testing.pytest import warns_deprecated_sympy
+            def test_metric():
+                with warns_deprecated_sympy():
+                    L = TensorIndexType('MetricSnapshot', dim=2)
+                    L.data = [[1, 2], [2, 3]]
+                    i, j = tensor_indices('i j', L)
+                    assert L.metric(i, j).data == Array([[1, 2], [2, 3]])
+                    assert L.metric(-i, -j).data == Array([[-3, 2], [2, -1]])
+                    assert L.delta(i, -j)[0, 0] == 1
+        ''')
+        metric, head = corpus['cases'][0]['tensorData']
+        self.assertEqual([x['p'] for x in metric[1]['flat']], ['1', '2', '2', '3'])
+        self.assertEqual(head[0]['head']['name'], 'metric')
+        self.assertEqual([x['p'] for x in head[1]['flat']], ['1', '2', '2', '3'])
+        lower = corpus['cases'][1]['tensorData'][1]
+        self.assertEqual([i['up'] for i in lower[0]['indices']], [False, False])
+        self.assertEqual([x['p'] for x in lower[1]['flat']], ['-3', '2', '2', '-1'])
+        delta = corpus['cases'][2]['tensorData'][1]
+        self.assertEqual(delta[0]['head']['name'], 'KD')
+        self.assertEqual([i['up'] for i in delta[0]['indices']], [True, True])
+        self.assertEqual([x['p'] for x in delta[1]['flat']], ['-3', '2', '2', '-1'])
+
     def test_calls_operators_attributes_subscripts_and_boolean_forms(self):
         corpus = self.extract('''
             def test_forms():
@@ -360,7 +476,8 @@ class UnitTestExtractorTests(unittest.TestCase):
         ''')
         self.assertEqual(len(corpus['cases']), 0)
         self.assertGreater(corpus['extraction']['examined'], 0)
-        self.assertEqual(corpus['extraction']['reasons']['unserializable-input'], 1)
+        reasons = corpus['extraction']['reasons']
+        self.assertEqual(sum(count for reason, count in reasons.items() if reason.startswith('Python test class ') and 'no' in reason), 1)
         # the records cross process boundaries during a full extraction
         import pickle
         pickle.dumps(corpus)

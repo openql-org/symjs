@@ -440,22 +440,26 @@ function topLevel(s: string): string[] {
  * (QQ(y) for sqrt(y)), or over an algebraic field `{ domain: 'QQ<a>' }`;
  * primitive with a positive leading coefficient, collected in x.
  */
-export function minimalPolynomial(ex: ExprLike, x?: Sym, opts?: MinimalPolynomialOptions & { polys?: false }): Expr;
-export function minimalPolynomial(ex: ExprLike, x: Sym | undefined, opts: MinimalPolynomialOptions & { polys: true }): Poly;
-export function minimalPolynomial(ex: ExprLike, x?: Sym, opts?: MinimalPolynomialOptions): Expr | Poly;
-export function minimalPolynomial(exIn: ExprLike, xIn?: Sym, opts: MinimalPolynomialOptions = {}): Expr | Poly {
-  let ex = sympify(exIn);
+export function minimalPolynomial(ex: ExprLike | AlgebraicNumber, x?: Sym, opts?: MinimalPolynomialOptions & { polys?: false }): Expr;
+export function minimalPolynomial(ex: ExprLike | AlgebraicNumber, x: Sym | undefined, opts: MinimalPolynomialOptions & { polys: true }): Poly;
+export function minimalPolynomial(ex: ExprLike | AlgebraicNumber, x?: Sym, opts?: MinimalPolynomialOptions): Expr | Poly;
+export function minimalPolynomial(exIn: ExprLike | AlgebraicNumber, xIn?: Sym, opts: MinimalPolynomialOptions = {}): Expr | Poly {
+  let ex = exIn instanceof AlgebraicNumber ? exIn.asExpr() : sympify(exIn);
   if (!groundSymbols(ex).size) ex = expand(ex);
   const x = xIn ?? new Dummy('x');
   const dom = groundOf(ex, opts.domain);
   if (dom.symbols.some((s) => same(s, x))) throw new PolynomialError(`the variable ${x.toString()} is an element of the ground domain`);
+  if (opts.compose === false && dom.symbols.length) throw new NotImplementedError('the Gröbner basis method requires a numeric ground field');
   // compose=False (SymPy's Groebner basis method) gives the same polynomial
   let result:Expr;
   if(dom.coefficientDomain){
     try {result=normalize(add(x,mul(-1,dom.coefficientDomain.toSympy(dom.coefficientDomain.convert(ex)))),x);}
     catch(error){if(!(error instanceof CoercionFailed))throw error;result=minimalPolynomialOf(ex,x,dom);}
   }else result=minimalPolynomialOf(ex,x,dom);
-  return opts.polys ? Poly.from(result, [x], { pure: xIn === undefined, domain: dom.coefficientDomain ?? (opts.domain?.toString() === 'QQ' ? 'QQ' : dom.symbols.length ? `ZZ(${dom.symbols.map((s) => s.name).join(',')})` : undefined) }) : collect(result, x);
+  const domain = dom.coefficientDomain ?? (dom.symbols.length
+    ? `ZZ(${dom.symbols.map((s) => s.name).join(',')})`
+    : opts.domain ?? (xIn === undefined ? undefined : 'QQ'));
+  return opts.polys ? Poly.from(result, [x], { pure: xIn === undefined, domain }) : collect(result, x);
 }
 
 
@@ -481,6 +485,7 @@ export interface AlgebraicNumberOptions {
 export class AlgebraicNumber {
   readonly root: Expr;
   readonly coeffList: readonly Expr[];
+  readonly args: readonly [Expr, readonly Expr[]] | readonly [Expr, readonly Expr[], Sym];
   /** The symbol of the primitive element, when one was given (SymPy alias). */
   readonly alias: Sym | undefined;
   private readonly rootMinpoly: Poly;
@@ -491,7 +496,8 @@ export class AlgebraicNumber {
     // an element of an element: the polynomials composed in the inner primitive element
     const inner = root instanceof AlgebraicNumber ? horner(root.coeffList, t) : t;
     this.root = root instanceof AlgebraicNumber ? root.root : sympify(root);
-    this.alias = typeof opts.alias === 'string' ? new Sym(opts.alias) : opts.alias;
+    this.alias = typeof opts.alias === 'string' ? new Sym(opts.alias) : opts.alias ?? (root instanceof AlgebraicNumber ? root.alias : undefined);
+    this.args = this.alias === undefined ? [this.root, cs] : [this.root, cs, this.alias];
     // SymPy raises when the minimal polynomial cannot be found (NotAlgebraic for a transcendental element)
     this.rootMinpoly = opts.minpoly ?? (root instanceof AlgebraicNumber ? root.rootMinpoly : minimalPolynomial(this.root, undefined, { polys: true }));
     const p = Poly.from(expandMul(horner(cs, inner)), [t]);
@@ -510,10 +516,7 @@ export class AlgebraicNumber {
 
   /** The minimal polynomial of this element (SymPy minpoly_of_element); the same polynomial object on every call. */
   minpolyOfElement(): Poly {
-    if (this.ownMinpoly === undefined) {
-      const primitive = this.coeffList.length === 2 && at(this.coeffList, 0).equals(1) && at(this.coeffList, 1).equals(0);
-      this.ownMinpoly = primitive ? this.rootMinpoly : minimalPolynomial(this.asExpr(), undefined, { polys: true });
-    }
+    this.ownMinpoly ??= this.isPrimitiveElement ? this.rootMinpoly : minimalPolynomial(this.asExpr(), undefined, { polys: true });
     return this.ownMinpoly;
   }
 
@@ -541,6 +544,13 @@ export class AlgebraicNumber {
 
   /** An algebraic field element is a number even when its root is represented symbolically. */
   get isNumber(): boolean { return true; }
+
+  /** Whether this element equals the primitive root of its field. */
+  get isPrimitiveElement(): boolean {
+    const c = this.coeffList;
+    return c.length === 2 && at(c, 0).equals(1) && at(c, 1).equals(0)
+      || c.length === 1 && at(c, 0).equals(this.root);
+  }
 
   /** Structural equality includes the primitive element and its coefficient representation. */
   equals(other: unknown): boolean {

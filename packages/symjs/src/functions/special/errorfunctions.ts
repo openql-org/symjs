@@ -8,10 +8,11 @@ import type { Expr } from '../../core/nodes';
 import { Rational, S } from '../../core/nodes';
 import { defined, first, pair } from '../../core/guard';
 import { add, mul, neg, pow, sqrt } from '../../core/ops';
-import { fn } from '../elementary/elementary';
+import { fn, log } from '../elementary/elementary';
 import { hyper, meijerg } from './hyper';
 import { expandMul } from '../../simplify/expand';
 import { registerRewrite } from '../../simplify/rewrite';
+import { fnTaylorAtZero } from '../../calculus/diff';
 
 const R = (p: number, q: number): Rational => Rational.of(p, q);
 const invSqrtPi = pow(S.Pi, S.NegHalf);
@@ -81,3 +82,27 @@ for (const name of ['fresnels', 'fresnelc'] as const) {
     return mul(S.Pi, pow(z, s ? R(9, 4) : R(3, 4)), pow(2, S.NegHalf), pow(pow(z, 2), neg(p)), pow(neg(z), neg(p)), meijerg([], [S.One], [p], [S.Zero, s ? R(1, 4) : R(3, 4)], a));
   });
 }
+
+// SymPy li rewrites retain logarithms that distinguish the branches.
+registerRewrite('li', 'hyper', (args) => {
+  const z = log(first(args));
+  return add(mul(z, hyper([1, 1], [2, 2], z)), mul(S.Half, add(log(z), neg(log(pow(z, -1))))), S.EulerGamma);
+});
+registerRewrite('li', 'meijerg', (args) => {
+  const z = log(first(args));
+  return add(neg(log(neg(z))), mul(S.Half, add(log(z), neg(log(pow(z, -1))))), neg(meijerg([], [1], [0, 0], [], neg(z))));
+});
+registerRewrite('Ci', 'expint', (args) => {
+  const z = first(args);
+  const polar = (sign: number) => fn('exp_polar', [mul(sign, S.I, S.Pi, S.Half)]);
+  return mul(S.NegHalf, add(fn('expint', [1, mul(z, polar(1))]), fn('expint', [1, mul(z, polar(-1))])));
+});
+
+// SymPy TrigonometricIntegral._eval_nseries integrates sin(z)/z or sinh(z)/z.
+for (const name of ['Si', 'Shi'] as const) fnTaylorAtZero[name] = (j) => {
+  if (j % 2 === 0) return S.Zero;
+  let factorial = 1n;
+  for (let k = 2; k <= j; k++) factorial *= BigInt(k);
+  const sign = name === 'Si' && (j - 1) % 4 === 2 ? -1n : 1n;
+  return Rational.of(sign, BigInt(j) * factorial);
+};

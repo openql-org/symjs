@@ -287,3 +287,45 @@ describe('the SymPy simplify pipeline (sympy/simplify/simplify.py)', () => {
     expect(Date.now() - t).toBeLessThan(1000);
   });
 });
+
+it('respects relational measures and recognizes algebraic zero identities', async () => {
+  const sj = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  const x = new sj.Sym('x');
+  const relation = new sj.Rel('Lt', sj.S.One, x);
+  expect(sj.simplify(relation, { ratio: 0 })).toBe(relation);
+  expect(String(sj.simplify(relation, { measure: (e) => sj.Rational.of(sj.countOps(e) + 1) }))).toBe('x > 1');
+  expect(impl.equalsZero?.(sj.S.Zero)).toBe(true);
+  expect(impl.equalsZero?.(sj.S.One)).toBeUndefined();
+  expect(impl.equalsZero?.(x)).toBeUndefined();
+  expect(impl.equalsZero?.(sj.I)).toBeUndefined();
+  expect(impl.equalsZero?.(sj.add(sj.sqrt(2), 1))).toBeUndefined();
+  expect(impl.equalsZero?.(sj.mul(sj.sqrt(2), sj.sqrt(3)))).toBeUndefined();
+});
+
+it('simplifies nested special functions and extension expressions', async () => {
+  const sj = await import('../../src');
+  expect(sj.simplify(sj.Quaternion(sj.add(sj.pow(sj.sin(x), 2), sj.pow(sj.cos(x), 2)), 0, 0, 0)).key).toBe(sj.Quaternion(1, 0, 0, 0).key);
+  expect(String(sj.simplify(sj.add(x, sj.hyper([], [], x))))).toBe('x + hyper((), (), x)');
+  expect(sj.simplify(sj.add(x, sj.fn('besselj', [sj.S.Half, x])))).toBeDefined();
+  expect(sj.simplify(sj.fn('binomial', [x, sj.S.Two]), { ratio: 0 }).key).toBe(sj.fn('binomial', [x, sj.S.Two]).key);
+});
+
+it('uses expression-valued measures and the algebraic zero certificate', async () => {
+  const sj = await import('../../src');
+  const { impl } = await import('../../src/core/nodes');
+  expect(sj.simplify(sj.add(x, sj.symbol('y')), { measure: (e) => sj.Rational.of(sj.countOps(e) + 1) }).key).toBe(sj.add(x, sj.symbol('y')).key);
+  const factorial = new sj.Fn('factorial', [x]);
+  expect(sj.simplify(factorial, { ratio: 0 }).key).toBe(factorial.key);
+  expect(sj.simplify(factorial, { ratio: Infinity }).key).toBe(sj.combsimp(factorial).key);
+  const zero = sj.parse('sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))');
+  expect(impl.equalsZero?.(zero)).toBe(true);
+});
+
+it('cancels shifted powers of the roots of a characteristic polynomial', () => {
+  const n = symbol('n', {integer:true});
+  for (const base of [parse('(1+sqrt(5))/2'),parse('(1-sqrt(5))/2')]) {
+    const residual = add(pow(base,add(n,2)),mul(-1,pow(base,add(n,1))),mul(-1,pow(base,n)));
+    expect(simplify(residual)).toBe(S.Zero);
+  }
+});

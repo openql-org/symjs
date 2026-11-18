@@ -413,7 +413,7 @@ describe("sympy/solvers/tests/test_numeric.py", () => {
     const x = new Sym('x');
     expect(sympyStr(nsolve(piecewise([x, Relational(x, rational(1), '<', { evaluate: false })], [new Pow(x, rational(2)), true]), x, rational(2), {}))).toBe('0');
   });
-  it.fails("test_issue_6408_integral:81", () => {
+  it("test_issue_6408_integral:81", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(nsolve(new Integral([new Mul([x, y]), x, rational(0), rational(5)]), y, rational(2)))).toBe('0');
   });

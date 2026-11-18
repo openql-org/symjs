@@ -37,6 +37,9 @@ describe('Float constructor (SymPy Float)', () => {
     expect(() => float('abc')).toThrow(SyntaxError);
     expect(() => float('1.2.3')).toThrow(SyntaxError);
     expect(() => float('')).toThrow();
+    for (const text of ['1  2', '1_', '1__2', '_1', '1._2']) expect(() => float(text)).toThrow(SyntaxError);
+    expect(() => float('1.23', 3, 10)).toThrow(RangeError);
+    expect(() => float('1.23', '', 10)).toThrow(RangeError);
   });
   it('infers the precision from the digits with the null string', () => {
     const cases: [string, string, number][] = [

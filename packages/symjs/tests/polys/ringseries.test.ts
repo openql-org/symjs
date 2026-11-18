@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
+import '../../src/calculus';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { Rational, Sym, parse, str } from '../../src/core';
+import { Fn, type ExprLike } from '../../src/core/nodes';
 import { first, at, getOrThrow } from '../../src/core/guard';
 import { NotImplementedError } from '../../src/core/errors';
-import { QQ, EX, ZZ, CoercionFailed } from '../../src/polys/domains';
+import { QQ, EX, ZZ, CoercionFailed, RationalField } from '../../src/polys/domains';
 import { PolyElement, PolyRing } from '../../src/polys/rings';
 import { PuiseuxRing, PuiseuxPoly } from '../../src/polys/puiseux';
 import * as rs from '../../src/polys/ringseries';
@@ -35,6 +37,30 @@ describe('sparse series against independently generated SymPy 1.14 references', 
 });
 
 describe('finite and truncated algebra', () => {
+  it('adjoins trigonometric coefficients for a nonzero constant part', () => {
+    const [c, s] = rs.rsCosSin(p('x+y'), x, 3);
+    expect(c.ring.fromExpr(parse('cos(y) - x*sin(y) - x**2*cos(y)/2')).equals(c)).toBe(true);
+    expect(s.ring.fromExpr(parse('sin(y) + x*cos(y) - x**2*sin(y)/2')).equals(s)).toBe(true);
+    const [ch, sh] = rs.rsCoshSinh(q('x+y'), u, 3);
+    expect(ch.ring.fromExpr(parse('cosh(y) + x*sinh(y) + x**2*cosh(y)/2')).equals(ch)).toBe(true);
+    expect(sh.ring.fromExpr(parse('sinh(y) + x*cosh(y) + x**2*sinh(y)/2')).equals(sh)).toBe(true);
+    const tanh = rs.rsTanh(q('x+y'), u, 2);
+    expect(tanh.ring.fromExpr(parse('tanh(y) + x*(1-tanh(y)**2)')).equals(tanh)).toBe(true);
+  });
+  it('adjoins generators after an out-of-range coefficient and propagates unrelated errors', () => {
+    class ControlledGround extends RationalField {
+      constructor(private readonly error: Error) { super(); }
+      override fromSympy(value: ExprLike) {
+        if (value instanceof Fn) throw this.error;
+        return super.fromSympy(value);
+      }
+    }
+    const limited = new PolyRing('x y', new ControlledGround(new RangeError('coefficient out of range')));
+    const result = rs.rsTan(limited.fromExpr(parse('x+y')), first(limited.gens), 2);
+    expect(result.ring.fromExpr(parse('tan(y) + x*(1+tan(y)**2)')).equals(result)).toBe(true);
+    const unavailable = new PolyRing('x y', new ControlledGround(new NotImplementedError('evaluation unavailable')));
+    expect(() => rs.rsTan(unavailable.fromExpr(parse('x+y')), first(unavailable.gens), 2)).toThrow(NotImplementedError);
+  });
   it('truncates, multiplies and differentiates in the selected generator', () => {
     expect(String(rs.rsTrunc(p('1+x+x**5+x**10'), x, 10))).toBe('x**5 + x + 1');
     expect(String(rs.rsTrunc(p('x+y**2'), y, 2))).toBe('x');
@@ -71,7 +97,7 @@ describe('finite and truncated algebra', () => {
     expect(String(rs.rsPow(q('x**(-2)+x'), 3, u, 4))).toBe('x**(-6) + 3*x**(-3) + 3 + x**3');
     expect(String(rs.rsPow(U.zero, 0, u, 3))).toBe('1');
     expect(String(rs.rsPow(U.zero, 2, u, 3))).toBe('');
-    expect(String(rs.rsPow(U.zero, Rational.of(1, 2), u, 3))).toBe('');
+    expect(rs.rsPow(U.zero, Rational.of(1, 2), u, 3).isZero).toBe(true);
     expect(String(rs.rsNthRoot(u, 0, u, 3))).toBe('1');
     expect(rs.rsPow(x, Rational.of(1, 2), x, 3)).toBeInstanceOf(PuiseuxPoly);
   });
@@ -164,4 +190,10 @@ it('returns paired trigonometric and hyperbolic series', () => {
   const x = R.gens[0]!, p = R.fromExpr(parse('x+x*y'));
   expect(rs.rsCosSin(p,x,4).map(String)).toEqual([String(rs.rsCos(p,x,4)), String(rs.rsSin(p,x,4))]);
   expect(rs.rsCoshSinh(p,x,4).map(String)).toEqual([String(rs.rsCosh(p,x,4)), String(rs.rsSinh(p,x,4))]);
+});
+
+it('retains the highest Newton power sum after multiplying the logarithmic derivative by x', () => {
+  const R = new PolyRing('x', QQ), x = first(R.gens), f = R.fromExpr(parse('x**2 - 2'));
+  expect(String(rs.rsNewton(f, x, 4))).toBe('8*x**4 + 4*x**2 + 2');
+  expect(String(rs.rsNewton(f, x, 5))).toBe('8*x**4 + 4*x**2 + 2');
 });

@@ -20,7 +20,7 @@ export class LambdaNode extends ExtensionExpr {
       if (v instanceof ExtensionExpr && v.name === 'Tuple') {
         v.args.forEach(validate);
       } else {
-        if (!(v instanceof Sym || (v instanceof ExtensionExpr && v.name === 'Indexed'))) throw new TypeError('Lambda signature must contain symbols');
+        if (!(v instanceof Sym || (v instanceof ExtensionExpr && ['Indexed', 'IndexedBase', 'MatrixSymbol'].includes(v.name)))) throw new TypeError('Lambda signature must contain symbols');
         if (seen.has(v.key)) throw new TypeError('Lambda signature contains a duplicate variable');
         seen.add(v.key);
       }

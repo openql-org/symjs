@@ -17,7 +17,7 @@ import { series } from '../series/series';
 import { expand } from '../simplify/expand';
 import type { IntLike } from '../ntheory/intutil';
 import { groundIsZero, intArg } from './compatibility';
-import { QQ } from './domains';
+import { CoercionFailed, QQ } from './domains';
 import type { PolyElement } from './rings';
 import { PolyRing } from './rings';
 import type { PuiseuxTerm } from './puiseux';
@@ -216,9 +216,46 @@ export function rsAtanh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPol
 /** Principal Lambert W series at zero (SymPy rs_LambertW). */
 export function rsLambertW(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return analytic(p, x, prec, 'LambertW'); }
 /** Tangent series (SymPy rs_tan). */
-export function rsTan(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return rsMul(rsSin(p, x, prec), rsSeriesInversion(rsCos(p, x, prec), x, prec), x, prec); }
+export function rsTan(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return tangent(p, x, prec, false); }
 /** Hyperbolic tangent series (SymPy rs_tanh). */
-export function rsTanh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return rsMul(rsSinh(p, x, prec), rsSeriesInversion(rsCosh(p, x, prec), x, prec), x, prec); }
+export function rsTanh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly { return tangent(p, x, prec, true); }
+
+/** Split off all terms independent of the series generator. */
+function constantPart(p: PuiseuxPoly, i: number): PuiseuxPoly {
+  return p.ring.fromDict(p.terms().filter(([m]) => at(m, i).isZero));
+}
+
+/** Coerce function values of the constant term, adjoining formal generators if needed. */
+function adjoinValues(p: SeriesPoly, tail: PuiseuxPoly, values: readonly Expr[]): [SeriesPoly, PuiseuxPoly, PuiseuxPoly[]] {
+  const missing = values.filter((value) => {
+    try { tail.ring.fromExpr(value); return false; }
+    catch (error) {
+      if (!(error instanceof CoercionFailed || error instanceof RangeError)) throw error;
+      return true;
+    }
+  });
+  if (missing.length === 0) return [p, tail, values.map((value) => tail.ring.fromExpr(value))];
+  const template = p instanceof PuiseuxPoly
+    ? new PuiseuxRing([...p.ring.symbols, ...missing], p.ring.domain).one
+    : p.ring.addGens(missing).one;
+  const ring = lift(template).ring;
+  return [template, ring.fromExpr(tail.asExpr()), values.map((value) => ring.fromExpr(value))];
+}
+
+function tangent(p: SeriesPoly, x: SeriesPoly, prec: ExprLike, hyperbolic: boolean): SeriesPoly {
+  const q = lift(p), i = index(p, x), order = rat(prec);
+  const constant = constantPart(q, i);
+  const [template, tail, values] = constant.isZero
+    ? [p, q, [q.ring.zero]] as const
+    : adjoinValues(p, q.sub(constant), [fn(hyperbolic ? 'tanh' : 'tan', [constant.asExpr()])]);
+  const sine = composePositive(tail, i, order, (k) => analyticCoefficient(hyperbolic ? 'sinh' : 'sin', k));
+  const cosine = composePositive(tail, i, order, (k) => analyticCoefficient(hyperbolic ? 'cosh' : 'cos', k));
+  const t = product(sine, rationalPower(cosine, minusOne, i, order), i, order);
+  if (constant.isZero) return restore(template, t);
+  const c = first(values), ct = c.mul(t);
+  const denominator = hyperbolic ? tail.ring.one.add(ct) : tail.ring.one.sub(ct);
+  return restore(template, product(c.add(t), rationalPower(denominator, minusOne, i, order), i, order));
+}
 /** Cotangent Laurent series, computing enough terms before inversion (SymPy rs_cot). */
 export function rsCot(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): SeriesPoly {
   const v = valuation(lift(p), index(p, x));
@@ -317,7 +354,7 @@ export function rsNewton(p: PolyElement, x: PolyElement, prec: ExprLike): Series
   if (p.ring.ngens !== 1 || p.isZero) throw new RangeError('Newton sums require a nonzero univariate polynomial');
   const degree = p.degree(), reversed = p.ring.fromTerms(p.listterms().map(([m, c]) => [[degree - first(m)], c]));
   const q = lift(p);
-  return restore(p, trunc(q.ring.groundNew(degree).sub(lift(rsMul(rsDiff(reversed, x), rsSeriesInversion(reversed, x, prec), x, prec)).mul(lift(x))), 0, rat(prec)));
+  return restore(p, q.ring.groundNew(degree).sub(lift(rsMul(rsDiff(reversed, x), rsSeriesInversion(reversed, x, prec), x, prec)).mul(lift(x))));
 }
 /** Polynomial whose roots are all pairwise sums of roots (SymPy rs_compose_add). */
 export function rsComposeAdd(p: PolyElement, q: PolyElement): PolyElement {
@@ -346,9 +383,26 @@ export function rsSeries(expr: ExprLike, x: Sym, prec: IntLike): SeriesPoly {
 
 /** Cosine and sine series to the same precision (SymPy rs_cos_sin). */
 export function rsCosSin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): [SeriesPoly, SeriesPoly] {
-  return [rsCos(p, x, prec), rsSin(p, x, prec)];
+  return cosineSine(p, x, prec, false);
 }
 /** Hyperbolic cosine and sine series (SymPy rs_cosh_sinh). */
 export function rsCoshSinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): [SeriesPoly, SeriesPoly] {
-  return [rsCosh(p, x, prec), rsSinh(p, x, prec)];
+  return cosineSine(p, x, prec, true);
+}
+
+function cosineSine(p: SeriesPoly, x: SeriesPoly, prec: ExprLike, hyperbolic: boolean): [SeriesPoly, SeriesPoly] {
+  const q = lift(p), i = index(p, x), order = rat(prec);
+  const constant = constantPart(q, i);
+  const sinName = hyperbolic ? 'sinh' : 'sin', cosName = hyperbolic ? 'cosh' : 'cos';
+  if (constant.isZero) return hyperbolic ? [rsCosh(p, x, prec), rsSinh(p, x, prec)] : [rsCos(p, x, prec), rsSin(p, x, prec)];
+  const value = constant.asExpr();
+  const [template, tail, coefficients] = adjoinValues(p, q.sub(constant), [fn(sinName, [value]), fn(cosName, [value])]);
+  const [s, c] = [at(coefficients, 0), at(coefficients, 1)];
+  const sinTail = composePositive(tail, i, order, (k) => analyticCoefficient(sinName, k));
+  const cosTail = composePositive(tail, i, order, (k) => analyticCoefficient(cosName, k));
+  const cin = cosTail.mul(c), sin = sinTail.mul(s);
+  return [
+    restore(template, hyperbolic ? cin.add(sin) : cin.sub(sin)),
+    restore(template, cosTail.mul(s).add(sinTail.mul(c))),
+  ];
 }

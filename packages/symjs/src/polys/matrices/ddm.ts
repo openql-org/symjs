@@ -69,6 +69,7 @@ export class DDM {
   }
   /** Set the element at (i, j) in place. */
   setitem(i: number, j: number, value: Expr): void {
+    if (!Number.isInteger(j) || j < -this.cols || j >= this.cols) throw new RangeError('column index out of range');
     at(this.data, i)[j < 0 ? j + this.cols : j] = value;
   }
   /** The submatrix of a row slice and a column slice. */

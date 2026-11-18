@@ -346,7 +346,7 @@ function linearIn(e: Expr, t: Expr): [Expr, Expr] | undefined {
 
 /** The Heaviside and DiracDelta rules of the table (written out, as they need exact function heads). */
 function laplaceDistributionRules(f: Expr, t: Expr, s: Expr): LaplaceTriple | undefined {
-  const isH = isHeaviside(f) && f.args.length === 1;
+  const isH = isHeaviside(f);
   const isD = isDiracDelta(f) && f.args.length === 1;
   if (!isH && !isD) return undefined;
   const lin = linearIn(at(f.args, 0), t);
@@ -415,7 +415,7 @@ function laplaceRuleTimescale(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefin
 /** SymPy _laplace_rule_heaviside: time-shifted Heaviside factors. */
 function laplaceRuleHeaviside(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
   const facs = mulArgs(f);
-  const i = facs.findIndex((x) => isHeaviside(x) && x.args.length === 1);
+  const i = facs.findIndex((x) => isHeaviside(x));
   if (i < 0) return undefined;
   const y = at(at(facs, i).args, 0);
   const g = mul(...facs.filter((_, j) => j !== i));
@@ -791,7 +791,7 @@ function laplaceTransformIntegration(f: Expr, t: Sym, s: Expr): LaplaceTriple | 
   if (some(f, isDiracDelta)) return undefined;
   // a factor Heaviside(a*t - b) with a < 0 and b >= 0 vanishes for t > 0 (the integral is 0)
   for (const fac of mulArgs(f)) {
-    if (!isHeaviside(fac) || fac.args.length !== 1) continue;
+    if (!isHeaviside(fac)) continue;
     const lin = linearIn(at(fac.args, 0), t);
     if (lin && holds(Lt(lin[0], 0)) && holds(Le(lin[1], 0))) return [S.Zero, S.NegativeInfinity, S.true];
   }

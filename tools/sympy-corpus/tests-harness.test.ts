@@ -14,6 +14,28 @@ const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'cor
   test: 'test_fixture', line: 1, src: 'assert Integer(1) == 1', fn: 'Integer',
   args: [{ t: 'Rational', p: '1', q: '1' }], kwargs: {}, expected: '1', op: '==' };
 
+it('translates nested containers, lambda syntax and numeric constructor arguments', () => {
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const text = (v: string): Tree => ({ t: 'Str', v });
+  const x: Tree = { t: 'Symbol', name: 'x', assume: {} };
+  const tuple: Tree = { t: 'Tuple', items: [x, { t: 'Tuple', items: [x, integer(1)] }] };
+  const cases: Partial<TestCase>[] = [
+    { fn: 'sympify', args: [{ t: 'Tuple', list: true, items: [text('1'), { t: 'Tuple', list: true, items: [text('2')] }] }], expected: '[1, [2]]' },
+    { fn: 'sympify', args: [{ t: 'Dict', items: [[text('x'), text('2')]] }], expected: '{x: 2}' },
+    { fn: 'sympify', args: [text('lambda x, y: 2*x+y')], expected: 'Lambda((x, y), 2*x + y)' },
+    { fn: 'sympify', args: [text('lambda *args: args')], raises: 'SympifyError' },
+    { fn: 'Float', args: [{ t: 'Float', v: 0.125, py: true }], expected: '0.125000000000000' },
+    { fn: 'Integer', args: [{ t: 'Rational', p: '-7', q: '3' }], expected: '-2' },
+    { fn: '.subs', self: tuple, args: [x, integer(0)], expected: '(0, (0, 1))' },
+    { fn: '.atoms', self: tuple, args: [], expected: '{1, x}' },
+    { fn: '.get', self: { t: 'Dict', items: [[x, integer(1)]] }, args: [integer(5), text('missing')], expected: 'missing', text: true },
+    { fn: 'scaled_zero', args: [integer(7)], expected: '(([0], 1, 7, 1), -1)' },
+    { fn: 'scaled_zero', args: [{ t: 'Tuple', items: [integer(1), integer(5), integer(1), integer(3)] }], raises: 'ValueError' },
+    { fn: '.__call__', self: x, args: [integer(1)], raises: 'TypeError' },
+  ];
+  for (const c of cases) expect(runTestCase({ ...base, ...c }), String(c.fn)).toEqual({ status: 'pass' });
+});
+
 it('preserves extrema calls and distribution arguments when translating Python attributes', () => {
   const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
   const x = { t: 'Symbol', name: 'x', assume: {} };
@@ -561,4 +583,148 @@ it('translates Matrix equalities and solver strategy flags through the public so
     || c.test === 'test_minsolve_linear_system' && [1754, 1755, 1792].includes(c.line));
   expect(selected).toHaveLength(7);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+
+it('compares Puiseux zero by value without changing its string representation', () => {
+  const R = new sj.PuiseuxRing('x', sj.QQ);
+  expect(matches(R.zero, '0')).toBe(true);
+  expect(matches(R.zero, '')).toBe(true);
+  expect(matches(R.one, '0')).toBe(false);
+  expect(String(R.zero)).toBe('');
+});
+
+it('rejects Python list multiplication by a DomainMatrix', () => {
+  const shard: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const test = shard.find((c) => c.module.endsWith('test_domainmatrix') && c.test === 'test_DomainMatrix_mul' && c.line === 529);
+  if (!test) throw new TypeError('missing domain matrix multiplication reference');
+  expect(runTestCase(test)).toEqual({ status: 'pass' });
+});
+
+it('replays captured tensor components through public array replacements without leaking state', () => {
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1' });
+  const type: Tree = { t: 'TensorIndexType', name: 'Captured', dim: integer(2), dummyName: 'C' };
+  const index = (name: string, up = true): Tree => ({ t: 'TensorIndex', name, type, up });
+  const head: Tree = { t: 'TensorHead', name: 'A', types: [type], symmetry: { t: 'TensorSymmetry', rank: 1, sign: 0 } };
+  const tensor = (up = true): Tree => ({ t: 'Tensor', head, indices: [index('i', up)] });
+  const array = (values: number[], shape: number[]): Tree => ({ t: 'NDimArray', cls: 'ImmutableDenseNDimArray', flat: values.map(integer), shape });
+  const tensorData: [Tree, Tree][] = [
+    [type, array([1, 0, 0, -1], [2, 2])],
+    [{ t: 'Tensor', head, indices: [index('component_0')] }, array([2, 3], [2])],
+  ];
+  const c: TestCase = { ...base, category: 'tensor', fn: '.__getitem__', self: tensor(false), args: [integer(1)], tensorData, expected: '-3' };
+  expect(runTestCase(c)).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, tensorData: [[type, integer(2)]] })).toEqual({ status: 'unsupported', reason: 'invalid tensor replacement state' });
+  expect(runTestCase({ ...c, fn: '.__pow__' })).toEqual({ status: 'unsupported', reason: 'legacy tensor norm powers are not exposed by the public tensor API' });
+  expect(testCaseKey(c)).toBe(testCaseKey({ ...c, tensorData: undefined }));
+  expect(runTestCase({ ...c, tensorData: undefined }).status).toBe('unsupported');
+  expect(runTestCase({ ...c, fn: '.data', args: [], expected: '[2, -3]' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.get_matrix', args: [], expected: 'Matrix([[2], [-3]])' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.__call__', self: head, args: [index('i')], post: 'list', expected: '[2, 3]' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, fn: '.data', self: { t: 'TensMul', args: [tensor(), tensor(false)] }, args: [], expected: '-5' })).toEqual({ status: 'pass' });
+  const metric: Tree = { t: 'Tensor', head: { t: 'TensorHead', name: 'metric', types: [type, type], symmetry: { t: 'TensorSymmetry', rank: 2, sign: 1 } }, indices: [index('i'), index('j', false)] };
+  const identity: Tree = { t: 'Matrix', rows: [[integer(1), integer(0)], [integer(0), integer(1)]], shape: [2, 2] };
+  expect(runTestCase({ ...c, self: metric, args: [{ t: 'Tuple', items: [integer(1), integer(1)] }], tensorData: [[type, array([1, 2, 2, 3], [2, 2])], [metric, identity]], expected: '1' })).toEqual({ status: 'pass' });
+  const changed: [Tree, Tree][] = [[type, array([1, 0, 0, -1], [2, 2])], [{ t: 'Tensor', head, indices: [index('component_0')] }, array([5, 7], [2])]];
+  expect(runTestCase({ ...c, tensorData: changed, expected: '-7' })).toEqual({ status: 'pass' });
+  expect(runTestCase(c)).toEqual({ status: 'pass' });
+});
+
+it('records Python class exclusions without treating them as successful assertions or changing identity', () => {
+  const reason = 'Python test class sympy.core.tests.test_fixture.Local requires Python method execution';
+  const c = { ...base, exclusion: reason, args: [{ ...base.args?.[0], t: 'Rational', unsupportedClass: reason }] };
+  expect(runTestCase(c)).toEqual({ status: 'unsupported', reason });
+  expect(() => deserialize({ t: 'Rational', p: '1', q: '1', unsupportedClass: reason })).toThrow(reason);
+  expect(testCaseKey(c)).toBe(testCaseKey(base));
+});
+
+it('replays the translated Function subclasses and keeps every excluded assertion out of the ratchet', () => {
+  const gaps: { cases: string[] } = JSON.parse(readFileSync(new URL('./tests-known-gaps.json', import.meta.url), 'utf8'));
+  let translated = 0;
+  let excluded = 0;
+  for (const category of ['core', 'functions', 'concrete']) {
+    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${category}.json`, import.meta.url), 'utf8'));
+    for (const c of cases) {
+      if (c.exclusion) {
+        excluded++;
+        expect(gaps.cases).not.toContain(testCaseKey(c));
+      }
+      if (c.module === 'sympy.core.tests.test_function' && ['test_Function', 'test_nargs_inheritance', 'test_fdiff_argument_index_error'].includes(c.test)
+        || c.module === 'sympy.functions.elementary.tests.test_interface' && ['test_function_series1', 'test_function_series2'].includes(c.test)) {
+        expect(c.exclusion).toBeUndefined();
+        expect(runTestCase(c), testCaseKey(c)).toEqual({ status: 'pass' });
+        translated++;
+      }
+    }
+  }
+  expect(translated).toBe(21);
+  expect(excluded).toBeGreaterThanOrEqual(43);
+});
+
+it('compares polynomial spans and quotient cosets through their public equality', () => {
+  const x = new sj.Sym('x'), y = new sj.Sym('y'), R = sj.QQ.oldPolyRing(x, y), F = R.freeModule(2);
+  expect(matches(F.submodule([x, 0], [0, y]), '<[0, y], [x, 0], [x, y]>')).toBe(true);
+  expect(matches(F.submodule([x, 0], [0, y]), '<[1, 0], [0, y]>')).toBe(false);
+  expect(matches(F.submodule([1, 0], [1, 1]), 'QQ[x,y]**2')).toBe(true);
+  expect(matches(F.submodule([x, 0]), 'QQ[x,y]**2')).toBe(false);
+  expect(matches(R.ideal(x, y), '<x,y,x+y>')).toBe(true);
+  expect(matches(R.ideal(x), '<y>')).toBe(false);
+  const Q = F.quotientModule([[x, y]]);
+  expect(matches(Q.convert([x, y]), '0')).toBe(true);
+  expect(matches(Q.convert([x, y]), '[0, 1]')).toBe(false);
+  expect(matches(Q.convert([x, y]), '[0, 0] + <[x, y]>')).toBe(true);
+  expect(matches(Q.convert([x, y]), '[0, 0] + <[1, 0]>')).toBe(false);
+});
+
+it('compares number-field module representatives without losing denominators', () => {
+  const A = new sj.PowerBasis(sj.Poly.from(sj.parse('x**2 - 2')));
+  expect(matches(A.call(sj.toCol([2, 4]), 2), '[1, 2]')).toBe(true);
+  expect(matches(A.call(sj.toCol([2, 4]), 2), '[1, 2]/2')).toBe(false);
+  expect(matches(A.call(sj.toCol([9007199254740993n, 0n])), '[9007199254740992, 0]')).toBe(false);
+  expect(matches(A.call(sj.toCol([18014398509481986n, 0n]), 2), '[9007199254740993, 0]')).toBe(true);
+  expect(matches(A.submoduleFromMatrix(sj.DomainMatrix.eye(2, sj.ZZ), 1), 'Submodule[[2, 0], [0, 2]]/2')).toBe(true);
+  expect(matches(A.submoduleFromMatrix(sj.DomainMatrix.eye(2, sj.ZZ), 1), 'Submodule[[2, 0], [0, 2]]')).toBe(false);
+});
+
+it('preserves polynomial object and expression conventions in algebraic-number calls', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.fn === '.minpoly' && ['sympy.polys.domains.tests.test_domains', 'sympy.polys.numberfields.tests.test_numbers'].includes(c.module)
+    || c.fn === 'primitive_element' && c.module === 'sympy.polys.numberfields.tests.test_subfield' && [251, 252, 261, 263, 267].includes(c.line));
+  expect(selected.length).toBeGreaterThan(20);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
+
+it('translates matrix classmethods, explicit conversion, deletion and set validation', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) =>
+    (c.test === 'test_hstack' || c.test === 'test_vstack' || c.test === 'test_row_col_del' || c.test === 'test_dense_conversion') ||
+    c.fn === 'MatrixSet' || c.test === 'test_issue_13774');
+  expect(selected.length).toBeGreaterThan(20);
+  for (const c of selected) expect(runTestCase(c).status, c.src).toBe('pass');
+});
+
+it('translates matrix diagonal sizes, ragged rows and callback predicates', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) =>
+    c.test === 'test_diag_make' || c.test === 'test_diag' && c.fn === 'diag' ||
+    c.test === 'test_diagonal_symmetrical' && c.fn === '.is_symmetric' ||
+    c.test === 'test_anti_symmetric' && c.fn === '.is_anti_symmetric' && c.kwargs?.simplify !== undefined ||
+    c.test === 'test_errors' && c.fn === '.copyin_list').filter((c) => !c.expected.startsWith('_MinimalMatrix'));
+  expect(selected.length).toBeGreaterThan(28);
+  for (const c of selected) expect(runTestCase(c).status, c.src).toBe('pass');
+});
+
+it('translates matrix rewrite rules, evaluated constructors and reflected arithmetic', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) =>
+    ['factor_in_front', 'remove_ids', 'combine_powers', 'any_zeros', 'MatAdd', 'MatMul'].includes(c.fn) ||
+    c.module.endsWith('test_matmul') && c.fn === '.args_cnc' ||
+    c.module.endsWith('test_matexpr') && c.test === 'test_matexpr_properties' && ['.symbol', '.name'].includes(c.fn) ||
+    c.module.endsWith('test_matexpr') && [118, 119, 139].includes(c.line) ||
+    c.test === 'test_no_exponentiation' ||
+    c.fn === 'hessian' && [1056, 1838].includes(c.line) ||
+    c.fn === 'GramSchmidt' && [2403, 3110].includes(c.line) ||
+    c.fn === '.applyfunc' && c.raises === 'TypeError');
+  expect(selected.length).toBeGreaterThan(25);
+  for (const c of selected) expect(runTestCase(c).status, c.src).toBe('pass');
 });

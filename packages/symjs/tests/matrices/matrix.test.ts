@@ -17,6 +17,13 @@ const s = (v: unknown): string => String(v);
 const M = Matrix.of([[1, 2], [3, 4]]);
 
 describe('Matrix', () => {
+  it('updates dimensions when mutable rows and columns are deleted', () => {
+    const m = MutableMatrix.of([[1, 2], [3, 4]]);
+    m.rowDel(0);
+    expect([m.rows, m.cols, String(m)]).toEqual([1, 2, 'Matrix([[3, 4]])']);
+    m.colDel(0);
+    expect([m.rows, m.cols, String(m)]).toEqual([1, 1, 'Matrix([[4]])']);
+  });
   it('does not treat an unsimplified numerical zero as provably nonzero', () => {
     const zero = parse('sin(1)**2 + cos(1)**2 - 1');
     expect(zero.isNumber).toBe(true);
@@ -31,6 +38,17 @@ describe('Matrix', () => {
     expect(m.transpose().toString()).toBe('Matrix([[a, c], [b, d]])');
     expect(m.mul(Matrix.eye(2)).equals(m)).toBe(true);
     expect(m.inv().mul(m).simplify().equals(Matrix.eye(2))).toBe(true);
+  });
+  it('simplifies rational-function characteristic polynomial coefficients', () => {
+    const [ki, kw, ua] = symbols('K_i K_w UA');
+    const m = Matrix.of([
+      [parse('-K_i - UA + K_i**2/(K_i + K_w)'), parse('K_i*K_w/(K_i + K_w)')],
+      [parse('K_i*K_w/(K_i + K_w)'), parse('-K_w + K_w**2/(K_i + K_w)')],
+    ]);
+    expect(m.charpolyCoeffs().map(String)).toEqual([
+      '1', '(2*K_i*K_w + K_i*UA + K_w*UA)/(K_i + K_w)', 'K_i*K_w*UA/(K_i + K_w)',
+    ]);
+    expect(m.charpoly(lam).subs([[ki, 1], [kw, 2], [ua, 3]]).simplify().toString()).toBe('lambda**2 + 13*lambda/3 + 2');
   });
 
   it('determinant of 3x3 via Berkowitz', () => {

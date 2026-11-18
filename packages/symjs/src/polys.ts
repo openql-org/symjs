@@ -213,7 +213,7 @@ export type { FracInput, FracSubstitutions } from './polys/fields';
 export { PuiseuxRing, PuiseuxPoly, puiseuxRing } from './polys/puiseux';
 export { PolynomialRingBase } from './polys/domains/oldpolynomialring';
 export { QuotientRing } from './polys/domains/quotientring';
-export { Module, FreeModule, SubModule, QuotientModule, ModuleElement } from './polys/agca/modules';
+export { Module, FreeModule, SubModule, QuotientModule, ModuleElement, ModuleOrder } from './polys/agca/modules';
 export type { ModuleInput } from './polys/agca/modules';
 export { ModuleImplementedIdeal } from './polys/agca/ideals';
 export { ModuleHomomorphism, homomorphism } from './polys/agca/homomorphisms';
@@ -299,3 +299,5 @@ export { groebnerInRing } from './polys/groebnertools';
 export { sylvester, bezout, backwardEye, res, resQ, resZ, subresultantsSylv, subresultantsBezout, subresultantsPg, subresultantsAmv, subresultantsAmvQ, subresultantsRem, subresultantsVv, subresultantsVv2, modifiedSubresultantsSylv, modifiedSubresultantsBezout, modifiedSubresultantsPg, modifiedSubresultantsAmv, euclidQ, sturmQ, quoZ, remZ, euclidAmv, euclidPg, sturmAmv, sturmPg } from './polys/subresultantsqqzz';
 
 export { DMPJs } from './polys/polyclasses';
+export { dupTrialDivision, dmpZzMignotteBound, dupZzHenselStep, dupZzHenselLift, dmpZzWang, dmpZzWangNonDivisors } from './polys/factortools';
+export { dupEuclideanPrs, dupPrimitivePrs } from './polys/euclidtools';

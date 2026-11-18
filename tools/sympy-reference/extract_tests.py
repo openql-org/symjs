@@ -576,6 +576,8 @@ class Capture:
 
     def snapshot(self, site, name, receiver, args, kwargs, *, function=None, synthetic=False):
         try:
+            if isinstance(function, type) and (reason := extract.custom_class_reason(function)):
+                return {"reason": reason}
             # extract.ser materializes iterators. Before-call capture must never
             # consume the iterator the real test is about to pass to its API.
             if contains_iterator((receiver, args, kwargs)):
@@ -605,6 +607,20 @@ class Capture:
                       "kwargs": {k: extract.ser(v) for k, v in kwargs.items()}}
             if name.startswith("."):
                 record["self"] = extract.ser(receiver)
+            state = extract.tensor_state((receiver, args, kwargs))
+            if state:
+                record["tensorData"] = state
+            def custom_reason(value):
+                if isinstance(value, dict):
+                    if "unsupportedClass" in value:
+                        return value["unsupportedClass"]
+                    return next((reason for item in value.values() if (reason := custom_reason(item))), None)
+                if isinstance(value, list):
+                    return next((reason for item in value if (reason := custom_reason(item))), None)
+                return None
+            reason = custom_reason(record)
+            if reason:
+                record["exclusion"] = reason
             from sympy.assumptions import global_assumptions
             if global_assumptions:
                 record["assume"] = [extract.ser(a) for a in sorted(global_assumptions, key=str)]
@@ -614,8 +630,8 @@ class Capture:
             raise
         except extract.PythonRuntime:
             return {"reason": "python-runtime-api"}
-        except extract.Unsupported:
-            return {"reason": "unserializable-input"}
+        except extract.Unsupported as error:
+            return {"reason": str(error) if str(error).startswith("Python test class ") else "unserializable-input"}
         except Exception:
             return {"reason": "serialization-error"}
 
@@ -675,6 +691,8 @@ class Capture:
             self.omit(site, "unstable-result-representation")
             return
         case = {**self.metadata(site), **record, "expected": text, "op": op, **extra}
+        if ported_function_case(case):
+            case.pop("exclusion", None)
         if isinstance(expected, str):
             case["text"] = True
         self.events.append((site, case))
@@ -1125,6 +1143,82 @@ def extract_category(category, paths, timeout, baseline):
     return corpus
 
 
+def ported_function_case(case):
+    """Function fixtures translated through the public JavaScript function API."""
+    return (case.get("module"), case.get("test")) in {
+        ("sympy.core.tests.test_function", "test_Function"),
+        ("sympy.core.tests.test_function", "test_nargs_inheritance"),
+        ("sympy.core.tests.test_function", "test_fdiff_argument_index_error"),
+        ("sympy.functions.elementary.tests.test_interface", "test_function_series1"),
+        ("sympy.functions.elementary.tests.test_interface", "test_function_series2"),
+    }
+
+
+def without_replay_state(value):
+    """The original assertion identity, independent of replay-only state."""
+    if isinstance(value, dict):
+        return {k: without_replay_state(v) for k, v in value.items()
+                if k not in ("tensorData", "exclusion", "unsupportedClass")}
+    if isinstance(value, list):
+        return [without_replay_state(v) for v in value]
+    return value
+
+
+def refresh_replay_state(destination, timeout=TEST_SECONDS):
+    """Re-execute stateful clusters while preserving every existing assertion and shard boundary."""
+    if os.environ.get("PYTHONHASHSEED") != "0":
+        raise RuntimeError("Run with PYTHONHASHSEED=0 for deterministic reference output")
+    destination = Path(destination)
+    root = Path(sympy.__file__).parent
+    modules = {
+        "tensor": ["sympy.tensor.tests.test_tensor"],
+        "core": ["sympy.core.tests.test_priority", "sympy.core.tests.test_function"],
+        "functions": ["sympy.functions.elementary.tests.test_interface"],
+    }
+    exclusions = {}
+    index_path = destination / "index.json"
+    index = json.loads(index_path.read_text())
+    for category, names in modules.items():
+        observed, omitted = {}, {}
+        for module in names:
+            path = root.joinpath(*module.split(".")[1:]).with_suffix(".py")
+            events, _, _ = execute_source(path.read_text(), module, category, str(path), timeout)
+            for event in events:
+                key = f"{module}:{event['test']}:{event['line']}: {event['src']}"
+                if event.get("reason", "").startswith("Python test class "):
+                    exclusions[key] = event["reason"]
+                    omitted[key] = event["reason"]
+                elif "reason" not in event:
+                    observed[json_line(without_replay_state(event))] = event
+                    if "exclusion" in event:
+                        exclusions[key] = event["exclusion"]
+            print(f"{module}: captured {len(events)} observations", file=sys.stderr, flush=True)
+        changed = 0
+        for shard in index["categories"][category]["shards"]:
+            path = destination / shard["file"]
+            original = path.read_text()
+            cases = json.loads(original)
+            for i, case in enumerate(cases):
+                if case["module"] not in names:
+                    continue
+                if category == "tensor" and not any(part in case["test"] for part in ("valued", "TensMul_data", "TensAdd_data")):
+                    continue
+                replacement = observed.get(json_line(without_replay_state(case)))
+                key = f"{case['module']}:{case['test']}:{case['line']}: {case['src']}"
+                if replacement is None and key in omitted:
+                    replacement = {**case, "exclusion": omitted[key]}
+                if replacement is not None and replacement != case:
+                    cases[i] = replacement
+                    changed += 1
+            encoded = "[\n" + ",\n".join(json_line(c) for c in cases) + "\n]\n"
+            if encoded != original:
+                path.write_text(encoded)
+                shard["bytes"] = path.stat().st_size
+        print(f"{category}: refreshed {changed} existing assertions", file=sys.stderr, flush=True)
+    index_path.write_text(json.dumps(index, indent=2, ensure_ascii=True, allow_nan=False) + "\n")
+    Path(__file__).with_name("unit-exclusions.json").write_text(json.dumps(dict(sorted(exclusions.items())), indent=2) + "\n")
+
+
 def main(destination, only=(), timeout=TEST_SECONDS, jobs=1, baseline=None):
     if sympy.__version__ != "1.14.0":
         raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
@@ -1169,8 +1263,11 @@ if __name__ == "__main__":
     parser.add_argument("--jobs", type=int, default=4, help="Independent extraction processes")
     parser.add_argument("--baseline", help="Preserve all records/audits from already measured modules in a legacy corpus")
     parser.add_argument("--compact-audits", action="store_true", help="Losslessly combine repeated omission records without re-extraction")
+    parser.add_argument("--refresh-state", action="store_true", help="Refresh tensor state and explicit custom-class exclusions in existing shards")
     args = parser.parse_args()
-    if args.compact_audits:
+    if args.refresh_state:
+        refresh_replay_state(args.destination, args.timeout)
+    elif args.compact_audits:
         compact_audits(args.destination, args.only)
     else:
         main(args.destination, args.only, args.timeout, args.jobs, args.baseline)

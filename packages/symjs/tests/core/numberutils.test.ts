@@ -134,12 +134,16 @@ describe('symbols() name ranges', () => {
     expect(names('a b  c')).toEqual(['a', 'b', 'c']);
     expect(names('x(:2)y')).toEqual(['x0y', 'x1y']);
     expect(() => names('x:')).toThrow('missing end range');
-    // SymPy raises ValueError('no symbols given'); symjs returns no names
-    expect(names(' ')).toEqual([]);
+    for (const spec of [' ', ',', 'x,,y', ',x']) expect(() => names(spec)).toThrow(RangeError);
   });
 });
 
 describe('number utilities', () => {
+  it('removes spaces in rational strings as SymPy Rational does', () => {
+    expect(String(rationalFromString('1 234'))).toBe('1234');
+    expect(String(rationalFromString('123 456.123 456'))).toBe('1929001929/15625');
+    expect(String(rationalFromString(' 1 2 / 3 0 '))).toBe('2/5');
+  });
   it('rejects strings without digits', () => {
     for (const t of ['', '.', '+', 'e5', '-.e3']) expect(() => rationalFromString(t)).toThrow(SyntaxError);
   });
