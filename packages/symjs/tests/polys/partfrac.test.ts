@@ -50,11 +50,17 @@ describe('RootSum and full partial fractions', () => {
 });
 
 describe('apart over an extension of QQ (SymPy 1.14 values)', () => {
+  it('solves the coefficient system in the algebraic field for repeated and conjugate factors', () => {
+    const f=P('(x**2+1)**3/((x+1)**2*(x-1)**2*(1-x**2+2*x)*(x**2+2*x-1))');
+    const expected='1/(2*(x - sqrt(2) + 1)) - 1/(2*(x - sqrt(2) - 1)) + 1/(2*(x + 1 + sqrt(2))) - 1/(2*(x - 1 + sqrt(2))) + 1/(2*(x + 1)**2) + 1/(2*(x - 1)**2)';
+    expect(str(apart(f,x,{extension:[sj.sqrt(2)]}))).toBe(expected);
+  });
   it('factors the denominator over the given domain', () => {
     const x = sj.symbol('x');
     const cases: [string, sj.ApartOptions, string][] = [
-      ['1/(1+x**2)', { domain: 'QQ_I' }, 'I/(2*(x + I)) - I/(2*(x - I))'],
+      ['1/(1+x**2)', { domain: 'QQ_I', full: false }, 'I/(2*(x + I)) - I/(2*(x - I))'],
       ['1/(x**2-2)', { extension: [sj.sqrt(2)] }, '-sqrt(2)/(4*(x + sqrt(2))) + sqrt(2)/(4*(x - sqrt(2)))'],
+      ['1/(x**2-1)', { extension: [sj.sqrt(2)] }, '-1/(2*(x + 1)) + 1/(2*(x - 1))'],
       ['x/(x**4-1)', { gaussian: true }, '-1/(4*(x + I)) - 1/(4*(x - I)) + 1/(4*(x + 1)) + 1/(4*(x - 1))'],
       ['1/(x**2+1)', { domain: 'QQ<I>' }, 'I/(2*(x + I)) - I/(2*(x - I))'],
       ['1/((x**2+1)**2*(x+1))', { domain: 'QQ_I' }, '(-1/8 + I/4)/(x + I) + (-1/8 - I/8)/(x + I)**2 + (-1/8 - I/4)/(x - I) + (-1/8 + I/8)/(x - I)**2 + 1/(4*(x + 1))'],

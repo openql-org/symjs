@@ -444,8 +444,9 @@ function symbolsWithFacts(facts: Branch['facts']): Map<string, Sym> {
     if (f.get('nonnegative') === true) a.nonnegative = true;
     if (f.get('nonpositive') === true) a.nonpositive = true;
     if (f.get('integer') === true) a.integer = true;
+    if (f.get('zero') === true) a.zero = true;
     if (f.get('zero') === false || f.get('nonzero') === true) a.zero = false;
-    if (f.get('commutative') === true) a.commutative = true;
+    if (f.has('commutative')) a.commutative = f.get('commutative');
     if (!Object.keys(a).length) continue;
     const s = new Sym(expr.name, { ...expr.assumptions, ...a });
     if (s.key !== expr.key) forward.set(k, s);
@@ -581,6 +582,34 @@ class Decider {
         if (this.q('finite', e) === false) return false;
         if (isConst(e, 'I')) return false;
         if (this.q('imaginary', e) === true) return false;
+        if (e instanceof Add) {
+          const rs = e.args.map((a) => this.q('real', a));
+          if (rs.every((r) => r === true)) return true;
+          if (rs.filter((r) => r === false).length === 1 && !rs.includes(undefined)) return false;
+        }
+        if (e instanceof Mul) {
+          const im = e.args.filter((a) => this.q('imaginary', a) === true);
+          if (im.length && e.args.every((a) => im.includes(a) || this.q('real', a) === true)) {
+            if (im.length % 2 === 0) return true;
+            if (e.args.every((a) => im.includes(a) || this.q('zero', a) === false)) return false;
+          }
+        }
+        if (e instanceof Pow) {
+          const { base, exp } = e;
+          if (this.q('imaginary', base) === true && this.q('integer', exp) === true) {
+            const odd = this.q('odd', exp);
+            if (odd !== undefined) return !odd;
+          }
+          if ((isConst(base, 'I') || isConst(mul(-1, base), 'I') || isInt(base) && base.p === -1n) && this.q('imaginary', exp) === true) return true;
+          if (this.q('positive', base) === true && this.q('real', exp) === true) return true;
+          if (this.q('real', base) === true && this.q('real', exp) === true) {
+            // A zero base is real only for a nonnegative exponent; a negative base needs an odd denominator.
+            if (this.q('zero', base) === true) return this.q('nonnegative', exp) === true ? true : undefined;
+            if (exp instanceof Rational && exp.q % 2n === 0n) return this.q('nonnegative', base) === true ? true : this.q('negative', base) === true ? false : undefined;
+            if (this.q('integer', exp) === true) return this.q('zero', base) === false || this.q('nonnegative', exp) === true ? true : undefined;
+            if (this.q('nonnegative', base) === true && this.q('positive', exp) === true) return true;
+          }
+        }
         return isReal(this.re(e)) ?? (this.q('rational', e) === true ? true : undefined);
       case 'extended_real': {
         if (e instanceof Special) return e.name === 'oo' || e.name === '-oo';
@@ -636,8 +665,14 @@ class Decider {
       case 'negative_infinite':
         return e instanceof Special ? e.name === '-oo' : this.q('finite', e) === true ? false : undefined;
       case 'integer':
+        if (e instanceof Float) return e.mpf.exp < 0n ? false : undefined;
         if (e instanceof Special || isConst(e, 'pi', 'E', 'I', 'GoldenRatio', 'TribonacciConstant')) return false;
         if (e instanceof Rational) return e.q === 1n;
+        if (e instanceof Pow && this.q('zero', e.exp) === true && this.q('zero', e.base) === false) return true;
+        if (e instanceof Mul) {
+          const half = e.args.find((a) => a instanceof Rational && a.q === 2n);
+          if (half instanceof Rational) return this.q('even', mul(half.p, ...e.args.filter((a) => a !== half)));
+        }
         if (e instanceof Fn && e.name === 'abs' && this.q('real', at(e.args, 0)) === true) return this.q('integer', at(e.args, 0));
         return isIntegerQ(this.re(e)) ?? (this.q('rational', e) === false ? false : undefined);
       case 'noninteger': {
@@ -676,13 +711,9 @@ class Decider {
       case 'imaginary':
         return this.imaginary(e);
       case 'hermitian':
-        // A noncommutative symbol can denote a Hermitian operator.
-        if (!e.isCommutative) return undefined;
-        return this.q('real', e);
+        return this.adjoint(e, false);
       case 'antihermitian':
-        if (this.q('imaginary', e) === true) return true;
-        if (this.q('zero', e) === true) return true;
-        return this.q('real', e) === true && this.q('zero', e) === false ? false : undefined;
+        return this.adjoint(e, true);
       case 'finite':
         return this.finite(e);
       case 'infinite':
@@ -734,7 +765,9 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
-      if (isConst(b, 'E')) return this.q('rational', x) === true && this.q('nonzero', x) === true ? false : undefined;
+      if (this.q('algebraic', e) === false) return false;
+      if (isConst(b, 'E')) return undefined;
+      if (isInt(x) && x.p === -1n && this.q('rational', b) === false && this.q('finite', b) === true) return false;
       if (this.q('integer', x) === true && this.q('rational', b) === true) return this.q('nonzero', b) === true || this.q('nonnegative', x) === true ? true : undefined;
       // an unevaluated rational power of a rational number is irrational or not real
       if (b instanceof Rational && x instanceof Rational) return false;
@@ -746,7 +779,7 @@ class Decider {
       const transcendentalAtNonzeroRational = ['exp', 'sin', 'cos', 'tan', 'cot', 'asin', 'atan', 'acot', 'sinh', 'cosh', 'tanh', 'asinh', 'atanh'];
       if (transcendentalAtNonzeroRational.includes(e.name) && this.q('rational', a()) === true && this.q('nonzero', a()) === true) return false;
       // log(1) = acos(1) = 0
-      if (e.name === 'log' && this.q('rational', a()) === true && this.q('positive', a()) === true && this.q('nonzero', add(a(), -1)) === true) return false;
+      if (e.name === 'log' && this.q('rational', a()) === true && this.q('nonzero', add(a(), -1)) === true) return false;
       if (e.name === 'acos' && this.q('rational', a()) === true && this.q('nonzero', add(a(), -1)) === true) return false;
       return undefined;
     }
@@ -778,7 +811,11 @@ class Decider {
         if (this.q('nonzero', x) === true && this.q('rational', mul(x, pow(S.Pi, -1))) === true) return false;
         return this.q('algebraic', x) === true && this.q('nonzero', x) === true ? false : undefined;
       }
-      if (this.q('rational', x) === true) return this.q('algebraic', b);
+      if (this.q('zero', x) === true) return true;
+      if (this.q('rational', x) === true) {
+        const algebraic = this.q('algebraic', b);
+        return algebraic === true || this.q('zero', x) === false ? algebraic : undefined;
+      }
       return undefined;
     }
     if (e instanceof Fn) {
@@ -852,6 +889,8 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      if (isInt(x) && x.p === 1n) return this.q('prime', b);
+      if (this.q('integer', x) === true && (this.q('composite', b) === true || this.q('prime', b) === true && this.q('zero', add(x, -1)) === false)) return false;
       if (this.q('integer', b) === true && this.q('integer', x) === true && isInt(x) && x.p > 1n) return false;
       return undefined;
     }
@@ -910,6 +949,8 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      if (this.q('imaginary', b) === true && this.q('integer', x) === true) return this.q('odd', x);
+      if (this.q('real', b) === true && this.q('integer', x) === true) return false;
       if (isConst(b, 'E') && this.q('rational', mul(x, pow(mul(S.I, S.Pi), -1))) === true) return undefined;
       if (this.q('negative', b) === true && x instanceof Rational && x.equals(Rational.of(1n, 2n))) return true;
       return undefined;
@@ -917,22 +958,70 @@ class Decider {
     return undefined;
   }
 
+  /** Adjoint parity for sums and products with at most one noncommutative factor. */
+  private adjoint(e: Expr, anti: boolean): Tri {
+    const name = anti ? 'antihermitian' : 'hermitian';
+    if (e instanceof Add) {
+      const values = e.args.map((a) => this.q(name, a));
+      if (values.every((v) => v === true)) return true;
+      if (!values.includes(undefined) && values.filter((v) => v === false).length === 1) return false;
+    }
+    if (e instanceof Mul && e.args.filter((a) => !a.isCommutative).length <= 1) {
+      let parity = false;
+      for (const a of e.args) {
+        if (this.q('hermitian', a) === true) continue;
+        if (this.q('antihermitian', a) !== true) return undefined;
+        parity = !parity;
+      }
+      if (parity === anti) return true;
+      return this.q('zero', e) === false ? false : undefined;
+    }
+    if (anti) {
+      if (this.q('imaginary', e) === true || this.q('zero', e) === true) return true;
+      return this.q('imaginary', e) === false && this.q('zero', e) === false ? false : undefined;
+    }
+    return e.isCommutative ? this.q('real', e) : undefined;
+  }
+
   private finite(e: Expr): Tri {
     if (e instanceof Rational || e instanceof Float || e instanceof Constant) return true;
     if (e instanceof Special) return false;
     // a real symbol is complex
     if (e instanceof Sym) return this.q('complex', e) === true ? true : undefined;
-    if (e instanceof Add || e instanceof Mul) {
+    if (e instanceof Add) {
+      const unbounded = e.args.filter((a) => this.q('finite', a) !== true);
+      if (!unbounded.length) return true;
+      if (unbounded.length === 1) return this.q('finite', at(unbounded, 0));
+      // Infinite terms cannot cancel when every remaining term has the same sign.
+      if (['extended_positive', 'extended_negative'].some((p) => unbounded.every((a) => this.q(p, a) === true))) {
+        return unbounded.some((a) => this.q('finite', a) === false) ? false : undefined;
+      }
+      return undefined;
+    }
+    if (e instanceof Mul) {
       const fs = e.args.map((a) => this.q('finite', a));
       if (fs.every((f) => f === true)) return true;
-      // one infinite term plus finite ones (times finite nonzero factors) is infinite
-      const k = fs.indexOf(false);
-      if (k < 0 || fs.lastIndexOf(false) !== k || fs.includes(undefined)) return undefined;
-      return e instanceof Add || e.args.every((a, i) => i === k || this.q('nonzero', a) === true) ? false : undefined;
+      if (!fs.includes(false) || fs.filter((f) => f === undefined).length > 1) return undefined;
+      // A finite zero or an unsigned unknown factor can make an infinite product indeterminate.
+      return e.args.every((a, i) => at(fs, i) === false || this.q('zero', a) === false || this.q('extended_nonzero', a) === true) ? false : undefined;
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
-      if (this.q('finite', b) === true && this.q('finite', x) === true && (this.q('nonzero', b) === true || this.q('nonnegative', x) === true || isConst(b, 'E'))) return true;
+      if (isConst(b, 'E')) return this.q('finite', x);
+      const bf = this.q('finite', b), xf = this.q('finite', x);
+      if (bf === true && xf === true) {
+        const bz = this.q('zero', b), xn = this.q('negative', x);
+        if (bz === true && xn === true) return false;
+        if (bz === false || xn === false) return true;
+      }
+      if (bf === false && this.q('extended_positive', x) === true) return false;
+      if (bf === false && this.q('extended_negative', x) === true) return true;
+      if (b instanceof Rational) {
+        const magnitude = b.p < 0n ? -b.p : b.p;
+        if (magnitude <= b.q && this.q('extended_positive', x) === true) return true;
+        if (magnitude >= b.q && this.q('extended_negative', x) === true) return true;
+        if (magnitude > b.q && xf === false && this.q('extended_positive', x) === true) return false;
+      }
       return undefined;
     }
     if (e instanceof Fn) {

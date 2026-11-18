@@ -33,3 +33,9 @@ describe('nroots', () => {
     expect(() => sj.nroots(parse('x**2 - a'), 15, x)).toThrow(sj.DomainError);
   });
 });
+
+import { rootHooks } from '../../src/polys/sympoly';
+it('registers the numerical root callback for polynomial consumers',()=>{
+  const roots=rootHooks.nroots;if(roots===undefined)throw new TypeError('missing numeric root callback');
+  expect(roots(sj.Poly.from(parse('x**2-2'),[x]),15).map(String)).toEqual(sj.nroots(parse('x**2-2'),15).map(String));
+});

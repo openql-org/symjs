@@ -26,7 +26,10 @@ import { divisors, factorint } from '../ntheory/factor';
 import { cos } from '../functions/elementary/elementary';
 import { chebyshevtCoeffs } from '../functions/special/orthocoeffs';
 import { CRootOf } from './rootof';
-import { Poly, factor, factorListExpr, resultant } from './sympoly';
+import { algebraicEnclosure } from './numberfields/interval';
+import { Poly, factor, factorListExpr, polyConstructionHooks, resultant } from './sympoly';
+import type { Domain } from './domains';
+import { CoercionFailed } from './domains';
 
 /** Options of minimalPolynomial. */
 export interface MinimalPolynomialOptions {
@@ -34,14 +37,15 @@ export interface MinimalPolynomialOptions {
   compose?: boolean;
   /** Return a Poly instead of an expression. */
   polys?: boolean;
-  /** The ground domain: 'QQ', or an algebraic field 'QQ<a, b, ...>' (SymPy QQ.algebraic_field(a, b, ...)). */
-  domain?: string;
+  /** The ground domain, as an object or 'QQ' / 'QQ<a, b, ...>' string. */
+  domain?: string | Domain;
 }
 
 /** The ground domain: its symbols (QQ(y, ...)) and the generators of an algebraic field (QQ<a>). */
 interface Ground {
   symbols: readonly Sym[];
   extension: readonly Expr[];
+  coefficientDomain?: Domain;
 }
 
 const notAlgebraic = (ex: Expr): NotImplementedError => new NotImplementedError(`${ex.toString()} does not seem to be an algebraic element`);
@@ -50,6 +54,7 @@ const isQQ = (dom: Ground): boolean => !dom.symbols.length && !dom.extension.len
 
 /** The irreducible factors (over the ground domain) of a polynomial in x. */
 function factorsIn(p: Expr, x: Sym, dom: Ground): Expr[] {
+  if(dom.coefficientDomain)return Poly.from(p,[x],{domain:dom.coefficientDomain}).factorList()[1].map(([f])=>f.asExpr());
   if (dom.extension.length) {
     const f = factor(p, { extension: [...dom.extension] });
     const parts = f instanceof Mul ? f.args : [f];
@@ -87,6 +92,19 @@ function points(k: number, bound: number): number[][] {
  */
 export function chooseFactor(factors: readonly Expr[], x: Sym, v: Expr, dom: Ground): Expr {
   if (factors.length === 1) return first(factors);
+  if(!dom.symbols.length){
+    const values=factors.map((f)=>xreplace(f,[[x,v]]));
+    const zeros=values.flatMap((f,i)=>f.equals(0)?[i]:[]);
+    if(zeros.length===1)return at(factors,first(zeros));
+    if(zeros.length>1)throw new NotImplementedError(`multiple candidates for the minimal polynomial of ${v.toString()}`);
+    let remaining=factors.map((_,i)=>i);
+    for(let bits=32;remaining.length>1;bits*=2){
+      try{
+        remaining=remaining.filter((i)=>algebraicEnclosure(at(values,i),bits).every(([lo,hi])=>lo.p<=0n&&hi.p>=0n));
+      }catch(error){if(error instanceof RangeError)continue;if(error instanceof NotImplementedError)break;throw error;}
+      if(remaining.length===1)return at(factors,first(remaining));
+    }
+  }
   for (let prec = 10; prec <= 200; prec *= 2) {
     const fe = factors.map((f) => xreplace(f, [[x, v]]));
     for (const pt of points(dom.symbols.length, 5)) {
@@ -385,11 +403,14 @@ function groundSymbols(ex: Expr): Set<Sym> {
 }
 
 /** The ground domain of ex: QQ(free symbols), or the algebraic field given as 'QQ<a, b>'. */
-function groundOf(ex: Expr, domain: string | undefined): Ground {
-  const symbols = [...groundSymbols(ex)];
-  if (domain === undefined || domain === 'QQ') return { symbols, extension: [] };
-  const m = /^QQ<(.*)>$/.exec(domain);
-  if (!m) throw new NotImplementedError(`minimal_polynomial over the domain ${domain}`);
+function groundOf(ex: Expr, domain: string | Domain | undefined): Ground {
+  const symbols = [...groundSymbols(ex)],name=domain?.toString();
+  if(name==='QQ'&&symbols.length)throw notAlgebraic(ex);
+  if (name === undefined || name === 'QQ') return { symbols, extension: [] };
+  const m = /^QQ<(.*)>$/.exec(name);
+  if((m || name==='QQ_I') && typeof domain==='object')return {symbols,extension:[defined(polyConstructionHooks.algebraic,'algebraic field data')(domain).generator],coefficientDomain:domain};
+  if(name==='QQ_I')return {symbols,extension:[S.I]};
+  if (!m) throw new NotImplementedError(`minimal_polynomial over the domain ${name}`);
   return { symbols, extension: topLevel(defined(m[1], 'domain generators')).map((g) => parse(g)) };
 }
 
@@ -427,8 +448,12 @@ export function minimalPolynomial(exIn: ExprLike, xIn?: Sym, opts: MinimalPolyno
   const dom = groundOf(ex, opts.domain);
   if (dom.symbols.some((s) => same(s, x))) throw new PolynomialError(`the variable ${x.toString()} is an element of the ground domain`);
   // compose=False (SymPy's Groebner basis method) gives the same polynomial
-  const result = minimalPolynomialOf(ex, x, dom);
-  return opts.polys ? Poly.from(result, [x], { pure: xIn === undefined }) : collect(result, x);
+  let result:Expr;
+  if(dom.coefficientDomain){
+    try {result=normalize(add(x,mul(-1,dom.coefficientDomain.toSympy(dom.coefficientDomain.convert(ex)))),x);}
+    catch(error){if(!(error instanceof CoercionFailed))throw error;result=minimalPolynomialOf(ex,x,dom);}
+  }else result=minimalPolynomialOf(ex,x,dom);
+  return opts.polys ? Poly.from(result, [x], { pure: xIn === undefined, domain:dom.coefficientDomain }) : collect(result, x);
 }
 
 

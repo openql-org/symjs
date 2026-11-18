@@ -3,7 +3,7 @@
 
 // Tests of src/polys/numberfields.ts: AlgebraicNumber and minimal polynomials; expected values from SymPy 1.14.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { add, AlgebraicNumber, Rational, sqrt } from '../../src';
 import { chooseFactor } from '../../src/polys/numberfields';
@@ -179,7 +179,7 @@ describe('minimalPolynomial (SymPy minimal_polynomial by composition)', () => {
     expect(mp('sqrt(3)', { domain: 'QQ<sqrt(2)>' })).toBe('x**2 - 3');
     expect(mp('sqrt(3)*I', { domain: 'QQ<sqrt(2)>' })).toBe('x**2 + 3');
     // SymPy: x - TribonacciConstant; symjs cannot factor over QQ<TribonacciConstant> and keeps the polynomial over QQ
-    expect(mp('TribonacciConstant', { domain: 'QQ<TribonacciConstant>' })).toBe('x**3 - x**2 - x - 1');
+    expect(mp('TribonacciConstant', { domain: 'QQ<TribonacciConstant>' })).toBe('x - TribonacciConstant');
     expect(() => mp('sqrt(2)', { domain: 'ZZ_I' })).toThrow(sj.NotImplementedError);
   });
   it('as a Poly, and compose=False', () => {
@@ -216,4 +216,44 @@ describe('LaTeX of algebraic numbers (SymPy 1.14 test_latex_basic)', () => {
     expect(sj.latex(new AlgebraicNumber(sqrt(2), [3, -7]))).toBe('-7 + 3 \\sqrt{2}');
     expect(sj.latex(new AlgebraicNumber(sqrt(2), [3, -7], { alias: 'alpha' }))).toBe('3 \\alpha - 7');
   });
+});
+
+import * as enclosureModule from '../../src/polys/numberfields/interval';
+it('refines indecisive factor enclosures, propagates errors, and retains the numeric fallback for unsupported syntax',()=>{
+  const x=new sj.Sym('x'),r=sj.CRootOf(parse('x**2-2'),1),factors=[parse('x**2-2'),parse('x**2-3')],dom={symbols:[],extension:[]};
+  const spy=vi.spyOn(enclosureModule,'algebraicEnclosure');
+  try {
+    spy.mockImplementationOnce(()=>{throw new RangeError('precision insufficient');});
+    expect(chooseFactor(factors,x,r,dom)).toEqual(factors[0]);
+    spy.mockImplementationOnce(()=>{throw new sj.NotImplementedError('unsupported interval syntax');});
+    expect(chooseFactor(factors,x,r,dom)).toEqual(factors[0]);
+    spy.mockImplementationOnce(()=>{throw new TypeError('invalid interval input');});
+    expect(()=>chooseFactor(factors,x,r,dom)).toThrow(TypeError);
+  } finally {spy.mockRestore();}
+});
+it('separates algebraic factor values closer than the initial enclosure and rejects ambiguous values',()=>{
+  const x=new sj.Sym('x'),r=sj.CRootOf(parse('x**2-2'),1),f=[parse('x**2-2'),parse('x**2-2-1/10**60')];
+  expect(chooseFactor(f,x,r,{symbols:[],extension:[]})).toEqual(f[0]);
+  expect(()=>chooseFactor([parse('x-1'),parse('x+1')],x,sj.S.Zero,{symbols:[],extension:[]})).toThrow(sj.NotImplementedError);
+});
+it('computes minimal polynomials over supplied algebraic domains with indexed generators',()=>{
+  const x=new sj.Sym('x'),r=sj.CRootOf(parse('x**3-x-1'),0),K=new sj.AlgebraicField(sj.QQ,r);
+  expect(String(sj.minimalPolynomial(r,x,{domain:K}))).toBe(String(add(x,sj.mul(-1,r))));
+  const polynomial=sj.minimalPolynomial(r,x,{domain:K,polys:true});
+  expect(polynomial.domain).toBe(String(K));expect(String(polynomial.eval(r))).toBe('0');
+  expect(String(sj.minimalPolynomial(sqrt(2),x,{domain:K}))).toBe('x**2 - 2');
+  expect(String(sj.minimalPolynomial(sqrt(2),x,{domain:sj.QQ}))).toBe('x**2 - 2');
+  expect(String(sj.minimalPolynomial(sj.I,x,{domain:sj.QQ_I}))).toBe('x - I');
+  expect(String(sj.minimalPolynomial(sj.I,x,{domain:'QQ_I'}))).toBe('x - I');
+  const theta=new sj.Sym('theta'),A=new sj.AlgebraicField(sj.QQ,new AlgebraicNumber(theta,[1,0],{minpoly:sj.Poly.from(parse('x**2-2'),[x])}));
+  expect(String(sj.minimalPolynomial(add(theta,1),x,{domain:A}))).toBe(String(parse('x-theta-1')));
+});
+it('propagates failures of a supplied coefficient domain',()=>{
+  const K=new sj.AlgebraicField(sj.QQ,sqrt(2)),spy=vi.spyOn(K,'convert').mockImplementation(()=>{throw new TypeError('coefficient conversion failed');});
+  try {expect(()=>sj.minimalPolynomial(sqrt(2),new sj.Sym('x'),{domain:K})).toThrow(TypeError);}
+  finally {spy.mockRestore();}
+});
+it('rejects free symbols over an explicitly rational coefficient field',()=>{
+  expect(()=>sj.minimalPolynomial(new sj.Sym('y'),new sj.Sym('x'),{domain:sj.QQ})).toThrow(sj.NotImplementedError);
+  expect(()=>sj.minimalPolynomial(new sj.Sym('y'),new sj.Sym('x'),{domain:'QQ'})).toThrow(sj.NotImplementedError);
 });

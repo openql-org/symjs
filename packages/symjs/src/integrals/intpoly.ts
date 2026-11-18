@@ -631,7 +631,56 @@ export function pointSort(poly: PolygonLike | readonly PointLike[], normal?: rea
     // (points on one ray from the centre compare equal; SymPy's comparator returns None there)
     return order * signOf(add(...[0, 1, 2].map((i) => mul(at(det, i), at(nrm, i)))));
   };
-  return [...pts].sort(dim === 2 ? compare : compare3d);
+  return sortLikePython(pts, dim === 2 ? compare : compare3d);
+}
+
+/**
+ * Python's `sorted(xs, key=cmp_to_key(cmp))`: for fewer than 64 items CPython
+ * (3.13 and later) takes the leading run (a descending run is reversed, equal
+ * stretches inside it are kept in order) and binary-inserts the rest, which
+ * fixes the result even for a comparator that is not transitive (the 3D
+ * comparator of pointSort cycles around the centre). Longer inputs use the
+ * engine's stable sort.
+ */
+function sortLikePython<T>(xs: readonly T[], cmp: (a: T, b: T) => number): T[] {
+  const a = [...xs];
+  const n = a.length;
+  if (n >= 64) return a.sort(cmp);
+  const lt = (i: number, j: number): boolean => cmp(at(a, i), at(a, j)) < 0;
+  const reverse = (from: number, to: number): void => {
+    a.splice(from, to - from, ...a.slice(from, to).reverse());
+  };
+  let k = 1;
+  while (k < n && !lt(k, k - 1)) k++;
+  if (k < n && !(k > 1 && lt(0, k - 1))) {
+    if (k > 1) reverse(0, k);
+    k++;
+    let neq = 0;
+    const reverseEqual = (): void => {
+      if (neq > 0) reverse(k - neq - 1, k);
+      neq = 0;
+    };
+    for (; k < n; k++) {
+      if (lt(k, k - 1)) reverseEqual();
+      else if (lt(k - 1, k)) break;
+      else neq++;
+    }
+    reverseEqual();
+    reverse(0, k);
+    while (k < n && !lt(k, k - 1)) k++;
+  }
+  for (let i = k; i < n; i++) {
+    const pivot = at(a, i);
+    let [l, r] = [0, i];
+    while (l < r) {
+      const m = (l + r) >> 1;
+      if (cmp(pivot, at(a, m)) < 0) r = m;
+      else l = m + 1;
+    }
+    a.splice(i, 1);
+    a.splice(l, 0, pivot);
+  }
+  return a;
 }
 
 /** The Euclidean norm of a point, of a sequence of coordinates or of the values of a map (SymPy norm). */

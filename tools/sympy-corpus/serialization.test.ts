@@ -298,3 +298,8 @@ it('preserves snake case assumptions on Dummy and Wild symbols', () => {
     expect((value as sj.Sym).assumptions0.get('finite')).toBe(true);
   }
 });
+it('converts a Python extension set to a coefficient-generator array',()=>{
+  const x={t:'Symbol',name:'x',assume:{}};
+  const c:Case={module:'sympy.polys.partfrac',category:'polys',fn:'apart',src:'apart(1/(x**2-2), x, extension={sqrt(2)})',args:[{t:'Pow',args:[{t:'Add',args:[{t:'Pow',args:[x,{t:'Rational',p:'2',q:'1'}]},{t:'Rational',p:'-2',q:'1'}]},{t:'Rational',p:'-1',q:'1'}]},x],kwargs:{extension:{t:'JsSet',items:[{t:'Pow',args:[{t:'Rational',p:'2',q:'1'},{t:'Rational',p:'1',q:'2'}]}]}},expected:'sqrt(2)/(4*(x-sqrt(2)))-sqrt(2)/(4*(x+sqrt(2)))'};
+  expect(['pass','equivalent']).toContain(runCase(c).status);
+});

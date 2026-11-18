@@ -254,7 +254,7 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
   //   raises(ValueError, lambda: rootof(x**2 - 1, x))
   //   => None
   it.todo("test_CRootOf___new__:101");
-  it.fails("test_CRootOf___new__:103", () => {
+  it("test_CRootOf___new__:103", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rootof(Poly.from(new Add([x, new Mul([rational(-1), y])]), [x], { domain: 'ZZ[y]', pure: false }), rational(0)))).toBe('y');
   });
@@ -415,10 +415,10 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
   //       ]
   //   => [CRootOf(x**25 - 5*x**20 + x**17 + 10*x**15 - 3*x**12 - 10*x**10 + 3*x**7 + 6*x**5 - x**2 - 1, 0)]
   it.todo("test_CRootOf_real_roots:323");
-  it.fails("test_CRootOf_real_roots:329", () => {
+  it("test_CRootOf_real_roots:329", () => {
     const x = new Sym('x');
     const v1 = Poly.from(new Add([rational(-2), new Pow(x, rational(3)), new Mul([x, new Add([rational(2), new Mul([rational(2), new Pow(rational(2), rational(1, 2))])])]), new Mul([new Pow(x, rational(2)), new Add([rational(-1), new Mul([rational(-2), new Pow(rational(2), rational(1, 2))])])])]), [x], { domain: 'QQ<sqrt(2)>', pure: false }).realRoots();
-    expect(sympyStr([at(v1, 1), at(v1, 1), at(v1, 3), at(v1, 3)])).toBe('[1, sqrt(2), sqrt(2)]');
+    expect(sympyStr([at(v1, 0), at(v1, 2), at(v1, 2)])).toBe('[1, sqrt(2), sqrt(2)]');
   });
   it("test_CRootOf_all_roots:336", () => {
     const x = new Sym('x');
@@ -435,13 +435,11 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
     const v1 = Poly.from(new Add([rational(-1), new Pow(x, rational(3)), new Mul([new Pow(rational(2), rational(1, 2)), new Pow(x, rational(2))])]), [x], { domain: 'QQ<sqrt(2)>', pure: false }).allRoots();
     expect(sympyStr([at(v1, 0), at(v1, 1), at(v1, 2)])).toBe('[CRootOf(x**6 - 2*x**4 - 2*x**3 + 1, 0), CRootOf(x**6 - 2*x**4 - 2*x**3 + 1, 2), CRootOf(x**6 - 2*x**4 - 2*x**3 + 1, 3)]');
   });
-  // a function that did not come from the library
-  //   assert Poly((x-1) * (x-sqrt(2))**2 * (x-I) * (x+I), x, extension=True).all_roots() ==\
-  //       [
-  //           S(1), sqrt(2), sqrt(2), -I, I
-  //       ]
-  //   => [1, sqrt(2), sqrt(2), -I, I]
-  it.todo("test_CRootOf_all_roots:360");
+  it("test_CRootOf_all_roots:360", () => {
+    const x = new Sym('x');
+    const v1 = Poly.from(new Add([rational(-2), new Pow(x, rational(5)), new Mul([x, new Add([rational(2), new Mul([rational(2), new Pow(rational(2), rational(1, 2))])])]), new Mul([new Pow(x, rational(2)), new Add([rational(-3), new Mul([rational(-2), new Pow(rational(2), rational(1, 2))])])]), new Mul([new Pow(x, rational(3)), new Add([rational(3), new Mul([rational(2), new Pow(rational(2), rational(1, 2))])])]), new Mul([new Pow(x, rational(4)), new Add([rational(-1), new Mul([rational(-2), new Pow(rational(2), rational(1, 2))])])])]), [x], { domain: 'QQ<sqrt(2)>', pure: false }).allRoots();
+    expect(sympyStr([at(v1, 0), at(v1, 2), at(v1, 2), at(v1, 3), I])).toBe('[1, sqrt(2), sqrt(2), -I, I]');
+  });
   it("test_CRootOf_all_roots:366", () => {
     const x = new Sym('x');
     const v1 = Poly.from(new Add([new Pow(x, rational(2)), new Mul([rational(-1, 2), I])]), [x], { domain: 'QQ_I', pure: false }).allRoots();

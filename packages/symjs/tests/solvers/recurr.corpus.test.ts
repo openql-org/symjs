@@ -519,7 +519,7 @@ describe("sympy/solvers/tests/test_recurr.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(rsolve(new Add([new Mul([rational(-3), (SymFunction('y'))(new Add([rational(1), n]))]), new Mul([rational(2), (SymFunction('y'))(n)]), (SymFunction('y'))(new Add([rational(3), n]))]), (SymFunction('y'))(n), [[(SymFunction('y'))(rational(1)), rational(0)], [(SymFunction('y'))(rational(2)), rational(8)], [(SymFunction('y'))(rational(3)), rational(-2)]]))).toBe('(-2)**n + 2*n');
   });
-  // the replay exceeds its deadline
+  // the case takes more than 4 seconds
   //   assert sol == expected
   //   => C0*((86*18**(1/3)/69 + (-12 + (-1 + sqrt(3)*I)*(290412 + 3036*sqrt(9165))**(1/3))*(1 - sqrt(3)*I)*(24201 + 253*sqrt(9165))**(1/3)/276)/((1 - sqrt(3)*I)*(24201 + 253*sqrt(9165))**(1/3)))**n + C1*((86*18**(1/3)/69 + (-12 + (-1 - sqrt(3)*I)*(290412 + 3036*sqrt(9165))**(1/3))*(1 + sqrt(3)*I)*(24201 + 253*sqrt(9165))**(1/3)/276)/((1 + sqrt(3)*I)*(24201 + 253*sqrt(9165))**(1/3)))**n + C2*(-43*18**(1/3)/(69*(24201 + 253*sqrt(9165))**(1/3)) - 1/23 + (290412 + 3036*sqrt(9165))**(1/3)/138)**n
   it.todo("test_issue_17990:258");

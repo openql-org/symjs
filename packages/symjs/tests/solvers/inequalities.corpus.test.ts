@@ -743,7 +743,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
   });
   it.fails("test_issue_5526:273", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(reduceInequalities(Relational(new Add([x, new Pow(y, rational(2)), Sum((SymFunction('f'))(x), [x, rational(1), rational(3)])]), rational(0), '>=', { evaluate: false }), [x]))).toBe('x >= -y**2 - Sum(f(x), (x, 1, 3))');
+    expect(sympyStr(reduceInequalities([Relational(new Add([x, new Pow(y, rational(2)), Sum((SymFunction('f'))(x), [x, rational(1), rational(3)])]), rational(0), '>=', { evaluate: false })], [x]))).toBe('x >= -y**2 - Sum(f(x), (x, 1, 3))');
   });
   it("test_solve_univariate_inequality:278", () => {
     const x = new Sym('x');

@@ -25,6 +25,15 @@ describe('assumptions', () => {
     };
     expect(sorted(sj.assumptions(add(x, sj.I)))).toEqual(sorted(new Map(Object.entries(want))));
   });
+  it('a sum groups the core hermitian facts of its terms (SymPy Add._eval_is_hermitian)', () => {
+    const facts = (e: Expr): unknown[] => { const m = sj.assumptions(e); return [m.get('hermitian'), m.get('antihermitian')]; };
+    expect(facts(add(3, sj.I))).toEqual([undefined, undefined]);
+    // ask leaves Q.extended_real(oo + I) open; the core group of the terms decides it
+    expect(sj.assumptions(add(sj.oo, sj.I)).get('extended_real')).toBe(false);
+    expect(facts(add(x, 3))).toEqual([true, undefined]);
+    expect(facts(add(new sj.Sym('h', { hermitian: true }), new sj.Sym('n', { hermitian: false })))).toEqual([false, undefined]);
+    expect(facts(add(new sj.Sym('a', { antihermitian: true }), mul(2, sj.I)))).toEqual([undefined, true]);
+  });
   it('a symbol has the closure of its assumptions', () => {
     expect(sorted(sj.assumptions(y))).toEqual([['commutative', true]]);
     const a = sj.assumptions(x);

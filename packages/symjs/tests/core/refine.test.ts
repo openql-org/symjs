@@ -243,7 +243,7 @@ const CASES: readonly Case[] = [
   ["ask", "Q.rational(x*pi)", "Q.rational(x)", "unknown"],  // SymPy 1.14: false (wrong in SymPy: x = 0 gives 0)
   ["ask", "Q.rational(x+y)", "True", "unknown"],
   ["ask", "Q.rational(x+I)", "Q.rational(x)", "false"],
-  ["ask", "Q.rational(x+y)", "Q.imaginary(x) & Q.real(y)", "unknown"],
+  ["ask", "Q.rational(x+y)", "Q.imaginary(x) & Q.real(y)", "false"],
   ["ask", "Q.rational(exp(2))", "True", "false"],
   ["ask", "Q.rational(exp(x))", "Q.rational(x) & Q.nonzero(x)", "false"],
   ["ask", "Q.rational(x**2)", "Q.rational(x)", "true"],  // SymPy 1.14: unknown (the square of a rational number is rational)
@@ -705,4 +705,46 @@ it('does not reject an unconstrained noncommutative Hermitian operator', () => {
   const operator = sj.symbol('operator', { commutative: false });
   expect(sj.ask(sj.Q.hermitian(operator))).toBe('unknown');
   expect(sj.ask(sj.Q.hermitian(operator), sj.Q.hermitian(operator))).toBe(true);
+});
+
+it('tracks zero, sign and cancellation in finite scalar expressions', () => {
+  const cases: readonly Case[] = [
+    ['ask', 'Q.finite(x**y)', '~Q.finite(x) & Q.extended_negative(y)', 'true'],
+    ['ask', 'Q.finite(x**y)', '~Q.finite(x)', 'unknown'],
+    ['ask', 'Q.finite((-2)**y)', 'Q.extended_negative(y)', 'true'],
+    ['ask', 'Q.finite(2**y)', '~Q.finite(y) & Q.extended_positive(y)', 'false'],
+    ['ask', 'Q.finite(x+y)', 'Q.negative_infinite(x) & Q.extended_negative(y)', 'false'],
+    ['ask', 'Q.finite(x+y)', '~Q.finite(x) & ~Q.finite(y) & ~Q.extended_positive(x) & ~Q.extended_positive(y)', 'unknown'],
+    ['ask', 'Q.hermitian(I*x)', 'Q.real(x) & Q.nonzero(x)', 'false'],
+    ['ask', 'Q.hermitian(I*x)', 'Q.real(x)', 'unknown'],
+    ['ask', 'Q.antihermitian(x+y)', 'Q.imaginary(x) & Q.imaginary(y)', 'true'],
+    ['ask', 'Q.imaginary(x+y)', 'Q.imaginary(x) & Q.imaginary(y)', 'unknown'],
+    ['ask', 'Q.rational(x**y)', '~Q.algebraic(x) & Q.rational(y)', 'unknown'],
+    ['ask', 'Q.rational(x**2)', '~Q.algebraic(x)', 'false'],
+  ];
+  for (const c of cases) expect(run(c), `${c[1]} under ${c[2]}`).toBe(c[3]);
+});
+
+it('distinguishes integral floats from fractional floats and evaluates zero powers', () => {
+  expect(ask(Q.integer(new sj.Float(1)))).toBe('unknown');
+  expect(ask(Q.integer(new sj.Float(1.25)))).toBe(false);
+  expect(ask(Q.algebraic(new sj.Pow(x, y)), Q.zero(y))).toBe(true);
+});
+
+it('keeps real powers of a real base sound when the base may be zero or negative', () => {
+  const cases: readonly Case[] = [
+    ['ask', 'Q.real(x**y)', 'Q.real(x) & Q.positive(y)', 'unknown'],  // SymPy 1.14: true (wrong in SymPy: (-1)**(1/2) = I)
+    ['ask', 'Q.real(x**(1/2))', 'Q.real(x)', 'unknown'],  // SymPy 1.14: true (wrong in SymPy: sqrt(-4) = 2*I)
+    ['ask', 'Q.real(x**(1/2))', 'Q.nonnegative(x)', 'true'],
+    ['ask', 'Q.real(x**(1/2))', 'Q.negative(x)', 'false'],
+    ['ask', 'Q.real(x**(3/2))', 'Q.real(x)', 'unknown'],
+    ['ask', 'Q.real(x**2)', 'Q.real(x)', 'true'],
+    ['ask', 'Q.real(x**(-1))', 'Q.real(x)', 'unknown'],
+    ['ask', 'Q.real(x**(-1))', 'Q.real(x) & Q.nonzero(x)', 'true'],
+    ['ask', 'Q.real(x**y)', 'Q.zero(x) & Q.positive(y)', 'true'],
+    ['ask', 'Q.real(x**y)', 'Q.zero(x) & Q.real(y)', 'unknown'],
+    ['ask', 'Q.real(x**y)', 'Q.nonnegative(x) & Q.positive(y)', 'true'],
+    ['ask', 'Q.real(x**y)', 'Q.nonnegative(x) & Q.real(y)', 'unknown'],
+  ];
+  for (const c of cases) expect(run(c), `${c[1]} under ${c[2]}`).toBe(c[3]);
 });

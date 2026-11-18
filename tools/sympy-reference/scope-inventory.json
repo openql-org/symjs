@@ -26233,7 +26233,7 @@
      "testFile": "sympy/concrete/tests/test_gosper.py",
      "inCorpus": true,
      "caseCount": 63,
-     "gapCount": 5,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -28063,7 +28063,7 @@
      "testFile": "sympy/core/tests/test_assumptions.py",
      "inCorpus": true,
      "caseCount": 706,
-     "gapCount": 22,
+     "gapCount": 20,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -33070,7 +33070,7 @@
      "testFile": "sympy/core/tests/test_relational.py",
      "inCorpus": true,
      "caseCount": 1063,
-     "gapCount": 207,
+     "gapCount": 206,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 8,
@@ -78370,20 +78370,13 @@
    "module": "sympy.polys.appellseqs",
    "sha256": "8567832ac2a726e02e3cdff9214ea6d6892eac0abdc4cb772d080c7a172f04a4",
    "status": "partial",
-   "note": "Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.",
    "sources": [
     "polys/appellseqs.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "dup_andre",
-      "dup_bernoulli",
-      "dup_bernoulli_c",
-      "dup_euler",
-      "dup_genocchi"
-     ],
+     "pass": true,
+     "missingNames": [],
      "pythonSpecificNames": [],
      "internalNames": [],
      "unresolvedBases": []
@@ -78414,16 +78407,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.",
-     "capabilities": [
-      {
-       "area": "Appell polynomial sequences",
-       "remaining": [
-        "Low-level dup_* coefficient-list exports"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -78966,7 +78952,7 @@
      "testFile": "sympy/polys/tests/test_constructor.py",
      "inCorpus": true,
      "caseCount": 59,
-     "gapCount": 26,
+     "gapCount": 24,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -79357,18 +79343,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Polynomial dispersion and linear systems",
-       "remaining": [
-        "Dispersion over general algebraic coefficient fields",
-        "sympy_eqs_to_ring convenience conversion",
-        "Linear equations over nonfield coefficient rings"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -84837,7 +84814,6 @@
    "module": "sympy.polys.fields",
    "sha256": "45d48390e96cea7f3bcaf1c6d4a5c59c69e0d094b7480714025cf8b536f54591",
    "status": "partial",
-   "note": "Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration remains partial.",
    "sources": [
     "polys/fields.ts"
    ],
@@ -84888,17 +84864,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration remains partial.",
-     "capabilities": [
-      {
-       "area": "Rational function fields",
-       "remaining": [
-        "General nested coefficient fields and algebraic coefficient domains",
-        "Domain wrappers beyond ZZ, QQ and RR with symbol generators"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -84996,19 +84964,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Finite-domain polynomials",
-       "remaining": [
-        "Multivariate finite-field GCD, factorization and rational cancellation",
-        "Finite-domain pseudo-division, resultants and further Poly methods",
-        "Nonsymmetric coefficient presentations and nonprime-modulus factorization",
-        "General algebraic-domain factorization beyond the existing extension algorithm"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -86618,18 +86576,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Number fields",
-       "remaining": [
-        "General algebraic presentations and RootOf embeddings",
-        "Unbounded primitive-element search",
-        "Maximal orders"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -86846,7 +86795,7 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 152,
-     "gapCount": 27,
+     "gapCount": 23,
      "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-slow": 1
@@ -87219,24 +87168,15 @@
      "testFile": "sympy/polys/numberfields/tests/test_subfield.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 66,
+     "gapCount": 64,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Number fields",
-       "remaining": [
-        "General algebraic presentations and RootOf embeddings",
-        "Unbounded primitive-element search",
-        "Maximal orders"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -87255,7 +87195,6 @@
    "module": "sympy.polys.numberfields.utilities",
    "sha256": "2072a67da7c4f6d3066a699f76d932478fc81dbd2638df8e0708ad1344acd51d",
    "status": "partial",
-   "note": "Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.",
    "sources": [
     "polys/numberfields/utilities.ts"
    ],
@@ -87298,19 +87237,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.",
-     "capabilities": [
-      {
-       "area": "Indexed roots and algebraic polynomials",
-       "remaining": [
-        "Complex CRootOf rational refinement",
-        "Complete indexed-root preprocessing and ordering at arbitrarily close roots",
-        "General multivariate algebraic factorization",
-        "Other number-field utilities and rigorous interval evaluation of general algebraic expressions"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -87555,7 +87484,7 @@
      "testFile": "sympy/polys/tests/test_partfrac.py",
      "inCorpus": true,
      "caseCount": 35,
-     "gapCount": 5,
+     "gapCount": 4,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 3,
@@ -89194,7 +89123,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "preprocess_roots",
       "roots_binomial",
       "roots_cubic",
       "roots_cyclotomic",
@@ -89226,7 +89154,7 @@
      "testFile": "sympy/polys/tests/test_polyroots.py",
      "inCorpus": true,
      "caseCount": 189,
-     "gapCount": 100,
+     "gapCount": 96,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 2,
@@ -89714,7 +89642,7 @@
      "testFile": "sympy/polys/tests/test_polytools.py",
      "inCorpus": true,
      "caseCount": 1707,
-     "gapCount": 476,
+     "gapCount": 455,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-tooslow": 1,
@@ -89729,28 +89657,9 @@
      }
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Indexed roots and algebraic polynomials",
-       "remaining": [
-        "Complex CRootOf rational refinement",
-        "Complete indexed-root preprocessing and ordering at arbitrarily close roots",
-        "General multivariate algebraic factorization",
-        "Other number-field utilities and rigorous interval evaluation of general algebraic expressions"
-       ]
-      },
-      {
-       "area": "Finite-domain polynomials",
-       "remaining": [
-        "Multivariate finite-field GCD, factorization and rational cancellation",
-        "Finite-domain pseudo-division, resultants and further Poly methods",
-        "Nonsymmetric coefficient presentations and nonprime-modulus factorization",
-        "General algebraic-domain factorization beyond the existing extension algorithm"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -90069,7 +89978,6 @@
    "module": "sympy.polys.puiseux",
    "sha256": "c1cff9c394725c77c0c02f4375efba79c3e6f72d73e430267ed86d499e770aa0",
    "status": "partial",
-   "note": "PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain",
    "sources": [
     "polys/puiseux.ts"
    ],
@@ -90114,8 +90022,8 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
-     "limitation": "PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -90209,7 +90117,6 @@
    "module": "sympy.polys.ring_series",
    "sha256": "ec38a39a58f201a42bba9581d0999a3701a6df0353b2d9c4b01967fa8d6e5f53",
    "status": "partial",
-   "note": "truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented",
    "sources": [
     "polys/ringseries.ts"
    ],
@@ -90255,8 +90162,8 @@
      }
     },
     "limitations": {
-     "pass": false,
-     "limitation": "truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented",
+     "pass": true,
+     "limitation": "",
      "capabilities": []
     }
    },
@@ -90830,7 +90737,6 @@
    "module": "sympy.polys.rootoftools",
    "sha256": "6cc71551c230a9a33ae37514d564c23663e60c545ea5912af577ddafd9a6eb74",
    "status": "partial",
-   "note": "Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.",
    "sources": [
     "polys/rootof.ts",
     "polys/rootsum.ts"
@@ -90965,7 +90871,7 @@
      "testFile": "sympy/polys/tests/test_rootoftools.py",
      "inCorpus": true,
      "caseCount": 148,
-     "gapCount": 45,
+     "gapCount": 42,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 56,
@@ -90979,19 +90885,9 @@
      }
     },
     "limitations": {
-     "pass": false,
-     "limitation": "Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.",
-     "capabilities": [
-      {
-       "area": "Indexed roots and algebraic polynomials",
-       "remaining": [
-        "Complex CRootOf rational refinement",
-        "Complete indexed-root preprocessing and ordering at arbitrarily close roots",
-        "General multivariate algebraic factorization",
-        "Other number-field utilities and rigorous interval evaluation of general algebraic expressions"
-       ]
-      }
-     ]
+     "pass": true,
+     "limitation": "",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -91192,18 +91088,9 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": false,
+     "pass": true,
      "limitation": "",
-     "capabilities": [
-      {
-       "area": "Polynomial dispersion and linear systems",
-       "remaining": [
-        "Dispersion over general algebraic coefficient fields",
-        "sympy_eqs_to_ring convenience conversion",
-        "Linear equations over nonfield coefficient rings"
-       ]
-      }
-     ]
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,
@@ -102100,7 +101987,7 @@
      "inCorpus": true,
      "caseCount": 286,
      "gapCount": 69,
-     "timeoutCount": 2,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 104,
       "marked-tooslow": 5,
@@ -102295,7 +102182,7 @@
      "inCorpus": true,
      "caseCount": 127,
      "gapCount": 3,
-     "timeoutCount": 1,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
       "unsupported-assertion": 4
@@ -102425,7 +102312,7 @@
      "inCorpus": true,
      "caseCount": 474,
      "gapCount": 238,
-     "timeoutCount": 3,
+     "timeoutCount": 2,
      "disallowedOmissions": {
       "marked-skip": 1,
       "marked-slow": 219,

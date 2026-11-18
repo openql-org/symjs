@@ -1,3 +1,4 @@
+import '../../src/polys';
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Finite-field cases generated independently with SymPy 1.14.0.
@@ -94,8 +95,8 @@ describe('SymPy finite-field polynomial results',()=>{
     expect(()=>Poly.from(x,[x],{domain:ZZ,modulus:5})).toThrow(OptionError);
     expect(()=>Poly.from(x,[x],{modulus:0})).toThrow(RangeError);
     expect(()=>Poly.from(x,[x],{modulus:-3})).toThrow(RangeError);
-    expect(()=>P('x+1',6).factorList()).toThrow(NotImplementedError);
-    expect(()=>P('x*y+1',5,[x,y]).gcd(P('x+y',5,[x,y]))).toThrow(NotImplementedError);
+    expect(P('x+1',6).factorList()[1].map(([f,k])=>[String(f.asExpr()),k])).toEqual([['x + 1',1]]);
+    expect(P('x*y+1',5,[x,y]).gcd(P('x+y',5,[x,y])).asExpr().equals(1)).toBe(true);
     expect(()=>P('x*y+1',5,[x,y]).div(P('0',5,[x,y]))).toThrow(RangeError);
     expect(()=>factor(x,{domain:'EX'})).toThrow(NotImplementedError);
   });

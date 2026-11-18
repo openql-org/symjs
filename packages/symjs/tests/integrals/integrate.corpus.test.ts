@@ -3236,7 +3236,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
   });
   it("test_constant_independent_of_symbol:533", () => {
     const [y, x] = symbols('y x');
-    expect(equivalent(sympyStr(manualintegrate(new Integral([y, x, rational(1), rational(2)]), x)), 'x*Integral(y, (x, 1, 2))', [y, x], { fn: 'manualintegrate', input: 'Integral(y, (x, 1, 2))' })).toBe(true);
+    expect(sympyStr(manualintegrate(new Integral([y, x, rational(1), rational(2)]), x))).toBe('x*Integral(y, (x, 1, 2))');
   });
   it("test_issue_12641:538", () => {
     const x = new Sym('x');

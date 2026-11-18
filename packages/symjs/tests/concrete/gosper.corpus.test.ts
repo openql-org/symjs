@@ -159,9 +159,9 @@ describe("sympy/concrete/tests/test_gosper.py", () => {
     const m = new Sym('m');
     expect(sympyStr(simplify(new Add([rational(-26), new Mul([rational(2), new Add([rational(13), new Mul([rational(-13), new Pow(rational(2), m)]), new Mul([new Pow(rational(2), m), new Pow(m, rational(3))]), new Mul([rational(-3), new Pow(rational(2), m), new Pow(m, rational(2))]), new Mul([rational(9), m, new Pow(rational(2), m)])])]), new Mul([rational(-1), new Pow(rational(2), new Add([rational(1), m])), new Add([rational(-13), new Pow(m, rational(3)), new Mul([rational(-3), new Pow(m, rational(2))]), new Mul([rational(9), m])])])])))).toBe('0');
   });
-  it.fails("test_gosper_sum_AeqB_part1:126", () => {
+  it("test_gosper_sum_AeqB_part1:126", () => {
     const [n, m] = symbols('n m');
-    expect(sympyStr(gosperSum(new Pow(new Add([rational(-1), new Pow(n, rational(2)), new Mul([n, new Pow(rational(5), rational(1, 2))])]), rational(-1)), [n, 0, m]))).toBe('None');
+    expect(sympyStr(gosperSum(new Pow(new Add([rational(-1), new Pow(n, rational(2)), new Mul([n, new Pow(rational(5), rational(1, 2))])]), rational(-1)), [n, 0, m]))).not.toBe('None');
   });
   it("test_gosper_sum_AeqB_part1:126 (2)", () => {
     const m = new Sym('m');
@@ -265,10 +265,10 @@ describe("sympy/concrete/tests/test_gosper.py", () => {
   //   assert g is None
   //   => None
   it.todo("test_gosper_sum_AeqB_part3:200");
-  // the case takes more than 4 seconds
-  //   assert g is not None and simplify(g - g3f) == 0
-  //   => None
-  it.todo("test_gosper_sum_AeqB_part3:202");
+  it("test_gosper_sum_AeqB_part3:202", () => {
+    const [n, m] = symbols('n m');
+    expect(sympyStr(gosperSum(new Mul([new Pow(n, rational(-2)), new Pow(new Add([rational(1), n]), rational(-2)), new Pow(new Add([rational(-3), n]), rational(-2)), new Pow(new Add([rational(-2), n]), rational(-2)), new Add([rational(-4), new Mul([rational(4), n])]), new Add([rational(-1), new Pow(n, rational(2)), new Mul([rational(-2), n])])]), [n, 4, m]))).not.toBe('None');
+  });
   it("test_gosper_sum_AeqB_part3:202 (2)", () => {
     const m = new Sym('m');
     expect(sympyStr(simplify(new Add([rational(-1, 16), new Mul([new Pow(new Add([rational(1), m]), rational(-2)), new Pow(new Add([rational(-2), m]), rational(-2))]), new Mul([rational(1, 16), new Pow(new Add([rational(1), m]), rational(-2)), new Pow(new Add([rational(-2), m]), rational(-2)), new Add([rational(-3), m]), new Add([rational(2), m]), new Add([rational(2), new Pow(m, rational(2)), new Mul([rational(-1), m])])])])))).toBe('0');

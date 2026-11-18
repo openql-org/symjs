@@ -3,7 +3,7 @@
 
 // Tests of src/polys/rootof.ts: CRootOf; expected values from SymPy 1.14.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { evalf, parse, Poly, rootOf, solve, symbols } from '../../src';
 
@@ -173,4 +173,21 @@ describe('CRootOf of non-real roots (SymPy references)', () => {
     sj.CRootOf.clearCache();
     expect(String(t.evalRational(parse('1/10')))).toBe('15/256 - 805*I/256');
   });
+});
+
+import continuationRefs from './continuation.references.json';
+for(const row of continuationRefs.roots) it(`preprocesses and orders exact indexed roots: ${row.expr}`,()=>{
+  const f=parse(row.expr);
+  expect(row.roots.map((_,i)=>String(rootOf(f,i,{radicals:false})))).toEqual(row.roots);
+});
+
+import * as nrootsModule from '../../src/polys/nroots';
+it('increases approximation precision until a unique complex root lies in the certified rectangle',()=>{
+  sj.CRootOf.clearCache();
+  const spy=vi.spyOn(nrootsModule,'nroots').mockImplementationOnce(()=>[sj.S.Zero]);
+  try {
+    const r=new sj.CRootOf(parse('x**3-x-1'),1);
+    expect(String(r.numericValue(15))).toBe('-0.662358978622373 - 0.562279512062301*I');
+    expect(spy.mock.calls.length).toBeGreaterThanOrEqual(2);
+  } finally {spy.mockRestore();sj.CRootOf.clearCache();}
 });

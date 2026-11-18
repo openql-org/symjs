@@ -3,12 +3,35 @@
 
 // Tests of src/polys/sympoly.ts: Poly methods and the top-level polynomial functions (gcd, degree, div, terms_gcd, horner, factor, ...); expected values from SymPy 1.14 (tuples written as [...]).
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import { add, expand, factorNc, mul, parse, pow, sstr, str, Sym, symbols } from '../../src';
 import { factorListInt } from '../../src/polys/sympoly';
 
 import algebraicRefs from './sympoly.algebraic.references.json';
+import finitePseudoRefs from './finite-pseudo.references.json';
+
+describe('finite-domain pseudo-division and resultants (SymPy 1.14)', () => {
+  for (const row of finitePseudoRefs) it(`${row.f} by ${row.g} modulo ${row.modulus}`, () => {
+    const gens = row.gens.map((s) => new Sym(s)), X = new Sym('x');
+    const poly = (e: sj.ExprLike): sj.Poly => Poly.from(e, gens, { modulus: row.modulus });
+    const f = poly(parse(row.f)), g = poly(parse(row.g)), [q, r] = f.pdiv(g);
+    expect([String(q.asExpr()), String(r.asExpr())]).toEqual([row.q, row.r]);
+    expect([q.domain, r.domain]).toEqual([f.domain, f.domain]);
+    expect(f.pquo(g).equals(q)).toBe(true);
+    expect(f.prem(g).equals(r)).toBe(true);
+    const lc = Poly.from(g.asExpr(), [X]).LC();
+    const scale = poly(pow(lc, Math.max(0, f.degree(X) - g.degree(X) + 1)));
+    expect(f.mul(scale).equals(q.mul(g).add(r))).toBe(true);
+    if (row.resultant !== undefined) expect(String(f.resultant(g))).toBe(row.resultant);
+  });
+  it('rejects a zero polynomial divisor and preserves exact quotient errors', () => {
+    const f = Poly.from(parse('x**2+1'), [new Sym('x')], { modulus: 5 });
+    expect(() => f.pdiv(f.sub(f))).toThrow(RangeError);
+    expect(() => f.pexquo(f.add(1))).toThrow(sj.ExactQuotientFailed);
+    expect(f.pexquo(f).asExpr().equals(1)).toBe(true);
+  });
+});
 
 const { Poly } = sj;
 const [x, y, z] = symbols('x y z');
@@ -150,7 +173,7 @@ describe('further cases', () => {
     expect(F('x**2 - a', { extension: s2 })).toBe('-a + x**2');
     expect(F('x**3 - 2', { extension: [E('2**(1/3)')] })).toBe('(x - 2**(1/3))*(x**2 + 2**(1/3)*x + 2**(2/3))');
     // SymPy factors with sin(x) as a generator: (sin(x) - sqrt(2))*(sin(x) + sqrt(2))
-    expect(F('sin(x)**2 - 2', { extension: s2 })).toBe('sin(x)**2 - 2');
+    expect(F('sin(x)**2 - 2', { extension: s2 })).toBe('(sin(x) - sqrt(2))*(sin(x) + sqrt(2))');
     // SymPy splits exp(x + y) into exp(x)*exp(y)
     expect(F('exp(x + y)*(x**2 - 1)', { deep: true })).toBe('(x - 1)*(x + 1)*exp(x)*exp(y)');
   });
@@ -287,6 +310,15 @@ describe('generators and domains', () => {
     expect(P('x*y + x**2', x, y).homogeneousOrder()).toBe(2);
     for (const g of [y, 1, -2]) expect(String(P('y**2 + y*z**2', x, y, z).ltrim(g))).toBe("Poly(y**2 + y*z**2, y, z, domain='ZZ')");
     expect(String(P('x**2 + y', x, y).reorder(y, x))).toBe("Poly(y + x**2, y, x, domain='ZZ')");
+    expect(String(P('x + y + z', x, y, z).reorder({ wrt: z }))).toBe("Poly(z + x + y, z, x, y, domain='ZZ')");
+    expect(String(P('x + y + z', x, y, z).reorder({ wrt: [y, new Sym('w')] }))).toBe("Poly(y + x + z, y, x, z, domain='ZZ')");
+    // SymPy PolynomialError: the generators can only be permuted; a left generator must not occur
+    expect(() => P('x + y', x, y).reorder(x, z)).toThrow(sj.PolynomialError);
+    expect(() => P('x + y', x, y).reorder(x)).toThrow(sj.PolynomialError);
+    expect(() => P('x + y', x, y).reorder(x, x)).toThrow(sj.PolynomialError);
+    expect(() => P('x*y**2 + y**2', x, y).ltrim(y)).toThrow(sj.PolynomialError);
+    expect(() => P('x*y - x', x, y).ltrim(-1)).toThrow(sj.PolynomialError);
+    for (const g of [2, -3, z]) expect(() => P('x*y', x, y).ltrim(g)).toThrow(sj.PolynomialError);
     expect(String(P('x**2 + 1', x).replace(x, y))).toBe("Poly(y**2 + 1, y, domain='ZZ')");
   });
   it('termsGcd, deflate, toRing, toExact, retract, trunc, clearDenoms', () => {
@@ -328,8 +360,7 @@ describe('generators and domains', () => {
     expect(() => P('x - 1', x).lift()).toThrow('computation can be done only in an algebraic domain');
     expect(() => P('x - sqrt(2)', x).lift()).toThrow(sj.DomainError);
     expect(() => P('x - 1', x).norm()).toThrow(sj.DomainError);
-    // not implemented: more than three square roots (SymPy gives (x - 1)**16 expanded)
-    expect(() => Poly.from(parse('x - 1'), [x], { domain: 'QQ<sqrt(2) + sqrt(3) + sqrt(5) + sqrt(7)>' }).norm()).toThrow('norm: unsupported coefficient field');
+    expect(Poly.from(parse('x - 1'), [x], { domain: 'QQ<sqrt(2) + sqrt(3) + sqrt(5) + sqrt(7)>' }).norm().equals(P('(x-1)**16',x))).toBe(true);
     expect(String(P('x/2', x).integrate())).toBe("Poly(1/4*x**2, x, domain='QQ')");
     expect(show(P('2*x**2 + 3*x + 1/2', x).makeMonicOverIntegersByScalingRoots())).toBe("[Poly(x**2 + 6*x + 4, x, domain='ZZ'), 4]");
     expect(() => P('a*x**2 + 1', x).makeMonicOverIntegersByScalingRoots()).toThrow(sj.DomainError);
@@ -1205,4 +1236,211 @@ it('preserves coefficient fields during extended Euclid and Sturm sequences', ()
   const b = Poly.from(E('x - y'), [x]);
   const [u, v, d] = a.gcdex(b);
   expect(u.mul(a).add(v.mul(b)).equals(d)).toBe(true);
+});
+
+import continuationRefs from './continuation.references.json';
+for(const row of continuationRefs.algebraic) it(`Trager factorization: ${row.expr}`,()=>{
+  const gens=row.gens.map((s)=>new Sym(s)),extension=row.extension.map((e)=>parse(e));
+  const f=Poly.from(parse(row.expr),gens,{extension}),[c,fs]=f.factorList();
+  expect(expand(add(c,mul(-1,parse(row.content))))).toEqual(sj.S.Zero);
+  const remaining=[...fs];
+  for(const [expr,k] of row.factors){
+    const i=remaining.findIndex(([g,m])=>m===k&&g.equals(Poly.from(parse(String(expr)),gens,{extension})));
+    expect(i).toBeGreaterThanOrEqual(0);remaining.splice(i,1);
+  }
+  expect(remaining).toHaveLength(0);
+  expect(fs.reduce((p,[g,k])=>p.mul(g.pow(k)),Poly.from(c,gens,{extension})).equals(f)).toBe(true);
+  expect(f.norm().equals(Poly.from(parse(row.norm),gens))).toBe(true);
+});
+for(const row of continuationRefs.finite) it(`multivariate finite PRS mod ${row.p}: ${row.a}, ${row.b}`,()=>{
+  const gens=row.gens.map((s)=>new Sym(s)),P=(e:string)=>Poly.from(parse(e),gens,{modulus:row.p});
+  const f=P(row.a),g=P(row.b),h=f.gcd(g);
+  expect(h.equals(P(row.gcd))).toBe(true);
+  expect(f.lcm(g).equals(P(row.lcm))).toBe(true);
+  expect(f.subresultants(g).map((p)=>String(p.asExpr()))).toEqual(row.subresultants.map((e)=>String(P(e).asExpr())));
+  expect(P(String(f.discriminant())).equals(P(row.discriminantExact))).toBe(true);
+  if(!h.isZero){expect(f.exquo(h).mul(h).equals(f)).toBe(true);expect(g.exquo(h).mul(h).equals(g)).toBe(true);}
+});
+it('preserves nonsymmetric finite presentations and supports composite-modulus factorization when division is invertible',()=>{
+  const x=new Sym('x'),P=(e:string)=>Poly.from(parse(e),[x],{modulus:5,symmetric:false});
+  expect(String(P('4*x+3').asExpr())).toBe('4*x + 3');
+  expect(String(P('4*x+3').add(P('x+1')).asExpr())).toBe('4');
+  expect(P('4*x+3').equals(Poly.from(parse('-x-2'),[x],{modulus:5}))).toBe(true);
+  expect(String(P('x+3').mul(P('x+3')).asExpr())).toBe('x**2 + x + 4');
+  for(const modulus of [6,9]){
+    const f=Poly.from(parse(modulus===6?'x+1':'x**2-1'),[x],{modulus}),[c,fs]=f.factorList();
+    expect(fs).toHaveLength(modulus===6?1:2);
+    expect(fs.reduce((r,[g,k])=>r.mul(g.pow(k)),Poly.from(c,[x],{modulus})).equals(f)).toBe(true);
+  }
+});
+
+import finiteMethodRefs from './finite-methods.references.json';
+for(const row of finiteMethodRefs) it(`further Poly methods on ${row.expr} mod ${row.p}`,()=>{
+  const x=new Sym('x'),P=(e:string)=>Poly.from(parse(e),[x],{modulus:row.p}),f=P(row.expr);
+  expect(f.sqfPart().equals(P(row.sqfPart))).toBe(true);
+  expect(f.sturm().map((g)=>String(g.asExpr()))).toEqual(row.sturm.map((e)=>String(P(e).asExpr())));
+  expect(f.groundRoots().map(([r,k])=>[String(r),k]).sort((a,b)=>String(a).localeCompare(String(b)))).toEqual([...row.groundRoots].sort((a,b)=>String(a).localeCompare(String(b))));
+  if(row.decompose)expect(f.decompose().map((g)=>String(g.asExpr()))).toEqual(row.decompose.map((e)=>String(P(e).asExpr())));
+  if(row.revert){const g=f.revert(5);expect(g.equals(P(row.revert))).toBe(true);expect(f.mul(g).rem(P('x**8')).equals(P('1'))).toBe(true);}
+});
+
+it('preprocesses indexed-root polynomials and removable symbolic coefficient scales',()=>{
+  const x=new Sym('x'),y=new Sym('y');
+  for(const [expr,scale,expected] of [['0','1','0'],['1','1','1'],['x**3-8*x+16','2','x**3-2*x+2'],['x**3/8-x+2','2','x**3-2*x+2'],['y**3*x**3+y**2*x**2+y*x+1','1/y','x**3+x**2+x+1']]){
+    const [s,f]=sj.preprocessRoots(Poly.from(parse(String(expr)),[x]));
+    expect(String(s)).toBe(String(scale));expect(f.equals(Poly.from(parse(String(expected)),[x]))).toBe(true);
+  }
+  expect(sj.cancel(parse('((x+y)*(x+1))/((x+y)*(y+1))'),{modulus:5}).equals(parse('(x+1)/(y+1)'))).toBe(true);
+  const f=Poly.from(parse('4*x**2+4*y**2'),[x,y],{modulus:5,symmetric:false});
+  for(const g of [f.reorder(y,x),f.deflate()[1],f.termsGcd()[1],f.homogenize(new Sym('z')),f.toExact(),f.toField(),f.toRing(),f.replace(x,new Sym('z'))]){
+    expect(g.coeffs().every((c)=>c instanceof sj.Rational&&c.p>=0n)).toBe(true);
+  }
+  expect(String(f.evalMany([[x,2],[y,1]]))).toBe('0');
+});
+
+it('unifies distinct algebraic coefficient fields before arithmetic and GCD',()=>{
+  const x=new Sym('x'),y=new Sym('y'),P=(e:string,r:string)=>Poly.from(parse(e),[x,y],{extension:parse(r)});
+  const a=P('x+sqrt(2)','sqrt(2)'),b=P('x+sqrt(3)','sqrt(3)');
+  expect(a.add(b).asExpr().equals(parse('2*x+sqrt(2)+sqrt(3)'))).toBe(true);
+  expect(a.sub(b).asExpr().equals(parse('sqrt(2)-sqrt(3)'))).toBe(true);
+  expect(a.mul(b).div(b)[1].isZero).toBe(true);
+  const f=a.mul(y),g=b.mul(y);
+  expect(f.gcd(g).asExpr().equals(y)).toBe(true);
+});
+
+it('rejects ordered-root operations over finite fields and reduces algebraic evaluation in its field',()=>{
+  const x=new Sym('x'),f=Poly.from(parse('x**2-2'),[x],{modulus:5});
+  expect(()=>f.intervals()).toThrow(sj.DomainError);
+  expect(()=>f.refineRoot(sj.S.One,sj.S.Two)).toThrow(sj.DomainError);
+  expect(()=>f.countRoots()).toThrow(sj.DomainError);
+  const K=new sj.AlgebraicField(sj.QQ,parse('sqrt(2)')),g=Poly.from(parse('sqrt(2)*x'),[x],{domain:K});
+  expect(g.content()).toEqual(sj.S.One);expect(g.primitive()[1]).toBe(g);
+  expect(String(g.eval(parse('sqrt(2)')))).toBe('2');
+  expect(g.integrate().domain).toBe(g.domain);
+});
+it('preserves inexact and multivariate preprocessing inputs as in SymPy',()=>{
+  const x=new Sym('x'),y=new Sym('y');
+  const rr=Poly.from(parse('2.0*x+4.0'),[x]),cc=Poly.from(x,[x],{domain:'CC'});
+  expect(sj.preprocessRoots(rr)[1]).toBe(rr);expect(sj.preprocessRoots(cc)[1]).toBe(cc);
+  const multi=Poly.from(parse('x*y+1'),[x,y]);
+  expect(sj.preprocessRoots(multi)[1].equals(multi)).toBe(true);
+  expect(sj.preprocessRoots(Poly.from(parse('x**2-4'),[x],{modulus:11})).map(String)).toEqual(['2',"Poly(x**2 - 1, x, domain='ZZ')"]);
+});
+it('factors over a supplied RootOf domain without parsing its generator name',()=>{
+  const x=new Sym('x'),r=sj.CRootOf(parse('x**3-x-1'),0),K=new sj.AlgebraicField(sj.QQ,r);
+  const f=Poly.from(parse('x**3-x-1'),[x],{domain:K}),[,fs]=f.factorList();
+  expect(fs.map(([g])=>g.degree()).sort((a,b)=>a-b)).toEqual([1,2]);
+  expect(String(f.eval(r))).toBe('0');
+  expect(fs.some(([g])=>g.degree()===1&&String(g.eval(r))==='0')).toBe(true);
+  expect(Poly.from(sj.factor(f.asExpr(),{domain:K}),[x],{domain:K}).equals(f)).toBe(true);
+});
+
+it('handles algebraic constants, zero norms and native subresultants',()=>{
+  const x=new Sym('x'),P=(e:string)=>Poly.from(parse(e),[x],{extension:parse('sqrt(2)')});
+  expect(P('0').factorList()).toEqual([sj.S.Zero,[]]);expect(P('sqrt(2)').factorList()[1]).toEqual([]);
+  expect(P('0').sqfNorm().map(String)).toEqual(['0',String(P('0')),"Poly(0, x, domain='QQ')"]);
+  expect(()=>P('(x+sqrt(2))**2').sqfNorm()).toThrow(sj.PolynomialError);
+  expect(P('x**2-2').subresultants(P('x-sqrt(2)')).map((p)=>p.degree())).toEqual([2,1]);
+  const r=sj.CRootOf(parse('x**3-x-1'),0),K=new sj.AlgebraicField(sj.QQ,r);
+  expect(Poly.from(add(mul(add(pow(r,3),mul(-1,r),-1),x),1),[x],{domain:K}).asExpr().equals(sj.S.One)).toBe(true);
+});
+
+import * as intervalModule from '../../src/polys/numberfields/interval';
+it('certifies lifted roots with small nonzero residuals and retries interval evaluation',()=>{
+  const x=new Sym('x'),f=Poly.from(parse('x**3-x+sqrt(2)/10**15'),[x],{extension:parse('sqrt(2)')});
+  expect(f.realRoots().map(String)).toEqual(continuationRefs.liftedRoots[0]?.roots);
+  const original=intervalModule.algebraicEnclosure,spy=vi.spyOn(intervalModule,'algebraicEnclosure');
+  let retried=false;
+  try {
+    spy.mockImplementation((e,bits)=>{
+      if(!retried&&String(e).includes('CRootOf')&&String(e).includes('sqrt(2)')){retried=true;throw new RangeError('precision insufficient');}
+      return original(e,bits);
+    });
+    expect(f.realRoots()).toHaveLength(3);expect(retried).toBe(true);
+    spy.mockImplementation((e,bits)=>{if(String(e).includes('CRootOf')&&String(e).includes('sqrt(2)'))throw new TypeError('invalid residual');return original(e,bits);});
+    expect(()=>f.realRoots()).toThrow(TypeError);
+  } finally {spy.mockRestore();}
+  expect(Poly.from(0,[x]).allRoots()).toEqual([]);
+  expect(Poly.from(parse('x-I'),[x]).realRoots()).toEqual([]);
+});
+
+it('preserves dense finite/algebraic reconstruction and PurePoly preprocessing domains',()=>{
+  const x=new Sym('x'),p=Poly.from(parse('4*x+3'),[x],{modulus:5,symmetric:false});
+  expect(String(p.per([sj.GF(5).convert(4),sj.GF(5).convert(3)]))).toBe('Poly(4*x + 3, x, modulus=5)');
+  expect(String(p.per([sj.GF(5).convert(4)],{remove:0}))).toBe('4');
+  expect(String(p.termwise((_m,c)=>mul(2,c)))).toBe("Poly(8*x + 6, x, domain='ZZ')");
+  const r=sj.CRootOf(parse('x**3-x-1'),0),K=new sj.AlgebraicField(sj.QQ,r),f=Poly.from(add(x,r),[x],{domain:K});
+  const g=f.per([K.convert(1),K.convert(r)]);
+  expect(g instanceof Poly&&g.equals(f)).toBe(true);
+  expect(sj.preprocessRoots(Poly.from(0,[x],{domain:'QQ'}))[1].domain).toBe('ZZ');
+  const pure=sj.PurePoly(parse('x**3-8*x+16'),x),[scale,normalized]=sj.preprocessRoots(pure);
+  expect(String(scale)).toBe('2');expect(normalized.pure).toBe(true);
+});
+it('preserves RootOf coefficients during shifts, composition and generator replacement',()=>{
+  const x=new Sym('x'),y=new Sym('y'),r=sj.CRootOf(parse('x**3-x-1'),0),K=new sj.AlgebraicField(sj.QQ,r),P=(e:sj.ExprLike)=>Poly.from(e,[x],{domain:K});
+  const f=P(mul(add(x,mul(-1,r)),add(x,mul(-1,r),-3))),g=f.shift(-2);
+  expect(g.shift(2).equals(f)).toBe(true);
+  expect(f.compose(P(add(x,2))).equals(f.shift(2))).toBe(true);
+  expect(f.replace(x,y).replace(y,x).equals(f)).toBe(true);
+  expect(f.compose(Poly.from(parse('x+sqrt(2)'),[x],{extension:parse('sqrt(2)')})).degree()).toBe(2);
+  const multi=Poly.from(add(x,y),[x,y],{domain:K}),evaluated=multi.eval(r);
+  expect(evaluated instanceof Poly&&evaluated.domain===multi.domain).toBe(true);
+  expect(String(Poly.from(mul(parse('sqrt(2)'),x),[x],{extension:parse('sqrt(2)')}).eval(parse('sqrt(3)')))).toBe('sqrt(6)');
+});
+it('covers degenerate finite discriminants, indecomposable polynomials and algebraic zero LCMs',()=>{
+  const x=new Sym('x'),y=new Sym('y'),p=Poly.from(parse('x**5+y**5'),[x,y],{modulus:5});
+  expect(String(p.discriminant())).toBe('0');
+  const q=Poly.from(parse('x**4+x+1'),[x],{modulus:5});expect(q.decompose()).toHaveLength(1);
+  const P=(e:number|sj.Expr)=>Poly.from(e,[x],{extension:parse('sqrt(2)')});
+  expect(P(0).lcm(P(x)).isZero).toBe(true);expect(P(x).lcm(P(0)).isZero).toBe(true);
+  expect(String(sj.factor(parse('x**2-1'),{modulus:9}))).toBe('(x - 1)*(x + 1)');
+});
+it('supports automatic, single-generator and deep algebraic factor options',()=>{
+  const x=new Sym('x');
+  expect(String(sj.factor(parse('x**2+2*sqrt(2)*x+2'),{extension:true}))).toBe('(x + sqrt(2))**2');
+  expect(String(sj.factor(parse('x**2-2'),{extension:parse('sqrt(2)')}))).toBe('(x - sqrt(2))*(x + sqrt(2))');
+  expect(String(sj.factor(parse('x**2-2'),{extension:false}))).toBe('x**2 - 2');
+  expect(String(sj.factor(parse('sin(x**2-2)'),{extension:parse('sqrt(2)'),deep:true}))).toBe('sin((x - sqrt(2))*(x + sqrt(2)))');
+  expect(Poly.from(sj.factor(parse('(x**2-2)/(x-sqrt(2))'),{extension:true}),[x],{extension:parse('sqrt(2)')}).equals(Poly.from(parse('x+sqrt(2)'),[x],{extension:parse('sqrt(2)')}))).toBe(true);
+});
+it('preserves coefficient-domain errors during algebraic evaluation',()=>{
+  const x=new Sym('x'),K=new sj.AlgebraicField(sj.QQ,parse('sqrt(2)')),f=Poly.from(x,[x],{domain:K}),spy=vi.spyOn(K,'convert').mockImplementation(()=>{throw new TypeError('coefficient conversion failed');});
+  try {expect(()=>f.eval(1)).toThrow(TypeError);}
+  finally {spy.mockRestore();}
+});
+it('recognizes indexed algebraic coefficients when choosing formal factorization generators',()=>{
+  const x=new Sym('x'),r=sj.CRootOf(parse('x**3-x-1'),0),K=new sj.AlgebraicField(sj.QQ,r),expression=pow(add(x,mul(-1,r)),2);
+  expect(Poly.from(sj.factor(expression,{extension:true}),[x],{domain:K}).equals(Poly.from(expression,[x],{domain:K}))).toBe(true);
+});
+it('keeps an algebraic domain alias out of the polynomial generators',()=>{
+  const x=new Sym('x'),theta=new Sym('theta'),K=new sj.AlgebraicField(sj.QQ,new sj.AlgebraicNumber(theta,[1,0],{minpoly:Poly.from(parse('x**2-2'),[x])}));
+  const result=sj.factor(add(pow(x,2),pow(theta,2),-4),{domain:K});
+  expect(String(result)).toBe(String(mul(add(x,mul(-1,theta)),add(x,theta))));
+});
+it('validates unary and binary generator replacement',()=>{
+  const x=new Sym('x'),y=new Sym('y'),z=new Sym('z'),f=Poly.from(add(x,1),[x]),g=Poly.from(add(x,y),[x,y]);
+  expect(f.replace(y).asExpr().equals(add(y,1))).toBe(true);expect(f.replace(x)).toBe(f);
+  expect(()=>g.replace(z)).toThrow(sj.PolynomialError);
+  expect(f.replace(z,y)).toBe(f);
+  expect(()=>g.replace(x,y)).toThrow(sj.PolynomialError);
+});
+it('recovers algebraic root multiplicities without multiplying by unused field conjugates',()=>{
+  const x=new Sym('x'),P=(e:string)=>Poly.from(parse(e),[x],{extension:[parse('sqrt(2)'),parse('sqrt(3)')]});
+  expect(P('x**2-2').realRoots().map(String)).toEqual(['-sqrt(2)','sqrt(2)']);
+  expect(P('x**2-sqrt(2)*x+1').allRoots().map(String)).toEqual(['sqrt(2)/2 - sqrt(2)*I/2','sqrt(2)/2 + sqrt(2)*I/2']);
+  expect(Poly.from(parse('x**2+1'),[x],{domain:'QQ_I'}).allRoots().map(String)).toEqual(['-I','I']);
+  expect(P('(x-sqrt(2))**2*(x+sqrt(2))**3').realRoots().map(String)).toEqual(['-sqrt(2)','-sqrt(2)','-sqrt(2)','sqrt(2)','sqrt(2)']);
+  expect(Poly.from(parse('x**2+1'),[x],{modulus:5}).allRoots().map(String)).toEqual(['-I','I']);
+  expect(Poly.from(parse('4*x+3'),[x],{modulus:5,symmetric:false}).allRoots().map(String)).toEqual(['-3/4']);
+});
+it('preserves nonsymmetric representatives in top-level finite factorization and cancellation',()=>{
+  expect(String(sj.factor(parse('x**2+1'),{modulus:5,symmetric:false}))).toBe('(x + 2)*(x + 3)');
+  expect(String(sj.factor(parse('x**2-1'),{modulus:9,symmetric:false}))).toBe('(x + 1)*(x + 8)');
+  expect(String(sj.factor(parse('x**2+1'),{domain:sj.GF(5,false)}))).toBe('(x + 2)*(x + 3)');
+  expect(String(sj.cancel(parse('(4*x+3)/(x+1)'),{modulus:5,symmetric:false}))).toBe('(4*x + 3)/(x + 1)');
+});
+
+it('rejects multivariate Taylor shifts like SymPy 1.14',()=>{
+  const x=new Sym('x'),y=new Sym('y');
+  expect(()=>Poly.from(add(mul(x,y),pow(y,2)),[x,y],{modulus:5}).shift(2)).toThrow('univariate polynomial expected');
 });

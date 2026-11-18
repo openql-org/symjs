@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import { ANP, I, Perm, PermutationGroup, Poly, PythonMPQ, QQ, S, Sym, add, cancel, exp, factor, gcd, isAlgebraic, minimalPolynomial, mul, pi, pow, rational } from '../../../src';
 import { sympyMatches, sympyStr } from '../../sympy-str';
-import { equivalent } from '../../sympy-equivalent';
 
 describe("doctests of sympy.polys.domains.algebraicfield", () => {
   it("Poly(x**2 + sqrt(2))", () => {
@@ -51,7 +50,7 @@ describe("doctests of sympy.polys.domains.algebraicfield", () => {
   });
   it("factor(p, extension=True)", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(factor(add(pow(x, 3), mul(-2, x), mul(-2, pow(2, rational(1, 2))), mul(pow(2, rational(1, 2)), pow(x, 2))), { extension: [S['true']], deep: false, gaussian: false })), '(x - sqrt(2))*(x + sqrt(2))**2', [x], { fn: 'factor', input: 'x**3 + sqrt(2)*x**2 - 2*x - 2*sqrt(2)' })).toBe(true);
+    expect(sympyStr(factor(add(pow(x, 3), mul(-2, x), mul(-2, pow(2, rational(1, 2))), mul(pow(2, rational(1, 2)), pow(x, 2))), { extension: [S['true']], deep: false, gaussian: false }))).toBe('(x - sqrt(2))*(x + sqrt(2))**2');
   });
   it("factor(x**2 - 2, extension=True)  # all rational coefficients", () => {
     const x = new Sym('x');
@@ -94,7 +93,7 @@ describe("doctests of sympy.polys.domains.algebraicfield", () => {
   });
   it("factor(x**3 - 1, extension=g)", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(factor(add(-1, pow(x, 3)), { extension: [exp(mul(rational(2, 3), pi, I))], deep: false, gaussian: false })), '(x - 1)*(x - exp(2*I*pi/3))*(x + 1 + exp(2*I*pi/3))', [x], { fn: 'factor', input: 'x**3 - 1' })).toBe(true);
+    expect(sympyStr(factor(add(-1, pow(x, 3)), { extension: [exp(mul(rational(2, 3), pi, I))], deep: false, gaussian: false }))).toBe('(x - 1)*(x - exp(2*I*pi/3))*(x + 1 + exp(2*I*pi/3))');
   });
   it("factor(p)", () => {
     const x = new Sym('x');
@@ -102,7 +101,7 @@ describe("doctests of sympy.polys.domains.algebraicfield", () => {
   });
   it("factor(p, domain=K)", () => {
     const x = new Sym('x');
-    expect(equivalent(sympyStr(factor(add(6, pow(x, 4), mul(-5, pow(x, 2))), { domain: 'QQ<sqrt(2) + sqrt(3)>', deep: false, gaussian: false })), '(x - sqrt(2))*(x + sqrt(2))*(x - sqrt(3))*(x + sqrt(3))', [x], { fn: 'factor', input: 'x**4 - 5*x**2 + 6' })).toBe(true);
+    expect(sympyStr(factor(add(6, pow(x, 4), mul(-5, pow(x, 2))), { domain: 'QQ<sqrt(2) + sqrt(3)>', deep: false, gaussian: false }))).toBe('(x - sqrt(2))*(x + sqrt(2))*(x - sqrt(3))*(x + sqrt(3))');
   });
   it("factor(p, extension=[sqrt(2), sqrt(3)])", () => {
     const x = new Sym('x');

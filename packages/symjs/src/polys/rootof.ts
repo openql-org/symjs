@@ -14,6 +14,8 @@ import { ExtensionExpr, Float, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { callableClass } from '../core/callable';
+import { asRealImag } from '../core/methods';
+import { toRational } from '../numeric/mpf';
 import { nroots } from './nroots';
 import type { ComplexInterval } from './rootisolation';
 import { isolateComplexRootsSqf, isolateRealRoots } from './rootisolation';
@@ -58,34 +60,51 @@ class CRootOfNode extends ExtensionExpr {
     return old.key === this.gen.key ? this : undefined;
   }
   /**
-   * The numerical roots of each polynomial, per precision: one nroots call serves all the indexed
-   * roots of a polynomial (SymPy caches the isolating intervals of a polynomial at class level).
+   * The numerical roots of each polynomial, per precision, computed from certified
+   * isolating intervals and cached for all indices.
    */
-  private static readonly rootValues = new Map<string, readonly Expr[]>();
+  private static readonly rootValues = new Map<string, Map<number,Expr>>();
   /** The number of root lists kept; the oldest is dropped beyond it. */
   static readonly rootValuesLimit = 256;
+  private static readonly approximations = new Map<string,readonly Expr[]>();
   override numericValue(dps: number): Expr | undefined {
     const key = `${dps}:${this.poly.key}`;
     let rs = CRootOfNode.rootValues.get(key);
     if (rs === undefined) {
-      rs = nroots(Poly.from(this.poly, [this.gen]), dps);
-      if (CRootOfNode.rootValues.size >= CRootOfNode.rootValuesLimit) CRootOfNode.rootValues.delete(first([...CRootOfNode.rootValues.keys()]));
+      rs = new Map();
+      if (CRootOfNode.rootValues.size >= CRootOfNode.rootValuesLimit) {
+        const oldest=first([...CRootOfNode.rootValues.keys()]);
+        CRootOfNode.rootValues.delete(oldest);CRootOfNode.approximations.delete(oldest);
+      }
       CRootOfNode.rootValues.set(key, rs);
     }
-    if (this.isRealRoot) return rs[this.index];
-    // nroots orders the non-real roots by real part, then by the modulus of the imaginary part: the
-    // value of this index is the one in its isolating rectangle (the nearest one, against rounding)
-    const iv = this.getInterval();
-    const [ax, bx, ay, by] = [iv.ax.value, iv.bx.value, iv.ay.value, iv.by.value];
-    const away = (v: Expr): number => {
-      const { re, im } = v.toComplex();
-      return Math.max(ax - re, 0, re - bx) + Math.max(ay - im, 0, im - by);
-    };
-    return rs.slice(this.realCount).reduce((m, v) => (away(v) < away(m) ? v : m));
+    let value = rs.get(this.index);
+    if(value === undefined){
+      if(this.isRealRoot){
+        const saved=CRootOfNode.realIntervals.get(this.key);
+        value=this.evalRational(undefined,undefined,{n:dps}).evalf(dps);
+        if(saved===undefined)CRootOfNode.realIntervals.delete(this.key);
+        else CRootOfNode.realIntervals.set(this.key,saved);
+      }
+      else {
+        const iv=this.getInterval();
+        const q=(v:Expr):Rational=>v instanceof Float?Rational.of(...toRational(v.mpf)):expectType(v,(r):r is Rational=>r instanceof Rational,'numeric root component');
+        const inside=(x:Rational,a:Rational,b:Rational):boolean=>a.p*x.q<=x.p*a.q&&x.p*b.q<=b.p*x.q;
+        for(let precision=dps+5;value===undefined;precision*=2){
+          const candidates=CRootOfNode.approximations.get(key)??nroots(Poly.from(this.poly,[this.gen]),precision);
+          const matches=candidates.filter((z)=>{const [re,im]=asRealImag(z);return inside(q(re),iv.ax,iv.bx)&&inside(q(im),iv.ay,iv.by);});
+          if(matches.length===1){value=first(matches).evalf(dps);CRootOfNode.approximations.set(key,candidates);}
+          else CRootOfNode.approximations.delete(key);
+        }
+      }
+      rs.set(this.index,defined(value));
+    }
+    return value;
   }
   /** Clear the cached root values and isolating intervals (SymPy CRootOf.clear_cache). */
   static clearCache(): void {
     CRootOfNode.rootValues.clear();
+    CRootOfNode.approximations.clear();
     CRootOfNode.realIntervals.clear();
     complexesCache.clear();
   }
@@ -283,11 +302,7 @@ export function rootOf(f: ExprLike | Poly, index: number | Rational, opts: RootO
   if (deg <= 0) throw new PolynomialError('Cannot construct CRootOf for a constant polynomial');
   if (!Number.isInteger(i) || i < -deg || i >= deg) throw new RangeError(`rootof: index ${i} out of range`);
   const radicals = opts.radicals ?? true;
-  const binomial = radicals && p.termList.length === 2 && !p.TC().equals(0);
-  const roots = binomial ? p.roots().map((r) => ({ r, v: r.toComplex() })).sort((a, b) => {
-    const ar = Math.abs(a.v.im) < 1e-12, br = Math.abs(b.v.im) < 1e-12;
-    return Number(br) - Number(ar) || a.v.re - b.v.re || a.v.im - b.v.im;
-  }).map(({ r }) => r) : p.allRoots({ radicals });
+  const roots = p.allRoots({ radicals });
   return at(roots, i < 0 ? deg + i : i);
 }
 

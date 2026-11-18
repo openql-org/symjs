@@ -11,6 +11,8 @@ import { expand } from '../../src/simplify/expand';
 import { getOrThrow } from '../../src/core/guard';
 import { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly } from '../../src/polys/appellseqs';
 import refs from './appellseqs.references.json';
+import denseRefs from './appellseqs.dense.references.json';
+import { dupBernoulli, dupBernoulliC, dupGenocchi, dupEuler, dupAndre, QQ, ZZ, GF, CoercionFailed } from '../../src';
 
 const x = new Sym('x');
 const functions = new Map([['bernoulli',bernoulliPoly],['central',bernoulliCPoly],['genocchi',genocchiPoly],['euler',eulerPoly],['andre',andrePoly]]);
@@ -32,5 +34,19 @@ describe('Appell sequences: independent SymPy references', () => {
     expect(str(eulerPoly(parse('2.9'),x))).toBe('x**2 - x');
     expect(()=>eulerPoly(parse('-1/2'))).toThrow(RangeError);
     expect(()=>eulerPoly(x)).toThrow(TypeError);
+  });
+});
+
+describe('dense Appell coefficient lists (SymPy 1.14)', () => {
+  const dense = new Map([['bernoulli', dupBernoulli], ['bernoulli_c', dupBernoulliC], ['genocchi', dupGenocchi], ['euler', dupEuler], ['andre', dupAndre]]);
+  for (const row of denseRefs) it(`${row.kind} degree ${row.n} over ${row.domain}`, () => {
+    const K = row.domain === 'QQ' ? QQ : ZZ;
+    expect(getOrThrow(dense, row.kind)(row.n, K).map((c) => str(K.toSympy(c)))).toEqual(row.coeffs);
+  });
+  it('computes in the supplied coefficient domain', () => {
+    const K = GF(101);
+    expect(dupAndre(4, K).map((c) => str(K.toSympy(c)))).toEqual(['1', '0', '-6', '0', '5']);
+    expect(dupAndre(4, QQ).map((c) => str(QQ.toSympy(c)))).toEqual(['1', '0', '-6', '0', '5']);
+    expect(() => dupBernoulli(1, ZZ)).toThrow(CoercionFailed);
   });
 });

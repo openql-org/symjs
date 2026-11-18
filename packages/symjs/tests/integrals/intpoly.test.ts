@@ -9,6 +9,7 @@ import { Expr, ExprMap, NotImplementedError, PolynomialError, Rational, S, Sym, 
 import { Point, Polygon, Segment2D } from '../../src/geometry';
 import type { Polygon as PolygonT } from '../../src/geometry';
 import type { Face, Hyperplane, MonomialRecord2D, PointLike, SegmentLike } from '../../src/integrals/intpoly';
+import pointSortRefs from './intpoly.point-sort.references.json';
 import {
   bestOrigin,
   crossProduct,
@@ -253,6 +254,13 @@ describe('point_sort', () => {
     expect(str(pointSort([Point(0, 0, 0), Point(1, 0, 0), Point(0, 1, 0)], [0, 0, 1]))).toBe('[Point3D(0, 1, 0), Point3D(1, 0, 0), Point3D(0, 0, 0)]');
     // collinear points compare equal and keep their order (SymPy's comparator returns None and fails)
     expect(str(pointSort([Point(0, 0, 0), Point(2, 0, 0), Point(1, 0, 0)], [0, 0, 1]))).toBe('[Point3D(0, 0, 0), Point3D(2, 0, 0), Point3D(1, 0, 0)]');
+  });
+  it('orders like Python sorted with cmp_to_key, also when the 3D comparator is not transitive', () => {
+    // reference values: sympy.integrals.intpoly.point_sort (SymPy 1.14, CPython 3.14) on random point sets
+    for (const c of pointSortRefs.small) expect(str(pointSort(c.pts.map((p) => Point(...p)), c.normal))).toBe(c.want);
+    expect(str(pointSort(pointSortRefs.big.pts.map((p) => Point(...p))))).toBe(pointSortRefs.big.want);
+    // equal (collinear) points inside the leading descending run keep their order: Python sorted with this comparator
+    expect(str(pointSort([Point(1, 2, 2), Point(-1, -2, 0), Point(1, 0, 0), Point(2, 0, 1)], [0, 0, 1]))).toBe('[Point3D(1, 0, 0), Point3D(2, 0, 1), Point3D(-1, -2, 0), Point3D(1, 2, 2)]');
   });
   it('needs decidable comparisons', () => {
     const a = new Sym('a');

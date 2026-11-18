@@ -1283,8 +1283,7 @@ export function deserialize(tree: Tree): unknown {
       }
     }
     case 'Pred': {
-      const p = sj.Q[tree['name'] as string];
-      if (!p) throw new Unsupported(`predicate ${tree['name']}`);
+      const p = sj.Q[tree['name'] as string] ?? sj.Predicate(String(tree['name']));
       return p(...(tree['args'] as Tree[]).map((x) => deserialize(x) as Expr));
     }
     case 'Iterator':
@@ -4043,7 +4042,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.homogeneous_order': polyM((p) => none(p.homogeneousOrder())),
   '.homogenize': polyM((p, a) => p.homogenize(asExpr(a[0]))),
   '.ltrim': polyM((p, a) => p.ltrim(a[0] instanceof sj.Rational ? Number(a[0].p) : asExpr(a[0]))),
-  '.reorder': polyM((p, a) => p.reorder(...a.map(asExpr))),
+  '.reorder': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'wrt') throw new Unsupported(`kwargs ${k}`);
+    const p = asPoly(self);
+    return kw['wrt'] === undefined ? p.reorder(...args.map(asExpr)) : p.reorder({ wrt: asExpr(kw['wrt']) });
+  },
   '.pdiv': polyM((p, a) => new JsTuple(p.pdiv(a[0] as sj.Poly))),
   '.pexquo': polyM((p, a) => p.pexquo(a[0] as sj.Poly)),
   '.shift': polyM((p, a) => p.shift(asExpr(a[0]))),
@@ -4302,7 +4305,12 @@ Object.assign(ADAPTERS, {
   '.sort_key': (_args, _kw, self) => keyTree(sj.sortKey(asExpr(self))),
   '.dir': (args, kw, self) => (noKw(kw), sj.dir(asExpr(self), asSym(args[0]), asExpr(args[1]))),
   '.separate': (args, kw, self) => sj.separate(asExpr(self), { deep: Boolean(kw['deep'] ?? args[0]), force: Boolean(kw['force'] ?? args[1]) }),
-  ask: (args, kw) => (noKw(kw), none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)))),
+  ask: (args, kw) => {
+    const { context, ...rest } = kw;
+    noKw(rest);
+    const query = () => none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
+    return context instanceof sj.AssumptionsContext ? sj.assuming([...context], query) : query();
+  },
   refine: (args, kw) => (noKw(kw), sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean))),
   '.refine': (args, kw, self) => {
     noKw(kw);
@@ -5031,8 +5039,9 @@ function placeArgs(f: (...a: unknown[]) => unknown, args: unknown[], kw: Record<
   const opts: Record<string, unknown> = {};
   for (const [k, x] of Object.entries(kw)) {
     const i = names.indexOf(camel(k));
-    if (i >= 0 && i >= args.length && !/^(opts|options)$/.test(names[i]!)) out[i] = conv(x);
-    else opts[camel(k)] = conv(x);
+    const value = k === 'extension' && x instanceof JsSet ? x.items.map(conv) : conv(x);
+    if (i >= 0 && i >= args.length && !/^(opts|options)$/.test(names[i]!)) out[i] = value;
+    else opts[camel(k)] = value;
   }
   if (Object.keys(opts).length) {
     // the options object goes to the parameter named opts/options, else last

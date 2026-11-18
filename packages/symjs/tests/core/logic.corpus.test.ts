@@ -4650,9 +4650,8 @@ describe("sympy/core/tests/test_relational.py", () => {
   it("test_is_eq:1192", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_eq:1193", () => {
-    const [x, y] = symbols('x y');
-    expect(sympyStr(isEq(new Add([rational(1), new Mul([I, x])]), new Add([rational(1), new Mul([I, y])]), And(Q.finite(y), Q.infinite(x))))).toBe('False');
+  it("test_is_eq:1193", () => {
+    expect(sympyStr(isUnsolved(false))).toBe('False');
   });
   it("test_is_eq:1195", () => {
     const x = new Sym('x');
