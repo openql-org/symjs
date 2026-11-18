@@ -1918,11 +1918,11 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Poly.from(new CRootOf(new Add([rational(3), x, new Pow(x, rational(3))]), 1), [y], {}))).toBe('Poly(CRootOf(x**3 + x + 3, 1), y, domain=\'EX\')');
   });
-  it.fails("test_Poly_rootof_extension:312", () => {
+  it("test_Poly_rootof_extension:312", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Poly.from(new CRootOf(new Add([rational(3), x, new Pow(x, rational(3))]), 0), [y], { extension: true }))).toBe('Poly(CRootOf(x**3 + x + 3, 0), y, domain=\'QQ<CRootOf(x**3 + x + 3, 0)>\')');
   });
-  it.fails("test_Poly_rootof_extension:313", () => {
+  it("test_Poly_rootof_extension:313", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Poly.from(new CRootOf(new Add([rational(3), x, new Pow(x, rational(3))]), 1), [y], { extension: true }))).toBe('Poly(CRootOf(x**3 + x + 3, 1), y, domain=\'QQ<CRootOf(x**3 + x + 3, 1)>\')');
   });
@@ -6590,15 +6590,15 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Add([rational(1), new Pow(x, rational(4))]), { deep: false, gaussian: false }))).toBe('x**4 + 1');
   });
-  it.fails("test_factor:2651", () => {
+  it("test_factor:2651", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Add([rational(1), new Pow(x, rational(4))]), { extension: [I], deep: false, gaussian: false }))).toBe('(x**2 - I)*(x**2 + I)');
   });
-  it.fails("test_factor:2652", () => {
+  it("test_factor:2652", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Add([rational(1), new Pow(x, rational(4))]), { deep: false, gaussian: true }))).toBe('(x**2 - I)*(x**2 + I)');
   });
-  it.fails("test_factor:2653", () => {
+  it("test_factor:2653", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Add([rational(1), new Pow(x, rational(4))]), { extension: [new Pow(rational(2), rational(1, 2))], deep: false, gaussian: false }))).toBe('(x**2 - sqrt(2)*x + 1)*(x**2 + sqrt(2)*x + 1)');
   });
@@ -6618,19 +6618,19 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Add([rational(-921416), new Mul([rational(8192), new Pow(x, rational(2))]), new Mul([rational(242313), I]), new Mul([x, new Add([rational(22656), new Mul([rational(175232), I])])])]), { domain: 'ZZ_I', deep: false, gaussian: false }))).toBe('I*(x*(64 - 64*I) + 773 + 596*I)**2');
   });
-  it.fails("test_factor:2668", () => {
+  it("test_factor:2668", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Add([rational(-921416), new Mul([rational(8192), new Pow(x, rational(2))]), new Mul([rational(242313), I]), new Mul([x, new Add([rational(22656), new Mul([rational(175232), I])])])]), { domain: 'QQ_I', deep: false, gaussian: false }))).toBe('8192*(x + 177/128 + 1369*I/128)**2');
   });
-  it.fails("test_factor:2672", () => {
+  it("test_factor:2672", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(2), x, new Pow(rational(2), rational(1, 2))])]), { extension: [new Pow(rational(2), rational(1, 2))], deep: false, gaussian: false }))).toBe('(x + sqrt(2))**2');
   });
-  it.fails("test_factor:2673", () => {
+  it("test_factor:2673", () => {
     const x = new Sym('x');
     expect(sympyStr(factor(new Pow(new Add([rational(2), new Pow(x, rational(2)), new Mul([rational(2), x, new Pow(rational(2), rational(1, 2))])]), rational(3)), { extension: [new Pow(rational(2), rational(1, 2))], deep: false, gaussian: false }))).toBe('(x + sqrt(2))**6');
   });
-  it.fails("test_factor:2675", () => {
+  it("test_factor:2675", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(factor(new Add([new Pow(x, rational(2)), new Mul([rational(-2), new Pow(y, rational(2))])]), { extension: [new Pow(rational(2), rational(1, 2))], deep: false, gaussian: false }))).toBe('(x - sqrt(2)*y)*(x + sqrt(2)*y)');
   });
@@ -6817,7 +6817,7 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const [x, y] = symbols('x y');
     expect(equivalent(sympyStr(factor(new Add([x, new Pow(x, rational(3)), new Mul([rational(-1), I]), new Mul([x, y]), new Mul([y, new Pow(x, rational(3))]), new Mul([rational(-1), I, y]), new Mul([rational(-1), I, new Pow(x, rational(2))]), new Mul([rational(-1), I, y, new Pow(x, rational(2))])]), { deep: false, gaussian: false })), '(x - I)**2*(x + I)*(y + 1)', [x, y], { fn: 'factor', input: 'x**3*y + x**3 - I*x**2*y - I*x**2 + x*y + x - I*y - I' })).toBe(true);
   });
-  it.fails("test_factor:2785", () => {
+  it("test_factor:2785", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(factor(new Add([rational(44), new Mul([rational(2), new Pow(x, rational(4))]), new Mul([rational(4), new Pow(x, rational(3))]), new Mul([rational(8), x]), new Mul([rational(10), new Pow(x, rational(2))]), new Mul([rational(22), new Pow(y, rational(4))]), new Mul([rational(24), new Pow(rational(2), rational(1, 2))]), new Mul([rational(92), new Pow(y, rational(3))]), new Mul([rational(136), y]), new Mul([rational(162), new Pow(y, rational(2))]), new Mul([new Pow(x, rational(4)), new Pow(y, rational(4))]), new Mul([rational(2), new Pow(x, rational(3)), new Pow(y, rational(4))]), new Mul([rational(2), new Pow(x, rational(4)), new Pow(y, rational(3))]), new Mul([rational(3), new Pow(x, rational(4)), new Pow(y, rational(2))]), new Mul([rational(4), x, new Pow(y, rational(4))]), new Mul([rational(4), y, new Pow(x, rational(4))]), new Mul([rational(4), new Pow(x, rational(3)), new Pow(y, rational(3))]), new Mul([rational(5), new Pow(x, rational(2)), new Pow(y, rational(4))]), new Mul([rational(6), new Pow(x, rational(3)), new Pow(y, rational(2))]), new Mul([rational(8), y, new Pow(x, rational(3))]), new Mul([rational(12), x, new Pow(rational(2), rational(1, 2))]), new Mul([rational(12), new Pow(rational(2), rational(1, 2)), new Pow(x, rational(2))]), new Mul([rational(12), new Pow(rational(2), rational(1, 2)), new Pow(y, rational(4))]), new Mul([rational(32), x, new Pow(y, rational(3))]), new Mul([rational(34), new Pow(x, rational(2)), new Pow(y, rational(3))]), new Mul([rational(40), x, y]), new Mul([rational(44), y, new Pow(x, rational(2))]), new Mul([rational(60), x, new Pow(y, rational(2))]), new Mul([rational(63), new Pow(x, rational(2)), new Pow(y, rational(2))]), new Mul([rational(68), new Pow(rational(2), rational(1, 2)), new Pow(y, rational(3))]), new Mul([rational(92), y, new Pow(rational(2), rational(1, 2))]), new Mul([rational(124), new Pow(rational(2), rational(1, 2)), new Pow(y, rational(2))]), new Mul([rational(2), y, new Pow(rational(2), rational(1, 2)), new Pow(x, rational(4))]), new Mul([rational(2), new Pow(rational(2), rational(1, 2)), new Pow(x, rational(4)), new Pow(y, rational(3))]), new Mul([rational(4), y, new Pow(rational(2), rational(1, 2)), new Pow(x, rational(3))]), new Mul([rational(4), new Pow(rational(2), rational(1, 2)), new Pow(x, rational(3)), new Pow(y, rational(3))]), new Mul([rational(4), new Pow(rational(2), rational(1, 2)), new Pow(x, rational(4)), new Pow(y, rational(2))]), new Mul([rational(6), x, new Pow(rational(2), rational(1, 2)), new Pow(y, rational(4))]), new Mul([rational(6), new Pow(rational(2), rational(1, 2)), new Pow(x, rational(2)), new Pow(y, rational(4))]), new Mul([rational(8), new Pow(rational(2), rational(1, 2)), new Pow(x, rational(3)), new Pow(y, rational(2))]), new Mul([rational(20), x, new Pow(rational(2), rational(1, 2)), new Pow(y, rational(3))]), new Mul([rational(22), new Pow(rational(2), rational(1, 2)), new Pow(x, rational(2)), new Pow(y, rational(3))]), new Mul([rational(32), x, y, new Pow(rational(2), rational(1, 2))]), new Mul([rational(34), x, new Pow(rational(2), rational(1, 2)), new Pow(y, rational(2))]), new Mul([rational(34), y, new Pow(rational(2), rational(1, 2)), new Pow(x, rational(2))]), new Mul([rational(38), new Pow(rational(2), rational(1, 2)), new Pow(x, rational(2)), new Pow(y, rational(2))])]), { extension: [S['true']], deep: false, gaussian: false }))).toBe('(y + 1)**2*(y + sqrt(2))**2*(x**2 + x + 2 + 3*sqrt(2))**2');
   });
@@ -8608,11 +8608,11 @@ describe("sympy/polys/tests/test_polytools.py", () => {
     const x = new Sym('x');
     expect(() => Poly.from(new Add([rational(1), new Pow(fn('sin', [x]), rational(3)), new Mul([rational(-1), fn('sin', [x])])]), []).nthPowerRootsPoly(2)).toThrow(PolynomialError);
   });
-  it.fails("test_issue_19360:3943", () => {
+  it("test_issue_19360:3943", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(factor(new Add([new Pow(y, rational(2)), new Mul([rational(2), new Pow(x, rational(2))]), new Mul([rational(-2), x, y, new Pow(rational(2), rational(1, 2))])]), { extension: [new Pow(rational(2), rational(1, 2))], deep: false, gaussian: false }))).toBe('2*(x - sqrt(2)*y/2)**2');
   });
-  it.fails("test_issue_19360:3946", () => {
+  it("test_issue_19360:3946", () => {
     const [x, z, t, y] = symbols('x z t y');
     expect(sympyStr(factor(new Add([new Mul([x, z]), new Mul([rational(-1), t, y]), new Mul([rational(-1), I, t, x]), new Mul([rational(-1), I, y, z])]), { extension: [I], deep: false, gaussian: false }))).toBe('(x - I*y)*(-I*t + z)');
   });

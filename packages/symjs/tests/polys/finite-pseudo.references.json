@@ -1,0 +1,81 @@
+[
+  {
+    "f": "2*x**3+3*x+1",
+    "g": "2*x+4",
+    "gens": [
+      "x"
+    ],
+    "modulus": 5,
+    "q": "-2*x**2 - x - 1",
+    "r": "2",
+    "resultant": "-2"
+  },
+  {
+    "f": "x**4+1",
+    "g": "2*x**2+1",
+    "gens": [
+      "x"
+    ],
+    "modulus": 5,
+    "q": "-x**2 - 2",
+    "r": "0",
+    "resultant": "0"
+  },
+  {
+    "f": "x**2+1",
+    "g": "x**4+1",
+    "gens": [
+      "x"
+    ],
+    "modulus": 5,
+    "q": "0",
+    "r": "x**2 + 1",
+    "resultant": "-1"
+  },
+  {
+    "f": "0",
+    "g": "x+1",
+    "gens": [
+      "x"
+    ],
+    "modulus": 5,
+    "q": "0",
+    "r": "0",
+    "resultant": "0"
+  },
+  {
+    "f": "(y+1)*x**3+y*x+1",
+    "g": "y*x**2+2",
+    "gens": [
+      "x",
+      "y"
+    ],
+    "modulus": 5,
+    "q": "x*y**2 + x*y",
+    "r": "x*y**3 - 2*x*y**2 - 2*x*y + y**2",
+    "resultant": "2*y**4 - 2*y**3 + y - 2"
+  },
+  {
+    "f": "x**4+y",
+    "g": "x**2+y",
+    "gens": [
+      "x",
+      "y"
+    ],
+    "modulus": 7,
+    "q": "x**2 - y",
+    "r": "y**2 + y",
+    "resultant": "y**4 + 2*y**3 + y**2"
+  },
+  {
+    "f": "x**3+1",
+    "g": "2*x+1",
+    "gens": [
+      "x"
+    ],
+    "modulus": 4,
+    "q": "2*x + 1",
+    "r": "-1",
+    "resultantError": "ZeroDivisionError: polynomial division"
+  }
+]

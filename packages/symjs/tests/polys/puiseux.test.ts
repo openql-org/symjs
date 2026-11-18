@@ -8,11 +8,26 @@ import { at, first } from '../../src/core/guard';
 import { NotImplementedError } from '../../src/core/errors';
 import { CoercionFailed, QQ, ZZ } from '../../src/polys/domains';
 import { PolyRing } from '../../src/polys/rings';
+import { GF, AlgebraicField } from '../../src';
 import { PuiseuxPoly, PuiseuxRing, puiseuxRing } from '../../src/polys/puiseux';
 
 const R = new PuiseuxRing('x y', QQ), x = first(R.gens), y = at(R.gens, 1);
 const P = (e: string): PuiseuxPoly => R.fromExpr(parse(e));
 const references: { puiseux: { expr: string; expected: string; asExpr: string; dx: string; dy: string }[] } = JSON.parse(readFileSync(new URL('./ringseries.references.json', import.meta.url), 'utf8'));
+
+it('inverts coefficients in their domain (SymPy 1.14 PuiseuxPoly)', () => {
+  const K = GF(5), R = new PuiseuxRing('x', K), x = first(R.gens);
+  expect(String(x.mul(2).pow(-1).asExpr())).toBe('-2/x');
+  expect(String(x.mul(2).pow(-2).asExpr())).toBe('-1/x**2');
+  expect(String(x.truediv(2).asExpr())).toBe('-2*x');
+  expect(x.mul(2).pow(-1).mul(x.mul(2)).isOne).toBe(true);
+  for (const K of [new AlgebraicField(QQ, parse('sqrt(2)')), QQ.fracField(new Sym('a'))]) {
+    const R = new PuiseuxRing('x', K), x = first(R.gens);
+    const c = K instanceof AlgebraicField ? parse('sqrt(2)') : new Sym('a');
+    expect(x.mul(c).pow(-1).mul(x.mul(c)).isOne).toBe(true);
+    expect(x.mul(c).truediv(c).equals(x)).toBe(true);
+  }
+});
 
 describe('SymPy 1.14 Puiseux polynomials', () => {
   for (const r of references.puiseux) it(r.expr, () => {

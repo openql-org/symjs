@@ -50,3 +50,10 @@ describe('constructDomain', () => {
     expect(cd([P('x*y'), P('x**2')], { composite: true })).toBe('(ZZ[x,y], [x*y, x**2])');
   });
 });
+
+import { CRootOf, cos, pi, mul } from '../../src';
+it('recognizes indexed and trigonometric algebraic coefficients in automatic extensions',()=>{
+  const r=CRootOf(P('x**3-x-1'),0),a=cos(mul(pi,Rational.of(1,7)));
+  expect(String(constructDomain([r],{extension:true})[0])).toContain('QQ<CRootOf');
+  expect(String(constructDomain([a],{extension:true})[0])).toContain('QQ<');
+});

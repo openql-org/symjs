@@ -5035,8 +5035,9 @@ function placeArgs(f: (...a: unknown[]) => unknown, args: unknown[], kw: Record<
   const opts: Record<string, unknown> = {};
   for (const [k, x] of Object.entries(kw)) {
     const i = names.indexOf(camel(k));
-    if (i >= 0 && i >= args.length && !/^(opts|options)$/.test(names[i]!)) out[i] = conv(x);
-    else opts[camel(k)] = conv(x);
+    const value = k === 'extension' && x instanceof JsSet ? x.items.map(conv) : conv(x);
+    if (i >= 0 && i >= args.length && !/^(opts|options)$/.test(names[i]!)) out[i] = value;
+    else opts[camel(k)] = value;
   }
   if (Object.keys(opts).length) {
     // the options object goes to the parameter named opts/options, else last

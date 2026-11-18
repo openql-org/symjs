@@ -62,3 +62,8 @@ describe('factorization over ZZ (Zassenhaus)', () => {
     expect(String(factor(parse('x**4 - 10*x**2 + 1')))).toBe('x**4 - 10*x**2 + 1');
   });
 });
+
+import { factorModP } from '../../src/polys/zassenhaus';
+it('rejects a noninvertible leading coefficient in modular factorization',()=>{
+  expect(()=>factorModP([1n,2n],4n)).toThrow(sj.NotInvertible);
+});

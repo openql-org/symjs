@@ -254,7 +254,7 @@ describe("sympy/polys/tests/test_rootoftools.py", () => {
   //   raises(ValueError, lambda: rootof(x**2 - 1, x))
   //   => None
   it.todo("test_CRootOf___new__:101");
-  it.fails("test_CRootOf___new__:103", () => {
+  it("test_CRootOf___new__:103", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rootof(Poly.from(new Add([x, new Mul([rational(-1), y])]), [x], { domain: 'ZZ[y]', pure: false }), rational(0)))).toBe('y');
   });

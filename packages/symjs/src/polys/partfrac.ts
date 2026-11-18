@@ -12,11 +12,12 @@ import { apartFull } from './rootsum';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { linsolve } from '../matrices/linsys';
+import { linearEqToMatrix, linsolve } from '../matrices/linsys';
 import { rebuild as impl_rebuild } from '../core/traverse';
 import { expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
-import { Poly, factor, factorListInt, sortGens } from './sympoly';
+import { Poly, factor, factorListInt, polyConstructionHooks, sortGens } from './sympoly';
+import { ddmIrref } from './matrices/dense';
 
 /** Options of apart: Bronstein's full decomposition, or the coefficient domain of the factorization. */
 export interface ApartOptions {
@@ -74,6 +75,8 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: ApartOptions = {}): Expr {
     else c = mul(c, pow(g, k));
   }
   const Qx = mul(...factors.map(([g, k]) => pow(g, k)));
+  const coefficientOptions = { domain: opts.domain, extension: opts.extension, gaussian: opts.gaussian };
+  const denominator = overDomain ? Poly.from(Qx, [x], coefficientOptions) : undefined;
   // unknown numerators A_ij of degree deg(g) - 1
   const unknowns: Sym[] = [];
   const terms: [Expr, Expr][] = []; // [numerator, denominator]
@@ -87,14 +90,23 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: ApartOptions = {}): Expr {
       unknowns.push(...coeffs);
       const A = add(...coeffs.map((a, m) => mul(a, pow(x, m))));
       terms.push([A, pow(g, j)]);
-      rhs = add(rhs, mul(A, cancel(mul(Qx, pow(pow(g, j), -1)))));
+      const cofactor = denominator === undefined ? cancel(mul(Qx, pow(pow(g, j), -1))) : denominator.exquo(Poly.from(pow(g, j), [x], coefficientOptions)).asExpr();
+      rhs = add(rhs, mul(A, cofactor));
     }
   }
   const lhs = mul(r, pow(c, -1));
   const diffPoly = Poly.from(expandMul(add(rhs, mul(-1, lhs))), [x]);
   const eqs = diffPoly.coeffs();
   // the partial fraction decomposition exists and is unique
-  const sol = defined(linsolve(eqs, unknowns), 'partial fraction coefficients');
+  let sol: Expr[];
+  if (overDomain) {
+    const [A, b] = defined(linearEqToMatrix(eqs, unknowns), 'linear partial fraction system');
+    const rows = A.hstack(b).toArray();
+    const K = defined(polyConstructionHooks.domain, 'polynomial domain construction')(rows.flat(), { extension: true }).getField();
+    const pivots = ddmIrref(rows, false, K);
+    const solution = new Map(pivots.map((column, i) => [column, at(at(rows, i), unknowns.length)]));
+    sol = unknowns.map((_, i) => defined(solution.get(i), 'partial fraction coefficient'));
+  } else sol = defined(linsolve(eqs, unknowns), 'partial fraction coefficients');
   const reps = new Map(unknowns.map((u, i) => [u.key, at(sol, i)]));
   const sub = (e: Expr): Expr => {
     const rep = e instanceof Sym ? reps.get(e.key) : undefined;

@@ -45,7 +45,7 @@ export function polyCoefficients(ex: ExprLike, x: Expr): Map<number, Expr> | und
       if (f.key === x.key) deg += 1;
       else if (f instanceof Pow && f.base.key === x.key && f.exp instanceof Rational && f.exp.isInteger && f.exp.p > 0n) {
         deg += Number(f.exp.p);
-      } else if (f.has(x)) return undefined;
+      } else if (f.has(x) && (!(x instanceof Sym) || [...freeSymbols(f)].some((s)=>s.key===x.key))) return undefined;
       else rest.push(f);
     }
     out.set(deg, add(out.get(deg) ?? S.Zero, mul(...rest)));
@@ -400,7 +400,7 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean; quint
   const zeros: Expr[] = Array.from({ length: low }, () => S.Zero);
   const effDeg = deg - low;
   // SymPy preprocess_roots: x -> c*x removes symbols from the coefficients (x**3 - a**3 -> a*roots(x**3 - 1))
-  const pre = preprocessRoots(new Map([...coeffs].map(([k, v]) => [k - low, v] as const)));
+  const pre = preprocessRootCoefficients(new Map([...coeffs].map(([k, v]) => [k - low, v] as const)));
   if (pre) {
     const [c, q] = pre;
     return [...roots(add(...[...q].map(([k, v]) => mul(v, pow(x, k)))), x, opts).map((r) => mul(c, r)), ...zeros];
@@ -603,9 +603,9 @@ function splitFactors(e: Expr, x: Sym): [Expr, number][] | undefined {
  * SymPy preprocess_roots for coefficients that are monomials in symbols: each symbol a whose
  * exponents are a fixed multiple r of the degrees in x (reversed when they grow towards the
  * constant term) is set to 1, and the roots are scaled by a**(-r). [scale, new coefficients] or
- * undefined when no symbol is removed.
+ * undefined when neither a symbolic scale nor an integer basis is removable.
  */
-function preprocessRoots(coeffs: ReadonlyMap<number, Expr>): [Expr, Map<number, Expr>] | undefined {
+export function preprocessRootCoefficients(coeffs: ReadonlyMap<number, Expr>): [Expr, Map<number, Expr>] | undefined {
   // the terms by decreasing degree in x, each as [numeric coefficient, symbol -> exponent]
   const terms: [number, Map<Sym, number>][] = [];
   for (const [k, c] of [...coeffs].sort((u, v) => v[0] - u[0])) {
@@ -640,15 +640,14 @@ function preprocessRoots(coeffs: ReadonlyMap<number, Expr>): [Expr, Map<number, 
     scale = mul(scale, pow(g, reverse ? ratio : -ratio));
     removed.push(g);
   }
-  if (!removed.length) return undefined;
   const rest = new Map([...coeffs].map(([k, c]) => [k, xreplaceOnes(c, removed)] as const));
-  if (![...rest.values()].every((c) => c instanceof Rational && c.isInteger)) return [scale, rest];
+  if (![...rest.values()].every((c) => c instanceof Rational && c.isInteger)) return removed.length ? [scale, rest] : undefined;
   // SymPy _integer_basis on the primitive integer polynomial: x -> div*x makes the coefficients smaller
   const ints = new Map([...rest].map(([k, c]) => [k, expectRational(c).p] as const));
   const g = [...ints.values()].reduce((u, v) => gcdBig(u, v), 0n);
   const prim = new Map([...ints].map(([k, c]) => [k, c / g] as const));
   const div = integerBasis(prim);
-  if (div === undefined) return [scale, rest];
+  if (div === undefined) return removed.length ? [scale, rest] : undefined;
   const n = Math.max(...prim.keys());
   return [mul(scale, Rational.of(div)), new Map([...prim].map(([k, c]) => [k, Rational.of(c / div ** BigInt(n - k))] as const))];
 }

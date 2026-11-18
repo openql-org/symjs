@@ -40,6 +40,7 @@ import { Poly, discriminant, polyGcd, resultant } from './sympoly';
 
 import { dmpSqfNorm } from './sqfreetools';
 import { dmpFromDict, dmpToDict } from './densebasic';
+import { FieldPoly } from './fieldpoly';
 
 /** An exponent vector. */
 export type Monom = readonly number[];
@@ -950,7 +951,7 @@ export abstract class IPolys<P extends CompatElement<P>> {
 
   /** f as a Poly over the generators and domain of the ring. */
   protected toPoly(f: P): Poly {
-    return Poly.from(f.asExpr(), this.symbols, { domain: this.domain.toString() });
+    return Poly.from(f.asExpr(), this.symbols, { domain: this.domain });
   }
   /** A Poly over the generators of the ring as an element. */
   protected fromPoly(p: Poly): P {
@@ -958,7 +959,7 @@ export abstract class IPolys<P extends CompatElement<P>> {
   }
   /** An expression polynomial in the generators of the ring as an element. */
   protected fromExprPoly(e: Expr): P {
-    return this.fromPoly(Poly.from(e, this.symbols, { domain: this.domain.toString() }));
+    return this.fromPoly(Poly.from(e, this.symbols, { domain: this.domain }));
   }
 
   /** The leading coefficient in the lexicographic order (SymPy dmp_ground_LC). */
@@ -971,6 +972,10 @@ export abstract class IPolys<P extends CompatElement<P>> {
   /** The gcd normalized as SymPy's (monic over a field, positive leading coefficient over ZZ). */
   private gcdOf(f: P, g: P): P {
     const K = this.domain;
+    if (K.isField && K.isExact && K !== QQ && K !== EX && String(K) !== 'EXRAW') {
+      const h = new FieldPoly(K,this.ngens,f.listterms()).gcd(new FieldPoly(K,this.ngens,g.listterms()));
+      return this.fromTerms(h.terms.map(([m,c]) => [m,K.toSympy(c)]));
+    }
     // mgcd normalizes the leading coefficient to be positive
     const h = this.fromExprPoly(mgcd(f.asExpr(), g.asExpr(), this.symbols));
     return K.isField ? h.mulGround(K.quo(K.one, this.groundLC(h))) : h;
