@@ -151,6 +151,11 @@ describe('precedence of the logic operators (SymPy PRECEDENCE)', () => {
   });
 });
 
+it('combines the sign of a negative infinity factor with a product coefficient', () => {
+  expect(str(new Mul([S.NegativeInfinity, I]))).toBe('-oo*I');
+  expect(str(new Mul([S.NegOne, S.NegativeInfinity, I]))).toBe('oo*I');
+});
+
 it('prints unevaluated denominators, bound variables and singleton tuple signatures', () => {
   expect(str(new Mul([S.One, pow(x, -1), pow(y, -1)]))).toBe('1/(x*y)');
   expect(str(new Mul([S.One, pow(x, -1)]))).toBe('1/x');

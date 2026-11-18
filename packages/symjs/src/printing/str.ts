@@ -140,6 +140,11 @@ function printMul(e: Mul): string {
   const b: Expr[] = [];
   const reciprocalBases = new Set<Expr>();
   for (const item of expr instanceof Mul ? asOrderedFactors(expr) : [expr]) {
+    if (item === S.NegativeInfinity) {
+      sign = sign === '-' ? '' : '-';
+      a.push(S.Infinity);
+      continue;
+    }
     if (item instanceof Pow && item.isCommutative && !isExp(item) && splitCoeff(item.exp)[0].isNegative) {
       const x = item.exp;
       if (item.base instanceof Pow || item.base instanceof Mul) reciprocalBases.add(item.base);

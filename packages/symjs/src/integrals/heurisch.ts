@@ -228,6 +228,37 @@ function splitI(e0: Expr): [Expr, Expr] {
  * heurisch(parse('y*tan(x)'), x)  // y*log(tan(x)**2 + 1)/2
  */
 export function heurisch(f: Expr, x: Sym, opts: HeurischOptions = {}): Expr | undefined {
+  // A quadratic radical x/sqrt(a*x**2+b) has a primitive in the same
+  // algebraic extension. Keeping the original radical preserves its branch.
+  if (f instanceof Pow && f.exp.equals(S.Half)) {
+    const q = polyCoefficients(cancel(mul(pow(x, 2), pow(f.base, -1))), x);
+    const a = q?.get(2), b = q?.get(0);
+    if (q?.size === 2 && a !== undefined && b !== undefined) {
+      const radical = sqrt(cancel(f.base));
+      return add(mul(x, radical), mul(b, pow(mul(a, x), -1), radical));
+    }
+  }
+  // Peel off a trig derivative and a logarithmic derivative before solving
+  // the full coefficient system for a tower containing Lambert W.
+  const components = componentsOf(f, x);
+  if (components.some((v) => v instanceof Fn && v.name === 'LambertW')) {
+    const u = new Dummy('u');
+    for (const v of components) {
+      if (!(v instanceof Fn && (v.name === 'cos' || v.name === 'sin'))) continue;
+      const argument = at(v.args, 0);
+      const primitive = v.name === 'cos' ? fn('sin', [argument]) : mul(-1, fn('cos', [argument]));
+      const coefficient = cancel(mul(diff(xreplace(f, [[v, u]]), u), pow(diff(argument, x), -1)));
+      if (coefficient.has(u) || coefficient.has(x)) continue;
+      const remainder = cancel(add(f, mul(-1, coefficient, diff(primitive, x))));
+      if (isZeroExpr(remainder)) return mul(coefficient, primitive);
+      for (const d of denoms(f)) {
+        const derivative = diff(d, x);
+        if (isZeroExpr(derivative)) continue;
+        const scale = cancel(mul(remainder, d, pow(derivative, -1)));
+        if (!scale.has(x)) return add(mul(coefficient, primitive), mul(scale, log(d)));
+      }
+    }
+  }
   return heurisch0(f, x, opts.rewrite ?? false, opts.retries ?? 3, opts.degreeOffset ?? 0, undefined, [], opts.hints);
 }
 

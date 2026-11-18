@@ -363,6 +363,10 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
       const own = x.evalfSelf(go, F.precToDps(prec));
       if (own !== undefined) return own;
     }
+    if (x instanceof Integral && x.limits && (x.limits[0].equals(x.limits[1]) || !x.integrand.has(x.variable))) {
+      const [a, b] = x.limits;
+      return go(a.equals(b) ? S.Zero : mul(x.integrand, add(b, mul(-1, a))));
+    }
     // SymPy Sum._eval_evalf and Product._eval_evalf: a sum with finite limits is evaluated term by term
     if (x instanceof Concrete) {
       const v = impl.evalConcrete?.(x);

@@ -790,18 +790,8 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
 };
 
 function integralNode(args: unknown[]): Expr {
-  // several limits: nested integrals, innermost first
-  if (args.length > 2) return args.slice(2).reduce<Expr>((acc, l) => integralNode([acc, l]), integralNode(args.slice(0, 2)));
-  const [f, lim] = args;
-  if (lim === undefined) {
-    const fs = [...sj.freeSymbols(f as Expr)];
-    if (fs.length === 1) return new Integral([f as Expr, fs[0]!]);
-  }
-  if (lim instanceof Sym) return new Integral([f as Expr, lim]);
-  if (lim instanceof JsTuple && lim.items.length === 3) return new Integral([f as Expr, ...(lim.items as Expr[])]);
-  if (lim instanceof JsTuple && lim.items.length === 1) return new Integral([f as Expr, lim.items[0] as Expr]);
-  if (lim instanceof JsTuple && lim.items.length === 2 && args.length === 2) return new Integral([f as Expr, ...(lim.items as Expr[])]);
-  throw new Unsupported('Integral limits');
+  const [f, ...limits] = args;
+  return sj.integral(asExpr(f), ...limits.map((l) => l instanceof JsTuple ? l.items.map(asExpr) : asExpr(l)));
 }
 
 const concreteDoit = (e: Expr): Expr => (e instanceof sj.Concrete ? sj.doitConcrete(e) : e);
@@ -1148,6 +1138,11 @@ export function deserialize(tree: Tree): unknown {
       }
       // Preserve the recorded Abs argument, including unevaluated products.
       if (tree['name'] === 'Abs') return sj.fn('abs', (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))), { evaluate: false });
+      // a hyperbolic function recorded with an unevaluated sum as its argument was built with evaluate=False
+      // (sinh(x + I*pi/2) would otherwise become I*cosh(x))
+      if (['sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch'].includes(String(tree['name'])) && (tree['args'] as Tree[])[0]?.t === 'Add' && (tree['args'] as Tree[])[0]?.['evaluate'] === false) {
+        return sj.fn(tree['name'] as never, (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))), { evaluate: false });
+      }
       if (tree['name'] === 'Min' || tree['name'] === 'Max' || (tree['name'] === 'andre' && tree['evaluate'] === false)) {
         return sj.fn(tree['name'], (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))), { evaluate: false });
       }
@@ -2058,6 +2053,7 @@ function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown
 }
 
 function toQuery(v: unknown): sj.Query {
+  if (v instanceof TypeRef && (v.name === 'Sum' || v.name === 'Product')) return (e: Expr) => e instanceof sj.Concrete && e.kind2 === v.name;
   if (v instanceof JsTable) return (e: Expr) => Boolean(v.call(e));
   if (v instanceof FnClass && ['Function', 'AppliedUndef'].includes(v.name)) return { type: v.name };
   if (v instanceof FnClass || v instanceof UFnClass) return { fn: v.name };
@@ -3625,8 +3621,18 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsTuple(sj.fraction(asExpr(args[0]), { exact: Boolean(kw['exact']) }));
   },
   diff: (args, kw) => ADAPTERS['.diff']!(args.slice(1), kw, args[0]),
+  laplace_transform: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'noconds' && k !== 'simplify') throw new Unsupported(`kwargs ${k}`);
+    const transform = args[0] instanceof Matrix ? args[0] : asExpr(args[0]);
+    const options = { noconds: kw['noconds'] === true, simplify: kw['simplify'] === true };
+    const value = transform instanceof Matrix
+      ? sj.laplaceTransform(transform, asSym(args[1]), asExpr(args[2]), options)
+      : sj.laplaceTransform(transform, asSym(args[1]), asExpr(args[2]), options);
+    return Array.isArray(value) ? new JsTuple(value) : value;
+  },
   integrate: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['conds', 'meijerg', 'manual'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['conds', 'meijerg', 'manual', 'risch'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (['meijerg', 'manual', 'risch'].filter((key) => kw[key] === true).length > 1) throw new RangeError('Only one integration method can be selected');
     if (args[0] instanceof Matrix) return args[0].map((entry) => asExpr(ADAPTERS['integrate']!([entry, ...args.slice(1)], kw)));
     // a formal power series: its definite integral is that of its function (SymPy FormalPowerSeries.integrate)
     if (args[0] instanceof sj.FormalPowerSeries && args[1] instanceof JsTuple && args[1].items.length === 3) {
@@ -3634,7 +3640,8 @@ export const ADAPTERS: Record<string, Adapter> = {
       return args[0].integrate(asSym(v), [asExpr(lo), asExpr(hi)]);
     }
     const conds = kw['conds'] === undefined ? 'piecewise' : String(kw['conds']);
-    let f = asExpr(args[0]);
+    const expr = (v: unknown): Expr => typeof v === 'string' ? sj.parse(v) : asExpr(v);
+    let f = expr(args[0]);
     let lims = args.slice(1);
     if (!lims.length) {
       const fs = [...sj.freeSymbols(f)];
@@ -3643,14 +3650,26 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     for (const v of lims) {
       if (v instanceof Sym) {
-        if (kw['manual'] === true) f = sj.manualintegrate(f, v);
+        if (kw['risch'] === true) {
+          try { f = sj.rischIntegrate(f, v); }
+          catch (e) { if (!(e instanceof sj.NotImplementedError)) throw e; f = new Integral([f, v]); }
+        } else if (kw['manual'] === true) f = sj.manualintegrate(f, v);
         else if (kw['meijerg'] === true) {
           const result = sj.meijerintIndefinite(f, v);
           f = result instanceof sj.Expr ? result : sj.integrate(f, v);
-        } else f = sj.integrate(f, v);
+        } else f = sj.integrate(f, v, undefined, { conds: conds === 'none' ? 'none' : 'piecewise' });
       }
-      else if (v instanceof JsTuple && v.items.length === 3)
-        f = sj.integrate(f, asSym(v.items[0]), [asExpr(v.items[1]), asExpr(v.items[2])], { conds: conds === 'none' ? 'none' : 'piecewise' });
+      else if (v instanceof JsTuple && v.items.length >= 2 && v.items.length <= 3) {
+        if (kw['risch'] === true) throw new RangeError('risch requires indefinite limits');
+        const [variable, a, b] = v.items;
+        const x = asSym(expr(variable));
+        if (v.items.length === 2 || a === null || b === null) {
+          const bound = a === null ? b : a;
+          const integral = new Integral(bound == null ? [f, x] : [f, x, expr(bound)]);
+          f = sj.doit(integral);
+          if (b === null && a !== null) f = sj.mul(-1, f);
+        } else f = sj.integrate(f, x, [expr(a), expr(b)], { conds: conds === 'none' ? 'none' : 'piecewise' });
+      }
       else if (v instanceof JsTuple && v.items.length === 1) f = sj.integrate(f, asSym(v.items[0]));
       else if (v instanceof sj.Expr) f = asExpr(Reflect.apply(sj.integrate, undefined, [f, v]));
       else throw new Unsupported('integrate limits');
@@ -6932,6 +6951,18 @@ function autoAdapter(c: Case): Adapter | undefined {
     ...(kw['dK'] === undefined ? {} : { dK: asExpr(kw['dK']) as sj.Rational }),
     ...(kw['radical'] === undefined ? {} : { radical: kw['radical'] as sj.Submodule }),
   }));
+  if (c.fn === 'unchanged' && c.args?.[0]?.['name'] === 'Integral') return (args, kw) => {
+    noKw(kw);
+    const [, f, ...limits] = args;
+    // Integral nodes store each successive limit on its own enclosing node.
+    let body = asExpr(f);
+    for (const limit of limits) {
+      const parts = limit instanceof JsTuple ? limit.items.map(asExpr) : [asExpr(limit)];
+      if (!sj.unchanged(function Integral(g: Expr, ...l: Expr[]) { return sj.integral(g, l); }, body, ...parts)) return false;
+      body = sj.integral(body, parts);
+    }
+    return limits.length > 0;
+  };
   if (c.fn === '.is_Piecewise') return (_args, kw, self) => (noKw(kw), self instanceof sj.Piecewise);
   if (c.fn === '.is_MatMul') return (_args, kw, self) => (noKw(kw), self instanceof sj.MatMul);
   if (c.fn === '.is_MatAdd') return (_args, kw, self) => (noKw(kw), self instanceof sj.MatAdd);
@@ -7201,6 +7232,10 @@ function autoAdapter(c: Case): Adapter | undefined {
         const opts = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), conv(v)]));
         return fromJs(g(self, ...args.map(conv), ...(Object.keys(opts).length ? [opts] : [])));
       }
+      if (name === 'args' && self instanceof Integral) {
+        const limits = ADAPTERS['.limits']!([], {}, self) as JsTuple;
+        return new JsTuple([self.function, ...limits.items]);
+      }
       if ((name === 'args' || name === 'pargs') && Array.isArray(m)) return new JsTuple(m);
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);
@@ -7432,6 +7467,19 @@ function withBrackets(value: unknown, kinds: string): unknown {
 function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets = ''): unknown {
   // Python's str() and repr() of a SymPy object are its sstr form, printed by symjs's str printer;
   // inside containers (and for repr) items print by repr: quoted strings, Permutation(1, 2), ...
+  if ((post === 'str' || post === 'repr') && value instanceof sj.DifferentialExtension) {
+    const poly = (p: typeof value.fa) => sj.Poly.from(p.asExpr(), [p.gen]);
+    const fa = poly(value.fa), fd = poly(value.fd), D = new JsList(value.D.map(poly));
+    if (post === 'str') return `DifferentialExtension({fa=${fmt(fa)}, fd=${fmt(fd)}, D=${fmt(D)}})`;
+    const attributes = {
+      f: value.f, x: value.x, T: new JsList(value.T), D, fa, fd, Tfuncs: new JsList(value.Tfuncs),
+      backsubs: new JsList(value.backsubs), exts: new JsList(value.exts.map((k) => k === 'none' ? null : k)),
+      extargs: new JsList(value.extargs.map((v, i) => value.exts[i] === 'none' ? null : v)),
+      cases: new JsList(value.cases), case: value.case, t: value.t, d: poly(value.d),
+      newf: value.newf, level: value.level, dummy: value.dummy,
+    };
+    return `DifferentialExtension(dict(${fmt(new JsList(Object.entries(attributes)))}))`;
+  }
   if (post === 'str') return typeof value === 'string' ? value : fmt(withBrackets(value, brackets));
   if (post === 'repr') return fmtItem(withBrackets(value, brackets));
   if (post === 'len') {
@@ -7646,6 +7694,14 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // At s = -2 the upstream condition holds, but exp(2*t)*Chi(t) grows like exp(3*t)/(2*t).
+  "sympy.integrals.tests.test_meijerint:assert laplace_transform(Chi(x), x, s, simplify=True) == (\n        (log(s**(-2)) - log(1 - 1/s**2))/(2*s), -oo, s**2 > 1)": "(log(1/(s**2 - 1))/(2*s), 1, True)",
+  // At s = -2 the upstream condition holds, but exp(2*t)*Shi(t) grows like exp(3*t)/(2*t).
+  "sympy.integrals.tests.test_meijerint:assert laplace_transform(Shi(x), x, s, simplify=True) == (\n        acoth(s)/s, -oo, s**2 > 1)": "(acoth(s)/s, 1, True)",
+  // At x = -1/2 the derivative of the upstream acos form is 26*i*sqrt(5)/5, but the integrand is -2*i*sqrt(5).
+  "sympy.integrals.tests.test_manual:assert manualintegrate(sqrt(16*x**2 - 9)/x, x) == \\\n        Piecewise((sqrt(16*x**2 - 9) - 3*acos(3/(4*x)),\n                   And(x < Rational(3, 4), x > Rational(-3, 4))))": "sqrt(16*x**2 - 9) - 3*atan(sqrt(16*x**2 - 9)/3)",
+  // At y = -1 the proposed derivative is negative for real x, whereas the integrand is (1+x**2)**(-3/2).
+  "sympy.integrals.tests.test_integrals:assert I2 == x/(y**3*sqrt(x**2/y**2 + 1))": "x/(y**2*sqrt(x**2 + y**2))",
   // At a = 1 + I the constant term is 1, while (1 - a)*sign(1 - a) is -1. The real-axis expansion follows from |z+h|² = |z|² + 2*h*Re(z) + h².
   "sympy.series.tests.test_nseries:assert abs(x - a).nseries(x, 1) == -a*sign(1 - a) + (x - 1)*sign(1 - a) + sign(1 - a)": "Abs(a - 1) + (x - 1)*re(sign(1 - a)) + (x - 1)**3*(re(sign(1 - a))**3/2 - re(sign(1 - a))/2)/Abs(a - 1)**2 + (x - 1)**4*(-5*re(sign(1 - a))**4/8 + 3*re(sign(1 - a))**2/4 - 1/8)/Abs(a - 1)**3 + (x - 1)**5*(7*re(sign(1 - a))**5/8 - 5*re(sign(1 - a))**3/4 + 3*re(sign(1 - a))/8)/Abs(a - 1)**4 + (1/2 - re(sign(1 - a))**2/2)*(x - 1)**2/Abs(a - 1) + O((x - 1)**6, (x, 1))",
   // At y = I the two absolute values agree for every real x, giving 0 instead of I. Rationalizing the difference gives Re(sign(y)), also at y = 0.
