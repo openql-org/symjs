@@ -470,3 +470,24 @@ describe('series terms of functions without a Maclaurin series (SymPy taylor_ter
     expect(tt('cot(2*x)', 0)).toBe('zoo');
   });
 });
+
+it('carries formal logarithms through directional leading terms', () => {
+  const x = new sj.Sym('x');
+  const p = new sj.Sym('p');
+  expect(sj.sstr(sj.asLeadingTerm(sj.parse('log(-2*x)'), x, { cdir: -1, logx: p }))).toBe('p + log(2) - I*pi');
+  expect(sj.sstr(sj.asLeadingTerm(sj.parse('log(-2*x)'), x, { cdir: 1, logx: p }))).toBe('p + log(2) + I*pi');
+  expect(() => sj.asLeadingTerm(sj.arg(x), x, { cdir: sj.S.I })).toThrow(sj.NotImplementedError);
+});
+
+it('registers the leading-term dispatcher used by expression extensions', async () => {
+  const { impl } = await import('../../src/core/nodes');
+  const x = new sj.Sym('x');
+  expect(impl.leadterm?.(sj.parse('sin(x)'), x).map(String)).toEqual(['1', '1']);
+});
+
+it('uses the log(1 + x) convention for logarithmic Taylor terms', () => {
+  const x = new sj.Sym('x');
+  for (const [n, expected] of [[-1, '0'], [0, 'x'], [1, '-x**2/2'], [4, 'x**5/5']] as const) {
+    expect(sj.sstr(sj.taylorTerm(sj.log(x), n, x))).toBe(expected);
+  }
+});

@@ -2666,8 +2666,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.leadterm': (args, kw, self) => (noKw(kw), new JsTuple(sj.leadterm(asExpr(self), asSym(args[0])))),
   '.as_leading_term': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'cdir' && k !== 'logx') throw new Unsupported(`kwargs ${k}`);
-    if (kw['logx'] !== undefined && kw['logx'] !== null) throw new Unsupported('as_leading_term logx');
-    return sj.asLeadingTerm(asExpr(self), asSym(args[0]), kw['cdir'] === undefined ? {} : { cdir: asExpr(kw['cdir']) });
+    if (args.length === 0) return asExpr(self);
+    return sj.asLeadingTerm(asExpr(self), asSym(args[0]), {
+      ...(kw['cdir'] === undefined ? {} : { cdir: asExpr(kw['cdir']) }),
+      ...(kw['logx'] === undefined || kw['logx'] === null ? {} : { logx: asExpr(kw['logx']) }),
+    });
   },
   '.getn': exprMethod((e) => none(sj.getn(e))),
   '.nseries': (args, kw, self) => {
@@ -5583,7 +5586,14 @@ function autoAdapter(c: Case): Adapter | undefined {
   // SymPy's class flag is_Relational is an instance test of the relation class
   if (c.fn === '.is_Relational') return (_args, kw, self) => (noKw(kw), self instanceof sj.Rel);
   if (c.fn === '.kind') return (_args, kw, self) => (noKw(kw), sj.kindOf(self instanceof Matrix ? self : asExpr(self)));
-  if (c.fn === '.nargs') return (_args, kw, self) => (noKw(kw), sj.nargs(self instanceof UFnClass ? sj.SymFunction(self.name, { nargs: self.nargs }) : self as sj.WildFunction));
+  if (c.fn === '.nargs') return (_args, kw, self) => {
+    noKw(kw);
+    if (self instanceof UFnClass) return sj.nargs(sj.SymFunction(self.name, { nargs: self.nargs }));
+    if (!(self instanceof FnClass)) return sj.nargs(self as sj.WildFunction);
+    const unary = ['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinc', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch'];
+    const nargs = unary.includes(self.name) ? [1] : self.name === 'atan2' ? [2] : undefined;
+    return sj.nargs(sj.SymFunction(self.name, { nargs }));
+  };
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {
     // the evaluating constructors of the arithmetic classes (Python calls the class: Pow(b, e))
@@ -6097,6 +6107,13 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   // The empty Puiseux polynomial is the additive identity (p - p = 0);
   // SymPy's empty printed string omits that value.
   'sympy.polys.tests.test_puiseux:assert R2.zero == PuiseuxPoly(R1.zero, R2)': '0',
+  // sin(x)/x = 1 - x**2/6 + O(x**4), sinh(x)/x = 1 + x**2/6 + O(x**4).
+  // The inverse functions have square-root branch points at 1, giving nonzero linear
+  // leading terms. Substituting the constant leading argument alone incorrectly gives 0.
+  'sympy.functions.elementary.tests.test_trigonometric:assert acos(sin(x)/x).as_leading_term(x) == 0': 'sqrt(3)*x/3',
+  'sympy.functions.elementary.tests.test_trigonometric:assert asec(sin(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
+  'sympy.functions.elementary.tests.test_hyperbolic:assert acosh(sin(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
+  'sympy.functions.elementary.tests.test_hyperbolic:assert asech(sinh(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
   // SymPy mixes Poly.gens=(y,x) with Options.gens=(x,y). Neither published
   // result solves the original pair; these tuples satisfy both equations.
   'sympy.solvers.polysys:solve_biquadratic(a, b, NewOption)': [
