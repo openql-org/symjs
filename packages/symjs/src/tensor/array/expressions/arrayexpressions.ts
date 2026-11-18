@@ -10,11 +10,12 @@ import { at, cast, first } from '../../../core/guard';
 import { add, mul, sub, sympify } from '../../../core/ops';
 import { isNegative, isNonNegative, isReal } from '../../../core/assumptions';
 import { NotImplementedError } from '../../../core/errors';
-import { MatrixExpr, checkDim } from '../../../matrices/expressions/matexpr';
+import { MatrixExpr, checkDim, strPrecedence, latexPrecedence } from '../../../matrices/expressions/matexpr';
 import { ImmutableDenseNDimArray, NDimArray } from '../../ndimarray';
 import { tensorproduct, tensorcontraction, tensordiagonal, permutedims, type PermutationLike } from '../../arrayop';
 import { Permutation } from '../../../combinatorics/permutations';
 import { KroneckerDelta } from '../../../functions/special/hyper';
+import { PREC } from '../../../printing/str';
 import { compareKeys, sortKey } from '../../../printing/sortkey';
 import { diagonalizeVector } from '../../../matrices/expressions/diagonal';
 import { sortContractionIndices } from './utils';
@@ -96,8 +97,14 @@ export class ArrayElement extends ExtensionExpr {
     this.indices = Object.freeze(ind);
   }
   withArgs(args: readonly Expr[]): Expr { return new ArrayElement(first(args), values(at(args, 1))); }
-  override printStr(print: (e: Expr) => string): string { return `${print(this.parent)}[${this.indices.map(print).join(', ')}]`; }
-  override printLatex(print: (e: Expr) => string): string { return `{{${print(this.parent)}}_{${this.indices.map(print).join(', ')}}}`; }
+  override printStr(print: (e: Expr) => string): string {
+    const parent = print(this.parent);
+    return `${strPrecedence(this.parent) < PREC.FUNC ? '(' + parent + ')' : parent}[${this.indices.map(print).join(', ')}]`;
+  }
+  override printLatex(print: (e: Expr) => string): string {
+    const parent = print(this.parent);
+    return `{{${latexPrecedence(this.parent) < PREC.FUNC ? '\\left(' + parent + '\\right)' : parent}}_{${this.indices.map(print).join(', ')}}}`;
+  }
   override diffSelf(x: Expr): Expr {
     if (x instanceof ArrayElement && x.parent.key === this.parent.key) return mul(...this.indices.map((i, k) => KroneckerDelta(i, at(x.indices, k))));
     return S.Zero;

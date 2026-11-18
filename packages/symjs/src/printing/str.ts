@@ -7,13 +7,14 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isAddLike, isNum } from '../core/nodes';
+import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, S, Special, Sym, UndefFn, impl, isAddLike, isNum } from '../core/nodes';
 import { mul, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
-import { floatToString } from '../numeric/mpf';
+import { floatToString, precToDps, toStr } from '../numeric/mpf';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from './sortkey';
 import { setClass } from './sets';
 import { Concrete } from '../core/concrete';
+import { DefinedFunctionCall } from '../core/defun';
 import { at } from '../core/guard';
 import { BoolOp } from '../core/boolalg';
 
@@ -69,6 +70,7 @@ export function declaredPrecedence(e: Expr, method: 'strPrecedence' | 'latexPrec
 
 /** SymPy `precedence()`: the precedence of an expression for the str printer ({@link PRECEDENCE}). */
 export function precedence(e: Expr): number {
+  if (e instanceof ExtensionExpr && e.name === 'UnevaluatedExpr') return precedence(at(e.args, 0)) - 0.5;
   const declared = declaredPrecedence(e, 'strPrecedence');
   if (declared !== undefined) return declared;
   if (e instanceof Rational) {
@@ -78,7 +80,11 @@ export function precedence(e: Expr): number {
   if (e instanceof Float) return e.value < 0 ? PREC.ADD : PREC.ATOM;
   if (e instanceof Special) return e.name === '-oo' ? PREC.ADD : PREC.ATOM;
   if (e instanceof Add) return PREC.ADD;
-  if (e instanceof Mul) return startsNegative(e) ? PREC.ADD : PREC.MUL;
+  if (e instanceof Mul) {
+    // A function that binds more loosely than multiplication must also be grouped after a negative coefficient.
+    const lowPrecedence = e.args.some((a) => a instanceof DefinedFunctionCall && (declaredPrecedence(a, 'strPrecedence') ?? PREC.FUNC) < PREC.MUL);
+    return startsNegative(e) && !lowPrecedence ? PREC.ADD : PREC.MUL;
+  }
   if (isExp(e)) return PREC.FUNC;
   if (e instanceof Pow) return PREC.POW;
   if (e instanceof Fn || e instanceof Piecewise || e instanceof UndefFn) return PREC.FUNC;
@@ -105,6 +111,22 @@ function parenthesize(e: Expr, level: number): string {
   return precedence(e) <= level ? `(${s})` : s;
 }
 
+function unevaluatedMul(e: Mul): string {
+  const numer: Expr[] = [];
+  const denom: Expr[] = [];
+  for (const factor of e.args) {
+    if (factor instanceof Pow && splitCoeff(factor.exp)[0].isNegative) {
+      denom.push(factor.exp.equals(S.NegOne) ? factor.base : new Pow(factor.base, mul(-1, factor.exp)));
+    } else numer.push(factor);
+  }
+  const parts = (xs: Expr[], bareFirst: boolean): string => xs.map((a, i) =>
+    bareFirst && i === 0 && startsNegative(a) ? str(a) : parenthesize(a, precedence(e))).join('*');
+  const n = parts(numer, true) || '1';
+  const d = parts(denom, denom.length > 1);
+  if (!denom.length) return n;
+  return n + '/' + (denom.length > 1 ? `(${d})` : d);
+}
+
 function printMul(e: Mul): string {
   const prec = precedence(e);
   const [c, rest] = splitCoeff(e);
@@ -116,9 +138,11 @@ function printMul(e: Mul): string {
   }
   const a: Expr[] = [];
   const b: Expr[] = [];
+  const reciprocalBases = new Set<Expr>();
   for (const item of expr instanceof Mul ? asOrderedFactors(expr) : [expr]) {
     if (item instanceof Pow && item.isCommutative && !isExp(item) && splitCoeff(item.exp)[0].isNegative) {
       const x = item.exp;
+      if (item.base instanceof Pow || item.base instanceof Mul) reciprocalBases.add(item.base);
       b.push(x instanceof Rational && x.p === -1n && x.q === 1n ? item.base : new Pow(item.base, mul(-1, x)));
     } else if (item instanceof Rational) {
       if (item.p !== 1n) a.push(Rational.of(item.p));
@@ -128,7 +152,7 @@ function printMul(e: Mul): string {
     }
   }
   const aStr = (a.length > 0 ? a : [Rational.of(1n)]).map((x) => parenthesize(x, prec));
-  const bStr = b.map((x) => parenthesize(x, prec));
+  const bStr = b.map((x) => reciprocalBases.has(x) ? `(${str(x)})` : parenthesize(x, prec));
   if (bStr.length === 0) return sign + aStr.join('*');
   if (bStr.length === 1) return `${sign}${aStr.join('*')}/${bStr[0]}`;
   return `${sign}${aStr.join('*')}/(${bStr.join('*')})`;
@@ -162,16 +186,23 @@ function printAdd(e: Add): string {
 
 let printLevel = 0;
 /** The StrPrinter setting full_prec: true or false, or 'auto' for the full precision at the top level only. */
-let fullPrec: boolean | 'auto' = 'auto';
+interface NumberSettings {
+  fullPrec?: boolean | 'auto';
+  sympyIntegers?: boolean;
+  min?: number;
+  max?: number;
+  dps?: number;
+}
+let numberSettings: NumberSettings = {};
 
 /** f() printed with the StrPrinter setting full_prec (SymPy sstr(expr, full_prec=...)). @internal */
-export function withFullPrec<T>(setting: boolean | 'auto', f: () => T): T {
-  const saved = fullPrec;
-  fullPrec = setting;
+export function withFullPrec<T>(setting: boolean | 'auto' | NumberSettings, f: () => T): T {
+  const saved = numberSettings;
+  numberSettings = typeof setting === 'object' ? setting : { fullPrec: setting };
   try {
     return f();
   } finally {
-    fullPrec = saved;
+    numberSettings = saved;
   }
 }
 
@@ -202,8 +233,16 @@ export function str(e: Expr): string {
 }
 
 function strInner(e: Expr): string {
-  if (e instanceof Rational) return e.q === 1n ? `${e.p}` : `${e.p}/${e.q}`;
-  if (e instanceof Float) return floatString(e, fullPrec === 'auto' ? printLevel > 1 : !fullPrec);
+  if (e instanceof Rational) {
+    const numerator = numberSettings.sympyIntegers ? `S(${e.p})` : String(e.p);
+    return e.q === 1n ? numerator : `${numerator}/${e.q}`;
+  }
+  if (e instanceof Float) {
+    const { fullPrec = 'auto', min, max, dps } = numberSettings;
+    const strip = fullPrec === 'auto' ? printLevel > 1 : !fullPrec;
+    if (min === undefined && max === undefined && dps === undefined) return floatString(e, strip);
+    return toStr(e.mpf, dps ?? (e.prec < 5 ? 0 : precToDps(e.prec)), strip, min, max).replace(/^(-?)\.0/, '$10.');
+  }
   if (e instanceof Sym) return e.printName;
   if (e instanceof Constant) return e.name;
   if (e instanceof Special) return e.name;
@@ -212,7 +251,8 @@ function strInner(e: Expr): string {
   if (e instanceof Mul) {
     // an unevaluated product of several numbers (Mul(1, 2, evaluate=False)) prints as written
     // (SymPy does not parenthesize a negative first factor: Mul(-2, 1) is -2*1)
-    if (e.args.filter((a) => isNum(a)).length > 1) return e.args.map((a, i) => (i === 0 && startsNegative(a) ? str(a) : parenthesize(a, PREC.MUL))).join('*');
+    if (at(e.args, 0).equals(S.One) || e.args.slice(1).some((a) => isNum(a) ||
+      a instanceof Pow && a.base instanceof Rational && a.base.isInteger && a.exp instanceof Rational && a.exp.isInteger)) return unevaluatedMul(e);
     return printMul(e);
   }
   if (e instanceof Pow) return printPow(e);
@@ -246,7 +286,13 @@ function strInner(e: Expr): string {
     if (!v || !p || (p instanceof Rational && p.isZero)) return `O(${str(e.expr)})`;
     return `O(${str(e.expr)}, (${str(v)}, ${str(p)}))`;
   }
-  if (e instanceof ExtensionExpr) return e.printStr(str);
+  if (e instanceof ExtensionExpr) {
+    if (e.name === 'Lambda' && e.args.length === 2) {
+      const v = at(e.args, 0);
+      if (v instanceof ExtensionExpr && v.name === 'Tuple') return `Lambda((${str(v)},), ${str(at(e.args, 1))})`;
+    }
+    return e.printStr(str);
+  }
   const cls = setClass(e);
   // SymPy StrPrinter._print_LatticeOp: a Union or Intersection lists its arguments in default_sort_key order
   if (cls === 'Union' || cls === 'Intersection') return `${cls}(${[...e.args].sort((a, b) => compareKeys(sortKey(a), sortKey(b))).map(str).join(', ')})`;

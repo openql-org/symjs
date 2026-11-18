@@ -156,6 +156,14 @@ describe('ordered terms with unevaluated function values', () => {
   });
 });
 
+it('orders exponentials and terms with real and imaginary numeric factors', async () => {
+  const { classKey } = await import('../../src/printing/sortkey');
+  expect(classKey(sj.exp(x))).toEqual([4, 10, 'exp']);
+  expect(asOrderedTerms(sj.sub(S.Pi, x)).map(str)).toEqual(['pi', '-x']);
+  const imaginary = new sj.Mul([S.I, S.Pi, x]);
+  expect(asOrderedTerms(new Add([S.One, imaginary]))).toEqual([imaginary, S.One]);
+});
+
 it('uses the exponential sort priority and orders a single factor', () => {
   const x = sj.symbol('x');
   expect(sj.classKey(sj.exp(x))).toEqual([4, 10, 'exp']);

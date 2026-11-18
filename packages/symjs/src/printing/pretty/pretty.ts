@@ -51,11 +51,11 @@ import { BoolOp } from '../../core/boolalg';
 import { Concrete } from '../../core/concrete';
 import { DictNode } from '../../core/containers';
 import { requiresPartial } from '../conventions';
-import { isFunctionClass } from '../../core/undef';
+import { isFunctionClass, isUndefinedFunction } from '../../core/undef';
 import type { FunctionClassLike } from '../../core/undef';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from '../sortkey';
 import type { Key } from '../sortkey';
-import { PREC, floatString, precedence, str } from '../str';
+import { PREC, floatString, permCyclic, precedence, str } from '../str';
 import { DOTS, rangePrintForm, setArgsOrdered, setClass } from '../sets';
 import { hasSymbolicBounds, isSequence, sequencePrintset } from '../sequences';
 import type { PictLike } from './stringpict';
@@ -293,7 +293,7 @@ export class PrettyPrinter {
       rootNotation: options.rootNotation ?? true,
       useUnicodeSqrtChar: options.useUnicodeSqrtChar ?? true,
       matSymbolStyle: options.matSymbolStyle ?? 'plain',
-      permCyclic: options.permCyclic ?? true,
+      permCyclic: options.permCyclic ?? permCyclic(),
     };
   }
 
@@ -334,7 +334,14 @@ export class PrettyPrinter {
     if (isMatrixLike(e)) return this.printMatrix(e);
     if (e instanceof Expr) return this.printExpr(e);
     // SymPy _print_FunctionClass: the name as a symbol
-    if (isFunctionClass(e)) return new PrettyForm(prettySymbol(e.functionName));
+    if (isFunctionClass(e)) {
+      const names: Readonly<Partial<Record<string, readonly [string, string]>>> = {
+        beta: ['Β', 'B'], gamma: ['Γ', 'Gamma'], lowergamma: ['γ', 'gamma'], lerchphi: ['Φ', 'lerchphi'],
+        KroneckerDelta: ['δ', 'delta'], DiracDelta: ['δ', 'delta'],
+      };
+      const special = isUndefinedFunction(e) ? undefined : names[e.functionName];
+      return new PrettyForm(special ? special[this.useUnicode ? 0 : 1] : prettySymbol(e.functionName));
+    }
     throw new TypeError('pretty: cannot print this value');
   }
 
