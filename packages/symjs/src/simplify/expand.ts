@@ -12,6 +12,7 @@ import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { rebuild } from '../core/traverse';
 import { at, defined, first } from '../core/guard';
+import { ratMod } from '../core/num';
 import { integerNthroot } from '../core/numberutils';
 
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
@@ -61,7 +62,7 @@ function expandNode(e: Expr): Expr {
   const node = args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
 
   if (node instanceof Mul) {
-    if (!node.args.some((a) => a instanceof Add)) return node;
+    if (!node.args.some((a) => a instanceof Add)) return mul(...node.args);
     return node.args.reduce<Expr>((acc, f) => distribute(acc, f), Rational.of(1n));
   }
   if (node instanceof Pow) {
@@ -97,6 +98,7 @@ export function expandMulRounds(e: ExprLike, maxRounds: number): Expr {
 // ---------------------------------------------------------------------------
 
 export interface ExpandHints {
+  modulus?: ExprLike;
   deep?: boolean;
   mul?: boolean;
   multinomial?: boolean;
@@ -134,7 +136,7 @@ const isNonPositive = (e: Expr): boolean => isNegative(e) === true || (e instanc
 function powerExp(e: Expr, force: boolean): Expr {
   if (!(e instanceof Pow)) return e;
   const [b, x] = e.args;
-  if (!(x instanceof Add)) return e;
+  if (!(x instanceof Add) || !x.isCommutative) return e;
   if (isE(b) || force || isNonZero(b) === true || allNonnegOrNonpos(x)) {
     return mul(...x.args.map((t) => pow(b, t)));
   }
@@ -402,6 +404,10 @@ export function asRealImagExpand(e: Expr): [Expr, Expr] {
         return [mul(cos(ra), cosh(ia)), mul(-1, sin(ra), sinh(ia))];
       case 'sin':
         return [mul(sin(ra), cosh(ia)), mul(cos(ra), sinh(ia))];
+      case 'sinh':
+        return [mul(sinh(ra), cos(ia)), mul(cosh(ra), sin(ia))];
+      case 'cosh':
+        return [mul(cosh(ra), cos(ia)), mul(sinh(ra), sin(ia))];
       case 'tan': {
         if (ia instanceof Rational && ia.isZero) return [tan(ra), S.Zero];
         const den = pow(add(cos(mul(2, ra)), cosh(mul(2, ia))), -1);
@@ -477,6 +483,14 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     if (h.mul && e.key !== was.key) e = h.deep ? (h.multinomial ? expandMul(e) : expandMulOnly(e)) : expandMulShallow(e, h.mul, h.multinomial);
     if (e.key === was.key) break;
   }
+  if (hints['modulus'] !== undefined) {
+    const m = sympify(hints['modulus']);
+    if (!(m instanceof Rational && m.isInteger && m.p > 0n)) throw new RangeError('modulus must be a positive integer');
+    e = add(...termsOf(e).map((t) => {
+      const [c, rest] = splitCoeff(t);
+      return c instanceof Rational ? mul(ratMod(c, m), rest) : t;
+    }));
+  }
   return e;
 }
 
@@ -484,6 +498,7 @@ function expandMulShallow(e: Expr, doMul: boolean, doMulti: boolean): Expr {
   if (doMul && e instanceof Mul && e.args.some((a) => a instanceof Add)) {
     return e.args.reduce<Expr>((acc, f) => distribute(acc, f), Rational.of(1n));
   }
+  if (doMul && e instanceof Mul) return mul(...e.args);
   if (doMulti && e instanceof Pow && e.base instanceof Add && e.exp instanceof Rational) return multinomialPow(e.base, e.exp) ?? e;
   return e;
 }

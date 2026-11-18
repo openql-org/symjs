@@ -1741,11 +1741,11 @@ function subsArgs(e: Expr, args: readonly unknown[]): Expr {
   throw new RangeError('subs requires a mapping or a sequence of pairs');
 }
 
-const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force', 'func', 'frac', 'numer', 'denom', 'diracdelta', 'wrt'];
+const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force', 'func', 'frac', 'numer', 'denom', 'diracdelta', 'wrt', 'modulus'];
 function expandHints(kw: Record<string, unknown>): sj.ExpandHints {
   for (const k of Object.keys(kw)) if (!HINTS.includes(k)) throw new Unsupported(`expand hint ${k}`);
   // wrt (the variable of the diracdelta hint) is an expression
-  return Object.fromEntries(Object.entries(kw).map(([k, v]) => [k, k === 'wrt' ? v : Boolean(v)])) as sj.ExpandHints;
+  return Object.fromEntries(Object.entries(kw).map(([k, v]) => [k, k === 'wrt' || k === 'modulus' ? v : Boolean(v)])) as sj.ExpandHints;
 }
 
 function asOrdered(e: Expr): Expr[] {
@@ -2337,12 +2337,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   Add: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
-    if (kw['evaluate'] === false) return new sj.Add(args.map(asMatrixExpression));
+    if (kw['evaluate'] === false && args.length) return new sj.Add(args.map(asMatrixExpression));
     return sj.add(...args.map(asMatrixExpression));
   },
   Mul: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
-    if (kw['evaluate'] === false) {
+    if (kw['evaluate'] === false && args.length) {
       return new sj.Mul(args.map(asMatrixExpression));
     }
     return sj.mul(...args.map(asMatrixExpression));
@@ -2844,7 +2844,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   var: (args, kw) => ADAPTERS['symbols']!(args, kw),
   '.limit_denominator': (args, kw, self) => (noKw(kw), sj.limitDenominator(self as sj.Rational, (args[0] as sj.Rational).p)),
   '.as_two_terms': exprMethod((e) => new JsTuple(sj.asTwoTerms(e))),
-  '.has_xfree': (args, kw, self) => (noKw(kw), sj.hasXfree(asExpr(self), (args[0] as JsSet).items.filter((i) => !(i instanceof UFnClass)).map(asExpr))),
+  '.has_xfree': (args, kw, self) => {
+    noKw(kw);
+    if (!(args[0] instanceof JsSet)) throw new TypeError('expected a set');
+    return sj.hasXfree(asExpr(self), args[0].items.filter((i) => !(i instanceof UFnClass)).map(asExpr));
+  },
   '.is_algebraic_expr': (args, kw, self) => (noKw(kw), sj.isAlgebraicExpr(asExpr(self), args.map(asExpr))),
   '.dummy_eq': (args, kw, self) => (noKw(kw), sj.dummyEq(asExpr(lambdaAsNode(self)), asExpr(lambdaAsNode(args[0])), args[1] === undefined ? undefined : asExpr(args[1]))),
   '.compare': (args, kw, self) => (noKw(kw), Math.sign(sj.compareKeys(sj.sortKey(asExpr(self)), sj.sortKey(asExpr(args[0]))))),
@@ -2881,11 +2885,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.has_free': (args, kw, self) => {
     noKw(kw);
+    if (args.some((a) => a instanceof JsSet || a instanceof JsList || a instanceof JsDict)) throw new TypeError('expected an expression');
     return sj.hasFree(asExpr(self), ...args.map((a) => (a instanceof UFnClass ? { fn: a.name } : asExpr(a))));
   },
   '.as_coefficients_dict': (args, kw, self) => {
     noKw(kw);
-    return new JsDefaultDict([...sj.asCoefficientsDict(asExpr(self), args.map(asExpr))]);
+    return new JsDict([...sj.asCoefficientsDict(asExpr(self), args.map(asExpr))]);
   },
   Pow: (args, kw) => (noKw(kw), sj.pow(asExpr(args[0]), asExpr(args[1]))),
   sqrt: exprFn(sj.sqrt),
@@ -2948,19 +2953,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   // ---- manipulation
   expand: (args, kw) => {
     if (args.length !== 1) throw new Unsupported('arity');
-    const { modulus, ...rest } = kw;
-    const r = sj.expand(asExpr(args[0]), expandHints(rest));
-    if (modulus === undefined) return r;
-    // coefficients reduced modulo m (SymPy modulus hint, symmetric=False)
-    const m = (modulus as sj.Rational).p;
-    const gens = sj.sortGens([...sj.freeSymbols(r)]);
-    const P = sj.Poly.from(r, gens);
-    return sj.add(...P.terms().map(([mon, c]) => {
-      const q = c as sj.Rational;
-      if (!q.isInteger) throw new Unsupported('modulus with rational coefficients');
-      return sj.mul(sj.Rational.of(((q.p % m) + m) % m), ...mon.map((k, i) => sj.pow(gens[i]!, k)));
-    }));
+    return sj.expand(asExpr(args[0]), expandHints(kw));
   },
+  numer_expand: (args, kw) => sj.expand(asExpr(args[0]), { ...expandHints(kw), numer: true }),
   expand_mul: exprFn(sj.expand_mul),
   expand_multinomial: exprFn(sj.expand_multinomial),
   expand_log: (args, kw) => sj.expand_log(asExpr(args[0]), Boolean(kw['force'])),
@@ -3060,6 +3055,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_poly': (args, kw, self) => {
     noKw(kw);
+    if (self instanceof sj.Poly) return self;
     if (self instanceof sj.AlgebraicNumber) return self.asPoly(args[0] === undefined ? undefined : asExpr(args[0]));
     let e = asExpr(self);
     if (e instanceof sj.Rel && e.op === 'Eq') e = sj.add(e.lhs, sj.mul(-1, e.rhs));
@@ -3901,7 +3897,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   denom: exprFn((e) => sj.fraction(e)[1]),
   ln: exprFn((e) => sj.log(e)),
   Rem: (args, kw) => (noKw(kw), sj.Rem(asExpr(args[0]), asExpr(args[1]))),
-  '.as_powers_dict': (_a, kw, self) => (noKw(kw), new JsDefaultDict([...sj.asPowersDict(asExpr(self))])),
+  '.as_powers_dict': (_a, kw, self) => (noKw(kw), new JsDict([...sj.asPowersDict(asExpr(self))])),
   '.as_coeff_exponent': (args, kw, self) => (noKw(kw), new JsTuple(sj.asCoeffExponent(asExpr(self), asExpr(args[0])))),
   '.as_coeff_Add': (_a, kw, self) => {
     noKw(kw);
@@ -3909,7 +3905,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (e instanceof sj.Add && e.args[0]!.isNumber) return new JsTuple([e.args[0]!, sj.add(...e.args.slice(1))]);
     return new JsTuple([e.isNumber ? e : S.Zero, e.isNumber ? S.Zero : e]);
   },
-  '.count': (args, kw, self) => (noKw(kw), sj.Rational.of(sj.count(asExpr(self), asExpr(args[0])))),
+  '.count': (args, kw, self) => (noKw(kw), sj.Rational.of(sj.count(asExpr(self), toQuery(args[0])))),
   '.normal': (args, kw, self) => self instanceof sj.Factors ? (noKw(kw), new JsTuple(self.normal(plain(args[0]) as sj.Factors | Expr))) : exprMethod((e) => {
     const [n, d] = sj.fraction(sj.together(e));
     return sj.mul(n, sj.pow(d, -1));
@@ -4057,7 +4053,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.has': (args, kw, self) => {
     noKw(kw);
-    const e = self instanceof Matrix ? self.data : [asExpr(self)];
+    const e = self instanceof Matrix ? self.data : self instanceof sj.Poly ? [self.asExpr(), ...self.gens] : self instanceof JsTuple ? self.items.map(expressionContainer) : [asExpr(self)];
     return args.some((a) =>
       a instanceof JsFunc
         ? false
@@ -4107,8 +4103,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   factor_terms: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['clear', 'fraction', 'sign', 'radical'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    if (kw['radical']) throw new Unsupported('radical');
-    const options = { clear: kw['clear'] as boolean | undefined, fraction: kw['fraction'] as boolean | undefined, sign: kw['sign'] as boolean | undefined };
+    const options = { clear: kw['clear'] as boolean | undefined, fraction: kw['fraction'] as boolean | undefined, sign: kw['sign'] as boolean | undefined, radical: kw['radical'] as boolean | undefined };
     const apply = (value: unknown): unknown => {
       if (value instanceof JsList) return new JsList(value.items.map(apply));
       if (value instanceof JsTuple) return new JsTuple(value.items.map(apply));
@@ -4187,11 +4182,18 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsTuple([c, new JsTuple(t)]);
   },
   '.as_coeff_mul': (args, kw, self) => {
-    noKw(kw);
-    const [c, t] = sj.asCoeffMul(asExpr(self), args.map(asExpr));
+    for (const k of Object.keys(kw)) if (k !== 'rational') throw new Unsupported(`kwargs ${k}`);
+    const [c, t] = sj.asCoeffMul(asExpr(self), args.map(asExpr), kw['rational'] !== false);
     return new JsTuple([c, new JsTuple(t)]);
   },
-  '.as_coeff_Mul': exprMethod((e) => new JsTuple(sj.splitCoeff(e))),
+  '.as_coeff_Mul': (_args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'rational') throw new Unsupported(`kwargs ${k}`);
+    if (kw['rational']) {
+      const [c, factors] = sj.asCoeffMul(asExpr(self));
+      return new JsTuple([c, sj.mul(...factors)]);
+    }
+    return new JsTuple(sj.splitCoeff(asExpr(self)));
+  },
   '.primitive': (_a, kw, self) => {
     noKw(kw);
     if (self instanceof sj.Poly) return new JsTuple(self.primitive());
@@ -4226,9 +4228,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   }),
   '.args_cnc': (args, kw, self) => {
     const split1 = kw['split_1'];
-    for (const k of Object.keys(kw)) if (k !== 'split_1' && k !== 'cset') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'split_1' && k !== 'cset' && k !== 'warn') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('arity');
     const [c, nc] = sj.argsCncSplit(asExpr(self), split1 === undefined ? true : Boolean(split1));
+    if (kw['cset'] && kw['warn'] !== false && new Set(c.map((e) => e.key)).size !== c.length) throw new RangeError('repeated commutative arguments');
     return new JsList([kw['cset'] ? new JsSet(c) : new JsList(c), new JsList(nc)]);
   },
   '.xreplace': (args, kw, self) => {
@@ -4255,6 +4258,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       return (x: Expr) => x.key === t.key;
     });
     const pred = preds.length ? (x: Expr) => preds.some((p) => p(x)) : () => true;
+    if (self instanceof sj.Poly) return new JsSet([...new Map([self.asExpr(), ...self.gens].flatMap((e) => sj.atoms(e, pred)).map((e) => [e.key, e])).values()]);
     if (self instanceof Matrix) return new JsSet([...self.atoms(pred)]);
     if (args.some((a) => a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass)) {
       return new JsSet(sj.find(asExpr(self), pred));

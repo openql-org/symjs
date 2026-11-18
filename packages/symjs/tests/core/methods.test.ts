@@ -719,3 +719,38 @@ it('extracts additive order terms and preserves floating primitive parts', () =>
   }
   expect(sj.asRealImag(new ScalarExtension('f', [x])).length).toBe(2);
 });
+
+it('separates rational coefficients from floating factors and sums', () => {
+  for (const value of [3, -3]) expect(sj.asCoeffAdd(new Float(value)).map(String)).toEqual(['0', String(new Float(value))]);
+  const x = new sj.Sym('x');
+  expect(sj.asCoeffAdd(sj.add(new Float(3), x)).map(String)).toEqual(['0', '3.00000000000000,x']);
+  expect(sj.asCoeffMul(new Float(3)).map(String)).toEqual(['1', '3.00000000000000']);
+  expect(sj.asCoeffMul(new Float(-3)).map(String)).toEqual(['-1', '3.00000000000000']);
+  expect(sj.asCoeffMul(sj.mul(new Float(1.1), x)).map(String)).toEqual(['1', '1.10000000000000,x']);
+  expect(sj.asCoeffMul(sj.mul(sj.S.NegativeInfinity, x)).map(String)).toEqual(['-1', 'oo,x']);
+});
+
+it('extracts a common exponent from a sum and splits NaN into NaN components', () => {
+  const x = new sj.Sym('x');
+  expect(sj.asCoeffExponent(sj.add(sj.mul(2, sj.pow(x, 3)), sj.mul(sj.S.Pi, sj.pow(x, 3))), x).map(String)).toEqual(['2 + pi', '3']);
+  expect(sj.asCoeffExponent(sj.add(x, sj.pow(x, 2)), x).map(String)).toEqual(['x**2 + x', '0']);
+  expect(sj.asRealImag(sj.S.NaN)).toEqual([sj.S.NaN, sj.S.NaN]);
+});
+
+it('keeps a negative unit coefficient and handles unavailable differentiation conservatively', () => {
+  expect(String(sj.keepCoeff(sj.S.NegOne, x))).toBe('-x');
+  expect(sj.asCoeffMul(sj.S.Infinity).map(String)).toEqual(['1', 'oo']);
+  class UnsupportedDerivative extends sj.ExtensionExpr {
+    withArgs(args: readonly sj.Expr[]): sj.Expr { return new UnsupportedDerivative(this.name, args); }
+    override diffSelf(): sj.Expr { throw new sj.NotImplementedError('derivative'); }
+  }
+  expect(sj.isConstant(new UnsupportedDerivative('g', [x]))).toBe(false);
+});
+
+it('optionally includes nonrational numeric coefficients in asCoeffMul', () => {
+  expect(sj.asCoeffMul(new Float(-3), [], false).map(String)).toEqual(['-3.00000000000000', '']);
+  expect(sj.asCoeffMul(sj.S.Infinity, [], false).map(String)).toEqual(['oo', '']);
+  expect(sj.asCoeffMul(sj.mul(new Float(1.1), x), [], false).map(String)).toEqual(['1.10000000000000', 'x']);
+  expect(sj.asCoeffMul(x, [], false).map(String)).toEqual(['1', 'x']);
+  expect(sj.asCoeffMul(sj.mul(x, y), [], false).map(String)).toEqual(['1', 'x,y']);
+});

@@ -253,13 +253,13 @@ export function asCoeffAdd(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Ex
     const ind = e.args.filter((a) => !deps.some((d) => a.has(d)));
     return [add(...ind), dep];
   }
-  if (isNum(e)) return [e, []];
-  if (isAddLike(e) && isNum(at(e.args, 0))) return [at(e.args, 0), [...e.args.slice(1)]];
+  if (e instanceof Rational) return [e, []];
+  if (isAddLike(e) && at(e.args, 0) instanceof Rational) return [at(e.args, 0), [...e.args.slice(1)]];
   return [S.Zero, [...addArgs(e)]];
 }
 
 /** SymPy `as_coeff_mul(*deps)`. */
-export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Expr[]] {
+export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = [], rational = true): [Expr, Expr[]] {
   const e = sympify(eIn);
   if (deps.length) {
     if (!isMulLike(e)) return deps.some((d) => e.has(d)) ? [S.One, [e]] : [e, []];
@@ -267,9 +267,16 @@ export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Ex
     const ind = e.args.filter((a) => !deps.some((d) => a.has(d)));
     return [mul(...ind), dep];
   }
-  if (isNum(e)) return [e, []];
-  if (isMulLike(e) && isNum(at(e.args, 0))) return [at(e.args, 0), [...e.args.slice(1)]];
-  return [S.One, [...mulArgs(e)]];
+  if (!rational) {
+    if (e instanceof Float || e instanceof Special) return [e, []];
+    if (isMulLike(e) && isNum(at(e.args, 0))) return [at(e.args, 0), [...e.args.slice(1)]];
+  }
+  if (e instanceof Rational) return [e, []];
+  if (isMulLike(e) && at(e.args, 0) instanceof Rational) return [at(e.args, 0), [...e.args.slice(1)].sort((a, b) => Number(b instanceof Special) - Number(a instanceof Special))];
+  const args = [...mulArgs(e)];
+  const first = at(args, 0);
+  if ((first instanceof Float && first.isNegative) || (first instanceof Special && first.name === '-oo')) return [S.NegOne, [mul(-1, first), ...args.slice(1)]];
+  return [S.One, args];
 }
 
 /** SymPy `primitive()`: [content, primitive] with rational content. */
@@ -610,6 +617,7 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
 /** SymPy `as_real_imag()`. */
 export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   const e0 = sympify(eIn);
+  if (e0 instanceof Special && e0.name === 'nan') return [S.NaN, S.NaN];
   const own = e0 instanceof ExtensionExpr ? e0.asRealImagSelf() : undefined;
   if (own) return own;
   if (e0 instanceof Fn && e0.name === 'log') {
@@ -770,6 +778,11 @@ function extractCommonRadical(e: Add): Expr {
 /** SymPy as_coeff_exponent(x): [c, e] with self = c*x**e and c free of x, else [self, 0]. */
 export function asCoeffExponent(eIn: ExprLike, x: Expr): [Expr, Expr] {
   const e = sympify(eIn);
+  if (e instanceof Add) {
+    const terms = e.args.map((t) => asCoeffExponent(t, x));
+    const exponent = at(terms, 0)[1];
+    return terms.every(([, p]) => p.key === exponent.key) ? [add(...terms.map(([c]) => c)), exponent] : [e, S.Zero];
+  }
   const cs: Expr[] = [];
   const es: Expr[] = [];
   for (const f of mulArgs(e)) {

@@ -950,3 +950,20 @@ it('uses the nonempty assumptions of indexed bases', () => {
   expect(fact(base, 'positive')).toBe(true);
   expect(fact(base.at(0), 'real')).toBe(true);
 });
+
+it('sin and cos of extended real arguments are finite, as are their sums and products', () => {
+  const x = new sj.Sym('x', { extendedReal: true });
+  const s = sj.sin(x);
+  const c = sj.cos(x);
+  for (const e of [s, c, sj.mul(1024, s), sj.mul(s, c), sj.add(s, -67), sj.pow(s, 2)]) expect(fact(e, 'finite')).toBe(true);
+  expect(fact(sj.sin(new sj.Sym('z')), 'finite')).toBeUndefined();
+});
+
+it('reads assumption knowledge bases supplied by extension nodes', () => {
+  class Known extends sj.ExtensionExpr {
+    readonly assumptions0 = new Map([['finite', true]]);
+    constructor() { super('Known', []); }
+    withArgs(): sj.Expr { return this; }
+  }
+  expect(fact(new Known(), 'finite')).toBe(true);
+});
