@@ -3,10 +3,10 @@
 // Ported from SymPy 1.14, assumptions/refine.py, BSD-3-Clause; see LICENSE.
 
 /** Individual assumption refinement handlers. A missing refinement is NoMatch. */
-import type { Expr, ExprLike } from '../core/nodes';
-import { Add, ExtensionExpr, Pow, Rational, S } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { Expr, Add, ExtensionExpr, Fn, Mul, Piecewise, Pow, Rational, S } from '../core/nodes';
 import type { Assumption } from '../core/refine';
-import { Q, ask, refine } from '../core/refine';
+import { Q, ask, refine, registerRefineHandler } from '../core/refine';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { at, pair } from '../core/guard';
 import type { NoMatchResult } from '../core/truth';
@@ -76,7 +76,7 @@ export function refineRe(expr: ExprLike, assumptions: Assumption = true): Expr {
   const x = at(e.args, 0);
   if (ask(Q.real(x), assumptions) === true) return x;
   if (ask(Q.imaginary(x), assumptions) === true) return S.Zero;
-  return refine(e, assumptions);
+  return e;
 }
 
 /** SymPy refine_im: imaginary part under assumptions. */
@@ -85,7 +85,7 @@ export function refineIm(expr: ExprLike, assumptions: Assumption = true): Expr {
   const x = at(e.args, 0);
   if (ask(Q.real(x), assumptions) === true) return S.Zero;
   if (ask(Q.imaginary(x), assumptions) === true) return mul(-1, S.I, x);
-  return refine(e, assumptions);
+  return e;
 }
 
 /** SymPy refine_sign: sign on the real and imaginary axes. */
@@ -110,3 +110,70 @@ export function refineMatrixelement(expr: ExprLike, assumptions: Assumption = tr
   if (ask(Q.symmetric(matrix), assumptions) !== true) return NoMatch;
   return couldExtractMinusSign(add(i, mul(-1, j))) ? e : e.withArgs([matrix, j, i]);
 }
+
+
+/** Structural refinements that do not depend on rebuilding assumed symbols. */
+registerRefineHandler((e, assumptions) => {
+  if (e instanceof Pow && e.base instanceof Rational && e.base.p < 0n) {
+    const magnitude = Rational.of(-e.base.p, e.base.q);
+    if (ask(Q.even(e.exp), assumptions) === true) return pow(magnitude, e.exp);
+    if (ask(Q.odd(e.exp), assumptions) === true) return mul(-1, pow(magnitude, e.exp));
+  }
+  if (e instanceof Pow && e.base.equals(S.NegOne) && e.exp instanceof Add) {
+    let matched = 0;
+    let constant = S.Zero;
+    let nested: Pow | undefined;
+    let coefficient = S.Zero;
+    for (const term of e.exp.args) {
+      if (term instanceof Rational) { constant = term; matched++; }
+      if (term instanceof Mul && term.args.length === 2) {
+        const c = term.args.find((arg) => arg instanceof Rational);
+        const p = term.args.find((arg) => arg instanceof Pow && arg.base.equals(S.NegOne));
+        if (c instanceof Rational && p instanceof Pow && nested === undefined) { coefficient = c; nested = p; matched++; }
+      }
+    }
+    if (matched === e.exp.args.length && nested && coefficient.q === 2n && (coefficient.p === 1n || coefficient.p === -1n) && ask(Q.integer(nested.exp), assumptions) === true) {
+      const shift = Rational.of(constant.p * coefficient.q + coefficient.p * constant.q, constant.q * coefficient.q);
+      if (shift.q === 1n) return pow(-1, add(nested.exp, shift));
+    }
+  }
+  if (e instanceof Piecewise) {
+    const pairs: Expr[] = [];
+    for (const [value, condition] of e.pairs) {
+      const truth = ask(condition, assumptions);
+      if (truth === false) continue;
+      if (truth === true && pairs.length === 0) return value;
+      pairs.push(value, truth === true ? S.true : condition);
+      if (truth === true) break;
+    }
+    return new Piecewise(pairs);
+  }
+  if (e instanceof Fn) {
+    if (e.name === 'atan2') return refineAtan2(e, assumptions);
+    if (e.name === 'sign') return refineSign(e, assumptions);
+    if (e.name === 'arg') {
+      const result = refineArg(e, assumptions);
+      return result instanceof Expr ? result : e;
+    }
+    if (e.name === 're' || e.name === 'im') {
+      const x = at(e.args, 0);
+      if (x instanceof Add) return add(...x.args.map((term) => refine(new Fn(e.name, [term]), assumptions)));
+      if (ask(Q.real(x), assumptions) === true) return e.name === 're' ? x : S.Zero;
+      let imaginary = ask(Q.imaginary(x), assumptions) === true;
+      if (x instanceof Mul) {
+        let count = 0;
+        const known = x.args.every((arg) => {
+          if (ask(Q.imaginary(arg), assumptions) === true) { count++; return true; }
+          return ask(Q.real(arg), assumptions) === true;
+        });
+        if (known) imaginary = count % 2 === 1;
+      }
+      if (imaginary) return e.name === 're' ? S.Zero : mul(-1, S.I, x);
+    }
+  }
+  if (e instanceof ExtensionExpr && e.name === 'MatrixElement') {
+    const result = refineMatrixelement(e, assumptions);
+    return result instanceof Expr ? result : e;
+  }
+  return e;
+});

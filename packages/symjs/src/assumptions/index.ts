@@ -27,7 +27,7 @@ export type { KnownFactsDict } from './facts';
 export { getAllKnownFacts, getAllKnownMatrixFacts, getAllKnownNumberFacts, getKnownFactsDict } from './askgenerated';
 export { satask, checkSatisfiability, extractPredargs, findSymbols, getRelevantClsfacts, getAllRelevantFacts } from './satask';
 export type { SataskOptions } from './satask';
-export { extractPredFromOldAssum } from './lrasatask';
+export { extractPredFromOldAssum, lraSatask } from './lrasatask';
 export { isInfinite, isExtendedReal, isExtendedNonnegative, AssumptionsWrapper } from './wrapper';
 export { BinaryRelation } from './relation/binrel';
 export { refinePow, refineAbs, refineArg, refineAtan2, refineRe, refineIm, refineSign, refineMatrixelement } from './refine';
