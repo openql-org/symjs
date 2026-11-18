@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Expected solution families: SymPy 1.14 solvers.solveset.
-import { expect, it } from 'vitest';
-import { nonlinsolve, substitution, symbols, parse, add, mul, pow, exp, sin, log, ImageSet, subs, S } from '../../src';
+import { expect, it, vi } from 'vitest';
+import { nonlinsolve, substitution, solvify, Reals, NoMatch, symbols, parse, add, mul, pow, exp, sin, log, ImageSet, subs, S } from '../../src';
+import * as elimination from '../../src/solvers/solve';
 const [x, y, z] = symbols('x y z');
 it('returns all complex exponential branches through the public API', () => {
   const eqs = [add(exp(x), mul(-1, sin(y))), add(pow(y, 2), -4)];
@@ -192,4 +193,33 @@ it('excludes poles from free parameters introduced by finite substitution', () =
   expect(solutions.map((solution) => String(solution[1]))).toEqual([
     'Complement({y}, {0})', 'Complement({y}, {0})', 'Complement({y}, {0})',
   ]);
+});
+
+it('rejects infinite algebraic candidates in an exponential system', () => {
+  const equations = [parse('(x**2+2*x-y**2)*exp(x)'), parse('-2*y*exp(x)')];
+  expect(nonlinsolve(equations, [x, y]).map(String)).toEqual(['-2,0', '0,0']);
+  expect(nonlinsolve([exp(add(x, y))], [x, y])).toEqual([]);
+});
+
+it('finds isolated solutions in a union with intervals of zeros', () => {
+  expect(String(solvify(parse('Piecewise((0,x<-1),(x**2,x<=1),(log(x),True))'), x, Reals))).toBe('0');
+  expect(String(solvify(parse('Piecewise((0,x<-10),(x**2+5*x-6,x>=-9))'), x, Reals))).toBe('-6,1');
+});
+
+it('discards a branch when finite substitution leaves a nonzero constant', () => {
+  expect(nonlinsolve([parse('x**2-y**2'), parse('sin(x**2-y**2+1)')], [x, y])).toEqual([]);
+});
+
+it('has no finite representatives for an identity on the reals', () => {
+  expect(solvify(0, x, Reals)).toBe(NoMatch);
+});
+
+it('propagates errors from elimination that are unrelated to solver support', () => {
+  const failure = new RangeError('invalid elimination input');
+  const spy = vi.spyOn(elimination, 'nonlinsolve').mockImplementationOnce(() => { throw failure; });
+  try {
+    expect(() => nonlinsolve([x], [x])).toThrow(failure);
+  } finally {
+    spy.mockRestore();
+  }
 });

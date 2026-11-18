@@ -68,7 +68,7 @@ const CASES = [
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 420],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1086],
+  ['simplify', 'simplify', 1087],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
@@ -76,9 +76,9 @@ const CASES = [
   ['polys', 'factor', 795],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1087],
-  ['solvers', 'solve', 1175],
-  ['solvers', 'dsolve', 1190],
+  ['calculus', 'integrate', 1088],
+  ['solvers', 'solve', 1181],
+  ['solvers', 'dsolve', 1196],
   ['sets', '*', 388],
   ['matrices', 'Matrix', 967],
   ['printing', 'pretty', 248],
@@ -90,14 +90,14 @@ const CASES = [
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 664],
-  ['holonomic', 'exprToHolonomic', 1267],
-  ['geometry', '*', 1152],
-  ['vector', '*', 1249],
-  ['stats', '*', 1420],
+  ['holonomic', 'exprToHolonomic', 1268],
+  ['geometry', '*', 1153],
+  ['vector', '*', 1255],
+  ['stats', '*', 1426],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
-  ['plotting', '*', 1127],
+  ['plotting', '*', 1133],
   ['crypto', '*', 373],
   ['liealgebras', '*', 353],
   // The C99 math function classes with SymPy's class members (assumption queries, matching, logic forms; measured 396 KiB).
@@ -109,7 +109,7 @@ const CASES = [
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Tensor axis normalization, indexed broadcasting and matrix-array conversions.
-  ['index', '*', 2874],
+  ['index', '*', 2881],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

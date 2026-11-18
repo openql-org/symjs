@@ -621,13 +621,6 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Order: ([e, ...rest]) => orderNode(e!, rest),
 };
 
-const OP_STR: Record<string, sj.RelOp> = { '<': 'Lt', '>': 'Gt', '<=': 'Le', '>=': 'Ge', '==': 'Eq', '!=': 'Ne' };
-function reduceAbs(e: Expr, op: string, x: Sym): Expr {
-  const r = OP_STR[op];
-  if (!r) throw new Unsupported(`relation ${op}`);
-  return sj.solveUnivariateInequality(sj.rel(r, e, S.Zero), x);
-}
-
 function integralNode(args: unknown[]): Expr {
   // several limits: nested integrals, innermost first
   if (args.length > 2) return args.slice(2).reduce<Expr>((acc, l) => integralNode([acc, l]), integralNode(args.slice(0, 2)));
@@ -2423,11 +2416,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     );
     return sj.solveRationalInequalities(groups);
   },
-  reduce_abs_inequality: (args, kw) => (noKw(kw), reduceAbs(asExpr(args[0]), args[1] as string, asSym(args[2]))),
+  reduce_abs_inequality: (args, kw) => (noKw(kw), sj.reduceAbsInequality(asExpr(args[0]), args[1] as string, asSym(args[2]))),
   reduce_abs_inequalities: (args, kw) => {
     noKw(kw);
     const x = asSym(args[1]);
-    return sj.and(...(args[0] as JsTuple).items.map((it) => reduceAbs(asExpr((it as JsTuple).items[0]), (it as JsTuple).items[1] as string, x)));
+    return sj.and(...(args[0] as JsTuple).items.map((it) => sj.reduceAbsInequality(asExpr((it as JsTuple).items[0]), (it as JsTuple).items[1] as string, x)));
   },
   reduce_inequalities: (args, kw) => {
     noKw(kw);
@@ -6632,6 +6625,12 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // The simultaneous equations f - 2 and f - 4 require distinct values of f.
+  "sympy.solvers.tests.test_solveset:assert substitution([h - 1, k - 1, f - 2, f - 4, -2 * k],\n                        [h, k, f]) == {(1, 1, f)}": "EmptySet",
+  // The constant equation 1 = 0 is inconsistent for every tuple.
+  "sympy.solvers.tests.test_solveset:assert substitution([x + y + z, S.One, S.One, S.One], [x, y, z]) == \\\n                        {(-y - z, y, z)}": "EmptySet",
+  // The last equation forces d = ±I, and the first three fix a = d and b = c = -d.
+  "sympy.solvers.tests.test_solveset:assert substitution([a - d, b + d, c + d, d**2 + 1], [a, b, c, d]) == \\\n                        {(d, -d, -d, d)}": "{(-I, I, I, -I), (I, -I, -I, I)}",
   // The empty Puiseux polynomial is the additive identity (p - p = 0);
   // SymPy's empty printed string omits that value.
   'sympy.polys.tests.test_puiseux:assert R2.zero == PuiseuxPoly(R1.zero, R2)': '0',

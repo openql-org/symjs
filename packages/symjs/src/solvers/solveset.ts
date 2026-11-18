@@ -145,7 +145,11 @@ export function solvify(f: ExprLike, symbol: Sym, domain: SetExpr): Expr[] | NoM
   if (result instanceof FiniteSet) return [...result.args];
   const period = periodicity(f, symbol);
   const parts = result instanceof SetOp && result.op === 'Union' ? result.args : [result];
-  if (period !== undefined && parts.every((s) => s instanceof ImageSet)) {
+  if (period === undefined) {
+    const finite = parts.flatMap((part) => part instanceof FiniteSet ? part.args : []);
+    return finite.length ? finite : NoMatch;
+  }
+  if (parts.every((s) => s instanceof ImageSet)) {
     const window = Interval.Ropen(0, period);
     const principal = union(...parts.map((s) => intersection(s, window)));
     if (principal instanceof FiniteSet) return [...principal.args];
@@ -210,11 +214,15 @@ export function nonlinsolve(system: readonly ExprLike[], symbols: readonly Sym[]
     }
   }
   try {
-    return finiteNonlinsolve(eqs, symbols);
+    return finiteNonlinsolve(eqs, symbols).filter(isFiniteTuple);
   } catch (error) {
     if (!(error instanceof NotImplementedError)) throw error;
     return substituteFinite(eqs, symbols);
   }
+}
+
+function isFiniteTuple(values: readonly Expr[]): boolean {
+  return !values.some((value) => some(value, (term) => term instanceof Special));
 }
 
 /** Eliminate one unknown at a time using the finite branches of solveset. */
@@ -242,13 +250,15 @@ function substituteFinite(system: readonly Expr[], symbols: readonly Sym[]): Exp
     }
     throw new NotImplementedError('nonlinsolve: nonlinear substitution has an unresolved solution set');
   };
-  const solutions = solveRemaining(system, symbols, symbols);
-  const accepted = new Map<string, Expr[]>();
-  for (const values of solutions) {
-    if (values.some((v) => some(v, (t) => t instanceof Special))) continue;
+  const solutions = solveRemaining(system, symbols, symbols).filter(isFiniteTuple);
+  const withExclusions = solutions.map((values) => {
     const mapping = symbols.map((s, i): [Expr, Expr] => [s, at(values, i)]);
     const forbidden = [...exclusions, ...values.flatMap((v) => [...denoms(v, ...symbols)])].map((d) => cancel(xreplace(d, mapping)));
-    if (forbidden.some((d) => d.equals(S.Zero))) continue;
+    return { values, forbidden };
+  });
+  const admissible = withExclusions.filter(({ forbidden }) => !forbidden.some((d) => d.equals(S.Zero)));
+  const accepted = new Map<string, Expr[]>();
+  for (const { values, forbidden } of admissible) {
     const row = values.map((v) => {
       if (!(v instanceof Sym) || !symbols.some((s) => s.equals(v))) return v;
       const excluded = forbidden.filter((d) => d.has(v) && symbols.every((s) => s.equals(v) || !d.has(s))).map((d) => solveset(d, v));
