@@ -1,4 +1,10 @@
 {
+  "sympy.assumptions.tests.test_query:test_custom_AskHandler:2461: assert ask(Q.mersenne(7))": "Python test class sympy.assumptions.tests.test_query.test_custom_AskHandler.<locals>.MersenneHandler requires Python method execution",
+  "sympy.assumptions.tests.test_query:test_custom_AskHandler:2480: assert ask(Q.mersenne(7))": "Python test class sympy.assumptions.tests.test_query.test_custom_AskHandler.<locals>.MersennePredicate requires Python method execution",
+  "sympy.assumptions.tests.test_query:test_key_extensibility:2215: assert ask(Q.my_key(x)) is True": "Python test class sympy.assumptions.tests.test_query.test_key_extensibility.<locals>.MyAskHandler requires Python method execution",
+  "sympy.assumptions.tests.test_query:test_key_extensibility:2234: assert ask(Q.my_key(x)) is True": "Python test class sympy.assumptions.tests.test_query.test_key_extensibility.<locals>.MyPredicate requires Python method execution",
+  "sympy.assumptions.tests.test_query:test_polyadic_predicate:2507: assert ask(Q.sexyprime(5, 11))": "Python test class sympy.assumptions.tests.test_query.test_polyadic_predicate.<locals>.SexyPredicate requires Python method execution",
+  "sympy.assumptions.tests.test_query:test_polyadic_predicate:2508: assert ask(Q.sexyprime(7, 13, 19))": "Python test class sympy.assumptions.tests.test_query.test_polyadic_predicate.<locals>.SexyPredicate requires Python method execution",
   "sympy.core.tests.test_arit:test_issue_3531:1641: assert sympify(1)/MightyNumeric((1, 2)) == \"something\"": "Python test class sympy.core.tests.test_arit.test_issue_3531.<locals>.MightyNumeric requires Python method execution",
   "sympy.core.tests.test_basic:test_equality:96: assert b == bar": "Python test class sympy.core.tests.test_basic.test_equality.<locals>.Bar requires Python method execution",
   "sympy.core.tests.test_containers:test_Tuple_concatenation:65: assert Tuple(1, 2) + Tuple2(3, 4) == Tuple(1, 2, 1, 2, 3, 4)": "Python test class sympy.core.tests.test_containers.test_Tuple_concatenation.<locals>.Tuple2 requires Python method execution",

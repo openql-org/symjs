@@ -233,7 +233,7 @@ const CASES: readonly Case[] = [
   ["ask", "Q.complex(x**y)", "Q.complex(x) & Q.complex(y) & Q.positive(x)", "true"],
   ["ask", "Q.complex(x**y)", "True", "unknown"],
   ["ask", "Q.complex(sin(x))", "Q.complex(x)", "true"],
-  ["ask", "Q.complex(sin(x))", "True", "unknown"],  // SymPy 1.14: true (SymPy answers True for any argument; x may be infinite)
+  ["ask", "Q.complex(sin(x))", "True", "true"],  // SymPy's handler: sin and cos are complex for any argument
   ["ask", "Q.complex(gamma(x))", "Q.complex(x)", "unknown"],
   ["ask", "Q.complex(exp(x))", "Q.complex(x)", "true"],
   ["ask", "Q.imaginary(2)", "True", "false"],
@@ -265,7 +265,7 @@ const CASES: readonly Case[] = [
   ["ask", "Q.finite(sin(x))", "Q.real(x)", "true"],
   ["ask", "Q.finite(Abs(x))", "Q.finite(x)", "true"],
   ["ask", "Q.finite(gamma(x))", "True", "unknown"],
-  ["ask", "Q.finite(sin(x))", "True", "unknown"],  // SymPy 1.14: true (SymPy answers True for any argument; x may be infinite)
+  ["ask", "Q.finite(sin(x))", "True", "true"],  // SymPy's handler: sin and cos are bounded for any argument
   ["ask", "Q.finite(oo)", "True", "false"],
   ["ask", "Q.finite(pi)", "True", "true"],
   ["ask", "Q.finite(x)", "Q.algebraic(x)", "true"],
@@ -756,7 +756,7 @@ it('tracks zero, sign and cancellation in finite scalar expressions', () => {
     ['ask', 'Q.finite((-2)**y)', 'Q.extended_negative(y)', 'true'],
     ['ask', 'Q.finite(2**y)', '~Q.finite(y) & Q.extended_positive(y)', 'false'],
     ['ask', 'Q.finite(x+y)', 'Q.negative_infinite(x) & Q.extended_negative(y)', 'false'],
-    ['ask', 'Q.finite(x+y)', '~Q.finite(x) & ~Q.finite(y) & ~Q.extended_positive(x) & ~Q.extended_positive(y)', 'unknown'],
+    ['ask', 'Q.finite(x+y)', '~Q.finite(x) & ~Q.finite(y) & ~Q.extended_positive(x) & ~Q.extended_positive(y)', 'false'],
     ['ask', 'Q.hermitian(I*x)', 'Q.real(x) & Q.nonzero(x)', 'false'],
     ['ask', 'Q.hermitian(I*x)', 'Q.real(x)', 'unknown'],
     ['ask', 'Q.antihermitian(x+y)', 'Q.imaginary(x) & Q.imaginary(y)', 'true'],
@@ -928,4 +928,32 @@ it('classifies unevaluated elementary functions at zero as rational and algebrai
   expect(sj.ask(sj.Q.rational(e))).toBe(true);
   expect(sj.ask(sj.Q.rational(t))).toBe(true);
   expect(sj.ask(sj.Q.algebraic(t))).toBe(true);
+});
+
+it('follows the SymPy handlers for finite, complex, prime and zero products', () => {
+  const [x, y] = sj.symbols('x y');
+  const Q = sj.Q;
+  const q = (name: string, ...args: sj.Expr[]) => (Q[name] as (...a: sj.Expr[]) => sj.Expr)(...args);
+  // sin and cos are bounded and complex for every argument
+  expect([sj.ask(q('finite', sj.sin(x))), sj.ask(q('finite', sj.cos(x)), sj.not(q('finite', x))), sj.ask(q('finite', sj.add(sj.cos(x), sj.sin(x))))]).toEqual([true, true, true]);
+  expect([sj.ask(q('complex', sj.sin(sj.add(sj.mul(2, x), 1)))), sj.ask(q('complex', sj.exp(x)))]).toEqual([true, true]);
+  // log is infinite at 0 and at an infinite argument only
+  expect(sj.ask(q('finite', sj.log(x)), sj.not(q('zero', x)))).toBe(true);
+  expect(sj.ask(q('finite', sj.log(x)), q('infinite', x))).toBe(false);
+  // a base of modulus at least 1 to an infinite power
+  expect(sj.ask(q('finite', sj.pow(2, x)), sj.not(q('finite', x)))).toBe(false);
+  // a sum: the terms that are not finite agree in sign
+  const sum = sj.add(x, y);
+  expect(sj.ask(q('finite', sum), sj.and(sj.not(q('finite', x)), sj.not(q('finite', y)), sj.not(q('extended_positive', x)), sj.not(q('extended_positive', y))))).toBe(false);
+  expect(sj.ask(q('finite', sum), sj.and(q('positive_infinite', x), sj.not(q('finite', y)), sj.not(q('extended_positive', y))))).toBe('unknown');
+  expect(sj.ask(q('finite', sum), sj.and(sj.not(q('extended_positive', x)), sj.not(q('finite', y)), sj.not(q('extended_positive', y))))).toBe(false);
+  // an exact number that is numerically an integer
+  const one = sj.add(sj.pow(sj.cos(1), 2), sj.pow(sj.sin(1), 2));
+  expect(sj.ask(q('prime', sj.add(sj.parse('12345678901234567890'), one)))).toBe(true);
+  expect(sj.ask(q('prime', sj.add(3, one)))).toBe(false);
+  expect(sj.ask(q('prime', sj.add(2, sj.cos(1))))).toBe(false);
+  expect(sj.ask(q('prime', sj.add(new sj.Float(2), one)))).toBe('unknown');
+  // a product is zero exactly when a factor is
+  expect(sj.ask(sj.or(q('zero', x), q('zero', y)), q('zero', sj.mul(x, y)))).toBe(true);
+  expect(sj.ask(q('zero', x), q('zero', sj.mul(x, y)))).toBe('unknown');
 });
