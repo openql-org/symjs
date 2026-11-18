@@ -247,3 +247,17 @@ describe('order of a sum of nonpositive terms', () => {
     expect(Gt(sj.Min(np, sj.symbol('r', { real: true })), 0)).toBe(S.false);
   });
 });
+
+it('orders tiny floating values using their exact binary significands', () => {
+  const tiny = new sj.Float({ man: 1n, exp: -2000n });
+  const twice = new sj.Float({ man: 1n, exp: -1999n });
+  expect(Lt(0, tiny)).toBe(S.true);
+  expect(Lt(tiny, twice)).toBe(S.true);
+  expect(Gt(twice, tiny)).toBe(S.true);
+  expect(Le(tiny, tiny)).toBe(S.true);
+  expect(Eq(new sj.Float(1.1), 2)).toBe(S.false);
+  expect(Ne(new sj.Float(2.1), 1)).toBe(S.true);
+  expect(Eq(new sj.Sym('zero', { zero: true }), 0)).toBe(S.true);
+  expect(Lt(x, y).func).toBe(Lt);
+  expect(Eq(pow(2, x), 0)).toBe(S.false);
+});

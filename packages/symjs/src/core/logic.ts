@@ -55,13 +55,14 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
       return byCmp((inf.name === 'oo' ? 1 : -1) * sgn);
     }
   }
+  if (!equality && isNum(lhs) && isNum(rhs)) return byCmp(numCmp(lhs, rhs));
   // equal sides (such as oo and oo, whose difference is nan)
   if (lhs.key === rhs.key) return byCmp(0);
   // a relation is not a number: Eq(Eq(F, G), C1) of the exact ODE solution stays unevaluated (SymPy)
   if (equality && (lhs instanceof Rel || rhs instanceof Rel)) return new Rel(op, lhs, rhs);
   const d = add(lhs, mul(-1, rhs));
   if (d instanceof Rational) return byCmp(numCmp(d, S.Zero));
-  if (d instanceof Float) return byCmp(Math.sign(d.value));
+  if (d instanceof Float) return byCmp(numCmp(d, S.Zero));
   // the difference is oo or -oo for oo against a finite number (SymPy Lt(-oo, oo) is True)
   if (isSpecial('oo')(d) || isSpecial('-oo')(d)) return byCmp(isSpecial('oo')(d) ? 1 : -1);
   // zoo differs from every finite number and from oo (the difference is zoo or nan)

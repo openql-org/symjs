@@ -12,7 +12,7 @@
 import { at, defined, first, last } from '../../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../../core/assumptions';
 import type { ExprLike, FnName } from '../../core/nodes';
-import { Dummy, Expr, Fn, Pow, Rational, S, Special, impl, registerFunctionHeads } from '../../core/nodes';
+import { Dummy, Expr, Float, Fn, Pow, Rational, S, Special, Sym, impl, registerFunctionHeads } from '../../core/nodes';
 import { AccumBounds } from '../../core/accumbounds';
 import { Product } from '../../core/concrete';
 import { add, mul, pow, sympify } from '../../core/ops';
@@ -24,6 +24,7 @@ import { rel } from '../../core/logic';
 import type { RelOp } from '../../core/nodes';
 import { isprime as ntheoryIsprime } from '../../ntheory/primetest';
 import type { IntLike } from '../../ntheory/intutil';
+import { primepiInt } from '../../ntheory/generate';
 import { asInt as intOf, invert } from '../../ntheory/intutil';
 import { multisetPartitionsTaocp } from '../../utilities/enumerative';
 import { valueKey } from '../../utilities/values';
@@ -226,11 +227,15 @@ function carmichaelLambda(n: bigint): bigint {
   return l;
 }
 
-function primepi(n: bigint): bigint {
-  let c = 0n;
-  for (let i = 2n; i <= n; i++) if (isprime(i)) c++;
-  return c;
+/** Validate the domain shared by multiplicative arithmetic functions. */
+function positiveInteger(n: Expr): void {
+  if (isIntegerQ(n) === false) throw new TypeError('argument must be an integer');
+  if (isPositive(n) === false || (n instanceof Sym && n.assumptions.positive === false)) throw new RangeError('argument must be positive');
 }
+
+const oddArgument = (n: Expr): boolean => (n instanceof Sym && n.assumptions.odd === true) || isIntegerQ(mul(add(n, -1), R(1, 2))) === true;
+
+const primeArgument = (n: Expr): boolean => n instanceof Sym && n.assumptions.prime === true;
 
 // ---------------------------------------------------------------------------
 // evaluators
@@ -240,13 +245,15 @@ const small = (n: bigint) => n >= 0n && n <= 5000n;
 
 const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   bernoulli: (n, x?: Expr) => {
+    if (x instanceof Rational && x.isOne) return fn('bernoulli', [n]);
+    if (x === undefined && oddArgument(n) && isPositive(add(n, -1)) === true) return S.Zero;
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
     if (x !== undefined) return small(k) ? bernoulliPoly(Number(k), x) : undefined;
-    if (k > 1n && k % 2n === 1n) return S.Zero;
     return small(k) ? bernoulliPlus(Number(k)) : undefined;
   },
   euler: (n, x?: Expr) => {
+    if (x === undefined && oddArgument(n) && isPositive(n) === true) return S.Zero;
     // SymPy euler.eval: euler(-1) = pi/2 and euler(-1, x) = digamma((x + 1)/2) - digamma(x/2)
     if (n instanceof Rational && n.p === -1n && n.q === 1n) {
       return x === undefined ? mul(R(1, 2), S.Pi) : add(fn('polygamma', [0, mul(add(x, 1), R(1, 2))]), mul(-1, fn('polygamma', [0, mul(x, R(1, 2))])));
@@ -260,7 +267,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     const k = asInt(n);
     if (k === undefined) {
       // genocchi(n) = 0 for odd n > 1
-      if (x === undefined && isIntegerQ(mul(add(n, -1), R(1, 2))) === true && isPositive(add(n, -1)) === true) return S.Zero;
+      if (x === undefined && oddArgument(n) && isPositive(add(n, -1)) === true) return S.Zero;
       return undefined;
     }
     if (k < 0n) return undefined;
@@ -272,6 +279,11 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     return mul(2, add(1, mul(-1, R(2n ** k))), bernoulliPlus(kk));
   },
   bell: (n, a?: Expr, ...rest: Expr[]) => {
+    if (n === S.Infinity) {
+      if (a !== undefined) throw new RangeError('Bell polynomial requires a finite index');
+      return S.Infinity;
+    }
+    if (isIntegerQ(n) === false || isNegative(n) === true) throw new RangeError('bell requires a nonnegative integer');
     const b = rest.length ? rest[0] : undefined;
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
@@ -303,6 +315,8 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     return R(fibNumber(k + 1n) + fibNumber(k - 1n));
   },
   tribonacci: (n, x?: Expr) => {
+    if (n === S.Infinity) return S.Infinity;
+    if (isNegative(n) === true && isIntegerQ(n) === true) throw new RangeError('tribonacci requires a nonnegative integer');
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
     if (x !== undefined) return tribPoly(Number(k), x);
@@ -311,20 +325,27 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     return R(k === 0n ? a : k === 1n ? b : c);
   },
   partition: (n) => {
+    if (isIntegerQ(n) === false) throw new TypeError('partition requires an integer');
     const k = asInt(n);
     if (k === undefined) return isIntegerQ(n) === true && isNegative(n) === true ? S.Zero : undefined;
     if (k < 0n) return S.Zero;
     return R(partitionNumber(Number(k)));
   },
   totient: (n) => {
+    positiveInteger(n);
+    if (primeArgument(n)) return add(n, -1);
     const k = asInt(n);
     return k !== undefined && k > 0n ? R(totient(k)) : undefined;
   },
   reduced_totient: (n) => {
+    positiveInteger(n);
+    if (primeArgument(n)) return add(n, -1);
     const k = asInt(n);
     return k !== undefined && k > 0n ? R(carmichaelLambda(k)) : undefined;
   },
   mobius: (n) => {
+    positiveInteger(n);
+    if (primeArgument(n)) return R(-1);
     const k = asInt(n);
     if (k === undefined) {
       // a square factor makes mobius of a positive integer vanish: mobius(4*n) = 0, and
@@ -342,7 +363,6 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
       }
       return zero ? S.Zero : undefined;
     }
-    if (k <= 0n) throw new RangeError('mobius: n should be a positive integer');
     let r = 1n;
     for (const e of factorInt(k).values()) {
       if (e > 1n) return S.Zero;
@@ -351,8 +371,15 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     return R(r);
   },
   divisor_sigma: (n, kIn?: Expr) => {
+    positiveInteger(n);
+    const order = kIn ?? S.One;
+    if (isIntegerQ(order) === false) throw new TypeError('order must be an integer');
+    if (isNegative(order) === true) throw new RangeError('order must be nonnegative');
+    if (primeArgument(n)) return add(1, pow(n, order));
     const m = asInt(n);
-    const k = kIn === undefined ? 1n : asInt(kIn);
+    const k = asInt(order);
+    if (m === 1n) return S.One;
+    if (m !== undefined && k === undefined) return mul(...[...factorInt(m)].map(([p, e]) => add(...Array.from({ length: Number(e + 1n) }, (_, i) => pow(R(p), mul(order, i))))));
     if (m === undefined || k === undefined || m <= 0n) return undefined;
     let r = 1n;
     for (const [p, e] of factorInt(m)) {
@@ -366,18 +393,24 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     return R(r);
   },
   udivisor_sigma: (n, kIn?: Expr) => {
+    positiveInteger(n);
     const k = kIn ?? S.One;
     if (isIntegerQ(n) === false || isIntegerQ(k) === false) throw new TypeError('udivisor_sigma requires integer arguments');
     if (isPositive(n) === false || isNegative(k) === true) throw new RangeError('udivisor_sigma requires n > 0 and k >= 0');
+    if (primeArgument(n)) return add(1, pow(n, k));
     const m = asInt(n);
     if (m === undefined) return undefined;
     return mul(...[...factorInt(m)].map(([p, e]) => add(1, pow(R(p), mul(k, R(e))))));
   },
   primenu: (n) => {
+    positiveInteger(n);
+    if (primeArgument(n)) return S.One;
     const k = asInt(n);
     return k !== undefined && k > 0n ? R(k === 1n ? 0 : factorInt(k).size) : undefined;
   },
   primeomega: (n) => {
+    positiveInteger(n);
+    if (primeArgument(n)) return S.One;
     const k = asInt(n);
     if (k === undefined || k <= 0n) return undefined;
     let c = 0n;
@@ -385,8 +418,12 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     return R(c);
   },
   primepi: (n) => {
-    const k = asInt(n);
-    return k !== undefined ? R(k < 2n ? 0n : primepi(k)) : undefined;
+    if (n === S.Infinity) return S.Infinity;
+    if (n === S.NegativeInfinity) return S.Zero;
+    if (isRealQ(n) === false) throw new TypeError('primepi requires a real argument');
+    if (rel('Lt', n, 2) === S.true) return S.Zero;
+    const value = n instanceof Rational ? n.p / n.q : n instanceof Float ? BigInt(Math.trunc(n.value)) : undefined;
+    return value === undefined ? undefined : R(primepiInt(value));
   },
   multigamma: (x, p) => {
     const k = asInt(p);
@@ -532,8 +569,14 @@ export const fibonacci = (n: ExprLike, x?: ExprLike): Expr => fn('fibonacci', x 
 export const lucas = (n: ExprLike): Expr => fn('lucas', [n]);
 export const tribonacci = (n: ExprLike, x?: ExprLike): Expr => fn('tribonacci', x === undefined ? [n] : [n, x]);
 export const partition = (n: ExprLike): Expr => fn('partition', [n]);
-export const totientFn = (n: ExprLike): Expr => fn('totient', [n]);
-export const reducedTotient = (n: ExprLike): Expr => fn('reduced_totient', [n]);
+/** An integer supplied directly or by its prime factorization. */
+type FactoredInteger = ExprLike | ReadonlyMap<ExprLike, ExprLike>;
+function factoredExpr(n: FactoredInteger): Expr {
+  if (typeof n === 'object' && !(n instanceof Expr)) return mul(...[...n].map(([p, k]) => pow(p, k)));
+  return sympify(n);
+}
+export const totientFn = (n: FactoredInteger): Expr => fn('totient', [factoredExpr(n)]);
+export const reducedTotient = (n: FactoredInteger): Expr => fn('reduced_totient', [factoredExpr(n)]);
 export const mobius = (n: ExprLike): Expr => fn('mobius', [n]);
 export const divisorSigma = (n: ExprLike, k?: ExprLike): Expr => fn('divisor_sigma', k === undefined ? [n] : [n, k]);
 /** Sum of k-th powers of the unitary divisors of n. */
@@ -552,6 +595,7 @@ export const frac = (x: ExprLike): Expr => fn('frac', [x]);
  * @experimental May change in a minor release.
  */
 export function firstMotzkins(n: number): bigint[] {
+  if (!Number.isInteger(n) || n < 0) throw new RangeError('count must be a nonnegative integer');
   const m: bigint[] = [];
   let a = 1n; // M(k - 2)
   let b = 1n; // M(k - 1)
@@ -573,6 +617,7 @@ export function firstMotzkins(n: number): bigint[] {
  * @experimental May change in a minor release.
  */
 export function motzkinNumbersInRange(x: bigint, y: bigint): bigint[] {
+  if (x < 0n || y < x) throw new RangeError('invalid Motzkin range');
   const out: bigint[] = [];
   let a = 1n;
   let b = 1n;
@@ -870,6 +915,7 @@ export function nD(i?: CountingInput, opts: { brute?: boolean; n?: IntLike; m?: 
 /** Number of partitions of a multiset; an integer denotes identical items. */
 export function nT(n: CountingInput, k?: IntLike): bigint {
   const counts = histogram(n, true).filter((v) => v > 0);
+  if (k !== undefined && intOf(k) < 0n) return 0n;
   const parts = k === undefined ? undefined : countSize(k);
   if (counts.length === 0) return parts === undefined || parts === 0 ? 1n : 0n;
   let result = 0n;

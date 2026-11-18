@@ -442,7 +442,7 @@ const REL_OPS: Record<string, sj.RelOp> = {
   GreaterThan: 'Ge',
 };
 
-const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
+const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'udivisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
 /** Functions of the zeta, beta, elliptic and Appell families (functions/special/zetafunctions.ts, special.ts, ellipticintegrals.ts, hyper.ts). */
 const ZETA_FAMILY_NAMES = ['polylog', 'lerchphi', 'dirichlet_eta', 'riemann_xi', 'stieltjes', 'betainc', 'betainc_regularized', 'elliptic_k', 'elliptic_e', 'elliptic_f', 'elliptic_pi', 'appellf1'] as const;
 const definedOr = <T>(v: T | undefined, what: string): T => {
@@ -1479,10 +1479,7 @@ function polyFactorial(args: unknown[], kw: Record<string, unknown>, dir: 1 | -1
   noKw(kw);
   const [p, k] = args;
   if (!(p instanceof sj.Poly)) return sj.fn(dir === 1 ? 'rf' : 'ff', args.map(asExpr));
-  const g = p.gens[0]!;
-  let acc: Expr = S.One;
-  for (let i = 0; i < Number((k as sj.Rational).p); i++) acc = sj.mul(acc, sj.xreplace(p.asExpr(), [[g, sj.add(g, dir * i)]]));
-  return sj.Poly.from(sj.expand(acc), p.gens);
+  return dir === 1 ? sj.rf(p, asExpr(k)) : sj.ff(p, asExpr(k));
 }
 /** eps as an exact rational (SymPy QQ.convert of a float such as 1e-2). */
 function epsArg(v: unknown): sj.Rational | undefined {
@@ -1936,7 +1933,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return matchDict(sj.match(asExpr(args[0]), asExpr(self)));
   },
   legendre_symbol: (args, kw) => (noKw(kw), sj.Rational.of(sj.legendreSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p))),
-  motzkin: (args, kw) => (noKw(kw), sj.Rational.of(sj.motzkin(Number((args[0] as sj.Rational).p)))),
+  motzkin: (args, kw) => (noKw(kw), sj.Rational.of(sj.motzkin(asExpr(args[0]).toNumber()))),
   andre: (args, kw) => (noKw(kw), sj.Rational.of(sj.andre(Number((args[0] as sj.Rational).p)))),
   nD: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['i', 'brute', 'n', 'm'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -2586,6 +2583,8 @@ export const ADAPTERS: Record<string, Adapter> = {
       }) as Adapter,
     ]),
   ),
+  totient: (args, kw) => (noKw(kw), sj.totient(args[0] instanceof JsDict ? new Map(args[0].entries.map(([p, k]) => [asExpr(p), asExpr(k)])) : args[0] instanceof Map ? args[0] : asExpr(args[0]))),
+  reduced_totient: (args, kw) => (noKw(kw), sj.reducedTotient(args[0] instanceof JsDict ? new Map(args[0].entries.map(([p, k]) => [asExpr(p), asExpr(k)])) : args[0] instanceof Map ? args[0] : asExpr(args[0]))),
   ff: (args, kw) => polyFactorial(args, kw, -1),
   rf: (args, kw) => polyFactorial(args, kw, 1),
   digamma: (args, kw) => {
@@ -2597,8 +2596,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.trigamma(asExpr(args[0]), { evaluate: kw['evaluate'] !== false });
   },
   E1: exprFn(sj.E1),
-  RisingFactorial: (args, kw) => (noKw(kw), sj.rf(asExpr(args[0]), asExpr(args[1]))),
-  FallingFactorial: (args, kw) => (noKw(kw), sj.ff(asExpr(args[0]), asExpr(args[1]))),
+  RisingFactorial: (args, kw) => polyFactorial(args, kw, 1),
+  FallingFactorial: (args, kw) => polyFactorial(args, kw, -1),
   expand_func: exprFn(sj.expandFunc),
   conjugate: exprFn(sj.conjugate),
   exp: (args,kw) => (noKw(kw), args[0] instanceof Matrix ? sj.matrixExp(args[0]) : sj.exp(asExpr(args[0]))),
@@ -2848,7 +2847,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.find_first_n_motzkins': (args, kw) => {
     noKw(kw);
-    return new JsList(sj.firstMotzkins(Number((args[0] as sj.Rational).p)).map((v) => sj.Rational.of(v)));
+    return new JsList(sj.firstMotzkins(asExpr(args[0]).toNumber()).map((v) => sj.Rational.of(v)));
   },
   '.factors': (args, kw, self) => {
     noKw(kw);
@@ -4015,6 +4014,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.eval': (args, kw, self) => {
     noKw(kw);
+    if (self instanceof FnClass && self.name === 'motzkin') return sj.Rational.of(sj.motzkin(asExpr(args[0]).toNumber()));
     const p = asPoly(self);
     if (args[0] instanceof JsDict) return p.evalMany(args[0].entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
     if (args[0] instanceof JsTuple) return p.evalMany(args[0].items.map((v, i) => [p.gens[i]!, asExpr(v)] as const));
@@ -5235,7 +5235,7 @@ function autoAdapter(c: Case): Adapter | undefined {
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {
     // the evaluating constructors of the arithmetic classes (Python calls the class: Pow(b, e))
-    const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow };
+    const constructors: Readonly<Record<string, unknown>> = { Add: sj.add, Mul: sj.mul, Pow: sj.pow, RisingFactorial: function RisingFactorial(x: Expr, k: Expr) { return sj.rf(x, k); }, FallingFactorial: function FallingFactorial(x: Expr, k: Expr) { return sj.ff(x, k); } };
     if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return constructors[x.name] ?? (sj as unknown as Record<string, unknown>)[REL_OPS[x.name] ?? camel(x.name)];
     const headName = String(c.args?.[0]?.['name']);
     if (c.fn === 'unchanged' && (x instanceof JsTuple || x instanceof JsList) && ['Eq', 'Ne', 'Lt', 'Le', 'Gt', 'Ge'].includes(REL_OPS[headName] ?? headName)) return expressionContainer(x);
