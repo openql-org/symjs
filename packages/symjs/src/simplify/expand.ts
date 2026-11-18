@@ -525,6 +525,14 @@ export function asRealImagExpand(e: Expr): [Expr, Expr] {
         const inv = pow(add(pow(real, 2), pow(imaginary, 2)), -1);
         return [mul(real, inv), mul(-1, imaginary, inv)];
       }
+      case 'log': {
+        // SymPy log.as_real_imag: the logarithm of the modulus and the argument
+        const modulus = fn('abs', [a]);
+        if (modulus.key === a.key) return [e, S.Zero];
+        const explicit = modulus instanceof Fn && modulus.name === 'abs' ? pow(add(pow(ra, 2), pow(ia, 2)), S.Half) : modulus;
+        const angle = fn('arg', [modulus instanceof Fn && modulus.name === 'abs' ? add(ra, mul(S.I, ia)) : a]);
+        return [expand(fn('log', [explicit]), { basic: false, log: true, mul: false, multinomial: false, power_exp: false, power_base: false }), angle];
+      }
       case 'tan': {
         if (ia instanceof Rational && ia.isZero) return [tan(ra), S.Zero];
         const den = pow(add(cos(mul(2, ra)), cosh(mul(2, ia))), -1);

@@ -2192,7 +2192,15 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
       if (c === false) keep.push(x);
       else if (c === undefined) unknown.push(x);
     }
-    if (unknown.length) return union(finiteSet(...keep), new SetOp('Complement', [finiteSet(...unknown), b]));
+    if (unknown.length) {
+      // SymPy FiniteSet._complement: the elements of b that are elements of a are taken out of both; what is
+      // subtracted from the rest are the elements of b whose membership in a is open ({i, j, k} - {j} = {i, k})
+      const open = b instanceof FiniteSet ? finiteSet(...b.args.filter((y) => containsQ(a, y) === undefined)) : b;
+      if (open === EmptySet) return finiteSet(...keep, ...unknown);
+      // (a smaller difference is reduced again, as SymPy's Complement does)
+      const reduced = unknown.length < a.args.length || open.key !== b.key;
+      return union(finiteSet(...keep), reduced ? complement(finiteSet(...unknown), open) : new SetOp('Complement', [finiteSet(...unknown), open]));
+    }
     return finiteSet(...keep);
   }
   const pa = intervalParts(a);

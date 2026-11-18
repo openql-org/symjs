@@ -5,6 +5,7 @@
 
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
+import * as sj from '../../src';
 import { describe, expect, it } from 'vitest';
 import { DiracDelta, Heaviside, I, Sym, abs, add, expPolar, expand, expandComplex, expandLog, expandMultinomial, expandPowerBase, expandTrig, fn, mul, parse, pow, sstr, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
@@ -490,4 +491,19 @@ it('expands exponential sums, logarithmic products and complex hyperbolic functi
     expect(after.re).toBeCloseTo(before.re);
     expect(after.im).toBeCloseTo(before.im);
   }
+});
+
+it('expands a logarithm into the logarithm of the modulus and the argument (SymPy log.as_real_imag)', () => {
+  const x = new sj.Sym('x');
+  const p = new sj.Sym('p', { positive: true });
+  const c = (e: sj.Expr) => String(sj.expand(e, { complex: true }));
+  expect(c(sj.log(sj.add(3, sj.mul(4, sj.I))))).toBe('log(5) + I*atan(4/3)');
+  expect(c(sj.log(x))).toBe('log(re(x)**2 + im(x)**2)/2 + I*arg(re(x) + I*im(x))');
+  expect(c(sj.log(p))).toBe('log(p)');
+  expect(c(sj.log(sj.mul(-1, p)))).toBe('log(p) + I*pi');
+  expect(c(sj.log(sj.add(1, sj.I)))).toBe('log(2)/2 + I*pi/4');
+  // the log of a nonnegative argument is its own real part
+  const u = sj.add(sj.pow(sj.re(x), 2), sj.pow(sj.im(x), 2));
+  expect(String(sj.re(sj.log(u)))).toBe('log(re(x)**2 + im(x)**2)');
+  expect(String(sj.im(sj.log(u)))).toBe('0');
 });
