@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Expected solution families: SymPy 1.14 solvers.solveset.
 import { expect, it } from 'vitest';
-import { nonlinsolve, substitution, symbols, add, mul, pow, exp, sin, log, ImageSet, subs, S } from '../../src';
+import { nonlinsolve, substitution, symbols, parse, add, mul, pow, exp, sin, log, ImageSet, subs, S } from '../../src';
 const [x, y, z] = symbols('x y z');
 it('returns all complex exponential branches through the public API', () => {
   const eqs = [add(exp(x), mul(-1, sin(y))), add(pow(y, 2), -4)];
@@ -175,4 +175,21 @@ it('retains unresolved decompositions and inversion problems', () => {
   expect(sj.invertReal(pow(x, S.I), 1, x).length).toBe(2);
   expect(nonlinsolve([add(pow(y, 2), -1), add(y, -2)], [x, y])).toEqual([]);
   expect(() => nonlinsolve([add(pow(y, 2), -1), add(x, sin(x))], [x, y])).toThrow(sj.NotImplementedError);
+});
+
+it('eliminates a variable in an underdetermined exponential system', () => {
+  expect(nonlinsolve([parse('2**x + 2**y - 3')], [x, y]).map(String)).toEqual(['log(3 - 2**y)/log(2),y']);
+});
+
+it('keeps free variables when known assignments resolve every equation', () => {
+  expect(substitution([add(x, -1)], [x, y], [new Map([[x, 1]])]).map(String)).toEqual(['1,y']);
+  expect(substitution([], [x, y], [new Map([[x, 1]])])).toEqual([]);
+});
+
+it('excludes poles from free parameters introduced by finite substitution', () => {
+  const solutions = nonlinsolve([parse('x**3*y**3 - 1/2')], [x, y]);
+  expect(solutions).toHaveLength(3);
+  expect(solutions.map((solution) => String(solution[1]))).toEqual([
+    'Complement({y}, {0})', 'Complement({y}, {0})', 'Complement({y}, {0})',
+  ]);
 });

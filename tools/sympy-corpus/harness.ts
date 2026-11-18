@@ -2387,11 +2387,23 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), expressionContainer(args[0]))),
   solveset: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
-    const dom = (kw['domain'] ?? args[2]) as sj.SetExpr | undefined;
+    for (const k of Object.keys(kw)) if (!['symbol', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const domain = kw['domain'] ?? args[2];
     const f = asExpr(args[0]);
-    const x = args[1] ? asSym(args[1]) : (sj.freeSymbols(f).values().next().value as Sym);
-    return sj.solveset(f, x, dom ?? sj.Complexes);
+    const symbol = kw['symbol'] ?? args[1];
+    return sj.solveset(f, symbol === undefined ? undefined : asExpr(symbol), domain === undefined ? sj.Complexes : asSet(domain));
+  },
+  solveset_real: (args, kw) => (noKw(kw), sj.solvesetReal(asExpr(args[0]), asExpr(args[1]))),
+  solveset_complex: (args, kw) => (noKw(kw), sj.solvesetComplex(asExpr(args[0]), asExpr(args[1]))),
+  linear_coeffs: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'dict') throw new Unsupported(`kwargs ${k}`);
+    const symbols = args.slice(1).map(asSym);
+    const coefficients = sj.linearCoeffs(asExpr(args[0]), ...symbols);
+    if (!kw['dict']) return new JsList(coefficients);
+    return new JsDict([...symbols, S.One].flatMap((symbol, i) => {
+      const coefficient = definedOr(coefficients[i], 'linear coefficient');
+      return coefficient.equals(S.Zero) ? [] : [[symbol, coefficient]];
+    }));
   },
   solve_univariate_inequality: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['relational', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -2421,7 +2433,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const a = args[0];
     const ineqs = a instanceof JsList || a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)];
-    const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : [];
+    const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : args[1] === undefined ? [] : [asSym(args[1])];
     return sj.reduceInequalities(ineqs, syms);
   },
   periodicity: (args, kw) => (noKw(kw), none(sj.periodicity(asExpr(args[0]), asSym(args[1])))),
@@ -3446,9 +3458,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   solve_poly_system: (args, kw) => polySystemSolutions(args, kw),
   solve_triangulated: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'extension' && k !== 'domain') throw new Unsupported(`kwargs ${k}`);
     // without extension only rational solutions are reported, with it all of them as CRootOf (SymPy)
-    const sols = polySystemSolutions(args, {}, !kw['extension']) as JsList;
+    const sols = polySystemSolutions(args, {}, !kw['extension'] && kw['domain'] === undefined) as JsList;
     if (!kw['extension']) return sols;
     const x0 = asSym(args[1]);
     const asRoot = (v: unknown): unknown => {

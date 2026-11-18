@@ -685,3 +685,35 @@ it('preserves both sides of integer relationals and restricts finite integer dom
     expect(() => solveset(p(source), x, Complexes)).toThrow(RangeError);
   }
 });
+
+describe('solveset input and domain handling', () => {
+  it('infers a single unknown and supports expression targets', () => {
+    expect(solveset(p('x - 2')).toString()).toBe('{2}');
+    expect(solveset(0, undefined, Reals)).toBe(Reals);
+    expect(() => solveset(p('x + y'))).toThrow(RangeError);
+    expect(solveset(p('sin(x) - cos(x)'), p('sin(x)')).toString()).toBe('{cos(x)}');
+  });
+
+  it('solves products and clears coupled real radicals', () => {
+    expect(solveset(p('(x + 2)*(exp(x) - 3)'), x, Reals).toString()).toBe('{-2, log(3)}');
+    expect(solveset(p('sqrt(2*x - 1) - sqrt(x - 4) - 2'), x, Reals).toString()).toBe('{5, 13}');
+    expect(solveset(p('sqrt(x - 3) - sqrt(x) - 3'), x, Reals)).toBe(sj.EmptySet);
+  });
+
+  it('preserves the first matching piece and tests its finite boundary', () => {
+    const piecewise = p('Piecewise((0, Eq(x, pi)), ((x - pi)/sin(x), True))');
+    expect(solveset(piecewise, x, Reals).toString()).toBe('{pi}');
+  });
+
+  it('orders indexed roots and keeps large logarithmic bounds exact', () => {
+    expect(Q.solveUnivariateInequality(Gt(p('x**7 - x - 2'), 0), x, { relational: false }).toString())
+      .toBe('Interval.open(CRootOf(x**7 - x - 2, 0), oo)');
+    expect(Q.reduceInequalities(p('log(x) < 1000'), [x]).toString()).toBe('(0 < x) & (x < exp(1000))');
+  });
+});
+
+it('solves affine congruences over the integers', () => {
+  expect(solveset(sj.Mod(add(mul(5, x), -8), 7).sub(3), x, Integers).toString()).toMatch(/7\*.* \+ 5/);
+  expect(solveset(sj.Mod(mul(2, x), 4).sub(1), x, Integers)).toBe(sj.EmptySet);
+  expect(solveset(sj.Mod(x, 3).sub(SS.I), x, Integers)).toBe(sj.EmptySet);
+});

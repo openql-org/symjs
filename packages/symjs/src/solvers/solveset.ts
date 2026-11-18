@@ -2,18 +2,19 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Ported from SymPy 1.14 (solvers/solveset.py), BSD-3-Clause; see LICENSE.
 
-import type { Expr, ExprLike, FnName, Sym } from '../core/nodes';
-import { Add, Constant, Fn, Mul, Pow, S, Special } from '../core/nodes';
+import type { Expr, ExprLike, FnName } from '../core/nodes';
+import { Add, Constant, Fn, Mul, Pow, S, Special, Sym } from '../core/nodes';
 import { isNegative, isNonNegative, isPositive } from '../core/assumptions';
 import { at, defined } from '../core/guard';
 import { add, mul, pow, sympify } from '../core/ops';
 import { fn, log } from '../functions/elementary/elementary';
-import { subs } from '../core/traverse';
+import { some, subs, xreplace } from '../core/traverse';
 import { NonlinearError, NotImplementedError } from '../core/errors';
 import { NoMatch, type NoMatchResult } from '../core/truth';
-import { Complexes, ConditionSet, EmptySet, FiniteSet, ImageSet, Interval, Reals, SetOp, type SetExpr, imageSet, intersection, union } from '../sets/sets';
+import { Complexes, ConditionSet, EmptySet, FiniteSet, ImageSet, Interval, Reals, SetOp, type SetExpr, complement, imageSet, intersection, union } from '../sets/sets';
 import { expand } from '../simplify/expand';
-import { asEquation, nonlinsolve as finiteNonlinsolve } from './solve';
+import { cancel } from '../simplify/rational';
+import { asEquation, denoms, nonlinsolve as finiteNonlinsolve } from './solve';
 import { periodicity, solveset } from './inequalities';
 import { decompogen } from './decompogen';
 import { functionRange } from './calculusutil';
@@ -47,16 +48,16 @@ export function linearCoeffs(eq: ExprLike, ...syms: Sym[]): Expr[] {
     }
     throw new NonlinearError('linearCoeffs: nonlinear in given generators');
   };
-  return visit(sympify(eq));
+  return visit(asEquation(eq));
 }
 
 /** Solve over the real domain. */
-export function solvesetReal(f: ExprLike, symbol: Sym): SetExpr {
+export function solvesetReal(f: ExprLike, symbol: ExprLike): SetExpr {
   return solveset(f, symbol, Reals);
 }
 
 /** Solve over the complex domain. */
-export function solvesetComplex(f: ExprLike, symbol: Sym): SetExpr {
+export function solvesetComplex(f: ExprLike, symbol: ExprLike): SetExpr {
   return solveset(f, symbol, Complexes);
 }
 
@@ -87,7 +88,7 @@ export function solveDecomposition(f: ExprLike, symbol: Sym, domain: SetExpr): S
 
 function invert(f: ExprLike, y: ExprLike, x: Sym, domain: SetExpr): [Expr, SetExpr] {
   const expression = sympify(f), value = sympify(y);
-  if (!expression.has(x) || value.has(x)) throw new RangeError('invert: f must depend on x and y must be independent of x');
+  if (![...expression.freeSymbols()].some((s) => s.equals(x)) || [...value.freeSymbols()].some((s) => s.equals(x))) throw new RangeError('invert: f must depend on x and y must be independent of x');
   const solutions = solveset(add(expression, mul(-1, value)), x, domain);
   return solutions instanceof ConditionSet ? [expression, FiniteSet.of(value)] : [x, solutions];
 }
@@ -100,7 +101,7 @@ export function invertComplex(f: ExprLike, y: ExprLike, x: Sym): [Expr, SetExpr]
 /** Invert f(x) = y over the real numbers, retaining unresolved equations. */
 export function invertReal(f: ExprLike, y: ExprLike, x: Sym): [Expr, SetExpr] {
   const expression = sympify(f), value = sympify(y);
-  if (!expression.has(x) || value.has(x)) throw new RangeError('invert: f must depend on x and y must be independent of x');
+  if (![...expression.freeSymbols()].some((s) => s.equals(x)) || [...value.freeSymbols()].some((s) => s.equals(x))) throw new RangeError('invert: f must depend on x and y must be independent of x');
   const visit = (e: Expr, values: readonly Expr[]): [Expr, SetExpr] => {
     if (e.equals(x) || values.length === 0) {
       const known = values.filter((v) => v instanceof Fn && v.name === 'acsch' && (isPositive(at(v.args, 0)) === true || isNegative(at(v.args, 0)) === true));
@@ -208,7 +209,54 @@ export function nonlinsolve(system: readonly ExprLike[], symbols: readonly Sym[]
       }
     }
   }
-  return finiteNonlinsolve(eqs, symbols);
+  try {
+    return finiteNonlinsolve(eqs, symbols);
+  } catch (error) {
+    if (!(error instanceof NotImplementedError)) throw error;
+    return substituteFinite(eqs, symbols);
+  }
+}
+
+/** Eliminate one unknown at a time using the finite branches of solveset. */
+function substituteFinite(system: readonly Expr[], symbols: readonly Sym[]): Expr[][] {
+  const exclusions = system.flatMap((e) => [...denoms(e, ...symbols)]);
+  const solveRemaining = (equations: readonly Expr[], remaining: readonly Sym[], values: readonly Expr[]): Expr[][] => {
+    const pending = equations.filter((e) => !e.equals(S.Zero));
+    if (!pending.length) return [[...values]];
+    const withUnknowns = pending.map((e) => ({ e, vars: remaining.filter((s) => e.has(s)) }));
+    if (withUnknowns.some(({ vars }) => !vars.length)) return [];
+    withUnknowns.sort((a, b) => a.vars.length - b.vars.length);
+    for (const { e, vars } of withUnknowns) {
+      for (const symbol of vars) {
+        const complex = solveset(e, symbol, Complexes);
+        if (complex === EmptySet) return [];
+        if (!(complex instanceof FiniteSet)) continue;
+        const real = solveset(e, symbol, Reals);
+        const candidates = new Map([...complex.args, ...(real instanceof FiniteSet ? real.args : [])].map((r) => [r.key, r]));
+        return [...candidates.values()].flatMap((root) => {
+          const replacement = [[symbol, root]] as const;
+          const next = pending.filter((f) => f !== e).map((f) => cancel(xreplace(f, replacement)));
+          return solveRemaining(next, remaining.filter((s) => !s.equals(symbol)), values.map((v) => xreplace(v, replacement)));
+        });
+      }
+    }
+    throw new NotImplementedError('nonlinsolve: nonlinear substitution has an unresolved solution set');
+  };
+  const solutions = solveRemaining(system, symbols, symbols);
+  const accepted = new Map<string, Expr[]>();
+  for (const values of solutions) {
+    if (values.some((v) => some(v, (t) => t instanceof Special))) continue;
+    const mapping = symbols.map((s, i): [Expr, Expr] => [s, at(values, i)]);
+    const forbidden = [...exclusions, ...values.flatMap((v) => [...denoms(v, ...symbols)])].map((d) => cancel(xreplace(d, mapping)));
+    if (forbidden.some((d) => d.equals(S.Zero))) continue;
+    const row = values.map((v) => {
+      if (!(v instanceof Sym) || !symbols.some((s) => s.equals(v))) return v;
+      const excluded = forbidden.filter((d) => d.has(v) && symbols.every((s) => s.equals(v) || !d.has(s))).map((d) => solveset(d, v));
+      return excluded.some((set) => set !== EmptySet) ? complement(FiniteSet.of(v), union(...excluded)) : v;
+    });
+    accepted.set(JSON.stringify(row.map((v) => v.key)), row);
+  }
+  return [...accepted.values()];
 }
 
 /** SymPy substitution: extend known assignments by solving the remaining system. */
@@ -225,7 +273,8 @@ export function substitution(
     const entries = [...known].map(([k, v]): [Expr, Expr] => [k, sympify(v)]);
     const pending = system.map((e) => expand(subs(asEquation(e), entries))).filter((e) => !e.equals(S.Zero));
     const free = symbols.filter((v) => !entries.some(([k]) => k.equals(v)));
-    const solutions = free.length ? nonlinsolve(pending, free) : pending.length ? [] : [[]];
+    if (system.length === 0) continue;
+    const solutions = pending.length ? free.length ? nonlinsolve(pending, free) : [] : [free];
     for (const solution of solutions) {
       const assignments: [Expr, Expr][] = [...entries, ...free.map((v, i): [Expr, Expr] => [v, at(solution, i)])];
       if (exclude.some((e) => expand(subs(sympify(e), assignments)).equals(S.Zero))) continue;
