@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /** Differential geometry on coordinate patches (SymPy 1.14 diffgeom.py). */
+import { splitSuperSub } from '../printing/conventions';
 import { Add, Mul, Pow, Expr, ExtensionExpr, Sym, Dummy, S } from '../core/nodes';
 import type { ExprLike } from '../core/nodes';
 import { Matrix } from '../matrices/matrix';
@@ -84,7 +85,8 @@ export class Manifold extends ExtensionExpr {
     return this.name;
   }
   override printLatex(): string {
-    return this.name;
+    const [name, supers, subs] = splitSuperSub(this.name);
+    return `\\text{${name}}` + (supers.length ? `^{${supers.join(' ')}}` : '') + (subs.length ? `_{${subs.join(' ')}}` : '');
   }
 }
 
@@ -109,8 +111,8 @@ export class Patch extends ExtensionExpr {
   override printStr(): string {
     return this.name;
   }
-  override printLatex(): string {
-    return this.name;
+  override printLatex(print: (e: Expr) => string): string {
+    return `\\text{${print(new Sym(this.name))}}_{${print(this.manifold)}}`;
   }
 }
 
@@ -194,8 +196,8 @@ export class CoordSystem extends ExtensionExpr {
   override printStr(): string {
     return this.name;
   }
-  override printLatex(): string {
-    return this.name;
+  override printLatex(print: (e: Expr) => string): string {
+    return `\\text{${print(new Sym(this.name))}}^{\\text{${print(new Sym(this.patch.name))}}}_{${print(this.manifold)}}`;
   }
   transformation(to: CoordSystem): Transformation {
     return new Transformation(this.coordinateNames, this.transform(to, this.coordinateNames));
@@ -553,7 +555,7 @@ class DifferentialNode extends ExtensionExpr {
   }
   override printLatex(print: (e: Expr) => string): string {
     return this.formField instanceof BaseScalarField
-      ? `\\operatorname{d}${print(this.formField)}`
+      ? `\\operatorname{d}${print(at(this.formField.coordSys.coordinateNames, this.formField.index))}`
       : `\\operatorname{d}\\left(${print(this.formField)}\\right)`;
   }
   call(...fields: (ExprLike | null)[]): Expr {

@@ -72,3 +72,31 @@ it('provides the fallback printer and validates settings', () => {
   expect(printer.emptyPrinter(32)).toBe('32');
   expect(() => sstr(x, { unknown: true } as sj.SstrOptions)).toThrow("Unknown setting 'unknown'.");
 });
+
+it('preserves scalar types, ordering and precision inside containers', () => {
+  expect(sj.sstrrepr([new sj.Str('x'), 'x'])).toBe("[Str('x'), 'x']");
+  expect(sstr(sj.Q.even)).toBe('Q.even');
+  expect(sstr({ frozenItems: new Set([sj.pow(x, 2), x]) })).toBe('frozenset({x, x**2})');
+  expect(sstr({ frozenItems: new Set() })).toBe('frozenset()');
+  expect(sstr(new Set(['b', 'c']))).toBe('{b, c}');
+  expect(sstr(sj.rational(7, 3), { sympyIntegers: true })).toBe('S(7)/3');
+  expect(sstr(sj.rational(2), { sympyIntegers: true })).toBe('S(2)');
+  expect(sstr(new sj.Float(100), { fullPrec: false, min: -2, max: 2 })).toBe('1.0e+2');
+  expect(sstr(sj.SymFunction('f')(new sj.Float(1.329294)), { dps: 3 })).toBe('f(1.33)');
+});
+
+it('prints polynomials and fraction field elements over their coefficient domains', () => {
+  const ring = new sj.PolyRing([x], sj.QQ_I);
+  expect(sstr(ring.zero)).toBe('(0 + 0*I)');
+  expect(sstr(ring.fromExpr(sj.add(sj.mul(sj.I, sj.pow(x, 2)), x)))).toBe('(0 + 1*I)*x**2 + x');
+  const field = new sj.FracField([x], sj.QQ);
+  expect(sstr(field.fieldNew(x))).toBe('x');
+  expect(sstr(field.new(field.ring.fromExpr(sj.add(x, 1)), field.ring.fromExpr(sj.pow(x, 2))))).toBe('(x + 1)/(x**2)');
+  expect(sstr(field.new(field.ring.one, field.ring.fromExpr(x)))).toBe('1/x');
+  expect(sstr(sj.Poly.from(x, [x]))).toBe("Poly(x, x, domain='ZZ')");
+});
+
+it('prints Gaussian constants in a multivariate polynomial', () => {
+  const ring = new sj.PolyRing([x, sj.symbol('y')], sj.QQ_I);
+  expect(sstr(ring.fromExpr(sj.add(x, sj.I)))).toBe('x + (0 + 1*I)');
+});

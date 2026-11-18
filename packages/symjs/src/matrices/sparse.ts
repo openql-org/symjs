@@ -67,6 +67,7 @@ function handleCreationInputs(args: SparseMatrixArgs): { rows: number; cols: num
     }
     return fromRows(a);
   }
+  if (args.length === 3 && (args[0] === null) !== (args[1] === null)) throw new RangeError('Specify both matrix dimensions or neither');
   // autosizing
   const data = args.length === 2 ? args[1] : args[2];
   const dims = args.length === 3 && args[0] !== null ? { r: args[0], c: args[1] } : undefined;
@@ -145,6 +146,7 @@ function denseEntries(args: SparseMatrixArgs): { rows: number; cols: number; cel
  * entries). A matrix value of the map is a block placed at its position.
  */
 export class MutableSparseMatrix extends MutableDenseMatrix {
+  override get classPriority(): number { return 3; }
   /** Nonzero entries (row, column, value), sorted by row / column. */
   get RL(): [number, number, Expr][] { return [...this.todok()].map(([[i,j],e]) => [i,j,e]); }
   get CL(): [number, number, Expr][] { return this.RL.sort((a,b) => a[1]-b[1] || a[0]-b[0]); }
@@ -164,6 +166,7 @@ export type SparseMatrix = MutableSparseMatrix;
  * constructor forms of {@link MutableSparseMatrix}.
  */
 export class ImmutableSparseMatrix extends ImmutableMatrixNode {
+  override get classPriority(): number { return 9; }
   get RL(): [number, number, Expr][] { return [...this.todok()].map(([[i,j],e]) => [i,j,e]); }
   get CL(): [number, number, Expr][] { return this.RL.sort((a,b) => a[1]-b[1] || a[0]-b[0]); }
   constructor(...args: SparseMatrixArgs) {

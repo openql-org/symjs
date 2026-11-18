@@ -98,7 +98,7 @@ describe("sympy/tensor/array/expressions/tests/test_arrayexpr_derivatives.py", (
     const k = new Sym('k');
     expect(sympyStr(arrayDerive(new ArrayContraction(new MatrixSymbol('X', k, k), [0, 1]), new MatrixSymbol('X', k, k)))).toBe('ArrayContraction(ArrayTensorProduct(I, I), (1, 3))');
   });
-  it.fails("test_arrayexpr_derivatives1:41", () => {
+  it("test_arrayexpr_derivatives1:41", () => {
     const k = new Sym('k');
     expect(sympyStr(arrayDerive(new ArrayDiagonal(new MatrixSymbol('X', k, k), [0, 1]), new MatrixSymbol('X', k, k)))).toBe('ArrayDiagonal(ArrayTensorProduct(I, I), (1, 3))');
   });
@@ -110,7 +110,7 @@ describe("sympy/tensor/array/expressions/tests/test_arrayexpr_derivatives.py", (
     const k = new Sym('k');
     expect(sympyStr(arrayDerive(new ArraySymbol('A', [rational(3), rational(2), k]), new ArraySymbol('A', [rational(3), rational(2), k])))).toBe('PermuteDims(ArrayTensorProduct(I, I, I), (5)(1 2 4 3))');
   });
-  it.fails("test_arrayexpr_derivatives1:78", () => {
+  it("test_arrayexpr_derivatives1:78", () => {
     const k = new Sym('k');
     expect(sympyStr(arrayDerive(new Reshape(new MatrixSymbol('A', k, k), [new Pow(k, rational(2))]), new MatrixSymbol('A', k, k)))).toBe('Reshape(PermuteDims(ArrayTensorProduct(I, I), (3)(1 2)), (k, k, k**2))');
   });
@@ -249,11 +249,11 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(rational(-2), new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [1, 2])))).toBe('-2*M*N');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix:87", () => {
+  it("test_arrayexpr_convert_array_to_matrix:87", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayTensorProduct(new MatrixSymbol('a', k, rational(1)), new ArrayAdd(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('b', k, rational(1)), new MatrixSymbol('c', k, rational(1))), [0, 2]), new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('c', k, rational(1)), new MatrixSymbol('b', k, rational(1))), [0, 2]))), [0, 1, 3, 2])))).toBe('a*(b.T*c + c.T*b)');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix:90", () => {
+  it("test_arrayexpr_convert_array_to_matrix:90", () => {
     const [m, n] = symbols('m n');
     expect(sympyStr(convertArrayToMatrix(new ZeroArray(m, n)))).toBe('0');
   });
@@ -261,7 +261,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayTensorProduct(rational(3), new MatrixSymbol('M', k, k))))).toBe('3*M');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix:97", () => {
+  it("test_arrayexpr_convert_array_to_matrix:97", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k), new MatrixSymbol('P', k, k), new MatrixSymbol('Q', k, k)), [0, 2], [1, 4, 6])))).toBe('ArrayContraction(ArrayTensorProduct(M.T*N, P, Q), (0, 2, 4))');
   });
@@ -273,51 +273,51 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [1, 3])))).toBe('M*N.T');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:114", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:114", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [0, 1, 3, 2])))).toBe('ArrayTensorProduct(M, N.T)');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:117", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:117", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [0, 1, 3, 2])))).toBe('ArrayTensorProduct(M, N.T)');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:124", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:124", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('N', k, k), new MatrixSymbol('M', k, k), new MatrixSymbol('P', k, k), new MatrixSymbol('Q', k, k)), [0, 1], [3, 5]), [0, 1, 3, 2])))).toBe('ArrayTensorProduct(Trace(N)*M*P.T, Q.T)');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:130", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:130", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('N', k, k), new MatrixSymbol('M', k, k), new MatrixSymbol('P', k, k), new MatrixSymbol('Q', k, k)), [0, 1], [3, 5]), [0, 1, 3, 2])))).toBe('ArrayTensorProduct(Trace(N)*M*P.T, Q.T)');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:133", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:133", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [0, 1, 3, 2])))).toBe('ArrayTensorProduct(M, N.T)');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:136", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:136", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [1, 0, 3, 2])))).toBe('ArrayTensorProduct(M.T, N.T)');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:139", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:139", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayTensorProduct(new MatrixSymbol('N', k, k), new MatrixSymbol('M', k, k)), [1, 0, 3, 2])))).toBe('ArrayTensorProduct(N.T, M.T)');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:142", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:142", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new MatrixSymbol('M', k, k), [0], [1])))).toBe('1*M*1');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:145", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:145", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new MatrixSymbol('x', k, rational(1)), [0])))).toBe('1*x');
   });
-  it.fails("test_arrayexpr_convert_array_to_matrix2:149", () => {
+  it("test_arrayexpr_convert_array_to_matrix2:149", () => {
     const [m, n] = symbols('m n');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new MatrixSymbol('Xm', m, n), [0], [1])))).toBe('1*Xm*1');
   });
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:157", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:157", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayTensorProduct(new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1)))))).toBe('a*b.T');
   });
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:160", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:160", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayTensorProduct(Identity(rational(1)), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1)))))).toBe('a*b.T');
   });
@@ -325,27 +325,27 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('B', k, k), new MatrixSymbol('C', k, k)), [0, 3], [1, 2])))).toBe('Trace(A*B)*C');
   });
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:171", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:171", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('a', k, rational(1))), [1, 2])))).toBe('A*DiagMatrix(a)');
   });
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:177", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:177", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1))), [0, 2])))).toBe('b.T*DiagMatrix(a)');
   });
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:181", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:181", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('a', k, rational(1))), [0, 2])))).toBe('A.T*DiagMatrix(a)');
   });
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:185", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:185", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(Identity(k), new MatrixSymbol('x', k, rational(1)), Identity(rational(1))), [0, 2], [3, 5])))).toBe('DiagMatrix(x)');
   });
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:193", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:193", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(Identity(rational(1)), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1))), [1, 3, 5])))).toBe('a*b.T');
   });
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:197", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:197", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(Identity(rational(1)), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1))), [1, 3])))).toBe('a*b.T');
   });
@@ -353,7 +353,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
   //   assert cg.diagonal_indices == ((1, 2),)
   //   => ((1, 2),)
   it.todo("test_arrayexpr_convert_array_to_diagonalized_vector:201");
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:202", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:202", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('x', k, rational(1)), Identity(rational(1))), [1, 2])))).toBe('x');
   });
@@ -389,7 +389,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
   //   assert cg.split_multiple_contractions() == _array_contraction(_array_tensor_product(A, DiagMatrix(a), OneArray(1), B), (1, 2), (3, 5))
   //   => ArrayContraction(ArrayTensorProduct(DiagMatrix(a), A, OneArray(1), B), (0, 3), (1, 5))
   it.todo("test_arrayexpr_convert_array_to_diagonalized_vector:227");
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:228", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:228", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('B', k, k)), [1, 2, 4])))).toBe('A*DiagMatrix(a)*B');
   });
@@ -397,7 +397,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
   //   assert cg.split_multiple_contractions() == _array_contraction(_array_tensor_product(A, DiagMatrix(a), OneArray(1), B), (0, 2), (3, 5))
   //   => ArrayContraction(ArrayTensorProduct(DiagMatrix(a), A, OneArray(1), B), (0, 2), (1, 5))
   it.todo("test_arrayexpr_convert_array_to_diagonalized_vector:231");
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:232", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:232", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('B', k, k)), [0, 2, 4])))).toBe('A.T*DiagMatrix(a)*B');
   });
@@ -407,7 +407,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
   //                                                  (0, 2), (3, 5), (6, 9), (8, 12))
   //   => ArrayContraction(ArrayTensorProduct(DiagMatrix(a), DiagMatrix(a), DiagMatrix(b), A, OneArray(1), OneArray(1), OneArray(1), B), (0, 6), (1, 4), (2, 12), (3, 5))
   it.todo("test_arrayexpr_convert_array_to_diagonalized_vector:235");
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:238", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:238", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1)), Transpose(new MatrixSymbol('a', k, rational(1))), new MatrixSymbol('B', k, k)), [0, 2, 4, 7, 9])))).toBe('A.T*DiagMatrix(a)*DiagMatrix(b)*DiagMatrix(a)*B.T');
   });
@@ -415,7 +415,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
   //   assert cg.split_multiple_contractions() == _array_contraction(_array_tensor_product(I1, I1, OneArray(1), I1), (1, 2), (3, 5))
   //   => ArrayContraction(ArrayTensorProduct(I, I, OneArray(1), I), (0, 3), (1, 5))
   it.todo("test_arrayexpr_convert_array_to_diagonalized_vector:241");
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:242", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:242", () => {
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(Identity(rational(1)), Identity(rational(1)), Identity(rational(1))), [1, 2, 4])))).toBe('1');
   });
   it("test_arrayexpr_convert_array_to_diagonalized_vector:245", () => {
@@ -426,7 +426,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
   //   assert cg.split_multiple_contractions() == expected
   //   => ArrayContraction(ArrayTensorProduct(DiagMatrix(a), DiagMatrix(a), C, A, OneArray(1), OneArray(1), B), (0, 4), (1, 7), (2, 5), (3, 10))
   it.todo("test_arrayexpr_convert_array_to_diagonalized_vector:249");
-  it.fails("test_arrayexpr_convert_array_to_diagonalized_vector:250", () => {
+  it("test_arrayexpr_convert_array_to_diagonalized_vector:250", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('C', k, k), new MatrixSymbol('A', k, k), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('B', k, k)), [0, 3, 4], [1, 6, 8])))).toBe('A*DiagMatrix(a)*C*DiagMatrix(a)*B');
   });
@@ -442,15 +442,15 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new ArrayAdd(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [1, 2]), new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('N', k, k), new MatrixSymbol('M', k, k)), [1, 2])), new MatrixSymbol('P', k, k), new MatrixSymbol('Q', k, k)), [0, 3], [1, 4])))).toBe('P*(M*N + N*M)*Q');
   });
-  it.fails("test_arrayexpr_convert_array_to_implicit_matmul:295", () => {
+  it("test_arrayexpr_convert_array_to_implicit_matmul:295", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayTensorProduct(new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1)))))).toBe('a*b.T');
   });
-  it.fails("test_arrayexpr_convert_array_to_implicit_matmul:298", () => {
+  it("test_arrayexpr_convert_array_to_implicit_matmul:298", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayTensorProduct(new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1)), Identity(k))))).toBe('ArrayTensorProduct(a*b.T, I)');
   });
-  it.fails("test_arrayexpr_convert_array_to_implicit_matmul:301", () => {
+  it("test_arrayexpr_convert_array_to_implicit_matmul:301", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayTensorProduct(Identity(k), new MatrixSymbol('a', k, rational(1)), new MatrixSymbol('b', k, rational(1)))))).toBe('ArrayTensorProduct(I, a*b.T)');
   });
@@ -462,7 +462,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(Identity(k), Identity(k)), [1, 2])))).toBe('I');
   });
-  it.fails("test_arrayexpr_convert_array_to_implicit_matmul:310", () => {
+  it("test_arrayexpr_convert_array_to_implicit_matmul:310", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayTensorProduct(Identity(k), Identity(rational(1))), [0, 2, 1, 3])))).toBe('I');
   });
@@ -470,15 +470,15 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [0, 2], [1, 3])))).toBe('HadamardProduct(M, N)');
   });
-  it.fails("test_convert_array_to_hadamard_products:523", () => {
+  it("test_convert_array_to_hadamard_products:523", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new PermuteDims(new ArrayDiagonal(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k), new MatrixSymbol('P', k, k)), [1, 3, 4]), [0, 1]), [1, 0])))).toBe('(HadamardProduct(M, N))*P');
   });
-  it.fails("test_convert_array_to_hadamard_products:528", () => {
+  it("test_convert_array_to_hadamard_products:528", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k), new MatrixSymbol('Q', k, k), new MatrixSymbol('P', k, k)), [0, 2, 5], [1, 3, 6])))).toBe('Q*(HadamardProduct(M, N))*P');
   });
-  it.fails("test_convert_array_to_hadamard_products:533", () => {
+  it("test_convert_array_to_hadamard_products:533", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k), new MatrixSymbol('Q', k, k), new MatrixSymbol('P', k, k)), [0, 3, 5], [1, 2, 6])))).toBe('Q*(HadamardProduct(M, N.T))*P');
   });
@@ -498,15 +498,15 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(HadamardProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), new MatrixSymbol('Q', k, k)), [0, 2])))).toBe('ArrayDiagonal(ArrayTensorProduct(HadamardProduct(M, N), Q), (0, 2))');
   });
-  it.fails("test_convert_array_to_hadamard_products:561", () => {
+  it("test_convert_array_to_hadamard_products:561", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [0, 1, 2, 3])))).toBe('Trace(HadamardProduct(M.T, N.T))');
   });
-  it.fails("test_convert_array_to_hadamard_products:566", () => {
+  it("test_convert_array_to_hadamard_products:566", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [0, 3, 5], [1, 2, 4])))).toBe('Trace((HadamardProduct(M, N))*A)');
   });
-  it.fails("test_convert_array_to_hadamard_products:571", () => {
+  it("test_convert_array_to_hadamard_products:571", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [0, 2, 5], [1, 3, 4])))).toBe('Trace((HadamardProduct(N, M.T))*A)');
   });
@@ -526,7 +526,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k), new MatrixSymbol('P', k, k)), [0, 3, 4], [1, 2, 5])))).toBe('HadamardProduct(M, P, N.T)');
   });
-  it.fails("test_convert_array_to_hadamard_products:590", () => {
+  it("test_convert_array_to_hadamard_products:590", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayDiagonal(new ArrayTensorProduct(Identity(k), Identity(rational(1)), new MatrixSymbol('x', k, rational(1))), [1, 4], [3, 5])))).toBe('DiagMatrix(x)');
   });
@@ -546,11 +546,11 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
   //   assert ret == cg
   //   => ArrayContraction(ArrayTensorProduct(DiagonalMatrix(D), A, B, M, N), (0, 1, 3, 4, 6, 8))
   it.todo("test_identify_removable_identity_matrices:614");
-  it.fails("test_array_contraction_to_diagonal_multiple_identities:628", () => {
+  it("test_array_contraction_to_diagonal_multiple_identities:628", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(Identity(k), new MatrixSymbol('A', k, k), new MatrixSymbol('B', k, k), new MatrixSymbol('C', k, k)), [0, 3, 4], [1, 6])))).toBe('ArrayContraction(ArrayTensorProduct(A, B, C), (1, 2, 4))');
   });
-  it.fails("test_array_contraction_to_diagonal_multiple_identities:632", () => {
+  it("test_array_contraction_to_diagonal_multiple_identities:632", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('A', k, k), Identity(k), Identity(k)), [1, 2, 4])))).toBe('A');
   });
@@ -558,7 +558,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
     const [k, i, j] = symbols('k i j');
     expect(sympyStr(convertArrayToMatrix(new ArrayElement(new MatrixSymbol('M', k, k), [i, j])))).toBe('M[i, j]');
   });
-  it.fails("test_convert_array_element_to_matrix:647", () => {
+  it("test_convert_array_element_to_matrix:647", () => {
     const [k, i, j] = symbols('k i j');
     expect(sympyStr(convertArrayToMatrix(new ArrayElement(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), [1, 3]), [i, j])))).toBe('(M*N.T)[i, j]');
   });
@@ -573,7 +573,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_array_to_matrix.py",
 });
 
 describe("sympy/tensor/array/expressions/tests/test_convert_indexed_to_array.py", () => {
-  it.fails("test_arrayexpr_convert_indexed_to_array_expression:80", () => {
+  it("test_arrayexpr_convert_indexed_to_array_expression:80", () => {
     const [A, i, B] = symbols('A i B');
     expect(sympyStr(convertIndexedToArray(Sum(new Mul([new IndexedBase(A, {}).at(i), new IndexedBase(B, {}).at(i)]), [i, rational(0), rational(3)])))).toBe('ArrayContraction(ArrayTensorProduct(A, B), (0, 1))');
   });
@@ -613,7 +613,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_indexed_to_array.py"
     const [k, i, j] = symbols('k i j');
     expect(sympyStr(convertIndexedToArray(new Mul([new ArrayElement(new ArraySymbol('A', [k]), [i]), new ArrayElement(new ArraySymbol('B', [k]), [j])]), [j, i]))).toBe('ArrayTensorProduct(B, A)');
   });
-  it.fails("test_arrayexpr_convert_indexed_to_array_and_back_to_matrix:133", () => {
+  it("test_arrayexpr_convert_indexed_to_array_and_back_to_matrix:133", () => {
     const k = new Sym('k');
     expect(sympyStr(convertIndexedToArray(Sum(new Mul([MatrixElement(new MatrixSymbol('a', k, rational(1)), new Dummy('i_1', {}, 1000000), rational(0)), MatrixElement(new MatrixSymbol('b', k, rational(1)), new Dummy('i_1', {}, 1000000), rational(0))]), [new Dummy('i_1', {}, 1000000), rational(0), new Add([rational(-1), k])])))).toBe('ArrayContraction(ArrayTensorProduct(a, b), (0, 2))[0, 0]');
   });
@@ -637,7 +637,7 @@ describe("sympy/tensor/array/expressions/tests/test_convert_indexed_to_array.py"
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new MatrixSymbol('N', k, k), new MatrixSymbol('M', k, k), new MatrixSymbol('P', k, k)), [0, 3], [1, 4])))).toBe('M*N*P');
   });
-  it.fails("test_arrayexpr_convert_indexed_to_array_and_back_to_matrix:159", () => {
+  it("test_arrayexpr_convert_indexed_to_array_and_back_to_matrix:159", () => {
     const k = new Sym('k');
     expect(sympyStr(convertArrayToMatrix(new ArrayContraction(new ArrayTensorProduct(new ArrayAdd(new MatrixSymbol('P', k, k), new PermuteDims(new MatrixSymbol('P', k, k), [1, 0])), new ArrayAdd(new ArrayTensorProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), new ArrayTensorProduct(new MatrixSymbol('N', k, k), new MatrixSymbol('M', k, k)))), [0, 3], [1, 4])))).toBe('M*P*N + M*P.T*N + N*P*M + N*P.T*M');
   });
@@ -665,27 +665,27 @@ describe("sympy/tensor/array/expressions/tests/test_convert_indexed_to_array.py"
     const [k, i, j, m] = symbols('k i j m');
     expect(() => convertIndexedToArray(Sum(new Mul([MatrixElement(new MatrixSymbol('M', k, k), i, j), MatrixElement(new MatrixSymbol('N', k, k), j, m)]), [j, rational(1), new Add([rational(-1), k])]))).toThrow(RangeError);
   });
-  it.fails("test_arrayexpr_convert_indexed_to_array_broadcast:186", () => {
+  it("test_arrayexpr_convert_indexed_to_array_broadcast:186", () => {
     const [i, j, k, l] = symbols('i j k l');
     expect(sympyStr(convertIndexedToArray(new Add([new ArrayElement(new ArraySymbol('A', [rational(3), rational(3)]), [i, j]), new ArrayElement(new ArraySymbol('B', [rational(3), rational(3)]), [k, l])])))).toBe('ArrayAdd(ArrayTensorProduct(A, OneArray(3, 3)), ArrayTensorProduct(OneArray(3, 3), B))');
   });
-  it.fails("test_arrayexpr_convert_indexed_to_array_broadcast:187", () => {
+  it("test_arrayexpr_convert_indexed_to_array_broadcast:187", () => {
     const [i, j, k, l] = symbols('i j k l');
     expect(sympyStr(convertIndexedToArray(new Add([new ArrayElement(new ArraySymbol('A', [rational(3), rational(3)]), [i, j]), new ArrayElement(new ArraySymbol('B', [rational(3), rational(3)]), [k, l])]), [i, j, k, l]))).toBe('ArrayAdd(ArrayTensorProduct(A, OneArray(3, 3)), ArrayTensorProduct(OneArray(3, 3), B))');
   });
-  it.fails("test_arrayexpr_convert_indexed_to_array_broadcast:188", () => {
+  it("test_arrayexpr_convert_indexed_to_array_broadcast:188", () => {
     const [i, j, k, l] = symbols('i j k l');
     expect(sympyStr(convertIndexedToArray(new Add([new ArrayElement(new ArraySymbol('A', [rational(3), rational(3)]), [i, j]), new ArrayElement(new ArraySymbol('B', [rational(3), rational(3)]), [k, l])]), [l, k, i, j]))).toBe('ArrayAdd(PermuteDims(ArrayTensorProduct(OneArray(3, 3), A), (3)(0 1)), PermuteDims(ArrayTensorProduct(B, OneArray(3, 3)), (3)(0 1)))');
   });
-  it.fails("test_arrayexpr_convert_indexed_to_array_broadcast:192", () => {
+  it("test_arrayexpr_convert_indexed_to_array_broadcast:192", () => {
     const [i, j, k] = symbols('i j k');
     expect(sympyStr(convertIndexedToArray(new Add([new ArrayElement(new ArraySymbol('A', [rational(3), rational(3)]), [i, j]), new ArrayElement(new ArraySymbol('B', [rational(3), rational(3)]), [j, k])]), [i, j, k]))).toBe('ArrayAdd(ArrayTensorProduct(A, OneArray(3)), ArrayTensorProduct(OneArray(3), B))');
   });
-  it.fails("test_arrayexpr_convert_indexed_to_array_broadcast:198", () => {
+  it("test_arrayexpr_convert_indexed_to_array_broadcast:198", () => {
     const [d0, d1, i, j, d3, k] = symbols('d0 d1 i j d3 k');
     expect(sympyStr(convertIndexedToArray(new Add([new ArrayElement(new ArraySymbol('C', [d0, d1]), [i, j]), new ArrayElement(new ArraySymbol('D', [d3, d1]), [k, j])]), [i, j, k]))).toBe('ArrayAdd(ArrayTensorProduct(C, OneArray(d3)), PermuteDims(ArrayTensorProduct(OneArray(d0), D), (1 2)))');
   });
-  it.fails("test_arrayexpr_convert_indexed_to_array_broadcast:203", () => {
+  it("test_arrayexpr_convert_indexed_to_array_broadcast:203", () => {
     const [j, n, i] = symbols('j n i');
     expect(sympyStr(convertIndexedToArray(new Add([new Mul([rational(-1), new ArrayElement(new ArraySymbol('X', [rational(5), rational(3)]), [j, n])]), new ArrayElement(new ArraySymbol('X', [rational(5), rational(3)]), [i, n])]), [i, j, n]))).toBe('ArrayAdd(ArrayTensorProduct(-1, OneArray(5), X), PermuteDims(ArrayTensorProduct(X, OneArray(5)), (1 2)))');
   });
@@ -736,15 +736,15 @@ describe("sympy/tensor/array/expressions/tests/test_convert_matrix_to_array.py",
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(Trace(new MatrixSymbol('M', k, k))))).toBe('ArrayContraction(M, (0, 1))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:83", () => {
+  it("test_arrayexpr_convert_matrix_to_array:83", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(new Mul([rational(3), Trace(new MatrixSymbol('M', k, k))])))).toBe('ArrayContraction(ArrayTensorProduct(3, M), (0, 1))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:87", () => {
+  it("test_arrayexpr_convert_matrix_to_array:87", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(new Mul([rational(3), Trace(MatMul(Trace(new MatrixSymbol('M', k, k)), new MatrixSymbol('M', k, k)))])))).toBe('ArrayContraction(ArrayTensorProduct(3, M, M), (0, 1), (2, 3))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:91", () => {
+  it("test_arrayexpr_convert_matrix_to_array:91", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(new Mul([rational(3), new Pow(Trace(new MatrixSymbol('M', k, k)), rational(2))])))).toBe('ArrayContraction(ArrayTensorProduct(3, M, M), (0, 1), (2, 3))');
   });
@@ -752,15 +752,15 @@ describe("sympy/tensor/array/expressions/tests/test_convert_matrix_to_array.py",
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(HadamardProduct(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k))))).toBe('ArrayDiagonal(ArrayTensorProduct(M, N), (0, 2), (1, 3))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:99", () => {
+  it("test_arrayexpr_convert_matrix_to_array:99", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(HadamardProduct(MatMul(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), MatMul(new MatrixSymbol('N', k, k), new MatrixSymbol('M', k, k)))))).toBe('ArrayDiagonal(ArrayContraction(ArrayTensorProduct(M, N, N, M), (1, 2), (5, 6)), (0, 2), (1, 3))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:103", () => {
+  it("test_arrayexpr_convert_matrix_to_array:103", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(HadamardPower(new MatrixSymbol('M', k, k), rational(2))))).toBe('ArrayDiagonal(ArrayTensorProduct(M, M), (0, 2), (1, 3))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:107", () => {
+  it("test_arrayexpr_convert_matrix_to_array:107", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(HadamardPower(MatMul(new MatrixSymbol('M', k, k), new MatrixSymbol('N', k, k)), rational(2))))).toBe('ArrayDiagonal(ArrayContraction(ArrayTensorProduct(M, N, M, N), (1, 2), (5, 6)), (0, 2), (1, 3))');
   });
@@ -772,11 +772,11 @@ describe("sympy/tensor/array/expressions/tests/test_convert_matrix_to_array.py",
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(MatMul(Transpose(new MatrixSymbol('a', k, rational(1))), new MatrixSymbol('b', k, rational(1)))))).toBe('ArrayContraction(ArrayTensorProduct(a, b), (0, 2))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:124", () => {
+  it("test_arrayexpr_convert_matrix_to_array:124", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(KroneckerProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('B', k, k))))).toBe('Reshape(PermuteDims(ArrayTensorProduct(A, B), (3)(1 2)), (k**2, k**2))');
   });
-  it.fails("test_arrayexpr_convert_matrix_to_array:128", () => {
+  it("test_arrayexpr_convert_matrix_to_array:128", () => {
     const k = new Sym('k');
     expect(sympyStr(convertMatrixToArray(KroneckerProduct(new MatrixSymbol('A', k, k), new MatrixSymbol('B', k, k), new MatrixSymbol('C', k, k), new MatrixSymbol('D', k, k))))).toBe('Reshape(PermuteDims(ArrayTensorProduct(A, B, C, D), (7)(1 2 4)(3 6 5)), (k**4, k**4))');
   });

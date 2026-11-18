@@ -18,6 +18,34 @@ import { rischHooks } from '../../src/integrals/risch';
 
 const syms = [new Sym('p', { positive: true }), new Sym('q', { negative: true }), new Sym('r', { real: true })];
 const P = (s: string) => parse(s, { symbols: syms });
+
+it('integrates affine Piecewise conditions that exclude a point or simplify to a truth value', () => {
+  const x = sj.symbol('x');
+  const a = sj.symbol('a');
+  expect(integrate(sj.Piecewise([1, sj.Ne(x, a)], [0, true]), x).equals(x)).toBe(true);
+  const condition = (lhs: Expr, rhs: Expr) => new sj.Rel('Gt', lhs, rhs);
+  const raw = (test: Expr) => new sj.Piecewise([sj.S.One, test, sj.S.Two, sj.S.true]);
+  expect(integrate(raw(sj.S.false), x).equals(sj.mul(2, x))).toBe(true);
+  expect(integrate(raw(condition(sj.add(x, 1), x)), x).equals(x)).toBe(true);
+  expect(integrate(raw(condition(x, x)), x).equals(sj.mul(2, x))).toBe(true);
+});
+
+it('evaluates symbolic interval holes and retains a singular branch constant', () => {
+  const x = sj.symbol('x');
+  const bound = sj.symbol('b', { positive: true });
+  expect(sstr(integrate(P('Piecewise((x,x<2))'), x, [0, bound])))
+    .toBe('Piecewise((Min(2, b)**2/2, b <= Min(2, b)), (nan, True))');
+  expect(sstr(integrate(P('Piecewise((1,x>0),(1/x,True))'), x)))
+    .toBe('Piecewise((log(x), x <= 0), (x, True))');
+});
+
+it('keeps the integral when a branch primitive or an affine clipping bound cannot be computed', () => {
+  const x = sj.symbol('x');
+  const a = sj.symbol('a');
+  const f = sj.SymFunction('f')(x);
+  expect(integrate(sj.Piecewise([f, sj.Gt(x, 0)], [0, true]), x)).toBeInstanceOf(sj.Integral);
+  expect(integrate(sj.Piecewise([1, sj.And(sj.Gt(x, a), sj.Gt(f, 0))], [0, true]), x)).toBeInstanceOf(sj.Integral);
+});
 const V = (s: string): Sym => {
   const v = P(s);
   if (!(v instanceof Sym)) throw new TypeError(s);
@@ -230,20 +258,19 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), x), "Integral(Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2/2, x < 1), (Integral(gamma(x), (x, 1, x)) + 1/2, True))"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(sj.Piecewise([P('x'), P('x > 1')], [P('1'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('x > 1')], [P('1'), true]), x), "Integral(Piecewise((x, x > 1), (1, True)), x)", "Piecewise((x, x <= 1), (x**2/2 + 1/2, True))"],
     // not implemented in symjs (SymPy's result shown)
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x)", () => sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x), "Integral(Piecewise((2*x, x < 1), (2*gamma(x), True)), x)", "Piecewise((x**2, x < 1), (2*Integral(gamma(x), x) - 2*Integral(gamma(x), (x, 1)) + 1, True))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x)", () => sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x), "Integral(x + Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2, x < 1), (Integral(x + gamma(x), (x, 1, x)) + 1, True))"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y > 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x**2 < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x**2*y < 0), (2, True)), (x, -2, -1))"],
     // SymPy raises TypeError
     ["sj.integrate(sj.Piecewise([P('1'), P('y*sin(x) < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*sin(x) < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y*sin(x) < 0), (2, True)), (x, -2, -1))", "ERR TypeError"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
-    ["sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y >= 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))"],
+    ["sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x <= 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, x*y <= 0), (2, True)), (x, -2, -1))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1]), "Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1))", "Piecewise((Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1)), a < 1), (-Integral(Piecewise((1, x*y < 0), (2, True)), (x, 1, a)), True))"],
     // the limit at oo is left for a symbolic y (SymPy uses the Mellin transform)
@@ -470,6 +497,11 @@ describe('definite integrals of Piecewise conditions and delta functions (sympy.
   const oo = sj.S.Infinity;
   const noo = sj.S.NegativeInfinity;
   const PW = (...p: [Expr, Expr | boolean][]): Expr => sj.piecewise(...p);
+  it('joins the antiderivatives continuously across a lower branch bound', () => {
+    const value = integrate(PW([x, sj.Gt(x, 1)], [sj.S.One, true]), x);
+    expect(sstr(value)).toBe('Piecewise((x, x <= 1), (x**2/2 + 1/2, True))');
+    expect(value.subs(x, 1).equals(sj.S.One)).toBe(true);
+  });
   it('conditions decided on the interval', () => {
     expect(sstr(integrate(PW([sj.S.One, sj.Gt(x, 0)], [sj.S.Zero, true]), x, [2, 1]))).toBe('-1');
     expect(sstr(integrate(PW([x, sj.Gt(x, -1)], [sj.S.Zero, true]), x, [0, 1]))).toBe('1/2');
@@ -479,8 +511,7 @@ describe('definite integrals of Piecewise conditions and delta functions (sympy.
     expect(sstr(integrate(PW([x, sj.Eq(x, sj.S.Half)], [sj.S.One, true]), x, [0, 1]))).toBe('1');
     const real = new Sym('x', { real: true });
     expect(sstr(integrate(PW([sj.mul(real, sj.exp(sj.mul(-1, sj.pow(real, 2)))), sj.and(sj.Gt(real, noo), sj.Lt(real, oo))], [sj.S.Zero, true]), real, [noo, oo]))).toBe('0');
-    // SymPy: 1 - Min(1, Max(0, a))
-    expect(sstr(integrate(PW([sj.S.One, sj.Lt(a, x)], [sj.S.Zero, true]), x, [0, 1]))).toBe('Integral(Piecewise((1, a < x), (0, True)), (x, 0, 1))');
+    expect(sstr(integrate(PW([sj.S.One, sj.Lt(a, x)], [sj.S.Zero, true]), x, [0, 1]))).toBe('1 - Min(1, Max(0, a))');
   });
   it('a product with a Piecewise factor', () => {
     expect(sstr(integrate(sj.mul(x, PW([sj.S.One, sj.Lt(x, sj.S.Half)], [sj.Rational.of(2), true])), x, [0, 1]))).toBe('7/8');
@@ -608,6 +639,66 @@ it('retains symbolic slopes multiplied by nonzero numeric constants', () => {
   expect(String(integrate(parse('exp(pi*y*x)'), x))).toBe('Piecewise((exp(pi*x*y)/(pi*y), Ne(y, 0)), (x, True))');
 });
 
+it('compares reversed Piecewise conditions and infinite breakpoints on a real interval', () => {
+  for (const condition of [
+    new sj.Rel('Lt', sj.S.NegativeInfinity, x),
+    new sj.Rel('Lt', sj.S.Zero, x),
+    new sj.Rel('Lt', sj.add(x, -1), x),
+  ]) {
+    const f = new sj.Mul([x, new sj.Piecewise([sj.S.One, condition, sj.S.Zero, sj.S.true])]);
+    expect(String(integrate(f, x, [0, 1]))).toBe('1/2');
+  }
+  const c = new sj.Rel('Gt', x, sj.S.Zero);
+  const f = new sj.Mul([x, new sj.Piecewise([sj.S.One, c, sj.S.Zero, sj.S.true])]);
+  const a = new sj.Sym('a', { positive: true });
+  expect(integrate(f, x, [a, sj.add(a, 1)]).subs(a, 2).equals(sj.Rational.of(5, 2))).toBe(true);
+});
+
+it('integrates absolute trigonometric waves across half-periods', () => {
+  expect(String(integrate(parse('Abs(sin(x))'), x, [0, parse('2*pi')]))).toBe('4');
+  expect(String(integrate(parse('Abs(cos(2*x))'), x, [parse('pi/4'), 0]))).toBe('-1/2');
+  expect(String(integrate(parse('Abs(sin(x-pi/4))'), x, [0, parse('pi/2')]))).toBe('2 - sqrt(2)');
+  for (const f of ['Abs(sin(x**2))', 'Abs(sin(exp(x)))', 'Abs(sin(a*x))', 'Abs(sin(x+I/2))']) {
+    expect(integrate(parse(f), x, [1, 2])).toBeInstanceOf(sj.Integral);
+  }
+  expect(integrate(parse('Abs(sin(x))'), x, [0, sj.S.Infinity])).toBeInstanceOf(sj.Integral);
+  for (const f of ['Abs(y)', 'Abs(log(y))']) {
+    expect(integrate(parse(f), x, [1, 2]).equals(parse(f))).toBe(true);
+  }
+  const imaginarySlope = sj.fn('abs', [sj.fn('sin', [sj.mul(sj.S.I, x)], { evaluate: false })], { evaluate: false });
+  expect(integrate(imaginarySlope, x, [0, 1])).toBeInstanceOf(sj.Integral);
+});
+
+it('matches the branch limits of a Piecewise Dirac delta antiderivative', () => {
+  const f = sj.piecewise([sj.DiracDelta(sj.add(x, -1)), sj.Lt(x, 2)], [0, true]);
+  expect(String(integrate(f, x))).toBe('Piecewise((Heaviside(x - 1), x < 2), (1, True))');
+});
+
+it('ignores isolated residue classes when measuring Piecewise intervals', () => {
+  const residue = sj.Mod(x, 2);
+  expect(String(integrate(sj.piecewise([1, sj.Eq(residue, 1)], [2, true]), x, [0, 5]))).toBe('10');
+  expect(String(integrate(sj.piecewise([1, sj.Ne(residue, 1)], [2, true]), x, [0, 5]))).toBe('5');
+  const y = new sj.Sym('y');
+  const unsupported = [
+    sj.Eq(sj.Mod(sj.pow(x, 2), 2), 1),
+    sj.Eq(sj.Mod(x, y), 1),
+    new sj.Rel('Eq', residue, x),
+  ];
+  for (const condition of unsupported) {
+    expect(integrate(new sj.Piecewise([sj.S.One, condition, sj.S.Two, sj.S.true]), x, [0, 5]))
+      .toBeInstanceOf(sj.Integral);
+  }
+});
+
+it('combines infinite limits with proven finite symbolic endpoints', () => {
+  const y = new sj.Sym('y');
+  const f = sj.piecewise([1, sj.Lt(sj.sub(x, y), 0)], [0, true]);
+  expect(integrate(f, y, [0, sj.S.Infinity])).toBe(sj.S.Infinity);
+  expect(integrate(1, y, [sj.S.NegativeInfinity, sj.Max(0, x)])).toBe(sj.S.Infinity);
+  expect(String(integrate(1, y, [sj.S.NegativeInfinity, x]))).toBe('x + oo');
+  expect(String(integrate(1, y, [x, sj.S.Infinity]))).toBe('-x + oo');
+});
+
 describe('absolute values and signs of real polynomials', () => {
   const x = new sjReal.Sym('x', { real: true });
   const p = (s: string) => sjReal.parse(s, { symbols: [x] });
@@ -649,4 +740,28 @@ describe('absolute values and signs of real polynomials', () => {
       expect(realIntegrand(sjReal.parse(f, { symbols: [x, a, b] }), x)).toBeUndefined();
     }
   });
+});
+
+describe('definite integrals with parametric poles and Gaussian factors (SymPy 1.14 values)', () => {
+  const x = new Sym('x'), t = new Sym('t'), y = new Sym('y');
+  const l = new Sym('l', { positive: true }), r = new Sym('r', { real: true });
+  const P = (src: string) => parse(src, { symbols: { x, t, y, l, r } });
+  it('places a pole whose sign is known by assumptions', () => {
+    expect(sstr(integrate(P('3*(x - l/2)**2/(l*(x/l + 1)**4)'), x, [0, sj.oo]))).toBe('3*l**2/4');
+    expect(sstr(integrate(P('1/(x + l)**2'), x, [0, sj.oo]))).toBe('1/l');
+  });
+  it('ignores poles off the real axis', () => {
+    expect(sstr(integrate(P('1/(x**2 + l**2)'), x, [0, sj.oo]))).toBe('pi/(2*l)');
+  });
+  it('leaves a real pole of unknown position unevaluated on a finite interval', () => {
+    expect(sstr(integrate(P('1/(x + r)**2'), x, [0, 1]))).toBe('Integral((r + x)**(-2), (x, 0, 1))');
+    expect(sstr(integrate(P('1/(x + r)**2'), x, [0, sj.oo]))).toMatch(/^Piecewise\(\(1\/r, /);
+  });
+});
+
+it('keeps the given Piecewise integrand in an integral that stays unevaluated (SymPy 1.14)', () => {
+  const x = new Sym('x');
+  const f = sj.SymFunction('f');
+  const p = sj.piecewise([1, sj.Eq(f(x), 1)], [2, sj.Lt(x, 10)], [0, true]);
+  expect(sstr(integrate(p, x, [0, 5]))).toBe('Integral(Piecewise((1, Eq(f(x), 1)), (2, x < 10), (0, True)), (x, 0, 5))');
 });

@@ -6,15 +6,13 @@
  */
 
 import type { Expr, ExprLike, FnName } from '../core/nodes';
-import { Add, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, Rel, S, Sym, UndefFn, Piecewise, impl, isNum } from '../core/nodes';
+import { Add, Constant, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { Concrete, Sum } from '../core/concrete';
 import { minimalPolynomial } from '../polys/numberfields';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { asContentPrimitive, asIndependent, asNumerDenom } from '../core/methods';
-import { and, BoolOp } from '../core/boolalg';
-import { Eq, Ge, Le, piecewise } from '../core/logic';
 import { countOps as opCount } from '../core/match';
-import { mapBottomUp, piecewiseFold, rebuild, some, xreplace } from '../core/traverse';
+import { mapBottomUp, piecewiseFold, rebuild, some, subs, xreplace } from '../core/traverse';
 import { combsimp } from './gammasimp';
 import { besselsimp } from './besselsimp';
 import { Hyper, MeijerG, KroneckerDelta, kroneckersimp } from '../functions/special/hyper';
@@ -28,6 +26,11 @@ import { at, first } from '../core/guard';
 import { nsimplify, nfloat } from '../numeric/nfloat';
 import { simplifyRelation } from '../core/relational';
 import { isNegative } from '../core/assumptions';
+import { BoolOp, and } from '../core/boolalg';
+import { Eq, Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
+import { ordered } from '../core/match';
+import type { SetExpr } from '../sets/sets';
+import { EmptySet, Interval, Reals, cmpReal, complement, intersection, interval, union } from '../sets/sets';
 
 /** Strip rational coefficients from an equation, applying the same operations to its right side. */
 export function clearCoefficients(exprIn: ExprLike, rhsIn: ExprLike = 0): [Expr, Expr] {
@@ -184,6 +187,92 @@ const isExpPow = (x: Expr): boolean => x instanceof Pow && x.base.key === S.E.ke
  */
 export const simplifyHooks: { hyperexpand?: (e: Expr) => Expr } = {};
 
+function isSubstitutionEquation(e: Rel): boolean {
+  const variable = (x: Expr): boolean => x instanceof Sym || x instanceof UndefFn;
+  return variable(e.lhs) && (variable(e.rhs) || e.rhs instanceof Rational || e.rhs instanceof Constant);
+}
+
+/** Read a conjunction of comparisons to real constants as an interval. */
+function piecewiseConditionSet(condition: Expr, x: Sym): SetExpr | undefined {
+  if (condition === S.true) return Reals;
+  if (condition === S.false) return EmptySet;
+  if (condition instanceof BoolOp && condition.op === 'And') {
+    const parts = condition.args.map((part) => piecewiseConditionSet(part, x));
+    if (parts.every((part): part is SetExpr => part !== undefined)) return intersection(...parts);
+    return undefined;
+  }
+  if (!(condition instanceof Rel) || condition.op === 'Eq' || condition.op === 'Ne') return undefined;
+  const left = condition.lhs.key === x.key;
+  if (!left && condition.rhs.key !== x.key) return undefined;
+  const bound = left ? condition.rhs : condition.lhs;
+  if (cmpReal(bound, S.Zero) === undefined) return undefined;
+  const upper = (condition.op === 'Lt' || condition.op === 'Le') === left;
+  const strict = condition.op === 'Lt' || condition.op === 'Gt';
+  return upper ? interval(S.NegativeInfinity, bound, true, strict) : interval(bound, S.Infinity, strict, true);
+}
+
+function simplifyPiecewiseIntervals(e: Piecewise): [Expr, Expr][] {
+  const pairs = e.pairs;
+  const vars = [...new Map(pairs.flatMap(([, c]) => [...c.freeSymbols()].map((symbol) => [symbol.key, symbol] as const))).values()];
+  const x = vars[0];
+  if (vars.length !== 1 || !(x instanceof Sym)) return pairs;
+  let covered: SetExpr = EmptySet;
+  const result: [Expr, Expr][] = [];
+  for (const [value, condition] of pairs) {
+    const set = piecewiseConditionSet(condition, x);
+    if (set === undefined) return pairs;
+    const remaining = complement(set, covered);
+    if (remaining === EmptySet) continue;
+    const all = union(covered, set);
+    let test = all === Reals ? S.true : condition;
+    if (test !== S.true && remaining instanceof Interval && !remaining.equals(set)) {
+      const entireLeft = interval(S.NegativeInfinity, remaining.start, true, !remaining.leftOpen);
+      const lo = remaining.isLeftUnbounded || complement(entireLeft, covered) === EmptySet
+        ? S.true : remaining.leftOpen ? Gt(x, remaining.start) : Ge(x, remaining.start);
+      const hi = remaining.isRightUnbounded ? S.true : remaining.rightOpen ? Lt(x, remaining.end) : Le(x, remaining.end);
+      test = and(lo, hi);
+    }
+    result.push([value, test]);
+    covered = all;
+  }
+  if (covered !== Reals) result.push([S.NaN, S.true]);
+  return result;
+}
+
+/** Apply branch equalities and merge a point value when it agrees with the next branch. */
+function simplifyPiecewise(e: Piecewise, opts: SimplifyOptions): Expr {
+  const pairs = simplifyPiecewiseIntervals(e).map(([branch, condition]): [Expr, Expr] => {
+    let value = branch;
+    const parts = condition instanceof BoolOp && condition.op === 'And' ? condition.args : [condition];
+    const equality = (part: Expr): part is Rel => part instanceof Rel && part.op === 'Eq';
+    const equations = ordered(parts.filter(equality).map((eq) => {
+      if (isSubstitutionEquation(eq) || eq.freeSymbols().size !== 1) return eq;
+      const delta = expand(add(eq.lhs, mul(-1, eq.rhs)));
+      return canonicalRelation(new Rel('Eq', delta, S.Zero));
+    }));
+    let remaining = parts.filter((part) => !equality(part));
+    for (const [i, eq] of equations.entries()) {
+      if (!(eq instanceof Rel) || !isSubstitutionEquation(eq)) continue;
+      const replacement = [[eq.lhs, eq.rhs]] as const;
+      value = subs(value, replacement);
+      equations.splice(i + 1, equations.length, ...equations.slice(i + 1).map((other) => subs(other, replacement)));
+      remaining = remaining.map((other) => subs(other, replacement));
+    }
+    const tests = remaining.map((test) => test instanceof Rel ? simplify(test, { ...opts, doit: false }) : test);
+    return [simplify(value, { ...opts, doit: false }), and(...equations, ...tests)];
+  });
+  for (let i = pairs.length - 2; i >= 0; i--) {
+    const [value, condition] = at(pairs, i);
+    const [next] = at(pairs, i + 1);
+    const parts = condition instanceof BoolOp && condition.op === 'And' ? condition.args : [condition];
+    if (!parts.every((part): part is Rel => part instanceof Rel && part.op === 'Eq')) continue;
+    const replacement = ordered(parts).filter((eq): eq is Rel => eq instanceof Rel && (pairs.length === 2 || isSubstitutionEquation(eq)))
+      .map((eq) => [eq.lhs, eq.rhs] as const);
+    if (subs(next, replacement).key === subs(value, replacement).key) at(pairs, i)[0] = next;
+  }
+  return piecewise(...pairs);
+}
+
 /**
  * Simplify an expression (SymPy simplify): rational-function forms (cancel, together), the
  * special simplifications for the functions it contains (hyperexpand, besselsimp, trigsimp,
@@ -217,6 +306,12 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
       }
     }
     return and(...fixed, ...terms);
+  }
+  if (input instanceof Piecewise) return simplifyPiecewise(input, opts);
+  // (a sum with Kronecker deltas keeps its Piecewise terms apart: they become deltas below)
+  if (input instanceof Add && input.args.some((term) => term instanceof Piecewise) && !some(input, (e) => e instanceof Fn && e.name === 'KroneckerDelta')) {
+    const folded = piecewiseFold(input);
+    if (folded instanceof Piecewise) return simplifyPiecewise(folded, opts);
   }
   if (input instanceof Rel) {
     const result = simplifyRelation(input, (e) => simplify(e, opts));
@@ -266,6 +361,13 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   }
   if (sympified instanceof Concrete && sympified.kind2 === 'Sum') {
     return factorTerms(combineConcrete(rebuild(sympified, sympified.args.map((a) => simplify(a, opts)))));
+  }
+  if (sympified instanceof Fn && sympified.name === 'log' && first(sympified.args) instanceof Concrete) {
+    return shorter(expand_log(sympified), sympified);
+  }
+  if (sympified instanceof Fn && sympified.name === 'sign') {
+    const [content, primitive] = asContentPrimitive(first(sympified.args));
+    if (content.isPositive && !content.isOne) return rebuild(sympified, [primitive]);
   }
   // SymPy _eval_simplify of hyper, the Bessel functions and the combinatorial functions
   const hyperexpand = simplifyHooks.hyperexpand;
@@ -331,7 +433,7 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   if (hasFn(expr, KRONECKER)) expr = kroneckersimp(expr);
   if (hasFn(expr, BESSEL)) expr = besselsimp(expr);
   if (hasFn(expr, TRIG_HYP)) expr = trigsimp(expr);
-  if (hasFn(expr, LOG)) expr = shorter(expand_log(expr), logcombine(expr));
+  if (hasFn(expr, LOG)) expr = shorter(expand_log(expr), logcombine(expr), expr);
   if (hasFn(expr, COMBINATORIAL_GAMMA)) expr = combsimp(expr);
   // powers, the cancelled form and the factored or expanded form
   let short = shorter(powsimp(expr, { combine: 'exp', deep: true }), powsimp(expr), expr);

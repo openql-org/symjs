@@ -88,7 +88,7 @@ describe("sympy/series/tests/test_residues.py", () => {
     const x = new Sym('x');
     expect(sympyStr(residue(new Pow(x, rational(2)), x, rational(5)))).toBe('0');
   });
-  it.fails("test_f:39", () => {
+  it("test_f:39", () => {
     const x = new Sym('x');
     expect(sympyStr(residue(new Mul([new Pow(x, rational(-5)), (SymFunction('f'))(x)]), x, rational(0)))).toBe('Subs(Derivative(f(x), (x, 4)), x, 0)/24');
   });

@@ -14,6 +14,32 @@ const x = sj.symbol('x');
 const y = sj.symbol('y');
 const s = (e: unknown): string => String(e);
 
+it('determines rationality for exponentials of unevaluated natural logarithms', () => {
+  const ofLog = (...args: sj.ExprLike[]) => new sj.Pow(sj.S.E, sj.fn('log', args, { evaluate: false }));
+  expect(ask(Q.rational(ofLog(3)))).toBe(true);
+  expect(ask(Q.rational(ofLog(sj.pi)))).toBe(false);
+  expect(ask(Q.rational(ofLog(3, 10)))).toBe('unknown');
+});
+
+it('queries the extended log and polar exponential on raw inputs', () => {
+  const raw = { evaluate: false };
+  expect(ask(Q.extended_positive(sj.fn('log', [sj.oo], raw)))).toBe(true);
+  expect(ask(Q.extended_positive(sj.fn('log', [sj.S.NegativeInfinity], raw)))).toBe('unknown');
+  expect(ask(Q.rational(sj.fn('exp_polar', [0], raw)))).toBe(true);
+});
+
+it('recognizes a product of three imaginary factors', () => {
+  const [u, v, w] = sj.symbols('u v w', { imaginary: true });
+  expect(ask(Q.real(sj.mul(u, v, w)))).toBe(false);
+});
+
+it('distinguishes nonreal inverse sine and cosine values from extended reals', () => {
+  expect(ask(Q.extended_real(sj.asin(2)))).toBe(false);
+  expect(ask(Q.extended_real(sj.acos(2)))).toBe(false);
+  expect(sj.isReal(sj.asin(-2))).toBe(false);
+  expect(ask(Q.extended_real(sj.asin(x)))).toBe('unknown');
+});
+
 const locals: Record<string, (...a: sj.Expr[]) => sj.Expr> = {
   ...Object.fromEntries(Object.keys(Q).map((k) => [`Q_${k}`, (...a: sj.Expr[]) => defined(Q[k], k)(...a)])),
   Xor: (...a) => sj.Xor(...a),
@@ -799,6 +825,63 @@ it('queries exponential phases and their integer powers', () => {
 it('keeps unknown numerical coordinates undecided', () => {
   const e = new sj.Pow(new sj.Fn('erf2inv', [sj.S.One]), sj.S.Half);
   expect(ask(Q.imaginary(e))).toBe('unknown');
+});
+
+it('infers facts about held powers without evaluating them first', () => {
+  const { Add, And, Fn, Mul, Pow, S, mul, rational, symbol } = sj;
+  const real = symbol('real', { real: true });
+  const negative = symbol('negative', { negative: true });
+  const imaginary = symbol('imaginary', { imaginary: true });
+  const integer = symbol('integer', { integer: true });
+  const even = symbol('even', { even: true, positive: true });
+  const odd = symbol('odd', { odd: true, positive: true });
+  const prime = symbol('prime', { prime: true });
+  const irrational = symbol('irrational', { irrational: true });
+  const phase = (n: sj.Expr) => new Pow(S.E, mul(S.I, S.Pi, n));
+  const held: readonly [sj.Expr, sj.Truth][] = [
+    [Q.real(new Pow(S.E, real)), true],
+    [Q.negative(new Pow(S.E, real)), false],
+    [Q.positive(phase(even)), true],
+    [Q.negative(phase(odd)), true],
+    [Q.imaginary(phase(mul(S.Half, odd))), true],
+    [Q.real(new Pow(imaginary, even)), true],
+    [Q.real(new Pow(imaginary, integer)), 'unknown'],
+    [Q.real(new Pow(S.I, imaginary)), true],
+    [Q.real(new Pow(mul(-1, S.I), imaginary)), true],
+    [Q.real(new Pow(S.NegOne, imaginary)), true],
+    [Q.imaginary(new Pow(imaginary, odd)), true],
+    [Q.imaginary(new Pow(negative, irrational)), false],
+    [Q.imaginary(new Pow(negative, rational(1, 3))), false],
+    [Q.positive(new Pow(negative, even)), true],
+    [Q.negative(new Pow(negative, odd)), true],
+    [Q.nonnegative(new Pow(real, even)), true],
+    [Q.integer(new Pow(negative, S.Zero)), true],
+    [Q.even(new Mul([integer, sj.add(integer, 1)])), true],
+    [Q.odd(new Pow(S.NegOne, integer)), true],
+    [Q.even(new Fn('re', [even])), true],
+    [Q.even(new Fn('im', [real])), true],
+    [Q.prime(new Pow(prime, S.One)), true],
+    [Q.prime(new Pow(prime, even)), false],
+    [Q.finite(new Pow(S.Half, S.Infinity)), true],
+    [Q.finite(new Pow(S.Two, S.Infinity)), false],
+    [Q.finite(new Pow(S.Two, x)), 'unknown'],
+    [Q.positive(new Fn('acot', [imaginary])), false],
+    [Q.rational(new Fn('cot', [integer])), false],
+    [Q.algebraic(new Fn('cot', [integer])), false],
+    [Q.finite(new Fn('log', [S.Zero])), false],
+    [Q.finite(new Fn('log', [negative])), true],
+    [Q.finite(new Fn('log', [x])), 'unknown'],
+    [Q.antihermitian(new Add([S.One, S.I])), false],
+  ];
+  for (const [predicate, expected] of held) expect(ask(predicate), String(predicate)).toBe(expected);
+  const asin = new Fn('asin', [x]);
+  expect(ask(Q.positive(asin), And(Q.positive(x), Q.nonpositive(sj.add(x, -1))))).toBe(true);
+  expect(ask(Q.positive(asin), And(Q.negative(x), Q.nonnegative(sj.add(x, 1))))).toBe(false);
+  expect(ask(Q.positive(asin))).toBe('unknown');
+  expect(ask(Q.antihermitian(new Mul([x, y])))).toBe('unknown');
+  expect(ask(Q.antihermitian(new Mul([x, y])), And(Q.antihermitian(x), Q.hermitian(y)))).toBe(true);
+  expect(ask(Q.hermitian(new Add([x, y])))).toBe('unknown');
+  expect(ask(Q.finite(new Add([x, y])), And(Q.extended_positive(x), Q.extended_positive(y)))).toBe('unknown');
 });
 
 it('handles core boolean atoms and relation normalization without optional proposition handlers', async () => {

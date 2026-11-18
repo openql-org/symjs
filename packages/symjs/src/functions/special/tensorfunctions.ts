@@ -9,8 +9,10 @@
  */
 
 import type { Expr, ExprLike } from '../../core/nodes';
-import { Fn, Rational, S, Sym } from '../../core/nodes';
-import { defineFunction } from '../../core/defun';
+import { Fn, Rational, S, Sym, registerHeadResolver } from '../../core/nodes';
+import type { FunctionDefinition } from '../../core/defun';
+import { DefinedFunctionCall, defineFunction } from '../../core/defun';
+import { add, mul, neg } from '../../core/ops';
 import { at, pair } from '../../core/guard';
 
 function deltaIndices(e: Expr): readonly [Expr, Expr] {
@@ -55,24 +57,45 @@ function evalLeviCivita(args: readonly bigint[]): Expr {
   return Rational.of(num, den);
 }
 
-const leviCivitaDef = defineFunction('LeviCivita', {
-  eval: (...args: Expr[]) => {
-    const ints = args.flatMap((a) => (a instanceof Rational && a.isInteger ? [a.p] : []));
-    if (ints.length === args.length) return evalLeviCivita(ints);
-    // a repeated index
-    if (new Set(args.map((a) => a.key)).size < args.length) return S.Zero;
-    return undefined;
+class LeviCivitaCall extends DefinedFunctionCall {
+  constructor(args: readonly Expr[]) { super('LeviCivita', args, leviCivitaDefinition); }
+  override printLatex(print: (e: Expr) => string): string {
+    return `\\varepsilon_{${this.args.map(print).join(' ')}}`;
+  }
+  override conjugateSelf(): Expr { return this; }
+  override adjointSelf(): Expr { return this; }
+  override isRealSelf(): boolean { return true; }
+  override doitSelf(): Expr {
+    const factors: Expr[] = [];
+    let denominator = 1n;
+    let factorial = 1n;
+    for (const [i, a] of this.args.entries()) {
+      factorial *= BigInt(Math.max(1, i));
+      denominator *= factorial;
+      for (const b of this.args.slice(i + 1)) factors.push(add(b, neg(a)));
+    }
+    return mul(Rational.of(1n, denominator), ...factors);
+  }
+}
+
+const leviCivitaDefinition: FunctionDefinition = {
+  eval: (...indices) => {
+    const ints = indices.flatMap((a) => (a instanceof Rational && a.isInteger ? [a.p] : []));
+    if (ints.length === indices.length) return evalLeviCivita(ints);
+    if (new Set(indices.map((a) => a.key)).size < indices.length) return S.Zero;
+    return new LeviCivitaCall(indices);
   },
-  latex: (args) => `\\varepsilon_{${args.join(' ')}}`,
-});
+};
+const leviCivita = defineFunction('LeviCivita', leviCivitaDefinition);
 
 /**
  * The Levi-Civita symbol (SymPy LeviCivita): the sign of the permutation of
  * integer arguments, 0 for a repeated index, unevaluated otherwise.
  */
 export function LeviCivita(...args: ExprLike[]): Expr {
-  return leviCivitaDef(...args);
+  return leviCivita(...args);
 }
+registerHeadResolver(LeviCivitaCall, () => leviCivita);
 
 /** SymPy Eijk: the Levi-Civita symbol, LeviCivita(*args). */
 export function Eijk(...args: ExprLike[]): Expr {

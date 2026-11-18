@@ -16,7 +16,7 @@
  */
 
 import type { Assumptions, ExprLike } from './nodes';
-import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym } from './nodes';
+import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, functionFactHandlers } from './nodes';
 import { add, couldExtractMinusSign, mul, pow, sympify } from './ops';
 import { mapBottomUp, xreplace } from './traverse';
 import { asRealImag } from './methods';
@@ -576,6 +576,8 @@ class Decider {
     this.memo.set(k, null);
     const r = (isMinMax(e) && MIN_MAX_PREDICATES.has(name) ? torf(e.args, (a) => this.q(name, a)) : undefined)
       ?? (e instanceof Piecewise && PIECEWISE_PREDICATES.has(name) ? torf(e.pairs.map(([x]) => x), (a) => this.q(name, a)) : undefined)
+      ?? this.exponentialDomain(name, e)
+      ?? (e instanceof Fn ? functionFactHandlers[e.name]?.(name, e.args, (fact, arg) => this.q(fact, arg)) : undefined)
       ?? this.numericDomain(name, e)
       ?? this.builtin(name, e);
     this.memo.set(k, r);
@@ -598,10 +600,10 @@ class Decider {
     return realZero === false || imaginaryZero === true ? false : realZero === true && imaginaryZero === false ? true : undefined;
   }
 
-  private builtin(name: string, e: Expr): Tri {
+  private exponentialDomain(name: string, e: Expr): Tri {
     if (e instanceof Pow && isConst(e.base, 'E') && ['real', 'imaginary', 'positive', 'negative'].includes(name)) {
       if (this.q('real', e.exp) === true) return name === 'real' || name === 'positive';
-      const phase = mul(e.exp, pow(mul(S.I, S.Pi), -1));
+      const phase = mul(-1, S.I, e.exp, pow(S.Pi, -1));
       const integral = this.q('integer', phase);
       if (name === 'real' && integral === true) return true;
       if (name === 'positive' && integral === true) return this.q('even', phase);
@@ -612,6 +614,10 @@ class Decider {
         if (integral === false && halfIntegral === true) return true;
       }
     }
+    return undefined;
+  }
+
+  private builtin(name: string, e: Expr): Tri {
     switch (name) {
       case 'real':
         if (e instanceof Fn && e.name === 'log') return this.q('positive', at(e.args, 0));
@@ -619,19 +625,22 @@ class Decider {
         // isReal counts oo and -oo as real (extended reals); Q.real does not
         if (this.q('finite', e) === false) return false;
         if (isConst(e, 'I')) return false;
-        if (this.q('imaginary', e) === true) return false;
         if (e instanceof Add) {
           const rs = e.args.map((a) => this.q('real', a));
           if (rs.every((r) => r === true)) return true;
           if (rs.filter((r) => r === false).length === 1 && !rs.includes(undefined)) return false;
         }
         if (e instanceof Mul) {
+          const real = e.args.map((a) => this.q('real', a));
+          if (real.filter((r) => r === false).length === 1 && !real.includes(undefined)
+            && e.args.every((a, i) => real[i] === false || this.q('nonzero', a) === true)) return false;
           const im = e.args.filter((a) => this.q('imaginary', a) === true);
           if (im.length && e.args.every((a) => im.includes(a) || this.q('real', a) === true)) {
             if (im.length % 2 === 0) return true;
             if (e.args.every((a) => im.includes(a) || this.q('zero', a) === false)) return false;
           }
         }
+        if (this.q('imaginary', e) === true) return false;
         if (e instanceof Pow) {
           const { base, exp } = e;
           if (base instanceof Pow && isConst(base.base, 'E') && this.q('integer', exp) === true) {
@@ -659,6 +668,7 @@ class Decider {
         return isReal(this.re(e)) ?? (this.q('rational', e) === true ? true : undefined);
       case 'extended_real': {
         if (e instanceof Special) return e.name === 'oo' || e.name === '-oo';
+        if (e instanceof Fn && (e.name === 'asin' || e.name === 'acos')) return this.q('real', e);
         if (e instanceof Add && e.args.length === 2 && e.args.some((a) => a instanceof Special && (a.name === 'oo' || a.name === '-oo')) && e.args.some((a) => this.q('real', a) === true)) return true;
         // SymPy _eval_is_extended_real of functions real on the extended real line
         if (e instanceof Fn && e.args.length === 1 && EXTENDED_REAL_FNS.has(e.name) && this.q('extended_real', at(e.args, 0)) === true) return true;
@@ -710,6 +720,10 @@ class Decider {
       }
       case 'extended_positive':
         if (e instanceof Special) return e.name === 'oo';
+        if (e instanceof Fn && e.name === 'log') {
+          const argument = at(e.args, 0);
+          if (this.q('infinite', argument) === true && this.q('extended_positive', argument) === true) return true;
+        }
         if (this.q('positive', e) === true) return true;
         if (this.q('extended_real', e) === false) return false;
         return this.q('extended_real', e) === true && this.q('extended_nonpositive', e) === true ? false : undefined;
@@ -801,6 +815,7 @@ class Decider {
 
   private rational(e: Expr): Tri {
     if (e instanceof Rational) return true;
+    if (e instanceof Fn && e.name === 'exp_polar' && this.q('zero', at(e.args, 0)) === true) return true;
     if (e instanceof Fn && this.q('zero', e) === true) return true;
     // SymPy Abs._eval_is_rational and _eval_is_integer: |a| of a rational (integer) real a
     if (e instanceof Fn && e.name === 'abs' && this.q('real', at(e.args, 0)) === true) return this.q('rational', at(e.args, 0));
@@ -826,6 +841,9 @@ class Decider {
     }
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      if (isConst(b, 'E') && x instanceof Fn && x.name === 'log' && x.args.length === 1) {
+        return this.q('rational', at(x.args, 0));
+      }
       if (this.q('algebraic', e) === false) return false;
       if (isConst(b, 'E')) return undefined;
       if (isInt(x) && x.p === -1n && this.q('rational', b) === false && this.q('finite', b) === true) return false;
@@ -886,7 +904,7 @@ class Decider {
       if (['cot', 'acot'].includes(e.name) && this.q('algebraic', a()) === true) return false;
       // trigonometric functions at rational multiples of pi are algebraic (SymPy sin._eval_is_algebraic)
       if (['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(e.name) && this.q('rational', mul(a(), pow(S.Pi, -1))) === true) return e.name === 'sin' || e.name === 'cos' ? true : undefined;
-      if (['exp', 'sin', 'cos', 'tan', 'cot', 'asin', 'atan', 'acot'].includes(e.name) && this.q('algebraic', a()) === true && this.q('nonzero', a()) === true) return false;
+      if (['exp', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'asin', 'atan', 'acot'].includes(e.name) && this.q('algebraic', a()) === true && this.q('nonzero', a()) === true) return false;
       // re, im and conjugate of an algebraic number; W(a) for a nonzero algebraic a is transcendental
       if (['re', 'im', 'conjugate'].includes(e.name) && this.q('algebraic', a()) === true) return true;
       if (e.name === 'LambertW' && e.args.length === 1 && this.q('algebraic', a()) === true && this.q('nonzero', a()) === true) return false;

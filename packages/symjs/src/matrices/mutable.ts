@@ -14,6 +14,7 @@ import { Matrix } from './matrix';
 
 /** A matrix whose entries can be changed in place (SymPy MutableDenseMatrix). */
 export class MutableDenseMatrix extends Matrix {
+  override get classPriority(): number { return 4; }
   readonly #cells: Expr[];
 
   protected constructor(rows: number, cols: number, cells: Expr[]) {

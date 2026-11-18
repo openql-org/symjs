@@ -605,6 +605,13 @@ class Capture:
             extract.DUMMY_IDS.clear()
             record = {"fn": name, "args": [extract.ser(a) for a in args],
                       "kwargs": {k: extract.ser(v) for k, v in kwargs.items()}}
+            owner = getattr(function, "__self__", None)
+            if not name.startswith(".") and isinstance(owner, sympy.MatrixBase):
+                record["boundMatrix"] = extract.ser(owner)
+            if name == "classof":
+                for arg, tree in zip(args, record["args"]):
+                    if tree["t"] == "Matrix":
+                        tree["matrixClass"] = type(arg).__name__
             if name.startswith("."):
                 record["self"] = extract.ser(receiver)
             state = extract.tensor_state((receiver, args, kwargs))
@@ -691,6 +698,8 @@ class Capture:
             self.omit(site, "unstable-result-representation")
             return
         case = {**self.metadata(site), **record, "expected": text, "op": op, **extra}
+        if op == "!=" and self.category == "tensor" and isinstance(expected, (sympy.Idx, sympy.Indexed, sympy.IndexedBase, sympy.tensor.tensor.TensorHead)):
+            case["comparisonTree"] = extract.ser(expected)
         if ported_function_case(case):
             case.pop("exclusion", None)
         if isinstance(expected, str):
@@ -1158,7 +1167,7 @@ def without_replay_state(value):
     """The original assertion identity, independent of replay-only state."""
     if isinstance(value, dict):
         return {k: without_replay_state(v) for k, v in value.items()
-                if k not in ("tensorData", "exclusion", "unsupportedClass")}
+                if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree", "matrixClass", "boundMatrix")}
     if isinstance(value, list):
         return [without_replay_state(v) for v in value]
     return value
@@ -1171,7 +1180,7 @@ def refresh_replay_state(destination, timeout=TEST_SECONDS):
     destination = Path(destination)
     root = Path(sympy.__file__).parent
     modules = {
-        "tensor": ["sympy.tensor.tests.test_tensor"],
+        "tensor": ["sympy.tensor.tests.test_tensor", "sympy.tensor.tests.test_indexed"],
         "core": ["sympy.core.tests.test_priority", "sympy.core.tests.test_function"],
         "functions": ["sympy.functions.elementary.tests.test_interface"],
     }
@@ -1201,7 +1210,7 @@ def refresh_replay_state(destination, timeout=TEST_SECONDS):
             for i, case in enumerate(cases):
                 if case["module"] not in names:
                     continue
-                if category == "tensor" and not any(part in case["test"] for part in ("valued", "TensMul_data", "TensAdd_data")):
+                if category == "tensor" and case["op"] != "!=" and case["module"].endswith("test_tensor") and not any(part in case["test"] for part in ("valued", "TensMul_data", "TensAdd_data", "noncommuting_components")):
                     continue
                 replacement = observed.get(json_line(without_replay_state(case)))
                 key = f"{case['module']}:{case['test']}:{case['line']}: {case['src']}"

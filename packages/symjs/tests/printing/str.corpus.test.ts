@@ -317,7 +317,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:93", () => {
+  it("test_Add:93", () => {
     const [w, x, y, z] = symbols('w x y z');
     const unicode = pprintUseUnicode(false);
     try {
@@ -326,7 +326,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:94", () => {
+  it("test_Add:94", () => {
     const [x, y, z] = symbols('x y z');
     const unicode = pprintUseUnicode(false);
     try {
@@ -335,7 +335,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Add:95", () => {
+  it("test_Add:95", () => {
     const [x, y, z, t] = symbols('x y z t');
     const unicode = pprintUseUnicode(false);
     try {
@@ -683,7 +683,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_AccumBounds:227", () => {
+  it("test_AccumBounds:227", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(AccumBounds(rational(0), a))).toBe('AccumBounds(0, a)');
   });
@@ -1025,7 +1025,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Mul:290", () => {
+  it("test_Mul:290", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
@@ -1034,7 +1034,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Mul:293", () => {
+  it("test_Mul:293", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
@@ -2632,7 +2632,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_set:675", () => {
+  it("test_set:675", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -3396,7 +3396,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_UnevaluatedExpr:1060", () => {
+  it("test_UnevaluatedExpr:1060", () => {
     const [a, b] = symbols('a b');
     const unicode = pprintUseUnicode(false);
     try {
@@ -3540,7 +3540,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_issue_22689:1129", () => {
+  it("test_issue_22689:1129", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
@@ -3685,7 +3685,7 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_printing_str_array_expressions:1185", () => {
+  it("test_printing_str_array_expressions:1185", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {

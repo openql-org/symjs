@@ -99,6 +99,7 @@ export function classKey(e: Expr): Key {
   if (e instanceof UndefFn) return [4, 0, e.name];
   if (e instanceof Derivative) return [5, 0, 'Derivative'];
   if (e instanceof Rel) return [5, 0, REL_CLASS[e.op]];
+  if (e instanceof ExtensionExpr && e.name === 'meijerg') return [4, 0, e.name];
   // SymPy MatAdd and MatMul sort like Add and Mul
   // (SymPy Atom subclasses such as Str and Permutation have the class key (2, 0, name))
   if (e instanceof ExtensionExpr) return e.name === 'MatAdd' ? [3, 1, 'MatAdd'] : e.name === 'MatMul' ? [3, 0, 'MatMul'] : [e.atomClass ? 2 : 5, 0, e.name];
@@ -265,7 +266,7 @@ function lexOrder(terms: readonly Expr[], order = 'lex'): Expr[] {
     const ncpart: Expr[] = [];
     if (!(rest instanceof Rational && rest.isOne)) {
       for (const factor of rest instanceof Mul ? rest.args : [rest]) {
-        if (!factor.isCommutative) {
+        if (!factor.isCommutative || factor instanceof ExtensionExpr && factor.name === 'UnevaluatedExpr') {
           ncpart.push(factor);
           continue;
         }

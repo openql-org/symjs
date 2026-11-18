@@ -193,3 +193,17 @@ it('canonicalizes with SymPy argument forms', () => {
   expect(() => canonicalizeTensor(g, [[0, 1]], [2 as unknown as 0])).toThrow('msym entries');
   expect(() => canonicalizeTensor(new Sym('x'), [[0, 1]], [0])).toThrow('g must be a Permutation');
 });
+
+it('canonicalizes naively and certifies graphs (SymPy combinatorics.testutil)', async () => {
+  const { canonicalizeNaive, graphCertificate, getSymmetricGroupSgs: sgs } = await import('../../src/tensor/tensorcan');
+  const [base1, gens1] = sgs(1);
+  const [base2, gens2] = sgs(2);
+  expect(canonicalizeNaive([1, 3, 2, 0, 4, 5], [2, 3], 0, [base2, gens2, 2, 0])).toEqual([0, 2, 1, 3, 4, 5]);
+  expect(canonicalizeNaive(new Permutation([1, 3, 5, 4, 2, 0, 6, 7]), [0, 1, 2, 3, 4, 5], 0, [base1, gens1, 6, 1])).toBe(0);
+  expect(graphCertificate(new Map([[0, [1]], [1, [0]]]))).toEqual([0, 1, 2, 3]);
+  expect(graphCertificate(new Map([[0, [1, 2]], [1, [0, 2]], [2, [0, 1]]]))).toEqual([0, 2, 1, 4, 3, 5, 6, 7]);
+  const first = new Map([[0, [1, 2, 3, 5]], [1, [0, 2, 4]], [2, [0, 1, 3, 4]], [3, [0, 2, 4]], [4, [1, 2, 3, 5]], [5, [0, 4]]]);
+  const second = new Map([[0, [1, 5]], [1, [0, 2, 3, 4]], [2, [1, 3, 5]], [3, [1, 2, 4, 5]], [4, [1, 3, 5]], [5, [0, 2, 3, 4]]]);
+  expect(graphCertificate(first)).toEqual([0, 2, 4, 6, 1, 8, 10, 12, 3, 14, 16, 18, 5, 9, 15, 7, 11, 17, 13, 19, 20, 21]);
+  expect(graphCertificate(second)).toEqual(graphCertificate(first));
+});
