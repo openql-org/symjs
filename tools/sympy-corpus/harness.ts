@@ -5790,14 +5790,15 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (!(self instanceof JsTuple) || !(args[0] instanceof JsTuple)) throw new TypeError('Tuple concatenation requires tuples');
       return sj.Tuple(...self.items.map(expressionContainer)).concat(sj.Tuple(...args[0].items.map(expressionContainer)));
     };
-    if (c.fn === '.__mul__') return (args, kw, self) => {
+    // tuple * integer repeats; another operand (a Permutation applied to a list) keeps its own product
+    if (c.fn === '.__mul__' && [c.self?.t, c.args?.[0]?.t].every((t) => t === 'Tuple' || t === 'Rational')) return (args, kw, self) => {
       noKw(kw);
       const tuple = self instanceof JsTuple ? self : args[0];
       const count = self instanceof JsTuple ? args[0] : self;
       if (!(tuple instanceof JsTuple) || !(count instanceof sj.Rational) || !count.isInteger) throw new TypeError('Tuple repetition requires an integer');
       return sj.Tuple(...tuple.items.map(expressionContainer)).repeat(Number(count.p));
     };
-    if (c.fn === '.tuple_count' || c.fn === '.index') return (args, kw, self) => {
+    if ((c.fn === '.tuple_count' || c.fn === '.index') && c.self?.t === 'Tuple') return (args, kw, self) => {
       noKw(kw);
       if (!(self instanceof JsTuple)) throw new TypeError('Expected a tuple');
       const tuple = sj.Tuple(...self.items.map(expressionContainer));
@@ -6513,7 +6514,10 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
   // a sympy.stats name that symjs exports under another name (stats E is the expectation, not the constant)
-  const adapter = diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  // a doctest's Matrix is mutable: simplify() works in place and returns None
+  const inPlaceSimplify: Adapter | undefined = c.fn === '.simplify' && c.self?.t === 'Matrix' && !c.module.includes('.tests.')
+    ? (_args, kw, self) => { noKw(kw); if (self instanceof Matrix) self.simplify(); return null; } : undefined;
+  const adapter = inPlaceSimplify ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     const self = c.self ? deserialize(c.self) : undefined;
