@@ -317,7 +317,7 @@ describe("sympy/algebras/tests/test_quaternion.py", () => {
   it("test_quaternion_axis_angle_simplification:103", () => {
     expect(sympyStr(new Mul([rational(3, 14), new Pow(rational(14), rational(1, 2)), fn('sin', [new Mul([rational(1, 2), fn('asin', [rational(4)])])])]))).toBe('3*sqrt(14)*sin(asin(4)/2)/14');
   });
-  it.fails("test_quaternion_complex_real_addition:112", () => {
+  it("test_quaternion_complex_real_addition:112", () => {
     const [w, x, y, z] = symbols('w x y z');
     const a = new Sym('a', { complex: true });
     expect(sympyStr(a.add(Quaternion(w, x, y, z, { realField: true })))).toBe('(w + re(a)) + (x + im(a))*i + y*j + z*k');
@@ -665,7 +665,7 @@ describe("sympy/algebras/tests/test_quaternion.py", () => {
     const y = new Sym('y');
     expect(sympyStr(Quaternion(rational(1), rational(2), rational(3), rational(5), { realField: true }).mul(Quaternion(rational(1), rational(1), rational(1), y, { realField: true })))).toBe('(-5*y - 4) + (3*y - 2)*i + (9 - 2*y)*j + (y + 4)*k');
   });
-  it.fails("test_quaternion_multiplication:354", () => {
+  it("test_quaternion_multiplication:354", () => {
     const z = new Sym('z', { complex: true });
     const q0 = new Sym('q0', { real: true });
     const q1 = new Sym('q1', { real: true });
@@ -673,7 +673,7 @@ describe("sympy/algebras/tests/test_quaternion.py", () => {
     const q3 = new Sym('q3', { real: true });
     expect(sympyStr(z.mul(Quaternion(q0, q1, q2, q3, { realField: true })))).toBe('(q0*re(z) - q1*im(z)) + (q0*im(z) + q1*re(z))*i + (q2*re(z) - q3*im(z))*j + (q2*im(z) + q3*re(z))*k');
   });
-  it.fails("test_quaternion_multiplication:355", () => {
+  it("test_quaternion_multiplication:355", () => {
     const q0 = new Sym('q0', { real: true });
     const q1 = new Sym('q1', { real: true });
     const q2 = new Sym('q2', { real: true });

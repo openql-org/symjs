@@ -13,6 +13,7 @@ import {
   GeometryEntity,
   GeometrySet,
   Line,
+  Line2D,
   Parabola,
   Plane,
   Point,
@@ -151,4 +152,35 @@ describe('GeometryEntity (SymPy test_entity)', () => {
     expect(realSymbol(x)).toBe(x);
     expect(Point3D(1, 2, 3).ambientDimension).toBe(3);
   });
+});
+
+it('constructs a base geometry entity and leaves its ambient dimension unspecified', () => {
+  const x = new Sym('x');
+  const entity = new GeometryEntity('GeometryEntity', [x]);
+  expect(String(entity)).toBe('GeometryEntity(x)');
+  expect(entity.equals(new GeometryEntity('GeometryEntity', [x]))).toBe(true);
+  expect(() => entity.ambientDimension).toThrow(NotImplementedError);
+  expect(() => entity.contains(Point(0, 0))).toThrow(NotImplementedError);
+});
+
+it('transforms nested geometry arguments and solves their point parameters', () => {
+  const x = new Sym('x');
+  const g = new GeometryEntity('GeometryEntity', [Point(1, 2), x]);
+  expect(String(g.scale(2, 3, [4, 5]))).toBe('GeometryEntity(Point2D(-2, -4), x)');
+  expect(String(g.scale())).toBe(String(g));
+  expect(String(g.rotate(pi))).toBe('GeometryEntity(Point2D(-1, -2), x)');
+  expect(String(g.translate(2, 3))).toBe('GeometryEntity(Point2D(3, 5), x)');
+  const axis = Line([0, 0], [1, 0]);
+  if (!(axis instanceof Line2D)) throw new TypeError('expected a planar line');
+  expect(String(g.reflect(axis))).toBe('GeometryEntity(Point2D(1, -2), x)');
+  const t = new Sym('t');
+  const line = Line([0, 0], [1, 1]);
+  for (const point of [[2, 2], Point(2, 2)]) {
+    const result = line.parameterValue(point, t);
+    expect(result).toBeInstanceOf(Map);
+    if (!(result instanceof Map)) throw new TypeError('expected parameter bindings');
+    expect([...result].map(([k, v]) => [String(k), String(v)])).toEqual([['t', '2']]);
+  }
+  expect(() => line.parameterValue([1, 2], t)).toThrow(RangeError);
+  expect(() => line.parameterValue(Circle([0, 0], 1), t)).toThrow('other must be a point');
 });

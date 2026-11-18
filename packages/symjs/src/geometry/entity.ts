@@ -84,14 +84,19 @@ export function realSymbol(parameter: string | Sym): Sym {
  * SymPy GeometryEntity: the base class of all geometric entities, an
  * expression node whose arguments define it.
  */
-export abstract class GeometryEntity extends ExtensionExpr {
+export class GeometryEntity extends ExtensionExpr {
+  withArgs(args: readonly Expr[]): Expr {
+    return new GeometryEntity(this.name, args);
+  }
   /** The entity is a point (SymPy is_Point). */
   get isPoint(): boolean {
     return false;
   }
 
   /** The number of coordinates of the space the entity lives in (SymPy ambient_dimension). */
-  abstract get ambientDimension(): number;
+  get ambientDimension(): number {
+    throw new NotImplementedError(`ambient dimension of ${this.name} is not defined`);
+  }
 
   /** The rectangle (xmin, ymin, xmax, ymax) bounding a 2D entity (SymPy bounds). */
   get bounds(): [Expr, Expr, Expr, Expr] {

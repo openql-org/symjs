@@ -659,3 +659,15 @@ function at3(xs: readonly Expr[], i: number): Expr {
 function evalfNum(e: Expr, values: Record<string, number>): number {
   return e.toNumber(values);
 }
+
+it('embeds symbolic complex scalars into the real quaternion field', () => {
+  const z = new Sym('z', { complex: true });
+  const [a, b, c, d] = ['a', 'b', 'c', 'd'].map((name) => new Sym(name, { real: true }));
+  if (!a || !b || !c || !d) throw new RangeError('missing quaternion coefficient');
+  const q = Quaternion(a, b, c, d);
+  const embedded = Quaternion(re(z), im(z), 0, 0);
+  expect(add(z, q).equals(add(embedded, q))).toBe(true);
+  expect(mul(z, q).equals(mul(embedded, q))).toBe(true);
+  expect(mul(q, z).equals(mul(q, embedded))).toBe(true);
+  expect(mul(z, q).equals(mul(q, z))).toBe(false);
+});
