@@ -567,7 +567,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
   Rem: ([p, q]) => sj.Rem(p!, q!),
-  KroneckerDelta: ([i, j]) => sj.KroneckerDelta(i!, j!),
+  KroneckerDelta: ([i, j, range]) => sj.KroneckerDelta(i!, j!, range === undefined ? undefined : sj.Tuple(...tupleItems(range))),
   ...Object.fromEntries(ZETA_FAMILY_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   hyper: ([ap, bq, z]) => sj.hyper(tupleItems(ap), tupleItems(bq), z!),
   meijerg: ([a, b, z]) => {
@@ -2860,9 +2860,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     SPECIAL_NAMES.map((n) => [
       n,
       ((args, kw) => {
-        noKw(kw);
+        for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
+        if (n === 'loggamma' && args.length !== 1) throw new TypeError('loggamma takes one argument');
+        if (n === 'beta' && args.length === 1 && kw['evaluate'] !== false) return sj.beta(asExpr(args[0]));
         if (n === 'sign' && args.length === 2) return new sj.Gruntz().sign(asExpr(args[0]), asSym(args[1]));
-        return sj.fn(n, args.flatMap((a) => (a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)])));
+        return sj.fn(n, args.flatMap((a) => (a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)])), { evaluate: kw['evaluate'] !== false });
       }) as Adapter,
     ]),
   ),
@@ -3844,14 +3846,25 @@ export const ADAPTERS: Record<string, Adapter> = {
     const x = (kw['x'] ?? args[1]) instanceof Sym ? asSym(kw['x'] ?? args[1]) : undefined;
     return sj.minimalPolynomial(asExpr(args[0]), x, { compose: kw['compose'] !== false, polys: Boolean(kw['polys']), ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }) });
   },
-  KroneckerDelta: (args, kw) => (noKw(kw), sj.KroneckerDelta(asExpr(args[0]), asExpr(args[1]))),
+  KroneckerDelta: (args, kw) => (noKw(kw), sj.KroneckerDelta(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? undefined : [(args[2] as JsTuple).items[0] as Expr, (args[2] as JsTuple).items[1] as Expr])),
+  meijerg: (args, kw) => {
+    noKw(kw);
+    if (args.length === 5) return sj.meijerg(asExprList(args[0]), asExprList(args[1]), asExprList(args[2]), asExprList(args[3]), asExpr(args[4]));
+    const a = (args[0] as JsTuple).items, b = (args[1] as JsTuple).items;
+    return sj.meijerg(asExprList(a[0]), asExprList(a[1]), asExprList(b[0]), asExprList(b[1]), asExpr(args[2]));
+  },
+  '.delta_range': (_args, kw, self) => (noKw(kw), (self as sj.Fn).args[2] === undefined ? null : new JsTuple(((self as sj.Fn).args[2] as Expr).args)),
+  '.integrand': (args, kw, self) => (noKw(kw), (self as sj.MeijerG).integrand(asExpr(args[0]))),
   hyper: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
     return sj.hyper((args[0] as JsTuple).items.map(asExpr), (args[1] as JsTuple).items.map(asExpr), asExpr(args[2]), { evaluate: kw['evaluate'] !== false });
   },
   ...Object.fromEntries(ZETA_FAMILY_NAMES.map((n) => [n, ((args, kw) => (noKw(kw), sj.fn(n, args.map(asExpr)))) as Adapter])),
-  jn: (args, kw) => (noKw(kw), sj.jn(asExpr(args[0]), asExpr(args[1]))),
-  yn: (args, kw) => (noKw(kw), sj.yn(asExpr(args[0]), asExpr(args[1]))),
+  ...Object.fromEntries((['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn'] as const).map((name) => [name, ((args, kw) => {
+    for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
+    if (args.length !== 2) throw new TypeError(`${name} takes two arguments`);
+    return kw['evaluate'] === false ? sj.fn(name, args.map(asExpr), { evaluate: false }) : sj[name](asExpr(args[0]), asExpr(args[1]));
+  }) as Adapter])),
   denom: exprFn((e) => sj.fraction(e)[1]),
   ln: exprFn((e) => sj.log(e)),
   Rem: (args, kw) => (noKw(kw), sj.Rem(asExpr(args[0]), asExpr(args[1]))),
@@ -3905,7 +3918,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsTuple([K.getField().toSympy(c), wrap(p), wrap(q)]);
   },
   '.trigsimp': exprMethod(sj.trigsimp),
-  '.fdiff': (args, kw, self) => (noKw(kw), sj.fdiff(asExpr(self), args.length ? intArg(args[0]) : 1)),
+  '.fdiff': (args, kw, self) => {
+    noKw(kw);
+    const e = asExpr(self);
+    const defaultIndex = e instanceof sj.Fn && ['polygamma', 'lowergamma', 'uppergamma', 'expint'].includes(e.name) ? 2 : 1;
+    return sj.fdiff(e, args.length ? intArg(args[0]) : defaultIndex);
+  },
   '.is_simple': (args, kw, self) => (noKw(kw), sj.isSimple(asExpr(self), asExpr(args[0]))),
   '.conjugate': exprMethod(sj.conjugate),
   '.subs': (args, kw, self0) => {
@@ -6548,7 +6566,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') ? undefined : auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       // (a DomainMatrix error is the method's own result)
-      if (!auto || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (c.fn === 'parse_expr' && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
+      if (!auto || (self === undefined && ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'loggamma'].includes(c.fn)) || !(e instanceof Unsupported || e instanceof TypeError) || e instanceof sj.DMError || (c.fn === 'parse_expr' && e instanceof TypeError) || c.module === 'sympy.polys.tests.test_polytools' && ['Poly', '.eval', 'invert'].includes(c.fn) && (e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError || e instanceof sj.CoercionFailed)) {
         if (!(e instanceof Unsupported)) observe?.({ error: e });
         throw e;
       }

@@ -7,7 +7,7 @@
 // derivatives, expand_func and double-precision numerics. Expected values are str() results of SymPy
 // 1.14 (mpmath 1.3 values for the numerics) unless a comment says otherwise.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../../src';
 
 
@@ -661,11 +661,11 @@ describe('special functions: cases outside the tables', () => {
     expect(toComplex(erf2(P('1/3'), P('2/3'))).re).toBeCloseTo(0.2915733020827768, 12);
     expect(() => toComplex(harmonic(x, y), { x: 2, y: 2 })).toThrow(NotImplementedError);
   });
-  it('derivatives with respect to an order are not implemented', () => {
+  it('represents order derivatives symbolically', () => {
     // SymPy: Derivative(polygamma(x, y), x) and meijerg expressions for the incomplete gamma functions
-    expect(() => diff(P('polygamma(x, y)'), x)).toThrow(NotImplementedError);
-    expect(() => diff(P('lowergamma(x, y)'), x)).toThrow(NotImplementedError);
-    expect(() => diff(P('uppergamma(x, y)'), x)).toThrow(NotImplementedError);
+    expect(String(diff(P('polygamma(x, y)'), x))).toBe('Derivative(polygamma(x, y), x)');
+    expect(String(diff(P('lowergamma(x, y)'), x))).toBe('-log(y)*uppergamma(x, y) + gamma(x)*polygamma(0, x) - meijerg(((), (1, 1)), ((0, 0, x), ()), y)');
+    expect(String(diff(P('uppergamma(x, y)'), x))).toBe('log(y)*uppergamma(x, y) + meijerg(((), (1, 1)), ((0, 0, x), ()), y)');
   });
 });
 
@@ -1100,4 +1100,33 @@ it('exposes the integral functions through their public constructors', () => {
   expect(String(expandFunc(new sj.Fn('polylog', [S.One, x])))).toBe('-log(1 - x)');
   expect(String(Min(1, new Float(1), x))).toBe('Min(1, x)');
   expect(String(sj.sign(x))).toBe('sign(x)');
+});
+
+it('propagates NaN through polygamma and expands beta through gamma', () => {
+  expect(polygamma(S.NaN, x)).toBe(S.NaN);
+  expect(digamma(S.NaN)).toBe(S.NaN);
+  expect(trigamma(S.NaN)).toBe(S.NaN);
+  expect(String(expandFunc(beta(x, y)))).toBe('gamma(x)*gamma(y)/gamma(x + y)');
+});
+
+it('retains the incomplete-gamma argument derivative registrations', async () => {
+  const { fnPartials } = await import('../../../src/calculus/diff');
+  const { defined } = await import('../../../src/core/guard');
+  expect(String(defined(fnPartials.lowergamma)([x, y], 1))).toBe('y**(x - 1)*exp(-y)');
+  expect(String(defined(fnPartials.uppergamma)([x, y], 1))).toBe('-y**(x - 1)*exp(-y)');
+  expect(String(beta(x))).toBe('beta(x, x)');
+});
+
+it('provides argument derivatives without loading the hypergeometric module', async () => {
+  vi.resetModules();
+  await import('../../../src/functions/special/special');
+  const { fnPartials } = await import('../../../src/calculus/diff');
+  const { Sym } = await import('../../../src/core/nodes');
+  const { defined } = await import('../../../src/core/guard');
+  const a = new Sym('a'), z = new Sym('z');
+  for (const name of ['lowergamma', 'uppergamma'] as const) {
+    const partial = defined(fnPartials[name]);
+    expect(() => partial([a, z], 0)).toThrow('w.r.t. s');
+    expect(String(partial([a, z], 1))).toContain('exp(-z)');
+  }
 });

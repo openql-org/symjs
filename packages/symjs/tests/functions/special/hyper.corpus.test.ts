@@ -218,7 +218,7 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
     const z = new Sym('z');
     expect(sympyStr(diff(hyper([z], [], z), z))).toBe('Derivative(hyper((z,), (), z), z)');
   });
-  it.fails("test_hyper:65", () => {
+  it("test_hyper:65", () => {
     const [z, k, x] = symbols('z k x');
     expect(sympyStr(hyper([fn('polar_lift', [z])], [fn('polar_lift', [k])], fn('polar_lift', [x]), { evaluate: true }))).toBe('hyper((z,), (k,), x)');
   });
@@ -373,15 +373,15 @@ describe("sympy/functions/special/tests/test_hyper.py", () => {
     const z = new Sym('z');
     expect(sympyStr(testDerivativeNumerically(meijerg([], [], [new Add([new Float({ man: 5566770506059763n, exp: -51n }, 53), new Mul([new Float({ man: -1798281890552797n, exp: -51n }, 53), I])])], [new Add([new Float({ man: 1370316921388177n, exp: -49n }, 53), new Mul([new Float({ man: 499390532281747n, exp: -51n }, 53), I])]), new Add([new Float({ man: 6559517746944167n, exp: -51n }, 53), new Mul([new Float({ man: 1050704132010545n, exp: -50n }, 53), I])])], z), z))).toBe('True');
   });
-  it.fails("test_meijer:181", () => {
+  it("test_meijer:181", () => {
     const [a1, a2, b1, b2, c1, c2, d1, d2, z] = symbols('a1 a2 b1 b2 c1 c2 d1 d2 z');
     expect(sympyStr(diff(meijerg([a1, a2], [b1, b2], [c1, c2], [d1, d2], z), z))).toBe('((a1 - 1)*meijerg(((a1, a2), (b1, b2)), ((c1, c2), (d1, d2)), z) + meijerg(((a2, a1 - 1), (b1, b2)), ((c1, c2), (d1, d2)), z))/z');
   });
-  it.fails("test_meijer:185", () => {
+  it("test_meijer:185", () => {
     const z = new Sym('z');
     expect(sympyStr(diff(meijerg([z, z], [], [], [], z), z))).toBe('Derivative(meijerg(((z, z), ()), ((), ()), z), z)');
   });
-  it.fails("test_meijer:190", () => {
+  it("test_meijer:190", () => {
     const [a1, a2, b1, b2, z] = symbols('a1 a2 b1 b2 z');
     expect(sympyStr(meijerg([fn('polar_lift', [a1])], [fn('polar_lift', [a2])], [fn('polar_lift', [b1])], [fn('polar_lift', [b2])], fn('polar_lift', [z])))).toBe('meijerg(((a1,), (a2,)), ((b1,), (b2,)), polar_lift(z))');
   });
