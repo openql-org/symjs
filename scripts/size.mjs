@@ -40,6 +40,9 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Algebraic-field factorization, certified root intervals, finite-domain Poly
 // methods and the scalar predicate handlers for sums add up to 6 KiB to the
 // consumers of the polynomial and assumption engines and 16 KiB to the root namespace.
+// The LRA satisfiability check behind relational ask, matrix assumption
+// closure, polytools keyword options and polynomial rising/falling factorials
+// add up to 12 KiB to their consumers.
 // SymPy's assumption handlers behind the public is* queries (core/exprfacts) add
 // about 22 KiB to the core namespace; Integer bitwise methods add under 1 KiB to
 // core consumers.
@@ -58,11 +61,11 @@ const CASES = [
   ['core', 'Rational', 202],
   ['core', 'parse, str', 219],
   ['core', 'parse, diff, expand, str, latex', 219],
-  ['core', '*', 327],
+  ['core', '*', 330],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
-  ['special', '*', 403],
+  ['special', '*', 408],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
-  ['simplify', 'simplify', 1045],
+  ['simplify', 'simplify', 1048],
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither; the finite-domain Poly
@@ -70,24 +73,24 @@ const CASES = [
   ['polys', 'factor', 767],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1042],
-  ['solvers', 'solve', 1131],
-  ['solvers', 'dsolve', 1146],
+  ['calculus', 'integrate', 1045],
+  ['solvers', 'solve', 1134],
+  ['solvers', 'dsolve', 1149],
   ['sets', '*', 374],
-  ['matrices', 'Matrix', 820],
+  ['matrices', 'Matrix', 833],
   ['printing', 'pretty', 241],
   ['discrete', '*', 299],
   ['strategies', '*', 214],
   // LaTeX parsing includes explicit matrix expressions and both hand-written grammars.
-  ['parsing', '*', 849],
+  ['parsing', '*', 852],
   ['unify', '*', 243],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
-  ['algebras', 'Quaternion', 642],
-  ['holonomic', 'exprToHolonomic', 1224],
-  ['geometry', '*', 1111],
-  ['vector', '*', 1203],
-  ['stats', '*', 1374],
+  ['algebras', 'Quaternion', 647],
+  ['holonomic', 'exprToHolonomic', 1227],
+  ['geometry', '*', 1114],
+  ['vector', '*', 1206],
+  ['stats', '*', 1378],
   // Diagram layout, pretty grids and Xy-pic text generation.
   ['categories', '*', 442],
   // Numeric meshing plus symbolic discontinuities and finite-sum evaluation.
@@ -102,7 +105,7 @@ const CASES = [
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2769],
+  ['index', '*', 2781],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];
