@@ -45,9 +45,7 @@ describe('continuous probability spaces (SymPy crv) 1', () => {
   it("E evaluate False doit", () => expect(show(rewrite(Expectation(Xn), 'Integral'))).toBe("Integral(sqrt(2)*x*exp(-x**2/2)/(2*sqrt(pi)), (x, -oo, oo))"));
   it("E exp", () => expect(show(E(exp(neg(Exponential('e', 1)))))).toBe("1/2"));
   it("cdf computed", () => expect(show(ap(cdf(Reciprocal('r', 1, 2)), z))).toBe("Piecewise((log(z)/log(2), z >= 1), (0, True))"));
-  // SymPy: Piecewise((Intersection({-sqrt(p), sqrt(p)}, Interval(0, 1)), (p >= 0) & (p <= 1)), (nan, True));
-  // symjs's solveset does not solve x**2 = p with a parameter
-  it("quantile computed", () => expect(show(ap(quantile(PowerFunction('w', 2, 0, 1)), p))).toBe('Piecewise((ConditionSet(_x, Eq(_x**2 - p, 0), Interval(0, 1)), (p >= 0) & (p <= 1)), (nan, True))'));
+  it("quantile computed", () => expect(show(ap(quantile(PowerFunction('w', 2, 0, 1)), p))).toBe('Piecewise((Intersection({-sqrt(p), sqrt(p)}, Interval(0, 1)), (p >= 0) & (p <= 1)), (nan, True))'));
 });
 
 describe('continuous probability spaces (SymPy crv) 2', () => {

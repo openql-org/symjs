@@ -25,7 +25,7 @@ import { Poly, factor } from '../../polys/sympoly';
 import { rootsDict } from '../../polys/poly';
 import { apart } from '../../polys/partfrac';
 import { asOrderedFactors } from '../../printing/sortkey';
-import { expand, expandMul } from '../../simplify/expand';
+import { expand, expandMul, withFactoredDenominators } from '../../simplify/expand';
 import { cancel, together } from '../../simplify/rational';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import type { TransformHints } from './base';
@@ -459,11 +459,12 @@ function inverseLaplaceApplyProgRules(F: Expr, s: Sym, t: Expr, plane: Expr | un
 /** SymPy _inverse_laplace_expand. */
 function inverseLaplaceExpand(fn: Expr, s: Sym, t: Expr, plane: Expr | undefined): InverseLaplacePair | undefined {
   if (fn instanceof Add) return undefined;
-  let r = expand(fn, { deep: false });
+  // (the denominators stay factored: the rules recognise their factors)
+  let r = withFactoredDenominators(() => expand(fn, { deep: false }));
   if (r instanceof Add) return inverseLaplaceTransformImpl(r, s, t, plane, false, true);
-  r = expandMul(fn);
+  r = withFactoredDenominators(() => expandMul(fn));
   if (r instanceof Add) return inverseLaplaceTransformImpl(r, s, t, plane, false, true);
-  r = expand(fn);
+  r = withFactoredDenominators(() => expand(fn));
   if (r instanceof Add) return inverseLaplaceTransformImpl(r, s, t, plane, false, true);
   if (isRationalFunction(fn, [s])) r = apartS(fn, s);
   if (r instanceof Add) return inverseLaplaceTransformImpl(r, s, t, plane, false, true);

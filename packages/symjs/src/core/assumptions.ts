@@ -421,7 +421,7 @@ export function isPositive(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isPositive;
   if (e instanceof Special) return e.name === 'oo' ? true : e.name === '-oo' ? false : undefined;
   if (e instanceof Constant) return e.name === 'I' ? false : true;
-  if (e instanceof Sym) return e.assumptions.positive ? true : e.assumptions.nonpositive ? false : undefined;
+  if (e instanceof Sym) return e.assumptions.positive ? true : e.assumptions.nonpositive || e.assumptions.positive === false || e.assumptions.real === false ? false : undefined;
   if (e instanceof Add) {
     if (all(e.args, isPositive)) return true;
     const bs = addBoundSign(e);
@@ -466,7 +466,7 @@ export function isNegative(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isNegative;
   if (e instanceof Special) return e.name === '-oo' ? true : e.name === 'oo' ? false : undefined;
   if (e instanceof Constant) return false;
-  if (e instanceof Sym) return e.assumptions.negative ? true : e.assumptions.nonnegative ? false : undefined;
+  if (e instanceof Sym) return e.assumptions.negative ? true : e.assumptions.nonnegative || e.assumptions.negative === false || e.assumptions.real === false ? false : undefined;
   if (e instanceof Add) {
     if (all(e.args, isNegative)) return true;
     const bs = addBoundSign(e);

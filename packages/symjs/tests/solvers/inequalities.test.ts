@@ -147,8 +147,7 @@ describe('solveset with parameters and inverse functions (sympy.stats needs both
     expect(String(Q.solveset(add(pow(xr, 2), mul(-1, zp)), xr, Reals))).toBe('{-sqrt(zp), sqrt(zp)}');
     expect(String(Q.solveset(add(pow(xr, 2), zp), xr, Reals))).toBe('EmptySet');
     expect(String(Q.solveset(div(add(xr, mul(-1, z)), add(xr, mul(-1, w))), xr, Reals))).toBe('Complement({z}, Intersection({w}, Reals))');
-    // SymPy: Intersection({z/2}, Interval(0, 1)); the zeros cannot be placed in a bounded interval here
-    expect(String(Q.solveset(add(mul(2, xr), mul(-1, z)), xr, interval(0, 1)))).toBe('ConditionSet(x, Eq(2*x - z, 0), Interval(0, 1))');
+    expect(String(Q.solveset(add(mul(2, xr), mul(-1, z)), xr, interval(0, 1)))).toBe('Intersection({z/2}, Interval(0, 1))');
   });
   it('decided conditions and comparisons with oo', () => {
     const x0 = new Sym('x');
@@ -381,10 +380,8 @@ describe('solveset over intervals', () => {
     expect(String(Q.solveset(p('sin(x)-y'), x, interval(0, 1)))).toBe('ConditionSet(x, Eq(-y + sin(x), 0), Interval(0, 1))');
     // SymPy: ConditionSet(x, Ne(y, 0), {0})
     expect(String(Q.solveset(p('sin(x*y)'), x, interval(0, 1)))).toBe('ConditionSet(x, Eq(sin(x*y), 0), Interval(0, 1))');
-    // SymPy: Intersection({y}, Interval(0, 1))
-    expect(String(Q.solveset(p('x - y'), x, interval(0, 1)))).toBe('ConditionSet(x, Eq(x - y, 0), Interval(0, 1))');
-    // SymPy: Intersection({2}, Interval(0, y))
-    expect(String(Q.solveset(p('x - 2'), x, interval(0, y)))).toBe('ConditionSet(x, Eq(x - 2, 0), Interval(0, y))');
+    expect(String(Q.solveset(p('x - y'), x, interval(0, 1)))).toBe('Intersection({y}, Interval(0, 1))');
+    expect(String(Q.solveset(p('x - 2'), x, interval(0, y)))).toBe('Intersection({2}, Interval(0, y))');
     expect(String(Q.solveset(p('x**2 - 2'), x, interval(0, 3)))).toBe('{sqrt(2)}');
   });
   it('an inequality with parameters is a ConditionSet', () => {
@@ -684,4 +681,21 @@ it('preserves both sides of integer relationals and restricts finite integer dom
   for (const source of ['Abs(x)-1', 'Min(x,15)-1', 'Max(x,15)-1']) {
     expect(() => solveset(p(source), x, Complexes)).toThrow(RangeError);
   }
+});
+
+describe('solveset on intervals with parameters (SymPy 1.14)', () => {
+  const x = new Sym('x'), y = new Sym('y'), l = new Sym('l', { positive: true });
+  const P = (s: string) => parse(s, { symbols: { x, y, l } });
+  it('treats Interval(-oo, oo) as the real line', () => {
+    const line = new sj.Interval(SS.NegativeInfinity, SS.Infinity, true, true);
+    // SymPy prints the domain it was given: Intersection({y}, Interval(-oo, oo))
+    expect(String(solveset(P('x - y'), x, line))).toBe('Intersection({y}, Reals)');
+    expect(String(solveset(P('sin(x)'), x, line))).toBe('Union(ImageSet(Lambda(_n, 2*_n*pi), Integers), ImageSet(Lambda(_n, 2*_n*pi + pi), Integers))');
+  });
+  it('keeps the roots that the interval contains', () => {
+    expect(String(solveset(P('x**2 - l'), x, sj.Interval.of(0, SS.Infinity)))).toBe('{sqrt(l)}');
+    expect(String(solveset(P('(x - l)/(x + l)'), x, sj.Interval.of(0, SS.Infinity)))).toBe('{l}');
+    expect(String(solveset(P('x**2 - y'), x, sj.Interval.of(0, 1)))).toBe('Intersection({-sqrt(y), sqrt(y)}, Interval(0, 1))');
+    expect(String(solveset(P('(x - l)*(x - y)'), x, sj.Interval.of(0, SS.Infinity)))).toBe('Union({l}, Intersection({y}, Interval(0, oo)))');
+  });
 });

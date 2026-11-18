@@ -399,3 +399,15 @@ it('does not infer the magnitude of the negative of a negative symbol', () => {
   const n = new sj.Sym('n', { negative: true });
   expect(isPositive(sj.add(sj.neg(n), -1))).toBeUndefined();
 });
+
+describe('symbols that are not real', () => {
+  it('are neither positive nor negative (SymPy Symbol(real=False).is_positive is False)', () => {
+    const nr = new sj.Sym('nonreal151', { real: false });
+    expect(isPositive(nr)).toBe(false);
+    expect(isNegative(nr)).toBe(false);
+    expect(isPositive(new sj.Sym('notpositive151', { positive: false }))).toBe(false);
+    expect(isNegative(new sj.Sym('notnegative151', { negative: false }))).toBe(false);
+    expect(isPositive(new sj.Sym('plain151'))).toBe(undefined);
+    expect(isNegative(new sj.Sym('plain151'))).toBe(undefined);
+  });
+});

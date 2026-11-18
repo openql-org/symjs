@@ -1269,3 +1269,32 @@ it('slices ranges with exact bounds beyond machine integer precision', () => {
   expect(String(range.slice(-2))).toBe('Range(999999999999999999999999999998, 1000000000000000000000000000000, 1)');
   expect(String(range.slice(undefined, undefined, -1).start)).toBe('999999999999999999999999999999');
 });
+
+describe('membership decided by assumptions (SymPy Interval._contains, FiniteSet._contains)', () => {
+  const l = new sj.Sym('l', { positive: true }), n = new sj.Sym('n', { negative: true }), r = new sj.Sym('r', { real: true }), x = new sj.Sym('x');
+  const oo = sj.oo;
+  it('places a signed symbol in an interval', () => {
+    expect(Sets.containsQ(sj.Interval.of(0, oo), l)).toBe(true);
+    expect(Sets.containsQ(sj.Interval.open(0, 1), n)).toBe(false);
+    expect(Sets.containsQ(sj.Interval.of(sj.mul(-1, oo), 0), n)).toBe(true);
+    expect(Sets.containsQ(sj.Interval.of(0, 5), sj.mul(-1, l))).toBe(false);
+    expect(Sets.containsQ(sj.Interval.open(0, 5), sj.mul(-1, l))).toBe(false);
+    // SymPy: l <= 1
+    expect(Sets.containsQ(sj.Interval.of(0, 1), l)).toBe(undefined);
+  });
+  it('compares with symbolic ends', () => {
+    expect(Sets.containsQ(sj.Interval.of(l, sj.mul(2, l)), l)).toBe(true);
+    expect(Sets.containsQ(sj.Interval.open(l, sj.mul(2, l)), l)).toBe(false);
+  });
+  it('needs a real element for an unbounded end', () => {
+    expect(Sets.containsQ(new sj.Interval(sj.S.NegativeInfinity, oo, true, true), r)).toBe(true);
+    // SymPy: (-oo < x) & (x <= 3)
+    expect(Sets.containsQ(sj.Interval.of(sj.mul(-1, oo), 3), x)).toBe(undefined);
+  });
+  it('separates the elements of a finite set by their evaluated equality', () => {
+    expect(Sets.containsQ(sj.finiteSet(l), sj.mul(-1, l))).toBe(false);
+    // SymPy: Eq(x, -l)
+    expect(Sets.containsQ(sj.finiteSet(l, x), sj.mul(-1, l))).toBe(undefined);
+    expect(String(sj.complement(sj.finiteSet(l), sj.finiteSet(sj.mul(-1, l))))).toBe('{l}');
+  });
+});

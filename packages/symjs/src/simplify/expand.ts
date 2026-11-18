@@ -56,10 +56,45 @@ function multinomialPow(b: Add, x: Rational): Expr | undefined {
   return distribute(expandPowInt(b, n), pow(b, Rational.of(x.p - n * x.q, x.q)));
 }
 
+let factoredDenominators = false;
+
+/**
+ * @internal Run an expansion that leaves product denominators factored (1/(x*(y + 1)) stays), for callers whose
+ * rules match the factors of the denominator.
+ */
+export function withFactoredDenominators<T>(run: () => T): T {
+  factoredDenominators = true;
+  try {
+    return run();
+  } finally {
+    factoredDenominators = false;
+  }
+}
+
+/** The product of the factors of a Mul, distributed over its sums. */
+function distributeFactors(m: Expr): Expr {
+  if (!(m instanceof Mul) || !m.args.some((a) => a instanceof Add)) return m;
+  return m.args.reduce<Expr>((acc, f) => distribute(acc, f), Rational.of(1n));
+}
+
+/**
+ * SymPy Mul._eval_expand_mul on the fraction of a product: a denominator that is itself a product is
+ * multiplied out (1/(x*(y + 1)) becomes 1/(x*y + x)).
+ */
+function expandProductDenominator(node: Mul): Expr {
+  if (factoredDenominators) return node;
+  if (!node.args.some((f) => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isNegative)) return node;
+  const [n, d] = defined(impl.fraction?.(node), 'impl.fraction (simplify/rational)');
+  if (!(d instanceof Mul)) return node;
+  const denominator = distributeFactors(d);
+  return denominator === d ? node : mul(distributeFactors(n), pow(denominator, -1));
+}
+
 function expandNode(e: Expr): Expr {
   if (e.args.length === 0) return e;
   const args = e.args.map(expandNode);
-  const node = args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
+  const rebuilt = args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
+  const node = rebuilt instanceof Mul ? expandProductDenominator(rebuilt) : rebuilt;
 
   if (node instanceof Mul) {
     if (!node.args.some((a) => a instanceof Add)) return mul(...node.args);
@@ -494,7 +529,8 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
   return e;
 }
 
-function expandMulShallow(e: Expr, doMul: boolean, doMulti: boolean): Expr {
+function expandMulShallow(eIn: Expr, doMul: boolean, doMulti: boolean): Expr {
+  const e = doMul && eIn instanceof Mul ? expandProductDenominator(eIn) : eIn;
   if (doMul && e instanceof Mul && e.args.some((a) => a instanceof Add)) {
     return e.args.reduce<Expr>((acc, f) => distribute(acc, f), Rational.of(1n));
   }

@@ -47,8 +47,8 @@ describe('SymPy test_continuous_rv 1', () => {
   it("density(Y)(x)", () => expect(show(ap(density(add(mul(Xn, sigma), mu)), xr))).toBe("sqrt(2)*exp(-(-mu + x)**2/(2*sigma**2))/(2*sqrt(pi)*sigma)"));
   it("P(X**2 < 1)", () => expect(show(P(Lt(pow(Xn, 2), 1)))).toBe("erf(sqrt(2)/2)"));
   // SymPy: Complement(Intersection({sqrt(2)*sigma*(sqrt(2)*mu/(2*sigma) + erfinv(2*x - 1))}, Interval(-oo, oo)), {mu});
-  // symjs's solveset does not solve the linear equation with parameters
-  it("quantile(Y)(x)", () => expect(show(ap(quantile(add(mul(Xn, sigma), mu)), xr))).toMatch(/^ConditionSet\(_x, Eq\(sqrt\(2\)\*_x\/\(2\*sigma\) - sqrt\(2\)\*mu\/\(2\*sigma\) - erfinv\(2\*x - 1\), 0\), Reals\)$|Complement/));
+  // symjs solves the same linear equation but prints the root expanded and without the excluded point
+  it("quantile(Y)(x)", () => expect(show(ap(quantile(add(mul(Xn, sigma), mu)), xr))).toBe('Intersection({mu + sqrt(2)*sigma*erfinv(2*x - 1)}, Reals)'));
   it("E(X, Eq(X, mu))", () => expect(show(E(Xn, Eq(Xn, mu)))).toBe("mu"));
   it("compute_expectation(1)", () => expect(show(doit(Xn.pspace.computeExpectation(S.One)))).toBe("1"));
   it("density(given)(z)", () => expect(show(ap(density(given(Xn, Ge(Xn, 0))), z))).toBe("sqrt(2)*exp(-z**2/2)/sqrt(pi)"));
@@ -61,8 +61,8 @@ describe('SymPy test_continuous_rv 1', () => {
 describe('SymPy test_continuous_rv 2', () => {
   it("where(X**2<=1).symbol", () => expect(show((where(Le(pow(Xn, 2), 1)) as SingleDomain).symbol)).toBe("x"));
   it("where(And).set", () => expect(show(where(and(Le(pow(Xn, 2), 1), Ge(Xn, 0))).set)).toBe("Interval(0, 1)"));
-  // SymPy raises ValueError (Reduction of condition failed): sin(x) > 1 holds nowhere, so the domain is empty
-  it("where(sin(X) > 1)", () => expect(show(where(Gt(sin(Xn), 1)))).toBe('Domain: False'));
+  // SymPy raises ValueError (Reduction of condition failed): only rational inequalities are reduced
+  it("where(sin(X) > 1)", () => expect(() => where(Gt(sin(Xn), 1))).toThrow(RangeError));
   it("E(X+Y)", () => expect(show(E(add(Xn, Yn)))).toBe("0"));
   it("variance(X+Y)", () => expect(show(variance(add(Xn, Yn)))).toBe("2"));
   it("E(X, Eq(X + Y, 0))", () => expect(show(E(Xn, Eq(add(Xn, Yn), 0)))).toBe("0"));

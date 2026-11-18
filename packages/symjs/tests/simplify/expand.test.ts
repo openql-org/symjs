@@ -380,3 +380,24 @@ it('dispatches expansion hints and top level expansion through extension nodes',
   expect(String(impl.expand?.(pow(add(x, 1), 2)))).toBe('x**2 + 2*x + 1');
   expect(impl.asRealImagExpand?.(x).map(String)).toEqual(['re(x)', 'im(x)']);
 });
+
+describe('product denominators (SymPy Mul._eval_expand_mul)', () => {
+  const [a, b, c] = symbols('a b c');
+  const P = (s: string) => parse(s, { symbols: { a, b, c } });
+  it('multiplies out a denominator that is a product', () => {
+    expect(sstr(expand(P('1/(a*(b + c))')))).toBe('1/(a*b + a*c)');
+    expect(sstr(expand(P('2*a/(b*(c + 1))')))).toBe('2*a/(b*c + b)');
+    expect(sstr(expand(P('(a + b)/(c*(a + 1))')))).toBe('a/(a*c + c) + b/(a*c + c)');
+    expect(sstr(expand(P('1/(2*(b + c))')))).toBe('1/(2*b + 2*c)');
+    expect(sstr(expand(P('a/(b + c)**2')))).toBe('a/(b**2 + 2*b*c + c**2)');
+  });
+  it('does so for the mul hint alone and without deep', () => {
+    expect(sstr(expand(P('1/(a*(b + c))'), { power_exp: false, power_base: false, log: false, multinomial: false }))).toBe('1/(a*b + a*c)');
+    expect(sstr(expand(P('1/(a*(b + c))'), { deep: false }))).toBe('1/(a*b + a*c)');
+  });
+  it('leaves other denominators as they are', () => {
+    expect(sstr(expand(P('1/(a*sqrt(b + c))')))).toBe('1/(a*sqrt(b + c))');
+    expect(sstr(expand(P('1/(a*b)')))).toBe('1/(a*b)');
+    expect(sstr(expand(P('1/(b + c)')))).toBe('1/(b + c)');
+  });
+});

@@ -1073,3 +1073,24 @@ describe('LaTeX settings of matrix expressions (SymPy 1.14 test_latex)', () => {
     expect(latex(Identity(1))).toBe('\\mathbb{I}');
   });
 });
+
+describe('MatrixElement of a scalar product with a matrix (SymPy MatrixKind of a Mul)', () => {
+  const M = ImmutableMatrix([[2]]);
+  const three = Rational.of(3);
+  const element = (factors: Expr[]): MatrixElementNode => sj.matrixElement(new sj.Mul(factors), 0, 0) as MatrixElementNode;
+  it('evaluates the product to its explicit entry', () => {
+    const e = element([three, new sj.Pow(S.E, M)]);
+    expect(String(e)).toBe('(3*exp(Matrix([[2]])))[0, 0]');
+    expect(String(e.doit())).toBe('3*exp(2)');
+    expect(String(element([three, M]).doit())).toBe('6');
+  });
+  it('keeps the element when the matrix is not explicit or the product has several matrices', () => {
+    const A = MatrixSymbol('A', 1, 1);
+    expect(String(element([three, new sj.Pow(S.E, A)]).doit({ deep: false }))).toBe('(3*exp(A))[0, 0]');
+    expect(String(element([three, M, new sj.Pow(S.E, M)]).doit())).toBe('(3*Matrix([[2]])*exp(Matrix([[2]])))[0, 0]');
+    expect(String(element([three, new sj.Pow(M, Rational.of(2))]).doit({ deep: false }))).toBe('(3*Matrix([[2]])**2)[0, 0]');
+  });
+  it('rejects a scalar', () => {
+    expect(() => sj.matrixElement(mul(3, symbol('x')), 0, 0)).toThrow(TypeError);
+  });
+});

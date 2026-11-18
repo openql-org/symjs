@@ -26,6 +26,7 @@ import { Max, Min } from '../functions/special/special';
 import { diff } from '../calculus/diff';
 import { limit } from '../series/limits';
 import { Poly } from '../polys/sympoly';
+import { polyCoefficients } from '../polys/poly';
 import { cancel, fraction } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
 import { integerLog } from '../core/numberutils';
@@ -250,6 +251,11 @@ function realZeros(e: Expr, x: Sym, lo: Expr, hi: Expr): Expr[] {
     if (c1 <= 0 && c2 <= 0) uniq.set(r.key, r);
   }
   return [...uniq.values()].sort(byValue);
+}
+
+/** The whole real line: SymPy's Reals or the equal Interval(-oo, oo). */
+function isRealLine(domain: SetExpr): boolean {
+  return domain === Reals || domain instanceof Interval && domain.isLeftUnbounded && domain.isRightUnbounded;
 }
 
 function bounds(domain: SetExpr): [Expr, Expr, boolean, boolean] {
@@ -552,6 +558,8 @@ function linearInequality(r: Rel, x: Sym): Expr {
 /** SymPy solveset for equations and inequalities in one variable. */
 export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): SetExpr {
   const f = sympify(fIn);
+  // Interval(-oo, oo) equals Reals in SymPy: solve over the real line
+  if (domain !== Reals && isRealLine(domain)) return solveset(f, x, Reals);
   // a decided condition holds everywhere or nowhere (SymPy solveset(True, x) is the domain)
   if (f instanceof BoolAtom) return f.value ? domain : EmptySet;
   if (f instanceof Rel && f.op !== 'Eq') {
@@ -724,9 +732,14 @@ function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
       const zs = realZeros(num, x, lo, hi).filter((z) => !realZeros(den, x, lo, hi).some((p) => p.key === z.key));
       return intersection(finiteSet(...zs), domain);
     } catch (e) {
-      // zeros with parameters (2*x - y = 0): over the whole real line they need not be placed
-      if (!(e instanceof NotImplementedError) || domain !== Reals) throw e;
-      return parametricRealRoots(num, den, x);
+      // zeros with parameters (2*x - y = 0): the real ones, kept where the domain contains them
+      if (!(e instanceof NotImplementedError)) throw e;
+      if (domain === Reals) return parametricRealRoots(num, den, x);
+      // on an interval: the roots of a polynomial equation, kept where the interval contains them
+      if (!polyCoefficients(num, x)) throw e;
+      const onDomain = (s: SetExpr): SetExpr => s instanceof SetOp && s.op === 'Union' ? union(...s.args.map(onDomain))
+        : intersection(s instanceof SetOp && s.op === 'Intersection' && s.args.includes(Reals) ? intersection(...s.args.filter((a) => a !== Reals)) : s, domain);
+      return onDomain(parametricRealRoots(num, den, x));
     }
   }
   const g = gIn;

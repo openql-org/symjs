@@ -37,7 +37,7 @@ import type { Key } from '../../printing/sortkey';
 import { compareKeys, sortKey } from '../../printing/sortkey';
 import { str } from '../../printing/str';
 import { simplify as simplifyScalar } from '../../simplify/simplify';
-import { permanent as explicitPermanent } from '../linalg';
+import { matrixExp, permanent as explicitPermanent } from '../linalg';
 import { Matrix } from '../matrix';
 import { PRECEDENCE, isInt, isNumber, relTruth, same, sameList, scalarPrecTraditional, toInt } from './util';
 import { precedence as scalarPrecedence } from '../../printing/str';
@@ -621,8 +621,9 @@ function mdiff(e: Expr, x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
 
 /** SymPy MatrixSymbol(name, n, m): a symbolic n x m matrix. */
 export class MatrixSymbolNode extends MatrixExpr {
-  constructor(symbolName: string, rows: ExprLike, cols: ExprLike) {
-    super('MatrixSymbol', [new Str(symbolName), dim(rows), dim(cols)]);
+  /** `extra`: further arguments of a subclass (SymPy RandomMatrixSymbol carries its probability space). */
+  constructor(symbolName: string, rows: ExprLike, cols: ExprLike, extra: readonly Expr[] = []) {
+    super('MatrixSymbol', [new Str(symbolName), dim(rows), dim(cols), ...extra]);
   }
   /** The name of the matrix (SymPy MatrixSymbol.name). */
   get symbolName(): string {
@@ -795,9 +796,10 @@ export class MatrixElementNode extends MatScalar {
     return matrixElement(at(args, 0), at(args, 1), at(args, 2));
   }
   override doit(hints: DoitHints = {}): Expr {
-    const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
-    const p = at(args, 0);
-    if (p instanceof MatrixExpr) return p.at(at(args, 1), at(args, 2));
+    const evaluate = (a: Expr): Expr => (hints.deep === false ? a : doitArg(a, hints));
+    const parent = at(this.args, 0);
+    const p = parent instanceof MatrixExpr ? evaluate(parent) : explicitMatrixValue(parent, evaluate);
+    if (p instanceof MatrixExpr) return p.at(evaluate(at(this.args, 1)), evaluate(at(this.args, 2)));
     return this;
   }
   /** evalf: the entry of the evaluated matrix ((M**5)[1, 2] of an explicit M is a number); undefined when it stays an element. */
@@ -832,9 +834,33 @@ export function matrixElement(parentIn: MatArg, iIn: ExprLike, jIn: ExprLike): E
   const i = sympify(iIn);
   const j = sympify(jIn);
   if (parent instanceof ImmutableMatrixNode && isInt(i) && isInt(j)) return parent.entry(i, j);
+  // a scalar product or function of a matrix has matrix kind in SymPy (sqrt(2)*exp(M) for a 1x1 M)
+  if (!(parent instanceof MatrixExpr) && hasMatrixKind(parent)) return new MatrixElementNode(parent, i, j);
   if (!(parent instanceof MatrixExpr)) throw new TypeError('First argument of MatrixElement should be a matrix');
   if (!parent.validIndex(i, j)) throw new RangeError('indices out of range');
   return new MatrixElementNode(parent, i, j);
+}
+
+/** A core product or power with a matrix among its arguments (SymPy MatrixKind of such a node). */
+function hasMatrixKind(e: Expr): boolean {
+  return (e instanceof Mul || e instanceof Pow) && e.args.some((a) => a instanceof MatrixExpr || hasMatrixKind(a));
+}
+
+/**
+ * The explicit matrix of a core product of scalars with one explicit matrix, with exp of an explicit matrix as
+ * its matrix exponential (SymPy exp.eval and Mul of a Matrix); other expressions are returned unchanged.
+ */
+function explicitMatrixValue(e: Expr, evaluate: (a: Expr) => Expr): Expr {
+  if (e instanceof MatrixExpr) return evaluate(e);
+  if (e instanceof Pow && same(e.base, S.E)) {
+    const argument = explicitMatrixValue(e.exp, evaluate);
+    return argument instanceof ImmutableMatrixNode ? new ImmutableMatrixNode(matrixExp(argument.matrix)) : e;
+  }
+  if (!(e instanceof Mul)) return e;
+  const factors = e.args.map((f) => (hasMatrixKind(f) || f instanceof MatrixExpr ? explicitMatrixValue(f, evaluate) : evaluate(f)));
+  const matrices = factors.filter((f): f is ImmutableMatrixNode => f instanceof ImmutableMatrixNode);
+  if (matrices.length !== 1 || factors.some((f) => (f instanceof MatrixExpr || hasMatrixKind(f)) && !(f instanceof ImmutableMatrixNode))) return e;
+  return new ImmutableMatrixNode(at(matrices, 0).matrix.scale(mul(...factors.filter((f) => !(f instanceof ImmutableMatrixNode)))));
 }
 
 // ---------------------------------------------------------------------------

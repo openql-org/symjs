@@ -650,3 +650,20 @@ describe('absolute values and signs of real polynomials', () => {
     }
   });
 });
+
+describe('definite integrals with parametric poles and Gaussian factors (SymPy 1.14 values)', () => {
+  const x = new Sym('x'), t = new Sym('t'), y = new Sym('y');
+  const l = new Sym('l', { positive: true }), r = new Sym('r', { real: true });
+  const P = (src: string) => parse(src, { symbols: { x, t, y, l, r } });
+  it('places a pole whose sign is known by assumptions', () => {
+    expect(sstr(integrate(P('3*(x - l/2)**2/(l*(x/l + 1)**4)'), x, [0, sj.oo]))).toBe('3*l**2/4');
+    expect(sstr(integrate(P('1/(x + l)**2'), x, [0, sj.oo]))).toBe('1/l');
+  });
+  it('ignores poles off the real axis', () => {
+    expect(sstr(integrate(P('1/(x**2 + l**2)'), x, [0, sj.oo]))).toBe('pi/(2*l)');
+  });
+  it('leaves a real pole of unknown position unevaluated on a finite interval', () => {
+    expect(sstr(integrate(P('1/(x + r)**2'), x, [0, 1]))).toBe('Integral((r + x)**(-2), (x, 0, 1))');
+    expect(sstr(integrate(P('1/(x + r)**2'), x, [0, sj.oo]))).toMatch(/^Piecewise\(\(1\/r, /);
+  });
+});

@@ -1241,17 +1241,26 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
   if (s instanceof ImageSet) return imageContains(s, x);
   if (s instanceof FiniteSet) {
     if (s.args.some((a) => a.key === x.key)) return true;
-    const unknown = s.args.some((a) => cmpReal(a, x) === undefined);
+    // an element differs when its numeric order or the evaluated equality says so (SymPy FiniteSet._contains)
+    const unknown = s.args.some((a) => cmpReal(a, x) === undefined && Eq(a, x) !== S.false);
     return unknown ? undefined : false;
   }
   if (s instanceof Interval) {
     if (isInf(x) || isReal(x) === false) return false;
-    const lo = cmpReal(s.start, x);
-    const hi = cmpReal(x, s.end);
-    if (lo === undefined || hi === undefined) return undefined;
-    const okLo = s.leftOpen ? lo < 0 : lo <= 0;
-    const okHi = s.rightOpen ? hi < 0 : hi <= 0;
-    return okLo && okHi;
+    // each end by its numeric order, else by the assumptions of the difference (SymPy evaluates start <= x <= end)
+    const side = (from: Expr, to: Expr, open: boolean): boolean | undefined => {
+      const order = cmpReal(from, to);
+      if (order !== undefined) return open ? order < 0 : order <= 0;
+      if (isInf(from) || isInf(to)) return isReal(x) === true ? true : undefined;
+      const width = add(to, neg(from));
+      const holds = open ? isPositive(width) : isNonNegative(width);
+      if (holds === true) return true;
+      return (open ? isNonNegative(neg(width)) : isNegative(width)) === true ? false : undefined;
+    };
+    const okLo = side(s.start, x, s.leftOpen);
+    const okHi = side(x, s.end, s.rightOpen);
+    if (okLo === false || okHi === false) return false;
+    return okLo === true && okHi === true ? true : undefined;
   }
   if (s instanceof SetOp) {
     const parts = s.args.map((a) => containsQ(a, x));
