@@ -52,13 +52,14 @@ export abstract class ArrayExpr extends ExtensionExpr {
   abstract readonly shape: readonly Expr[];
   abstract asExplicit(): Expr;
   rank(): number { return this.shape.length; }
-  at(...index: ExprLike[]): ArrayElement { return new ArrayElement(this, index); }
+  at(...index: ExprLike[]): Expr { return new ArrayElement(this, index); }
   doit(): Expr { return this; }
   override doitSelf(): Expr { return this.doit(); }
 }
 
 /** An array of symbolic entries with a specified shape. */
 export class ArraySymbol extends ArrayExpr {
+  override at(...index: ExprLike[]): ArrayElement { return new ArrayElement(this, index); }
   readonly shape: readonly Expr[];
   readonly label: Sym;
   constructor(name: string | Sym, shape: ArrayShape) {
@@ -113,6 +114,32 @@ export class ArrayTensorProduct extends ArrayExpr {
     const args = this.args.flatMap((a) => a instanceof ArrayTensorProduct ? a.args : [a]);
     if (args.length === 0) return S.One;
     if (args.length === 1) return first(args);
+    if (args.some((arg) => arg instanceof PermuteDims)) {
+      let offset = 0;
+      const permutation = args.flatMap((arg) => {
+        const axes = arg instanceof PermuteDims ? arg.permutation.arrayForm : indices(getRank(arg));
+        const shifted = axes.map((axis) => axis + offset);
+        offset += axes.length;
+        return shifted;
+      });
+      const product = new ArrayTensorProduct(...args.map((arg) => arg instanceof PermuteDims ? arg.expr : arg)).doit();
+      return new PermuteDims(product, permutation).doit();
+    }
+    if (args.some((arg) => arg instanceof ArrayDiagonal)) {
+      let offset = 0;
+      const groups: number[][] = [], desired: number[] = [];
+      const factors = args.map((arg) => {
+        const base = arg instanceof ArrayDiagonal ? arg.expr : arg;
+        const diagonals = arg instanceof ArrayDiagonal ? arg.diagonalIndices : [];
+        groups.push(...diagonals.map((group) => group.map((axis) => axis + offset)));
+        desired.push(...remainingAxes(getRank(base), diagonals).map((axis) => axis + offset), ...diagonals.map((group) => first(group) + offset));
+        offset += getRank(base);
+        return base;
+      });
+      const actual = [...remainingAxes(offset, groups), ...groups.map(first)];
+      const diagonal = new ArrayDiagonal(new ArrayTensorProduct(...factors).doit(), ...groups).doit();
+      return new PermuteDims(diagonal, desired.map((axis) => actual.indexOf(axis))).doit();
+    }
     // Lift contractions out of the product without changing its free axes.
     let offset = 0;
     const groups: number[][] = [];
@@ -122,7 +149,7 @@ export class ArrayTensorProduct extends ArrayExpr {
       offset += getRank(base);
       return base;
     });
-    return groups.length ? new ArrayContraction(new ArrayTensorProduct(...factors), ...groups).doit() : new ArrayTensorProduct(...args);
+    return groups.length ? new ArrayContraction(new ArrayTensorProduct(...factors).doit(), ...groups).doit() : new ArrayTensorProduct(...args);
   }
 }
 
@@ -250,6 +277,14 @@ export class ArrayAdd extends ArrayExpr {
     this.shape = shape;
   }
   withArgs(args: readonly Expr[]): Expr { return new ArrayAdd(...args); }
+  override doit(): Expr {
+    const args = this.args.flatMap((arg) => {
+      const value = arg instanceof ArrayAdd ? arg.doit() : arg;
+      return value instanceof ArrayAdd ? value.args : [value];
+    }).filter((arg) => !(arg instanceof ZeroArray));
+    if (!args.length) return new ZeroArray(...this.shape);
+    return args.length === 1 ? first(args) : new ArrayAdd(...args);
+  }
   asExplicit(): Expr {
     const arrays = this.args.map(explicitArray), firstArray = first(arrays);
     if (!(firstArray instanceof NDimArray)) return add(...arrays);
@@ -281,8 +316,13 @@ export class PermuteDims extends ArrayExpr {
   override printStr(print: (e: Expr) => string): string { return `PermuteDims(${print(this.expr)}, ${String(this.permutation)})`; }
   override printLatex(print: (e: Expr) => string): string { return `\\operatorname{PermuteDims}\\left(${print(this.expr)}, ${print(this.permutation)}\\right)`; }
   asExplicit(): Expr { return permutedims(explicitArray(this.expr), this.permutation); }
+  /** Distribute permutations over sums and normalize tensor-product axis blocks. */
+  nestPermutation(): Expr {
+    return this.doit();
+  }
   override doit(): Expr {
     const p = this.permutation.arrayForm;
+    if (this.expr instanceof ArrayAdd) return new ArrayAdd(...this.expr.args.map((arg) => new PermuteDims(arg, p).doit())).doit();
     if (this.expr instanceof ArrayDiagonal) {
       const inner = this.expr.doit();
       if (inner.key !== this.expr.key) return new PermuteDims(inner, p).doit();
@@ -311,12 +351,14 @@ export class Reshape extends ArrayExpr {
   readonly shape: readonly Expr[];
   constructor(readonly expr: Expr, shape: ArrayShape) {
     const dims = shape.map((s) => checkDim(sympify(s)));
-    if (mul(...dims).key !== mul(...getShape(expr)).key) throw new RangeError('reshape must preserve the number of entries');
+    const difference = sub(mul(...dims), mul(...getShape(expr)));
+    if (difference.isNumber && !difference.equals(0)) throw new RangeError('reshape must preserve the number of entries');
     super('Reshape', [expr, tuple(dims)]);
     this.shape = dims;
   }
   withArgs(args: readonly Expr[]): Expr { return new Reshape(first(args), values(at(args, 1))); }
   asExplicit(): Expr { return cast(explicitArray(this.expr), NDimArray).reshape(...this.shape.map(integer)); }
+  override doit(): Expr { return this.expr instanceof NDimArray ? this.asExplicit() : this; }
 }
 
 /** Constant zero array, including symbolic dimensions. */
@@ -324,6 +366,8 @@ export class ZeroArray extends ArrayExpr {
   readonly shape: readonly Expr[];
   constructor(...shape: ExprLike[]) { const dims = shape.map((s) => checkDim(sympify(s))); super('ZeroArray', dims); this.shape = dims; }
   withArgs(args: readonly Expr[]): Expr { return new ZeroArray(...args); }
+  override at(...index: ExprLike[]): Expr { super.at(...index); return S.Zero; }
+  override doit(): Expr { return this.shape.length ? this : S.Zero; }
   asExplicit(): Expr {
     const shape = this.shape.map(integer), size = shape.reduce((a, b) => a * b, 1);
     if (!Number.isSafeInteger(size)) throw new NotImplementedError('array is too large to materialize');
@@ -336,6 +380,8 @@ export class OneArray extends ArrayExpr {
   readonly shape: readonly Expr[];
   constructor(...shape: ExprLike[]) { const dims = shape.map((s) => checkDim(sympify(s))); super('OneArray', dims); this.shape = dims; }
   withArgs(args: readonly Expr[]): Expr { return new OneArray(...args); }
+  override at(...index: ExprLike[]): Expr { super.at(...index); return S.One; }
+  override doit(): Expr { return this.shape.length ? this : S.One; }
   asExplicit(): Expr {
     const shape = this.shape.map(integer), size = shape.reduce((a, b) => a * b, 1);
     if (!Number.isSafeInteger(size)) throw new NotImplementedError('array is too large to materialize');

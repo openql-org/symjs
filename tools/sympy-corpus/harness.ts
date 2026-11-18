@@ -3446,6 +3446,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   // ---- Expr methods
   '.expand': (args, kw, self) => {
     if (args.length) throw new Unsupported('expand args');
+    if (self instanceof sj.TensExpr) { noKw(kw); return self.expand(); }
     return sj.expand(asExpr(self), expandHints(kw));
   },
   // Matrix.simplify() works in place in SymPy and returns None
@@ -4652,6 +4653,11 @@ export function pyNumberFormat(format: string, v: unknown): string {
 }
 
 ADAPTERS['MutablePolyDenseMatrix'] = (args, kw) => new sj.PolyMatrix(...(polyMatrixArgs(args, kw) as sj.PolyMatrixArgument[]));
+ADAPTERS['ZeroArray'] = (args, kw) => (noKw(kw), new sj.ZeroArray(...args.map(asExpr)).doit());
+ADAPTERS['OneArray'] = (args, kw) => (noKw(kw), new sj.OneArray(...args.map(asExpr)).doit());
+ADAPTERS['nest_permutation'] = (args, kw) => (noKw(kw), args[0] instanceof sj.PermuteDims ? args[0].nestPermutation() : args[0]);
+ADAPTERS['ZeroArray'] = (args, kw) => (noKw(kw), new sj.ZeroArray(...args.map(asExpr)).doit());
+ADAPTERS['OneArray'] = (args, kw) => (noKw(kw), new sj.OneArray(...args.map(asExpr)).doit());
 // The classmethods of PolyMatrix: from_Matrix(M, *gens, ring=...), eye(n, gens), zeros(m, n, gens)
 const polyMatrixClassmethod = (method: (args: unknown[]) => unknown, previous: Adapter | undefined): Adapter => (args, kw, self) => {
   if (self instanceof TypeRef && self.name === 'PolyMatrix') return method(polyMatrixArgs(args, kw));
@@ -4663,6 +4669,11 @@ ADAPTERS['.eye'] = polyMatrixClassmethod((a) => sj.PolyMatrix.eye(...(a as Param
 {
   const zeros = definedOr(ADAPTERS['.zeros'], '.zeros adapter');
   const arrays = { ImmutableDenseNDimArray: sj.ImmutableDenseNDimArray, MutableDenseNDimArray: sj.MutableDenseNDimArray, ImmutableSparseNDimArray: sj.ImmutableSparseNDimArray, MutableSparseNDimArray: sj.MutableSparseNDimArray };
+  for (const [name, ctor] of Object.entries(arrays)) ADAPTERS[name] = (args, kw) => {
+    for (const key of Object.keys(kw)) if (key !== 'shape') throw new Unsupported(`kwargs ${key}`);
+    const shape = args[1] ?? kw['shape'];
+    return new ctor(toJs(args[0], true) as sj.ArrayInput, shape === undefined ? undefined : (plain(shape) as unknown[]).map(intArg));
+  };
   ADAPTERS['.zeros'] = (args, kw, self) => {
     if (self instanceof TypeRef && Object.hasOwn(arrays, self.name)) {
       noKw(kw);
@@ -4944,6 +4955,10 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
+    if (a instanceof sj.ArrayExpr) {
+      const index = i instanceof JsTuple ? i.items : Array.isArray(i) ? i : [i];
+      return a.at(...index.map(asExpr));
+    }
     if (a instanceof sj.PolyRing && i instanceof sj.Slice) {
       const [start, stop, step] = i.indices(a.ngens);
       if (step === 1) return a.slice(start, stop);
@@ -5704,6 +5719,7 @@ function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets
   if (post === 'str') return typeof value === 'string' ? value : fmt(withBrackets(value, brackets));
   if (post === 'repr') return fmtItem(withBrackets(value, brackets));
   if (post === 'len') {
+    if (value instanceof sj.NDimArray) return value.length;
     if (value instanceof sj.Range) return value.size;
     if (value instanceof sj.FiniteSet) return value.args.length;
     if (value === sj.EmptySet) return 0;

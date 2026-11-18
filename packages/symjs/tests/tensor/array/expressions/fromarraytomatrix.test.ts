@@ -69,3 +69,16 @@ it('recognizes elementwise powers with scalar coefficients', () => {
     expect(str(convertArrayToMatrix(new ArrayElementwiseApplyFunc(func, M)))).toContain('Lambda');
   }
 });
+
+it('converts local transposes, matrix elements and shaped zeros', async () => {
+  const { ArrayElement, ZeroArray } = await import('../../../../src');
+  expect(str(convertArrayToMatrix(new ZeroArray(2, 2)))).toBe('0');
+  const vectorZero = new ZeroArray(2);
+  expect(convertArrayToMatrix(vectorZero)).toBe(vectorZero);
+  expect(str(convertArrayToMatrix(new P(new TP(M, N), [0, 1, 3, 2])))).toBe('ArrayTensorProduct(M, N.T)');
+  expect(str(convertArrayToMatrix(new P(new TP(M, N), [3, 2, 1, 0])))).toBe('ArrayTensorProduct(N.T, M.T)');
+  const mixed = new P(new TP(M, A), [0, 2, 1, 3]);
+  expect(str(convertArrayToMatrix(mixed))).toBe(str(mixed));
+  expect(str(convertArrayToMatrix(new ArrayElement(new C(new TP(M, N), [1, 3]), [0, 1])))).toBe('(M*N.T)[0, 1]');
+  expect(str(convertArrayToMatrix(A.at(0, 1)))).toBe('A[0, 1]');
+});
