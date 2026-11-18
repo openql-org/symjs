@@ -279,13 +279,26 @@ export const leadingTermRules: Partial<Record<string, (e: Fn, x: Sym, cdir: Expr
  * SymPy as_leading_term(x, cdir=...): the leading term as x -> 0 from the direction cdir (0 when
  * not given: the side does not matter, or x approaches 0 from above).
  */
-export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike } = {}): Expr {
+export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike; logx?: ExprLike } = {}): Expr {
   const e = sympify(ex);
   const rule = e instanceof Fn ? leadingTermRules[e.name] : undefined;
   const special = rule?.(cast(e, Fn, 'function'), x, sympify(opts.cdir ?? 0));
-  if (special !== undefined) return special;
-  const [c, p] = leadterm(e, x);
-  return mul(c, pow(x, p));
+  let result: Expr;
+  if (special !== undefined) result = special;
+  else if (e instanceof Mul) result = mul(...e.args.map((a) => asLeadingTerm(a, x, opts)));
+  else {
+    const ray = sympify(opts.cdir ?? 1);
+    if (ray instanceof Rational && (ray.isZero || ray.key === S.One.key)) {
+      const [c, p] = leadterm(e, x);
+      result = mul(c, pow(x, p));
+    } else {
+      if (isReal(ray) !== true) throw new NotImplementedError('leading term in a nonreal direction');
+      const t = new Sym('_leading', { positive: true });
+      const [c, p] = leadterm(subs(e, [[x, mul(ray, t)]]), t);
+      result = expandMul(subs(mul(c, pow(t, p)), [[log(t), add(log(x), neg(log(ray)))], [t, mul(x, pow(ray, -1))]]));
+    }
+  }
+  return opts.logx === undefined ? result : subs(result, [[log(x), sympify(opts.logx)]]);
 }
 
 /** Order of the O term in a sum, or undefined (SymPy getn). */
@@ -345,6 +358,7 @@ const SERIES_TERMS: Readonly<Record<string, (n: number, x: Expr) => Expr>> = {
     const k = (n - 1) / 2 + 1;
     return mul(k % 2 === 1 ? 1 : -1, 2, add(pow(2, 2 * k - 1), -1), bernoulliNumber(2 * k), pow(x, 2 * k - 1), Rational.of(1n, factorialOf(2 * k)));
   },
+  log: (n, x) => n < 0 ? S.Zero : mul(Rational.of(n % 2 === 0 ? 1 : -1, n + 1), pow(x, n + 1)),
   asec: (n, x) => n === 0 ? mul(S.I, log(mul(2, pow(x, -1)))) : n < 0 || n % 2 === 1 ? S.Zero : mul(neg(S.I), halfRisingTerm(n, x)),
   acsc: (n, x) => n === 0 ? add(mul(S.Pi, S.Half), mul(neg(S.I), log(2)), mul(S.I, log(x))) : n < 0 || n % 2 === 1 ? S.Zero : mul(S.I, halfRisingTerm(n, x)),
   asech: (n, x) => n === 0 ? log(mul(2, pow(x, -1))) : n < 0 || n % 2 === 1 ? S.Zero : neg(halfRisingTerm(n, x)),
@@ -354,6 +368,7 @@ const SERIES_TERMS: Readonly<Record<string, (n: number, x: Expr) => Expr>> = {
 /**
  * SymPy Expr.taylor_term(n, x): the n-th term of the Maclaurin series, f^(n)(0)*x**n/n!; for cot,
  * csc, asec, acsc, asech and acsch of x the n-th term of their series at 0.
+ * For log(x), SymPy's class convention gives the n-th term of log(1 + x).
  */
 export function taylorTerm(eIn: ExprLike, n: number, x: Sym): Expr {
   const e = sympify(eIn);

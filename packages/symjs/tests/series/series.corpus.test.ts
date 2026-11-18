@@ -366,11 +366,11 @@ describe("sympy/series/tests/test_series.py", () => {
     const x = new Sym('x');
     expect(sympyStr(series(new Mul([new Pow(x, rational(-3, 2)), exp(x)]), x, rational(0), 6, '+', {}))).toBe('x**(-3/2) + 1/sqrt(x) + sqrt(x)/2 + x**(3/2)/6 + x**(5/2)/24 + x**(7/2)/120 + x**(9/2)/720 + x**(11/2)/5040 + O(x**6)');
   });
-  it.fails("test_issue_15539:276", () => {
+  it("test_issue_15539:276", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('atan', [x]), x, S.NegativeInfinity, 6, '+', {}))).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x - pi/2 + O(x**(-6), (x, -oo))');
   });
-  it.fails("test_issue_15539:278", () => {
+  it("test_issue_15539:278", () => {
     const x = new Sym('x');
     expect(sympyStr(series(fn('atan', [x]), x, oo, 6, '+', {}))).toBe('-1/(5*x**5) + 1/(3*x**3) - 1/x + pi/2 + O(x**(-6), (x, oo))');
   });

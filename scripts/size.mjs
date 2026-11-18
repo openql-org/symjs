@@ -75,7 +75,8 @@ const CASES = [
   ['polys', 'factor', 774],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
-  ['calculus', 'integrate', 1051],
+  // Directional inverse-function leading terms and branch-point Puiseux expansions add under 2 KiB.
+  ['calculus', 'integrate', 1053],
   ['solvers', 'solve', 1140],
   ['solvers', 'dsolve', 1155],
   ['sets', '*', 378],
@@ -107,7 +108,7 @@ const CASES = [
   // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
   // resolvents, PolyMatrix, multivariate resultants, tensor operators, TensorProduct, array conversions,
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
-  ['index', '*', 2789],
+  ['index', '*', 2791],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];

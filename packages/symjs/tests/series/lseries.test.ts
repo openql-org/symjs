@@ -4,6 +4,7 @@
 // Tests of src/series/lseries.ts.
 // Orders, leading terms and the remaining series helpers. Expected values are those of SymPy 1.14.
 
+import inverseLeadingCases from './inverse-leading-cases.json';
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { Sym, parse } from '../../src';
@@ -155,4 +156,55 @@ describe('leading terms that depend on the direction (SymPy test_integers, test_
     expect(lt('asech(x + 1/2)')).toBe(sj.sstr(sj.asech(sj.Rational.of(1n, 2n))));
     expect(lt('acot(x + 1)')).toBe('pi/4');
   });
+});
+
+
+describe('inverse function leading terms on both sides of their cuts (SymPy 1.14)', () => {
+  it.each(inverseLeadingCases)('%s with cdir=%s', (expression, direction, expected) => {
+    if (typeof expression !== 'string' || typeof direction !== 'number' || typeof expected !== 'string') throw new TypeError('invalid leading-term fixture');
+    const actual = sj.asLeadingTerm(parse(expression), x, { cdir: direction });
+    const reference = parse(expected);
+    if (sj.sstr(actual) === sj.sstr(reference)) return;
+    const delta = sj.sub(actual, reference).toComplex();
+    expect(Math.hypot(delta.re, delta.im)).toBeLessThan(1e-12);
+  });
+});
+
+describe('unevaluated inverse heads and removable singularities', () => {
+  it('keeps a constant head and evaluates removable arguments before selecting a branch', () => {
+    const constant = new sj.Fn('asin', [sj.S.One]);
+    expect(sj.asLeadingTerm(constant, x)).toBe(constant);
+    expect(sj.sstr(sj.asLeadingTerm(parse('asinh(sin(x)/x)'), x))).toBe('log(1 + sqrt(2))');
+    const singular = parse('atanh(sin(x)/x)');
+    expect(sj.asLeadingTerm(singular, x)).toBe(singular);
+    expect(() => sj.asLeadingTerm(parse('asec(exp(1/x))'), x)).toThrow();
+  });
+  it('selects the branches of raw negative arguments as well as evaluated odd functions', () => {
+    const cases = [
+      ['asin', '-I*x - 2', '-pi + asin(2)'],
+      ['acsc', '-I*x + 1/2', 'pi - acsc(1/2)'],
+      ['atanh', '-I*x - 2', '-I*pi - atanh(2)'],
+      ['acoth', '-I*x + 1/2', 'I*pi + acoth(1/2)'],
+    ] as const;
+    for (const [name, arg, expected] of cases) {
+      expect(sj.sstr(sj.asLeadingTerm(new sj.Fn(name, [parse(arg)]), x))).toBe(sj.sstr(parse(expected)));
+    }
+  });
+});
+
+
+it('retains nonzero leading terms when removable arguments tend to a branch point', () => {
+  const cases = [
+    ['acos(sin(x)/x)', 'sqrt(3)*x/3'],
+    ['asec(sin(x)/x)', 'sqrt(3)*I*x/3'],
+    ['acosh(sin(x)/x)', 'sqrt(3)*I*x/3'],
+    ['asech(sinh(x)/x)', 'sqrt(3)*I*x/3'],
+  ] as const;
+  for (const [expression, expected] of cases) {
+    expect(sj.sstr(sj.asLeadingTerm(parse(expression), x))).toBe(expected);
+  }
+});
+
+it('takes periodic accumulation intervals from negative directions', () => {
+  expect(sj.sstr(sj.asLeadingTerm(parse('sin(1/x)'), x, { cdir: -1 }))).toBe('AccumBounds(-1, 1)');
 });

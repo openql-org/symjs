@@ -12,7 +12,9 @@ import { Add, Dummy, Mul, Order, Pow, Rational, S, Special, impl } from '../core
 import { add, mul, neg, pow, sub, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
-import { log } from '../functions/elementary/elementary';
+import { im, log, re } from '../functions/elementary/elementary';
+import { rewrite } from '../simplify/rewrite';
+import { expandMul } from '../simplify/expand';
 import { asLeadingTerm, leadingTermRules, leadterm, series } from './series';
 import { isNegative, isPositive } from '../core/assumptions';
 import { AccumBounds } from '../core/accumbounds';
@@ -147,19 +149,73 @@ for (const [name, lo, hi] of [['sin', -1, 1], ['cos', -1, 1], ['tan', S.Negative
 }
 // SymPy hyperbolic _eval_as_leading_term: a function of an infinite argument is its own leading term
 for (const name of ['sinh', 'cosh', 'tanh', 'coth']) leadingTermRules[name] = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : e);
-// the limits at an infinite argument: atan(+-oo) = +-pi/2, atanh(+-oo) = -+I*pi/2, asec(oo) = pi/2, asech(oo) = I*pi/2
-const halfPi = mul(S.Pi, S.Half);
-leadingTermRules.atan = (e, x, cdir) => {
-  const v = infiniteAtZero(first(e.args), x, cdir);
-  return v === undefined || v.name === 'zoo' ? undefined : v.name === 'oo' ? halfPi : neg(halfPi);
-};
-leadingTermRules.atanh = (e, x, cdir) => {
-  const v = infiniteAtZero(first(e.args), x, cdir);
-  return v === undefined || v.name === 'zoo' ? undefined : mul(v.name === 'oo' ? -1 : 1, S.I, halfPi);
-};
-leadingTermRules.asec = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : halfPi);
-leadingTermRules.asech = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : mul(S.I, halfPi));
-// acot(z) = atan(1/z), acsc(z) = asin(1/z) and acsch(z) = asinh(1/z) behave like 1/z for an infinite z
-for (const name of ['acot', 'acsc', 'acsch']) {
-  leadingTermRules[name] = (e, x, cdir) => (infiniteAtZero(first(e.args), x, cdir) === undefined ? undefined : asLeadingTerm(pow(first(e.args), -1), x, { cdir }));
+/** Leading term of the logarithmic rewrite on the ray selected by cdir (SymPy inverse functions). */
+function logarithmicLeadingTerm(e: Fn, x: Sym, cdir: Expr): Expr {
+  return expandMul(asLeadingTerm(rewrite(e, 'log'), x, { cdir }));
+}
+
+// The branch-cut corrections below follow SymPy's _eval_as_leading_term methods. At a branch
+// point, expand the logarithmic identity instead of differentiating a singular inverse function.
+for (const name of ['asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch']) {
+  leadingTermRules[name] = (e, x, cdir) => {
+    const arg = first(e.args);
+    if (!arg.has(x)) return e;
+    const x0 = subs(arg, [[x, 0]]);
+    if (x0 instanceof Special && x0.name === 'nan') {
+      const value = fn(e.name, [asLeadingTerm(arg, x, { cdir })]);
+      if (isZeroExpr(value)) return logarithmicLeadingTerm(e, x, cdir);
+      return value instanceof Special ? e : value;
+    }
+    if (x0 instanceof Special) return logarithmicLeadingTerm(e, x, cdir);
+    const zero = isZeroExpr(x0);
+    const one = x0.key === S.One.key;
+    const minusOne = x0.key === S.NegOne.key;
+    const imaginaryUnit = x0.key === S.I.key || x0.key === neg(S.I).key;
+    if ((name === 'asin' || name === 'atan' || name === 'asinh' || name === 'atanh') && zero) return asLeadingTerm(arg, x, { cdir });
+    if ((name === 'acos' || name === 'asec') && one) {
+      return mul(pow(2, S.Half), pow(asLeadingTerm(name === 'acos' ? sub(1, arg) : sub(arg, 1), x, { cdir }), S.Half));
+    }
+    const branchPoint = name === 'asin' || name === 'atanh' ? one || minusOne
+      : name === 'acos' ? minusOne
+      : name === 'atan' || name === 'asinh' ? imaginaryUnit
+      : name === 'acot' || name === 'acsch' ? imaginaryUnit || zero
+      : name === 'asec' ? minusOne || zero
+      : one || minusOne || zero;
+    if (branchPoint) return logarithmicLeadingTerm(e, x, cdir);
+    const value = fn(e.name, [x0]);
+    const square = pow(x0, 2);
+    const realOutside = isNegative(sub(1, square)) === true;
+    const imaginaryOutside = isNegative(add(1, square)) === true;
+    const realInside = isNegative(neg(sub(1, square))) === true && isZeroExpr(im(x0));
+    const imaginaryInside = isNegative(neg(add(1, square))) === true && isZeroExpr(re(x0));
+    const onCut = name === 'asin' || name === 'acos' || name === 'atanh' ? realOutside
+      : name === 'atan' || name === 'asinh' ? imaginaryOutside
+      : name === 'acot' || name === 'acsch' ? imaginaryInside
+      : name === 'acosh' ? isNegative(sub(x0, 1)) === true
+      : name === 'asech' ? isNegative(x0) === true || isNegative(sub(1, x0)) === true
+      : realInside;
+    if (!onCut) return value;
+    const ndir = dir(arg, x, isZeroExpr(cdir) ? S.One : cdir);
+    const horizontal = name === 'atan' || name === 'acot' || name === 'asinh' || name === 'acsch';
+    const component = horizontal ? re(ndir) : im(ndir);
+    const positive = isPositive(component) === true;
+    const negative = isNegative(component) === true;
+    if (!positive && !negative) return logarithmicLeadingTerm(e, x, cdir);
+    const pos = isPositive(horizontal ? im(x0) : x0) === true;
+    const ipi = mul(S.I, S.Pi);
+    switch (name) {
+      case 'asin': return positive && pos ? sub(S.Pi, value) : negative && !pos ? sub(neg(S.Pi), value) : value;
+      case 'acos': return positive && pos ? neg(value) : negative && !pos ? sub(mul(2, S.Pi), value) : value;
+      case 'atan': return negative && pos ? sub(value, S.Pi) : positive && !pos ? add(value, S.Pi) : value;
+      case 'acot': return positive && pos ? add(value, S.Pi) : negative && !pos ? sub(value, S.Pi) : value;
+      case 'asec': return negative && pos ? neg(value) : positive && !pos ? sub(mul(2, S.Pi), value) : value;
+      case 'acsc': return negative && pos ? sub(S.Pi, value) : positive && !pos ? sub(neg(S.Pi), value) : value;
+      case 'asinh': return positive && !pos ? sub(neg(value), ipi) : negative && pos ? add(neg(value), ipi) : value;
+      case 'atanh': return negative && !pos ? sub(value, ipi) : positive && pos ? add(value, ipi) : value;
+      case 'acoth': return negative && pos ? add(value, ipi) : positive && !pos ? sub(value, ipi) : value;
+      case 'acsch': return positive && pos ? sub(neg(value), ipi) : negative && !pos ? add(neg(value), ipi) : value;
+      case 'acosh': return negative ? isNegative(add(x0, 1)) === true ? sub(value, mul(2, ipi)) : neg(value) : value;
+      default: return positive ? pos || isNegative(add(x0, 1)) === true ? neg(value) : sub(value, mul(2, ipi)) : value;
+    }
+  };
 }

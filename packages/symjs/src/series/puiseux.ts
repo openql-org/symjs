@@ -21,6 +21,7 @@ import { fnTaylorAtZero } from '../calculus/diff';
 import { expandMul as expand } from '../simplify/expand';
 import { first, last } from '../core/guard';
 import { isNegative, isPositive, isReal } from '../core/assumptions';
+import { rewrite } from '../simplify/rewrite';
 import { Hyper } from '../functions/special/hyper';
 
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
@@ -437,6 +438,20 @@ export class Expander {
       const head = PS.constant(add(lc, mul(lead.e, this.L)));
       return head.add(this.analytic((w) => log(add(1, w)), S.Zero, u, n));
     }
+    // Inverse functions have algebraic or logarithmic branch points. Their logarithmic
+    // identities admit Puiseux expansions there, including when the argument has a pole.
+    if (['asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch'].includes(e.name)) {
+      const argSeries = this.ser(g, n.isPositive ? n : S.One);
+      const at = argSeries.coeff(S.Zero);
+      const pole = argSeries.terms.some((term) => term.e.isNegative && !isZeroCoeff(term.c));
+      const singular = e.name !== 'acosh' && (['asin', 'acos', 'atanh', 'acosh', 'asec', 'acsc', 'acoth', 'asech'].includes(e.name)
+        ? at.key === S.One.key || at.key === S.NegOne.key
+        : at.key === S.I.key || at.key === mul(-1, S.I).key);
+      if (pole || singular || (['acot', 'asec', 'acsc'].includes(e.name) && isZeroCoeff(at))) {
+        const result = this.ser(rewrite(e, 'log'), n);
+        return new PS(result.terms.map((term) => ({ e: term.e, c: expand(term.c) })), result.order);
+      }
+    }
     const sg = this.ser(g, n.isPositive ? n : S.One);
     for (const term of sg.terms) {
       if (term.e.isNegative && !isZeroCoeff(term.c)) throw new SeriesError('essential singularity');
@@ -614,7 +629,7 @@ export class Expander {
 
   /** belowCut for b = c*t**e*(1 + u), with more terms of u when those known do not decide it. */
   private belowCutOf(b: Expr, c: Expr, e: Rational, u: PS): boolean {
-    if (!(isNum(c) && c.isNegative)) return false;
+    if (isNegative(c) !== true) return false;
     if (belowCut(u) || u.terms.some((t) => !isRealConst(t.c))) return belowCut(u);
     const more = this.ser(b, numAdd(e, Rational.of(4n)));
     return belowCut(more.from(e).scale(pow(c, -1)).shift(numNeg(e)).add(PS.constant(S.NegOne)));
