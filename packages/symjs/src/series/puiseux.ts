@@ -10,9 +10,10 @@
  * log(t) grows slower than any power of t.
  */
 
+import { accumBounds } from '../core/accumbounds';
 import { NotImplementedError } from '../core/errors';
 import type { Expr, FnName } from '../core/nodes';
-import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, isNum } from '../core/nodes';
+import { Add, Constant, ExtensionExpr, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, isNum } from '../core/nodes';
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
@@ -246,7 +247,7 @@ export class Expander {
   readonly L = new Sym('_L');
   private depth = 0;
 
-  constructor(readonly t: Sym) {}
+  constructor(readonly t: Sym, private readonly taylorVariable?: Sym) {}
 
   /** Series of e correct for all exponents < n. */
   ser(e: Expr, n: Rational): PS {
@@ -276,6 +277,13 @@ export class Expander {
     if (e instanceof Fn) return this.serFn(e, n);
     if (e instanceof UndefFn && (e.name === SCALED_BESSELI || e.name === SCALED_BESSELK)) return this.scaledBessel(e, n);
     if (e instanceof UndefFn && (e.name === SCALED_EI || e.name === SCALED_ERFC)) return this.scaledExponentialIntegral(e, n);
+    if (e instanceof Order && e.args.length === 1) return new PS([], this.leading(e.expr).e);
+    if (e instanceof UndefFn && this.taylorVariable && e.args.length === 1) {
+      const arg = this.ser(first(e.args), n.isPositive ? n : S.One);
+      if (arg.leadExp().isNegative) throw new SeriesError('Cannot expand an undefined function at infinity');
+      const h = new PS(arg.terms.filter((term) => term.e.isPositive), arg.order);
+      return this.analytic((w) => new UndefFn(e.name, [w]), arg.coeff(S.Zero), h, n, this.taylorVariable);
+    }
     if (e instanceof Hyper) return this.serHyper(e, n);
     if (e instanceof ExtensionExpr && e.name === 'SingularityFunction') {
       const power = at(e.args, 2);
@@ -468,6 +476,14 @@ export class Expander {
       }
     }
     const sg = this.ser(g, n.isPositive ? n : S.One);
+    if (e.name === 'erf' || e.name === 'erfc' || (e.name === 'frac' && this.taylorVariable)) {
+      const lead = sg.lead();
+      if (lead?.e.isNegative && isReal(g) === true) {
+        if (e.name === 'frac') return PS.constant(accumBounds(0, 1)).cut(n);
+        const side = isPositive(lead.c) ? 1 : isNegative(lead.c) ? -1 : 0;
+        if (side) return PS.constant(Rational.of(e.name === 'erf' ? side : 1 - side)).cut(n);
+      }
+    }
     for (const term of sg.terms) {
       if (term.e.isNegative && !isZeroCoeff(term.c)) throw new SeriesError('essential singularity');
     }
@@ -488,9 +504,25 @@ export class Expander {
         }
       }
       // abs(g) with g -> 0 along t -> 0+: the sign of the leading coefficient decides
+      if (e.name === 'abs' && isReal(g0) === true && !isZeroCoeff(g0) && isReal(g) === true) return sg.scale(fn('sign', [g0]));
       if (e.name === 'abs' && isZeroCoeff(g0)) {
         const lc = sg.lead()?.c;
         if (lc instanceof Rational) return lc.isNegative ? sg.scale(S.NegOne) : sg;
+      }
+      if (e.name === 'abs' && !isZeroCoeff(g0) && h.terms.every((u) => isReal(u.c) === true)) {
+        // |z+h| = |z| sqrt(1 + 2*c*h/|z| + h²/|z|²) for real h and c = Re(sign(z)).
+        const radius = fn('abs', [g0]);
+        const c = fn('re', [fn('sign', [g0])]);
+        let prev: Expr = S.One;
+        let curr = c;
+        return this.powerSeries((j) => {
+          if (j === 0) return radius;
+          if (j === 1) return c;
+          const next = expand(mul(Rational.of(1, j), add(mul(3 - 2 * j, c, curr), mul(3 - j, prev))));
+          prev = curr;
+          curr = next;
+          return mul(next, pow(radius, 1 - j));
+        }, h, n);
       }
       throw new SeriesError(`cannot expand ${e.name}`);
     }
@@ -528,7 +560,7 @@ export class Expander {
     }
     // frac(g) = g - floor(g): h plus frac(g0), or plus 1 below an integer (SymPy: series(frac(x), x) = x)
     if (e.name === 'frac') {
-      const lc = h.lead()?.c;
+      const lc = h.lead()?.c ?? (this.taylorVariable && !h.isExact ? this.leading(add(g, mul(-1, g0))).c : undefined);
       const sign = lc === undefined ? 0 : isPositive(lc) ? 1 : isNegative(lc) ? -1 : 0;
       if (g0 instanceof Rational && g0.isInteger) {
         if (sign === 0) throw new SeriesError('cannot expand frac');
@@ -582,7 +614,7 @@ export class Expander {
     const z = last(e.args);
     if (!z.has(this.t)) return undefined;
     const lead = this.leading(z);
-    if ((name === '_eis' || name === '_erfs') && lead.e.isNegative) return this.scaledExponentialIntegral(e, n);
+    if ((name === '_eis' && !lead.e.isPositive) || (name === '_erfs' && lead.e.isNegative)) return this.scaledExponentialIntegral(e, n);
     if (!lead.e.isPositive) return undefined;
     const order = first(e.args);
     if (name === 'polylog' && order.has(this.t)) return undefined;
@@ -655,6 +687,16 @@ export class Expander {
   private scaledExponentialIntegral(e: UndefFn | Fn, n: Rational): PS {
     const g = first(e.args);
     const lead = this.leading(g);
+    if (lead.e.isZero && e.name === SCALED_EI) {
+      // F(z) = exp(-z)*Ei(z) satisfies F'(z) + F(z) = 1/z.
+      const center = lead.c;
+      const h = this.ser(add(g, mul(-1, center)), n);
+      let a: Expr = e instanceof Fn ? fn(e.name, [center]) : new UndefFn(e.name, [center]);
+      return this.powerSeries((j) => {
+        if (j) a = mul(Rational.of(1, j), add(mul(j % 2 ? 1 : -1, pow(center, -j)), mul(-1, a)));
+        return a;
+      }, h, n);
+    }
     if (!(lead.e.isNegative && (e.name === SCALED_EI ? isReal(lead.c) === true : isPositive(lead.c)))) throw new SeriesError(`cannot expand ${e.name}`);
     // e^-g Ei(g) ~ sum k!/g^(k+1), e^(g^2) erfc(g) ~ sum (-1)^k (1/2)_k/(sqrt(pi)*g^(2k+1)).
     const step = e.name === SCALED_EI ? 1 : 2;
@@ -700,8 +742,7 @@ export class Expander {
   }
 
   /** f(g0 + h) = sum_j f^(j)(g0)/j! h^j, h with positive exponents only. */
-  private analytic(f: (w: Expr) => Expr, g0: Expr, h: PS, n: Rational): PS {
-    const w = new Sym('_w');
+  private analytic(f: (w: Expr) => Expr, g0: Expr, h: PS, n: Rational, w = new Sym('_w')): PS {
     let deriv = f(w);
     let fact = 1n;
     const value = (d: Expr) => {

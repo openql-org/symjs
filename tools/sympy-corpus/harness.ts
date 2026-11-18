@@ -833,7 +833,7 @@ function orderNode(e: unknown, rest: unknown[]): Expr {
   }
   if (r instanceof JsTuple && r.items.length === 2) return sj.O(e as Expr, r.items[0] as Sym, r.items[1] as Expr);
   if (r instanceof Sym) return sj.O(e as Expr, r);
-  throw new Unsupported('Order arguments');
+  throw new TypeError('An Order variable must be a symbol');
 }
 
 export function deserialize(tree: Tree): unknown {
@@ -1313,7 +1313,7 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'SeqOp': {
       const seqs = (tree['args'] as Tree[]).map((t) => deserialize(t) as sj.SeqBase);
-      return tree['op'] === 'SeqAdd' ? sj.SeqAdd(...seqs) : sj.SeqMul(...seqs);
+      return tree['op'] === 'SeqAdd' ? new sj.SeqAddNode(seqs) : new sj.SeqMulNode(seqs);
     }
     case 'RecursiveSeq':
       return sj.RecursiveSeq(
@@ -3173,10 +3173,21 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_leading_term': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'cdir' && k !== 'logx') throw new Unsupported(`kwargs ${k}`);
     if (args.length === 0) return asExpr(self);
+    if (self instanceof sj.FourierSeries || self instanceof sj.FormalPowerSeries) return self.asLeadingTerm();
     return sj.asLeadingTerm(asExpr(self), asSym(args[0]), {
       ...(kw['cdir'] === undefined ? {} : { cdir: asExpr(kw['cdir']) }),
       ...(kw['logx'] === undefined || kw['logx'] === null ? {} : { logx: asExpr(kw['logx']) }),
     });
+  },
+  '.as_expr_variables': (args, kw, self) => {
+    noKw(kw);
+    const input = args[0];
+    const pairs = input instanceof JsTuple ? input.items.map((pair): [Sym, Expr] => {
+      if (!(pair instanceof JsTuple)) throw new TypeError('Expected a variable and an expansion point');
+      return [asSym(pair.items[0]), asExpr(pair.items[1])];
+    }) : [];
+    const [e, variables] = sj.asExprVariables(self as sj.Order, pairs);
+    return new JsTuple([e, new JsTuple(variables.map((v) => new JsTuple(v)))]);
   },
   '.getn': exprMethod((e) => none(sj.getn(e))),
   '.nseries': (args, kw, self) => {
@@ -4140,14 +4151,17 @@ export const ADAPTERS: Record<string, Adapter> = {
       ...(kw['cols'] === undefined ? {} : { cols: intArg(kw['cols']) }),
     });
   },
+  heuristics: (args, kw) => (noKw(kw), none(sj.heuristics(asExpr(args[0]), asSym(args[1]), asExpr(args[2]), args[3] as '+' | '-'))),
   limit: (args, kw) => {
     const dir = (kw['dir'] as string | undefined) ?? (typeof args[3] === 'string' ? (args[3] as string) : '+');
     for (const k of Object.keys(kw)) if (k !== 'dir') throw new Unsupported(`kwargs ${k}`);
     return sj.limit(asExpr(args[0]), asSym(args[1]), asExpr(args[2]), dir as '+' | '-' | '+-');
   },
   Limit: (args, kw) => {
-    const dir = (kw['dir'] as string | undefined) ?? '+';
-    return new sj.Limit([asExpr(args[0]), asSym(args[1]), asExpr(args[2])], dir as '+' | '-' | '+-');
+    const dir = kw['dir'] ?? args[3] ?? '+';
+    if (typeof dir !== 'string') throw new TypeError('Limit direction must be a string');
+    if (!['+', '-', '+-'].includes(dir)) throw new RangeError('Invalid limit direction');
+    return new sj.Limit([asExpr(args[0]), asExpr(args[1]), asExpr(args[2])], dir as '+' | '-' | '+-');
   },
   series: (args, kw) => {
     const x0 = kw['x0'] ?? args[2] ?? 0;
@@ -4156,10 +4170,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     const dir = cdir === 0 ? (kw['dir'] ?? args[4] ?? '+') as '+' | '-' : cdir < 0 ? '-' : '+';
     for (const k of Object.keys(kw)) if (!['x', 'x0', 'n', 'dir', 'cdir', 'logx'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const e = asExpr(args[0]);
-    const syms = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     const variable = args[1] ?? kw['x'];
-    const x = variable ? asSym(variable) : syms.length === 1 ? syms[0]! : undefined;
-    if (!x) throw new Unsupported('series variable');
+    const x = variable === undefined ? undefined : asSym(variable);
     const logx = kw['logx'] ?? args[5];
     return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p), dir, logx === undefined ? {} : { logx: asExpr(logx) });
   },
@@ -5370,11 +5382,20 @@ Object.assign(ADAPTERS, {
     const x = args[0] === undefined ? ([...sj.freeSymbols(asExpr(self))][0] as Sym) : asSym(args[0]);
     return sj.lseries(asExpr(self), x, args[1] === undefined ? 0 : asExpr(args[1]));
   },
-  '.fps': (args, kw, self) => {
-    noKw(kw);
-    if (args[0] === undefined) return sj.fps(asExpr(self));
-    return sj.fps(asExpr(self), asSym(args[0]), args[1] === undefined ? 0 : asExpr(args[1]));
+  fps: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['dir', 'x0', 'x', 'rational', 'hyper'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const x = kw['x'] ?? args[1];
+    const dir = kw['dir'] ?? args[3] ?? '+';
+    const direction = dir instanceof sj.Rational ? dir.equals(S.One) ? '+' : dir.equals(S.NegOne) ? '-' : dir : dir;
+    if (direction !== '+' && direction !== '-') throw new RangeError('Invalid series direction');
+    return sj.fps(asExpr(args[0]), x === undefined ? undefined : asSym(x), asExpr(kw['x0'] ?? args[2] ?? 0), direction, {
+      rational: kw['rational'] !== false, hyper: kw['hyper'] !== false,
+    });
   },
+  SeqAdd: (args, kw) => kw['evaluate'] === false ? new sj.SeqAddNode(args as sj.SeqBase[]) : sj.SeqAdd(...args.map((a) => toJs(a, false) as sj.SeqBase)),
+  SeqMul: (args, kw) => kw['evaluate'] === false ? new sj.SeqMulNode(args as sj.SeqBase[]) : sj.SeqMul(...args.map((a) => toJs(a, false) as sj.SeqBase)),
+  fourier_series: (args, kw) => ADAPTERS['.fourier_series']!(args.slice(1), kw, args[0]),
+  '.fps': (args, kw, self) => ADAPTERS['fps']!([self, ...args], kw),
   // ---- sympy.series.sequences, limitseq, residues and sympy.calculus.finite_diff, euler
   '.find_linear_recurrence': (args, kw, self) => {
     if (!(self instanceof sj.SeqBase)) throw new Unsupported('sequence receiver');
@@ -5426,6 +5447,8 @@ Object.assign(ADAPTERS, {
   '.fourier_series': (args, kw, self) => {
     noKw(kw);
     const lim = args[0] instanceof JsTuple ? args[0].items : undefined;
+    if (lim?.length === 2) return sj.fourierSeries(asExpr(self), undefined, [asExpr(lim[0]), asExpr(lim[1])]);
+    if (lim && !(lim[0] instanceof Sym)) throw new RangeError('Fourier series variable must be a symbol');
     const x = lim ? asSym(lim[0]) : ([...sj.freeSymbols(asExpr(self))][0] as Sym);
     return sj.fourierSeries(asExpr(self), x, lim && lim.length === 3 ? [asExpr(lim[1]), asExpr(lim[2])] : undefined);
   },
@@ -6016,6 +6039,11 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return callMethod(a, ['ge'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Ge(a, b) : unsupportedOp('>='));
   },
   '.__contains__': (a, [b]) => {
+    if (a instanceof sj.Order) {
+      const result = a.contains(asExpr(b));
+      if (result === 'unknown') throw new TypeError('Order containment is undecidable');
+      return result;
+    }
     if (a instanceof sj.SetExpr && !(a instanceof sj.MatrixSet)) {
       return a.hasElement(expressionContainer(b));
     }
@@ -6471,6 +6499,8 @@ function autoAdapter(c: Case): Adapter | undefined {
     return () => sj.Id;
   }
   if (c.category === 'series') {
+    if (c.fn === '.period' && c.self?.t === 'FourierSeries') return (_args, kw, self) => (noKw(kw), new JsTuple((self as sj.FourierSeries).period));
+    if (c.fn === 'Order' || c.fn === 'Limit') return ADAPTERS[c.fn];
     if (c.fn === 'compare' && c.args?.length === 3) return (args, kw) => {
       noKw(kw);
       return new sj.Gruntz().compare(asExpr(args[0]), asExpr(args[1]), asSym(args[2]));
@@ -6854,6 +6884,7 @@ function autoAdapter(c: Case): Adapter | undefined {
     // the evaluating constructors of the arithmetic classes (Python calls the class: Pow(b, e))
     const constructors: Readonly<Record<string, unknown>> = {
       Add: sj.add, Mul: sj.mul, Pow: sj.pow, PowerSet: sj.PowerSet,
+      Order: function Order(e: Expr) { return sj.O(e); },
       RisingFactorial: function RisingFactorial(x: Expr, k: Expr) { return sj.rf(x, k); },
       FallingFactorial: function FallingFactorial(x: Expr, k: Expr) { return sj.ff(x, k); },
       ConditionSet: function ConditionSet(x: Expr, c: Expr, s: sj.SetExpr) { return sj.ConditionSet.of(x, c, s); },
@@ -7501,6 +7532,13 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // At a = 1 + I the constant term is 1, while (1 - a)*sign(1 - a) is -1. The real-axis expansion follows from |z+h|² = |z|² + 2*h*Re(z) + h².
+  "sympy.series.tests.test_nseries:assert abs(x - a).nseries(x, 1) == -a*sign(1 - a) + (x - 1)*sign(1 - a) + sign(1 - a)": "Abs(a - 1) + (x - 1)*re(sign(1 - a)) + (x - 1)**3*(re(sign(1 - a))**3/2 - re(sign(1 - a))/2)/Abs(a - 1)**2 + (x - 1)**4*(-5*re(sign(1 - a))**4/8 + 3*re(sign(1 - a))**2/4 - 1/8)/Abs(a - 1)**3 + (x - 1)**5*(7*re(sign(1 - a))**5/8 - 5*re(sign(1 - a))**3/4 + 3*re(sign(1 - a))/8)/Abs(a - 1)**4 + (1/2 - re(sign(1 - a))**2/2)*(x - 1)**2/Abs(a - 1) + O((x - 1)**6, (x, 1))",
+  // At y = I the two absolute values agree for every real x, giving 0 instead of I. Rationalizing the difference gives Re(sign(y)), also at y = 0.
+  "sympy.series.tests.test_limits:assert limit((Abs(x + y) - Abs(x - y))/(2*x), x, 0) == sign(y)": "re(sign(y))",
+  // At n = 2, sin(x) + x² exp(x) has coefficient 1 - 1/6 = 5/6 at x³. Collecting each Taylor coefficient gives the series below.
+  "sympy.series.tests.test_formal:assert fps(f, x).truncate() == \\\n        (x**(n - 1) + x**(n + 1) + x**(n + 2)/2 + x**n +\n         x**(n + 4)/24 + x**(n + 5)/60 + O(x**(n + 6), x))": "41*x**(n + 5)/5040 + x**(n + 4)/24 + 7*x**(n + 3)/40 + x**(n + 2)/2 + 5*x**(n + 1)/6 + x**(n - 1) + x**n + O(x**(n + 6))",
+
   // For z = erfinv(exp(I/2)), |arg(z)| is about 0.7785 < pi/3, so (z**3)**(1/3) = z.
   // SymPy checksol accepts z**3 ≈ -0.53608030044786368 + 0.55885485862048475*I.
   'sympy.solvers.tests.test_solvers:assert solve(-erf(x**(S(1)/3))**pi + I, x) == []': '[erfinv(I**(1/pi))**3]',

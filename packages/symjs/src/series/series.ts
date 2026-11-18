@@ -5,21 +5,25 @@
  * @file series(): power series expansion with an Order term, SymPy style.
  */
 
-import { NotImplementedError } from '../core/errors';
+import { NotImplementedError, PoleError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Derivative, ExtensionExpr, Float, Integral, Fn, Order, Piecewise, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
+import { Add, Dummy, Derivative, ExtensionExpr, Float, Integral, Fn, Order, Piecewise, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul, isMulLike } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
 import { mapBottomUp, some, xreplace as subs } from '../core/traverse';
-import { cos, fn, infiniteForm, log, sin } from '../functions/elementary/elementary';
+import { cos, fn, im, infiniteForm, log, sin } from '../functions/elementary/elementary';
 import { bernoulliNumber } from '../functions/special/special';
 import { besselLocalExpansion } from '../functions/special/bessel';
-import { EssentialSingularity, Expander, type PS, isE } from './puiseux';
+import { EssentialSingularity, Expander, SeriesError, type PS, isE } from './puiseux';
 import { isNegative, isPositive, isReal, isZero } from '../core/assumptions';
 import { at, cast, first, getOrThrow, last } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
+import { SubsNode } from '../core/subsnode';
+import { powsimp } from '../simplify/powsimp';
+import { together } from '../simplify/rational';
+import { Gruntz } from './gruntz';
 import { asIndependent } from '../core/methods';
 import { AccumBounds, AccumBoundsNode } from '../core/accumbounds';
 
@@ -31,8 +35,9 @@ const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => 
  * power: O(x + x**2) = O(x), O(cos(x)) = O(1), O(cos(x), x, pi/2) = O(x - pi/2).
  */
 export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): Expr {
-  const e = sympify(ex);
-  if (e.equals(S.Zero)) return S.Zero;
+  const e = mapBottomUp(sympify(ex), (v) => v instanceof Integral && impl.doit ? impl.doit(v) : v);
+  if (isSymList(xIn) && new Set(xIn.map((v) => v.key)).size !== xIn.length) throw new RangeError('Repeated order variable');
+  if (e.equals(S.Zero)) return new Order([e]);
   if (e === S.NaN) return e;
   if (e instanceof Order) {
     if (xIn === undefined) return e;
@@ -75,7 +80,7 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
     const lead = expander.leading(subs(e, [[v, add(p, t)]]));
     const logarithms = asIndependent(lead.c, [expander.L], { asAdd: false })[1];
     const displacement = atZero ? v : add(v, mul(-1, p));
-    reduced = mul(pow(displacement, lead.e), subs(logarithms, [[expander.L, log(displacement)]]));
+    reduced = mul(pow(displacement, lead.e), subs(together(logarithms), [[expander.L, log(displacement)]]));
   } catch {
     if (e instanceof Add) {
       const combined = add(...e.args.map((term) => O(term, v, p)));
@@ -99,7 +104,20 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
   const atOo = p instanceof Special && p.name === 'oo';
   let reduced = e;
   if (atZero || atOo) {
-    const ex = expandMul(e);
+    const leadingFactor = (f: Expr): Expr => {
+      if (!(atZero && f instanceof Fn)) return f;
+      const [v, ...rest] = vars.filter((s) => f.has(s));
+      if (!v || rest.length) return f;
+      try { return asLeadingTerm(f, v); }
+      catch { return f; }
+    };
+    const original = expandMul(e);
+    const summands = original instanceof Add ? original.args : [original];
+    const monomials = summands.map((u) => u instanceof Mul ? mul(...u.args.map(leadingFactor)) : leadingFactor(u));
+    const ex = add(...monomials);
+    // If leading monomials cancel, their higher terms can still dominate on some paths.
+    if (!ex.equals(original) && ex instanceof Add && ex.args.length < summands.length) return new Order([e, ...vars, p]);
+    if (!ex.equals(original) && !(ex instanceof Add) && summands.length > 1) return new Order([e, ...vars, p]);
     const terms = ex instanceof Add ? ex.args : [ex];
     // SymPy scales every variable by t -> 0: a power v**k whose exponent k (in the order variables, without a constant
     // term) also vanishes at 0 has the leading term 1 (O(x**y) is O(1, x, y))
@@ -130,15 +148,11 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
 }
 
 /**
- * Series expansion of e about x = x0 up to O((x - x0)**n). Like SymPy, an
- * exact (finite) expansion is returned without an Order term.
- */
-/**
  * Series at +oo or -oo (SymPy series(f, x, oo, n)): x = sign/t with t -> 0+,
  * the expansion in t written back in x, with O(x**(-n), (x, oo)).
  */
-function seriesAtInfinity(e: Expr, x: Sym, ray: Expr, point: Expr, n: number): Expr {
-  if (e instanceof Fn && point instanceof Special) {
+function seriesAtInfinity(e: Expr, x: Sym, ray: Expr, point: Expr, n: number, algebraic: boolean): Expr {
+  if (!algebraic && e instanceof Fn && point instanceof Special) {
     const special = specialSeriesAtInfinity(e, x, point === S.Infinity ? 1 : -1, n);
     if (special !== undefined) return special;
   }
@@ -158,6 +172,7 @@ function seriesAtInfinity(e: Expr, x: Sym, ray: Expr, point: Expr, n: number): E
     } else out.push(back(u));
   }
   if (!order) return add(...out);
+  if (point === S.Infinity && !out.length && e instanceof Add && some(e, (f) => f instanceof Pow && isE(f.base) && f.exp.has(x))) return aseries(e, x, n);
   // the Order at infinity must not absorb the terms (they are larger there): smallest terms first, like SymPy
   const body = add(...out);
   const parts = (body instanceof Add ? body.args : [body]).filter((u) => !(u instanceof Rational && u.isZero));
@@ -266,9 +281,35 @@ function singularityLocalForm(e: Expr, x: Sym, fromLeft: boolean): Expr {
   });
 }
 
-export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr; local?: boolean } = {}): Expr {
+/**
+ * Series expansion of e about x = x0 up to O((x - x0)**n). Like SymPy, an
+ * exact (finite) expansion is returned without an Order term.
+ * The algebraic option uses an inverse-power expansion at infinity, as in formal series.
+ */
+export function series(ex: ExprLike, variable?: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr; local?: boolean; algebraic?: boolean } = {}): Expr {
+  if (!['+', '-'].includes(dir)) throw new RangeError('Series direction must be + or -');
+  const original = sympify(ex);
+  const free = [...original.freeSymbols()].filter((v) => v instanceof Sym);
+  if (!variable && !free.length) return original;
+  if (!variable && free.length > 1) throw new RangeError('Specify the series variable');
+  const x = variable ?? first(free);
+  if (original instanceof SubsNode) {
+    if (!free.some((v) => v.equals(x))) return original;
+    const position = original.point.findIndex((v) => v.equals(x));
+    const inner = position < 0 ? x : cast(at(original.variables, position), Sym);
+    const expansion = series(original.expr, inner, x0x, n, dir, opts);
+    const terms = expansion instanceof Add ? expansion.args : [expansion];
+    return add(...terms.map((u) => u instanceof Order ? subs(u, [[inner, x]]) : original.withArgs([u, ...original.args.slice(1)])));
+  }
+  if (original instanceof Derivative && original.expr.has(x)) {
+    const count = original.variableCount.reduce((k, [v, m]) => k + (v.equals(x) ? m : 0), 0);
+    const expansion = series(original.expr, x, x0x, n + count, dir, opts);
+    const terms = expansion instanceof Add ? expansion.args : [expansion];
+    return add(...terms.map((u) => u instanceof Order ? u.diff(x, count) : original.withArgs([u, ...original.args.slice(1)])));
+  }
   // sinc(u) = sin(u)/u has a removable singularity at u = 0
-  let e = mapBottomUp(sympify(ex), (t) => {
+  let e = mapBottomUp(original, (t) => {
+    if (t instanceof Integral && impl.doit) return impl.doit(t);
     if (!(t instanceof Fn && t.name === 'sinc')) return t;
     const u = first(t.args);
     return mul(sin(u), pow(u, -1));
@@ -284,18 +325,26 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   if (opts.logx && atZero) {
     // SymPy logx: log(x) stands for the given symbol; x**c = exp(c*log(x)) for symbolic c
     e = mapBottomUp(e, (t) => (t instanceof Pow && t.base.key === x.key && !(t.exp instanceof Rational) && !t.exp.has(x) ? exp(mul(t.exp, log(x))) : t));
-    e = subs(e, [[log(x), opts.logx]]);
-    if (!e.has(x)) return e;
+    const logSymbol = new Dummy('logx');
+    e = subs(e, [[log(x), logSymbol], [log(pow(x, -1)), neg(logSymbol)]]);
+    return subs(series(e, x, x00, n, dir), [[logSymbol, opts.logx], [log(x), opts.logx]]);
+  }
+  if (atZero && e instanceof Pow && isE(e.base) && e.exp instanceof Mul) {
+    const coefficient = asIndependent(e.exp, [x], { asAdd: false });
+    if (coefficient[1].equals(log(x)) && coefficient[0].isNumber && !im(coefficient[0]).equals(S.Zero)) throw new PoleError('Cannot expand an oscillatory logarithmic exponential');
   }
   // x**c with symbolic c is its own expansion at 0
-  if (atZero && e instanceof Pow && e.base.key === x.key && !(e.exp instanceof Rational) && !e.exp.has(x)) return e;
+  if (atZero && e instanceof Pow && e.base.key === x.key && !(e.exp instanceof Rational) && !e.exp.has(x)) {
+    if (isReal(e.exp) === false || (e.exp.isNumber && !im(e.exp).equals(S.Zero))) throw new PoleError('Cannot expand a power with a nonreal exponent');
+    return e;
+  }
   const x0 = sympify(x0x);
   if (x0 === S.Infinity || x0 === S.NegativeInfinity) {
-    return seriesAtInfinity(e, x, x0 === S.Infinity ? S.One : S.NegOne, x0, n);
+    return seriesAtInfinity(e, x, x0 === S.Infinity ? S.One : S.NegOne, x0, n, opts.algebraic === true);
   }
   const form = infiniteForm(x0);
   if (form?.kind === 'I' && form.a === 0) {
-    return seriesAtInfinity(e, x, mul(form.t, S.I), x0, n);
+    return seriesAtInfinity(e, x, mul(form.t, S.I), x0, n, opts.algebraic === true);
   }
   // at zoo SymPy substitutes x = sign(zoo)/x: only a Laurent polynomial in x comes back as it is
   // (series(x, x, zoo) = x); other expansions there are not defined
@@ -314,7 +363,7 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
     if (bessel !== undefined) return bessel;
   }
   const t = new Sym('_s', { positive: true });
-  const ex0 = new Expander(t);
+  const ex0 = new Expander(t, x);
   // from the left: x = x0 - t with t -> 0+, written in powers of (x0 - x)
   const shifted = subs(e, [[x, dir === '-' ? add(x0, mul(-1, t)) : add(x0, t)]]);
   if (n < 0) throw new RangeError('series: the order n must be nonnegative');
@@ -474,7 +523,16 @@ export function leadterm(ex: ExprLike, x: Sym): [Expr, Expr] {
   const factors = e instanceof Mul ? e.args : [e];
   const irrational = (f: Expr): f is Pow => f instanceof Pow && f.base.key === x.key && !(f.exp instanceof Rational) && !f.exp.has(x);
   const powers = factors.filter(irrational);
-  if (powers.length === 0) return leadtermExact(e, x);
+  if (powers.length === 0) {
+    try {
+      return leadtermExact(e, x);
+    } catch (error) {
+      if (!(e instanceof Add) || !(error instanceof SeriesError && error.message === 'non-rational exponent')) throw error;
+      const value = impl.limit(e, x, S.Zero, '+');
+      if (value instanceof Rational && !value.isZero) return [value, S.Zero];
+      throw error;
+    }
+  }
   const [c, p] = leadtermExact(mul(...factors.filter((f) => !irrational(f))), x);
   return [c, add(p, ...powers.map((f) => f.exp))];
 }
@@ -633,7 +691,9 @@ export function asLeadingTerm(ex: ExprLike, x: Sym, opts: { cdir?: ExprLike; log
 /** Order of the O term in a sum, or undefined (SymPy getn). */
 export function getn(ex: ExprLike): Expr | undefined {
   const e = sympify(ex);
-  const o = (e instanceof Add ? e.args : [e]).find((a) => a instanceof Order);
+  const orders = (e instanceof Add ? e.args : [e]).filter((a) => a instanceof Order);
+  if (orders.length > 1) throw new NotImplementedError('Several independent Order terms');
+  const o = orders[0];
   if (!o) return undefined;
   // SymPy Order.getn: O(1) -> 0, O(x) -> 1, O(x**n) -> n, O(x**n*log(x)**m) -> |n|
   const b = first(o.args);
@@ -731,7 +791,27 @@ export function aseries(ex: ExprLike, x: Sym, n = 6, hir = false): Expr {
     u.args.forEach(walk);
   };
   walk(e);
-  if (growing || other) return e;
+  if (growing || other) {
+    if (!(e instanceof Add || e instanceof Mul)) return e;
+    const algorithm = new Gruntz();
+    const [omega, expression] = algorithm.mrv(e, x);
+    if (omega.has(x)) return e;
+    const w = new Dummy('w', { positive: true });
+    const [rewritten, logw] = algorithm.rewrite(expression, omega, x, w);
+    const expansion = new Expander(w);
+    if (hir) {
+      const ps = expansion.ser(rewritten, Rational.of(n));
+      const power = (k: Expr) => exp(mul(k, logw));
+      return new Add([...ps.terms.map(({ c, e: k }) => mul(c, power(k))), new Order([power(ps.order), x, S.Infinity])]);
+    }
+    const lead = expansion.leading(rewritten);
+    const coefficient = series(lead.c, x, S.Infinity, n);
+    if (some(coefficient, (u) => u instanceof Order)) return mul(coefficient, exp(mul(lead.e, logw)));
+    const ps = expansion.ser(rewritten, Rational.of(n));
+    const terms = ps.terms.map((u) => expandMul(mul(powsimp(expandMul(u.c)), exp(mul(u.e, logw)))));
+    if (!ps.isExact) terms.push(new Order([exp(mul(ps.order, logw)), x, S.Infinity]));
+    return add(...terms);
+  }
   if (!rates.length) return series(e, x, S.Infinity, n);
   // the slowest decay
   const b = first([...rates].sort((r, u) => Math.abs(r.toNumber()) - Math.abs(u.toNumber())));
@@ -774,6 +854,18 @@ function orderVariables(o: Order): Sym[] {
   return o.args.length > 1 ? o.args.slice(1, -1).filter((v): v is Sym => v instanceof Sym) : [...o.expr.freeSymbols()].filter((s) => s instanceof Sym);
 }
 
+/** The leading expression and merged (variable, point) pairs of an Order. */
+export function asExprVariables(o: Order, existing: readonly (readonly [Sym, Expr])[] = []): [Expr, [Sym, Expr][]] {
+  const p = o.args.length > 1 ? at(o.args, -1) : S.Zero;
+  const variables = new Map<string, [Sym, Expr]>();
+  for (const [v, point] of existing) {
+    if (!point.equals(p)) throw new NotImplementedError('Multiplying Order at different points');
+    variables.set(v.key, [v, point]);
+  }
+  for (const v of orderVariables(o)) variables.set(v.key, [v, p]);
+  return [o.expr, [...variables.values()].sort(([a], [b]) => Number(a.name > b.name) - Number(a.name < b.name))];
+}
+
 impl.orderContains = (o, e) => {
   let variables = orderVariables(o);
   const point = o.args.length > 1 ? at(o.args, -1) : S.Zero;
@@ -783,7 +875,18 @@ impl.orderContains = (o, e) => {
   if (!variables.length && other.freeSymbols().size > 0) variables = otherVariables;
   if (e instanceof Order && variables.length && otherVariables.length && !variables.some((v) => otherVariables.some((w) => w.equals(v)))) return 'unknown';
   if (!variables.length && otherVariables.length) return false;
-  if (e instanceof Order && e.args.length > 1 && !at(e.args, -1).equals(point)) return 'unknown';
+  if (e instanceof Order) {
+    const otherPoint = e.args.length > 1 ? at(e.args, -1) : S.Zero;
+    if (!otherPoint.equals(point)) return 'unknown';
+    if (point.equals(S.Zero) && o.expr instanceof Add && !(other instanceof Add)) {
+      return o.expr.args.some((term) => {
+        const termOrder = O(term, variables, point);
+        return termOrder instanceof Order && termOrder.contains(e) === true;
+      });
+    }
+    if (other instanceof Add && o.expr.equals(S.One)) return other.args.every((term) => o.contains(term) === true);
+    if (otherVariables.length) variables = variables.filter((v) => otherVariables.some((w) => w.equals(v)));
+  }
   if (other.equals(S.Zero)) return true;
   if (o.expr.equals(S.Zero)) return false;
   if (!variables.length) return ![S.Infinity, S.NegativeInfinity, S.ComplexInfinity].some((v) => other.has(v));
@@ -816,6 +919,7 @@ impl.orderContains = (o, e) => {
 registerArithmetic((op, args) => {
   if (op === 'pow') {
     const [base, exponent] = [at(args, 0), at(args, 1)];
+    if (base instanceof Order && exponent instanceof Order && base.expr.equals(S.One) && exponent.expr.equals(S.One)) return base;
     if (!(base instanceof Order) || !(exponent instanceof Rational) || !exponent.isPositive) return undefined;
     return O(pow(base.expr, exponent), orderVariables(base), base.args.length > 1 ? at(base.args, -1) : S.Zero);
   }
@@ -837,6 +941,7 @@ registerArithmetic((op, args) => {
       for (let i = kept.length - 1; i >= 0; i--) if (contains(o, at(kept, i))) kept.splice(i, 1);
       kept.push(o);
     }
+    kept.sort((a, b) => Number(a.key > b.key) - Number(a.key < b.key));
     const body = add(...flat.filter((e) => !(e instanceof Order) && !kept.some((o) => contains(o, e))));
     const terms = body.equals(S.Zero) ? [] : body instanceof Add ? [...body.args] : [body];
     return terms.length + kept.length === 1 ? first([...terms, ...kept]) : new Add([...terms, ...kept]);
@@ -844,7 +949,7 @@ registerArithmetic((op, args) => {
   if (op !== 'mul') return undefined;
   const point = (o: Order): Expr => o.args.length > 1 ? at(o.args, -1) : S.Zero;
   const p = point(first(orders));
-  if (orders.some((o) => !point(o).equals(p))) return undefined;
+  if (orders.some((o) => !point(o).equals(p))) throw new NotImplementedError('Multiplying Order at different points');
   const variables = [...new Map(orders.flatMap(orderVariables).map((v) => [v.key, v])).values()];
   return O(mul(...args.map((a) => a instanceof Order ? a.expr : a)), variables, p);
 });

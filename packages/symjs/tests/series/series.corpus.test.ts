@@ -24,7 +24,7 @@ describe("sympy/series/tests/test_aseries.py", () => {
     const x = new Sym('x');
     expect(sympyStr(aseries(new Add([new Mul([rational(-1), fn('sin', [new Pow(x, rational(-1))])]), fn('sin', [new Add([new Pow(x, rational(-1)), exp(new Mul([rational(-1), x]))])])]), x, 6, false))).toBe('(1/(24*x**4) - 1/(2*x**2) + 1 + O(x**(-6), (x, oo)))*exp(-x)');
   });
-  it.fails("test_simple:19", () => {
+  it("test_simple:19", () => {
     const x = new Sym('x');
     expect(sympyStr(aseries(new Mul([new Add([new Mul([rational(-1), exp(new Pow(x, rational(-1)))]), exp(new Add([new Pow(x, rational(-1)), exp(new Mul([rational(-1), x]))]))]), exp(x)]), x, 4, false))).toBe('1/(6*x**3) + 1/(2*x**2) + 1/x + 1 + O(x**(-4), (x, oo))');
   });
@@ -32,15 +32,15 @@ describe("sympy/series/tests/test_aseries.py", () => {
     const x = new Sym('x');
     expect(sympyStr(aseries(exp(new Mul([new Pow(new Add([rational(1), new Mul([rational(-1), new Pow(x, rational(-1))])]), rational(-1)), exp(x)])), x, 6, false))).toBe('exp(exp(x)/(1 - 1/x))');
   });
-  it.fails("test_simple:30", () => {
+  it("test_simple:30", () => {
     const x = new Sym('x');
     expect(sympyStr(aseries(new Add([new Mul([rational(-1), exp(fn('sin', [new Pow(x, rational(-1))]))]), exp(fn('sin', [new Add([new Pow(x, rational(-1)), exp(new Mul([rational(-1), exp(x)]))])]))]), x, 4, false))).toBe('(-1/(2*x**3) + 1/x + 1 + O(x**(-4), (x, oo)))*exp(-exp(x))');
   });
-  it.fails("test_simple:34", () => {
+  it("test_simple:34", () => {
     const x = new Sym('x');
     expect(sympyStr(aseries(new Mul([exp(new Mul([rational(-1), exp(exp(new Add([x, new Mul([rational(-1), exp(new Mul([rational(-1), exp(exp(x))]))])])))])), exp(exp(exp(x)))]), x, 3, false))).toBe('1 + exp(2*x + 2*exp(x))*exp(-2*exp(exp(x)))/2 - exp(2*x + exp(x))*exp(-2*exp(exp(x)))/2 - exp(x + exp(x))*exp(-2*exp(exp(x)))/2 + exp(x + exp(x))*exp(-exp(exp(x))) + O(exp(-3*exp(exp(x))), (x, oo))');
   });
-  it.fails("test_simple:39", () => {
+  it("test_simple:39", () => {
     const x = new Sym('x');
     expect(sympyStr(aseries(new Mul([new Add([new Mul([rational(-1), exp(fn('sin', [new Pow(x, rational(-1))]))]), exp(fn('sin', [new Add([new Pow(x, rational(-1)), exp(new Mul([rational(-1), exp(x)]))])]))]), exp(exp(x))]), x, 4, false))).toBe('-1/(2*x**3) + 1/x + 1 + O(x**(-4), (x, oo))');
   });
@@ -99,7 +99,7 @@ describe("sympy/series/tests/test_series.py", () => {
   it("test_issue_5223:49", () => {
     expect(sympyStr(S.Zero)).toBe('0');
   });
-  it.fails("test_issue_5223:56", () => {
+  it("test_issue_5223:56", () => {
     const x = new Sym('x');
     expect(sympyStr(series(abs(x), x, rational(1), 6, '-', {}))).toBe('x');
   });
@@ -111,12 +111,12 @@ describe("sympy/series/tests/test_series.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(doit(new Add([derivative(new Pow(x, rational(2)), [[x, 2], [y, 1]]), derivative(new Mul([new Pow(x, rational(3)), new Pow(y, rational(2))]), [[x, 2], [y, 1]])])))).toBe('12*x*y');
   });
-  it.fails("test_issue_5223:63", () => {
+  it("test_issue_5223:63", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(series(derivative(exp(x), [[x, 1]]), v1, sympify(0), 3, '+', {}))).toBe('Derivative(x**3/6, x) + Derivative(x**2/2, x) + Derivative(x, x) + Derivative(1, x) + O(x**3)');
   });
-  it.fails("test_issue_5223:66", () => {
+  it("test_issue_5223:66", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(series(new Integral([new Integral([x, x, rational(1), rational(3)]), y, rational(1), x]), x, sympify(0), 6, '+', {}))).toBe('4*x - 4');
   });
@@ -177,7 +177,7 @@ describe("sympy/series/tests/test_series.py", () => {
     const k = new Sym('k');
     expect(sympyStr(series(new Mul([rational(-1, 6), new Pow(rational(3), rational(1, 2)), new Pow(pi, rational(-1)), new Pow(k, rational(-1, 3)), new Add([new Mul([new Pow(k, rational(1, 3)), new Pow(fn('gamma', [rational(1, 3)]), rational(2)), new Pow(fn('gamma', [rational(2, 3)]), rational(2)), fn('besseli', [rational(-1, 3), new Mul([rational(2), k])])]), new Mul([new Pow(k, rational(4, 3)), exp(new Mul([rational(-2, 3), pi, I])), fn('gamma', [rational(-2, 3)]), fn('gamma', [rational(-1, 3)]), hyper([rational(1)], [rational(4, 3), rational(5, 3)], new Pow(k, rational(2)))]), new Mul([new Pow(k, rational(1, 3)), fn('besseli', [rational(1, 3), new Mul([rational(2), k])]), exp(new Mul([rational(-1, 3), pi, I])), fn('gamma', [rational(-1, 3)]), fn('gamma', [rational(1, 3)]), fn('gamma', [rational(2, 3)]), fn('gamma', [rational(4, 3)])])]), exp(new Mul([rational(2, 3), pi, I]))]), k, rational(0), 3, '+', {}))).toBe('-(-1)**(2/3)*sqrt(3)*gamma(1/3)**2*gamma(2/3)/(6*pi*k**(1/3)) - sqrt(3)*k*gamma(-2/3)*gamma(-1/3)/(6*pi) - (-1)**(1/3)*sqrt(3)*k**(1/3)*gamma(-1/3)*gamma(1/3)*gamma(2/3)/(6*pi) - (-1)**(2/3)*sqrt(3)*k**(5/3)*gamma(1/3)**2*gamma(2/3)/(4*pi) - (-1)**(1/3)*sqrt(3)*k**(7/3)*gamma(-1/3)*gamma(1/3)*gamma(2/3)/(8*pi) + O(k**3)');
   });
-  it.fails("test_issue_11313:102", () => {
+  it("test_issue_11313:102", () => {
     const x = new Sym('x');
     expect(sympyStr(series(new Integral([fn('cos', [x]), x]), x, sympify(0), 6, '+', {}))).toBe('x - x**3/6 + x**5/120 + O(x**6)');
   });
@@ -217,20 +217,20 @@ describe("sympy/series/tests/test_series.py", () => {
     const x = new Sym('x');
     expect(sympyStr(doit(derivative(log(x), [[x, 1]])))).toBe('1/x');
   });
-  it.fails("test_issue_11313:118", () => {
+  it("test_issue_11313:118", () => {
     const x = new Sym('x');
     expect(sympyStr(series(new Integral([log(x), x]), x, sympify(0), 6, '+', {}))).toBe('x*(log(x) - 1)');
   });
-  it.fails("test_series_of_Subs:128", () => {
+  it("test_series_of_Subs:128", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), x, sympify(0), 6, '+', {}))).toBe('Subs(sin(x), x, y)');
   });
-  it.fails("test_series_of_Subs:131", () => {
+  it("test_series_of_Subs:131", () => {
     const [x, y] = symbols('x y');
     const v1 = y;
     expect(sympyStr(series(Subs(fn('sin', [x]), [x], [v1]), v1, sympify(0), 6, '+', {}))).toBe('Subs(x**5/120, x, y) + Subs(-x**3/6, x, y) + Subs(x, x, y) + O(y**6)');
   });
-  it.fails("test_series_of_Subs:132", () => {
+  it("test_series_of_Subs:132", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), y, sympify(0), 6, '+', {}))).toBe('Subs(x**5/120, x, y) + Subs(-x**3/6, x, y) + Subs(x, x, y) + O(y**6)');
   });
@@ -238,7 +238,7 @@ describe("sympy/series/tests/test_series.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(series(Subs(fn('sin', [x]), [x], [y]), z, sympify(0), 6, '+', {}))).toBe('Subs(sin(x), x, y)');
   });
-  it.fails("test_series_of_Subs:134", () => {
+  it("test_series_of_Subs:134", () => {
     const [z, x, y] = symbols('z x y');
     expect(sympyStr(series(Subs(new Mul([fn('cos', [z]), fn('sin', [x])]), [x], [y]), z, sympify(0), 6, '+', {}))).toBe('Subs(sin(x), x, y) + Subs(z**4*sin(x)/24, x, y) + Subs(-z**2*sin(x)/2, x, y) + O(z**6)');
   });
@@ -421,7 +421,7 @@ describe("sympy/series/tests/test_series.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(factor(new Add([new Mul([new Pow(new Add([rational(-40), new Mul([rational(-16), new Pow(rational(5), rational(1, 2))])]), rational(-1)), new Pow(new Add([x, new Mul([rational(-1), new Pow(new Add([rational(1, 2), new Mul([rational(1, 2), new Pow(rational(5), rational(1, 2))])]), rational(-1))])]), rational(-1)), new Add([rational(16), new Mul([rational(8), new Pow(rational(5), rational(1, 2))])])]), new Mul([new Pow(new Add([rational(-40), new Mul([rational(-16), new Pow(rational(5), rational(1, 2))])]), rational(-1)), new Add([rational(16), new Mul([rational(8), new Pow(rational(5), rational(1, 2))])]), new Add([new Mul([rational(16), new Pow(new Add([rational(-40), new Mul([rational(-16), new Pow(rational(5), rational(1, 2))])]), rational(-1))]), new Mul([rational(8), new Pow(rational(5), rational(1, 2)), new Pow(new Add([rational(-40), new Mul([rational(-16), new Pow(rational(5), rational(1, 2))])]), rational(-1))])])]), O(new Add([x, new Mul([rational(-2), new Pow(new Add([rational(1), new Pow(rational(5), rational(1, 2))]), rational(-1))])]), x, new Mul([rational(2), new Pow(new Add([rational(1), new Pow(rational(5), rational(1, 2))]), rational(-1))]))]))), '(-37*sqrt(5) - 83 + 13*sqrt(5)*x + 29*x + O((x - 2/(1 + sqrt(5)))**2, (x, 2/(1 + sqrt(5)))))/((2*sqrt(5) + 5)**2*(x + sqrt(5)*x - 2))', [x], { fn: '.factor', input: '(16 + 8*sqrt(5))/((-40 - 16*sqrt(5))*(x - 1/(1/2 + sqrt(5)/2))) + (16 + 8*sqrt(5))*(8*sqrt(5)/(-40 - 16*sqrt(5)) + 16/(-40 - 16*sqrt(5)))/(-40 - 16*sqrt(5)) + O(x - 2/(1 + sqrt(5)), (x, 2/(1 + sqrt(5))))' })).toBe(true);
   });
-  it.fails("test_issue_21938:390", () => {
+  it("test_issue_21938:390", () => {
     const x = new Sym('x');
     expect(sympyStr(series(new Add([new Mul([rational(-1), fn('sin', [new Pow(x, rational(-1))])]), fn('sin', [new Add([new Pow(x, rational(-1)), exp(new Mul([rational(-1), x]))])])]), x, oo, 6, '+', {}))).toBe('(1/(24*x**4) - 1/(2*x**2) + 1 + O(x**(-6), (x, oo)))*exp(-x)');
   });
