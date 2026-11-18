@@ -5386,7 +5386,7 @@ describe("sympy/matrices/tests/test_matrices.py", () => {
   it("test_matrix_norm:2151", () => {
     expect(sympyStr(norm(Matrix.of([[rational(1), rational(1)], [rational(1), rational(1)]]), rational(-2)))).toBe('0');
   });
-  it.fails("test_matrix_norm:2152", () => {
+  it("test_matrix_norm:2152", () => {
     expect(sympyStr(norm(Matrix.of([[rational(1), rational(1)], [rational(1), rational(1)]]), 'frobenius'))).toBe('2');
   });
   it("test_matrix_norm:2153", () => {
@@ -5406,7 +5406,7 @@ describe("sympy/matrices/tests/test_matrices.py", () => {
   it("test_matrix_norm:2163", () => {
     expect(sympyStr(norm(Matrix.of([[rational(1), rational(2), rational(-3)], [rational(4), rational(5), rational(13, 2)]]), rational(2)))).toBe('sqrt(sqrt(78665)/8 + 389/8)');
   });
-  it.fails("test_matrix_norm:2165", () => {
+  it("test_matrix_norm:2165", () => {
     expect(sympyStr(norm(Matrix.of([[rational(1), rational(2), rational(-3)], [rational(4), rational(5), rational(13, 2)]]), 'frobenius'))).toBe('sqrt(389)/2');
   });
   it("test_matrix_norm:2185", () => {
@@ -5569,7 +5569,7 @@ describe("sympy/matrices/tests/test_matrices.py", () => {
   it("test_normalized:2287", () => {
     expect(sympyStr(normalized(Matrix.of([[rational(3)], [rational(4)]])))).toBe('Matrix([[3/5], [4/5]])');
   });
-  it.fails("test_normalized:2291", () => {
+  it("test_normalized:2291", () => {
     expect(sympyStr(normalized(Matrix.of([[rational(0)], [rational(0)], [rational(0)]])))).toBe('Matrix([[0], [0], [0]])');
   });
   // cannot format (...values) => { 		out += `${values.map((v) => String(v)).join(" ")}\n`; 	}

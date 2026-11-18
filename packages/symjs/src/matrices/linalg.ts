@@ -734,7 +734,7 @@ export function norm(m: Matrix, ord?: ExprLike | string): Expr {
     if (o instanceof Expr) return pow(add(...vals.map((v) => pow(abs(v), o))), pow(o, -1));
     throw new RangeError(`norm: unsupported order ${String(ord)}`);
   }
-  if (o === undefined || o === 'fro' || o === 'f') return sqrt(add(...vals.map((v) => pow(abs(v), 2))));
+  if (o === undefined || o === 'fro' || o === 'f' || o === 'frobenius') return sqrt(add(...vals.map((v) => pow(abs(v), 2))));
   if (o instanceof Rational && o.isOne) {
     return Max(...Array.from({ length: m.cols }, (_, j) => add(...m.col(j).data.map((v) => abs(v)))));
   }
@@ -754,6 +754,8 @@ export function pinv(m: Matrix): Matrix {
 }
 
 export function jacobian(X: Matrix, Y: Matrix | readonly Expr[]): Matrix {
+  if (X.rows !== 1 && X.cols !== 1) throw new TypeError('jacobian requires a row or column matrix');
+  if (Y instanceof Matrix && Y.rows !== 1 && Y.cols !== 1) throw new TypeError('jacobian variables must be a row or column matrix');
   const ys = Y instanceof Matrix ? Y.data : Y;
   const xs = X.data;
   return Matrix.fromFunction(xs.length, ys.length, (i, j) => diff(at(xs, i), at(ys, j)));
@@ -919,13 +921,16 @@ export function solveLeastSquares(A: Matrix, b: Matrix): Matrix {
 }
 
 /** SymPy GramSchmidt(vlist, orthonormal=False). */
-export function gramSchmidt(vs: readonly Matrix[], orthonormal = false): Matrix[] {
+export function gramSchmidt(vs: readonly Matrix[], orthonormal = false, rankcheck = true): Matrix[] {
   const out: Matrix[] = [];
   for (const v of vs) {
     let u = v;
-    for (const w of out) u = u.sub(w.scale(cancel(mul(dot(w, v), pow(dot(w, w), -1)))));
+    for (const w of out) u = u.sub(w.scale(cancel(mul(dot(w, v, true), pow(dot(w, w, true), -1)))));
     u = u.map((e) => cancel(e));
-    if (u.data.every((e) => e instanceof Rational && e.isZero)) throw new RangeError('GramSchmidt: the vectors are not linearly independent');
+    if (u.data.every((e) => e instanceof Rational && e.isZero)) {
+      if (rankcheck) throw new RangeError('GramSchmidt: the vectors are not linearly independent');
+      continue;
+    }
     out.push(u);
   }
   return orthonormal ? out.map((u) => normalized(u)) : out;
@@ -933,7 +938,9 @@ export function gramSchmidt(vs: readonly Matrix[], orthonormal = false): Matrix[
 
 /** SymPy Matrix.normalized: v/|v|. */
 export function normalized(v: Matrix): Matrix {
+  if (v.rows !== 1 && v.cols !== 1) throw new ShapeError('normalized requires a row or column matrix');
   const n = norm(v);
+  if (n instanceof Rational && n.isZero) return v;
   return v.map((e) => mul(e, pow(n, -1)));
 }
 
