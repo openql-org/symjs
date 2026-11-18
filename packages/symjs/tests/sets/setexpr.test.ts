@@ -65,3 +65,8 @@ it('keeps exact endpoint images for products, reciprocals and integer powers', a
   expect(String(SetExpression(Interval.of(x, x.add(1))).pow(2))).toContain('ImageSet');
   expect(String(SetExpression(Interval.of(x, x.add(1))).mul(wrap(1, 2)))).toContain('ImageSet');
 });
+
+it('preserves a set expression with no bound parameters', () => {
+  const e = SetExpression(Interval.of(1, 2));
+  expect(e.asDummy()).toBe(e);
+});

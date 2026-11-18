@@ -3,7 +3,7 @@
 
 import { expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { assertionOutcome, runTestCase, testCaseKey } from './tests-harness';
+import { assertionOutcome, passingModuleCases, runTestCase, testCaseKey } from './tests-harness';
 import { deserialize, runCase, counterpartFor, matches } from './harness';
 import type { Case, Tree } from './harness';
 import * as dg from '@symjs/symjs/diffgeom';
@@ -62,10 +62,30 @@ it('adapts function inverses, numerical derivatives, residue limits and derangem
   const limits = { t: 'Tuple', items: [x, integer(0), integer(5)] };
   expect(runTestCase({ ...base, fn: 'eval_sum_residue', args: [x, limits], expected: 'None' })).toEqual({ status: 'pass' });
   for (const [name, expected] of [['digamma', 'polygamma(0, x)'], ['trigamma', 'polygamma(1, x)']] as const) {
-    expect(String(deserialize(fn(name)))).toBe(expected);
+    const unevaluated = `${name}(x)`;
+    expect(String(deserialize(fn(name)))).toBe(unevaluated);
+    expect(runTestCase({ ...base, fn: name, args: [x], expected })).toEqual({ status: 'pass' });
+    expect(runTestCase({ ...base, fn: name, args: [x], kwargs: { evaluate: { t: 'Js', v: false } }, expected: unevaluated })).toEqual({ status: 'pass' });
   }
   expect(String(deserialize(fn('LeviCivita', [integer(1), integer(2), integer(3)])))).toBe('1');
   expect(runTestCase({ ...base, fn: '.epsilon_eq', self: integer(1), args: [integer(1)], expected: 'True' })).toEqual({ status: 'pass' });
+});
+
+it('preserves constructor heads and exception classes in the set, special function and matrix adapters', () => {
+  for (const [category, module, lines] of [
+    ['sets', 'sympy.sets.tests.test_conditionset', [59, 74]],
+    ['sets', 'sympy.sets.tests.test_contains', [22]],
+    ['functions', 'sympy.functions.combinatorial.tests.test_comb_factorials', [33, 123]],
+    ['functions', 'sympy.functions.special.tests.test_beta_functions', [63, 79]],
+    ['functions', 'sympy.functions.special.tests.test_spec_polynomials', [360]],
+    ['matrices', 'sympy.matrices.expressions.tests.test_funcmatrix', [22]],
+    ['matrices', 'sympy.matrices.tests.test_repmatrix', [49]],
+    ['polys', 'sympy.polys.tests.test_polytools', [691]],
+  ] as const) {
+    const cases = passingModuleCases(category, module).filter((c) => lines.some((line) => line === c.line));
+    expect(cases.map((c) => c.line)).toEqual(lines);
+    for (const c of cases) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+  }
 });
 
 it('replays series indices and slices with the SeriesBase offset semantics', () => {
