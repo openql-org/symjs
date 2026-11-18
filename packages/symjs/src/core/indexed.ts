@@ -15,6 +15,11 @@ import { TupleNode } from './containers';
 import { NoMatch, isNoMatch } from './truth';
 import type { NoMatchResult } from './truth';
 
+/** An explicit N-dimensional array (tensor/ndimarray), recognised without importing it. */
+function isExplicitArray(base: Expr): base is Expr & { get(...index: number[]): Expr } {
+  return base instanceof ExtensionExpr && base.name.endsWith('NDimArray') && 'get' in base && typeof base.get === 'function';
+}
+
 /** SymPy Indexed(base, *indices): args are [base symbol, ...indices]; printed base[i, j]. */
 export class Indexed extends ExtensionExpr {
   constructor(args: readonly Expr[]) {
@@ -43,6 +48,11 @@ export class Indexed extends ExtensionExpr {
       const value = base.args[n < 0 ? base.args.length + n : n];
       if (value === undefined) throw new RangeError('Indexed sequence index out of range.');
       return value;
+    }
+    // an explicit array with integer indices gives its element (SymPy Indexed.__new__ on an NDimArray base)
+    const indices = args.slice(1);
+    if (isExplicitArray(base) && indices.every((i): i is Rational => i instanceof Rational && i.isInteger)) {
+      return base.get(...indices.map((i) => Number(i.p)));
     }
     return new Indexed(args);
   }

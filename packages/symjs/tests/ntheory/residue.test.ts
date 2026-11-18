@@ -350,3 +350,12 @@ describe("ntheory residue: results equal SymPy 1.14", () => {
     }
   });
 });
+
+it('reduces a symbolic argument by its assumptions first (SymPy a % m)', () => {
+  const even = new Sym('even151', { even: true }), odd = new Sym('odd151', { odd: true });
+  expect(isNthpowResidue(even.add(3), 3, 2)).toBe(true);
+  expect(nthrootMod(odd, 3, 2)).toBe(1n);
+  expect(isNthpowResidue(8, 3, 7)).toBe(true);
+  expect(isNthpowResidue(8n, 3, 7)).toBe(true);
+  expect(() => isNthpowResidue(new Sym('plain151'), 3, 2)).toThrow();
+});

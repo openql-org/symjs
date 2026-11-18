@@ -239,7 +239,18 @@ export function equivalent(got: string, expected: string, symbols: readonly sj.S
   if (got === expected) return true;
   if (/ConditionSet|Lambda\(/.test(expected) && renameBound(got) === renameBound(expected)) return true;
   if (opts.fn && FORM_FUNCTIONS.has(opts.fn)) {
-    if (opts.input !== undefined && got === opts.input) return false;
+    // the input came back unchanged: compatible only when SymPy's result is that same expression
+    // (printed otherwise: an unevaluated Pow(E, x) is E**x in SymPy and exp(x) here)
+    if (opts.input !== undefined && got === opts.input) {
+      try {
+        symbolTable = Object.fromEntries(symbols.filter((s) => !(s instanceof sj.Dummy)).map((s) => [s.name, s]));
+        const g = parseValue(got);
+        const e = parseValue(expected);
+        return g.t === 'expr' && e.t === 'expr' && g.e.key === e.e.key;
+      } catch {
+        return false;
+      }
+    }
     try {
       symbolTable = Object.fromEntries(symbols.filter((s) => !(s instanceof sj.Dummy)).map((s) => [s.name, s]));
       const g = parseValue(got);
