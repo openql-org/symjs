@@ -5194,18 +5194,7 @@ Object.assign(ADAPTERS, {
   ask: (args, kw) => {
     const { context, ...rest } = kw;
     noKw(rest);
-    const matrixPred = (x: unknown): sj.MatrixPredicate | undefined => {
-      if (x instanceof sj.MatrixPredicate) return x;
-      if (!(x instanceof sj.AppliedPredicate) || !(x.arg instanceof sj.MatrixExpr)) return undefined;
-      const make = sj.MatrixQ[x.predicate as keyof typeof sj.MatrixQ];
-      return make?.(x.arg);
-    };
-    const query = () => {
-      const predicate = matrixPred(args[0]);
-      return predicate
-        ? none(sj.askMatrix(predicate, matrixPred(args[1])))
-        : none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
-    };
+    const query = () => none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)));
     return context instanceof sj.AssumptionsContext ? sj.assuming([...context], query) : query();
   },
   lra_satask: (args, kw) => (noKw(kw), none(sj.lraSatask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)))),
@@ -5214,9 +5203,8 @@ Object.assign(ADAPTERS, {
     const assumption = args[1] instanceof sj.AppliedPredicate && args[1].arg instanceof sj.MatrixExpr
       ? sj.MatrixQ[args[1].predicate as keyof typeof sj.MatrixQ]?.(args[1].arg)
       : args[1] instanceof sj.MatrixPredicate ? args[1] : undefined;
-    return assumption && args[0] instanceof Expr
-      ? sj.refineMatrix(args[0], assumption)
-      : sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean));
+    const result = sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean));
+    return assumption ? sj.refineMatrix(result, assumption) : result;
   },
   '.refine': (args, kw, self) => {
     noKw(kw);
@@ -6261,7 +6249,8 @@ function autoAdapter(c: Case): Adapter | undefined {
     const key = typeof args[0] === 'string' ? sj.parse(args[0]) : asExpr(args[0]);
     return dict.containsKey(key) ? dict.get(key) : args[1] ?? null;
   };
-  if (['Add', 'Mul', '.hstack', '.vstack', '.args_cnc'].includes(c.fn)) return ADAPTERS[c.fn];
+  if (['Add', 'Mul', '.args_cnc'].includes(c.fn)) return ADAPTERS[c.fn];
+  if (c.fn === '.applyfunc' && ['Matrix', 'MatrixSymbol', 'MatExpr'].includes(c.self?.t ?? '')) return ADAPTERS[c.fn];
   if (c.fn === '.equals' && (c.self?.t === 'Matrix' || ['MatExpr', 'MatrixSymbol'].includes(c.self?.t ?? '')) && c.args?.some((arg) => ['MatExpr', 'MatrixSymbol', 'Matrix'].includes(arg.t))) return ([other], kw, self) =>
     (noKw(kw), (asMatrixExpression(self) as sj.MatrixExpr).equalsExplicit(asMatrixExpression(other)));
   if (['.diagonal_length', '.shape'].includes(c.fn) && ['DiagonalOf', 'DiagonalMatrix'].includes(String(c.self?.['cls']))) return (_args, kw, self) => {
