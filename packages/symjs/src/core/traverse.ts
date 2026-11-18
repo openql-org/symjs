@@ -31,6 +31,7 @@ const isSubsPairs = (s: Substitution): s is readonly (readonly [Expr, ExprLike])
 export function rebuild(e: Expr, args?: readonly Expr[]): Expr {
   if (args === undefined) return e.isAtom ? e : rebuild(e, e.args.map((a) => rebuild(a)));
   if (e instanceof ExtensionExpr || e instanceof BoolOp) return e.withArgs(args);
+  if (e instanceof Sym && e.args.length > 0) return e.func(...args);
   if (e instanceof Add) return add(...args);
   if (e instanceof Mul) return mul(...args);
   if (e instanceof Pow) return pow(at(args, 0), at(args, 1));

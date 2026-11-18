@@ -289,3 +289,9 @@ describe('inequality operand validation', () => {
 it('keeps a symbolic leading coefficient in Piecewise conditions', () => {
   expect(String(piecewise([1, Lt(mul(x, y), 2)], [0, true]))).toBe('Piecewise((1, x*y < 2), (0, True))');
 });
+
+it('retains undecidable inequalities for overlapping index ranges', () => {
+  const a = sj.Idx('a', [1, 4]), b = sj.Idx('b', [3, 5]);
+  for (const op of [sj.Lt, sj.Le, sj.Gt, sj.Ge]) expect(op(a, b)).toBeInstanceOf(sj.Rel);
+  expect(sj.Lt(a, x)).toBeInstanceOf(sj.Rel);
+});

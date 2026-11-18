@@ -6,7 +6,8 @@
  */
 
 import { Special } from './nodes';
-import type { Expr, ExprLike, RelOp } from './nodes';
+import type { ExprLike, RelOp } from './nodes';
+import { Expr } from './nodes';
 import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, Sym, impl, isNum, registerHeadResolver } from './nodes';
 import { numCmp } from './num';
 import { add, couldExtractMinusSign, mul, sympify } from './ops';
@@ -65,6 +66,16 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   if (!equality && isNum(lhs) && isNum(rhs)) return byCmp(numCmp(lhs, rhs));
   // equal sides (such as oo and oo, whose difference is nan)
   if (lhs.key === rhs.key) return byCmp(0);
+  // SymPy compares bounded integer indices through the extrema of their ranges.
+  if (!equality) {
+    const interval = (e: Expr): readonly [Expr, Expr] => e instanceof Sym && 'lower' in e && 'upper' in e && e.lower instanceof Expr && e.upper instanceof Expr ? [e.lower, e.upper] : [e, e];
+    const [lo, hi] = interval(lhs), [rlo, rhi] = interval(rhs);
+    if (lo !== lhs || rlo !== rhs) {
+      const lower = op === 'Lt' || op === 'Le';
+      if (rel(op, lower ? hi : lo, lower ? rlo : rhi) === S.true) return S.true;
+      if (rel(op, lower ? lo : hi, lower ? rhi : rlo) === S.false) return S.false;
+    }
+  }
   // a relation is not a number: Eq(Eq(F, G), C1) of the exact ODE solution stays unevaluated (SymPy)
   if (equality && (lhs instanceof Rel || rhs instanceof Rel)) return new Rel(op, lhs, rhs);
   const d = add(lhs, mul(-1, rhs));

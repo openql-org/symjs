@@ -2,6 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Expected values from SymPy 1.14 sympy.tensor.tensor (printed with str()).
 import { describe, expect, it } from 'vitest';
+import * as sj from '../../src';
 import type { Expr, TensExpr } from '../../src';
 import {
   ExprMap,
@@ -668,4 +669,24 @@ describe('LaTeX of tensors (SymPy 1.14 test_latex_printer_tensor)', async () => 
     expect(latex(e)).toBe('K{}^{i=3,j,k=2,l}');
     expect(latex(TensorElement(TK.at(ti, tj, tk.neg(), tl.neg()), new Map([[ti, 3], [tk.neg(), 2]])))).toBe('K{}^{i=3,j}{}_{k=2,l}');
   });
+});
+
+it('reports TensorElement free positions and dummy pairs after fixing slots', () => {
+  const type = sj.TensorIndexType('ElementIndex');
+  const i = sj.TensorIndex('i', type), j = sj.TensorIndex('j', type);
+  const head = sj.TensorHead('Element', [type, type]);
+  const element = sj.TensorElement(head.at(i, j), new Map([[i, 2]]));
+  if (!(element instanceof sj.TensorElement)) throw new TypeError('expected TensorElement');
+  expect(element.free).toEqual([[j, 0]]);
+  expect(element.dum).toEqual([]);
+});
+
+it('substitutes free indices through the callable tensor convention and prints products', () => {
+  const type = TensorIndexType('CallableIndex');
+  const i = TensorIndex('i', type), j = TensorIndex('j', type);
+  const head = TensorHead('CallableTensor', [type]);
+  expect(String(head.at(i).funEval([i, j]))).toBe('CallableTensor(j)');
+  const product = mul(head.at(i), head.at(j));
+  if (!(product instanceof sj.TensMul)) throw new TypeError('expected tensor product');
+  expect(product.strPrecedence()).toBe(sj.precedence(sj.mul(new Sym('x'), new Sym('y'))));
 });

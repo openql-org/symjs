@@ -89,3 +89,41 @@ it('preserves explicit base shapes through indexing and substitution', () => {
   expect(B.shape).toBe(sj.NoMatch);
   expect(B.withArgs(B.args).equals(B)).toBe(true);
 });
+
+it('inherits and preserves base assumptions without changing a symbolic label', () => {
+  const label = sj.symbol('a');
+  const a = new sj.IndexedBase(label, { positive: true, shape: [2] });
+  expect(a.label).toBe(label);
+  expect(a.equals(new sj.IndexedBase(label))).toBe(false);
+  expect(a.equals(new sj.IndexedBase(label, { positive: true, real: true, shape: [2] }))).toBe(true);
+  for (const e of [a, a.at(i)]) {
+    expect([sj.isReal(e), sj.isComplex(e), sj.isImaginary(e), sj.isNonnegative(e), sj.isNonzero(e)]).toEqual([true, true, false, true, true]);
+    expect(sj.log(sj.exp(e)).equals(e)).toBe(true);
+    expect(e.isRealSelf()).toBe(true);
+  }
+  expect(sj.isReal(sj.xreplace(a.at(i), [[i, j]]))).toBe(true);
+  const integer = new sj.IndexedBase('I', { integer: true });
+  expect(sj.isIntegerValued(integer.label)).toBe(true);
+  expect(sj.isIntegerValued(integer.at(0))).toBe(true);
+  expect(a.func(...a.args).equals(new sj.IndexedBase(label, {shape: [2]}))).toBe(true);
+  const b = new sj.IndexedBase('b');
+  expect(b.func(...b.args).equals(b)).toBe(true);
+  expect(new sj.IndexedBase('c', {commutative: false}).at(0).isCommutative).toBe(false);
+});
+
+it('validates indexed constructors and evaluates substituted sequence entries', () => {
+  const a = new sj.IndexedBase('A');
+  expect(() => new sj.Indexed([a])).toThrow(RangeError);
+  expect(() => new sj.Indexed([a.at(i), j])).toThrow(TypeError);
+  const tuple = sj.Tuple(10, 20);
+  expect(String(a.at(1).subs(a, tuple))).toBe('20');
+  expect(String(a.at(-1).subs(a.label, tuple))).toBe('20');
+  expect(String(a.at(0).subs(a.label, sj.symbol('B')))).toBe('B[0]');
+  expect(() => a.at(2).subs(a, tuple)).toThrow(RangeError);
+  expect(new sj.Indexed([tuple, i]).assumptions0.size).toBe(0);
+  expect(new sj.Indexed([tuple, i]).isRealSelf()).toBeUndefined();
+  expect(new sj.Indexed([tuple, i]).subsSelf(i, j)).toBeUndefined();
+  expect(String(new sj.Indexed([tuple, i]).withArgs([tuple, i]))).toBe('(10, 20)[i]');
+  expect(String(new sj.Indexed([tuple, sj.S.Half]).withArgs([tuple, sj.S.Half]))).toBe('(10, 20)[1/2]');
+  expect(String(new sj.Indexed([tuple, i, j]).withArgs([tuple, i, j]))).toBe('(10, 20)[i, j]');
+});

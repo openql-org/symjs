@@ -3676,7 +3676,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       if (args.length !== 2) throw new Unsupported('Matrix.subs');
       return self.subs(asExpr(args[0]), asExpr(args[1]));
     }
-    return subsArgs(asExpr(self), args);
+    return subsArgs(asExpr(self), args.map((v, i) => self instanceof sj.Indexed && i === 1 && (v instanceof JsList || v instanceof JsTuple) ? sj.Tuple(...v.items.map(asExpr)) : v));
   },
   '.diff': (args, kw, self) => {
     if (args.some((v) => v instanceof Matrix || v instanceof sj.NDimArray || (v instanceof JsTuple && v.items.some((x) => x instanceof JsTuple)))) {
@@ -4931,9 +4931,19 @@ ADAPTERS['diophantine'] = (args, kw) => new JsSet(sj.diophantine(asExpr(args[0])
 ADAPTERS['Indexed'] = (args, kw) => {
   noKw(kw);
   const [b, ...ix] = args;
+  if (b instanceof sj.Range && ix.length === 1) return b.at(intArg(ix[0]));
   if (b instanceof sj.IndexedBase) return b.at(...ix.map(asExpr));
   const label = typeof b === 'string' ? sj.symbol(b) : asExpr(b);
   return new sj.Indexed([label, ...ix.map(asExpr)]);
+};
+
+ADAPTERS['IndexedBase'] = (args, kw) => {
+  const name = args[0];
+  if (name instanceof sj.Range) return name;
+  if (name instanceof JsList || name instanceof JsTuple) return sj.Tuple(...name.items.map(asExpr));
+  const shape = kw['shape'] ?? args[1];
+  const assumptions = Object.fromEntries(Object.entries(kw).filter(([k]) => k !== 'shape').map(([k, v]) => [camel(k), v]));
+  return new sj.IndexedBase(typeof name === 'string' ? name : asSym(name), { ...assumptions, ...(shape === undefined ? {} : { shape: shape instanceof JsTuple || shape instanceof JsList ? shape.items.map(asExpr) : [asExpr(shape)] }) });
 };
 
 ADAPTERS['.as_set'] = (_args, kw, self) => (noKw(kw), self instanceof sj.Contains ? self.asSet() : sj.asSet(self as Expr | boolean));
@@ -5676,6 +5686,10 @@ function autoAdapter(c: Case): Adapter | undefined {
       const self = self0 instanceof JsTuple ? sj.Tuple(...self0.items.map(asExpr)) : self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0 instanceof JsLambda ? sj.Lambda(self0.vars, self0.body) : self0;
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
       if (name === 'arguments' && self instanceof sj.AppliedPredicate) return new JsTuple(self.arguments);
+      if ((name === 'free' || name === 'dum') && (self instanceof sj.TensorElement || self instanceof sj.Tensor)) return new JsList(self[name].map((pair) => new JsTuple(pair)));
+      if (name === 'name' && self instanceof sj.Indexed) return String(self);
+      if (name === 'ranges' && self instanceof sj.Indexed) return new JsList(sj.ranges(self).map((r, i) => sj.isNoMatch(r) ? self.indices[i] instanceof sj.Idx ? new JsTuple([null, null]) : null : new JsTuple(r)));
+      if (name === 'func' && args.length > 0 && self instanceof sj.IndexedBase) return new sj.IndexedBase(asSym(args[0]), args[1] === undefined ? {} : { shape: asExprList(args[1]) });
       if (name === 'func' && self instanceof sj.CRootOf) return new TypeRef('polys.rootoftools.ComplexRootOf');
       // SymPy expr.func read as a value: the class or function, printed as SymPy prints it
       if (name === 'func' && args.length === 0 && self instanceof sj.Expr) {
@@ -5995,6 +6009,12 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       return v;
     };
     const args = (c.args ?? []).map((v) => coefficient(deserialize(v)));
+    // The extractor serializes a Python range as a list; preserve its constructor when available.
+    const rangeCall = c.fn === 'IndexedBase' ? /IndexedBase\(range\(([-\d,\s]+)\)\)/.exec(c.src) : null;
+    if (rangeCall && (args[0] instanceof JsList || args[0] instanceof JsTuple)) {
+      const bounds = definedOr(rangeCall[1], 'range arguments').split(',').map((s) => sj.Rational.of(BigInt(s.trim())));
+      args[0] = sj.Range.of(definedOr(bounds[0], 'range start'), bounds[1], bounds[2]);
+    }
     const kwargs = Object.fromEntries(Object.entries(c.kwargs ?? {}).map(([k, v]) => [k, coefficient(deserialize(v))]));
     const call = (a: Adapter): unknown => (c.assume ? sj.assuming(c.assume.map((t) => deserialize(t) as Expr), () => a(args, kwargs, self)) : a(args, kwargs, self));
     let v: unknown;
@@ -6003,7 +6023,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // DomainMatrix, DDM and SDM methods (and their classes' static methods) share names with Matrix and Poly adapters
     const isDomainMatrix = (x: unknown) => x instanceof sj.DomainMatrix || x instanceof sj.DDM || x instanceof sj.SDM || (x instanceof TypeRef && ['DomainMatrix', 'DDM', 'SDM'].includes(x.name));
     // (rewrite targets are SymPy classes, which only the rewrite adapter names)
-    const auto0 = (c.fn !== '.rewrite' && (isMatExpr(self) || args.some(isMatExpr))) || isDomainMatrix(self) || self instanceof sj.NDimArray || self instanceof sj.Indexed ? autoAdapter(c) : undefined;
+    const auto0 = (c.fn !== '.rewrite' && (isMatExpr(self) || args.some(isMatExpr))) || isDomainMatrix(self) || self instanceof sj.NDimArray || (self instanceof sj.Indexed && c.fn !== '.is_constant') ? autoAdapter(c) : undefined;
     try {
       v = call(auto0 ?? adapter);
     } catch (e) {

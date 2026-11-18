@@ -314,3 +314,9 @@ it('stops substitution after a true Piecewise branch', () => {
   const excluded = sj.piecewise([sj.Lt(x, 0), sj.Eq(x, 0)], [1, true]);
   expect(String(sj.subs(excluded, [[x, sj.I]]))).toBe('1');
 });
+
+it('orders complex substitutions before their constituents and delegates extension substitution', () => {
+  expect(sj.subs(add(x, y), new Map<sj.Expr, sj.Expr>([[x, sj.S.One], [add(x, y), z]]))).toBe(z);
+  const q = sj.Quaternion(x, 1, 2, 3).subs(x, y);
+  expect(q.args[0]).toBe(y);
+});

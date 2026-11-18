@@ -17,6 +17,7 @@ import type { Indexed } from '../core/indexed';
 import { isNoMatch } from '../core/truth';
 import { latex } from '../printing/latex';
 import { str } from '../printing/str';
+import { TupleNode } from '../core/containers';
 
 const isInfinite = (e: Expr): boolean => e instanceof Special && (e.name === 'oo' || e.name === '-oo');
 
@@ -39,6 +40,13 @@ export function ranges(e: Indexed): (readonly [Expr, Expr] | NoMatchResult)[] {
  * `i`. `Idx(n)` with an integer n gives n itself.
  */
 export class IdxNode extends Sym {
+  override readonly args: readonly Expr[];
+  override get func(): typeof makeIdx {
+    return makeIdx;
+  }
+  override get isAtom(): boolean {
+    return true;
+  }
   /** The label (an integer symbol or integer expression). */
   readonly label: Expr;
   readonly #bounds: readonly [Expr, Expr] | undefined;
@@ -50,6 +58,7 @@ export class IdxNode extends Sym {
     super(lab instanceof Sym ? lab.name : str(lab), { integer: true });
     this.label = lab;
     this.#bounds = parseRange(range);
+    this.args = [lab, ...(this.#bounds ? [new TupleNode(this.#bounds)] : [])];
   }
 
   /** The lower bound (SymPy Idx.lower), or NoMatch when the index has no range (SymPy None). */
@@ -59,6 +68,10 @@ export class IdxNode extends Sym {
   /** The upper bound (SymPy Idx.upper), or NoMatch when the index has no range (SymPy None). */
   get upper(): Expr | NoMatchResult {
     return this.#bounds ? this.#bounds[1] : NoMatch;
+  }
+
+  override substituteInner(f: (e: Expr) => Expr): Expr {
+    return makeIdx(f(this.label), this.#bounds?.map(f));
   }
 
   /**
@@ -81,6 +94,7 @@ const isRangeList = (r: IdxRange): r is readonly ExprLike[] => Array.isArray(r);
 
 function parseRange(range: IdxRange | undefined): readonly [Expr, Expr] | undefined {
   if (range === undefined) return undefined;
+  if (range instanceof TupleNode) return parseRange(range.args);
   if (isRangeList(range)) {
     const r = range;
     if (r.length !== 2) throw new RangeError(`Idx range tuple must have length 2, but got ${r.length}`);

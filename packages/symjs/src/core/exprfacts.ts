@@ -138,6 +138,7 @@ function initialFacts(e: Expr): Map<string, boolean> {
   }
   if (e instanceof Constant || e instanceof Special) return fromRecord({ commutative: true, ...CONSTANT_FACTS[e.name] });
   if (e instanceof Sym) return e.assumptions0;
+  if (e instanceof ExtensionExpr && 'assumptions0' in e && e.assumptions0 instanceof Map) return e.assumptions0;
   if (e instanceof Add || e instanceof Mul || e instanceof Pow) return new Map();
   // (SymPy Function._eval_is_commutative: all the arguments are commutative)
   const f = functionFacts(e);
