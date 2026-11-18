@@ -27,6 +27,8 @@ import { at, cast, defined } from '../core/guard';
 import { cos, sin, atan } from '../functions/elementary/elementary';
 import { Matrix } from '../matrices/matrix';
 import { solveEquations } from './solvehelp';
+import { FiniteSet, SetExpr, SetOp, finiteSet, intersection, union } from '../sets/sets';
+import type { Truth } from '../core/truth';
 
 /** A point given as an entity or as a sequence of coordinates (SymPy accepts any sequence). */
 export type PointInput = Expr | readonly ExprLike[];
@@ -258,6 +260,62 @@ function negated(p: GeometryEntity): [Expr, Expr] {
  * planes, polygons, ellipses, curves and parabolas).
  */
 export abstract class GeometrySet extends GeometryEntity {}
+
+/**
+ * A geometric set as an operand of Union and Intersection (in SymPy a
+ * GeometrySet is itself a Set): the points of the entity.
+ */
+export class GeometrySetNode extends SetExpr {
+  readonly args: readonly Expr[];
+  constructor(readonly entity: GeometryEntity) {
+    super();
+    this.args = [entity];
+  }
+  get className(): string {
+    return this.entity.name;
+  }
+  protected computeKey(): string {
+    return `GeometrySet(${this.entity.key})`;
+  }
+  printStr(print: (e: Expr) => string): string {
+    return print(this.entity);
+  }
+  override withArgs(args: readonly Expr[]): Expr {
+    return new GeometrySetNode(cast(at(args, 0), GeometryEntity));
+  }
+  /** SymPy GeometrySet._contains: a finite set is contained when all its points are. */
+  override elementOf(x: Expr): Truth {
+    return x instanceof FiniteSet ? x.args.every((point) => this.entity.contains(point)) : this.entity.contains(x);
+  }
+  /** SymPy intersection_sets(GeometrySet, Set): the common points as a finite set, with the other common entities. */
+  override intersectWith(other: SetExpr): SetExpr | undefined {
+    // (SymPy distributes the intersection over a union before this rule applies)
+    if (other instanceof SetOp && other.op === 'Union') return union(...other.args.map((part) => intersection(this, cast(part, SetExpr))));
+    if (!(other instanceof GeometrySetNode)) return undefined;
+    let common: GeometryEntity[];
+    try {
+      common = this.entity.intersection(other.entity);
+    } catch (error) {
+      if (error instanceof NotImplementedError) return undefined;
+      throw error;
+    }
+    return union(...common.filter((e) => !e.isPoint).map((e) => new GeometrySetNode(e)), finiteSet(...common.filter((e) => e.isPoint)));
+  }
+  /** SymPy union_sets(GeometrySet, Set): the points and the sets that this set contains are absorbed. */
+  override unionWith(other: SetExpr): SetExpr | undefined {
+    if (other instanceof FiniteSet) {
+      const outside = other.args.filter((point) => !this.entity.contains(point));
+      if (outside.length === other.args.length) return undefined;
+      return outside.length ? new SetOp('Union', [this, finiteSet(...outside)]) : this;
+    }
+    return other instanceof GeometrySetNode && this.entity.contains(other.entity) ? this : undefined;
+  }
+}
+
+/** The set of the points of a geometric entity, for Union and Intersection (SymPy passes the entity itself). */
+export function geometrySet(entity: GeometryEntity): SetExpr {
+  return new GeometrySetNode(entity);
+}
 
 /** The matrix of the 2D translation by (x, y) acting on row vectors (SymPy entity.translate). */
 export function translate(x: ExprLike, y: ExprLike): Matrix {

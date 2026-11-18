@@ -32,6 +32,7 @@ import { GeometryEntity, geometryClasses } from './entity';
 import { isNonRealNumber } from './solvehelp';
 import type { PointInput } from './entity';
 import { GeometryError, Undecidable } from './exceptions';
+import { BasicNode } from '../core/basic';
 
 /** Options of the Point constructors (SymPy keyword arguments). */
 export interface PointOptions {
@@ -54,7 +55,7 @@ const isCoordSequence = (x: unknown): x is readonly ExprLike[] | TupleNode => Ar
 const isNumberExpr = (e: Expr): boolean => e.freeSymbols().size === 0;
 
 /** A value that is not a SymPy Expr (a geometry entity, container, set, boolean or relational). */
-const isNotExpr = (e: Expr): boolean => e instanceof GeometryEntity || e instanceof TupleNode || e instanceof BoolAtom || e instanceof Rel || e.kind === 'Set';
+const isNotExpr = (e: Expr): boolean => e instanceof GeometryEntity || e instanceof TupleNode || e instanceof BasicNode || e instanceof BoolAtom || e instanceof Rel || e.kind === 'Set';
 
 /**
  * SymPy Point: a point in n-dimensional Euclidean space. Point2D and
@@ -295,10 +296,15 @@ export class PointNode extends GeometryEntity {
     return affineRank(...args.map((a) => toPoint(a)));
   }
 
+  /** The ambient dimension of the class (SymPy _ambient_dimension): undefined for Point. */
+  protected static readonly classDimension: number | undefined = undefined;
+
   /** The points lie in one plane (SymPy are_coplanar). */
   static areCoplanar(...points: PointInput[]): boolean {
     if (points.length <= 1) return true;
-    const ps = normalizeDimension(points.map((a) => toPoint(a)));
+    // (called on Point2D or Point3D, the points are taken in the dimension of that class)
+    const dim = this.classDimension;
+    const ps = normalizeDimension(points.map((a) => toPoint(a)), dim === undefined ? {} : { dim });
     if (at(ps, 0).ambientDimension === 2) return true;
     return affineRank(...uniqPoints(ps)) <= 2;
   }
@@ -313,6 +319,7 @@ export class PointNode extends GeometryEntity {
 
 /** SymPy Point2D: a point in the plane. */
 export class Point2DNode extends PointNode {
+  protected static override readonly classDimension: number | undefined = 2;
   constructor(coords: readonly Expr[]) {
     super(coords, 'Point2D');
   }
@@ -374,6 +381,7 @@ export class Point2DNode extends PointNode {
 
 /** SymPy Point3D: a point in three-dimensional space. */
 export class Point3DNode extends PointNode {
+  protected static override readonly classDimension: number | undefined = 3;
   constructor(coords: readonly Expr[]) {
     super(coords, 'Point3D');
   }

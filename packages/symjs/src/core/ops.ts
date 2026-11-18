@@ -40,7 +40,7 @@ import {
 import { mkFloat, numAdd, numDiv, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } from './num';
 import { ZERO as MPF_ZERO, precToDps } from '../numeric/mpf';
 import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
-import { factorInt, gcd, iroot, ipow } from './numbers';
+import { factorInt, gcd, iroot, ipow, perfectPower } from './numbers';
 import { NotLoadedError, SympifyError, errorSettings } from './errors';
 import { at, cast, pair } from './guard';
 import { globalParameters } from './parameters';
@@ -306,17 +306,6 @@ export function add(...xs: ExprLike[]): Expr {
 /** Accumulates rational bases raised to rational powers, factored into primes. */
 /** A positive integer raised to a rational power, before simplification. */
 type RatPow = readonly [bigint, Rational];
-
-/**
- * The largest k with n = r**k (SymPy perfect_power), or undefined.
- */
-function perfectPower(n: bigint): [bigint, bigint] | undefined {
-  for (let k = BigInt(n.toString(2).length); k >= 2n; k--) {
-    const r = iroot(n, k);
-    if (r > 1n && ipow(r, k) === n) return [r, k];
-  }
-  return undefined;
-}
 
 /**
  * SymPy Integer._eval_power for a positive integer n and a rational e that is

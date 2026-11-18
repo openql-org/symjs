@@ -12,7 +12,7 @@
 // every entry point brings the core with its registrations
 import './core';
 
-export { GeometryEntity, GeometrySet } from './geometry/entity';
+export { GeometryEntity, GeometrySet, GeometrySetNode, geometrySet } from './geometry/entity';
 export type { PointInput, ReflectionLine } from './geometry/entity';
 export { GeometryError, Undecidable } from './geometry/exceptions';
 export { Point, Point2D, Point3D } from './geometry/point';
