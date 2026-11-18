@@ -5800,8 +5800,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // this also accepts a correct solution where SymPy's printed one is wrong
     if (['dsolve', 'dsolve_system'].includes(c.fn) && solvesDsolveCase(args[0], v) && constantCount(got) === constantCount(c.expected)) return { status: 'equivalent', got };
     // a doctest whose printed output is mathematically wrong: the correct value counts as compatible
-    const erratum = SYMPY_ERRATA[`${c.module}:${c.src}`] ?? SYMPY_ERRATA[c.src];
-    if (typeof erratum === 'string' ? erratum === got : erratum?.includes(got)) return { status: 'equivalent', got };
+    if (matchesSympyErratum(c, got)) return { status: 'equivalent', got };
     return { status: 'fail', got };
   } catch (e) {
     if (e instanceof Unsupported) return { status: 'unsupported', reason: e.message };
@@ -5833,8 +5832,27 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'is_strictly_increasing(-x**2 + y, Interval(-oo, 0), x)': 'True',
   // n is a positive integer: mobius(1**2) = 1, so the value is not 0 for every n
   'mobius(n**2)': 'mobius(n**2)',
+  // the same unit-test assertions (n = 1 and k = 1 give mobius(1) = 1)
+  'sympy.functions.combinatorial.tests.test_comb_numbers:assert mobius(n**2) == 0': 'mobius(n**2)',
+  'sympy.functions.combinatorial.tests.test_comb_numbers:assert mobius(n**(k+1)) == 0': 'mobius(n**(k + 1))',
   // a product of symmetric matrices is symmetric only when they commute: X*Z is not known to be symmetric
   'ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z))': 'None',
+  'sympy.assumptions.tests.test_matrices:assert ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z)) is True': 'None',
+  // A = [[1, 2], [-2, 1]] has a positive quadratic form (x.T*A*x = |x|**2), but the symmetric part of A**3 is -11*I
+  // and that of A*I*A is -3*I, so powers and A*Z*A of a positive definite (not symmetric) matrix need not be
+  'sympy.assumptions.tests.test_matrices:assert ask(Q.positive_definite(X**3), Q.positive_definite(X))': 'None',
+  'sympy.assumptions.tests.test_matrices:assert ask(Q.positive_definite(X*Z*X),\n            Q.positive_definite(X) & Q.positive_definite(Z)) is True': 'None',
+  // -I is orthogonal and not positive definite
+  'sympy.assumptions.tests.test_matrices:assert ask(Q.positive_definite(X), Q.orthogonal(X))': 'None',
+  // Y is 2 x 3 in that test: Y.T*X*Y is 3 x 3 of rank at most 2, so it is singular
+  'sympy.assumptions.tests.test_matrices:assert ask(Q.positive_definite(Y.T*X*Y),\n            Q.positive_definite(X) & Q.fullrank(Y)) is True': 'None',
+  // the permutation matrix swapping indices 1 and 3 is orthogonal and invertible, and its principal slice X[1:3, 1:3]
+  // is the singular [[0, 0], [0, 1]]
+  'sympy.assumptions.tests.test_matrices:assert ask(Q.invertible(B), Q.invertible(X))': 'None',
+  'sympy.assumptions.tests.test_matrices:assert ask(Q.orthogonal(B), Q.orthogonal(X))': 'None',
+  // C is a 3 x 2 slice: a non-square matrix is neither symmetric nor orthogonal (the assertion `not ask(...)` holds)
+  'sympy.assumptions.tests.test_matrices:assert not ask(Q.symmetric(C), Q.symmetric(X))': 'False',
+  'sympy.assumptions.tests.test_matrices:assert not ask(Q.orthogonal(C), Q.orthogonal(X))': 'False',
   // SymPy evaluates the weight at a rational approximation of the root, which moves the last
   // digit: the exact weight is 1.70630566574432743792195751524918602024548..., so the
   // correctly rounded 40-digit value ends in ...245.
@@ -5843,6 +5861,12 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
             '1.097332224279111467485302294320899710461',
             '1.706305665744327437921957515249186020246']`]: "['0.3379547635663543330553835737094171534907', '1.097332224279111467485302294320899710461', '1.706305665744327437921957515249186020245']",
 };
+
+/** The printed result is the correct value registered for a case whose SymPy output is wrong. */
+export function matchesSympyErratum(c: Pick<Case, 'module' | 'src'>, got: string): boolean {
+  const erratum = SYMPY_ERRATA[`${c.module}:${c.src}`] ?? SYMPY_ERRATA[c.src];
+  return typeof erratum === 'string' ? erratum === got : erratum?.includes(got) === true;
+}
 
 /** The dsolve result v solves the equation (or system) eqArg. */
 export function solvesDsolveCase(eqArg: unknown, v: unknown): boolean {

@@ -410,3 +410,16 @@ it('replays matrix powers, indexing, identity predicates and matrix differentiat
   expect(selected).toHaveLength(233);
   for (const c of selected) expect(['pass', 'equivalent'], `${c.module}:${c.test}:${c.line}`).toContain(runTestCase(c).status);
 });
+
+it('accepts the registered correct value of a truth-value assertion whose SymPy answer is wrong', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/assumptions.json', import.meta.url), 'utf8'));
+  const pick = (line: number): TestCase => {
+    const c = cases.find((x) => x.module === 'sympy.assumptions.tests.test_matrices' && x.line === line);
+    if (c === undefined) throw new Error(`missing case ${line}`);
+    return c;
+  };
+  // `is True` and truthy assertions answered None, and a falsy assertion answered False
+  expect(runTestCase(pick(86))).toEqual({ status: 'equivalent', got: 'None' });
+  expect(runTestCase(pick(145))).toEqual({ status: 'equivalent', got: 'None' });
+  expect(runTestCase(pick(225))).toEqual({ status: 'equivalent', got: 'False' });
+});
