@@ -645,9 +645,9 @@ describe("sympy/core/tests/test_function.py", () => {
     const x = new Sym('x');
     expect(sympyStr(derivative(derivative((SymFunction('f'))(x), [[x, 1]]), [[x, 1]]))).toBe('Derivative(f(x), (x, 2))');
   });
-  it.fails("test_derivative_evaluate:112", () => {
+  it("test_derivative_evaluate:112", () => {
     const x = new Sym('x');
-    expect(sympyStr(derivative(fn('sin', [x]), [[x, 1], [rational(0), 1]]))).toBe('sin(x)');
+    expect(sympyStr(derivative(fn('sin', [x]), [[x, 0]]))).toBe('sin(x)');
   });
   it.fails("test_derivative_evaluate:113", () => {
     const x = new Sym('x');

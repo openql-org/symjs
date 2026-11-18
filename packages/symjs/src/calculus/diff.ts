@@ -254,12 +254,22 @@ function diffIndexed(e: Expr, x: Indexed): Expr {
 export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
   if (!Number.isInteger(n) || n < 0) throw new RangeError('diff: order must be a non-negative integer');
   let e = sympify(ex);
+  if (n === 0) return e;
+  // SymPy permits symbols, applied undefined functions and elementary derivatives
+  // as scalar variables. Products and evaluated functions are ambiguous variables.
+  if (x instanceof Derivative) {
+    let evaluated = x.expr;
+    for (const [v, count] of x.variableCount) evaluated = diff(evaluated, v, count);
+    if (!(x.expr instanceof UndefFn) || !(evaluated instanceof Derivative)) throw new RangeError(`diff: invalid variable ${x.toString()}`);
+  } else if (!(x instanceof Sym || x instanceof UndefFn || x instanceof ExtensionExpr)) {
+    throw new RangeError(`diff: invalid variable ${x.toString()}`);
+  }
   if (x instanceof Indexed) {
     for (let i = 0; i < n; i++) e = diffIndexed(e, x);
     return e;
   }
   // SymPy: a variable that is not a scalar (is_scalar = False) keeps the derivative unevaluated
-  if (x instanceof ExtensionExpr && !x.isScalar && n > 0 && e.has(x)) return derivative(e, [[x, n]]);
+  if (x instanceof ExtensionExpr && !x.isScalar && e.has(x)) return derivative(e, [[x, n]]);
   // differentiate with respect to an expression such as f(x): treat it as a symbol
   if (!(x instanceof Sym) && !isMatrixElement(x)) return diffWrtTerm(e, x, n);
   for (let i = 0; i < n; i++) e = d(e, x);

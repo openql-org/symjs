@@ -37,6 +37,7 @@ export const isUndefinedFunction = (v: unknown): v is UndefinedFunction => typeo
 export function SymFunction(name: string, options: { nargs?: number | readonly number[] } = {}): UndefinedFunction {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new SyntaxError(`Invalid function name: ${name}`);
   const arity = options.nargs === undefined ? NoMatch : Object.freeze([...new Set(typeof options.nargs === 'number' ? [options.nargs] : options.nargs)].sort((a,b) => a-b));
+  if (!isNoMatch(arity) && arity.length === 0) throw new RangeError('function arities must not be empty');
   if (!isNoMatch(arity) && arity.some((n) => !Number.isSafeInteger(n) || n < 0)) throw new RangeError('function arities must be nonnegative integers');
   const f = (...args: ExprLike[]): Expr => {
     if (!isNoMatch(arity) && !arity.includes(args.length)) throw new TypeError(`${name} does not accept ${args.length} arguments`);
@@ -67,6 +68,8 @@ export function derivative(expr: Expr, variables: readonly [Expr, number][], eva
     e = e.expr;
   }
   for (const [v, n] of variables) {
+    if (!Number.isSafeInteger(n) || n < 0) throw new RangeError('derivative order must be a nonnegative integer');
+    if (n === 0) continue;
     const last = vc[vc.length - 1];
     if (last && last[0].key === v.key) last[1] += n;
     else vc.push([v, n]);
@@ -85,5 +88,5 @@ export function derivative(expr: Expr, variables: readonly [Expr, number][], eva
       return an < bn ? -1 : an > bn ? 1 : 0;
     });
   }
-  return new Derivative([e, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]);
+  return vc.length ? new Derivative([e, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]) : e;
 }

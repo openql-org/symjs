@@ -451,12 +451,12 @@ describe("sympy/core/tests/test_match.py", () => {
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(match(new Mul([new Wild('u', { exclude: [] }), new Wild('v', { exclude: [] }), A, C]), new Mul([new Wild('u', { exclude: [] }), new Wild('v', { exclude: [] }), A, B])))).toBe('None');
   });
-  it.fails("test_mul_noncommutative_mismatch:230", () => {
+  it("test_mul_noncommutative_mismatch:230", () => {
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(match(new Mul([A, B, A]), new Mul([new Wild('w', { exclude: [], commutative: false }), B, new Wild('w', { exclude: [], commutative: false })])))).toBe('{w_: A}');
   });
-  it.fails("test_mul_noncommutative_mismatch:231", () => {
+  it("test_mul_noncommutative_mismatch:231", () => {
     const A = new Sym('A', { commutative: false });
     const C = new Sym('C', { commutative: false });
     const B = new Sym('B', { commutative: false });
@@ -502,7 +502,7 @@ describe("sympy/core/tests/test_match.py", () => {
     const A = new Sym('A', { commutative: false });
     expect(sympyStr(new Map([[new Wild('w', { exclude: [], commutative: false }), A]]))).toBe('{w_: A}');
   });
-  it.fails("test_mul_noncommutative_pow:249", () => {
+  it("test_mul_noncommutative_pow:249", () => {
     const A = new Sym('A', { commutative: false });
     const B = new Sym('B', { commutative: false });
     expect(sympyStr(match(new Mul([new Pow(A, rational(2)), B, new Pow(A, rational(3))]), new Mul([new Pow(new Wild('w', { exclude: [], commutative: false }), rational(2)), B, new Pow(new Wild('w', { exclude: [], commutative: false }), rational(3))])))).toBe('{w_: A}');

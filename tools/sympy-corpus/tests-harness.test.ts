@@ -430,3 +430,14 @@ it('treats != as structural: an equivalent but different expression satisfies it
   if (c === undefined) throw new Error('missing case');
   expect(runTestCase(c)).toEqual({ status: 'pass' });
 });
+
+it('translates nested Lambda signatures and positional derivative counts through the public API', () => {
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const y = { t: 'Symbol', name: 'y', assume: {} };
+  const tuple = (...items: Tree[]): Tree => ({ t: 'Tuple', items });
+  const integer = (n: number): Tree => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const lambda = { t: 'JsLambda', params: [tuple(x, y)], body: { t: 'Add', args: [x, y] } };
+  expect(runTestCase({ ...base, fn: '.__call__', self: lambda, args: [tuple(integer(2), integer(3))], expected: '5' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'Derivative', args: [x, x, integer(0)], expected: 'x' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...base, fn: 'Derivative', args: [x, tuple(x, integer(0))], expected: 'x' })).toEqual({ status: 'pass' });
+});

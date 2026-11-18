@@ -141,7 +141,7 @@ export class JsLambda {
     readonly body: Expr,
   ) {}
   call(...xs: Expr[]): Expr {
-    return sj.xreplace(this.body, this.vars.map((v, i) => [v, xs[i]!] as [Expr, Expr]));
+    return sj.Lambda(this.vars.map(expressionContainer), expressionContainer(this.body)).call(...xs.map(expressionContainer));
   }
   /** Python arithmetic on primitive callback arguments (not symbolic sympification). */
   callStrings(...xs: unknown[]): unknown {
@@ -1831,9 +1831,16 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     const e = asExpr(args[0]);
     const vc: [Expr, number][] = [];
-    for (const a of args.slice(1)) {
-      if (a instanceof JsTuple) vc.push([asExpr(a.items[0]), Number((a.items[1] as sj.Rational).p)]);
-      else vc.push([asExpr(a), 1]);
+    for (let i = 1; i < args.length; i++) {
+      const a = args[i];
+      if (a instanceof JsTuple) vc.push([asExpr(a.items[0]), intArg(a.items[1])]);
+      else {
+        const count = args[i + 1];
+        if (count instanceof sj.Rational || typeof count === 'number') {
+          vc.push([asExpr(a), intArg(count)]);
+          i++;
+        } else vc.push([asExpr(a), 1]);
+      }
     }
     return sj.derivative(e, vc);
   },
@@ -1918,8 +1925,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   Unequality: (args, kw) => relationArgs(args, kw, '!='),
   Lambda: (args, kw) => {
     noKw(kw);
-    const vs = args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
-    return sj.Lambda(vs, asExpr(args[1]));
+    const vs = args[0] instanceof JsTuple ? args[0].items.map(expressionContainer) : [expressionContainer(args[0])];
+    return sj.Lambda(vs, expressionContainer(args[1]));
   },
   ...Object.fromEntries(
     (['pi', 'E', 'I', 'oo', 'nan', 'zoo', 'Catalan', 'EulerGamma', 'GoldenRatio', 'TribonacciConstant'] as const).map((n) => [n, () => sj.parse(n)] as [string, Adapter]),
@@ -5424,6 +5431,10 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (c.fn === '.__mul__' && left instanceof sj.DomainMatrix && right instanceof Expr) return left.scalarmul(right);
       if (c.fn === '.__mul__' && right instanceof sj.DomainMatrix && left instanceof Expr) return right.rscalarmul(left);
       return fromJs(dunder(left, [right]));
+    }
+    if (c.fn === '.__call__' && (self0 instanceof JsLambda || self0 instanceof sj.Lambda)) {
+      const lambda = self0 instanceof JsLambda ? sj.Lambda(self0.vars.map(expressionContainer), expressionContainer(self0.body)) : self0;
+      return lambda.call(...args.map(expressionContainer));
     }
     const arithmetic = ['.__add__', '.__sub__', '.__mul__', '.__truediv__', '.__pow__', '.__mod__', '.__neg__'];
     if (arithmetic.includes(c.fn) && [self0, ...args].some((v) => typeof v === 'boolean' || v instanceof sj.BoolAtom)) {
