@@ -255,7 +255,7 @@ describe('matmul', () => {
     expect(s(X)).toBe('Matrix([[1, 1], [1, 1]])*A*Matrix([[1, 2], [3, 4]])');
     expect(s(mergeExplicitMatMul(X))).toBe('Matrix([[1, 1], [1, 1]])*A*Matrix([[1, 2], [3, 4]])');
     expect(L(MatMul(A, B))).toBe('A \\left[\\begin{matrix}1 & 1\\\\1 & 1\\end{matrix}\\right]');
-    expect(s(M(MatMul(2, A)).mul(C))).toBe('A*Matrix([[2, 4], [6, 8]])');
+    expect(s(M(MatMul(2, A)).mul(C))).toBe('2*A*Matrix([[1, 2], [3, 4]])');
     expect(s(M(MatMul(2, C, A)).doit())).toBe('Matrix([[2, 4], [6, 8]])*A');
     expect(s(MatMul(C, 2, A))).toBe('Matrix([[1, 2], [3, 4]])*2*A');
     expect(s(A.mul(eye(2)))).toBe('A');
@@ -840,6 +840,12 @@ describe('defaults and remaining paths', () => {
   it('merge_explicit of a product', () => {
     expect(s(mergeExplicitMatMul(MatMul(Mi, 2)))).toBe('Matrix([[2, 4], [6, 8]])');
     expect(s(mergeExplicitMatMul(MatMul(2, 3, Mi)))).toBe('Matrix([[6, 12], [18, 24]])');
+    expect(s(mergeExplicitMatMul(MatMul(2, Mi, X)))).toBe('Matrix([[2, 4], [6, 8]])*X');
+    expect(s(mergeExplicitMatMul(MatMul(x, Mi, X)))).toBe('x*Matrix([[1, 2], [3, 4]])*X');
+  });
+  it('evaluates explicit factors in the Mul constructor', () => {
+    expect(s(mul(x, MatMul(Mi, X)))).toBe('Matrix([[x, 2*x], [3*x, 4*x]])*X');
+    expect(s(mul(Mi, Mi))).toBe('Matrix([[7, 10], [15, 22]])');
   });
   it('generic identity and zero', () => {
     expect(GenericIdentity().key).toBe('GenericIdentity()');
@@ -1111,4 +1117,14 @@ describe('LaTeX settings of matrix expressions (SymPy 1.14 test_latex)', () => {
     expect(latex(Identity(1), { matSymbolStyle: 'bold' })).toBe('\\mathbf{I}');
     expect(latex(Identity(1))).toBe('\\mathbb{I}');
   });
+});
+
+it('uses the parent dimensions for deltas of matrix-entry derivatives', async () => {
+  const { MatrixElementNode } = await import('../../../src/matrices/expressions/matexpr');
+  const [i, j, k, l] = symbols('i j k l');
+  const A = MatrixSymbol('A', 2, 3);
+  expect(String(A.at(i, j).diff(A.at(k, l)))).toBe('KroneckerDelta(i, k, (0, 1))*KroneckerDelta(j, l, (0, 2))');
+  const scalar = symbol('m');
+  const entry = new MatrixElementNode(scalar, i, j);
+  expect(String(entry.diffSelf(new MatrixElementNode(scalar, k, l), diff))).toBe('KroneckerDelta(i, k)*KroneckerDelta(j, l)');
 });

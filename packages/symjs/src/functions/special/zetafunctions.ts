@@ -11,13 +11,13 @@
  */
 
 import type { Expr, ExprLike } from '../../core/nodes';
-import { Float, Fn, Pow, Rational, S, Special, Sym, registerFunctionHeads } from '../../core/nodes';
+import { Float, Fn, Integral, Pow, Rational, S, Special, Sym, impl, registerFunctionHeads } from '../../core/nodes';
 import { at, pair } from '../../core/guard';
 import { isIntegerQ, isNegative, isPositive, isZero } from '../../core/assumptions';
 import { add, exp, mul, neg, pow, sqrt } from '../../core/ops';
 import { Eq, piecewise } from '../../core/logic';
 import { subs } from '../../core/traverse';
-import { diff, fnPartials } from '../../calculus/diff';
+import { diff, fnPartials, unavailablePartials } from '../../calculus/diff';
 import { mpFns } from '../../numeric/mpeval';
 import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
@@ -62,6 +62,9 @@ export const stieltjes = (n: ExprLike, a?: ExprLike): Expr => fn('stieltjes', a 
 const zeta = (s: Expr, a?: Expr): Expr => fn('zeta', a === undefined ? [s] : [s, a]);
 const digamma = (x: Expr): Expr => fn('polygamma', [0, x]);
 
+unavailablePartials.polylog = [1];
+unavailablePartials.lerchphi = [2];
+
 // ---- polylog --------------------------------------------------------------------------
 
 /** SymPy _dilogtable: polylog(2, z) at special points. */
@@ -96,6 +99,10 @@ const hasPolar = (e: Expr): boolean => (e instanceof Fn && (e.name === 'exp_pola
 evaluators.polylog = (s, z) => {
   const isNumber = z.freeSymbols().size === 0;
   if (isNumber) {
+    if (z instanceof Integral) {
+      const value = impl.doit?.(z);
+      if (value !== undefined && value.key !== z.key) return polylog(s, value);
+    }
     if (isRat(z, 1n)) return zeta(s);
     if (isRat(z, -1n)) return neg(dirichletEta(s));
     if (isRat(z, 0n)) return S.Zero;

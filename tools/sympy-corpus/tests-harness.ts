@@ -17,7 +17,7 @@ export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; ac
 
 export function testCaseKey(c: TestCase): string {
   // Replay state annotates an existing assertion without changing its ratchet identity.
-  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
+  return `${c.module}:${c.test}:${c.line} #${createHash('sha256').update(JSON.stringify(c, (key, value: unknown) => ['tensorData', 'exclusion', 'unsupportedClass', 'matrixClass', 'boundMatrix'].includes(key) ? undefined : value)).digest('hex').slice(0, 20)}`;
 }
 
 // The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
@@ -89,7 +89,8 @@ export function runTestCase(c: TestCase): TestOutcome {
   // These established public names capitalize the second word after "Non".
   const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };
   const fn = alias[c.fn];
-  const outcome = runCase(fn === undefined ? c : { ...c, fn }, (event) => { observation = event; });
+  const call = c.boundMatrix ? { ...c, fn: '.' + c.fn, self: c.boundMatrix } : fn === undefined ? c : { ...c, fn };
+  const outcome = runCase(call, (event) => { observation = event; });
   const result = assertionOutcome(c, outcome, observation);
   return result.status === 'error' ? { ...result, phase: observation === undefined ? 'input' : 'error' in observation ? 'invoke' : 'result' } : result;
 }

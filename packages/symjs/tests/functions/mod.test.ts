@@ -6,13 +6,26 @@
 // Mod. Expected values are str() / latex() results of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { add, E, fn, Float, Fn, I, latex, Mod, mul, pi, Pow, Rational, sqrt, Sym, SymFunction } from '../../src';
+import { add, E, fn, Float, Fn, I, latex, Mod, mul, pi, Pow, Rational, S, sqrt, Sym, SymFunction } from '../../src';
 
 const x = new Sym('x');
 const y = new Sym('y');
 const n = new Sym('n', { integer: true });
 
 describe('Mod', () => {
+  it('reduces the Ramanujan partition congruences and Wilson remainders', () => {
+    const n = new Sym('n', { integer: true });
+    const p = new Sym('p', { prime: true });
+    for (const [q, r] of [[5, 4], [7, 5], [11, 6]] as const) {
+      expect(Mod(fn('partition', [add(mul(q, n), r)]), q)).toBe(S.Zero);
+    }
+    expect(Mod(fn('partition', [add(mul(5, n), 2)]), 5).has(n)).toBe(true);
+    expect(Mod(fn('partition', [add(mul(3, n), 2)]), 3).has(n)).toBe(true);
+    expect(Mod(fn('factorial', [add(p, -1)]), p)).toEqual(add(p, -1));
+    expect(Mod(fn('factorial', [add(p, -1)]), mul(-1, p))).toBe(S.NegOne);
+    expect(Mod(mul(2, n), 2)).toBe(S.Zero);
+    expect(Mod(add(mul(2, n), 1), 2).equals(S.One)).toBe(true);
+  });
   it('numbers', () => {
     expect(String(Mod(7, 2))).toBe('1');
     expect(String(Mod(-7, 2))).toBe('1');
