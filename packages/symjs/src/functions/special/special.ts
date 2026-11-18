@@ -531,7 +531,9 @@ function evalErf(z: Expr): Expr | undefined {
   if (isNegOo(z)) return S.NegOne;
   if (isIOo(z)) return iOo();
   if (isNegIOo(z)) return neg(iOo());
-  if (z instanceof Fn && z.name === 'erfinv') return z.args[0];
+  if (z instanceof Fn && z.name === 'erfinv') return first(z.args);
+  if (z instanceof Fn && z.name === 'erfcinv') return add(1, neg(first(z.args)));
+  if (z instanceof Fn && z.name === 'erf2inv' && isZero(first(z.args)) === true) return at(z.args, 1);
   return odd('erf', z);
 }
 
@@ -541,7 +543,8 @@ function evalErfc(z: Expr): Expr | undefined {
   if (isNegOo(z)) return S.Two;
   if (isIOo(z)) return neg(iOo());
   if (isNegIOo(z)) return iOo();
-  if (z instanceof Fn && z.name === 'erfcinv') return z.args[0];
+  if (z instanceof Fn && z.name === 'erfcinv') return first(z.args);
+  if (z instanceof Fn && z.name === 'erfinv') return add(1, neg(first(z.args)));
   if (couldExtractMinusSign(z)) return add(2, neg(fnN('erfc', neg(z))));
   return undefined;
 }
@@ -552,6 +555,11 @@ function evalErfi(z: Expr): Expr | undefined {
   if (isNegOo(z)) return S.NegativeInfinity;
   if (isIOo(z)) return S.I;
   if (isNegIOo(z)) return neg(S.I);
+  const w = imagFactor(z);
+  if (w instanceof Fn && ['erfinv', 'erfcinv', 'erf2inv'].includes(w.name)) {
+    const value = evalErf(w);
+    if (value !== undefined) return mul(S.I, value);
+  }
   return odd('erfi', z);
 }
 
@@ -579,6 +587,7 @@ function evalErfcinv(z: Expr): Expr | undefined {
 
 function evalErf2(x: Expr, y: Expr): Expr | undefined {
   if (x.key === y.key) return S.Zero;
+  if (y instanceof Fn && y.name === 'erf2inv' && first(y.args).key === x.key) return at(y.args, 1);
   if (x instanceof Rational && x.isZero) return fnN('erf', y);
   if (y instanceof Rational && y.isZero) return neg(fnN('erf', x));
   if (isOo(x)) return add(fnN('erf', y), -1);
@@ -586,6 +595,7 @@ function evalErf2(x: Expr, y: Expr): Expr | undefined {
   if (isOo(y)) return add(1, neg(fnN('erf', x)));
   if (isNegOo(y)) return add(neg(fnN('erf', x)), -1);
   if (couldExtractMinusSign(x) && couldExtractMinusSign(y)) return neg(fnN('erf2', neg(x), neg(y)));
+  if (couldExtractMinusSign(x) || couldExtractMinusSign(y)) return add(fnN('erf', y), neg(fnN('erf', x)));
   return undefined;
 }
 
@@ -1530,6 +1540,41 @@ export const Max = (...xs: ExprLike[]): Expr => fn('Max', xs);
  * @internal
  */
 export const funcExpanders: Partial<Record<FnName, (args: readonly Expr[]) => Expr | undefined>> = {};
+
+/** SymPy polygamma._eval_expand_func: recurrence and multiplication theorem. */
+funcExpanders.polygamma = (args) => {
+  const [n, z] = pair(args);
+  if (!(isInt(n) && !n.isNegative)) return undefined;
+  const [shift, rest] = splitAddInt(z);
+  if (shift !== 0n) {
+    const terms: Expr[] = [];
+    if (shift > 0n) {
+      for (let k = 0n; k < shift; k++) terms.push(pow(add(rest, R(k)), R(-n.p - 1n)));
+    } else {
+      for (let k = 0n; k < -shift; k++) terms.push(neg(pow(add(z, R(k)), R(-n.p - 1n))));
+    }
+    return add(fnN('polygamma', n, rest), mul(pow(-1, n), R(factorialBig(n.p)), add(...terms)));
+  }
+  if (z instanceof Mul) {
+    const [coeff, tail] = splitCoeff(z);
+    if (isInt(coeff) && coeff.isPositive) {
+      const terms: Expr[] = [];
+      for (let k = 0n; k < coeff.p; k++) terms.push(fnN('polygamma', n, add(tail, R(k, coeff.p))));
+      const result = mul(pow(coeff, R(-n.p - 1n)), add(...terms));
+      return n.isZero ? add(result, log(coeff)) : result;
+    }
+  }
+  if (n.isZero && z instanceof Rational) return digammaRational(z);
+  return undefined;
+};
+funcExpanders.erfi = (args) => {
+  const w = imagFactor(first(args));
+  return w === undefined ? mul(-1, S.I, fnN('erf', mul(S.I, first(args)))) : mul(S.I, fnN('erf', w));
+};
+funcExpanders.erf2 = (args) => {
+  const [x, y] = pair(args);
+  return add(fnN('erf', y), neg(fnN('erf', x)));
+};
 
 /**
  * SymPy _eval_expand_func of the functions defined in other modules, by

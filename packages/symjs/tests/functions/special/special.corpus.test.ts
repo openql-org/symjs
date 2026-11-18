@@ -1028,7 +1028,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erf', [fn('erfinv', [x])]))).toBe('x');
   });
-  it.fails("test_erf:45", () => {
+  it("test_erf:45", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erf', [fn('erfcinv', [x])]))).toBe('1 - x');
   });
@@ -1110,35 +1110,35 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('erf', [new Pow(x, rational(-1))]), x, {}))).toBe('1');
   });
-  it.fails("test_erf:74", () => {
+  it("test_erf:74", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erf', [z]), 'uppergamma', { pattern: [], deep: true }))).toBe('(1 - erfc(sqrt(z**2)))*sqrt(z**2)/z');
   });
-  it.fails("test_erf:75", () => {
+  it("test_erf:75", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erf', [z]), 'erfc', { pattern: [], deep: true }))).toBe('1 - erfc(z)');
   });
-  it.fails("test_erf:76", () => {
+  it("test_erf:76", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erf', [z]), 'erfi', { pattern: [], deep: true }))).toBe('-I*erfi(I*z)');
   });
-  it.fails("test_erf:77", () => {
+  it("test_erf:77", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erf', [z]), 'fresnels', { pattern: [], deep: true }))).toBe('(1 + I)*(fresnelc(z*(1 - I)/sqrt(pi)) - I*fresnels(z*(1 - I)/sqrt(pi)))');
   });
-  it.fails("test_erf:79", () => {
+  it("test_erf:79", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erf', [z]), 'fresnelc', { pattern: [], deep: true }))).toBe('(1 + I)*(fresnelc(z*(1 - I)/sqrt(pi)) - I*fresnels(z*(1 - I)/sqrt(pi)))');
   });
-  it.fails("test_erf:81", () => {
+  it("test_erf:81", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erf', [z]), 'hyper', { pattern: [], deep: true }))).toBe('2*z*hyper((1/2,), (3/2,), -z**2)/sqrt(pi)');
   });
-  it.fails("test_erf:82", () => {
+  it("test_erf:82", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erf', [z]), 'meijerg', { pattern: [], deep: true }))).toBe('z*meijerg(((1/2,), ()), ((0,), (-1/2,)), z**2)/sqrt(pi)');
   });
-  it.fails("test_erf:83", () => {
+  it("test_erf:83", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erf', [z]), 'expint', { pattern: [], deep: true }))).toBe('-z*erfc(sqrt(z**2))/sqrt(z**2) + sqrt(z**2)/z');
   });
@@ -1275,7 +1275,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   it("test_erfc:159", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_erfc:161", () => {
+  it("test_erfc:161", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erfc', [fn('erfinv', [x])]))).toBe('1 - x');
   });
@@ -1287,35 +1287,35 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('erfc', [new Pow(x, rational(-1))]), x, {}))).toBe('0');
   });
-  it.fails("test_erfc:168", () => {
+  it("test_erfc:168", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfc', [z]), 'erf', { pattern: [], deep: true }))).toBe('1 - erf(z)');
   });
-  it.fails("test_erfc:169", () => {
+  it("test_erfc:169", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfc', [z]), 'erfi', { pattern: [], deep: true }))).toBe('I*erfi(I*z) + 1');
   });
-  it.fails("test_erfc:170", () => {
+  it("test_erfc:170", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfc', [z]), 'fresnels', { pattern: [], deep: true }))).toBe('-(1 + I)*(fresnelc(z*(1 - I)/sqrt(pi)) - I*fresnels(z*(1 - I)/sqrt(pi))) + 1');
   });
-  it.fails("test_erfc:172", () => {
+  it("test_erfc:172", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfc', [z]), 'fresnelc', { pattern: [], deep: true }))).toBe('-(1 + I)*(fresnelc(z*(1 - I)/sqrt(pi)) - I*fresnels(z*(1 - I)/sqrt(pi))) + 1');
   });
-  it.fails("test_erfc:174", () => {
+  it("test_erfc:174", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfc', [z]), 'hyper', { pattern: [], deep: true }))).toBe('-2*z*hyper((1/2,), (3/2,), -z**2)/sqrt(pi) + 1');
   });
-  it.fails("test_erfc:175", () => {
+  it("test_erfc:175", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfc', [z]), 'meijerg', { pattern: [], deep: true }))).toBe('-z*meijerg(((1/2,), ()), ((0,), (-1/2,)), z**2)/sqrt(pi) + 1');
   });
-  it.fails("test_erfc:176", () => {
+  it("test_erfc:176", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfc', [z]), 'uppergamma', { pattern: [], deep: true }))).toBe('1 - (1 - erfc(sqrt(z**2)))*sqrt(z**2)/z');
   });
-  it.fails("test_erfc:177", () => {
+  it("test_erfc:177", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfc', [z]), 'expint', { pattern: [], deep: true }))).toBe('z*erfc(sqrt(z**2))/sqrt(z**2) + 1 - sqrt(z**2)/z');
   });
@@ -1372,19 +1372,19 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erfi', [new Mul([rational(-1), x])]))).toBe('-erfi(x)');
   });
-  it.fails("test_erfi:221", () => {
+  it("test_erfi:221", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erfi', [new Mul([I, fn('erfinv', [x])])]))).toBe('I*x');
   });
-  it.fails("test_erfi:222", () => {
+  it("test_erfi:222", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erfi', [new Mul([I, fn('erfcinv', [x])])]))).toBe('I*(1 - x)');
   });
-  it.fails("test_erfi:223", () => {
+  it("test_erfi:223", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erfi', [new Mul([I, fn('erfinv', [x])])]))).toBe('I*x');
   });
-  it.fails("test_erfi:224", () => {
+  it("test_erfi:224", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erfi', [new Mul([I, fn('erf2inv', [rational(0), x])])]))).toBe('I*x');
   });
@@ -1418,43 +1418,43 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(asLeadingTerm(fn('erfi', [new Pow(x, rational(-1))]), x, {}))).toBe('erfi(1/x)');
   });
-  it.fails("test_erfi:237", () => {
+  it("test_erfi:237", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfi', [z]), 'erf', { pattern: [], deep: true }))).toBe('-I*erf(I*z)');
   });
-  it.fails("test_erfi:238", () => {
+  it("test_erfi:238", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfi', [z]), 'erfc', { pattern: [], deep: true }))).toBe('I*erfc(I*z) - I');
   });
-  it.fails("test_erfi:239", () => {
+  it("test_erfi:239", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfi', [z]), 'fresnels', { pattern: [], deep: true }))).toBe('(1 - I)*(fresnelc(z*(1 + I)/sqrt(pi)) - I*fresnels(z*(1 + I)/sqrt(pi)))');
   });
-  it.fails("test_erfi:241", () => {
+  it("test_erfi:241", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfi', [z]), 'fresnelc', { pattern: [], deep: true }))).toBe('(1 - I)*(fresnelc(z*(1 + I)/sqrt(pi)) - I*fresnels(z*(1 + I)/sqrt(pi)))');
   });
-  it.fails("test_erfi:243", () => {
+  it("test_erfi:243", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfi', [z]), 'hyper', { pattern: [], deep: true }))).toBe('2*z*hyper((1/2,), (3/2,), z**2)/sqrt(pi)');
   });
-  it.fails("test_erfi:244", () => {
+  it("test_erfi:244", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfi', [z]), 'meijerg', { pattern: [], deep: true }))).toBe('z*meijerg(((1/2,), ()), ((0,), (-1/2,)), -z**2)/sqrt(pi)');
   });
-  it.fails("test_erfi:245", () => {
+  it("test_erfi:245", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfi', [z]), 'uppergamma', { pattern: [], deep: true }))).toBe('sqrt(-z**2)*(erfc(sqrt(-z**2)) - 1)/z');
   });
-  it.fails("test_erfi:247", () => {
+  it("test_erfi:247", () => {
     const z = new Sym('z');
-    expect(sympyStr(rewrite(fn('erfi', [z]), 'expint', { pattern: [], deep: true }))).toBe('-z*erfc(sqrt(-z**2))/sqrt(-z**2) + sqrt(-z**2)/z');
+    expect(sympyStr(rewrite(fn('erfi', [z]), 'expint', { pattern: [], deep: true }))).toBe('-z*erfc(sqrt(-z**2))/sqrt(-z**2) - sqrt(-z**2)/z');
   });
   it.fails("test_erfi:248", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfi', [z]), 'tractable', { pattern: [], deep: true }))).toBe('-I*(-exp(z**2)*_erfs(I*z) + 1)');
   });
-  it.fails("test_erfi:249", () => {
+  it("test_erfi:249", () => {
     const z = new Sym('z');
     expect(sympyStr(expandFunc(fn('erfi', [new Mul([I, z])])))).toBe('I*erf(z)');
   });
@@ -1509,7 +1509,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fn('erf2', [x, S.NegativeInfinity]))).toBe('-erf(x) - 1');
   });
-  it.fails("test_erf2:286", () => {
+  it("test_erf2:286", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(fn('erf2', [x, fn('erf2inv', [x, y])]))).toBe('y');
   });
@@ -1525,27 +1525,27 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const [x, y] = symbols('x y');
     expect(equivalent(sympyStr(fn('erf2', [x, new Mul([rational(-1), y])])), '-erf(x) - erf(y)', [x, y], { fn: 'erf2', input: 'x' })).toBe(true);
   });
-  it.fails("test_erf2:291", () => {
+  it("test_erf2:291", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'fresnels', { pattern: [], deep: true }))).toBe('-(1 + I)*(fresnelc(x*(1 - I)/sqrt(pi)) - I*fresnels(x*(1 - I)/sqrt(pi))) + (1 + I)*(fresnelc(y*(1 - I)/sqrt(pi)) - I*fresnels(y*(1 - I)/sqrt(pi)))');
   });
-  it.fails("test_erf2:292", () => {
+  it("test_erf2:292", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'fresnelc', { pattern: [], deep: true }))).toBe('-(1 + I)*(fresnelc(x*(1 - I)/sqrt(pi)) - I*fresnels(x*(1 - I)/sqrt(pi))) + (1 + I)*(fresnelc(y*(1 - I)/sqrt(pi)) - I*fresnels(y*(1 - I)/sqrt(pi)))');
   });
-  it.fails("test_erf2:293", () => {
+  it("test_erf2:293", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'hyper', { pattern: [], deep: true }))).toBe('-2*x*hyper((1/2,), (3/2,), -x**2)/sqrt(pi) + 2*y*hyper((1/2,), (3/2,), -y**2)/sqrt(pi)');
   });
-  it.fails("test_erf2:294", () => {
+  it("test_erf2:294", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'meijerg', { pattern: [], deep: true }))).toBe('-x*meijerg(((1/2,), ()), ((0,), (-1/2,)), x**2)/sqrt(pi) + y*meijerg(((1/2,), ()), ((0,), (-1/2,)), y**2)/sqrt(pi)');
   });
-  it.fails("test_erf2:295", () => {
+  it("test_erf2:295", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'uppergamma', { pattern: [], deep: true }))).toBe('(1 - erfc(sqrt(y**2)))*sqrt(y**2)/y - (1 - erfc(sqrt(x**2)))*sqrt(x**2)/x');
   });
-  it.fails("test_erf2:296", () => {
+  it("test_erf2:296", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'expint', { pattern: [], deep: true }))).toBe('x*erfc(sqrt(x**2))/sqrt(x**2) - y*erfc(sqrt(y**2))/sqrt(y**2) + sqrt(y**2)/y - sqrt(x**2)/x');
   });
@@ -1567,7 +1567,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(isZero(fn('erf2', [x, y])))).toBe('None');
   });
-  it.fails("test_erf2:304", () => {
+  it("test_erf2:304", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expandFunc(new Add([fn('erf', [x]), fn('erf2', [x, y])])))).toBe('erf(y)');
   });
@@ -1575,15 +1575,15 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(fn('conjugate', [fn('erf2', [x, y])]))).toBe('erf2(conjugate(x), conjugate(y))');
   });
-  it.fails("test_erf2:308", () => {
+  it("test_erf2:308", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'erf', { pattern: [], deep: true }))).toBe('-erf(x) + erf(y)');
   });
-  it.fails("test_erf2:309", () => {
+  it("test_erf2:309", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'erfc', { pattern: [], deep: true }))).toBe('erfc(x) - erfc(y)');
   });
-  it.fails("test_erf2:310", () => {
+  it("test_erf2:310", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(rewrite(fn('erf2', [x, y]), 'erfi', { pattern: [], deep: true }))).toBe('I*(erfi(I*x) - erfi(I*y))');
   });
@@ -1633,7 +1633,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   //   raises(ArgumentIndexError, lambda: erfinv(x).fdiff(2))
   //   => None
   it.todo("test_erfinv:333");
-  it.fails("test_erfinv:335", () => {
+  it("test_erfinv:335", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfinv', [z]), 'erfcinv', { pattern: [], deep: true }))).toBe('erfcinv(1 - z)');
   });
@@ -1660,7 +1660,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   //   raises(ArgumentIndexError, lambda: erfcinv(x).fdiff(2))
   //   => None
   it.todo("test_erfcinv:351");
-  it.fails("test_erfcinv:353", () => {
+  it("test_erfcinv:353", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfcinv', [z]), 'erfinv', { pattern: [], deep: true }))).toBe('erfinv(1 - z)');
   });
@@ -2138,11 +2138,11 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const z = new Sym('z');
     expect(sympyStr(diff(fn('fresnels', [z]), z))).toBe('sin(pi*z**2/2)');
   });
-  it.fails("test_fresnel:733", () => {
+  it("test_fresnel:733", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('fresnels', [z]), 'erf', { pattern: [], deep: true }))).toBe('(1/4 + I/4)*(-I*erf(sqrt(pi)*z*(1/2 - I/2)) + erf(sqrt(pi)*z*(1/2 + I/2)))');
   });
-  it.fails("test_fresnel:736", () => {
+  it("test_fresnel:736", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('fresnels', [z]), 'hyper', { pattern: [], deep: true }))).toBe('pi*z**3*hyper((3/4,), (3/2, 7/4), -pi**2*z**4/16)/6');
   });
@@ -2194,7 +2194,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const z = new Sym('z');
     expect(sympyStr(expandFunc(new Add([new Mul([rational(3, 4), z, new Pow(fn('gamma', [rational(7, 4)]), rational(-1)), fn('fresnels', [z]), fn('gamma', [rational(3, 4)])]), new Mul([rational(3, 4), new Pow(pi, rational(-1)), new Pow(fn('gamma', [rational(7, 4)]), rational(-1)), fn('cos', [new Mul([rational(1, 2), pi, new Pow(z, rational(2))])]), fn('gamma', [rational(3, 4)])])])))).toBe('z*fresnels(z) + cos(pi*z**2/2)/pi');
   });
-  it.fails("test_fresnel:767", () => {
+  it("test_fresnel:767", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('fresnels', [z]), 'meijerg', { pattern: [], deep: true }))).toBe('sqrt(2)*pi*z**(9/4)*meijerg(((), (1,)), ((3/4,), (0, 1/4)), -pi**2*z**4/16)/(2*(-z)**(3/4)*(z**2)**(3/4))');
   });
@@ -2231,11 +2231,11 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const z = new Sym('z');
     expect(sympyStr(diff(fn('fresnelc', [z]), z))).toBe('cos(pi*z**2/2)');
   });
-  it.fails("test_fresnel:785", () => {
+  it("test_fresnel:785", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('fresnelc', [z]), 'erf', { pattern: [], deep: true }))).toBe('(1/4 - I/4)*(I*erf(sqrt(pi)*z*(1/2 - I/2)) + erf(sqrt(pi)*z*(1/2 + I/2)))');
   });
-  it.fails("test_fresnel:788", () => {
+  it("test_fresnel:788", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('fresnelc', [z]), 'hyper', { pattern: [], deep: true }))).toBe('z*hyper((1/4,), (1/2, 5/4), -pi**2*z**4/16)');
   });
@@ -2262,7 +2262,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const z = new Sym('z');
     expect(sympyStr(expandFunc(new Add([new Mul([rational(-1, 4), new Pow(pi, rational(-1)), new Pow(fn('gamma', [rational(5, 4)]), rational(-1)), fn('gamma', [rational(1, 4)]), fn('sin', [new Mul([rational(1, 2), pi, new Pow(z, rational(2))])])]), new Mul([rational(1, 4), z, new Pow(fn('gamma', [rational(5, 4)]), rational(-1)), fn('fresnelc', [z]), fn('gamma', [rational(1, 4)])])])))).toBe('z*fresnelc(z) - sin(pi*z**2/2)/pi');
   });
-  it.fails("test_fresnel:809", () => {
+  it("test_fresnel:809", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('fresnelc', [z]), 'meijerg', { pattern: [], deep: true }))).toBe('sqrt(2)*pi*z**(3/4)*meijerg(((), (1,)), ((1/4,), (0, 3/4)), -pi**2*z**4/16)/(2*(-z)**(1/4)*(z**2)**(1/4))');
   });
@@ -2878,11 +2878,11 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), x]), { func: true }))).toBe('polygamma(0, x)');
   });
-  it.fails("test_polygamma_expand_func:368", () => {
+  it("test_polygamma_expand_func:368", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Mul([rational(2), x])]), { func: true }))).toBe('polygamma(0, x)/2 + polygamma(0, x + 1/2)/2 + log(2)');
   });
-  it.fails("test_polygamma_expand_func:370", () => {
+  it("test_polygamma_expand_func:370", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Mul([rational(2), x])]), { func: true }))).toBe('polygamma(1, x)/4 + polygamma(1, x + 1/2)/4');
   });
@@ -2890,39 +2890,39 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(2), x]), { func: true }))).toBe('polygamma(2, x)');
   });
-  it.fails("test_polygamma_expand_func:374", () => {
+  it("test_polygamma_expand_func:374", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(-1), x])]), { func: true }))).toBe('polygamma(0, x) - 1/(x - 1)');
   });
-  it.fails("test_polygamma_expand_func:376", () => {
+  it("test_polygamma_expand_func:376", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(1), x])]), { func: true }))).toBe('polygamma(0, x) + 1/x');
   });
-  it.fails("test_polygamma_expand_func:378", () => {
+  it("test_polygamma_expand_func:378", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(2), x])]), { func: true }))).toBe('polygamma(0, x) + 1/(x + 1) + 1/x');
   });
-  it.fails("test_polygamma_expand_func:380", () => {
+  it("test_polygamma_expand_func:380", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(3), x])]), { func: true }))).toBe('polygamma(0, x) + 1/(x + 2) + 1/(x + 1) + 1/x');
   });
-  it.fails("test_polygamma_expand_func:382", () => {
+  it("test_polygamma_expand_func:382", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(4), x])]), { func: true }))).toBe('polygamma(0, x) + 1/(x + 3) + 1/(x + 2) + 1/(x + 1) + 1/x');
   });
-  it.fails("test_polygamma_expand_func:384", () => {
+  it("test_polygamma_expand_func:384", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(1), x])]), { func: true }))).toBe('polygamma(1, x) - 1/x**2');
   });
-  it.fails("test_polygamma_expand_func:386", () => {
+  it("test_polygamma_expand_func:386", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(2), x])]), { func: true, multinomial: false }))).toBe('polygamma(1, x) - 1/(x + 1)**2 - 1/x**2');
   });
-  it.fails("test_polygamma_expand_func:388", () => {
+  it("test_polygamma_expand_func:388", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(3), x])]), { func: true, multinomial: false }))).toBe('polygamma(1, x) - 1/(x + 2)**2 - 1/(x + 1)**2 - 1/x**2');
   });
-  it.fails("test_polygamma_expand_func:390", () => {
+  it("test_polygamma_expand_func:390", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(4), x])]), { func: true, multinomial: false }))).toBe('polygamma(1, x) - 1/(x + 3)**2 - 1/(x + 2)**2 - 1/(x + 1)**2 - 1/x**2');
   });
@@ -2934,15 +2934,15 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([x, y])]), { func: true }))).toBe('polygamma(1, x + y)');
   });
-  it.fails("test_polygamma_expand_func:397", () => {
+  it("test_polygamma_expand_func:397", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(3), y, new Mul([rational(4), x])])]), { func: true, multinomial: false }))).toBe('polygamma(1, 4*x + y) - 1/(4*x + y + 2)**2 - 1/(4*x + y + 1)**2 - 1/(4*x + y)**2');
   });
-  it.fails("test_polygamma_expand_func:400", () => {
+  it("test_polygamma_expand_func:400", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(expand(fn('polygamma', [rational(3), new Add([rational(3), y, new Mul([rational(4), x])])]), { func: true, multinomial: false }))).toBe('polygamma(3, 4*x + y) - 6/(4*x + y + 2)**4 - 6/(4*x + y + 1)**4 - 6/(4*x + y)**4');
   });
-  it.fails("test_polygamma_expand_func:403", () => {
+  it("test_polygamma_expand_func:403", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(expand(fn('polygamma', [rational(3), new Add([rational(1), y, new Mul([rational(4), x])])]), { func: true, multinomial: false }))).toBe('polygamma(3, 4*x + y) - 6/(4*x + y)**4');
   });
@@ -3029,27 +3029,27 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), x]), { func: true }))).toBe('polygamma(0, x)');
   });
-  it.fails("test_digamma_expand_func:471", () => {
+  it("test_digamma_expand_func:471", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Mul([rational(2), x])]), { func: true }))).toBe('polygamma(0, x)/2 + polygamma(0, x + 1/2)/2 + log(2)');
   });
-  it.fails("test_digamma_expand_func:473", () => {
+  it("test_digamma_expand_func:473", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(-1), x])]), { func: true }))).toBe('polygamma(0, x) - 1/(x - 1)');
   });
-  it.fails("test_digamma_expand_func:475", () => {
+  it("test_digamma_expand_func:475", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(1), x])]), { func: true }))).toBe('polygamma(0, x) + 1/x');
   });
-  it.fails("test_digamma_expand_func:477", () => {
+  it("test_digamma_expand_func:477", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(2), x])]), { func: true }))).toBe('polygamma(0, x) + 1/(x + 1) + 1/x');
   });
-  it.fails("test_digamma_expand_func:479", () => {
+  it("test_digamma_expand_func:479", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(3), x])]), { func: true }))).toBe('polygamma(0, x) + 1/(x + 2) + 1/(x + 1) + 1/x');
   });
-  it.fails("test_digamma_expand_func:481", () => {
+  it("test_digamma_expand_func:481", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(0), new Add([rational(4), x])]), { func: true }))).toBe('polygamma(0, x) + 1/(x + 3) + 1/(x + 2) + 1/(x + 1) + 1/x');
   });
@@ -3100,23 +3100,23 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
     const x = new Sym('x');
     expect(sympyStr(rewrite(trigamma(x), 'polygamma', { pattern: [], deep: true }))).toBe('polygamma(1, x)');
   });
-  it.fails("test_trigamma_expand_func:510", () => {
+  it("test_trigamma_expand_func:510", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Mul([rational(2), x])]), { func: true }))).toBe('polygamma(1, x)/4 + polygamma(1, x + 1/2)/4');
   });
-  it.fails("test_trigamma_expand_func:512", () => {
+  it("test_trigamma_expand_func:512", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(1), x])]), { func: true }))).toBe('polygamma(1, x) - 1/x**2');
   });
-  it.fails("test_trigamma_expand_func:514", () => {
+  it("test_trigamma_expand_func:514", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(2), x])]), { func: true, multinomial: false }))).toBe('polygamma(1, x) - 1/(x + 1)**2 - 1/x**2');
   });
-  it.fails("test_trigamma_expand_func:516", () => {
+  it("test_trigamma_expand_func:516", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(3), x])]), { func: true, multinomial: false }))).toBe('polygamma(1, x) - 1/(x + 2)**2 - 1/(x + 1)**2 - 1/x**2');
   });
-  it.fails("test_trigamma_expand_func:518", () => {
+  it("test_trigamma_expand_func:518", () => {
     const x = new Sym('x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(4), x])]), { func: true, multinomial: false }))).toBe('polygamma(1, x) - 1/(x + 3)**2 - 1/(x + 2)**2 - 1/(x + 1)**2 - 1/x**2');
   });
@@ -3124,7 +3124,7 @@ describe("sympy/functions/special/tests/test_gamma_functions.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([x, y])]), { func: true }))).toBe('polygamma(1, x + y)');
   });
-  it.fails("test_trigamma_expand_func:523", () => {
+  it("test_trigamma_expand_func:523", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(expand(fn('polygamma', [rational(1), new Add([rational(3), y, new Mul([rational(4), x])])]), { func: true, multinomial: false }))).toBe('polygamma(1, 4*x + y) - 1/(4*x + y + 2)**2 - 1/(4*x + y + 1)**2 - 1/(4*x + y)**2');
   });

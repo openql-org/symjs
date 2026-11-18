@@ -321,3 +321,30 @@ it('exposes the order and argument of Bessel functions', async () => {
   expect(() => a.order(n)).toThrow(TypeError);
   expect(() => a.argument(a.sin(z))).toThrow(TypeError);
 });
+
+it('keeps infinite Bessel orders unevaluated during function expansion', async () => {
+  const a = await import('../../../src');
+  for (const f of [a.besselj, a.bessely, a.besseli, a.besselk]) {
+    for (const nu of [a.S.Infinity, a.S.NegativeInfinity]) {
+      const e = f(nu, new a.Sym('x'));
+      expect(a.expandFunc(e).key).toBe(e.key);
+    }
+  }
+});
+it('rewrites cylindrical J and I with polar rotations', async () => {
+  const a = await import('../../../src');
+  const n = new a.Sym('n'), z = new a.Sym('z');
+  expect(String(a.rewrite(a.besselj(n, z), 'besseli'))).toBe('exp(I*pi*n/2)*besseli(n, z*exp_polar(-I*pi/2))');
+  expect(String(a.rewrite(a.besseli(n, z), 'besselj'))).toBe('exp(-I*pi*n/2)*besselj(n, z*exp_polar(I*pi/2))');
+});
+
+it('rewrites the six trigonometric functions as half-order Bessel functions', async () => {
+  const { rewriteRules } = await import('../../../src/simplify/rewrite');
+  for (const name of ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'] as const) {
+    const rule = rewriteRules[name]?.['besselj'];
+    if (rule === undefined) throw new TypeError('missing Bessel rewrite');
+    expect(rule([], sj.S.Zero)).toBeUndefined();
+    const result = sj.rewrite(sj.fn(name, [x]), 'besselj');
+    expect(String(result)).toContain('besselj');
+  }
+});

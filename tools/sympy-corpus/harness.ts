@@ -6114,6 +6114,8 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'sympy.functions.elementary.tests.test_trigonometric:assert asec(sin(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
   'sympy.functions.elementary.tests.test_hyperbolic:assert acosh(sin(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
   'sympy.functions.elementary.tests.test_hyperbolic:assert asech(sinh(x)/x).as_leading_term(x) == 0': 'sqrt(3)*I*x/3',
+  // At z=1 SymPy gives erfi(1)+2*I. E_(1/2)(w)=sqrt(pi)*erfc(sqrt(w))/sqrt(w) requires a negative constant term.
+  "sympy.functions.special.tests.test_error_functions:assert erfi(z).rewrite('expint') == sqrt(-z**2)/z - z*expint(S.Half, -z**2)/sqrt(S.Pi)": '-z*erfc(sqrt(-z**2))/sqrt(-z**2) - sqrt(-z**2)/z',
   // SymPy mixes Poly.gens=(y,x) with Options.gens=(x,y). Neither published
   // result solves the original pair; these tuples satisfy both equations.
   'sympy.solvers.polysys:solve_biquadratic(a, b, NewOption)': [

@@ -764,11 +764,11 @@ describe("sympy/functions/special/tests/test_bessel.py", () => {
     const [n, z] = symbols('n z');
     expect(sympyStr(rewrite(fn('bessely', [n, z]), 'yn', { pattern: [], deep: true }))).toBe('sqrt(2)*sqrt(z)*yn(n - 1/2, z)/sqrt(pi)');
   });
-  it.fails("test_rewrite:225", () => {
+  it("test_rewrite:225", () => {
     const [n, z] = symbols('n z');
     expect(sympyStr(rewrite(fn('besseli', [n, z]), 'besselj', { pattern: [], deep: true }))).toBe('exp(-I*pi*n/2)*besselj(n, z*exp_polar(I*pi/2))');
   });
-  it.fails("test_rewrite:227", () => {
+  it("test_rewrite:227", () => {
     const [n, z] = symbols('n z');
     expect(sympyStr(rewrite(fn('besselj', [n, z]), 'besseli', { pattern: [], deep: true }))).toBe('exp(I*pi*n/2)*besseli(n, z*exp_polar(-I*pi/2))');
   });
@@ -1062,35 +1062,35 @@ describe("sympy/functions/special/tests/test_bessel.py", () => {
     const r = new Sym('r', { real: true });
     expect(sympyStr(isExtendedReal(fn('besselk', [i, r])))).toBe('None');
   });
-  it.fails("test_expand:350", () => {
+  it("test_expand:350", () => {
     const x = new Sym('x');
     expect(sympyStr(expandFunc(fn('besselj', [oo, x])))).toBe('besselj(oo, x)');
   });
-  it.fails("test_expand:351", () => {
+  it("test_expand:351", () => {
     const x = new Sym('x');
     expect(sympyStr(expandFunc(fn('besselj', [S.NegativeInfinity, x])))).toBe('besselj(-oo, x)');
   });
-  it.fails("test_expand:350 (2)", () => {
+  it("test_expand:350 (2)", () => {
     const x = new Sym('x');
     expect(sympyStr(expandFunc(fn('bessely', [oo, x])))).toBe('bessely(oo, x)');
   });
-  it.fails("test_expand:351 (2)", () => {
+  it("test_expand:351 (2)", () => {
     const x = new Sym('x');
     expect(sympyStr(expandFunc(fn('bessely', [S.NegativeInfinity, x])))).toBe('bessely(-oo, x)');
   });
-  it.fails("test_expand:350 (3)", () => {
+  it("test_expand:350 (3)", () => {
     const x = new Sym('x');
     expect(sympyStr(expandFunc(fn('besseli', [oo, x])))).toBe('besseli(oo, x)');
   });
-  it.fails("test_expand:351 (3)", () => {
+  it("test_expand:351 (3)", () => {
     const x = new Sym('x');
     expect(sympyStr(expandFunc(fn('besseli', [S.NegativeInfinity, x])))).toBe('besseli(-oo, x)');
   });
-  it.fails("test_expand:350 (4)", () => {
+  it("test_expand:350 (4)", () => {
     const x = new Sym('x');
     expect(sympyStr(expandFunc(fn('besselk', [oo, x])))).toBe('besselk(oo, x)');
   });
-  it.fails("test_expand:351 (4)", () => {
+  it("test_expand:351 (4)", () => {
     const x = new Sym('x');
     expect(sympyStr(expandFunc(fn('besselk', [S.NegativeInfinity, x])))).toBe('besselk(-oo, x)');
   });

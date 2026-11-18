@@ -144,6 +144,7 @@ export {
   assocLaguerre,
 } from './functions/special/polynomials';
 export { migcdex, ipartfrac, fermatCoords, cos3, cos5, cos17, cos257, cosTable } from './functions/elementary/trigonometricspecial';
+import './functions/special/errorfunctions';
 export { order, argument } from './functions/special/bessel';
 export { bsplineBasis, bsplineBasisSet, interpolatingSpline } from './functions/special/bsplines';
 

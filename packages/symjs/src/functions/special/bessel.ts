@@ -349,6 +349,16 @@ registerRewrite('besselk', 'besseli', (args) => {
   return mul(S.Pi, S.Half, fn('csc', [mul(S.Pi, nu)]), add(fn('besseli', [neg(nu), z]), mul(-1, fn('besseli', [nu, z]))));
 });
 
+// SymPy besselj/besseli._eval_rewrite_as_besseli/besselj.
+registerRewrite('besselj', 'besseli', (args) => {
+  const [nu, z] = pair(args);
+  return mul(exp(mul(S.Half, S.I, S.Pi, nu)), fn('besseli', [nu, mul(fn('exp_polar', [mul(S.NegHalf, S.I, S.Pi)]), z)]));
+});
+registerRewrite('besseli', 'besselj', (args) => {
+  const [nu, z] = pair(args);
+  return mul(exp(mul(S.NegHalf, S.I, S.Pi, nu)), fn('besselj', [nu, mul(fn('exp_polar', [mul(S.Half, S.I, S.Pi)]), z)]));
+});
+
 // ---- expand_func ----------------------------------------------------------------------
 
 /** The recurrence coefficients (_a, _b) of SymPy's Bessel classes. */
@@ -358,7 +368,7 @@ const RECURRENCE: Record<BName | HName, [number, number]> = { besselj: [1, 1], b
 function expandBessel(name: BName | HName, nu: Expr, z: Expr): Expr {
   const [a, b] = RECURRENCE[name];
   const f = (k: number) => expandBessel(name, add(nu, k), z);
-  if (isReal(nu) === true) {
+  if (isReal(nu) === true && !isOo(nu)) {
     if (isPositive(add(nu, -1)) === true) return add(mul(-a * b, f(-2)), mul(mul(2 * a, add(nu, -1), f(-1)), pow(z, -1)));
     if (isNegative(add(nu, 1)) === true) return add(mul(mul(2 * b, add(nu, 1), f(1)), pow(z, -1)), mul(-a * b, f(2)));
   }
