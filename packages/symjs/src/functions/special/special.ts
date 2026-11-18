@@ -33,7 +33,7 @@ import { numAdd, numMul } from '../../core/num';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
 import { Concrete } from '../../core/concrete';
-import { evalMp, MpSpecialValue, mpFns } from '../../numeric/mpeval';
+import { evalMp, MpSpecialValue, mpFn2, mpFns } from '../../numeric/mpeval';
 import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
 import type { Mpc } from '../../numeric/mpfun';
@@ -1232,6 +1232,24 @@ function mpBetainc(args: Mpc[], prec: number, regularized: boolean): Mpc {
 mpFns['betainc'] = (args, prec) => mpBetainc(args, prec, false);
 mpFns['betainc_regularized'] = (args, prec) => mpBetainc(args, prec, true);
 
+/** Analytic continuation in the order, expressed through the Hurwitz zeta derivative. */
+function generalizedPolygamma(s: Mpc, z: Mpc, p: number): Mpc {
+  const [integer, denominator] = F.toRational(s[0]);
+  if (M.isReal(s) && denominator === 1n && integer >= 0n) return SP.cpolygamma(Number(integer), z, p);
+  const step = F.ldexp(F.ONE, -Math.ceil(p / 2) - 16);
+  const wp = p + Math.ceil(p / 2) + 40;
+  const u = M.cadd(s, M.C1, wp);
+  const h: Mpc = [step, F.ZERO];
+  const plus = SP.czeta(M.cadd(u, h, wp), wp, z);
+  const minus = SP.czeta(M.csub(u, h, wp), wp, z);
+  const dz = M.cdiv(M.csub(plus, minus, wp), [F.ldexp(step, 1), F.ZERO], wp);
+  const ns = M.cneg(s);
+  const shift = M.cadd([M.mpEuler(wp), F.ZERO], SP.cpolygamma(0, ns, wp), wp);
+  return M.cdiv(M.cadd(dz, M.cmul(shift, SP.czeta(u, wp, z), wp), wp), SP.cgamma(ns, wp), p);
+}
+
+mpFns.polygamma = mpFn2(generalizedPolygamma);
+
 type Spec = {
   eval?: (...args: Expr[]) => Expr | undefined;
   partials?: (args: readonly Expr[], i: number) => Expr;
@@ -1323,7 +1341,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
       if (i === 1) return fnN('polygamma', add(n, 1), x);
       return noPartial('polygamma', [n, x], 0);
     }),
-    numeric: binary((n, z) => cpolygamma(n.re, z)),
+    numeric: binary((n, z) => n.im === 0 && Number.isInteger(n.re) && n.re >= 0 ? cpolygamma(n.re, z) : mpNumeric('polygamma', [n, z])),
     conjugate: true,
   },
   lowergamma: {
@@ -1499,6 +1517,8 @@ export const digamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
 /** SymPy trigamma(x) = polygamma(1, x); with `{ evaluate: false }` the unevaluated trigamma(x). */
 export const trigamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
   opts.evaluate === false ? new Fn('trigamma', [sympify(x)]) : fn('polygamma', [1, x]);
+fnPartials.digamma = (args) => fn('polygamma', [1, first(args)]);
+fnPartials.trigamma = (args) => fn('polygamma', [2, first(args)]);
 export const lowergamma = (s: ExprLike, x: ExprLike): Expr => fn('lowergamma', [s, x]);
 export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [s, x]);
 export const beta = (a: ExprLike, b: ExprLike = a): Expr => fn('beta', [a, b]);

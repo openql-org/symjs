@@ -25,7 +25,7 @@ import { SubsNode } from '../../core/subsnode';
 import { abs, fn, im } from '../../functions/elementary/elementary';
 import { sign } from '../../functions/special/special';
 import { registerRewrite } from '../../simplify/rewrite';
-import { diff, fnPartials } from '../../calculus/diff';
+import { diff, fnPartials, unavailablePartials } from '../../calculus/diff';
 import { polyCoefficients, rootsDict } from '../../polys/poly';
 
 const isNaN = (e: Expr): boolean => e.key === S.NaN.key;
@@ -216,6 +216,8 @@ function expandDiracDelta(self: Expr, wrt0: unknown): Expr {
 const NEGATIVE_ORDERS = new Set(['-1', '-2', '-3', '-4']);
 const isNegativeOrder = (n: Expr): n is Rational => n instanceof Rational && NEGATIVE_ORDERS.has(String(n));
 
+unavailablePartials.SingularityFunction = [2, 3];
+
 const singularityDef: DefinedFunction = defineFunction('SingularityFunction', {
   nargs: 3,
   eval: (x: Expr, a: Expr, n: Expr) => {
@@ -262,7 +264,10 @@ function singularityAsHeaviside(x: Expr, a: Expr, n: Expr): Expr | undefined {
   if (isNegativeOrder(n)) {
     const v = [...freeSymbols(x)].filter((s) => s instanceof Sym)[0];
     // SymPy raises KeyError for a variable without free symbols
-    return v === undefined ? undefined : diff(Heaviside(sub(x, a)), v, -Number(n.p));
+    if (v === undefined) return undefined;
+    const shift = sub(x, a), order = -Number(n.p);
+    if (order % 2 === 0 && couldExtractMinusSign(shift)) return neg(diff(Heaviside(neg(shift)), v, order));
+    return diff(Heaviside(shift), v, order);
   }
   if (isNonNegative(n) === true) return mul(pow(sub(x, a), n), Heaviside(sub(x, a), 1));
   return undefined;

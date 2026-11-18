@@ -269,3 +269,23 @@ it('expands the logarithmic coefficients of reciprocal inverse functions', () =>
   expect(sj.sstr(series(sj.asec(x), x, 0, 5))).toBe('I*log(2) - I*log(x) - I*x**2/4 - 3*I*x**4/32 + O(x**5)');
   expect(sj.sstr(series(sj.acsc(x), x, 0, 5))).toBe('-I*log(2) + pi/2 + I*log(x) + I*x**2/4 + 3*I*x**4/32 + O(x**5)');
 });
+
+it('expands the local distribution on the positive ray', () => {
+  const expander = new Expander(t);
+  const F = sj.SingularityFunction;
+  expect(expander.ser(F(t, 0, -1), Rational.of(3)).terms).toEqual([]);
+  expect(expander.ser(F(t, 1, 2), Rational.of(3)).terms).toEqual([]);
+  expect(expander.ser(F(t, 0, 2), Rational.of(3)).terms).toEqual([{ e: Rational.of(2), c: sj.S.One }]);
+});
+
+it('expands scaled and logarithmic special functions at zero', () => {
+  expect(String(sj.series(sj.fn('_erfs', [x]), x, 0, 2))).toBe('1 - 2*x/sqrt(pi) + O(x**2)');
+  expect(String(sj.series(sj.fn('_eis', [x]), x, 0, 2))).toBe('EulerGamma + log(x) + x*(-log(x) - EulerGamma + 1) + O(x**2*log(x))');
+  expect(String(sj.series(sj.Ci(x), x, 0, 4))).toBe('EulerGamma + log(x) - x**2/4 + O(x**4)');
+});
+
+it('delegates expansions when the special-function order also varies', () => {
+  const expander = new Expander(t);
+  expect(() => expander.ser(sj.polylog(t, t), Rational.of(2))).toThrow(SeriesError);
+  expect(() => expander.ser(sj.expint(y, t), Rational.of(2))).not.toThrow();
+});

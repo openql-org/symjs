@@ -119,6 +119,8 @@ export interface Assumptions {
 
 /** Function names known to the library. */
 export type FnName =
+  | '_eis'
+  | '_erfs'
   | 'adjoint'
   | 'transpose'
   | 'sin'
@@ -290,7 +292,7 @@ export interface Impl {
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
   isComparable(e: Expr): boolean;
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
-  rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr;
+  rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> }): Expr;
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
   expandComplex?(e: Expr): Expr;
@@ -377,7 +379,7 @@ export interface Impl {
   /** SymPy is_hypergeometric (registered by the simplify entry point). */
   isHypergeometric?(e: Expr, k: Expr): boolean;
   limit(e: Expr, z: Sym, z0: ExprLike, dir?: '+' | '-' | '+-'): Expr;
-  series(e: Expr, x: Sym, x0?: ExprLike, n?: number): Expr;
+  series(e: Expr, x: Sym, x0?: ExprLike, n?: number, dir?: '+' | '-', opts?: { logx?: Expr; local?: boolean }): Expr;
 }
 
 /** An implementation provided by a feature area that has not been imported. */
@@ -461,7 +463,7 @@ export function registerFunctionHeads(heads: readonly (readonly [string, Head])[
 }
 
 /** A rule on the rewritten arguments and the original expression. */
-export type RewriteRule = (args: Expr[], self: Expr) => Expr | undefined;
+export type RewriteRule = (args: Expr[], self: Expr, hints?: Readonly<Record<string, Expr>>) => Expr | undefined;
 
 /** The function rewrites, indexed by the function and target names. */
 export const rewriteRules: Record<string, Record<string, RewriteRule>> = {};
@@ -657,7 +659,7 @@ export abstract class Expr {
     return impl.evalf(this, n, opts);
   }
   /** Rewrite in terms of another function (SymPy `rewrite`), e.g. `sin(x).rewrite('exp')`. */
-  rewrite(target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr {
+  rewrite(target: string, opts?: { pattern?: readonly string[]; deep?: boolean; hints?: Readonly<Record<string, Expr>> }): Expr {
     if (!impl.rewrite) notLoaded('rewrite', 'simplify');
     return impl.rewrite(this, target, opts);
   }

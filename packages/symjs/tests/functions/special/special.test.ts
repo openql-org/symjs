@@ -702,8 +702,8 @@ describe('special functions: cases outside the tables', () => {
   it('represents order derivatives symbolically', () => {
     // SymPy: Derivative(polygamma(x, y), x) and meijerg expressions for the incomplete gamma functions
     expect(String(diff(P('polygamma(x, y)'), x))).toBe('Derivative(polygamma(x, y), x)');
-    expect(String(diff(P('lowergamma(x, y)'), x))).toBe('-log(y)*uppergamma(x, y) + gamma(x)*polygamma(0, x) - meijerg(((), (1, 1)), ((0, 0, x), ()), y)');
-    expect(String(diff(P('uppergamma(x, y)'), x))).toBe('log(y)*uppergamma(x, y) + meijerg(((), (1, 1)), ((0, 0, x), ()), y)');
+    expect(String(diff(P('lowergamma(x, y)'), x))).toBe('-meijerg(((), (1, 1)), ((0, 0, x), ()), y) - log(y)*uppergamma(x, y) + gamma(x)*polygamma(0, x)');
+    expect(String(diff(P('uppergamma(x, y)'), x))).toBe('meijerg(((), (1, 1)), ((0, 0, x), ()), y) + log(y)*uppergamma(x, y)');
   });
 });
 
@@ -1167,4 +1167,15 @@ it('provides argument derivatives without loading the hypergeometric module', as
     expect(() => partial([a, z], 0)).toThrow('w.r.t. s');
     expect(String(partial([a, z], 1))).toContain('exp(-z)');
   }
+});
+
+it('evaluates polygamma continued to nonintegral and complex orders', () => {
+  expect(String(evalf(P('polygamma(pi, 3)'), 10))).toBe('0.1169314564');
+  expect(String(evalf(P('polygamma(I, 1)'), 10))).toBe('-3.109856569 + 1.89089016*I');
+  expect(String(evalf(P('polygamma(I, I)'), 10))).toBe('6.332362889 + 45.92828268*I');
+});
+
+it('differentiates explicitly unevaluated digamma and trigamma calls', () => {
+  expect(diff(digamma(x, { evaluate: false }), x).equals(polygamma(1, x))).toBe(true);
+  expect(diff(trigamma(x, { evaluate: false }), x).equals(polygamma(2, x))).toBe(true);
 });
