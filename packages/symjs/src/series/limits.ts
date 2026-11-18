@@ -29,7 +29,7 @@ import { factorTerms } from '../simplify/exprtools';
 import { AccumBoundsNode, accumBounds } from '../core/accumbounds';
 import { Expander, isZeroCoeff } from './puiseux';
 import { SignUnknownError, gruntz } from './gruntz';
-import { defined, first, getOrThrow } from '../core/guard';
+import { at, defined, first, getOrThrow } from '../core/guard';
 import { NotImplementedError } from '../core/errors';
 import { nsimplify } from '../numeric/nfloat';
 
@@ -372,6 +372,7 @@ class Limiter {
       const vs = ls.filter(isValue);
       if (vs.length !== ls.length) return undefined;
       const r = fn(f.name, vs);
+      if (f.name === 'harmonic' && vs[0] === S.Infinity && !at(f.args, 1).has(this.z)) return r;
       if (hasSpecialInside(r) || isNaN_(r)) return undefined;
       return r;
     }

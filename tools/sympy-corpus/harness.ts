@@ -594,7 +594,7 @@ const REL_OPS: Record<string, sj.RelOp> = {
   GreaterThan: 'Ge',
 };
 
-const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'udivisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
+const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'andre', 'legendre_symbol', 'jacobi_symbol', 'kronecker_symbol', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'udivisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
 /** Functions of the zeta, beta, elliptic and Appell families (functions/special/zetafunctions.ts, special.ts, ellipticintegrals.ts, hyper.ts). */
 const ZETA_FAMILY_NAMES = ['polylog', 'lerchphi', 'dirichlet_eta', 'riemann_xi', 'stieltjes', 'betainc', 'betainc_regularized', 'elliptic_k', 'elliptic_e', 'elliptic_f', 'elliptic_pi', 'appellf1'] as const;
 const definedOr = <T>(v: T | undefined, what: string): T => {
@@ -1088,7 +1088,7 @@ export function deserialize(tree: Tree): unknown {
         const a = deserialize((tree['args'] as Tree[])[0]!);
         if (a instanceof sj.Rational && a.q === 1n && a.p > 100000n) return new Fn('factorial', [a]);
       }
-      if (tree['name'] === 'Min' || tree['name'] === 'Max') {
+      if (tree['name'] === 'Min' || tree['name'] === 'Max' || (tree['name'] === 'andre' && tree['evaluate'] === false)) {
         return sj.fn(tree['name'], (tree['args'] as Tree[]).map((a) => asExpr(deserialize(a))), { evaluate: false });
       }
       const f = FUNCTIONS[tree['name'] as string];
@@ -1778,6 +1778,11 @@ function rootsDict(rs: Expr[]): JsDict {
 function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
   const differentiate = (expression: Expr, variable: Expr, order = 1): Expr => evaluate
     ? sj.diff(expression, variable, order) : sj.derivative(expression, [[variable, order]]);
+  if (!rest.length) {
+    const fs = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
+    if (fs.length !== 1) throw new Unsupported('diff variable');
+    return differentiate(e, fs[0]!);
+  }
   if (!evaluate) {
     const variables: [Expr, number][] = [];
     for (let i = 0; i < rest.length; i++) {
@@ -1790,11 +1795,6 @@ function diffArgs(e: Expr, rest: unknown[], evaluate = true): Expr {
       }
     }
     return sj.derivative(e, variables);
-  }
-  if (!rest.length) {
-    const fs = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
-    if (fs.length !== 1) throw new Unsupported('diff variable');
-    return differentiate(e, fs[0]!);
   }
   let out = e;
   for (let i = 0; i < rest.length; i++) {
@@ -2286,9 +2286,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof sj.TensExpr || self instanceof sj.TensorIndex) return matchDict(self.matches(asExpr(args[0])));
     return matchDict(sj.match(asExpr(args[0]), asExpr(self)));
   },
-  legendre_symbol: (args, kw) => (noKw(kw), sj.Rational.of(sj.legendreSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p))),
   motzkin: (args, kw) => (noKw(kw), sj.Rational.of(sj.motzkin(asExpr(args[0]).toNumber()))),
-  andre: (args, kw) => (noKw(kw), sj.Rational.of(sj.andre(Number((args[0] as sj.Rational).p)))),
   nD: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['i', 'brute', 'n', 'm'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const opts = Object.fromEntries(Object.entries(kw).filter(([k]) => k !== 'i').map(([k, v]) => [k, toJs(v, true)]));
@@ -2594,8 +2592,6 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.isConvex(asExpr(args[0]), asSym(args[1]), (kw['domain'] as sj.SetExpr | undefined) ?? sj.Reals);
   },
   isprime: (args, kw) => (noKw(kw), sj.isprime(asExpr(args[0]))),
-  jacobi_symbol: (args, kw) => (noKw(kw), sj.jacobiSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
-  kronecker_symbol: (args, kw) => (noKw(kw), sj.kroneckerSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
   '.is_Function': (_args, kw, self) => (noKw(kw), self instanceof sj.Fn || self instanceof sj.UndefFn || self instanceof sj.DefinedFunctionCall),
   '.piecewise_integrate': (args, kw, self) => (noKw(kw), sj.piecewiseIntegrate(self as sj.Piecewise, asSym(args[0]))),
   '.as_expr_set_pairs': (args, kw, self) =>
@@ -3027,7 +3023,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       n,
       ((args, kw) => {
         for (const key of Object.keys(kw)) if (key !== 'evaluate') throw new Unsupported(`kwargs ${key}`);
-        if (n === 'loggamma' && args.length !== 1) throw new TypeError('loggamma takes one argument');
+        if ((n === 'loggamma' || n === 'catalan') && args.length !== 1) throw new TypeError(`${n} takes one argument`);
         if (n === 'beta' && args.length === 1 && kw['evaluate'] !== false) return sj.beta(asExpr(args[0]));
         if (n === 'sign' && args.length === 2) return new sj.Gruntz().sign(asExpr(args[0]), asSym(args[1]));
         return sj.fn(n, args.flatMap((a) => (a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)])), { evaluate: kw['evaluate'] !== false });
@@ -6514,6 +6510,13 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn.startsWith('.')) {
     const name = OPERATOR_METHODS[c.fn] ?? camel(c.fn.slice(1));
     return (args, kw, self0) => {
+      if (self0 instanceof FnClass && self0.name === 'carmichael') {
+        noKw(kw);
+        if (name === 'isPrime') return sj.isprime(asExpr(args[0]));
+        if (name === 'isCarmichael') return sj.carmichael.isCarmichael(asExpr(args[0]));
+        if (name === 'findCarmichaelNumbersInRange') return sj.carmichael.findCarmichaelNumbersInRange(asExpr(args[0]), asExpr(args[1]));
+        if (name === 'findFirstNCarmichaels') return sj.carmichael.findFirstNCarmichaels(intArg(args[0]));
+      }
       // a static method called on the class (Permutation.unrank_lex, ...)
       const self = self0 instanceof JsTuple ? sj.Tuple(...self0.items.map(asExpr)) : self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0 instanceof JsLambda ? sj.Lambda(self0.vars, self0.body) : self0;
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
@@ -7064,6 +7067,23 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   // the same unit-test assertions (n = 1 and k = 1 give mobius(1) = 1)
   'sympy.functions.combinatorial.tests.test_comb_numbers:assert mobius(n**2) == 0': 'mobius(n**2)',
   'sympy.functions.combinatorial.tests.test_comb_numbers:assert mobius(n**(k+1)) == 0': 'mobius(n**(k + 1))',
+  // n = -1 and k = m = 0 give rf(-1, pi) = 0.
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert rf(n, k + pi).is_integer is False': 'None',
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert rf(n, m + pi).is_integer is False': 'None',
+  // For m = 0 both factorial products are 1, and for m = 1 both are pi.
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert rf(pi, m).is_integer is False': 'None',
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert ff(pi, m).is_integer is False': 'None',
+  // n = -1 gives binomial(-1, -1-j) = 0, whereas binomial(-1, j) = (-1)**j.
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(n, n - 1)) == n': 'binomial(n, n - 1)',
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(n, n - 2)) == n*(n - 1)/2': 'binomial(n, n - 2)',
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(n, n - 3)) == n*(n - 2)*(n - 1)/6': 'binomial(n, n - 3)',
+  // x = nt = 1/2 gives binomial(1/2, 1/2) = 1.
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert binomial(x, nt).is_integer is False': 'None',
+  // x = -2, -1, -2, and sqrt(2)*I respectively give upper index -1 and lower index -2 or -3.
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(x + 1, x)) == x + 1': 'binomial(x + 1, x)',
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(x, x - 1)) == x': 'binomial(x, x - 1)',
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(x + 1, x - 1)) == x*(x + 1)/2': 'binomial(x + 1, x - 1)',
+  'sympy.functions.combinatorial.tests.test_comb_factorials:assert expand_func(binomial(x**2 + 1, x**2)) == x**2 + 1': 'binomial(x**2 + 1, x**2)',
   // a product of symmetric matrices is symmetric only when they commute: X*Z is not known to be symmetric
   'ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z))': 'None',
   'sympy.assumptions.tests.test_matrices:assert ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z)) is True': 'None',

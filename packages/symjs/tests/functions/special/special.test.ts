@@ -14,6 +14,22 @@ import * as sj from '../../../src';
 import { acosh, asec, asech, atan, atan2, beta, binomial, catalan, ceiling, diff, digamma, E, E1, erf, erf2, erf2inv, erfc, erfcinv, erfi, erfinv, evalf, expandFunc, factorial, factorial2, ff, Float, float, fresnelc, fresnels, harmonic, LambertW, Li, li, lowergamma, Max, Min, NotImplementedError, parse, polygamma, pow, Rational, Rem, rf, S, subfactorial, Sym, symbols, toComplex, trigamma, uppergamma, zeta } from '../../../src';
 import { impl } from '../../../src/core/nodes';
 
+it('expands complementary binomial indices only when the upper index is away from negative integer poles', () => {
+  const n = new Sym('n', { integer: true });
+  const m = new Sym('m', { integer: true, nonnegative: true });
+  const neg = new Sym('neg', { integer: true, negative: true });
+  const zero = new Sym('zero', { zero: true });
+  const valid = binomial(m, sj.add(m, -2));
+  const unknown = binomial(n, sj.add(n, -2));
+  expect(expandFunc(valid)).toEqual(sj.mul(S.Half, m, sj.add(m, -1)));
+  expect(expandFunc(unknown)).toEqual(unknown);
+  expect(expandFunc(sj.fn('binomial', [m, -2], { evaluate: false }))).toBe(S.Zero);
+  expect(binomial(n, zero)).toBe(S.One);
+  expect(binomial(neg, neg)).toBe(S.Zero);
+  expect(binomial(m, sj.add(m, 2))).toBe(S.Zero);
+  expect(() => Reflect.apply(catalan, undefined, [n, m])).toThrow(TypeError);
+});
+
 const [x] = symbols('x');
 const y = new Sym('y');
 // ---- table harness: each case is [kind, SymPy source, str() of the SymPy 1.14 result or [re, im]] ----
