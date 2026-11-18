@@ -15,16 +15,19 @@ export interface UniqueSymbolOptions extends Assumptions {
 }
 
 /** SymPy uniquely_named_symbol: increment a suffix until the name is unused. */
-export function uniquelyNamedSymbol(xname: string | Sym, exprs: ExprLike | readonly ExprLike[] = [], options: UniqueSymbolOptions = {}): Sym {
+export function uniquelyNamedSymbol(xname: string | Sym | readonly [string | Sym, Sym], exprs: ExprLike | readonly ExprLike[] = [], options: UniqueSymbolOptions = {}): Sym {
   const { compare = (name: string): string => name, modify, ...assumptions } = options;
+  const base = typeof xname === 'string' || xname instanceof Sym ? xname : xname[0];
+  const fallback = typeof xname === 'string' || xname instanceof Sym ? undefined : xname[1];
   const expressions = exprs instanceof Expr || typeof exprs !== 'object' ? [exprs] : exprs;
   const used = new Set<string>();
   for (const e of expressions) for (const node of preorderTraversal(sympify(e))) {
     if (node instanceof Sym || node instanceof UndefFn) used.add(compare(node.name));
   }
   const increment = (name: string): string => name.replace(/(\d*)$/, (digits: string) => String(digits === '' ? 0 : BigInt(digits) + 1n));
-  let name = compare(typeof xname === 'string' ? xname : xname.name);
+  let name = compare(typeof base === 'string' ? base : base.name);
   while (used.has(name)) name = (modify ?? increment)(name);
+  if (fallback?.name === name) return fallback;
   return new Sym(name, assumptions);
 }
 
