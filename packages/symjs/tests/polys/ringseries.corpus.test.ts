@@ -395,7 +395,7 @@ describe("sympy/polys/tests/test_ring_series.py", () => {
     const [x, y, a] = symbols('x y a');
     expect(sympyStr(rsExp(new PolyRing([x, y], EX, 'lex').fromExpr(new Add([a, x, new Mul([y, new Pow(x, rational(2))])])), new PolyRing([x, y], EX, 'lex').fromExpr(x), rational(5)))).toBe('EX(exp(a)/2)*x**4*y**2 + EX(exp(a)/2)*x**4*y + EX(exp(a)/24)*x**4 + EX(exp(a))*x**3*y + EX(exp(a)/6)*x**3 + EX(exp(a))*x**2*y + EX(exp(a)/2)*x**2 + EX(exp(a))*x + EX(exp(a))');
   });
-  it.fails("test_newton:227", () => {
+  it("test_newton:227", () => {
     const x = new Sym('x');
     expect(sympyStr(rsNewton(new PolyRing([x], QQ, 'lex').fromExpr(new Add([rational(-2), new Pow(x, rational(2))])), new PolyRing([x], QQ, 'lex').fromExpr(x), rational(4)))).toBe('8*x**4 + 4*x**2 + 2');
   });

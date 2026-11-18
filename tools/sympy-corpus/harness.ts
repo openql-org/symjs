@@ -358,6 +358,43 @@ export function matches(v: unknown, expectedIn: string): boolean {
   return matches0(v, expectedIn, got);
 }
 function matches0(v: unknown, expected: string, got: string): boolean {
+  if (got === expected || PRINT_ALIASES[expected] === got) return true;
+  if (v instanceof sj.NumberFieldModuleElement) {
+    const match = /^(\[[\d, -]*\])(?:\/(\d+))?$/.exec(expected);
+    if (match) return v.equals(sj.makeModElt(v.module, sj.toCol((JSON.parse(match[1]!.replace(/-?\d+/g, '"$&"')) as string[]).map(BigInt)), BigInt(match[2] ?? '1')));
+  }
+  if (v instanceof sj.Submodule) {
+    const match = /^Submodule(\[.*\])(?:\/(\d+))?$/.exec(expected);
+    if (match) {
+      const rows = (JSON.parse(match[1]!.replace(/-?\d+/g, '"$&"')) as string[][]).map((row) => row.map((n) => sj.Rational.of(BigInt(n))));
+      const matrix = rows.length ? new sj.DomainMatrix(rows, [rows.length, rows[0]?.length ?? 0], sj.ZZ).transpose() : sj.DomainMatrix.zeros([v.parent.n, 0], sj.ZZ);
+      return v.equals(new sj.Submodule(v.parent, matrix, BigInt(match[2] ?? '1')));
+    }
+  }
+  if (v instanceof JsModuleCoefficient) {
+    try { return v.module.ring.canon(v.value).equals(v.module.ring.canon(printedModuleCoefficient(expected, v.module))); }
+    catch { return false; }
+  }
+  // Module equality is equality of spans and cosets, rather than equality
+  // of a chosen generating list. Reconstruct the printed reference through
+  // the same public constructors used for serialized corpus arguments.
+  if (v instanceof sj.Module || v instanceof sj.ModuleElement || v instanceof sj.ModuleImplementedIdeal) {
+    try {
+      const module = v instanceof sj.ModuleElement ? v.module : v instanceof sj.ModuleImplementedIdeal ? v.module : v;
+      if (v instanceof sj.ModuleElement) return v.equals(printedModuleVector(expected, module));
+      if (v instanceof sj.ModuleImplementedIdeal && expected.startsWith('<') && expected.endsWith('>')) return v.equals(v.ring.ideal(...printedModuleItems(expected).map((s) => printedModuleCoefficient(s, module))));
+      if (v instanceof sj.Module) return v.equals(printedModule(expected, module));
+    } catch { /* A different printed object follows the ordinary comparison. */ }
+  }
+  if (v instanceof sj.Poly && /^(?:Pure)?Poly\(/.test(expected)) {
+    try {
+      const fields = topLevelItems(expected.slice(expected.indexOf('(')));
+      const domain = fields.find((s) => s.startsWith('domain='))?.slice(8, -1);
+      const gens = fields.slice(1).filter((s) => !s.includes('=')).map((s) => sj.parse(s));
+      return v.eq(sj.Poly.from(sj.parse(fields[0]!), gens, { pure: expected.startsWith('PurePoly'), ...(domain === undefined ? {} : { domain }) }));
+    } catch { /* A specialized coefficient domain uses the ordinary comparison. */ }
+  }
+  if (v instanceof sj.DMP && expected.startsWith('DMP_Python(')) return matches(new sj.DMPJs(v.rep, v.dom), expected);
   if (v instanceof sj.DMPJs) {
     const match = /^DMP_Python\((\[.*\]), (ZZ|QQ)\)$/.exec(expected);
     if (match) {
@@ -367,7 +404,6 @@ function matches0(v: unknown, expected: string, got: string): boolean {
     }
   }
 
-  if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (normalizeLayout(got) === normalizeLayout(expected)) return true;
   // Puiseux zero prints as an empty string but still compares equal to scalar zero.
   if (v instanceof sj.PuiseuxPoly && expected === '0') return v.equals(0);
@@ -403,12 +439,79 @@ function matches0(v: unknown, expected: string, got: string): boolean {
     return a.length === b.length && a.every((x, i) => x === b[i]);
   }
   if (v instanceof JsList || v instanceof JsTuple) {
+    if ((expected.startsWith('[') && expected.endsWith(']')) || (expected.startsWith('(') && expected.endsWith(')'))) {
+      const items = topLevelItems(expected);
+      if (items.length === v.items.length && v.items.every((item, i) => matches(item, items[i]!))) return true;
+    }
     // JavaScript has only arrays: a Python tuple and list of the same items agree
     const brackets = (t: string) => t.replace(/,\)/g, ')').replace(/\(/g, '[').replace(/\)/g, ']');
     if (brackets(got) === brackets(expected)) return true;
     if (normalizeSets(brackets(got)) === normalizeSets(brackets(expected))) return true;
   }
   return false;
+}
+
+/** Delimiter-aware fields of a printed AGCA vector, module or ideal. */
+function printedModuleItems(value: string): string[] {
+  const items: string[] = [];
+  let depth = 0, start = 1;
+  for (let i = 1; i < value.length - 1; i++) {
+    const ch = value[i]!;
+    if ('([{<'.includes(ch)) depth++;
+    if (')]}>' .includes(ch)) depth--;
+    if (ch === ',' && depth === 0) { items.push(value.slice(start, i).trim()); start = i + 1; }
+  }
+  if (value.slice(start, -1).trim()) items.push(value.slice(start, -1).trim());
+  return items;
+}
+
+/** Python's dense coefficient wrappers, read through public sparse-ring constructors. */
+function printedModuleCoefficient(value: string, module: sj.Module): Expr {
+  const relation = value.indexOf(' + <');
+  if (relation >= 0) {
+    if (!(module.ring instanceof sj.QuotientRing) || value.slice(relation + 3) !== module.ring.baseIdeal.toString()) throw new TypeError('different coefficient quotient');
+    return printedModuleCoefficient(value.slice(0, relation), module);
+  }
+  const dense = (text: string): sj.PolyElement => {
+    const read = (v: unknown): unknown => Array.isArray(v) ? v.map(read) : sj.parse(String(v));
+    const raw = JSON.parse(unMPQ(text).replace(/-?\d+(?:\/\d+)?/g, '"$&"'));
+    return new sj.PolyRing(module.context.symbols, module.context.domain).fromList(read(raw) as unknown[]);
+  };
+  if (value.startsWith('DMP_Python(')) return dense(topLevelItems(value.slice('DMP_Python'.length))[0]!).asExpr();
+  if (value.startsWith('DMF(')) {
+    let fields = topLevelItems(value.slice(3));
+    if (fields[0]?.startsWith('(')) fields = topLevelItems(fields[0]);
+    return sj.mul(dense(fields[0]!).asExpr(), sj.pow(dense(fields[1]!).asExpr(), -1));
+  }
+  return sj.parse(value);
+}
+
+function printedModuleVector(value: string, module: sj.Module): sj.ModuleInput {
+  if (value === '0') return S.Zero;
+  let depth = 0, end = -1;
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] === '[') depth++;
+    if (value[i] === ']' && --depth === 0) { end = i; break; }
+  }
+  if (end < 0 || !value.startsWith('[')) throw new TypeError('expected a module vector');
+  const tail = value.slice(end + 1);
+  if (tail) {
+    const ambient = module.ambient;
+    if (!(ambient instanceof sj.QuotientModule) || !tail.startsWith(' + ') || !ambient.killedModule.equals(printedModule(tail.slice(3), ambient.base))) throw new TypeError('different quotient relations');
+  }
+  return printedModuleItems(value.slice(0, end + 1)).map((s) => printedModuleCoefficient(s, module));
+}
+
+class JsModuleCoefficient {
+  constructor(readonly value: Expr, readonly module: sj.Module) {}
+  toString(): string { return sj.str(this.value); }
+}
+
+function printedModule(value: string, reference: sj.Module): sj.Module {
+  if (value.startsWith('<') && value.endsWith('>')) return reference.ambient.submodule(...printedModuleItems(value).map((s) => printedModuleVector(s, reference)));
+  const normalize = (s: string): string => s.replace(/\s+/g, '').replace(/\]order=([^/]*?)(?=\/|\*\*|$)/g, 'order=$1]');
+  if (normalize(value) === normalize(reference.ambient.toString())) return reference.ambient;
+  throw new TypeError('different ambient module');
 }
 
 // ---------------------------------------------------------------------------
@@ -2623,7 +2726,10 @@ export const ADAPTERS: Record<string, Adapter> = {
 
   apart: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['full', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    return sj.apart(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]), { full: Boolean(kw['full']), ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }) });
+    const apply = (e: Expr): Expr => sj.apart(e, args[1] === undefined ? undefined : asSym(args[1]), { full: Boolean(kw['full']), ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }) });
+    if (args[0] instanceof Matrix) return args[0].map(apply);
+    if (args[0] instanceof sj.Rel && args[0].op === 'Eq') return sj.Eq(apply(args[0].lhs), apply(args[0].rhs));
+    return apply(asExpr(args[0]));
   },
   apart_list: (args, kw) => {
     noKw(kw);
@@ -5507,9 +5613,9 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
 const pythonTypeError = (message: string): never => { throw new TypeError(message); };
 
 const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknown>> = {
-  '.__add__': (a, [b]) => (Array.isArray(a) && b instanceof sj.ModuleElement ? b.add(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
+  '.__add__': (a, [b]) => (Array.isArray(a) && (b instanceof sj.ModuleElement || b instanceof sj.SubModule) ? b.add(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
-  '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? (isScalar(a) && b instanceof sj.DMPJs ? b.neg().add(a) : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
+  '.__sub__': (a, [b]) => (Array.isArray(a) && b instanceof sj.ModuleElement ? b.neg().add(a) : undefined) ?? (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? (isScalar(a) && b instanceof sj.DMPJs ? b.neg().add(a) : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
   '.__mul__': (a, [b]) => (b instanceof sj.Point && isScalar(a) ? b.mul(a) : undefined) ?? (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).mul(b) : undefined) ?? (a instanceof sj.SDM && b instanceof sj.SDM ? a.matmul(b) : undefined) ?? (Array.isArray(a) && (b instanceof sj.PolyMatrix || b instanceof sj.DomainMatrix) ? pythonTypeError(`can't multiply sequence by non-int of type '${b.constructor.name}'`) : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
   '.__truediv__': (a, [b]) => a instanceof sj.Factors ? a.quo(b as sj.Factors | Expr) : (a instanceof Matrix && isScalar(b) ? a.scale(sj.pow(b, -1)) : undefined) ?? (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, a instanceof sj.DMPJs ? ['exquo'] : ['truediv', 'div', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
@@ -5983,6 +6089,14 @@ function autoAdapter(c: Case): Adapter | undefined {
   }
 
   if (c.self?.t === 'Domain' && ['.is_ZZ', '.is_Frac'].includes(c.fn)) return (_args, kw, self) => (noKw(kw), c.fn === '.is_ZZ' ? String(toJs(self, false)) === 'ZZ' : toJs(self, false) instanceof sj.FractionField);
+  if (c.self?.t === 'Domain' && c.fn === '.is_FF') return (_args, kw, self) => (noKw(kw), toJs(self, false) instanceof sj.FiniteField);
+  if (c.self?.t === 'Domain' && c.fn === '.map') return (args, kw, self) => {
+    noKw(kw);
+    const domain = toJs(self, false) as sj.Domain;
+    const visit = (value: unknown): unknown => value instanceof JsList || value instanceof JsTuple ? new JsList(value.items.map(visit)) : domain.convert(toJs(value, false));
+    return visit(args[0]);
+  };
+  if (c.self?.t === 'AlgebraicNumber' && c.fn === '.native_coeffs') return (_args, kw, self) => (noKw(kw), new JsList((self as sj.AlgebraicNumber).coeffs().map((a) => sj.QQ.convert(a))));
   if (c.self?.t === 'Groebner' && ['.polys', '.domain', '.order'].includes(c.fn)) return (_args, kw, self) => {
     noKw(kw); const g = self as sj.GroebnerBasis;
     return c.fn === '.polys' ? new JsList(g.exprs.map((e) => sj.Poly.from(e, g.gens, { domain: g.domain }))) : new UFnClass(c.fn === '.domain' ? g.domain : g.order);
@@ -6002,6 +6116,26 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === 'FreeModulePolyRing') return (args, kw) => {
     noKw(kw);
     return new sj.FreeModule(toJs(args[0], false) as sj.Domain, intArg(args[1]));
+  };
+  if (c.self?.t === 'PolyRing' && ['.dup_euclidean_prs', '.dup_primitive_prs'].includes(c.fn)) return (args, kw) => {
+    noKw(kw);
+    const f = args[0] as sj.PolyElement, g = args[1] as sj.PolyElement;
+    return fromJs(c.fn === '.dup_euclidean_prs' ? sj.dupEuclideanPrs(f, g) : sj.dupPrimitivePrs(f, g));
+  };
+  if (c.self?.t === 'PolyRing' && ['.dup_trial_division', '.dmp_trial_division', '.dmp_zz_mignotte_bound', '.dup_zz_hensel_step', '.dup_zz_hensel_lift', '.dmp_zz_wang_non_divisors'].includes(c.fn)) return (args, kw, self) => {
+    noKw(kw);
+    const ring = self as sj.PolyRing;
+    const element = (v: unknown): sj.PolyElement => v instanceof sj.PolyElement ? v : ring.fromExpr(asExpr(v));
+    if (c.fn === '.dmp_zz_wang_non_divisors') return fromJs(sj.dmpZzWangNonDivisors((args[0] as JsList | JsTuple).items.map(integerBigArg), integerBigArg(args[1]), integerBigArg(args[2])));
+    if (c.fn === '.dup_zz_hensel_lift') return fromJs(sj.dupZzHenselLift(integerBigArg(args[0]), element(args[1]), (args[2] as JsList | JsTuple).items.map(element), intArg(args[3])));
+    if (c.fn === '.dmp_zz_mignotte_bound') return sj.dmpZzMignotteBound(element(args[0]));
+    if (c.fn === '.dup_zz_hensel_step') return fromJs(sj.dupZzHenselStep(integerBigArg(args[0]), element(args[1]), element(args[2]), element(args[3]), element(args[4]), element(args[5])));
+    return fromJs(sj.dupTrialDivision(element(args[0]), (args[1] as JsList | JsTuple).items.map(element)));
+  };
+  if (c.fn === '.__call__' && c.self?.t === 'PowerBasis') return (args, kw, self) => {
+    const basis = self as sj.PowerBasis;
+    const spec = args[0] instanceof sj.Rational ? intArg(args[0]) : args[0] as sj.DomainMatrix;
+    return basis.call(spec, integerBigArg(kw['denom'] ?? args[1] ?? 1));
   };
   if (c.fn === '.order' && c.self?.t === 'Domain' && c.args?.length === 1) return (args, kw, self) => {
     noKw(kw);
@@ -6245,14 +6379,14 @@ function autoAdapter(c: Case): Adapter | undefined {
     noKw(kw);
     if (!(self instanceof sj.AlgebraicNumber)) throw new TypeError('expected an algebraic number');
     if (c.fn === '.rep') return new JsDMP(new sj.PolyRing('x', sj.QQ).fromList(self.coeffs()));
-    if (c.fn === '.minpoly') return self.minpoly().asExprAt([new Sym('x')]);
+    if (c.fn === '.minpoly') return c.module === 'sympy.polys.domains.tests.test_domains' ? self.minpoly() : self.minpoly().asExprAt([new Sym('x')]);
     if (c.fn === '.alias') return self.alias ?? null;
     return self.asPoly(args[0] === undefined ? undefined : asExpr(args[0]));
   };
   if (c.fn === 'primitive_element') return (args, kw) => {
     const x = args[1] === undefined ? undefined : asSym(args[1]);
     const result = sj.primitiveElement(asExprList(args[0]), x, { ex: Boolean(kw['ex']) });
-    return new JsTuple([kw['polys'] ? sj.Poly.from(result[0], x === undefined ? undefined : [x], { domain: 'QQ' }) : result[0], ...result.slice(1).map(fromJs)]);
+    return new JsTuple([kw['polys'] ? sj.Poly.from(result[0], x === undefined ? undefined : [x], x === undefined ? { pure: true } : { domain: 'QQ' }) : result[0], ...result.slice(1).map(fromJs)]);
   };
   if (c.module === 'sympy.polys.tests.test_polyoptions' && c.self?.t === 'Dict' && ['.gens', '.domain'].includes(c.fn)) return (_args, kw, self) => {
     noKw(kw);
@@ -6319,6 +6453,7 @@ function autoAdapter(c: Case): Adapter | undefined {
   const reflected = reflectedName === undefined ? undefined : DUNDER[reflectedName];
   if (reflected !== undefined && c.self?.t === 'Rational' && c.self['py'] === true) return (args, _kw, self) => fromJs(reflected(plain(conv(args[0])), [self]));
   if (dunder !== undefined) return (args, _kw, self0) => {
+    if (c.fn === '.__floordiv__' && self0 instanceof sj.Rational && args[0] instanceof sj.NumberFieldModuleElement) return args[0].module.elementFromRational(self0).floordiv(args[0]);
     if (self0 instanceof sj.PuiseuxPoly || args[0] instanceof sj.PuiseuxPoly) {
       const left = self0 instanceof sj.PythonMPQ ? sj.Rational.of(self0.numerator, self0.denominator) : self0;
       const right = conv(args[0]);
@@ -6360,6 +6495,7 @@ function autoAdapter(c: Case): Adapter | undefined {
         const [a, b] = left.unifyFmt([right], 'dense');
         return fromJs(dunder(definedOr(a, 'left matrix'), [definedOr(b, 'right matrix')]));
       }
+      if (c.fn === '.__mul__' && (left instanceof JsList || left instanceof JsTuple || right instanceof JsList || right instanceof JsTuple)) throw new TypeError('sequences cannot multiply domain matrices');
       if (c.fn === '.__mul__' && left instanceof sj.DomainMatrix && right instanceof Expr) return left.scalarmul(right);
       if (c.fn === '.__mul__' && right instanceof sj.DomainMatrix && left instanceof Expr) return right.rscalarmul(left);
       return fromJs(dunder(left, [right]));
@@ -6457,6 +6593,7 @@ function autoAdapter(c: Case): Adapter | undefined {
           }
         }
         const result = method.call(thisArg, ...placed);
+        if ((self instanceof sj.PolynomialRingBase || self instanceof sj.QuotientRing) && self.dom.isField && name === 'convert' && result instanceof Expr) return new JsModuleCoefficient(result, self.freeModule(1));
         if (self instanceof sj.PolyRing && /^(dup|dmp)(ExtFactor|QqIFactor|ZzIFactor|FactorList)$/.test(name) && Array.isArray(result)) {
           const [coefficient, factors] = result as [Expr, [sj.PolyElement, number][]];
           const K = self.domain;
@@ -6473,6 +6610,7 @@ function autoAdapter(c: Case): Adapter | undefined {
           const coefficient = (e: Expr): unknown => ({ toString: () => `DMP_Python(${fmt(dense(R.fromExpr(e).toDense()))}, ${String(K)})` });
           return new JsTuple([result[0], ...result.slice(1).map((rows: Expr[][]) => new JsList(rows.map((row) => name === 'intersect' ? new JsTuple(row.map(coefficient)) : new JsList(row.map(coefficient)))))]);
         }
+        if (self instanceof sj.SubModule && name === 'inTermsOfGenerators' && Array.isArray(result)) return new JsList(result.map((e: Expr) => new JsModuleCoefficient(e, self)));
         return fromJs(result);
       }
       // an assumption attribute without a query function of its own is the predicate asked of the
@@ -6685,6 +6823,7 @@ function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets
   if (post === 'repr') return fmtItem(withBrackets(value, brackets));
   if (post === 'len') {
     if (value instanceof sj.Dict) return value.size;
+    if (value instanceof sj.NumberFieldModuleElement) return value.n;
     if (value instanceof sj.NDimArray) return value.length;
     if (value instanceof sj.Range) return value.size;
     if (value instanceof sj.FiniteSet) return value.args.length;
@@ -6697,6 +6836,7 @@ function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets
     return resultItems(value, post).length;
   }
   const items = resultItems(value, post);
+  if (post === 'list' && value instanceof sj.ModuleElement) return new JsList(items.map((e) => new JsModuleCoefficient(e as Expr, value.module)));
   if (post === 'list') return new JsList(items.map(fromJs));
   if (post === 'tuple') return new JsTuple(items.map(fromJs));
   return new JsList(items.map((item) => { const v = fromJs(item); return typeof v === 'string' ? v : fmt(v); }));
@@ -6725,15 +6865,21 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   const adapter = inPlaceSimplify ?? tensorStateAdapter(c) ?? diffgeomAdapter(c) ?? ((c.module === 'sympy.integrals.intpoly' || c.module === 'sympy.integrals.tests.test_intpoly') ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
-    const self = c.self ? deserialize(c.self) : undefined;
-    const ownerRing = self instanceof sj.ModuleElement ? self.module.ring : self instanceof sj.Module || self instanceof sj.ModuleImplementedIdeal ? self.ring : undefined;
+    let self = c.self ? deserialize(c.self) : undefined;
+    const rightModule = c.args?.find((v) => ['AGCAElement', 'AGCASubModule'].includes(v.t));
+    const rightOwner = rightModule === undefined ? undefined : deserialize(rightModule);
+    const owner = self instanceof sj.ModuleElement || self instanceof sj.Module || self instanceof sj.ModuleImplementedIdeal ? self : rightOwner;
+    const ownerRing = owner instanceof sj.ModuleElement ? owner.module.ring : owner instanceof sj.Module || owner instanceof sj.ModuleImplementedIdeal ? owner.ring : undefined;
     const coefficient = (v: unknown): unknown => {
       if (!c.module.startsWith('sympy.polys.agca.') || ownerRing === undefined) return v;
+      if (v instanceof JsList) return new JsList(v.items.map(coefficient));
+      if (v instanceof JsTuple) return new JsTuple(v.items.map(coefficient));
       if (v instanceof sj.DMPJs) return new sj.PolyRing(ownerRing.symbols, v.dom).fromDict(new Map([...v.toDict()].map(([m, c]) => [m, v.dom.toSympy(c)]))).asExpr();
       if (v instanceof JsDMP) return v.value.asExpr(...ownerRing.symbols);
       if (v instanceof sj.DMP) return sj.subs(v.toSympy(), [[new Sym('_x'), definedOr(ownerRing.symbols[0], 'polynomial generator')]]);
       return v;
     };
+    self = coefficient(self);
     const args = (c.args ?? []).map((v) => coefficient(deserialize(v)));
     // The extractor serializes a Python range as a list; preserve its constructor when available.
     const rangeCall = c.fn === 'IndexedBase' ? /IndexedBase\(range\(([-\d,\s]+)\)\)/.exec(c.src) : null;

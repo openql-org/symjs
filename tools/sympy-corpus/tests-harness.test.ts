@@ -660,3 +660,36 @@ it('replays the translated Function subclasses and keeps every excluded assertio
   expect(translated).toBe(21);
   expect(excluded).toBeGreaterThanOrEqual(43);
 });
+
+it('compares polynomial spans and quotient cosets through their public equality', () => {
+  const x = new sj.Sym('x'), y = new sj.Sym('y'), R = sj.QQ.oldPolyRing(x, y), F = R.freeModule(2);
+  expect(matches(F.submodule([x, 0], [0, y]), '<[0, y], [x, 0], [x, y]>')).toBe(true);
+  expect(matches(F.submodule([x, 0], [0, y]), '<[1, 0], [0, y]>')).toBe(false);
+  expect(matches(F.submodule([1, 0], [1, 1]), 'QQ[x,y]**2')).toBe(true);
+  expect(matches(F.submodule([x, 0]), 'QQ[x,y]**2')).toBe(false);
+  expect(matches(R.ideal(x, y), '<x,y,x+y>')).toBe(true);
+  expect(matches(R.ideal(x), '<y>')).toBe(false);
+  const Q = F.quotientModule([[x, y]]);
+  expect(matches(Q.convert([x, y]), '0')).toBe(true);
+  expect(matches(Q.convert([x, y]), '[0, 1]')).toBe(false);
+  expect(matches(Q.convert([x, y]), '[0, 0] + <[x, y]>')).toBe(true);
+  expect(matches(Q.convert([x, y]), '[0, 0] + <[1, 0]>')).toBe(false);
+});
+
+it('compares number-field module representatives without losing denominators', () => {
+  const A = new sj.PowerBasis(sj.Poly.from(sj.parse('x**2 - 2')));
+  expect(matches(A.call(sj.toCol([2, 4]), 2), '[1, 2]')).toBe(true);
+  expect(matches(A.call(sj.toCol([2, 4]), 2), '[1, 2]/2')).toBe(false);
+  expect(matches(A.call(sj.toCol([9007199254740993n, 0n])), '[9007199254740992, 0]')).toBe(false);
+  expect(matches(A.call(sj.toCol([18014398509481986n, 0n]), 2), '[9007199254740993, 0]')).toBe(true);
+  expect(matches(A.submoduleFromMatrix(sj.DomainMatrix.eye(2, sj.ZZ), 1), 'Submodule[[2, 0], [0, 2]]/2')).toBe(true);
+  expect(matches(A.submoduleFromMatrix(sj.DomainMatrix.eye(2, sj.ZZ), 1), 'Submodule[[2, 0], [0, 2]]')).toBe(false);
+});
+
+it('preserves polynomial object and expression conventions in algebraic-number calls', () => {
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const selected = cases.filter((c) => c.fn === '.minpoly' && ['sympy.polys.domains.tests.test_domains', 'sympy.polys.numberfields.tests.test_numbers'].includes(c.module)
+    || c.fn === 'primitive_element' && c.module === 'sympy.polys.numberfields.tests.test_subfield' && [251, 252, 261, 263, 267].includes(c.line));
+  expect(selected.length).toBeGreaterThan(20);
+  for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
+});
