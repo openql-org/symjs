@@ -27,7 +27,7 @@ const cdv = (a: C, b: C): C => {
   return { re: (a.re * b.re + a.im * b.im) / d, im: (a.im * b.re - a.re * b.im) / d };
 };
 
-function durandKerner(coeffs: C[]): C[] {
+function durandKerner(coeffs: C[], scaled = false): C[] {
   const n = coeffs.length - 1;
   const lc = first(coeffs);
   const a = coeffs.map((c) => cdv(c, lc));
@@ -52,7 +52,14 @@ function durandKerner(coeffs: C[]): C[] {
     });
     if (delta < 1e-15) break;
   }
-  return z;
+  if (scaled || z.every((r) => Number.isFinite(r.re) && Number.isFinite(r.im))) return z;
+  // Scale the variable using the coefficient magnitudes before retrying.
+  const radius = a.reduce((r, c, i) => i === 0 ? r : Math.max(r, Math.hypot(c.re, c.im) ** (1 / i)), 1);
+  const reduced = a.map((c, i) => {
+    const scale = radius ** -i;
+    return { re: c.re * scale, im: c.im * scale };
+  });
+  return durandKerner(reduced, true).map((r) => ({ re: r.re * radius, im: r.im * radius }));
 }
 
 /** Newton refinement of a root at the given binary precision. */
@@ -100,7 +107,8 @@ export function nroots(fIn: ExprLike | Poly, n = 15, x?: Sym): Expr[] {
     const reMag = F.mag(r[0]);
     const imMag = F.mag(r[1]);
     const isReal = F.isZero(r[1]) || imMag < Math.max(reMag, 0) + tol || imMag < tol;
-    return { r, isReal, re: F.toNumber(r[0]), im: isReal ? 0 : F.toNumber(r[1]) };
+    const re = reMag < tol ? 0 : F.toNumber(F.round(r[0], prec));
+    return { r, isReal, re, im: isReal ? 0 : F.toNumber(F.round(r[1], prec)) };
   });
   items.sort((a, b) => (a.isReal ? 0 : 1) - (b.isReal ? 0 : 1) || a.re - b.re || Math.abs(a.im) - Math.abs(b.im) || Math.sign(a.im) - Math.sign(b.im));
   return items.map(({ r, isReal }) => {

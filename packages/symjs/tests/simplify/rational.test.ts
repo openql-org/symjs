@@ -261,3 +261,9 @@ describe('numer and denom', () => {
     expect(String(denom(P('x*y**(-n)'), { exact: true }))).toBe(String(fraction(P('x*y**(-n)'), { exact: true })[1]));
   });
 });
+
+it('uses the algebraic coefficient extension when greedy generators are disabled', () => {
+  const f = P('(x**2-2)/(x+sqrt(2))');
+  expect(String(cancel(f, { greedy: false }))).toBe('x - sqrt(2)');
+  expect(String(cancel(f, { greedy: false, extension: P('sqrt(2)') }))).toBe('x - sqrt(2)');
+});

@@ -14,13 +14,17 @@
 
 import { at, defined } from '../core/guard';
 import { Dummy } from '../core/nodes';
-import type { Expr } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { groundGcd, groundLcm, groundQuo } from './compatibility';
 import { monomialDivides, monomialLcm, monomialLdiv, monomialMul } from './monomial';
 import type { MonomialKey } from './orderings';
 import { compareMonomialKeys, lex } from './orderings';
 import type { Monom, PolyElement } from './rings';
 import { PolyRing } from './rings';
+import { GF } from './domains/finitefield';
+import { constructDomain } from './constructor';
+import { Poly } from './sympoly';
+import { GroebnerBasis, groebner, type GroebnerOptions, type MonomialOrder } from './groebner';
 
 /** A signature: a monomial and the index of an input polynomial. */
 export type Signature = readonly [Monom, number];
@@ -271,4 +275,17 @@ export function groebnerInRing(seq: readonly PolyElement[], ring: PolyRing): Pol
   const field = ring.domain.isField ? ring : ring.withDomain(ring.domain.getField());
   const basis = f5b(seq.map((p) => field.fromExpr(p.asExpr())), field);
   return field === ring ? basis : basis.map((p) => ring.fromExpr(p.clearDenoms()[1].asExpr()));
+}
+
+/** Reduced Gröbner basis with optional coefficient-domain arithmetic. */
+export function groebnerWithDomain(F: readonly ExprLike[], gens: readonly Sym[], order: MonomialOrder = 'lex', opts: GroebnerOptions = {}): GroebnerBasis {
+  return groebner(F, gens, order, opts, (polys, generators, ordering, options) => {
+    const extension = options.extension === true ? true : undefined;
+    const domain = options.modulus === undefined ? options.domain ?? constructDomain(polys.flatMap((p) => p.coeffs()), { extension, field: options.field })[0]
+      : GF(options.modulus, options.symmetric ?? true);
+    const ring = new PolyRing(generators, domain, ordering);
+    const basis = groebnerInRing(polys.map((p) => ring.fromExpr(p.asExpr())), ring);
+    const exprs = basis.map((g) => ring.domain.isExact ? g.asExpr() : Poly.from(g.asExpr(), generators, { domain: ring.domain }).asExpr());
+    return new GroebnerBasis(exprs, generators, String(ring.domain), ordering, options.polys, ring);
+  });
 }

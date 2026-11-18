@@ -93,3 +93,24 @@ it('converts GroebnerBasis orders with FGLM and preserves the coefficient domain
   }
   expect(() => sj.groebner([x.mul(y)], [x, y]).fglm('grlex')).toThrow('positive dimension');
 });
+
+it('constructs Gröbner bases from equations and over finite fields', () => {
+  const f = sj.groebner([sj.Eq(parse('x**3'), 1), sj.Eq(parse('x**2'), 1)], []);
+  expect(f.exprs.map(String)).toEqual(['x - 1']);
+  expect(() => sj.groebner([1], [])).toThrow(sj.ComputationFailed);
+  expect(() => sj.groebner([x], [x], 'lex', { method: 'unknown' })).toThrow(RangeError);
+  const g = sj.groebner([parse('2*x+1')], [x], 'lex', { modulus: 7, symmetric: false, polys: true });
+  expect(g.domain).toBe('GF(7)');
+  expect([...g].map(String)).toEqual(['Poly(x + 4, x, modulus=7)']);
+  expect(g.reduce(parse('2*x+1'))[1].equals(0)).toBe(true);
+});
+
+it('iterates ordinary bases and uses the requested algorithm', () => {
+  expect([...sj.groebner([x], [x])].map(String)).toEqual(['x']);
+  expect(sj.groebner([x], [x]).polys[0]?.equals(x)).toBe(true);
+  expect(sj.groebner([x], [x], 'lex', { modulus: 7 }).domain).toBe('GF(7)');
+  expect(sj.groebner([x], [x], 'lex', { method: 'f5b' }).exprs.map(String)).toEqual(['x']);
+  expect(sj.groebner([x, parse('y/2')], [x, y], 'lex', { method: 'f5b' }).domain).toBe('QQ');
+  expect(sj.groebner([parse('sqrt(2)*x+y'), x], [x, y], 'lex', { method: 'f5b', extension: true }).exprs.map(String)).toEqual(['x', 'y']);
+  expect(sj.groebner([], [x], 'lex', { method: 'f5b' }).exprs).toEqual([]);
+});

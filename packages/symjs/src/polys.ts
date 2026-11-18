@@ -35,9 +35,11 @@ export {
   gcdList,
   lcmList,
   sqf,
+  sqfList,
+  toRationalCoeffs,
 } from './polys/sympoly';
 
-export { rootsDict as roots } from './polys/poly';
+export { rootsDict as roots, type RootOptions } from './polys/poly';
 export { dictFromExpr, parallelDictFromExpr } from './polys/polyutils';
 export type { DictFromExprOptions } from './polys/polyutils';
 export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly, dupBernoulli, dupBernoulliC, dupGenocchi, dupEuler, dupAndre } from './polys/appellseqs';
@@ -121,12 +123,12 @@ export {
   viete,
 } from './polys/polyfuncs';
 export {
-  groebner,
   GroebnerBasis,
   reduced,
   isZeroDimensional,
 } from './polys/groebner';
-export type { MonomialOrder } from './polys/groebner';
+export type { GroebnerOptions, MonomialOrder } from './polys/groebner';
+export { groebnerWithDomain as groebner } from './polys/groebnertools';
 export {
   jacobiPoly,
   gegenbauerPoly,

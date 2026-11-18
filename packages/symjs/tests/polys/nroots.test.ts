@@ -39,3 +39,12 @@ it('registers the numerical root callback for polynomial consumers',()=>{
   const roots=rootHooks.nroots;if(roots===undefined)throw new TypeError('missing numeric root callback');
   expect(roots(sj.Poly.from(parse('x**2-2'),[x]),15).map(String)).toEqual(sj.nroots(parse('x**2-2'),15).map(String));
 });
+
+it('rescales widely separated coefficient magnitudes', () => {
+  const roots = sj.nroots(parse('x**8 - 1.0e60'), 12);
+  expect(roots).toHaveLength(8);
+  for (const r of roots) {
+    const { re, im } = r.toComplex();
+    expect(Math.hypot(re, im) / 10 ** 7.5).toBeCloseTo(1, 9);
+  }
+});

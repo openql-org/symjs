@@ -6,7 +6,8 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, Float, Fn, impl, isMulLike, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
+import { Add, Constant, Dummy, Float, Fn, impl, isMulLike, Mul, Piecewise, Pow, Rational, Rel, S, Sym, isNum } from '../core/nodes';
+import { piecewise } from '../core/logic';
 import { fromRational } from '../numeric/mpf';
 import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
@@ -130,9 +131,25 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
  * PolyElement.cancel does: denominators cleared, p and q with integer (Gaussian) coefficients and
  * the leading coefficient of q (lex order of the generators) canonical.
  */
-export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
-  if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined) return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(sympify(ex), opts);
-  const e = together(sympify(ex));
+export function cancel(ex: ExprLike, opts: PolynomialDomainOptions & { greedy?: boolean } = {}): Expr {
+  const input = sympify(ex);
+  if (input instanceof Rel) return input;
+  if (input instanceof Piecewise) return piecewise(...input.pairs.map(([value, condition]) => [cancel(value, opts), condition] as const));
+  if (input instanceof Mul && !input.isCommutative) {
+    const [n, d] = fraction(together(input));
+    const ratio = radicalContentRatio(expand(n), expand(d));
+    if (ratio !== undefined) return ratio;
+  }
+  if ((input instanceof Add || input instanceof Mul) && (!input.isCommutative || input.args.some(containsPiecewise))) {
+    const ordinary = input.args.filter((e) => e.isCommutative && !containsPiecewise(e));
+    const special = input.args.filter((e) => !e.isCommutative || containsPiecewise(e));
+    const combine = input instanceof Add ? add : mul;
+    return combine(cancel(combine(...ordinary), opts), ...special.map((e) => cancel(e, opts)));
+  }
+  if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined || opts.greedy === false) {
+    return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(input, opts.greedy === false && opts.extension === undefined ? { ...opts, extension: true } : opts);
+  }
+  const e = together(input);
   let [n, d] = fraction(e);
   // SymPy as_numer_denom of sums (also inside products): the terms' denominators, also those of exp(-x) = 1/exp(x)
   if (n instanceof Add || n instanceof Mul) {
@@ -173,6 +190,10 @@ export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
   [p, q] = [fromTable(defined(coeffTable(p, vars), 'p'), vars), fromTable(defined(coeffTable(q, vars), 'q'), vars)];
   [p, q] = [xreplace(p, back), xreplace(q, back)];
   return q instanceof Rational && q.isOne ? p : mul(p, pow(q, -1));
+}
+
+function containsPiecewise(e: Expr): boolean {
+  return e instanceof Piecewise || e.args.some(containsPiecewise);
 }
 
 /**
