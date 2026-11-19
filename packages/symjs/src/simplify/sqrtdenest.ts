@@ -276,7 +276,10 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
   const [en, ed] = asNumerDenom(expr);
   if (!isOne(ed)) expr = isNum(ed) ? unevaluatedMul(en, pow(ed, -1)) : mul(en, pow(ed, -1));
   const old = fraction(expr);
-  let [n, d] = fraction(handle(expr));
+  // Keep the conjugate as a separate numerator factor until expand_mul distributes it.
+  const parts = factorsOf(handle(expr)).map((f) => fraction(f));
+  let n = unevaluatedMul(...parts.map(([num]) => num));
+  let d = mul(...parts.map(([, den]) => den));
   if (n.key !== old[0].key || d.key !== old[1].key) {
     if (d.args.length > 0) {
       const was: [Expr, Expr] = [n, d];

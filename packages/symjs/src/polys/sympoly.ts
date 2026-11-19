@@ -25,7 +25,7 @@ import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, rebuild, some, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { str } from '../printing/str';
-import { expand as expandFull, expandMul as expand } from '../simplify/expand';
+import { expand as expandFull, expand_power_exp, expandMul as expand } from '../simplify/expand';
 import { sqrtdenest } from '../simplify/sqrtdenest';
 import { cancel, fraction, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
@@ -2746,8 +2746,9 @@ export function polyGcd(f: Poly | ExprLike, g: Poly | ExprLike, opts: Polynomial
     return Poly.from(toExpr(f), vars, opts).gcd(Poly.from(toExpr(g), vars, opts)).asExpr();
   }
   if (f instanceof Poly && g instanceof Poly) return f.gcd(g).asExpr();
-  const a = toExpr(f);
-  const b = toExpr(g);
+  // Expose common generators such as x**n in powers with additive exponents.
+  const a = expand_power_exp(toExpr(f));
+  const b = expand_power_exp(toExpr(g));
   // SymPy parallel_poly_from_expr: algebraic numbers (sqrt(2), pi) are generators unless an extension is given
   const gens = gensFor(a, b);
   return algebraicGcdLcm(a, b, 'gcd') ?? fieldGcdLcm(a, b, gens, 'gcd') ?? mgcd(a, b, gens);
@@ -3105,13 +3106,14 @@ export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: bo
     // SymPy together (gcd_terms): a Float that is the coefficient of every term up to its sign is taken out,
     // and the rest is factored exactly (1.5*x + 1.5 is 1.5*(x + 1))
     const parts = e.args.map((t): [Float | undefined, Expr] => {
-      const float = t instanceof Float ? t : t instanceof Mul ? t.args.find((a): a is Float => a instanceof Float) : undefined;
-      return [float, float === undefined || t instanceof Float ? S.One : mul(...(t instanceof Mul ? t.args : []).filter((a) => a !== float))];
+      const factors = t instanceof Mul ? t.args : [t];
+      const float = factors.find((a): a is Float => a instanceof Float);
+      return [float, float === undefined ? S.One : mul(...factors.filter((a) => a !== float))];
     });
     const leading = at(parts, 0)[0];
     const magnitude = Math.abs(leading?.toNumber() ?? 1);
-    if (leading !== undefined && parts.every(([c]) => c !== undefined && Math.abs(c.toNumber()) === magnitude)) {
-      const inner = add(...parts.map(([c, rest]) => ((c?.toNumber() ?? 1) < 0 ? mul(-1, rest) : rest)));
+    if (leading !== undefined && parts.every((part): part is [Float, Expr] => part[0] !== undefined && Math.abs(part[0].toNumber()) === magnitude)) {
+      const inner = add(...parts.map(([c, rest]) => (c.isNegative ? mul(-1, rest) : rest)));
       if (!some(inner, (a) => a instanceof Float)) {
         // the sign goes with the Float so that the leading coefficient of the rest is positive
         const positive = leading.toNumber() < 0 ? mul(-1, leading) : leading;
