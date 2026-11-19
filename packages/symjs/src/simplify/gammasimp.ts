@@ -231,21 +231,6 @@ function gammasimpCore(exprIn: Expr, asComb: boolean, level0 = 0): Expr {
       multiplicationTheorem(numerGammas, numerOthers);
       multiplicationTheorem(denomGammas, denomOthers);
     }
-    // Cancel adjacent gamma factors even when their common offset is fractional.
-    // Gamma(z + 1)/Gamma(z) = z, and the reciprocal contributes 1/z.
-    for (const [upper, lower, factors] of [
-      [numerGammas, denomGammas, numerOthers],
-      [denomGammas, numerGammas, denomOthers],
-    ] as const) {
-      for (const z of [...lower]) {
-        const next = add(z, 1);
-        if (upper.some((arg) => arg.equals(next))) {
-          remove(upper, next);
-          remove(lower, z);
-          factors.push(z);
-        }
-      }
-    }
     absorb(numerGammas, denomGammas, numerOthers, denomOthers);
 
     return mul(
