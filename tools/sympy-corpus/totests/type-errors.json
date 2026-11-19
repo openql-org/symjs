@@ -518,6 +518,7 @@
  "sympy.core.symbol:: #e112987cf31ee6809636",
  "sympy.core.sympify:: #7b9036dcbbc1bb0f283b",
  "sympy.core.tests.test_arit:test_issue_3531:1641 #5a5ed8ca73392e507ec9",
+ "sympy.core.tests.test_arit:test_issue_3531:1641 #61d3058dca79404bd790",
  "sympy.core.tests.test_arit:test_issue_6082:2140 #5e1250c3327082a9a57f",
  "sympy.core.tests.test_arit:test_suppressed_evaluation:1677 #9e48b27980c462a6f895",
  "sympy.core.tests.test_assumptions:test_sanitize_assumptions:1043 #1f9a7c6550525f71fe24",

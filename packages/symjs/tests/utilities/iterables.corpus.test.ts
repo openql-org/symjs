@@ -1215,7 +1215,7 @@ describe("sympy/utilities/tests/test_iterables.py", () => {
   //           [2, 3, 4, [2], [1], [3]]
   //   => [2, 3, 4, [2], [1], [3]]
   it.todo("test_uniq:721");
-  // the arguments do not type-check against the public API
+  // cannot format (...values) => { 		out += `${values.map((v) => String(v)).join(" ")}\n`; 	}
   //   assert capture(lambda : test1()) == dedent('''\
   //           ordered = None
   //               [[0], [0, 1]]
@@ -1263,7 +1263,7 @@ describe("sympy/utilities/tests/test_iterables.py", () => {
   //       [[1, 0], [0]]
   //   
   it.todo("test_kbins:741");
-  // the arguments do not type-check against the public API
+  // cannot format (...values) => { 		out += `${values.map((v) => String(v)).join(" ")}\n`; 	}
   //   assert capture(lambda : test2()) == dedent('''\
   //           ordered = None
   //               [[0], [1, 2]]

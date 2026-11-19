@@ -475,15 +475,15 @@ describe("doctests of sympy.functions.elementary.piecewise", () => {
   });
   it("piecewise_exclusive(p)", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(0n, 1n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(1n, 2n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [Rational.of(1n, 1n, { gcd: 1n }), true], { evaluate: false }), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
+    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(0n, 1n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(1n, 2n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [Rational.of(1n, 1n, { gcd: 1n }), true], { evaluate: false }), { skipNan: false, deep: true }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
   });
   it("piecewise_exclusive(Piecewise((2, x > 1)))", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(2n, 1n, { gcd: 1n }), Relational(x, Rational.of(1n, 1n, { gcd: 1n }), '>', { evaluate: false })], { evaluate: false }), { skipNan: false }))).toBe('Piecewise((2, x > 1), (nan, x <= 1))');
+    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(2n, 1n, { gcd: 1n }), Relational(x, Rational.of(1n, 1n, { gcd: 1n }), '>', { evaluate: false })], { evaluate: false }), { skipNan: false, deep: true }))).toBe('Piecewise((2, x > 1), (nan, x <= 1))');
   });
   it("piecewise_exclusive(Piecewise((2, x > 1)), skip_nan=True)", () => {
     const x = new Sym('x', { real: true });
-    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(2n, 1n, { gcd: 1n }), Relational(x, Rational.of(1n, 1n, { gcd: 1n }), '>', { evaluate: false })], { evaluate: false }), { skipNan: true }))).toBe('Piecewise((2, x > 1))');
+    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(2n, 1n, { gcd: 1n }), Relational(x, Rational.of(1n, 1n, { gcd: 1n }), '>', { evaluate: false })], { evaluate: false }), { skipNan: true, deep: true }))).toBe('Piecewise((2, x > 1))');
   });
   it("piecewise_fold(x*p)", () => {
     const x = new Sym('x');
@@ -6024,28 +6024,28 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
   });
   it("test_piecewise_exclusive:742", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(0n, 1n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(1n, 2n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [Rational.of(1n, 1n, { gcd: 1n }), true], { evaluate: false }), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
+    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(0n, 1n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(1n, 2n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [Rational.of(1n, 1n, { gcd: 1n }), true], { evaluate: false }), { skipNan: false, deep: true }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
   });
-  it.fails("test_piecewise_exclusive:744", () => {
+  it("test_piecewise_exclusive:744", () => {
     const x = new Sym('x');
-    expect(sympyStr(piecewiseExclusive(new Add([Rational.of(2n, 1n, { gcd: 1n }), piecewise([Rational.of(0n, 1n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(1n, 2n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [Rational.of(1n, 1n, { gcd: 1n }), true], { evaluate: false })]), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0)) + 2');
+    expect(sympyStr(piecewiseExclusive(new Add([Rational.of(2n, 1n, { gcd: 1n }), piecewise([Rational.of(0n, 1n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(1n, 2n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [Rational.of(1n, 1n, { gcd: 1n }), true], { evaluate: false })]), { skipNan: false, deep: true }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0)) + 2');
   });
   it("test_piecewise_exclusive:746", () => {
     const y = new Sym('y');
-    expect(equivalent(sympyStr(piecewiseExclusive(piecewise([Rational.of(1n, 1n, { gcd: 1n }), Relational(y, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), piecewise([Rational.of(2n, 1n, { gcd: 1n }), Relational(y, Rational.of(0n, 1n, { gcd: 1n }), '>=', { evaluate: false })], { evaluate: false })]), true], { evaluate: false }), { skipNan: false })), 'Piecewise((1, y <= 0), (-Piecewise((2, y >= 0), (nan, y < 0)), y > 0))', [y], { fn: 'piecewise_exclusive', input: 'Piecewise((1, y <= 0), (-Piecewise((2, y >= 0)), True))' })).toBe(true);
+    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(1n, 1n, { gcd: 1n }), Relational(y, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), piecewise([Rational.of(2n, 1n, { gcd: 1n }), Relational(y, Rational.of(0n, 1n, { gcd: 1n }), '>=', { evaluate: false })], { evaluate: false })]), true], { evaluate: false }), { skipNan: false, deep: true }))).toBe('Piecewise((1, y <= 0), (-Piecewise((2, y >= 0), (nan, y < 0)), y > 0))');
   });
   it("test_piecewise_exclusive:751", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(1n, 1n, { gcd: 1n }), Relational(x, y, '>', { evaluate: false })], { evaluate: false }), { skipNan: false }))).toBe('Piecewise((1, x > y), (nan, x <= y))');
+    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(1n, 1n, { gcd: 1n }), Relational(x, y, '>', { evaluate: false })], { evaluate: false }), { skipNan: false, deep: true }))).toBe('Piecewise((1, x > y), (nan, x <= y))');
   });
   it("test_piecewise_exclusive:754", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(1n, 1n, { gcd: 1n }), Relational(x, y, '>', { evaluate: false })], { evaluate: false }), { skipNan: true }))).toBe('Piecewise((1, x > y))');
+    expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(1n, 1n, { gcd: 1n }), Relational(x, y, '>', { evaluate: false })], { evaluate: false }), { skipNan: true, deep: true }))).toBe('Piecewise((1, x > y))');
   });
   it("test_piecewise_exclusive:766", () => {
     const xr = new Sym('xr', { real: true });
     const yr = new Sym('yr', { real: true });
-    expect(equivalent(sympyStr(piecewiseExclusive(piecewise([piecewise([Rational.of(1n, 1n, { gcd: 1n }), Relational(xr, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(2n, 1n, { gcd: 1n }), true], { evaluate: false }), Relational(yr, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(3n, 1n, { gcd: 1n }), true], { evaluate: false }), { skipNan: false })), 'Piecewise((Piecewise((1, xr < 0), (2, xr >= 0)), yr < 0), (3, yr >= 0))', [xr, yr], { fn: 'piecewise_exclusive', input: 'Piecewise((Piecewise((1, xr < 0), (2, True)), yr < 0), (3, True))' })).toBe(true);
+    expect(sympyStr(piecewiseExclusive(piecewise([piecewise([Rational.of(1n, 1n, { gcd: 1n }), Relational(xr, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(2n, 1n, { gcd: 1n }), true], { evaluate: false }), Relational(yr, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(3n, 1n, { gcd: 1n }), true], { evaluate: false }), { skipNan: false, deep: true }))).toBe('Piecewise((Piecewise((1, xr < 0), (2, xr >= 0)), yr < 0), (3, yr >= 0))');
   });
   // the arguments do not type-check against the public API
   //   assert piecewise_exclusive(p2, deep=False) == p2x

@@ -2436,14 +2436,10 @@ describe("sympy/printing/tests/test_str.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  it.fails("test_Float:622", () => {
-    const unicode = pprintUseUnicode(false);
-    try {
-      expect(pyStr(new Add([new Float({ man: -463584654553002400209758682930606754398148616142504092784075231847842646712863278510466992168086712215856293750995285709858230698038210282072760874936899611183192355274093480504927634764503409312969043n, exp: -6n }, 668), new Pow(pi, Rational.of(400n, 1n, { gcd: 1n }))]).evalf(2, {}))).toBe('-0.e+88');
-    } finally {
-      pprintUseUnicode(unicode);
-    }
-  });
+  // an equivalent form that the declared symbols do not confirm
+  //   assert str((pi**400 - (pi**400).round(1)).n(2)) == '-0.e+88'
+  //   => -0.e+88
+  it.todo("test_Float:622");
   // the arguments do not type-check against the public API
   //   assert sstr(Float("100"), full_prec=False, min=-2, max=2) == '1.0e+2'
   //   => 1.0e+2

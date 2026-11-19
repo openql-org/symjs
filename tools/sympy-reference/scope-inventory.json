@@ -27845,7 +27845,7 @@
      "testFile": "sympy/core/tests/test_basic.py",
      "inCorpus": true,
      "caseCount": 207,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -28027,7 +28027,7 @@
      "testFile": "sympy/core/tests/test_containers.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -40173,7 +40173,7 @@
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
      "caseCount": 459,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 1,
@@ -40447,7 +40447,7 @@
      "testFile": "sympy/functions/elementary/tests/test_exponential.py",
      "inCorpus": true,
      "caseCount": 491,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -41333,7 +41333,7 @@
      "testFile": "sympy/functions/elementary/tests/test_integers.py",
      "inCorpus": true,
      "caseCount": 451,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
@@ -41860,7 +41860,7 @@
      "testFile": "sympy/functions/elementary/tests/test_piecewise.py",
      "inCorpus": true,
      "caseCount": 493,
-     "gapCount": 6,
+     "gapCount": 5,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -42518,7 +42518,7 @@
      "testFile": "sympy/functions/elementary/tests/test_trigonometric.py",
      "inCorpus": true,
      "caseCount": 3035,
-     "gapCount": 4,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -91419,7 +91419,7 @@
      "testFile": "sympy/printing/tests/test_str.py",
      "inCorpus": true,
      "caseCount": 438,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 27,
@@ -111837,7 +111837,7 @@
      "testFile": "sympy/utilities/tests/test_iterables.py",
      "inCorpus": true,
      "caseCount": 252,
-     "gapCount": 4,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 137,

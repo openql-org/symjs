@@ -701,7 +701,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   //   raises(ArgumentIndexError, lambda: erf(x).fdiff(2))
   //   => None
   it.todo("test_erf:106");
-  // cannot format (z) => (0,__vite_ssr_import_23__.fn)("erfinv", [z])
+  // cannot format (z) => (0,__vite_ssr_import_24__.fn)("erfinv", [z])
   //   assert erf(x).inverse() == erfinv
   //   => erfinv
   it.todo("test_erf:108");
@@ -853,7 +853,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
   //   raises(ArgumentIndexError, lambda: erfc(x).fdiff(2))
   //   => None
   it.todo("test_erfc:191");
-  // cannot format (z) => (0,__vite_ssr_import_23__.fn)("erfcinv", [z])
+  // cannot format (z) => (0,__vite_ssr_import_24__.fn)("erfcinv", [z])
   //   assert erfc(x).inverse() == erfcinv
   //   => erfcinv
   it.todo("test_erfc:193");
@@ -1143,7 +1143,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfinv', [z]), 'erfcinv', { pattern: [], deep: true, hints: {} }))).toBe('erfcinv(1 - z)');
   });
-  // cannot format (z) => (0,__vite_ssr_import_23__.fn)("erf", [z])
+  // cannot format (z) => (0,__vite_ssr_import_24__.fn)("erf", [z])
   //   assert erfinv(z).inverse() == erf
   //   => erf
   it.todo("test_erfinv:336");
@@ -1170,7 +1170,7 @@ describe("sympy/functions/special/tests/test_error_functions.py", () => {
     const z = new Sym('z');
     expect(sympyStr(rewrite(fn('erfcinv', [z]), 'erfinv', { pattern: [], deep: true, hints: {} }))).toBe('erfinv(1 - z)');
   });
-  // cannot format (z) => (0,__vite_ssr_import_23__.fn)("erfc", [z])
+  // cannot format (z) => (0,__vite_ssr_import_24__.fn)("erfc", [z])
   //   assert erfcinv(z).inverse() == erfc
   //   => erfc
   it.todo("test_erfcinv:354");

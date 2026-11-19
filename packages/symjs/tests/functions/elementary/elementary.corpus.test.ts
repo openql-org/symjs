@@ -1450,7 +1450,7 @@ describe("sympy/functions/elementary/tests/test_exponential.py", () => {
   it("test_exp_assumptions:410", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_exp_assumptions:411", () => {
+  it("test_exp_assumptions:411", () => {
     expect(sympyStr(isImaginary(new Pow(E, new Mul([Rational.of(1n, 2n, { gcd: 1n }), pi, I]))))).toBe('True');
   });
   it("test_exp_assumptions:412", () => {
@@ -12977,7 +12977,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   it("test_atan2:1178", () => {
     expect(sympyStr(fn('atan2', [Rational.of(-1n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], { evaluate: true }))).toBe('-pi/4');
   });
-  it.fails("test_atan2:1184", () => {
+  it("test_atan2:1184", () => {
     const r = new Sym('r', { real: true });
     const i = new Sym('i', { imaginary: true });
     expect(sympyStr(fn('atan2', [r, i]).subs(r, Rational.of(2n, 1n, { gcd: 1n })).subs(i, I))).toBe('-I*(log(sqrt(3)) + I*pi/2)');
@@ -13007,9 +13007,9 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   });
   it("test_atan2:1199", () => {
     const y = new Sym('y');
-    expect(equivalent(sympyStr(fn('atan2', [y, oo], { evaluate: true })), '0', [y], { fn: 'atan2', input: 'y' })).toBe(true);
+    expect(sympyStr(fn('atan2', [y, oo], { evaluate: true }))).toBe('0');
   });
-  it.fails("test_atan2:1200", () => {
+  it("test_atan2:1200", () => {
     const y = new Sym('y');
     expect(sympyStr(fn('atan2', [y, S.NegativeInfinity], { evaluate: true }))).toBe('2*pi*Heaviside(re(y)) - pi');
   });
@@ -13030,7 +13030,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
   it("test_atan2:1209", () => {
     expect(sympyStr(rewrite(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), fn('atan', [Rational.of(2n, 3n, { gcd: 1n })], { evaluate: false }), fn('atan', [Rational.of(3n, 2n, { gcd: 1n })], { evaluate: false })]), 'arg', { pattern: [], deep: true, hints: {} }))).toBe('-pi + atan(2/3) + atan(3/2)');
   });
-  it.fails("test_atan2:1215", () => {
+  it("test_atan2:1215", () => {
     const i = new Sym('i', { imaginary: true });
     const r = new Sym('r', { real: true });
     expect(sympyStr(rewrite(fn('atan2', [i, r]), 'arg', { pattern: [], deep: true, hints: {} }))).toBe('-I*log(Abs(I*i + r)/sqrt(Abs(i**2 + r**2))) + arg((I*i + r)/sqrt(i**2 + r**2))');
@@ -13046,7 +13046,7 @@ describe("sympy/functions/elementary/tests/test_trigonometric.py", () => {
     const r = new Sym('r', { real: true });
     expect(sympyStr(rewrite(fn('atan2', [Rational.of(0n, 1n, { gcd: 1n }), r]), 'atan', { pattern: [], deep: true, hints: {} }))).toBe('Piecewise((pi, r < 0), (0, Ne(r, 0)), (nan, True))');
   });
-  it.fails("test_atan2:1223", () => {
+  it("test_atan2:1223", () => {
     const r = new Sym('r', { real: true });
     const i = new Sym('i', { imaginary: true });
     expect(sympyStr(rewrite(fn('atan2', [Rational.of(0n, 1n, { gcd: 1n }), new Add([r, i])]), 'atan', { pattern: [], deep: true, hints: {} }))).toBe('Piecewise((pi, r < 0), (0, True))');

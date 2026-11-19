@@ -1374,7 +1374,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   });
   it("test_difference:296", () => {
     const [eggs, ham] = symbols('eggs ham');
-    expect(sympyStr(finiteSet(eggs, ham).sub(finiteSet(eggs)))).toBe('Complement({ham}, {eggs})');
+    expect(sympyStr(finiteSet(eggs, ham).sub(finiteSet(eggs)))).toBe('{ham}');
   });
   it("test_difference:297", () => {
     expect(sympyStr(finiteSet(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n })).sub(interval(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n }), true, false)))).toBe('{1, 2}');
@@ -3101,7 +3101,7 @@ describe("sympy/sets/tests/test_sets.py", () => {
   });
   it("test_issue_9808:1366", () => {
     const [x, y] = symbols('x y');
-    expect(sympyStr(Complement(finiteSet(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), x), finiteSet(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), x, y)))).toBe('Complement({1}, {2, 3, x, y})');
+    expect(sympyStr(Complement(finiteSet(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), x), finiteSet(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), x, y)))).toBe('Complement({1}, {y})');
   });
   it("test_issue_9956:1371", () => {
     expect(sympyMatches(Union(Reals, finiteSet(Rational.of(1n, 1n, { gcd: 1n }))), 'Interval(-oo, oo)')).toBe(true);

@@ -642,7 +642,7 @@ describe("sympy/functions/elementary/tests/test_complexes.py", () => {
   });
   it("test_sign:258", () => {
     const x = new Sym('x', { imaginary: true });
-    expect(equivalent(sympyStr(doit(fn('sign', [x]))), 'x/Abs(x)', [x], { fn: '.doit', input: 'sign(x)' })).toBe(true);
+    expect(sympyStr(doit(fn('sign', [x])))).toBe('x/Abs(x)');
   });
   it("test_sign:259", () => {
     const x = new Sym('x', { imaginary: true });
@@ -691,7 +691,7 @@ describe("sympy/functions/elementary/tests/test_complexes.py", () => {
   });
   it("test_sign:275", () => {
     const x = new Sym('x', { nonzero: true });
-    expect(equivalent(sympyStr(doit(fn('sign', [x]))), 'x/Abs(x)', [x], { fn: '.doit', input: 'sign(x)' })).toBe(true);
+    expect(sympyStr(doit(fn('sign', [x])))).toBe('x/Abs(x)');
   });
   it("test_sign:276", () => {
     const x = new Sym('x', { nonzero: true });
@@ -1840,7 +1840,7 @@ describe("sympy/functions/elementary/tests/test_complexes.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(doit(new Mul([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(4n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), fn('re', [derivative(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([I, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), [[x, 1]])], { evaluate: false })]), fn('im', [derivative(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([I, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), [[x, 1]])], { evaluate: false })])])))).toBe('2*x/(x**4 + 1)');
   });
-  it.fails("test_derivatives_issue_4757:887", () => {
+  it("test_derivatives_issue_4757:887", () => {
     const y = new Sym('y', { imaginary: true });
     expect(sympyStr(doit(new Mul([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), y]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), I, fn('im', [derivative(new Add([Rational.of(1n, 1n, { gcd: 1n }), y]), [[y, 1]])], { evaluate: false })]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y, fn('re', [derivative(new Add([Rational.of(1n, 1n, { gcd: 1n }), y]), [[y, 1]])], { evaluate: false })])]), fn('sign', [new Add([Rational.of(1n, 1n, { gcd: 1n }), y])])])))).toBe('-y/sqrt(1 - y**2)');
   });

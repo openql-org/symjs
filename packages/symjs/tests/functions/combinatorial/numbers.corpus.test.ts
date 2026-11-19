@@ -8499,10 +8499,10 @@ describe("sympy/functions/elementary/tests/test_integers.py", () => {
   it("test_ceiling:426", () => {
     expect(sympyStr(fn('ceiling', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])], { evaluate: true }))).toBe('6');
   });
-  it.fails("test_ceiling:430", () => {
+  it("test_ceiling:430", () => {
     const x = new Sym('x');
     const n = new Sym('n', { integer: true });
-    expect(sympyStr(Intersection(new ImageSet(n, new Add([n, new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), 0)]), Integers), interval(Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n }), false, false)))).toBe('{CRootOf(x**5 - x**2 + 1, 0) + 9, -9 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 2, CRootOf(x**5 - x**2 + 1, 0) + 6, CRootOf(x**5 - x**2 + 1, 0), -7 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 4, -5 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 8, -3 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 10, CRootOf(x**5 - x**2 + 1, 0) + 1, -8 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 3, -6 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 5, -4 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 7, -2 + CRootOf(x**5 - x**2 + 1, 0), -1 + CRootOf(x**5 - x**2 + 1, 0)}');
+    expect(equivalent(sympyStr(Intersection(new ImageSet(n, new Add([n, new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), 0)]), Integers), interval(Rational.of(-10n, 1n, { gcd: 1n }), Rational.of(10n, 1n, { gcd: 1n }), false, false))), '{CRootOf(x**5 - x**2 + 1, 0) + 9, -9 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 2, CRootOf(x**5 - x**2 + 1, 0) + 6, CRootOf(x**5 - x**2 + 1, 0), -7 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 4, -5 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 8, -3 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 10, CRootOf(x**5 - x**2 + 1, 0) + 1, -8 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 3, -6 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 5, -4 + CRootOf(x**5 - x**2 + 1, 0), CRootOf(x**5 - x**2 + 1, 0) + 7, -2 + CRootOf(x**5 - x**2 + 1, 0), -1 + CRootOf(x**5 - x**2 + 1, 0)}', [n, x], { fn: '.intersect', input: 'ImageSet(Lambda(n, n + CRootOf(x**5 - x**2 + 1, 0)), Integers)' })).toBe(true);
   });
   it("test_frac:435", () => {
     expect(sympyStr(frac(oo))).toBe('AccumBounds(0, 1)');
@@ -8954,7 +8954,7 @@ describe("sympy/functions/elementary/tests/test_integers.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(nseries(fn('floor', [x]), x, y, 100, { dir: '+', cdir: 0 }))).toBe('floor(y)');
   });
-  it.fails("test_series:583", () => {
+  it("test_series:583", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(nseries(fn('ceiling', [x]), x, y, 100, { dir: '+', cdir: 0 }))).toBe('ceiling(y)');
   });

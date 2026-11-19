@@ -58,7 +58,7 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | crypto | 99.29% | 5031 | 1 | 35 | 0 |
 | diffgeom | 89.52% | 188 | 0 | 22 | 0 |
 | discrete | 80.21% | 154 | 0 | 38 | 0 |
-| functions | 95.41% | 10160 | 34 | 455 | 0 |
+| functions | 95.49% | 10169 | 25 | 455 | 0 |
 | geometry | 85.57% | 943 | 3 | 156 | 0 |
 | holonomic | 86.84% | 165 | 0 | 25 | 0 |
 | integrals | 70.72% | 1007 | 38 | 379 | 0 |
@@ -69,7 +69,7 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | parsing | 90.67% | 787 | 12 | 69 | 0 |
 | plotting | 71.43% | 35 | 0 | 14 | 0 |
 | polys | 59.47% | 7228 | 172 | 4754 | 0 |
-| printing | 87.70% | 1883 | 2 | 262 | 0 |
+| printing | 87.70% | 1883 | 1 | 263 | 0 |
 | series | 83.87% | 1404 | 36 | 234 | 0 |
 | sets | 86.01% | 1598 | 13 | 247 | 0 |
 | simplify | 87.28% | 1331 | 0 | 194 | 0 |
@@ -78,6 +78,6 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | strategies | 100.00% | 7 | 0 | 0 | 0 |
 | tensor | 75.27% | 1470 | 13 | 470 | 0 |
 | unify | 62.50% | 10 | 4 | 2 | 0 |
-| utilities | 57.55% | 320 | 21 | 215 | 0 |
+| utilities | 57.91% | 322 | 19 | 215 | 0 |
 | vector | 26.51% | 184 | 2 | 508 | 0 |
-| **all** | **87.70%** | 107618 | 636 | 14463 | 0 |
+| **all** | **87.71%** | 107629 | 624 | 14464 | 0 |

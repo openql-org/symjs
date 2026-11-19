@@ -25,7 +25,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
     const m = new Sym('m', { integer: true });
     expect(sympyStr(Intersection(new SetOp('Intersection', [finiteSet(i, j, k), finiteSet(j, k, l)]), finiteSet(j, m)))).toBe('Intersection({j, m}, {i, j, k}, {j, k, l})');
   });
-  it.fails("test_B3:134", () => {
+  it("test_B3:134", () => {
     const i = new Sym('i', { integer: true });
     const j = new Sym('j', { integer: true });
     const k = new Sym('k', { integer: true });
@@ -107,7 +107,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
       pprintUseUnicode(unicode);
     }
   });
-  // no adapter for .ae
+  // a primitive result that no library call returned
   //   assert exp(pi*sqrt(163)).evalf(50).num.ae(262537412640768744)
   //   => True
   it.todo("test_D3:280");
@@ -345,7 +345,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
     const z2 = new Sym('z2', { complex: true });
     expect(sympyStr(fn('im', [new Add([z1, new Mul([I, z2])])], { evaluate: true }))).toBe('re(z2) + im(z1)');
   });
-  it.fails("test_K4:807", () => {
+  it("test_K4:807", () => {
     expect(sympyStr(expand(fn('log', [new Add([Rational.of(3n, 1n, { gcd: 1n }), new Mul([Rational.of(4n, 1n, { gcd: 1n }), I])])], { evaluate: false }), { complex: true }))).toBe('log(5) + I*atan(4/3)');
   });
   it("test_K5:812", () => {
@@ -532,7 +532,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
   it("test_P3:1392", () => {
     expect(sympyStr(Matrix.of([[Matrix.of([[Rational.of(-12n, 1n, { gcd: 1n }), Rational.of(-13n, 1n, { gcd: 1n }), Rational.of(-14n, 1n, { gcd: 1n })], [Rational.of(-22n, 1n, { gcd: 1n }), Rational.of(-23n, 1n, { gcd: 1n }), Rational.of(-24n, 1n, { gcd: 1n })], [Rational.of(-32n, 1n, { gcd: 1n }), Rational.of(-33n, 1n, { gcd: 1n }), Rational.of(-34n, 1n, { gcd: 1n })]]), Matrix.of([[Rational.of(13n, 1n, { gcd: 1n }), Rational.of(11n, 1n, { gcd: 1n }), Rational.of(14n, 1n, { gcd: 1n })], [Rational.of(23n, 1n, { gcd: 1n }), Rational.of(21n, 1n, { gcd: 1n }), Rational.of(24n, 1n, { gcd: 1n })], [Rational.of(43n, 1n, { gcd: 1n }), Rational.of(41n, 1n, { gcd: 1n }), Rational.of(44n, 1n, { gcd: 1n })]])], [Matrix.of([[Rational.of(11n, 1n, { gcd: 1n }), Rational.of(12n, 1n, { gcd: 1n }), Rational.of(13n, 1n, { gcd: 1n }), Rational.of(14n, 1n, { gcd: 1n })], [Rational.of(21n, 1n, { gcd: 1n }), Rational.of(22n, 1n, { gcd: 1n }), Rational.of(23n, 1n, { gcd: 1n }), Rational.of(24n, 1n, { gcd: 1n })], [Rational.of(31n, 1n, { gcd: 1n }), Rational.of(32n, 1n, { gcd: 1n }), Rational.of(33n, 1n, { gcd: 1n }), Rational.of(34n, 1n, { gcd: 1n })], [Rational.of(41n, 1n, { gcd: 1n }), Rational.of(42n, 1n, { gcd: 1n }), Rational.of(43n, 1n, { gcd: 1n }), Rational.of(44n, 1n, { gcd: 1n })]]), BlockMatrix(Matrix.of([[sympifyMatrix(Matrix.of([[Rational.of(-13n, 1n, { gcd: 1n }), Rational.of(-23n, 1n, { gcd: 1n })], [Rational.of(-14n, 1n, { gcd: 1n }), Rational.of(-24n, 1n, { gcd: 1n })]]))], [sympifyMatrix(Matrix.of([[Rational.of(-43n, 1n, { gcd: 1n }), Rational.of(-13n, 1n, { gcd: 1n })], [Rational.of(-42n, 1n, { gcd: 1n }), Rational.of(-12n, 1n, { gcd: 1n })]]))]])).asExplicit()]]))).toBe('Matrix([[-12, -13, -14, 13, 11, 14], [-22, -23, -24, 23, 21, 24], [-32, -33, -34, 43, 41, 44], [11, 12, 13, 14, -13, -23], [21, 22, 23, 24, -14, -24], [31, 32, 33, 34, -43, -13], [41, 42, 43, 44, -42, -12]])');
   });
-  // no adapter for the operator %
+  // a callback parameter outside its callback
   //   assert  M % 2 == Matrix([[1, 1],
   //                                [1, 0]])
   //   => Matrix([[1, 1], [1, 0]])
