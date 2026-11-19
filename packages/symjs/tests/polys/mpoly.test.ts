@@ -84,3 +84,7 @@ describe('heuGcdCofactors (SymPy dmp_zz_heu_gcd over QQ)', () => {
     expect(heuGcdCofactors(parse('5762*x**3 + 50145*x**2 + 75378*x - 83080'), parse('-4386*x**2 - 36108*x - 54672'), [x], 3n)).toBeUndefined();
   });
 });
+
+it('returns zero for the lcm with a zero polynomial', () => {
+  expect(sj.mlcm(x.add(y), sj.S.Zero, [x, y])).toBe(sj.S.Zero);
+});

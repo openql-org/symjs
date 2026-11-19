@@ -125,3 +125,12 @@ describe('MarginalDistribution', () => {
     expect(X).toBeInstanceOf(RandomSymbol);
   });
 });
+
+it('marginalises shared random parameters once in name order', () => {
+  const z = Normal('Z', 0, 1), a = Normal('A', z, 1), other = Normal('A', 2, 1), w = Normal('W', 0, 1);
+  const dist = new NormalDistribution([a.add(other).add(w).add(z), sympify(1)]);
+  const md = new MarginalDistribution([dist, new TupleNode([w])]);
+  const expected = Lambda([w.symbol], md.computePdf(dist, [a, other, z])).call(x);
+  expect(md.pdf(x)).toEqual(expected);
+  expect(md.marginaliseOut(m.mul(x), m)).toEqual(m.symbol.mul(x));
+});

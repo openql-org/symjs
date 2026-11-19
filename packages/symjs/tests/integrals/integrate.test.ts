@@ -946,3 +946,28 @@ it('recognizes uncovered intervals and known nonreal poles', () => {
   expect(integrate(sj.piecewise([1, sj.Gt(x, 2)]), x, [0, pp])).toBe(sj.S.NaN);
   expect(integrate(P('1/(x+I*p)**2'), x, [0, 1]).equals(P('-1/(I*p+1)-I/p'))).toBe(true);
 });
+
+it('uses zero integrands and the width of a definite interval in zero queries', () => {
+  expect(sj.ask(sj.Q.zero(sj.integral(0, x)))).toBe(true);
+  expect(sj.isZero(sj.integral(2, [x, 1, 3]))).toBe(false);
+});
+
+it('integrates affine Piecewise conditions on unions, isolated points and partial domains', () => {
+  const f = sj.piecewise([1, sj.or(sj.Lt(x, 1), sj.Gt(x, 3))], [0, true]);
+  expect(String(integrate(f, x))).toBe('Piecewise((x, x < 1), (1, x <= 3), (x - 2, True))');
+  expect(integrate(sj.piecewise([1, sj.Eq(x, 1)], [2, true]), x)).toEqual(x.mul(2));
+  const partial = sj.piecewise([1, sj.Gt(x, a.add(1))]);
+  expect(integrate(partial, x, [a, a.add(2)]).equals(sj.S.NaN)).toBe(true);
+  expect(String(integrate(sj.piecewise([1, sj.Gt(x, 1)]), x))).toBe('Piecewise((nan, x < 1), (x, True))');
+  const step = sj.piecewise([1, sj.Lt(x, a)], [2, true]);
+  expect(integrate(step, x, [2, 0]).equals(sj.Min(2, sj.Max(0, a)).sub(4))).toBe(true);
+  const thresholds = new sj.Piecewise([sj.S.One, new sj.Rel('Lt', x, a), sj.S.Two, new sj.Rel('Lt', x, b), sj.S.Zero, sj.S.true]);
+  expect(integrate(thresholds, x).subs(new Map([[a, 1], [b, 3], [x, 4]]))).toEqual(sj.sympify(5));
+});
+
+it('integrates an odd sine across a symmetric interval and a rational function with a nonreal pole', () => {
+  expect(integrate(sj.sin(x), x, [-1, 1])).toBe(sj.S.Zero);
+  const c = new Sym('c', { imaginary: true });
+  expect(integrate(x.sub(c).pow(-2), x, [0, 1]).equals(sj.sub(1, c).pow(-1).neg().sub(c.pow(-1)))).toBe(true);
+  expect(String(integrate(parse('(x + sin(x))**a'), x))).toBe('Integral((x + sin(x))**a, x)');
+});

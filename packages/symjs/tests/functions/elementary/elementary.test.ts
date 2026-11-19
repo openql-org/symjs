@@ -858,3 +858,25 @@ it('exp is imaginary at the odd multiples of I*pi/2 (SymPy Pow._eval_is_imaginar
   const at = (k: string) => sj.isImaginary(new sj.Pow(sj.E, sj.mul(sj.I, sj.pi, sj.parse(k))));
   expect(['1', '2', '1/2', '3/2', '-1/2', '1/3'].map(at)).toEqual([false, false, true, true, true, 'unknown']);
 });
+
+it('keeps an unknown function phase and decides a negative Bessel value numerically', () => {
+  const f = sj.SymFunction('f')(symbol('x'));
+  expect(String(arg(f))).toBe('arg(f(x))');
+  expect(arg(sj.besselj(0, 3))).toBe(pi);
+});
+
+it('conjugates and transposes each piece under the original condition', () => {
+  const x = symbol('x'), c = sj.Gt(x, 0);
+  const p = sj.piecewise([x, c], [I, true]);
+  for (const op of [conjugate, adjoint, transpose]) {
+    expect(op(p)).toEqual(sj.piecewise([op(x), c], [op(I), true]));
+  }
+  const step = sj.Heaviside(x);
+  expect(conjugate(step)).toBe(step);
+});
+
+it('preserves inverse hyperbolic calls on a held real sum at infinity', () => {
+  const sum = new sj.Add([S.One, sj.oo]);
+  expect(String(sj.asinh(sum))).toBe('asinh(1 + oo)');
+  expect(String(sj.acosh(sum))).toBe('acosh(1 + oo)');
+});

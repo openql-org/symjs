@@ -455,3 +455,19 @@ it('preserves unevaluated forcing in a constant-coefficient system', () => {
   const solution = at(sj.dsolveSystem(equations,undefined,t,undefined,{doit:false,simplify:false}),0);
   expect(String(solution)).toContain('Integral');
 });
+
+it.each([
+  [['f(t) + 1', '2*g(t) - 3'], ['C1*exp(t) - 1', 'C2*exp(2*t) + 3/2']],
+  [['a*f(t)', '2*a*g(t)', '3*a*h(t)'], ['C1*exp(a*t)', 'C2*exp(2*a*t)', 'C3*exp(3*a*t)']],
+  [['f(t) + a*g(t)', '2*g(t)'], ['a*C1*exp(t) + a*C2*exp(2*t)', 'C2*exp(2*t)']],
+])('solves the constant coefficient system with velocities %s', (rhs, expected) => {
+  const fs = ['f', 'g', 'h'].slice(0, rhs.length).map((name) => new UndefFn(name, [t]));
+  const eqs = fs.map((v, i) => sub(diff(v, t), parse(at(rhs, i))));
+  const family = at(sj.dsolveSystem(eqs, fs), 0);
+  expect(family).toEqual(fs.map((v, i) => Eq(v, parse(at(expected, i)))));
+});
+
+it.each([0, 1])('solves a constant acceleration equation with forcing %i', (forcing) => {
+  const ft = new UndefFn('f', [t]), eq = diff(ft, t, 2).sub(ft).sub(forcing);
+  expect(sj.dsolveSystem([eq], [ft])).toEqual([[Eq(ft, parse('C1*exp(-t) + C2*exp(t)').sub(forcing))]]);
+});

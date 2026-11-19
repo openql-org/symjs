@@ -1498,3 +1498,15 @@ it('checks the imaginary part of numeric expressions with undecided real assumpt
     approx.mockRestore();
   }
 });
+
+it('excludes complex numeric values with a nonzero imaginary part from the reals', () => {
+  expect(C(Sets.Reals, sj.exp(sj.I))).toBe(sj.S.false);
+});
+
+it('leaves a numeric endpoint unordered when its evaluator is outside its domain', () => {
+  const positiveLog = sj.implementedFunction('positiveLog', (t) => {
+    if (t <= 0) throw new RangeError('positive argument required');
+    return Math.log(t);
+  });
+  expect(Sets.realValue(positiveLog(-1))).toBeUndefined();
+});

@@ -1954,3 +1954,26 @@ it('factors a common float around a nonpolynomial expression', () => {
   const nested = sj.add(float.mul(sj.sin(float.mul(x))), float.mul(x));
   expect(sj.factor(nested).subs(x, 0).equals(sj.S.Zero)).toBe(true);
 });
+
+it('clears denominators in EX and rejects a compound generator for real isolation', () => {
+  const x = new Sym('x');
+  const f = Poly.from(parse('x + sin(y)'), [x], { domain: 'EX' });
+  const g = Poly.from(x, [x], { domain: 'EX' });
+  expect(f.ratClearDenoms(g)).toEqual([f, g]);
+  const generator = x.pow(2);
+  expect(() => Poly.from(generator.add(1), [generator]).realRoots({ extension: false })).toThrow(sj.PolynomialError);
+});
+
+it('handles common floating coefficients with nonpolynomial and inexact factors', () => {
+  const x = new Sym('x');
+  expect(String(sj.factor(parse('1.5/x + 1.5'), { gens: [x] }))).toBe('1.5*(x + 1)/x');
+  const e = parse('1.5*sin(1.2*x) + 1.5');
+  expect(sj.expand(sj.factor(e)).equals(e)).toBe(true);
+});
+
+it('factors a noncommutative indexed base as a single operator', () => {
+  const label = new Sym('K', { commutative: false });
+  const base = new sj.IndexedBase(label);
+  const x = new Sym('x');
+  expect(sj.factorNc(base.add(x.mul(base))).equals(x.add(1).mul(base))).toBe(true);
+});

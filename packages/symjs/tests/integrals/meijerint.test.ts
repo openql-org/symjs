@@ -7,7 +7,7 @@
 // quoted and the value is checked against the integral computed numerically (mpmath).
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Piecewise, Rational, Rel, S, Sym, abs, add, and, arg, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
+import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Piecewise, Rational, Rel, S, Sym, abs, add, and, arg, ask, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
 import { CoeffExpError, condsimp, findSplittingPoints, getCoeffExp, liftPolar, laplaceBesselProduct, meijerintDefinite, meijerintIndefinite, meijerintInversion, rewriteSingle, splitMul, unpolarifyExponents } from '../../src/integrals/meijerint';
 
 const R = (p: number, q: number): Expr => Rational.of(BigInt(p), BigInt(q));
@@ -290,4 +290,21 @@ it('rewrites modified Bessel functions and evaluates the integral of zero on a h
   expect(rewriteSingle(P('besseli(a,x)'), x)?.[0]).toHaveLength(1);
   expect(run('0', '0', 'oo')).toEqual(['0', 'True']);
   expect(String(condsimp(new Rel('Eq', I, S.Zero)))).toBe('Eq(I, 0)');
+});
+
+it('handles a zero integrand, a complex comparison and an exponential with a constant shift', () => {
+  expect(run('0', '0', 'oo')).toEqual(['0', 'True']);
+  const condition = new Rel('Eq', I, Rational.of(0));
+  expect(ask(condsimp(condition))).toBe(false);
+  expect(meijerintInversion(P('exp(1 - 2*x)/x**2'), x, y)?.map(String))
+    .toEqual(['E*(y - 2)*Heaviside(y - 2)', 'True']);
+  expect(meijerintInversion(meijerg([], [], [0], [], pow(x, 4)), x, y)).toBeUndefined();
+});
+
+it('rewrites the modified Bessel function of the first kind as a Meijer G', () => {
+  const result = rewriteSingle(P('besseli(a,x)'), x);
+  expect(result?.[0].map((term) => term.map(String))).toEqual([
+    ['pi', '0', 'meijerg(((), (a/2 + 1/2,)), ((a/2,), (-a/2, a/2 + 1/2)), x**2/4)'],
+  ]);
+  expect(String(result?.[1])).toBe('True');
 });
