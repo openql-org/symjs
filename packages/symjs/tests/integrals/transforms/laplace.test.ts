@@ -616,6 +616,7 @@ describe('laplace: rule table', () => {
   it('table entries', () => {
     const cases: [string, string][] = [
       ['1/(a*sqrt(t)+t**1.5)', '(pi*sqrt(a)*exp(a*s)*erfc(sqrt(a)*sqrt(s)), 0, True)'],
+      ['erf(a/sqrt(t))', '(1/s - exp(-2*a*sqrt(s))/s, 0, True)'],
       ['log(a*t)', '(-log(s*exp(EulerGamma)/a)/s, 0, True)'],
       ['log(2*t)', '(-log(s*exp(EulerGamma)/2)/s, 0, True)'],
       // 4.6.9 is skipped as in SymPy; 4.6.11 with n = -1/2 applies

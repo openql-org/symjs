@@ -286,6 +286,8 @@ function buildRules(): RuleTable {
       const A = g(m, 'a');
       return mul(exp(mul(pow(s, 2), pow(pow(mul(2, A), 2), -1))), erfc(mul(s, pow(mul(2, A), -1))), pow(s, -1));
     }, (m) => Lt(mul(4, abs(arg(g(m, 'a')))), pi), () => Z), // 4.12.2
+    r(erf(mul(a, pow(t, S.NegHalf))), (m) => sub(pow(s, -1), mul(exp(mul(-2, g(m, 'a'), sqrt(s))), pow(s, -1))),
+      (m) => Lt(mul(4, abs(arg(g(m, 'a')))), pi), () => Z), // 4.12.6
     r(besselj(n, mul(a, t)), (m) => {
       const N = g(m, 'n');
       const A = g(m, 'a');
