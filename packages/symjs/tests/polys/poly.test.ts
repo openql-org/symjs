@@ -387,3 +387,10 @@ it('takes the powers of sums in the constant term of a binomial out of the root 
   expect(firstRoot('x**2 - (a + b)**3')).toBe('-sqrt((a + b)**3)');
   expect(solve(E('C1 + t + 1/(4*u**4)'), E('u')).map(String)).toEqual(['-(-1/(4*C1 + 4*t))**(1/4)', '(-1/(4*C1 + 4*t))**(1/4)', '-I*(-1/(4*C1 + 4*t))**(1/4)', 'I*(-1/(4*C1 + 4*t))**(1/4)']);
 });
+
+it('leaves irreducible quintics without expressible roots unresolved', () => {
+  expect(roots(E('x**5 - x + 1'), x, { quintics: true }).size).toBe(0);
+  for (const coefficient of [sj.sqrt(2), sj.pi]) {
+    expect(roots(x.pow(5).add(coefficient.mul(x)).add(1), x, { multiple: true, skipQuintic: true })).toEqual([]);
+  }
+});

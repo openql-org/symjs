@@ -1892,3 +1892,26 @@ it('counts powers of a generator that is no symbol and keeps unexpanded generato
   expect(String(sj.Poly.from(pow(add(x, y), 3), [add(x, y)], { expand: false }))).toBe("Poly((x + y)**3, x + y, domain='ZZ')");
   expect(String(sj.Poly.from(pow(add(x, -1), 2), [add(x, -1)], { expand: false }))).toBe("Poly((x - 1)**2, x - 1, domain='ZZ')");
 });
+
+it('clears denominators in EX and rejects a compound generator for real isolation', () => {
+  const x = new Sym('x');
+  const f = Poly.from(parse('x + sin(y)'), [x], { domain: 'EX' });
+  const g = Poly.from(x, [x], { domain: 'EX' });
+  expect(f.ratClearDenoms(g)).toEqual([f, g]);
+  const generator = x.pow(2);
+  expect(() => Poly.from(generator.add(1), [generator]).realRoots({ extension: false })).toThrow(sj.PolynomialError);
+});
+
+it('handles common floating coefficients with nonpolynomial and inexact factors', () => {
+  const x = new Sym('x');
+  expect(String(sj.factor(parse('1.5/x + 1.5'), { gens: [x] }))).toBe('1.5*(x + 1)/x');
+  const e = parse('1.5*sin(1.2*x) + 1.5');
+  expect(sj.expand(sj.factor(e)).equals(e)).toBe(true);
+});
+
+it('factors a noncommutative indexed base as a single operator', () => {
+  const label = new Sym('K', { commutative: false });
+  const base = new sj.IndexedBase(label);
+  const x = new Sym('x');
+  expect(sj.factorNc(base.add(x.mul(base))).equals(x.add(1).mul(base))).toBe(true);
+});

@@ -30,7 +30,7 @@ import {
   Sym, registerFunctionHeads,
   UndefFn,
 } from '../../core/nodes';
-import { numAbs, numNeg, ratMod } from '../../core/num';
+import { numAbs, numNeg, ratFloor, ratMod } from '../../core/num';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../../core/ops';
 
 export type Evaluator = (x: Expr, ...rest: Expr[]) => Expr | undefined;
@@ -136,8 +136,7 @@ function cosOfPiMultiple(c: Rational): Expr | undefined {
 /** SymPy _peeloff_pi: the multiple of pi/2 in c*pi, c - (c mod 1/2). */
 function peelHalfPi(c: Rational): Rational {
   const twice = Rational.of(c.p * 2n, c.q);
-  const fl = twice.p >= 0n ? twice.p / twice.q : -((-twice.p + twice.q - 1n) / twice.q);
-  return Rational.of(fl, 2n);
+  return Rational.of(ratFloor(twice), 2n);
 }
 
 /** sin(c*pi) for rational c (SymPy sin.eval of a rational multiple of pi). */
@@ -455,6 +454,25 @@ const isImaginaryArg = (x: Expr): boolean => (x instanceof Sym && x.assumptions.
 /** log of a nonnegative argument: an extended real number (-oo at 0), as SymPy's re and im take it. */
 const isExtendedRealLog = (x: Expr): boolean => x instanceof Fn && x.name === 'log' && isNonNegative(first(x.args)) === true;
 
+/** For a product of real factors and z, take the component of z after extracting a factor I. */
+function productComponent(x: Mul, imaginary: boolean): Expr | undefined {
+  const component = imaginary ? im : re;
+  const rotated = (z: Expr): Expr => imaginary ? re(z) : neg(im(z));
+  const real: Expr[] = [];
+  const other: Expr[] = [];
+  for (const factor of x.args) (isReal(factor) === true ? real : other).push(factor);
+  if (real.length) {
+    const rest = mul(...other);
+    if (isI(rest)) return imaginary ? mul(...real) : S.Zero;
+    if (rest instanceof Mul && rest.args.filter(isI).length === 1) {
+      return mul(...real, rotated(mul(...rest.args.filter((a) => !isI(a)))));
+    }
+    return mul(...real, component(rest));
+  }
+  if (x.args.some(isI)) return rotated(mul(...x.args.filter((a) => !isI(a))));
+  return undefined;
+}
+
 const evalRe: Evaluator = (x) => {
   if (x instanceof ExtensionExpr) {
     const parts = x.asRealImagSelf();
@@ -466,21 +484,8 @@ const evalRe: Evaluator = (x) => {
   if (ur) return ur[0];
   if (x instanceof Add) return add(...x.args.map(re));
   if (x instanceof Mul) {
-    const real = x.args.filter((a) => isReal(a) === true);
-    const others = x.args.filter((a) => isReal(a) !== true);
-    if (real.length > 0) {
-      const o = mul(...others);
-      if (isI(o)) return S.Zero;
-      if (o instanceof Mul && o.args.some(isI) && o.args.filter(isI).length === 1) {
-        const w = mul(...o.args.filter((a) => !isI(a)));
-        return mul(...real, neg(im(w)));
-      }
-      return mul(...real, re(o));
-    }
-    if (x.args.some(isI)) {
-      const w = mul(...x.args.filter((a) => !isI(a)));
-      return neg(im(w));
-    }
+    const part = productComponent(x, false);
+    if (part !== undefined) return part;
   }
   if (x instanceof Fn && x.name === 'conjugate') return re(first(x.args));
   if (isImaginaryArg(x)) return S.Zero;
@@ -498,21 +503,8 @@ const evalIm: Evaluator = (x) => {
   if (isI(x)) return S.One;
   if (x instanceof Add) return add(...x.args.map(im));
   if (x instanceof Mul) {
-    const real = x.args.filter((a) => isReal(a) === true);
-    const others = x.args.filter((a) => isReal(a) !== true);
-    if (real.length > 0) {
-      const o = mul(...others);
-      if (isI(o)) return mul(...real);
-      if (o instanceof Mul && o.args.filter(isI).length === 1) {
-        const w = mul(...o.args.filter((a) => !isI(a)));
-        return mul(...real, re(w));
-      }
-      return mul(...real, im(o));
-    }
-    if (x.args.some(isI)) {
-      const w = mul(...x.args.filter((a) => !isI(a)));
-      return re(w);
-    }
+    const part = productComponent(x, true);
+    if (part !== undefined) return part;
   }
   if (x instanceof Fn && x.name === 'conjugate') return neg(im(first(x.args)));
   if (isImaginaryArg(x)) return mul(-1, S.I, x);
@@ -536,16 +528,11 @@ const evalArg: Evaluator = (x) => {
   const knownSign = (t: Expr): 1 | -1 | undefined =>
     isPositive(t) === true ? 1 : isNegative(t) === true ? -1
       : t instanceof UndefFn ? (t.givenFacts.get('extended_positive') === true ? 1 : t.givenFacts.get('extended_negative') === true ? -1 : undefined) : undefined;
-  if (knownSign(x) === 1) return S.Zero;
-  if (knownSign(x) === -1) return S.Pi;
-  {
-    const sg = numericSign(x);
-    if (sg === 1) return S.Zero;
-    if (sg === -1) return S.Pi;
-  }
+  const sign = knownSign(x) ?? numericSign(x);
+  if (sign !== undefined) return sign === 1 ? S.Zero : S.Pi;
   // SymPy arg.eval: a factor of known sign counts by that sign only (arg((3 + I)*p) = arg(3 + I) for positive p)
   if (x instanceof Mul) {
-    const reduced = mul(...x.args.map((t) => (knownSign(t) === 1 ? S.One : knownSign(t) === -1 ? S.NegOne : t)));
+    const reduced = mul(...x.args.map((t) => knownSign(t) ?? t));
     if (reduced.key !== x.key) return arg(reduced);
   }
   // a + b*I with real numeric a, b
@@ -553,7 +540,7 @@ const evalArg: Evaluator = (x) => {
     const a = re(x);
     const b = im(x);
     if (isNum(a) && isNum(b) && (a instanceof Float || b instanceof Float)) {
-      return new Float(Math.atan2(b instanceof Rational ? b.value : (b).value, a instanceof Rational ? a.value : (a).value));
+      return new Float(Math.atan2(b.value, a.value));
     }
     if (!(a instanceof Fn) && !(b instanceof Fn) && a.freeSymbols().size === 0) {
       // signs decided by the assumptions, else numerically (SymPy evaluates is_positive by evalf)
@@ -569,7 +556,6 @@ const evalArg: Evaluator = (x) => {
       }
     }
   }
-  if (isNegative(x)) return S.Pi;
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') {
     const t = im(x.exp);
     // a rational angle reduced into (-pi, pi]
@@ -687,15 +673,17 @@ export function transpose(xx: ExprLike): Expr {
   return new Fn('transpose', [x]);
 }
 
+/** A symbolic involution that returns its own unevaluated call leaves evaluation to fn. */
+function involutionEvaluator(name: FnName, apply: (x: Expr) => Expr): Evaluator {
+  return (x) => {
+    const result = apply(x);
+    return result instanceof Fn && result.name === name && result.args[0] === x ? undefined : result;
+  };
+}
+
 export const evaluators: Partial<Record<FnName, Evaluator>> = {
-  adjoint: (x) => {
-    const c = adjoint(x);
-    return c instanceof Fn && c.name === 'adjoint' && c.args[0] === x ? undefined : c;
-  },
-  transpose: (x) => {
-    const c = transpose(x);
-    return c instanceof Fn && c.name === 'transpose' && c.args[0] === x ? undefined : c;
-  },
+  adjoint: involutionEvaluator('adjoint', adjoint),
+  transpose: involutionEvaluator('transpose', transpose),
   sin: evalSin,
   cos: evalCos,
   tan: evalTan,
@@ -710,10 +698,7 @@ export const evaluators: Partial<Record<FnName, Evaluator>> = {
   re: evalRe,
   im: evalIm,
   arg: evalArg,
-  conjugate: (x) => {
-    const c = conjugate(x);
-    return c instanceof Fn && c.name === 'conjugate' && c.args[0] === x ? undefined : c;
-  },
+  conjugate: involutionEvaluator('conjugate', conjugate),
 };
 
 /** The sign of a finite part, undefined when it is not decided. */
@@ -782,6 +767,10 @@ const signedOo = (k: number): Expr => (k > 0 ? S.Infinity : S.NegativeInfinity);
 /** zoo where the modulus grows without bound (the limit on the Riemann sphere). */
 const zooUnless = (f: InfiniteForm, kinds: readonly string[]): Expr | undefined => (kinds.includes(f.kind) ? S.ComplexInfinity : undefined);
 
+/** Reciprocal functions vanish at a directed infinity. The evaluator handles a pure real infinity. */
+const reciprocalLimit = (f: InfiniteForm): Expr | undefined =>
+  f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero;
+
 /**
  * The values of functions at a number with an infinite part, where SymPy leaves them
  * unevaluated: the limit when it exists (zoo when the modulus grows without bound in no fixed
@@ -823,18 +812,18 @@ const INFINITE_LIMITS: Partial<Record<FnName, (f: InfiniteForm) => Expr | undefi
     return zooUnless(f, ['D']);
   },
   atanh: (f) => (f.kind === 'R' ? (!f.c ? undefined : iHalfPi(f.c)) : f.kind === 'zoo' ? undefined : iHalfPi(f.t)),
-  acoth: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  acoth: reciprocalLimit,
   // asech(z) = acosh(1/z) with 1/z -> 0 from the side opposite to z
   asech: (f) => (f.kind === 'R' ? (!f.c ? undefined : iHalfPi(-f.c)) : f.kind === 'zoo' ? undefined : iHalfPi(-f.t)),
-  acsch: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  acsch: reciprocalLimit,
   atan: (f) => {
     if (f.kind === 'R') return !f.c ? undefined : halfPi(f.s);
     if (f.kind === 'I') return !f.a ? undefined : halfPi(f.a);
     return f.kind === 'D' ? halfPi(f.s) : undefined;
   },
-  acot: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  acot: reciprocalLimit,
   asec: (f) => (f.kind === 'zoo' ? undefined : halfPi(1)),
-  acsc: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  acsc: reciprocalLimit,
   // arg and sign of a direction; arg of a D form has no limit: SymPy's values, arg(oo + oo*I) = pi/4,
   // arg(oo - oo*I) = -pi/4, arg(-oo + oo*I) = pi, arg(-oo - oo*I) = -3*pi/4 (SymPy arg(-1 + oo*I) = nan,
   // its limit pi/2 here)

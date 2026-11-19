@@ -79,3 +79,11 @@ it('distributes the derivative of a product with a matrix sum', async () => {
   expect(str(diff(expression, M))).toBe('2*M.T + 2*N.T');
   expect(str(diff(MatAdd(M, MatMul(M, M)), M))).toContain('ArrayAdd');
 });
+
+it('distributes nested tensor products and differentiates a one-by-one matrix power', () => {
+  const r = new ArraySymbol('R', [1]);
+  const cube = new TP(new TP(r, r), r);
+  expect(str(explicitArray(arrayDerive(cube, r)))).toBe('[[[[3*R[0]**2]]]]');
+  const x = MatrixSymbol('X', 1, 1);
+  expect(str(explicitArray(arrayDerive(MatPow(x, S.Half), x)))).toBe('[[[[1/(2*sqrt(X[0, 0]))]]]]');
+});

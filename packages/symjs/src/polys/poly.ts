@@ -12,7 +12,7 @@ import { ExprMap } from '../core/exprmap';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Dummy, Float, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
-import { numCmp } from '../core/num';
+import { numAdd as qAdd, numCmp, numMul as qMul, numNeg as qNeg } from '../core/num';
 import { at, defined, expectType, first, getOrThrow, last } from '../core/guard';
 import { countOps, ordered } from '../core/match';
 import { gcd as gcdBig, iroot, lcm } from '../core/numbers';
@@ -65,10 +65,6 @@ export function polyCoefficients(ex: ExprLike, x: Expr): Map<number, Expr> | und
 
 const R = (n: bigint | number, d: bigint | number = 1n) => Rational.of(n, d);
 
-// Exact rational arithmetic (the Rational cases of core/num, typed as Rational).
-const qAdd = (a: Rational, b: Rational): Rational => (a.q === b.q ? Rational.of(a.p + b.p, a.q) : Rational.of(a.p * b.q + b.p * a.q, a.q * b.q));
-const qMul = (a: Rational, b: Rational): Rational => (a.isOne ? b : b.isOne ? a : Rational.of(a.p * b.p, a.q * b.q));
-const qNeg = (a: Rational): Rational => Rational.of(-a.p, a.q);
 /** 1/a for a nonzero a (leading coefficients and scale factors). */
 const qInv = (a: Rational): Rational => Rational.of(a.q, a.p);
 /** a**n for n >= 0. */
@@ -261,7 +257,11 @@ function sqrtRemoveSquares(d: Expr): Expr {
   return mul(...outside, sqrt(mul(...inside)));
 }
 
-/** Roots of a quadratic a x^2 + b x + c (symbolic coefficients allowed). */
+function cubeRootsOfUnity(): [Expr, Expr, Expr] {
+  const imaginary = mul(S.I, sqrt(3), S.Half);
+  return [S.One, add(S.NegHalf, imaginary), add(S.NegHalf, neg(imaginary))];
+}
+
 /** SymPy roots_cubic (Cardano) for x**3 + a*x**2 + b*x + c with rational coefficients. */
 function cubicRoots(lc: Rational, c2: Rational, c1: Rational, c0: Rational): Expr[] {
   const a = qMul(c2, qInv(lc));
@@ -281,16 +281,15 @@ function cubicRoots(lc: Rational, c2: Rational, c1: Rational, c0: Rational): Exp
   } else if (q.isNegative) {
     u1 = neg(cbrt(add(mul(-1, q, Rational.of(1n, 2n)), sqrt(add(mul(pow(q, 2), Rational.of(1n, 4n)), pow(pon3, 3))))));
   }
-  const coeff = mul(S.I, sqrt(3), Rational.of(1n, 2n));
+  const uks = cubeRootsOfUnity();
   if (u1 === undefined) {
-    const uks = [S.One, add(Rational.of(-1n, 2n), coeff), add(Rational.of(-1n, 2n), neg(coeff))];
     const D0 = add(pow(a, 2), mul(-3, b));
     const D1 = add(mul(2, pow(a, 3)), mul(-9, a, b), mul(27, c));
     const C = cbrt(mul(add(D1, sqrt(add(pow(D1, 2), mul(-4, pow(D0, 3))))), Rational.of(1n, 2n)));
     return uks.map((uk) => mul(-1, third, add(a, mul(uk, C), mul(D0, pow(C, -1), pow(uk, -1)))));
   }
-  const u2 = mul(u1, add(Rational.of(-1n, 2n), coeff));
-  const u3 = mul(u1, add(Rational.of(-1n, 2n), neg(coeff)));
+  const u2 = mul(u1, uks[1]);
+  const u3 = mul(u1, uks[2]);
   if (pz) return [u1, u2, u3].map((u) => add(u, neg(aon3)));
   return [u1, u2, u3].map((u) => add(neg(u), mul(pon3, pow(u, -1)), neg(aon3)));
 }
@@ -473,7 +472,7 @@ function findRoots(ex: ExprLike, x: Sym, opts: RootOptions): Expr[] {
     return [...symbolicQuadraticRoots(orig(low + 2), orig(low + 1), orig(low)), ...zeros];
   }
   // SymPy roots(): a binomial a*x**n + b by roots_binomial
-  if (normalized.size === 2) return [...symbolicBinomialRoots(get(low), effDeg, coeffs.get(deg) ?? S.One, coeffs.get(low) ?? S.Zero), ...zeros];
+  if (normalized.size === 2) return [...symbolicBinomialRoots(get(low), effDeg, lead, getOrThrow(coeffs, low)), ...zeros];
   if (effDeg === 3) return opts.cubics === false ? zeros : [...rootsCubicFormula(S.One, get(low + 2), get(low + 1), get(low), opts.trig), ...zeros];
   // a polynomial in x**2 (SymPy's decomposition f = g(x**2)): the square roots of the roots of g
   if ([...normalized.keys()].every((k) => (k - low) % 2 === 0)) {
@@ -814,8 +813,7 @@ function symbolicCubicRoots(a: Expr, b: Expr, c: Expr): Expr[] {
   // (expanded; q = 0 gives the root -a/3, which factor() splits off before)
   const p = expand(add(b, mul(-1, pow(a, 2), third)));
   const q = expand(add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1n, 27n))));
-  const coeff = mul(S.I, sqrt(3), Rational.of(1n, 2n));
-  const uks = [S.One, add(Rational.of(-1n, 2n), coeff), add(Rational.of(-1n, 2n), neg(coeff))];
+  const uks = cubeRootsOfUnity();
   if (isZeroE(p) || (isReal(q) === true && isNegative(q) === true)) {
     // the cases with u1 (SymPy): x**3 + a*x**2 + ... with p = 0 or q < 0
     const pon3 = mul(p, third);
@@ -825,7 +823,7 @@ function symbolicCubicRoots(a: Expr, b: Expr, c: Expr): Expr[] {
         ? neg(pow(q, third))
         : pow(neg(q), third)
       : neg(pow(add(mul(-1, q, Rational.of(1n, 2n)), sqrt(add(mul(pow(q, 2), Rational.of(1n, 4n)), pow(pon3, 3)))), third));
-    const us = [u1, mul(u1, at(uks, 1)), mul(u1, at(uks, 2))];
+    const us = [u1, mul(u1, uks[1]), mul(u1, uks[2])];
     if (isZeroE(p)) return us.map((u) => add(u, neg(aon3)));
     return us.map((u) => add(neg(u), mul(pon3, pow(u, -1)), neg(aon3)));
   }

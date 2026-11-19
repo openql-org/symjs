@@ -3105,13 +3105,14 @@ export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: bo
     // SymPy together (gcd_terms): a Float that is the coefficient of every term up to its sign is taken out,
     // and the rest is factored exactly (1.5*x + 1.5 is 1.5*(x + 1))
     const parts = e.args.map((t): [Float | undefined, Expr] => {
-      const float = t instanceof Float ? t : t instanceof Mul ? t.args.find((a): a is Float => a instanceof Float) : undefined;
-      return [float, float === undefined || t instanceof Float ? S.One : mul(...(t instanceof Mul ? t.args : []).filter((a) => a !== float))];
+      if (!(t instanceof Mul)) return [t instanceof Float ? t : undefined, S.One];
+      const float = t.args.find((a): a is Float => a instanceof Float);
+      return [float, float === undefined ? S.One : mul(...t.args.filter((a) => a !== float))];
     });
     const leading = at(parts, 0)[0];
     const magnitude = Math.abs(leading?.toNumber() ?? 1);
     if (leading !== undefined && parts.every(([c]) => c !== undefined && Math.abs(c.toNumber()) === magnitude)) {
-      const inner = add(...parts.map(([c, rest]) => ((c?.toNumber() ?? 1) < 0 ? mul(-1, rest) : rest)));
+      const inner = add(...parts.map(([c, rest]) => (defined(c).toNumber() < 0 ? mul(-1, rest) : rest)));
       if (!some(inner, (a) => a instanceof Float)) {
         // the sign goes with the Float so that the leading coefficient of the rest is positive
         const positive = leading.toNumber() < 0 ? mul(-1, leading) : leading;

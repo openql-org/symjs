@@ -137,3 +137,11 @@ it('gives the element when the base becomes an explicit array (SymPy Indexed on 
   // a symbolic index stays an indexed entry
   expect(str(sj.subs(A.at(x, 0), [[A, M]]))).toBe('[[x, y], [z, w]][x, 0]');
 });
+
+it('stores assumptions on a base with a quotient as its label', () => {
+  const label = x.div(i);
+  const base = new IndexedBase(label, { real: true });
+  expect(base.label).toBe(label);
+  expect(base.isReal).toBe(true);
+  expect(new IndexedBase(label).isReal).toBe('unknown');
+});

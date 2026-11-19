@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, Sym, parse, separatevars, symbol, isNoMatch, abs } from '../../src';
+import { DiracDelta, Heaviside, Sym, parse, separatevars, symbol, isNoMatch, abs, SymFunction } from '../../src';
 import type { Expr } from '../../src';
 
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
@@ -86,4 +86,11 @@ it('factors only shared trailing noncommuting factors', () => {
   const x = symbol('x');
   expect(String(separatevars(A.mul(B).add(x.mul(B))))).toBe('(x + A)*B');
   expect(String(separatevars(A.mul(B).add(B.mul(A))))).toBe('A*B + B*A');
+});
+
+it('extracts a common right factor from noncommuting functions of commuting variables', () => {
+  const [x, y] = [new Sym('x'), new Sym('y')];
+  const nc = { assumptions: { commutative: false } };
+  const q = SymFunction('q', nc)(x), w = SymFunction('w', nc)(y);
+  expect(String(separatevars(q.add(w.mul(q))))).toBe('(1 + w(y))*q(x)');
 });

@@ -1485,3 +1485,15 @@ it('takes common symbols out of a difference of finite sets (SymPy FiniteSet._co
   // SymPy test_issue_9808
   expect(show(F(1, 2, x), F(x, y, 2, 3))).toBe('Complement({1}, {y})');
 });
+
+it('excludes complex numeric values with a nonzero imaginary part from the reals', () => {
+  expect(C(Sets.Reals, sj.exp(sj.I))).toBe(sj.S.false);
+});
+
+it('leaves a numeric endpoint unordered when its evaluator is outside its domain', () => {
+  const positiveLog = sj.implementedFunction('positiveLog', (t) => {
+    if (t <= 0) throw new RangeError('positive argument required');
+    return Math.log(t);
+  });
+  expect(Sets.realValue(positiveLog(-1))).toBeUndefined();
+});

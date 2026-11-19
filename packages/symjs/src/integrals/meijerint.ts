@@ -1053,12 +1053,6 @@ function checkAntecedentsInversion(g0: MeijerG, x: Sym): Expr | boolean {
   const theta = div(add(R(1 - sigma, 2), ...g.bq, ...g.ap.map(neg)), sigma);
   const delta = g.delta;
   if (!(isPositive(sub(delta, div(e, 2))) === true || sub(delta, div(e, 2)).key === S.Zero.key || (p >= 1 && p >= q))) return false;
-  for (const a of g.an) {
-    for (const b of g.bm) {
-      const d = sub(a, b);
-      if (isRat(d) && d.isInteger && d.isPositive) return false;
-    }
-  }
   const E = (zz: Expr) => and(...g.an.map((a) => statement(sub(a, 1), S.Zero, S.Zero, zz)));
   if (p >= q) return E(z);
   const H = (zz: Expr) => statement(theta, R(-sigma), R(1, sigma), zz);

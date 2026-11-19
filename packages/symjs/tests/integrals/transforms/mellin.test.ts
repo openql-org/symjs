@@ -17,6 +17,8 @@ import {
   pi,
   pow,
   symbols,
+  DefinedFunctionCall,
+  sin,
   DiracDelta,
   Heaviside,
   inverseMellinTransform,
@@ -397,4 +399,22 @@ it('exposes the Mellin kernel and its LaTeX symbol', () => {
   const transform = new MellinTransform(SymFunction('f')(x), x, s);
   expect(String(transform.asIntegral)).toBe('Integral(x**(s - 1)*f(x), (x, 0, oo))');
   expect(latex(transform)).toContain('mathcal{M}');
+});
+
+it('transforms unevaluated one-argument Heaviside calls and their power weights', () => {
+  const [x, s, a] = symbols('x s a');
+  const head = Heaviside(x);
+  if (!(head instanceof DefinedFunctionCall)) throw new TypeError('expected a Heaviside call');
+  const step = (arg: Expr) => new DefinedFunctionCall(head.name, [arg], head.definition);
+  const transform = (f: Expr) => show(mellinTransform(f, x, s));
+  expect(transform(step(x.sub(2)))).toBe('(-2**s/s, (-oo, 0), True)');
+  expect(transform(step(x.neg().add(2)))).toBe('(2**s/s, (0, oo), True)');
+  expect(transform(step(sin(x)))).toBe('MellinTransform(Heaviside(sin(x)), x, s)');
+  const above = x.sub(1), below = x.neg().add(1);
+  expect(transform(mul(step(above), pow(above, a))))
+    .toBe('(gamma(-a - s)*gamma(a + 1)/gamma(1 - s), (-oo, -re(a)), re(a) > -1)');
+  expect(transform(mul(step(below), pow(below, a))))
+    .toBe('(gamma(s)*gamma(a + 1)/gamma(a + s + 1), (0, oo), re(a) > -1)');
+  expect(transform(mul(step(above), exp(x.neg())))).toBe('(-(s*lowergamma(s, 1) - gamma(s + 1))/s, (-oo, oo), True)');
+  expect(transform(mul(step(below), exp(x.neg())))).toBe('(lowergamma(s, 1), (0, oo), True)');
 });
