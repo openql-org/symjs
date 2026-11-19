@@ -493,7 +493,7 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e instanceof Integral && e.args.length === 2 && e.variable.key === old.key && !(nw instanceof Sym)) return new Integral([e.integrand, old, nw]);
   // a bound variable is not free: only the limits are substituted
   const bound = boundSymbols(e);
-  if (bound.length && bound.some((b) => old.key === b.key)) {
+  if (bound.length && bound.some((b) => old.key === b.key || (e instanceof Integral && !(old instanceof UndefFn) && [...old.freeSymbols()].some(v => v.equals(b))))) {
     if (e instanceof ExtensionExpr) {
       // boundSymbols found the variables of an extension node through its bindings
       const b = defined(e.bindings(), 'bindings');
@@ -532,6 +532,7 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     return piecewise(...pairs);
   }
   const args = e.args.map((a) => subsOne(a, old, nw));
+  if (e instanceof Integral && args.length === 3 && at(args, 1).equals(at(args, 2))) return new Integral(args.slice(0, 2));
   if (e instanceof Derivative && old instanceof Sym && e.expr.key !== old.key && first(args).key !== e.expr.key) {
     const introduced = new Set([...nw.freeSymbols()].map((v) => v.key));
     if (e.variableCount.some(([v]) => introduced.has(v.key) && !old.has(v) && e.expr.has(v))) return new SubsNode([e, old, nw]);

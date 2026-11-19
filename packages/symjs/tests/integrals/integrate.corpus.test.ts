@@ -953,7 +953,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [x, y, z] = symbols('x y z');
     expect(equivalent(sympyStr(integrate(new Pow(E, new Mul([x, y])), x, [Rational.of(0n, 1n, { gcd: 1n }), z], { conds: 'piecewise' })), 'Piecewise((exp(y*z)/y - 1/y, (y > -oo) & (y < oo) & Ne(y, 0)), (z, True))', [x, y, z], { fn: 'integrate', input: 'exp(x*y)' })).toBe(true);
   });
-  it.fails("test_integrate_returns_piecewise:679", () => {
+  it("test_integrate_returns_piecewise:679", () => {
     const [t, x, y] = symbols('t x y');
     expect(sympyStr(integrate(new Mul([new Pow(E, t), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), t, new Pow(new Add([x, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y])]), Rational.of(1n, 2n, { gcd: 1n }))]))]), t, undefined, { conds: 'piecewise' }))).toBe('Piecewise((-exp(t)/(sqrt(x - y)*exp(t*sqrt(x - y)) - exp(t*sqrt(x - y))), Ne(x, y + 1)), (t, True))');
   });
@@ -965,11 +965,11 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(integrate(fn('Max', [new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n }))], { evaluate: false }), x, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })], { conds: 'piecewise' }))).toBe('49/12');
   });
-  it.fails("test_integrate_max_min:688", () => {
+  it("test_integrate_max_min:688", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(integrate(new Pow(fn('Min', [new Pow(E, x), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]))], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n })), x, undefined, { conds: 'piecewise' }))).toBe('Piecewise((exp(2*x)/2, x <= 0), (1 - exp(-2*x)/2, True))');
   });
-  it.fails("test_integrate_max_min:695", () => {
+  it("test_integrate_max_min:695", () => {
     const c = new Sym('c', { extendedReal: true });
     const x = new Sym('x', { real: true });
     expect(sympyStr(integrate(new Mul([fn('Max', [c, x], { evaluate: false }), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]))]), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('sqrt(pi)*c*erf(c)/2 + sqrt(pi)*c/2 + exp(-c**2)/2');
@@ -1092,7 +1092,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(integral(new Pow(E, new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])])), [x, x]).subs(x, Rational.of(5n, 1n, { gcd: 1n })))).toBe('Integral(exp(-x**2 + y), (x, 5))');
   });
-  it.fails("test_subs5:769", () => {
+  it("test_subs5:769", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(integral(new Pow(E, new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])])), [x, x]).subs(y, Rational.of(5n, 1n, { gcd: 1n })))).toBe('Integral(exp(5 - x**2), x)');
   });
@@ -1135,11 +1135,11 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(subs(integral(x, [x, Rational.of(1n, 1n, { gcd: 1n }), y], [y, Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })]), new Map([[x, Rational.of(1n, 1n, { gcd: 1n })], [y, Rational.of(2n, 1n, { gcd: 1n })]])))).toBe('Integral(x, (x, 1, y), (y, 1, 2))');
   });
-  it.fails("test_subs7:798", () => {
+  it("test_subs7:798", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(integral(new Add([fn('sin', [x], { evaluate: false }), fn('sin', [y], { evaluate: false })]), [x, fn('sin', [x], { evaluate: false }), fn('sin', [y], { evaluate: false })], [y, Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })]).subs(fn('sin', [y], { evaluate: false }), Rational.of(1n, 1n, { gcd: 1n })))).toBe('Integral(sin(x) + sin(y), (x, sin(x), sin(y)), (y, 1, 2))');
   });
-  it.fails("test_subs7:799", () => {
+  it("test_subs7:799", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(integral(new Add([fn('sin', [x], { evaluate: false }), fn('sin', [y], { evaluate: false })]), [x, fn('sin', [x], { evaluate: false }), fn('sin', [y], { evaluate: false })], [y, Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })]).subs(fn('sin', [x], { evaluate: false }), Rational.of(1n, 1n, { gcd: 1n })))).toBe('Integral(sin(x) + sin(y), (x, 1, sin(y)), (y, 1, 2))');
   });
@@ -1592,7 +1592,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const z = new Sym('z', { positive: true });
     expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(z, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(1n, 2n, { gcd: 1n })), x, undefined, { conds: 'piecewise' }))).toBe('x*sqrt(x**2 + z**2)/2 + z**2*asinh(x/z)/2');
   });
-  it.fails("test_issue_4403:1048", () => {
+  it("test_issue_4403:1048", () => {
     const x = new Sym('x');
     const z = new Sym('z', { positive: true });
     expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(z, Rational.of(2n, 1n, { gcd: 1n }))])]), Rational.of(1n, 2n, { gcd: 1n })), x, undefined, { conds: 'piecewise' }))).toBe('x*sqrt(x**2 - z**2)/2 - z**2*log(x + sqrt(x**2 - z**2))/2');
@@ -1602,7 +1602,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const y = new Sym('y', { positive: true });
     expect(sympyStr(integrate(new Pow(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-3n, 2n, { gcd: 1n })), x, undefined, { conds: 'piecewise' }))).toBe('x/(y**2*sqrt(x**2 + y**2))');
   });
-  it.fails("test_issue_4403_2:1060", () => {
+  it("test_issue_4403_2:1060", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Pow(new Add([Rational.of(-4n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), Rational.of(1n, 2n, { gcd: 1n })), x, undefined, { conds: 'piecewise' }))).toBe('x*sqrt(-x**2 - 4)/2 - 2*atan(x/sqrt(-x**2 - 4))');
   });
@@ -1688,12 +1688,12 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Mul([new Pow(x, Rational.of(-1n, 3n, { gcd: 1n })), new Add([new Pow(x, Rational.of(1n, 2n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(3n, 1n, { gcd: 1n }))])])]), x, undefined, { conds: 'piecewise' }))).toBe('6*x**(7/6)/7 - 3*x**(11/3)/11');
   });
-  it.fails("test_issue_4527:1119", () => {
+  it("test_issue_4527:1119", () => {
     const k = new Sym('k', { integer: true });
     const m = new Sym('m', { integer: true });
     expect(sympyStr(simplify(piecewise([Rational.of(0n, 1n, { gcd: 1n }), Or(Relational(k, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(m, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), And(Relational(k, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(m, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false })), And(Relational(k, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, m, '==', { evaluate: false }), Relational(m, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false })), And(Relational(k, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(m, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), m]), '==', { evaluate: false })), And(Relational(k, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, m, '==', { evaluate: false }), Relational(m, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), m]), '==', { evaluate: false })))], [new Mul([Rational.of(-1n, 2n, { gcd: 1n }), pi]), Or(Relational(k, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), m]), '==', { evaluate: false }), And(Relational(k, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), m]), '==', { evaluate: false })), And(Relational(k, m, '==', { evaluate: false }), Relational(k, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), m]), '==', { evaluate: false })), And(Relational(m, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), m]), '==', { evaluate: false })), And(Relational(k, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, m, '==', { evaluate: false }), Relational(k, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), m]), '==', { evaluate: false })), And(Relational(k, m, '==', { evaluate: false }), Relational(m, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), m]), '==', { evaluate: false })))], [new Mul([Rational.of(1n, 2n, { gcd: 1n }), pi]), Or(Relational(k, m, '==', { evaluate: false }), And(Relational(k, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Relational(k, m, '==', { evaluate: false })), And(Relational(k, m, '==', { evaluate: false }), Relational(m, Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false })))], [Rational.of(0n, 1n, { gcd: 1n }), true], { evaluate: false })))).toBe('Piecewise((0, Eq(k, 0) | Eq(m, 0)), (-pi/2, Eq(k, -m) | (Eq(k, 0) & Eq(m, 0))), (pi/2, Eq(k, m) | (Eq(k, 0) & Eq(m, 0))), (0, True))');
   });
-  it.fails("test_issue_4527:1130", () => {
+  it("test_issue_4527:1130", () => {
     const x = new Sym('x');
     const k = new Sym('k', { integer: true });
     const m = new Sym('m', { integer: true });
@@ -1960,7 +1960,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(integrate(new Pow(new Add([x, y]), Rational.of(-2n, 1n, { gcd: 1n })), x, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], { conds: 'piecewise' }))).toBe('-1/(y + 1) + 1/y');
   });
-  it.fails("test_issue_14096:1519", () => {
+  it("test_issue_14096:1519", () => {
     const [x, y, z] = symbols('x y z');
     expect(sympyStr(integrate(integrate(integrate(new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), x, y, z]), Rational.of(-2n, 1n, { gcd: 1n })), x, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], { conds: 'piecewise' }), y, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], { conds: 'piecewise' }), z, [Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })], { conds: 'piecewise' }))).toBe('-4*log(4) - 6*log(2) + 9*log(3)');
   });
@@ -1999,7 +1999,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const n = new Sym('n', { integer: true });
     expect(equivalent(sympyStr(gammasimp(piecewise([new Add([new Mul([n, fn('gamma', [n]), fn('polygamma', [Rational.of(0n, 1n, { gcd: 1n }), n])]), new Mul([new Pow(fn('gamma', [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), n])]), Rational.of(-2n, 1n, { gcd: 1n })), new Pow(fn('gamma', [new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), n])])]), Rational.of(2n, 1n, { gcd: 1n })), hyper([new Add([Rational.of(1n, 1n, { gcd: 1n }), n]), new Add([Rational.of(1n, 1n, { gcd: 1n }), n])], [new Add([Rational.of(2n, 1n, { gcd: 1n }), n]), new Add([Rational.of(2n, 1n, { gcd: 1n }), n])], Rational.of(-1n, 1n, { gcd: 1n }), { evaluate: false })]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(fn('gamma', [new Add([Rational.of(1n, 1n, { gcd: 1n }), n])]), Rational.of(2n, 1n, { gcd: 1n })), new Pow(fn('gamma', [new Add([Rational.of(2n, 1n, { gcd: 1n }), n])]), Rational.of(-2n, 1n, { gcd: 1n })), hyper([new Add([Rational.of(1n, 1n, { gcd: 1n }), n]), new Add([Rational.of(1n, 1n, { gcd: 1n }), n])], [new Add([Rational.of(2n, 1n, { gcd: 1n }), n]), new Add([Rational.of(2n, 1n, { gcd: 1n }), n])], Rational.of(-1n, 1n, { gcd: 1n }), { evaluate: false })]), fn('gamma', [n])]), Relational(n, Rational.of(-1n, 1n, { gcd: 1n }), '>', { evaluate: false })], [integral(new Mul([new Pow(x, n), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])), fn('log', [x], { evaluate: false })]), [x, Rational.of(0n, 1n, { gcd: 1n }), oo]), true], { evaluate: false }))), 'Piecewise((gamma(n + 1)*polygamma(0, n) + gamma(n + 1)/n, n > -1), (Integral(x**n*exp(-x)*log(x), (x, 0, oo)), True))', [n, x], { fn: '.gammasimp', input: 'Piecewise((n*gamma(n)*polygamma(0, n) + gamma(n) - gamma(n + 1)**2*hyper((n + 1, n + 1), (n + 2, n + 2), -1)/gamma(n + 2)**2 + gamma(-n - 1)**2*hyper((n + 1, n + 1), (n + 2, n + 2), -1)/gamma(-n)**2, n > -1), (Integral(x**n*exp(-x)*log(x), (x, 0, oo)), True))' })).toBe(true);
   });
-  it.fails("test_issue_15124:1581", () => {
+  it("test_issue_15124:1581", () => {
     const [x, omega] = symbols('x omega');
     const m = new Sym('m', { integer: true });
     const p = new Sym('p', { integer: true });
@@ -2068,7 +2068,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const x = new Sym('x');
     expect(sympyStr(diff(new Add([new Mul([Rational.of(4n, 1n, { gcd: 1n }), fn('Ei', [new Mul([Rational.of(4n, 1n, { gcd: 1n }), fn('log', [x], { evaluate: false })])])]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(4n, 1n, { gcd: 1n })), new Pow(fn('log', [x], { evaluate: false }), Rational.of(-1n, 1n, { gcd: 1n }))])]), x, 1))).toBe('x**3/log(x)**2');
   });
-  it.fails("test_issue_15640_log_substitutions:1636", () => {
+  it("test_issue_15640_log_substitutions:1636", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Mul([new Pow(x, Rational.of(-2n, 1n, { gcd: 1n })), new Pow(fn('log', [x], { evaluate: false }), Rational.of(1n, 2n, { gcd: 1n }))]), x, undefined, { conds: 'piecewise' }))).toBe('-sqrt(pi)*erfc(sqrt(log(x)))/2 - sqrt(log(x))/x');
   });
@@ -2104,11 +2104,11 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const t = new Sym('t', { real: true });
     expect(sympyStr(integrate(new Pow(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(E, new Mul([I, t]))]), Rational.of(-1n, 1n, { gcd: 1n })), t, undefined, { conds: 'piecewise' }))).toBe('-t/2 - I*log(exp(I*t) - 2)/2');
   });
-  it.fails("test_integrate_with_complex_constants:1668", () => {
+  it("test_integrate_with_complex_constants:1668", () => {
     const t = new Sym('t', { real: true });
     expect(sympyStr(integrate(new Pow(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(E, new Mul([I, t]))]), Rational.of(-1n, 1n, { gcd: 1n })), t, [Rational.of(0n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi])], { conds: 'piecewise' }))).toBe('-pi');
   });
-  it.fails("test_issue_14241:1674", () => {
+  it("test_issue_14241:1674", () => {
     const x = new Sym('x');
     const n = new Sym('n', { positive: true, integer: true });
     expect(sympyStr(integrate(new Mul([n, new Pow(x, new Add([Rational.of(-1n, 1n, { gcd: 1n }), n])), new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), Rational.of(-1n, 1n, { gcd: 1n }))]), x, undefined, { conds: 'piecewise' }))).toBe('n**2*x**n*lerchphi(x*exp_polar(I*pi), 1, n)*gamma(n)/gamma(n + 1)');
@@ -2117,7 +2117,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const t = new Sym('t');
     expect(sympyStr(integrate(new Mul([new Pow(new Add([Rational.of(5n, 1n, { gcd: 1n }), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), fn('cos', [t], { evaluate: false })])]), Rational.of(-1n, 1n, { gcd: 1n })), new Pow(fn('sin', [t], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n }))]), t, [Rational.of(0n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi])], { conds: 'piecewise' }))).toBe('pi/4');
   });
-  it.fails("test_issue_14709b:1685", () => {
+  it("test_issue_14709b:1685", () => {
     const x = new Sym('x');
     const h = new Sym('h', { positive: true });
     expect(sympyStr(integrate(new Mul([x, fn('acos', [new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x, new Pow(h, Rational.of(-1n, 1n, { gcd: 1n }))])])], { evaluate: false })]), x, [Rational.of(0n, 1n, { gcd: 1n }), h], { conds: 'piecewise' }))).toBe('5*pi*h**2/16');
@@ -2130,15 +2130,15 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(E, new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x]))]), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]))])]), x, [Rational.of(0n, 1n, { gcd: 1n }), oo], { conds: 'piecewise' }))).toBe('log(2)');
   });
-  it.fails("test_li_integral:1713", () => {
+  it("test_li_integral:1713", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(doit(integral(fn('li', [new Mul([y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), [x])))).toBe('Piecewise((x*li(x**2*y) - x*Ei(3*log(x**2*y)/2)/sqrt(x**2*y), Ne(y, 0)), (0, True))');
   });
-  it.fails("test_issue_17473:1725", () => {
+  it("test_issue_17473:1725", () => {
     const [x, n] = symbols('x n');
     expect(sympyStr(integrate(fn('sin', [new Pow(x, n)], { evaluate: false }), x, undefined, { conds: 'piecewise' }))).toBe('x**(n + 1)*gamma(1/2 + 1/(2*n))*hyper((1/2 + 1/(2*n),), (3/2, 3/2 + 1/(2*n)), -x**(2*n)/4)/(2*n*gamma(3/2 + 1/(2*n)))');
   });
-  it.fails("test_issue_17473:1728", () => {
+  it("test_issue_17473:1728", () => {
     const n = new Sym('n');
     const x = new Sym('x', { zero: false });
     expect(sympyStr(integrate(fn('sin', [new Pow(x, n)], { evaluate: false }), x, undefined, { conds: 'piecewise' }))).toBe('x*x**n*gamma(1/2 + 1/(2*n))*hyper((1/2 + 1/(2*n),), (3/2, 3/2 + 1/(2*n)), -x**(2*n)/4)/(2*n*gamma(3/2 + 1/(2*n)))');
@@ -2195,7 +2195,7 @@ describe("sympy/integrals/tests/test_integrals.py", () => {
     const [x, y] = symbols('x y');
     expect(() => integrate(Sum(x, [x, Rational.of(1n, 1n, { gcd: 1n }), y]), x, undefined, { conds: 'piecewise' })).toThrow(RangeError);
   });
-  it.fails("test_issue_4231:1763", () => {
+  it("test_issue_4231:1763", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), new Pow(new Add([x, new Pow(new Add([x, fn('log', [x], { evaluate: false })]), Rational.of(1n, 2n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), new Pow(new Add([x, fn('log', [x], { evaluate: false })]), Rational.of(-1n, 2n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x]), new Mul([new Pow(new Add([x, fn('log', [x], { evaluate: false })]), Rational.of(1n, 2n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), x])])])])]), x, undefined, { conds: 'piecewise' }))).toBe('2*sqrt(x + log(x)) + 2*log(x + sqrt(x + log(x)))');
   });
@@ -2742,7 +2742,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(manualintegrate(new Mul([fn('cos', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), x])], { evaluate: false }), fn('sec', [x], { evaluate: false })]), x)), '-x + sin(2*x)', [x], { fn: 'manualintegrate', input: 'cos(3*x)*sec(x)' })).toBe(true);
   });
-  it.fails("test_manualintegrate_trigonometry:104", () => {
+  it("test_manualintegrate_trigonometry:104", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([fn('sec', [x], { evaluate: false }), fn('sin', [new Mul([Rational.of(3n, 1n, { gcd: 1n }), x])], { evaluate: false })]), x))).toBe('-3*log(cos(x)) + 2*log(cos(x)**2) - 2*cos(x)**2');
   });
@@ -3384,7 +3384,7 @@ describe("sympy/integrals/tests/test_manual.py", () => {
     const [x, a, b] = symbols('x a b');
     expect(equivalent(sympyStr(manualintegrate(new Mul([x, new Pow(new Add([a, new Mul([b, x])]), Rational.of(-3n, 2n, { gcd: 1n }))]), x)), 'Piecewise((2*(a/sqrt(a + b*x) + sqrt(a + b*x))/b**2, Ne(b, 0)), (x**2/(2*a**(3/2)), True))', [x, a, b], { fn: 'manualintegrate', input: 'x/(a + b*x)**(3/2)' })).toBe(true);
   });
-  it.fails("test_manualintegrate_sqrt_linear:30 (2)", () => {
+  it("test_manualintegrate_sqrt_linear:30 (2)", () => {
     const x = new Sym('x');
     expect(sympyStr(manualintegrate(new Mul([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(new Add([Rational.of(2n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])]), Rational.of(1n, 3n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(new Add([Rational.of(3n, 1n, { gcd: 1n }), new Mul([Rational.of(3n, 1n, { gcd: 1n }), x])]), Rational.of(1n, 2n, { gcd: 1n }))])]), x))).toBe('3*sqrt(6)*(2*x + 2)**(7/6)/14 - 3*sqrt(6)*(2*x + 2)**(5/6)/10 - 3*sqrt(6)*(2*x + 2)**(1/6)/2 + 3*(2*x + 2)**(2/3)/4 - 3*(2*x + 2)**(1/3)/2 + sqrt(6)*sqrt(2*x + 2)/2 + 3*log((2*x + 2)**(1/3) + 1)/2 + 3*sqrt(6)*atan((2*x + 2)**(1/6))/2');
   });

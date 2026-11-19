@@ -252,3 +252,11 @@ it('distinguishes a held constant logarithm from a dilogarithm derivative', () =
   const f = new sj.Mul([new sj.Fn('log', [two]), sj.pow(x, -1)]);
   expect(sj.manualintegrate(f,x).equals(parse('log(2)*log(x)'))).toBe(true);
 });
+
+it('uses a common radical only when the change of variable is rational', () => {
+  const f = parse('sqrt(3*x)/(1+(2*x)**(1/3))');
+  const primitive = sj.manualintegrate(f, x);
+  expect(sj.diff(primitive, x).subs(x, 2).toNumber()).toBeCloseTo(f.subs(x, 2).toNumber(), 12);
+  const withSine = parse('sin(x)*sqrt(3*x)/((2*x)**(1/3)+1)');
+  expect(String(sj.manualintegrate(withSine, x))).toBe('sqrt(3)*Integral(sqrt(x)*sin(x)/(2**(1/3)*x**(1/3) + 1), x)');
+});

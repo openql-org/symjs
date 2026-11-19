@@ -1892,3 +1892,19 @@ it('counts powers of a generator that is no symbol and keeps unexpanded generato
   expect(String(sj.Poly.from(pow(add(x, y), 3), [add(x, y)], { expand: false }))).toBe("Poly((x + y)**3, x + y, domain='ZZ')");
   expect(String(sj.Poly.from(pow(add(x, -1), 2), [add(x, -1)], { expand: false }))).toBe("Poly((x - 1)**2, x - 1, domain='ZZ')");
 });
+
+it('retains coefficient domains in sums and rational denominator clearing', () => {
+  const x = new Sym('x');
+  for (const domain of ['QQ', 'EX']) {
+    const f = Poly.from(x, [x], { domain });
+    const g = Poly.from(1, [x], { domain });
+    expect(f.add(g).domain).toBe(domain);
+    expect(f.ratClearDenoms(g).map(p => p.domain)).toEqual(domain === 'EX' ? ['EX', 'EX'] : ['ZZ', 'ZZ']);
+  }
+  const generator = sj.sin(x);
+  expect(() => Poly.from(generator, [generator]).realRoots({ extension: false })).toThrow(sj.PolynomialError);
+  const inexact = parse('1.5*sin(1.2*x)+1.5');
+  expect(sj.factor(inexact).equals(inexact)).toBe(true);
+  // The sign of the leading coefficient is unavailable for a non-polynomial generator.
+  expect(String(sj.factor(parse('1.5/x+1.5'), { gens: [x] }))).toBe('1.5*(x + 1)/x');
+});
