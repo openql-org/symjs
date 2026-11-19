@@ -9,6 +9,11 @@ import type { Expr } from '../../src';
 import { clearCoefficients, factorSum, inversecombine, ncSimplify, nthroot, fn, S, Sum, Mul, Pow } from '../../src';
 import { Add, And, Or, Piecewise, Rel, Tuple, pi, sstr } from '../../src';
 
+it('cancels reciprocal principal square roots on the negative real axis', () => {
+  const z = symbol('z', { negative: true });
+  expect(simplify(parse('sqrt(1/z) + 1/sqrt(z)', { symbols: [z] })).equals(0)).toBe(true);
+});
+
 it('retains a short logarithmic change-of-base ratio', () => {
   const y = symbol('y', { positive: true });
   const expr = parse('log(y/10)/log(y/5)', { symbols: [y] });
@@ -23,6 +28,11 @@ describe('simplifying Piecewise intervals and equalities', () => {
     [Piecewise([1, Lt(x, 2)], [2, Lt(x, 1)], [3, true]), 'Piecewise((1, x < 2), (3, True))'],
     [Piecewise([1, And(Gt(x, 1), Lt(x, 3))], [2, And(Gt(x, 2), Lt(x, 4))]), 'Piecewise((1, (x > 1) & (x < 3)), (2, (x >= 3) & (x < 4)), (nan, True))'],
     [Piecewise([1, And(Ge(x, 1), Le(x, 3))], [2, Gt(x, 2)]), 'Piecewise((1, (x >= 1) & (x <= 3)), (2, x > 3), (nan, True))'],
+    [Piecewise([1, Lt(x, 1)], [2, Le(x, 3)], [3, true]), 'Piecewise((1, x < 1), (2, x <= 3), (3, True))'],
+    [Piecewise([x, and(Eq(x, y), Eq(pow(x, 2), 2))], [2, true]), 'Piecewise((y, Eq(x, y) & Eq(y**2, 2)), (2, True))'],
+    [Piecewise([x, and(Eq(x, y), Gt(x, 2))], [2, true]), 'Piecewise((y, Eq(x, y) & (y > 2)), (2, True))'],
+    [Piecewise([x, Eq(mul(x, y), 2)], [2, true]), 'Piecewise((x, Eq(x*y, 2)), (2, True))'],
+    [add(x, Piecewise([x, Gt(x, 1)], [2, true])), 'Piecewise((2*x, x > 1), (x + 2, True))'],
     [Piecewise([x, Eq(x, pi)], [pi, true]), 'pi'],
     [Piecewise([9, Lt(x, 0)], [8, Eq(x, 3)], [7, true]), 'Piecewise((9, x < 0), (8, Eq(x, 3)), (7, True))'],
     [Piecewise([x, Or(Gt(x, y), Lt(x, 1))], [1, true]), 'Piecewise((x, (x > y) | (x < 1)), (1, True))'],

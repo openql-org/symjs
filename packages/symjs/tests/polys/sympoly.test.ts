@@ -12,6 +12,34 @@ import { polyHooks } from '../../src/polys/poly';
 import algebraicRefs from './sympoly.algebraic.references.json';
 import finitePseudoRefs from './finite-pseudo.references.json';
 
+it('retains inferred coefficient domains through termwise construction and normalization', () => {
+  const p = sj.Poly.from(x, [x]);
+  expect(p.termwise(() => parse('1/(y+2)')).domain).toBe('ZZ(y)');
+  expect(p.termwise(() => parse('1/(sin(y)+2)')).domain).toBe('EX');
+  expect(p.termwise(() => y).monic().domain).toBe('ZZ(y)');
+
+  const expressionPoly = sj.Poly.from(parse('x + sin(y)'), [x], { domain: 'EX' });
+  expect(expressionPoly.ratClearDenoms(expressionPoly).every((q) => q.equals(expressionPoly))).toBe(true);
+  const generator = sj.sin(x);
+  expect(() => sj.Poly.from(generator, [generator]).realRoots({ extension: false })).toThrow(sj.PolynomialError);
+});
+
+it('factors around a held operator and respects inexact function arguments', () => {
+  const held = new sj.UnevaluatedExpr(new Sym('A', { commutative: false }));
+  expect(factorNc(add(held, mul(x, held))).equals(mul(add(x, 1), held))).toBe(true);
+  expect(String(sj.factor(parse('1.5*sin(x)**2 - 1.5'), { gens: [x] }))).toBe('1.5*(sin(x) - 1)*(sin(x) + 1)');
+  const inexact = parse('1.5*sin(0.2*x) + 1.5*x');
+  expect(sj.factor(inexact).equals(inexact)).toBe(true);
+});
+
+it('finds a common symbolic power after expanding additive exponents', () => {
+  const x = sj.symbol('x', { zero: false });
+  const n = sj.symbol('n');
+  const f = x.pow(n.add(4)).mul(2).sub(x.pow(n.add(2)));
+  const g = x.pow(n.add(1)).mul(4).add(x.pow(n).mul(3));
+  expect(sj.gcd(f, g).equals(x.pow(n))).toBe(true);
+});
+
 describe('finite-domain pseudo-division and resultants (SymPy 1.14)', () => {
   for (const row of finitePseudoRefs) it(`${row.f} by ${row.g} modulo ${row.modulus}`, () => {
     const gens = row.gens.map((s) => new Sym(s)), X = new Sym('x');

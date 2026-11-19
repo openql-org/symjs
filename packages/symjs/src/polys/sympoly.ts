@@ -26,7 +26,7 @@ import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, rebuild, some, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { str } from '../printing/str';
-import { expand as expandFull, expandMul as expand } from '../simplify/expand';
+import { expand as expandFull, expand_power_exp, expandMul as expand } from '../simplify/expand';
 import { sqrtdenest } from '../simplify/sqrtdenest';
 import { cancel, fraction, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
@@ -2749,8 +2749,9 @@ export function polyGcd(f: Poly | ExprLike, g: Poly | ExprLike, opts: Polynomial
     return Poly.from(toExpr(f), vars, opts).gcd(Poly.from(toExpr(g), vars, opts)).asExpr();
   }
   if (f instanceof Poly && g instanceof Poly) return f.gcd(g).asExpr();
-  const a = toExpr(f);
-  const b = toExpr(g);
+  // Expose common generators such as x**n in powers with additive exponents.
+  const a = expand_power_exp(toExpr(f));
+  const b = expand_power_exp(toExpr(g));
   // SymPy parallel_poly_from_expr: algebraic numbers (sqrt(2), pi) are generators unless an extension is given
   const gens = gensFor(a, b);
   return algebraicGcdLcm(a, b, 'gcd') ?? fieldGcdLcm(a, b, gens, 'gcd') ?? mgcd(a, b, gens);

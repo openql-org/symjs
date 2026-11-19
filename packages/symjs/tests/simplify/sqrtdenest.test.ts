@@ -32,6 +32,7 @@ describe('sqrtdenest and radsimp (SymPy ports)', () => {
     expect(['1/(sqrt(2) + sqrt(3))', '1/(1 + sqrt(2) + sqrt(3))', '1/(a + b*sqrt(c))', '1/(2 + sqrt(2))'].map((s) => rs(s))).toEqual([
       '-sqrt(2) + sqrt(3)', '(-sqrt(6) + sqrt(2) + 2)/4', '(a - b*sqrt(c))/(a**2 - b**2*c)', '(2 - sqrt(2))/2',
     ]);
+    expect(rs('(sqrt(3) + sqrt(2))/(sqrt(3) - sqrt(2))')).toBe('2*sqrt(6) + 5');
     expect(rs('1/(a + b*sqrt(c))', { symbolic: false })).toBe('1/(a + b*sqrt(c))');
   });
 });

@@ -12,6 +12,7 @@
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Float, Mul, Pow, Rational, S } from '../core/nodes';
 import { add, div, mul, sqrt, sub, sympify } from '../core/ops';
+import { isPositive } from '../core/assumptions';
 import { asNumerDenom } from '../core/methods';
 import { gcd, lcm } from '../core/numbers';
 import { NotImplementedError } from '../core/errors';
@@ -203,19 +204,13 @@ function qdiv(x: Quad, y: Quad, D: bigint): Quad {
   return [rdiv(num[0], den), rdiv(num[1], den)];
 }
 
-const asRational = (t: ExprLike | bigint): Rational => {
-  const e = typeof t === 'bigint' ? R(t) : sympify(t);
-  if (!(e instanceof Rational)) throw new NotImplementedError('continued_fraction_reduce: the terms of a periodic continued fraction must be rational');
-  return e;
-};
-
-/** The recurrences [p1, q1, p2, q2] after the given terms. */
-function convergentState(terms: readonly Rational[]): [Rational, Rational, Rational, Rational] {
-  let [p2, q2] = [R(0n), R(1n)];
-  let [p1, q1] = [R(1n), R(0n)];
+/** The convergent numerators and denominators after the given terms. */
+function convergentState<T>(terms: readonly T[], zero: T, one: T, plus: (x: T, y: T) => T, times: (x: T, y: T) => T): [T, T, T, T] {
+  let [p2, q2] = [zero, one];
+  let [p1, q1] = [one, zero];
   for (const a of terms) {
-    const p = radd(rmul(a, p1), p2);
-    const q = radd(rmul(a, q1), q2);
+    const p = plus(times(a, p1), p2);
+    const q = plus(times(a, q1), q2);
     [p2, q2] = [p1, q1];
     [p1, q1] = [p, q];
   }
@@ -223,9 +218,9 @@ function convergentState(terms: readonly Rational[]): [Rational, Rational, Ratio
 }
 
 /**
- * The value of a continued fraction (SymPy continued_fraction_reduce): a
- * Rational for finite lists, a quadratic irrational (A + B*sqrt(D))/C for
- * periodic ones.
+ * Reduce a finite or periodic continued fraction (SymPy continued_fraction_reduce).
+ * A rational period uses exact quadratic arithmetic. A positive symbolic period
+ * selects the larger root of its fixed-point equation.
  */
 export function continuedFractionReduce(cf: readonly (ExprLike | bigint | readonly (ExprLike | bigint)[])[]): Expr {
   const prefix: (ExprLike | bigint)[] = [];
@@ -243,7 +238,20 @@ export function continuedFractionReduce(cf: readonly (ExprLike | bigint | readon
     return a;
   }
   // the purely periodic part y = [period..., y]: Q y**2 + (Q' - P) y - P' = 0
-  const [P, Q, P2, Q2] = convergentState(period.map(asRational));
+  const tail = period.map((t) => sympify(t));
+  const head = prefix.map((t) => sympify(t));
+  const rational = (t: Expr): t is Rational => t instanceof Rational;
+  if (!tail.every(rational)) {
+    if (!tail.every((t) => isPositive(t) === true)) throw new NotImplementedError('continued_fraction_reduce: the symbolic period must have positive terms');
+    const [p, q, p2, q2] = convergentState<Expr>(tail, S.Zero, S.One, add, mul);
+    const center = div(sub(p, q2), mul(2, q));
+    const pure = add(center, sqrt(add(center.pow(2), div(p2, q))));
+    return head.reduceRight((rest, t) => add(t, div(1, rest)), pure);
+  }
+  if (!head.every(rational)) {
+    return head.reduceRight((rest, t) => add(t, div(1, rest)), continuedFractionReduce([tail]));
+  }
+  const [P, Q, P2, Q2] = convergentState(tail, R(0n), R(1n), radd, rmul);
   if (Q.p === 0n) throw new NotImplementedError('continued_fraction_reduce: degenerate period');
   const bq = radd(Q2, rneg(P));
   const disc = radd(rmul(bq, bq), rmul(R(4n), rmul(Q, P2)));
@@ -262,7 +270,7 @@ export function continuedFractionReduce(cf: readonly (ExprLike | bigint | readon
   const twoQ = rmul(R(2n), Q);
   let pure: Quad = [rdiv(rneg(bq), twoQ), rdiv(rmul(R(sign), sqrtCoeff), twoQ)];
   if (D === 1n) pure = [radd(pure[0], pure[1]), R(0n)];
-  const [p1, q1, p2, q2] = convergentState(prefix.map(asRational));
+  const [p1, q1, p2, q2] = convergentState(head, R(0n), R(1n), radd, rmul);
   const num = qadd(qmul([p1, R(0n)], pure, D), [p2, R(0n)]);
   const den = qadd(qmul([q1, R(0n)], pure, D), [q2, R(0n)]);
   const [r, s] = qdiv(num, den, D);

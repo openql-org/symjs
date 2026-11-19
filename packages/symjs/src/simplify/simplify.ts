@@ -401,9 +401,10 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
   if (leading instanceof Float && leading.mpf.man === 1n && leading.mpf.exp === 0n && !sympified.isCommutative) {
     sympified = mul(...sympified.args.slice(1));
   }
-  if (sympified instanceof Mul && sympified.args.some((a) => a.key === S.I.key)) {
-    sympified = mul(...sympified.args.map((a) => a instanceof Pow && a.exp.key === S.Half.key && isNegative(a.base) === true
-      ? mul(S.I, pow(mul(-1, a.base), S.Half)) : a));
+  if (sympified.has(S.I)) {
+    // On the negative real axis b**(p/2) = I**p * (-b)**(p/2).
+    sympified = mapBottomUp(sympified, (a) => a instanceof Pow && a.exp instanceof Rational && a.exp.q === 2n && isNegative(a.base) === true
+      ? mul(pow(S.I, a.exp.p), pow(mul(-1, a.base), a.exp)) : a);
   }
   const original = collectAbs(signsimp(mapBottomUp(sympified, t => {
     if (!isExpPow(t) || !t.exp.has(S.Pi) || !t.exp.has(S.I)) return t;

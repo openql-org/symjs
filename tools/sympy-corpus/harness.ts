@@ -3745,8 +3745,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   factor: (args, kw) => {
     if ('polys' in kw) throw new sj.FlagError('polys is not valid for factor');
     for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus', 'domain', 'fraction', 'expand'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const extension = kw['extension'];
+    const domainOptions = extension instanceof sj.AlgebraicNumber
+      ? { ...polynomialOptions({ ...kw, extension: undefined }), domain: new sj.AlgebraicField(sj.QQ, extension) }
+      : polynomialOptions(kw);
     const options = {
-      ...polynomialOptions(kw), deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']),
+      ...domainOptions, deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']),
       fraction: kw['fraction'] !== false, expand: kw['expand'] !== false,
       gens: args.slice(1).flatMap((g) => g instanceof JsTuple ? g.items.map(asExpr) : [asExpr(g)]),
     };
