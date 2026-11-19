@@ -93,7 +93,7 @@ registerHandler('zero', (e) => {
 class Integrator {
   private depth = 0;
 
-  constructor(private readonly x: Sym, private readonly noConditions = false) {}
+  constructor(private readonly x: Sym, private readonly noConditions = false, private readonly symbolicBounds = false) {}
 
   private free(e: Expr): boolean {
     return !e.has(this.x);
@@ -339,6 +339,11 @@ class Integrator {
         if (q !== undefined && Math.max(...q.keys()) === 2) {
           const a = getOrThrow(q, 2), h = q.get(1) ?? S.Zero, c = q.get(0) ?? S.Zero;
           const den = expand(add(mul(4, a, c), mul(-1, pow(h, 2))));
+          // The Meijer G primitive keeps a symbolic quadratic scale on its original branch.
+          if (this.symbolicBounds && den.freeSymbols().size) {
+            const primitive = meijerintIndefinite(f, x);
+            if (primitive !== undefined) return primitive;
+          }
           if (!isZeroR(den)) return mul(2, add(mul(2, a, x), h), pow(den, -1), pow(b, S.NegHalf));
         }
       }
@@ -483,6 +488,9 @@ class Integrator {
         if (!isZeroR(du)) {
           const q = cancel(mul(...factors.filter((t) => t !== g), pow(du, -1)));
           if (this.free(q)) return mul(q, g);
+          // d Ei(u)/dx = exp(u)*u'/u.
+          const scale = cancel(mul(q, g.exp));
+          if (this.free(scale)) return mul(scale, fnErf('Ei', [g.exp]));
         }
       }
       if (!(g instanceof Pow) && factors.length > 1) {
@@ -1262,6 +1270,8 @@ function trigIntervalSign(base: Fn, a: Expr, b: Expr): number {
 
 /** Polynomial singularities of an integrand; undefined means their location is unresolved. */
 function singularPoints(f: Expr, x: Sym, a: Expr, b: Expr): Expr[] | undefined {
+  // Expr._eval_interval checks interior singularities only between comparable endpoints.
+  if (!a.isComparable || !b.isComparable) return [];
   const bases = new Map<string, Expr>();
   const visit = (e: Expr): void => {
     if (e instanceof Pow && e.exp instanceof Rational && e.exp.isNegative && e.base.has(x)) bases.set(e.base.key, e.base);
@@ -1298,7 +1308,7 @@ function singularPoints(f: Expr, x: Sym, a: Expr, b: Expr): Expr[] | undefined {
         // Numerical ordering is used only for constant real roots, never for parameters.
         const real = cmpReal(r, S.Zero);
         if (real !== undefined) points.set(r.key, r);
-        else if (r.freeSymbols().size !== 0) {
+        else if (r.freeSymbols().size !== 0 && (a instanceof Special || b instanceof Special)) {
           // a parametric root: on the real axis when its assumptions say so, off it when they exclude that
           const onAxis = isReal(r);
           if (onAxis === true) points.set(r.key, r);
@@ -1563,7 +1573,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     }
   }
   const F0 = opts.heurisch ? (opts.conds === 'none' ? heurisch(f, x) : heurischWrapper(f, x))
-    : f instanceof Piecewise ? integratePiecewise(f, x) : (new Integrator(x, opts.conds === 'none').integrate(f) ?? otherMethods(f, x));
+    : f instanceof Piecewise ? integratePiecewise(f, x) : (new Integrator(x, opts.conds === 'none', limits?.some(v => !sympify(v).isNumber)).integrate(f) ?? otherMethods(f, x));
   if (opts.heurisch && limits && F0 instanceof Piecewise && F0.pairs.every(([, c]) => !c.has(x)) && singularPoints(f, x, sympify(limits[0]), sympify(limits[1]))?.length === 0) {
     return piecewise(...F0.pairs.map(([v, c]): [Expr, Expr] => {
       const condition = c instanceof Rel && c.op === 'Ne' && c.rhs.equals(S.Zero) ? and(Gt(c.lhs, S.NegativeInfinity), Lt(c.lhs, S.Infinity), c) : c;
@@ -1575,8 +1585,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   const a = sympify(limits[0]);
   const b = sympify(limits[1]);
   if (F === undefined) return unevaluatedAsGiven(definiteWithoutAntiderivative(f, x, a, b, opts));
-  // An antiderivative's endpoint difference is valid only between singularities.
-  // Evaluate the two sides independently: this is an improper integral, not a principal value.
+  // Use one-sided limits at each numerical interior singularity.
   if (a.key === b.key) return S.Zero;
   const points = singularPoints(f, x, a, b);
   const unevaluated = new Integral([f, x, a, b]);
@@ -1592,11 +1601,11 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     const right = cmpSign(p, b);
     if (left === undefined || right === undefined) {
       // An integrable singularity with a continuous primitive needs no split,
-      // even when a symbolic endpoint prevents ordering (e.g. integral of log(x)).
+      // even when the position of a parametric pole is unknown.
       const l = impl.limit(F, x, p, '-');
       const r = impl.limit(F, x, p, '+');
       if (l.key === r.key && !bad(l) && !l.has(x)) continue;
-      return [a, b].some((e) => e instanceof Special) ? definiteWithoutAntiderivative(f, x, a, b, opts) : unevaluated;
+      return definiteWithoutAntiderivative(f, x, a, b, opts);
     }
     if (left > 0 && right < 0) interior.push(p);
   }

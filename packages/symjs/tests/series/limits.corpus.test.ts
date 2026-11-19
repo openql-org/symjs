@@ -2104,7 +2104,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([new Pow(new Add([new Pow(Rational.of(2n, 1n, { gcd: 1n }), x), new Pow(Rational.of(2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]))]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Pow(Rational.of(2n, 1n, { gcd: 1n }), x), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(Rational.of(2n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]))])])]), x, S.NegativeInfinity, '+'))).toBe('-1');
   });
-  it.fails("test_issue_23596:1302", () => {
+  it("test_issue_23596:1302", () => {
     const x = new Sym('x');
     expect(sympyStr(integrate(new Mul([new Pow(x, Rational.of(-2n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(-1n, 1n, { gcd: 1n }))]))]), x, [Rational.of(0n, 1n, { gcd: 1n }), oo], { conds: 'piecewise' }))).toBe('oo');
   });

@@ -1626,19 +1626,19 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(Rational.of(1n, 1n, { gcd: 1n }).div(O(new AppliedUndef('f', [x]), x, Rational.of(0n, 1n, { gcd: 1n }))))).not.toBe('O(1/x)');
   });
-  it.fails("test_order_conjugate_transpose:328", () => {
+  it("test_order_conjugate_transpose:328", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(fn('conjugate', [O(x, x, Rational.of(0n, 1n, { gcd: 1n }))], { evaluate: true }))).toBe('O(x)');
   });
-  it.fails("test_order_conjugate_transpose:329", () => {
+  it("test_order_conjugate_transpose:329", () => {
     const y = new Sym('y', { imaginary: true });
     expect(sympyStr(fn('conjugate', [O(y, y, Rational.of(0n, 1n, { gcd: 1n }))], { evaluate: true }))).toBe('O(y)');
   });
-  it.fails("test_order_conjugate_transpose:330", () => {
+  it("test_order_conjugate_transpose:330", () => {
     const x = new Sym('x', { real: true });
     expect(sympyStr(fn('conjugate', [O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, Rational.of(0n, 1n, { gcd: 1n }))], { evaluate: true }))).toBe('O(x**2)');
   });
-  it.fails("test_order_conjugate_transpose:331", () => {
+  it("test_order_conjugate_transpose:331", () => {
     const y = new Sym('y', { imaginary: true });
     expect(sympyStr(fn('conjugate', [O(new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), y, Rational.of(0n, 1n, { gcd: 1n }))], { evaluate: true }))).toBe('O(y**2)');
   });

@@ -16,7 +16,7 @@ import { isNegative, isPositive, isNonZero, isReal } from '../core/assumptions';
 import { lcm } from '../core/numbers';
 import { at, defined, getOrThrow } from '../core/guard';
 import { Ne, piecewise } from '../core/logic';
-import { asIndependent, isRationalFunction } from '../core/methods';
+import { asIndependent, asNumerDenom, isRationalFunction } from '../core/methods';
 import type { ExprLike } from '../core/nodes';
 import { Add, Derivative, Expr, Dummy, Fn, Integral, Mul, Piecewise, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
@@ -24,6 +24,7 @@ import { mapBottomUp, preorderTraversal, subs, xreplace } from '../core/traverse
 import { asin, atan, cos, cosh, fn, log, sin, sinh, tan } from '../functions/elementary/elementary';
 import { asinh } from '../functions/elementary/trigext';
 import { diff } from '../calculus/diff';
+import { factor } from '../polys/sympoly';
 import { polyCoefficients } from '../polys/poly';
 import { DiracDelta, Heaviside, isDiracDelta, isHeaviside } from './transforms/delta';
 import { expand, expandMul, expand_trig } from '../simplify/expand';
@@ -320,6 +321,25 @@ export function manualintegrate(f: ExprLike, x: Sym): Expr {
     if (!(u instanceof Fn || u instanceof Pow) || !u.has(x)) continue;
     const ratio = cancel(mul(e, add(1, pow(u, 2)), pow(diff(u, x), -1)));
     if (!ratio.has(x) && !(ratio instanceof Special)) return mul(ratio, atan(u));
+  }
+  // A repeated irreducible quadratic with a linear term has no manual
+  // inverse-tangent rule. Try substitution, then distribute an affine numerator.
+  const [num, den] = asNumerDenom(e);
+  const numer = polyCoefficients(num, x), denom = polyCoefficients(den, x);
+  if (numer && Math.max(...numer.keys()) <= 1 && denom && Math.max(...denom.keys()) > 2) {
+    const repeated = factor(den);
+    if (repeated instanceof Pow && repeated.exp instanceof Rational && repeated.exp.isInteger) {
+      const base = polyCoefficients(repeated.base, x);
+      if (base?.has(1) && Math.max(...base.keys()) === 2) {
+        const scale = cancel(mul(num, pow(diff(repeated.base, x), -1)));
+        if (!scale.has(x)) {
+          const power = add(1, mul(-1, repeated.exp));
+          return mul(scale, pow(repeated.base, power), pow(power, -1));
+        }
+        if (num instanceof Add) return manualintegrate(expand(e), x);
+        return new Integral([e, x]);
+      }
+    }
   }
   const result = impl.integrate(e, x);
   if (result instanceof Integral && e instanceof Mul) {

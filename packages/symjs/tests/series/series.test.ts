@@ -972,3 +972,30 @@ it('carries an order-valued replacement into constant remainders', () => {
   expect(sj.O(x).subs(x, sj.SymFunction('f')(y))).toBeInstanceOf(sj.Subs);
   expect(String(sj.O(P('x*sin(x+I*x)'), x, sj.oo))).toContain('sin(x + I*x)');
 });
+
+it('expands an integral in a parameter while retaining its limits', () => {
+  const [a, x, z] = symbols('a x z');
+  const body = parse('1/sqrt((1+x)**2+a*(1+x)**3)');
+  const leading = parse('1/sqrt(x**3+4*x**2+5*x+2)');
+  for (const bound of [x, [x, z], [x, 0, z]] as const) {
+    const expected = sj.add(sj.integral(leading, bound), sj.O(sj.sub(a, 1), a, 1));
+    expect(series(sj.integral(body, bound), a, 1, 1).equals(expected)).toBe(true);
+  }
+});
+
+it('pulls expansion points back through changes of variable in an order', () => {
+  const [x, y, z] = symbols('x y z');
+  const o = sj.O(x);
+  for (const [replacement, expected] of [
+    [y, 'O(y)'], [sj.mul(3, y), 'O(y)'], [sj.add(y, 2), 'O(y + 2, (y, -2))'],
+    [sj.pow(y, -1), 'O(1/y, (y, oo))'], [sj.add(y, z), 'O(y + z)'],
+  ] as const) expect(String(o.subs(x, replacement))).toBe(expected);
+  expect(String(sj.O(sj.mul(x, y), [x, y]).subs(x, z))).toBe('O(y*z, z, y)');
+  expect(String(sj.O(parse('x*(-x)**a'), x))).toBe('O((-x)**(a + 1))');
+});
+
+it('keeps a pure order from expanding an integral with a vanishing integrand', () => {
+  const [a, x, z] = symbols('a x z');
+  const f = sj.integral(sj.mul(a, sj.SymFunction('f')(x)), [x, 0, z]);
+  expect(series(f, a, 0, 1).equals(sj.O(a))).toBe(true);
+});
