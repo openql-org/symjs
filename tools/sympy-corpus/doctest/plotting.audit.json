@@ -1,0 +1,120 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot(x**2, (x, -5, 5))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot(x, x**2, x**3, (x, -5, 5))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot((x**2, (x, -6, 6)), (x, (x, -5, 5)))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot(x**2, adaptive=True, n=400)",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot3d(x*y, (x, -5, 5), (y, -5, 5))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot3d(x*y, -x*y, (x, -5, 5), (y, -5, 5))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot3d((x**2 + y**2, (x, -5, 5), (y, -5, 5)),\n    (x*y, (x, -3, 3), (y, -3, 3)))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot3d_parametric_line(cos(u), sin(u), u, (u, -5, 5))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot3d_parametric_line((cos(u), sin(u), u, (u, -5, 5)),\n    (sin(u), u**2, u, (u, -5, 5)))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot3d_parametric_surface(cos(u + v), sin(u - v), u - v,\n    (u, -5, 5), (v, -5, 5))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot_parametric((cos(u), sin(u)), (u, -5, 5))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot_parametric((cos(u), sin(u)), (u, cos(u)), (u, -10, 10))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plot",
+   "src": "plot_parametric((cos(u), sin(u), (u, -5, 5)),\n    (cos(u), u, (u, -5, 5)))",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plotgrid",
+   "src": "PlotGrid(2, 1, p1, p2)",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plotgrid",
+   "src": "PlotGrid(1, 3, p2, p3, p4)",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.plotgrid",
+   "src": "PlotGrid(2, 2, p1, p2, p3, p4)",
+   "reason": "rendering-backend-construction: rendering is done by connector packages"
+  },
+  {
+   "module": "sympy.plotting.utils",
+   "src": "_check_arguments([cos(x), sin(x)], 2, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.plotting.utils",
+   "src": "_check_arguments([cos(x), sin(x), \"test\"], 2, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.plotting.utils",
+   "src": "_check_arguments([cos(x), sin(x), \"test\", {\"a\": 0, \"b\": 1}], 2, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.plotting.utils",
+   "src": "_check_arguments([x, x**2], 1, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.plotting.utils",
+   "src": "_unpack_args(*args)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.plotting.utils",
+   "src": "_unpack_args(*args)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.plotting.utils",
+   "src": "_unpack_args(*args)",
+   "reason": "non-call-expression"
+  }
+ ],
+ "preservedReferences": []
+}

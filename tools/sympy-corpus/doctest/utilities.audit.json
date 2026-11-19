@@ -1,0 +1,865 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "_partition('abcde', [1, 0, 1, 2, 0])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "_partition('abcde', [1, 0, 1, 2, 0], 3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "_partition('abcde', *output)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for m, q in _set_partitions(3):\n    print('%s %s %s' % (m, q, _partition('abc', q, m)))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for i in binary_partitions(5):\n    print(i)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "'hello' in capture(foo) # foo, not foo()",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(permutations(range(4)))[:5]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(generate_bell(4))[:5]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(generate_derangements([0, 1, 2]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(generate_derangements([0, 1, 2, 2]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(generate_derangements([0, 1, 1]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(generate_involutions(3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "len(list(generate_involutions(4)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(generate_oriented_forest(4))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "all(has_dups(c) is False for c in (set(), Set(), dict(), Dict()))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for i in ibin(2, 'all'):\n    print(i)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "ibin(n, bits, str=True)[::-1]  # small bits left",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(ibin(3, 'all', str=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "sorted(iproduct([1,2], [3,4]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "(3,) in iproduct(S.Integers)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "(3, 4) in iproduct(S.Integers, S.Integers)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for i in things:\n    print('%s %s' % (iterable(i), type(i)))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for p in kbins(list(range(5)), 2):\n    print(p)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for ordered_flag in [None, 0, 1, 10, 11]:\n    print('ordered = %s' % ordered_flag)\n    for p in kbins(list(range(3)), 2, ordered=ordered_flag):\n        print('     %s' % p)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "rotate_left(a, _)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "[''.join(i) for i in  multiset_combinations('baby', 3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "count(combinations, s1), count(multiset_combinations, s1)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "count(combinations, s2), count(multiset_combinations, s2)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(uniq([i for i in multiset_derangements('1233')]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "[i.copy() for i in multiset_derangements('1233')]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "[''.join(i) for i in multiset_derangements('1233')]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(multiset_partitions([1, 2, 3, 4], 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(multiset_partitions([1, 2, 3, 4], 1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(multiset_partitions(a, 2)) == ans",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "(list(multiset_partitions(a)) ==\n list(multiset_partitions(sorted(a))))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(multiset_partitions([1, 1, 2]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(multiset_partitions([1]*3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "len(list(multiset_partitions(5))) == bell(5) == 52",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "stirling(5, 2) == len(list(multiset_partitions(5, 2))) == 15",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "[''.join(i) for i in multiset_permutations('aab')]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "len(list(multiset_permutations('banana')))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "set(N) - set(B)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(necklaces(4, 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "[show('.o', i) for i in bracelets(4, 2)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for p in ordered_partitions(5):\n    print(p)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for p in ordered_partitions(5, 2):\n    print(p)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "[p for p in ordered_partitions(7, 3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "[list(p) for p in ordered_partitions(7, 3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for p in ordered_partitions(6, 2):\n    print(p)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for p in ordered_partitions(6, 2, sort=False):\n    print(p)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for p in partitions(6, k=2):  # doctest: +SKIP\n    print(p)",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for p in partitions(6, m=2):  # doctest: +SKIP\n    print(p)",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(permute_signs((0, 1, 2)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(postfixes([1,2,3,4]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(prefixes([1,2,3,4]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "all(i != j for i, j in zip(d, t))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(rotations([1,2,3]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(rotations([1,2,3], -1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for out in sequence_partitions([1, 2, 3, 4], 2):\n    print(out)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "for out in sequence_partitions_empty([1, 2, 3, 4], 2):\n    print(out)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "_[False]",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "sift(args, lambda x: x.is_rational, binary=True)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "set(sift(args, lambda x: x.is_rational).keys())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(signed_permutations((0, 1, 2)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(subsets([1, 2], 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(subsets([1, 2]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(subsets([1, 2, 3], 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(subsets([1, 2], 2, repetition=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(subsets([0, 1], 3, repetition=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(subsets([0, 1], 3, repetition=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "topological_sort((V, E + [(10, 7)]))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "type(uniq(dat)) in (list, tuple)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(uniq(dat))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(uniq(x for x in dat))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(uniq([[1], [2, 1], [1]]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(variations([1, 2], 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(variations([1, 2], 2, repetition=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(variations([0, 1], 3, repetition=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.iterables",
+   "src": "list(variations([0, 1], 3, repetition=True))[:4]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "sorted(namespace.keys())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 100)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, -1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 100)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, -1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 100)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, -1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 100)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, -1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 1000)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 100)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "_too_large_for_docstring(expr, -1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "lam_f(4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "expr",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f((3, 4, 5))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1, (2, 3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1,2,3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(0, 5)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "row(1, 2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1, (2, 4))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(*flatten(vals))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "func(4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "print(result)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "print(result.__class__)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "result.numpy()",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "result.numpy()",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "result.numpy()",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "with ignore_warnings(RuntimeWarning):\n    f(numpy.array([-1, 0, 1, 2]))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(0)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "with ignore_warnings(RuntimeWarning):\n    float(f(numpy.array([0])))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "sin_cos(1) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "sin_cos(1) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "sin_cos(1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "sin_cos(1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "print(inspect.getsource(f))",
+   "reason": "python-runtime-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f.__globals__['sin']",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f.__globals__['cos']",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f.__globals__['sin'] is numpy.sin",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "f(x + 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "g(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.lambdify",
+   "src": "g(x + 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "f('food')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "f('food')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "type(big) is float",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "big == int(big)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "as_int(big)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "int(one) == 1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "as_int(one)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "replace('abc', *reps) in ('xc', 'ay')",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "q == (\n'this is a long string that should be b'\n'roken into shorter lines'\n)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.misc",
+   "src": "translate(abc, {'ab': 'x', 'bc': 'y'}) in ('xc', 'ay')",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.enumerative",
+   "src": "list(list_visitor(state, 'ab') for state in states)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.enumerative",
+   "src": "list(list_visitor(state, 'ab') for state in states)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.enumerative",
+   "src": "list(list_visitor(state, 'ab') for state in states)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.enumerative",
+   "src": "list(list_visitor(state, 'ab') for state in states)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.enumerative",
+   "src": "primes",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.enumerative",
+   "src": "multiplicities",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.enumerative",
+   "src": "list(factoring_visitor(state, primes) for state in states)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.enumerative",
+   "src": "list(list_visitor(state, components) for state in states)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.decorator",
+   "src": "simplify_this(x*(x + 1) - x**2) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.utilities.decorator",
+   "src": "hasattr(A, 'x')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.decorator",
+   "src": "hasattr(B, 'x')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.decorator",
+   "src": "__all__ # noqa: F821",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.utilities.decorator",
+   "src": "__all__ # noqa: F821",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.utilities.memoization",
+   "src": "factorial(4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.utilities.memoization",
+   "src": "factorial(3) # use cache values",
+   "reason": "not-exported-api"
+  }
+ ],
+ "preservedReferences": []
+}

@@ -1,0 +1,1000 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "P10('ABC')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "H",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "check",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "base, gens",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_verify_bsgs(S1, base, gens)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "for g in A.basic_stabilizers:\n    print(g)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "[H.order() for H in C]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "[H.order() for H in C]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "[H.order() for H in C]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "f1 = G.coset_factor(g, True); f1",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "len(G)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "list(G.generate())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "len(A.derived_series())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "len(S.derived_series())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "list(C.generate(af=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "J = PermutationGroup(list(H.generate())); J",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_.is_group",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "list(g.generate_dimino(af=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "list(g.generate_schreier_sims(af=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "G3.is_transitive() or G3.is_transitive(strict=False)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "len(A.lower_central_series())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "len(G)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "list(G.generate())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_verify_bsgs(A, base, strong_gens)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "base[:2]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_verify_bsgs(S, base, strong_gens) #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_verify_bsgs(G, base, G.generators)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "len1 == len2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "len1 < len3",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_orbit(G.degree, G.generators, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_orbit(G.degree, G.generators, [0, 4], 'union')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_orbit_transversal(G.degree, G.generators, 0, False)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_orbits(a.size, [a, b])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.perm_groups",
+   "src": "_stabilizer(G.degree, G.generators, 5)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.named_groups",
+   "src": "_.is_group",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.named_groups",
+   "src": "len(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.named_groups",
+   "src": "all(perm.is_even for perm in a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.named_groups",
+   "src": "list(G.generate_schreier_sims(af=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.named_groups",
+   "src": "[perm.cyclic_form for perm in a]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.named_groups",
+   "src": "list(G.generate_schreier_sims(af=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_.subs(x, 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Cycle(1, 2)(2, 3)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Cycle()(1, 2)(2, 3)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Cycle(1, 4, 10)(4, 5)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Cycle(1, 2)(4)(5)(10)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(Cycle(1, 2).items())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Cycle(1, 2)(2, 3)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "a(2, 3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "a(2, 3)(4, 5)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "print(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(Cycle(1, 2).items())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Cycle(1, 2, 4)(5, 6)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p = Permutation([0, 2, 1]); p",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[i^p for i in range(p.size)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[i^p^q for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[i^(p*q) for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[(p*q)(i) for i in range(p.size)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[q(p(i)) for i in range(p.size)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[p(q(i)) for i in range(p.size)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Permutation(1,2,3) == Permutation(2,3,1) == Permutation(3,1,2)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_ == Permutation([[1, 2]])*Permutation([[1, 3]])*Permutation([[2, 3]])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Permutation(1, 2)(3)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "all(p == I for p in [\nPermutation(3),\nPermutation(range(4)),\nPermutation([], size=4),\nPermutation(size=4)])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Permutation(_) == p",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "q.array_form[1] # the hard way",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "q(1) # the easy way",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "{i: q(i) for i in range(q.size)} # showing the bijection",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Permutation.rmul(*[Permutation([ti], size=6) for ti in _]).cyclic_form",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_.rank()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(q*p)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(p*q)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[q(p(i)) for i in range(p.size)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p(['zero', 'one', 'four', 'two'])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p('zo42')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "for p in [p1,p2,a1,a2,a3]: p, G.contains(p)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[p(i) for i in range(4)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p([x, 1, 0, x**2])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_ == p**-1",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p*~p == ~p*p == Permutation([0, 1, 2, 3])",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(Permutation(range(3)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(a*b)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[b(a(i)) for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_rmul(al, bl)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[al[bl[i]] for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Cycle(1, 2)(2, 3)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "Permutation([2, 1])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_.array_form",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "2^p == p(2) == 9",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "c == ~q*p*q and p == q*c*~q",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "all(i^p == p(i) for i in range(p.size))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "q^r*p^r == q^(r*p)^r == Permutation(9)(1, 6, 4)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "c = p.commutator(x); c",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_(sorted(\"SymPy\"))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "while p:\n    print('%s %s %s' % (p, p.inversion_vector(), p.rank()))\n    p = p.next_lex()",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p = Permutation([2, 3, 1, 0]); p.rank()",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p = p.next_lex(); p.rank()",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p = Permutation([2, 0, 3, 1]); p.rank_nonlex()",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p = p.next_nonlex(); p",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p = p.next_trotterjohnson(); p",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p.resize(2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(Permutation.rmul(a, b))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[a(b(i)) for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(a*b)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[b(a(i)) for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_commutes_with([1, 2, 0], [0, 2, 1])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_invert(A)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_rmul(_, A)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_parity([0, 1, 2, 3])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_parity([3, 2, 0, 1])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_pow(p._array_form, 4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_rmul(a, b)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[a[b[i]] for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(a*b)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[b(a(i)) for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "_af_rmul(a, b)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[a[b[i]] for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "list(a*b)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.permutations",
+   "src": "[b(a(i)) for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.partitions",
+   "src": "IntegerPartition(10, [5, 4, 3, 1])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.partitions",
+   "src": "p.partition < p.next_lex().partition",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.partitions",
+   "src": "p.partition > p.prev_lex().partition",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.partitions",
+   "src": "_.RGS",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.partitions",
+   "src": "a.rank, b.rank",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.partitions",
+   "src": "a.rank, b.rank",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.partitions",
+   "src": "len(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.partitions",
+   "src": "l.sort(key=default_sort_key); l",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.subsets",
+   "src": "list(ksubsets([1, 2, 3], 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.subsets",
+   "src": "list(ksubsets([1, 2, 3, 4, 5], 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "list(a.generate_gray())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "list(a.generate_gray())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "list(a.generate_gray())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "list(a.generate_gray(start='011'))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "list(a.generate_gray(rank=4))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "list(a.generate_gray())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "for i in a.generate_gray():\n    if i == '010':\n        a.skip()\n    print(i)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "list(graycode_subsets(['a', 'b', 'c']))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "list(graycode_subsets(['a', 'b', 'c', 'c']))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.graycode",
+   "src": "random_bitstring(3) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.combinatorics.prufer",
+   "src": "Prufer([0]*4).size == Prufer([6]*4).size == 1296",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.coset_table",
+   "src": "for i in range(len(C.p)):\n    if C.p[i] == i:\n        print(C.table[i])",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.coset_table",
+   "src": "for i in range(len(C.p)):\n    if C.p[i] == i:\n        print(C.table[i])",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.coset_table",
+   "src": "for i in range(len(C.p)):\n    if C.p[i] == i:\n        print(C.table[i])",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.coset_table",
+   "src": "for i in range(len(C.p)):\n    if C.p[i] == i:\n        print(C.table[i])",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.coset_table",
+   "src": "for i in range(len(C.p)):\n    if C.p[i] == i:\n        print(C.table[i])",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.coset_table",
+   "src": "index",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.coset_table",
+   "src": "index",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.free_groups",
+   "src": "swapnil1**0 == swap0**0",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.free_groups",
+   "src": "len(w)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.free_groups",
+   "src": "len(a**17)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.free_groups",
+   "src": "len(w**0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.free_groups",
+   "src": "type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.free_groups",
+   "src": "type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.free_groups",
+   "src": "F",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.free_groups",
+   "src": "type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.fp_groups",
+   "src": "T(K.generators)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.fp_groups",
+   "src": "_simplify_relators(w1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.fp_groups",
+   "src": "_simplify_relators(w2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.fp_groups",
+   "src": "_simplify_relators(w3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.fp_groups",
+   "src": "_simplify_relators(w4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.fp_groups",
+   "src": "for coset_table in L:\n    print(coset_table.table)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.combinatorics.group_numbers",
+   "src": "_holder_formula({2}) # n = 2",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.group_numbers",
+   "src": "_holder_formula({2, 3}) # n = 2*3 = 6",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.homomorphisms",
+   "src": "T(b*a*b**-1*a**-1*b**-1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.pc_groups",
+   "src": "G1.equals(G2), G1 == G2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.pc_groups",
+   "src": "[gen.order() for gen in ipcgs]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.pc_groups",
+   "src": "[gen.order() for gen in ipcgs]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.pc_groups",
+   "src": "len(pcgs)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.polyhedron",
+   "src": "tetra.pgroup.make_perm(3) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.combinatorics.polyhedron",
+   "src": "tetra.corners in all and tetra.corners == sequentially",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.polyhedron",
+   "src": "show()",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.polyhedron",
+   "src": "show()",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.polyhedron",
+   "src": "p.corners == p.vertices == (a, b, c, d)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.polyhedron",
+   "src": "_ == shadow.corners",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.combinatorics.polyhedron",
+   "src": "[h.pgroup.is_group for h in polyhedra]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.tensor_can",
+   "src": "_is_minimal_bsgs(*riemann_bsgs)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.tensor_can",
+   "src": "_is_minimal_bsgs(*riemann_bsgs1)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.tensor_can",
+   "src": "_min_dummies([list(range(2, 8))], [0], list(range(10)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.tensor_can",
+   "src": "get_minimal_bsgs(*riemann_bsgs1)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "_base_ordering(S.base, S.degree)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "_check_cycles_alt_sym(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "_check_cycles_alt_sym(b)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "_distribute_gens_by_base(D.base, D.strong_gens)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "_handle_precomputed_bsgs(D.base, D.strong_gens,\nbasic_orbits=D.basic_orbits)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "(S.base, strong_gens_distr)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "len(new_gens)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "_verify_bsgs(S, base, new_gens)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "_strip(g, S.base, S.basic_orbits, S.basic_transversals)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.util",
+   "src": "_strong_gens_from_distr(strong_gens_distr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.generators",
+   "src": "list(alternating(3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.generators",
+   "src": "list(cyclic(5))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.generators",
+   "src": "list(dihedral(3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.combinatorics.generators",
+   "src": "list(symmetric(3))",
+   "reason": "not-exported-api"
+  }
+ ],
+ "preservedReferences": []
+}

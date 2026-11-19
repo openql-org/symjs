@@ -8,7 +8,7 @@ call ``f(args...)`` or method call ``obj.m(args...)``, the arguments are
 evaluated in the doctest namespace and serialized to a JSON tree. The
 expected output is ``str()`` of the result computed by the installed SymPy.
 
-Usage: PYTHONHASHSEED=0 python3 tools/sympy-reference/extract.py tools/sympy-corpus/corpus.json
+Usage: PYTHONHASHSEED=0 python3 tools/sympy-reference/extract_doctest.py tools/sympy-corpus/doctest
 (the fixed hash seed keeps the order of printed sets reproducible)
 """
 
@@ -30,6 +30,9 @@ import math
 import random
 import sys
 import warnings
+from itertools import groupby
+from pathlib import Path
+from corpus_shards import read_doctest_cases, write_shards
 from collections import Counter, defaultdict
 
 import sympy
@@ -2002,7 +2005,43 @@ def preserve_references(cases, baseline, refresh=False, omitted=()):
     return list(baseline) + added, preserved
 
 
-def main(dst, baseline_path=None, refresh=False):
+def write_corpus(dst, corpus, categories):
+    destination = Path(dst)
+    manifest = destination / "index.json"
+    previous = json.loads(manifest.read_text())["categories"] if manifest.exists() else {}
+    extraction = corpus["extraction"]
+    index = {"sympy": corpus["sympy"], "api": corpus["api"],
+             "extraction": {k: v for k, v in extraction.items() if k not in ("omitted", "preservedReferences")},
+             "caseOrder": [[name, sum(1 for _ in group)] for name, group in
+                           groupby(corpus["cases"], key=lambda c: c["category"])],
+             "categories": {}}
+    for category in categories:
+        cases = [c for c in corpus["cases"] if c["category"] == category]
+        shards = write_shards(destination, category, cases)
+        audit = {key: [r for r in extraction[key] if MODULES[r["module"]] == category]
+                 for key in ("omitted", "preservedReferences") if key in extraction}
+        audit_file = destination / f"{category}.audit.json"
+        audit_file.write_text(json.dumps(audit, indent=1) + "\n")
+        index["categories"][category] = {"cases": len(cases), "shards": shards, "auditFile": audit_file.name,
+                                         "auditBytes": audit_file.stat().st_size}
+    temporary = manifest.with_suffix(".tmp")
+    temporary.write_text(json.dumps(index, indent=2) + "\n")
+    temporary.replace(manifest)
+    def files(summaries):
+        return {name for entry in summaries.values()
+                for name in [entry["auditFile"], *(shard["file"] for shard in entry["shards"])]}
+    for obsolete in files(previous) - files(index["categories"]):
+        (destination / obsolete).unlink(missing_ok=True)
+
+
+def main(dst, baseline_path=None, refresh=False, only=()):
+    selected = {c for item in only for c in item.split(",") if c}
+    categories = selected or set(MODULES.values())
+    if categories - set(MODULES.values()):
+        raise ValueError(f"Unknown categories: {sorted(categories - set(MODULES.values()))}")
+    index_path = Path(dst) / "index.json"
+    if selected and index_path.exists() and set(json.loads(index_path.read_text())["categories"]) - selected:
+        raise ValueError("Use a separate destination for a category extraction to retain the whole-corpus audit")
     if sympy.__version__ != "1.14.0":
         raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
     import random
@@ -2023,6 +2062,8 @@ def main(dst, baseline_path=None, refresh=False):
         if ex.want.strip():
             extraction["omitted"].append({"module": modname, "src": ex.source.strip(), "reason": reason})
     for modname, category in MODULES.items():
+        if category not in categories:
+            continue
         if ONLY and not any(modname.startswith(m) for m in ONLY):
             continue
         try:
@@ -2240,14 +2281,16 @@ def main(dst, baseline_path=None, refresh=False):
                 record.update({"category": category, "module": modname, "src": src, "expected": expected})
                 cases.append(record)
     if baseline_path is not None:
-        with open(baseline_path, encoding="utf-8") as f:
-            baseline = json.load(f)
+        directory = Path(baseline_path)
+        baseline = json.loads(((directory / "index.json") if directory.is_dir() else directory).read_text())
         if baseline["sympy"] != sympy.__version__:
             raise ValueError("Baseline SymPy version differs from the pinned reference")
-        cases, extraction["preservedReferences"] = preserve_references(cases, baseline["cases"], refresh, extraction["omitted"])
-    with open(dst, "w", encoding="utf-8") as f:
-        json.dump({"sympy": sympy.__version__, "api": api_inventory(), "cases": cases, "extraction": extraction}, f, indent=1, ensure_ascii=False)
-        f.write("\n")
+        previous = (read_doctest_cases(directory, baseline, selected or baseline["categories"]) if directory.is_dir() else
+                    [c for c in baseline["cases"] if not selected or c["category"] in selected])
+        cases, extraction["preservedReferences"] = preserve_references(cases, previous, refresh, extraction["omitted"])
+    api = [a for a in api_inventory() if not selected or a["category"] in selected]
+    write_corpus(dst, {"sympy": sympy.__version__, "api": api, "cases": cases, "extraction": extraction},
+                 sorted(categories | {a["category"] for a in api}))
     by_cat = {}
     for c in cases:
         by_cat[c["category"]] = by_cat.get(c["category"], 0) + 1
@@ -2262,5 +2305,6 @@ if __name__ == "__main__":
     parser.add_argument("--baseline", help="Preserve every existing case while expanding this corpus")
     parser.add_argument("--refresh", action="store_true",
                         help="With --baseline, replace an example whose inputs the current extractor serializes differently")
+    parser.add_argument("--only", action="append", default=[], help="Extract selected categories to a separate directory")
     args = parser.parse_args()
-    main(args.destination, args.baseline, args.refresh)
+    main(args.destination, args.baseline, args.refresh, args.only)

@@ -4,7 +4,7 @@
 import { expect, it, vi } from 'vitest';
 import { nonlinsolve, substitution, solvify, Reals, NoMatch, symbols, parse, add, mul, pow, exp, sin, log, ImageSet, subs, S } from '../../src';
 import { at } from '../../src/core/guard';
-import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/unittest-harness';
 import * as elimination from '../../src/solvers/solve';
 const [x, y, z] = symbols('x y z');
 it('returns all complex exponential branches through the public API', () => {

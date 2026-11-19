@@ -11,6 +11,7 @@
  * compared with SymPy's output like any other case.
  */
 
+import { readCases } from './corpus';
 import * as sj from '../../packages/symjs/src';
 import { parseLatex } from '../../packages/symjs/src/parsing';
 import { Expr } from '../../packages/symjs/src';
@@ -826,3 +827,17 @@ export function capturedIterable(c: Case & { test: string; line: number }): stri
   }
   return undefined;
 }
+
+/** Repeated sources can have a different translation for each preceding setup. */
+export function portFor(c: Case): (() => unknown) | undefined {
+  const entry = PORTS[`${c.module}:${'line' in c ? c.line : ''}:${c.src}`] ?? PORTS[`${c.module}:${c.src}`];
+  if (typeof entry === 'function' || entry === undefined) return entry;
+  let cases = occurrenceCases.get(c.category);
+  if (!cases) {
+    cases = [...readCases('doctest', c.category)];
+    occurrenceCases.set(c.category, cases);
+  }
+  const same = cases.filter((d) => d.module === c.module && d.src === c.src);
+  return entry[Math.max(0, same.findIndex((d) => d.expected === c.expected))];
+}
+const occurrenceCases = new Map<string, Case[]>();

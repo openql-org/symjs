@@ -1,0 +1,285 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "_ is False, _ is false",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "_ is true",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "~false, ~False  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "false >> false, False >> False",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "_ is True, _ is true",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "_ is true",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "~true, ~True  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "true >> true, True >> True",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "ITE(True, [], ())",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "True >> False",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "~True  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "dict(finger(eq))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "dict(finger(x & ~y))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "dict(finger(to_cnf(Xor(*symbols('a:5')))))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "dict(finger(And(Or(x, y), y)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "dict(finger(And(Or(x, And(a, x)), y)))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "polynomial",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "as_Boolean(0) is false",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "as_Boolean(1) is true",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "as_Boolean(2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "as_Boolean(nan)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "conjuncts(A & B)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "conjuncts(A | B)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "disjuncts(A | B)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "disjuncts(A & B)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "to_int_repr([x | y, y], [x, y]) == [{1, 2}, {2}]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "for t in table:\n    print('{0} -> {1}'.format(*t))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "list(table)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "values",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.boolalg",
+   "src": "for i, value in enumerate(values):\n    print('{0} -> {1}'.format(list(zip(\n    vars, ibin(i, len(vars)))), value))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.logic.inference",
+   "src": "next(satisfiable(A & ~A, all_models=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.inference",
+   "src": "next(models)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.inference",
+   "src": "next(models)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.inference",
+   "src": "use_models(satisfiable(A >> ~A, all_models=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.inference",
+   "src": "use_models(satisfiable(A ^ A, all_models=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "next(l._find_model())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "l._clause_sat(0)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "l._clause_sat(1)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "next(l._find_model())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "list(l._find_model())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "list(l._find_model())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "next(l._find_model())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "l._is_sentinel(2, 3)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "l._is_sentinel(-3, 1)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "next(l._find_model())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "l._simple_compute_conflict()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "next(l._find_model())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "level.decision, level.var_settings, level.flipped",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "level.decision, level.var_settings, level.flipped",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.logic.algorithms.dpll2",
+   "src": "l._vsids_calculate()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.lra_theory",
+   "src": "LRASolver._pivot(_, 1, 0)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.logic.algorithms.lra_theory",
+   "src": "lra #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.logic.algorithms.lra_theory",
+   "src": "conflicts #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.logic.algorithms.lra_theory",
+   "src": "_sep_const_coeff(2*x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.lra_theory",
+   "src": "_sep_const_coeff(2*x + 3*y)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.logic.algorithms.lra_theory",
+   "src": "_sep_const_terms(2*x + 3*y + 2)",
+   "reason": "not-exported-api"
+  }
+ ],
+ "preservedReferences": []
+}

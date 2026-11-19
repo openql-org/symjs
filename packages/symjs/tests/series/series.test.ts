@@ -11,12 +11,12 @@ import { SeriesError } from '../../src/series/puiseux';
 import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
 import { readFileSync } from 'node:fs';
-import { runTestCase, testCaseKey } from '../../../../tools/sympy-corpus/tests-harness';
-import type { TestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import { runTestCase, testCaseKey } from '../../../../tools/sympy-corpus/unittest-harness';
+import type { TestCase } from '../../../../tools/sympy-corpus/unittest-harness';
 import orderCaseIds from './order-case-ids.json';
 
 describe('Order upstream regressions', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/tests-corpus/series.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/unittest/series.json', import.meta.url), 'utf8'));
   const ids = new Set(orderCaseIds);
   it.each(cases.filter((c) => ids.has(testCaseKey(c))))('$test:$line', (c) => {
     expect(['pass', 'equivalent']).toContain(runTestCase(c).status);

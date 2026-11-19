@@ -1,0 +1,195 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.sets.sets",
+   "src": "len(D1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "len(D2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "len(D3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "S.EmptySet",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "set(coin**2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "x in Interval(0, 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "_ is S.true",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "FiniteSet(Matrix([1, 2])).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "Interval(1, 2).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "EmptySet.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "PowerSet({1, 2, 3}).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "list(p)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "p.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "FiniteSet(0, Matrix([1, 2])).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "Interval(1, 2).kind.element_kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "Interval(1, 2).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "Interval(1,2).kind.element_kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.sets.sets",
+   "src": "S.UniversalSet",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "S.Complexes",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "for i in range(4):\n    next(square_iterable)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iterable)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iterable)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iterable)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iterable)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iterable)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iterable)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iterable)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "list(Range(3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "list(Range(10, 0, -2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iter(r))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "next(iter(r.reversed))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "list(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "Range(3)[:0]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "Range(i, j, k).inf",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.sets.fancysets",
+   "src": "[next(iterable) for i in range(12)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.sets.conditionset",
+   "src": "cond = (n > 0); cond",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.sets.conditionset",
+   "src": "ConditionSet(x + 1, x + 1 < 1, S.Integers)",
+   "reason": "reference-exception"
+  }
+ ],
+ "preservedReferences": []
+}

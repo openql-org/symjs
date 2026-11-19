@@ -211,7 +211,7 @@ Examined 26286 doctest statements including setup. Kept 9657 in-scope calls; 20 
 
 ## Public API evidence
 
-Names without a directly named corpus case: 762/1667. A method exercised under another name may still have unit tests; name presence alone does not establish correctness. Concrete export/member paths are recorded in tools/sympy-corpus/compat/results/report.json; an unmapped name is unverified or absent, not proof that the mathematical operation is unavailable.
+Names without a directly named corpus case: 762/1667. A method exercised under another name may still have unit tests; name presence alone does not establish correctness. Concrete export/member paths are recorded in tools/sympy-corpus/compat/results/doctest-report.json; an unmapped name is unverified or absent, not proof that the mathematical operation is unavailable.
 
 | Execution route | Cases |
 |---|---:|

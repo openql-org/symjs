@@ -1,0 +1,35 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.parsing.sympy_parser",
+   "src": "type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.parsing.sympy_parser",
+   "src": "parse_expr(\"2**3\"), parse_expr(\"2**3\", evaluate=False)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.parsing.sympy_parser",
+   "src": "print(transformations)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.parsing.sympy_parser",
+   "src": "str(T) == str(transformations)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.parsing.sympy_parser",
+   "src": "T[:5] == standard_transformations",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.parsing.sympy_parser",
+   "src": "parse_expr(\"2x\", transformations=T[:5])",
+   "reason": "reference-exception"
+  }
+ ],
+ "preservedReferences": []
+}

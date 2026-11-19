@@ -4,7 +4,7 @@
 // Tests of src/printing/latex.ts.
 
 import { describe, expect, it } from 'vitest';
-import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/unittest-harness';
 import * as sj from '../../src';
 import { adjoint, exp, I, mul, pow, rational, sin, sqrt, Sym, symbol, symbols, SymFunction } from '../../src';
 import { Add, Float, Fn, Integral, Limit, Mul, Order, Pow, Rational, Rel, S } from '../../src/core/nodes';

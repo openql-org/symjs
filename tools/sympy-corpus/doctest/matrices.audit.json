@@ -1,0 +1,670 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "func( [1, 2, 3] )",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "Matrix(eye(2)).D",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "Q_aug",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "R_aug",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "2*A == A*2 == Matrix([[2, 4, 6], [8, 10, 12]])",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "B*A",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "m._eval_matrix_exp_jblock()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "m._eval_matrix_exp_jblock()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "m._eval_matrix_log_jblock()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "m._eval_matrix_log_jblock()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "m",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "M[3*m] = ones(1, m)*2; M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "M[2] = ones(m, 1)*4; M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.atoms()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.atoms()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "func_name(Matrix.diag(1, cls=ImmutableMatrix))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "m = Matrix(3, 3, lambda i, j: j - i); m",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.diagonal()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.expand()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "A * _",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "A.inv('ADJ') == A.inv('GE') == A.inv('LU') == A.inv('CH') == A.inv('LDL') == A.inv('QR')",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "bool(m.is_symmetric(simplify=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "list(m.iter_items())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "list(m.iter_values())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "Matrix.orthogonalize(*v)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "B",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.refine(Q.real(x))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "M = Matrix(2, 2, lambda i, j: F(i+j)) ; M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.simplify()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "V_aug",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "U_aug",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "r = S*Matrix([2, 3]); r",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "xy = S.solve_least_squares(Matrix([8, 14, 18])); xy",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.norm().n(2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.subs(x, y)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "Matrix(_).subs(y, x)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "print('[%s]' % M.table(printer, rowsep=',\\n'))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "_.xreplace({x: y})",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "Matrix(_).xreplace({y: x})",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.matrixbase",
+   "src": "classof(M, IM)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "Y",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "randMatrix(3) # doctest:+SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "randMatrix(3, 2) # doctest:+SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "symarray('', 3)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "symarray('a', 3)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "symarray('a', (2, 3))",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "symarray('a', (2, 3, 2))",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.matrices.dense",
+   "src": "[s.is_real for s in symarray('a', 2, real=True)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.decompositions",
+   "src": "Q_aug",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.decompositions",
+   "src": "R_aug",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.decompositions",
+   "src": "V_aug",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.decompositions",
+   "src": "U_aug",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.solvers",
+   "src": "r = S*Matrix([2, 3]); r",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.solvers",
+   "src": "xy = S.solve_least_squares(Matrix([8, 14, 18])); xy",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.solvers",
+   "src": "_.norm().n(2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.subspaces",
+   "src": "Matrix.orthogonalize(*v)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.inverse",
+   "src": "A * _",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.inverse",
+   "src": "A.inv('ADJ') == A.inv('GE') == A.inv('LU') == A.inv('CH') == A.inv('LDL') == A.inv('QR')",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.inverse",
+   "src": "B",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.expressions.matmul",
+   "src": "print(expr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.expressions.matmul",
+   "src": "with assuming(Q.orthogonal(X)):\n    print(refine(expr))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.expressions.inverse",
+   "src": "with assuming(Q.orthogonal(X)):\n    print(refine(X.I))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.expressions.determinant",
+   "src": "with assuming(Q.orthogonal(X)):\n    print(refine(det(X)))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.expressions.blockmatrix",
+   "src": "BlockMatrix(dat)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.expressions.blockmatrix",
+   "src": "_.transpose()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.expressions.blockmatrix",
+   "src": "type(B).__name__",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.expressions.transpose",
+   "src": "A.T == transpose(A) == Transpose(A)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.expressions.transpose",
+   "src": "with assuming(Q.symmetric(X)):\n    print(refine(X.T))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.expressions.hadamard",
+   "src": "isinstance(hadamard_product(A, B), HadamardProduct)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.expressions.hadamard",
+   "src": "X",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.expressions.hadamard",
+   "src": "Y",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.expressions.kronecker",
+   "src": "isinstance(KroneckerProduct(A, B), KroneckerProduct)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.expressions.diagonal",
+   "src": "DiagonalMatrix(MatrixSymbol('x', n, m)).diagonal_length is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.expressions.diagonal",
+   "src": "diag[1, 0] == diag[1] == x[1, 1]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.expressions.diagonal",
+   "src": "DiagonalOf(MatrixSymbol('x', n, m)).diagonal_length is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.expressions.funcmatrix",
+   "src": "isinstance(Y*Y, MatPow) # this is an expression object",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.sparse",
+   "src": "SparseMatrix(2, 2, [1, 2])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.sparse",
+   "src": "SparseMatrix(2, 2, [[1, 2, 3]])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.sparse",
+   "src": "SparseMatrix(3, 3, {(0, 0): ones(2), (1, 1): 2})",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.sparse",
+   "src": "Y",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.sparse",
+   "src": "r = S*Matrix([2, 3]); r",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.sparse",
+   "src": "xy = S.solve_least_squares(Matrix([8, 14, 18])); xy",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.sparse",
+   "src": "_.norm().n(2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.immutable",
+   "src": "_[0, 0] = 42",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.immutable",
+   "src": "_[0, 0] = 42",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.immutable",
+   "src": "_.shape",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "2*A == A*2 == Matrix([[2, 4, 6], [8, 10, 12]])",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "B*A",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "_.expand()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "_.refine(Q.real(x))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "M = Matrix(2, 2, lambda i, j: F(i+j)) ; M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "_.simplify()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "_.subs(x, y)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "Matrix(_).subs(y, x)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "_.xreplace({x: y})",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "Matrix(_).xreplace({y: x})",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "_.atoms()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "_.atoms()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "bool(m.is_symmetric(simplify=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "m = Matrix(3, 3, lambda i, j: j - i); m",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "_.diagonal()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "func_name(Matrix.diag(1, cls=ImmutableMatrix))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.common",
+   "src": "classof(M, IM)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.matrices.matrices",
+   "src": "Matrix.orthogonalize(*v)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "m",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M[3*m] = ones(1, m)*2; M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M[2] = ones(m, 1)*4; M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M.col_op(1, lambda v, i: v + 2*M[i, 0]); M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "I",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "I",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "I",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "I",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M = SparseMatrix.zeros(3); M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M.fill(1); M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M.row_add(0, 2,3); M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M.row_mult(1,7); M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M.row_op(1, lambda v, j: v + 2*M[0, j]); M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "M.zip_row_op(1, 0, lambda v, u: v + 2*u); M",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "A.simplify() == B.simplify()",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.repmatrix",
+   "src": "m[::2]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.kind",
+   "src": "isinstance(intM, MatrixExpr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.kind",
+   "src": "isinstance(M.kind, MatrixKind)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.kind",
+   "src": "M.kind is MatrixKind(NumberKind)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.matrices.sparsetools",
+   "src": "_csrtodok([[5, 8, 3, 6], [0, 1, 2, 1], [0, 0, 2, 3, 4], [4, 3]])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.sparsetools",
+   "src": "_doktocsr(m)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.matrices.sparsetools",
+   "src": "banded({0: 2, 1: ones(2)}, rows=5)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.sparsetools",
+   "src": "banded(4, {0: 2, 1: ones(2)})  # trying to make 4x4 and cols must be odd",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.matrices.sparsetools",
+   "src": "banded({0: (2,)*5, 1: (ones(2),)*3})",
+   "reason": "reference-exception"
+  }
+ ],
+ "preservedReferences": []
+}

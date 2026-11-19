@@ -145,7 +145,10 @@ repeated doctest source lines with different inputs remain distinct.
 
 ```sh
 bun run corpus:compat  # run tests with coverage, then replay both corpora and write their reports
-bun run corpus:extract # regenerate tools/sympy-corpus/corpus.json from the installed SymPy
+bun run corpus:extract:doctest # regenerate the doctest category shards from SymPy
+bun run corpus:extract:unittest --only geometry # regenerate one unit-test category
+bun run corpus:compat:doctest -- geometry
+bun run corpus:compat:unittest -- geometry
 UPDATE_KNOWN_GAPS=1 bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts
 ```
 

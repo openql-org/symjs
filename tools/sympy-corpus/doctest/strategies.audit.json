@@ -1,0 +1,60 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.strategies.rl",
+   "src": "dist(expr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.rl",
+   "src": "key(2*x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.rl",
+   "src": "count(2*x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.rl",
+   "src": "combine(2, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.rl",
+   "src": "remove_zeros(Basic(S(1), S(0), S(2)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.rl",
+   "src": "remove_zeros(Basic(S(0), S(0))) # If only identities then we keep one",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.rl",
+   "src": "sort_rl(Basic(S(3), S(1), S(2)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.tree",
+   "src": "fn(4)  # lowest value comes from the inc",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.tree",
+   "src": "fn(1)  # lowest value comes from dec then double",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.tree",
+   "src": "fn(4)  # highest value comes from the dec then double",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.strategies.tree",
+   "src": "fn(1)  # highest value comes from the inc",
+   "reason": "not-exported-api"
+  }
+ ],
+ "preservedReferences": []
+}

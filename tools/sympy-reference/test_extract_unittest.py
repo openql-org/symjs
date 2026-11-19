@@ -10,7 +10,8 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-import extract_tests as unit
+from corpus_shards import write_array
+import extract_unittest as unit
 
 
 class UnitTestExtractorTests(unittest.TestCase):
@@ -126,11 +127,11 @@ def test_Function():
             index = {"categories": {}}
             for category in ('tensor', 'core', 'functions'):
                 shard = destination / f"{category}.json"
-                unit.write_array(shard, [original, unrelated] if category == 'core' else [])
+                write_array(shard, [original, unrelated] if category == 'core' else [])
                 index['categories'][category] = {"shards": [{"file": shard.name, "cases": 2 if category == 'core' else 0, "bytes": shard.stat().st_size}]}
             (destination / 'index.json').write_text(json.dumps(index))
-            manifest = destination / 'unit-exclusions.json'
-            with patch.dict(os.environ, {'PYTHONHASHSEED': '0'}), patch.object(unit, 'execute_source', side_effect=execute), patch.object(unit, '__file__', str(destination / 'extract_tests.py')):
+            manifest = destination / 'unittest-exclusions.json'
+            with patch.dict(os.environ, {'PYTHONHASHSEED': '0'}), patch.object(unit, 'execute_source', side_effect=execute), patch.object(unit, '__file__', str(destination / 'extract_unittest.py')):
                 unit.refresh_replay_state(destination)
                 first = (destination / 'core.json').read_bytes()
                 unit.refresh_replay_state(destination)

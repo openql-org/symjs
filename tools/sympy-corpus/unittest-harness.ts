@@ -39,9 +39,9 @@ export function testCaseKey(c: TestCase): string {
 
 // The cases of one upstream test module in a corpus shard that the unit-test ratchet does not list as failing.
 export function passingModuleCases(shard: string, module: string): TestCase[] {
-  const gaps: { cases: string[] } = JSON.parse(readFileSync(new URL('./tests-known-gaps.json', import.meta.url), 'utf8'));
+  const gaps: { cases: string[] } = JSON.parse(readFileSync(new URL('./unittest-known-gaps.json', import.meta.url), 'utf8'));
   const failing = new Set(gaps.cases);
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${shard}.json`, import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./unittest/${shard}.json`, import.meta.url), 'utf8'));
   return cases.filter((c) => c.module === module && !c.exclusion && !failing.has(testCaseKey(c)));
 }
 

@@ -1,0 +1,181 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.solvers.ode.ode",
+   "src": "expr",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.ode",
+   "src": "homogeneous_order(f(x), f(x)) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.ode",
+   "src": "homogeneous_order(f(x,y), f(y, x), x, y) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.ode",
+   "src": "homogeneous_order(x**2+f(x), x, f(x)) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.ode",
+   "src": "[ode_sol_simplicity(eq, f(x)) for eq in [eq1, eq2]]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.ode",
+   "src": "min([eq1, eq2], key=lambda i: ode_sol_simplicity(i, f(x)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.ode.ode",
+   "src": "pprint(odesimp(eq, f(x), 1, {C1},\nhint='1st_homogeneous_coeff_subs_indep_div_dep'\n)) #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "_preprocess((f(x).diff(x)-4)**5, f(x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "_preprocess(Derivative(f(x) + x, x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "_preprocess(Derivative(g(x), y, z), f(y))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "_preprocess(Derivative(f(y), z), f(y))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "_preprocess(Derivative(g(x), y), f(x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "_preprocess(Derivative(f(x), y), f(x), hint='')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "_preprocess(eq, f(x), hint=None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "_preprocess(eq, g(x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.deutils",
+   "src": "try: _preprocess(eq)\nexcept ValueError: print(\"A ValueError was raised.\")",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "is_commuting",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "A1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "A0",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "b",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "linear_ode_to_matrix(eqs, funcs, t, 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "linear_ode_to_matrix(eqs, funcs, t, 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "linodesolve_type(A_non_commutative, t)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.solvers.ode.nonhomogeneous",
+   "src": "_undetermined_coefficients_match(9*x*exp(x) + exp(-x), x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.ode.nonhomogeneous",
+   "src": "_undetermined_coefficients_match(log(x), x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.ode.single",
+   "src": "obj._linear_coeff_match(eq, f(x))",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.solvers.ode.single",
+   "src": "obj._linear_coeff_match(eq, f(x))",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.solvers.ode.single",
+   "src": "checkodesol(genform, sol, order=1)[0]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.single",
+   "src": "obj.get_linear_coefficients(eq, f(x), 3) == None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.solvers.ode.lie_group",
+   "src": "_lie_group_remove(eq)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.ode.lie_group",
+   "src": "_lie_group_remove(eq)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.ode.lie_group",
+   "src": "_lie_group_remove(eq)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.solvers.ode.lie_group",
+   "src": "_lie_group_remove(eq)",
+   "reason": "not-exported-api"
+  }
+ ],
+ "preservedReferences": [
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "checkodesol(eqs, sol)",
+   "reason": "Preserve established anonymous Dummy names, simultaneous replacement-map order or the recorded external real sample."
+  },
+  {
+   "module": "sympy.solvers.ode.systems",
+   "src": "checkodesol(eqs, sol)",
+   "reason": "Preserve established anonymous Dummy names, simultaneous replacement-map order or the recorded external real sample."
+  }
+ ]
+}

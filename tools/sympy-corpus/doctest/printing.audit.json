@@ -1,0 +1,40 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.printing.str",
+   "src": "printer._print_Pow(sqrt(x), rational=True)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.printing.str",
+   "src": "printer._print_Pow(sqrt(x), rational=False)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.printing.str",
+   "src": "printer._print_Pow(1/sqrt(x), rational=True)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.printing.str",
+   "src": "printer._print_Pow(1/sqrt(x), rational=False)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.printing.dot",
+   "src": "for e in dotedges(x+2):\n    print(e)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.printing.pretty.stringpict",
+   "src": "print(stringPict(\"x+3\").below(\n      stringPict.LINE, '3')[0]) #doctest: +NORMALIZE_WHITESPACE",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.printing.pretty.stringpict",
+   "src": "print(stringPict(\"10\").right(\" + \",stringPict(\"1\\r-\\r2\",1))[0])",
+   "reason": "not-exported-api"
+  }
+ ],
+ "preservedReferences": []
+}

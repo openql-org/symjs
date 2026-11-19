@@ -3,7 +3,7 @@
 # SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 """Execute instrumented SymPy 1.14 base-scope unit tests, independently of doctests.
 
-PYTHONHASHSEED=0 python3 -B tools/sympy-reference/extract_tests.py tools/sympy-corpus/tests-corpus
+PYTHONHASHSEED=0 python3 -B tools/sympy-reference/extract_unittest.py tools/sympy-corpus/unittest
 
 The audit counts executed assertion instances, including duplicates, plus one
 omission for each source site never reached. Test execution has a separate audit.
@@ -37,7 +37,8 @@ from collections import Counter, defaultdict
 from collections.abc import Iterator
 
 import sympy
-import extract
+from corpus_shards import MAX_SHARD_BYTES, json_line, read_cases, write_shards
+import extract_doctest as extract
 
 
 OPTIONAL = {"numpy", "scipy", "gmpy", "gmpy2", "flint", "matplotlib", "hypothesis",
@@ -769,7 +770,7 @@ class Capture:
             self.omit(site, "test-utility")
             return
         text = str(expected)
-        # Like extract.py: strings are compared as text, all other values by
+        # Like extract_doctest.py: strings are compared as text, all other values by
         # their str form. Monomials in tuples need str instead of address repr.
         from sympy.polys.monomials import Monomial
         if isinstance(expected, tuple) and any(isinstance(x, Monomial) for x in expected):
@@ -1167,37 +1168,8 @@ def corpus_from_events(events, tests, source_sites, categories=None):
                            "testStatuses": dict(sorted(Counter(t["status"] for t in tests).items()))}}
 
 
-MAX_SHARD_BYTES = 25_000_000
-
-
-def json_line(value):
-    return json.dumps(value, ensure_ascii=True, allow_nan=False, separators=(",", ":"))
-
-
-def write_array(path, values):
-    path.write_text("[\n" + ",\n".join(json_line(v) for v in values) + "\n]\n", encoding="utf-8")
-
-
 def write_category(destination, category, corpus, max_bytes=MAX_SHARD_BYTES):
-    """Bound shards by encoded bytes; never split a case or change its key order."""
-    destination.mkdir(parents=True, exist_ok=True)
-    chunks, chunk, size = [], [], 4
-    for case in corpus["cases"]:
-        length = len(json_line(case).encode("utf-8")) + 2
-        if length + 4 > max_bytes:
-            raise ValueError(f"Single {category} case exceeds shard size limit")
-        if chunk and size + length > max_bytes:
-            chunks.append(chunk)
-            chunk, size = [], 4
-        chunk.append(case)
-        size += length
-    chunks.append(chunk)
-    shards = []
-    for i, cases in enumerate(chunks):
-        name = f"{category}.json" if len(chunks) == 1 else f"{category}-{i + 1:03}.json"
-        path = destination / name
-        write_array(path, cases)
-        shards.append({"file": name, "cases": len(cases), "bytes": path.stat().st_size})
+    shards = write_shards(destination, category, corpus["cases"], max_bytes)
     audit = corpus["extraction"]
     audit_name = write_audit(destination, category, audit["omitted"], audit["tests"])
 
@@ -1254,7 +1226,18 @@ def extract_category(category, paths, timeout, baseline):
     events, tests, source_sites = [], [], 0
     retained = set()
     if baseline:
-        old = json.loads(Path(baseline).read_text())
+        directory = Path(baseline)
+        if directory.is_dir():
+            index = json.loads((directory / "index.json").read_text())
+            if index["sympy"] != sympy.__version__:
+                raise ValueError("Baseline SymPy version differs from the pinned reference")
+            summary = index["categories"].get(category)
+            old = {"cases": [], "extraction": {"omitted": [], "tests": []}}
+            if summary:
+                old = {"cases": read_cases(directory, summary),
+                       "extraction": json.loads((directory / summary["auditFile"]).read_text())}
+        else:
+            old = json.loads(directory.read_text())
         events.extend(c for c in old["cases"] if c["category"] == category)
         events.extend(c for c in old["extraction"]["omitted"] if c["category"] == category)
         tests.extend(t for t in old["extraction"]["tests"] if t["module"].split(".")[1] == category)
@@ -1352,7 +1335,7 @@ def refresh_replay_state(destination, timeout=TEST_SECONDS):
                 shard["bytes"] = path.stat().st_size
         print(f"{category}: refreshed {changed} existing assertions", file=sys.stderr, flush=True)
     index_path.write_text(json.dumps(index, indent=2, ensure_ascii=True, allow_nan=False) + "\n")
-    Path(__file__).with_name("unit-exclusions.json").write_text(json.dumps(dict(sorted(exclusions.items())), indent=2) + "\n")
+    Path(__file__).with_name("unittest-exclusions.json").write_text(json.dumps(dict(sorted(exclusions.items())), indent=2) + "\n")
 
 
 def main(destination, only=(), timeout=TEST_SECONDS, jobs=1, baseline=None):
@@ -1393,11 +1376,11 @@ def main(destination, only=(), timeout=TEST_SECONDS, jobs=1, baseline=None):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("destination", nargs="?", default="tools/sympy-corpus/tests-corpus")
+    parser.add_argument("destination", nargs="?", default="tools/sympy-corpus/unittest")
     parser.add_argument("--only", action="append", default=[], help="Category names, comma-separated or repeatable; other shards are retained")
     parser.add_argument("--timeout", type=float, default=TEST_SECONDS)
     parser.add_argument("--jobs", type=int, default=4, help="Independent extraction processes")
-    parser.add_argument("--baseline", help="Preserve all records/audits from already measured modules in a legacy corpus")
+    parser.add_argument("--baseline", help="Preserve all records/audits from already measured modules in a baseline corpus")
     parser.add_argument("--compact-audits", action="store_true", help="Losslessly combine repeated omission records without re-extraction")
     parser.add_argument("--refresh-state", action="store_true", help="Refresh tensor state and explicit custom-class exclusions in existing shards")
     args = parser.parse_args()

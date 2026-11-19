@@ -1,0 +1,115 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "ifft(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "fft(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "fft(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "ifwht(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "fwht(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "ifft(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "fft(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "fft(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "ifwht(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "fwht(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "intt(_, 3*2**8 + 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "ntt(_, prime=3*2**8 + 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "inverse_mobius_transform(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "inverse_mobius_transform(_, subset=False)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "inverse_mobius_transform(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "inverse_mobius_transform(_, subset=False)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "inverse_mobius_transform(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "inverse_mobius_transform(_, subset=False)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "inverse_mobius_transform(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "inverse_mobius_transform(_, subset=False)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "intt(_, 3*2**8 + 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.discrete.transforms",
+   "src": "ntt(_, prime=3*2**8 + 1)",
+   "reason": "reference-exception"
+  }
+ ],
+ "preservedReferences": []
+}

@@ -3,10 +3,12 @@
 import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { expect, it } from 'vitest';
-import { counterpartFor, hasCounterpart, type Case } from '../sympy-corpus/harness';
+import { counterpartFor, hasCounterpart } from '../sympy-corpus/doctest-harness';
+import type { Case } from '../sympy-corpus/harness';
+import { doctestExtraction, readCases, readIndex, type DoctestIndex } from '../sympy-corpus/corpus';
 import { adapterInventory, evidenceFor, REVIEWED_ADAPTERS } from '../sympy-corpus/adapter-audit';
 import { collectApiMembers, generateApiMembers, formatApiMembers } from './api-members';
-import { scopeLines, scopeSummary } from './scope-report';
+import { scopeLines, scopeSummary } from '../sympy-corpus/compat/doctest-report';
 const read = (file: string) => JSON.parse(readFileSync(new URL(file, import.meta.url), 'utf8'));
 it('pins the entire module universe without converting missing evidence into exclusions', () => {
   const scope = read('./scope-inventory.json');
@@ -86,7 +88,7 @@ it('lists every adapter and counts unaudited computations separately', () => {
   expect(evidenceFor({ module: '', src: '', fn: 'primitive_element' } as Case)).toBe('public-call');
 });
 it('accounts for every examined doctest and maintains condition-based test links', () => {
-  const corpus = read('../sympy-corpus/corpus.json');
+  const corpus = { cases: [...readCases('doctest')], extraction: doctestExtraction(readIndex<DoctestIndex>('doctest')) };
   const omitted = Object.values(corpus.extraction.reasons).reduce((a: number, b) => a + Number(b), 0);
   expect(corpus.extraction.examined).toBe(corpus.cases.length + omitted);
   // The detailed list contains output-bearing examples; reason counts also

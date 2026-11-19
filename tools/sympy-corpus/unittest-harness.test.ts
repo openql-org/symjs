@@ -3,13 +3,15 @@
 
 import { expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { assertionOutcome, passingModuleCases, runTestCase, testCaseKey } from './tests-harness';
-import { deserialize, runCase, counterpartFor, matches } from './harness';
+import { assertionOutcome, passingModuleCases, runTestCase, testCaseKey } from './unittest-harness';
+import { counterpartFor } from './doctest-harness';
+import { readCases } from './corpus';
+import { deserialize, runCase, matches } from './harness';
 import type { Case, Tree } from './harness';
 import * as dg from '@symjs/symjs/diffgeom';
 import * as sj from '../../packages/symjs/src';
 import { div as divideExpr } from '../../packages/symjs/src/core/ops';
-import type { TestCase } from './tests-harness';
+import type { TestCase } from './unittest-harness';
 
 const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'core',
   test: 'test_fixture', line: 1, src: 'assert Integer(1) == 1', fn: 'Integer',
@@ -400,7 +402,7 @@ it('converts solver varargs, function unknowns and constant variable sets', () =
 });
 
 it('replays keyword nseries arguments without passing an options object as the expansion point', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/series.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/series.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.fn === '.nseries' && c.src === 'assert abs(x).nseries(x, n=4) == x');
   expect(selected.length).toBeGreaterThan(0);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
@@ -412,7 +414,7 @@ it('maps series function attributes, free-group slices and curve calls to public
     ['combinatorics', '.__getitem__', 'FreeGroup'],
     ['geometry', '.__call__', 'Geom'],
   ]) {
-    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${category}.json`, import.meta.url), 'utf8'));
+    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./unittest/${category}.json`, import.meta.url), 'utf8'));
     const selected = cases.filter((c) => c.fn === fn && c.self?.t === tag);
     expect(selected.length).toBeGreaterThan(0);
     for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
@@ -420,35 +422,35 @@ it('maps series function attributes, free-group slices and curve calls to public
 });
 
 it('preserves symbolic Python slice bounds for matrix printing', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/printing.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/printing.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.fn === '.__getitem__' && c.test === 'test_MatrixSlice');
   expect(selected).toHaveLength(19);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
 
 it('passes serialized built-in function classes to the public LaTeX printer', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/printing.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/printing.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.fn === 'latex' && c.args?.[0]?.t === 'FnClass' && ['sin', 'cos', 'tan', 'log', 'Ei', 'zeta', 'mygamma'].includes(String(c.args[0]['name'])));
   expect(selected.length).toBeGreaterThan(5);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
 
 it('translates real cdir arguments into the public series direction', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/series.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/series.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.fn === '.series' && c.src.startsWith('assert frac(x).series(x, cdir='));
   expect(selected.length).toBeGreaterThan(0);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
 
 it('constructs category arrow descriptions with a public NoMatch for Python None', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/categories.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/categories.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.fn === 'ArrowStringDescription');
   expect(selected).toHaveLength(6);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
 
 it('replays polynomial keyword options, monomial tuples and sparse constructors', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8'));
   const lines = new Set([154, 156, 158, 160, 275, 276, 629, 632, 662, 665, 671, 674,
     698, 699, 701, 702, 704, 705, 707, 708, 710, 1041, 1047, 1055, 1477, 1482,
     1492, 1502, 1511, 1523, 1835, 1840, 1856, 1857, 1858, 1859, 1860, 1861,
@@ -460,7 +462,7 @@ it('replays polynomial keyword options, monomial tuples and sparse constructors'
 });
 
 it('preserves printed polynomial monomials and checks exponent tuples exactly', () => {
-  const cases: Case[] = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')).cases;
+  const cases: Case[] = [...readCases('doctest', 'polys')];
   const selected = cases.filter((c) => c.module === 'sympy.polys.polytools' && ['.LM', '.EM', '.LT', '.ET'].includes(c.fn));
   expect(selected).toHaveLength(4);
   for (const c of selected) expect(runCase(c), c.src).toEqual({ status: 'pass' });
@@ -470,7 +472,7 @@ it('preserves printed polynomial monomials and checks exponent tuples exactly', 
 });
 
 it('replays matrix powers, indexing, identity predicates and matrix differentiation', () => {
-  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8')) as TestCase[];
+  const cases = JSON.parse(readFileSync(new URL('./unittest/matrices.json', import.meta.url), 'utf8')) as TestCase[];
   const modules = ['sympy.matrices.tests.test_matrices', 'sympy.matrices.tests.test_matrixbase'];
   const tests = ['test_diff_by_matrix', 'test_diff', 'test_power', 'test_fancy_index_matrix', 'test_is_Identity', 'test_nonvectorJacobian'];
   const selected = cases.filter((c) => modules.includes(c.module) && tests.includes(c.test));
@@ -479,7 +481,7 @@ it('replays matrix powers, indexing, identity predicates and matrix differentiat
 });
 
 it('accepts the registered correct value of a truth-value assertion whose SymPy answer is wrong', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/assumptions.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/assumptions.json', import.meta.url), 'utf8'));
   const pick = (line: number): TestCase => {
     const c = cases.find((x) => x.module === 'sympy.assumptions.tests.test_matrices' && x.line === line);
     if (c === undefined) throw new Error(`missing case ${line}`);
@@ -492,7 +494,7 @@ it('accepts the registered correct value of a truth-value assertion whose SymPy 
 });
 
 it('treats != as structural: an equivalent but different expression satisfies it', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/core.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/core.json', import.meta.url), 'utf8'));
   const c = cases.find((x) => x.module === 'sympy.core.tests.test_power' && x.test === 'test_Pow_signs' && x.line === 209);
   if (c === undefined) throw new Error('missing case');
   expect(runTestCase(c)).toEqual({ status: 'pass' });
@@ -510,7 +512,7 @@ it('translates nested Lambda signatures and positional derivative counts through
 });
 
 it('translates polynomial degrees, algebraic representations and rational Puiseux operands', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8'));
   const selected = [
     ['test_jacobi_poly', 30],
     ['test_AlgebraicNumber', 21],
@@ -563,14 +565,14 @@ it('translates Python Boolean set attributes and partial truth assignments', () 
 });
 
 it('replays the recursive dense DMP object API', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.module === 'sympy.polys.tests.test_polyclasses' && c.test.startsWith('test_DMP'));
   expect(selected.length).toBeGreaterThan(100);
   for (const c of selected) expect(runTestCase(c), testCaseKey(c)).toEqual({ status: 'pass' });
 });
 
 it('preserves old polynomial-ring and AGCA operator conventions', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8'));
   const selections = [
     ['sympy.polys.tests.test_polytools', 'test_Poly__new__', 373],
     ['sympy.polys.tests.test_polytools', 'test_Poly_eval', 1658],
@@ -599,7 +601,7 @@ it('compares dense polynomial domains without rounding large coefficients', () =
 });
 
 it('supplies anonymous unknowns for augmented linsolve matrices and accepts equation lists', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/solvers.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/solvers.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.fn === 'linsolve' && c.args?.length === 1 && c.args[0]?.t === 'Matrix');
   expect(selected.length).toBeGreaterThanOrEqual(4);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
@@ -609,7 +611,7 @@ it('supplies anonymous unknowns for augmented linsolve matrices and accepts equa
 });
 
 it('translates Matrix equalities and solver strategy flags through the public solvers', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/solvers.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/solvers.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.test === 'test_solve_Matrix' && [720, 726, 727, 728].includes(c.line)
     || c.test === 'test_minsolve_linear_system' && [1754, 1755, 1792].includes(c.line));
   expect(selected).toHaveLength(7);
@@ -626,7 +628,7 @@ it('compares Puiseux zero by value without changing its string representation', 
 });
 
 it('rejects Python list multiplication by a DomainMatrix', () => {
-  const shard: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const shard: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8'));
   const test = shard.find((c) => c.module.endsWith('test_domainmatrix') && c.test === 'test_DomainMatrix_mul' && c.line === 529);
   if (!test) throw new TypeError('missing domain matrix multiplication reference');
   expect(runTestCase(test)).toEqual({ status: 'pass' });
@@ -670,11 +672,11 @@ it('records Python class exclusions without treating them as successful assertio
 });
 
 it('replays the translated Function subclasses and keeps every excluded assertion out of the ratchet', () => {
-  const gaps: { cases: string[] } = JSON.parse(readFileSync(new URL('./tests-known-gaps.json', import.meta.url), 'utf8'));
+  const gaps: { cases: string[] } = JSON.parse(readFileSync(new URL('./unittest-known-gaps.json', import.meta.url), 'utf8'));
   let translated = 0;
   let excluded = 0;
   for (const category of ['core', 'functions', 'concrete']) {
-    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./tests-corpus/${category}.json`, import.meta.url), 'utf8'));
+    const cases: TestCase[] = JSON.parse(readFileSync(new URL(`./unittest/${category}.json`, import.meta.url), 'utf8'));
     for (const c of cases) {
       if (c.exclusion) {
         excluded++;
@@ -718,7 +720,7 @@ it('compares number-field module representatives without losing denominators', (
 });
 
 it('preserves polynomial object and expression conventions in algebraic-number calls', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) => c.fn === '.minpoly' && ['sympy.polys.domains.tests.test_domains', 'sympy.polys.numberfields.tests.test_numbers'].includes(c.module)
     || c.fn === 'primitive_element' && c.module === 'sympy.polys.numberfields.tests.test_subfield' && [251, 252, 261, 263, 267].includes(c.line));
   expect(selected.length).toBeGreaterThan(20);
@@ -726,7 +728,7 @@ it('preserves polynomial object and expression conventions in algebraic-number c
 });
 
 it('translates matrix classmethods, explicit conversion, deletion and set validation', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/matrices.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) =>
     (c.test === 'test_hstack' || c.test === 'test_vstack' || c.test === 'test_row_col_del' || c.test === 'test_dense_conversion') ||
     c.fn === 'MatrixSet' || c.test === 'test_issue_13774');
@@ -735,7 +737,7 @@ it('translates matrix classmethods, explicit conversion, deletion and set valida
 });
 
 it('translates matrix diagonal sizes, ragged rows and callback predicates', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/matrices.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) =>
     c.test === 'test_diag_make' || c.test === 'test_diag' && c.fn === 'diag' ||
     c.test === 'test_diagonal_symmetrical' && c.fn === '.is_symmetric' ||
@@ -746,7 +748,7 @@ it('translates matrix diagonal sizes, ragged rows and callback predicates', () =
 });
 
 it('translates matrix rewrite rules, evaluated constructors and reflected arithmetic', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./tests-corpus/matrices.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('./unittest/matrices.json', import.meta.url), 'utf8'));
   const selected = cases.filter((c) =>
     ['factor_in_front', 'remove_ids', 'combine_powers', 'any_zeros', 'MatAdd', 'MatMul'].includes(c.fn) ||
     c.module.endsWith('test_matmul') && c.fn === '.args_cnc' ||

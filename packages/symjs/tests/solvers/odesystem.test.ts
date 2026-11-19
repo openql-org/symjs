@@ -365,9 +365,9 @@ it('extracts all derivative matrices with the leading-order sign convention', ()
 });
 
 import { readFileSync } from 'node:fs';
-import { runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
-import type { TestCase } from '../../../../tools/sympy-corpus/tests-harness';
-const matrixCases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/tests-corpus/solvers.json', import.meta.url), 'utf8'));
+import { runTestCase } from '../../../../tools/sympy-corpus/unittest-harness';
+import type { TestCase } from '../../../../tools/sympy-corpus/unittest-harness';
+const matrixCases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/unittest/solvers.json', import.meta.url), 'utf8'));
 for (const [i, c] of matrixCases.filter((c) => c.fn === 'linear_ode_to_matrix' || (c.fn === 'matrix_exp' && c.raises === undefined) || (c.fn === 'checksysodesol' && (c.line === 203 || c.line === 2490)) || (c.module.endsWith('test_systems') && [1607,1639,1690,1721,1876,1902,2233,2345].includes(c.line) && ['dsolve', 'dsolve_system'].includes(c.fn)) || (c.fn === 'checkodesol' && c.test === 'test_2nd_nonlinear_autonomous_conserved_integral')).entries()) {
   it(`${c.test}:${c.line} (${i})`, () => expect(['pass', 'equivalent']).toContain(runTestCase(c).status));
 }

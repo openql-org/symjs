@@ -1,0 +1,45 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(str(astr))",
+   "reason": "printing-expression"
+  },
+  {
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(str(astr))",
+   "reason": "printing-expression"
+  },
+  {
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(str(astr))",
+   "reason": "printing-expression"
+  },
+  {
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(str(astr))",
+   "reason": "printing-expression"
+  },
+  {
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(str(astr))",
+   "reason": "printing-expression"
+  },
+  {
+   "module": "sympy.categories.diagram_drawing",
+   "src": "(grid.width, grid.height)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.categories.diagram_drawing",
+   "src": "(grid[0, 0], grid[0, 1])",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.categories.diagram_drawing",
+   "src": "(grid[1, 0], grid[1, 1])",
+   "reason": "non-call-expression"
+  }
+ ],
+ "preservedReferences": []
+}

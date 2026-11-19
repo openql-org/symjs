@@ -23,6 +23,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { expect, it, vi } from 'vitest';
+import { readCases } from '../corpus';
 import type { Tree } from '../harness';
 import type { ResultOf } from './program';
 
@@ -115,7 +116,7 @@ const caseId = (c: CorpusCase): string => `${c.module}:${c.test ?? ''}:${c.line 
 
 it('converts the corpora', async () => {
   const H = await import('../harness');
-  const T = await import('../tests-harness');
+  const T = await import('../unittest-harness');
   const tr = await import('./trace');
   const P = await import('./program');
   const helpers = await import('../../../packages/symjs/tests/sympy-str');
@@ -132,7 +133,7 @@ it('converts the corpora', async () => {
   });
   const sj = await import('../../../packages/symjs/src');
 
-  const gaps = JSON.parse(readFileSync(`${ROOT}tools/sympy-corpus/tests-known-gaps.json`, 'utf8')) as { timeouts: string[] };
+  const gaps = JSON.parse(readFileSync(`${ROOT}tools/sympy-corpus/unittest-known-gaps.json`, 'utf8')) as { timeouts: string[] };
   const timeouts = new Set(gaps.timeouts);
   const typeErrors = new Set<string>(existsSync(TYPE_ERRORS) && !process.env['CORPUS_RECHECK_TYPES'] ? JSON.parse(readFileSync(TYPE_ERRORS, 'utf8')) as string[] : []);
   const unreproduced = new Set<string>(existsSync(UNREPRODUCED) && !process.env['CORPUS_RECHECK_TYPES'] ? JSON.parse(readFileSync(UNREPRODUCED, 'utf8')) as string[] : []);
@@ -393,19 +394,13 @@ it('converts the corpora', async () => {
   const only = process.env['ONLY'];
   // a test file holds the cases of several corpus modules; writing a subset would drop the others
   if (only && process.env['UPDATE_CORPUS_TESTS']) throw new Error('ONLY selects cases to inspect; UPDATE_CORPUS_TESTS writes every file');
-  const doc = (JSON.parse(readFileSync(`${ROOT}tools/sympy-corpus/corpus.json`, 'utf8')) as { cases: CorpusCase[] }).cases;
-  for (const c of doc) {
+  for (const c of readCases<CorpusCase>('doctest')) {
     if (only && !c.module.includes(only)) continue;
     convert(c, `doctests of ${c.module}`, (c.src.split('\n')[0] ?? '').slice(0, 100), false);
   }
-  const index = JSON.parse(readFileSync(`${ROOT}tools/sympy-corpus/tests-corpus/index.json`, 'utf8')) as { categories: Record<string, { shards: { file: string }[] }> };
-  for (const category of Object.values(index.categories)) {
-    for (const shard of category.shards) {
-      for (const c of JSON.parse(readFileSync(`${ROOT}tools/sympy-corpus/tests-corpus/${shard.file}`, 'utf8')) as CorpusCase[]) {
-        if (only && !c.module.includes(only)) continue;
-        convert(c, `${c.module.replace(/\./g, '/')}.py`, `${c.test ?? ''}:${c.line ?? ''}`, true);
-      }
-    }
+  for (const c of readCases<CorpusCase>('unittest')) {
+    if (only && !c.module.includes(only)) continue;
+    convert(c, `${c.module.replace(/\./g, '/')}.py`, `${c.test ?? ''}:${c.line ?? ''}`, true);
   }
   console.log([...tally].sort((a, b) => b[1] - a[1]).map(([k, n]) => `${n}\t${k}`).join('\n'));
 

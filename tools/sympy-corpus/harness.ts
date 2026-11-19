@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Harness that replays SymPy doctest cases (tools/sympy-corpus/corpus.json) against symjs.
+ * @file Harness that replays SymPy corpus calls against symjs.
  *
  * Each case is a call `f(args, **kwargs)` or `obj.m(args, **kwargs)` with
  * serialized arguments and SymPy's `str()` of the result. An adapter maps the
@@ -11,7 +11,6 @@
  */
 
 import { pyIsClose } from '../../packages/symjs/tests/sympy-str';
-import { readFileSync } from 'node:fs';
 import * as sj from '../../packages/symjs/src';
 import * as dg from '@symjs/symjs/diffgeom';
 import * as categories from '../../packages/symjs/src/categories';
@@ -21,11 +20,11 @@ import * as strategyTree from '../../packages/symjs/src/strategies/tree';
 import { rubik } from '../../packages/symjs/src/combinatorics/generators';
 import { Commutator as SecondQuantCommutator } from '../../packages/physics-quantum/src/secondquant';
 // Category dispatch selects diffgeom.Point; the root geometry Point keeps its name.
-const publicApi = { ...dg, ...sj, ...parsing };
+export const publicApi: Record<string, unknown> = { ...dg, ...sj, ...parsing };
 import { equivalent } from '../../packages/symjs/tests/sympy-equivalent';
 import { GrowableGrid } from '../../packages/symjs/src/categories/diagram_drawing';
 import { Tr } from '../../packages/physics-quantum/src';
-import { PORTS, printingFixtureFunction, withPrintingContext } from './ports';
+import { portFor, printingFixtureFunction, withPrintingContext } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../../packages/symjs/src';
 import { latexEscape } from '../../packages/symjs/src/printing/latex';
@@ -6885,9 +6884,9 @@ const GROUP_RENAMES: Record<string, string> = { homomorphism: 'groupHomomorphism
 /** sympy.utilities names that symjs exports under another name (replace is the expression operation). */
 const UTILITIES_RENAMES: Record<string, string> = { replace: 'replaceString' };
 const CATEGORY_RENAMES: Readonly<Record<string, Record<string, string>>> = { vector: VECTOR_RENAMES, stats: STATS_RENAMES, combinatorics: GROUP_RENAMES, utilities: UTILITIES_RENAMES, sets: { SetExpr: 'SetExpression' } };
-const camelIn = (n: string, category: string | undefined): string => CATEGORY_RENAMES[category ?? '']?.[n] ?? camel(n);
+export const camelIn = (n: string, category: string | undefined): string => CATEGORY_RENAMES[category ?? '']?.[n] ?? camel(n);
 // (an underscore before a capital is dropped too: solve_linear_system_LU -> solveLinearSystemLU)
-const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-Z0-9])/g, (_m, ch: string) => ch.toUpperCase());
+export const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-Z0-9])/g, (_m, ch: string) => ch.toUpperCase());
 
 /** A deserialized argument as the JS value the API takes. */
 function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
@@ -6902,7 +6901,7 @@ function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
     throw new TypeError('len requires a sized value');
   };
   if (v instanceof JsFunc) {
-    const callback = (publicApi as unknown as Record<string, unknown>)[camel(v.name)];
+    const callback = publicApi[camel(v.name)];
     if (typeof callback === 'function') return callback;
   }
   if (v instanceof JsFunc && v.name === '_operator.ge') return (a: number | string, b: number | string) => a >= b;
@@ -8061,7 +8060,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       return fromJs(m);
     };
   }
-  const f = (publicApi as unknown as Record<string, unknown>)[camelIn(c.fn, c.category)] ?? (publicApi as unknown as Record<string, unknown>)[c.fn];
+  const f = publicApi[camelIn(c.fn, c.category)] ?? publicApi[c.fn];
   if (f instanceof sj.Domain) return (args) => fromJs(f.new(...args.map(conv)));
   if (typeof f !== 'function') return undefined;
   const isClass = /^class[\s{]/.test(Function.prototype.toString.call(f));
@@ -8071,89 +8070,10 @@ function autoAdapter(c: Case): Adapter | undefined {
   };
 }
 
-/** Explicit public aliases: an adapter by itself is never evidence of an API. */
-export const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
-  _linear_eq_to_dict: '_linearEqToDict', _lin_eq2dict: '_linEq2dict',
-  Catalan: 'S.Catalan', EulerGamma: 'S.EulerGamma', GoldenRatio: 'S.GoldenRatio', TribonacciConstant: 'S.TribonacciConstant',
-  Integer: 'Rational.of', Equality: 'Eq', Unequality: 'Ne', GreaterThan: 'Ge', LessThan: 'Le', StrictGreaterThan: 'Gt', StrictLessThan: 'Lt',
-  N: 'evalf', ln: 'log', minpoly: 'minimalPolynomial', poly: 'Poly.from',
-  heugcd: 'IPolys.prototype.dmpZzHeuGcd',
-  zeros: 'Matrix.zeros', ones: 'Matrix.ones', eye: 'Matrix.eye', diag: 'Matrix.diag',
-  true: 'S.true', false: 'S.false', FallingFactorial: 'ff', RisingFactorial: 'rf',
-};
-function publicPathExists(path: string): boolean {
-  let value: unknown = publicApi;
-  for (const key of path.split('.')) {
-    if (value === null || (typeof value !== 'object' && typeof value !== 'function') || !(key in value)) return false;
-    value = (value as Record<string, unknown>)[key];
-  }
-  return value !== undefined;
-}
-const exprMethods = ['diff', 'integrate', 'limit', 'series', 'expand', 'simplify', 'factor', 'collect', 'cancel', 'apart', 'ratsimp', 'together', 'trigsimp', 'powsimp', 'radsimp', 'nsimplify', 'logcombine', 'powdenest', 'rewrite', 'refine', 'evalf',
-      'adjoint', 'argsCnc', 'asBaseExp', 'asCoeffAdd', 'asCoeffMul', 'asCoeffExponent', 'asCoefficient', 'asCoefficientsDict', 'asContentPrimitive', 'asDummy', 'asIndependent', 'asLeadingTerm', 'asNumerDenom', 'asPoly', 'asPowersDict', 'asRealImag', 'asTerms', 'aseries', 'atoms', 'classKey', 'coeff', 'combsimp', 'compare', 'couldExtractMinusSign', 'count', 'countOps', 'dir', 'doit', 'dummyEq', 'extractAdditively', 'extractBranchFactor', 'extractMultiplicatively', 'find', 'fourierSeries', 'fps', 'gammasimp', 'getO', 'getn', 'hasFree', 'hasXfree', 'invert', 'isAlgebraicExpr', 'isConstant', 'isHypergeometric', 'isMeromorphic', 'isPolynomial', 'isRationalFunction', 'isSame', 'leadterm', 'lseries', 'match', 'matches', 'normal', 'primitive', 'rcall', 'removeO', 'replace', 'round', 'separate', 'sortKey', 'taylorTerm', 'transpose', 'xreplace',
-      'asExpr', 'asOrderedFactors', 'asOrderedTerms', 'copy', 'nseries'];
-export const MEMBER_FUNCTIONS: Readonly<Record<string, readonly string[]>> = {
-    Expr: exprMethods,
-    Matrix: ['doit', 'berkowitz', 'berkowitzEigenvals', 'berkowitzMinors', 'companion', 'connectedComponents', 'elementaryColOp', 'elementaryRowOp', 'inverseADJ', 'inverseBLOCK', 'inverseCH', 'inverseGE', 'inverseLDL', 'inverseLU', 'inverseQR', 'irregular', 'iterItems', 'iterValues', 'jordanBlock', 'jordanCell', 'key2bounds', 'key2ij', 'per', 'permuteBkwd', 'permuteFwd', 'printNonzero', 'refine', 'singularValueDecomposition', 'stronglyConnectedComponents', 'table', 'toDM', 'upperHessenbergDecomposition', 'wilkinson', 'analyticFunc', 'bidiagonalDecomposition', 'bidiagonalize', 'cholesky', 'choleskySolve', 'cofactor', 'colInsert', 'columnspace', 'conditionNumber', 'connectedComponentsDecomposition', 'cramerSolve', 'cross', 'diagonal', 'diagonalSolve', 'diagonalize', 'dot', 'dual', 'echelonForm', 'eigenvects', 'extract', 'gaussJordanSolve', 'getDiagBlocks', 'hat', 'invMod', 'isAntiSymmetric', 'isDiagonal', 'isDiagonalizable', 'isNilpotent', 'isSymmetric', 'jacobian', 'jordanCells', 'jordanForm', 'leftEigenvects', 'lll', 'lllTransform', 'lowerTriangular', 'lowerTriangularSolve', 'minorSubmatrix', 'multiplyElementwise', 'norm', 'normalized', 'nullspace', 'orthogonalize', 'permanent', 'permuteCols', 'permuteRows', 'pinv', 'pinvSolve', 'project', 'rank', 'rankDecomposition', 'rref', 'rrefRhs', 'rowInsert', 'rowspace', 'singularValues', 'solveLeastSquares', 'stronglyConnectedComponentsDecomposition', 'upperTriangular', 'upperTriangularSolve', 'vech', 'vec'],
-    MatrixExpr: ['fromIndexSummation', ...exprMethods],
-  };
-export const MATRIX_MEMBER_ALIASES: Readonly<Record<string, string>> = {
-    LUdecomposition: 'luDecomposition', LDLdecomposition: 'ldl', QRdecomposition: 'qrDecomposition', LUdecompositionFF: 'LUdecompositionFF', LUdecompositionSimple: 'LUdecompositionSimple',
-    LUsolve: 'matrixSolve', QRsolve: 'matrixSolve', LDLsolve: 'matrixSolve', solve: 'matrixSolve', exp: 'matrixExp', log: 'matrixLog',
-    applyfunc: 'Matrix.prototype.map', colJoin: 'Matrix.prototype.vstack', rowJoin: 'Matrix.prototype.hstack',
-    berkowitzCharpoly: 'Matrix.prototype.charpoly', berkowitzDet: 'Matrix.prototype.det', detLUDecomposition: 'Matrix.prototype.det', detBareis: 'Matrix.prototype.det',
-  };
-
-/** The actual public export/member supporting a name, or undefined when absent. */
-export function counterpartFor(a: { name: string; owner?: string; category?: string }): string | undefined {
-  if (camel(a.name) in categories && ['DiagramGrid', 'XypicDiagramDrawer', 'xypicDrawDiagram', 'ArrowStringDescription'].includes(camel(a.name))) return 'categories.' + camel(a.name);
-  if (a.category === 'plotting' && camel(a.name) in plotting) return 'plotting.' + camel(a.name);
-  const camelMethod = (n: string): string => n.replace(/_([a-zA-Z0-9])/g, (_m, c: string) => c.toUpperCase());
-  if (a.category === 'diffgeom' && !a.name.startsWith('.')) {
-    const name = camel(a.name);
-    return name in diffgeomNamespace ? `@symjs/symjs/diffgeom.${name}` : undefined;
-  }
-  if (!a.name.startsWith('.')) {
-    const alias = PUBLIC_ALIASES[a.name];
-    const candidates = [camelIn(a.name, a.category), ...(alias ? [alias] : [])];
-    if (!(a.name in JS_GLOBAL_RENAMES)) candidates.push(a.name);
-    if (a.category === 'polys') candidates.push('Poly.prototype.' + camelMethod(a.name));
-    return candidates.find(publicPathExists);
-  }
-  const m = camelMethod(a.name.slice(1));
-  const owners: Record<string, string> = { Expr: 'Expr', MutableDenseMatrix: 'Matrix', Matrix: 'Matrix', ImmutableDenseNDimArray: 'ImmutableDenseNDimArray', Permutation: 'Permutation', MatrixExpr: 'MatrixExpr' };
-  const owner = owners[a.owner ?? ''];
-  if (!owner) return undefined;
-  const candidates = [`${owner}.prototype.${m}`, `${owner}.${m}`, `${owner}.prototype.${a.name.slice(1)}`];
-  // SymPy's mutable matrix methods (row_swap, fill, ...) are members of the mutable class
-  if (a.owner === 'MutableDenseMatrix') candidates.push(`MutableDenseMatrix.prototype.${m}`, `MutableDenseMatrix.prototype.${a.name.slice(1)}`);
-  // Expression operations may be exposed as free functions. Their concrete path
-  // is reported, so a function counterpart is not confused with a fluent method.
-  // SymPy's MatrixExpr derives from Expr: its Expr methods are the same functions
-  if (MEMBER_FUNCTIONS[owner]?.includes(m)) candidates.push(m);
-  if (owner === 'Matrix' && MATRIX_MEMBER_ALIASES[m]) candidates.push(MATRIX_MEMBER_ALIASES[m]!);
-  return candidates.find(publicPathExists);
-}
-export function hasCounterpart(a: { name: string; owner?: string; category?: string }): boolean {
-  return counterpartFor(a) !== undefined;
-}
-
 export type Outcome = { status: 'pass' } | { status: 'equivalent'; got: string } | { status: 'fail'; got: string } | { status: 'unsupported'; reason: string } | {
   status: 'error';
   reason: string;
 };
-
-/**
- * The position of a case among the corpus cases with the same module and
- * source (a doctest source that occurs several times, after different setup
- * lines, has one port per occurrence).
- */
-function occurrence(c: Case): number {
-  occurrenceCorpus ??= (JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')) as { cases: Case[] }).cases;
-  const same = occurrenceCorpus.filter((d) => d.module === c.module && d.src === c.src);
-  return Math.max(0, same.findIndex((d) => d.expected === c.expected));
-}
-let occurrenceCorpus: Case[] | undefined;
 
 /** Optional observation for assertion corpora; deserialization failures are not API exceptions. */
 export type CaseObservation = { value: unknown } | { error: unknown };
@@ -8340,8 +8260,7 @@ function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets
 }
 
 function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome {
-  const portEntry = PORTS[`${c.module}:${'line' in c ? c.line : ''}:${c.src}`] ?? PORTS[`${c.module}:${c.src}`];
-  const port = Array.isArray(portEntry) ? (portEntry as readonly (() => unknown)[])[occurrence(c)] : (portEntry as (() => unknown) | undefined);
+  const port = portFor(c);
   if (port) {
     // a doctest that needs Python code (classes, lambdas) runs as its JavaScript translation
     try {

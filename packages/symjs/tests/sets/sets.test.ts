@@ -9,7 +9,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as sj from '../../src';
 import * as Sets from '../../src/sets/sets';
-import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/unittest-harness';
 import rangeSlices from './range-slices.json';
 import { impl } from '../../src/core/nodes';
 import { cast } from '../../src/core/guard';

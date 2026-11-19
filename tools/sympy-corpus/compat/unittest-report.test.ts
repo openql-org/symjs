@@ -2,7 +2,8 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { expect, it } from 'vitest';
-import { failureKind, ratchetDifferences, replayDeadlineMs } from './tests-report';
+import { failureKind } from './unittest-report';
+import { ratchetDifferences, replayDeadlineMs } from './replay';
 
 it('validates optional replay deadlines while preserving category defaults', () => {
   expect(replayDeadlineMs('core', '')).toBe(30_000);
