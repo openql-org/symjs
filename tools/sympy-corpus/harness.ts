@@ -1965,7 +1965,8 @@ function polySystemSolutions(args: unknown[], kw: Record<string, unknown>, ratio
   const eqs = (args[0] as JsList | JsTuple).items.map(asExprOrPoly);
   const explicit = (args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items : args.slice(1)).map(asSym);
   const syms = explicit.length ? explicit : sj.sortGens(args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.flatMap((v) => v instanceof sj.Poly ? [...v.gens] : [...sj.freeSymbols(asExpr(v))]) : []).map(asSym).filter((v, i, all) => all.findIndex((w) => w.key === v.key) === i);
-  const result = sj.solvePolySystem(eqs, syms, { rationalOnly, strict: kw['strict'] === true });
+  const result = sj.solvePolySystem(eqs, syms, { rationalOnly, strict: kw['strict'] === true, distinguishInconsistent: true });
+  if (sj.isNoMatch(result)) return null;
   return new JsList(result.map((t) => new JsTuple(t)));
 }
 /** ff/rf of a Poly: product of the polynomial shifted by -i (ff) or +i (rf). */
@@ -3571,7 +3572,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.is_algebraic_expr': (args, kw, self) => (noKw(kw), sj.isAlgebraicExpr(asExpr(self), args.map(asExpr))),
   '.dummy_eq': (args, kw, self) => {
     noKw(kw);
-    const canonical = (v: unknown): Expr => v instanceof sj.ImageSet || v instanceof sj.ConditionSet || v instanceof sj.SetExpressionNode ? v.asDummy() : asExpr(lambdaAsNode(v));
+    const canonical = (v: unknown): Expr => v instanceof sj.ImageSet || v instanceof sj.ConditionSet || v instanceof sj.SetOp || v instanceof sj.SetExpressionNode ? v.asDummy() : asExpr(lambdaAsNode(v));
     return sj.dummyEq(canonical(self), canonical(args[0]), args[1] === undefined ? undefined : asExpr(args[1]));
   },
   '.compare': (args, kw, self) => {
@@ -3911,7 +3912,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_dummy': (_args, kw, self) => {
     noKw(kw);
-    if (self instanceof sj.ConditionSet || self instanceof sj.ImageSet || self instanceof sj.SetExpressionNode) return self.asDummy();
+    if (self instanceof sj.ConditionSet || self instanceof sj.ImageSet || self instanceof sj.SetOp || self instanceof sj.SetExpressionNode) return self.asDummy();
     return sj.asDummy(asExpr(lambdaAsNode(self)));
   },
   LambertW: (args, kw) => {
@@ -4343,13 +4344,16 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const exprs = (value: unknown): Expr[] => (value as JsTuple).items.map(asExpr);
     const eqs = exprs(args[0]);
-    const syms = (args[1] as JsTuple).items.map(asSym);
+    const syms = exprs(args[1]).map((v) => {
+      if (!(v instanceof Sym)) throw new RangeError('substitution: unknowns must be symbols');
+      return v;
+    });
     const results = args[2] instanceof JsTuple ? args[2].items.map((d) => new Map((d as JsDict).entries.map(([k, v]) => [asSym(k), asExpr(v)]))) : undefined;
     const known = args[3] instanceof JsTuple ? args[3].items.map(asSym) : undefined;
     const exclude = args[4] instanceof JsSet || args[4] instanceof JsTuple ? args[4].items.map(asExpr) : undefined;
     const all = args[5] instanceof JsTuple ? args[5].items.map(asSym) : undefined;
     const solutions = sj.substitution(eqs, syms, results, known, exclude, all);
-    return solutions.length ? new JsSet(solutions.map((t) => new JsTuple(t))) : 'EmptySet';
+    return sj.FiniteSet.of(...solutions.map((row) => sj.Tuple(...row)));
   },
   nonlinsolve: (args, kw) => {
     noKw(kw);
@@ -4357,12 +4361,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (!(equations instanceof JsTuple || equations instanceof JsList)) throw new Unsupported('nonlinsolve equations');
     const eqs = equations.items.map(asExpr);
     const targets = args[1] instanceof JsTuple || args[1] instanceof JsList || args[1] instanceof JsSet ? args[1].items : args.slice(1);
-    const originals = targets.map(asExpr);
-    const syms = originals.map((e, i) => e instanceof Sym ? e : new sj.Dummy(`_u${i}`));
-    const replacements = originals.map((e, i): [Expr, Expr] => [e, definedOr(syms[i], 'nonlinear solver unknown')]);
-    const sols = sj.nonlinsolve(eqs.map((e) => sj.xreplace(e, replacements)), syms);
-    const back = replacements.map(([e, d]): [Expr, Expr] => [d, e]);
-    return sols.length ? new JsSet(sols.map((t) => new JsTuple(t.map((e) => sj.xreplace(e, back))))) : 'EmptySet';
+    return sj.nonlinsolve(eqs, targets.map(asExpr), { asSet: true });
   },
   constant_renumber: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['variables', 'newconstants'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -8566,6 +8565,32 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
+  // Abs(I) = 1, but neither tuple with y = 1 has x = I. The graph y = Abs(x) includes it.
+  "sympy.solvers.tests.test_solveset:assert nonlinsolve([Abs(x) - y], x, y) == soln": "{(x, Abs(x))}",
+  // At q = 0 all five residuals vanish for ax = lx and mx = nx = 0, with bx, cx, gx, jx and lx arbitrary.
+  "sympy.solvers.tests.test_solveset:assert nonlinsolve(S, *V) == sol": "{(lx, bx, cx, gx, jx, lx, 0, 0, 0), ((lx*q + mx)/q, (-cx*q + jx*q + nx)/q**2, cx, mx/q**2, jx, lx, mx, nx, q)}",
+  // At x = -4 - I*pi/log(2), y = 1 + I*pi/log(2) both residuals vanish. Each exponential equality has an independent integer period.
+  "sympy.solvers.tests.test_solveset:assert nonlinsolve([32*(2**x)/2**(-y) - 4**y, 27*(3**x) - S(1)/3**y], x, y) ==\\\n        FiniteSet((-log(81)/log(3), 1))": "ImageSet(Lambda((_k0, _k1), (-_k0*I*pi/log(2) - _k1*I*pi/log(3) - 4, _k0*I*pi/log(2) - _k1*I*pi/log(3) + 1)), Integers, Integers)",
+  // At m = -4 - I*pi/log(2), n = 1 + I*pi/log(2) both equations hold, outside the reported singleton.
+  "sympy.solvers.tests.test_solveset:assert nonlinsolve([32*2**m*2**n - 4**n, 27*3**m - 3**(-n)], m, n) ==\\\n        FiniteSet((-log(81)/log(3), 1))": "ImageSet(Lambda((_k0, _k1), (-_k0*I*pi/log(2) - _k1*I*pi/log(3) - 4, _k0*I*pi/log(2) - _k1*I*pi/log(3) + 1)), Integers, Integers)",
+  // At (log(2), 2) both products vanish and the first coordinate is nonzero.
+  "sympy.solvers.tests.test_solveset:assert substitution([a*(a - log(b)), a*(b - 2)], [a, b]) == \\\n           {(0, b)}": "{(0, b), (log(2), 2)}",
+  // At -sqrt(10) both logarithms have imaginary part pi, so their sum is 2*pi*I. Only sqrt(10) gives zero.
+  "sympy.solvers.tests.test_solveset:assert solveset_real(log(x - 3) + log(x + 3), x) == FiniteSet(\n        -sqrt(10), sqrt(10))": "{sqrt(10)}",
+  // At y = 2, z = 2*pi*I the positive candidate sqrt(2) gives residual 2*pi*I. Exponentiation requires the principal-log strip.
+  "sympy.solvers.tests.test_solveset:assert solveset_real(eq, x) == \\\n        Intersection(S.Reals, FiniteSet(-sqrt(y**2 - y*exp(z)),\n            sqrt(y**2 - y*exp(z)))) - \\\n        Intersection(S.Reals, FiniteSet(-sqrt(y**2), sqrt(y**2)))": "ConditionSet(x, (-im(z) + im(log(x)) <= pi) & (-pi < -im(z) + im(log(x))), Complement(Intersection({-sqrt(y**2 - y*exp(z)), sqrt(y**2 - y*exp(z))}, Reals), Union({0}, Intersection({-sqrt(y**2), sqrt(y**2)}, Reals))))",
+  // For x = -1 and y = 2, log(x**y) - y*log(x) is -2*pi*I.
+  "sympy.solvers.tests.test_solveset:assert solveset(log(x**y) - y*log(x), x, S.Reals) == S.Reals": "ConditionSet(x, (im(y*log(x)) <= pi) & (-pi < im(y*log(x))), Union(Interval.open(-oo, 0), Interval.open(0, oo)))",
+  // The proposed free family contains (0, 1), which gives 4**0 + 9**1 - 5 = 5. Eliminating 2**x leaves an equation on y.
+  "sympy.solvers.tests.test_solveset:assert nonlinsolve(sys, x, y) == FiniteSet((log(3 - 2**y)/log(2), y))": "ImageSet(Lambda((_k, y), ((2*_k*I*pi + log(3 - 2**y))/log(2), y)), Integers, ConditionSet(y, Ne(3 - 2**y, 0) & Eq(9**y + (3 - 2**y)**2 - 5, 0), Complexes))",
+  // The proposed first family contains (0, 0), where the second residual is 5. Both zero factors must still satisfy the second equation.
+  "sympy.solvers.tests.test_solveset:assert res == sols": "Union(ImageSet(Lambda(x, (x, 0)), ConditionSet(x, Eq(4*x*exp(2*x) + 4*exp(2*x) + 1, 0), Complexes)), ImageSet(Lambda(y, (-exp(y) - 1/2, y)), ConditionSet(y, Eq(4*y*exp(y - 2*exp(y) - 1) + 4*(-exp(y) - 1/2)*exp(-2*exp(y) - 1) + 4*exp(y - 2*exp(y) - 1) + 1, 0), Complexes)))",
+  // Taking n = 0 in the proposed unrestricted family gives m = 0 and a second residual of 3. Taking logarithms gives two independent integer periods.
+  "sympy.solvers.tests.test_solveset:assert nonlinsolve([ 2**m - 2**(2*n), 4*2**m - 2**(4*n)], m, n\n                      ) == FiniteSet((log(2**(2*n))/log(2), S.Complexes))": "ImageSet(Lambda((_k0, _k1), (4*_k0*I*pi/log(2) + 2*_k1*I*pi/log(2) + 2, _k0*I*pi/log(2) + _k1*I*pi/log(2) + 1)), Integers, Integers)",
+  // At x = y = 0 both original polynomials vanish. All three printed quotients omit this point. Away from it (x*y)**3 = 1/2.
+  "sympy.solvers.tests.test_solveset:assert nonlinsolve([4*x**3*y**4 - 2*y, 4*x**4*y**3 - 2*x], x, y) == {\n        (2**e/(2*y), y), ((-2**e/4 - 2**e*sqrt(3)*I/4)/y, y),\n        ((-2**e/4 + 2**e*sqrt(3)*I/4)/y, y)}": "{(0, 0), (2**(2/3)/(2*y), y), ((-2**(2/3)/4 - 2**(2/3)*sqrt(3)*I/4)/y, y), ((-2**(2/3)/4 + 2**(2/3)*sqrt(3)*I/4)/y, y)}",
+  // The same missing origin solves both equations for real x and y as well.
+  "sympy.solvers.tests.test_solveset:assert sol == ans": "{(0, 0), (2**(2/3)/(2*y), y), ((-2**(2/3)/4 - 2**(2/3)*sqrt(3)*I/4)/y, y), ((-2**(2/3)/4 + 2**(2/3)*sqrt(3)*I/4)/y, y)}",
   // The difference is 0.0058279433...: SymPy's own (pi**400 - (pi**400).round(1)).evalf(2, maxn=300) is 0.0058.
   // With the default maxn=100 its evaluation of the 199-digit operands stops before the cancellation is
   // resolved, and the printed -0.e+88 is a value without any correct digit.

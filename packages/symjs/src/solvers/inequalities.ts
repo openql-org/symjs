@@ -13,26 +13,27 @@ import type { Expr, ExprLike, FnName, RelOp } from '../core/nodes';
 import { Sym } from '../core/nodes';
 import { Add, BoolAtom, Constant, Dummy, ExtensionExpr, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
 import { at, cast, defined, expectType, first } from '../core/guard';
-import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
+import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from '../core/assumptions';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
-import { asRealImag } from '../core/methods';
+import { isReal as realFact } from '../core/public';
+import { asNumerDenom, asRealImag, coeff } from '../core/methods';
 import { expand_log, expandMul } from '../simplify/expand';
-import { factorTerms } from '../simplify/exprtools';
+import { factorTerms, signsimp } from '../simplify/exprtools';
 import { BoolOp, and, not as notB, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne, piecewise } from '../core/logic';
-import { mapBottomUp, piecewiseFold, some, xreplace } from '../core/traverse';
+import { mapBottomUp, piecewiseFold, some, subs, xreplace } from '../core/traverse';
 import { fn, log } from '../functions/elementary/elementary';
 import { Max, Min } from '../functions/special/special';
 import { diff } from '../calculus/diff';
 import { limit } from '../series/limits';
-import { Poly } from '../polys/sympoly';
+import { factor, Poly } from '../polys/sympoly';
 import { CRootOf } from '../polys/rootof';
 import { trigsimp } from '../simplify/trigsimp';
 import { polyCoefficients } from '../polys/poly';
 import { cancel, fraction } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
-import { igcdex, integerLog } from '../core/numberutils';
-import { polynomialInGenerator, solve } from './solve';
+import { igcdex, integerLog, limitDenominator, rationalFromFloat } from '../core/numberutils';
+import { checksol, denoms, polynomialInGenerator, solve } from './solve';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import {
   SetExpr,
@@ -444,6 +445,20 @@ export function solveUnivariateInequality(
   if (rel instanceof BoolAtom) return opts.relational === false ? rel.value ? opts.domain ?? Reals : EmptySet : rel;
   if (!(rel instanceof Rel)) throw new TypeError('solve_univariate_inequality: relational expected');
   const domain = opts.domain ?? Reals;
+  // A sign chart cannot decide the order of an endpoint by a rounded cancellation.
+  for (const bound of [rel.lhs, rel.rhs]) {
+    if (!(bound instanceof Add) || bound.freeSymbols().size || isZero(bound) !== undefined) continue;
+    const magnitude = bound.args.reduce((sum, term) => sum + Math.abs(Number(realValue(term))), 0);
+    if (Number.isFinite(magnitude) && Math.abs(Number(realValue(bound))) <= bound.args.length * Number.EPSILON * magnitude) {
+      throw new NotImplementedError('inequalities: cannot certify the sign of the constant endpoint');
+    }
+  }
+  const [numerator, denominator] = fraction(rel.lhs);
+  if (opts.relational !== false && domain === Reals && denominator.equals(x) && isPositive(x) === true && !numerator.has(x) && rel.rhs instanceof Rational && !rel.rhs.isZero) {
+    const endpoint = mul(numerator, pow(rel.rhs, -1));
+    const reversed: Record<RelOp, RelOp> = { Gt: 'Lt', Ge: 'Le', Lt: 'Gt', Le: 'Ge', Eq: 'Eq', Ne: 'Ne' };
+    return relFn[rel.rhs.isNegative ? reversed[rel.op] : rel.op](endpoint, x);
+  }
   const logarithm = rel.lhs;
   if (logarithm instanceof Fn && logarithm.name === 'log' && first(logarithm.args).equals(x) && !rel.rhs.has(x) && isReal(rel.rhs) === true) {
     const endpoint = pow(S.E, rel.rhs);
@@ -638,7 +653,9 @@ export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Com
   if (!(target instanceof Sym)) {
     if (target === undefined) return f === S.true || f.equals(S.Zero) ? domain : EmptySet;
     const variable = new Dummy('x');
-    const result = solveset(xreplace(f, [[target, variable]]), variable, domain);
+    // Number._eval_subs also replaces the additive inverse of a numeric target.
+    const recast = target instanceof Rational && !target.isZero ? xreplace(f, [[target, variable], [target.neg(), variable.neg()]]) : subs(f, [[target, variable]]);
+    const result = solveset(recast, variable, domain);
     return cast(xreplace(result, [[variable, target]]), SetExpr);
   }
   const x = target;
@@ -648,6 +665,11 @@ export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Com
   // unknown (sqrt(x**2) is Abs(x))
   if ((domain === Reals || domain instanceof Interval) && isReal(x) !== true && !(f instanceof BoolAtom)) {
     const real = new Dummy('R', { real: true });
+    // Keep a symbolic base intact when a real exponent would distribute over its factors.
+    if (f instanceof Add && f.args.some((term) => term instanceof Pow && term.base instanceof Mul && term.exp.equals(x) && isPositive(term.base) === true)) {
+      const isolated = invertExponential(f, x, domain);
+      if (isolated !== undefined) return isolated;
+    }
     const evaluated = xreplace(xreplace(f, [[x, real]]), [[real, x]]);
     if (!evaluated.equals(f)) return solveset(evaluated, x, domain);
   }
@@ -714,6 +736,10 @@ export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Com
     }
     const modular = solveModular(g, x, domain);
     if (modular !== undefined) return modular;
+    if (domain instanceof Interval) {
+      const preimage = boundedCosinePreimage(g, x, domain);
+      if (preimage !== undefined) return preimage;
+    }
     const periodic = periodicSolutions(g, x, domain);
     if (periodic) return periodic;
     if (domain === Complexes) {
@@ -724,6 +750,12 @@ export function solveset(fIn: ExprLike, symbol?: ExprLike, domain: SetExpr = Com
     if (algebraic !== EmptySet) return algebraic;
   } catch {
     algebraic = undefined;
+  }
+  if (domain === Complexes && g instanceof Add && some(g, (term) => term instanceof Fn && term.has(x))) {
+    const product = factor(g);
+    if (product instanceof Mul && product.args.filter((a) => a.has(x)).length > 1 && !some(product, (a) => a instanceof Pow && isNegative(a.exp) === true)) {
+      return union(...product.args.filter((a) => a.has(x)).map((a) => solveset(a, x, domain)));
+    }
   }
   const hyperbolicHeads = ['sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch'];
   if (some(g, (term) => term instanceof Fn && hyperbolicHeads.includes(term.name))) {
@@ -862,14 +894,22 @@ function invertReal(g: Expr, x: Sym, domain: SetExpr): Expr | undefined {
 }
 
 /** The real roots of a polynomial with parameters: SymPy keeps those known to be real and intersects the others with the Reals. */
-function parametricRealRoots(num: Expr, den: Expr, x: Sym): SetExpr {
+function parametricRealRoots(num: Expr, den: Expr, x: Sym, original: Expr): SetExpr {
   const realPart = (xs: readonly Expr[]): SetExpr => {
     const reals = xs.filter((r) => isRealSym(r) && isReal(r) !== false && (isReal(r) === true || r.freeSymbols().size !== 0 || Number.isFinite(realValue(approximateRoots(r)))));
-    const unknown = reals.filter((r) => isReal(r) !== true);
-    return union(finiteSet(...reals.filter((r) => isReal(r) === true)), unknown.length ? new SetOp('Intersection', [finiteSet(...unknown), Reals]) : EmptySet);
+    const unknown = reals.filter((r) => isReal(r) !== true && realFact(r) !== true);
+    return union(finiteSet(...reals.filter((r) => !unknown.includes(r))), unknown.length ? new SetOp('Intersection', [finiteSet(...unknown), Reals]) : EmptySet);
   };
-  const roots = realPart(solve(num, x));
-  return den.has(x) ? complement(roots, realPart(solve(den, x))) : roots;
+  const roots = solve(num, x);
+  const poles = den.has(x) ? realPart(solve(den, x)) : EmptySet;
+  if (some(original, (term) => term instanceof Pow && term.base.has(x) && term.exp.equals(S.Half.neg()))) {
+    return union(...roots.map((root) => {
+      const base = realPart([root]);
+      const solution = checksol(original, x, root) === true ? base : new ConditionSet(x, Eq(original, 0), base);
+      return complement(solution, poles);
+    }));
+  }
+  return complement(realPart(roots), poles);
 }
 
 /**
@@ -901,6 +941,12 @@ function invertRealPower(g: Expr, x: Sym): SetExpr | undefined {
     const sets = invertTo(B, pow(t, pow(e, -1)), x).map((r) => imageSet(x, xreplace(r, [[t, x]]), base));
     return sets.length === 1 ? first(sets) : new SetOp('Union', sets.sort((u, v) => compareKeys(sortKey(u), sortKey(v))));
   }
+  if (B.equals(x) && e.equals(S.Two)) {
+    if (isNegative(c) === true) return EmptySet;
+    const root = pow(c, S.Half);
+    const candidates = finiteSet(root.neg(), root);
+    return realFact(root) === true ? candidates : new SetOp('Intersection', [candidates, Reals]);
+  }
   if (!e.isInteger || e.p % 2n === 0n) return undefined;
   const sols = invertTo(B, realRoot(c, e.p), x);
   // real_root of a real c is real
@@ -923,7 +969,7 @@ function invertTo(B: Expr, r: Expr, x: Sym): Expr[] {
     const rest = B.args.filter((a) => !a.has(x));
     if (dep.length === 1 && rest.length) {
       const inner = first(dep);
-      return invertTo(inner, B instanceof Add ? add(r, mul(-1, ...rest)) : mul(r, pow(mul(...rest), -1)), x);
+      return invertTo(inner, B instanceof Add ? add(r, add(...rest).neg()) : mul(r, pow(mul(...rest), -1)), x);
     }
   }
   if (B instanceof Pow && B.exp instanceof Rational && B.exp.isInteger && B.exp.p > 1n) {
@@ -939,8 +985,90 @@ function invertTo(B: Expr, r: Expr, x: Sym): Expr[] {
 /** SymPy real_root(c, n) for an odd n: Abs(c)**(1/n)*sign(c). */
 const realRoot = (c: Expr, n: bigint): Expr => mul(pow(fn('abs', [c]), Rational.of(1n, n)), fn('sign', [c]));
 
+/** Enforce the principal branch when exponentiating an equation between logarithms. */
+function logarithmicPreimage(equation: Add, x: Sym): SetExpr | undefined {
+  const positive = equation.args.find((t): t is Fn => t instanceof Fn && t.name === 'log' && t.has(x));
+  if (!positive) return undefined;
+  const argument = first(positive.args);
+  if (argument instanceof Pow && argument.base.equals(x) && !argument.exp.has(x)) {
+    const exponent = mul(argument.exp, log(x));
+    if (add(...equation.args.filter((t) => t !== positive), exponent).equals(S.Zero)) {
+      const imaginary = fn('im', [exponent]);
+      return new ConditionSet(x, and(Lt(S.Pi.neg(), imaginary), Le(imaginary, S.Pi)), complement(Reals, finiteSet(0)));
+    }
+  }
+  const negative = equation.args.find((t) => t instanceof Mul && t.args.length === 2 && t.args.some((a) => a.equals(-1)) && t.args.some((a) => a instanceof Fn && a.name === 'log' && a.has(x)));
+  if (!(negative instanceof Mul)) return undefined;
+  const offset = add(...equation.args.filter((t) => t !== positive && t !== negative));
+  if (!offset.freeSymbols().size || offset.has(x)) return undefined;
+  const other = first(cast(defined(negative.args.find((a) => a instanceof Fn)), Fn).args);
+  const ratio = cancel(mul(argument, pow(other, -1)));
+  const [numerator] = fraction(cancel(add(mul(ratio, pow(S.E, offset)), -1)));
+  const candidates = solveset(numerator, x, Reals);
+  const excluded = union(...[...denoms(equation, x), other].map((d) => solveset(d, x, Reals)));
+  const imaginary = fn('im', [add(log(other), offset.neg())]);
+  return new ConditionSet(x, and(Lt(S.Pi.neg(), imaginary), Le(imaginary, S.Pi)), complement(candidates, excluded));
+}
+
+/** Intersect the periodic cosine preimages with the monotone image of the interval. */
+function boundedCosinePreimage(g: Expr, x: Sym, domain: Interval): SetExpr | undefined {
+  const terms = g instanceof Add ? g.args : [g];
+  const dependent = terms.filter((t) => t.has(x));
+  const outer = dependent[0];
+  if (dependent.length !== 1 || !(outer instanceof Fn) || outer.name !== 'cos') return undefined;
+  const inner = first(outer.args);
+  if (!(inner instanceof Fn) || inner.name !== 'sinh' || !first(inner.args).equals(x)) return undefined;
+  const target = add(...terms.filter((t) => t !== outer)).neg();
+  if (containsQ(interval(-1, 1), target) === false) return EmptySet;
+  const angle = fn('acos', [target]);
+  const numeric = realValue(angle);
+  if (numeric === undefined) return new ConditionSet(x, Eq(g, 0), domain);
+  const multiple = limitDenominator(rationalFromFloat(numeric / Math.PI), 360n);
+  const rational = mul(S.Pi, multiple);
+  const offset = Math.abs(multiple.toNumber() * Math.PI - numeric) <= Number.EPSILON * Math.PI && expandMul(fn('cos', [rational])).equals(expandMul(target)) ? rational : angle;
+  const n = new Dummy('n', { integer: true });
+  const window = interval(fn('sinh', [domain.start]), fn('sinh', [domain.end]), domain.leftOpen, domain.rightOpen);
+  const values = union(...[offset, offset.neg()].map((a) => intersection(imageSet(n, add(mul(2, n, S.Pi), a), Integers), window)));
+  return imageSet(x, fn('asinh', [x]), values);
+}
+
 function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
+  const terms = gIn instanceof Add ? gIn.args : [gIn];
+  const dependent = terms.filter((t) => t.has(x));
+  if (dependent.length === 1) {
+    const term = first(dependent);
+    const rhs = add(...terms.filter((t) => t !== term)).neg();
+    if (domain === Reals && term.equals(x) && fraction(rhs)[1].freeSymbols().size && isNonZero(fraction(rhs)[1]) !== true) {
+      return new SetOp('Intersection', [finiteSet(rhs), Reals]);
+    }
+    const [numerator, denominator] = fraction(term);
+    if (domain === Complexes && !numerator.has(x) && denominator instanceof Add && rhs.freeSymbols().size && denominator.has(x)) {
+      const values = invertTo(denominator, mul(numerator, pow(rhs, -1)), x);
+      return complement(finiteSet(...values), solveset(denominator, x, domain));
+    }
+  }
   if (domain === Reals || domain instanceof Interval) {
+    if (domain === Reals && gIn instanceof Add) {
+      const logarithmic = logarithmicPreimage(gIn, x);
+      if (logarithmic) return logarithmic;
+    }
+    let generator: Fn | undefined;
+    if (domain === Reals) some(gIn, (f) => {
+      if (!(f instanceof Fn) || f.name !== 'coth' || !first(f.args).equals(x)) return false;
+      generator = f;
+      return true;
+    });
+    if (generator instanceof Fn && !generator.equals(gIn)) {
+      const variable = new Sym('x');
+      const polynomial = xreplace(gIn, [[generator, variable]]);
+      if (gIn.freeSymbols().size === 1 && !xreplace(gIn, [[generator, S.Zero]]).has(x) && polyCoefficients(polynomial, variable)) {
+        const p = Poly.from(polynomial, [variable]);
+        const squareFree = p.sqfPart();
+        const negative = squareFree.countRoots(S.NegativeInfinity, -1);
+        const middle = squareFree.countRoots(S.NegativeInfinity, 1);
+        return finiteSet(...squareFree.realRoots().filter((r, i) => i < negative && !r.equals(-1) || i >= middle).map((r) => fn('acoth', [r])));
+      }
+    }
     if (gIn instanceof Fn && gIn.name === 'arg') {
       const real = new Dummy('x', { real: true });
       const [re, im] = asRealImag(xreplace(first(gIn.args), [[x, real]]));
@@ -966,7 +1094,7 @@ function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
     try {
       const zeros = realZeros(num, x, lo, hi);
       if (domain === Reals && zeros.length === 1 && first(zeros) instanceof CRootOf && Poly.from(num, [x]).degree() === 3) {
-        return parametricRealRoots(num, den, x);
+        return parametricRealRoots(num, den, x, g);
       }
       const zs = zeros.filter((z) => {
         const denominator = xreplace(den, [[x, z]]);
@@ -976,12 +1104,12 @@ function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
     } catch (e) {
       // zeros with parameters (2*x - y = 0): the real ones, kept where the domain contains them
       if (!(e instanceof NotImplementedError)) throw e;
-      if (domain === Reals) return parametricRealRoots(num, den, x);
+      if (domain === Reals) return parametricRealRoots(num, den, x, g);
       // on an interval: the roots of a polynomial equation, kept where the interval contains them
       if (!polyCoefficients(num, x)) throw e;
       const onDomain = (s: SetExpr): SetExpr => s instanceof SetOp && s.op === 'Union' ? union(...s.args.map(onDomain))
         : intersection(s instanceof SetOp && s.op === 'Intersection' && s.args.includes(Reals) ? intersection(...s.args.filter((a) => a !== Reals)) : s, domain);
-      return onDomain(parametricRealRoots(num, den, x));
+      return onDomain(parametricRealRoots(num, den, x, g));
     }
   }
   const g = gIn;
@@ -994,7 +1122,7 @@ function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
   }
   const poles = den.has(x) ? solve(den, x) : [];
   const keep = sols.filter((s) => !poles.some((p) => p.key === s.key));
-  return complement(intersection(finiteSet(...keep), domain === Complexes ? finiteSet(...keep) : domain), EmptySet);
+  return complement(domain === Complexes ? finiteSet(...keep) : intersection(finiteSet(...keep), domain), finiteSet(...poles));
 }
 
 /** Invert an isolated absolute value with a known nonnegative right-hand side. */
@@ -1030,6 +1158,14 @@ function invertExponential(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefine
   const term = first(dependent);
   const factors = term instanceof Mul ? term.args : [term];
   const variableFactors = factors.filter((factor) => factor.has(x));
+  if (variableFactors.length > 1 && variableFactors.every((v) => v instanceof Pow && v.base.equals(S.E))) {
+    const exponent = add(...variableFactors.map((v) => cast(v, Pow).exp));
+    const [num, den] = asNumerDenom(exponent);
+    const rhs = mul(add(...terms.filter((t) => t !== term)).neg(), pow(mul(...factors.filter((v) => !v.has(x))), -1));
+    if (den.has(x) && isPositive(rhs) === true && isReal(xreplace(exponent, [[x, new Dummy('r', { real: true })]])) === true) {
+      return complement(solveset(add(num, mul(-1, den, log(rhs))), x, domain), solveset(den, x, domain));
+    }
+  }
   if (variableFactors.length !== 1) return undefined;
   const exponential = first(variableFactors);
   if (!(exponential instanceof Pow) || exponential.base.has(x) || !exponential.exp.has(x)) return undefined;
@@ -1038,11 +1174,19 @@ function invertExponential(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefine
   if (isPositive(exponential.base) === false || exponential.exp.has(S.I)) return undefined;
   if (value.equals(S.Zero) || isNegative(value) === true) return EmptySet;
   if (exponential.base.equals(S.E)) {
-    const [numerator, denominator] = fraction(exponential.exp);
-    if (denominator.has(x) || (numerator instanceof Pow && numerator.base.has(x))) return undefined;
+    const [numerator, denominator] = asNumerDenom(exponential.exp);
+    if (denominator.has(x)) {
+      if (isReal(xreplace(exponential.exp, [[x, new Dummy('r', { real: true })]])) !== true) return undefined;
+      return complement(solveset(add(numerator, mul(-1, denominator, log(value))), x, domain), solveset(denominator, x, domain));
+    }
+    if (numerator instanceof Pow && numerator.base.has(x)) return undefined;
     return solveset(add(exponential.exp, mul(-1, log(value))), x, domain);
   }
-  return solveset(add(exponential.exp, mul(-1, log(value), pow(log(exponential.base), -1))), x, domain);
+  const rhs = mul(log(value), pow(log(exponential.base), -1));
+  if (domain === Reals && exponential.exp.equals(x) && !rhs.equals(S.Zero) && exponential.base.freeSymbols().size && isNonZero(log(exponential.base)) !== true) {
+    return new SetOp('Intersection', [finiteSet(rhs), Reals]);
+  }
+  return solveset(add(exponential.exp, rhs.neg()), x, domain);
 }
 
 /** Take logarithms of positive exponential factors, or solve in a common exponential generator. */
@@ -1074,7 +1218,14 @@ function realExponential(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined 
     const [a, u] = first(parts), [b, v] = at(parts, 1);
     const ratio = mul(-1, b, pow(a, -1));
     if (isNegative(ratio) === true) return EmptySet;
-    return solveset(add(u, mul(-1, v), mul(-1, log(ratio))), x, domain);
+    const residual = add(u, v.neg(), log(ratio).neg());
+    if (domain === Reals && a.freeSymbols().size === 0 && b.freeSymbols().size === 0 && u.has(x) && v.has(x)) {
+      const slope = coeff(add(u, v.neg()), x);
+      if (slope.freeSymbols().size && isNonZero(slope) !== true && expandMul(mul(slope, x)).equals(expandMul(add(u, v.neg())))) {
+        return new SetOp('Intersection', [finiteSet(signsimp(mul(log(ratio), pow(slope, -1)))), Reals]);
+      }
+    }
+    return solveset(residual, x, domain);
   }
   const rewritten = add(...parts.map(([a, u]) => mul(a, pow(S.E, expandMul(u)))));
   const polynomial = polynomialInGenerator(rewritten, x);

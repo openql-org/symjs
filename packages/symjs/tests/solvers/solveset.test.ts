@@ -3,6 +3,8 @@
 // Expected solution families: SymPy 1.14 solvers.solveset.
 import { expect, it, vi } from 'vitest';
 import { nonlinsolve, substitution, solvify, Reals, NoMatch, symbols, parse, add, mul, pow, exp, sin, log, ImageSet, subs, S } from '../../src';
+import { at } from '../../src/core/guard';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
 import * as elimination from '../../src/solvers/solve';
 const [x, y, z] = symbols('x y z');
 it('returns all complex exponential branches through the public API', () => {
@@ -231,8 +233,102 @@ it('propagates errors from elimination that are unrelated to solver support', ()
   const failure = new RangeError('invalid elimination input');
   const spy = vi.spyOn(elimination, 'nonlinsolve').mockImplementationOnce(() => { throw failure; });
   try {
-    expect(() => nonlinsolve([x], [x])).toThrow(failure);
+    expect(() => nonlinsolve([x], [x, y])).toThrow(failure);
   } finally {
     spy.mockRestore();
   }
+});
+
+it('evaluates the SymPy nonlinear-system assertions that require symbolic set results', () => {
+  const cases = passingModuleCases('solvers', 'sympy.solvers.tests.test_solveset')
+    .filter((c) => c.fn === 'nonlinsolve' || c.fn === 'substitution');
+  for (const c of cases) expect(['pass', 'equivalent'], c.src).toContain(runTestCase(c).status);
+});
+
+it('preserves the joint integer parameters of a binomial exponential system', () => {
+  const equations = [parse('32*2**x*2**y-4**y'), parse('27*3**x-3**(-y)')];
+  const system = nonlinsolve(equations, [x, y], { asSet: true });
+  expect(system).toBeInstanceOf(ImageSet);
+  if (!(system instanceof ImageSet)) throw new TypeError('expected an integer image');
+  for (const [i, j] of [[0, 0], [-2, 1], [1, 3]] as const) {
+    const point = system.lamda.call(i, j);
+    for (const e of equations) {
+      const residual = subs(e, [[x, at(point.args, 0)], [y, at(point.args, 1)]]).toComplex();
+      expect(Math.hypot(residual.re, residual.im)).toBeLessThan(1e-10);
+    }
+  }
+  expect(nonlinsolve(equations, [x, y])[0]?.every((coord) => coord instanceof ImageSet)).toBe(true);
+});
+
+it('retains relations for unsolved coordinates and supports compound unknowns', () => {
+  const f = sin(x);
+  expect(nonlinsolve([add(f, y, -1), add(f, y.neg())], [f, y]).map(String)).toEqual(['1/2,1/2']);
+  expect(nonlinsolve([add(x, -1)], [x]).map(String)).toEqual(['1']);
+  expect(nonlinsolve([sj.Eq(add(x, pow(x, -1)), pow(x, -1))], [x]).map(String)).toEqual(['EmptySet']);
+  expect(() => substitution([x], [])).toThrow(RangeError);
+});
+
+it('retains constraints that survive attempted bivariate elimination', () => {
+  for (const equations of [
+    ['(x**2+y**2+1)*(exp(x)+exp(y)+1)', 'sin(x+y)+x+y'],
+    ['2**(x+y)+5**x+2**x', '3**x+x+sin(y)'],
+    ['2**x+y+1', '3**x+sin(y)+x'],
+    ['sin(x+y)/y+x', 'sin(x+y)/x+y'],
+  ]) {
+    expect(nonlinsolve(equations.map((e) => parse(e)), [x, y], { asSet: true })).toBeInstanceOf(sj.ConditionSet);
+  }
+  const rankDeficient = nonlinsolve([parse('2**x-3**y'), parse('4**x-9**y')], [x, y], { asSet: true });
+  expect(rankDeficient).toBeInstanceOf(ImageSet);
+  const oddPeriods = nonlinsolve([parse('2**x+3**y'), parse('2**x*3**y-3**(-y)')], [x, y], { asSet: true });
+  expect(oddPeriods).toBeInstanceOf(ImageSet);
+  expect(nonlinsolve([parse('z-1'), parse('x**2-y**2')], [x, z])).toHaveLength(4);
+});
+
+it('separates periodic coordinates only when their periods and zero factors allow it', () => {
+  for (const equations of [
+    ['sin(x)*cos(y)', 'sin(x)+sin(y)'],
+    ['sin(x)*cos(y)', 'y-x'],
+    ['sin(x)*cos(y)', 'cos(x/3)*cos(y)-1'],
+    ['sin(x)*cos(y)', 'cos(x)*y-1'],
+    ['sin(x+y)*cos(y)', 'x-y'],
+    ['sin(z)*cos(x)', 'x-y'],
+    ['sin(x**2)*sin(y)', 'cos(x)*cos(y)'],
+    ['sin(x)*sin(y)', 'cos(x)*sin(y)'],
+  ]) {
+    const result = nonlinsolve(equations.map((e) => parse(e)), [x, y], { asSet: true });
+    expect(result).toBeInstanceOf(sj.FiniteSet);
+  }
+});
+
+it('solves quadratic factors with numeric and parametric content', () => {
+  expect(nonlinsolve([parse('2*(x**2-y**2)')], [x, y]).length).toBeGreaterThanOrEqual(2);
+  expect(nonlinsolve([parse('z*(x**2-y**2)')], [x, y]).length).toBeGreaterThanOrEqual(2);
+  expect(nonlinsolve([parse('sin(x)*(y**2-x**2)')], [x, y], { asSet: true })).toBeInstanceOf(sj.SetExpr);
+});
+
+it('keeps residual equations over all coordinates of a positive-dimensional domain', () => {
+  const equations = [parse('sin(x+y)+x'), parse('sin(x+y)+y')];
+  const result = nonlinsolve(equations, [x, y, z], { asSet: true });
+  expect(result).toBeInstanceOf(sj.ConditionSet);
+  expect(String(result)).toContain('ProductSet(Complexes, Complexes, Complexes)');
+  const coupled = nonlinsolve([parse('sin(x+y)*cos(y)'), parse('sin(y)+sin(x)')], [x, y], { asSet: true });
+  expect(coupled).toBeInstanceOf(sj.ConditionSet);
+  const shorterPeriod = nonlinsolve([parse('sin(2*x)*sin(2*y)'), parse('sin(x)+sin(y)')], [x, y]);
+  expect(shorterPeriod.map(String)).toContain('0,0');
+});
+
+it('combines the two substitution passes for a cubic with conjugate Cardano radicals', () => {
+  const equation = parse('y**3-3*y**2+1');
+  const rows = substitution([x.sub(y), equation], [x, y]);
+  const ordinates = new Set<string>();
+  for (const row of rows) {
+    const a = at(row, 0).toNumber(), b = at(row, 1).toNumber();
+    expect(a).toBeCloseTo(b, 12);
+    expect(b ** 3 - 3 * b ** 2 + 1).toBeCloseTo(0, 12);
+    ordinates.add(at(row, 1).key);
+  }
+  expect(rows).toHaveLength(5);
+  expect(ordinates.size).toBe(3);
+  const rationalEquation = equation.div(y.add(2));
+  expect(substitution([x.sub(y), rationalEquation], [x, y])).toHaveLength(3);
 });
