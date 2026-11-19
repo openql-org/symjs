@@ -103,6 +103,9 @@ describe('signs of numbers and powers (SymPy Expr._eval_is_extended_positive_neg
     // a term without a numeric value (an undefined function of a number)
     const f = sj.SymFunction('f');
     expect(isPositive(add(f(1), 1))).toBeUndefined();
+    const huge = 10n ** 500n;
+    expect(isPositive(new sj.Add([sj.Rational.of(huge), sj.Rational.of(-huge)]))).toBeUndefined();
+    expect(isZero(S.NaN)).toBeUndefined();
   });
 });
 
@@ -465,4 +468,12 @@ it('a sum of real terms and one term that is not real is neither real nor zero',
   expect([isReal(sj.add(r, i)), isZero(sj.add(r, i)), isReal(sj.add(r, sj.mul(2, i), 1))]).toEqual([false, false, false]);
   expect([isReal(sj.add(r, i, x)), isZero(sj.add(r, i, x)), isReal(sj.add(i, sj.mul(sj.I, r)))]).toEqual([undefined, undefined, undefined]);
   expect(String(sj.Ne(sj.add(r, i), 0))).toBe('True');
+});
+
+it('recognizes real powers that include the zero exponent', () => {
+  const n = sj.symbol('n', { nonnegative: true });
+  const k = sj.symbol('k', { nonnegative: true });
+  expect(isReal(sj.pow(n, k))).toBe(true);
+  expect(isNonNegative(sj.pow(n, k))).toBe(true);
+  expect(isNonNegative(sj.mul(n, k))).toBe(true);
 });

@@ -12,7 +12,7 @@
  * - distribution of a numeric coefficient over a sum (2*(x+1) -> 2*x+2)
  */
 
-import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal } from './assumptions';
+import { isIntegerQ, isKnownExtendedReal, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal } from './assumptions';
 import type { ComplexValue, ExprLike, Num } from './nodes';
 import {
   Add,
@@ -242,13 +242,13 @@ export function add(...xs: ExprLike[]): Expr {
   if (own !== undefined) return own;
   const ab = impl.accumBounds;
   if (ab && sx.some((e) => ab.is(e) || (e instanceof Add && e.args.some((a) => ab.is(a))))) {
-    // interval arithmetic: the intervals absorb a numeric remainder, symbolic terms stay beside them
+    // AccumBounds shifts its endpoints by a known real remainder.
     const flat = sx.flatMap((e) => (e instanceof Add ? e.args : [e]));
     const complexInfinity = flat.lastIndexOf(S.ComplexInfinity);
     const abs = flat.filter((e, i) => ab.is(e) && (i > complexInfinity || ab.bounds(e).some((bound) => bound instanceof Special)));
     const rest = add(...flat.filter((e) => !ab.is(e)));
     if (abs.length === 0) return rest;
-    if (rest.freeSymbols().size === 0) return ab.add(abs, rest);
+    if (rest.freeSymbols().size === 0 || isKnownExtendedReal(rest)) return ab.add(abs, rest);
     // like SymPy, the interval absorbs the numeric term: x + 1 + AccumBounds(1, 2) = x + AccumBounds(2, 3)
     const [c, terms] = rest instanceof Add && isNum(at(rest.args, 0)) ? [at(rest.args, 0), rest.args.slice(1)] : [S.Zero, [rest]];
     return new Add([...terms, ab.add(abs, c)]);
@@ -757,7 +757,13 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   if (!globalParameters.evaluate) return new Pow(b, e);
   const own = impl.arithmetic?.('pow', [b, e]);
   if (own !== undefined) return own;
-  if (impl.accumBounds?.is(b) && e.freeSymbols().size === 0) return impl.accumBounds.pow(b, e);
+  if (impl.accumBounds?.is(b)) return impl.accumBounds.pow(b, e);
+  if (isNum(b) && b.isZero && impl.accumBounds?.is(e)) {
+    const [lo] = impl.accumBounds.bounds(e);
+    if (lo.equals(S.Zero)) return impl.accumBounds.make(S.Zero, S.One);
+    if (isPositive(lo)) return S.Zero;
+    return new Pow(b, e);
+  }
   if (impl.accumBounds?.is(e) && b.freeSymbols().size === 0 && b.toNumber() > 0) {
     // a positive base: b**x is monotone in x (exp(AccumBounds(0, 1)) = AccumBounds(1, E))
     const [lo, hi] = impl.accumBounds.bounds(e);
@@ -1166,6 +1172,9 @@ export function sub(a: ExprLike, b: ExprLike): Expr {
 export function div(a: ExprLike, b: ExprLike): Expr {
   const x = sympify(a), y = sympify(b);
   if (isNum(x) && isNum(y) && !y.isZero) return numDiv(x, y);
+  if (isNum(x) && x.isZero && impl.accumBounds?.is(y)) return S.Zero;
+  // Preserve the direction of approach before the reciprocal collapses to zero.
+  if (y === S.NegativeInfinity && impl.accumBounds?.is(x)) return neg(mul(x, S.Zero));
   return mul(x, pow(y, S.NegOne));
 }
 

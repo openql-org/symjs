@@ -134,7 +134,7 @@ export function isReal(e: Expr): Tri {
     const [b, x] = e.args;
     if (isReal(b) && isIntegerQ(x)) return isZero(b) && isNegative(x) ? undefined : true;
     if (isPositive(b) && isReal(x)) return true;
-    if (isNonNegative(b) && isPositive(x)) return true;
+    if (isNonNegative(b) && isNonNegative(x)) return true;
     return undefined;
   }
   if (e instanceof ExtensionExpr) return e.isRealSelf();
@@ -220,6 +220,13 @@ export function isReal(e: Expr): Tri {
     }
   }
   return undefined;
+}
+
+/** Whether an expression is known to belong to the extended real line. */
+export function isKnownExtendedReal(e: Expr): boolean {
+  if (isReal(e) === true) return true;
+  if (e instanceof Sym) return e.assumptions0.get('extended_real') === true;
+  return (e instanceof Add || e instanceof Mul) && e.args.every(isKnownExtendedReal);
 }
 
 const add1 = (x: Expr, c: number): Expr => impl.add(x, c);

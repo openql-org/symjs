@@ -746,3 +746,14 @@ it('preserves zero-, one- and multiple-operand constructors when evaluation is d
     expect(pow(x, 1)).toBeInstanceOf(sj.Pow);
   });
 });
+
+it('collects polar exponentials with numeric and symbolic exponents', () => {
+  expect(mul(sj.expPolar(2), sj.expPolar(3)).equals(sj.expPolar(5))).toBe(true);
+  expect(mul(sj.expPolar(mul(0.5, x)), sj.expPolar(x)).equals(sj.expPolar(mul(1.5, x)))).toBe(true);
+});
+
+it('dispatches powers to the base and keeps a unit term in an exponential', () => {
+  const q = sj.Quaternion(0, 1, 0, 0);
+  expect(pow(q, 2).equals(q.pow(2))).toBe(true);
+  expect(String(sj.exp(add(1, x)))).toBe('exp(x + 1)');
+});
