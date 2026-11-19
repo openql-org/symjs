@@ -30,7 +30,7 @@ import {
   symbols,
   xreplace,
 } from '../../src';
-import { boundSymbols, piecewiseFold } from '../../src/core/traverse';
+import { boundSymbols, piecewiseFold, piecewiseFoldHooks } from '../../src/core/traverse';
 import { BoolOp } from '../../src/core/boolalg';
 import { at } from '../../src/core/guard';
 
@@ -269,6 +269,19 @@ describe('use and preorderTraversal (SymPy sympy.core.traversal)', () => {
 describe('piecewiseFold (SymPy piecewise_fold)', () => {
   const P = sj.Piecewise([x, sj.Gt(x, 0)], [mul(-1, x), true]);
   const Q = sj.Piecewise([1, sj.Gt(y, 0)], [2, true]);
+  it('minimizes nested conditional guards and supports folding with core alone', () => {
+    const a = sj.Gt(x, 0), b = sj.Lt(y, 1);
+    const impossible = sj.ITE(sj.Or(a, b), sj.S.false, sj.ITE(a, a, b), { evaluate: false });
+    expect(piecewiseFold(sj.piecewise([1, impossible], [2, true]))).toEqual(sj.S.Two);
+    const normalize = piecewiseFoldHooks.normalizeIte;
+    delete piecewiseFoldHooks.normalizeIte;
+    try {
+      const cond = new BoolOp('ITE', [a, sj.S.true, b]);
+      expect(piecewiseFold(sj.piecewise([1, cond]))).toEqual(sj.piecewise([1, sj.Or(a, b)]));
+    } finally {
+      piecewiseFoldHooks.normalizeIte = normalize;
+    }
+  });
   it('flattens nested values and translates conditional Boolean branches', () => {
     const args = [sj.Gt(x, 0), sj.Lt(y, 1), sj.Gt(y, 1)] as const;
     for (const condition of [new BoolOp('ITE', args), sj.ITE(...args, { evaluate: false })]) {
@@ -620,4 +633,10 @@ it('binds the free symbols of a compound limit variable only in the body', () =>
   expect([...expression.freeSymbols()].map(String).sort()).toEqual(['x', 'z']);
   const pattern = new sj.Pow(sj.E, new sj.Fn('log', [y]));
   expect(x.pow(2).subs(pattern, z)).toEqual(x.pow(2));
+});
+
+it('restores an indefinite integral when its substituted endpoint is its variable', () => {
+  const endpoint = new Integral([x, x, y]);
+  expect(endpoint.subs(y, x)).toEqual(new Integral([x, x]));
+  expect(endpoint.subs(y, z)).toEqual(new Integral([x, x, z]));
 });

@@ -700,6 +700,9 @@ export function preorderTraversal(node: ExprLike, keys: boolean | ((e: Expr) => 
   return new PreorderTraversal(sympify(node), keys);
 }
 
+/** Conditional normalization supplied by the simplification module. */
+export const piecewiseFoldHooks: { normalizeIte?: (condition: Expr) => Expr } = {};
+
 /**
  * SymPy piecewise_fold (sympy/functions/elementary/piecewise.py): an
  * expression with Piecewise arguments as one Piecewise whose branches are
@@ -716,8 +719,9 @@ export function piecewiseFold(e: Expr): Expr {
       const folded = piecewiseFold(value);
       let c = condition;
       if (condition instanceof BoolOp ? condition.op === 'ITE' : condition instanceof ExtensionExpr && condition.name === 'ITE') {
-        const test = at(condition.args, 0), whenTrue = at(condition.args, 1), whenFalse = at(condition.args, 2);
-        c = and(or(not(test), whenTrue), or(test, whenFalse));
+        const test = at(condition.args, 0);
+        c = piecewiseFoldHooks.normalizeIte?.(condition)
+          ?? and(or(not(test), at(condition.args, 1)), or(test, at(condition.args, 2)));
       }
       if (folded instanceof Piecewise) {
         const inner = folded.pairs;
