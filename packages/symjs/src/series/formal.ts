@@ -39,6 +39,7 @@ import { interval, type SetExpr } from '../sets/sets';
 import { Concrete } from '../core/concrete';
 import { SeriesBase } from './series_class';
 import { apart } from '../polys/partfrac';
+import { AccumBoundsNode } from '../core/accumbounds';
 import { limit } from './limits';
 import { doit } from '../calculus/doit';
 
@@ -228,7 +229,12 @@ export class FormalPowerSeries extends SeriesBase {
     if (this.x0 === S.Infinity) {
       const body = series(this.core, this.x, this.x0, n, this.direction, { algebraic: true });
       const terms = body instanceof Add ? body.args : [body];
-      return add(...terms.map((u) => u instanceof Order ? new Order([this.withSymb(u.expr), this.x, this.x0]) : this.withSymb(u)));
+      const t = new Dummy('t', { positive: true });
+      const local = subs(this.core, [[this.x, pow(t, -1)]]);
+      const recurrence = hyperAlgorithm(local, t, new Dummy('k'));
+      const initial = isNoMatch(recurrence) ? [] : seriesTerms(recurrence[1], t, S.Zero, n, '+').terms.map((u) => subs(u, [[t, pow(this.x, -1)]]));
+      const remaining = terms.filter((u) => !initial.some((v) => v.equals(u)));
+      return add(this.withSymb(add(...initial)), ...remaining.map((u) => u instanceof Order ? new Order([this.withSymb(u.expr), this.x, this.x0]) : this.withSymb(u)));
     }
     // the Order term carries the symbolic factor too: O(x**(n + m)) for the factor x**m
     const xk = isZeroExpr(this.x0) ? this.x : sub(this.x, this.x0);
@@ -450,7 +456,12 @@ export function solveDe(fIn: ExprLike, x: Sym, DE: ExprLike, order: number, g: U
   const branches: [Expr, Expr | boolean][] = [];
   let independent: Expr = S.Zero;
   let lastInitial = -1;
-  const coefficient = (i: number): Expr => mul(subs(diff(f, x, i), [[x, S.Zero]]), pow(fn('factorial', [sympify(i)]), -1));
+  const coefficient = (i: number): Expr => {
+    const derivative = diff(f, x, i);
+    const value = subs(derivative, [[x, S.Zero]]);
+    const c = some(value, (v) => v instanceof Special || v instanceof AccumBoundsNode) ? limit(derivative, x, S.Zero) : value;
+    return mul(c, pow(fn('factorial', [sympify(i)]), -1));
+  };
   for (let i = 0; i < initial + step; i++) {
     const c = coefficient(i);
     if (some(c, (e) => e instanceof Special) || c.has(x)) return NoMatch;

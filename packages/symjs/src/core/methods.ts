@@ -1304,7 +1304,8 @@ export function copy(e: ExprLike): Expr {
 export function getO(eIn: ExprLike): Expr | undefined {
   const e = sympify(eIn);
   if (e instanceof Order) return e;
-  return e instanceof Add ? e.args.find((a) => a instanceof Order) : undefined;
+  const orders = e instanceof Add ? e.args.filter((a) => a instanceof Order) : [];
+  return orders.length ? add(...orders) : undefined;
 }
 
 /** SymPy `removeO()`: e without its additive order term. */

@@ -11,7 +11,7 @@ import { Add, Dummy, Derivative, ExtensionExpr, Float, Integral, Fn, Limit, Orde
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul, isMulLike } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
-import { mapBottomUp, some, xreplace as subs } from '../core/traverse';
+import { mapBottomUp, some, substitutionHooks, xreplace as subs } from '../core/traverse';
 import { cos, fn, im, infiniteForm, log, sin } from '../functions/elementary/elementary';
 import { bernoulliNumber } from '../functions/special/special';
 import { besselLocalExpansion } from '../functions/special/bessel';
@@ -55,6 +55,17 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
   const atZero = p instanceof Rational && p.isZero;
   if (v !== undefined && e instanceof Pow && e.exp.has(v) && !isE(e.base)) return O(exp(mul(e.exp, log(e.base))), v, p);
   if (v !== undefined && p instanceof Special && (p.name === 'oo' || p.name === '-oo')) {
+    if (e instanceof Mul) {
+      const factors = e.args.filter((factor) => {
+        if (!(factor instanceof Fn) || !['sin', 'cos'].includes(factor.name)) return true;
+        const argument = first(factor.args);
+        const ray = new Dummy('r', { real: true });
+        if (isReal(subs(argument, [[v, ray]])) !== true) return true;
+        const phase = impl.limit(argument, v, p, '+');
+        return phase !== S.Infinity && phase !== S.NegativeInfinity;
+      });
+      if (factors.length < e.args.length) return O(mul(...factors), v, p);
+    }
     // leading behaviour at infinity: substitute x = 1/t, t -> 0+
     try {
       const t = new Sym('_o', { positive: true });
@@ -62,7 +73,7 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
       const expander = new Expander(t);
       const lead = expander.leading(subs(e, [[v, mul(p.name === 'oo' ? 1 : -1, pow(t, -1))]]));
       const logarithms = asIndependent(lead.c, [expander.L], { asAdd: false })[1];
-      return new Order([mul(pow(v, neg(lead.e)), subs(logarithms, [[expander.L, log(pow(v, -1))]])), v, p]);
+      return new Order([mul(pow(p.name === '-oo' ? neg(v) : v, neg(lead.e)), subs(logarithms, [[expander.L, log(pow(v, -1))]])), v, p]);
     } catch {
       if (e instanceof Add) {
         const combined = add(...e.args.map((term) => O(term, v, p)));
@@ -83,6 +94,17 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
     const displacement = atZero ? v : add(v, mul(-1, p));
     reduced = mul(pow(displacement, lead.e), subs(together(logarithms), [[expander.L, log(displacement)]]));
   } catch {
+    // Along a fixed ray a nonzero real scale changes a monomial only by a constant.
+    if (atZero && e instanceof Mul) {
+      const powers = e.args.filter((factor) => factor.has(v)).map((factor) => {
+        const [base, exponent] = factor instanceof Pow ? factor.args : [factor, S.One];
+        return { scale: mul(base, pow(v, -1)), exponent };
+      });
+      if (powers.every(({ scale, exponent }) => scale instanceof Rational && !exponent.has(v))) {
+        const base = powers.some(({ scale, exponent }) => isNegative(scale) && isReal(exponent) !== true) ? neg(v) : v;
+        reduced = pow(base, add(...powers.map(({ exponent }) => exponent)));
+      }
+    }
     if (e instanceof Add) {
       const combined = add(...e.args.map((term) => O(term, v, p)));
       if (combined instanceof Order) return combined;
@@ -325,15 +347,23 @@ export function series(ex: ExprLike, variable?: Sym, x0x: ExprLike = 0, n = 6, d
   }
   if (opts.logx && atZero) {
     // SymPy logx: log(x) stands for the given symbol; x**c = exp(c*log(x)) for symbolic c
-    e = mapBottomUp(e, (t) => (t instanceof Pow && t.base.key === x.key && !(t.exp instanceof Rational) && !t.exp.has(x) ? exp(mul(t.exp, log(x))) : t));
     const logSymbol = new Dummy('logx');
+    e = mapBottomUp(e, (u) => {
+      if (!(u instanceof Pow) || u.exp instanceof Rational || u.exp.has(x) || !u.base.has(x)) return u;
+      if (u.base.equals(x)) return exp(mul(u.exp, logSymbol));
+      if (dir === '-') return u;
+      // Factor the leading monomial before expanding a symbolic power.
+      const [coefficient, degree] = leadterm(u.base, x);
+      if (degree.equals(0) || isPositive(coefficient) !== true) return u;
+      return mul(exp(mul(degree, logSymbol, u.exp)), pow(mul(u.base, pow(x, neg(degree))), u.exp));
+    });
     e = mapBottomUp(e, (t) => {
       if (dir !== '+' || !(t instanceof Fn) || t.name !== 'log') return t;
       const argument = first(t.args);
       return argument instanceof Pow && argument.base.key === x.key && argument.exp instanceof Rational ? mul(argument.exp, logSymbol) : t;
     });
     e = subs(e, [[log(x), logSymbol], [log(pow(x, -1)), neg(logSymbol)]]);
-    return subs(series(e, x, x00, n, dir), [[logSymbol, opts.logx], [log(x), opts.logx]]);
+    return subs(series(e, x, x00, n, dir, { local: opts.local }), [[logSymbol, opts.logx], [log(x), opts.logx]]);
   }
   if (atZero && e instanceof Pow && isE(e.base) && e.exp instanceof Mul) {
     const coefficient = asIndependent(e.exp, [x], { asAdd: false });
@@ -378,17 +408,34 @@ export function series(ex: ExprLike, variable?: Sym, x0x: ExprLike = 0, n = 6, d
   // (expanded to at least the order 1 and then truncated: series(sin(x), x, 0, 0) = O(1))
   let ps: PS;
   try {
-    ps = ex0.ser(shifted, Rational.of(Math.max(n, 1))).truncate(Rational.of(n));
+    let cutoff = Rational.of(n);
+    if (opts.local && atZero && shifted instanceof Pow && isE(shifted.base) && shifted.exp instanceof Add) {
+      const [constant, increment] = asIndependent(shifted.exp, [t], { asAdd: true });
+      if (!constant.equals(0)) {
+        const degree = ex0.leading(increment).e;
+        if (degree.isPositive && degree.value < 1) cutoff = Rational.of(degree.p * BigInt(n), degree.q);
+      }
+    }
+    ps = ex0.ser(shifted, Rational.of(Math.max(n, 1))).truncate(cutoff);
   } catch (err) {
     // exp(g) with g -> oo (or of unknown sign) has no expansion: SymPy returns it unchanged, but
     // raises PoleError for a complex g (exp(I/x))
     if (err instanceof EssentialSingularity && e instanceof Pow && isE(e.base) && isReal(err.coeff) !== false) return e;
     if (err instanceof EssentialSingularity) return essentialSeries(e, x, x0, n, dir, err);
+    if (err instanceof SeriesError && err.message === 'non-rational exponent' && atZero && dir === '+') {
+      const generalized = binomialSeries(shifted, t, n);
+      if (generalized !== undefined) return subs(generalized, [[t, x]]);
+    }
     throw err;
   }
   const base = dir === '-' ? add(x0, mul(-1, x)) : x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
   const back = (c: Expr) => subs(c, [[ex0.L, log(base)]]);
-  const terms = ps.terms.map((term) => mul(back(term.c), pow(base, term.e)));
+  const terms = ps.terms.map((term) => {
+    const raw = back(term.c);
+    const coefficient = raw.has(S.I) && some(raw, (u) => u instanceof Pow && isE(u.base) && u.exp.has(S.Pi)) ? powsimp(raw) : raw;
+    const value = mul(e instanceof Pow && !e.base.has(x) && e.exp.has(x) ? expandMul(coefficient) : coefficient, pow(base, term.e));
+    return opts.local && atZero ? expandMul(value) : value;
+  });
   const body = add(...terms);
   if (ps.order.value >= 1e5) return body;
   const lin = x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
@@ -407,6 +454,59 @@ export function series(ex: ExprLike, variable?: Sym, x0x: ExprLike = 0, n = 6, d
   }
   const ord = x0 instanceof Rational && x0.isZero ? new Order([remainder]) : new Order([remainder, x, x0]);
   return add(body, ord);
+}
+
+/** Binomial and logarithmic expansions with real, nonrational monomial exponents. */
+function binomialSeries(e: Expr, x: Sym, n: number): Expr | undefined {
+  const terms = expandMul(e);
+  const result: Expr[] = [];
+  let truncated = false;
+  for (const term of terms instanceof Add ? terms.args : [terms]) {
+    const [factor, f] = asIndependent(term, [x], { asAdd: false });
+    const logarithm = f instanceof Fn && f.name === 'log';
+    if (!(f instanceof Pow || logarithm)) return undefined;
+    const base = first(f.args);
+    const exponent = f instanceof Pow ? f.exp : S.Zero;
+    if (!exponent.isNumber || isReal(exponent) !== true) return undefined;
+    const summands = base instanceof Add ? base.args : [base];
+    if (summands.length > 2) return undefined;
+    const powers = summands.map((u) => {
+      const [c, monomial] = asIndependent(u, [x], { asAdd: false });
+      const power = monomial instanceof Pow && monomial.base.equals(x) ? monomial.exp : monomial.equals(x) ? S.One : S.Zero;
+      return { c, power, valid: monomial.equals(pow(x, power)) && power.isNumber && isReal(power) === true };
+    });
+    if (!powers.every((p) => p.valid)) return undefined;
+    powers.sort((a, b) => a.power.toNumber() - b.power.toNumber());
+    const lead = first(powers);
+    if (isPositive(lead.c) !== true) return undefined;
+    const start = mul(lead.power, exponent);
+    const front = mul(factor, pow(lead.c, exponent));
+    if (logarithm) result.push(mul(factor, add(log(lead.c), mul(lead.power, log(x)))));
+    const next = powers[1];
+    if (!next) {
+      if (!logarithm) return undefined;
+      continue;
+    }
+    const step = expandMul(add(next.power, neg(lead.power)));
+    if (isPositive(step) !== true) return undefined;
+    const count = Math.ceil((n - start.toNumber()) / step.toNumber());
+    if (count > 10000) return undefined;
+    let binomial: Expr = S.One;
+    const ratio = mul(next.c, pow(lead.c, -1));
+    for (let j = 0; ; j++) {
+      const degree = expandMul(add(start, mul(j, step)));
+      const below = isPositive(add(n, neg(degree)));
+      if (below === undefined) return undefined;
+      if (!below) break;
+      if (!logarithm || j > 0) {
+        const c = logarithm ? Rational.of(j % 2 ? 1 : -1, j) : binomial;
+        result.push(mul(front, c, pow(ratio, j), pow(x, degree)));
+      }
+      binomial = mul(binomial, add(exponent, -j), Rational.of(1, j + 1));
+    }
+    truncated = true;
+  }
+  return add(expandMul(add(...result)), ...(truncated ? [new Order([pow(x, n), x, S.Zero])] : []));
 }
 
 /** Preserve the Frobenius powers and logarithmic coefficients of a monomial argument. */
@@ -899,12 +999,41 @@ export function asExprVariables(o: Order, existing: readonly (readonly [Sym, Exp
   return [o.expr, [...variables.values()].sort(([a], [b]) => Number(a.name > b.name) - Number(a.name < b.name))];
 }
 
+// Pull back the expansion point through a change of variable (Order._eval_subs).
+substitutionHooks.order = (o, old, replacement) => {
+  const variables = orderVariables(o);
+  if (variables.length !== 1 || !first(variables).equals(old)) return undefined;
+  const point = o.point ?? S.Zero;
+  const symbols = [...replacement.freeSymbols()].filter((s) => s instanceof Sym);
+  const variable = symbols.find((s) => s.equals(old)) ?? (symbols.length === 1 ? first(symbols) : undefined);
+  if (!variable) return undefined;
+  const expr = o.expr.subs(old, replacement);
+  if (replacement instanceof Order) {
+    const expansionPoint = replacement.point ?? S.Zero;
+    if (!impl.limit(replacement.expr, variable, expansionPoint, '+').equals(point)) {
+      throw new NotImplementedError('Cannot invert an order with an incompatible limit');
+    }
+    return O(expr, variable, expansionPoint);
+  }
+  if (replacement instanceof Sym) return O(expr, replacement, point);
+  if (subs(replacement, [[variable, point]]).equals(point)) return O(expr, variable, point);
+  // Invert affine substitutions and reciprocals before taking the limit.
+  const slope = replacement.diff(variable);
+  const intercept = subs(replacement, [[variable, S.Zero]]);
+  if (!slope.has(variable) && !slope.equals(0)) return O(expr, variable, mul(add(point, neg(intercept)), pow(slope, -1)));
+  if (replacement instanceof Pow && replacement.base.equals(variable) && !replacement.exp.has(variable)) {
+    const inverse = pow(variable, pow(replacement.exp, -1));
+    return O(expr, variable, impl.limit(inverse, variable, point, '+'));
+  }
+  return new SubsNode([o, old, replacement]);
+};
+
 impl.rebuildOrder = (args) => {
   const variables = args.slice(1, -1).filter((v): v is Sym => v instanceof Sym);
   return O(first(args), variables.length ? variables : undefined, args.length === 1 ? S.Zero : at(args, -1));
 };
 
-function orderContains(o: Order, e: Expr): boolean | 'unknown' {
+function orderContains(o: Order, e: Expr, strict = true): boolean | 'unknown' {
   let variables = orderVariables(o);
   const point = o.args.length > 1 ? at(o.args, -1) : S.Zero;
   const other = e instanceof Order ? e.expr : e;
@@ -945,7 +1074,11 @@ function orderContains(o: Order, e: Expr): boolean | 'unknown' {
     } catch {
       // Essential singularities require the limit algorithms.
     }
-    const ratio = impl.limit(quotient, variable, point, '+');
+    const ratio = impl.limit(powsimp(quotient), variable, point, '+');
+    if (ratio instanceof Limit && ratio.expr instanceof Pow && ratio.expr.base.equals(variable) && ratio.expr.exp.freeSymbols().size) {
+      if (strict && !(e instanceof Order)) throw new NotImplementedError('Cannot determine the sign of the order exponent');
+      return 'unknown';
+    }
     if (ratio.has(S.NaN) || ratio.kind === 'Limit') return 'unknown';
     const contained = !ratio.equals(S.Zero);
     if (result !== 'unknown' && result !== contained) return 'unknown';
@@ -974,7 +1107,7 @@ registerArithmetic((op, args) => {
       const variables = orderVariables(o);
       const other = e instanceof Order ? orderVariables(e) : [...e.freeSymbols()].filter((s): s is Sym => s instanceof Sym);
       const query = variables.length === 0 && o.args.length === 1 ? new Order([o.expr, ...other, S.Zero]) : o;
-      return query.contains(e) === true;
+      return orderContains(query, e, false) === true;
     };
     for (const o of orders) {
       if (kept.some((other) => contains(other, o))) continue;

@@ -15,7 +15,7 @@ import { str } from '../printing/str';
 import { divExact, heuGcdCofactors, mgcd } from '../polys/mpoly';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { UPoly, polyHooks } from '../polys/poly';
-import { expandMul as expand } from './expand';
+import { expandMul as expand, expand_log as expandLog } from './expand';
 import { isNegative, isPositive } from '../core/assumptions';
 import { at, defined, first } from '../core/guard';
 import { decomposePower } from './exprtools';
@@ -164,6 +164,8 @@ export function cancel(ex: ExprLike, opts: PolynomialDomainOptions & { greedy?: 
     [n, d] = [n1, mul(d, d1)];
   }
   n = expand(n);
+  // Numeric logarithms can be algebraically dependent as polynomial generators.
+  if (n instanceof Add && n.isNumber && n.args.some((v) => v instanceof Fn && v.name === 'log') && expandLog(n).equals(0)) return S.Zero;
   d = expand(d);
   // (with Float coefficients SymPy works over RR or CC: 1.0*x + 1 = 1.0*x + 1.0, (1.0*x + 1)/3 = 0.333333333333333*x + 0.333333333333333)
   const exact = !(d instanceof Float) && floatsToRationals(n)[1] === 0;

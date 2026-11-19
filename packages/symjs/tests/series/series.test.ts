@@ -926,3 +926,49 @@ it('finds a finite constant by a limit when the remaining power has irrational o
   expect(() => sj.leadterm(P('(x+x**2)**sqrt(2)-x'), x)).toThrow(SeriesError);
   expect(() => sj.leadterm(P('y+(x+x**2)**sqrt(2)'), x)).toThrow(SeriesError);
 });
+
+it('expands binomials with logarithmic power ratios', () => {
+  const r = P('log(5)/log(3)');
+  const f = sj.mul(x.pow(-1), sj.sub(sj.log(sj.add(y, y.pow(r))), sj.log(y.pow(r.add(1)))));
+  expect(String(sj.nseries(f, y, 0, 1))).toBe('-log(5)*log(y)/(x*log(3)) + y**(-1 + log(5)/log(3))/x - y**(-2 + 2*log(5)/log(3))/(2*x) + O(y)');
+  expect(String(sj.nseries(P('1/(1/x+x**(log(3)/log(2)))'), x, 0, 5))).toBe('-x**(log(3)/log(2) + 2) + x + O(x**5)');
+});
+
+it('uses the degree of the increment in local exponential and logarithmic series', () => {
+  expect(String(sj.nseries(P('exp(1+sqrt(x))'), x, 0, 3))).toBe('E + E*x/2 + E*sqrt(x) + O(x**(3/2))');
+  expect(String(sj.nseries(P('sin(x)**y'), x, 0, 1, { logx: z }))).toBe('exp(y*z) + O(x)');
+  expect(String(sj.nseries(P('exp(1+x)'), x, 0, 2))).toBe('E + E*x + O(x**2)');
+  expect(String(sj.series(P('frac(1/x)'), x, 0, 3))).toContain('AccumBounds(0, 1)');
+});
+
+it('keeps unresolved order comparisons during addition', () => {
+  const o = new sj.Order([x.pow(3)]);
+  expect(() => o.contains(x.pow(y))).toThrow(sj.NotImplementedError);
+  expect(sj.add(x.pow(y), o)).toBeInstanceOf(sj.Add);
+});
+
+it('recognizes constant phase and independent symbolic logarithms', () => {
+  expect(String(sj.O(P('x*(2*x)**(I/2)'), x))).toBe('O(x**(1 + I/2))');
+  expect(String(series(P('log(x**sqrt(2))'), x, 0, 1))).toBe('sqrt(2)*log(x)');
+  expect(String(sj.nseries(P('exp(x+sqrt(x))'), x, 0, 1))).toBe('1 + sqrt(x) + O(x)');
+  expect(String(sj.nseries(P('(1+x)**y'), x, 0, 2, { logx: z }))).toBe('1 + x*y + O(x**2)');
+  expect(() => sj.nseries(P('(-x+x**2)**y'), x, 0, 2, { logx: z, dir: '-' })).toThrow(SeriesError);
+});
+
+it('retains an explicit failure for unsupported generalized power expansions', () => {
+  for (const source of [
+    '(1+x**sqrt(2))**y', '1/(x+x**sqrt(2)+x**sqrt(3))', 'log(-x+x**sqrt(2))',
+    'log(x**sqrt(2))+x**sqrt(3)', '(x**sqrt(2)+x**(sqrt(2)+1/10000000))**(-1)',
+    '(x**sqrt(2)+x**(sqrt(2)+log(4)-2*log(2)))**(-1)',
+    '1/(1+x**(1+sqrt(2)-14142135623731/10000000000000))',
+  ]) expect(() => series(P(source), x, 0, 1)).toThrow(SeriesError);
+});
+
+it('carries an order-valued replacement into constant remainders', () => {
+  const constant = sj.O(1, x);
+  expect(constant.subs(x, sj.O(y)).equals(sj.O(1, y))).toBe(true);
+  expect(constant.subs(x, sj.O(y.pow(-1), y, sj.oo)).equals(sj.O(1, y, sj.oo))).toBe(true);
+  expect(() => sj.O(x, x, sj.oo).subs(x, sj.O(y))).toThrow(sj.NotImplementedError);
+  expect(sj.O(x).subs(x, sj.SymFunction('f')(y))).toBeInstanceOf(sj.Subs);
+  expect(String(sj.O(P('x*sin(x+I*x)'), x, sj.oo))).toContain('sin(x + I*x)');
+});

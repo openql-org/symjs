@@ -554,7 +554,7 @@ describe("sympy/series/tests/test_gruntz.py", () => {
   //   assert gruntz(log(x**x)/log(gamma(x)), x, oo) == 1
   //   => 1
   it.todo("test_intractable:421");
-  it.fails("test_aseries_trig:426", () => {
+  it("test_aseries_trig:426", () => {
     expect(sympyStr(cancel(new Add([new Pow(fn('log', [new Mul([Rational.of(1n, 2n, { gcd: 1n }), pi])], { evaluate: false }), Rational.of(-1n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('log', [Rational.of(2n, 1n, { gcd: 1n })], { evaluate: false })]), fn('log', [pi], { evaluate: false })]), Rational.of(-1n, 1n, { gcd: 1n }))])]), { greedy: true }))).toBe('0');
   });
   // the arguments do not type-check against the public API

@@ -7,9 +7,13 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Rational, S, Sym } from '../core/nodes';
+import { Dummy, Piecewise, Rational, Rel, S, Sym } from '../core/nodes';
 import { add, mul, pow, sub, sympify } from '../core/ops';
-import { subs } from '../core/traverse';
+import { and } from '../core/boolalg';
+import { piecewise } from '../core/logic';
+import { asIndependent } from '../core/methods';
+import { SeqFormula } from './sequences';
+import { piecewiseFold, subs } from '../core/traverse';
 import { cos, fn, sin } from '../functions/elementary/elementary';
 import { integrate } from '../integrals/integrate';
 import { simplify } from '../simplify/simplify';
@@ -55,6 +59,21 @@ export class FourierSeries extends SeriesBase {
     return new FourierSeries(at(args, 0), cast(at(args, 1), Sym), at(args, 2), at(args, 3), {
       source: at(args, 4), xmap: at(args, 5), factor: at(args, 6), offset: at(args, 7),
     });
+  }
+  override printStr(print: (e: Expr) => string): string {
+    const n = new Dummy('n');
+    const [constant, dependent] = asIndependent(this.source, [this.x], { asAdd: false });
+    const sequence = (trig: (e: Expr) => Expr): Expr => {
+      const harmonic = trig(mul(n, S.Pi, this.x, pow(this.L, -1)));
+      let integral = piecewiseFold(integrate(mul(dependent, harmonic), this.x, [this.a, this.b]));
+      if (integral instanceof Piecewise) {
+        const finite = and(new Rel('Gt', n, S.NegativeInfinity), new Rel('Lt', n, S.Infinity));
+        integral = piecewise(...integral.pairs.map(([value, cond]) => [value, cond === S.true ? cond : and(finite, cond)] as const));
+      }
+      const term = mul(this.factor, constant, integral, trig(this.arg(n)), pow(this.L, -1));
+      return SeqFormula(term, [term.equals(0) ? new Dummy('k') : n, S.One, S.Infinity]);
+    };
+    return `FourierSeries(${print(this.fn)}, (${print(this.x)}, ${print(this.a)}, ${print(this.b)}), (${print(this.a0())}, ${print(sequence(cos))}, ${print(sequence(sin))}))`;
   }
   get period(): readonly [Expr, Expr] { return [this.a, this.b]; }
   asLeadingTerm(): Expr { return this.truncate(1); }

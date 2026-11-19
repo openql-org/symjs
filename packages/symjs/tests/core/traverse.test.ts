@@ -605,3 +605,11 @@ it('matches exponential patterns only when the resulting power divides the sourc
   const derivative = sj.derivative(f, [[x, order]]);
   expect(sj.subs(sj.add(derivative, f), new Map<sj.Expr, sj.Expr>([[f, x], [derivative, y]])).equals(sj.add(x, y))).toBe(true);
 });
+
+it('binds the free symbols of a compound limit variable only in the body', () => {
+  const variable = sj.add(x, y);
+  const expression = new sj.Limit([sj.add(variable, z), variable, x], '-');
+  expect([...expression.freeSymbols()].map(String).sort()).toEqual(['x', 'z']);
+  const pattern = new sj.Pow(sj.E, new sj.Fn('log', [y]));
+  expect(x.pow(2).subs(pattern, z)).toEqual(x.pow(2));
+});

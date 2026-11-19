@@ -376,7 +376,8 @@ export class Expander {
     const need = numAdd(e0, rel);
     const s = numCmp(need, sb.order) > 0 ? this.ser(b, need) : sb;
     // (the terms before the leading one have coefficients that are zero but not written as 0: 1 - cos(a)**2 - sin(a)**2)
-    const u = s.from(e0).scale(pow(c0, -1)).shift(numNeg(e0)).add(PS.constant(S.NegOne)).truncate(rel);
+    const normalized = s.from(e0).scale(pow(c0, -1)).shift(numNeg(e0)).add(PS.constant(S.NegOne)).truncate(rel);
+    const u = e0.isNegative && k.equals(-1) ? new PS(normalized.terms.map(({ e, c }) => ({ e, c: expand(c) })), normalized.order) : normalized;
     const d = u.lead()?.e;
     let acc = PS.constant(S.One);
     const infinite = !!(d?.isPositive);
@@ -418,8 +419,9 @@ export class Expander {
     const [a, b] = e.args;
     const zeroSeries = this.singularAtZero(e, n);
     if (zeroSeries !== undefined) return zeroSeries;
-    if (b !== undefined && a instanceof Rational && !a.isNegative && !a.has(this.t) && b.has(this.t)
-      && (e.name === 'besselj' || e.name === 'besseli' || e.name === 'besselk' || e.name === 'bessely' && a.isInteger)) {
+    if (b !== undefined && a instanceof Rational && b.has(this.t)
+      && ((e.name === 'besselj' || e.name === 'besseli') && !(a.isNegative && a.isInteger)
+        || !a.isNegative && (e.name === 'besselk' || e.name === 'bessely' && a.isInteger))) {
       const leading = this.leading(b).e;
       if (leading.isPositive && n.isPositive) return this.ser(besselLocalExpansion(e.name, a, b, leading.value, n.value), n).cut(n);
     }

@@ -116,7 +116,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Pow(x, Rational.of(1n, 2n, { gcd: 1n })), x, Rational.of(0n, 1n, { gcd: 1n }), '-'))).toBe('0');
   });
-  it.fails("test_basic1:100", () => {
+  it("test_basic1:100", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Pow(x, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi])), x, Rational.of(0n, 1n, { gcd: 1n }), '-'))).toBe('-oo*(-1)**(1 - pi)');
   });
@@ -624,11 +624,11 @@ describe("sympy/series/tests/test_limits.py", () => {
     const k = new Sym('k');
     expect(sympyStr(limit(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('cos', [k], { evaluate: false }), fn('sin', [k], { evaluate: false })]), fn('sin', [k], { evaluate: false })]), k, oo, '+'))).toBe('AccumBounds(-2, 2)');
   });
-  it.fails("test_series_AccumBounds:358", () => {
+  it("test_series_AccumBounds:358", () => {
     const k = new Sym('k');
     expect(sympyStr(limit(new Mul([Rational.of(1n, 2n, { gcd: 1n }), new Pow(new Add([Rational.of(-1n, 1n, { gcd: 1n }), fn('cos', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false })]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('cos', [k], { evaluate: false })]), fn('cos', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false }), fn('cos', [new Add([Rational.of(1n, 1n, { gcd: 1n }), k])], { evaluate: false })])]), k, oo, '+'))).toBe('AccumBounds(-3/2 + cos(1)/2, cos(1)/2 + 1/2)/(-1 + cos(1))');
   });
-  it.fails("test_series_AccumBounds:361", () => {
+  it("test_series_AccumBounds:361", () => {
     const k = new Sym('k');
     expect(sympyStr(limit(new Mul([new Pow(new Add([Rational.of(2n, 1n, { gcd: 1n }), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), fn('cos', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false })])]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('sin', [new Add([Rational.of(1n, 1n, { gcd: 1n }), k])], { evaluate: false })]), fn('sin', [Rational.of(1n, 1n, { gcd: 1n })], { evaluate: false }), fn('sin', [k], { evaluate: false })])]), k, oo, '+'))).toBe('AccumBounds(-1 + sin(1)/2, sin(1)/2 + 1)/(1 - cos(1))');
   });
@@ -1084,7 +1084,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([Rational.of(1n, 2n, { gcd: 1n }), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(pi, Rational.of(-1n, 2n, { gcd: 1n })), new Pow(x, Rational.of(-1n, 2n, { gcd: 1n })), new Pow(new Mul([x, new Pow(E, Rational.of(-1n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])), fn('factorial', [x])]), x, oo, '+'))).toBe('1');
   });
-  it.fails("test_factorial:573", () => {
+  it("test_factorial:573", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(fn('factorial', [x]), x, S.NegativeInfinity, '+'))).toBe('gamma(-oo)');
   });
@@ -1428,7 +1428,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(limit(new Mul([new Pow(Rational.of(27n, 1n, { gcd: 1n }), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([new Pow(fn('log', [Rational.of(3n, 1n, { gcd: 1n })], { evaluate: false }), Rational.of(-1n, 1n, { gcd: 1n })), fn('log', [n], { evaluate: false })])])), new Pow(n, Rational.of(-3n, 1n, { gcd: 1n }))]), n, oo, '+'))).toBe('27');
   });
-  it.fails("test_issue_10382:780", () => {
+  it("test_issue_10382:780", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(limit(new Mul([new Pow(fn('fibonacci', [n]), Rational.of(-1n, 1n, { gcd: 1n })), fn('fibonacci', [new Add([Rational.of(1n, 1n, { gcd: 1n }), n])])]), n, oo, '+'))).toBe('GoldenRatio');
   });
@@ -2037,7 +2037,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const z = new Sym('z');
     expect(sympyStr(limit(new Add([new Mul([new Pow(new Add([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('cos', [new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('re', [z], { evaluate: false })])], { evaluate: false }), new Pow(E, new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('im', [z], { evaluate: false })]))])]), Rational.of(2n, 1n, { gcd: 1n })), new Mul([new Pow(fn('sin', [new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('re', [z], { evaluate: false })])], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n })), new Pow(E, new Mul([Rational.of(4n, 5n, { gcd: 1n }), pi, fn('im', [z], { evaluate: false })]))])]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('cos', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, fn('re', [z], { evaluate: false })])], { evaluate: false }), new Pow(E, new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, fn('im', [z], { evaluate: false })]))])]), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('cos', [new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('re', [z], { evaluate: false })])], { evaluate: false }), new Pow(E, new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('im', [z], { evaluate: false })]))])])]), new Mul([new Pow(new Add([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('cos', [new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('re', [z], { evaluate: false })])], { evaluate: false }), new Pow(E, new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('im', [z], { evaluate: false })]))])]), Rational.of(2n, 1n, { gcd: 1n })), new Mul([new Pow(fn('sin', [new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('re', [z], { evaluate: false })])], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n })), new Pow(E, new Mul([Rational.of(4n, 5n, { gcd: 1n }), pi, fn('im', [z], { evaluate: false })]))])]), Rational.of(-1n, 1n, { gcd: 1n })), new Pow(E, new Mul([Rational.of(12n, 5n, { gcd: 1n }), pi, fn('im', [z], { evaluate: false })])), fn('sin', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, fn('re', [z], { evaluate: false })])], { evaluate: false }), fn('sin', [new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, fn('re', [z], { evaluate: false })])], { evaluate: false })])]), z, Rational.of(0n, 1n, { gcd: 1n }), '+'))).toBe('5');
   });
-  it.fails("test_issue_21785:1252", () => {
+  it("test_issue_21785:1252", () => {
     const [x, a] = symbols('x a');
     expect(sympyStr(limit(new Pow(new Mul([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))])])]), Rational.of(1n, 2n, { gcd: 1n })), a, Rational.of(1n, 1n, { gcd: 1n }), '-'))).toBe('I');
   });

@@ -472,6 +472,8 @@ export function boundSymbols(e: Expr): Expr[] {
   return [];
 }
 
+export const substitutionHooks: { order?: (o: Order, old: Expr, replacement: Expr) => Expr | undefined } = {};
+
 function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e.key === old.key) return nw;
   if (e instanceof Sym && old instanceof Pow && e.key === old.base.key) {
@@ -487,6 +489,10 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     const validVariable = nw instanceof Sym || nw instanceof UndefFn;
     if (changingVariable && !validVariable) return new SubsNode([e, old, nw]);
     if (changingVariable && nw.key !== old.key && e.expr.has(nw)) return new SubsNode([e, old, nw]);
+  }
+  if (e instanceof Order) {
+    const result = substitutionHooks.order?.(e, old, nw);
+    if (result !== undefined) return result;
   }
   if (e instanceof SubsNode) return e.subsSelf(old, nw, (x) => subsOne(x, old, nw));
   // the variable of an indefinite integral replaced: the antiderivative at that point (SymPy (x, b) limit)
@@ -593,6 +599,10 @@ export function freeSymbols(e: Expr): Set<Expr> {
           for (const s of freeSymbols(a)) if (!bound.has(s.key)) out.set(s.key, s);
         } else go(a);
       });
+    } else if (x instanceof Limit) {
+      const bound = new Set([...freeSymbols(x.variable)].map((s) => s.key));
+      for (const s of freeSymbols(x.expr)) if (!bound.has(s.key)) out.set(s.key, s);
+      go(x.point);
     } else if (x instanceof Derivative) {
       go(x.expr);
       for (const [, order] of x.variableOrders) go(order);
