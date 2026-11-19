@@ -13590,7 +13590,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "AskHandler",
       "CommonHandler",
       "CommonHandler.AlwaysFalse",
       "CommonHandler.AlwaysNone",
@@ -13698,7 +13697,6 @@
     "publicApi": {
      "pass": false,
      "missingNames": [
-      "AskHandler",
       "CommonHandler",
       "CommonHandler.AlwaysFalse",
       "CommonHandler.AlwaysNone",

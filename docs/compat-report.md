@@ -68,7 +68,7 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | ntheory | 99.47% | 44928 | 8 | 232 | 0 |
 | parsing | 90.67% | 787 | 12 | 69 | 0 |
 | plotting | 71.43% | 35 | 0 | 14 | 0 |
-| polys | 59.54% | 7236 | 167 | 4751 | 0 |
+| polys | 59.53% | 7235 | 167 | 4752 | 0 |
 | printing | 87.70% | 1883 | 1 | 263 | 0 |
 | series | 86.08% | 1441 | 5 | 228 | 0 |
 | sets | 86.01% | 1598 | 13 | 247 | 0 |
@@ -80,4 +80,4 @@ Rate = cases that give SymPy's result / all cases. Fails: translated, the result
 | unify | 62.50% | 10 | 4 | 2 | 0 |
 | utilities | 59.71% | 332 | 9 | 215 | 0 |
 | vector | 26.51% | 184 | 2 | 508 | 0 |
-| **all** | **88.00%** | 107992 | 363 | 14362 | 0 |
+| **all** | **88.00%** | 107991 | 363 | 14363 | 0 |

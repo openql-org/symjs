@@ -19,8 +19,8 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 456 selected for e
 
 | Inventory status | Modules |
 |---|---:|
-| complete | 108 |
-| partial | 431 |
+| complete | 109 |
+| partial | 430 |
 | unassessed | 0 |
 | extend | 111 |
 | excluded | 175 |
@@ -51,7 +51,7 @@ Complete means public exports and class members are present, doctest and unit-te
 | interactive | 0 | 0 | 0 | 0 | 4 |
 | liealgebras | 3 | 10 | 0 | 0 | 0 |
 | logic | 2 | 7 | 0 | 0 | 3 |
-| matrices | 8 | 38 | 0 | 0 | 0 |
+| matrices | 9 | 37 | 0 | 0 | 0 |
 | multipledispatch | 0 | 0 | 0 | 0 | 5 |
 | ntheory | 2 | 13 | 0 | 0 | 0 |
 | parsing | 4 | 5 | 0 | 0 | 35 |
@@ -121,6 +121,7 @@ Complete means public exports and class members are present, doctest and unit-te
 - `sympy.matrices.expressions.adjoint`
 - `sympy.matrices.expressions.applyfunc`
 - `sympy.matrices.expressions.companion`
+- `sympy.matrices.expressions.matpow`
 - `sympy.matrices.expressions.permutation`
 - `sympy.matrices.graph`
 - `sympy.matrices.normalforms`

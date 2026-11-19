@@ -36,7 +36,7 @@ describe("doctests of sympy.assumptions.assume", () => {
   it("Q.integer(1)", () => {
     expect(sympyStr(Q.integer(Rational.of(1n, 1n, { gcd: 1n })))).toBe('Q.integer(1)');
   });
-  // cannot format (...argsIn) => { 		const args = argsIn.map((a) => typeof a === "boolean" ? a ? __vite_ssr_import_0__.S.true : __vite_ssr_import_0__.S.false : (0,__vite_ssr_import_1__.sympify)(a)); 		// SymPy IsTruePredicate: Q.is_true of a predicate is the predicate, of a relation its predicate (Q.eq, Q.gt, ...) 		const a0 = args[0]; 		if (name === "is_true" && a0 instanceof AppliedPredicate) return a0; 		if (name === "is_true" && a0 instanceof __vite_ssr_import_0__.Rel) return new AppliedPredicate(REL_PREDICATES[a0.op], [a0.lhs, a0.rhs]); 		return new AppliedPredicate(name, args); 	}
+  // cannot format (...argsIn) => { 		const args = argsIn.map((a) => typeof a === "boolean" ? a ? __vite_ssr_import_0__.S.true : __vite_ssr_import_0__.S.false : (0,__vite_ssr_import_1__.sympify)(a)); 		// SymPy IsTruePredicate: Q.is_true of a predicate is the predicate, of a relation its predicate (Q.eq, Q.gt, ...) 		const a0 = args[0]; 		if (name === "is_true" && a0 instanceof AppliedPredicate) return a0; 		if (name === "is_true" && a0 instanceof __vite_ssr_import_0__.Rel) return new AppliedPredicate(REL_PREDICATES[a0.op], [a0.lhs, a0.rhs]); 		return new AppliedPredicate(name, args, f); 	}
   //   Q.integer(1).function
   //   => Q.integer
   it.todo("Q.integer(1).function");
