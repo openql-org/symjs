@@ -89,7 +89,7 @@ export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, fuzzyBool, fuz
 export type { Truth, FuzzyLike } from './core/truth';
 export { classKey } from './printing/sortkey';
 export { expand_power_base as separate } from './simplify/expand';
-export { Q, ask, refine, AppliedPredicate, Predicate, registerHandler, removeHandler, AssumptionsContext, globalAssumptions, assuming } from './core/refine';
+export { Q, ask, refine, AppliedPredicate, Predicate, AskHandler, registerHandler, removeHandler, AssumptionsContext, globalAssumptions, assuming } from './core/refine';
 export type { Assumption, PredicateName, PredicateHandler } from './core/refine';
 export { assumptions, checkAssumptions, commonAssumptions, failingAssumptions } from './core/checkassumptions';
 export type { AssumptionName, AssumptionValues } from './core/checkassumptions';

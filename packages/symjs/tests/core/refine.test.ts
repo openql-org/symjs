@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { defined } from '../../src/core/guard';
+import { askExpressionFact } from '../../src/core/refine';
 
 const { Q, ask, refine } = sj;
 const x = sj.symbol('x');
@@ -952,8 +953,96 @@ it('follows the SymPy handlers for finite, complex, prime and zero products', ()
   expect(sj.ask(q('prime', sj.add(sj.parse('12345678901234567890'), one)))).toBe(true);
   expect(sj.ask(q('prime', sj.add(3, one)))).toBe(false);
   expect(sj.ask(q('prime', sj.add(2, sj.cos(1))))).toBe(false);
+  expect(ask(Q.prime(sj.add(sj.sin(1), sj.cos(1))))).toBe(false);
+  expect(ask(Q.prime(sj.add(2, sj.SymFunction('f')(1))))).toBe('unknown');
   expect(sj.ask(q('prime', sj.add(new sj.Float(2), one)))).toBe('unknown');
   // a product is zero exactly when a factor is
   expect(sj.ask(sj.or(q('zero', x), q('zero', y)), q('zero', sj.mul(x, y)))).toBe(true);
   expect(sj.ask(q('zero', x), q('zero', sj.mul(x, y)))).toBe('unknown');
+});
+
+it('retains unknown bounds for sums and transcendental functions', () => {
+  const p = sj.symbol('p', { extendedPositive: true }), q = sj.symbol('q', { extendedPositive: true });
+  expect(ask(Q.finite(x.add(y)), sj.And(sj.Not(Q.finite(x)), sj.Not(Q.finite(y))))).toBe('unknown');
+  expect(ask(Q.complex(sj.sinh(x)))).toBe('unknown');
+  expect(ask(Q.complex(sj.sinh(sj.symbol('c', { complex: true }))))).toBe(true);
+  expect(askExpressionFact(Q.finite(new sj.Add([x, y])))).toBe('unknown');
+  expect(askExpressionFact(Q.finite(new sj.Add([p, q])))).toBe('unknown');
+  expect(askExpressionFact(Q.finite(new sj.Add([p, sj.oo])))).toBe(false);
+});
+
+describe('runtime predicate registration', () => {
+  it('selects the most specific signature of the right arity and forwards assumptions', () => {
+    const p = sj.Predicate('typed');
+    p.register(['Integer', sj.Sym], (_i, s, assumptions) => ask(Q.positive(s), assumptions));
+    p.register([sj.Rational, sj.Expr], () => false);
+    p.register(['Integer', 'Integer', 'Integer'], () => true);
+    expect(ask(p(3, x), Q.positive(x))).toBe(true);
+    expect(ask(p(3, x))).toBe('unknown');
+    expect(ask(p(3, 4))).toBe(false);
+    expect(ask(p(sj.S.Half, x))).toBe(false);
+    expect(ask(p(3, 4, 5))).toBe(true);
+    expect(ask(p(x, 3))).toBe('unknown');
+    expect(ask(p(3))).toBe('unknown');
+    expect(() => p.register([], () => false)).toThrow(RangeError);
+    p.register(['Integer', sj.Sym], () => false);
+    expect(ask(p(3, x), Q.positive(x))).toBe(false);
+  });
+
+  it('keeps registered methods on the applied predicate when a Q key is replaced', () => {
+    const p = sj.Predicate('local');
+    Q.local = p;
+    try {
+      p.register([sj.Sym], () => true);
+      const applied = Q.local(x);
+      Q.local = sj.Predicate('local');
+      expect(ask(Q.local(x))).toBe('unknown');
+      expect(applied.function).toBe(p);
+      expect(ask(applied.withArgs([y]))).toBe(true);
+      expect(new sj.AppliedPredicate('local', [x]).function).toBe(Q.local);
+      expect(new sj.AppliedPredicate('unregistered', [x]).function.predicateName).toBe('unregistered');
+    } finally {
+      delete Q.local;
+    }
+  });
+
+  it('tries legacy static methods from derived to base, and removes the registered class', () => {
+    class CustomSymbol extends sj.Sym {}
+    class Handler extends sj.AskHandler {
+      static CustomSymbol(): boolean { return false; }
+      static Integer(): sj.Truth { return 'unknown'; }
+      static Rational(): boolean { return false; }
+      static Symbol(expr: sj.Expr, assumptions: sj.Expr): sj.Truth { return ask(Q.positive(expr), assumptions); }
+    }
+    sj.registerHandler('legacy', Handler);
+    try {
+      const p = defined(Q.legacy);
+      expect(ask(p(x), Q.positive(x))).toBe(true);
+      expect(ask(p(new CustomSymbol('z')))).toBe(false);
+      expect(ask(p(1))).toBe(false);
+      expect(ask(p(x.add(1)))).toBe('unknown');
+      expect(() => ask(p(x, y))).toThrow(RangeError);
+      sj.removeHandler(p, Handler);
+      expect(ask(p(1))).toBe('unknown');
+      class Disagrees extends sj.AskHandler {
+        static Rational(): boolean { return true; }
+      }
+      sj.registerHandler(p, sj.AskHandler);
+      sj.registerHandler(p, Disagrees);
+      sj.registerHandler(p, Disagrees);
+      expect(ask(p(1))).toBe(true);
+      sj.registerHandler(p, Handler);
+      expect(() => ask(p(1))).toThrow(/Incompatible/);
+      expect(() => ask(sj.Predicate('legacy')(1))).toThrow(/Incompatible/);
+      Q.noHandlers = sj.Predicate('noHandlers');
+      try {
+        sj.removeHandler('noHandlers', Handler);
+        expect(ask(Q.noHandlers(x))).toBe('unknown');
+      } finally {
+        delete Q.noHandlers;
+      }
+    } finally {
+      delete Q.legacy;
+    }
+  });
 });
