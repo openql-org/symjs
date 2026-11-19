@@ -613,3 +613,11 @@ it('leaves unrelated exponential substitution patterns alone', () => {
     expect(power.subs(new sj.Pow(sj.S.E, exponent), z).key).toBe(power.key);
   }
 });
+
+it('binds the free symbols of a compound limit variable only in the body', () => {
+  const variable = sj.add(x, y);
+  const expression = new sj.Limit([sj.add(variable, z), variable, x], '-');
+  expect([...expression.freeSymbols()].map(String).sort()).toEqual(['x', 'z']);
+  const pattern = new sj.Pow(sj.E, new sj.Fn('log', [y]));
+  expect(x.pow(2).subs(pattern, z)).toEqual(x.pow(2));
+});

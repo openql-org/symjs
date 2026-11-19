@@ -907,3 +907,9 @@ it('distinguishes a known pole from a denominator known to be nonzero', () => {
   expect(sj.isConstantTruth(v(zero))).toBe(false);
   expect(sj.isConstantTruth(new ConstantWithArgument(new sj.Mul([t, new sj.Pow(sj.S.Two, sj.S.NegOne)])))).toBe(true);
 });
+
+it('returns all independent additive orders', () => {
+  const [a, b] = sj.symbols('a b');
+  const orders = sj.add(sj.O(a), sj.O(b));
+  expect(sj.getO(sj.add(1, orders))).toEqual(orders);
+});

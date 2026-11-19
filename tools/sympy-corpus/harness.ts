@@ -835,6 +835,9 @@ const tupleItems = (t: unknown): Expr[] => (t as JsTuple).items.map((x) => x as 
 const fooFixture = sj.defineFunction('foo');
 const signInvariantFixture = sj.defineFunction('sign_invariant');
 const identityFixture = sj.defineFunction('identity_func', { eval: (value: Expr) => value });
+const testFFixture = sj.defineFunction('TestF');
+const myLimitFixture = sj.defineFunction('my', { eval: (arg) => arg === S.Infinity ? S.NaN : undefined });
+
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   foo: (args) => fooFixture(...args),
   identity_func: (args) => identityFixture(...args),
@@ -871,6 +874,8 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   jn: ([n, z]) => sj.jn(n!, z!),
   yn: ([n, z]) => sj.yn(n!, z!),
   IdentityFunction: () => new JsLambda([...sj.Id.variables], sj.Id.expr) as unknown as Expr,
+  my: (args) => myLimitFixture(...args),
+  TestF: (args) => testFFixture(...args),
   my_function: (args) => sj.defineFunction('my_function', {
     nargs: 1,
     eval: (x) => x.equals(S.Zero) ? S.Zero : undefined,
@@ -4833,12 +4838,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (first === undefined || second === undefined || !Number.isFinite(first) || !Number.isFinite(second)) return null;
     return Math.abs(first - second) > 1e-9 * Math.max(1, Math.abs(first), Math.abs(second)) ? false : null;
   },
-  '.getO': (_a, kw, self) => {
-    noKw(kw);
-    const e = asExpr(self);
-    const o = (e instanceof sj.Add ? e.args : [e]).find((t) => t instanceof sj.Order);
-    return o ?? null;
-  },
+  '.getO': exprMethod((e) => none(sj.getO(e))),
   '.apart': (args, kw, self) => ADAPTERS['apart']!([self, ...args], kw),
   '.collect': (args, kw, self) => ADAPTERS['collect']!([self, ...args], kw),
   '.nsimplify': (args, kw, self) => ADAPTERS['nsimplify']!([self, ...args], kw),

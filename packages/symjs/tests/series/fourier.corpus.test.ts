@@ -129,7 +129,7 @@ describe("sympy/series/tests/test_fourier.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('sin', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])], { evaluate: false })]))).toBe('-sin(2*x)');
   });
-  it.fails("test_FourierSeries:64", () => {
+  it("test_FourierSeries:64", () => {
     const x = new Sym('x');
     expect(sympyStr(fourierSeries(x, x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), pi]).subs(x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))))).toBe('FourierSeries(x, (x, -pi, pi), (0, SeqFormula(0, (_k, 1, oo)), SeqFormula(Piecewise((-2*pi*cos(_n*pi)/_n + 2*sin(_n*pi)/_n**2, (_n > -oo) & (_n < oo) & Ne(_n, 0)), (0, True))*sin(_n*x)/pi, (_n, 1, oo))))');
   });
@@ -209,7 +209,7 @@ describe("sympy/series/tests/test_fourier.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fourierSeries(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), pi]).truncate())).toBe('4*cos(x) - cos(2*x) - pi**2/3');
   });
-  it.fails("test_FourierSeries__add__sub:136", () => {
+  it("test_FourierSeries__add__sub:136", () => {
     const x = new Sym('x');
     expect(sympyStr(fourierSeries(x, x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), pi]).add(fourierSeries(x, x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), pi])))).toBe('FourierSeries(2*x, (x, -pi, pi), (0, SeqFormula(0, (_k, 1, oo)), SeqFormula(2*Piecewise((-2*pi*cos(_n*pi)/_n + 2*sin(_n*pi)/_n**2, (_n > -oo) & (_n < oo) & Ne(_n, 0)), (0, True))*sin(_n*x)/pi, (_n, 1, oo))))');
   });
@@ -217,7 +217,7 @@ describe("sympy/series/tests/test_fourier.py", () => {
     const x = new Sym('x');
     expect(sympyStr(fourierSeries(x, x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), pi]).sub(fourierSeries(x, x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), pi])))).toBe('0');
   });
-  it.fails("test_FourierSeries__add__sub:138", () => {
+  it("test_FourierSeries__add__sub:138", () => {
     const x = new Sym('x');
     expect(sympyStr(fourierSeries(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), pi]).sub(fourierSeries(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi]), pi])))).toBe('FourierSeries(-2*x**2, (x, -pi, pi), (-2*pi**2/3, SeqFormula(-2*Piecewise((2*pi**2*sin(_n*pi)/_n + 4*pi*cos(_n*pi)/_n**2 - 4*sin(_n*pi)/_n**3, (_n > -oo) & (_n < oo) & Ne(_n, 0)), (2*pi**3/3, True))*cos(_n*x)/pi, (_n, 1, oo)), SeqFormula(0, (_k, 1, oo))))');
   });

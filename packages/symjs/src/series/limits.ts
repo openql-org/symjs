@@ -20,6 +20,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Dummy, ExtensionExpr, Float, Fn, Limit, Mul, Piecewise, Rel, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { mapBottomUp, rebuild, xreplace as subs } from '../core/traverse';
+import { asContentPrimitive } from '../core/methods';
 import { diff } from '../calculus/diff';
 import { fn, log } from '../functions/elementary/elementary';
 import { polyCoefficients } from '../polys/poly';
@@ -357,6 +358,7 @@ class Limiter {
           if (lh instanceof Rational && lh.isInteger && lh.p % 2n === 0n) return S.Infinity;
           if (s === 1) return S.Infinity;
           if (s === -1 && lh instanceof Rational && lh.isInteger) return S.NegativeInfinity;
+          if (s === -1 && !(lh instanceof Rational) && !h.has(z) && b.equals(z) && isReal(lh) === true) return mul(S.NegativeInfinity, pow(-1, add(lh, 1)));
           return undefined;
         }
         if (isPositive(lh)) return S.Zero;
@@ -419,6 +421,7 @@ class Limiter {
         if (la.name === 'zoo') return undefined;
         // subfactorial grows like factorial (SymPy subfactorial(oo) = oo)
         if (f.name === 'subfactorial' && la === S.Infinity) return S.Infinity;
+        if (f.name === 'factorial' && la === S.NegativeInfinity) return fn('gamma', [la]);
         const r = fn(f.name, [la]);
         // (an oscillation over an interval, frac(oo) = AccumBounds(0, 1), is bounded)
         if (r instanceof AccumBoundsNode && !hasSpecialInside(r)) return BOUNDED;
@@ -852,6 +855,15 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
       if (err instanceof SignUnknownError) throw new NotImplementedError(err.message);
     }
   }
+  // Binet's formula gives F(n+a)/F(n+b) ~ phi**(a-b) for fixed integer shifts.
+  if (z0 === S.Infinity && es instanceof Mul && z.assumptions0.get('integer') === true) {
+    const [numerator, denominator] = fraction(es);
+    if (numerator instanceof Fn && numerator.name === 'fibonacci' && numerator.args.length === 1 &&
+        denominator instanceof Fn && denominator.name === 'fibonacci' && denominator.args.length === 1) {
+      const k = first(denominator.args), difference = add(first(numerator.args), mul(-1, k));
+      if (!difference.has(z) && isIntegerQ(difference) && limiter.lim(k) === S.Infinity) return pow(S.GoldenRatio, difference);
+    }
+  }
   const v = limiter.lim(es);
   if (v === undefined || v === BOUNDED) {
     const g = z0 instanceof Special && z0.name === 'oo' ? gammaAsymptotic(es, z) : undefined;
@@ -905,6 +917,7 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
   if (v instanceof Add && isInfiniteSum(v)) return infinitePart(v);
   // a finite sum with symbols is cancelled, like the leading terms of a sum in SymPy
   // (Add._eval_as_leading_term: limit(1/y - 1/(y*z) + 1/x, x, oo) = (z - 1)/(y*z))
+  if (v instanceof Pow && v.base instanceof Mul && isFinite_(v.base)) return pow(cancel(v.base), v.exp);
   if (v instanceof Add && isFinite_(v) && impl.freeSymbols(v).size !== 0) return cancel(v);
   // and powers of a symbol combine (b*y**b/(a*y**a) = b*y**(b - a)/a)
   if (v instanceof Mul && isFinite_(v)) {
@@ -941,6 +954,17 @@ function intervalLimit(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number
     jumps = true;
     return add(g, x.name === 'floor' ? accumBounds(-1, 0) : accumBounds(0, 1));
   });
+  // Limit.doit keeps the independent denominator outside the accumulation
+  // interval. Only the rational content scales its endpoints.
+  if (rw instanceof Mul) {
+    const denominators = rw.args.filter((a): a is Pow => a instanceof Pow && a.exp.equals(-1) && !a.has(z) && a.base.isNumber);
+    if (denominators.length) {
+      const [content, denominator] = asContentPrimitive(mul(...denominators.map((a) => a.base)));
+      const numerator = mul(...rw.args.filter((a) => !denominators.some((d) => d === a)), pow(content, -1));
+      const interval = limiter.interval(numerator);
+      if (interval instanceof AccumBoundsNode) return new Mul([accumBounds(expand(interval.min), expand(interval.max)), pow(denominator, -1)]);
+    }
+  }
   const r = limiter.interval(jumps ? expand(rw) : rw);
   // a value with nan or an unevaluated function or power of an interval or an infinity is no limit
   // (AccumBounds(1, 3)**y, which SymPy returns, is not taken for a limit)

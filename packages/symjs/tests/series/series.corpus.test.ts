@@ -167,7 +167,7 @@ describe("sympy/series/tests/test_series.py", () => {
     const x = new Sym('x');
     expect(sympyStr(series(new Pow(E, new Mul([fn('log', [x], { evaluate: false }), fn('sin', [x], { evaluate: false })])), undefined, sympify(0), 2, '+', {}))).toBe('1 + x*log(x) + O(x**2*log(x)**2)');
   });
-  it.fails("test_issue_6350:94", () => {
+  it("test_issue_6350:94", () => {
     const k = new Sym('k');
     expect(sympyStr(series(new Mul([Rational.of(-1n, 6n, { gcd: 1n }), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(pi, Rational.of(-1n, 1n, { gcd: 1n })), new Pow(k, Rational.of(-1n, 3n, { gcd: 1n })), new Add([new Mul([new Pow(k, Rational.of(1n, 3n, { gcd: 1n })), new Pow(fn('gamma', [Rational.of(1n, 3n, { gcd: 1n })]), Rational.of(2n, 1n, { gcd: 1n })), new Pow(fn('gamma', [Rational.of(2n, 3n, { gcd: 1n })]), Rational.of(2n, 1n, { gcd: 1n })), fn('besseli', [Rational.of(-1n, 3n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), k])])]), new Mul([new Pow(k, Rational.of(4n, 3n, { gcd: 1n })), new Pow(E, new Mul([Rational.of(-2n, 3n, { gcd: 1n }), pi, I])), fn('gamma', [Rational.of(-2n, 3n, { gcd: 1n })]), fn('gamma', [Rational.of(-1n, 3n, { gcd: 1n })]), hyper([Rational.of(1n, 1n, { gcd: 1n })], [Rational.of(4n, 3n, { gcd: 1n }), Rational.of(5n, 3n, { gcd: 1n })], new Pow(k, Rational.of(2n, 1n, { gcd: 1n })), { evaluate: false })]), new Mul([new Pow(k, Rational.of(1n, 3n, { gcd: 1n })), fn('besseli', [Rational.of(1n, 3n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), k])]), new Pow(E, new Mul([Rational.of(-1n, 3n, { gcd: 1n }), pi, I])), fn('gamma', [Rational.of(-1n, 3n, { gcd: 1n })]), fn('gamma', [Rational.of(1n, 3n, { gcd: 1n })]), fn('gamma', [Rational.of(2n, 3n, { gcd: 1n })]), fn('gamma', [Rational.of(4n, 3n, { gcd: 1n })])])]), new Pow(E, new Mul([Rational.of(2n, 3n, { gcd: 1n }), pi, I]))]), k, Rational.of(0n, 1n, { gcd: 1n }), 3, '+', {}))).toBe('-(-1)**(2/3)*sqrt(3)*gamma(1/3)**2*gamma(2/3)/(6*pi*k**(1/3)) - sqrt(3)*k*gamma(-2/3)*gamma(-1/3)/(6*pi) - (-1)**(1/3)*sqrt(3)*k**(1/3)*gamma(-1/3)*gamma(1/3)*gamma(2/3)/(6*pi) - (-1)**(2/3)*sqrt(3)*k**(5/3)*gamma(1/3)**2*gamma(2/3)/(4*pi) - (-1)**(1/3)*sqrt(3)*k**(7/3)*gamma(-1/3)*gamma(1/3)*gamma(2/3)/(8*pi) + O(k**3)');
   });
@@ -303,7 +303,7 @@ describe("sympy/series/tests/test_series.py", () => {
   //   assert series(1, n=8) == 1
   //   => 1
   it.todo("test_issue_8805:212");
-  it.fails("test_issue_9173:222", () => {
+  it("test_issue_9173:222", () => {
     const [y, b0, p1, p3, b1, b2, p2] = symbols('y b0 p1 p3 b1 b2 p2');
     const p0_ = new Sym('p0');
     expect(sympyStr(series(new Mul([new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([new Pow(y, Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Mul([new Pow(b0, Rational.of(-3n, 1n, { gcd: 1n })), new Add([new Mul([p1, new Pow(b0, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), p3, new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(b1, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([b0, b2])])]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b0, b1, p2])])]), new Mul([new Pow(y, Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Mul([new Pow(b0, Rational.of(-2n, 1n, { gcd: 1n })), new Add([new Mul([b0, p2]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b1, p3])])]), new Mul([p3, new Pow(b0, Rational.of(-1n, 1n, { gcd: 1n })), new Pow(y, Rational.of(-1n, 1n, { gcd: 1n }))])])])])])]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([p0_, new Mul([new Pow(y, Rational.of(-1n, 1n, { gcd: 1n })), new Add([p1, new Mul([new Pow(y, Rational.of(-1n, 1n, { gcd: 1n })), new Add([p2, new Mul([p3, new Pow(y, Rational.of(-1n, 1n, { gcd: 1n }))])])])])])])]), y, sympify(0), 3, '+', {}))).toBe('y*(b0*p2/p3 + b0*(-p2/p3 + b1/b0)) + y**2*(b0*p1/p3 + b0*p2*(-p2/p3 + b1/b0)/p3 + b0*(-p1/p3 + (p2/p3 - b1/b0)**2 + b1*p2/(b0*p3) + b2/b0 - b1**2/b0**2)) + b0 + O(y**3)');
@@ -437,7 +437,7 @@ describe("sympy/series/tests/test_series.py", () => {
     const x = new Sym('x');
     expect(sympyStr(series(new Mul([new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi, I, new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])])])), fn('gamma', [new Add([Rational.of(1n, 1n, { gcd: 1n }), x])])]), x, Rational.of(0n, 1n, { gcd: 1n }), 3, '+', {}))).toBe('-1 + x*(EulerGamma + 2*I*pi) + x**2*(-EulerGamma**2/2 + 23*pi**2/12 - 2*EulerGamma*I*pi) + O(x**3)');
   });
-  it.fails("test_issue_24266:411", () => {
+  it("test_issue_24266:411", () => {
     const x = new Sym('x');
     expect(sympyStr(series(new Pow(new Mul([Rational.of(2n, 1n, { gcd: 1n }), I]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), pi, I, new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])])])), x, Rational.of(0n, 1n, { gcd: 1n }), 2, '+', {}))).toBe('exp(pi**2/2 - I*pi*log(2)) + x*(pi**2*exp(pi**2/2 - I*pi*log(2)) - 2*I*pi*exp(pi**2/2 - I*pi*log(2))*log(2)) + O(x**2)');
   });

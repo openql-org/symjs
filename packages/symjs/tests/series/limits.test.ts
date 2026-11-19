@@ -948,3 +948,11 @@ it('compares complete gamma growth and logarithmic powers', () => {
   expect(String(limit(P('27**(1+log(x)/log(3))/x**3'), x, oo))).toBe('27');
   expect(String(limit(P('8**(log(x)/log(2))/x**3'), x, oo))).toBe('1');
 });
+
+it('requires a fixed shift for the Fibonacci ratio and a range for interval scaling', () => {
+  const index = symbol('index', { integer: true });
+  const ratio = sj.fibonacci(index.pow(2)).div(sj.fibonacci(index));
+  expect(limit(ratio, index, oo)).toBeInstanceOf(sj.Limit);
+  const unknown = sj.SymFunction('f')(index).div(sj.pi);
+  expect(limit(unknown, index, oo)).toBeInstanceOf(sj.Limit);
+});

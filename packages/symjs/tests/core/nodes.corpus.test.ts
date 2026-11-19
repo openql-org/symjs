@@ -1220,7 +1220,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Mul([new Pow(x, Rational.of(3n, 2n, { gcd: 1n })), new Pow(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(3n, 1n, { gcd: 1n }))]), Rational.of(1n, 2n, { gcd: 1n }))])))).toBe('O(x**3)');
   });
-  it.fails("test_simple_8:102", () => {
+  it("test_simple_8:102", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Mul([x, new Pow(new Mul([Rational.of(-2n, 1n, { gcd: 1n }), x]), new Mul([Rational.of(1n, 2n, { gcd: 1n }), I]))])))).toBe('O((-x)**(1 + I/2))');
   });
@@ -1579,7 +1579,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(x, x, Rational.of(0n, 1n, { gcd: 1n })).subs(y, x))).toBe('O(x)');
   });
-  it.fails("test_eval:302", () => {
+  it("test_eval:302", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(x, x, Rational.of(0n, 1n, { gcd: 1n })).subs(x, new Add([x, y])))).toBe('O(x + y, (x, -y))');
   });
@@ -1888,7 +1888,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([Rational.of(-2n, 1n, { gcd: 1n }), x]), x, Rational.of(2n, 1n, { gcd: 1n })).sub(O(new Add([Rational.of(-2n, 1n, { gcd: 1n }), x]), x, Rational.of(2n, 1n, { gcd: 1n }))))).toBe('O(x - 2, (x, 2))');
   });
-  it.fails("test_order_subs_limits:418", () => {
+  it("test_order_subs_limits:418", () => {
     const x = new Sym('x');
     expect(sympyStr(new Add([Rational.of(1n, 1n, { gcd: 1n }), O(x, x, Rational.of(0n, 1n, { gcd: 1n }))]).subs(x, new Pow(x, Rational.of(-1n, 1n, { gcd: 1n }))))).toBe('1 + O(1/x, (x, oo))');
   });
@@ -1900,11 +1900,11 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), new Add([x, O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, Rational.of(0n, 1n, { gcd: 1n }))])]), x, Rational.of(0n, 1n, { gcd: 1n }), '+'))).toBe('1');
   });
-  it.fails("test_order_subs_limits:423", () => {
+  it("test_order_subs_limits:423", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, Rational.of(0n, 1n, { gcd: 1n })).subs(x, new Add([Rational.of(-1n, 1n, { gcd: 1n }), y])))).toBe('O((y - 1)**2, (y, 1))');
   });
-  it.fails("test_order_subs_limits:424", () => {
+  it("test_order_subs_limits:424", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(O(Rational.of(1n, 1n, { gcd: 1n }), x, Rational.of(2n, 1n, { gcd: 1n })).subs(x, new Add([Rational.of(-1n, 1n, { gcd: 1n }), y])))).toBe('O(1, (y, 3))');
   });
@@ -1916,11 +1916,11 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, Rational.of(0n, 1n, { gcd: 1n })).subs(x, O(x, x, Rational.of(0n, 1n, { gcd: 1n })))), 'O(x**2)', [x], { fn: '.subs', input: 'O(x**2)' })).toBe(true);
   });
-  it.fails("test_order_subs_limits:429", () => {
+  it("test_order_subs_limits:429", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).subs(x, O(x, x, oo)))).toBe('O(x, (x, oo))');
   });
-  it.fails("test_order_subs_limits:430", () => {
+  it("test_order_subs_limits:430", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, oo).subs(x, O(x, x, oo)))).toBe('O(x**2, (x, oo))');
   });
@@ -1936,7 +1936,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(equivalent(sympyStr(new Add([Rational.of(1n, 1n, { gcd: 1n }), O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, Rational.of(0n, 1n, { gcd: 1n }))]).subs(x, new Add([x, O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, Rational.of(0n, 1n, { gcd: 1n }))]))), '1 + O(x**2)', [x], { fn: '.subs', input: '1 + O(x**2)' })).toBe(true);
   });
-  it.fails("test_order_subs_limits:434", () => {
+  it("test_order_subs_limits:434", () => {
     const x = new Sym('x');
     expect(sympyStr(O(x, x, oo).subs(x, O(new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), x, oo)))).toBe('O(x**2, (x, oo))');
   });
@@ -2005,7 +2005,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(x, Rational.of(-4n, 1n, { gcd: 1n })), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]))]), x, S.NegativeInfinity))).toBe('O(exp(-x), (x, -oo))');
   });
-  it.fails("test_issue_15539:477", () => {
+  it("test_issue_15539:477", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), x, oo).subs(x, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])))).toBe('O(-1/x, (x, -oo))');
   });
@@ -2033,7 +2033,7 @@ describe("sympy/series/tests/test_order.py", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([new Pow(Rational.of(2n, 1n, { gcd: 1n }), x), new Pow(Rational.of(3n, 1n, { gcd: 1n }), x)]), x, oo))).toBe('O(exp(x*log(3)), (x, oo))');
   });
-  it.fails("test_issue_9917:497", () => {
+  it("test_issue_9917:497", () => {
     const x = new Sym('x');
     expect(sympyStr(O(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([x, fn('sin', [x], { evaluate: false })])]), x, oo))).toBe('O(x, (x, oo))');
   });

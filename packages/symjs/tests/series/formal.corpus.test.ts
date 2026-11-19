@@ -458,7 +458,7 @@ describe("sympy/series/tests/test_formal.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(fps(new Add([new Mul([new Pow(x, n), new Pow(E, x)]), new Mul([new Pow(x, new Add([Rational.of(-2n, 1n, { gcd: 1n }), n])), fn('sin', [x], { evaluate: false })])]), x, Rational.of(0n, 1n, { gcd: 1n }), '+').truncate())).toBe('41*x**(n + 5)/5040 + x**(n + 4)/24 + 7*x**(n + 3)/40 + x**(n + 2)/2 + 5*x**(n + 1)/6 + x**(n - 1) + x**n + O(x**(n + 6))');
   });
-  it.fails("test_fps_symbolic:427", () => {
+  it("test_fps_symbolic:427", () => {
     const x = new Sym('x');
     const n = new Sym('n', { integer: true });
     expect(sympyStr(fps(new Mul([new Pow(x, n), fn('atan', [x], { evaluate: false })]), x, oo, '+').truncate())).toBe('x**(n - 3)/3 - x**(n - 5)/5 + x**n*(pi/2 - 1/x) + O(x**(n - 6), (x, oo))');
