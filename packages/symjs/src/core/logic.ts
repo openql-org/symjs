@@ -14,7 +14,7 @@ import { add, couldExtractMinusSign, knownNonreal, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { at } from './guard';
-import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
+import { isIntegerQ, isKnownExtendedReal, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 const isSpecial = (name: string) => (x: Expr): boolean => x instanceof Special && x.name === name;
@@ -41,6 +41,7 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   const equality = op === 'Eq' || op === 'Ne';
   const bounds = impl.accumBounds;
   if (!equality && bounds !== undefined && (bounds.is(lhs) || bounds.is(rhs))) {
+    if ([lhs, rhs].some((e) => !isKnownExtendedReal(e))) throw new TypeError('AccumBounds comparisons require extended real operands');
     const [a, b] = bounds.is(lhs) ? bounds.bounds(lhs) : [lhs, lhs];
     const [c, d] = bounds.is(rhs) ? bounds.bounds(rhs) : [rhs, rhs];
     const lower = op === 'Lt' || op === 'Le';

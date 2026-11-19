@@ -149,7 +149,7 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
     const x = new Sym('x');
     expect(sympyStr(x.add(AccumBounds(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('x + AccumBounds(1, 2)');
   });
-  it.fails("test_AccumBounds:36", () => {
+  it("test_AccumBounds:36", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(a.add(AccumBounds(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }))))).toBe('AccumBounds(a + 1, a + 2)');
   });
@@ -356,11 +356,11 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
   //   assert B(-oo, 1)/(-oo) == B(0, oo)
   //   => AccumBounds(0, oo)
   it.todo("test_AccumBounds_div:130");
-  it.fails("test_issue_18795:138", () => {
+  it("test_issue_18795:138", () => {
     const r = new Sym('r', { real: true });
     expect(sympyStr(AccumBounds(Rational.of(7n, 1n, { gcd: 1n }), oo).sub(fn('tan', [r], { evaluate: false })))).toBe('AccumBounds(7 - tan(r), oo)');
   });
-  it.fails("test_issue_18795:139", () => {
+  it("test_issue_18795:139", () => {
     const r = new Sym('r', { real: true });
     expect(sympyStr(AccumBounds(S.NegativeInfinity, oo).add(fn('tan', [r], { evaluate: false })))).toBe('AccumBounds(-oo, oo)');
   });
@@ -413,7 +413,7 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
     const nn = new Sym('nn', { nonnegative: true });
     expect(sympyStr(AccumBounds(nn, new Add([Rational.of(1n, 1n, { gcd: 1n }), nn])).pow(Rational.of(1n, 2n, { gcd: 1n })))).toBe('AccumBounds(sqrt(nn), sqrt(nn + 1))');
   });
-  it.fails("test_AccumBounds_pow:173", () => {
+  it("test_AccumBounds_pow:173", () => {
     const nn = new Sym('nn', { nonnegative: true });
     expect(sympyStr(AccumBounds(nn, new Add([Rational.of(1n, 1n, { gcd: 1n }), nn])).pow(nn))).toBe('AccumBounds(nn**nn, (nn + 1)**nn)');
   });
@@ -422,15 +422,15 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
     const nn = new Sym('nn', { nonnegative: true });
     expect(sympyStr(unchanged(pow, AccumBounds(nn, new Add([Rational.of(1n, 1n, { gcd: 1n }), nn])), x))).toBe('True');
   });
-  it.fails("test_AccumBounds_pow:176", () => {
+  it("test_AccumBounds_pow:176", () => {
     const i = new Sym('i', { integer: true });
     expect(sympyStr(AccumBounds(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })).pow(i))).toBe('AccumBounds(Min(1, 2**i), Max(1, 2**i))');
   });
-  it.fails("test_AccumBounds_pow:178", () => {
+  it("test_AccumBounds_pow:178", () => {
     const i = new Sym('i', { integer: true, nonnegative: true });
     expect(sympyStr(AccumBounds(Rational.of(1n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n })).pow(i))).toBe('AccumBounds(1, 2**i)');
   });
-  it.fails("test_AccumBounds_pow:179", () => {
+  it("test_AccumBounds_pow:179", () => {
     const i = new Sym('i', { integer: true, nonnegative: true });
     expect(sympyStr(AccumBounds(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })).pow(i))).toBe('AccumBounds(0**i, 1)');
   });
@@ -511,11 +511,11 @@ describe("sympy/calculus/tests/test_accumulationbounds.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new Pow(fn('tan', [x], { evaluate: false }), fn('sin', [new Mul([Rational.of(2n, 1n, { gcd: 1n }), x])], { evaluate: false })).subs(x, AccumBounds(Rational.of(0n, 1n, { gcd: 1n }), new Mul([Rational.of(1n, 2n, { gcd: 1n }), pi]))))).toBe('AccumBounds(-oo, oo)**AccumBounds(0, 1)');
   });
-  it.fails("test_AccumBounds_exponent:226", () => {
+  it("test_AccumBounds_exponent:226", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(new Pow(Rational.of(0n, 1n, { gcd: 1n }), AccumBounds(a, new Add([Rational.of(1n, 2n, { gcd: 1n }), a]))).subs(a, Rational.of(0n, 1n, { gcd: 1n })))).toBe('AccumBounds(0, 1)');
   });
-  it.fails("test_AccumBounds_exponent:227", () => {
+  it("test_AccumBounds_exponent:227", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(new Pow(Rational.of(0n, 1n, { gcd: 1n }), AccumBounds(a, new Add([Rational.of(1n, 2n, { gcd: 1n }), a]))).subs(a, Rational.of(1n, 1n, { gcd: 1n })))).toBe('0');
   });
