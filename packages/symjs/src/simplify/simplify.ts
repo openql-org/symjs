@@ -30,7 +30,7 @@ import type { Truth } from '../core/truth';
 import { simplifyLogic } from '../logic/minimize';
 import { BoolOp, and } from '../core/boolalg';
 import { simplifyBoolean } from '../logic/minimize';
-import { Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
+import { Eq, Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
 import { ordered } from '../core/match';
 import type { SetExpr } from '../sets/sets';
 import { EmptySet, Interval, Reals, cmpReal, complement, intersection, interval, union } from '../sets/sets';
