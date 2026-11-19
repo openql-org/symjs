@@ -9,7 +9,7 @@ import { at, defined, first } from '../core/guard';
 import { NonInvertibleMatrixError, NonSquareMatrixError, ShapeError } from '../core/errors';
 import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
 import { Expr, Float, Rational, S, Sym, impl, isNum } from '../core/nodes';
-import { add, mul, pow, sympify } from '../core/ops';
+import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
 import { asRealImag, atoms } from '../core/methods';
 import { ExprMap } from '../core/exprmap';
@@ -298,6 +298,22 @@ export class Matrix {
     if (k === undefined) {
       const exp = sympify(n);
       if (this.isDiagonal()) return Matrix.fromFunction(this.rows, this.cols, (i, j) => (i === j ? pow(this.get(i, i), exp) : S.Zero));
+      if (this.rows === 2 && this.freeSymbols().size > 0) {
+        const [a, b, c, d] = [this.get(0, 0), this.get(0, 1), this.get(1, 0), this.get(1, 1)];
+        const trace = add(a, d), gap = add(a, mul(-1, d));
+        const disc = add(pow(trace, 2), mul(-4, a, d), mul(4, b, c));
+        const radical = sqrt(expand(disc));
+        if (!isZeroE(radical) && !isZeroE(b) && !isZeroE(c) && !isZeroE(this.det())) {
+          // Columns of P are eigenvectors [b/(lambda - a), 1].
+          const denominator = expand(mul(radical, gap)).add(expand(disc));
+          const twiceBC = mul(2, b, c);
+          const P = Matrix.of([[mul(-2, b, pow(add(gap, radical), -1)), mul(-2, b, pow(add(gap, mul(-1, radical)), -1))], [1, 1]]);
+          const inverse = Matrix.of([[mul(-1, c, pow(radical, -1)), mul(add(denominator, mul(-1, twiceBC)), pow(denominator, -1))],
+            [mul(c, pow(radical, -1)), mul(twiceBC, pow(denominator, -1))]]);
+          const center = add(mul(S.Half, a), mul(S.Half, d)), offset = mul(S.Half, sqrt(disc));
+          return P.mul(Matrix.diag(pow(add(center, mul(-1, offset)), exp), pow(add(center, offset), exp))).mul(inverse);
+        }
+      }
       return this.interpolatedPower(exp);
     }
     if (k < 0) return this.inv().pow(-k);
@@ -470,11 +486,12 @@ export class Matrix {
     const d = simplify(this.det());
     if (d instanceof Rational && d.isZero) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
     const invDet = pow(d, -1);
-    return this.adjugate().map((e) => expand(mul(e, invDet)));
+    const inverse = this.adjugate().scale(invDet);
+    return d.isNumber ? inverse.expand() : inverse;
   }
 
   /** Eigenvalues (with multiplicity) as roots of the characteristic polynomial. */
-  eigenvals(): Expr[] {
+  eigenvals(simplifyRoots = true): Expr[] {
     // SymPy _eigenvals: a triangular matrix has its diagonal entries as eigenvalues, in order
     const n = this.rows;
     const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -482,7 +499,8 @@ export class Matrix {
     const above = this.data.filter((_, k) => Math.floor(k / this.cols) < k % this.cols);
     if (this.isSquare && (below.every(isZero) || above.every(isZero))) return Array.from({ length: n }, (_, i) => this.get(i, i));
     const lam = new Sym('lambda_');
-    return roots(this.charpoly(lam), lam).map((r) => simplify(r));
+    const values = roots(this.charpoly(lam), lam);
+    return simplifyRoots ? values.map(simplify) : values;
   }
 
   // ---- transformation --------------------------------------------------------------
@@ -867,7 +885,7 @@ function berkowitz(M: Matrix): Expr[] {
   let v = C;
   for (let k = 0; k < n - 1; k++) {
     diags.push(expand(mul(-1, R.mul(v).get(0, 0))));
-    if (k < n - 2) v = A.mul(v);
+    if (k < n - 2) v = A.mul(v).map(expand);
   }
   const sub = berkowitz(A); // length n
   // Toeplitz (n+1) x n lower-triangular times sub

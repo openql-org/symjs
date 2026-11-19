@@ -3,16 +3,16 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { Expr } from '../../packages/symjs/src/core/nodes';
+import { Dyadic, Expr, capture, Matrix, sympify, sympifyMethod, Vector } from '../../packages/symjs/src';
 import { deserialize, equalsSerializedOperand, fmt, matchesSympyErratum, pyEquals, runCase } from './harness';
 import type { Case, CaseObservation, Outcome, Tree } from './harness';
-import { Dyadic, Vector } from '../../packages/symjs/src';
 
 export interface TestCase extends Case {
   test: string;
   line: number;
   op: '==' | '!=' | 'is' | 'is not' | 'truthy' | 'falsy';
   raises?: string;
+  capturedPrinter?: Pick<Case, 'self' | 'fn' | 'args' | 'kwargs'>;
   expectedOperand?: Tree;
   comparisonTree?: Tree;
   polyReplay?: {
@@ -26,7 +26,7 @@ export interface TestCase extends Case {
 export type TestOutcome = Outcome & { exceptionMismatch?: { expected: string; actual: string }; phase?: 'input' | 'invoke' | 'result' };
 
 const REPLAY_STATE = new Set([
-  'tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix', 'polyReplay',
+  'capturedPrinter', 'attributeRead', 'tensorData', 'exclusion', 'unsupportedClass', 'indexedAssumptions', 'comparisonTree', 'matrixClass', 'boundMatrix', 'polyReplay',
   'expectedOperand', 'zeroDefault', 'divideError', 'functionPartials', 'randomState', 'latticeOperation', 'dummyIndex', 'globalEvaluate',
 ]);
 
@@ -66,6 +66,13 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
     }
     if (outcome.status === 'unsupported' || outcome.status === 'error') return outcome;
     return { status: 'fail', got: 'did not raise' };
+  }
+  if (c.op === '==' && c.expectedOperand && observation && 'value' in observation && observation.value instanceof Matrix) {
+    const operand = c.expectedOperand;
+    const rhs = operand.t === 'SympifiableMatrix'
+      ? sympify({ [sympifyMethod]: () => deserialize(operand.value as Tree) })
+      : deserialize(operand);
+    return rhs instanceof Matrix && observation.value.equals(rhs) ? { status: 'pass' } : { status: 'fail', got: fmt(observation.value) };
   }
   // identity with an object (x.func is cls) is compared like ==
   if (c.op === '==' || (c.op === 'is' && !['True', 'False', 'None'].includes(c.expected))) return outcome;
@@ -128,6 +135,16 @@ export function runTestCase(c: TestCase): TestOutcome {
   if (c.polyReplay?.submoduleDiscard) {
     const { original, index, computedTable } = c.polyReplay.submoduleDiscard;
     call.self = { ...original, discardBefore: index, computedTable };
+  }
+  if (c.capturedPrinter) {
+    const printer = { ...call, ...c.capturedPrinter, text: true };
+    let printed: CaseObservation | undefined;
+    const output = runCase(printer, (event) => { printed = event; });
+    if (!printed || !('value' in printed)) return output;
+    if (typeof printed.value !== 'string') return { status: 'fail', got: fmt(printed.value) };
+    const pattern = printed.value;
+    const got = capture((print) => print(pattern));
+    return got === c.expected ? { status: 'pass' } : { status: 'fail', got };
   }
   const outcome = runCase(call, (event) => { observation = event; });
   const result = assertionOutcome(c, outcome, observation);

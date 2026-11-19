@@ -106,6 +106,8 @@ export class JsFFElement {
   }
 }
 
+class AttributeError extends ReferenceError {}
+
 /** A Python float (printed as 2.0, 0.5, ...). */
 export class JsFloat {
   constructor(readonly v: number) {}
@@ -129,7 +131,7 @@ export class JsTable {
   constructor(readonly entries: readonly (readonly [readonly unknown[], unknown])[]) {}
   call(...xs: unknown[]): unknown {
     const key = xs.map((x) => fmt(typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)).join(', ');
-    const entry = this.entries.find(([args]) => args.map((a) => fmt(a)).join(', ') === key);
+    const entry = this.entries.find(([args]) => args.map((a) => fmt(lambdaAsNode(a))).join(', ') === key);
     if (entry === undefined) throw new Unsupported(`callback called with (${key}), outside the recorded calls`);
     return entry[1];
   }
@@ -6180,6 +6182,7 @@ Object.assign(ADAPTERS, {
 
 export interface Case {
   boundMatrix?: Tree;
+  attributeRead?: boolean;
   zeroDefault?: boolean;
   divideError?: boolean;
   functionPartials?: Tree[];
@@ -8056,6 +8059,7 @@ function autoAdapter(c: Case): Adapter | undefined {
         return new JsTuple([self.function, ...limits.items]);
       }
       if ((name === 'args' || name === 'pargs') && Array.isArray(m)) return new JsTuple(m);
+      if (c.attributeRead && !(name in self)) throw new AttributeError(c.fn.slice(1));
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);
     };
@@ -8457,7 +8461,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // DomainMatrix, DDM and SDM methods (and their classes' static methods) share names with Matrix and Poly adapters
     const isDomainMatrix = (x: unknown) => x instanceof sj.DomainMatrix || x instanceof sj.DDM || x instanceof sj.SDM || (x instanceof TypeRef && ['DomainMatrix', 'DDM', 'SDM'].includes(x.name));
     // (rewrite targets are SymPy classes, which only the rewrite adapter names)
-    const matrixAuto = !['ask', 'refine', '.rewrite', 're', 'im'].includes(c.fn) && !(c.fn === '.applyfunc' && self instanceof sj.MatrixExpr) && (isMatExpr(self) || args.some(isMatExpr));
+    const matrixAuto = !['ask', 'refine', '.rewrite', 're', 'im'].includes(c.fn) && !(['.applyfunc', '.replace'].includes(c.fn) && self instanceof sj.MatrixExpr) && (isMatExpr(self) || args.some(isMatExpr));
     const auto0 = matrixAuto || self instanceof sj.DMPJs || c.self?.t === 'DMP' && (c.module === 'sympy.polys.tests.test_polyclasses' || c.fn === '.cancel') || isDomainMatrix(self) || self instanceof sj.NDimArray || (self instanceof sj.Indexed && c.fn !== '.is_constant') ? autoAdapter(c) : undefined;
     try {
       v = call(auto0 ?? adapter);

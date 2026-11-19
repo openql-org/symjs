@@ -87,7 +87,9 @@ export function rref(m: Matrix, opts: { iszerofunc?: (e: Expr) => boolean } = {}
     if (p < 0) continue;
     const rowP = at(A, p);
     A[p] = at(A, r);
-    const inv = pow(at(rowP, c), -1);
+    const pivot = at(rowP, c);
+    const reciprocal = pow(pivot, -1);
+    const inv = pivot.freeSymbols().size === 0 && impl.radsimp ? impl.radsimp(reciprocal) : reciprocal;
     const pivotRow = rowP.map((v) => tidy(mul(v, inv)));
     pivotRow[c] = S.One;
     A[r] = pivotRow;
@@ -749,8 +751,14 @@ function threeEntries(v: Matrix): [Expr, Expr, Expr] {
 
 export function singularValues(m: Matrix): Expr[] {
   // eigenvals of the cols x cols matrix A^H A gives all cols values (or throws)
-  const vals = m.adjoint().mul(m).eigenvals().map((v) => sqrt(v));
-  return vals.sort((a, b) => compareKeys(sortKey(b), sortKey(a)));
+  const vals = m.adjoint().mul(m).eigenvals(false).map((v) => sqrt(v));
+  return vals.sort((a, b) => {
+    if (a.isNumber && b.isNumber) {
+      try { return b.toNumber() - a.toNumber(); }
+      catch { /* A symbolic function may have no numerical evaluator. */ }
+    }
+    return compareKeys(sortKey(b), sortKey(a));
+  });
 }
 
 /** SymPy Matrix.norm(ord). */
@@ -1098,6 +1106,7 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
     else counts.set(v.key, [v, 1]);
   }
   const eig = [...counts.values()].sort((a, b) => {
+    if (a[0].freeSymbols().size || b[0].freeSymbols().size) return compareKeys(sortKey(a[0]), sortKey(b[0]));
     const ca = impl.toComplex(a[0]);
     const cb = impl.toComplex(b[0]);
     return ca.re - cb.re || ca.im - cb.im;

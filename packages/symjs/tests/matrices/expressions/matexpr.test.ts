@@ -642,8 +642,8 @@ describe('MatPow and Inverse', () => {
     expect(s(Inverse(X).at(0, 0))).toBe('X[1, 1]/(X[0, 0]*X[1, 1] - X[0, 1]*X[1, 0])');
     expect(s(MatPow(W, k).at(0, 0))).toBe('(W**k)[0, 0]');
     expect(s(MatPow(X, 2).at(0, 1))).toBe('X[0, 0]*X[0, 1] + X[0, 1]*X[1, 1]');
-    // SymPy writes the entry of X**k out with the eigenvalues of X; it is left unevaluated here
-    expect(s(MatPow(X, k).at(0, 0))).toBe('(X**k)[0, 0]');
+    const entry = MatPow(X, k).at(0, 0);
+    expect(s(entry.subs([[X, ImmutableMatrix([[2, 1], [1, 2]])], [k, Rational.of(3)]]).simplify())).toBe('14');
     const e = MatPow(X, -2).at(0, 1);
     const ref = X.at(0, 0).mul(X.at(0, 1)).add(X.at(0, 1).mul(X.at(1, 1))).neg().div(X.at(0, 0).mul(X.at(1, 1)).sub(X.at(0, 1).mul(X.at(1, 0))).pow(2));
     expect(s(e.sub(ref).simplify())).toBe('0');
@@ -1012,7 +1012,7 @@ describe('Expr methods of matrix expressions (SymPy MatrixExpr derives from Expr
     expect(s(MatPow(ImmutableMatrix([[1, 2], [3, 4]]), n).doit())).toBe('Matrix([[1, 2], [3, 4]])**n');
     expect(String(MatPow(ImmutableMatrix([[4, 0], [0, 9]]), half).asExplicit())).toBe('Matrix([[2, 0], [0, 3]])');
     expect(String(MatPow(ImmutableMatrix([[1, 2], [3, 4]]), 2).asExplicit())).toBe('Matrix([[7, 10], [15, 22]])');
-    expect(String(MatPow(A, n).asExplicit())).toBe('Matrix([[(A**n)[0, 0], (A**n)[0, 1]], [(A**n)[1, 0], (A**n)[1, 1]]])');
+    expect(MatPow(A, n).asExplicit().subs([[A, ImmutableMatrix([[2, 1], [1, 2]])], [n, Rational.of(3)]]).simplify().equals(Matrix.of([[14, 13], [13, 14]]))).toBe(true);
     const c = MatrixSymbol('c', 1, 2);
     expect(String(M(MatMul(MatPow(ImmutableMatrix([[4]]), half), c)).asExplicit())).toBe('Matrix([[2*c[0, 0], 2*c[0, 1]]])');
   });
@@ -1148,4 +1148,18 @@ describe('MatrixElement of a scalar product with a matrix (SymPy MatrixKind of a
   it('rejects a scalar', () => {
     expect(() => sj.matrixElement(mul(3, symbol('x')), 0, 0)).toThrow(TypeError);
   });
+});
+
+it('compares matrix identities and shapes and simplifies scalar coefficients', () => {
+  expect(sj.Ne(X, MatrixSymbol('Y', 3, 2))).toBe(S.true);
+  expect(sj.Ne(Identity(1), OneMatrix(1, 1))).toBe(S.false);
+  expect(String(sj.simplify(MatMul(x.add(x), X)))).toBe('(2*x)*X');
+  expect(ImmutableMatrix([[1]]).classPriority).toBe(Matrix.eye(1).classPriority);
+  expect(cast(MatrixSlice(X, [0, 1], [0, 1]), MatrixSliceNode).onDiag).toBe(true);
+});
+
+it('keeps entries of a dense symbolic three-by-three square root unevaluated', () => {
+  const root = MatPow(MatrixSymbol('Q', 3, 3), S.Half);
+  expect(root.at(0, 1)).toBeInstanceOf(MatrixElementNode);
+  expect(root.asExplicit().get(0, 1).key).toBe(root.at(0, 1).key);
 });

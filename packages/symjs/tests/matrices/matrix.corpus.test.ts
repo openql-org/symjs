@@ -4976,7 +4976,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
   it("test_matrix_norm:2918", () => {
     expect(sympyStr(simplify(Rational.of(0n, 1n, { gcd: 1n }), { inverse: false, rational: false, doit: true }))).toBe('0');
   });
-  it.fails("test_matrix_norm:2913 (8)", () => {
+  it("test_matrix_norm:2913 (8)", () => {
     expect(sympyStr(Ge(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(new Add([Rational.of(60n, 1n, { gcd: 1n }), new Mul([Rational.of(4n, 1n, { gcd: 1n }), new Pow(Rational.of(221n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])]), Rational.of(1n, 2n, { gcd: 1n }))]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(new Add([Rational.of(15n, 1n, { gcd: 1n }), new Pow(Rational.of(221n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))]), Rational.of(1n, 2n, { gcd: 1n }))])]), Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_matrix_norm:2913 (9)", () => {
@@ -5001,7 +5001,7 @@ describe("sympy/matrices/tests/test_matrixbase.py", () => {
     const alpha = new Sym('alpha', { real: true });
     expect(sympyStr(simplify(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(new Add([Rational.of(15n, 1n, { gcd: 1n }), new Pow(Rational.of(221n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))]), Rational.of(1n, 2n, { gcd: 1n })), fn('abs', [alpha], { evaluate: false })]), new Mul([new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(new Add([Rational.of(15n, 2n, { gcd: 1n }), new Mul([Rational.of(1n, 2n, { gcd: 1n }), new Pow(Rational.of(221n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])]), Rational.of(1n, 2n, { gcd: 1n })), fn('abs', [alpha], { evaluate: false })])]), { inverse: false, rational: false, doit: true }))).toBe('0');
   });
-  it.fails("test_matrix_norm:2913 (15)", () => {
+  it("test_matrix_norm:2913 (15)", () => {
     expect(sympyStr(Ge(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(new Add([Rational.of(60n, 1n, { gcd: 1n }), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), new Pow(Rational.of(221n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])]), Rational.of(1n, 2n, { gcd: 1n }))]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(new Add([Rational.of(15n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(Rational.of(221n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])]), Rational.of(1n, 2n, { gcd: 1n }))])]), Rational.of(0n, 1n, { gcd: 1n })))).toBe('True');
   });
   it("test_matrix_norm:2913 (16)", () => {

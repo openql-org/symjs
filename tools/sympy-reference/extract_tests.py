@@ -247,6 +247,11 @@ class Instrument(ast.NodeTransformer):
 
     def measured(self, node, site):
         if isinstance(node, ast.Call):
+            if (isinstance(node.func, ast.Name) and node.func.id == "capture" and len(node.args) == 1
+                    and isinstance(node.args[0], ast.Lambda)):
+                body = node.args[0].body
+                if isinstance(body, ast.Call) and isinstance(body.func, ast.Attribute) and body.func.attr == "print_nonzero":
+                    body.func = call_hook("capture_printer", site, body.func.value, ast.Constant(body.func.attr))
             if isinstance(node.func, ast.Attribute):
                 prepared = call_hook("method", site, node.func.value, ast.Constant(node.func.attr))
             else:
@@ -575,6 +580,7 @@ class Capture:
         self.pending = {}
         self.exceptions = {}
         self.bindings = {}
+        self.printers = {}
 
     def metadata(self, site):
         return {"module": self.module, "category": self.category, "test": self.test,
@@ -702,7 +708,7 @@ class Capture:
         except Exception:
             return {"reason": "serialization-error"}
 
-    def invoke(self, site, name, receiver, function, args, kwargs):
+    def invoke(self, site, name, receiver, function, args, kwargs, *, attribute_read=False):
         args, tables = tabulated(args)
         record = self.snapshot(site, name, receiver, [None if i in tables else a for i, a in enumerate(args)], kwargs, function=function)
         self.pending[site] = record
@@ -710,6 +716,8 @@ class Capture:
             result = function(*args, **kwargs)
             if tables and "reason" not in record:
                 self.pending[site] = fill_tables(record, tables)
+            if site in self.printers:
+                self.pending[site]["capturedPrinter"] = self.printers.pop(site)
             return result
         except (extract.Timeout, TestDeadline):
             raise
@@ -718,11 +726,20 @@ class Capture:
             if expected is not None and isinstance(error, expected):
                 if isinstance(expected, tuple):
                     expected = type(error)
+                if attribute_read and isinstance(error, AttributeError) and isinstance(receiver, sympy.MatrixBase):
+                    record["attributeRead"] = True
                 self.finish(site, record, "is", None, raises=expected.__name__)
             else:
                 self.omit(site, "reference-exception")
             self.pending.pop(site, None)
             raise
+
+    def capture_printer(self, site, receiver, name):
+        def printed(*args, **kw):
+            self.printers[site] = {"self": extract.ser(receiver), "fn": "." + name,
+                                   "args": [extract.ser(a) for a in args], "kwargs": {k: extract.ser(v) for k, v in kw.items()}}
+            return getattr(receiver, name)(*args, **kw)
+        return printed
 
     def function(self, site, function):
         name = getattr(function, "__name__", "")
@@ -741,7 +758,7 @@ class Capture:
 
     def synthetic(self, site, name, receiver, *args):
         function = (lambda *a: OPS[name](receiver, *a)) if name in OPS else (lambda: getattr(receiver, name))
-        return self.invoke(site, "." + name, receiver, function, args, {})
+        return self.invoke(site, "." + name, receiver, function, args, {}, attribute_read=name not in OPS)
 
     def finish(self, site, record, op, expected, **extra):
         if "reason" in record:
@@ -761,6 +778,16 @@ class Capture:
             self.omit(site, "unstable-result-representation")
             return
         case = {**self.metadata(site), **{k: v for k, v in record.items() if k != "_dummyIds"}, "expected": text, "op": op, **extra}
+        if self.category == "matrices":
+            from sympy.matrices.common import _MinimalMatrix
+            if op == "!=" and record["fn"] == ".identity":
+                case["expectedOperand"] = extract.ser(expected)
+            elif op == "==" and isinstance(expected, _MinimalMatrix):
+                case["expectedOperand"] = extract.ser(sympy.Matrix(expected.rows, expected.cols, list(expected)))
+            elif op == "==" and ".tests." in type(expected).__module__ and hasattr(expected, "_sympy_"):
+                converted = sympy.sympify(expected)
+                if isinstance(converted, sympy.MatrixBase):
+                    case["expectedOperand"] = {"t": "SympifiableMatrix", "value": extract.ser(converted)}
         if op == "!=" and self.category == "tensor" and isinstance(expected, (sympy.Idx, sympy.Indexed, sympy.IndexedBase, sympy.tensor.tensor.TensorHead)):
             case["comparisonTree"] = extract.ser(expected)
         if op == "!=" and self.category == "polys":
@@ -1264,7 +1291,7 @@ def without_replay_state(value):
     if isinstance(value, dict):
         return {k: without_replay_state(v) for k, v in value.items()
                 if k not in ("tensorData", "exclusion", "unsupportedClass", "indexedAssumptions", "comparisonTree",
-                             "matrixClass", "boundMatrix", "polyReplay", "expectedOperand", "zeroDefault", "divideError",
+                             "matrixClass", "boundMatrix", "capturedPrinter", "attributeRead", "polyReplay", "expectedOperand", "zeroDefault", "divideError",
                              "functionPartials", "randomState", "latticeOperation", "dummyIndex", "globalEvaluate")}
     if isinstance(value, list):
         return [without_replay_state(v) for v in value]
