@@ -1179,3 +1179,18 @@ it('differentiates explicitly unevaluated digamma and trigamma calls', () => {
   expect(diff(digamma(x, { evaluate: false }), x).equals(polygamma(1, x))).toBe(true);
   expect(diff(trigamma(x, { evaluate: false }), x).equals(polygamma(2, x))).toBe(true);
 });
+
+it('deduplicates Min and Max arguments after absorbing a nested bound', () => {
+  expect(Min(x, Max(x, y)).equals(x)).toBe(true);
+  expect(Max(x, Min(x, y)).equals(x)).toBe(true);
+});
+
+it('keeps atan2 symbolic at negative infinity when Heaviside is unavailable', () => {
+  const heaviside = Object.getOwnPropertyDescriptor(impl, 'heaviside');
+  delete impl.heaviside;
+  try {
+    expect(String(atan2(x, S.NegativeInfinity))).toBe('atan2(x, -oo)');
+  } finally {
+    if (heaviside) Object.defineProperty(impl, 'heaviside', heaviside);
+  }
+});

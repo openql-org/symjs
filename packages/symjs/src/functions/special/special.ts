@@ -930,7 +930,7 @@ function collapseMinMax(name: 'Min' | 'Max', argsIn: Expr[]): Expr[] {
     const ai = at(args, i);
     for (let j = i + 1; j < args.length; j++) args[j] = doIt(at(args, j), ai);
   }
-  return args;
+  return uniq(args);
 }
 
 // ---------------------------------------------------------------------------

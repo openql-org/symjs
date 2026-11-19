@@ -525,3 +525,18 @@ it('preserves endpoints and substitutions when simplifying folded branches', () 
   expect(simplify(nonlinear).subs(x, -1).equals(5)).toBe(true);
   expect(simplify(add(closed, 1)).subs(x, 3).equals(5)).toBe(true);
 });
+
+it('preserves interval boundaries and solves branch equalities when simplifying Piecewise', () => {
+  const [x, y] = symbols('x y');
+  const start = Piecewise([1, Le(x, 0)], [2, And(Ge(x, 0), Le(x, 2))], [3, true]);
+  expect(simplify(start)).toEqual(Piecewise([1, Le(x, 0)], [2, Le(x, 2)], [3, true]));
+  const eq = Eq(add(mul(x, add(1, x)), mul(-1, pow(x, 2))), 0);
+  expect(simplify(Piecewise([x, eq], [y, true])).equals(Piecewise([0, Eq(x, 0)], [y, true]))).toBe(true);
+  const point = Piecewise([x, And(Eq(x, 2), Ge(y, 0))], [0, true]);
+  expect(simplify(point).equals(Piecewise([2, And(Eq(x, 2), Ge(y, 0))], [0, true]))).toBe(true);
+  const multi = Piecewise([1, Eq(add(x, y), 2)], [x, true]);
+  expect(simplify(multi).subs([[x, 0], [y, 2]]).equals(S.One)).toBe(true);
+  expect(simplify(add(Piecewise([x, Lt(x, 0)], [y, true]), 1))
+    .equals(Piecewise([add(1, x), Lt(x, 0)], [add(1, y), true]))).toBe(true);
+  expect(simplify(new Piecewise([S.One, S.true])).equals(S.One)).toBe(true);
+});

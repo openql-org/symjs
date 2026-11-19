@@ -12,7 +12,7 @@ import { AlgebraicNumber, minimalPolynomial } from '../polys/numberfields';
 import { add, couldExtractMinusSign, mul, pow, sub, sympify } from '../core/ops';
 import { asContentPrimitive, asIndependent, asNumerDenom, isConstantTruth, isRationalFunction } from '../core/methods';
 import { countOps as opCount } from '../core/match';
-import { mapBottomUp, piecewiseFold, rebuild, some, subs, xreplace } from '../core/traverse';
+import { mapBottomUp, piecewiseFold, piecewiseFoldHooks, rebuild, some, subs, xreplace } from '../core/traverse';
 import { combsimp } from './gammasimp';
 import { besselsimp } from './besselsimp';
 import { Hyper, MeijerG, KroneckerDelta, kroneckersimp } from '../functions/special/hyper';
@@ -28,6 +28,8 @@ import { simplifyRelation } from '../core/relational';
 import { isNegative, isIntegerQ } from '../core/assumptions';
 import type { Truth } from '../core/truth';
 import { simplifyLogic } from '../logic/minimize';
+import { toNnf } from '../logic/normalforms';
+import { simplifySymbolicIntervals } from '../functions/elementary/piecewise';
 import { BoolOp, and } from '../core/boolalg';
 import { simplifyBoolean } from '../logic/minimize';
 import { Eq, Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
@@ -193,6 +195,8 @@ const isExpPow = (x: Expr): x is Pow => x instanceof Pow && x.base.key === S.E.k
  */
 export const simplifyHooks: { hyperexpand?: (e: Expr) => Expr } = {};
 
+piecewiseFoldHooks.normalizeIte = (condition) => simplifyLogic(toNnf(condition), 'cnf');
+
 function isSubstitutionEquation(e: Rel): boolean {
   const variable = (x: Expr): boolean => x instanceof Sym || x instanceof UndefFn;
   return variable(e.lhs) && (variable(e.rhs) || e.rhs instanceof Rational || e.rhs instanceof Constant);
@@ -221,11 +225,12 @@ function piecewiseConditionSet(condition: Expr, x: Sym): SetExpr | undefined {
   return upper ? interval(S.NegativeInfinity, bound, true, strict) : interval(bound, S.Infinity, strict, true);
 }
 
-function simplifyPiecewiseIntervals(e: Piecewise): [Expr, Expr][] {
+function simplifyPiecewiseIntervals(e: Piecewise, opts: SimplifyOptions): [Expr, Expr][] {
   const pairs = e.pairs;
   const vars = [...new Map(pairs.flatMap(([, c]) => [...c.freeSymbols()].map((symbol) => [symbol.key, symbol] as const))).values()];
   const x = vars[0];
-  if (vars.length !== 1 || !(x instanceof Sym)) return pairs;
+  if (vars.length > 1) return simplifySymbolicIntervals(pairs, (condition) => simplify(condition, { ...opts, doit: false }));
+  if (!(x instanceof Sym)) return pairs;
   let covered: SetExpr = EmptySet;
   const result: [Expr, Expr][] = [];
   for (const [value, condition] of pairs) {
@@ -251,7 +256,7 @@ function simplifyPiecewiseIntervals(e: Piecewise): [Expr, Expr][] {
 
 /** Apply branch equalities and merge a point value when it agrees with the next branch. */
 function simplifyPiecewise(e: Piecewise, opts: SimplifyOptions): Expr {
-  const pairs = simplifyPiecewiseIntervals(e).map(([branch, condition]): [Expr, Expr] => {
+  const pairs = simplifyPiecewiseIntervals(e, opts).map(([branch, condition]): [Expr, Expr] => {
     let value = branch;
     const parts = condition instanceof BoolOp && condition.op === 'And' ? condition.args : [condition];
     const equality = (part: Expr): part is Rel => part instanceof Rel && part.op === 'Eq';
