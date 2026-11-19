@@ -41,10 +41,10 @@ export function refreshScopeReport(): void {
   const root = new URL('../..', import.meta.url);
   execFileSync('python3', ['tools/sympy-reference/inventory.py'], { cwd: root, stdio: 'pipe' });
   const inventory: ScopeInventory = JSON.parse(readFileSync(new URL('./scope-inventory.json', import.meta.url), 'utf8'));
-  const markdownFile = new URL('../../compat/REPORT.md', import.meta.url);
+  const markdownFile = new URL('../../docs/doctest-compat-report.md', import.meta.url);
   const markdown = readFileSync(markdownFile, 'utf8');
   writeFileSync(markdownFile, markdown.replace(/## Whole-reference scope\n[\s\S]*?(?=## Extraction audit\n)/, scopeLines(inventory).join('\n') + '\n'));
-  const jsonFile = new URL('../../compat/report.json', import.meta.url);
+  const jsonFile = new URL('../sympy-corpus/compat/results/report.json', import.meta.url);
   if (existsSync(jsonFile)) {
     const report = JSON.parse(readFileSync(jsonFile, 'utf8'));
     report.scope = scopeSummary(inventory);

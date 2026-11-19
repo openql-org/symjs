@@ -29,7 +29,7 @@ bun run typecheck                              # tsc --noEmit, no errors
 bun run lint                                   # oxlint --type-aware --deny-warnings, no warnings
 bun run test                                   # every test passes
 bun run coverage                               # 100% coverage (see below)
-bun run compat                                 # SymPy doctest compatibility, writes compat/REPORT.md
+bun run corpus:compat                          # write the doctest and unit-test compatibility reports in docs/
 bun run corpus:report                          # corpus tests, writes docs/compat-report.md
 bun run build && bun scripts/size.mjs --check  # bundle sizes within budget
 bun run test:package                           # built ESM/CJS, minification and consumer type resolution
@@ -42,7 +42,7 @@ pnpm run typecheck
 pnpm run lint
 pnpm run test
 pnpm run coverage
-pnpm run compat
+pnpm run corpus:compat
 pnpm run corpus:report
 pnpm run build && node scripts/size.mjs --check
 pnpm run test:package
@@ -114,10 +114,10 @@ pnpm run test:package
 - Deliberate differences from SymPy are allowed when they are documented
   the same way.
 - SymPy doctests and API names that symjs does not support yet are listed in
-  `compat/known-gaps.json`. A change may only shrink that list: `bun run compat`
+  `tools/sympy-corpus/doctest-known-gaps.json`. A change may only shrink that list: `bun run corpus:compat`
   fails when an unlisted case stops passing and when a listed case starts
   passing. After fixing listed cases, rewrite the list with
-  `UPDATE_KNOWN_GAPS=1 bunx vitest run --config compat/vitest.config.ts`
+  `UPDATE_KNOWN_GAPS=1 bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts`
   and check that it only lost entries.
   Expanding the pinned reference scope or correcting an invalid measurement
   can establish a new baseline; the commit message records the old and new counts.
@@ -133,7 +133,7 @@ pnpm run test:package
   local paths such as a home directory or a temporary directory, which can
   contain personal information.
 
-For corpus expansion, use `bun run compat:expand` with SymPy 1.14.0 installed.
+For corpus expansion, use `bun run corpus:expand` with SymPy 1.14.0 installed.
 It retains every existing case (including duplicate documented occurrences),
 preserves anonymous Dummy names and the established external-sampler fixture,
 and fails if another existing input or result changes or disappears. Public
@@ -141,12 +141,12 @@ functions defined in a selected module are measured even if they are not
 re-exported at the top level. Multiline results remain measurable; outputs
 containing process-local object addresses are recorded as extraction omissions.
 When the extractor itself improves (a new serialization or a new omission
-rule), `bun run compat:refresh` re-extracts every existing example in place: each
+rule), `bun run corpus:refresh` re-extracts every existing example in place: each
 occurrence keeps its position and takes the current serialization, an example
 the extractor now omits is dropped only with its recorded omission reason, and
 any other disappearance still fails.
-Run `bun run compat:test-extract` when changing the extractor. Newly revealed
-failures go to `compat/known-gaps.json`; a lower agreement percentage after
+Run `bun run corpus:test-extract` when changing the extractor. Newly revealed
+failures go to `tools/sympy-corpus/doctest-known-gaps.json`; a lower agreement percentage after
 adding previously unmeasured behavior is not itself an implementation
 regression.
 
@@ -195,16 +195,16 @@ benchmark. Every method is tested against mpmath at the table boundaries.
 The independent unit-test corpus covers the base package's 30 top-level SymPy
 areas, including their nested test directories. `tools/sympy-reference/extract_tests.py`
 contains file-level scope rules for printing, parsing, categories and utilities;
-`compat/TESTS-REPORT.md` lists excluded files and technical reasons. Optional
+`docs/unittest-compat-report.md` lists excluded files and technical reasons. Optional
 dependencies and unsupported test constructs appear in the extraction audit.
 
 ```sh
-bun run compat:extract-tests                       # SymPy 1.14.0, four isolated processes
-bun run compat:extract-tests --only sets,geometry  # replace only these categories
-bun run compat:extract-tests --only polys --jobs 2 # includes agca/domains/matrices/numberfields
-bun run compat:test-extract
-bunx vitest run --config compat/vitest.config.ts --project unit-geometry
-UPDATE_KNOWN_GAPS=1 bunx vitest run --config compat/vitest.config.ts
+bun run corpus:extract-tests                       # SymPy 1.14.0, four isolated processes
+bun run corpus:extract-tests --only sets,geometry  # replace only these categories
+bun run corpus:extract-tests --only polys --jobs 2 # includes agca/domains/matrices/numberfields
+bun run corpus:test-extract
+bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts --project unit-geometry
+UPDATE_KNOWN_GAPS=1 bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts
 ```
 
 `tools/sympy-corpus/tests-corpus/index.json` is the manifest. Each category has one or more
@@ -225,16 +225,16 @@ separately under the established exception assertion convention.
 
 `tools/sympy-corpus/tests-known-gaps.json` is the independent unit-test ratchet. Existing
 case IDs include the complete record, with its field order, and remain stable
-when records move to shards. A full run writes `compat/TESTS-REPORT.md`, the
-summary `compat/tests-report.json`, and per-category failure details in
-`compat/tests-results/*.jsonl`. A single coordinator updates the ratchet after
+when records move to shards. A full run writes `docs/unittest-compat-report.md`, the
+summary `tools/sympy-corpus/compat/results/tests-report.json`, and per-category failure details in
+`tools/sympy-corpus/compat/results/tests-results/*.jsonl`. A single coordinator updates the ratchet after
 all categories finish; partial project runs cannot replace the full report or
 ratchet. When expanding scope, distinguish newly measured gaps from regressions
 in existing cases. The doctest corpus and its ratchet remain independent.
 
 Repeated omission records share a `count` in category audit files. Counts retain
 every examined loop observation without repeating identical source metadata.
-`bun run compat:extract-tests --compact-audits` losslessly repacks these audits
+`bun run corpus:extract-tests --compact-audits` losslessly repacks these audits
 without changing case records or re-executing upstream tests.
 
 Replay deadlines remain in the measured totals and failure groups. The ratchet
@@ -314,14 +314,14 @@ bun run corpus:report    # the new rates
 After re-extracting part of the reference (here SymPy's geometry unit tests):
 
 ```sh
-bun run compat:extract-tests --only geometry  # SymPy 1.14.0 → tools/sympy-corpus/tests-corpus/
-bun run compat:test-extract                   # the extractor's own tests
+bun run corpus:extract-tests --only geometry  # SymPy 1.14.0 → tools/sympy-corpus/tests-corpus/
+bun run corpus:test-extract                   # the extractor's own tests
 bun run corpus:generate                       # repeat until type errors and unreproduced are 0
 bun run corpus:report
 ```
 
-Doctests are re-extracted with `bun run compat:expand` (new modules) or
-`bun run compat:refresh` (every existing example).
+Doctests are re-extracted with `bun run corpus:expand` (new modules) or
+`bun run corpus:refresh` (every existing example).
 
 To look at the conversion of some cases without writing files:
 

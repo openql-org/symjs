@@ -78,7 +78,7 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/liealgebras` | `CartanType`, `CartanMatrix`, `DynkinDiagram`, `RootSystem` and `WeylGroup` of the simple Lie algebras |
 | `@symjs/symjs/codegen` | The C99 math functions of `sympy.codegen.cfunctions`: `expm1`, `log1p`, `exp2`, `log2`, `fma`, `log10`, `Sqrt`, `Cbrt`, `hypot`, `isnan`, `isinf` |
 
-Differential geometry mirrors `sympy.diffgeom`: import its names from `@symjs/symjs/diffgeom`. Its doctests and unit assertions are included in the [base compatibility reports](compat/README.md).
+Differential geometry mirrors `sympy.diffgeom`: import its names from `@symjs/symjs/diffgeom`. Its doctests and unit assertions are included in the [base compatibility reports](tools/sympy-corpus/README.md#harness-replay).
 
 LaTeX parsing is imported separately:
 
@@ -117,8 +117,8 @@ tools/
   sympy-reference/      SymPy scope inventory, public API snapshot, case extractors and the
                         generators of expected values from SymPy (generators/, Python)
   sympy-corpus/         extracted SymPy cases, replay harness, converter to *.corpus.test.ts
-                        and the compatibility report of the corpus tests
-compat/                 doctest and unit-test compatibility ratchets and reports
+    compat/             doctest and unit-test compatibility runs and report writers
+docs/                   doctest and unit-test compatibility reports and the generated corpus test report
 scripts/                package build steps and checks (declarations, bundle sizes, side effects, built files)
 ```
 
@@ -129,26 +129,25 @@ To add an extend module, create `packages/<name>/` with its own `package.json` (
 Compatibility has separate measurements; none is a whole-SymPy completion percentage:
 
 - The pinned [scope inventory](tools/sympy-reference/scope-inventory.json) lists **all 825 production modules of SymPy 1.14.0**, including complete, partial, unassessed, extend (planned for an extend package such as physics) and explicitly excluded modules. Complete modules have every public export and class member except Python-specific ones (operator dunders and class type flags such as `is_Add`) and names SymPy deprecates or keeps internal (see [docs/api-policy.md](docs/api-policy.md)), passing doctest and unit-test evidence with only explicitly allowed omissions, and no recorded limitation (a module without an upstream SymPy test file has no applicable unit-test criterion and relies on the per-file 100% coverage of its own tests); partial modules list the criteria that fail.
-- **Corpus result agreement** measures extracted examples. The [extraction audit](compat/REPORT.md#extraction-audit) records omitted examples and their reasons.
+- **Corpus result agreement** measures extracted examples. The [extraction audit](docs/doctest-compat-report.md#extraction-audit) records omitted examples and their reasons.
 - **Verified public-call results** count automatic public API calls and reviewed conversion adapters. Mathematical computations remaining in the harness and unreviewed translations are reported separately, even when their results match.
 - **API presence** requires an actual exported function or member, with its concrete path recorded. It does not establish behavior or completeness. An adapter alone no longer counts as an API.
 - [Capability conditions](tools/sympy-reference/capabilities.json) link direct public-API tests to their mathematical conditions and remaining limitations.
 - Unit coverage must reach 100% of statements, branches, functions and lines. This is a code-test metric, not SymPy compatibility.
 
-The current counts are generated in [compat/REPORT.md](compat/REPORT.md).
-Unmatched examples and names without a verified public counterpart are tracked in `compat/known-gaps.json`.
+The [doctest compatibility report](docs/doctest-compat-report.md) gives the current counts.
+The [unit-test compatibility report](docs/unittest-compat-report.md) measures assertions extracted from SymPy's unit tests.
+Unmatched examples and names without a verified public counterpart are tracked in `tools/sympy-corpus/doctest-known-gaps.json`.
 The regression baseline now includes previously unmeasured mathematics and
 APIs incorrectly counted solely from adapter presence; changes within this
 scope must shrink the gap list. Cases include an input/output digest so that
 repeated doctest source lines with different inputs remain distinct.
 
 ```sh
-bun run compat                                                        # run the tests with coverage and the corpus, write compat/REPORT.md
-UPDATE_KNOWN_GAPS=1 bunx vitest run --config compat/vitest.config.ts  # rewrite compat/known-gaps.json
-bun run compat:extract                                                # regenerate tools/sympy-corpus/corpus.json from the installed SymPy
+bun run corpus:compat  # run tests with coverage, then replay both corpora and write their reports
+bun run corpus:extract # regenerate tools/sympy-corpus/corpus.json from the installed SymPy
+UPDATE_KNOWN_GAPS=1 bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts
 ```
-
-See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest-impact gaps.
 
 The extracted cases also run as vitest tests of the public API
 (`packages/symjs/tests/**/*.corpus.test.ts`): `bun run corpus:generate` converts
@@ -233,7 +232,7 @@ accepts `locals` with values and functions by name.
 
 ## Current limitations
 
-See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable gaps:
+See [docs/doctest-compat-report.md](docs/doctest-compat-report.md) for the measured compatibility. Notable gaps:
 
 - `simplify` is a lighter heuristic than SymPy's; results can differ in form
 - `factor` over general algebraic extensions remains limited; number-field presentation constraints are recorded in `tools/sympy-reference/capabilities.json`.

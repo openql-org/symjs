@@ -898,7 +898,7 @@ def load_evidence(root, corpus):
             if module in units:
                 units[module]['timeouts' if kind == 'timeouts' else 'gaps'].append(case_id)
     return {'doctests': by_module(corpus['cases']), 'doctestOmissions': by_module(corpus['extraction']['omitted']),
-            'doctestGaps': read(root / 'compat/known-gaps.json')['cases'],
+            'doctestGaps': read(corpora / 'doctest-known-gaps.json')['cases'],
             'doctestExclusions': read(root / 'tools/sympy-reference/doctest-exclusions.json'),
             'units': units, 'upstreamTests': upstream_tests(), 'limitations': read(root / 'tools/sympy-reference/capabilities.json')['areas']}
 

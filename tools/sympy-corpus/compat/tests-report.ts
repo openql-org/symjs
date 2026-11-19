@@ -3,8 +3,8 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { refreshScopeReport } from '../tools/sympy-reference/scope-report';
-import type { TestOutcome } from '../tools/sympy-corpus/tests-harness.js';
+import { refreshScopeReport } from '../../sympy-reference/scope-report.js';
+import type { TestOutcome } from '../tests-harness.js';
 
 export interface Counts { cases: number; exact: number; equivalent: number; fail: number; unsupported: number; error: number }
 export interface Audit {
@@ -25,7 +25,7 @@ export interface CategoryResult {
 }
 export const emptyCounts = (): Counts => ({ cases: 0, exact: 0, equivalent: 0, fail: 0, unsupported: 0, error: 0 });
 export const ratio = (a: number, b: number): string => b === 0 ? '-' : `${(100 * a / b).toFixed(2)}%`;
-export const corpusIndex = (): CorpusIndex => JSON.parse(readFileSync(new URL('../tools/sympy-corpus/tests-corpus/index.json', import.meta.url), 'utf8'));
+export const corpusIndex = (): CorpusIndex => JSON.parse(readFileSync(new URL('../tests-corpus/index.json', import.meta.url), 'utf8'));
 
 export function failureKind(o: TestOutcome): string {
   if (o.status === 'fail') return o.got === 'did not raise' ? 'exception not raised' : 'wrong result';
@@ -71,7 +71,7 @@ export function writeTestsReport(directory: string, suiteSeconds: number): void 
   const mismatch = results.flatMap((r) => r.exceptionMismatches);
   const seconds = results.reduce((n, r) => n + r.seconds, 0);
   const lines = [
-    '# SymPy unit-test compatibility', '',
+    '# SymPy unit-test agreement from harness replay (`bun run corpus:compat`)', '',
     `Reference: SymPy ${index.sympy}. Independent of the doctest corpus and its ratchet.`, '',
     `Measured **${total.cases}** cases: **${total.exact} exact**, **${total.equivalent} equivalent**, **${failing.length} failing**. Agreement: **${ratio(total.exact + total.equivalent, total.cases)}**.`, '',
     `Compatibility suite wall time: **${suiteSeconds.toFixed(2)} s**. Sum of category replay times: **${seconds.toFixed(2)} s** (projects run in parallel).`, '',
@@ -99,16 +99,16 @@ export function writeTestsReport(directory: string, suiteSeconds: number): void 
   for (const r of results) for (const [api, n] of Object.entries(r.apiGroups).sort((a, b) => b[1] - a[1]).slice(0, 10)) lines.push(`| ${r.category} | ${api} | ${n} |`);
   lines.push('', '## Corpus files', '', '| Category | Cases bytes | Audit bytes | Shards |', '|---|---:|---:|---:|');
   for (const [name, a] of Object.entries(index.categories)) lines.push(`| ${name} | ${a.shards.reduce((n, s) => n + s.bytes, 0)} | ${a.auditBytes} | ${a.shards.length} |`);
-  lines.push('', 'Case shards contain one JSON case per line, with ASCII escapes and finite JSON numbers. Shards are at most 25 MB. tests-report.json contains summaries only; tests-results/*.jsonl contains one failure per line.', '',
+  lines.push('', 'Case shards contain one JSON case per line, with ASCII escapes and finite JSON numbers. Shards are at most 25 MB. In `tools/sympy-corpus/compat/results/`, `tests-report.json` contains summaries and `tests-results/*.jsonl` contains one failure per line.', '',
     '## Out-of-scope test files', '', '| File (relative to sympy/) | Technical reason |', '|---|---|');
   for (const { file, reason } of index.excludedFiles) lines.push(`| ${file} | ${reason} |`);
   lines.push('', `Accepted exception class mismatches: **${mismatch.length}**. Their case IDs and classes are retained in tests-report.json.`, '');
-  writeFileSync(new URL('./TESTS-REPORT.md', import.meta.url), lines.join('\n'));
-  writeFileSync(new URL('./tests-report.json', import.meta.url), JSON.stringify({
+  writeFileSync(new URL('../../../docs/unittest-compat-report.md', import.meta.url), lines.join('\n'));
+  writeFileSync(new URL('./results/tests-report.json', import.meta.url), JSON.stringify({
     sympy: index.sympy, suiteSeconds, seconds, total,
     categories: Object.fromEntries(results.map((r) => [r.category, { ...r, failures: r.failures.length }])),
     extraction: index,
   }, null, 1) + '\n');
-  if (process.env['UPDATE_KNOWN_GAPS']) writeFileSync(new URL('../tools/sympy-corpus/tests-known-gaps.json', import.meta.url), JSON.stringify({ cases: failing, timeouts }, null, 1) + '\n');
+  if (process.env['UPDATE_KNOWN_GAPS']) writeFileSync(new URL('../tests-known-gaps.json', import.meta.url), JSON.stringify({ cases: failing, timeouts }, null, 1) + '\n');
   refreshScopeReport();
 }

@@ -1,10 +1,10 @@
-# SymPy unit-test compatibility
+# SymPy unit-test agreement from harness replay (`bun run corpus:compat`)
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
 Measured **122663** cases: **120038 exact**, **2625 equivalent**, **0 failing**. Agreement: **100.00%**.
 
-Compatibility suite wall time: **100.95 s**. Sum of category replay times: **158.41 s** (projects run in parallel).
+Compatibility suite wall time: **101.28 s**. Sum of category replay times: **156.06 s** (projects run in parallel).
 
 Extraction wall time: **12.02 s**, 4 processes, 120 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
@@ -20,37 +20,37 @@ Exact includes successful inequality, identity, boolean and exception assertions
 |---|---:|---:|---:|---:|---:|---:|
 | algebras | 133 | 133 | 0 | 0 | 100.00% | 0.22 |
 | assumptions | 2245 | 2208 | 37 | 0 | 100.00% | 0.77 |
-| calculus | 525 | 524 | 1 | 0 | 100.00% | 1.31 |
-| categories | 333 | 333 | 0 | 0 | 100.00% | 0.72 |
-| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.27 |
+| calculus | 525 | 524 | 1 | 0 | 100.00% | 1.07 |
+| categories | 333 | 333 | 0 | 0 | 100.00% | 0.69 |
+| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.28 |
 | combinatorics | 2196 | 2196 | 0 | 0 | 100.00% | 0.61 |
-| concrete | 937 | 879 | 58 | 0 | 100.00% | 4.82 |
-| core | 9291 | 9104 | 187 | 0 | 100.00% | 8.02 |
-| crypto | 5067 | 5067 | 0 | 0 | 100.00% | 0.41 |
-| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 0.54 |
-| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.39 |
-| functions | 10649 | 8889 | 1760 | 0 | 100.00% | 18.89 |
-| geometry | 1102 | 1096 | 6 | 0 | 100.00% | 2.33 |
-| holonomic | 190 | 186 | 4 | 0 | 100.00% | 1.44 |
-| integrals | 1424 | 1341 | 83 | 0 | 100.00% | 7.64 |
+| concrete | 937 | 879 | 58 | 0 | 100.00% | 4.85 |
+| core | 9291 | 9104 | 187 | 0 | 100.00% | 8.61 |
+| crypto | 5067 | 5067 | 0 | 0 | 100.00% | 0.42 |
+| diffgeom | 210 | 204 | 6 | 0 | 100.00% | 0.58 |
+| discrete | 192 | 191 | 1 | 0 | 100.00% | 0.40 |
+| functions | 10649 | 8889 | 1760 | 0 | 100.00% | 17.89 |
+| geometry | 1102 | 1096 | 6 | 0 | 100.00% | 1.99 |
+| holonomic | 190 | 186 | 4 | 0 | 100.00% | 1.48 |
+| integrals | 1424 | 1341 | 83 | 0 | 100.00% | 7.84 |
 | liealgebras | 93 | 88 | 5 | 0 | 100.00% | 0.03 |
-| logic | 7608 | 7606 | 2 | 0 | 100.00% | 0.95 |
-| matrices | 5093 | 5068 | 25 | 0 | 100.00% | 18.14 |
-| ntheory | 45168 | 45168 | 0 | 0 | 100.00% | 5.02 |
-| parsing | 868 | 801 | 67 | 0 | 100.00% | 0.21 |
-| plotting | 49 | 49 | 0 | 0 | 100.00% | 0.02 |
-| polys | 12154 | 12052 | 102 | 0 | 100.00% | 32.39 |
-| printing | 2143 | 2141 | 2 | 0 | 100.00% | 0.36 |
-| series | 1674 | 1643 | 31 | 0 | 100.00% | 8.70 |
-| sets | 1858 | 1848 | 10 | 0 | 100.00% | 0.38 |
-| simplify | 1525 | 1483 | 42 | 0 | 100.00% | 3.16 |
-| solvers | 4618 | 4467 | 151 | 0 | 100.00% | 21.00 |
-| stats | 2021 | 1991 | 30 | 0 | 100.00% | 12.22 |
+| logic | 7608 | 7606 | 2 | 0 | 100.00% | 1.05 |
+| matrices | 5093 | 5068 | 25 | 0 | 100.00% | 17.92 |
+| ntheory | 45168 | 45168 | 0 | 0 | 100.00% | 5.10 |
+| parsing | 868 | 801 | 67 | 0 | 100.00% | 0.20 |
+| plotting | 49 | 49 | 0 | 0 | 100.00% | 0.03 |
+| polys | 12154 | 12052 | 102 | 0 | 100.00% | 31.77 |
+| printing | 2143 | 2141 | 2 | 0 | 100.00% | 0.37 |
+| series | 1674 | 1643 | 31 | 0 | 100.00% | 8.82 |
+| sets | 1858 | 1848 | 10 | 0 | 100.00% | 0.40 |
+| simplify | 1525 | 1483 | 42 | 0 | 100.00% | 2.66 |
+| solvers | 4618 | 4467 | 151 | 0 | 100.00% | 20.55 |
+| stats | 2021 | 1991 | 30 | 0 | 100.00% | 11.86 |
 | strategies | 7 | 7 | 0 | 0 | 100.00% | 0.01 |
-| tensor | 1953 | 1953 | 0 | 0 | 100.00% | 1.39 |
+| tensor | 1953 | 1953 | 0 | 0 | 100.00% | 1.50 |
 | unify | 16 | 16 | 0 | 0 | 100.00% | 0.01 |
-| utilities | 556 | 549 | 7 | 0 | 100.00% | 4.71 |
-| vector | 694 | 690 | 4 | 0 | 100.00% | 1.33 |
+| utilities | 556 | 549 | 7 | 0 | 100.00% | 4.74 |
+| vector | 694 | 690 | 4 | 0 | 100.00% | 1.36 |
 
 ## Extraction audit
 
@@ -594,7 +594,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | utilities | 1465456 | 195453 | 1 |
 | vector | 2103042 | 28350 | 1 |
 
-Case shards contain one JSON case per line, with ASCII escapes and finite JSON numbers. Shards are at most 25 MB. tests-report.json contains summaries only; tests-results/*.jsonl contains one failure per line.
+Case shards contain one JSON case per line, with ASCII escapes and finite JSON numbers. Shards are at most 25 MB. In `tools/sympy-corpus/compat/results/`, `tests-report.json` contains summaries and `tests-results/*.jsonl` contains one failure per line.
 
 ## Out-of-scope test files
 

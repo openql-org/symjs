@@ -21,10 +21,10 @@ converter turns them into vitest tests; the pipeline and its procedures are in
 For unit-test extraction and selective replay:
 
 ```sh
-bun run compat:extract-tests --only geometry,vector
-bun run compat:extract-tests --only diffgeom
-bun run compat:test-extract
-bunx vitest run --config compat/vitest.config.ts --project unit-geometry
+bun run corpus:extract-tests --only geometry,vector
+bun run corpus:extract-tests --only diffgeom
+bun run corpus:test-extract
+bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts --project unit-geometry
 ```
 
 With pnpm, `bunx` becomes `pnpm exec` and `bun run` becomes `pnpm run`
@@ -57,7 +57,7 @@ the default one of `randMatrix`, are seeded deterministically during extraction.
 
 Repeated omission records share a `count` in category audit files. Counts retain
 every examined loop observation without repeating identical source metadata.
-`bun run compat:extract-tests --compact-audits` losslessly repacks these audits
+`bun run corpus:extract-tests --compact-audits` losslessly repacks these audits
 without changing case records or re-executing upstream tests.
 
 `tensorData` snapshots the component replacements needed by a unit-test call:

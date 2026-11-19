@@ -9,8 +9,8 @@ const directory = mkdtempSync(join(tmpdir(), 'symjs-unit-results-'));
 let start = 0;
 const resolve = {
   alias: [
-    { find: /^@symjs\/symjs$/, replacement: fileURLToPath(new URL('../packages/symjs/src/index.ts', import.meta.url)) },
-    { find: /^@symjs\/symjs\/(.*)$/, replacement: fileURLToPath(new URL('../packages/symjs/src/', import.meta.url)) + '$1.ts' },
+    { find: /^@symjs\/symjs$/, replacement: fileURLToPath(new URL('../../../packages/symjs/src/index.ts', import.meta.url)) },
+    { find: /^@symjs\/symjs\/(.*)$/, replacement: fileURLToPath(new URL('../../../packages/symjs/src/', import.meta.url)) + '$1.ts' },
   ],
 };
 
@@ -24,9 +24,9 @@ export default defineConfig({
       onTestRunEnd() { writeTestsReport(directory, (performance.now() - start) / 1000); rmSync(directory, { recursive: true, force: true }); },
     }],
     projects: [
-      { resolve, test: { name: 'doctests-and-harness', include: ['compat/**/*.test.ts', 'tools/sympy-corpus/serialization.test.ts', 'tools/sympy-corpus/tests-harness.test.ts'], exclude: ['compat/tests-compat.test.ts'], testTimeout: 600_000 } },
+      { resolve, test: { name: 'doctests-and-harness', include: ['tools/sympy-corpus/compat/**/*.test.ts', 'tools/sympy-corpus/serialization.test.ts', 'tools/sympy-corpus/tests-harness.test.ts'], exclude: ['tools/sympy-corpus/compat/tests-compat.test.ts'], testTimeout: 600_000 } },
       ...Object.keys(corpusIndex().categories).map((category) => ({ resolve, test: {
-        name: `unit-${category}`, include: ['compat/tests-compat.test.ts'], testTimeout: 600_000,
+        name: `unit-${category}`, include: ['tools/sympy-corpus/compat/tests-compat.test.ts'], testTimeout: 600_000,
         provide: { testsCategory: category, testsResults: directory },
       } })),
     ],
