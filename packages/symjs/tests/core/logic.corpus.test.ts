@@ -6026,7 +6026,7 @@ describe("sympy/functions/elementary/tests/test_piecewise.py", () => {
     const x = new Sym('x');
     expect(sympyStr(piecewiseExclusive(piecewise([Rational.of(0n, 1n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(1n, 2n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [Rational.of(1n, 1n, { gcd: 1n }), true], { evaluate: false }), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
   });
-  it.fails("test_piecewise_exclusive:744", () => {
+  it("test_piecewise_exclusive:744", () => {
     const x = new Sym('x');
     expect(sympyStr(piecewiseExclusive(new Add([Rational.of(2n, 1n, { gcd: 1n }), piecewise([Rational.of(0n, 1n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Rational.of(1n, 2n, { gcd: 1n }), Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '<=', { evaluate: false })], [Rational.of(1n, 1n, { gcd: 1n }), true], { evaluate: false })]), { skipNan: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0)) + 2');
   });

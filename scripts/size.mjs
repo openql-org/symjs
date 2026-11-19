@@ -62,11 +62,13 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // The manual integration fallback adds about 4 KiB to consumers of integrate.
 // Matrix coercion, analytic functions, index contractions and scalar matrix derivatives
 // add up to 3.2 KiB to the Matrix import and 4.7 KiB to the root namespace.
+// Algebraic comparisons add 60 bytes to core and sets. Matrix powers and
+// derivatives add about 0.8 KiB to geometry and 2.2 KiB to the root.
 const CASES = [
   ['core', 'Rational', 297],
   ['core', 'parse, str', 314],
   ['core', 'parse, diff, expand, str, latex', 314],
-  ['core', '*', 390],
+  ['core', '*', 391],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   // Meijer G derivatives, support intervals and branch-preserving integral rewrites.
   ['special', '*', 530],
@@ -82,7 +84,7 @@ const CASES = [
   ['calculus', 'integrate', 1260],
   ['solvers', 'solve', 1354],
   ['solvers', 'dsolve', 1378],
-  ['sets', '*', 517],
+  ['sets', '*', 518],
   ['matrices', 'Matrix', 1124],
   ['printing', 'pretty', 335],
   ['discrete', '*', 397],
@@ -94,7 +96,7 @@ const CASES = [
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 731],
   ['holonomic', 'exprToHolonomic', 1440],
-  ['geometry', '*', 1315],
+  ['geometry', '*', 1316],
   ['vector', '*', 1422],
   ['stats', '*', 1604],
   // Diagram layout, pretty grids and Xy-pic text generation.
@@ -113,7 +115,7 @@ const CASES = [
   // quadrature, exact cosine tables, symbolic acceleration and Sylow subgroups (measured 2730 KiB).
   // Tensor axis normalization, indexed broadcasting and matrix-array conversions.
   // Polynomial remainder sequences, Hensel lifting and module orders add up to 2 KiB.
-  ['index', '*', 3104],
+  ['index', '*', 3105],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1323],
 ];

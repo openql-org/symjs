@@ -775,3 +775,9 @@ it('checks analyticity at each eigenvalue with its multiplicity', () => {
   expect(L.gaussJordanSolve(Matrix.zeros(1, 2), Matrix.col(0))[1].data.map(String)).toEqual(['tau0', 'tau1']);
   expect(L.gaussJordanSolve(Matrix.row(1, 0), Matrix.col(sj.symbol('tau9')))[1].data.map(String)).toEqual(['_tau0']);
 });
+
+it('accepts a monic coefficient sequence and eliminates a trigonometric zero', () => {
+  expect(String(L.companion([S.One, S.Zero, S.One]))).toBe('Matrix([[0, -1], [1, 0]])');
+  const zero = parse('sin(x)**2 + cos(x)**2 - 1');
+  expect(L.rref(Matrix.col(zero))[1]).toEqual([]);
+});

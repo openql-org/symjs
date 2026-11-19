@@ -131,3 +131,15 @@ it('retains factors in scalar differentials and contracts elementwise vector Jac
   expect(str(diff(MatMul(w.T, MatAdd(X, A), v), X))).toBe('w*v.T');
   expect(str(diff(Trace(MatMul(X, A)), X))).toBe('A.T');
 });
+
+it('keeps the axes of a column-vector product separate through a transpose', async () => {
+  const { diff, MatAdd, MatPow } = await import('../../../src');
+  const v = MatrixSymbol('v', 3, 1), A = MatrixSymbol('A', 3, 3), B = MatrixSymbol('B', 3, 3);
+  expect(str(diff(MatMul(v, v.T, v), v))).toBe('KroneckerProduct(I, v.T*v) + 2*v*v.T');
+  expect(str(diff(MatPow(MatMul(v.T, A, v), S.Half), v))).toContain('**(-1/2)');
+  expect(str(diff(MatMul(v.T, MatMul(3, MatAdd(A, B), A), v), A))).toContain('v.T');
+  expect(str(diff(MatAdd(v, MatMul(A, v)), v))).toBe('I + A.T');
+  expect(str(diff(Trace(MatMul(Trace(A), A)), A))).toBe('(2*Trace(A))*I');
+  expect(str(diff(Trace(MatPow(A, 2)), A))).toBe('2*A.T');
+  expect(str(diff(v.T, v))).toBe('I');
+});

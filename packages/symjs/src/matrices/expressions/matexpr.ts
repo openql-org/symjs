@@ -21,8 +21,8 @@ export { ShapeError } from '../../core/errors';
 import { at, cast, last } from '../../core/guard';
 import { LambdaNode } from '../../core/lambda';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Add, Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
-import { isIntegerQ, isNegative, isZero } from '../../core/assumptions';
+import { Add, Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, impl, registerArithmetic, registerFromiter, registerHead } from '../../core/nodes';
+import { isIntegerQ, isNegative, isPositive, isZero } from '../../core/assumptions';
 import { and } from '../../core/boolalg';
 import { Eq } from '../../core/logic';
 import { add, mul, pow, sympify } from '../../core/ops';
@@ -1362,6 +1362,9 @@ export class MatMulNode extends MatrixExpr {
   withArgs(args: readonly Expr[]): Expr {
     return new MatMulNode(args);
   }
+  override simplifySelf(simplify: (e: Expr) => Expr): Expr {
+    return this.withArgs(this.args.map((a) => a instanceof MatrixExpr ? a.simplify() : simplify(a)));
+  }
   /** SymPy as_coeff_matrices: the scalar factor and the matrices. */
   asCoeffMatrices(): [Expr, MatrixExpr[]] {
     const scalars = this.args.filter((a) => !(a instanceof MatrixExpr));
@@ -1479,8 +1482,20 @@ function matMul(...args: MatArg[]): Expr {
   return asMat(MatMulNode.create(args)).doit();
 }
 
-// SymPy's constructor postprocessors of MatrixExpr: Add(...) and Mul(...) with matrix arguments
-// build MatAdd and MatMul (a sum of scalars and matrices stays an Add, as in SymPy), Pow(M, e) is MatPow
+// Matrix equality first compares shapes. Matrices with undecidable entries
+// retain an unevaluated relation, just as scalar expressions do.
+const previousRelation = impl.relational?.bind(impl);
+impl.relational = (op, a, b) => {
+  if ((op === 'Eq' || op === 'Ne') && a instanceof MatrixExpr && b instanceof MatrixExpr
+      && !(a instanceof GenericIdentityNode || b instanceof GenericIdentityNode || a instanceof GenericZeroMatrixNode || b instanceof GenericZeroMatrixNode)) {
+    const dims = [Eq(a.rows, b.rows), Eq(a.cols, b.cols)];
+    if (dims.includes(S.false)) return op === 'Eq' ? S.false : S.true;
+    if (dims.every((d) => d === S.true) && a.isIdentity === true && b.isIdentity === true) return op === 'Eq' ? S.true : S.false;
+  }
+  return previousRelation?.(op, a, b);
+};
+
+// SymPy constructor postprocessors route matrix arithmetic to the matrix expression classes.
 registerArithmetic((op, args) => {
   if (!args.some((a) => a instanceof MatrixExpr)) return undefined;
   switch (op) {
@@ -1744,11 +1759,9 @@ export class MatPowNode extends MatrixExpr {
         const base = A.base;
         A = new MatMulNode(Array.from({ length: toInt(e) }, () => base));
       } else if (isInt(this.rows) && isInt(this.cols)) {
-        const m = A.base.asExplicit();
         // a positive exponent was expanded above and doit turns the exponent 0 into Identity
-        const p = isInt(e) ? m.inv().pow(-toInt(e)) : explicitPower(m, e);
-        if (p) return new ImmutableMatrixNode(p).at(i, j);
-        return new MatrixElementNode(this, i, j);
+        const p = isInt(e) ? A.base.asExplicit().inv().pow(-toInt(e)) : A.explicitNonIntegerPower();
+        return p ? new ImmutableMatrixNode(p).at(i, j) : new MatrixElementNode(this, i, j);
       } else return new MatrixElementNode(this, i, j);
     }
     return cast(A, MatrixExpr).at(i, j);
@@ -1771,9 +1784,20 @@ export class MatPowNode extends MatrixExpr {
     if (same(exp, S.NegOne)) return InverseNode.create(b).doit(hints);
     return b.evalPower(exp);
   }
+  private explicitNonIntegerPower(): Matrix | undefined {
+    const m = this.base.asExplicit();
+    if (this.base instanceof MatMulNode && isPositive(this.exp) === true) {
+      // A rank-one outer product satisfies M**2 = trace(M)*M.
+      const [, factors] = this.base.asCoeffMatrices();
+      if (factors.slice(0, -1).some((f) => same(f.cols, S.One)) && !same(m.trace(), S.Zero)) {
+        return m.scale(pow(m.trace(), add(this.exp, -1)));
+      }
+    }
+    return m.rows === 2 ? m.pow(this.exp) : explicitPower(m, this.exp);
+  }
   /** SymPy MatPow.as_explicit: the power of the explicit base. */
   override asExplicit(): Matrix {
-    return (isInt(this.exp) ? undefined : explicitPower(this.base.asExplicit(), this.exp)) ?? super.asExplicit();
+    return (isInt(this.exp) ? undefined : this.explicitNonIntegerPower()) ?? super.asExplicit();
   }
   override evalTranspose(): Expr {
     return new MatPowNode(this.base.transpose(), this.exp);

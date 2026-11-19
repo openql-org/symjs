@@ -145,6 +145,7 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
       const numeric = impl.evalf(d, 15);
       if (isNum(numeric) && !numeric.isZero) return byCmp(numCmp(numeric, S.Zero));
     }
+    if (d instanceof Add && d.isNumber && impl.equalsZero?.(d)) return byCmp(0);
   }
   return new Rel(op, lhs, rhs);
 }

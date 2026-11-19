@@ -167,9 +167,9 @@ describe('ordering relations decided like SymPy (is_lt, is_le, is_gt, is_ge)', (
     expect([Ge(e1, r('pi')), Gt(e1, r('pi')), Le(e1, r('pi')), Lt(e1, r('pi'))].map(s)).toEqual(['True', 'True', 'False', 'False']);
     const c1 = r('cos(1)');
     expect([Ge(c1, S.Half), Gt(c1, S.Half), Le(c1, S.Half), Lt(c1, S.Half)].map(s)).toEqual(['True', 'True', 'False', 'False']);
-    // undecided: complex, near zero, not evaluable
+    // A real algebraic zero is decided exactly.
     expect(s(Lt(r('I*x'), 2))).toBe('I*x < 2');
-    expect(s(Lt(r('sqrt(2) + sqrt(3)'), r('sqrt(5 + 2*sqrt(6))')))).toBe('sqrt(2) + sqrt(3) < sqrt(2*sqrt(6) + 5)');
+    expect(s(Lt(r('sqrt(2) + sqrt(3)'), r('sqrt(5 + 2*sqrt(6))')))).toBe('False');
     expect(s(Lt(r('f(1)'), 2))).toBe('f(1) < 2');
     expect(s(Lt(r('oo'), 2))).toBe('False');
   });

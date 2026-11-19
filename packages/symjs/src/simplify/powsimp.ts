@@ -8,7 +8,7 @@
 
 import { isIntegerQ, isNegative, isNonNegative, isPolar, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
+import { ExtensionExpr, Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { countOps, ordered } from '../core/match';
 import { keepCoeff } from '../core/methods';
@@ -124,6 +124,9 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
   if (deep || expr instanceof Add || (expr instanceof Mul && !expr.args.some((a) => a.key === Y.key))) {
     const ex = expExponent(expr);
     expr = ex !== undefined ? exp(recurse(ex)) : rebuild(expr, expr.args.map((w) => recurse(w)));
+  }
+  if (expr instanceof ExtensionExpr && expr.assocOp === 'Mul') {
+    return expr.withArgs(expr.args.map((factor) => factor.isCommutative ? recurse(factor) : factor));
   }
   if (expr instanceof Pow) {
     return mul(recurse(mul(expr, Y), { deep: false }), pow(Y, -1));
