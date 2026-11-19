@@ -1,8 +1,4 @@
 {
-  "cases": [
-    "sympy.functions.elementary.tests.test_piecewise:test_issue_11045:967 #12448195fb52891da044",
-    "sympy.utilities.tests.test_wester:test_V4:2347 #b8c794ea687242a94dd7",
-    "sympy.utilities.tests.test_wester:test_Y4:2929 #e5977d5b0c120c2c0263"
-  ],
+  "cases": [],
   "timeouts": []
 }

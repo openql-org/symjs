@@ -994,3 +994,23 @@ it('clips symbolic piecewise intervals with disjunctions, holes and reversed bou
   expect(integrate(P('Piecewise((x,Eq(x,a)),(2,True))'), x, [pp, 0]).equals(sj.mul(-2, pp))).toBe(true);
   expect(String(integrate(P('Piecewise((a,a<b),(2,a<c))'), a))).toContain('Max(b, c)');
 });
+
+it('integrates commensurate exponential powers by substitution', () => {
+  expect(integrate(P('3**x/sqrt(1+9**x)'), x).equals(P('asinh(3**x)/log(3)'))).toBe(true);
+});
+
+it('orders infinite limits against a symbolic endpoint', () => {
+  const f = P('Piecewise((1,(x>0)&(x<2)),(0,True))');
+  expect(integrate(f, x, [sj.oo, y]).equals(P('Max(0,y)-Max(2,y)'))).toBe(true);
+  expect(integrate(f, x, [y, sj.S.NegativeInfinity]).equals(P('Min(0,y)-Min(2,y)'))).toBe(true);
+});
+
+it('uses the order of the limits before testing for an undefined Piecewise segment', () => {
+  const f = P('Piecewise((x,(x>1)&(x<3)), (1,x<4))');
+  const forward = integrate(f, x, [1, y]);
+  const reverse = integrate(f, x, [y, 1]);
+  for (const end of [-1, 1, 2, 3, 4, 5]) {
+    expect(forward.subs(y, end).equals(integrate(f, x, [1, end]))).toBe(true);
+    expect(reverse.subs(y, end).equals(integrate(f, x, [end, 1]))).toBe(true);
+  }
+});

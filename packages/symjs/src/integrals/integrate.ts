@@ -91,6 +91,7 @@ registerHandler('zero', (e) => {
 });
 
 class Integrator {
+  private static readonly substitutionVariable = new Dummy('u');
   private depth = 0;
 
   constructor(private readonly x: Sym, private readonly noConditions = false, private readonly symbolicBounds = false) {}
@@ -452,7 +453,10 @@ class Integrator {
     const cands: Expr[] = [];
     const seen = new Set<string>();
     const walk = (e: Expr) => {
-      const inner = e instanceof Fn ? [...e.args, e] : e instanceof Pow && e.base instanceof Constant && e.base.name === 'E' ? [e.exp] : [];
+      let inner: readonly Expr[] = [];
+      if (e instanceof Fn) inner = [...e.args, e];
+      else if (isExp(e)) inner = [e.exp];
+      else if (e instanceof Pow && isNum(e.base) && e.base.isPositive) inner = [e];
       for (const u of inner) {
         if (u.has(x) && u.key !== x.key && !seen.has(u.key)) {
           seen.add(u.key);
@@ -466,8 +470,10 @@ class Integrator {
       const du = diff(u, x);
       if (isZeroR(du)) continue;
       const q = cancel(expandFull(mul(f, pow(du, -1)), { trig: true }));
-      const t = new Sym('_u');
-      const g = subs(q, [[u, t]]);
+      const numericPower = u instanceof Pow && isNum(u.base);
+      const t = Integrator.substitutionVariable;
+      // Algebraic substitution rewrites commensurate exponential powers in t.
+      const g = numericPower ? q.subs(u, t) : subs(q, [[u, t]]);
       if (g.has(x)) continue;
       const G = new Integrator(t).integrate(g);
       if (G === undefined) continue;
@@ -1051,12 +1057,27 @@ function piecewiseSegments(f: Piecewise, x: Sym, start: Expr, end: Expr): Piecew
 }
 
 function symbolicDefinitePiecewise(f: Piecewise, x: Sym, a: Expr, b: Expr): Expr | undefined {
+  const order = a === S.NegativeInfinity || b === S.Infinity ? -1
+    : a === S.Infinity || b === S.NegativeInfinity ? 1 : cmpSign(a, b);
+  const movable = a instanceof Sym ? a : b;
+  const fixed = movable === a ? b : a;
+  const width = new Dummy('width', { positive: true });
   const orderedIntegral = (start: Expr, end: Expr): Expr | undefined => {
     const segments = piecewiseSegments(f, x, start, end);
     if (!segments) return undefined;
+    // Simplify each clipped endpoint under start < end before looking for holes.
+    const simplifyBound = (v: Expr): Expr => {
+      if (order !== undefined || !(movable instanceof Sym) || fixed.has(movable)) return v;
+      const offset = movable === start ? mul(-1, width) : width;
+      const ordered = subs(v, [[movable, add(fixed, offset)]]);
+      return mapBottomUp(subs(ordered, [[width, add(end, mul(-1, start))]]), (node) =>
+        node instanceof Fn && (node.name === 'Min' || node.name === 'Max') ? node.func(...node.args) : node);
+    };
     let total: Expr = S.Zero;
     let previous: Expr | undefined;
-    for (const [left, right, branch] of segments) {
+    for (const [lo, hi, branch] of segments) {
+      const left = simplifyBound(lo), right = simplifyBound(hi);
+      if (left.equals(right)) continue;
       if (branch < 0) return previous === undefined ? S.NaN : piecewise([total, Le(end, previous)], [S.NaN, true]);
       const result = integrate(at(f.pairs, branch)[0], x, [left, right]);
       if (result instanceof Integral) return undefined;
@@ -1065,7 +1086,6 @@ function symbolicDefinitePiecewise(f: Piecewise, x: Sym, a: Expr, b: Expr): Expr
     }
     return total;
   };
-  const order = cmpSign(a, b);
   if (order !== undefined) {
     const result = order < 0 ? orderedIntegral(a, b) : orderedIntegral(b, a);
     return result === undefined || order < 0 ? result : mul(-1, result);
@@ -1073,7 +1093,10 @@ function symbolicDefinitePiecewise(f: Piecewise, x: Sym, a: Expr, b: Expr): Expr
   const forward = orderedIntegral(a, b);
   const reverse = orderedIntegral(b, a);
   if (forward === undefined || reverse === undefined) return undefined;
-  return piecewise([forward, Lt(a, b)], [mul(-1, reverse), true]);
+  const backward = mul(-1, reverse);
+  return piecewiseFold(a.isComparable
+    ? piecewise([backward, Lt(b, a)], [forward, true])
+    : piecewise([forward, Lt(a, b)], [backward, true]));
 }
 
 /**
