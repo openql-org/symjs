@@ -391,3 +391,17 @@ it('evaluates constant definite integrals and coincident symbolic endpoints', ()
   expect(evalf(sj.integral(2, [x, 1, 3])).toNumber()).toBe(4);
   expect(evalf(sj.integral(f(x), [x, 1, 3]))).toBeInstanceOf(sj.Integral);
 });
+
+it('evaluates piecewise values and substitutes only free symbols of sums', () => {
+  const [x, n] = sj.symbols('x n');
+  const sum = sj.Sum(x, [x, 1, n]);
+  expect(sum.evalf(2, { subs: new Map([[x, 99], [n, 2]]) }).toNumber()).toBe(3);
+  const pw = sj.piecewise([sj.sqrt(2), sj.Lt(x, 1)], [x, true]);
+  expect(pw.evalf().subs(x, 0).toNumber()).toBeCloseTo(Math.SQRT2);
+});
+
+it('retains symbolic indexed expressions during numeric evaluation', () => {
+  const x = sj.symbol('x');
+  const entry = new sj.IndexedBase('A').at(x);
+  expect(entry.evalf().equals(entry)).toBe(true);
+});

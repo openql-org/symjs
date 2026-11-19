@@ -1892,3 +1892,21 @@ it('counts powers of a generator that is no symbol and keeps unexpanded generato
   expect(String(sj.Poly.from(pow(add(x, y), 3), [add(x, y)], { expand: false }))).toBe("Poly((x + y)**3, x + y, domain='ZZ')");
   expect(String(sj.Poly.from(pow(add(x, -1), 2), [add(x, -1)], { expand: false }))).toBe("Poly((x - 1)**2, x - 1, domain='ZZ')");
 });
+
+it('retains expression-domain denominators and validates root generators', () => {
+  const x = sj.symbol('x');
+  const f = Poly.from(x.add(sj.exp(sj.symbol('y'))), [x], { domain: 'EX' });
+  expect(f.ratClearDenoms(f).map(String)).toEqual([String(f), String(f)]);
+  const formal = Poly.from(sj.sin(x).pow(2), [sj.sin(x)]);
+  expect(() => formal.realRoots({ extension: false })).toThrow(sj.PolynomialError);
+});
+
+it('factors a common float around a nonpolynomial expression', () => {
+  const x = sj.symbol('x');
+  const float = new sj.Float(2);
+  const expression = sj.add(float.mul(sj.sin(x)), float.mul(sj.cos(x)));
+  const result = sj.factor(expression, { gens: [x] });
+  expect(String(result)).toBe('2.0*(sin(x) + cos(x))');
+  const nested = sj.add(float.mul(sj.sin(float.mul(x))), float.mul(x));
+  expect(sj.factor(nested).subs(x, 0).equals(sj.S.Zero)).toBe(true);
+});

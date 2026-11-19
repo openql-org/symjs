@@ -489,6 +489,22 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     if (changingVariable && nw.key !== old.key && e.expr.has(nw)) return new SubsNode([e, old, nw]);
   }
   if (e instanceof SubsNode) return e.subsSelf(old, nw, (x) => subsOne(x, old, nw));
+  if (e instanceof Concrete && !(old instanceof Sym)) {
+    const oldSymbols = new Set([...freeSymbols(old)].map(s => s.key));
+    let bodyInScope = true as boolean;
+    const limits = e.limits.reverse().map(([k, a, b]) => {
+      if (!bodyInScope) return [k, a, b];
+      const bounds = [k, subsOne(a, old, nw), subsOne(b, old, nw)];
+      if ([...freeSymbols(k)].some(s => oldSymbols.has(s.key))) bodyInScope = false;
+      return bounds;
+    });
+    if (old instanceof UndefFn) {
+      const variables = new Set(e.limits.map(([k]) => k.key));
+      if ([...freeSymbols(nw)].some(s => variables.has(s.key) && !old.args.some(a => a.equals(s)))) throw new RangeError('Substitution cannot create dummy dependencies');
+      bodyInScope = true;
+    }
+    return new Concrete(e.kind2, [bodyInScope ? subsOne(e.function, old, nw) : e.function, ...limits.reverse().flat()]);
+  }
   // the variable of an indefinite integral replaced: the antiderivative at that point (SymPy (x, b) limit)
   if (e instanceof Integral && e.args.length === 2 && e.variable.key === old.key && !(nw instanceof Sym)) return new Integral([e.integrand, old, nw]);
   // a bound variable is not free: only the limits are substituted

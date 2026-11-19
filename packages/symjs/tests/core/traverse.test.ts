@@ -605,3 +605,22 @@ it('matches exponential patterns only when the resulting power divides the sourc
   const derivative = sj.derivative(f, [[x, order]]);
   expect(sj.subs(sj.add(derivative, f), new Map<sj.Expr, sj.Expr>([[f, x], [derivative, y]])).equals(sj.add(x, y))).toBe(true);
 });
+
+it('keeps substitutions inside bound function arguments capture-free', () => {
+  const [x, y] = sj.symbols('x y');
+  const fy = sj.SymFunction('f')(y);
+  const sum = sj.Sum(x.mul(fy), [x, 0, 2], [y, 0, 2]);
+  expect(() => sum.subs(fy, x.add(y))).toThrow('dummy dependencies');
+  expect(sum.subs(fy, y).equals(sj.Sum(x.mul(y), [x, 0, 2], [y, 0, 2]))).toBe(true);
+  const ly = sj.log(y);
+  expect(sj.Sum(ly, [x, 0, ly], [y, 0, ly]).subs(ly, y).equals(sj.Sum(ly, [x, 0, ly], [y, 0, y]))).toBe(true);
+});
+
+it('keeps powers distinct from unrelated exponential substitution patterns', () => {
+  const [x, y] = sj.symbols('x y');
+  const power = sj.pow(x, y);
+  const logarithm = sj.fn('log', [x, 2], { evaluate: false });
+  for (const exponent of [sj.sin(x), logarithm, sj.log(x)]) {
+    expect(power.subs(new sj.Pow(sj.S.E, exponent), y).equals(power)).toBe(true);
+  }
+});

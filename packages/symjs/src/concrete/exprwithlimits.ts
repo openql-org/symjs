@@ -3,11 +3,11 @@
 // Ported from SymPy 1.14 concrete/expr_with_limits.py (BSD-3-Clause).
 
 import { Concrete, concreteHooks } from '../core/concrete';
-import { Integral, S, type Expr } from '../core/nodes';
+import { Integral, S, type Expr, type ExprLike } from '../core/nodes';
 import { first } from '../core/guard';
-import { add, mul, pow, sub } from '../core/ops';
+import { add, mul, pow, sub, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
-import { Interval, Range, inf, sup } from '../sets/sets';
+import { Interval, Range, SetExpr, inf, sup } from '../sets/sets';
 import { abs, fn } from '../functions/elementary/elementary';
 import { NotImplementedError } from '../core/errors';
 import { ask, Q, registerHandler } from '../core/refine';
@@ -28,6 +28,24 @@ concreteHooks.processLimit = (f, k, domain) => {
   const upper = fromLeft ? fn('floor', [mul(sub(hi, lo), pow(step, -1))]) : S.Infinity;
   return [xreplace(f, [[k, replacement]]), S.Zero, upper];
 };
+
+/** Normalize a continuous limit expressed as a univariate condition or an interval. */
+export function processContinuousLimit(input: ExprLike | readonly ExprLike[], asSet: (condition: Expr) => Expr): readonly Expr[] {
+  const sequence = (value: typeof input): value is readonly ExprLike[] => Array.isArray(value);
+  let parts = sequence(input) ? input.map(sympify) : [sympify(input)];
+  const variable = parts[0];
+  if (variable && parts.length === 1 && (variable.kind === 'Rel' || variable.kind === 'BoolOp')) {
+    const domain = asSet(variable);
+    parts = [first([...variable.freeSymbols()]), domain];
+  }
+  const domain = parts[1];
+  if (parts.length === 2 && domain instanceof SetExpr) {
+    if (domain instanceof Range) throw new TypeError('Continuous limits require an interval');
+    if (!(domain instanceof Interval)) throw new NotImplementedError('Expected a single interval');
+    return [first(parts), inf(domain), sup(domain)];
+  }
+  return parts;
+}
 
 /** Limits in the order used by SymPy (innermost first). */
 function limits(e: Concrete | Integral): (readonly Expr[])[] {

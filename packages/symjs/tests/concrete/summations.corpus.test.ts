@@ -795,7 +795,7 @@ describe("sympy/concrete/tests/test_products.py", () => {
   //   assert product(1 - a**2 / (n*pi)**2, [n, 1, oo]) != 0
   //   => 0
   it.todo("test_issue_14036:390");
-  it.fails("test_rewrite_Sum:394", () => {
+  it("test_rewrite_Sum:394", () => {
     const k = new Sym('k', { integer: true });
     expect(sympyStr(rewrite(Product(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 4n, { gcd: 1n }), new Pow(k, Rational.of(-2n, 1n, { gcd: 1n }))])]), [k, Rational.of(1n, 1n, { gcd: 1n }), oo]), 'Sum', { pattern: [], deep: true, hints: {} }))).toBe('exp(Sum(log(1 - 1/(4*k**2)), (k, 1, oo)))');
   });
@@ -1143,7 +1143,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
   it("test_geometric_sums:330", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_geometric_sums:340", () => {
+  it("test_geometric_sums:340", () => {
     const n = new Sym('n', { integer: true });
     const k = new Sym('k', { integer: true });
     const q = new Sym('q', { integer: true });
@@ -1390,7 +1390,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const n = new Sym('n', { integer: true });
     expect(equivalent(sympyStr(doit(Sum(new Mul([new Pow(new Add([Rational.of(2n, 1n, { gcd: 1n }), new Mul([Rational.of(5n, 1n, { gcd: 1n }), n])]), Rational.of(-1n, 1n, { gcd: 1n })), new Pow(new Add([Rational.of(7n, 1n, { gcd: 1n }), new Mul([Rational.of(5n, 1n, { gcd: 1n }), n])]), Rational.of(-1n, 1n, { gcd: 1n }))]), [n, Rational.of(0n, 1n, { gcd: 1n }), oo]))), '1/10', [n], { fn: '.doit', input: 'Sum(1/((5*n + 2)*(5*n + 7)), (n, 0, oo))' })).toBe(true);
   });
-  it.fails("test_telescopic_sums:574", () => {
+  it("test_telescopic_sums:574", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(simplify(new Add([new Mul([Rational.of(-1n, 5n, { gcd: 1n }), Sum(new Pow(new Add([Rational.of(7n, 1n, { gcd: 1n }), new Mul([Rational.of(5n, 1n, { gcd: 1n }), n])]), Rational.of(-1n, 1n, { gcd: 1n })), [n, Rational.of(0n, 1n, { gcd: 1n }), oo])]), new Mul([Rational.of(1n, 5n, { gcd: 1n }), Sum(new Pow(new Add([Rational.of(2n, 1n, { gcd: 1n }), new Mul([Rational.of(5n, 1n, { gcd: 1n }), n])]), Rational.of(-1n, 1n, { gcd: 1n })), [n, Rational.of(0n, 1n, { gcd: 1n }), oo])])])))).toBe('1/10');
   });
@@ -1458,7 +1458,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const [x, y] = symbols('x y');
     expect(() => str(Sum(new Mul([x, new AppliedUndef('f', [y])]), [x, Rational.of(0n, 1n, { gcd: 1n }), oo], [y, Rational.of(0n, 1n, { gcd: 1n }), oo]))).toThrow(RangeError);
   });
-  it.fails("test_function_subs:602", () => {
+  it("test_function_subs:602", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Sum(new Mul([x, fn('log', [y], { evaluate: false })]), [x, Rational.of(0n, 1n, { gcd: 1n }), oo], [y, Rational.of(0n, 1n, { gcd: 1n }), oo]).subs(fn('log', [y], { evaluate: false }), y))).toBe('Sum(x*log(y), (x, 0, oo), (y, 0, oo))');
   });
@@ -2037,7 +2037,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const M = new Sym('M', { integer: true, positive: true });
     expect(sympyStr(doit(Sum(new Mul([new Pow(B, n), A, new Pow(B, n)]), [n, Rational.of(1n, 1n, { gcd: 1n }), M])))).toBe('Sum(B**n*A*B**n, (n, 1, M))');
   });
-  it.fails("test_issue_6273:830", () => {
+  it("test_issue_6273:830", () => {
     const x = new Sym('x');
     const n = new Sym('n', { integer: true });
     expect(sympyStr(Sum(x, [x, Rational.of(1n, 1n, { gcd: 1n }), n]).evalf(2, { subs: new Map([[n, Rational.of(1n, 1n, { gcd: 1n })]]) }))).toBe('1.0');
@@ -2192,27 +2192,27 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
   //           Sum(x*y, (x, b + 1, a - 1), (y, 6, 1))
   //   => Sum(x*y, (x, b + 1, a - 1), (y, 6, 1))
   it.todo("test_reverse_order:953");
-  it.fails("test_factor_expand_subs:963", () => {
+  it("test_factor_expand_subs:963", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(factor(Sum(new Mul([Rational.of(4n, 1n, { gcd: 1n }), x]), [x, Rational.of(1n, 1n, { gcd: 1n }), y])))).toBe('4*Sum(x, (x, 1, y))');
   });
-  it.fails("test_factor_expand_subs:964", () => {
+  it("test_factor_expand_subs:964", () => {
     const [a, x, y] = symbols('a x y');
     expect(sympyStr(factor(Sum(new Mul([a, x]), [x, Rational.of(1n, 1n, { gcd: 1n }), y])))).toBe('a*Sum(x, (x, 1, y))');
   });
-  it.fails("test_factor_expand_subs:965", () => {
+  it("test_factor_expand_subs:965", () => {
     const [a, x, y] = symbols('a x y');
     expect(sympyStr(factor(Sum(new Mul([Rational.of(4n, 1n, { gcd: 1n }), a, x]), [x, Rational.of(1n, 1n, { gcd: 1n }), y])))).toBe('4*a*Sum(x, (x, 1, y))');
   });
-  it.fails("test_factor_expand_subs:966", () => {
+  it("test_factor_expand_subs:966", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(factor(Sum(new Mul([Rational.of(4n, 1n, { gcd: 1n }), x, y]), [x, Rational.of(1n, 1n, { gcd: 1n }), y])))).toBe('4*y*Sum(x, (x, 1, y))');
   });
-  it.fails("test_factor_expand_subs:970", () => {
+  it("test_factor_expand_subs:970", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(expand(Sum(new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), [x, Rational.of(1n, 1n, { gcd: 1n }), y]), {}))).toBe('Sum(1, (x, 1, y)) + Sum(x, (x, 1, y))');
   });
-  it.fails("test_factor_expand_subs:971", () => {
+  it("test_factor_expand_subs:971", () => {
     const [x, a, y] = symbols('x a y');
     expect(sympyStr(expand(Sum(new Add([x, new Mul([a, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), [x, Rational.of(1n, 1n, { gcd: 1n }), y]), {}))).toBe('Sum(x, (x, 1, y)) + Sum(a*x**2, (x, 1, y))');
   });
@@ -2231,7 +2231,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const n = new Sym('n', { integer: true });
     expect(equivalent(sympyStr(expand(Sum(new Mul([new Pow(x, new Add([Rational.of(1n, 1n, { gcd: 1n }), n])), new Add([Rational.of(1n, 1n, { gcd: 1n }), n])]), [n, Rational.of(-1n, 1n, { gcd: 1n }), oo]), { force: true })), 'Sum(x*x**n, (n, -1, oo)) + Sum(n*x*x**n, (n, -1, oo))', [x, n], { fn: '.expand', input: 'Sum(x**(n + 1)*(n + 1), (n, -1, oo))' })).toBe(true);
   });
-  it.fails("test_factor_expand_subs:978", () => {
+  it("test_factor_expand_subs:978", () => {
     const a = new Sym('a');
     const n = new Sym('n', { integer: true });
     expect(sympyStr(expand(Sum(new Add([new Mul([a, n]), new Mul([a, new Pow(n, Rational.of(2n, 1n, { gcd: 1n }))])]), [n, Rational.of(0n, 1n, { gcd: 1n }), Rational.of(4n, 1n, { gcd: 1n })]), {}))).toBe('Sum(a*n, (n, 0, 4)) + Sum(a*n**2, (n, 0, 4))');
@@ -2280,7 +2280,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const x = new Sym('x');
     expect(sympyStr(doit(Relational(Product(new Mul([Rational.of(2n, 1n, { gcd: 1n }), x]), [x, Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })]), Product(new AppliedUndef('f', [x]), [x, Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })]), '==', { evaluate: false })))).toBe('Eq(48, f(1)*f(2)*f(3))');
   });
-  it.fails("test_distribution_over_equality:998", () => {
+  it("test_distribution_over_equality:998", () => {
     const [x, y] = symbols('x y');
     expect(sympyStr(Sum(Relational(new AppliedUndef('f', [x]), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), '==', { evaluate: false }), [x, Rational.of(0n, 1n, { gcd: 1n }), y]))).toBe('Eq(Sum(f(x), (x, 0, y)), Sum(x**2, (x, 0, y)))');
   });
@@ -2357,11 +2357,11 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const m = new Sym('m', { integer: true });
     expect(sympyStr(diff(Sum(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), q_i, z_i, new Pow(k, Rational.of(-1n, 1n, { gcd: 1n }))]), [i, Rational.of(1n, 1n, { gcd: 1n }), m]), z_i, 1))).toBe('Sum(-q_i/k, (i, 1, m))');
   });
-  it.fails("test_issue_10156:1177", () => {
+  it("test_issue_10156:1177", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(factor(new Mul([Rational.of(2n, 1n, { gcd: 1n }), y, Sum(new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), Sum(new Mul([Rational.of(2n, 1n, { gcd: 1n }), x, new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), [x, Rational.of(1n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n })])]), [x, Rational.of(1n, 1n, { gcd: 1n }), Rational.of(9n, 1n, { gcd: 1n })])])))).toBe('8*y**3*Sum(x, (x, 1, 3))*Sum(x**2, (x, 1, 9))');
   });
-  it.fails("test_issue_14129:1192", () => {
+  it("test_issue_14129:1192", () => {
     const k = new Sym('k');
     const x = new Sym('x', { zero: false });
     const n = new Sym('n', { integer: true });
@@ -2373,7 +2373,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(doit(Sum(new Pow(x, k), [k, Rational.of(0n, 1n, { gcd: 1n }), new Add([Rational.of(-1n, 1n, { gcd: 1n }), n])])))).toBe('Piecewise((n, Eq(x, 1)), ((1 - x**n)/(1 - x), True))');
   });
-  it.fails("test_issue_14129:1197", () => {
+  it("test_issue_14129:1197", () => {
     const [k, y] = symbols('k y');
     const x = new Sym('x', { zero: false });
     const n = new Sym('n', { integer: true });
@@ -2390,14 +2390,14 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(doit(Sum(new Mul([new Pow(a, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), i])), new Pow(new Add([a, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b])]), Rational.of(-1n, 1n, { gcd: 1n }))]), [i, Rational.of(0n, 1n, { gcd: 1n }), n])))).toBe('Piecewise((n + 1, Eq(1/a, 1)), ((1 - a**(-n - 1))/(1 - 1/a), True))/(a - b)');
   });
-  it.fails("test_issue_14640:1234 (2)", () => {
+  it("test_issue_14640:1234 (2)", () => {
     const a = new Sym('a', { zero: false });
     const i = new Sym('i', { integer: true });
     const b = new Sym('b', { zero: false });
     const n = new Sym('n', { integer: true });
     expect(sympyStr(doit(Sum(new Pow(new Add([new Mul([a, new Pow(a, i)]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b, new Pow(a, i)])]), Rational.of(-1n, 1n, { gcd: 1n })), [i, Rational.of(0n, 1n, { gcd: 1n }), n])))).toBe('Piecewise((n + 1, Eq(1/a, 1)), ((1 - a**(-n - 1))/(1 - 1/a), True))/(a - b)');
   });
-  it.fails("test_issue_14640:1239", () => {
+  it("test_issue_14640:1239", () => {
     const b = new Sym('b', { zero: false });
     const a = new Sym('a', { zero: false });
     const i = new Sym('i', { integer: true });
@@ -2801,7 +2801,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
   //   assert s_as_product.has(Product)
   //   => True
   it.todo("test_expand_with_assumptions:1371");
-  it.fails("test_expand_with_assumptions:1372", () => {
+  it("test_expand_with_assumptions:1372", () => {
     const x = new Sym('x', { positive: true });
     const m = new Sym('m', { nonnegative: true, integer: true });
     const M = new Sym('M', { integer: true, positive: true });
@@ -2936,7 +2936,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
   //   assert Sum(S.Half**floor(n/2), (n, 1, oo)).is_convergent()
   //   => True
   it.todo("test_issue_14313:1439");
-  it.fails("test_issue_14563:1444", () => {
+  it("test_issue_14563:1444", () => {
     const x = new Sym('x');
     expect(sympyStr(Mod(Rational.of(1n, 1n, { gcd: 1n }), Sum(Rational.of(1n, 1n, { gcd: 1n }), [x, Rational.of(0n, 1n, { gcd: 1n }), Rational.of(1n, 1n, { gcd: 1n })])))).toBe('1');
   });
@@ -2944,7 +2944,7 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const n = new Sym('n', { integer: true });
     expect(sympyStr(doit(Sum(new Mul([new Pow(Rational.of(-1n, 1n, { gcd: 1n }), n), new Pow(Rational.of(10n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), n])), new Pow(fn('factorial', [n]), Rational.of(-1n, 1n, { gcd: 1n })), new Pow(fn('factorial', [new Mul([Rational.of(-1n, 1n, { gcd: 1n }), n])]), Rational.of(-1n, 1n, { gcd: 1n }))]), [n, Rational.of(0n, 1n, { gcd: 1n }), oo])))).toBe('1');
   });
-  it.fails("test_issue_17165:1461", () => {
+  it("test_issue_17165:1461", () => {
     const x = new Sym('x');
     const n = new Sym('n', { integer: true });
     expect(sympyStr(simplify(new Mul([x, piecewise([new Mul([new Pow(x, Rational.of(-1n, 1n, { gcd: 1n })), new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])]), Rational.of(-1n, 1n, { gcd: 1n }))]), Relational(fn('abs', [x], { evaluate: false }), Rational.of(1n, 1n, { gcd: 1n }), '<', { evaluate: false })], [Sum(new Pow(x, n), [n, Rational.of(-1n, 1n, { gcd: 1n }), oo]), true], { evaluate: false })])))).toBe('Piecewise((-1/(x - 1), (x > -1) & (x < 1)), (x*Sum(x**n, (n, -1, oo)), True))');
@@ -3161,19 +3161,19 @@ describe("sympy/concrete/tests/test_sums_products.py", () => {
     const x = new Sym('x');
     expect(sympyStr(evalSumResidue(new Mul([new Pow(Rational.of(-1n, 1n, { gcd: 1n }), x), new Pow(x, Rational.of(-2n, 1n, { gcd: 1n }))]), [x, Rational.of(2n, 1n, { gcd: 1n }), oo]))).toBe('1 - pi**2/12');
   });
-  it.fails("test_process_limits:1640", () => {
+  it("test_process_limits:1640", () => {
     const x = new Sym('x');
     expect(sympyStr(integral(x, Relational(x, Rational.of(5n, 1n, { gcd: 1n }), '>=', { evaluate: false })))).toBe('Integral(x, (x, 5, oo))');
   });
-  it.fails("test_process_limits:1641", () => {
+  it("test_process_limits:1641", () => {
     const x = new Sym('x');
     expect(sympyStr(integral(x, Relational(x, Rational.of(3n, 1n, { gcd: 1n }), '<', { evaluate: false })))).toBe('Integral(x, (x, -oo, 3))');
   });
-  it.fails("test_process_limits:1643", () => {
+  it("test_process_limits:1643", () => {
     const x = new Sym('x');
     expect(sympyStr(integral(x, And(Relational(x, Rational.of(0n, 1n, { gcd: 1n }), '>=', { evaluate: false }), Relational(x, Rational.of(3n, 1n, { gcd: 1n }), '<', { evaluate: false }))))).toBe('Integral(x, (x, 0, 3))');
   });
-  it.fails("test_process_limits:1644", () => {
+  it("test_process_limits:1644", () => {
     const x = new Sym('x');
     expect(sympyStr(integral(x, [x, interval(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), false, true)]))).toBe('Integral(x, (x, 0, 3))');
   });

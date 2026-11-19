@@ -16,7 +16,7 @@ export {
   doit,
 } from './calculus/doit';
 export {
-  integral, integrate,
+  integrate,
 } from './integrals/integrate';
 export {
   transformIntegral,
@@ -58,6 +58,7 @@ export {
   product,
   reverseOrder,
   eulerMaclaurin,
+  telescopic,
   telescopicDirect,
   evalSumResidue,
 } from './concrete/summations';
@@ -85,6 +86,9 @@ export { residue } from './series/residues';
 export { differenceDelta, limitSeq } from './series/limitseq';
 export { finiteDiff, finiteDiffKauers } from './series/kauers';
 export { deltasummation, deltaproduct } from './concrete/delta';
+import { summationHooks } from './concrete/summations';
+import { gosperSum } from './concrete/gosper';
+summationHooks.gosperSum = gosperSum;
 export { gosperNormal, gosperTerm, gosperSum } from './concrete/gosper';
 export type { DeltaLimit } from './concrete/delta';
 export {
@@ -165,6 +169,15 @@ export { findSimpleRecurrenceVector, findSimpleRecurrence, rationalize, guessGen
 export type { GuessGeneratingFunctionOptions, GuessOptions } from './concrete/guess';
 export { approximants } from './series/approximants';
 export type { ApproximantsOptions } from './series/approximants';
+import { integral as makeIntegral } from './integrals/integrate';
+import { asSet as conditionSet } from './solvers/inequalities';
+import { processContinuousLimit } from './concrete/exprwithlimits';
+
+/** Construct an unevaluated integral from variables, endpoints, intervals or inequalities. */
+export function integral(ex: _ExprLike_, ...limits: readonly (_ExprLike_ | readonly _ExprLike_[])[]): _Expr_ {
+  return makeIntegral(ex, ...limits.map(input => processContinuousLimit(input, conditionSet)));
+}
+
 export { variables, hasFiniteLimits, hasReversedLimits } from './concrete/exprwithlimits';
 export { gaussLegendre, gaussLaguerre, gaussHermite, gaussGenLaguerre, gaussJacobi, gaussChebyshevT, gaussChebyshevU, gaussLobatto } from './integrals/quadrature';
 export type { QuadratureRule } from './integrals/quadrature';

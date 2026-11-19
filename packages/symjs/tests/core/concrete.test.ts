@@ -112,3 +112,24 @@ describe('Sum and Product heads', () => {
     expect(sj.str(sj.rebuild(p, [...p.args]))).toBe(sj.str(p));
   });
 });
+
+it('checks only decidable bounds on a ranged index', () => {
+  const j = sj.Idx('j', [1, 3]), n = sj.symbol('n');
+  for (const make of [sj.Sum, sj.Product]) {
+    expect(() => make(j, [j, 0, 3])).toThrow(RangeError);
+    expect(() => make(j, [j, 1, sj.oo])).toThrow(RangeError);
+    expect(make(j, [j, 2, n])).toBeInstanceOf(Concrete);
+    const unbounded = sj.Idx('j');
+    expect(make(unbounded, [unbounded, -1, 3])).toBeInstanceOf(Concrete);
+  }
+});
+
+it('factors nested sums in limit order and keeps additive summands together', () => {
+  const [x, y, n] = sj.symbols('x y n');
+  const sum = (f: sj.Expr) => sj.Sum(f, [x, 1, n]);
+  expect(sj.factor(sum(x.add(1))).equals(sum(x.add(1)))).toBe(true);
+  expect(sj.factor(sum(x.pow(2).add(x))).equals(sum(x.mul(x.add(1))))).toBe(true);
+  expect(sj.factor(sj.log(sum(x.mul(2)))).equals(sj.log(sum(x.mul(2))))).toBe(true);
+  expect(sj.factor(sj.Sum(x, [x, 1, n], [y, 1, n])).equals(n.mul(sum(x)))).toBe(true);
+  expect(sj.factor(sj.Sum(x.mul(y), [x, 1, n], [y, 1, n])).equals(sum(x).mul(sj.Sum(y, [y, 1, n])))).toBe(true);
+});

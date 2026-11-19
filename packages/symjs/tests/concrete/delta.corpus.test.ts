@@ -643,7 +643,7 @@ describe("sympy/concrete/tests/test_delta.py", () => {
     const j = new Sym('j', { integer: true, finite: true });
     expect(equivalent(sympyStr(deltaproduct(new Mul([new Add([x, KroneckerDelta(i, k)]), new Add([y, KroneckerDelta(i, j)])]), [j, k, 3])), '((KroneckerDelta(i, k) + x)*y)**4*((KroneckerDelta(i, k) + x)*y)**(-k) + Piecewise((((KroneckerDelta(i, k) + x)*y)**i*((KroneckerDelta(i, k) + x)*y)**(-k)*(KroneckerDelta(i, k) + x)*((KroneckerDelta(i, k) + x)*y)**3*((KroneckerDelta(i, k) + x)*y)**(-i), (i >= k) & (i <= 3)), (0, True))', [x, i, k, y, j], { fn: 'deltaproduct', input: '(KroneckerDelta(i, k) + x)*(KroneckerDelta(i, j) + y)' })).toBe(true);
   });
-  it.fails("test_deltaproduct_mul_add_x_kd_add_y_kd:223", () => {
+  it("test_deltaproduct_mul_add_x_kd_add_y_kd:223", () => {
     const x = new Sym('x', { commutative: false });
     const i = new Sym('i', { integer: true, finite: true });
     const k = new Sym('k', { integer: true, finite: true });

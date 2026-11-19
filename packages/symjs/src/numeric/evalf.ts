@@ -203,6 +203,10 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
     const v = { oo: c(Infinity), '-oo': c(-Infinity), zoo: c(Infinity, Infinity), nan: c(NaN) }[e.name];
     return () => v;
   }
+  if (e instanceof Concrete) {
+    const value = impl.evalConcrete?.(e);
+    if (value !== undefined) return compile(value, resolve);
+  }
   if (e instanceof Sym) return resolve(e);
   if (e instanceof Add) {
     const fs = e.args.map((a) => compile(a, resolve));
@@ -411,6 +415,10 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     if (x instanceof Fn && r instanceof Special && !args.some((a) => a instanceof Special)) pole = true;
     return r;
   };
+  if (e instanceof Concrete) {
+    const replacements = [...e.freeSymbols()].filter(s => s instanceof Sym).map(s => [s, sub(s)] as const);
+    return go(e.subs(replacements));
+  }
   const e2 = sub(e);
   if (e2 instanceof Special) return pole ? e : e2;
   if (e2.kind === 'Set') return go(e2);

@@ -19,7 +19,8 @@ import { Poly, factor } from '../polys/sympoly';
 import { fraction } from '../simplify/rational';
 import { hypersimp } from '../simplify/public';
 import { limit } from '../series/limits';
-import { linsolve } from '../solvers/public';
+import { solveAugmented } from '../matrices/linsys';
+import { Matrix } from '../matrices/matrix';
 
 const field = (e: Expr, n: Sym): Poly => Poly.from(e, [n], { field: true });
 
@@ -78,14 +79,19 @@ export function gosperTerm(fIn: ExprLike, n: Sym): Expr | NoMatchResult {
   if (!ds.length) return NoMatch;
   const d = Math.max(...ds);
   const coeffs = Array.from({ length: d + 1 }, (_c, i) => new Dummy(`c${i}`));
-  // x = c0*n**d + ... + cd
-  const x = add(...coeffs.map((c, i) => mul(c, pow(n, d - i))));
-  const H = sub(sub(mul(A.asExpr(), xreplace(x, [[n, add(n, 1)]])), mul(B.asExpr(), x)), C.asExpr());
-  const eqs = Poly.from(H, [n]).coeffs();
-  const sol = linsolve(eqs, coeffs);
-  if (!Array.isArray(sol)) return NoMatch;
-  // undetermined coefficients are 0 (x is not zero: C is not)
-  const xs = xreplace(xreplace(x, coeffs.map((c, i) => [c, at(sol, i)] as const)), coeffs.map((c) => [c, S.Zero] as const));
+  // Apply A(n) x(n+1) - B(n) x(n) to each monomial of x separately.
+  // Its coefficients form one column of the linear system with right side C.
+  const powers = coeffs.map((_, i) => pow(n, d - i));
+  const columns = powers.map(power => {
+    const monomial = field(power, n);
+    return A.mul(monomial.shift(1)).sub(B.mul(monomial));
+  });
+  const rows = 1 + Math.max(K, ...columns.map(column => column.degree()));
+  const matrix = Matrix.fromFunction(rows, columns.length + 1, (i, j) => (columns[j] ?? C).nth(i));
+  const sol = solveAugmented(matrix, coeffs);
+  if (sol === undefined) return NoMatch;
+  const free = coeffs.map(c => [c, S.Zero] as const);
+  const xs = add(...sol.map((value, i) => mul(xreplace(value, free), at(powers, i))));
   // (B*x first: a numeric x distributes over B, as in SymPy)
   return mul(mul(B.asExpr(), xs), pow(C.asExpr(), -1));
 }
