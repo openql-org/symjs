@@ -16,9 +16,9 @@
  */
 
 import type { Assumptions, ExprLike } from './nodes';
-import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, functionFactHandlers } from './nodes';
+import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, functionFactHandlers, impl } from './nodes';
 import { add, couldExtractMinusSign, mul, pow, sympify } from './ops';
-import { mapBottomUp, xreplace } from './traverse';
+import { mapBottomUp, some, xreplace } from './traverse';
 import { asRealImag } from './methods';
 import { isIntegerQ, isMinMax, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero, torf } from './assumptions';
 import { BoolOp, and, not, or, xor } from './boolalg';
@@ -975,10 +975,29 @@ class Decider {
     return undefined;
   }
 
+  /**
+   * SymPy _PrimePredicate_number: an exact number that is numerically an integer is tested as that integer
+   * (12345678901234567890 + cos(1)**2 + sin(1)**2); 'symbolic' for anything else.
+   */
+  private primeNumber(e: Expr): Tri | 'symbolic' {
+    if (!(e instanceof Add) || e.freeSymbols().size > 0) return 'symbolic';
+    const float = some(e, (t) => t instanceof Float);
+    const value = impl.evalf(e, 60);
+    if (!(value instanceof Float)) return 'symbolic';
+    const { man, exp } = value.mpf;
+    // the nearest integer of man * 2**exp
+    const nearest = exp >= 0n ? man << exp : (man + (1n << (-exp - 1n))) >> -exp;
+    const difference = impl.evalf(add(e, Rational.of(-nearest)), 30);
+    if (difference instanceof Float && Math.abs(difference.value) > 1e-25) return false;
+    return float ? undefined : isPrimeBig(nearest);
+  }
+
   private prime(e: Expr): Tri {
     if (e instanceof Rational) return e.q === 1n && isPrimeBig(e.p);
     if (this.q('integer', e) === false) return false;
     if (this.q('positive', e) === false) return false;
+    const number = this.primeNumber(e);
+    if (number !== 'symbolic') return number;
     if (e instanceof Mul) {
       // SymPy PrimePredicate for Mul: a composite number factor of an integer product
       if (!e.args.every((a) => this.q('integer', a) === true)) return undefined;
@@ -1004,11 +1023,15 @@ class Decider {
     if (e instanceof Add || e instanceof Mul) return allTri(e.args, (a) => this.q('complex', a)) === true ? true : this.q('infinite', e) === true ? false : undefined;
     if (e instanceof Pow) {
       const [b, x] = e.args;
+      // SymPy ComplexPredicate: exp is complex for every argument
+      if (!expressionFacts && isConst(b, 'E')) return true;
       if (this.q('complex', b) === true && this.q('complex', x) === true && (this.q('nonzero', b) === true || this.q('nonnegative', x) === true || isConst(b, 'E'))) return true;
       return undefined;
     }
     if (e instanceof Fn) {
-      if (['exp', 'sin', 'cos', 'sinh', 'cosh', 're', 'im', 'abs', 'arg', 'conjugate', 'atan'].includes(e.name)) return allTri(e.args, (a) => this.q('complex', a)) === true ? true : undefined;
+      // SymPy ComplexPredicate: sin and cos are complex for every argument
+      if (!expressionFacts && (e.name === 'sin' || e.name === 'cos')) return true;
+      if (['sin', 'cos', 'exp', 'sinh', 'cosh', 're', 'im', 'abs', 'arg', 'conjugate', 'atan'].includes(e.name)) return allTri(e.args, (a) => this.q('complex', a)) === true ? true : undefined;
       return undefined;
     }
     return undefined;
@@ -1101,6 +1124,21 @@ class Decider {
     if (e instanceof Special) return false;
     // a real symbol is complex
     if (e instanceof Sym) return this.q('complex', e) === true ? true : undefined;
+    if (e instanceof Add && !expressionFacts) {
+      // SymPy FinitePredicate handler of Add: the terms that are not known finite must agree in
+      // extended_positive (true, or false for all of them), and an infinite one makes the sum infinite
+      let sign: Tri | 'none' = 'none';
+      let result: Tri = true;
+      for (const a of e.args) {
+        const bounded = this.q('finite', a);
+        if (bounded === true) continue;
+        const positive = this.q('extended_positive', a);
+        if ((sign !== 'none' && positive !== sign) || (positive === undefined && (bounded === undefined || sign === undefined))) return undefined;
+        sign = positive;
+        if (result !== false) result = bounded;
+      }
+      return result;
+    }
     if (e instanceof Add) {
       const unbounded = e.args.filter((a) => this.q('finite', a) !== true);
       if (!unbounded.length) return true;
@@ -1134,12 +1172,16 @@ class Decider {
         if (magnitude <= b.q && this.q('extended_positive', x) === true) return true;
         if (magnitude >= b.q && this.q('extended_negative', x) === true) return true;
         if (magnitude > b.q && xf === false && this.q('extended_positive', x) === true) return false;
+        // SymPy: a base of modulus at least 1 to an infinite power is not finite
+        if (!expressionFacts && magnitude >= b.q && xf === false) return false;
       }
       return undefined;
     }
     if (e instanceof Fn) {
       // the functions named below take one argument
       const a = (): Expr => at(e.args, 0);
+      // SymPy FinitePredicate: sin and cos are bounded
+      if (!expressionFacts && (e.name === 'sin' || e.name === 'cos')) return true;
       if (['sin', 'cos', 'atan', 'tanh'].includes(e.name) && this.q('real', a()) === true) return true;
       // SymPy frac._eval_is_finite and RoundFunction._eval_is_finite; sign is -1, 0, 1 or on the unit circle
       if (e.name === 'frac' || e.name === 'sign') return true;
@@ -1150,8 +1192,9 @@ class Decider {
       if (e.name === 'floor' || e.name === 'ceiling') return this.q('finite', a());
       if (['exp', 'sinh', 'cosh', 'abs', 're', 'im', 'conjugate'].includes(e.name) && this.q('finite', a()) === true) return true;
       if (e.name === 'log') {
-        if (this.q('zero', a()) === true || this.q('finite', a()) === false) return false;
-        if (this.q('finite', a()) === true && this.q('zero', a()) === false) return true;
+        // SymPy FinitePredicate handler of log: infinite at an infinite argument and at 0 only
+        if (this.q('zero', a()) === true || this.q('finite', a()) === false || this.q('infinite', a()) === true) return false;
+        if (this.q('zero', a()) === false && (!expressionFacts || this.q('finite', a()) === true)) return true;
       }
       return undefined;
     }
@@ -1199,6 +1242,23 @@ function decide(prop: Expr, d: Decider): Tri {
  * relation, or a boolean combination of them; inconsistent assumptions
  * throw a RangeError.
  */
+/**
+ * The facts of an expression (SymPy expr.is_<fact>, the old assumptions) are asked without the rules that only
+ * the handlers of SymPy's ask have: sin(x).is_finite is None, while ask(Q.finite(sin(x))) is True.
+ */
+let expressionFacts = false;
+
+/** ask for a fact of an expression itself (SymPy expr.is_<fact>). */
+export function askExpressionFact(proposition: Expr): Truth {
+  const outer = expressionFacts;
+  expressionFacts = true;
+  try {
+    return ask(proposition);
+  } finally {
+    expressionFacts = outer;
+  }
+}
+
 export function ask(proposition: ExprLike | boolean, assumptions: Assumption = true): Truth {
   const prop = typeof proposition === 'boolean' ? (proposition ? S.true : S.false) : sympify(proposition);
   const assumed = and(...asList(assumptions), ...globalAssumptions);
@@ -1215,6 +1275,10 @@ export function ask(proposition: ExprLike | boolean, assumptions: Assumption = t
   if (prop instanceof BoolOp && consistentBranches(assumed).length) {
     if (!consistentBranches(and(assumed, not(prop))).length) return true;
     if (!consistentBranches(and(assumed, prop)).length) return false;
+    // SymPy sathandlers: a product is zero exactly when one of its factors is
+    const factored = mapBottomUp(assumed, (node) => (node instanceof AppliedPredicate && node.predicate === 'zero' && node.arg instanceof Mul
+      ? or(...node.arg.args.map((factor) => new AppliedPredicate('zero', [factor]))) : node));
+    if (factored.key !== assumed.key && !consistentBranches(and(factored, not(prop))).length) return true;
   }
   const relationAssumed = prop instanceof Rel ? mapBottomUp(assumed, (node) => node instanceof Rel ? new AppliedPredicate(REL_PREDICATES[node.op], [node.lhs, node.rhs]) : node) : assumed;
   const vs = branches(relationAssumed).map((b) => decide(prop, new Decider(b, relationAssumed)));

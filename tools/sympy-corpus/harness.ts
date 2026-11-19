@@ -4953,6 +4953,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.evalf': (args, kw, self) => evalfAdapter(self, args, kw),
   '.n': (args, kw, self) => evalfAdapter(self, args, kw),
+  // SymPy Predicate.handler: the dispatcher of a predicate, None for one without handlers (an undefined predicate)
+  '.handler': (args, kw, self) => {
+    noKw(kw);
+    const name = (self as { predicateName?: unknown }).predicateName;
+    if (args.length || typeof name !== 'string' || sj.Q[name] !== undefined) throw new Unsupported('Predicate.handler');
+    return null;
+  },
   // mpmath mpf.ae(other): equal up to the relative error 2**(-prec + 4) of the working precision (53 bits)
   '.ae': (args, kw, self) => {
     noKw(kw);

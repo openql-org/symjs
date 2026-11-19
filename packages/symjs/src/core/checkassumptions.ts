@@ -23,7 +23,7 @@ import { Add, Constant, Expr, Pow, S, Sym } from './nodes';
 import { mul, pow, sympify } from './ops';
 import { deduceAllFacts } from './facts';
 import { isPolar } from './assumptions';
-import { Q, ask } from './refine';
+import { Q, ask, askExpressionFact } from './refine';
 import type { FuzzyLike, Truth } from './truth';
 
 /** The assumption facts of SymPy (`_assume_defined`), in alphabetical order. */
@@ -80,7 +80,7 @@ function factsOf(e: Expr): Map<string, boolean> {
     const given: Record<string, boolean> = {};
     for (const k of ASSUMPTION_NAMES) {
       const p = Q[k];
-      const v: Truth = p === undefined ? (isPolar(e) ? true : 'unknown') : ask(p(e));
+      const v: Truth = p === undefined ? (isPolar(e) ? true : 'unknown') : askExpressionFact(p(e));
       if (v !== 'unknown') given[k] = v;
     }
     // SymPy Add._eval_is_hermitian/_eval_is_antihermitian: the fuzzy group of the terms' core facts
