@@ -6,6 +6,7 @@
  * solvers/polysys.py factor_system and factor_system_cond).
  */
 
+import { NoMatch, NoMatchResult } from '../core/truth';
 import { NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Sym } from '../core/nodes';
@@ -223,9 +224,12 @@ const cmpSysKey = (a: Key[], b: Key[], params: readonly Expr[]): number =>
  * the order of `gens`, sorted like SymPy (default_sort_key). Throws for
  * systems that are not zero-dimensional.
  */
-export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { rationalOnly?: boolean; strict?: boolean } = {}): Expr[][] {
+export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { distinguishInconsistent: true; rationalOnly?: boolean; strict?: boolean }): Expr[][] | NoMatchResult;
+export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts?: { rationalOnly?: boolean; strict?: boolean }): Expr[][];
+export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { distinguishInconsistent?: boolean; rationalOnly?: boolean; strict?: boolean } = {}): Expr[][] | NoMatchResult {
   const system = eqs.map((e) => expand(sympify(e))).filter((e) => !(e instanceof Rational && e.isZero));
-  const sols = solveReduced(system, gens, opts.rationalOnly ?? false, opts.strict ?? false);
+  const sols = solveReduced(system, gens, opts.rationalOnly ?? false, opts.strict ?? false, true);
+  if (sols instanceof NoMatchResult) return opts.distinguishInconsistent ? sols : [];
   return sols.sort((a, b) => cmpSeq(a, b, (u, v) => compareKeys(sortKey(u), sortKey(v))));
 }
 
@@ -236,7 +240,9 @@ function radicalRoots(f: Expr, x: Sym, strict: boolean): Expr[] {
   return result;
 }
 
-function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean): Expr[][] {
+function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean): Expr[][];
+function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean, entry: true): Expr[][] | NoMatchResult;
+function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean, strict: boolean, entry = false): Expr[][] | NoMatchResult {
   // no equation left to determine the generators: they are free
   if (!system.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const gen = at(gens, -1);
@@ -264,7 +270,7 @@ function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolea
     }
   }
   const basis = [...groebner(system, [...gens], 'lex').exprs];
-  if (basis.length === 1 && basis[0] instanceof Rational) return [];
+  if (basis.length === 1 && basis[0] instanceof Rational) return entry ? NoMatch : [];
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
   const univariate = basis.filter((b) => ![...freeSymbols(b)].filter((s) => s instanceof Sym).some((s) => others.has(s.key)) && b.has(gen));
   if (univariate.length !== 1) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');

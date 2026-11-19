@@ -855,11 +855,11 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const [x, a] = symbols('x a');
     expect(sympyStr(solvesetComplex(new Add([new Pow(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), a])]), x))).toBe('{-sqrt(1 - sqrt(a)), sqrt(1 - sqrt(a)), -sqrt(sqrt(a) + 1), sqrt(sqrt(a) + 1)}');
   });
-  it.fails("test_solve_polynomial_symbolic_param:652", () => {
+  it("test_solve_polynomial_symbolic_param:652", () => {
     const [y, b, a, x] = symbols('y b a x');
     expect(sympyStr(solvesetComplex(new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b, new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([a, x])]), Rational.of(-1n, 1n, { gcd: 1n }))])]), x))).toBe('Complement({(b/y - 1)/a}, {-1/a})');
   });
-  it.fails("test_solve_polynomial_symbolic_param:656", () => {
+  it("test_solve_polynomial_symbolic_param:656", () => {
     const [y, b, x, a] = symbols('y b x a');
     expect(sympyStr(solvesetComplex(new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b, x, new Pow(new Add([a, x]), Rational.of(-1n, 1n, { gcd: 1n }))])]), x))).toBe('Complement({-a*y/(-b + y)}, {-a})');
   });
@@ -1139,7 +1139,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
   it("test_solve_trig_hyp_by_inversion:1041", () => {
     expect(sympyStr(dummyEq(new SetOp('Union', [new ImageSet(new Dummy('n', { integer: true }, 1000001), fn('asinh', [new Add([new Mul([Rational.of(1n, 12n, { gcd: 1n }), pi]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, new Dummy('n', { integer: true }, 1000001)])])], { evaluate: false }), Integers), new ImageSet(new Dummy('n', { integer: true }, 1000001), fn('asinh', [new Add([new Mul([Rational.of(23n, 12n, { gcd: 1n }), pi]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, new Dummy('n', { integer: true }, 1000001)])])], { evaluate: false }), Integers)]), new SetOp('Union', [new ImageSet(new Dummy('n', {}, 1000000), fn('asinh', [new Add([new Mul([Rational.of(1n, 12n, { gcd: 1n }), pi]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, new Dummy('n', {}, 1000000)])])], { evaluate: false }), Integers), new ImageSet(new Dummy('n', {}, 1000000), fn('asinh', [new Add([new Mul([Rational.of(23n, 12n, { gcd: 1n }), pi]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), pi, new Dummy('n', {}, 1000000)])])], { evaluate: false }), Integers)])))).toBe('True');
   });
-  it.fails("test_solve_trig_hyp_by_inversion:1044", () => {
+  it("test_solve_trig_hyp_by_inversion:1044", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([new Mul([Rational.of(-1n, 4n, { gcd: 1n }), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))]), new Mul([Rational.of(-1n, 4n, { gcd: 1n }), new Pow(Rational.of(6n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))]), fn('cos', [fn('sinh', [x], { evaluate: false })], { evaluate: false })]), x, interval(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(3n, 1n, { gcd: 1n }), false, false)))).toBe('{asinh(23*pi/12), asinh(25*pi/12)}');
   });
@@ -1231,7 +1231,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(dummyEq(new SetOp('Union', [new ImageSet(new Dummy('n', { integer: true }, 1000001), new Add([new Mul([pi, I, new Dummy('n', { integer: true }, 1000001)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 0)], { evaluate: false })]), Integers), new ImageSet(new Dummy('n', { integer: true }, 1000002), new Add([new Mul([pi, I, new Dummy('n', { integer: true }, 1000002)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 1)], { evaluate: false })]), Integers), new ImageSet(new Dummy('n', { integer: true }, 1000003), new Add([new Mul([pi, I, new Dummy('n', { integer: true }, 1000003)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 2)], { evaluate: false })]), Integers), new ImageSet(new Dummy('n', { integer: true }, 1000004), new Add([new Mul([pi, I, new Dummy('n', { integer: true }, 1000004)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 3)], { evaluate: false })]), Integers), new ImageSet(new Dummy('n', { integer: true }, 1000005), new Add([new Mul([pi, I, new Dummy('n', { integer: true }, 1000005)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 4)], { evaluate: false })]), Integers)]), new SetOp('Union', [new ImageSet(new Dummy('n', {}, 1000000), new Add([new Mul([pi, I, new Dummy('n', {}, 1000000)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 0)], { evaluate: false })]), Integers), new ImageSet(new Dummy('n', {}, 1000000), new Add([new Mul([pi, I, new Dummy('n', {}, 1000000)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 1)], { evaluate: false })]), Integers), new ImageSet(new Dummy('n', {}, 1000000), new Add([new Mul([pi, I, new Dummy('n', {}, 1000000)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 2)], { evaluate: false })]), Integers), new ImageSet(new Dummy('n', {}, 1000000), new Add([new Mul([pi, I, new Dummy('n', {}, 1000000)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 3)], { evaluate: false })]), Integers), new ImageSet(new Dummy('n', {}, 1000000), new Add([new Mul([pi, I, new Dummy('n', {}, 1000000)]), fn('acoth', [new CRootOf(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x])]), 4)], { evaluate: false })]), Integers)])))).toBe('True');
   });
-  it.fails("test_solve_trig_hyp_by_inversion:1091", () => {
+  it("test_solve_trig_hyp_by_inversion:1091", () => {
     const z = new Sym('z');
     expect(sympyStr(solveset(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(fn('coth', [z], { evaluate: false }), Rational.of(5n, 1n, { gcd: 1n })), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), fn('coth', [z], { evaluate: false })])]), z, Reals))).toBe('{acoth(CRootOf(x**5 - 4*x + 1, 0)), acoth(CRootOf(x**5 - 4*x + 1, 2))}');
   });
@@ -2241,7 +2241,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const [x, a, b] = symbols('x a b');
     expect(sympyStr(solveset(new Add([x, new Mul([new Pow(new Add([new Mul([Rational.of(-2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), b])]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([a, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b])])])]), x, Complexes))).toBe('{1/2}');
   });
-  it.fails("test_simplification:2598", () => {
+  it("test_simplification:2598", () => {
     const [x, a, b] = symbols('x a b');
     expect(sympyStr(solveset(new Add([x, new Mul([new Pow(new Add([new Mul([Rational.of(-2n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), b])]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([a, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b])])])]), x, Reals))).toBe('Intersection({-(a - b)/(-2*a + 2*b)}, Reals)');
   });
@@ -2321,12 +2321,12 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const [x, t, r] = symbols('x t r');
     expect(sympyStr(solveset(new Add([new Mul([x, fn('tan', [t], { evaluate: false })]), new Mul([new Pow(r, Rational.of(1n, 2n, { gcd: 1n })), new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(fn('tan', [t], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 2n, { gcd: 1n })), fn('abs', [fn('tan', [t], { evaluate: false })], { evaluate: false })])]), x, Reals))).toBe('Intersection({-sqrt(r)*Abs(tan(t))/(sqrt(tan(t)**2 + 1)*tan(t))}, Reals)');
   });
-  it.fails("test_issue_11534:2684", () => {
+  it("test_issue_11534:2684", () => {
     const y = new Sym('y', { real: true });
     const x = new Sym('x', { real: true });
     expect(sympyStr(solveset(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y]), new Mul([x, new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), Rational.of(-1n, 2n, { gcd: 1n }))])]), x, Reals))).toBe('Union(Complement(ConditionSet(x, Eq(x/sqrt(1 - x**2) - y, 0), {-y/sqrt(y**2 + 1)}), {-1, 1}), Complement({y/sqrt(y**2 + 1)}, {-1, 1}))');
   });
-  it.fails("test_issue_11534:2685", () => {
+  it("test_issue_11534:2685", () => {
     const y = new Sym('y', { real: true });
     const x = new Sym('x', { real: true });
     expect(sympyStr(solveset(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))])]), Rational.of(-1n, 1n, { gcd: 1n }))])]), x, Reals))).toBe('Complement({-y/sqrt(y**2 + 1), y/sqrt(y**2 + 1)}, {-1, 1})');
@@ -2443,7 +2443,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(solveset(new Add([new Mul([Rational.of(4n, 3n, { gcd: 1n }), new Pow(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 3n, { gcd: 1n }))]), new Mul([Rational.of(-8n, 9n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-4n, 3n, { gcd: 1n }))])]), x, Complexes))).toBe('{-sqrt(3), sqrt(3)}');
   });
-  it.fails("test_issue_21276:2814", () => {
+  it("test_issue_21276:2814", () => {
     const [y, z, x] = symbols('y z x');
     expect(sympyStr(solveset(new Add([new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), new Pow(z, Rational.of(2n, 1n, { gcd: 1n })), new Mul([new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), new Pow(fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])]), Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([new Pow(z, Rational.of(2n, 1n, { gcd: 1n })), new Pow(fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])]), Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x, new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x, new Pow(z, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), y, z]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])])]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(z, Rational.of(2n, 1n, { gcd: 1n })), fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])])]), new Mul([Rational.of(4n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(y, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(4n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(z, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-8n, 1n, { gcd: 1n }), y, z, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x, new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])])]), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), x, new Pow(z, Rational.of(2n, 1n, { gcd: 1n })), fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])])]), new Mul([Rational.of(-4n, 1n, { gcd: 1n }), y, z, fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])])]), new Mul([Rational.of(-2n, 1n, { gcd: 1n }), y, z, new Pow(fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])]), Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(8n, 1n, { gcd: 1n }), x, y, z]), new Mul([Rational.of(8n, 1n, { gcd: 1n }), x, y, z, fn('erf', [new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z])])])])]), y, Complexes))).toBe('{z, z + erfinv(2*x - 1)}');
   });
@@ -2504,7 +2504,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
   //           S.Reals, FiniteSet(-log(C1 + C2/x**2)))
   //   => Intersection({-log(C1 + C2/x**2)}, Reals)
   it.todo("test_exponential_real:2854");
-  it.fails("test_exponential_real:2857", () => {
+  it("test_exponential_real:2857", () => {
     const x = new Sym('x');
     const y = new Sym('y', { positive: true });
     expect(sympyStr(solvesetReal(new Add([new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(y, Rational.of(2n, 1n, { gcd: 1n })), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]))])]), y))).toBe('Intersection({-sqrt(x**2*exp(x)), sqrt(x**2*exp(x))}, Reals)');
@@ -2541,19 +2541,19 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const x = new Sym('x');
     expect(sympyStr(dummyEq(new ConditionSet(x, Relational(new Add([new Pow(Rational.of(2n, 1n, { gcd: 1n }), x), new Pow(Rational.of(3n, 1n, { gcd: 1n }), x), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(Rational.of(5n, 1n, { gcd: 1n }), x)])]), Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Reals).asDummy(), new ConditionSet(x, Relational(new Add([new Pow(Rational.of(2n, 1n, { gcd: 1n }), x), new Pow(Rational.of(3n, 1n, { gcd: 1n }), x), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(Rational.of(5n, 1n, { gcd: 1n }), x)])]), Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), Reals).asDummy()))).toBe('True');
   });
-  it.fails("test_exponential_symbols:2919", () => {
+  it("test_exponential_symbols:2919", () => {
     const z = new Sym('z', { positive: true });
     const x = new Sym('x', { positive: true });
     const y = new Sym('y', { positive: true });
     expect(sympyStr(solveset(new Add([new Pow(z, x), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), y])]), x, Reals))).toBe('Intersection({log(y)/log(z)}, Reals)');
   });
-  it.fails("test_exponential_symbols:2926", () => {
+  it("test_exponential_symbols:2926", () => {
     const w = new Sym('w');
     const y = new Sym('y', { positive: true });
     const x = new Sym('x', { positive: true });
     expect(sympyStr(solveset(new Add([new Mul([Rational.of(-4n, 1n, { gcd: 1n }), new Pow(y, w)]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(x, w)])]), w, Reals))).toBe('Intersection({log(2)/(log(x) - log(y))}, Reals)');
   });
-  it.fails("test_exponential_symbols:2927", () => {
+  it("test_exponential_symbols:2927", () => {
     const w = new Sym('w');
     const x = new Sym('x', { positive: true });
     const y = new Sym('y', { positive: true });
@@ -2568,13 +2568,13 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const y = new Sym('y', { positive: true });
     expect(sympyStr(solveset(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, y)]), y, Reals))).toBe('{0}');
   });
-  it.fails("test_exponential_symbols:2932", () => {
+  it("test_exponential_symbols:2932", () => {
     const x = new Sym('x', { positive: true });
     const y = new Sym('y', { positive: true });
     const z = new Sym('z', { positive: true });
     expect(sympyStr(solveset(new Add([Rational.of(-2n, 1n, { gcd: 1n }), new Mul([new Pow(E, new Mul([x, new Pow(y, Rational.of(-1n, 1n, { gcd: 1n }))])), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z, new Pow(y, Rational.of(-1n, 1n, { gcd: 1n }))]))])]), y, Reals))).toBe('Complement({(x - z)/log(2)}, {0})');
   });
-  it.fails("test_exponential_symbols:2935", () => {
+  it("test_exponential_symbols:2935", () => {
     const xr = new Sym('xr', { real: true });
     const y = new Sym('y', { positive: true });
     const zr = new Sym('zr', { real: true });
@@ -2834,7 +2834,7 @@ describe("sympy/solvers/tests/test_solveset.py", () => {
     const v2 = solve(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]), new Mul([Rational.of(1n, 2n, { gcd: 1n }), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(v1, Rational.of(1n, 2n, { gcd: 1n }))])]), v1, { check: true, implicit: false, simplify: true, cubics: true });
     expect(sympyStr([at(v2, 0), at(v2, 1)])).toBe('[0, 1/2]');
   });
-  it.fails("test_issue_26077:3548", () => {
+  it("test_issue_26077:3548", () => {
     const [x, _n] = symbols('x _n');
     expect(sympyStr(new ConditionSet(x, Relational(new Add([new Mul([x, new Add([Rational.of(-5n, 1n, { gcd: 1n }), new Mul([Rational.of(-5n, 1n, { gcd: 1n }), new Pow(fn('cot', [new Mul([Rational.of(5n, 1n, { gcd: 1n }), x])], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n }))])])]), fn('cot', [new Mul([Rational.of(5n, 1n, { gcd: 1n }), x])], { evaluate: false })]), Rational.of(0n, 1n, { gcd: 1n }), '==', { evaluate: false }), new SetOp('Complement', [Reals, new SetOp('Union', [new ImageSet(_n, new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, _n]), Integers), new ImageSet(_n, new Add([new Mul([Rational.of(1n, 5n, { gcd: 1n }), pi]), new Mul([Rational.of(2n, 5n, { gcd: 1n }), pi, _n])]), Integers)])])).asDummy())).toBe('ConditionSet(_0, Eq(_0*(-5*cot(5*_0)**2 - 5) + cot(5*_0), 0), Complement(Reals, Union(ImageSet(Lambda(_0, 2*pi*_0/5), Integers), ImageSet(Lambda(_0, 2*pi*_0/5 + pi/5), Integers))))');
   });

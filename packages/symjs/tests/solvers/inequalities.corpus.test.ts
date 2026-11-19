@@ -808,7 +808,7 @@ describe("sympy/solvers/tests/test_inequalities.py", () => {
   it("test_solve_univariate_inequality:316", () => {
     expect(() => solveUnivariateInequality(Relational(new Mul([new Pow(new Dummy('c1', { positive: true }, 1000000), Rational.of(-1n, 1n, { gcd: 1n })), new Dummy('n', {}, 1000001)]), Rational.of(0n, 1n, { gcd: 1n }), '<', { evaluate: false }), new Dummy('c1', { positive: true }, 1000000), { relational: true })).toThrow(NotImplementedError);
   });
-  it.fails("test_solve_univariate_inequality:318", () => {
+  it("test_solve_univariate_inequality:318", () => {
     expect(sympyStr(solveUnivariateInequality(Relational(new Mul([new Pow(new Dummy('c1', { positive: true }, 1000000), Rational.of(-1n, 1n, { gcd: 1n })), new Dummy('n', { negative: true }, 1000001)]), Rational.of(-2n, 1n, { gcd: 1n }), '>', { evaluate: false }), new Dummy('c1', { positive: true }, 1000000), { relational: true }))).toBe('-_n/2 < _c1');
   });
   // the arguments do not type-check against the public API

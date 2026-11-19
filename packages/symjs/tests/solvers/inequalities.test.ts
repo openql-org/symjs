@@ -892,7 +892,7 @@ it('checks original equations and domain membership after clearing coupled radic
     { source: 'sqrt(x)+sqrt(x-1)-1', domain: Reals, expected: '{1}' },
     { source: 'sqrt(x)+sqrt(x-1)-2', domain: interval(100, 101), expected: 'EmptySet' },
     { source: 'sqrt(x)+sqrt(x-1)+2', domain: Reals, expected: 'EmptySet' },
-    { source: 'sqrt(x**2)-sqrt((x+1)**2)+1', domain: Reals, expected: undefined },
+    { source: 'sqrt(x**2)-sqrt((x+1)**2)+1', domain: Reals, expected: 'Interval(0, oo)' },
     { source: 'sinh(x)+cosh(x)-2', domain: Reals, expected: '{log(2)}' },
   ];
   for (const { source, domain, expected } of cases) {
@@ -903,8 +903,7 @@ it('checks original equations and domain membership after clearing coupled radic
     });
     try {
       const solution = solveset(equation, x, domain);
-      if (expected === undefined) expect(solution).toBeInstanceOf(ConditionSet);
-      else expect(String(solution)).toBe(expected);
+      expect(String(solution)).toBe(expected);
     } finally {
       fail.mockRestore();
     }
@@ -917,4 +916,47 @@ it('makes every Piecewise of an expression exclusive (SymPy piecewise_exclusive 
   expect(String(sj.piecewiseExclusive(sj.add(piece, 2), { deep: false }))).toBe('Piecewise((0, x < 0), (1/2, x <= 0), (1, True)) + 2');
   expect(String(sj.piecewiseExclusive(piece, { deep: false }))).toBe('Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))');
   expect(String(sj.piecewiseExclusive(sj.add(x, 1)))).toBe('x + 1');
+});
+
+it('accounts for rounding cancellation and sign when ordering endpoints', () => {
+  const zero = p('cos(1)**2+sin(1)**2-1');
+  const compare = (bound: Expr) => Q.solveUnivariateInequality(new sj.Rel('Lt', pow(x, 2), bound), x);
+  expect(() => compare(zero)).toThrow(NotImplementedError);
+  expect(compare(add(zero, Rational.of(-1, 2)))).toBe(SS.false);
+  expect(() => compare(p('cos(1)+sin(1)*I-1'))).toThrow(TypeError);
+  const positive = new Sym('p', { positive: true });
+  expect(String(Q.solveUnivariateInequality(Gt(mul(y, pow(positive, -1)), 2), positive))).toBe(String(Gt(mul(y, SS.Half), positive)));
+  expect(Q.solveUnivariateInequality(new sj.Rel('Gt', x, SS.Infinity), x, { relational: false })).toBe(sj.EmptySet);
+});
+
+it('inverts an unevaluated two-argument arctangent on its principal interval', () => {
+  const angle = new sj.Fn('atan2', [xr, SS.Two]);
+  expect(String(solveset(angle, xr, Reals))).toBe('{0}');
+  expect(solveset(add(angle, sj.pi.neg()), xr, Reals)).toBe(sj.EmptySet);
+  expect(solveset(add(angle, y.neg()), xr, Reals)).toBeInstanceOf(ConditionSet);
+});
+
+it('keeps the original real-domain restrictions when isolation is incomplete', () => {
+  for (const source of ['log(x**y)-3', 'Abs(x+1)-y', 'exp(x/y)*exp(1/x)-y']) {
+    expect(solveset(p(source), x, Reals)).toBeInstanceOf(ConditionSet);
+  }
+  const a = new Sym('a', { positive: true }), b = new Sym('b', { positive: true });
+  expect(solveset(add(pow(mul(a, b), x), x), x, Reals)).toBeInstanceOf(ConditionSet);
+  const nested = new sj.Pow(new sj.Pow(xr, Rational.of(2, 3)), SS.Half);
+  expect(solveset(add(nested, y.neg()), xr, Reals)).toBeInstanceOf(sj.SetExpr);
+  const realRoots = solveset(p('3**x*y-2**x'), x, Reals);
+  expect(String(realRoots)).toContain('log(1/y)');
+});
+
+it('restricts cosine preimages to the range of the hyperbolic argument', () => {
+  const equation = p('cos(sinh(x))-1/3');
+  expect(String(solveset(equation, x, interval(0, 2)))).toBe('{asinh(acos(1/3))}');
+  expect(solveset(p('cos(sinh(x))-2'), x, interval(0, 1))).toBe(sj.EmptySet);
+  expect(solveset(p('cos(sinh(x))-y'), x, interval(0, 1))).toBeInstanceOf(ConditionSet);
+});
+
+it('retains the original condition when squaring a radical equation gives an identity', () => {
+  const equation = p('sqrt(x**2+2*x+1)-sqrt(x**2-2*x+1)-2');
+  const result = solveset(equation, x, Reals);
+  expect(String(result)).toBe(String(new ConditionSet(x, Eq(equation, 0), Reals)));
 });

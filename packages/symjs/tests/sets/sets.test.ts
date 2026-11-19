@@ -1472,16 +1472,29 @@ it('cuts the image of the integers by an interval with indexed-root shifts (SymP
   expect(cut.args.map(String).sort()).toEqual(['CRootOf(x**5 - x**2 + 1, 0)', 'CRootOf(x**5 - x**2 + 1, 0) + 1', 'CRootOf(x**5 - x**2 + 1, 0) + 2', 'CRootOf(x**5 - x**2 + 1, 0) - 1']);
 });
 
-it('takes common symbols out of a difference of finite sets (SymPy FiniteSet._complement)', () => {
+it('preserves exclusions that can coincide with a remaining finite-set element', () => {
   const [i, j, k, x, y] = sj.symbols('i j k x y');
   const F = sj.finiteSet;
   const show = (a: sj.SetExpr, b: sj.SetExpr) => String(sj.complement(a, b));
-  expect(show(F(i, j, k), F(j))).toBe('{i, k}');
-  expect(show(F(i, j, k), F(j, 1))).toBe('Complement({i, k}, {1})');
+  expect(show(F(i, j, k), F(j))).toBe('Complement({i, k}, {j})');
+  expect(show(F(i, j, k), F(j, 1))).toBe('Complement({i, k}, {1, j})');
   expect(show(F(1, 2, k), F(j))).toBe('Complement({1, 2, k}, {j})');
   expect(show(F(1, 2, 3), F(2, j))).toBe('Complement({1, 3}, {j})');
   expect(show(F(i, j), F(k))).toBe('Complement({i, j}, {k})');
-  expect(show(F(1, i), F(1))).toBe('{i}');
+  expect(show(F(1, i), F(1))).toBe('Complement({i}, {1})');
   // SymPy test_issue_9808
-  expect(show(F(1, 2, x), F(x, y, 2, 3))).toBe('Complement({1}, {y})');
+  expect(show(F(1, 2, x), F(x, y, 2, 3))).toBe('Complement({1}, {2, 3, x, y})');
+});
+
+it('checks the imaginary part of numeric expressions with undecided real assumptions', () => {
+  expect(Sets.containsQ(Sets.Reals, sj.parse('(-2)**(1/3)'))).toBe(false);
+  expect(Sets.containsQ(Sets.Reals, sj.parse('Gamma(1+I)'))).toBeUndefined();
+  const numeric = vi.spyOn(impl, 'toComplex').mockImplementationOnce(() => { throw new TypeError('unsupported numeric evaluation'); });
+  const approx = vi.spyOn(impl, 'evalf').mockImplementationOnce(() => { throw new TypeError('unsupported arbitrary precision'); });
+  try {
+    expect(Sets.realValue(sj.pi)).toBeUndefined();
+  } finally {
+    numeric.mockRestore();
+    approx.mockRestore();
+  }
 });

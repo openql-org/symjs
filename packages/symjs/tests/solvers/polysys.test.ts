@@ -4,7 +4,7 @@
 // Tests of src/solvers/polysys.ts: polynomial systems (solve_poly_system, factor_system); expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { factorSystem, factorSystemCond, factorSystemPoly, Poly, NotImplementedError, parse, solvePolySystem, solveTriangulated, symbols } from '../../src';
+import { NoMatch, factorSystem, factorSystemCond, factorSystemPoly, Poly, NotImplementedError, parse, solvePolySystem, solveTriangulated, symbols } from '../../src';
 
 const [x, y, z] = symbols('x y z');
 const P = (ss: string[]) => ss.map((s) => parse(s));
@@ -238,4 +238,10 @@ it('factors polynomial systems in their coefficient domain', () => {
 it('factors symbolic parameters in composite coefficient domains', () => {
   const f = P(['a*(x - 1)*(x + 1)', 'b*(x - 1)*(x + 1)']);
   expect(show(factorSystemCond(f, [x], { domain: 'ZZ[a,b]' }))).toBe('[[x + 1], [x - 1], [a, b]]');
+});
+
+it('distinguishes a ground basis from a polynomial without radical roots', () => {
+  const options = { distinguishInconsistent: true } as const;
+  expect(solvePolySystem(P(['y-x', 'y-x-1']), [x, y], options)).toBe(NoMatch);
+  expect(solvePolySystem(P(['x**5-x+1']), [x], options)).toEqual([]);
 });
