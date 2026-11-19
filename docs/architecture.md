@@ -251,7 +251,7 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 | `stats/stochastic_process.py` | `stats/stochasticprocess.ts` | SymPy's `Distribution()` of a process without a distribution is `UnspecifiedDistribution` |
 | `stats/stochastic_process_types.py` | `stats/stochasticprocesstypes.ts` | X[n] of a discrete-time process is `X.at(n)` and X(t) of a continuous-time one `X.call(t)`; the Markov chains derive from `MarkovProcess` only (no multiple inheritance) |
 | `stats/symbolic_multivariate_probability.py` | `stats/symbolicmultivariateprobability.ts` | ExpectationMatrix, VarianceMatrix and CrossCovarianceMatrix are matrix expressions; `Expectation`, `Variance` and `Covariance` of a matrix give them through `statsClasses` |
-| `stats/sampling/sample_numpy.py`, `sample_scipy.py`, `sample_pymc.py` (and `sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=` of `stats/rv.py` and the `sample` methods of the other stats modules) | not ported (out of scope) | they draw samples with the external Python libraries numpy, scipy and pymc, which have no JavaScript counterpart in symjs; their doctests are listed in `OUT_OF_SCOPE` of `tools/sympy-corpus/compat/compat.test.ts` |
+| `stats/sampling/sample_numpy.py`, `sample_scipy.py`, `sample_pymc.py` (and `sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=` of `stats/rv.py` and the `sample` methods of the other stats modules) | not ported (out of scope) | they draw samples with the external Python libraries numpy, scipy and pymc, which have no JavaScript counterpart in symjs; their doctests are listed in `tools/sympy-reference/doctest-exclusions.json` |
 
 ### Additional mathematical foundations
 
@@ -346,7 +346,7 @@ and tensor operations follow SymPy's differential-geometry namespace.
 Differential-geometry doctests belong to the base corpus. The shared harness
 resolves their constructors and methods from the public diffgeom subpath, using
 only argument and result conversions. Unit assertions are extracted into
-`tools/sympy-corpus/tests-corpus/diffgeom.json` and replayed by the `unit-diffgeom` project
+`tools/sympy-corpus/unittest/diffgeom.json` and replayed by the `unittest-diffgeom` project
 through the same base dispatch.
 
 ## Plotting data for connector packages

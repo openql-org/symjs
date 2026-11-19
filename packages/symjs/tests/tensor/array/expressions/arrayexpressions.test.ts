@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-import { passingModuleCases, runTestCase } from '../../../../../../tools/sympy-corpus/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../../../tools/sympy-corpus/unittest-harness';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { ArraySymbol, ArrayElement, ArrayTensorProduct as TP, ArrayContraction as C, ArrayDiagonal as D, ArrayAdd, PermuteDims as P, Reshape, ZeroArray, getShape, getRank, SymArray, MatrixSymbol, Sym, S, str, latex, tensorproduct, tensorcontraction, tensordiagonal, permutedims, parse, diff, expand, sub } from '../../../../src/index';

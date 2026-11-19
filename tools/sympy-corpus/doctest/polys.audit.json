@@ -1,0 +1,2020 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.polys.numberfields.subfield",
+   "src": "print(field_isomorphism(3, sqrt(2)))  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.subfield",
+   "src": "print(field_isomorphism( I*sqrt(3), I*sqrt(3)/2))  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.subfield",
+   "src": "print([S(r) for r in reps[0]])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.subfield",
+   "src": "print([S(r) for r in reps[1]])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.subfield",
+   "src": "print(type(a))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.subfield",
+   "src": "print(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "list(G.fglm('lex'))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "list(groebner(F, x, y, order='lex'))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "expand(sum(q*g for q, g in zip(Q, G)) + r)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "_ == f",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "f(2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "f(2, 5)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "f(2, 5, 7)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "dispersion(fp)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(fp, gp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "dispersion(fp, gp)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(gp, fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "dispersion(gp, fp)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(fp, gp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(gp, fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "dispersion(fp)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(fp, gp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "dispersion(fp, gp)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(gp, fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "dispersion(gp, fp)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(fp, gp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(gp, fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "sorted(dispersionset(fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "f(2, 5)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "Poly(x**2 + 1, x).exquo(Poly(2*x - 4, x))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "Poly(2*x + 3).exquo_ground(2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "Poly(x**2 - 1, x).invert(Poly(x - 1, x))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "_.nth(1, 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "Poly(x**2 + 1, x).pexquo(Poly(2*x - 4, x))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "Poly(x**2 - 2, x).revert(2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "Poly(1/x, x).revert(1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "f.root(3)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "print(indices)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "factors = _torational_factor_list(p, x); factors",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "factors = _torational_factor_list(p, x); factors",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "for r in all_roots(p): print(r)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "[r.evalf(3) for r in all_roots(p)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "all_roots(p)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "together(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "exquo(x**2 + 1, 2*x - 4)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "invert(x**2 - 1, x - 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "pexquo(x**2 + 1, 2*x - 4)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "[r.evalf(3) for r in real_roots(p)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "[r.evalf(5) for r in roots(p, multiple=True)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "[r.evalf(5) for r in real_roots(p, x)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "[r.is_real for r in roots(p, multiple=True)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "[r.is_real for r in real_roots(p)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "real_roots(p)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "lc, r",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polytools",
+   "src": "g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polyroots",
+   "src": "_integer_basis(p)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polyroots",
+   "src": "_inv_totient_estimate(192)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polyroots",
+   "src": "_inv_totient_estimate(400)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polyroots",
+   "src": "_roots_quartic_euler(p, q, r, S(0))[0]",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.polys.polyroots",
+   "src": "sorted(str(tmp.evalf(n=2)) for tmp in r)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.polyfuncs",
+   "src": "[(i,interpolate((a, b), i)) for i in range(1, 4)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.orthopolys",
+   "src": "fn(1, z)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.orthopolys",
+   "src": "fn(2, z)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.orthopolys",
+   "src": "fn(3, z)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.orthopolys",
+   "src": "fn(4, z)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.minpoly",
+   "src": "_minimal_polynomial_sq(q, 3, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.minpoly",
+   "src": "_minpoly_op_algebraic_element(Mul, p1, p2, x, QQ)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.minpoly",
+   "src": "_minpoly_op_algebraic_element(Add, q1, q2, x, QQ.frac_field(y))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.minpoly",
+   "src": "_minpoly_pow(p, 2, x, QQ)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.minpoly",
+   "src": "_minpoly_pow(y, Rational(1, 3), x, QQ.frac_field(y))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.minpoly",
+   "src": "p = _separate_sq(p); p",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.numberfields.minpoly",
+   "src": "p = _separate_sq(p); p",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.numberfields.minpoly",
+   "src": "p = _separate_sq(p); p",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.polyutils",
+   "src": "some.foo, some.bar",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polyutils",
+   "src": "some2.foo, some2.bar",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.appellseqs",
+   "src": "[andre_poly(n, 0) for n in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.appellseqs",
+   "src": "[euler(n) for n in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.appellseqs",
+   "src": "[andre_poly(n-1, 1) * n / (4**n - 2**n) for n in range(1, 11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.appellseqs",
+   "src": "[bernoulli(n) for n in range(1, 11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.appellseqs",
+   "src": "[-andre_poly(n-1, -1) * n / (-2)**(n-1) for n in range(1, 11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.appellseqs",
+   "src": "[genocchi(n) for n in range(1, 11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.appellseqs",
+   "src": "[abs(andre_poly(n, n%2)) for n in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.appellseqs",
+   "src": "psum(4, -6, 27)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.constructor",
+   "src": "type(elements[0])  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.constructor",
+   "src": "type(expressions[0])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.constructor",
+   "src": "construct_domain([sqrt(2)], extension=True)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(fp, gp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(gp, fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(fp, gp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(gp, fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(fp, gp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(gp, fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(fp, gp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(gp, fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.dispersion",
+   "src": "sorted(dispersionset(fp))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.heuristicgcd",
+   "src": "h, cff, cfg",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.heuristicgcd",
+   "src": "cff*h == f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.heuristicgcd",
+   "src": "cfg*h == g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_LC(f)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_LC(f)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_LC(f)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq.trunc_ground(p) == hp",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq.trunc_ground(q) == hq",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq.trunc_ground(p) == hp",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq.trunc_ground(q) == hq",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq.trunc_ground(p) == hp",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "hpq.trunc_ground(q) == hq",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_deg(f)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_deg(f)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_deg(f)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_func_field_modgcd_m(f, g, minpoly)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_func_field_modgcd_m(f, g, minpoly)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_primitive(f, p)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "_primitive(f, p)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cff * h == f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cfg * h == g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cff * h == f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cfg * h == g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cff * h == f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cfg * h == g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cff * h == f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cfg * h == g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cff * h == f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cfg * h == g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cff * h == f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.modulargcd",
+   "src": "cfg * h == g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.monomials",
+   "src": "sorted(itermonomials([x, y], 2), key=monomial_key('grlex', [y, x]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.monomials",
+   "src": "sorted(itermonomials([x, y], 3), key=monomial_key('grlex', [y, x]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.monomials",
+   "src": "set(itermonomials([a, b, x], 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.monomials",
+   "src": "sorted(itermonomials([x, y], 2, 1), key=monomial_key('grlex', [y, x]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.monomials",
+   "src": "sorted(itermonomials([x, y], [2, 4], [1, 2]), reverse=True, key=monomial_key('lex', [x, y]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.monomials",
+   "src": "sorted(M, key=monomial_key('grlex', [y, x]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.monomials",
+   "src": "len(M)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.monomials",
+   "src": "monomial_div((3, 4, 1), (1, 2, 2)) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.orderings",
+   "src": "ilex((5,)) < ilex((0,))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.orderings",
+   "src": "P((2, 1, 1, 0, 0)) > P((1, 10, 0, 2, 0))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.orderings",
+   "src": "P((2, 1, 1, 0, 0)) < P((2, 1, 0, 2, 0))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.polyoptions",
+   "src": "allowed_flags({'domain': ZZ, 'frac': True}, [])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "isinstance(_, Expr)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "list(p.itermonoms())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "list(p.iterterms())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "rs_exp(x, x, 5)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "rs_nth_root(8*x + x**2 + x**3, 3, x, 5)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "R(3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "R({(QQ(1,2),): QQ(3)})",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "QQ.of_type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "isinstance(_, PuiseuxPoly)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.puiseux",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.ring_series",
+   "src": "_has_constant_term(p, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.ring_series",
+   "src": "_invert_monoms(p)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.ring_series",
+   "src": "_series_inversion1(p, x, 4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.ring_series",
+   "src": "p1 = rs_series_reversion(p, x, 3, y); p1",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "(x + y)**2 + (x - y)**2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1 == 4*x*y",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1 == 2*(x**2 + y**2)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p**3",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "4 * p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "4 - p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1 - p2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1 is p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1 is p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "qv[0]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "qv[1]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "r",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1 is p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "p1 is p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "f.exquo(g) # shows the difference between pexquo and exquo",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "f.pexquo(h)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "_.factor_list()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "_.factor_list()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "x + y + z",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "x + y + z # noqa:",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "R",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "x + y + z",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rings",
+   "src": "type(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rootoftools",
+   "src": "r = rootof(4*x**5 + 16*x**3 + 12*x**2 + 7, 0); r",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.rootoftools",
+   "src": "interval = r._get_interval(); interval",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.rootoftools",
+   "src": "interval",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootoftools",
+   "src": "r._get_interval() # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.rootoftools",
+   "src": "r._get_interval()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.polys.rootoftools",
+   "src": "r._get_interval()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.polys.rootoftools",
+   "src": "CRootOf(exp(x) - 1, 0)  # would correspond to x == 0",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.rootoftools",
+   "src": "P[y + 1]",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.solvers",
+   "src": "_solve_lin_sys(eqs, eqs_rhs, R)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.solvers",
+   "src": "_solve_lin_sys_component(eqs, eqs_rhs, R)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.solvers",
+   "src": "type(eqs_ring[0])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.solvers",
+   "src": "ring",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.densearith",
+   "src": "R.dmp_exquo(f, h)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.densearith",
+   "src": "R.dmp_pexquo(f, h)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.densearith",
+   "src": "R.dup_exquo(x**2 + 1, 2*x - 4)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.densearith",
+   "src": "R.dup_pexquo(x**2 + 1, 2*x - 4)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.densebasic",
+   "src": "dmp_from_sympy([[S(1)], [S(2)]], 1, ZZ) == [[ZZ(1)], [ZZ(2)]]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.densebasic",
+   "src": "dmp_validate([[1], 1])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.densebasic",
+   "src": "dup_from_sympy([S(1), S(2)], ZZ) == [ZZ(1), ZZ(2)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.densebasic",
+   "src": "dup_random(3, -10, 10, ZZ) #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "_csolve_prime_las_vegas([1, 4, 3], 7) # x^2 + 4x + 3 = 0 (mod 7)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "_csolve_prime_las_vegas([5, 7, 1, 9], 11) # 5x^3 + 7x^2 + x + 9 = 0 (mod 11)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "[ i for i in range(3) if not (i**2 + i + 7) % 3]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "[x + v * p**s for v in V]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "[ i for i in range(3**2) if not (i**2 + i + 7) % 3**2]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "[639985 % m for m in [99, 97, 95]]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "for U in Us:\n    print(gf_crt2(U, M, p, E, S, ZZ))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "gf_exquo(ZZ.map([1, 0, 1, 1]), ZZ.map([1, 1, 0]), 2, ZZ)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "s, t, g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "gf_add(S, T, 11, ZZ) == [1, 7]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "gf_irreducible(10, 5, ZZ) #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "gf_random(10, 5, ZZ) #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.galoistools",
+   "src": "gf_pow([1, 1], 11, 11, ZZ) == f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.sqfreetools",
+   "src": "s == 1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "isinstance(p.domain, Domain)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "ZZ.dtype  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "type(ZZ(2))  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "type(QQ(1, 2))  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "ZZ(2) + ZZ(3)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "ZZ(5) // ZZ(2)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "ZZ(5) % ZZ(2)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "K",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "type(K)             # class of the domain",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "K.dtype             # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "p_expr",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "type(p_expr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "isinstance(p_expr, Expr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "type(p_domain)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "type(ez)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "type(eq)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "K",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "a               # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "b               # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "divmod(a, b)    # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "QQ.div(a, b)    # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "ZZ.exquo(ZZ(5), ZZ(2))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "ZZ(4) / ZZ(2) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "ZZ(5) / ZZ(2) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "ZZ(4) / ZZ(2) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "isinstance(q_domain, Expr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "isinstance(q_expr, Expr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.domain",
+   "src": "p_domain",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.domainelement",
+   "src": "p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.algebraicfield",
+   "src": "xk  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.algebraicfield",
+   "src": "xk * yk  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.algebraicfield",
+   "src": "K.mod  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.algebraicfield",
+   "src": "print(B0[1])  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.algebraicfield",
+   "src": "print(B1[1])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.algebraicfield",
+   "src": "print(B2[1])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.algebraicfield",
+   "src": "print(type(B1[1]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.algebraicfield",
+   "src": "print(type(B2[1]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.finitefield",
+   "src": "x",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.finitefield",
+   "src": "y",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.finitefield",
+   "src": "z",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.gaussiandomains",
+   "src": "type(z)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.gaussiandomains",
+   "src": "z1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.gaussiandomains",
+   "src": "z2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.gaussiandomains",
+   "src": "ZZ_I.exquo(z3, z4)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.domains.gaussiandomains",
+   "src": "type(z)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.gaussiandomains",
+   "src": "z1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.gaussiandomains",
+   "src": "z2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.domains.old_polynomialring",
+   "src": "R._vector_to_sdm([f, g], ilex)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.polys.domains.old_polynomialring",
+   "src": "R._vector_to_sdm([f, g], lex)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.polys.domains.old_polynomialring",
+   "src": "type(F)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.domains.old_polynomialring",
+   "src": "test(R1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.old_polynomialring",
+   "src": "test(R2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.old_polynomialring",
+   "src": "test(R3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.old_polynomialring",
+   "src": "test(R4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.domains.old_polynomialring",
+   "src": "R._sdm_to_vector(L, 2)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.polys.domains.old_fractionfield",
+   "src": "QQx.from_FractionField(f, ZZx)",
+   "reason": "serialization-error"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "den",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "den_reduced",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "L.is_lower and U.is_upper and D.is_diagonal",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "list(A.iter_items())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "list(A.iter_values())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "A_null.shape == (cols, nullity)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "B.nullspace(divide_last=True)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "M_primitive.content() == ZZ(1)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "xsol_uncancelled",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "type(ddm)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "dfm",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "type(dfm)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "type(dfm)  # Depends on the ground domain and ground types",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "type(sdm)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.domainmatrix",
+   "src": "_collect_factors([([1, 2], 2), ([1, 4], 3), ([1, 2], 5)])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A.shape",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "type(A)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A @ A",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "ddm_idet(A, QQ)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "ddm_idet([[0, 1], [-1, 0]], QQ)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A == DDM.from_flat_nz(elements, data, A.domain)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A == DDM([[ZZ(0), ZZ(1)], [ZZ(-1), ZZ(0)]], (2, 2), ZZ)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A == DDM.from_list_flat(A.to_list_flat(), A.shape, A.domain)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "list(A.iter_items())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "list(A.iter_values())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A.to_dfm()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "type(A.to_dfm())",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "type(A.to_dfm_or_ddm())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A == DDM.from_flat_nz(elements, data, A.domain)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "A == DDM.from_list_flat(A.to_list_flat(), A.shape, A.domain)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.ddm",
+   "src": "type(A.to_sdm())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "A + B",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "A*B",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "A*ZZ(2)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "list(A.iter_items())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "list(A.iter_values())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "pivots",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "nonpivots",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "A.to_dfm()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.matrices.sdm",
+   "src": "type(A.to_dfm_or_ddm())  # depends on the ground types",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "M",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "M",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "[a[i][i] for i in range(len(a))]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "ainv",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "result",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "A",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "x",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "L",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "U",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "M",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "pivots",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "M",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "den",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.matrices.dense",
+   "src": "pivots",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.agca.extensions",
+   "src": "R = FiniteExtension(Poly(x**2 - 2)); R",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.agca.extensions",
+   "src": "F = FiniteExtension(Poly(x**3 + x**2 + 2, modulus=5)); F",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.agca.homomorphisms",
+   "src": "h([1, 0])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.agca.homomorphisms",
+   "src": "h([0, 1])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.agca.homomorphisms",
+   "src": "h([1, 1])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.agca.homomorphisms",
+   "src": "homomorphism(S/[(0, x)], T, [0, [x**2, 0]])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.agca.ideals",
+   "src": "list(QQ.old_poly_ring(x, y).ideal(x, y, x**2 + y).gens)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.agca.ideals",
+   "src": "I.in_terms_of_generators(1)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.agca.modules",
+   "src": "M.in_terms_of_generators([x, x**2])  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.basis",
+   "src": "print(rad)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.exceptions",
+   "src": "B.represent(a2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print((B(0) * C(0)).module == A)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(A._mult_tab is None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(A._mult_tab is None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "tau.matrix().transpose()  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "E.represent(tau).transpose()  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "phi.matrix().transpose()  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(e)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(f)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(a)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(A.mult_tab())  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(b.transpose())  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(B)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(B)  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(phi.matrix())  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(B.QQ_matrix == C.QQ_matrix)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.primes",
+   "src": "print(P0**6 == 7*P0.ZK)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.primes",
+   "src": "print(P0 + 7*P0.ZK == P0.as_submodule())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.utilities",
+   "src": "print(zeta_pow[0])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.utilities",
+   "src": "print(zeta_pow[1])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.utilities",
+   "src": "print(zeta_pow[4])  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.utilities",
+   "src": "print(zeta_pow[24])  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.numberfields.utilities",
+   "src": "print(C)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.polys.numberfields.utilities",
+   "src": "print(isolate(sqrt(2)))  # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "R.dmp_inner_subresultants(f, g) == (prs, sres)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "res == b             # resultant has n-1 variables",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "res == b.drop(x)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "prs == [f, g, a, b]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "R.dmp_subresultants(f, g) == [f, g, a, b]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "R.dup_invert(f, h)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "prs[0]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "prs[1]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "prs[2]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "prs[3]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "prs[4]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.euclidtools",
+   "src": "prs[5]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "i = root._get_interval(); i",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "i.dx, i.dy",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "i.b, i.bx, i.by",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "i.a, i.ax, i.ay",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "ic = i.conjugate(); ic",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "(i.ax, i.ay), (i.bx, i.by)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "(ic.ax, ic.ay), (ic.bx, ic.by)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "i  # for reference, this is the current interval",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "i.is_disjoint(i), i.is_disjoint(i.conjugate())",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.polys.rootisolation",
+   "src": "j = close._get_interval(); j",
+   "reason": "statement-or-setup"
+  }
+ ],
+ "preservedReferences": []
+}

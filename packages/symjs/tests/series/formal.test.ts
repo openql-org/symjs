@@ -8,8 +8,8 @@ import * as sj from '../../src';
 import { Sym, parse } from '../../src';
 import { Expr } from '../../src/core/nodes';
 import { readFileSync } from 'node:fs';
-import { runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
-import type { TestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import { runTestCase } from '../../../../tools/sympy-corpus/unittest-harness';
+import type { TestCase } from '../../../../tools/sympy-corpus/unittest-harness';
 
 const P = (s: string) => parse(s);
 const V = (s: string): Sym => {
@@ -20,7 +20,7 @@ const V = (s: string): Sym => {
 const [x, y] = [V('x'), V('y')];
 
 describe('rationalAlgorithm', () => {
-  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/tests-corpus/series.json', import.meta.url), 'utf8'));
+  const cases: TestCase[] = JSON.parse(readFileSync(new URL('../../../../tools/sympy-corpus/unittest/series.json', import.meta.url), 'utf8'));
   it.each(cases.filter((c) => c.fn === 'rational_algorithm'))('matches the upstream coefficient formula at line $line', (c) => {
     expect(['pass', 'equivalent']).toContain(runTestCase(c).status);
   });

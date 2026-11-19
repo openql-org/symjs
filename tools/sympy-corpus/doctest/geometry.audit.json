@@ -1,0 +1,195 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.geometry.entity",
+   "src": "Line(a, b).arbitrary_point(t).subs(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.entity",
+   "src": "t # vertex on x axis",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.entity",
+   "src": "t",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.entity",
+   "src": "t",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.point",
+   "src": "p1.is_concyclic() == p1.is_concyclic(p2, p3, p4) == True",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.point",
+   "src": "Line(b, b.origin).is_perpendicular(Line(a, a.origin))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.line",
+   "src": "eq = l1.equation(x, y, z); eq",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.line",
+   "src": "P = L.perpendicular_line(p3); P",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.line",
+   "src": "P = L.perpendicular_line(p3); P",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.line",
+   "src": "sum(i**2 for i in _)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.line",
+   "src": "angle = r1.closing_angle(r2); angle",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.line",
+   "src": "s = Segment(Point(4, 3, 9), Point(1, 1, 7)); s",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.line",
+   "src": "s = Segment(Point(4, 3), Point(1, 1)); s",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.line",
+   "src": "s = Segment3D(Point3D(4, 3, 9), Point3D(1, 1, 7)); s",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.plane",
+   "src": "Ray(p.p1, _).arbitrary_point(r)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.plane",
+   "src": "_ in A",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.polygon",
+   "src": "square._do_poly_distance(triangle)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.geometry.polygon",
+   "src": "Polygon._is_clockwise(a, b, c)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.geometry.polygon",
+   "src": "Polygon._is_clockwise(a, c, b)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.geometry.polygon",
+   "src": "_ == square.length**2",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.polygon",
+   "src": "sqrt((_/2)**2 + s.apothem**2) == s.radius",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "c1.hradius, c1.vradius, c1.radius",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "c2.hradius, c2.vradius, c2.radius, c2.center",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "e1.hradius, e1.vradius",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "eq1 = e1.equation(x, y); eq1",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "eq2 = e1.equation(x, y, _slope=1); eq2",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "e1.random_point() # gives some random point",
+   "reason": "illustrative-output"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "p1 = e1.random_point(seed=0); p1.n(2)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "arb = e1.arbitrary_point(t); arb",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.ellipse",
+   "src": "Ellipse(Point(3, 4), 1, 3).reflect(Line(Point(0, -4), Point(5, 0)))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.curve",
+   "src": "C = Curve((t, interpolate([1, 4, 9, 16], t)), (t, 0, 1)); C",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.geometry.util",
+   "src": "p.centroid, q.centroid",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.util",
+   "src": "closest_points(*_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.util",
+   "src": "convex_hull(*points)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.util",
+   "src": "convex_hull(*points, **dict(polygon=False))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.geometry.util",
+   "src": "farthest_points(*_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.util",
+   "src": "_.name == 'x'",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.geometry.util",
+   "src": "find(x, Dummy('x'))",
+   "reason": "reference-exception"
+  }
+ ],
+ "preservedReferences": []
+}

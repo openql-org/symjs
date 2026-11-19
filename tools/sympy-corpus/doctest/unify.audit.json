@@ -1,0 +1,65 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.unify.core",
+   "src": "for x in allcombinations((1, 2, 3), (5, 6), 'associative'): print(x)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.unify.core",
+   "src": "for x in allcombinations((1, 2, 3), (5, 6), 'commutative'): print(x)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.unify.core",
+   "src": "next(unify(expr, pattern, {}))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.rewrite",
+   "src": "sorted(rl(z + 3), key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.rewrite",
+   "src": "list(rl(z + 3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.rewrite",
+   "src": "list(rl(z + 3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.rewrite",
+   "src": "list(rl(w + z, Q.integer(z)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.usympy",
+   "src": "next(unify(Basic(S(1), S(2)), Basic(S(1), x), variables=[x]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.usympy",
+   "src": "next(unify(expr, pattern, {}, variables=(p, q)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.usympy",
+   "src": "len(list(unify(expr, pattern, {}, variables=(p, q))))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.usympy",
+   "src": "next(unify(expr, pattern, {}, variables=[x, y]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.unify.usympy",
+   "src": "next(unify(expr, pattern, {}, variables=[p]))",
+   "reason": "not-exported-api"
+  }
+ ],
+ "preservedReferences": []
+}

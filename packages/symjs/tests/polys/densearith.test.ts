@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { expect, it, vi } from 'vitest';
-import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/unittest-harness';
 import * as D from '../../src/polys/densearith';
 import { EX, QQ, RR, ZZ } from '../../src/polys/domains';
 import { GF } from '../../src/polys/domains/finitefield';

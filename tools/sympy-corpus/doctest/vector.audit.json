@@ -1,0 +1,100 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "type(diff(sin(x), x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "type(diff(sin(x), x, evaluate=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "type(diff(sin(x), x, 0))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "type(diff(sin(x), x, 0, evaluate=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "diff(sin(x*y))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "cancel(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "count_ops(simplify(root, ratio=oo)) > count_ops(root)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "my_measure(g)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "my_measure(h)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.vector.basisdependent",
+   "src": "15./8 > 1.7 # 1.7 is the default ratio",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.vector.integrals",
+   "src": "_.doit()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.vector.kind",
+   "src": "Sys.i.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.vector.kind",
+   "src": "v1.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.vector.kind",
+   "src": "v2.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.vector.kind",
+   "src": "Add(v1, v2).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.vector.vector",
+   "src": "v1._projections",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.vector.vector",
+   "src": "v2._projections",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.vector.vector",
+   "src": "v3._projections",
+   "reason": "non-call-expression"
+  }
+ ],
+ "preservedReferences": []
+}

@@ -1,0 +1,191 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.functions.elementary.complexes",
+   "src": "abs(-x) # The Python built-in",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.complexes",
+   "src": "type(abs(-1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.complexes",
+   "src": "type(abs(S.NegativeOne))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.complexes",
+   "src": "_.evalf()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_peeloff_pi(x + pi/2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_peeloff_pi(x + 2*pi/3 + pi*y)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(3*x*pi)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(11*pi/7)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(-11*pi/7)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(4*pi)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(5*pi)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(5.0*pi)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(5.5*pi)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(2*Dummy(integer=True)*pi)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.trigonometric",
+   "src": "_pi_coeff(2*Dummy(even=True)*pi)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.hyperbolic",
+   "src": "peel(x + I*pi/2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.hyperbolic",
+   "src": "peel(x + I*2*pi/3 + I*pi*y)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.miscellaneous",
+   "src": "real_root(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.elementary.miscellaneous",
+   "src": "real_root(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.elementary.miscellaneous",
+   "src": "[rootof(x**2 - 1, i) for i in range(2)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.elementary.miscellaneous",
+   "src": "[rootof(x**3 - 1,i) for i in range(3)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.elementary.miscellaneous",
+   "src": "[rootof(x**4 - 1,i) for i in range(4)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.elementary.miscellaneous",
+   "src": "real_root(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.elementary.miscellaneous",
+   "src": "[rootof(x**2-3,i) for i in (0,1)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.elementary.miscellaneous",
+   "src": "func_name(sqrt(x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.elementary.piecewise",
+   "src": "cond = (x < y).subs(x, Piecewise((2, x < 0), (3, True))); cond",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.functions.elementary.piecewise",
+   "src": "folded_cond = piecewise_fold(cond); folded_cond",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.functions.elementary.piecewise",
+   "src": "piecewise_fold(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.elementary.piecewise",
+   "src": "Piecewise(*args, evaluate=False)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.elementary.piecewise",
+   "src": "Piecewise(*args)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.elementary.piecewise",
+   "src": "anti.subs(x, 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.elementary.piecewise",
+   "src": "_.subs(x, 1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.elementary.piecewise",
+   "src": "_clip(A, B, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.codegen.cfunctions",
+   "src": "exp(1e-99) - 1",
+   "reason": "python-runtime-api"
+  },
+  {
+   "module": "sympy.codegen.cfunctions",
+   "src": "log(1 + 1e-99)",
+   "reason": "python-runtime-api"
+  },
+  {
+   "module": "sympy.functions.elementary._trigonometric_special",
+   "src": "out",
+   "reason": "non-call-expression"
+  }
+ ],
+ "preservedReferences": [
+  {
+   "module": "sympy.functions.elementary.complexes",
+   "src": "arg(arg(arg(real)))",
+   "reason": "Preserve established anonymous Dummy names, simultaneous replacement-map order or the recorded external real sample."
+  }
+ ]
+}

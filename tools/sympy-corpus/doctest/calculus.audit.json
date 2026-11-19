@@ -1,0 +1,575 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.integrals.integrals",
+   "src": "Integral(cos(x**2 - 1), (x, 0, 1)).transform(x**2 - 1, u)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.integrals.integrals",
+   "src": "integrate(x*y)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.series.series",
+   "src": "series(f, x, 2, oo, \"+\")",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "LaplaceTransform._name",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma(s*(s+3)*(s-1), s, -oo, oo)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma((s-1)**2, s, -oo, oo)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma(1/s, s, 0, oo)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma(1/s, s, None, oo)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma(1/s, s, 0, None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma(1/s, s, -oo, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma(1/s, s, None, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma(1/s, s, -oo, None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_gamma(2**(-s+3), s, -oo, oo)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_sin((pi, 0), s, 0, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_sin((pi, 0), s, 1, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_sin((pi, 0), s, -1, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_sin((pi, pi/2), s, S(1)/2, S(3)/2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_sin((pi, pi), s, 0, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_sin((2*pi, 0), s, 0, S(1)/2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.transforms",
+   "src": "_rewrite_sin((2*pi, 0), s, S(1)/2, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(abs(x**2) < 1, x, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(abs(x**2) < 1, x, 2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(abs(x**2) < 1, x, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(abs(1/x**2) < 1, x, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(S(1) < abs(x), x, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(S(1) < abs(1/x), x, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(Ne(1, x**3), x, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(Ne(1, x**3), x, 2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "_simplifyconds(Ne(1, x**3), x, 0)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.laplace",
+   "src": "Xs",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "fcomp._eval_terms(6)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "fcomp._eval_terms(8)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "finv1._eval_terms(6)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "finv2._eval_terms(8)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "fprod._eval_terms(4)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "ra(1 / (1 - x), x, k)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "ra(log(1 + x), x, k)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "ra(atan(x), x, k, full=True)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "rh(exp(x), x, -S.One, (k + 1), k, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.formal",
+   "src": "rh(ln(1 + x), x, k**2, k*(k + 1), k, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.fourier",
+   "src": "pari(x**2, (x, -2, 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.fourier",
+   "src": "pari(x**2, (-2, 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.fourier",
+   "src": "pari(x**2, None)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.limitseq",
+   "src": "dd(n*(n + 1), n)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.limitseq",
+   "src": "dd(n*(n + 1), n, 2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "EmptySequence",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "fib[:6] # supports slicing",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "for x in zip(range(10), fib): # supports iteration\n    print(x)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "SeqPer((1, 2, 3), (-10, 10))._ith_point(0)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "SeqPer((1, 2, 3), (-10, 10))._ith_point(5)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "SeqPer((1, 2, 3), (0, oo))._ith_point(5)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "SeqPer((1, 2, 3), (-oo, 0))._ith_point(5)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "s[:]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "list(s)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "SeqFormula(n**2, (-oo, 0))[0:6]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "s[:]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "list(s)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "SeqPer((1, 2, 3), (-oo, 0))[0:6]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.sequences",
+   "src": "SeqPer((k, k**2, k**3), (k, 0, oo))[0:6]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.concrete.gosper",
+   "src": "_.subs(n, 2) == sum(f.subs(k, i) for i in [0, 1, 2])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.concrete.gosper",
+   "src": "_.subs(n, 5) == sum(f.subs(k, i) for i in [3, 4, 5])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.concrete.delta",
+   "src": "_extract_delta(4*x*y*KroneckerDelta(i, j), i)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.concrete.delta",
+   "src": "_extract_delta(4*x*y*KroneckerDelta(i, j), k)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "_as_finite_diff(f(x).diff(x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "_as_finite_diff(f(x).diff(x), h)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "_as_finite_diff(f(x).diff(x), [x, x+h, x+2*h])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "_as_finite_diff(f(x).diff(x, 1), xl, x+h*sq2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "_as_finite_diff(d2fdxdy, wrt=x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "apply_finite_diff(2, xlist, map(cube, xlist), 2) - 12 # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "res",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "res[3:]  # higher order approximations",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "foo",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "print(x_list)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.calculus.finite_diff",
+   "src": "[simplify(c) for c in  mycoeffs] #doctest: +NORMALIZE_WHITESPACE",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.integrals.manualintegrate",
+   "src": "print(repr(integral_steps(exp(x) / (1 + exp(2 * x)), x)))     # doctest: +NORMALIZE_WHITESPACE",
+   "reason": "printing-expression"
+  },
+  {
+   "module": "sympy.integrals.manualintegrate",
+   "src": "print(repr(integral_steps(sin(x), x)))     # doctest: +NORMALIZE_WHITESPACE",
+   "reason": "printing-expression"
+  },
+  {
+   "module": "sympy.integrals.manualintegrate",
+   "src": "print(repr(integral_steps((x**2 + 3)**2, x)))     # doctest: +NORMALIZE_WHITESPACE",
+   "reason": "printing-expression"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "simp(Or(x < y, Eq(x, y)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_exponents(x, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_exponents(x**2, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_exponents(x**2 + x, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_exponents(x**3*sin(x + x**y) + 1/x, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "fsp(x, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "fsp((x-1)**3, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "fsp(sin(x+3)*x, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_get_coeff_exp(a*x**b, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_get_coeff_exp(x, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_get_coeff_exp(2*x, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_get_coeff_exp(x**3, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_int0oo(g1, g2, t)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_int0oo_1(meijerg([a], [b], [c], [d], x*y), x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "list(ordered(_mul_as_two_parts(x*sin(x)*exp(x))))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.meijerint",
+   "src": "_split_mul((3*x)**s*sin(x**2)*x, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.risch",
+   "src": "type(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.integrals.risch",
+   "src": "type(b.atoms(Integral).pop())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.concrete.guess",
+   "src": "[r[0].subs(i0,n).doit() for n in range(1,10)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.concrete.guess",
+   "src": "ggf([k+1 for k in range(12)], types=['ogf', 'lgf', 'hlgf'])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.concrete.guess",
+   "src": "ggf(l)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.concrete.guess",
+   "src": "ggf([fibonacci(k) for k in range(5, 15)], types=['ogf'])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.concrete.guess",
+   "src": "ggf([factorial(k) for k in range(12)], types=['ogf', 'egf', 'lgf'])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.concrete.guess",
+   "src": "ggf([k+1 for k in range(12)], types=['egf'])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(e.subs(n, 100).evalf(), 10))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(richardson(e, n, 10, 20).evalf(), 10))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(E.evalf(), 10))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(A.subs(n, 100).evalf(), 10))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(richardson(A, n, 10, 20).evalf(), 10))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(((pi**2)/6).evalf(), 10))     # Exact value",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(A.subs(n, 100).doit().evalf(), 10))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(shanks(A, n, 25).evalf(), 10))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.acceleration",
+   "src": "print(round(shanks(A, n, 25, 5).evalf(), 10))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.series.approximants",
+   "src": "[e for e in approximants(g)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.approximants",
+   "src": "[e for e in approximants(h)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.series.approximants",
+   "src": "for k in range(3): print(next(y))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.series.approximants",
+   "src": "for k in range(3): print(next(y))",
+   "reason": "statement-or-setup"
+  }
+ ],
+ "preservedReferences": []
+}

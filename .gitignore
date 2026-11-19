@@ -2,5 +2,5 @@ node_modules
 dist
 coverage
 *.tsbuildinfo
-tools/sympy-corpus/compat/results/
+/tools/sympy-corpus/compat/results/
 __pycache__/

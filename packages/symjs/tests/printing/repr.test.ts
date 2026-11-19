@@ -4,7 +4,7 @@
 // Tests of src/printing/repr.ts. Expected values from SymPy 1.14 srepr(...).
 
 import { describe, expect, it } from 'vitest';
-import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/unittest-harness';
 import * as sj from '../../src';
 import { Dummy, Float, Integral, Limit, Order, Rational, S, Sym, Wild, WildFunction } from '../../src/core/nodes';
 import type { Expr } from '../../src/core/nodes';

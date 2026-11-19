@@ -6,12 +6,14 @@ import { readFileSync } from 'node:fs';
 import { ADAPTERS, JsList, JsTuple, JsPred, deserialize, matches, runCase, solvesDsolveCase } from './harness';
 import type { Case } from './harness';
 import * as sj from '../../packages/symjs/src';
-import { runTestCase, type TestCase } from './tests-harness';
+import { runTestCase, type TestCase } from './unittest-harness';
 
-const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')) as { cases: Case[] };
+import { readCases } from './corpus';
+
+const corpus = { cases: [...readCases('doctest')] };
 
 it('converts ground constants to polynomials for dense ring algorithms', () => {
-  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8')) as TestCase[];
+  const cases = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8')) as TestCase[];
   const selected = cases.filter((c) => ['.dup_zz_heu_gcd', '.dup_rr_prs_gcd', '.dup_factor_list', '.dmp_factor_list'].includes(c.fn)
     && c.args?.every((a) => a.t === 'Rational'));
   expect(selected.length).toBeGreaterThan(20);
@@ -19,21 +21,21 @@ it('converts ground constants to polynomials for dense ring algorithms', () => {
 });
 
 it('replays rectangular root counts through the public dense root API', () => {
-  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8')) as TestCase[];
+  const cases = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8')) as TestCase[];
   const selected = cases.filter((c) => c.fn === '.dup_count_complex_roots');
   expect(selected).toHaveLength(105);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
 
 it('preserves polynomial indices and optional bases in joint real-root isolation', () => {
-  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8')) as TestCase[];
+  const cases = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8')) as TestCase[];
   const selected = cases.filter((c) => c.fn === '.dup_isolate_real_roots_list');
   expect(selected).toHaveLength(21);
   for (const c of selected) expect(runTestCase(c), c.src).toEqual({ status: 'pass' });
 });
 
 it('replays real-root isolation, refinement and counting conventions', () => {
-  const cases = JSON.parse(readFileSync(new URL('./tests-corpus/polys.json', import.meta.url), 'utf8')) as TestCase[];
+  const cases = JSON.parse(readFileSync(new URL('./unittest/polys.json', import.meta.url), 'utf8')) as TestCase[];
   const names = ['.dup_isolate_real_roots_sqf', '.dup_isolate_real_roots', '.dup_refine_real_root', '.dup_count_real_roots'];
   const selected = cases.filter((c) => names.includes(c.fn));
   expect(selected).toHaveLength(155);

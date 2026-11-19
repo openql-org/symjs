@@ -1,0 +1,560 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "_perfect_power(16)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "_perfect_power(17)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "sorted(antidivisors(128, generator=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "list(divisors(120, generator=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "f == {991: 1, int(202916782076162456022877024859): 1, 7: 1}",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "regular = factorint(1764); regular",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "visual = factorint(1764, visual=True); pprint(visual)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "for base, exp in sorted(factors.items()):\n    print('%s %s' % (base, exp))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "6 == divisor_sigma(6) - 6 == sum(divisors(6)[:-1])",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "[multiplicity(5, n) for n in [8, 5, 25, 125, 250]]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "_ == multiplicity_in_factorial(p, n)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "[(i, is2pow(i)) for i in range(5)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "set([igcd(pow(a, M, n) - 1, n) for a in range(2, 256) if\n     igcd(pow(a, M, n) - 1, n) != n])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "[(d, aM%Pow(*d.args)) for d in factorint(n, visual=True).args]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "for s in range(5):\n    print('loop length = %4i; leader length = %3i' % next(cycle_length(F, s)))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "for i in range(9):\n    print(x)\n    x=(x**2+12)%17",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "next(cycle_length(lambda x: (x**2+12)%17, 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "list(cycle_length(lambda x: (x**2+12)%17, 2, values=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "sorted(factorint(123456).items())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "sorted(factorint(10000000001, limit=200).items())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "list(proper_divisors(120, generator=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "smoothness_p(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "smoothness_p(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.ntheory.factor_",
+   "src": "sorted(udivisors(120, generator=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "_lucas_extrastrong_params(101)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "_lucas_extrastrong_params(15)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "_lucas_lehmer_primality_test(5) # 2**5 - 1 = 31 is prime",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "_lucas_lehmer_primality_test(11) # 2**11 - 1 = 2047 is not prime",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "for n in range(1, 1000):\n    if is_euler_jacobi_pseudoprime(n, 2) and not isprime(n):\n        print(n)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "for n in range(1, 1000):\n    if is_euler_pseudoprime(n, 2) and not isprime(n):\n        print(n)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "for i in range(20000):\n    if is_extra_strong_lucas_prp(i) and not isprime(i):\n       print(i)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "for n in range(1, 1000):\n    if is_fermat_pseudoprime(n, 2) and not isprime(n):\n        print(n)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "for i in range(10000):\n    if is_lucas_prp(i) and not isprime(i):\n        print(i)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "for i in range(20000):\n    if is_strong_lucas_prp(i) and not isprime(i):\n       print(i)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "int(1e3) == 1e3 == 10**3",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "int(1e23) == 1e23",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.primetest",
+   "src": "int(1e23) == 10**23",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "sieve._list",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "s._list[-1]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "list(s._primerange(18, 31))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "sieve[10] == 29",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "sieve._list",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "print([i for i in sieve.mobiusrange(7, 18)])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "print([i for i in sieve.primerange(19)])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "print([i for i in sieve.primerange(7, 19)])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "list(sieve.primerange(prime(10) + 1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "print([i for i in sieve.totientrange(7, 18)])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "next(cycle_length(func, 4))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "list(iter)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "next(cycle_length(func, 4, nmax = 4))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "list(cycle_length(func, 4, nmax = 4, values=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "[(i, nextprime(i)) for i in range(10, 15)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "[(i, prevprime(i)) for i in range(10, 15)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "prevprime(25) == prime(9)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "list(primerange(19))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "list(primerange(7, 19))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "list(primerange(prime(10) + 1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "list(sieve.primerange(1, 30))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "sorted(set(primefactors(Mul(*p) + 1)).difference(set(p)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.generate",
+   "src": "randprime(1, 30) #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_binomial_mod_prime_power(10, 2, 3, 2)  # binomial(10, 2) = 45",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_binomial_mod_prime_power(17, 9, 2, 4)  # binomial(17, 9) = 24310",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_discrete_log_index_calculus(24570203447, 23859756228, 2, 12285101723)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_discrete_log_pohlig_hellman(251, 210, 71)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_discrete_log_pollard_rho(227, 3**7, 3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_discrete_log_shanks_steps(41, 15, 7)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_discrete_log_trial_mul(41, 15, 7)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_nthroot_mod1(5, 3, 13, False)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_nthroot_mod1(13, 4, 17, True)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "sorted(_primitive_root_prime_iter(19))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "sorted(_primitive_root_prime_power2_iter(5, 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "sorted(_primitive_root_prime_power_iter(5, 2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_sqrt_mod_prime_power(11, 43, 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "_sqrt_mod_tonelli_shanks(2, 17) in [6, 11]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "sorted(set([i**2 % 7 for i in range(7)]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "[j for j in range(7) if is_quad_residue(j, 7)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "[legendre_symbol(i, 7) for i in range(7)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "sorted(set([i**2 % 7 for i in range(7)]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "primitive_root(21) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.residue_ntheory",
+   "src": "list(sqrt_mod_iter(11, 43))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.continued_fraction",
+   "src": "list(continued_fraction_convergents([0, 2, 1, 2]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.continued_fraction",
+   "src": "list(continued_fraction_convergents([1, S('1/2'), -7, S('1/4')]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.continued_fraction",
+   "src": "for n in range(7):\n    print(next(it))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.continued_fraction",
+   "src": "for n in range(7):\n    print(next(it))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.continued_fraction",
+   "src": "list(continued_fraction_iterator(Rational(3, 8)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.continued_fraction",
+   "src": "list(continued_fraction_iterator(Rational(-3, 8)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.continued_fraction",
+   "src": "for i, v in enumerate(continued_fraction_iterator(pi)):\n    if i > 7:\n        break\n    print(v)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.modular",
+   "src": "[639985 % m for m in [99, 97, 95]]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.modular",
+   "src": "[954 % m for m in [12, 6, 17]]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.modular",
+   "src": "crt([12, 6, 17], [3, 4, 2]) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.modular",
+   "src": "for v in vs:\n    print(crt2(m, v, mm, e, s))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.modular",
+   "src": "[23 % m for m in [3, 5, 7]]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.modular",
+   "src": "solve_congruence(*zip((2, 3, 2), (3, 5, 7)))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.modular",
+   "src": "solve_congruence((2, 3), (4, 6)) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.multinomial",
+   "src": "m53[(0,0,0,1,2)] == m53[(0,0,1,0,2)] == m53[(1,0,2,0,0)] == m33[(0,1,2)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.multinomial",
+   "src": "next(it)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.digits",
+   "src": "n = 0xFA; n",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.ntheory.digits",
+   "src": "count_digits(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.ntheory.digits",
+   "src": "[i for i in range(10) if c77[i] == 7]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.digits",
+   "src": "all(is_palindromic(i) for i in (-11, 1, 22, 121))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.digits",
+   "src": "0o121, is_palindromic(0o121)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.digits",
+   "src": "oct(121), is_palindromic(121, 8) and is_palindromic(121)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.ntheory.bbp_pi",
+   "src": "hex(int(math.pi * 2**((14-1)*4)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.bbp_pi",
+   "src": "hex(int(math.pi * 2**((3-1)*4)))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.elliptic_curve",
+   "src": "e1.minimal()",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.ntheory.elliptic_curve",
+   "src": "sorted(e2.torsion_points())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.ntheory.elliptic_curve",
+   "src": "p1 + p2",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.ntheory.elliptic_curve",
+   "src": "e3(1, -3) * 3",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.ntheory.elliptic_curve",
+   "src": "p+q",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.ntheory.elliptic_curve",
+   "src": "p-q",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.ntheory.elliptic_curve",
+   "src": "3*p-5*q",
+   "reason": "unsupported-result-type"
+  }
+ ],
+ "preservedReferences": []
+}

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Expected values from SymPy 1.14 sympy.tensor.tensor (printed with str()).
-import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/tests-harness';
+import { passingModuleCases, runTestCase } from '../../../../tools/sympy-corpus/unittest-harness';
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import type { Expr, TensExpr } from '../../src';

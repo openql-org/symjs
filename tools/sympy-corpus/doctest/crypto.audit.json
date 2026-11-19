@@ -1,0 +1,185 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decrypted",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "check_and_join('a phrase!'.upper().split(), 'ARE')",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_affine(_, key)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "encipher_atbash(msg) == decipher_atbash(msg)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "msg == encipher_atbash(encipher_atbash(msg))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_bifid(_, key)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_bifid(_, 'gold pug')",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_bifid5(_, key)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_bifid6(_, key)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "pub = elgamal_public_key(pri); pub",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_elgamal(encipher_elgamal(msg, pub), pri) == msg",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_hill(_, key)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_hill(_, key)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "decipher_hill(_, key)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "ciphertext = encipher_rot13(msg);ciphertext",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "encipher_rot13(msg) == decipher_rot13(msg)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "msg == decipher_rot13(ciphertext)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "ct = encipher_shift(msg, 1); ct",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "p == _p and g == _g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "x == pow(g, a, p)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "sk == pow(x, 1000, p)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "round_trip(msg, key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "round_trip(msg.replace(\"J\", \"I\"), key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "pri = elgamal_private_key(5, seed=[3]); pri",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "pub = elgamal_public_key(pri); pub",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "ct = encipher_shift(msg, 1); ct",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "ct = encipher_substitution(msg, old, new); ct",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "encipher('NAVY')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "encipher(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "m = AZ('go navy, beat army! yes you can'); m",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "auto_key = key + m[:n2 - n1]; auto_key",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "ct = encipher_vigenere(m, auto_key); ct",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "''.join(pt) == m",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "padded_key('RSA', 'ARTIST')",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "rsa_private_key(*args)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.crypto.crypto",
+   "src": "rsa_public_key(*args)",
+   "reason": "non-call-expression"
+  }
+ ],
+ "preservedReferences": []
+}

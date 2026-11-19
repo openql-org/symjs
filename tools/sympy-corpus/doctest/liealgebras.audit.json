@@ -1,0 +1,10 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.liealgebras.weyl_group",
+   "src": "c.group_order()",
+   "reason": "unsupported-result-type"
+  }
+ ],
+ "preservedReferences": []
+}

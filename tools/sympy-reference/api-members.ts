@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 import { readFileSync } from 'node:fs';
-import { ATTRIBUTE_FUNCTIONS, JS_GLOBAL_RENAMES, PUBLIC_ALIASES, MEMBER_FUNCTIONS, MATRIX_MEMBER_ALIASES } from '../sympy-corpus/harness';
+import { ATTRIBUTE_FUNCTIONS, JS_GLOBAL_RENAMES } from '../sympy-corpus/harness';
+import { PUBLIC_ALIASES, MEMBER_FUNCTIONS, MATRIX_MEMBER_ALIASES } from '../sympy-corpus/doctest-harness';
 
 export interface ApiExport {
   entries: string[];

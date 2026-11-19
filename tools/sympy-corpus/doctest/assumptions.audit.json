@@ -1,0 +1,180 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.assumptions.ask",
+   "src": "_ask_single_fact(key, local_facts)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.ask",
+   "src": "_ask_single_fact(key, local_facts)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.ask",
+   "src": "_ask_single_fact(key, local_facts)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.ask",
+   "src": "_ask_single_fact(key, local_facts)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.ask",
+   "src": "ask(Q.integer(x), Q.even(x) & Q.odd(x))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "type(Q.integer(1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "global_assumptions",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "global_assumptions",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "global_assumptions",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "global_assumptions",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "type(Q.P)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "Q.P.register(Integer)(lambda expr, assump: True)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "Q.P.func",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.assumptions.assume",
+   "src": "with assuming(Q.integer(x), Q.integer(y)):\n    print(ask(Q.integer(x + y)))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.assumptions.cnf",
+   "src": "Literal(Q.even(x))",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.assumptions.cnf",
+   "src": "Literal(~Q.even(x))",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.assumptions.cnf",
+   "src": "to_NNF(expr)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.assumptions.cnf",
+   "src": "to_NNF(Eq(x, y))",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.assumptions.cnf",
+   "src": "to_NNF(Q.nonpositive, cmap)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.assumptions.cnf",
+   "src": "to_NNF(Q.nonpositive(x), cmap)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.assumptions.relation.binrel",
+   "src": "ask(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.relation.equality",
+   "src": "ask(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.relation.equality",
+   "src": "ask(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.relation.equality",
+   "src": "ask(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.relation.equality",
+   "src": "ask(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.relation.equality",
+   "src": "ask(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.relation.equality",
+   "src": "ask(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.assumptions.satask",
+   "src": "get_all_relevant_facts(props, assump, context) #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.assumptions.satask",
+   "src": "facts.clauses #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.assumptions.sathandlers",
+   "src": "reg(Abs(x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.sathandlers",
+   "src": "reg2(Abs(x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.wrapper",
+   "src": "_x.is_integer",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.assumptions.wrapper",
+   "src": "_x.is_odd",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.assumptions.wrapper",
+   "src": "MyAbs(x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.assumptions.wrapper",
+   "src": "MyAbs(Symbol('y', negative=True))",
+   "reason": "not-exported-api"
+  }
+ ],
+ "preservedReferences": []
+}

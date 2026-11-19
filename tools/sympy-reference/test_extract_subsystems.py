@@ -1,7 +1,7 @@
 """Serialization of polynomial, tensor and set-arithmetic receivers."""
 import unittest
 import sympy as s
-import extract
+import extract_doctest as extract
 from sympy.tensor.tensor import TensorIndexType, TensorHead
 from sympy.tensor.toperators import PartialDerivative
 from sympy.polys.polymatrix import PolyMatrix

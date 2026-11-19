@@ -1,0 +1,35 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.algebras.quaternion",
+   "src": "q1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.algebras.quaternion",
+   "src": "q2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.algebras.quaternion",
+   "src": "Quaternion._generic_mul(q1, q2)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.algebras.quaternion",
+   "src": "Quaternion._generic_mul(q1, S(2))",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.algebras.quaternion",
+   "src": "Quaternion._generic_mul(q1, x)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.algebras.quaternion",
+   "src": "Quaternion._generic_mul(q3, 2 + 3*I)",
+   "reason": "private-api"
+  }
+ ],
+ "preservedReferences": []
+}

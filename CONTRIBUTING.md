@@ -133,7 +133,7 @@ pnpm run test:package
   local paths such as a home directory or a temporary directory, which can
   contain personal information.
 
-For corpus expansion, use `bun run corpus:expand` with SymPy 1.14.0 installed.
+For corpus expansion, use `bun run corpus:expand:doctest` with SymPy 1.14.0 installed.
 It retains every existing case (including duplicate documented occurrences),
 preserves anonymous Dummy names and the established external-sampler fixture,
 and fails if another existing input or result changes or disappears. Public
@@ -141,7 +141,7 @@ functions defined in a selected module are measured even if they are not
 re-exported at the top level. Multiline results remain measurable; outputs
 containing process-local object addresses are recorded as extraction omissions.
 When the extractor itself improves (a new serialization or a new omission
-rule), `bun run corpus:refresh` re-extracts every existing example in place: each
+rule), `bun run corpus:refresh:doctest` re-extracts every existing example in place: each
 occurrence keeps its position and takes the current serialization, an example
 the extractor now omits is dropped only with its recorded omission reason, and
 any other disappearance still fails.
@@ -192,49 +192,50 @@ benchmark. Every method is tested against mpmath at the table boundaries.
 
 ## SymPy unit-test corpus
 
-The independent unit-test corpus covers the base package's 30 top-level SymPy
-areas, including their nested test directories. `tools/sympy-reference/extract_tests.py`
+The independent unit-test corpus covers the base package's 33 top-level SymPy
+areas, including their nested test directories. `tools/sympy-reference/extract_unittest.py`
 contains file-level scope rules for printing, parsing, categories and utilities;
 `docs/unittest-compat-report.md` lists excluded files and technical reasons. Optional
 dependencies and unsupported test constructs appear in the extraction audit.
 
 ```sh
-bun run corpus:extract-tests                       # SymPy 1.14.0, four isolated processes
-bun run corpus:extract-tests --only sets,geometry  # replace only these categories
-bun run corpus:extract-tests --only polys --jobs 2 # includes agca/domains/matrices/numberfields
+bun run corpus:extract:unittest                       # SymPy 1.14.0, four isolated processes
+bun run corpus:extract:unittest --only sets,geometry  # replace only these categories
+bun run corpus:extract:unittest --only polys --jobs 2 # includes agca/domains/matrices/numberfields
 bun run corpus:test-extract
-bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts --project unit-geometry
+bun run corpus:compat:doctest -- geometry
+bun run corpus:compat:unittest -- geometry
 UPDATE_KNOWN_GAPS=1 bunx vitest run --config tools/sympy-corpus/compat/vitest.config.ts
 ```
 
-`tools/sympy-corpus/tests-corpus/index.json` is the manifest. Each category has one or more
+`tools/sympy-corpus/unittest/index.json` is the manifest. Each category has one or more
 case arrays (one case per line, ASCII JSON escapes, no nonfinite JSON numbers,
 at most 25 MB per shard) and an audit file containing omitted source locations
 and test execution statuses. `--only` accepts comma-separated or repeated
 category names, retains the other shards and updates the manifest. `--timeout`
 sets the upstream per-test deadline (120 seconds by default). Tests that exceed
-it contribute no partial observations. `--baseline <legacy-corpus.json>`
+it contribute no partial observations. `--baseline <baseline-directory>`
 retains existing modules' cases exactly and preserves their audit counts while
 extracting new modules, so migration does not discard machine-dependent observations.
 
-Vitest runs one project/test per category with at most four workers. The
+Vitest runs one project/test per category with at most two workers. The
 runner shares the doctest deserializer and adapters and limits synchronous
 replay to 30 seconds per core/polys case and 5 seconds elsewhere. A replay
 timeout is a measured failure. Exception class mismatches are counted
 separately under the established exception assertion convention.
 
-`tools/sympy-corpus/tests-known-gaps.json` is the independent unit-test ratchet. Existing
+`tools/sympy-corpus/unittest-known-gaps.json` is the independent unit-test ratchet. Existing
 case IDs include the complete record, with its field order, and remain stable
 when records move to shards. A full run writes `docs/unittest-compat-report.md`, the
-summary `tools/sympy-corpus/compat/results/tests-report.json`, and per-category failure details in
-`tools/sympy-corpus/compat/results/tests-results/*.jsonl`. A single coordinator updates the ratchet after
+summary `tools/sympy-corpus/compat/results/unittest-report.json`, and per-category failure details in
+`tools/sympy-corpus/compat/results/unittest/*.jsonl`. A single coordinator updates the ratchet after
 all categories finish; partial project runs cannot replace the full report or
 ratchet. When expanding scope, distinguish newly measured gaps from regressions
 in existing cases. The doctest corpus and its ratchet remain independent.
 
 Repeated omission records share a `count` in category audit files. Counts retain
 every examined loop observation without repeating identical source metadata.
-`bun run corpus:extract-tests --compact-audits` losslessly repacks these audits
+`bun run corpus:extract:unittest --compact-audits` losslessly repacks these audits
 without changing case records or re-executing upstream tests.
 
 Replay deadlines remain in the measured totals and failure groups. The ratchet
@@ -252,10 +253,10 @@ SymPy; the converter runs symjs. They exchange only the corpus files:
 
 ```
 SymPy 1.14.0 (Python)
-  │  tools/sympy-reference/extract.py        doctests in the docstrings
-  │  tools/sympy-reference/extract_tests.py  assertions of SymPy's unit tests
+  │  tools/sympy-reference/extract_doctest.py   doctests in the docstrings
+  │  tools/sympy-reference/extract_unittest.py  assertions of SymPy's unit tests
   ▼
-tools/sympy-corpus/corpus.json, tests-corpus/*.json
+tools/sympy-corpus/{doctest,unittest}/*.json
   │  each case: the call (function, serialized arguments), SymPy's printed result
   │
   │  tools/sympy-corpus/totests (bun run corpus:generate)
@@ -314,14 +315,14 @@ bun run corpus:report    # the new rates
 After re-extracting part of the reference (here SymPy's geometry unit tests):
 
 ```sh
-bun run corpus:extract-tests --only geometry  # SymPy 1.14.0 → tools/sympy-corpus/tests-corpus/
+bun run corpus:extract:unittest --only geometry  # SymPy 1.14.0 → tools/sympy-corpus/unittest/
 bun run corpus:test-extract                   # the extractor's own tests
 bun run corpus:generate                       # repeat until type errors and unreproduced are 0
 bun run corpus:report
 ```
 
-Doctests are re-extracted with `bun run corpus:expand` (new modules) or
-`bun run corpus:refresh` (every existing example).
+Doctests are re-extracted with `bun run corpus:expand:doctest` (new modules) or
+`bun run corpus:refresh:doctest` (every existing example).
 
 To look at the conversion of some cases without writing files:
 

@@ -17,6 +17,7 @@ import inspect
 import json
 import re
 from pathlib import Path
+from corpus_shards import read_doctest
 import sys
 import sympy
 from sympy.core.assumptions import _assume_defined
@@ -883,16 +884,16 @@ def load_evidence(root, corpus):
             result[row['module']].append(row)
         return result
     units = {}
-    index = read(corpora / 'tests-corpus/index.json')
+    index = read(corpora / 'unittest/index.json')
     for category in index['categories'].values():
-        audit = read(corpora / 'tests-corpus' / category['auditFile'])
+        audit = read(corpora / 'unittest' / category['auditFile'])
         omitted, tests = by_module(audit['omitted']), by_module(audit['tests'])
         counts = Counter()
         for shard in category['shards']:
-            counts.update(c['module'] for c in read(corpora / 'tests-corpus' / shard['file']))
+            counts.update(c['module'] for c in read(corpora / 'unittest' / shard['file']))
         for module in category['modules']:
             units[module] = {'exists': True, 'caseCount': counts[module], 'omitted': omitted[module], 'tests': tests[module], 'gaps': [], 'timeouts': []}
-    for kind, ids in read(corpora / 'tests-known-gaps.json').items():
+    for kind, ids in read(corpora / 'unittest-known-gaps.json').items():
         for case_id in ids:
             module = case_id.split(':', 1)[0]
             if module in units:
@@ -906,9 +907,9 @@ def load_evidence(root, corpus):
 def build_inventory(root):
     reference = Path(sympy.__file__).parent
     source = root / 'packages/symjs/src'
-    corpus = json.loads((root / 'tools/sympy-corpus/corpus.json').read_text())
+    corpus = read_doctest(root / 'tools/sympy-corpus/doctest')
     measured = {c['module'] for c in corpus['cases']}
-    selected_ast = ast.parse((root / 'tools/sympy-reference/extract.py').read_text())
+    selected_ast = ast.parse((root / 'tools/sympy-reference/extract_doctest.py').read_text())
     selected = next(ast.literal_eval(n.value) for n in selected_ast.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'MODULES' for t in n.targets))
     selected = set(selected)
     api = json.loads((root / 'tools/sympy-reference/api-members.json').read_text())

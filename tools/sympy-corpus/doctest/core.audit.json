@@ -1,0 +1,1700 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.core.add",
+   "src": "type(expr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.add",
+   "src": "uAdd(x + 1, x + 2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "type(expr)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "_.subs(a.base, z).subs(z, a.base)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "_keep_coeff(S.Half, x + 2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "_keep_coeff(S.Half, x + 2, clear=False)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "_keep_coeff(S.Half, (x + 2)*y, clear=False)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "_keep_coeff(S(-1), x + y)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "_keep_coeff(S(-1), x + y, sign=True)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "type(_) is int",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.mul",
+   "src": "_.is_Integer",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.power",
+   "src": "p.base, p.exp",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.power",
+   "src": "powsimp(Mul(*_))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.power",
+   "src": "s = expand_power_base(eq); s.is_Mul, s",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.power",
+   "src": "s = expand_power_base(_[1]); s.is_Mul, s",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "e._diff_wrt",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "x._random()                         # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "x._random(2)                        # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "(x + y/2)._random(2)                # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "sqrt(2)._random(2)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "_.args[0]  # just want the exact match",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "p = Poly(2*E + x*E); p",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "_[a]",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "e.aseries(x, bound=3) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "eq",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "[eq.coeff(x, i) for i in reversed(range(4))]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "[eq.coeff(x, i) for i in reversed(range(4))]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "{i.could_extract_minus_sign() for i in (e, -e)}",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "_.could_extract_minus_sign()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "(x + y).expr_free_symbols # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "t.expr_free_symbols # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "eq.subs({x: pi, a: 2}) == eq.subs({x: pi, a: 3}) == 0",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "((one - 1)**(x + 1)).is_constant() in (True, False) # could be 0 or 1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "f(1).is_number",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "pi.is_number, pi.is_Number",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "cos(1).is_number and cos(1).is_comparable",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "e.nseries(x, 0, 6)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "a = (6*x + 2); a.primitive()",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "b = (x/2 + 3); b.primitive()",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "isinstance(round(S(123), -2), Number)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "[next(term) for i in range(2)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "_mag(Float(.1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "_mag(Float(.01))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.expr",
+   "src": "_mag(Float(1234))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "cot(x)._args    # do not use this, use cot(x).args instead",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "isinstance(A, Basic)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "isinstance(B, Basic)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "Add._eval_subs(z*(x + y) + 3, x + y, 1) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "_.variables[0].is_real is None",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "Derivative(x, (y, n)).free_symbols",
+   "reason": "serialization-error"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "a.func",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "a.func(*a.args)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "i = Interval.Lopen(0, 5); i",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "expr.has_free(*(x, f(x)))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "dif.n(2)._prec",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "Basic(a + x, x).matches(Basic(a + b, c)) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "e.replace(*q, exact=False)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "e.replace(*q, exact=True)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "sorted([S(1)/2, I, -I], key=lambda x: x.sort_key())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "sorted(_, key=lambda x: x.sort_key())",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "Integral(x, (x, 1, 2*x)).xreplace({x: 2*y}) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "_atomic(x + y)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "_atomic(x + f(y))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "_atomic(Derivative(f(x), x) + cos(x) + y)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "basic._cmp_name(cos, tan)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "basic._cmp_name(cos, tan)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.basic",
+   "src": "basic._cmp_name(sin, cos)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f(x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "print(sympy.srepr(f(x).func))",
+   "reason": "python-runtime-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f(x).args",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f(x)._diff_wrt",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "(x*y*z).diff(x*y)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_.doit()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "Derivative(f(x), x)._diff_wrt",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "Derivative(cos(x), x)._diff_wrt",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "Derivative(x + 1, x)._diff_wrt",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "Derivative(f(f(x)), x)._diff_wrt",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "vsort([(x, 1), (x, 1)])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "vsort([(y, 1), (f(x), 1), (y, 1), (f(x), 1)])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "vsort0(y, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "vsort0(g(y), g(x), f(y))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f(x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f_real(x).is_real",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f_real_inherit(x).is_real",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "loggamma(1/x)._eval_nseries(x,0,None)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f(1).nargs",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "len(f(1).args)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f(4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f2(1, 2, 3, 4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f((1, 2), 3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "f(*p)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_.subs(f, sin).doit() == sin(x).diff(x).subs(x, 0) == cos(0)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_.doit()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "s.has(x), s.has(y)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "ss.has(x), ss.has(y)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "s, ss",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_coeff_isneg(-3*pi)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_coeff_isneg(S(3))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_coeff_isneg(-oo)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_coeff_isneg(Symbol('n', negative=True)) # coeff is 1",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_coeff_isneg(-sqrt(2)*A)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "_coeff_isneg(sqrt(2)*A)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "arity(lambda *x: sum(x)) is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "type(diff(sin(x), x))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "type(diff(sin(x), x, evaluate=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "type(diff(sin(x), x, 0))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "type(diff(sin(x), x, 0, evaluate=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "diff(sin(x*y))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "expand_power_base(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "prev.subs(y, p).expand().subs(p, 0)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "prev.subs(y, 0).subs(z, -1)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.function",
+   "src": "type(nfloat((1, 2))) is tuple",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "print(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "print(b)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "print(b.primitive_element() == a.primitive_element())",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "E is exp(1)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "show(t)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "show(Float(t, 20)) # higher prec, not higher accuracy",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "show(Float(t, 2)) # lower prec",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "show(t.evalf(20))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "show(t.evalf(2))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "(-1)**n*c*2**p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "_._mpf_",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "_.is_Float",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "Rational(1, 2) is S.Half",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "nan is S.NaN",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "Integer(-1) is S.NegativeOne",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "Integer(1) is S.One",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "S.Pi",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "Rational(pi)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "r.p/r.q",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "Integer(0) is S.Zero",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "expr1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "expr2",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "pi4 = pi.n(4); pi4",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "comp(_, 3.142)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "abs(1/pi4 - 0.3183)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.numbers",
+   "src": "abs(pi4 - 3.14)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "Dummy() #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "alpha #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "alpha_i #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "x._diff_wrt",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_symbol('y')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_.is_real is None",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_symbol('y', real=True).is_real",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_symbol(x, real=True)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_.is_real is None  # ignore attribute if s is a Symbol",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_symbol('x', sym).name",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_symbol('x', sym, real=False).is_real",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_symbol('foo', sym)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "_symbol('foo', sym, real=False).is_real",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "disambiguate(*tup)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "disambiguate(*eqs)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "x.is_real and y.is_real and z.is_real",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "type(_[0])",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "x # noqa: F821",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "abc # noqa: F821",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.symbol",
+   "src": "x.is_real and y.is_real # noqa: F821",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.doit()",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "simplify(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "Eq(True, 1), True == 1",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "eq.rewrite(Add)  #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "eq.rewrite(Add, evaluate=None).args  #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "eq.rewrite(Add, evaluate=False).args  #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_ == Ge(x, 2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e = x < 1; e",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e == x < 1  # expecting True, too",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e != x < 1  # expecting False",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "x < 1 != x < 1  # expecting False or the same thing as before",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e = x < y < z",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "type( e )",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "(x < y) and (y < z)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_ == Ge(x, 2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e = x < 1; e",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e == x < 1  # expecting True, too",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e != x < 1  # expecting False",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "x < 1 != x < 1  # expecting False or the same thing as before",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e = x < y < z",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "type( e )",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "(x < y) and (y < z)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.reversed.canonical",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.negated",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.negated",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.reversed",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.reversed",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.reversedsign",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.reversedsign",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.strict",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_.weak",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_ == Ge(x, 2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e = x < 1; e",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e == x < 1  # expecting True, too",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e != x < 1  # expecting False",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "x < 1 != x < 1  # expecting False or the same thing as before",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e = x < y < z",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "type( e )",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "(x < y) and (y < z)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "_ == Ge(x, 2)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e = x < 1; e",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e == x < 1  # expecting True, too",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e != x < 1  # expecting False",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "x < 1 != x < 1  # expecting False or the same thing as before",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e = x < y < z",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "type( e )",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "e",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.relational",
+   "src": "(x < y) and (y < z)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.evalf",
+   "src": "N(_, 4)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.evalf",
+   "src": "n, (log(n)/log(2)).evalf(2), fastlog((s, m, e, bc))",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.evalf",
+   "src": "z, p",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "Factors(e)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "Factors(e.as_powers_dict())",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "f.factors  # underlying dictionary",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "f.gens  # base of each factor",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "Factors(0)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "Factors(I)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a/x",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "factor_terms(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a.gcd(b)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a.lcm(b)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a.mul(b)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a*b",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a**2",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a.quo(b)  # same as a/b",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a.rem(b)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "a.rem(a)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "_mask_nc(A**2 - x**2, 'd')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "_mask_nc(A**2 - B**2, 'd')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "_mask_nc(1 + x*Commutator(A, B), 'd')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "_mask_nc(NO(Fd(x)*F(y)), 'd')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "_mask_nc(eq, 'd')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "_mask_nc(eq, 'd')",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "F(nn + 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "F(p - 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "F(nn*p + 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.exprtools",
+   "src": "F(p2*p + 1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sympify",
+   "src": "sympify(Something())",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.sympify",
+   "src": "x + '1'",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.sympify",
+   "src": "2*(x + y), -(x + 1)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.sympify",
+   "src": "sympify(\"x***2\")",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.sympify",
+   "src": "sympify(\"2x+1\")",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.sympify",
+   "src": "sympify(\"O + 1\")",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.sympify",
+   "src": "set(_clash1)  # if this fails, see issue #23903",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sympify",
+   "src": "sympify(None, strict=True)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.intfunc",
+   "src": "x, y, g",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.intfunc",
+   "src": "x*100 + y*2004",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.intfunc",
+   "src": "is_square(26)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.intfunc",
+   "src": "isqrt(\"30\")",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.intfunc",
+   "src": "isqrt(Rational(-1, 2))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.intfunc",
+   "src": "mod_inverse(2, 4)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.mod",
+   "src": "_.subs({x: 5, y: 6})",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.containers",
+   "src": "for key in D:\n   if key == 1:\n       print('%s %s' % (key, D[key]))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.containers",
+   "src": "Tuple(a, b, c)[1:]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.containers",
+   "src": "Tuple(1, 2).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.containers",
+   "src": "Tuple(Matrix([1, 2]), 1).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.containers",
+   "src": "Tuple(1, 2).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.containers",
+   "src": "g(0, (1, 2), 3)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "list(iterargs(Integral(f(x), (f(x), 1))))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "list(iterfreeargs(Integral(f(x), (f(x), 1))))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "list(postorder_traversal(w + (x + y)*z)) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "list(postorder_traversal(w + (x + y)*z, keys=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "list(preorder_traversal((x + y)*z, keys=None)) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "list(preorder_traversal((x + y)*z, keys=True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "for i in pt:\n    print(i)\n    if i == x + y*z:\n            pt.skip()",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "list(walk(Min(x, Max(y, Min(1, z))), Min))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.traversal",
+   "src": "list(walk(Min(x, Max(y, Min(1, z))), Min, Max))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "sorted(a, key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "a.sort(key=default_sort_key); a[0]",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "min(a, key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "sorted(eq.args, key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "sorted(eq.args, key=lambda i: default_sort_key(i, order='rev-lex'))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "sorted([sin(x)*cos(x), sin(x)], key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "sorted([x, x**2, sqrt(x), x**3], key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "list(ordered([y + 2, x + 2, x**2 + y + 3],\n   count_ops, default=False, warn=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "list(ordered([y + 2, x + 2, x**2 + y + 3]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "list(ordered(seq, keys, default=False, warn=False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.sorting",
+   "src": "list(ordered(seq, keys, default=False, warn=True))",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "(a+sin(b)*c)._matches_commutative(x+sin(y)*z)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "(x+sin(b)*c)._matches_commutative(x+sin(y)*z, repl_dict={a: x})",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "(x+sin(b)*c)._matches_commutative(x+sin(y)*z)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "Mul(*e.args[1:])",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "e._new_rawargs(*e.args[1:])  # the same as above, but faster",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "m = (x*y)._new_rawargs(S.One, x); m",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "my_join(2, 3) == my_join(3, 2)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "my_join(2, my_join(3, 4)) == my_join(2, 3, 4)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "my_join(0, 1, 4, 2, 3, 4)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.operations",
+   "src": "my_join(1, 2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.parameters",
+   "src": "with _exp_is_pow(True): print(type(exp(x)))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.parameters",
+   "src": "with _exp_is_pow(False): print(type(exp(x)))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.parameters",
+   "src": "print(log)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.parameters",
+   "src": "print(2*(x + 1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.parameters",
+   "src": "with distribute(False):\n    print(2*(x + 1))",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.parameters",
+   "src": "print(x + x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.parameters",
+   "src": "with evaluate(False):\n    print(x + x)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.random",
+   "src": "ri(1, 1000) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.random",
+   "src": "ri(1, 1000) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.random",
+   "src": "ri(1, 3), ri(1, 3)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.random",
+   "src": "rr(1000) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.random",
+   "src": "rr(1000) # doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.core.random",
+   "src": "rr(3), rr(3)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.random",
+   "src": "td(sin(x), x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.random",
+   "src": "tn(sin(x)**2 + cos(x)**2, 1, x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.singleton",
+   "src": "Basic() is Basic()",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.singleton",
+   "src": "MySingleton() is MySingleton()",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.singleton",
+   "src": "S.MySingleton is MySingleton()",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.singleton",
+   "src": "a is S.Zero",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.singleton",
+   "src": "x is S.Zero",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.assumptions",
+   "src": "x = Symbol('x', real=True); x",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.core.assumptions",
+   "src": "eq._assumptions",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.assumptions",
+   "src": "eq._assumptions",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.assumptions",
+   "src": "Symbol('x', prime=True, even=True)._assumptions_orig",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "S.true.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "Q.even(3).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "S.One.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "(-oo).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "S.NaN.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "x.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "Symbol('y', commutative=False).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "(x+1).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.kind",
+   "src": "Expr().kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.core.logic",
+   "src": "_fuzzy_group([False, False, True])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.logic",
+   "src": "_fuzzy_group([False, True, True], quick_exit=True)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.logic",
+   "src": "_torf((True, True))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.logic",
+   "src": "_torf((False, False))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.core.logic",
+   "src": "fuzzy_bool(x), fuzzy_bool(None)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.core.logic",
+   "src": "bool(x), bool(None)",
+   "reason": "non-call-expression"
+  }
+ ],
+ "preservedReferences": []
+}

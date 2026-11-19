@@ -15,10 +15,32 @@ from pathlib import Path
 from unittest.mock import patch
 
 import sympy
-import extract
+from corpus_shards import read_doctest, read_doctest_cases
+import extract_doctest as extract
 
 
 class ExtractTests(unittest.TestCase):
+    def test_interleaved_categories_round_trip_without_changing_case_keys(self):
+        modules = {"sympy.core.expr": "core", "sympy.matrices.matrixbase": "matrices"}
+        cases = [{"module": module, "category": modules[module], "src": str(i), "expected": "α"}
+                 for i, module in enumerate([*modules, "sympy.core.expr"])]
+        omitted = [{"module": "sympy.core.expr", "src": "x", "reason": "non-call-expression"}]
+        corpus = {"sympy": sympy.__version__, "api": [], "cases": cases,
+                  "extraction": {"examined": 4, "reasons": {"non-call-expression": 1}, "omitted": omitted}}
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(extract.MODULES, modules, clear=True):
+            directory = Path(tmp)
+            extract.write_corpus(directory, corpus, sorted(modules.values()))
+            index = json.loads((directory / "index.json").read_text())
+            restored = read_doctest(directory)
+            self.assertEqual(restored, corpus)
+            self.assertEqual(json.dumps(restored["cases"]), json.dumps(cases))
+            self.assertEqual(read_doctest_cases(directory, index, {"core"}), cases[::2])
+            for name, summary in index["categories"].items():
+                shard, = summary["shards"]
+                self.assertEqual(shard["bytes"], (directory / shard["file"]).stat().st_size)
+                audit = json.loads((directory / summary["auditFile"]).read_text())
+                self.assertEqual(audit["omitted"], omitted if name == "core" else [])
+
     def test_serializes_hypergeometric_bases_and_differential_operators(self):
         from sympy.simplify.hyperexpand import FormulaCollection, Hyper_Function, G_Function, reduce_order_meijer
         from sympy.functions.special.hyper import HyperRep_power1
@@ -124,12 +146,12 @@ class ExtractTests(unittest.TestCase):
         handler = signal.getsignal(signal.SIGALRM)
         try:
             with tempfile.TemporaryDirectory() as tmp:
-                target = Path(tmp) / "corpus.json"
+                target = Path(tmp) / "doctest"
                 with patch.dict(extract.MODULES, {module: "test"}, clear=True), \
                         patch.object(extract, "ONLY", []), \
                         patch.object(doctest.DocTestFinder, "find", return_value=tests):
                     extract.main(target)
-                corpus = json.loads(target.read_text())
+                corpus = read_doctest(target)
         finally:
             signal.signal(signal.SIGALRM, handler)
         self.assertEqual(corpus["extraction"]["examined"],
@@ -414,19 +436,19 @@ class ExtractTests(unittest.TestCase):
         handler = signal.getsignal(signal.SIGALRM)
         try:
             with tempfile.TemporaryDirectory() as tmp:
-                target = Path(tmp) / "corpus.json"
+                target = Path(tmp) / "doctest"
                 with patch.dict(extract.MODULES, {m: "test" for m in examples}, clear=True), \
                         patch.object(extract, "ONLY", []), \
                         patch.object(doctest.DocTestFinder, "find", side_effect=find):
                     extract.main(target)
-                corpus = json.loads(target.read_text())
+                corpus = read_doctest(target)
                 # The normal expansion command uses the destination as its own
                 # baseline; loading it before writing must preserve all records.
                 with patch.dict(extract.MODULES, {m: "test" for m in examples}, clear=True), \
                         patch.object(extract, "ONLY", []), \
                         patch.object(doctest.DocTestFinder, "find", side_effect=find):
                     extract.main(target, target)
-                replayed = json.loads(target.read_text())
+                replayed = read_doctest(target)
                 self.assertEqual(replayed["cases"], corpus["cases"])
                 self.assertEqual(replayed["extraction"]["preservedReferences"], [])
         finally:

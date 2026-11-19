@@ -1,0 +1,335 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "t = p(a) + q(a); t",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "t",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "A(mu, -nu)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "A(mu, -mu)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "A(x, mu)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "A(x, -x)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "t = A(i, k)*B(-k, -j); t",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "t",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "A(mu, nu)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "A(-mu, -rho)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "A(mu, -mu)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "type(W(p))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "_IndexStructure._free_dum_from_indices(m0, m1, -m1, m3)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "_IndexStructure.from_indices(m0, m1, -m1, m3)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "_TensorDataLazyEvaluator.parse_data([1, 3, -6, 12])",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.tensor.tensor",
+   "src": "_TensorDataLazyEvaluator.parse_data([[1, 2], [4, 7]])",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.tensor.array.dense_ndim_array",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.array.dense_ndim_array",
+   "src": "b",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.array.dense_ndim_array",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.array.ndim_array",
+   "src": "NDimArray([1,2,3]).kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.tensor.array.ndim_array",
+   "src": "isinstance(intA, NDimArray)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.array.ndim_array",
+   "src": "intA.kind",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.tensor.array.ndim_array",
+   "src": "isinstance(boolA.kind, ArrayKind)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.array.ndim_array",
+   "src": "boolA.kind is ArrayKind(NumberKind)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.array.ndim_array",
+   "src": "c",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.array.ndim_array",
+   "src": "len(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.array.arrayop",
+   "src": "Flatten(A)",
+   "reason": "unsupported-result-type"
+  },
+  {
+   "module": "sympy.tensor.array.arrayop",
+   "src": "[i for i in Flatten(A)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "idx = Idx('qwerty'); idx",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "idx.lower, idx.upper",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "idx = Idx(i, (L, U)); idx",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "idx.lower, idx.upper",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "idx = Idx(i, n); idx.lower, idx.upper",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "idx = Idx(i, 4); idx.lower, idx.upper",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "idx = Idx(i, oo); idx.lower, idx.upper",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "Idx('j').lower is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "Idx('j').upper is None",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "q.rank == len(q.indices)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "A = IndexedBase('A'); A",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "type(A)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.indexed",
+   "src": "type(A[i, j, 2])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.array.sparse_ndim_array",
+   "src": "a",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "_get_indices_Add(x[i] + x[k]*y[i, k])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "_get_indices_Mul(x[i, k]*y[j, k])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "_get_indices_Mul(x[i, k]*y[j, k], return_dummies=True)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "_get_indices_Pow(exp(A[i, j]*x[j]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "_get_indices_Pow(Pow(x[i], x[i]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "_get_indices_Pow(Pow(A[i, j]*x[j], x[i]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "_remove_repeated(l1)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "_unique_and_repeated([2, 3, 1, 3, 0, 4, 0])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "sorted(d.keys(), key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "sorted(d[x[i, i]*y[j, j]], key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "sorted(d.keys(), key=default_sort_key)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.index_methods",
+   "src": "get_indices(x[i] + y[j])                #doctest: +SKIP",
+   "reason": "upstream-skip"
+  },
+  {
+   "module": "sympy.tensor.array",
+   "src": "isinstance(m2.tolist(), list)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.array",
+   "src": "ArrayTensorProduct(A, B)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.array",
+   "src": "ArrayContraction(C, (0, 1))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.array.array_comprehension",
+   "src": "len(a)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.array.expressions.array_expressions",
+   "src": "cg",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.array.expressions.array_expressions",
+   "src": "cg._get_contraction_links()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.tensor.array.expressions.array_expressions",
+   "src": "cg._get_contraction_tuples()",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.tensor.array.expressions.array_expressions",
+   "src": "cg._get_index_shifts(cg)",
+   "reason": "private-api"
+  },
+  {
+   "module": "sympy.tensor.array.expressions.array_expressions",
+   "src": "cg",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.tensor.array.expressions.array_expressions",
+   "src": "convert_array_to_matrix(cg)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.tensor.functions",
+   "src": "shape(x)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.tensor.functions",
+   "src": "shape(Integral(x, x))",
+   "reason": "reference-exception"
+  }
+ ],
+ "preservedReferences": []
+}

@@ -1,0 +1,7931 @@
+{
+  "sympy": "1.14.0",
+  "api": [
+    {
+      "name": "Abs",
+      "category": "functions"
+    },
+    {
+      "name": "AccumBounds",
+      "category": "calculus"
+    },
+    {
+      "name": "Add",
+      "category": "core"
+    },
+    {
+      "name": "Adjoint",
+      "category": "matrices"
+    },
+    {
+      "name": "AlgebraicField",
+      "category": "polys"
+    },
+    {
+      "name": "AlgebraicNumber",
+      "category": "core"
+    },
+    {
+      "name": "And",
+      "category": "logic"
+    },
+    {
+      "name": "AppliedPredicate",
+      "category": "assumptions"
+    },
+    {
+      "name": "Array",
+      "category": "tensor"
+    },
+    {
+      "name": "AssumptionsContext",
+      "category": "assumptions"
+    },
+    {
+      "name": "Atom",
+      "category": "core"
+    },
+    {
+      "name": "AtomicExpr",
+      "category": "core"
+    },
+    {
+      "name": "BasePolynomialError",
+      "category": "polys"
+    },
+    {
+      "name": "Basic",
+      "category": "core"
+    },
+    {
+      "name": "BlockDiagMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "BlockMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "CC",
+      "category": "polys"
+    },
+    {
+      "name": "CRootOf",
+      "category": "polys"
+    },
+    {
+      "name": "Catalan",
+      "category": "core"
+    },
+    {
+      "name": "Chi",
+      "category": "special"
+    },
+    {
+      "name": "Ci",
+      "category": "special"
+    },
+    {
+      "name": "Circle",
+      "category": "geometry"
+    },
+    {
+      "name": "CoercionFailed",
+      "category": "polys"
+    },
+    {
+      "name": "Complement",
+      "category": "sets"
+    },
+    {
+      "name": "ComplexField",
+      "category": "polys"
+    },
+    {
+      "name": "ComplexRegion",
+      "category": "sets"
+    },
+    {
+      "name": "ComplexRootOf",
+      "category": "polys"
+    },
+    {
+      "name": "Complexes",
+      "category": "sets"
+    },
+    {
+      "name": "ComputationFailed",
+      "category": "polys"
+    },
+    {
+      "name": "ConditionSet",
+      "category": "sets"
+    },
+    {
+      "name": "Contains",
+      "category": "sets"
+    },
+    {
+      "name": "CosineTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "Curve",
+      "category": "geometry"
+    },
+    {
+      "name": "Cycle",
+      "category": "combinatorics"
+    },
+    {
+      "name": "DeferredVector",
+      "category": "matrices"
+    },
+    {
+      "name": "DenseNDimArray",
+      "category": "tensor"
+    },
+    {
+      "name": "Derivative",
+      "category": "core"
+    },
+    {
+      "name": "Determinant",
+      "category": "matrices"
+    },
+    {
+      "name": "DiagMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "DiagonalMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "DiagonalOf",
+      "category": "matrices"
+    },
+    {
+      "name": "Dict",
+      "category": "core"
+    },
+    {
+      "name": "DiracDelta",
+      "category": "special"
+    },
+    {
+      "name": "DisjointUnion",
+      "category": "sets"
+    },
+    {
+      "name": "Domain",
+      "category": "polys"
+    },
+    {
+      "name": "DomainError",
+      "category": "polys"
+    },
+    {
+      "name": "DotProduct",
+      "category": "matrices"
+    },
+    {
+      "name": "Dummy",
+      "category": "core"
+    },
+    {
+      "name": "E",
+      "category": "core"
+    },
+    {
+      "name": "E1",
+      "category": "special"
+    },
+    {
+      "name": "EPath",
+      "category": "simplify"
+    },
+    {
+      "name": "EX",
+      "category": "polys"
+    },
+    {
+      "name": "EXRAW",
+      "category": "polys"
+    },
+    {
+      "name": "Ei",
+      "category": "special"
+    },
+    {
+      "name": "Eijk",
+      "category": "special"
+    },
+    {
+      "name": "Ellipse",
+      "category": "geometry"
+    },
+    {
+      "name": "EmptySequence",
+      "category": "calculus"
+    },
+    {
+      "name": "EmptySet",
+      "category": "sets"
+    },
+    {
+      "name": "Eq",
+      "category": "core"
+    },
+    {
+      "name": "Equality",
+      "category": "core"
+    },
+    {
+      "name": "Equivalent",
+      "category": "logic"
+    },
+    {
+      "name": "EulerGamma",
+      "category": "core"
+    },
+    {
+      "name": "EvaluationFailed",
+      "category": "polys"
+    },
+    {
+      "name": "ExactQuotientFailed",
+      "category": "polys"
+    },
+    {
+      "name": "Expr",
+      "category": "core"
+    },
+    {
+      "name": "ExpressionDomain",
+      "category": "polys"
+    },
+    {
+      "name": "ExtraneousFactors",
+      "category": "polys"
+    },
+    {
+      "name": "FF",
+      "category": "polys"
+    },
+    {
+      "name": "FallingFactorial",
+      "category": "special"
+    },
+    {
+      "name": "FiniteField",
+      "category": "polys"
+    },
+    {
+      "name": "FiniteSet",
+      "category": "sets"
+    },
+    {
+      "name": "FlagError",
+      "category": "polys"
+    },
+    {
+      "name": "Float",
+      "category": "core"
+    },
+    {
+      "name": "FourierTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "FractionField",
+      "category": "polys"
+    },
+    {
+      "name": "Function",
+      "category": "core"
+    },
+    {
+      "name": "FunctionClass",
+      "category": "core"
+    },
+    {
+      "name": "FunctionMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "GF",
+      "category": "polys"
+    },
+    {
+      "name": "Ge",
+      "category": "core"
+    },
+    {
+      "name": "GeneratorsError",
+      "category": "polys"
+    },
+    {
+      "name": "GeneratorsNeeded",
+      "category": "polys"
+    },
+    {
+      "name": "GeometryError",
+      "category": "geometry"
+    },
+    {
+      "name": "GoldenRatio",
+      "category": "core"
+    },
+    {
+      "name": "GramSchmidt",
+      "category": "matrices"
+    },
+    {
+      "name": "GreaterThan",
+      "category": "core"
+    },
+    {
+      "name": "GroebnerBasis",
+      "category": "polys"
+    },
+    {
+      "name": "Gt",
+      "category": "core"
+    },
+    {
+      "name": "HadamardPower",
+      "category": "matrices"
+    },
+    {
+      "name": "HadamardProduct",
+      "category": "matrices"
+    },
+    {
+      "name": "HankelTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "Heaviside",
+      "category": "special"
+    },
+    {
+      "name": "HeuristicGCDFailed",
+      "category": "polys"
+    },
+    {
+      "name": "HomomorphismFailed",
+      "category": "polys"
+    },
+    {
+      "name": "I",
+      "category": "core"
+    },
+    {
+      "name": "ITE",
+      "category": "logic"
+    },
+    {
+      "name": "Id",
+      "category": "functions"
+    },
+    {
+      "name": "Identity",
+      "category": "matrices"
+    },
+    {
+      "name": "Idx",
+      "category": "tensor"
+    },
+    {
+      "name": "ImageSet",
+      "category": "sets"
+    },
+    {
+      "name": "ImmutableDenseMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "ImmutableDenseNDimArray",
+      "category": "tensor"
+    },
+    {
+      "name": "ImmutableMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "ImmutableSparseMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "ImmutableSparseNDimArray",
+      "category": "tensor"
+    },
+    {
+      "name": "Implies",
+      "category": "logic"
+    },
+    {
+      "name": "Indexed",
+      "category": "tensor"
+    },
+    {
+      "name": "IndexedBase",
+      "category": "tensor"
+    },
+    {
+      "name": "Integer",
+      "category": "core"
+    },
+    {
+      "name": "IntegerRing",
+      "category": "polys"
+    },
+    {
+      "name": "Integers",
+      "category": "sets"
+    },
+    {
+      "name": "Integral",
+      "category": "calculus"
+    },
+    {
+      "name": "Intersection",
+      "category": "sets"
+    },
+    {
+      "name": "Interval",
+      "category": "sets"
+    },
+    {
+      "name": "Inverse",
+      "category": "matrices"
+    },
+    {
+      "name": "InverseCosineTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "InverseFourierTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "InverseHankelTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "InverseLaplaceTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "InverseMellinTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "InverseSineTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "IsomorphismFailed",
+      "category": "polys"
+    },
+    {
+      "name": "KroneckerDelta",
+      "category": "special"
+    },
+    {
+      "name": "KroneckerProduct",
+      "category": "matrices"
+    },
+    {
+      "name": "LC",
+      "category": "polys"
+    },
+    {
+      "name": "LM",
+      "category": "polys"
+    },
+    {
+      "name": "LT",
+      "category": "polys"
+    },
+    {
+      "name": "Lambda",
+      "category": "core"
+    },
+    {
+      "name": "LambertW",
+      "category": "functions"
+    },
+    {
+      "name": "LaplaceTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "Le",
+      "category": "core"
+    },
+    {
+      "name": "LessThan",
+      "category": "core"
+    },
+    {
+      "name": "LeviCivita",
+      "category": "special"
+    },
+    {
+      "name": "Li",
+      "category": "special"
+    },
+    {
+      "name": "Limit",
+      "category": "calculus"
+    },
+    {
+      "name": "Line",
+      "category": "geometry"
+    },
+    {
+      "name": "Line2D",
+      "category": "geometry"
+    },
+    {
+      "name": "Line3D",
+      "category": "geometry"
+    },
+    {
+      "name": "Lt",
+      "category": "core"
+    },
+    {
+      "name": "MatAdd",
+      "category": "matrices"
+    },
+    {
+      "name": "MatMul",
+      "category": "matrices"
+    },
+    {
+      "name": "MatPow",
+      "category": "matrices"
+    },
+    {
+      "name": "Matrix",
+      "category": "matrices"
+    },
+    {
+      "name": "MatrixBase",
+      "category": "matrices"
+    },
+    {
+      "name": "MatrixExpr",
+      "category": "matrices"
+    },
+    {
+      "name": "MatrixPermute",
+      "category": "matrices"
+    },
+    {
+      "name": "MatrixSlice",
+      "category": "matrices"
+    },
+    {
+      "name": "MatrixSymbol",
+      "category": "matrices"
+    },
+    {
+      "name": "Max",
+      "category": "functions"
+    },
+    {
+      "name": "MellinTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "Min",
+      "category": "functions"
+    },
+    {
+      "name": "Mod",
+      "category": "core"
+    },
+    {
+      "name": "Monomial",
+      "category": "polys"
+    },
+    {
+      "name": "Mul",
+      "category": "core"
+    },
+    {
+      "name": "MultivariatePolynomialError",
+      "category": "polys"
+    },
+    {
+      "name": "MutableDenseMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "MutableDenseNDimArray",
+      "category": "tensor"
+    },
+    {
+      "name": "MutableMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "MutableSparseMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "MutableSparseNDimArray",
+      "category": "tensor"
+    },
+    {
+      "name": "N",
+      "category": "core"
+    },
+    {
+      "name": "NDimArray",
+      "category": "tensor"
+    },
+    {
+      "name": "Nand",
+      "category": "logic"
+    },
+    {
+      "name": "Naturals",
+      "category": "sets"
+    },
+    {
+      "name": "Naturals0",
+      "category": "sets"
+    },
+    {
+      "name": "Ne",
+      "category": "core"
+    },
+    {
+      "name": "NonSquareMatrixError",
+      "category": "matrices"
+    },
+    {
+      "name": "Nor",
+      "category": "logic"
+    },
+    {
+      "name": "Not",
+      "category": "logic"
+    },
+    {
+      "name": "NotAlgebraic",
+      "category": "polys"
+    },
+    {
+      "name": "NotInvertible",
+      "category": "polys"
+    },
+    {
+      "name": "NotReversible",
+      "category": "polys"
+    },
+    {
+      "name": "Number",
+      "category": "core"
+    },
+    {
+      "name": "NumberSymbol",
+      "category": "core"
+    },
+    {
+      "name": "O",
+      "category": "calculus"
+    },
+    {
+      "name": "OmegaPower",
+      "category": "sets"
+    },
+    {
+      "name": "OneMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "OperationNotSupported",
+      "category": "polys"
+    },
+    {
+      "name": "OptionError",
+      "category": "polys"
+    },
+    {
+      "name": "Options",
+      "category": "polys"
+    },
+    {
+      "name": "Or",
+      "category": "logic"
+    },
+    {
+      "name": "Order",
+      "category": "calculus"
+    },
+    {
+      "name": "Ordinal",
+      "category": "sets"
+    },
+    {
+      "name": "POSform",
+      "category": "logic"
+    },
+    {
+      "name": "Parabola",
+      "category": "geometry"
+    },
+    {
+      "name": "Permanent",
+      "category": "matrices"
+    },
+    {
+      "name": "Permutation",
+      "category": "combinatorics"
+    },
+    {
+      "name": "PermutationMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "Piecewise",
+      "category": "functions"
+    },
+    {
+      "name": "Plane",
+      "category": "geometry"
+    },
+    {
+      "name": "Point",
+      "category": "geometry"
+    },
+    {
+      "name": "Point2D",
+      "category": "geometry"
+    },
+    {
+      "name": "Point3D",
+      "category": "geometry"
+    },
+    {
+      "name": "PoleError",
+      "category": "core"
+    },
+    {
+      "name": "PolificationFailed",
+      "category": "polys"
+    },
+    {
+      "name": "Poly",
+      "category": "polys"
+    },
+    {
+      "name": "Polygon",
+      "category": "geometry"
+    },
+    {
+      "name": "PolynomialDivisionFailed",
+      "category": "polys"
+    },
+    {
+      "name": "PolynomialError",
+      "category": "polys"
+    },
+    {
+      "name": "PolynomialRing",
+      "category": "polys"
+    },
+    {
+      "name": "Pow",
+      "category": "core"
+    },
+    {
+      "name": "PowerSet",
+      "category": "sets"
+    },
+    {
+      "name": "PrecisionExhausted",
+      "category": "core"
+    },
+    {
+      "name": "Predicate",
+      "category": "assumptions"
+    },
+    {
+      "name": "Product",
+      "category": "calculus"
+    },
+    {
+      "name": "ProductSet",
+      "category": "sets"
+    },
+    {
+      "name": "PurePoly",
+      "category": "polys"
+    },
+    {
+      "name": "Q",
+      "category": "assumptions"
+    },
+    {
+      "name": "QQ",
+      "category": "polys"
+    },
+    {
+      "name": "QQ_I",
+      "category": "polys"
+    },
+    {
+      "name": "Quaternion",
+      "category": "algebras"
+    },
+    {
+      "name": "RR",
+      "category": "polys"
+    },
+    {
+      "name": "Range",
+      "category": "sets"
+    },
+    {
+      "name": "Rational",
+      "category": "core"
+    },
+    {
+      "name": "RationalField",
+      "category": "polys"
+    },
+    {
+      "name": "Rationals",
+      "category": "sets"
+    },
+    {
+      "name": "Ray",
+      "category": "geometry"
+    },
+    {
+      "name": "Ray2D",
+      "category": "geometry"
+    },
+    {
+      "name": "Ray3D",
+      "category": "geometry"
+    },
+    {
+      "name": "RealField",
+      "category": "polys"
+    },
+    {
+      "name": "RealNumber",
+      "category": "core"
+    },
+    {
+      "name": "Reals",
+      "category": "sets"
+    },
+    {
+      "name": "RefinementFailed",
+      "category": "polys"
+    },
+    {
+      "name": "RegularPolygon",
+      "category": "geometry"
+    },
+    {
+      "name": "Rel",
+      "category": "core"
+    },
+    {
+      "name": "Rem",
+      "category": "functions"
+    },
+    {
+      "name": "RisingFactorial",
+      "category": "special"
+    },
+    {
+      "name": "RootOf",
+      "category": "polys"
+    },
+    {
+      "name": "RootSum",
+      "category": "polys"
+    },
+    {
+      "name": "S",
+      "category": "core"
+    },
+    {
+      "name": "SOPform",
+      "category": "logic"
+    },
+    {
+      "name": "Segment",
+      "category": "geometry"
+    },
+    {
+      "name": "Segment2D",
+      "category": "geometry"
+    },
+    {
+      "name": "Segment3D",
+      "category": "geometry"
+    },
+    {
+      "name": "SeqAdd",
+      "category": "calculus"
+    },
+    {
+      "name": "SeqFormula",
+      "category": "calculus"
+    },
+    {
+      "name": "SeqMul",
+      "category": "calculus"
+    },
+    {
+      "name": "SeqPer",
+      "category": "calculus"
+    },
+    {
+      "name": "Set",
+      "category": "sets"
+    },
+    {
+      "name": "ShapeError",
+      "category": "matrices"
+    },
+    {
+      "name": "Shi",
+      "category": "special"
+    },
+    {
+      "name": "Si",
+      "category": "special"
+    },
+    {
+      "name": "Sieve",
+      "category": "ntheory"
+    },
+    {
+      "name": "SineTransform",
+      "category": "calculus"
+    },
+    {
+      "name": "SingularityFunction",
+      "category": "special"
+    },
+    {
+      "name": "SparseMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "SparseNDimArray",
+      "category": "tensor"
+    },
+    {
+      "name": "StrPrinter",
+      "category": "printing"
+    },
+    {
+      "name": "StrictGreaterThan",
+      "category": "core"
+    },
+    {
+      "name": "StrictLessThan",
+      "category": "core"
+    },
+    {
+      "name": "Subs",
+      "category": "core"
+    },
+    {
+      "name": "Sum",
+      "category": "calculus"
+    },
+    {
+      "name": "Symbol",
+      "category": "core"
+    },
+    {
+      "name": "SymmetricDifference",
+      "category": "sets"
+    },
+    {
+      "name": "SympifyError",
+      "category": "core"
+    },
+    {
+      "name": "TableForm",
+      "category": "printing"
+    },
+    {
+      "name": "Trace",
+      "category": "matrices"
+    },
+    {
+      "name": "Transpose",
+      "category": "matrices"
+    },
+    {
+      "name": "Triangle",
+      "category": "geometry"
+    },
+    {
+      "name": "TribonacciConstant",
+      "category": "core"
+    },
+    {
+      "name": "Tuple",
+      "category": "core"
+    },
+    {
+      "name": "Unequality",
+      "category": "core"
+    },
+    {
+      "name": "UnevaluatedExpr",
+      "category": "core"
+    },
+    {
+      "name": "UnificationFailed",
+      "category": "polys"
+    },
+    {
+      "name": "Union",
+      "category": "sets"
+    },
+    {
+      "name": "UnivariatePolynomialError",
+      "category": "polys"
+    },
+    {
+      "name": "UniversalSet",
+      "category": "sets"
+    },
+    {
+      "name": "Wild",
+      "category": "core"
+    },
+    {
+      "name": "WildFunction",
+      "category": "core"
+    },
+    {
+      "name": "Xor",
+      "category": "logic"
+    },
+    {
+      "name": "Ynm",
+      "category": "special"
+    },
+    {
+      "name": "Ynm_c",
+      "category": "special"
+    },
+    {
+      "name": "ZZ",
+      "category": "polys"
+    },
+    {
+      "name": "ZZ_I",
+      "category": "polys"
+    },
+    {
+      "name": "ZeroMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "Znm",
+      "category": "special"
+    },
+    {
+      "name": "abundance",
+      "category": "ntheory"
+    },
+    {
+      "name": "acos",
+      "category": "functions"
+    },
+    {
+      "name": "acosh",
+      "category": "functions"
+    },
+    {
+      "name": "acot",
+      "category": "functions"
+    },
+    {
+      "name": "acoth",
+      "category": "functions"
+    },
+    {
+      "name": "acsc",
+      "category": "functions"
+    },
+    {
+      "name": "acsch",
+      "category": "functions"
+    },
+    {
+      "name": "adjoint",
+      "category": "functions"
+    },
+    {
+      "name": "airyai",
+      "category": "special"
+    },
+    {
+      "name": "airyaiprime",
+      "category": "special"
+    },
+    {
+      "name": "airybi",
+      "category": "special"
+    },
+    {
+      "name": "airybiprime",
+      "category": "special"
+    },
+    {
+      "name": "all_roots",
+      "category": "polys"
+    },
+    {
+      "name": "andre",
+      "category": "special"
+    },
+    {
+      "name": "apart",
+      "category": "simplify"
+    },
+    {
+      "name": "apart_list",
+      "category": "simplify"
+    },
+    {
+      "name": "appellf1",
+      "category": "special"
+    },
+    {
+      "name": "apply_finite_diff",
+      "category": "calculus"
+    },
+    {
+      "name": "approximants",
+      "category": "calculus"
+    },
+    {
+      "name": "are_similar",
+      "category": "geometry"
+    },
+    {
+      "name": "arg",
+      "category": "functions"
+    },
+    {
+      "name": "arity",
+      "category": "core"
+    },
+    {
+      "name": "asec",
+      "category": "functions"
+    },
+    {
+      "name": "asech",
+      "category": "functions"
+    },
+    {
+      "name": "asin",
+      "category": "functions"
+    },
+    {
+      "name": "asinh",
+      "category": "functions"
+    },
+    {
+      "name": "ask",
+      "category": "assumptions"
+    },
+    {
+      "name": "assemble_partfrac_list",
+      "category": "simplify"
+    },
+    {
+      "name": "assoc_laguerre",
+      "category": "special"
+    },
+    {
+      "name": "assoc_legendre",
+      "category": "special"
+    },
+    {
+      "name": "assuming",
+      "category": "assumptions"
+    },
+    {
+      "name": "atan",
+      "category": "functions"
+    },
+    {
+      "name": "atan2",
+      "category": "functions"
+    },
+    {
+      "name": "atanh",
+      "category": "functions"
+    },
+    {
+      "name": "banded",
+      "category": "matrices"
+    },
+    {
+      "name": "bell",
+      "category": "special"
+    },
+    {
+      "name": "bernoulli",
+      "category": "special"
+    },
+    {
+      "name": "besseli",
+      "category": "special"
+    },
+    {
+      "name": "besselj",
+      "category": "special"
+    },
+    {
+      "name": "besselk",
+      "category": "special"
+    },
+    {
+      "name": "besselsimp",
+      "category": "simplify"
+    },
+    {
+      "name": "bessely",
+      "category": "special"
+    },
+    {
+      "name": "beta",
+      "category": "special"
+    },
+    {
+      "name": "betainc",
+      "category": "special"
+    },
+    {
+      "name": "betainc_regularized",
+      "category": "special"
+    },
+    {
+      "name": "binomial",
+      "category": "special"
+    },
+    {
+      "name": "binomial_coefficients",
+      "category": "ntheory"
+    },
+    {
+      "name": "binomial_coefficients_list",
+      "category": "ntheory"
+    },
+    {
+      "name": "block_collapse",
+      "category": "matrices"
+    },
+    {
+      "name": "blockcut",
+      "category": "matrices"
+    },
+    {
+      "name": "bool_map",
+      "category": "logic"
+    },
+    {
+      "name": "bottom_up",
+      "category": "core"
+    },
+    {
+      "name": "bspline_basis",
+      "category": "special"
+    },
+    {
+      "name": "bspline_basis_set",
+      "category": "special"
+    },
+    {
+      "name": "cancel",
+      "category": "polys"
+    },
+    {
+      "name": "capture",
+      "category": "utilities"
+    },
+    {
+      "name": "carmichael",
+      "category": "special"
+    },
+    {
+      "name": "casoratian",
+      "category": "matrices"
+    },
+    {
+      "name": "catalan",
+      "category": "special"
+    },
+    {
+      "name": "cbrt",
+      "category": "functions"
+    },
+    {
+      "name": "ceiling",
+      "category": "functions"
+    },
+    {
+      "name": "centroid",
+      "category": "geometry"
+    },
+    {
+      "name": "chebyshevt",
+      "category": "special"
+    },
+    {
+      "name": "chebyshevt_poly",
+      "category": "polys"
+    },
+    {
+      "name": "chebyshevt_root",
+      "category": "special"
+    },
+    {
+      "name": "chebyshevu",
+      "category": "special"
+    },
+    {
+      "name": "chebyshevu_poly",
+      "category": "polys"
+    },
+    {
+      "name": "chebyshevu_root",
+      "category": "special"
+    },
+    {
+      "name": "check_assumptions",
+      "category": "core"
+    },
+    {
+      "name": "checkodesol",
+      "category": "ode"
+    },
+    {
+      "name": "checkpdesol",
+      "category": "pde"
+    },
+    {
+      "name": "checksol",
+      "category": "solvers"
+    },
+    {
+      "name": "classify_ode",
+      "category": "ode"
+    },
+    {
+      "name": "classify_pde",
+      "category": "pde"
+    },
+    {
+      "name": "closest_points",
+      "category": "geometry"
+    },
+    {
+      "name": "cofactors",
+      "category": "polys"
+    },
+    {
+      "name": "collect",
+      "category": "simplify"
+    },
+    {
+      "name": "collect_const",
+      "category": "simplify"
+    },
+    {
+      "name": "combsimp",
+      "category": "simplify"
+    },
+    {
+      "name": "comp",
+      "category": "core"
+    },
+    {
+      "name": "compose",
+      "category": "polys"
+    },
+    {
+      "name": "composite",
+      "category": "ntheory"
+    },
+    {
+      "name": "compositepi",
+      "category": "ntheory"
+    },
+    {
+      "name": "conjugate",
+      "category": "functions"
+    },
+    {
+      "name": "construct_domain",
+      "category": "polys"
+    },
+    {
+      "name": "content",
+      "category": "polys"
+    },
+    {
+      "name": "continued_fraction",
+      "category": "ntheory"
+    },
+    {
+      "name": "continued_fraction_convergents",
+      "category": "ntheory"
+    },
+    {
+      "name": "continued_fraction_iterator",
+      "category": "ntheory"
+    },
+    {
+      "name": "continued_fraction_periodic",
+      "category": "ntheory"
+    },
+    {
+      "name": "continued_fraction_reduce",
+      "category": "ntheory"
+    },
+    {
+      "name": "convex_hull",
+      "category": "geometry"
+    },
+    {
+      "name": "convolution",
+      "category": "discrete"
+    },
+    {
+      "name": "cos",
+      "category": "functions"
+    },
+    {
+      "name": "cosh",
+      "category": "functions"
+    },
+    {
+      "name": "cosine_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "cot",
+      "category": "functions"
+    },
+    {
+      "name": "coth",
+      "category": "functions"
+    },
+    {
+      "name": "count_ops",
+      "category": "core"
+    },
+    {
+      "name": "count_roots",
+      "category": "polys"
+    },
+    {
+      "name": "covering_product",
+      "category": "discrete"
+    },
+    {
+      "name": "csc",
+      "category": "functions"
+    },
+    {
+      "name": "csch",
+      "category": "functions"
+    },
+    {
+      "name": "cse",
+      "category": "simplify"
+    },
+    {
+      "name": "cycle_length",
+      "category": "ntheory"
+    },
+    {
+      "name": "cyclotomic_poly",
+      "category": "polys"
+    },
+    {
+      "name": "decompogen",
+      "category": "solvers"
+    },
+    {
+      "name": "decompose",
+      "category": "polys"
+    },
+    {
+      "name": "default_sort_key",
+      "category": "core"
+    },
+    {
+      "name": "deg",
+      "category": "geometry"
+    },
+    {
+      "name": "degree",
+      "category": "polys"
+    },
+    {
+      "name": "degree_list",
+      "category": "polys"
+    },
+    {
+      "name": "denom",
+      "category": "simplify"
+    },
+    {
+      "name": "derive_by_array",
+      "category": "tensor"
+    },
+    {
+      "name": "det",
+      "category": "matrices"
+    },
+    {
+      "name": "det_quick",
+      "category": "solvers"
+    },
+    {
+      "name": "diag",
+      "category": "matrices"
+    },
+    {
+      "name": "diagonalize_vector",
+      "category": "matrices"
+    },
+    {
+      "name": "dict_merge",
+      "category": "utilities"
+    },
+    {
+      "name": "diff",
+      "category": "core"
+    },
+    {
+      "name": "difference_delta",
+      "category": "calculus"
+    },
+    {
+      "name": "differentiate_finite",
+      "category": "calculus"
+    },
+    {
+      "name": "digamma",
+      "category": "special"
+    },
+    {
+      "name": "diophantine",
+      "category": "solvers"
+    },
+    {
+      "name": "dirichlet_eta",
+      "category": "special"
+    },
+    {
+      "name": "discrete_log",
+      "category": "ntheory"
+    },
+    {
+      "name": "discriminant",
+      "category": "polys"
+    },
+    {
+      "name": "div",
+      "category": "polys"
+    },
+    {
+      "name": "divisor_count",
+      "category": "ntheory"
+    },
+    {
+      "name": "divisor_sigma",
+      "category": "special"
+    },
+    {
+      "name": "divisors",
+      "category": "ntheory"
+    },
+    {
+      "name": "dotprint",
+      "category": "printing"
+    },
+    {
+      "name": "dsolve",
+      "category": "ode"
+    },
+    {
+      "name": "egyptian_fraction",
+      "category": "ntheory"
+    },
+    {
+      "name": "elliptic_e",
+      "category": "special"
+    },
+    {
+      "name": "elliptic_f",
+      "category": "special"
+    },
+    {
+      "name": "elliptic_k",
+      "category": "special"
+    },
+    {
+      "name": "elliptic_pi",
+      "category": "special"
+    },
+    {
+      "name": "epath",
+      "category": "simplify"
+    },
+    {
+      "name": "erf",
+      "category": "special"
+    },
+    {
+      "name": "erf2",
+      "category": "special"
+    },
+    {
+      "name": "erf2inv",
+      "category": "special"
+    },
+    {
+      "name": "erfc",
+      "category": "special"
+    },
+    {
+      "name": "erfcinv",
+      "category": "special"
+    },
+    {
+      "name": "erfi",
+      "category": "special"
+    },
+    {
+      "name": "erfinv",
+      "category": "special"
+    },
+    {
+      "name": "euler",
+      "category": "special"
+    },
+    {
+      "name": "euler_equations",
+      "category": "calculus"
+    },
+    {
+      "name": "evaluate",
+      "category": "core"
+    },
+    {
+      "name": "exp",
+      "category": "functions"
+    },
+    {
+      "name": "exp_polar",
+      "category": "functions"
+    },
+    {
+      "name": "expand",
+      "category": "core"
+    },
+    {
+      "name": "expand_complex",
+      "category": "core"
+    },
+    {
+      "name": "expand_func",
+      "category": "core"
+    },
+    {
+      "name": "expand_log",
+      "category": "core"
+    },
+    {
+      "name": "expand_mul",
+      "category": "core"
+    },
+    {
+      "name": "expand_multinomial",
+      "category": "core"
+    },
+    {
+      "name": "expand_power_base",
+      "category": "core"
+    },
+    {
+      "name": "expand_power_exp",
+      "category": "core"
+    },
+    {
+      "name": "expand_trig",
+      "category": "core"
+    },
+    {
+      "name": "expint",
+      "category": "special"
+    },
+    {
+      "name": "exptrigsimp",
+      "category": "simplify"
+    },
+    {
+      "name": "exquo",
+      "category": "polys"
+    },
+    {
+      "name": "eye",
+      "category": "matrices"
+    },
+    {
+      "name": "factor",
+      "category": "polys"
+    },
+    {
+      "name": "factor_cache",
+      "category": "ntheory"
+    },
+    {
+      "name": "factor_list",
+      "category": "polys"
+    },
+    {
+      "name": "factor_nc",
+      "category": "core"
+    },
+    {
+      "name": "factor_system",
+      "category": "solvers"
+    },
+    {
+      "name": "factor_terms",
+      "category": "core"
+    },
+    {
+      "name": "factorial",
+      "category": "special"
+    },
+    {
+      "name": "factorial2",
+      "category": "special"
+    },
+    {
+      "name": "factorint",
+      "category": "ntheory"
+    },
+    {
+      "name": "factorrat",
+      "category": "ntheory"
+    },
+    {
+      "name": "failing_assumptions",
+      "category": "core"
+    },
+    {
+      "name": "false",
+      "category": "logic"
+    },
+    {
+      "name": "farthest_points",
+      "category": "geometry"
+    },
+    {
+      "name": "ff",
+      "category": "special"
+    },
+    {
+      "name": "fft",
+      "category": "discrete"
+    },
+    {
+      "name": "fibonacci",
+      "category": "special"
+    },
+    {
+      "name": "field",
+      "category": "polys"
+    },
+    {
+      "name": "field_isomorphism",
+      "category": "polys"
+    },
+    {
+      "name": "filldedent",
+      "category": "utilities"
+    },
+    {
+      "name": "finite_diff_weights",
+      "category": "calculus"
+    },
+    {
+      "name": "flatten",
+      "category": "utilities"
+    },
+    {
+      "name": "floor",
+      "category": "functions"
+    },
+    {
+      "name": "fourier_series",
+      "category": "calculus"
+    },
+    {
+      "name": "fourier_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "fps",
+      "category": "calculus"
+    },
+    {
+      "name": "frac",
+      "category": "functions"
+    },
+    {
+      "name": "fraction",
+      "category": "simplify"
+    },
+    {
+      "name": "fresnelc",
+      "category": "special"
+    },
+    {
+      "name": "fresnels",
+      "category": "special"
+    },
+    {
+      "name": "fu",
+      "category": "simplify"
+    },
+    {
+      "name": "fwht",
+      "category": "discrete"
+    },
+    {
+      "name": "galois_group",
+      "category": "polys"
+    },
+    {
+      "name": "gamma",
+      "category": "special"
+    },
+    {
+      "name": "gammasimp",
+      "category": "simplify"
+    },
+    {
+      "name": "gcd",
+      "category": "polys"
+    },
+    {
+      "name": "gcd_list",
+      "category": "polys"
+    },
+    {
+      "name": "gcd_terms",
+      "category": "core"
+    },
+    {
+      "name": "gcdex",
+      "category": "polys"
+    },
+    {
+      "name": "gegenbauer",
+      "category": "special"
+    },
+    {
+      "name": "genocchi",
+      "category": "special"
+    },
+    {
+      "name": "get_contraction_structure",
+      "category": "tensor"
+    },
+    {
+      "name": "get_indices",
+      "category": "tensor"
+    },
+    {
+      "name": "gff",
+      "category": "polys"
+    },
+    {
+      "name": "gff_list",
+      "category": "polys"
+    },
+    {
+      "name": "grevlex",
+      "category": "polys"
+    },
+    {
+      "name": "grlex",
+      "category": "polys"
+    },
+    {
+      "name": "groebner",
+      "category": "polys"
+    },
+    {
+      "name": "ground_roots",
+      "category": "polys"
+    },
+    {
+      "name": "group",
+      "category": "utilities"
+    },
+    {
+      "name": "hadamard_product",
+      "category": "matrices"
+    },
+    {
+      "name": "half_gcdex",
+      "category": "polys"
+    },
+    {
+      "name": "hankel1",
+      "category": "special"
+    },
+    {
+      "name": "hankel2",
+      "category": "special"
+    },
+    {
+      "name": "hankel_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "harmonic",
+      "category": "special"
+    },
+    {
+      "name": "has_dups",
+      "category": "utilities"
+    },
+    {
+      "name": "has_variety",
+      "category": "utilities"
+    },
+    {
+      "name": "hermite",
+      "category": "special"
+    },
+    {
+      "name": "hermite_poly",
+      "category": "polys"
+    },
+    {
+      "name": "hermite_prob",
+      "category": "special"
+    },
+    {
+      "name": "hermite_prob_poly",
+      "category": "polys"
+    },
+    {
+      "name": "hessian",
+      "category": "matrices"
+    },
+    {
+      "name": "hn1",
+      "category": "special"
+    },
+    {
+      "name": "hn2",
+      "category": "special"
+    },
+    {
+      "name": "homogeneous_order",
+      "category": "ode"
+    },
+    {
+      "name": "horner",
+      "category": "polys"
+    },
+    {
+      "name": "hyper",
+      "category": "special"
+    },
+    {
+      "name": "hyperexpand",
+      "category": "simplify"
+    },
+    {
+      "name": "hypersimilar",
+      "category": "simplify"
+    },
+    {
+      "name": "hypersimp",
+      "category": "simplify"
+    },
+    {
+      "name": "idiff",
+      "category": "geometry"
+    },
+    {
+      "name": "ifft",
+      "category": "discrete"
+    },
+    {
+      "name": "ifwht",
+      "category": "discrete"
+    },
+    {
+      "name": "igcd",
+      "category": "core"
+    },
+    {
+      "name": "igrevlex",
+      "category": "polys"
+    },
+    {
+      "name": "igrlex",
+      "category": "polys"
+    },
+    {
+      "name": "ilcm",
+      "category": "core"
+    },
+    {
+      "name": "ilex",
+      "category": "polys"
+    },
+    {
+      "name": "im",
+      "category": "functions"
+    },
+    {
+      "name": "imageset",
+      "category": "sets"
+    },
+    {
+      "name": "integer_log",
+      "category": "core"
+    },
+    {
+      "name": "integer_nthroot",
+      "category": "core"
+    },
+    {
+      "name": "integrate",
+      "category": "calculus"
+    },
+    {
+      "name": "interpolate",
+      "category": "polys"
+    },
+    {
+      "name": "interpolating_poly",
+      "category": "polys"
+    },
+    {
+      "name": "interpolating_spline",
+      "category": "special"
+    },
+    {
+      "name": "intersecting_product",
+      "category": "discrete"
+    },
+    {
+      "name": "intersection",
+      "category": "geometry"
+    },
+    {
+      "name": "intervals",
+      "category": "polys"
+    },
+    {
+      "name": "intt",
+      "category": "discrete"
+    },
+    {
+      "name": "inv_quick",
+      "category": "solvers"
+    },
+    {
+      "name": "inverse_cosine_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "inverse_fourier_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "inverse_hankel_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "inverse_laplace_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "inverse_mellin_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "inverse_mobius_transform",
+      "category": "discrete"
+    },
+    {
+      "name": "inverse_sine_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "invert",
+      "category": "polys"
+    },
+    {
+      "name": "is_abundant",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_amicable",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_carmichael",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_convex",
+      "category": "calculus"
+    },
+    {
+      "name": "is_decreasing",
+      "category": "calculus"
+    },
+    {
+      "name": "is_deficient",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_increasing",
+      "category": "calculus"
+    },
+    {
+      "name": "is_mersenne_prime",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_monotonic",
+      "category": "calculus"
+    },
+    {
+      "name": "is_nthpow_residue",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_perfect",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_primitive_root",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_quad_residue",
+      "category": "ntheory"
+    },
+    {
+      "name": "is_strictly_decreasing",
+      "category": "calculus"
+    },
+    {
+      "name": "is_strictly_increasing",
+      "category": "calculus"
+    },
+    {
+      "name": "is_zero_dimensional",
+      "category": "polys"
+    },
+    {
+      "name": "isolate",
+      "category": "polys"
+    },
+    {
+      "name": "isprime",
+      "category": "ntheory"
+    },
+    {
+      "name": "itermonomials",
+      "category": "polys"
+    },
+    {
+      "name": "jacobi",
+      "category": "special"
+    },
+    {
+      "name": "jacobi_normalized",
+      "category": "special"
+    },
+    {
+      "name": "jacobi_poly",
+      "category": "polys"
+    },
+    {
+      "name": "jacobi_symbol",
+      "category": "special"
+    },
+    {
+      "name": "jn",
+      "category": "special"
+    },
+    {
+      "name": "jn_zeros",
+      "category": "special"
+    },
+    {
+      "name": "jordan_cell",
+      "category": "matrices"
+    },
+    {
+      "name": "kronecker_product",
+      "category": "matrices"
+    },
+    {
+      "name": "kronecker_symbol",
+      "category": "special"
+    },
+    {
+      "name": "kroneckersimp",
+      "category": "simplify"
+    },
+    {
+      "name": "laguerre",
+      "category": "special"
+    },
+    {
+      "name": "laguerre_poly",
+      "category": "polys"
+    },
+    {
+      "name": "lambdify",
+      "category": "utilities"
+    },
+    {
+      "name": "laplace_correspondence",
+      "category": "calculus"
+    },
+    {
+      "name": "laplace_initial_conds",
+      "category": "calculus"
+    },
+    {
+      "name": "laplace_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "latex",
+      "category": "printing"
+    },
+    {
+      "name": "lcm",
+      "category": "polys"
+    },
+    {
+      "name": "lcm_list",
+      "category": "polys"
+    },
+    {
+      "name": "legendre",
+      "category": "special"
+    },
+    {
+      "name": "legendre_poly",
+      "category": "polys"
+    },
+    {
+      "name": "legendre_symbol",
+      "category": "special"
+    },
+    {
+      "name": "lerchphi",
+      "category": "special"
+    },
+    {
+      "name": "lex",
+      "category": "polys"
+    },
+    {
+      "name": "li",
+      "category": "special"
+    },
+    {
+      "name": "limit",
+      "category": "calculus"
+    },
+    {
+      "name": "limit_seq",
+      "category": "calculus"
+    },
+    {
+      "name": "line_integrate",
+      "category": "calculus"
+    },
+    {
+      "name": "linear_eq_to_matrix",
+      "category": "solvers"
+    },
+    {
+      "name": "linsolve",
+      "category": "solvers"
+    },
+    {
+      "name": "list2numpy",
+      "category": "matrices"
+    },
+    {
+      "name": "ln",
+      "category": "functions"
+    },
+    {
+      "name": "log",
+      "category": "functions"
+    },
+    {
+      "name": "logcombine",
+      "category": "simplify"
+    },
+    {
+      "name": "loggamma",
+      "category": "special"
+    },
+    {
+      "name": "lowergamma",
+      "category": "special"
+    },
+    {
+      "name": "lucas",
+      "category": "special"
+    },
+    {
+      "name": "marcumq",
+      "category": "special"
+    },
+    {
+      "name": "mathieuc",
+      "category": "special"
+    },
+    {
+      "name": "mathieucprime",
+      "category": "special"
+    },
+    {
+      "name": "mathieus",
+      "category": "special"
+    },
+    {
+      "name": "mathieusprime",
+      "category": "special"
+    },
+    {
+      "name": "mathml",
+      "category": "printing"
+    },
+    {
+      "name": "matrix2numpy",
+      "category": "matrices"
+    },
+    {
+      "name": "matrix_multiply_elementwise",
+      "category": "matrices"
+    },
+    {
+      "name": "matrix_symbols",
+      "category": "matrices"
+    },
+    {
+      "name": "maximum",
+      "category": "calculus"
+    },
+    {
+      "name": "meijerg",
+      "category": "special"
+    },
+    {
+      "name": "mellin_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "memoize_property",
+      "category": "utilities"
+    },
+    {
+      "name": "mersenne_prime_exponent",
+      "category": "ntheory"
+    },
+    {
+      "name": "minimal_polynomial",
+      "category": "polys"
+    },
+    {
+      "name": "minimum",
+      "category": "calculus"
+    },
+    {
+      "name": "minpoly",
+      "category": "polys"
+    },
+    {
+      "name": "mobius",
+      "category": "special"
+    },
+    {
+      "name": "mobius_transform",
+      "category": "discrete"
+    },
+    {
+      "name": "mod_inverse",
+      "category": "core"
+    },
+    {
+      "name": "monic",
+      "category": "polys"
+    },
+    {
+      "name": "motzkin",
+      "category": "special"
+    },
+    {
+      "name": "multigamma",
+      "category": "special"
+    },
+    {
+      "name": "multiline_latex",
+      "category": "printing"
+    },
+    {
+      "name": "multinomial_coefficients",
+      "category": "ntheory"
+    },
+    {
+      "name": "multiplicity",
+      "category": "ntheory"
+    },
+    {
+      "name": "n_order",
+      "category": "ntheory"
+    },
+    {
+      "name": "nan",
+      "category": "core"
+    },
+    {
+      "name": "nextprime",
+      "category": "ntheory"
+    },
+    {
+      "name": "nfloat",
+      "category": "core"
+    },
+    {
+      "name": "nonlinsolve",
+      "category": "solvers"
+    },
+    {
+      "name": "not_empty_in",
+      "category": "calculus"
+    },
+    {
+      "name": "npartitions",
+      "category": "ntheory"
+    },
+    {
+      "name": "nroots",
+      "category": "polys"
+    },
+    {
+      "name": "nsimplify",
+      "category": "simplify"
+    },
+    {
+      "name": "nsolve",
+      "category": "solvers"
+    },
+    {
+      "name": "nth_power_roots_poly",
+      "category": "polys"
+    },
+    {
+      "name": "nthroot_mod",
+      "category": "ntheory"
+    },
+    {
+      "name": "ntt",
+      "category": "discrete"
+    },
+    {
+      "name": "num_digits",
+      "category": "core"
+    },
+    {
+      "name": "numbered_symbols",
+      "category": "utilities"
+    },
+    {
+      "name": "numer",
+      "category": "simplify"
+    },
+    {
+      "name": "ode_order",
+      "category": "ode"
+    },
+    {
+      "name": "ones",
+      "category": "matrices"
+    },
+    {
+      "name": "oo",
+      "category": "core"
+    },
+    {
+      "name": "ord0",
+      "category": "sets"
+    },
+    {
+      "name": "ordered",
+      "category": "core"
+    },
+    {
+      "name": "pager_print",
+      "category": "printing"
+    },
+    {
+      "name": "parallel_poly_from_expr",
+      "category": "polys"
+    },
+    {
+      "name": "parse_expr",
+      "category": "parsing"
+    },
+    {
+      "name": "partition",
+      "category": "special"
+    },
+    {
+      "name": "pde_separate",
+      "category": "pde"
+    },
+    {
+      "name": "pde_separate_add",
+      "category": "pde"
+    },
+    {
+      "name": "pde_separate_mul",
+      "category": "pde"
+    },
+    {
+      "name": "pdiv",
+      "category": "polys"
+    },
+    {
+      "name": "pdsolve",
+      "category": "pde"
+    },
+    {
+      "name": "per",
+      "category": "matrices"
+    },
+    {
+      "name": "perfect_power",
+      "category": "ntheory"
+    },
+    {
+      "name": "periodic_argument",
+      "category": "functions"
+    },
+    {
+      "name": "periodicity",
+      "category": "calculus"
+    },
+    {
+      "name": "permutedims",
+      "category": "tensor"
+    },
+    {
+      "name": "pexquo",
+      "category": "polys"
+    },
+    {
+      "name": "pi",
+      "category": "core"
+    },
+    {
+      "name": "piecewise_exclusive",
+      "category": "functions"
+    },
+    {
+      "name": "piecewise_fold",
+      "category": "functions"
+    },
+    {
+      "name": "plot",
+      "category": "plotting"
+    },
+    {
+      "name": "plot_implicit",
+      "category": "plotting"
+    },
+    {
+      "name": "plot_parametric",
+      "category": "plotting"
+    },
+    {
+      "name": "polar_lift",
+      "category": "functions"
+    },
+    {
+      "name": "polarify",
+      "category": "functions"
+    },
+    {
+      "name": "pollard_pm1",
+      "category": "ntheory"
+    },
+    {
+      "name": "pollard_rho",
+      "category": "ntheory"
+    },
+    {
+      "name": "poly",
+      "category": "polys"
+    },
+    {
+      "name": "poly_from_expr",
+      "category": "polys"
+    },
+    {
+      "name": "polygamma",
+      "category": "special"
+    },
+    {
+      "name": "polylog",
+      "category": "special"
+    },
+    {
+      "name": "posify",
+      "category": "simplify"
+    },
+    {
+      "name": "postfixes",
+      "category": "utilities"
+    },
+    {
+      "name": "postorder_traversal",
+      "category": "core"
+    },
+    {
+      "name": "powdenest",
+      "category": "simplify"
+    },
+    {
+      "name": "powsimp",
+      "category": "simplify"
+    },
+    {
+      "name": "pprint",
+      "category": "printing"
+    },
+    {
+      "name": "pprint_try_use_unicode",
+      "category": "printing"
+    },
+    {
+      "name": "pprint_use_unicode",
+      "category": "printing"
+    },
+    {
+      "name": "pquo",
+      "category": "polys"
+    },
+    {
+      "name": "prefixes",
+      "category": "utilities"
+    },
+    {
+      "name": "prem",
+      "category": "polys"
+    },
+    {
+      "name": "preorder_traversal",
+      "category": "core"
+    },
+    {
+      "name": "pretty",
+      "category": "printing"
+    },
+    {
+      "name": "pretty_print",
+      "category": "printing"
+    },
+    {
+      "name": "prevprime",
+      "category": "ntheory"
+    },
+    {
+      "name": "prime",
+      "category": "ntheory"
+    },
+    {
+      "name": "prime_decomp",
+      "category": "polys"
+    },
+    {
+      "name": "prime_valuation",
+      "category": "polys"
+    },
+    {
+      "name": "primefactors",
+      "category": "ntheory"
+    },
+    {
+      "name": "primenu",
+      "category": "special"
+    },
+    {
+      "name": "primeomega",
+      "category": "special"
+    },
+    {
+      "name": "primepi",
+      "category": "special"
+    },
+    {
+      "name": "primerange",
+      "category": "ntheory"
+    },
+    {
+      "name": "primitive",
+      "category": "polys"
+    },
+    {
+      "name": "primitive_element",
+      "category": "polys"
+    },
+    {
+      "name": "primitive_root",
+      "category": "ntheory"
+    },
+    {
+      "name": "primorial",
+      "category": "ntheory"
+    },
+    {
+      "name": "principal_branch",
+      "category": "functions"
+    },
+    {
+      "name": "print_latex",
+      "category": "printing"
+    },
+    {
+      "name": "print_mathml",
+      "category": "printing"
+    },
+    {
+      "name": "print_tree",
+      "category": "printing"
+    },
+    {
+      "name": "prod",
+      "category": "core"
+    },
+    {
+      "name": "product",
+      "category": "calculus"
+    },
+    {
+      "name": "proper_divisor_count",
+      "category": "ntheory"
+    },
+    {
+      "name": "proper_divisors",
+      "category": "ntheory"
+    },
+    {
+      "name": "public",
+      "category": "utilities"
+    },
+    {
+      "name": "quadratic_congruence",
+      "category": "ntheory"
+    },
+    {
+      "name": "quadratic_residues",
+      "category": "ntheory"
+    },
+    {
+      "name": "quo",
+      "category": "polys"
+    },
+    {
+      "name": "rad",
+      "category": "geometry"
+    },
+    {
+      "name": "radsimp",
+      "category": "simplify"
+    },
+    {
+      "name": "randMatrix",
+      "category": "matrices"
+    },
+    {
+      "name": "random_poly",
+      "category": "polys"
+    },
+    {
+      "name": "randprime",
+      "category": "ntheory"
+    },
+    {
+      "name": "rational_interpolate",
+      "category": "polys"
+    },
+    {
+      "name": "ratsimp",
+      "category": "simplify"
+    },
+    {
+      "name": "ratsimpmodprime",
+      "category": "simplify"
+    },
+    {
+      "name": "rcollect",
+      "category": "simplify"
+    },
+    {
+      "name": "re",
+      "category": "functions"
+    },
+    {
+      "name": "real_root",
+      "category": "functions"
+    },
+    {
+      "name": "real_roots",
+      "category": "polys"
+    },
+    {
+      "name": "reduce_abs_inequalities",
+      "category": "solvers"
+    },
+    {
+      "name": "reduce_abs_inequality",
+      "category": "solvers"
+    },
+    {
+      "name": "reduce_inequalities",
+      "category": "solvers"
+    },
+    {
+      "name": "reduced",
+      "category": "polys"
+    },
+    {
+      "name": "reduced_totient",
+      "category": "special"
+    },
+    {
+      "name": "refine",
+      "category": "assumptions"
+    },
+    {
+      "name": "refine_root",
+      "category": "polys"
+    },
+    {
+      "name": "register_handler",
+      "category": "assumptions"
+    },
+    {
+      "name": "rem",
+      "category": "polys"
+    },
+    {
+      "name": "remove_handler",
+      "category": "assumptions"
+    },
+    {
+      "name": "reshape",
+      "category": "utilities"
+    },
+    {
+      "name": "residue",
+      "category": "calculus"
+    },
+    {
+      "name": "resultant",
+      "category": "polys"
+    },
+    {
+      "name": "rf",
+      "category": "special"
+    },
+    {
+      "name": "riemann_xi",
+      "category": "special"
+    },
+    {
+      "name": "ring",
+      "category": "polys"
+    },
+    {
+      "name": "root",
+      "category": "functions"
+    },
+    {
+      "name": "rootof",
+      "category": "polys"
+    },
+    {
+      "name": "roots",
+      "category": "polys"
+    },
+    {
+      "name": "rot_axis1",
+      "category": "matrices"
+    },
+    {
+      "name": "rot_axis2",
+      "category": "matrices"
+    },
+    {
+      "name": "rot_axis3",
+      "category": "matrices"
+    },
+    {
+      "name": "rot_ccw_axis1",
+      "category": "matrices"
+    },
+    {
+      "name": "rot_ccw_axis2",
+      "category": "matrices"
+    },
+    {
+      "name": "rot_ccw_axis3",
+      "category": "matrices"
+    },
+    {
+      "name": "rot_givens",
+      "category": "matrices"
+    },
+    {
+      "name": "rotations",
+      "category": "utilities"
+    },
+    {
+      "name": "round_two",
+      "category": "polys"
+    },
+    {
+      "name": "rsolve",
+      "category": "solvers"
+    },
+    {
+      "name": "rsolve_hyper",
+      "category": "solvers"
+    },
+    {
+      "name": "rsolve_poly",
+      "category": "solvers"
+    },
+    {
+      "name": "rsolve_ratio",
+      "category": "solvers"
+    },
+    {
+      "name": "satisfiable",
+      "category": "logic"
+    },
+    {
+      "name": "sec",
+      "category": "functions"
+    },
+    {
+      "name": "sech",
+      "category": "functions"
+    },
+    {
+      "name": "separatevars",
+      "category": "simplify"
+    },
+    {
+      "name": "sequence",
+      "category": "calculus"
+    },
+    {
+      "name": "series",
+      "category": "calculus"
+    },
+    {
+      "name": "seterr",
+      "category": "core"
+    },
+    {
+      "name": "sfield",
+      "category": "polys"
+    },
+    {
+      "name": "shape",
+      "category": "tensor"
+    },
+    {
+      "name": "sieve",
+      "category": "ntheory"
+    },
+    {
+      "name": "sift",
+      "category": "utilities"
+    },
+    {
+      "name": "sign",
+      "category": "functions"
+    },
+    {
+      "name": "signsimp",
+      "category": "simplify"
+    },
+    {
+      "name": "simplify",
+      "category": "simplify"
+    },
+    {
+      "name": "simplify_logic",
+      "category": "logic"
+    },
+    {
+      "name": "sin",
+      "category": "functions"
+    },
+    {
+      "name": "sinc",
+      "category": "functions"
+    },
+    {
+      "name": "sine_transform",
+      "category": "calculus"
+    },
+    {
+      "name": "singularities",
+      "category": "calculus"
+    },
+    {
+      "name": "singularityintegrate",
+      "category": "calculus"
+    },
+    {
+      "name": "sinh",
+      "category": "functions"
+    },
+    {
+      "name": "solve",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_linear",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_linear_system",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_linear_system_LU",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_poly_inequality",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_poly_system",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_rational_inequalities",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_triangulated",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_undetermined_coeffs",
+      "category": "solvers"
+    },
+    {
+      "name": "solve_univariate_inequality",
+      "category": "solvers"
+    },
+    {
+      "name": "solveset",
+      "category": "solvers"
+    },
+    {
+      "name": "sqf",
+      "category": "polys"
+    },
+    {
+      "name": "sqf_list",
+      "category": "polys"
+    },
+    {
+      "name": "sqf_norm",
+      "category": "polys"
+    },
+    {
+      "name": "sqf_part",
+      "category": "polys"
+    },
+    {
+      "name": "sqrt",
+      "category": "functions"
+    },
+    {
+      "name": "sqrt_mod",
+      "category": "ntheory"
+    },
+    {
+      "name": "sqrt_mod_iter",
+      "category": "ntheory"
+    },
+    {
+      "name": "sqrtdenest",
+      "category": "simplify"
+    },
+    {
+      "name": "srepr",
+      "category": "printing"
+    },
+    {
+      "name": "sring",
+      "category": "polys"
+    },
+    {
+      "name": "sstr",
+      "category": "printing"
+    },
+    {
+      "name": "sstrrepr",
+      "category": "printing"
+    },
+    {
+      "name": "stationary_points",
+      "category": "calculus"
+    },
+    {
+      "name": "stieltjes",
+      "category": "special"
+    },
+    {
+      "name": "sturm",
+      "category": "polys"
+    },
+    {
+      "name": "subfactorial",
+      "category": "special"
+    },
+    {
+      "name": "subresultants",
+      "category": "polys"
+    },
+    {
+      "name": "subsets",
+      "category": "utilities"
+    },
+    {
+      "name": "substitution",
+      "category": "solvers"
+    },
+    {
+      "name": "summation",
+      "category": "calculus"
+    },
+    {
+      "name": "swinnerton_dyer_poly",
+      "category": "polys"
+    },
+    {
+      "name": "symarray",
+      "category": "matrices"
+    },
+    {
+      "name": "symbols",
+      "category": "core"
+    },
+    {
+      "name": "symmetric_poly",
+      "category": "polys"
+    },
+    {
+      "name": "symmetrize",
+      "category": "polys"
+    },
+    {
+      "name": "sympify",
+      "category": "core"
+    },
+    {
+      "name": "take",
+      "category": "utilities"
+    },
+    {
+      "name": "tan",
+      "category": "functions"
+    },
+    {
+      "name": "tanh",
+      "category": "functions"
+    },
+    {
+      "name": "tensorcontraction",
+      "category": "tensor"
+    },
+    {
+      "name": "tensordiagonal",
+      "category": "tensor"
+    },
+    {
+      "name": "tensorproduct",
+      "category": "tensor"
+    },
+    {
+      "name": "terms_gcd",
+      "category": "polys"
+    },
+    {
+      "name": "textplot",
+      "category": "plotting"
+    },
+    {
+      "name": "threaded",
+      "category": "utilities"
+    },
+    {
+      "name": "to_cnf",
+      "category": "logic"
+    },
+    {
+      "name": "to_dnf",
+      "category": "logic"
+    },
+    {
+      "name": "to_nnf",
+      "category": "logic"
+    },
+    {
+      "name": "to_number_field",
+      "category": "polys"
+    },
+    {
+      "name": "together",
+      "category": "simplify"
+    },
+    {
+      "name": "topological_sort",
+      "category": "utilities"
+    },
+    {
+      "name": "total_degree",
+      "category": "polys"
+    },
+    {
+      "name": "totient",
+      "category": "special"
+    },
+    {
+      "name": "trace",
+      "category": "matrices"
+    },
+    {
+      "name": "trailing",
+      "category": "core"
+    },
+    {
+      "name": "transpose",
+      "category": "functions"
+    },
+    {
+      "name": "tribonacci",
+      "category": "special"
+    },
+    {
+      "name": "trigamma",
+      "category": "special"
+    },
+    {
+      "name": "trigsimp",
+      "category": "simplify"
+    },
+    {
+      "name": "true",
+      "category": "logic"
+    },
+    {
+      "name": "trunc",
+      "category": "polys"
+    },
+    {
+      "name": "unbranched_argument",
+      "category": "functions"
+    },
+    {
+      "name": "unflatten",
+      "category": "utilities"
+    },
+    {
+      "name": "unpolarify",
+      "category": "functions"
+    },
+    {
+      "name": "uppergamma",
+      "category": "special"
+    },
+    {
+      "name": "use",
+      "category": "core"
+    },
+    {
+      "name": "var",
+      "category": "core"
+    },
+    {
+      "name": "variations",
+      "category": "utilities"
+    },
+    {
+      "name": "vfield",
+      "category": "polys"
+    },
+    {
+      "name": "viete",
+      "category": "polys"
+    },
+    {
+      "name": "vring",
+      "category": "polys"
+    },
+    {
+      "name": "wronskian",
+      "category": "matrices"
+    },
+    {
+      "name": "xfield",
+      "category": "polys"
+    },
+    {
+      "name": "xring",
+      "category": "polys"
+    },
+    {
+      "name": "xthreaded",
+      "category": "utilities"
+    },
+    {
+      "name": "yn",
+      "category": "special"
+    },
+    {
+      "name": "zeros",
+      "category": "matrices"
+    },
+    {
+      "name": "zeta",
+      "category": "special"
+    },
+    {
+      "name": "zoo",
+      "category": "core"
+    },
+    {
+      "name": "AxisOrienter",
+      "category": "vector"
+    },
+    {
+      "name": "BaseDyadic",
+      "category": "vector"
+    },
+    {
+      "name": "BaseScalar",
+      "category": "vector"
+    },
+    {
+      "name": "BaseVector",
+      "category": "vector"
+    },
+    {
+      "name": "BodyOrienter",
+      "category": "vector"
+    },
+    {
+      "name": "CoordSys3D",
+      "category": "vector"
+    },
+    {
+      "name": "Cross",
+      "category": "vector"
+    },
+    {
+      "name": "Curl",
+      "category": "vector"
+    },
+    {
+      "name": "Del",
+      "category": "vector"
+    },
+    {
+      "name": "Divergence",
+      "category": "vector"
+    },
+    {
+      "name": "Dot",
+      "category": "vector"
+    },
+    {
+      "name": "Dyadic",
+      "category": "vector"
+    },
+    {
+      "name": "DyadicAdd",
+      "category": "vector"
+    },
+    {
+      "name": "DyadicMul",
+      "category": "vector"
+    },
+    {
+      "name": "DyadicZero",
+      "category": "vector"
+    },
+    {
+      "name": "Gradient",
+      "category": "vector"
+    },
+    {
+      "name": "ImplicitRegion",
+      "category": "vector"
+    },
+    {
+      "name": "Laplacian",
+      "category": "vector"
+    },
+    {
+      "name": "ParametricIntegral",
+      "category": "vector"
+    },
+    {
+      "name": "ParametricRegion",
+      "category": "vector"
+    },
+    {
+      "name": "Point",
+      "category": "vector"
+    },
+    {
+      "name": "QuaternionOrienter",
+      "category": "vector"
+    },
+    {
+      "name": "SpaceOrienter",
+      "category": "vector"
+    },
+    {
+      "name": "Vector",
+      "category": "vector"
+    },
+    {
+      "name": "VectorAdd",
+      "category": "vector"
+    },
+    {
+      "name": "VectorKind",
+      "category": "vector"
+    },
+    {
+      "name": "VectorMul",
+      "category": "vector"
+    },
+    {
+      "name": "VectorZero",
+      "category": "vector"
+    },
+    {
+      "name": "cross",
+      "category": "vector"
+    },
+    {
+      "name": "curl",
+      "category": "vector"
+    },
+    {
+      "name": "directional_derivative",
+      "category": "vector"
+    },
+    {
+      "name": "divergence",
+      "category": "vector"
+    },
+    {
+      "name": "dot",
+      "category": "vector"
+    },
+    {
+      "name": "express",
+      "category": "vector"
+    },
+    {
+      "name": "gradient",
+      "category": "vector"
+    },
+    {
+      "name": "is_conservative",
+      "category": "vector"
+    },
+    {
+      "name": "is_solenoidal",
+      "category": "vector"
+    },
+    {
+      "name": "laplacian",
+      "category": "vector"
+    },
+    {
+      "name": "matrix_to_vector",
+      "category": "vector"
+    },
+    {
+      "name": "parametric_region_list",
+      "category": "vector"
+    },
+    {
+      "name": "scalar_potential",
+      "category": "vector"
+    },
+    {
+      "name": "scalar_potential_difference",
+      "category": "vector"
+    },
+    {
+      "name": "vector_integrate",
+      "category": "vector"
+    },
+    {
+      "name": "Object",
+      "category": "categories"
+    },
+    {
+      "name": "Morphism",
+      "category": "categories"
+    },
+    {
+      "name": "IdentityMorphism",
+      "category": "categories"
+    },
+    {
+      "name": "NamedMorphism",
+      "category": "categories"
+    },
+    {
+      "name": "CompositeMorphism",
+      "category": "categories"
+    },
+    {
+      "name": "Category",
+      "category": "categories"
+    },
+    {
+      "name": "Diagram",
+      "category": "categories"
+    },
+    {
+      "name": "DiagramGrid",
+      "category": "categories"
+    },
+    {
+      "name": "XypicDiagramDrawer",
+      "category": "categories"
+    },
+    {
+      "name": "xypic_draw_diagram",
+      "category": "categories"
+    },
+    {
+      "name": "AbelianGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "AlternatingGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "Collector",
+      "category": "combinatorics"
+    },
+    {
+      "name": "Coset",
+      "category": "combinatorics"
+    },
+    {
+      "name": "CyclicGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "DihedralGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "DirectProduct",
+      "category": "combinatorics"
+    },
+    {
+      "name": "GrayCode",
+      "category": "combinatorics"
+    },
+    {
+      "name": "IntegerPartition",
+      "category": "combinatorics"
+    },
+    {
+      "name": "Partition",
+      "category": "combinatorics"
+    },
+    {
+      "name": "PermutationGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "PolycyclicGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "Polyhedron",
+      "category": "combinatorics"
+    },
+    {
+      "name": "Prufer",
+      "category": "combinatorics"
+    },
+    {
+      "name": "RGS_enum",
+      "category": "combinatorics"
+    },
+    {
+      "name": "RGS_rank",
+      "category": "combinatorics"
+    },
+    {
+      "name": "RGS_unrank",
+      "category": "combinatorics"
+    },
+    {
+      "name": "RubikGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "Subset",
+      "category": "combinatorics"
+    },
+    {
+      "name": "SymmetricGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "SymmetricPermutationGroup",
+      "category": "combinatorics"
+    },
+    {
+      "name": "alternating",
+      "category": "combinatorics"
+    },
+    {
+      "name": "cube",
+      "category": "combinatorics"
+    },
+    {
+      "name": "cyclic",
+      "category": "combinatorics"
+    },
+    {
+      "name": "dihedral",
+      "category": "combinatorics"
+    },
+    {
+      "name": "dodecahedron",
+      "category": "combinatorics"
+    },
+    {
+      "name": "free_group",
+      "category": "combinatorics"
+    },
+    {
+      "name": "icosahedron",
+      "category": "combinatorics"
+    },
+    {
+      "name": "octahedron",
+      "category": "combinatorics"
+    },
+    {
+      "name": "symmetric",
+      "category": "combinatorics"
+    },
+    {
+      "name": "tetrahedron",
+      "category": "combinatorics"
+    },
+    {
+      "name": "TensorIndexType",
+      "category": "tensor"
+    },
+    {
+      "name": "TensorIndex",
+      "category": "tensor"
+    },
+    {
+      "name": "TensorHead",
+      "category": "tensor"
+    },
+    {
+      "name": "TensorSymmetry",
+      "category": "tensor"
+    },
+    {
+      "name": "tensor_indices",
+      "category": "tensor"
+    },
+    {
+      "name": "tensor_heads",
+      "category": "tensor"
+    },
+    {
+      "name": "canon_bp",
+      "category": "tensor"
+    },
+    {
+      "name": "contract_metric",
+      "category": "tensor"
+    },
+    {
+      "name": "bg_private_key",
+      "category": "crypto"
+    },
+    {
+      "name": "bg_public_key",
+      "category": "crypto"
+    },
+    {
+      "name": "bifid10",
+      "category": "crypto"
+    },
+    {
+      "name": "bifid5",
+      "category": "crypto"
+    },
+    {
+      "name": "bifid5_square",
+      "category": "crypto"
+    },
+    {
+      "name": "bifid6",
+      "category": "crypto"
+    },
+    {
+      "name": "bifid6_square",
+      "category": "crypto"
+    },
+    {
+      "name": "bifid_square",
+      "category": "crypto"
+    },
+    {
+      "name": "check_and_join",
+      "category": "crypto"
+    },
+    {
+      "name": "cycle_list",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_atbash",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_bg",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_bifid",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_bifid5",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_bifid6",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_elgamal",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_gm",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_hill",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_kid_rsa",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_railfence",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_rot13",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_rsa",
+      "category": "crypto"
+    },
+    {
+      "name": "decipher_vigenere",
+      "category": "crypto"
+    },
+    {
+      "name": "decode_morse",
+      "category": "crypto"
+    },
+    {
+      "name": "dh_private_key",
+      "category": "crypto"
+    },
+    {
+      "name": "dh_public_key",
+      "category": "crypto"
+    },
+    {
+      "name": "dh_shared_key",
+      "category": "crypto"
+    },
+    {
+      "name": "elgamal_private_key",
+      "category": "crypto"
+    },
+    {
+      "name": "elgamal_public_key",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_affine",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_atbash",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_bg",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_bifid",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_bifid5",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_bifid6",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_elgamal",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_gm",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_hill",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_kid_rsa",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_railfence",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_rot13",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_rsa",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_shift",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_substitution",
+      "category": "crypto"
+    },
+    {
+      "name": "encipher_vigenere",
+      "category": "crypto"
+    },
+    {
+      "name": "encode_morse",
+      "category": "crypto"
+    },
+    {
+      "name": "gm_private_key",
+      "category": "crypto"
+    },
+    {
+      "name": "gm_public_key",
+      "category": "crypto"
+    },
+    {
+      "name": "kid_rsa_private_key",
+      "category": "crypto"
+    },
+    {
+      "name": "kid_rsa_public_key",
+      "category": "crypto"
+    },
+    {
+      "name": "lfsr_autocorrelation",
+      "category": "crypto"
+    },
+    {
+      "name": "lfsr_connection_polynomial",
+      "category": "crypto"
+    },
+    {
+      "name": "lfsr_sequence",
+      "category": "crypto"
+    },
+    {
+      "name": "padded_key",
+      "category": "crypto"
+    },
+    {
+      "name": "rsa_private_key",
+      "category": "crypto"
+    },
+    {
+      "name": "rsa_public_key",
+      "category": "crypto"
+    },
+    {
+      "name": "CartanType",
+      "category": "liealgebras"
+    },
+    {
+      "name": "BaseCovarDerivativeOp",
+      "category": "diffgeom"
+    },
+    {
+      "name": "BaseScalarField",
+      "category": "diffgeom"
+    },
+    {
+      "name": "BaseVectorField",
+      "category": "diffgeom"
+    },
+    {
+      "name": "Commutator",
+      "category": "diffgeom"
+    },
+    {
+      "name": "CoordSystem",
+      "category": "diffgeom"
+    },
+    {
+      "name": "CoordinateSymbol",
+      "category": "diffgeom"
+    },
+    {
+      "name": "CovarDerivativeOp",
+      "category": "diffgeom"
+    },
+    {
+      "name": "Differential",
+      "category": "diffgeom"
+    },
+    {
+      "name": "LieDerivative",
+      "category": "diffgeom"
+    },
+    {
+      "name": "Manifold",
+      "category": "diffgeom"
+    },
+    {
+      "name": "Patch",
+      "category": "diffgeom"
+    },
+    {
+      "name": "Point",
+      "category": "diffgeom"
+    },
+    {
+      "name": "TensorProduct",
+      "category": "diffgeom"
+    },
+    {
+      "name": "WedgeProduct",
+      "category": "diffgeom"
+    },
+    {
+      "name": "contravariant_order",
+      "category": "diffgeom"
+    },
+    {
+      "name": "covariant_order",
+      "category": "diffgeom"
+    },
+    {
+      "name": "intcurve_diffequ",
+      "category": "diffgeom"
+    },
+    {
+      "name": "intcurve_series",
+      "category": "diffgeom"
+    },
+    {
+      "name": "metric_to_Christoffel_1st",
+      "category": "diffgeom"
+    },
+    {
+      "name": "metric_to_Christoffel_2nd",
+      "category": "diffgeom"
+    },
+    {
+      "name": "metric_to_Ricci_components",
+      "category": "diffgeom"
+    },
+    {
+      "name": "metric_to_Riemann_components",
+      "category": "diffgeom"
+    },
+    {
+      "name": "twoform_to_matrix",
+      "category": "diffgeom"
+    },
+    {
+      "name": "vectors_in_basis",
+      "category": "diffgeom"
+    },
+    {
+      "name": "Arcsin",
+      "category": "stats"
+    },
+    {
+      "name": "Benini",
+      "category": "stats"
+    },
+    {
+      "name": "Bernoulli",
+      "category": "stats"
+    },
+    {
+      "name": "BernoulliProcess",
+      "category": "stats"
+    },
+    {
+      "name": "Beta",
+      "category": "stats"
+    },
+    {
+      "name": "BetaBinomial",
+      "category": "stats"
+    },
+    {
+      "name": "BetaNoncentral",
+      "category": "stats"
+    },
+    {
+      "name": "BetaPrime",
+      "category": "stats"
+    },
+    {
+      "name": "Binomial",
+      "category": "stats"
+    },
+    {
+      "name": "BoundedPareto",
+      "category": "stats"
+    },
+    {
+      "name": "Cauchy",
+      "category": "stats"
+    },
+    {
+      "name": "CentralMoment",
+      "category": "stats"
+    },
+    {
+      "name": "Chi",
+      "category": "stats"
+    },
+    {
+      "name": "ChiNoncentral",
+      "category": "stats"
+    },
+    {
+      "name": "ChiSquared",
+      "category": "stats"
+    },
+    {
+      "name": "CircularEnsemble",
+      "category": "stats"
+    },
+    {
+      "name": "CircularOrthogonalEnsemble",
+      "category": "stats"
+    },
+    {
+      "name": "CircularSymplecticEnsemble",
+      "category": "stats"
+    },
+    {
+      "name": "CircularUnitaryEnsemble",
+      "category": "stats"
+    },
+    {
+      "name": "Coin",
+      "category": "stats"
+    },
+    {
+      "name": "ContinuousDistributionHandmade",
+      "category": "stats"
+    },
+    {
+      "name": "ContinuousMarkovChain",
+      "category": "stats"
+    },
+    {
+      "name": "ContinuousRV",
+      "category": "stats"
+    },
+    {
+      "name": "Covariance",
+      "category": "stats"
+    },
+    {
+      "name": "CrossCovarianceMatrix",
+      "category": "stats"
+    },
+    {
+      "name": "Dagum",
+      "category": "stats"
+    },
+    {
+      "name": "Davis",
+      "category": "stats"
+    },
+    {
+      "name": "Die",
+      "category": "stats"
+    },
+    {
+      "name": "Dirichlet",
+      "category": "stats"
+    },
+    {
+      "name": "DiscreteDistributionHandmade",
+      "category": "stats"
+    },
+    {
+      "name": "DiscreteMarkovChain",
+      "category": "stats"
+    },
+    {
+      "name": "DiscreteRV",
+      "category": "stats"
+    },
+    {
+      "name": "DiscreteTimeStochasticProcess",
+      "category": "stats"
+    },
+    {
+      "name": "DiscreteUniform",
+      "category": "stats"
+    },
+    {
+      "name": "E",
+      "category": "stats"
+    },
+    {
+      "name": "Erlang",
+      "category": "stats"
+    },
+    {
+      "name": "ExGaussian",
+      "category": "stats"
+    },
+    {
+      "name": "Expectation",
+      "category": "stats"
+    },
+    {
+      "name": "ExpectationMatrix",
+      "category": "stats"
+    },
+    {
+      "name": "Exponential",
+      "category": "stats"
+    },
+    {
+      "name": "ExponentialPower",
+      "category": "stats"
+    },
+    {
+      "name": "FDistribution",
+      "category": "stats"
+    },
+    {
+      "name": "FiniteDistributionHandmade",
+      "category": "stats"
+    },
+    {
+      "name": "FiniteRV",
+      "category": "stats"
+    },
+    {
+      "name": "FisherZ",
+      "category": "stats"
+    },
+    {
+      "name": "FlorySchulz",
+      "category": "stats"
+    },
+    {
+      "name": "Frechet",
+      "category": "stats"
+    },
+    {
+      "name": "Gamma",
+      "category": "stats"
+    },
+    {
+      "name": "GammaInverse",
+      "category": "stats"
+    },
+    {
+      "name": "GammaProcess",
+      "category": "stats"
+    },
+    {
+      "name": "GaussianEnsemble",
+      "category": "stats"
+    },
+    {
+      "name": "GaussianInverse",
+      "category": "stats"
+    },
+    {
+      "name": "GaussianOrthogonalEnsemble",
+      "category": "stats"
+    },
+    {
+      "name": "GaussianSymplecticEnsemble",
+      "category": "stats"
+    },
+    {
+      "name": "GaussianUnitaryEnsemble",
+      "category": "stats"
+    },
+    {
+      "name": "GeneralizedMultivariateLogGamma",
+      "category": "stats"
+    },
+    {
+      "name": "GeneralizedMultivariateLogGammaOmega",
+      "category": "stats"
+    },
+    {
+      "name": "GeneratorMatrixOf",
+      "category": "stats"
+    },
+    {
+      "name": "Geometric",
+      "category": "stats"
+    },
+    {
+      "name": "Gompertz",
+      "category": "stats"
+    },
+    {
+      "name": "Gumbel",
+      "category": "stats"
+    },
+    {
+      "name": "H",
+      "category": "stats"
+    },
+    {
+      "name": "Hermite",
+      "category": "stats"
+    },
+    {
+      "name": "Hypergeometric",
+      "category": "stats"
+    },
+    {
+      "name": "IdealSoliton",
+      "category": "stats"
+    },
+    {
+      "name": "JointEigenDistribution",
+      "category": "stats"
+    },
+    {
+      "name": "JointRV",
+      "category": "stats"
+    },
+    {
+      "name": "Kumaraswamy",
+      "category": "stats"
+    },
+    {
+      "name": "Laplace",
+      "category": "stats"
+    },
+    {
+      "name": "Levy",
+      "category": "stats"
+    },
+    {
+      "name": "LogCauchy",
+      "category": "stats"
+    },
+    {
+      "name": "LogLogistic",
+      "category": "stats"
+    },
+    {
+      "name": "LogNormal",
+      "category": "stats"
+    },
+    {
+      "name": "Logarithmic",
+      "category": "stats"
+    },
+    {
+      "name": "Logistic",
+      "category": "stats"
+    },
+    {
+      "name": "LogitNormal",
+      "category": "stats"
+    },
+    {
+      "name": "Lomax",
+      "category": "stats"
+    },
+    {
+      "name": "MatrixGamma",
+      "category": "stats"
+    },
+    {
+      "name": "MatrixNormal",
+      "category": "stats"
+    },
+    {
+      "name": "MatrixStudentT",
+      "category": "stats"
+    },
+    {
+      "name": "Maxwell",
+      "category": "stats"
+    },
+    {
+      "name": "Moment",
+      "category": "stats"
+    },
+    {
+      "name": "Moyal",
+      "category": "stats"
+    },
+    {
+      "name": "Multinomial",
+      "category": "stats"
+    },
+    {
+      "name": "MultivariateBeta",
+      "category": "stats"
+    },
+    {
+      "name": "MultivariateEwens",
+      "category": "stats"
+    },
+    {
+      "name": "MultivariateLaplace",
+      "category": "stats"
+    },
+    {
+      "name": "MultivariateNormal",
+      "category": "stats"
+    },
+    {
+      "name": "MultivariateT",
+      "category": "stats"
+    },
+    {
+      "name": "Nakagami",
+      "category": "stats"
+    },
+    {
+      "name": "NegativeBinomial",
+      "category": "stats"
+    },
+    {
+      "name": "NegativeMultinomial",
+      "category": "stats"
+    },
+    {
+      "name": "Normal",
+      "category": "stats"
+    },
+    {
+      "name": "NormalGamma",
+      "category": "stats"
+    },
+    {
+      "name": "P",
+      "category": "stats"
+    },
+    {
+      "name": "Pareto",
+      "category": "stats"
+    },
+    {
+      "name": "Poisson",
+      "category": "stats"
+    },
+    {
+      "name": "PoissonProcess",
+      "category": "stats"
+    },
+    {
+      "name": "PowerFunction",
+      "category": "stats"
+    },
+    {
+      "name": "Probability",
+      "category": "stats"
+    },
+    {
+      "name": "QuadraticU",
+      "category": "stats"
+    },
+    {
+      "name": "Rademacher",
+      "category": "stats"
+    },
+    {
+      "name": "RaisedCosine",
+      "category": "stats"
+    },
+    {
+      "name": "Rayleigh",
+      "category": "stats"
+    },
+    {
+      "name": "Reciprocal",
+      "category": "stats"
+    },
+    {
+      "name": "RobustSoliton",
+      "category": "stats"
+    },
+    {
+      "name": "ShiftedGompertz",
+      "category": "stats"
+    },
+    {
+      "name": "Skellam",
+      "category": "stats"
+    },
+    {
+      "name": "StochasticProcess",
+      "category": "stats"
+    },
+    {
+      "name": "StochasticStateSpaceOf",
+      "category": "stats"
+    },
+    {
+      "name": "StudentT",
+      "category": "stats"
+    },
+    {
+      "name": "TransitionMatrixOf",
+      "category": "stats"
+    },
+    {
+      "name": "Trapezoidal",
+      "category": "stats"
+    },
+    {
+      "name": "Triangular",
+      "category": "stats"
+    },
+    {
+      "name": "Uniform",
+      "category": "stats"
+    },
+    {
+      "name": "UniformSum",
+      "category": "stats"
+    },
+    {
+      "name": "Variance",
+      "category": "stats"
+    },
+    {
+      "name": "VarianceMatrix",
+      "category": "stats"
+    },
+    {
+      "name": "VonMises",
+      "category": "stats"
+    },
+    {
+      "name": "Wald",
+      "category": "stats"
+    },
+    {
+      "name": "Weibull",
+      "category": "stats"
+    },
+    {
+      "name": "WienerProcess",
+      "category": "stats"
+    },
+    {
+      "name": "WignerSemicircle",
+      "category": "stats"
+    },
+    {
+      "name": "Wishart",
+      "category": "stats"
+    },
+    {
+      "name": "YuleSimon",
+      "category": "stats"
+    },
+    {
+      "name": "Zeta",
+      "category": "stats"
+    },
+    {
+      "name": "cdf",
+      "category": "stats"
+    },
+    {
+      "name": "characteristic_function",
+      "category": "stats"
+    },
+    {
+      "name": "cmoment",
+      "category": "stats"
+    },
+    {
+      "name": "correlation",
+      "category": "stats"
+    },
+    {
+      "name": "coskewness",
+      "category": "stats"
+    },
+    {
+      "name": "covariance",
+      "category": "stats"
+    },
+    {
+      "name": "density",
+      "category": "stats"
+    },
+    {
+      "name": "dependent",
+      "category": "stats"
+    },
+    {
+      "name": "entropy",
+      "category": "stats"
+    },
+    {
+      "name": "factorial_moment",
+      "category": "stats"
+    },
+    {
+      "name": "given",
+      "category": "stats"
+    },
+    {
+      "name": "independent",
+      "category": "stats"
+    },
+    {
+      "name": "joint_eigen_distribution",
+      "category": "stats"
+    },
+    {
+      "name": "kurtosis",
+      "category": "stats"
+    },
+    {
+      "name": "level_spacing_distribution",
+      "category": "stats"
+    },
+    {
+      "name": "marginal_distribution",
+      "category": "stats"
+    },
+    {
+      "name": "median",
+      "category": "stats"
+    },
+    {
+      "name": "moment",
+      "category": "stats"
+    },
+    {
+      "name": "moment_generating_function",
+      "category": "stats"
+    },
+    {
+      "name": "pspace",
+      "category": "stats"
+    },
+    {
+      "name": "quantile",
+      "category": "stats"
+    },
+    {
+      "name": "random_symbols",
+      "category": "stats"
+    },
+    {
+      "name": "skewness",
+      "category": "stats"
+    },
+    {
+      "name": "smoment",
+      "category": "stats"
+    },
+    {
+      "name": "std",
+      "category": "stats"
+    },
+    {
+      "name": "variance",
+      "category": "stats"
+    },
+    {
+      "name": "where",
+      "category": "stats"
+    },
+    {
+      "name": ".adjoint",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".apart",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".args_cnc",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_base_exp",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_coeff_Add",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_coeff_Mul",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_coeff_add",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_coeff_exponent",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_coeff_mul",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_coefficient",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_coefficients_dict",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_content_primitive",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_dummy",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_expr",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_independent",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_leading_term",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_numer_denom",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_ordered_factors",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_ordered_terms",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_poly",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_powers_dict",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_real_imag",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".as_terms",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".aseries",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".atoms",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".cancel",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".class_key",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".coeff",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".collect",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".combsimp",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".compare",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".conjugate",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".copy",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".could_extract_minus_sign",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".count",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".count_ops",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".diff",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".dir",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".doit",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".dummy_eq",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".equals",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".evalf",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".expand",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".extract_additively",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".extract_branch_factor",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".extract_multiplicatively",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".factor",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".find",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".fourier_series",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".fps",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".fromiter",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".gammasimp",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".getO",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".getn",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".has",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".has_free",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".has_xfree",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".integrate",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".invert",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".is_algebraic_expr",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".is_constant",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".is_hypergeometric",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".is_meromorphic",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".is_polynomial",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".is_rational_function",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".is_same",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".leadterm",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".limit",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".lseries",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".match",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".matches",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".n",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".normal",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".nseries",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".nsimplify",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".powsimp",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".primitive",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".radsimp",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".ratsimp",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".rcall",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".refine",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".removeO",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".replace",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".rewrite",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".round",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".separate",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".series",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".simplify",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".sort_key",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".subs",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".taylor_term",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".together",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".transpose",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".trigsimp",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".xreplace",
+      "category": "core",
+      "owner": "Expr"
+    },
+    {
+      "name": ".LDLdecomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".LDLsolve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".LUdecomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".LUdecompositionFF",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".LUdecomposition_Simple",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".LUsolve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".QRdecomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".QRsolve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".add",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".adjoint",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".adjugate",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".analytic_func",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".applyfunc",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".as_immutable",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".as_mutable",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".as_real_imag",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".atoms",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".berkowitz",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".berkowitz_charpoly",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".berkowitz_det",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".berkowitz_eigenvals",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".berkowitz_minors",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".bidiagonal_decomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".bidiagonalize",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".charpoly",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".cholesky",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".cholesky_solve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".cofactor",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".cofactorMatrix",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".cofactor_matrix",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".col",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".col_del",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".col_insert",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".col_join",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".col_op",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".col_swap",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".columnspace",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".companion",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".condition_number",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".conjugate",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".connected_components",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".connected_components_decomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".copy",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".copyin_list",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".copyin_matrix",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".cramer_solve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".cross",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".det",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".det_LU_decomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".det_bareis",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".diag",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".diagonal",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".diagonal_solve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".diagonalize",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".diff",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".doit",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".dot",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".dual",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".echelon_form",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".eigenvals",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".eigenvects",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".elementary_col_op",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".elementary_row_op",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".equals",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".evalf",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".exp",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".expand",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".extract",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".eye",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".fill",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".flat",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".from_dok",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".gauss_jordan_solve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".get_diag_blocks",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".has",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".hat",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".hstack",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".integrate",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inv",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inv_mod",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inverse_ADJ",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inverse_BLOCK",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inverse_CH",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inverse_GE",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inverse_LDL",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inverse_LU",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".inverse_QR",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".irregular",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".is_anti_symmetric",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".is_diagonal",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".is_diagonalizable",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".is_nilpotent",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".is_symbolic",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".is_symmetric",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".iter_items",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".iter_values",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".jacobian",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".jordan_block",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".jordan_cell",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".jordan_cells",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".jordan_form",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".key2bounds",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".key2ij",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".left_eigenvects",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".limit",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".lll",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".lll_transform",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".log",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".lower_triangular",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".lower_triangular_solve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".minor",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".minorEntry",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".minorMatrix",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".minor_submatrix",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".multiply",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".multiply_elementwise",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".n",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".norm",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".normalized",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".nullspace",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".ones",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".orthogonalize",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".per",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".permute",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".permuteBkwd",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".permuteFwd",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".permute_cols",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".permute_rows",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".pinv",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".pinv_solve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".pow",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".print_nonzero",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".project",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".rank",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".rank_decomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".refine",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".replace",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".reshape",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".rmultiply",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".rot90",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".row",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".row_add",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".row_del",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".row_insert",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".row_join",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".row_mult",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".row_op",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".row_swap",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".rowspace",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".rref",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".rref_rhs",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".simplify",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".singular_value_decomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".singular_values",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".solve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".solve_least_squares",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".strongly_connected_components",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".strongly_connected_components_decomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".subs",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".table",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".to_DM",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".todod",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".todok",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".tolist",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".trace",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".transpose",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".upper_hessenberg_decomposition",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".upper_triangular",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".upper_triangular_solve",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".values",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".vec",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".vech",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".vee",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".vstack",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".wilkinson",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".xreplace",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".zeros",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".zip_row_op",
+      "category": "matrices",
+      "owner": "MutableDenseMatrix"
+    },
+    {
+      "name": ".adjoint",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".applyfunc",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".as_content_primitive",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".as_dummy",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".as_immutable",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".as_mutable",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".atoms",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".class_key",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".compare",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".conjugate",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".copy",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".could_extract_minus_sign",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".count",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".count_ops",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".diff",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".doit",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".dummy_eq",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".find",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".fromiter",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".has",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".has_free",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".has_xfree",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".is_hypergeometric",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".is_same",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".match",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".matches",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".rank",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".rcall",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".refine",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".replace",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".reshape",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".rewrite",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".simplify",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".sort_key",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".subs",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".tolist",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".tomatrix",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".transpose",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".xreplace",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".zeros",
+      "category": "tensor",
+      "owner": "ImmutableDenseNDimArray"
+    },
+    {
+      "name": ".apply",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".as_content_primitive",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".as_dummy",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".ascents",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".atoms",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".class_key",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".commutator",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".commutes_with",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".compare",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".copy",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".could_extract_minus_sign",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".count",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".count_ops",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".descents",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".doit",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".dummy_eq",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".find",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".from_inversion_vector",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".from_sequence",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".fromiter",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".get_adjacency_distance",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".get_adjacency_matrix",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".get_positional_distance",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".get_precedence_distance",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".get_precedence_matrix",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".has",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".has_free",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".has_xfree",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".index",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".inversion_vector",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".inversions",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".is_hypergeometric",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".is_same",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".josephus",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".length",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".list",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".match",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".matches",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".max",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".min",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".mul_inv",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".next_lex",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".next_nonlex",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".next_trotterjohnson",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".order",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".parity",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".random",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".rank",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".rank_nonlex",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".rank_trotterjohnson",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".rcall",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".refine",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".replace",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".resize",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".rewrite",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".rmul",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".rmul_with_af",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".runs",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".signature",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".simplify",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".sort_key",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".subs",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".support",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".transpositions",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".unrank_lex",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".unrank_nonlex",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".unrank_trotterjohnson",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".xreplace",
+      "category": "combinatorics",
+      "owner": "Permutation"
+    },
+    {
+      "name": ".adjoint",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".apart",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".applyfunc",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".args_cnc",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_base_exp",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_coeff_Add",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_coeff_Mul",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_coeff_add",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_coeff_exponent",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_coeff_mmul",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_coeff_mul",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_coefficient",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_coefficients_dict",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_content_primitive",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_dummy",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_explicit",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_expr",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_independent",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_leading_term",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_mutable",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_numer_denom",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_ordered_factors",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_ordered_terms",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_poly",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_powers_dict",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_real_imag",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".as_terms",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".aseries",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".atoms",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".cancel",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".canonicalize",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".class_key",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".coeff",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".collect",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".combsimp",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".compare",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".conjugate",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".copy",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".could_extract_minus_sign",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".count",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".count_ops",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".det",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".diff",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".dir",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".doit",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".dummy_eq",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".equals",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".evalf",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".expand",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".extract_additively",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".extract_branch_factor",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".extract_multiplicatively",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".factor",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".find",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".fourier_series",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".fps",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".from_index_summation",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".fromiter",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".gammasimp",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".getO",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".getn",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".has",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".has_free",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".has_xfree",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".integrate",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".inv",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".inverse",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".invert",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".is_algebraic_expr",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".is_constant",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".is_hypergeometric",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".is_meromorphic",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".is_polynomial",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".is_rational_function",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".is_same",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".leadterm",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".limit",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".lseries",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".match",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".matches",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".n",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".normal",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".nseries",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".nsimplify",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".powsimp",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".primitive",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".radsimp",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".ratsimp",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".rcall",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".refine",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".removeO",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".replace",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".rewrite",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".round",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".separate",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".series",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".simplify",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".sort_key",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".subs",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".taylor_term",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".together",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".transpose",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".trigsimp",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".valid_index",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    },
+    {
+      "name": ".xreplace",
+      "category": "matrices",
+      "owner": "MatrixExpr"
+    }
+  ],
+  "extraction": {
+    "examined": 26286,
+    "reasons": {
+      "statement-or-setup": 14459,
+      "non-call-expression": 610,
+      "reference-exception": 319,
+      "printing-expression": 31,
+      "external-TeX-rendering": 9,
+      "rendering-backend-construction: rendering is done by connector packages": 30,
+      "rendering-backend-object: rendering is done by connector packages": 1,
+      "not-exported-api": 875,
+      "upstream-skip": 113,
+      "private-api": 71,
+      "serialization-error": 2,
+      "unsupported-result-type": 71,
+      "python-runtime-api": 4,
+      "unstable-result-representation": 13,
+      "illustrative-output": 1
+    }
+  },
+  "caseOrder": [
+    [
+      "categories",
+      35
+    ],
+    [
+      "polys",
+      5
+    ],
+    [
+      "combinatorics",
+      124
+    ],
+    [
+      "tensor",
+      50
+    ],
+    [
+      "pde",
+      16
+    ],
+    [
+      "core",
+      940
+    ],
+    [
+      "functions",
+      244
+    ],
+    [
+      "simplify",
+      201
+    ],
+    [
+      "polys",
+      385
+    ],
+    [
+      "solvers",
+      162
+    ],
+    [
+      "ode",
+      26
+    ],
+    [
+      "solvers",
+      52
+    ],
+    [
+      "calculus",
+      232
+    ],
+    [
+      "matrices",
+      620
+    ],
+    [
+      "special",
+      340
+    ],
+    [
+      "logic",
+      165
+    ],
+    [
+      "tensor",
+      82
+    ],
+    [
+      "ntheory",
+      213
+    ],
+    [
+      "assumptions",
+      56
+    ],
+    [
+      "utilities",
+      73
+    ],
+    [
+      "combinatorics",
+      155
+    ],
+    [
+      "calculus",
+      65
+    ],
+    [
+      "matrices",
+      60
+    ],
+    [
+      "sets",
+      163
+    ],
+    [
+      "special",
+      415
+    ],
+    [
+      "printing",
+      39
+    ],
+    [
+      "core",
+      22
+    ],
+    [
+      "simplify",
+      132
+    ],
+    [
+      "polys",
+      10
+    ],
+    [
+      "solvers",
+      85
+    ],
+    [
+      "ode",
+      20
+    ],
+    [
+      "calculus",
+      169
+    ],
+    [
+      "matrices",
+      104
+    ],
+    [
+      "logic",
+      26
+    ],
+    [
+      "combinatorics",
+      125
+    ],
+    [
+      "ntheory",
+      13
+    ],
+    [
+      "utilities",
+      27
+    ],
+    [
+      "tensor",
+      15
+    ],
+    [
+      "discrete",
+      58
+    ],
+    [
+      "algebras",
+      64
+    ],
+    [
+      "strategies",
+      8
+    ],
+    [
+      "unify",
+      2
+    ],
+    [
+      "geometry",
+      531
+    ],
+    [
+      "vector",
+      166
+    ],
+    [
+      "stats",
+      436
+    ],
+    [
+      "printing",
+      33
+    ],
+    [
+      "utilities",
+      2
+    ],
+    [
+      "matrices",
+      306
+    ],
+    [
+      "polys",
+      1157
+    ],
+    [
+      "core",
+      23
+    ],
+    [
+      "assumptions",
+      164
+    ],
+    [
+      "combinatorics",
+      131
+    ],
+    [
+      "calculus",
+      63
+    ],
+    [
+      "crypto",
+      80
+    ],
+    [
+      "functions",
+      6
+    ],
+    [
+      "calculus",
+      27
+    ],
+    [
+      "liealgebras",
+      43
+    ],
+    [
+      "logic",
+      19
+    ],
+    [
+      "ntheory",
+      6
+    ],
+    [
+      "parsing",
+      26
+    ],
+    [
+      "calculus",
+      8
+    ],
+    [
+      "sets",
+      12
+    ],
+    [
+      "solvers",
+      24
+    ],
+    [
+      "ode",
+      65
+    ],
+    [
+      "stats",
+      13
+    ],
+    [
+      "tensor",
+      106
+    ],
+    [
+      "polys",
+      54
+    ],
+    [
+      "holonomic",
+      38
+    ],
+    [
+      "combinatorics",
+      70
+    ],
+    [
+      "core",
+      32
+    ],
+    [
+      "ode",
+      2
+    ],
+    [
+      "printing",
+      2
+    ],
+    [
+      "special",
+      6
+    ],
+    [
+      "polys",
+      8
+    ],
+    [
+      "tensor",
+      12
+    ],
+    [
+      "calculus",
+      32
+    ],
+    [
+      "parsing",
+      3
+    ],
+    [
+      "categories",
+      19
+    ],
+    [
+      "plotting",
+      3
+    ],
+    [
+      "diffgeom",
+      98
+    ],
+    [
+      "polys",
+      4
+    ],
+    [
+      "functions",
+      18
+    ],
+    [
+      "categories",
+      1
+    ],
+    [
+      "polys",
+      5
+    ],
+    [
+      "tensor",
+      12
+    ],
+    [
+      "matrices",
+      4
+    ],
+    [
+      "calculus",
+      2
+    ],
+    [
+      "combinatorics",
+      1
+    ],
+    [
+      "tensor",
+      4
+    ],
+    [
+      "printing",
+      1
+    ],
+    [
+      "polys",
+      1
+    ]
+  ],
+  "categories": {
+    "algebras": {
+      "cases": 64,
+      "shards": [
+        {
+          "file": "algebras.json",
+          "cases": 64,
+          "bytes": 41541
+        }
+      ],
+      "auditFile": "algebras.audit.json",
+      "auditBytes": 750
+    },
+    "assumptions": {
+      "cases": 220,
+      "shards": [
+        {
+          "file": "assumptions.json",
+          "cases": 220,
+          "bytes": 129857
+        }
+      ],
+      "auditFile": "assumptions.audit.json",
+      "auditBytes": 4285
+    },
+    "calculus": {
+      "cases": 598,
+      "shards": [
+        {
+          "file": "calculus.json",
+          "cases": 598,
+          "bytes": 346261
+        }
+      ],
+      "auditFile": "calculus.audit.json",
+      "auditBytes": 14730
+    },
+    "categories": {
+      "cases": 55,
+      "shards": [
+        {
+          "file": "categories.json",
+          "cases": 55,
+          "bytes": 78237
+        }
+      ],
+      "auditFile": "categories.audit.json",
+      "auditBytes": 1057
+    },
+    "combinatorics": {
+      "cases": 606,
+      "shards": [
+        {
+          "file": "combinatorics.json",
+          "cases": 606,
+          "bytes": 317945
+        }
+      ],
+      "auditFile": "combinatorics.audit.json",
+      "auditBytes": 26108
+    },
+    "core": {
+      "cases": 1017,
+      "shards": [
+        {
+          "file": "core.json",
+          "cases": 1017,
+          "bytes": 361615
+        }
+      ],
+      "auditFile": "core.audit.json",
+      "auditBytes": 39926
+    },
+    "crypto": {
+      "cases": 80,
+      "shards": [
+        {
+          "file": "crypto.json",
+          "cases": 80,
+          "bytes": 31143
+        }
+      ],
+      "auditFile": "crypto.audit.json",
+      "auditBytes": 4488
+    },
+    "diffgeom": {
+      "cases": 98,
+      "shards": [
+        {
+          "file": "diffgeom.json",
+          "cases": 98,
+          "bytes": 120743
+        }
+      ],
+      "auditFile": "diffgeom.audit.json",
+      "auditBytes": 694
+    },
+    "discrete": {
+      "cases": 58,
+      "shards": [
+        {
+          "file": "discrete.json",
+          "cases": 58,
+          "bytes": 27544
+        }
+      ],
+      "auditFile": "discrete.audit.json",
+      "auditBytes": 2674
+    },
+    "functions": {
+      "cases": 268,
+      "shards": [
+        {
+          "file": "functions.json",
+          "cases": 268,
+          "bytes": 77252
+        }
+      ],
+      "auditFile": "functions.audit.json",
+      "auditBytes": 5083
+    },
+    "geometry": {
+      "cases": 531,
+      "shards": [
+        {
+          "file": "geometry.json",
+          "cases": 531,
+          "bytes": 295045
+        }
+      ],
+      "auditFile": "geometry.audit.json",
+      "auditBytes": 4841
+    },
+    "holonomic": {
+      "cases": 38,
+      "shards": [
+        {
+          "file": "holonomic.json",
+          "cases": 38,
+          "bytes": 28206
+        }
+      ],
+      "auditFile": "holonomic.audit.json",
+      "auditBytes": 47
+    },
+    "liealgebras": {
+      "cases": 43,
+      "shards": [
+        {
+          "file": "liealgebras.json",
+          "cases": 43,
+          "bytes": 11805
+        }
+      ],
+      "auditFile": "liealgebras.audit.json",
+      "auditBytes": 170
+    },
+    "logic": {
+      "cases": 210,
+      "shards": [
+        {
+          "file": "logic.json",
+          "cases": 210,
+          "bytes": 83760
+        }
+      ],
+      "auditFile": "logic.audit.json",
+      "auditBytes": 6847
+    },
+    "matrices": {
+      "cases": 1094,
+      "shards": [
+        {
+          "file": "matrices.json",
+          "cases": 1094,
+          "bytes": 659034
+        }
+      ],
+      "auditFile": "matrices.audit.json",
+      "auditBytes": 16498
+    },
+    "ntheory": {
+      "cases": 232,
+      "shards": [
+        {
+          "file": "ntheory.json",
+          "cases": 232,
+          "bytes": 59844
+        }
+      ],
+      "auditFile": "ntheory.audit.json",
+      "auditBytes": 15393
+    },
+    "ode": {
+      "cases": 113,
+      "shards": [
+        {
+          "file": "ode.json",
+          "cases": 113,
+          "bytes": 127873
+        }
+      ],
+      "auditFile": "ode.audit.json",
+      "auditBytes": 4849
+    },
+    "parsing": {
+      "cases": 29,
+      "shards": [
+        {
+          "file": "parsing.json",
+          "cases": 29,
+          "bytes": 10516
+        }
+      ],
+      "auditFile": "parsing.audit.json",
+      "auditBytes": 842
+    },
+    "pde": {
+      "cases": 16,
+      "shards": [
+        {
+          "file": "pde.json",
+          "cases": 16,
+          "bytes": 21576
+        }
+      ],
+      "auditFile": "pde.audit.json",
+      "auditBytes": 47
+    },
+    "plotting": {
+      "cases": 3,
+      "shards": [
+        {
+          "file": "plotting.json",
+          "cases": 3,
+          "bytes": 2737
+        }
+      ],
+      "auditFile": "plotting.audit.json",
+      "auditBytes": 4071
+    },
+    "polys": {
+      "cases": 1629,
+      "shards": [
+        {
+          "file": "polys.json",
+          "cases": 1629,
+          "bytes": 1202482
+        }
+      ],
+      "auditFile": "polys.audit.json",
+      "auditBytes": 48546
+    },
+    "printing": {
+      "cases": 75,
+      "shards": [
+        {
+          "file": "printing.json",
+          "cases": 75,
+          "bytes": 32510
+        }
+      ],
+      "auditFile": "printing.audit.json",
+      "auditBytes": 1067
+    },
+    "sets": {
+      "cases": 175,
+      "shards": [
+        {
+          "file": "sets.json",
+          "cases": 175,
+          "bytes": 72765
+        }
+      ],
+      "auditFile": "sets.audit.json",
+      "auditBytes": 4219
+    },
+    "simplify": {
+      "cases": 333,
+      "shards": [
+        {
+          "file": "simplify.json",
+          "cases": 333,
+          "bytes": 198509
+        }
+      ],
+      "auditFile": "simplify.audit.json",
+      "auditBytes": 8858
+    },
+    "solvers": {
+      "cases": 323,
+      "shards": [
+        {
+          "file": "solvers.json",
+          "cases": 323,
+          "bytes": 180110
+        }
+      ],
+      "auditFile": "solvers.audit.json",
+      "auditBytes": 21232
+    },
+    "special": {
+      "cases": 761,
+      "shards": [
+        {
+          "file": "special.json",
+          "cases": 761,
+          "bytes": 252850
+        }
+      ],
+      "auditFile": "special.audit.json",
+      "auditBytes": 8564
+    },
+    "stats": {
+      "cases": 449,
+      "shards": [
+        {
+          "file": "stats.json",
+          "cases": 449,
+          "bytes": 385947
+        }
+      ],
+      "auditFile": "stats.audit.json",
+      "auditBytes": 3353
+    },
+    "strategies": {
+      "cases": 8,
+      "shards": [
+        {
+          "file": "strategies.json",
+          "cases": 8,
+          "bytes": 2413
+        }
+      ],
+      "auditFile": "strategies.audit.json",
+      "auditBytes": 1418
+    },
+    "tensor": {
+      "cases": 281,
+      "shards": [
+        {
+          "file": "tensor.json",
+          "cases": 281,
+          "bytes": 298511
+        }
+      ],
+      "auditFile": "tensor.audit.json",
+      "auditBytes": 8060
+    },
+    "unify": {
+      "cases": 2,
+      "shards": [
+        {
+          "file": "unify.json",
+          "cases": 2,
+          "bytes": 1130
+        }
+      ],
+      "auditFile": "unify.audit.json",
+      "auditBytes": 1649
+    },
+    "utilities": {
+      "cases": 102,
+      "shards": [
+        {
+          "file": "utilities.json",
+          "cases": 102,
+          "bytes": 46439
+        }
+      ],
+      "auditFile": "utilities.audit.json",
+      "auditBytes": 22381
+    },
+    "vector": {
+      "cases": 166,
+      "shards": [
+        {
+          "file": "vector.json",
+          "cases": 166,
+          "bytes": 335211
+        }
+      ],
+      "auditFile": "vector.audit.json",
+      "auditBytes": 2271
+    }
+  }
+}

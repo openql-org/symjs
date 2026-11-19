@@ -1,0 +1,295 @@
+{
+ "omitted": [
+  {
+   "module": "sympy.functions.combinatorial.factorials",
+   "src": "for i in (rf, ff, factorial, binomial, gamma):\n F.rewrite(i)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.functions.combinatorial.factorials",
+   "src": "for i in (rf, ff, factorial, binomial, gamma):\n R.rewrite(i)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.functions.combinatorial.factorials",
+   "src": "for N in range(8):\n    print([binomial(N, i) for i in range(N + 1)])",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.functions.combinatorial.factorials",
+   "src": "[binomial(N, i) for i in range(1 - N)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "c = _AOP_product(n); dict(c)",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[andre(n) for n in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[(-1)**k * andre(2*k) for k in range(7)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[euler(2*k) for k in range(7)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[andre(2*k-1) * (2*k) / ((-4)**k - (-16)**k) for k in range(1, 8)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[bernoulli(2*k) for k in range(1, 8)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[bell(n) for n in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[bernoulli(n) for n in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "find_first_n_carmichaels(5)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "find_carmichael_numbers_in_range(0, 562)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "find_carmichael_numbers_in_range(0,1000)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "find_carmichael_numbers_in_range(0,2000)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[catalan(i) for i in range(1,10)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[euler(n) for n in range(10)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[2**n*euler(n,1) for n in range(10)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[fibonacci(x) for x in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[genocchi(n) for n in range(9)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[harmonic(n) for n in range(6)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[harmonic(n, 2) for n in range(6)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[legendre_symbol(i, 7) for i in range(7)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "sorted(set([i**2 % 7 for i in range(7)]))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[lucas(x) for x in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[len(list(multiset_combinations('aaaabbbbcccc', i))) for i in range(5)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "sum(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "sum(nC(4, i) for i in range(5))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "set([''.join(i) for i in enum('abc')])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "nP('abc', 2) == nP(multiset('abc'), 2) == 6",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[nP(3, i) for i in range(4)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "nP(3) == sum(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[len(list(multiset_permutations('aaaabbbbcccc', i))) for i in range(5)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "sum(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[nT('aabbc', i) for i in range(1, 7)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "nT('aabbc') == sum(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[nT(\"mississippi\", i) for i in range(1, 12)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[nT(5, i) for i in range(1, 6)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "nT('1'*5) == sum(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[nT(range(5), i) for i in range(1, 6)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "nT(range(5)) == sum(_)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[partition(n) for n in range(9)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "prevprime(25) == prime(9)",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[stirling(6, i, kind=1) for i in range(7)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[sum(Permutation(p).cycles == i for p in perms) for i in range(5)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[stirling(4, i, kind=1) for i in range(5)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[stirling(4, i, signed=True) for i in range(5)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[stirling(10, i) for i in range(12)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "sum(_) == bell(10)",
+   "reason": "reference-exception"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "sum(1 for p in parts if all(delta(i) >= d for i in p))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.combinatorial.numbers",
+   "src": "[tribonacci(x) for x in range(11)]",
+   "reason": "non-call-expression"
+  },
+  {
+   "module": "sympy.functions.special.error_functions",
+   "src": "findroot(li, 2)",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.special.hyper",
+   "src": "_prep_tuple([1, 2, 3])",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.special.hyper",
+   "src": "_prep_tuple((4, 5))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.special.hyper",
+   "src": "_prep_tuple((7, 8, 9))",
+   "reason": "not-exported-api"
+  },
+  {
+   "module": "sympy.functions.special.hyper",
+   "src": "h = hyper((1, 2, 3), [3, 4], x); h",
+   "reason": "statement-or-setup"
+  },
+  {
+   "module": "sympy.functions.special.polynomials",
+   "src": "[hermite_prob(n,I) / I**n for n in range(11)]",
+   "reason": "non-call-expression"
+  }
+ ],
+ "preservedReferences": []
+}
