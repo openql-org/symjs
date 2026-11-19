@@ -298,7 +298,7 @@ describe("sympy/integrals/tests/test_meijerint.py", () => {
   //           (-t - 1)*exp(x) + (-t + 1)*exp(-x))*exp(-t*x)/2/(t**2 - 1)
   //   => ((1 - t)*exp(-x) + (-t - 1)*exp(x))*exp(-t*x)/(2*(t**2 - 1))
   it.todo("test_issue_8368:716");
-  it.fails("test_issue_10211:722", () => {
+  it("test_issue_10211:722", () => {
     const [h, y, x, w] = symbols('h y x w');
     expect(sympyStr(integrate(integrate(new Pow(new Add([new Pow(h, Rational.of(2n, 1n, { gcd: 1n })), new Pow(new Add([y, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x])]), Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-3n, 2n, { gcd: 1n })), x, [Rational.of(0n, 1n, { gcd: 1n }), w], { conds: 'piecewise' }), y, [Rational.of(0n, 1n, { gcd: 1n }), w], { conds: 'piecewise' }))).toBe('2*sqrt(1 + w**2/h**2)/h - 2/h');
   });

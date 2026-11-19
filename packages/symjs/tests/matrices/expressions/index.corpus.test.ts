@@ -168,7 +168,7 @@ describe("sympy/matrices/expressions/tests/test_derivatives.py", () => {
     const k = new Sym('k');
     expect(sympyStr(MatMul(MatAdd(MatMul(Transpose(new MatrixSymbol('b', k, Rational.of(1n, 1n, { gcd: 1n }))), Transpose(new MatrixSymbol('X', k, k))), Transpose(new MatrixSymbol('c', k, Rational.of(1n, 1n, { gcd: 1n })))), new MatrixSymbol('D', k, k), MatAdd(MatMul(new MatrixSymbol('X', k, k), new MatrixSymbol('b', k, Rational.of(1n, 1n, { gcd: 1n }))), new MatrixSymbol('c', k, Rational.of(1n, 1n, { gcd: 1n })))).diff(new MatrixSymbol('X', k, k)))).toBe('D*(X*b + c)*b.T + D.T*(X*b + c)*b.T');
   });
-  it.fails("test_matrix_derivative_vectors_and_scalars:176", () => {
+  it("test_matrix_derivative_vectors_and_scalars:176", () => {
     const [k, m, n] = symbols('k m n');
     const unicode = pprintUseUnicode(false);
     try {

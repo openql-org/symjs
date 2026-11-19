@@ -8,7 +8,7 @@
 import type { Expr, ExprLike } from '../core/nodes';
 import { NotImplementedError } from '../core/errors';
 import { Add, Dummy, ExtensionExpr, Fn, Integral, Limit, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, Wild, asRational, impl, isNum, registerRewrite } from '../core/nodes';
-import { asNumerDenom } from '../core/methods';
+import { asIndependent, asNumerDenom } from '../core/methods';
 import { apart } from '../polys/partfrac';
 import { cancel, fraction, together } from '../simplify/rational';
 import { factor } from '../polys/sympoly';
@@ -264,9 +264,18 @@ function linearRoot(d: Expr, k: Sym): Expr | undefined {
  * condition); sums are taken term by term. Undefined for other deltas.
  */
 function deltaSum(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
-  const g = expand(f);
+  const additive = f instanceof Mul && f.args.find(t => t instanceof Add && hasDelta(t, k));
+  const g = additive instanceof Add ? add(...additive.args.map(t => mul(...f.args.map(v => v === additive ? t : v)))) : f;
   if (g instanceof Add) {
-    const parts = g.args.map((t) => (hasDelta(t, k) ? deltaSum(t, k, a, b) : sumOne(t, k, a, b)));
+    const parts = g.args.map((t) => {
+      if (hasDelta(t, k)) return deltaSum(t, k, a, b);
+      const result = sumOne(t, k, a, b);
+      if (result !== undefined) return result;
+      // Pull a delta in another index outside this sum so its own limit can contract it.
+      const [constant, dependent] = asIndependent(t, [k], { asAdd: false });
+      return some(constant, v => v instanceof Fn && v.name === 'KroneckerDelta')
+        ? mul(constant, Sum(dependent, [k, a, b])) : Sum(t, [k, a, b]);
+    });
     return parts.every((x) => x !== undefined) ? add(...parts) : undefined;
   }
   const factors = g instanceof Mul ? g.args : [g];

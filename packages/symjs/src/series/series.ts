@@ -10,7 +10,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Dummy, Derivative, ExtensionExpr, Float, Integral, Fn, Limit, Order, Piecewise, Pow, Rational, S, Special, Sym, impl, registerArithmetic } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul, isMulLike } from '../core/nodes';
-import { expandMul } from '../simplify/expand';
+import { expand, expandMul } from '../simplify/expand';
 import { mapBottomUp, some, substitutionHooks, xreplace as subs } from '../core/traverse';
 import { cos, fn, im, infiniteForm, log, sin } from '../functions/elementary/elementary';
 import { bernoulliNumber } from '../functions/special/special';
@@ -337,6 +337,13 @@ export function series(ex: ExprLike, variable?: Sym, x0x: ExprLike = 0, n = 6, d
     const u = first(t.args);
     return mul(sin(u), pow(u, -1));
   });
+  // An external parameter can be expanded under the original integration limits.
+  if (e instanceof Integral && impl.doit && e.integrand.has(x) && !e.args.slice(1).some(limit => limit.has(x))) {
+    const expansion = series(expand(e.integrand), x, x0x, n, dir, opts);
+    const terms = expansion instanceof Add ? expansion.args : [expansion];
+    const body = add(...terms.filter(term => !(term instanceof Order)));
+    return add(impl.doit(new Integral([body, ...e.args.slice(1)])), ...terms.filter(term => term instanceof Order));
+  }
   const x00 = sympify(x0x);
   const atZero = x00 instanceof Rational && x00.isZero;
   if (opts.local && atZero && some(e, isSingularity)) {

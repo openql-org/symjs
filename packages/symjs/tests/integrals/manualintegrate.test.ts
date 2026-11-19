@@ -260,3 +260,14 @@ it('uses a common radical only when the change of variable is rational', () => {
   const withSine = parse('sin(x)*sqrt(3*x)/((2*x)**(1/3)+1)');
   expect(String(sj.manualintegrate(withSine, x))).toBe('sqrt(3)*Integral(sqrt(x)*sin(x)/(2**(1/3)*x**(1/3) + 1), x)');
 });
+
+it('distributes an affine numerator over a repeated shifted quadratic after trying substitution', () => {
+  const q = parse('x**2-2*x+2'), den = sj.expand(sj.pow(q, 2));
+  const primitive = sj.manualintegrate(sj.mul(sj.sub(x, 3), sj.pow(q, -2)), x);
+  expect(primitive.equals(sj.sub(sj.integral(sj.mul(x, sj.pow(den, -1)), x), sj.mul(3, sj.integral(sj.pow(den, -1), x))))).toBe(true);
+  expect(sj.manualintegrate(sj.mul(sj.sub(x, 1), sj.pow(q, -2)), x).equals(sj.mul(sj.S.NegHalf, sj.pow(q, -1)))).toBe(true);
+});
+
+it('retains the tangent substitution for a centered repeated quadratic', () => {
+  expect(sj.manualintegrate(parse('1/(x**2+1)**2'), x).equals(parse('x/(2*x**2+2)+atan(x)/2'))).toBe(true);
+});

@@ -374,10 +374,7 @@ describe('unresolved singularities stay unevaluated', () => {
   // analysis is available, do not cross a possible pole with an endpoint subtraction.
   it.each([
     ['tan(x)', '0', 'pi'], // nan (the interior pole cannot be crossed)
-    ['1/(x-y)**2', '0', '1'], // depends on whether y lies in the interval
     ['(5*x**4-1)/(x**5-x-1)', '0', '1'], // SymPy: 0; quintic root isolation is not used here
-    ['1/x**2', '1', 'a'], // depends on a (a > 0 gives 1 - 1/a)
-    ['1/x**2', 'a', '1'],
   ])('%s on [%s, %s]', (f, lo, hi) => {
     expect(integrate(P(f), x, [P(lo), P(hi)])).toBeInstanceOf(sj.Integral);
   });
@@ -406,7 +403,10 @@ describe('unresolved singularities stay unevaluated', () => {
     const zero = derivative.subs([[x, 0]]).toComplex();
     expect(Math.hypot(zero.re, zero.im)).toBeLessThan(1e-12);
   });
-  it('keeps symbolic endpoints when the primitive extends continuously', () => {
+  it('evaluates the generic endpoint difference for symbolic bounds and poles', () => {
+    expect(integrate(P('1/x**2'), x, [1, a]).equals(P('1 - 1/a'))).toBe(true);
+    expect(integrate(P('1/x**2'), x, [a, 1]).equals(P('1/a - 1'))).toBe(true);
+    expect(integrate(P('1/(x-y)**2'), x, [0, 1]).equals(P('-1/(1-y) - 1/y'))).toBe(true);
     // SymPy: integrate(log(x), (x, 1, a))
     expect(String(integrate(P('log(x)'), x, [1, a]))).toBe('a*log(a) - a + 1');
   });
@@ -882,8 +882,8 @@ describe('definite integrals with parametric poles and Gaussian factors (SymPy 1
   it('ignores poles off the real axis', () => {
     expect(sstr(integrate(P('1/(x**2 + l**2)'), x, [0, sj.oo]))).toBe('pi/(2*l)');
   });
-  it('leaves a real pole of unknown position unevaluated on a finite interval', () => {
-    expect(sstr(integrate(P('1/(x + r)**2'), x, [0, 1]))).toBe('Integral((r + x)**(-2), (x, 0, 1))');
+  it('returns the generic finite-interval value and checks convergence at infinity', () => {
+    expect(sstr(integrate(P('1/(x + r)**2'), x, [0, 1]))).toBe('-1/(r + 1) + 1/r');
     expect(sstr(integrate(P('1/(x + r)**2'), x, [0, sj.oo]))).toMatch(/^Piecewise\(\(1\/r, /);
   });
 });
@@ -970,4 +970,27 @@ it('integrates an odd sine across a symmetric interval and a rational function w
   const c = new Sym('c', { imaginary: true });
   expect(integrate(x.sub(c).pow(-2), x, [0, 1]).equals(sj.sub(1, c).pow(-1).neg().sub(c.pow(-1)))).toBe(true);
   expect(String(integrate(parse('(x + sin(x))**a'), x))).toBe('Integral((x + sin(x))**a, x)');
+});
+
+it('uses the scaled quadratic primitive and takes one-sided exponential integral limits', () => {
+  expect(integrate(P('(a+x**2)**(-3/2)'), x, [0, b]).equals(P('b/(a**(3/2)*sqrt(1+b**2/a))'))).toBe(true);
+  expect(integrate(P('(1+x)*exp(-1/x)/x**2'), x, [0, sj.oo])).toBe(sj.oo);
+});
+
+it('checks numerical improper bounds with real and imaginary parameter-dependent poles', () => {
+  expect(integrate(P('1/(x+I*p)**2'), x, [0, sj.oo]).equals(P('-I/p'))).toBe(true);
+  expect(integrate(P('(x+r)**(-1/2)'), x, [0, sj.oo]).has(sj.oo)).toBe(true);
+});
+
+it('uses the algebraic primitive for a quadratic without a Meijer G reduction', () => {
+  const f = P('(a*x**2+x+1)**(-3/2)');
+  const primitive = integrate(f, x);
+  expect(integrate(f, x, [0, y]).equals(sj.sub(primitive.subs(x, y), primitive.subs(x, 0)))).toBe(true);
+});
+
+it('clips symbolic piecewise intervals with disjunctions, holes and reversed bounds', () => {
+  const f = P('Piecewise((1,(x<1)|(x>2)))');
+  expect(String(integrate(f, x))).toBe('Piecewise((x, x < 1), (nan, x < 2), (x, True))');
+  expect(integrate(P('Piecewise((x,Eq(x,a)),(2,True))'), x, [pp, 0]).equals(sj.mul(-2, pp))).toBe(true);
+  expect(String(integrate(P('Piecewise((a,a<b),(2,a<c))'), a))).toContain('Max(b, c)');
 });

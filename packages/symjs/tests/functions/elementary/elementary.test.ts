@@ -880,3 +880,38 @@ it('preserves inverse hyperbolic calls on a held real sum at infinity', () => {
   expect(String(sj.asinh(sum))).toBe('asinh(1 + oo)');
   expect(String(sj.acosh(sum))).toBe('acosh(1 + oo)');
 });
+
+it('rebuilds transformed orders with their expansion variables and points', () => {
+  const r = symbol('r', { real: true }), y = symbol('y', { imaginary: true });
+  for (const expr of [sj.O(y), sj.O(pow(y, 2)), sj.O(sj.sub(r, 2), r, 2)]) {
+    for (const transform of [conjugate, adjoint, transpose]) expect(transform(expr).equals(expr)).toBe(true);
+  }
+  expect(String(conjugate(sj.O(x)))).toBe('conjugate(O(x))');
+});
+
+it('transforms an order with a noncommuting coefficient and without the series hook', async () => {
+  const h = symbol('H', { commutative: false, hermitian: true });
+  expect(adjoint(new sj.Order([h])).equals(sj.O(h))).toBe(true);
+  const { impl } = await import('../../../src/core/nodes');
+  const rebuild = impl.rebuildOrder;
+  try {
+    impl.rebuildOrder = undefined;
+    const r = symbol('r', { real: true });
+    expect(conjugate(new sj.Order([r])).equals(new sj.Order([r]))).toBe(true);
+  } finally {
+    impl.rebuildOrder = rebuild;
+  }
+});
+
+it('transforms each branch and respects the argument of a negative real value', () => {
+  const condition = sj.Gt(x, 0);
+  const pw = sj.Piecewise([I, condition], [1, true]);
+  expect(conjugate(pw).equals(sj.Piecewise([sj.neg(I), condition], [1, true]))).toBe(true);
+  expect(adjoint(pw).equals(conjugate(pw))).toBe(true);
+  expect(transpose(pw).equals(pw)).toBe(true);
+  expect(conjugate(sj.AccumBounds(1, 2)).equals(sj.AccumBounds(1, 2))).toBe(true);
+  expect(String(arg(sj.SymFunction('f')(x)))).toBe('arg(f(x))');
+  expect(arg(sj.besselj(0, 4))).toBe(pi);
+  expect(fn('asinh', [sj.oo])).toBe(sj.oo);
+  expect(fn('acosh', [sj.oo])).toBe(sj.oo);
+});

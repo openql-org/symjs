@@ -18,6 +18,7 @@ import {
   Expr,
   Fn,
   Mul,
+  Order,
   Piecewise,
   Pow,
   Float,
@@ -573,9 +574,17 @@ export const conjugateCommutes = new Set<string>();
 /** Functions with their own conjugate (SymPy _eval_conjugate), by name; filled by the modules that define them. */
 export const conjugateRules: Partial<Record<string, (args: readonly Expr[]) => Expr>> = {};
 
+function transformOrder(order: Order, name: 'conjugate' | 'transpose' | 'adjoint', transform: (expr: Expr) => Expr): Expr {
+  const expr = transform(order.expr);
+  if (expr instanceof Fn && expr.name === name && first(expr.args).equals(order.expr)) return new Fn(name, [order]);
+  const args = [expr, ...order.args.slice(1)];
+  return impl.rebuildOrder?.(args) ?? new Order(args);
+}
+
 /** Complex conjugate, pushed through the expression tree. */
 export function conjugate(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof Order) return transformOrder(x, 'conjugate', conjugate);
   if (x instanceof Piecewise) return piecewise(...x.pairs.map(([value, condition]) => [conjugate(value), condition] as const));
   if (x instanceof ExtensionExpr) {
     const r = x.conjugateSelf();
@@ -635,6 +644,7 @@ export function adjoint(xx: ExprLike): Expr {
   if (x instanceof Sym && x.assumptions.hermitian === true) return x;
   if (x instanceof Sym && x.assumptions.antihermitian === true) return neg(x);
   if (x.isCommutative && !(x instanceof Add) && !(x instanceof Mul)) return conjugate(x);
+  if (x instanceof Order) return transformOrder(x, 'adjoint', adjoint);
   if (x instanceof Add) return add(...x.args.map(adjoint));
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(adjoint));
   if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(adjoint(x.base), x.exp);
@@ -653,6 +663,7 @@ export function adjoint(xx: ExprLike): Expr {
 /** Transpose (SymPy transpose): commutative scalars are unchanged, products reverse. */
 export function transpose(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof Order) return transformOrder(x, 'transpose', transpose);
   if (x instanceof Piecewise) return piecewise(...x.pairs.map(([value, condition]) => [transpose(value), condition] as const));
   if (x instanceof ExtensionExpr) {
     const r = x.transposeSelf();

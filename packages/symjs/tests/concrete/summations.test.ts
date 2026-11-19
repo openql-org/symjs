@@ -728,3 +728,23 @@ it('matches positive and negative telescoping shifts beyond adjacent indices', (
   expect(sj.telescopic(k.add(1), k, [k, 1, n])).toBe(sj.NoMatch);
   expect(sj.telescopic(k, k.add(1), [k, 1, n])).toBe(sj.NoMatch);
 });
+
+it('contracts deltas in separate addends at their own summation limits', () => {
+  const [i, j, m, n] = sj.symbols('i j m n');
+  const f = sj.SymFunction('f'), g = sj.SymFunction('g');
+  const delta = (v: Sym) => sj.KroneckerDelta(v, m, [0, n]);
+  const terms = sj.add(sj.mul(delta(i), f(i, j)), sj.mul(delta(j), g(i, j)));
+  expect(doit(Sum(terms, [i, 0, n], [j, 0, n])).equals(sj.add(Sum(f(m, j), [j, 0, n]), Sum(g(i, m), [i, 0, n])))).toBe(true);
+});
+
+it('distributes a product over deltas in the current index', () => {
+  const k = sj.symbol('k');
+  const deltas = sj.add(sj.KroneckerDelta(k, 2), sj.KroneckerDelta(k, 4));
+  expect(summation(sj.mul(k, deltas), [k, 1, 5]).equals(6)).toBe(true);
+});
+
+it('uses the smooth primitive for a finite Euler–Maclaurin interval', () => {
+  const k = sj.symbol('k');
+  const term = parse('(5*k**4-1)/(k**5-k-1)');
+  expect(eulerMaclaurin(new Concrete('Sum', [term, k, sj.S.Zero, sj.S.One]), 0, 0).map(String)).toEqual(['-3/2', '35/12']);
+});
