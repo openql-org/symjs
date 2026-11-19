@@ -866,6 +866,12 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
   }
   const v = limiter.lim(es);
   if (v === undefined || v === BOUNDED) {
+    // N/(N + R) tends to one if N diverges and R/N tends to zero.
+    const [numerator, denominator] = fraction(es);
+    if (denominator instanceof Add && denominator.args.some((a) => a.equals(numerator)) && isInf(limiter.lim(numerator))) {
+      const rest = add(...denominator.args.filter((a) => !a.equals(numerator)));
+      if (isZeroE(limiter.interval(mul(rest, pow(numerator, -1))))) return S.One;
+    }
     const g = z0 instanceof Special && z0.name === 'oo' ? gammaAsymptotic(es, z) : undefined;
     if (g !== undefined) {
       const w = new Limiter(z, z0, d, budget).lim(g);

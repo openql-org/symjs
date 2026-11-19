@@ -178,6 +178,8 @@ const evalSin: Evaluator = (x) => {
   if (x instanceof Rational && x.isZero) return S.Zero;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) return sinPi(c);
+  const k = integerPiCoeff(x);
+  if (k !== undefined && isIntegerQ(k) === true) return S.Zero;
   if (couldExtractMinusSign(x)) return neg(sin(neg(x)));
   const m = peelHalfPi(c);
   if (!m.isZero) {
@@ -196,6 +198,8 @@ const evalCos: Evaluator = (x) => {
   if (x instanceof Rational && x.isZero) return S.One;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) return cosPi(c);
+  const k = integerPiCoeff(x);
+  if (k !== undefined && isIntegerQ(k) === true) return pow(-1, k);
   if (couldExtractMinusSign(x)) return cos(neg(x));
   const m = peelHalfPi(c);
   if (!m.isZero) {
@@ -536,13 +540,9 @@ const evalArg: Evaluator = (x) => {
   const knownSign = (t: Expr): 1 | -1 | undefined =>
     isPositive(t) === true ? 1 : isNegative(t) === true ? -1
       : t instanceof UndefFn ? (t.givenFacts.get('extended_positive') === true ? 1 : t.givenFacts.get('extended_negative') === true ? -1 : undefined) : undefined;
-  if (knownSign(x) === 1) return S.Zero;
-  if (knownSign(x) === -1) return S.Pi;
-  {
-    const sg = numericSign(x);
-    if (sg === 1) return S.Zero;
-    if (sg === -1) return S.Pi;
-  }
+  const sign = knownSign(x) ?? numericSign(x);
+  if (sign === 1) return S.Zero;
+  if (sign === -1) return S.Pi;
   // SymPy arg.eval: a factor of known sign counts by that sign only (arg((3 + I)*p) = arg(3 + I) for positive p)
   if (x instanceof Mul) {
     const reduced = mul(...x.args.map((t) => (knownSign(t) === 1 ? S.One : knownSign(t) === -1 ? S.NegOne : t)));
@@ -569,7 +569,6 @@ const evalArg: Evaluator = (x) => {
       }
     }
   }
-  if (isNegative(x)) return S.Pi;
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') {
     const t = im(x.exp);
     // a rational angle reduced into (-pi, pi]

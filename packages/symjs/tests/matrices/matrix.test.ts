@@ -493,3 +493,19 @@ it('joins empty left and top operands and preserves element replacement maps', a
   // @ts-expect-error Non-matrix operands have no class priority.
   expect(() => classof(x, M)).toThrow(TypeError);
 });
+
+it('keeps known eigenvalues when an unresolved polynomial block is allowed', () => {
+  const matrix = Matrix.fromFunction(6, 6, (i, j) => {
+    if (i === 5 && j === 5) return 3;
+    if (i === 0 && j === 4) return a;
+    if (i === 0 && j === 3) return b;
+    return i < 5 && i === j + 1 ? 1 : 0;
+  });
+  expect(() => matrix.eigenvals()).toThrow();
+  expect(matrix.eigenvals(true, false).map(String)).toEqual(['3']);
+});
+
+it('specializes a symbolic matrix power at an integer exponent', () => {
+  const matrix = Matrix.of([[a, 1], [1, a]]);
+  expect(matrix.pow(x).subs(x, 2).expand().equals(matrix.mul(matrix).expand())).toBe(true);
+});

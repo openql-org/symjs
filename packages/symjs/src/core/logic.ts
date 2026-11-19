@@ -146,9 +146,14 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
       const numeric = impl.evalf(d, 15);
       if (isNum(numeric) && !numeric.isZero) return byCmp(numCmp(numeric, S.Zero));
     }
-    if (d instanceof Add && d.isNumber && impl.equalsZero?.(d)) return byCmp(0);
+    if (d instanceof Add && isRadicalExpression(d) && impl.equalsZero?.(d)) return byCmp(0);
   }
   return new Rel(op, lhs, rhs);
+}
+
+/** Exact arithmetic expressions over rationals and their radicals. */
+function isRadicalExpression(e: Expr): boolean {
+  return e instanceof Rational || (e instanceof Add || e instanceof Mul || e instanceof Pow && e.exp instanceof Rational) && e.args.every(isRadicalExpression);
 }
 
 /** A branch-bearing power that has not been reduced to real and imaginary parts. */

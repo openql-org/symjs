@@ -1022,7 +1022,11 @@ it('takes logarithms of two positive exponential terms', () => {
 
 it('keeps free coordinates in monic positive-dimensional systems', () => {
   const [x, y, z] = symbols('x y z');
-  expect(nonlinsolve([parse('x**2-y**2')], [x, y]).map((row) => row.map(String))).toEqual([['-y', 'y'], ['y', 'y']]);
+  const equation = parse('x**2-y**2');
+  expect(nonlinsolveCoordinates([equation], [x, y]).map((row) => row.map(String))).toEqual([['-y', 'y'], ['y', 'y']]);
+  expect(nonlinsolve([equation], [x, y]).map((row) => row.map(String))).toEqual([
+    ['-y', 'y'], ['y', 'y'], ['sqrt(y**2)', 'y'], ['-sqrt(y**2)', 'y'],
+  ]);
   const rows = nonlinsolve([parse('x**2+y**2-1'), parse('z-2')], [x, y, z]);
   expect(rows).toHaveLength(2);
   for (const row of rows) {
@@ -1069,4 +1073,8 @@ it('uses the symbolic residual if concrete evaluation is unavailable', async () 
   } finally {
     if (previous !== undefined) Object.defineProperty(impl, 'doit', previous);
   }
+});
+
+it('expands principal logarithms to expose a common generator', () => {
+  expect(show(solve(parse('sqrt(log(x))-log(sqrt(x))'), x))).toBe('[1, exp(4)]');
 });

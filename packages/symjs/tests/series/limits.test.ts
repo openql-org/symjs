@@ -956,3 +956,19 @@ it('requires a fixed shift for the Fibonacci ratio and a range for interval scal
   const unknown = sj.SymFunction('f')(index).div(sj.pi);
   expect(limit(unknown, index, oo)).toBeInstanceOf(sj.Limit);
 });
+
+it('compares bounded oscillations with the divergent term in a quotient', () => {
+  const x = symbol('x');
+  expect(limit(parse('log(x)/(log(x)+sin(x))'), x, oo)).toBe(sj.S.One);
+});
+
+it('leaves a quotient unresolved when the oscillatory term is not smaller', () => {
+  const x = symbol('x');
+  expect(limit(parse('log(x)/(log(x)+x*sin(x))'), x, oo)).toBeInstanceOf(sj.Limit);
+});
+
+it('returns Unsolved when the limiting argument is outside the function domain', () => {
+  const x = symbol('x');
+  const factorial = sj.fn('factorial2', [x.pow(-1)], { evaluate: false });
+  expect(sj.isUnsolved(sj.heuristics(factorial, x, sj.S.Zero, '+'))).toBe(true);
+});

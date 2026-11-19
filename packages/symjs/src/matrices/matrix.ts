@@ -491,7 +491,7 @@ export class Matrix {
   }
 
   /** Eigenvalues (with multiplicity) as roots of the characteristic polynomial. */
-  eigenvals(simplifyRoots = true): Expr[] {
+  eigenvals(simplifyRoots = true, errorWhenIncomplete = true): Expr[] {
     // SymPy _eigenvals: a triangular matrix has its diagonal entries as eigenvalues, in order
     const n = this.rows;
     const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -499,7 +499,7 @@ export class Matrix {
     const above = this.data.filter((_, k) => Math.floor(k / this.cols) < k % this.cols);
     if (this.isSquare && (below.every(isZero) || above.every(isZero))) return Array.from({ length: n }, (_, i) => this.get(i, i));
     const lam = new Sym('lambda_');
-    const values = roots(this.charpoly(lam), lam);
+    const values = roots(this.charpoly(lam), lam, { skipQuintic: !errorWhenIncomplete });
     return simplifyRoots ? values.map(simplify) : values;
   }
 

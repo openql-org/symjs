@@ -332,7 +332,7 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(continuousDomain(fn('acsc', [x], { evaluate: false }), x, Reals))).toBe('Union(Interval(-oo, -1), Interval(1, oo))');
   });
-  it.fails("test_continuous_domain:121", () => {
+  it("test_continuous_domain:121", () => {
     const x = new Sym('x');
     expect(sympyStr(continuousDomain(fn('coth', [x], { evaluate: false }), x, Reals))).toBe('Union(Interval.open(-oo, 0), Interval.open(0, oo))');
   });
@@ -340,18 +340,18 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(continuousDomain(fn('acsch', [x], { evaluate: false }), x, Reals))).toBe('Union(Interval.open(-oo, 0), Interval.open(0, oo))');
   });
-  it.fails("test_continuous_domain:121 (3)", () => {
+  it("test_continuous_domain:121 (3)", () => {
     const x = new Sym('x');
     expect(sympyStr(continuousDomain(fn('csch', [x], { evaluate: false }), x, Reals))).toBe('Union(Interval.open(-oo, 0), Interval.open(0, oo))');
   });
   it("test_continuous_domain:123", () => {
     expect(sympyStr(contains(new SetOp('Union', [interval(S.NegativeInfinity, Rational.of(0n, 1n, { gcd: 1n }), true, true), interval(Rational.of(0n, 1n, { gcd: 1n }), oo, true, true)]), Rational.of(0n, 1n, { gcd: 1n })))).toBe('False');
   });
-  it.fails("test_continuous_domain:124", () => {
+  it("test_continuous_domain:124", () => {
     const x = new Sym('x');
     expect(sympyStr(continuousDomain(new Pow(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), x]), new Pow(E, x)]), Rational.of(-1n, 1n, { gcd: 1n })), x, Reals))).toBe('Complement(Reals, ConditionSet(x, Eq(-x + exp(x), 0), Reals))');
   });
-  it.fails("test_continuous_domain:126", () => {
+  it("test_continuous_domain:126", () => {
     const x = new Sym('x');
     expect(sympyStr(continuousDomain(frac(new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))), x, interval(Rational.of(-2n, 1n, { gcd: 1n }), Rational.of(-1n, 1n, { gcd: 1n }), false, false)))).toBe('Union(Interval.open(-2, -sqrt(3)), Interval.open(-sqrt(2), -1), Interval.open(-sqrt(3), -sqrt(2)))');
   });
@@ -858,7 +858,7 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(maximum(fn('abs', [new Add([new Mul([Rational.of(24n, 1n, { gcd: 1n }), a]), new Mul([Rational.of(60n, 1n, { gcd: 1n }), new Pow(a, Rational.of(3n, 1n, { gcd: 1n }))])])], { evaluate: false }), a, interval(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), false, false)))).toBe('528');
   });
-  it.fails("test_maximum:338", () => {
+  it("test_maximum:338", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(maximum(new Mul([new Add([Rational.of(24n, 1n, { gcd: 1n }), new Mul([Rational.of(60n, 1n, { gcd: 1n }), new Pow(a, Rational.of(2n, 1n, { gcd: 1n }))])]), fn('abs', [a], { evaluate: false })]), a, interval(Rational.of(0n, 1n, { gcd: 1n }), Rational.of(2n, 1n, { gcd: 1n }), false, false)))).toBe('528');
   });
@@ -957,7 +957,7 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(maximum(new Mul([Rational.of(1n, 3n, { gcd: 1n }), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), Rational.of(-1n, 2n, { gcd: 1n })), new Add([Rational.of(-1n, 1n, { gcd: 1n }), x])]), x, Reals))).toBe('sqrt(3)/3');
   });
-  it.fails("test_issue_16469:383", () => {
+  it("test_issue_16469:383", () => {
     const a = new Sym('a', { real: true });
     expect(sympyStr(functionRange(fn('abs', [a], { evaluate: false }), a, Reals))).toBe('Interval(0, oo)');
   });
@@ -969,7 +969,7 @@ describe("sympy/calculus/tests/test_util.py", () => {
     const x = new Sym('x');
     expect(sympyStr(periodicity(new Pow(E, new Mul([pi, I, new Add([Rational.of(1n, 4n, { gcd: 1n }), new Mul([Rational.of(1n, 4n, { gcd: 1n }), x])])])), x))).toBe('8');
   });
-  it.fails("test_issue_25942:392", () => {
+  it("test_issue_25942:392", () => {
     const x = new Sym('x');
     expect(sympyStr(asSet(Relational(fn('acos', [x], { evaluate: false }), new Mul([Rational.of(1n, 3n, { gcd: 1n }), pi]), '>', { evaluate: false })))).toBe('Interval.Ropen(-1, 1/2)');
   });

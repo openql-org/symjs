@@ -858,3 +858,15 @@ it('exp is imaginary at the odd multiples of I*pi/2 (SymPy Pow._eval_is_imaginar
   const at = (k: string) => sj.isImaginary(new sj.Pow(sj.E, sj.mul(sj.I, sj.pi, sj.parse(k))));
   expect(['1', '2', '1/2', '3/2', '-1/2', '1/3'].map(at)).toEqual([false, false, true, true, true, 'unknown']);
 });
+
+it('evaluates sine and cosine at integer multiples of pi', () => {
+  const n = symbol('n', { integer: true });
+  expect(sin(mul(n, pi))).toBe(S.Zero);
+  expect(cos(mul(n, pi)).equals(pow(-1, n))).toBe(true);
+});
+
+it('preserves an unknown argument and evaluates a negative Bessel value', () => {
+  const f = sj.SymFunction('f')(x);
+  expect(String(arg(f))).toBe('arg(f(x))');
+  expect(arg(parse('besselj(0, 3)'))).toBe(pi);
+});

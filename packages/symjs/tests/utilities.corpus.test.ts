@@ -81,7 +81,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
   it("test_C16:223", () => {
     expect(sympyStr(sqrtdenest(new Pow(new Add([Rational.of(10n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(Rational.of(6n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(Rational.of(10n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(Rational.of(15n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])]), Rational.of(1n, 2n, { gcd: 1n }))))).toBe('sqrt(2) + sqrt(3) + sqrt(5)');
   });
-  it.fails("test_C17:229", () => {
+  it("test_C17:229", () => {
     expect(sympyStr(radsimp(new Mul([new Pow(new Add([new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])]), Rational.of(-1n, 1n, { gcd: 1n })), new Add([new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(Rational.of(3n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])]), { symbolic: true }))).toBe('2*sqrt(6) + 5');
   });
   it("test_C18:233", () => {
@@ -154,7 +154,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
   it("test_G18:416", () => {
     expect(sympyStr(expand(new Mul([Rational.of(1n, 2n, { gcd: 1n }), new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(Rational.of(5n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n }))])]), {}))).toBe('1/2 + sqrt(5)/2');
   });
-  it.fails("test_G20:429", () => {
+  it("test_G20:429", () => {
     const s = new Sym('s', { integer: true, positive: true });
     expect(sympyStr(continuedFractionReduce([[new Mul([Rational.of(2n, 1n, { gcd: 1n }), s])]]))).toBe('s + sqrt(s**2 + 1)');
   });
@@ -197,7 +197,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
   //   assert gcd(p1 * q, p2 * q, x, y, z) == q
   //   => 47*x**17*y**5*z**8 + 11*x**12*y**7*z**13 - 23*x**2*y**8*z**10
   it.todo("test_H8:483");
-  it.fails("test_H9:490", () => {
+  it("test_H9:490", () => {
     const x = new Sym('x', { zero: false });
     const n = new Sym('n', { integer: true });
     expect(sympyStr(gcd(new Add([new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, new Add([Rational.of(2n, 1n, { gcd: 1n }), n]))]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(x, new Add([Rational.of(4n, 1n, { gcd: 1n }), n]))])]), new Add([new Mul([Rational.of(3n, 1n, { gcd: 1n }), new Pow(x, n)]), new Mul([Rational.of(4n, 1n, { gcd: 1n }), new Pow(x, new Add([Rational.of(1n, 1n, { gcd: 1n }), n]))])]), {}))).toBe('x**n');
@@ -375,7 +375,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
   it("test_K9:837", () => {
     expect(sympyStr(simplify(Rational.of(0n, 1n, { gcd: 1n }), { inverse: false, rational: false, doit: true }))).toBe('0');
   });
-  it.fails("test_K10:842", () => {
+  it("test_K10:842", () => {
     const z = new Sym('z', { negative: true });
     expect(sympyStr(simplify(new Add([new Pow(z, Rational.of(-1n, 2n, { gcd: 1n })), new Mul([I, new Pow(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), z]), Rational.of(-1n, 2n, { gcd: 1n }))])]), { inverse: false, rational: false, doit: true }))).toBe('0');
   });
@@ -438,7 +438,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
     const a = new Sym('a', { positive: true });
     expect(sympyStr(expand(new Mul([new Pow(fn('log', [new Mul([b, new Pow(d, Rational.of(-1n, 1n, { gcd: 1n }))])], { evaluate: false }), Rational.of(-1n, 1n, { gcd: 1n })), fn('log', [new Mul([c, new Pow(a, Rational.of(-1n, 1n, { gcd: 1n }))])], { evaluate: false })]), {}))).toBe('-log(a)/(log(b) - log(d)) + log(c)/(log(b) - log(d))');
   });
-  it.fails("test_M26:1053", () => {
+  it("test_M26:1053", () => {
     const x = new Sym('x');
     const v1 = x;
     expect(sympyStr(solve(new Add([new Pow(fn('log', [x], { evaluate: false }), Rational.of(1n, 2n, { gcd: 1n })), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), fn('log', [new Pow(v1, Rational.of(1n, 2n, { gcd: 1n }))], { evaluate: false })])]), v1, { check: true, implicit: false, simplify: true, cubics: true }))).toBe('[1, exp(4)]');
@@ -743,7 +743,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
   it("test_R18:2000", () => {
     expect(sympyStr(simplify(new Add([new Mul([Rational.of(-1n, 2n, { gcd: 1n }), new Pow(fn('log', [Rational.of(2n, 1n, { gcd: 1n })], { evaluate: false }), Rational.of(2n, 1n, { gcd: 1n }))]), new Mul([Rational.of(1n, 12n, { gcd: 1n }), new Pow(pi, Rational.of(2n, 1n, { gcd: 1n }))])])))).toBe('-log(2)**2/2 + pi**2/12');
   });
-  it.fails("test_R24:2048", () => {
+  it("test_R24:2048", () => {
     const k = new Sym('k', { integer: true, positive: true });
     const m = new Sym('m', { integer: true, positive: true });
     expect(sympyStr(doit(Sum(Product(new Mul([k, new Pow(new Add([Rational.of(-1n, 1n, { gcd: 1n }), new Mul([Rational.of(2n, 1n, { gcd: 1n }), k])]), Rational.of(-1n, 1n, { gcd: 1n }))]), [k, Rational.of(1n, 1n, { gcd: 1n }), m]), [m, Rational.of(2n, 1n, { gcd: 1n }), oo])))).toBe('pi/2');
@@ -781,7 +781,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Pow(new Add([new Pow(Rational.of(3n, 1n, { gcd: 1n }), x), new Pow(Rational.of(5n, 1n, { gcd: 1n }), x)]), new Pow(x, Rational.of(-1n, 1n, { gcd: 1n }))), x, oo, '+'))).toBe('5');
   });
-  it.fails("test_T3:2132", () => {
+  it("test_T3:2132", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(new Mul([new Pow(new Add([fn('log', [x], { evaluate: false }), fn('sin', [x], { evaluate: false })]), Rational.of(-1n, 1n, { gcd: 1n })), fn('log', [x], { evaluate: false })]), x, oo, '+'))).toBe('1');
   });
@@ -1008,7 +1008,7 @@ describe("sympy/utilities/tests/test_wester.py", () => {
     const p = new Sym('p', { positive: true });
     expect(sympyStr(new Mul([new Pow(p, Rational.of(-1n, 1n, { gcd: 1n })), piecewise([new Add([new Mul([Rational.of(-2n, 1n, { gcd: 1n }), new Pow(pi, Rational.of(-1n, 1n, { gcd: 1n })), new Pow(p, Rational.of(2n, 1n, { gcd: 1n })), new Pow(new Dummy('n', {}, 1000000), Rational.of(-1n, 1n, { gcd: 1n })), fn('cos', [new Mul([pi, new Dummy('n', {}, 1000000)])], { evaluate: false })]), new Mul([Rational.of(2n, 1n, { gcd: 1n }), new Pow(pi, Rational.of(-2n, 1n, { gcd: 1n })), new Pow(p, Rational.of(2n, 1n, { gcd: 1n })), new Pow(new Dummy('n', {}, 1000000), Rational.of(-2n, 1n, { gcd: 1n })), fn('sin', [new Mul([pi, new Dummy('n', {}, 1000000)])], { evaluate: false })])]), And(Relational(new Dummy('n', {}, 1000000), S.NegativeInfinity, '>', { evaluate: false }), Relational(new Dummy('n', {}, 1000000), oo, '<', { evaluate: false }), Relational(new Dummy('n', {}, 1000000), Rational.of(0n, 1n, { gcd: 1n }), '!=', { evaluate: false }))], [Rational.of(0n, 1n, { gcd: 1n }), true], { evaluate: false }), fn('sin', [new Mul([pi, x, new Pow(p, Rational.of(-1n, 1n, { gcd: 1n })), new Dummy('n', {}, 1000000)])], { evaluate: false })]).subs(new Dummy('n', {}, 1000000), Rational.of(0n, 1n, { gcd: 1n })))).toBe('0');
   });
-  it.fails("test_X21:2864", () => {
+  it("test_X21:2864", () => {
     const x = new Sym('x');
     const p = new Sym('p', { positive: true });
     const n = new Sym('n', { positive: true, integer: true });

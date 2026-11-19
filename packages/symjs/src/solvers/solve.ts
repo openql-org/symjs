@@ -39,7 +39,7 @@ import { ExprMap } from '../core/exprmap';
 import { ordered } from '../core/match';
 import { generateBell } from '../utilities/iterables';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { expand, expandMul, expand_power_exp, withFactoredDenominators } from '../simplify/expand';
+import { expand, expandMul, expand_log, expand_power_exp, withFactoredDenominators } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { radsimp } from '../simplify/radsimp';
 import { simplify } from '../simplify/simplify';
@@ -532,6 +532,10 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   if (!rewritten.equals(num)) {
     const cancelled = cancel(rewritten);
     return solveRaw(f instanceof Add && f.args.some((term) => term.equals(x)) || polyCoefficients(cancelled, x) ? cancelled : rewritten, x, depth + 1);
+  }
+  if (some(num, (a) => a instanceof Fn && a.name === 'log')) {
+    const expanded = expand_log(num);
+    if (!expanded.equals(num)) return solveRaw(expanded, x, depth + 1);
   }
   throw new NotImplementedError(`solve: cannot solve ${f.toString()} for ${x.name}`);
 }

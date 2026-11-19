@@ -1,15 +1,5 @@
 {
   "cases": [
-    "sympy.calculus.tests.test_singularities:test_is_decreasing:94 #c741e359560e7ac4469d",
-    "sympy.calculus.tests.test_singularities:test_is_increasing:65 #e74b63b3ac3ad645d09b",
-    "sympy.calculus.tests.test_util:test_continuous_domain:121 #463ce7ec8e6a627a8d27",
-    "sympy.calculus.tests.test_util:test_continuous_domain:121 #ae07a6feedfb29d51fa3",
-    "sympy.calculus.tests.test_util:test_continuous_domain:124 #53e581e7a9797907e993",
-    "sympy.calculus.tests.test_util:test_continuous_domain:126 #acd6e93520408c0ea648",
-    "sympy.calculus.tests.test_util:test_is_convex:282 #fc4f227af8146e61e04c",
-    "sympy.calculus.tests.test_util:test_issue_16469:383 #8625e0b5923e687d0359",
-    "sympy.calculus.tests.test_util:test_issue_25942:392 #638c8bd1501fafb220ec",
-    "sympy.calculus.tests.test_util:test_maximum:338 #fe3f1cc2ab9e8a8840a5",
     "sympy.functions.elementary.tests.test_piecewise:test_issue_11045:967 #12448195fb52891da044",
     "sympy.functions.elementary.tests.test_piecewise:test_issue_22917:456 #8b754bab79b9ed035da4",
     "sympy.functions.elementary.tests.test_piecewise:test_issue_6900:1143 #d186c7619c89828b9fa5",
@@ -30,12 +20,7 @@
     "sympy.series.tests.test_order:test_order_conjugate_transpose:329 #93b9ca603b4a7950ccb7",
     "sympy.series.tests.test_order:test_order_conjugate_transpose:330 #fa3f3c23846e665faedc",
     "sympy.series.tests.test_order:test_order_conjugate_transpose:331 #2b635ad63626498c7478",
-    "sympy.utilities.tests.test_wester:test_M26:1053 #8c5ff8ee802e6660a294",
-    "sympy.utilities.tests.test_wester:test_P26:1639 #952fe8cf57a2835d3021",
-    "sympy.utilities.tests.test_wester:test_T3:2132 #e375a8683add7935f576",
     "sympy.utilities.tests.test_wester:test_V4:2347 #b8c794ea687242a94dd7",
-    "sympy.utilities.tests.test_wester:test_X21:2864 #b18f914e8e8c355b231c",
-    "sympy.utilities.tests.test_wester:test_X6:2693 #7d2a0e0ca506c6311b2a",
     "sympy.utilities.tests.test_wester:test_Y4:2929 #e5977d5b0c120c2c0263"
   ],
   "timeouts": []

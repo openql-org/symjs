@@ -3153,7 +3153,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   is_monotonic: monoAdapter(sj.isMonotonic),
   is_convex: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
-    if (args.length > 2) throw new Unsupported('multivariate convexity');
+    if (args.length > 2) return none(sj.isConvex(asExpr(args[0]), asSym(args[1]), ...args.slice(2).map(asSym)));
     return sj.isConvex(asExpr(args[0]), asSym(args[1]), (kw['domain'] as sj.SetExpr | undefined) ?? sj.Reals);
   },
   isprime: (args, kw) => (noKw(kw), sj.isprime(asExpr(args[0]))),
@@ -5874,7 +5874,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.adjugate': matrixMethod((m) => m.adjugate()),
   '.trace': matrixMethod((m) => m.trace()),
   '.eigenvals': (args, kw, self) => {
-    const vals = (self as Matrix).eigenvals();
+    const vals = (self as Matrix).eigenvals(true, (kw['error_when_incomplete'] ?? args[0]) !== false);
     return (kw['multiple'] ?? args[1]) === true ? new JsList(vals) : rootsDict(vals);
   },
   '.is_symmetric': (_args, kw, self) => {
@@ -8698,8 +8698,6 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   "sympy.functions.special.tests.test_zeta_functions:assert str(dirichlet_eta(I, I).evalf(n=10)) == '3.462349253 + 0.220285771*I'": '3.462349253 + 0.2202857711*I',
   // At z=1 SymPy gives erfi(1)+2*I. E_(1/2)(w)=sqrt(pi)*erfc(sqrt(w))/sqrt(w) requires a negative constant term.
   "sympy.functions.special.tests.test_error_functions:assert erfi(z).rewrite('expint') == sqrt(-z**2)/z - z*expint(S.Half, -z**2)/sqrt(S.Pi)": '-z*erfc(sqrt(-z**2))/sqrt(-z**2) - sqrt(-z**2)/z',
-  // Identifying ham with eggs makes the left difference empty, whereas {ham} becomes {eggs}.
-  "sympy.sets.tests.test_sets:assert FiniteSet('ham', 'eggs') - FiniteSet('eggs') == FiniteSet('ham')": 'Complement({ham}, {eggs})',
   // With x=1 and y=0 the left difference is empty, while {1} minus {y} contains 1.
   "sympy.sets.tests.test_sets:assert Complement(FiniteSet(1, 2, x), FiniteSet(x, y, 2, 3)) == \\\n        Complement(FiniteSet(1), FiniteSet(y), evaluate=False)": 'Complement({1}, {2, 3, x, y})',
   // (0, 0) is in the square and cannot be a triple in the cube.

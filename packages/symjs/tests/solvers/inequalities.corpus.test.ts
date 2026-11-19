@@ -309,7 +309,7 @@ describe("sympy/calculus/tests/test_singularities.py", () => {
     const [y, x] = symbols('y x');
     expect(sympyStr(isIncreasing(new Add([y, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), interval(Rational.of(1n, 1n, { gcd: 1n }), oo, false, true), x))).toBe('True');
   });
-  it.fails("test_is_increasing:65", () => {
+  it("test_is_increasing:65", () => {
     const x = new Sym('x');
     const a = new Sym('a', { negative: true });
     expect(sympyStr(isIncreasing(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), a, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), interval(Rational.of(1n, 1n, { gcd: 1n }), oo, false, true), x))).toBe('True');
@@ -358,7 +358,7 @@ describe("sympy/calculus/tests/test_singularities.py", () => {
   it("test_is_decreasing:93", () => {
     expect(sympyStr(isUnsolved(false))).toBe('False');
   });
-  it.fails("test_is_decreasing:94", () => {
+  it("test_is_decreasing:94", () => {
     const x = new Sym('x');
     const b = new Sym('b', { positive: true });
     expect(sympyStr(isDecreasing(new Mul([Rational.of(-1n, 1n, { gcd: 1n }), b, new Pow(x, Rational.of(2n, 1n, { gcd: 1n }))]), interval(S.NegativeInfinity, Rational.of(0n, 1n, { gcd: 1n }), true, false), x))).toBe('False');
