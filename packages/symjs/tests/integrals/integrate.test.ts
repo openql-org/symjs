@@ -238,7 +238,7 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.integrate(P('sin(x)*cos(2*x)'), x)", () => sj.integrate(P('sin(x)*cos(2*x)'), x), "Integral(sin(x)*cos(2*x), x)", "2*sin(x)*sin(2*x)/3 + cos(x)*cos(2*x)/3"],
     // not implemented in symjs (SymPy's result shown)
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('sin(x**2)**2'), x)", () => sj.integrate(P('sin(x**2)**2'), x), "Integral(sin(x**2)**2, x)", "-5*x*gamma(-5/4)/(8*gamma(-1/4)) + 5*sqrt(pi)*fresnelc(2*x/sqrt(pi))*gamma(-5/4)/(16*gamma(-1/4))"],
+    ["sj.integrate(P('sin(x**2)**2'), x)", () => sj.integrate(P('sin(x**2)**2'), x), "x/2 - sqrt(pi)*fresnelc(2*x/sqrt(pi))*gamma(1/4)/(16*gamma(5/4))", "-5*x*gamma(-5/4)/(8*gamma(-1/4)) + 5*sqrt(pi)*fresnelc(2*x/sqrt(pi))*gamma(-5/4)/(16*gamma(-1/4))"],
     ["sj.integrate(P('sin(x)*exp(x)*x'), x)", () => sj.integrate(P('sin(x)*exp(x)*x'), x), "x*(exp(x)*sin(x)/2 - exp(x)*cos(x)/2) + exp(x)*cos(x)/2", "x*exp(x)*sin(x)/2 - x*exp(x)*cos(x)/2 + exp(x)*cos(x)/2"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('log(x)**(1/2)*x'), x)", () => sj.integrate(P('log(x)**(1/2)*x'), x), "Integral(x*sqrt(log(x)), x)", "sqrt(2)*(sqrt(2)*x**2*sqrt(-log(x)) + sqrt(pi)*erfc(sqrt(2)*sqrt(-log(x)))/2)*sqrt(log(x))/(4*sqrt(-log(x)))"],
@@ -912,4 +912,37 @@ it('constructs the Integral of a self-integrating integrand through that integra
   // an unevaluated product integrates as any other expression (SymPy raises an AttributeError)
   expect(sj.integral(sj.Cross(i, j), a).kind).toBe('Integral');
   expect(sj.integral(i, [a, 0]).kind).toBe('Integral');
+});
+
+it('keeps singularities and zero slopes separate in elementary integration rules', () => {
+  const rate = sj.add(a, b);
+  const f = sj.exp(sj.add(sj.mul(rate, x), 1));
+  expect(integrate(f, x).subs(a, sj.mul(-1, b)).equals(sj.mul(x, sj.E))).toBe(true);
+  const radical = P('sqrt(3*x**2-5)'), point = sj.rational(3, 2);
+  expect(diff(integrate(radical, x), x).subs(x, point).toNumber()).toBeCloseTo(radical.subs(x, point).toNumber(), 10);
+  for (const source of ['sin(x**2)*sin(x)', 'sin(x**3)**2', 'cos(x**2)**4', 'x*acos(a*x)', 'sqrt(log(x))*x**2', 'li(1/x)']) {
+    const body = P(source);
+    expect(integrate(body, x).equals(sj.integral(body, x))).toBe(true);
+  }
+});
+
+it('computes the mean on either side of the unit circle and keeps poles on it', () => {
+  const period = [0, sj.mul(2, sj.pi)] as const;
+  expect(integrate(P('1/(1+2*exp(I*x))'), x, period)).toBe(sj.S.Zero);
+  expect(integrate(P('1/(1+exp(I*x))'), x, period)).toBeInstanceOf(sj.Integral);
+  expect(integrate(P('sin(1/x)'), x, [-1, 1])).toBe(sj.S.Zero);
+});
+
+it('evaluates the parameter branches of heuristic primitives at both bounds', () => {
+  const f = P('cos(a*x+b)');
+  const primitive = integrate(f, x, [1, y], { heurisch: true });
+  expect(primitive.subs(a, 0).equals(P('y*cos(b)-cos(b)'))).toBe(true);
+  expect(integrate(f, x, undefined, { heurisch: true, conds: 'none' }).equals(P('sin(a*x+b)/a'))).toBe(true);
+  expect(sj.ask(sj.Q.zero(sj.integral(0, [x, 0, 1])))).toBe(true);
+  expect(sj.ask(sj.Q.zero(sj.integral(1, [x, 0, 1])))).toBe(false);
+});
+
+it('recognizes uncovered intervals and known nonreal poles', () => {
+  expect(integrate(sj.piecewise([1, sj.Gt(x, 2)]), x, [0, pp])).toBe(sj.S.NaN);
+  expect(integrate(P('1/(x+I*p)**2'), x, [0, 1]).equals(P('-1/(I*p+1)-I/p'))).toBe(true);
 });

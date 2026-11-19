@@ -21,8 +21,7 @@
  *
  * Not ported: the recursive rewriting of factors through Mellin transforms,
  * the lookup entries of Prudnikov 8.4.2 (12, 13), log(Abs(t - a)), the
- * elliptic integrals and the rewriting of hyperbolic functions as
- * exponentials.
+ * elliptic integrals.
  */
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
@@ -1003,9 +1002,7 @@ function meijerintIndefinite1(f: Expr, x: Sym): Expr | undefined {
  * undefined (SymPy meijerint_indefinite). A result without G-functions or
  * hypergeometric functions is preferred.
  *
- * Difference from SymPy: SymPy tries again with the hyperbolic functions
- * written as exponentials; that retry is not done here (the G-function table
- * has sinh and cosh, and the integrands it would add are not rewritten here).
+ * Linear hyperbolic factors are rewritten as the sum of two exponentials.
  */
 export function meijerintIndefinite(fIn: ExprLike, x: Sym): Expr | undefined {
   const f = sympify(fIn);
@@ -1017,6 +1014,25 @@ export function meijerintIndefinite(fIn: ExprLike, x: Sym): Expr | undefined {
     const res = xreplace(r, [[x, sub(x, a)]]);
     if (!some(res, (n) => n instanceof Hyper || n instanceof MeijerG)) return res;
     results.push(res);
+  }
+  if (f instanceof Mul) {
+    const hyperbolic = f.args.find(t => isFnN(t, 'cosh') || isFnN(t, 'sinh'));
+    if (hyperbolic !== undefined) {
+      const u = first(hyperbolic.args), rate = coeffExp(u, x);
+      const rest = mul(...f.args.filter(t => t !== hyperbolic));
+      if (rate?.[1].equals(S.One) && rest instanceof Pow && rest.base.equals(S.E)) {
+        const slope = coeffExp(rest.exp, x);
+        if (slope?.[1].equals(S.One)) {
+          const a = slope[0], b = rate[0], plus = add(a, b), minus = sub(a, b);
+          const sign = isFnN(hyperbolic, 'cosh') ? S.One : S.NegOne;
+          if (plus.equals(S.Zero) || minus.equals(S.Zero)) {
+            const term = (k: Expr) => k.equals(S.Zero) ? x : div(exp(mul(k, x)), k);
+            return mul(half, add(term(plus), mul(sign, term(minus))));
+          }
+          return div(mul(half, rest, add(mul(minus, exp(u)), mul(sign, plus, exp(neg(u))))), sub(pow(a, 2), pow(b, 2)));
+        }
+      }
+    }
   }
   // (SymPy next(ordered(results)))
   return ordered(results)[0];
@@ -1053,12 +1069,7 @@ function checkAntecedentsInversion(g0: MeijerG, x: Sym): Expr | boolean {
   const theta = div(add(R(1 - sigma, 2), ...g.bq, ...g.ap.map(neg)), sigma);
   const delta = g.delta;
   if (!(isPositive(sub(delta, div(e, 2))) === true || sub(delta, div(e, 2)).key === S.Zero.key || (p >= 1 && p >= q))) return false;
-  for (const a of g.an) {
-    for (const b of g.bm) {
-      const d = sub(a, b);
-      if (isRat(d) && d.isInteger && d.isPositive) return false;
-    }
-  }
+  // meijerg() has already excluded overlapping upper and lower numerator poles.
   const E = (zz: Expr) => and(...g.an.map((a) => statement(sub(a, 1), S.Zero, S.Zero, zz)));
   if (p >= q) return E(z);
   const H = (zz: Expr) => statement(theta, R(-sigma), R(1, sigma), zz);

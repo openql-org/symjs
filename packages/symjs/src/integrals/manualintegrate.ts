@@ -13,6 +13,7 @@
  */
 
 import { isNegative, isPositive, isNonZero, isReal } from '../core/assumptions';
+import { lcm } from '../core/numbers';
 import { at, defined, getOrThrow } from '../core/guard';
 import { Ne, piecewise } from '../core/logic';
 import { asIndependent, isRationalFunction } from '../core/methods';
@@ -98,6 +99,41 @@ export function manualintegrate(f: ExprLike, x: Sym): Expr {
       if (multiple instanceof Rational && multiple.isInteger && multiple.p > 1n) {
         const expanded = expandMul(mul(expand_trig(trig), pow(cos(v), -1)));
         return manualintegrate(expanded, x);
+      }
+    }
+  }
+  // An odd sine power over cosine becomes a rational polynomial in u = cos(v)**2.
+  if (e instanceof Mul && factors.length === 2) {
+    const odd = factors.find((g): g is Pow => g instanceof Pow && g.base instanceof Fn && g.base.name === 'sin' && g.exp instanceof Rational && g.exp.isInteger && g.exp.p > 1n && g.exp.p % 2n === 1n);
+    if (odd && odd.exp instanceof Rational) {
+      const v = at(odd.base.args, 0), slope = diff(v, x);
+      if (e.equals(mul(odd, pow(cos(v), -1))) && !slope.has(x) && isNonZero(slope) === true) {
+        const u = new Dummy('u'), numerator = pow(add(1, mul(-1, u)), (odd.exp.p - 1n) / 2n);
+        const primitive = impl.integrate(expand(mul(numerator, pow(u, -1))), u);
+        return expandMul(mul(S.NegHalf, pow(slope, -1), xreplace(primitive, [[u, pow(cos(v), 2)]])));
+      }
+    }
+  }
+  // Rational powers of proportional affine forms have one common radical.
+  const radicals = [...preorderTraversal(e)].filter((g): g is Pow & { exp: Rational } => g instanceof Pow && g.exp instanceof Rational && !g.exp.isInteger && g.base.has(x));
+  if (radicals.length > 1) {
+    const base = radicals.reduce((a, b) => a.exp.q >= b.exp.q ? a : b).base, pc = polyCoefficients(base, x);
+    if (pc && Math.max(...pc.keys()) === 1) {
+      const ratios = radicals.map(r => cancel(mul(r.base, pow(base, -1))));
+      if (ratios.every(r => r instanceof Rational && r.isPositive)) {
+        const degree = radicals.reduce((d, r) => lcm(d, r.exp.q), 1n);
+        const u = new Dummy('u'), slope = getOrThrow(pc, 1);
+        const replacements: [Expr, Expr][] = radicals.map((r, i) => [r, mul(pow(at(ratios, i), r.exp), pow(u, mul(degree, r.exp)))]);
+        replacements.push([x, mul(add(pow(u, degree), mul(-1, pc.get(0) ?? S.Zero)), pow(slope, -1))]);
+        const transformed = expandMul(mul(degree, pow(u, degree - 1n), xreplace(e, replacements)));
+        if (isRationalFunction(transformed, [u]) && isNonZero(slope) === true) {
+          const terms = transformed instanceof Add ? transformed.args : [transformed];
+          const primitive = add(...terms.map(t => {
+            const [c, f] = asIndependent(t, [u], { asAdd: false });
+            return mul(c, impl.integrate(f, u));
+          }));
+          return xreplace(expandMul(mul(pow(slope, -1), primitive)), [[u, pow(base, Rational.of(1n, degree))]]);
+        }
       }
     }
   }

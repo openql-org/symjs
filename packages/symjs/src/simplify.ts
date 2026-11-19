@@ -26,7 +26,7 @@ export {
   ncSimplify,
   type SimplifyOptions,
 } from './simplify/simplify';
-export { hyperexpand, Hyper_Function, G_Function, Operator, Formula, HyperRep, devisePlan, devisePlanMeijer, reduceOrder, reduceOrderMeijer, type HyperexpandOptions } from './simplify/hyperexpand';
+export { powdenestPolar, hyperexpand, Hyper_Function, G_Function, Operator, Formula, HyperRep, devisePlan, devisePlanMeijer, reduceOrder, reduceOrderMeijer, type HyperexpandOptions } from './simplify/hyperexpand';
 export { ratsimpmodprime } from './simplify/ratsimp';
 export { basicCompare as compare } from './simplify/csemain';
 export { gammasimp, combsimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';

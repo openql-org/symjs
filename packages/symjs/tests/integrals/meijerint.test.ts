@@ -7,7 +7,7 @@
 // quoted and the value is checked against the integral computed numerically (mpmath).
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Piecewise, Rational, Sym, abs, add, and, arg, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
+import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Piecewise, Rational, Rel, S, Sym, abs, add, and, arg, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
 import { CoeffExpError, condsimp, findSplittingPoints, getCoeffExp, liftPolar, laplaceBesselProduct, meijerintDefinite, meijerintIndefinite, meijerintInversion, rewriteSingle, splitMul, unpolarifyExponents } from '../../src/integrals/meijerint';
 
 const R = (p: number, q: number): Expr => Rational.of(BigInt(p), BigInt(q));
@@ -271,4 +271,23 @@ describe('meijerint_indefinite', () => {
     // SymPy: x*exp(-1/x) + Ei(exp_polar(I*pi)/x), here with a constant added as above
     expect(ind('exp(-1/x)')).toContain('x*exp(-1/x)');
   });
+});
+
+it('integrates hyperbolic functions with exponential weights, including coincident rates', () => {
+  for (const [f, derivative] of [
+    ['exp(-t*x)*cosh(x)', '((1-t)*exp(-x)+(-1-t)*exp(x))*exp(-t*x)/(2*(t**2-1))'],
+    ['exp(x)*sinh(x)', 'exp(2*x)/4-x/2'],
+    ['exp(-x)*cosh(x)', 'x/2-exp(-2*x)/4'],
+  ] as const) {
+    expect(meijerintIndefinite(P(f), x)?.expand().equals(P(derivative).expand())).toBe(true);
+  }
+  for (const f of ['exp(x**2)*cosh(x)', 'sin(x)*cosh(x)', 'exp(x)*sinh(x**2)', 'exp(sin(x))*sinh(x)', 'exp(x)*cosh(sin(x))']) {
+    expect(meijerintIndefinite(P(f), x)).toBeUndefined();
+  }
+});
+
+it('rewrites modified Bessel functions and evaluates the integral of zero on a half-line', () => {
+  expect(rewriteSingle(P('besseli(a,x)'), x)?.[0]).toHaveLength(1);
+  expect(run('0', '0', 'oo')).toEqual(['0', 'True']);
+  expect(String(condsimp(new Rel('Eq', I, S.Zero)))).toBe('Eq(I, 0)');
 });

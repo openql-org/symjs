@@ -40,14 +40,14 @@ import { fn as fnErf } from '../functions/elementary/elementary';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { trigsimp, expsimp, hasTrigFunctions } from '../simplify/trigsimp';
-import { meijerintDefinite } from './meijerint';
+import { meijerintDefinite, meijerintIndefinite } from './meijerint';
 import { NonElementaryIntegral, rischHooks, rischIntegrate } from './risch';
 import { isDiracDelta, isHeaviside, isSingularityFunction } from './transforms/delta';
 import { deltaIntegral } from './deltafunctions';
 import { singularityIntegral } from './singularityfunctions';
 import { cancelFraction, isRationalIn, ratint } from './rationaltools';
 import { trigintegrate } from './trigonometry';
-import { heurisch, heurischTrig } from './heurisch';
+import { heurisch, heurischTrig, heurischWrapper } from './heurisch';
 import { manualintegrate, sqrtQuadraticRule } from './manualintegrate';
 import { floor, Max, Min, sign } from '../functions/special/special';
 import { and, or, BoolOp } from '../core/boolalg';
@@ -212,6 +212,10 @@ class Integrator {
     const pc = polyCoefficients(f.base, x);
     if (!pc || Math.max(...pc.keys()) !== 2) return undefined;
     const [a, b, c] = [getOrThrow(pc, 2), pc.get(1) ?? S.Zero, pc.get(0) ?? S.Zero];
+    if (isZeroR(b) && isNegativeQ(c) === true) {
+      if (a.equals(S.One)) return mul(S.Half, add(mul(x, f), mul(c, log(add(x, f)))));
+      if (a.equals(S.NegOne)) return add(mul(S.Half, x, f), mul(S.Half, c, atan(mul(x, pow(f, -1)))));
+    }
     if (!(a instanceof Rational && b instanceof Rational && c instanceof Rational)) return undefined;
     // the discriminant b**2 - 4*a*c
     const disc = numAdd(numMul(b, b), numNeg(numMul(Rational.of(4n), numMul(a, c))));
@@ -318,7 +322,14 @@ class Integrator {
         const lin = this.linear(n);
         if (lin) {
           const [a] = lin;
-          if (isE(b)) return this.nonzero(a, f, () => mul(f, pow(a, -1)));
+          if (isE(b)) {
+            if (a instanceof Add) {
+              const rate = diff(n, x);
+              return this.noConditions ? mul(expandFull(f), pow(rate, -1))
+                : piecewise([mul(f, pow(rate, -1)), Ne(rate, 0)], [mul(x, exp(lin[1])), true]);
+            }
+            return this.nonzero(a, f, () => mul(f, pow(a, -1)));
+          }
           return this.nonzero(a, f, () => mul(f, pow(mul(a, log(b)), -1)));
         }
       }
@@ -362,6 +373,14 @@ class Integrator {
     if (f instanceof Fn) {
       const u = at(f.args, 0);
       const lin = this.linear(u);
+      if (f.name === 'li') {
+        const [scale, monomial] = asIndependent(u, [x], { asAdd: false });
+        if (monomial instanceof Pow && monomial.base.equals(x) && monomial.exp instanceof Rational && !monomial.exp.isZero) {
+          const inverse = numInv(monomial.exp);
+          const correction = mul(x, pow(u, numNeg(inverse)), fnErf('Ei', [mul(add(1, inverse), log(u))]));
+          if (!monomial.exp.equals(S.NegOne)) return piecewise([add(mul(x, f), mul(-1, correction)), Ne(scale, 0)], [S.Zero, true]);
+        }
+      }
       if ((f.name === 'sin' || f.name === 'cos') && u instanceof Fn && u.name === 'log') {
         const rate = cancel(mul(x, diff(u, x)));
         if (rate instanceof Rational) {
@@ -500,6 +519,17 @@ class Integrator {
   // ---- sin^m cos^n ---------------------------------------------------------
 
   private trigPowers(f: Expr): R {
+    if (f instanceof Mul && f.args.length === 2 && f.args.every(t => t instanceof Fn && t.name === 'sin')) {
+      const [s, t] = pair(f.args), u = at(s.args, 0), v = at(t.args, 0);
+      const a = this.linear(u), b = this.linear(v);
+      if (a && b && isZeroR(a[1]) && isZeroR(b[1]) && !a[0].equals(b[0])) {
+        const k = a[0], m = b[0], x = this.x, den = pow(add(pow(k, 2), mul(-1, pow(m, 2))), -1);
+        const general = add(mul(m, s, cos(v), den), mul(-1, k, t, cos(u), den));
+        // At equal frequencies integration by parts reduces the product to sin(v)**2.
+        const resonant = add(mul(S.Half, x, pow(t, 2)), mul(S.Half, x, pow(cos(v), 2)), mul(S.NegHalf, t, cos(v), pow(m, -1)));
+        return piecewise([S.Zero, and(Eq(k, 0), Eq(m, 0))], [expand(mul(-1, resonant)), Eq(k, mul(-1, m))], [resonant, Eq(k, m)], [general, true]);
+      }
+    }
     let m = 0;
     let n = 0;
     let u: Expr | undefined;
@@ -519,7 +549,11 @@ class Integrator {
     }
     if (u === undefined || m + n < 2) return undefined;
     const lin = this.linear(u);
-    if (!lin) return undefined;
+    if (!lin) {
+      if (m + n !== 2 || (m !== 0 && n !== 0)) return undefined;
+      const wave = this.fresnel(cos(mul(2, u)));
+      return wave === undefined ? undefined : add(mul(S.Half, this.x), mul(n === 2 ? S.Half : S.NegHalf, wave));
+    }
     const [a] = lin;
     const s = new Sym('_u');
     const polyInt = (p: Expr): Expr => {
@@ -584,6 +618,15 @@ class Integrator {
 
     if (others.length === 1) {
       const g = at(others, 0);
+      if (g instanceof Fn && g.name === 'acos' && P.equals(x)) {
+        const u = at(g.args, 0), linear = this.linear(u);
+        if (linear && isNonZero(linear[0]) === true) {
+          const [slope, offset] = linear, root = sqrt(add(1, mul(-1, pow(u, 2))));
+          // Substitute u = slope*x + offset and integrate u*acos(u) by parts.
+          return mul(pow(slope, -2), add(mul(add(mul(S.Half, pow(u, 2)), Rational.of(-1, 4), mul(-1, offset, u)), g),
+            mul(add(offset, mul(Rational.of(-1, 4), u)), root)));
+        }
+      }
       // P * exp(a*x + b)
       if (isExp(g)) {
         const lin = this.linear(g.exp);
@@ -639,6 +682,18 @@ class Integrator {
           const regular = cancel(mul(add(q, mul(-1, constant)), pow(x, -1)));
           return add(mul(exponential, q, log(x)), mul(-1, exponential, this.exponentialPolynomial(regular, rate)),
             mul(-1, constant, exp(shift), fnErf('Ei', [mul(rate, x)])));
+        }
+      }
+    }
+    // With u = sqrt(log(x)), x**(-k-1)*sqrt(log(x))*dx becomes 2*u**2*exp(-k*u**2)*du.
+    if (f instanceof Mul && f.has(sqrt(log(x)))) {
+      const rest = mul(f, pow(log(x), S.NegHalf));
+      if (rest instanceof Pow && rest.base.equals(x)) {
+        const k = add(-1, mul(-1, rest.exp));
+        if (isPositiveQ(k) === true && !k.has(x)) {
+          const root = sqrt(log(x));
+          return add(mul(-1, pow(x, mul(-1, k)), root, pow(k, -1)),
+            mul(S.NegHalf, sqrt(S.Pi), pow(k, Rational.of(-3, 2)), fnErf('erfc', [mul(sqrt(k), root)])));
         }
       }
     }
@@ -1294,8 +1349,19 @@ function otherMethods(f: Expr, x: Sym): Expr | undefined {
     if (some(f, (e) => e instanceof Float)) return undefined;
     // SymPy tries the manual rules after the elementary algorithms. The active
     // method guard also lets their unresolved subproblems return unevaluated.
+    // The parallel Risch algorithm works over towers of exponentials and algebraic logarithmic extensions.
+    if (f instanceof Mul && f.args.every(isExp)) return heurischWrapper(f, x, { retries: 0 });
+    if (some(f, t => t instanceof Pow && t.exp.equals(S.Half) && t.base.has(log(x)))) {
+      const elementary = heurisch(f, x, { retries: 0 });
+      if (elementary !== undefined) return elementary;
+    }
     const manual = manualintegrate(f, x);
-    return some(manual, (e) => e instanceof Integral) ? undefined : manual;
+    if (!some(manual, (e) => e instanceof Integral)) return manual;
+    if (some(f, t => t instanceof Pow && t.base.equals(x) && !(t.exp instanceof Rational) && !t.exp.has(x))) {
+      const result = meijerintIndefinite(f, x);
+      return result && isNonZero(x) === true ? expandFull(result) : result;
+    }
+    return undefined;
   } finally {
     activeMethods.delete(key);
   }
@@ -1381,10 +1447,17 @@ export function integral(ex: ExprLike, ...limits: readonly (ExprLike | readonly 
   return result;
 }
 
-export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none' } = {}): Expr {
+export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none'; heurisch?: boolean } = {}): Expr {
   if (!(x instanceof Sym)) throw new RangeError('integrate: the integration variable must be a symbol');
   let f = sympify(ex);
-  if (f instanceof Integral && impl.doit) f = impl.doit(f);
+  if (f instanceof Integral && impl.doit) {
+    // On an interval with nonnegative endpoints its interior variable is positive.
+    // Carry that fact into inner integrals before deciding where their poles lie.
+    if (limits && limits.every(v => fact(sympify(v), 'nonnegative') === true) && !f.boundSymbols.some(v => v.equals(x))) {
+      const positive = new Dummy(x.name, { positive: true });
+      f = subs(impl.doit(subs(f, [[x, positive]])), [[positive, x]]);
+    } else f = impl.doit(f);
+  }
   if (f instanceof Concrete && f.kind2 === 'Sum') {
     const bounds = f.limits.flat();
     if (bounds.some((v) => v.has(x))) throw new RangeError('A summation limit depends on the integration variable');
@@ -1479,7 +1552,24 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     const r = integratePiecewise(f, x);
     if (r) return r;
   }
-  const F0 = f instanceof Piecewise ? integratePiecewise(f, x) : (new Integrator(x, opts.conds === 'none').integrate(f) ?? otherMethods(f, x));
+  // The mean over a full period of 1/(a+b*exp(I*x)) is its constant Fourier coefficient.
+  if (limits && sympify(limits[0]).equals(S.Zero) && sympify(limits[1]).equals(mul(2, S.Pi)) && f instanceof Pow && f.exp.equals(S.NegOne)) {
+    const coefficients = polyCoefficients(f.base, exp(mul(S.I, x)));
+    const a = coefficients?.get(0), b = coefficients?.get(1);
+    if (coefficients?.size === 2 && a instanceof Rational && b instanceof Rational) {
+      const sign = cmpReal(pow(a, 2), pow(b, 2));
+      if (sign === 1) return mul(2, S.Pi, numInv(a));
+      if (sign === -1) return S.Zero;
+    }
+  }
+  const F0 = opts.heurisch ? (opts.conds === 'none' ? heurisch(f, x) : heurischWrapper(f, x))
+    : f instanceof Piecewise ? integratePiecewise(f, x) : (new Integrator(x, opts.conds === 'none').integrate(f) ?? otherMethods(f, x));
+  if (opts.heurisch && limits && F0 instanceof Piecewise && F0.pairs.every(([, c]) => !c.has(x)) && singularPoints(f, x, sympify(limits[0]), sympify(limits[1]))?.length === 0) {
+    return piecewise(...F0.pairs.map(([v, c]): [Expr, Expr] => {
+      const condition = c instanceof Rel && c.op === 'Ne' && c.rhs.equals(S.Zero) ? and(Gt(c.lhs, S.NegativeInfinity), Lt(c.lhs, S.Infinity), c) : c;
+      return [add(subs(v, [[x, sympify(limits[1])]]), mul(-1, subs(v, [[x, sympify(limits[0])]]))), condition];
+    }));
+  }
   const F = F0 && continuousAtan(F0);
   if (!limits) return F ?? new Integral([f, x]);
   const a = sympify(limits[0]);
@@ -1687,9 +1777,13 @@ export function realIntegrand(f: Expr, x: Sym): Expr | undefined {
     if (!(e instanceof Fn) || !['abs', 'sign', 'Min', 'Max'].includes(e.name) || !e.has(x)) continue;
     const args = e.args;
     if (args.length > 2) return undefined;
-    const p = args.length === 1 ? at(args, 0) : add(at(args, 0), mul(-1, at(args, 1)));
+    // Exponentiation preserves the order of real arguments.
+    const realX = new Dummy('x', { real: true });
+    const values = args.length === 2 && args.every(isExp) && args.every(v => isReal(xreplace(v.exp, [[x, realX]])) === true)
+      ? args.map(v => v.exp) : args;
+    const p = values.length === 1 ? at(values, 0) : add(at(values, 0), mul(-1, at(values, 1)));
     const pc = polyCoefficients(p, x);
-    if (pc === undefined || [...pc.keys()].some((k) => k > 3) || isReal(xreplace(p, [[x, new Dummy('x', { real: true })]])) !== true) return undefined;
+    if (pc === undefined || [...pc.keys()].some((k) => k > 3) || fact(xreplace(p, [[x, realX]]), 'extended_real') !== true) return undefined;
     targets.push([e, p]);
     for (const r of roots(p, x)) {
       if (rootIsReal(r) === false) continue;

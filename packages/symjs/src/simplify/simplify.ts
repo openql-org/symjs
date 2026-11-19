@@ -27,6 +27,7 @@ import { nsimplify, nfloat } from '../numeric/nfloat';
 import { simplifyRelation } from '../core/relational';
 import { isNegative } from '../core/assumptions';
 import type { Truth } from '../core/truth';
+import { simplifyLogic } from '../logic/minimize';
 import { BoolOp, and } from '../core/boolalg';
 import { simplifyBoolean } from '../logic/minimize';
 import { Ge, Gt, Le, Lt, canonicalRelation, piecewise } from '../core/logic';
@@ -263,7 +264,10 @@ function simplifyPiecewise(e: Piecewise, opts: SimplifyOptions): Expr {
       equations.splice(i + 1, equations.length, ...equations.slice(i + 1).map((other) => subs(other, replacement)));
       remaining = remaining.map((other) => subs(other, replacement));
     }
-    const tests = remaining.map((test) => test instanceof Rel ? simplify(test, { ...opts, doit: false }) : test);
+    const tests = remaining.map((test) => {
+      if (test instanceof BoolOp && test.op === 'Or') return simplifyLogic(simplify(test, { ...opts, doit: false }));
+      return test instanceof Rel ? simplify(test, { ...opts, doit: false }) : test;
+    });
     return [simplify(value, { ...opts, doit: false }), and(...equations, ...tests)];
   });
   for (let i = pairs.length - 2; i >= 0; i--) {
