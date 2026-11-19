@@ -36,7 +36,7 @@ describe("sympy/integrals/tests/test_prde.py", () => {
     const x = new Sym('x');
     expect(sympyStr([at(PolyMatrix.fromList(4, 4, [-1, 0, 0, 0, 0, -1, 1, 0, 0, 0, -1, 1, 0, 0, 0, 0], [], new PolyMatrixRing(QQ, [x])).nullspace(), 0)])).toBe('[PolyMatrix([\n[0],\n[1],\n[1],\n[1]], ring=QQ[x])]');
   });
-  it.fails("test_param_poly_rischDE:193", () => {
+  it("test_param_poly_rischDE:193", () => {
     const x = new Sym('x');
     expect(sympyStr(Poly.from(x, [x], { domain: 'QQ', pure: false }).add(Poly.from(Rational.of(0n, 1n, { gcd: 1n }), [x], { domain: 'QQ', pure: false })))).toBe('Poly(x, x, domain=\'QQ\')');
   });
@@ -44,7 +44,7 @@ describe("sympy/integrals/tests/test_prde.py", () => {
     const x = new Sym('x');
     expect(sympyStr([at(PolyMatrix.fromList(6, 6, [-1, 0, 0, Rational.of(-2n, 3n, { gcd: 1n }), Rational.of(-1n, 3n, { gcd: 1n }), 0, 0, -1, 0, 1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 0, 0, -1, 0, -5, 0, 0, 0, 0, -1, 1, 0, 0, 0, 0, 0, 0], [], new PolyMatrixRing(QQ, [x])).nullspace(), 0)])).toBe('[PolyMatrix([\n[ 3],\n[-5],\n[ 1],\n[-5],\n[ 1],\n[ 1]], ring=QQ[x])]');
   });
-  it.fails("test_param_poly_rischDE:204", () => {
+  it("test_param_poly_rischDE:204", () => {
     const x = new Sym('x');
     expect(sympyStr(Poly.from(Rational.of(0n, 1n, { gcd: 1n }), [x], { domain: 'QQ', pure: false }).add(Poly.from(new Add([Rational.of(3n, 1n, { gcd: 1n }), new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Mul([Rational.of(-5n, 1n, { gcd: 1n }), x])]), [x], { domain: 'QQ', pure: false })))).toBe('Poly(x**2 - 5*x + 3, x, domain=\'QQ\')');
   });

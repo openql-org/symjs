@@ -10,6 +10,7 @@
  * compared with the expected string.
  */
 
+import { pyIsClose } from '../../packages/symjs/tests/sympy-str';
 import { readFileSync } from 'node:fs';
 import * as sj from '../../packages/symjs/src';
 import * as dg from '@symjs/symjs/diffgeom';
@@ -3939,11 +3940,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const num = (x: Expr, y: Expr): boolean => {
       // SymPy equal_valued compares the exact (binary) values
       if (fn === 'equal_valued') return sj.equalValued(x, y);
-      if (fn === 'math.isclose') {
-        const u = x.toComplex().re;
-        const v = y.toComplex().re;
-        return Math.abs(u - v) <= 1e-9 * Math.max(Math.abs(u), Math.abs(v));
-      }
+      if (fn === 'math.isclose') return pyIsClose(x, y);
       return x.key === y.key;
     };
     return sj.isSame(a, b, fn === undefined ? undefined : num);
@@ -4351,10 +4348,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const exprs = (value: unknown): Expr[] => (value as JsTuple).items.map(asExpr);
     const eqs = exprs(args[0]);
-    const syms = exprs(args[1]).map((v) => {
-      if (!(v instanceof Sym)) throw new RangeError('substitution: unknowns must be symbols');
-      return v;
-    });
+    const syms = exprs(args[1]);
     const results = args[2] instanceof JsTuple ? args[2].items.map((d) => new Map((d as JsDict).entries.map(([k, v]) => [asSym(k), asExpr(v)]))) : undefined;
     const known = args[3] instanceof JsTuple ? args[3].items.map(asSym) : undefined;
     const exclude = args[4] instanceof JsSet || args[4] instanceof JsTuple ? args[4].items.map(asExpr) : undefined;
@@ -4915,6 +4909,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof Matrix) {
       // SymPy MatrixBase.diff by a matrix or an array: ArrayDerivative, evaluated by derive_by_array
       if (args.length === 1 && (args[0] instanceof Matrix || args[0] instanceof sj.NDimArray)) return sj.deriveByArray(self, args[0]);
+      if (args.length === 1 && args[0] instanceof sj.Sym) return self.diff(args[0]);
       return self.map((e) => diffArgs(e, args));
     }
     return diffArgs(asExpr(self), args, kw['evaluate'] !== false);

@@ -56,8 +56,7 @@ describe('continuous probability spaces (SymPy crv) 2', () => {
   it("conditional pdf", () => expect(show((given(Xn, Gt(Xn, 0)) as RandomSymbol).pspace.pdf)).toBe("sqrt(2)*exp(-x**2/2)/(2*sqrt(pi)*Integral(sqrt(2)*exp(-_x**2/2)/(2*sqrt(pi)), (_x, 0, oo)))"));
   it("conditional density 2x", () => expect(show(ap(density(mul(2, given(Xn, Gt(Xn, 0)))), z))).toBe("-sqrt(2)*exp(-z**2/8)*Heaviside(-z/2)/(2*sqrt(pi)) + sqrt(2)*exp(-z**2/8)/(2*sqrt(pi))"));
   it("conditional cdf", () => expect(show(ap(cdf(given(Xn, Gt(Xn, 0))), z))).toBe("Piecewise((erf(sqrt(2)*z/2), z >= 0), (0, True))"));
-  // SymPy: E*Integral(exp(-_x)*exp(_x*I*t), (_x, -oo, oo)); symjs integrates it with the convergence conditions of the Meijer G-function method
-  it("conditional cf", () => expect(show(ap(characteristicFunction(given(Exponential('e', 1), Gt(Exponential('e', 1), 1))), t))).toMatch(/^Piecewise\(\(-E\/\(-I\*t \+ 1\) \+ E\*I\/\(t\*\(1 \+ I\/t\)\), /));
+  it("conditional cf", () => expect(show(ap(characteristicFunction(given(Exponential('e', 1), Gt(Exponential('e', 1), 1))), t))).toBe('E*Integral(exp(-_x)*exp(_x*I*t), (_x, -oo, oo))'));
   // SymPy: Piecewise((0, (Abs(t) > 1) & (Abs(arg(t)) < pi/2) & (Abs(arg(t) + pi) <= pi/2)), (Piecewise(...), True)): the conditions of the
   // Meijer G-function method in another form
   it("conditional mgf", () => expect(show(ap(momentGeneratingFunction(given(Exponential('e', 1), Gt(Exponential('e', 1), 1))), t))).toMatch(/^Piecewise\(\(0, Ne\(t, 1\) & /));

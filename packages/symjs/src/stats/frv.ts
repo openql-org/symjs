@@ -13,7 +13,8 @@
  * it is the FiniteSet of the (symbol, value) Tuples.
  */
 
-import { BoolAtom, Dummy, Expr, Rel, S, Sym } from '../core/nodes';
+import { BoolAtom, Dummy, Expr, Rational, Rel, S, Sym } from '../core/nodes';
+import { gcd } from '../core/numbers';
 import type { ExprLike } from '../core/nodes';
 import { add, exp, mul, sympify } from '../core/ops';
 import { Eq, Ge, Le, Lt, Gt, piecewise } from '../core/logic';
@@ -250,15 +251,16 @@ export class FinitePSpace extends PSpace {
     const d = this.density;
     return d instanceof DictNode ? d.items() : distItems(cast(d, SingleFiniteDistribution, 'density'));
   }
+  #probabilities?: { mass: FiniteDensity; elementKeys: boolean };
   /** The probability of an element (SymPy prob_of). */
   probOf(elem: FiniteElement): Expr {
-    const items = this.densityItems;
-    if (items.length && first(items)[0] instanceof FiniteSet) {
-      const k = elementKey(elem).key;
-      return items.find(([key]) => key.key === k)?.[1] ?? S.Zero;
+    // A finite space is immutable. Index its mass function once for all outcomes of an expectation.
+    if (!this.#probabilities) {
+      const items = this.densityItems;
+      this.#probabilities = { mass: new FiniteDensity(items), elementKeys: items[0]?.[0] instanceof FiniteSet };
     }
-    const v = at(first(elem), 1).key;
-    return items.find(([key]) => key.key === v)?.[1] ?? S.Zero;
+    const { mass, elementKeys } = this.#probabilities;
+    return mass.call(elementKeys ? elementKey(elem) : at(first(elem), 1));
   }
   override where(condition: Expr): RandomDomain {
     return conditionalFiniteDomain(this.domain, condition);
@@ -302,14 +304,25 @@ export class FinitePSpace extends PSpace {
     const expr = rvSubs(exprIn, rvs);
     const elements = finiteElements(this.domain);
     const isBool = expr instanceof Rel || expr instanceof BoolOp || expr instanceof BoolAtom;
-    return add(
-      ...elements.map((elem) => {
-        const prob = this.probOf(elem);
-        const value = isBool ? at(first(elem), 1) : at_(expr, elem);
-        const blv: Expr = isBool ? at_(expr, elem) : S.true;
-        return piecewise([mul(prob, value), blv], [S.Zero, true]);
-      }),
-    );
+    let numerator = 0n;
+    let denominator = 1n;
+    const terms: Expr[] = [];
+    for (const elem of elements) {
+      const prob = this.probOf(elem);
+      const value = isBool ? at(first(elem), 1) : at_(expr, elem);
+      const condition = isBool ? at_(expr, elem) : S.true;
+      if (condition === S.true && value instanceof Rational && prob instanceof Rational) {
+        // Keep a common denominator and reduce the exact contribution once after summing the support.
+        const termDenominator = value.q * prob.q;
+        const common = gcd(denominator, termDenominator);
+        const scale = termDenominator / common;
+        numerator = numerator * scale + value.p * prob.p * (denominator / common);
+        denominator *= scale;
+      } else {
+        terms.push(piecewise([mul(prob, value), condition], [S.Zero, true]));
+      }
+    }
+    return add(Rational.of(numerator, denominator), ...terms);
   }
   override computeQuantile(expr: Expr): Expr {
     const c = cast(this.computeCdf(expr), FiniteDensity);

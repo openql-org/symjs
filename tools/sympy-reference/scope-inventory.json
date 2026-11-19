@@ -21310,7 +21310,7 @@
      "testFile": "sympy/calculus/tests/test_accumulationbounds.py",
      "inCorpus": true,
      "caseCount": 201,
-     "gapCount": 24,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 4,
@@ -21482,13 +21482,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.calculus.tests.test_singularities",
      "testFile": "sympy/calculus/tests/test_singularities.py",
      "inCorpus": true,
      "caseCount": 52,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -21546,7 +21546,7 @@
      "testFile": "sympy/calculus/tests/test_util.py",
      "inCorpus": true,
      "caseCount": 209,
-     "gapCount": 8,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 1,
@@ -25400,13 +25400,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.concrete.tests.test_delta",
      "testFile": "sympy/concrete/tests/test_delta.py",
      "inCorpus": true,
      "caseCount": 187,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -25826,13 +25826,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.concrete.tests.test_gosper",
      "testFile": "sympy/concrete/tests/test_gosper.py",
      "inCorpus": true,
      "caseCount": 63,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -25981,7 +25981,7 @@
      "testFile": "sympy/concrete/tests/test_products.py",
      "inCorpus": true,
      "caseCount": 90,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 9,
@@ -26034,8 +26034,7 @@
       "eval_sum",
       "eval_sum_direct",
       "eval_sum_hyper",
-      "eval_sum_symbolic",
-      "telescopic"
+      "eval_sum_symbolic"
      ],
      "pythonSpecificNames": [
       "Sum.__floordiv__",
@@ -41694,7 +41693,8 @@
    "status": "partial",
    "sources": [
     "core/logic.ts",
-    "core/traverse.ts"
+    "core/traverse.ts",
+    "functions/elementary/piecewise.ts"
    ],
    "completeness": {
     "publicApi": {
@@ -41860,7 +41860,7 @@
      "testFile": "sympy/functions/elementary/tests/test_piecewise.py",
      "inCorpus": true,
      "caseCount": 493,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -51457,7 +51457,7 @@
      "testFile": "sympy/integrals/tests/test_integrals.py",
      "inCorpus": true,
      "caseCount": 569,
-     "gapCount": 32,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 51,
@@ -52382,7 +52382,7 @@
      "testFile": "sympy/integrals/tests/test_meijerint.py",
      "inCorpus": true,
      "caseCount": 68,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 110,
@@ -52472,7 +52472,7 @@
      "testFile": "sympy/integrals/tests/test_prde.py",
      "inCorpus": true,
      "caseCount": 16,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 37
@@ -56557,7 +56557,7 @@
      "testFile": "sympy/logic/tests/test_boolalg.py",
      "inCorpus": true,
      "caseCount": 7484,
-     "gapCount": 44,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 15,
@@ -56719,7 +56719,7 @@
      "testFile": "sympy/logic/tests/test_inference.py",
      "inCorpus": true,
      "caseCount": 103,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 2,
@@ -58784,7 +58784,7 @@
      "testFile": "sympy/matrices/tests/test_eigen.py",
      "inCorpus": true,
      "caseCount": 316,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 25,
@@ -61155,7 +61155,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_funcmatrix.py",
      "inCorpus": true,
      "caseCount": 21,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 2
@@ -61535,7 +61535,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matadd.py",
      "inCorpus": true,
      "caseCount": 12,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 1
@@ -61666,7 +61666,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_matexpr.py",
      "inCorpus": true,
      "caseCount": 192,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 12,
@@ -61845,7 +61845,7 @@
   {
    "module": "sympy.matrices.expressions.matpow",
    "sha256": "a6eb98078f70af55b3171853f437135ad1766c60c559c6c9ee8875e004d0011b",
-   "status": "partial",
+   "status": "complete",
    "sources": [
     "matrices/expressions/matexpr.ts"
    ],
@@ -61893,13 +61893,13 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "applicable": true,
      "testModule": "sympy.matrices.expressions.tests.test_matpow",
      "testFile": "sympy/matrices/expressions/tests/test_matpow.py",
      "inCorpus": true,
      "caseCount": 114,
-     "gapCount": 4,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
      "incompleteTests": {}
@@ -62361,7 +62361,7 @@
      "testFile": "sympy/matrices/expressions/tests/test_special.py",
      "inCorpus": true,
      "caseCount": 80,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "unserializable-input": 5
@@ -63814,8 +63814,8 @@
      "testFile": "sympy/matrices/tests/test_matrices.py",
      "inCorpus": true,
      "caseCount": 878,
-     "gapCount": 10,
-     "timeoutCount": 3,
+     "gapCount": 0,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 2,
       "non-boolean-assertion": 3,
@@ -63987,8 +63987,8 @@
      "testFile": "sympy/matrices/tests/test_matrixbase.py",
      "inCorpus": true,
      "caseCount": 1056,
-     "gapCount": 11,
-     "timeoutCount": 3,
+     "gapCount": 0,
+     "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 4,
       "non-boolean-assertion": 3,
@@ -92593,7 +92593,7 @@
      "testFile": "sympy/series/tests/test_formal.py",
      "inCorpus": true,
      "caseCount": 133,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 29,
@@ -92836,7 +92836,7 @@
      "testFile": "sympy/series/tests/test_fourier.py",
      "inCorpus": true,
      "caseCount": 42,
-     "gapCount": 3,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 12,
@@ -92934,7 +92934,7 @@
      "testFile": "sympy/series/tests/test_gruntz.py",
      "inCorpus": true,
      "caseCount": 102,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-slow": 30,
@@ -93084,7 +93084,7 @@
      "testFile": "sympy/series/tests/test_limits.py",
      "inCorpus": true,
      "caseCount": 571,
-     "gapCount": 12,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-executed": 2,
@@ -93226,7 +93226,7 @@
      "testFile": "sympy/series/tests/test_order.py",
      "inCorpus": true,
      "caseCount": 257,
-     "gapCount": 16,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "not-exported-api": 2,
@@ -93762,7 +93762,7 @@
      "testFile": "sympy/series/tests/test_series.py",
      "inCorpus": true,
      "caseCount": 97,
-     "gapCount": 5,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 3,
@@ -99631,7 +99631,7 @@
      "testFile": "sympy/solvers/tests/test_inequalities.py",
      "inCorpus": true,
      "caseCount": 154,
-     "gapCount": 2,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -100656,7 +100656,7 @@
      "testFile": "sympy/solvers/tests/test_polysys.py",
      "inCorpus": true,
      "caseCount": 110,
-     "gapCount": 1,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "stateful-iterator-input": 4
@@ -100925,7 +100925,7 @@
      "testFile": "sympy/solvers/tests/test_solveset.py",
      "inCorpus": true,
      "caseCount": 610,
-     "gapCount": 51,
+     "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "marked-skip": 3,

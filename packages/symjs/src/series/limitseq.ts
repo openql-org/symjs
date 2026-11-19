@@ -190,18 +190,19 @@ function fibonacciToGoldenRatio(e: Expr): Expr {
 /**
  * Powers of a negative b to an exponent a*m + c with an even
  * integer a and an integer c (m an integer): (-1)**c * (-b)**(a*m + c); and
- * sines and cosines of pi*(a*m + c) with an even integer a.
+ * sines and cosines of pi*(a*m + c) with an integer a.
  */
 function fixParity(e: Expr, m: Sym): Expr {
   const args = e.args.map((a) => fixParity(a, m));
   const r = args.length ? rebuild(e, args) : e;
-  // sin(pi*(a*m + c)) = sin(pi*c) and cos(pi*(a*m + c)) = cos(pi*c) for an even integer a
+  // Each shift by pi changes the sign of both sine and cosine.
   if (r instanceof Fn && (r.name === 'sin' || r.name === 'cos')) {
     const t = expand(mul(at(r.args, 0), pow(S.Pi, -1)));
     const a = coeff(t, m);
-    if (a instanceof Rational && a.isInteger && a.p % 2n === 0n && !a.isZero) {
+    if (a instanceof Rational && a.isInteger && !a.isZero) {
       const c = sub(t, mul(a, m));
-      return fn(r.name, [mul(S.Pi, c)]);
+      const sign = a.p % 2n === 0n ? S.One : pow(-1, m);
+      return mul(sign, fn(r.name, [mul(S.Pi, c)]));
     }
   }
   if (r instanceof Pow && isNegative(r.base) === true) {

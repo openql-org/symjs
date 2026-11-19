@@ -23,6 +23,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { expect, it, vi } from 'vitest';
+import type { Tree } from '../harness';
 import type { ResultOf } from './program';
 
 vi.mock('../../../packages/symjs/src', async (orig) => (await import('./trace')).traceModule(await orig(), 'index'));
@@ -47,6 +48,9 @@ interface CorpusCase {
   brackets?: string;
   ws?: boolean;
   unsupportedArg?: string;
+  expectedOperand?: Tree;
+  self?: Tree;
+  args?: Tree[];
   kwargs?: Record<string, unknown>;
 }
 
@@ -234,7 +238,7 @@ it('converts the corpora', async () => {
     let observation: Record<string, unknown> | undefined;
     const alias: Readonly<Record<string, string>> = { '.is_nonnegative': '.isNonNegative', '.is_nonzero': '.isNonZero', '.is_nonpositive': '.isNonPositive' };
     const fn = alias[c.fn];
-    const replay = fn === undefined ? c : { ...c, fn };
+    const replay = unit ? T.replayCall(c as never) : fn === undefined ? c : { ...c, fn };
     const started = performance.now();
     const { value: outcome0 } = tr.record(() => H.runCase(replay as never, (ev) => { observation = ev as Record<string, unknown>; }));
     const seconds = (performance.now() - started) / 1000;
@@ -274,6 +278,30 @@ it('converts the corpora', async () => {
         p.count(r);
         const e = p.expr(r);
         body = p.finish([...p.lines, `expect(() => ${e}).toThrow(${global ? cls : p.importName('index', cls)});`]);
+      } else if (c.fn === '.is_same' && c.self && c.args?.[0] && c.args[1]?.t === 'JsFunc') {
+        const comparator = c.args[1]['name'];
+        if (comparator !== 'equal_valued' && comparator !== 'math.isclose') throw new P.Unprintable('unknown numeric comparison');
+        const approx = comparator === 'equal_valued' ? p.importName('index', 'equalValued') : 'pyIsClose';
+        if (approx === 'pyIsClose') p.helpers.add(approx);
+        const lhs = p.expr(H.deserialize(c.self));
+        const rhs = p.expr(H.deserialize(c.args[0]));
+        const same = p.importName('index', 'isSame');
+        const expected = equivalentForm && outcome.got !== undefined && H.matchesSympyErratum(c as never, outcome.got) ? outcome.got : c.expected;
+        body = p.finish([...p.lines, `expect(${same}(${lhs}, ${rhs}, ${approx})).toBe(${expected === 'True'});`]);
+      } else if (c.op === '==' && c.expectedOperand && observation && observation['value'] instanceof sj.Matrix) {
+        const lhs = p.expr(observation['value']);
+        const operand = c.expectedOperand;
+        if (operand.t === 'SympifiableMatrix') {
+          const rhs = p.expr(H.deserialize(operand['value'] as Tree));
+          const convert = p.importName('index', 'sympify');
+          const method = p.importName('index', 'sympifyMethod');
+          const matrix = p.importName('index', 'Matrix');
+          body = p.finish([...p.lines, `const rhs = ${convert}({ [${method}]: () => ${rhs} });`,
+            `expect(rhs instanceof ${matrix} && ${lhs}.equals(rhs)).toBe(true);`]);
+        } else {
+          const rhs = p.expr(H.deserialize(operand));
+          body = p.finish([...p.lines, `expect(${lhs}.equals(${rhs})).toBe(true);`]);
+        }
       } else if (libraryError) {
         if (passing) throw new P.Unprintable('an error for a passing case');
         const r = new P.ResultOf(thrown.node);
@@ -284,7 +312,9 @@ it('converts the corpora', async () => {
         if (observation === undefined || !('value' in observation)) throw new P.Unprintable(outcome.status === 'error' ? 'an error outside the library' : 'no value');
         const kinds: string[] = [];
         indexResults();
-        const pv = fromLibrary(toPublic(observation['value'], kinds));
+        // A public multiplication table already has the nested Map representation of the Python dict.
+        const table = c.fn === '.mult_tab' ? [...tr.results].reverse().find(r => r.node.k === 'method' && r.node.name === 'multTab') : undefined;
+        const pv = table === undefined ? fromLibrary(toPublic(observation['value'], kinds)) : new P.ResultOf(table.node);
         const value = deepUnwrap(pv);
         const op = c.op ?? '==';
         const positive = !(op === '!=' || op === 'is not');
@@ -403,26 +433,7 @@ it('converts the corpora', async () => {
     if (outside.length > 0) console.log(`type errors outside the cases:\n${outside.join('\n')}`);
     writeFileSync(TYPE_ERRORS, JSON.stringify([...new Set([...typeErrors, ...bad])].sort(), null, 1) + '\n');
     console.log(`type errors: ${bad.size}`);
-    // cases whose generated test disagrees with the replay (an it that fails, an it.fails that passes)
-    const report = `${ROOT}node_modules/.corpus-tests.json`;
-    spawnSync(`${ROOT}node_modules/.bin/vitest`, ['run', '--reporter=json', `--outputFile=${report}`, '--includeTaskLocation', '.corpus.test.ts'], { encoding: 'utf8', maxBuffer: 1 << 28, cwd: ROOT });
-    const results = JSON.parse(readFileSync(report, 'utf8')) as { testResults: { name: string; message?: string; assertionResults: { status: string; location?: { line: number } }[] }[] };
-    rmSync(report);
-    const stale = new Set<string>();
-    const failedFiles: string[] = [];
-    for (const file of results.testResults) {
-      if (file.message) failedFiles.push(`${file.name}: ${file.message.split('\n')[0] ?? ''}`);
-      for (const a of file.assertionResults) {
-        if (a.status !== 'failed') continue;
-        const line = a.location?.line ?? 0;
-        const hit = ranges.get(file.name)?.find(([x, y]) => line >= x && line <= y);
-        if (hit) stale.add(hit[2]);
-        else failedFiles.push(`${file.name}:${line}`);
-      }
-    }
-    if (failedFiles.length > 0) console.log(`failures outside the cases:\n${failedFiles.join('\n')}`);
-    writeFileSync(UNREPRODUCED, JSON.stringify([...new Set([...unreproduced, ...stale])].sort(), null, 1) + '\n');
-    console.log(`unreproduced: ${stale.size}`);
+    writeFileSync(`${ROOT}node_modules/.corpus-ranges.json`, JSON.stringify([...ranges]));
   } else if (process.env['SHOW']) {
     const [file, cases] = [...out][0] ?? [];
     if (file !== undefined && cases !== undefined) console.log(render(file, cases.slice(0, Number(process.env['SHOW']))).text);

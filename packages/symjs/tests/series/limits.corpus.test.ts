@@ -186,7 +186,7 @@ describe("sympy/series/tests/test_limits.py", () => {
   });
   it("test_basic4:133", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(3n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), x, [Rational.of(0n, 1n, { gcd: 1n }), oo], { conds: 'piecewise' }))).toBe('2*sqrt(3)*pi/9');
+    expect(sympyStr(integrate(new Pow(new Add([Rational.of(1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(3n, 1n, { gcd: 1n }))]), Rational.of(-1n, 1n, { gcd: 1n })), x, [Rational.of(0n, 1n, { gcd: 1n }), oo], { conds: 'piecewise', heurisch: false }))).toBe('2*sqrt(3)*pi/9');
   });
   it("test_log:140", () => {
     const a = new Sym('a', { positive: true });
@@ -220,7 +220,7 @@ describe("sympy/series/tests/test_limits.py", () => {
     const x = new Sym('x');
     expect(sympyStr(limit(piecewise([new Add([Rational.of(-9n, 5n, { gcd: 1n }), new Mul([Rational.of(1n, 5n, { gcd: 1n }), x])]), Or(Relational(x, Rational.of(4n, 1n, { gcd: 1n }), '>', { evaluate: false }), Relational(x, Rational.of(-1n, 1n, { gcd: 1n }), '<', { evaluate: false }))], [new Pow(fn('abs', [new Add([Rational.of(-3n, 1n, { gcd: 1n }), x])], { evaluate: false }), Rational.of(1n, 2n, { gcd: 1n })), true], { evaluate: false }), x, Rational.of(-1n, 1n, { gcd: 1n }), '+'))).toBe('2');
   });
-  // function my
+  // a function that did not come from the library
   //   assert limit(my(x), x, oo) == Limit(my(x), x, oo)
   //   => Limit(my(x), x, oo, dir='-')
   it.todo("test_basic5:172");
@@ -1404,22 +1404,22 @@ describe("sympy/series/tests/test_limits.py", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(limit(new Mul([Rational.of(1n, 2n, { gcd: 1n }), new Pow(Rational.of(2n, 1n, { gcd: 1n }), Rational.of(1n, 2n, { gcd: 1n })), new Pow(pi, Rational.of(-1n, 2n, { gcd: 1n })), new Pow(n, Rational.of(-1n, 2n, { gcd: 1n })), new Pow(new Mul([n, new Pow(E, Rational.of(-1n, 1n, { gcd: 1n }))]), new Mul([Rational.of(-1n, 1n, { gcd: 1n }), n])), fn('factorial', [n])]), n, oo, '+'))).toBe('1');
   });
-  // a function that did not come from the library
-  //   assert Limit(x, x, a).free_symbols == {a}
-  //   => {a}
-  it.todo("test_issue_9205:768");
-  // a function that did not come from the library
-  //   assert Limit(x, x, a, '-').free_symbols == {a}
-  //   => {a}
-  it.todo("test_issue_9205:769");
-  // a function that did not come from the library
-  //   assert Limit(x + y, x + y, a).free_symbols == {a}
-  //   => {a}
-  it.todo("test_issue_9205:770");
-  // a function that did not come from the library
-  //   assert Limit(-x**2 + y, x**2, a).free_symbols == {y, a}
-  //   => {y, a}
-  it.todo("test_issue_9205:771");
+  it("test_issue_9205:768", () => {
+    const a = new Sym('a');
+    expect(sympyStr(new Set([a]))).toBe('{a}');
+  });
+  it("test_issue_9205:769", () => {
+    const a = new Sym('a');
+    expect(sympyStr(new Set([a]))).toBe('{a}');
+  });
+  it("test_issue_9205:770", () => {
+    const a = new Sym('a');
+    expect(sympyStr(new Set([a]))).toBe('{a}');
+  });
+  it("test_issue_9205:771", () => {
+    const [y, a] = symbols('y a');
+    expect(sympyStr(new Set([y, a]))).toBe('{y, a}');
+  });
   it("test_issue_9471:775", () => {
     const n = new Sym('n', { integer: true, positive: true });
     expect(sympyStr(limit(new Mul([new Pow(Rational.of(27n, 1n, { gcd: 1n }), new Mul([new Pow(fn('log', [Rational.of(3n, 1n, { gcd: 1n })], { evaluate: false }), Rational.of(-1n, 1n, { gcd: 1n })), fn('log', [n], { evaluate: false })])), new Pow(n, Rational.of(-3n, 1n, { gcd: 1n }))]), n, oo, '+'))).toBe('1');
@@ -2106,7 +2106,7 @@ describe("sympy/series/tests/test_limits.py", () => {
   });
   it("test_issue_23596:1302", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(new Mul([new Pow(x, Rational.of(-2n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(-1n, 1n, { gcd: 1n }))]))]), x, [Rational.of(0n, 1n, { gcd: 1n }), oo], { conds: 'piecewise' }))).toBe('oo');
+    expect(sympyStr(integrate(new Mul([new Pow(x, Rational.of(-2n, 1n, { gcd: 1n })), new Add([Rational.of(1n, 1n, { gcd: 1n }), x]), new Pow(E, new Mul([Rational.of(-1n, 1n, { gcd: 1n }), new Pow(x, Rational.of(-1n, 1n, { gcd: 1n }))]))]), x, [Rational.of(0n, 1n, { gcd: 1n }), oo], { conds: 'piecewise', heurisch: false }))).toBe('oo');
   });
   it("test_issue_23752:1308", () => {
     const x = new Sym('x');

@@ -951,15 +951,18 @@ function intervalPower(b: AccumBoundsNode, h: AccumBoundsNode): Expr | undefined
  */
 function intervalLimit(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number): Expr | undefined {
   const limiter = new Limiter(z, z0, dir, budget);
-  let jumps = false as boolean; // set inside a callback
-  const rw = mapBottomUp(e, (x: Expr) => {
+  const errors: [Dummy, Expr][] = [];
+  const formal = mapBottomUp(e, (x: Expr) => {
     if (!(x instanceof Fn && (x.name === 'floor' || x.name === 'ceiling'))) return x;
     const g = first(x.args);
     const l = limiter.lim(g);
     if (l !== S.Infinity && l !== S.NegativeInfinity) return x;
-    jumps = true;
-    return add(g, x.name === 'floor' ? accumBounds(-1, 0) : accumBounds(0, 1));
+    const error = new Dummy('error');
+    errors.push([error, x.name === 'floor' ? accumBounds(-1, 0) : accumBounds(0, 1)]);
+    return add(g, error);
   });
+  // Distribute the bounded rounding error before interval arithmetic combines it with g.
+  const rw = errors.length ? subs(expand(formal), errors) : formal;
   // Limit.doit keeps the independent denominator outside the accumulation
   // interval. Only the rational content scales its endpoints.
   if (rw instanceof Mul) {
@@ -971,7 +974,7 @@ function intervalLimit(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number
       if (interval instanceof AccumBoundsNode) return new Mul([accumBounds(expand(interval.min), expand(interval.max)), pow(denominator, -1)]);
     }
   }
-  const r = limiter.interval(jumps ? expand(rw) : rw);
+  const r = limiter.interval(rw);
   // a value with nan or an unevaluated function or power of an interval or an infinity is no limit
   // (AccumBounds(1, 3)**y, which SymPy returns, is not taken for a limit)
   const unevaluatedAt = (x: Expr): boolean => (x instanceof Pow && x.base instanceof AccumBoundsNode) || (!(x instanceof AccumBoundsNode) && x.args.some(unevaluatedAt));

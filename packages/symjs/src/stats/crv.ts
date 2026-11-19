@@ -19,7 +19,7 @@ import { BoolOp, and } from '../core/boolalg';
 import { xreplace } from '../core/traverse';
 import { Lambda, LambdaNode } from '../core/lambda';
 import { NotImplementedError } from '../core/errors';
-import { isRationalFunction } from '../core/methods';
+import { asIndependent, isRationalFunction } from '../core/methods';
 import { at, cast, defined, first } from '../core/guard';
 import { EmptySet, FiniteSet, Interval, Reals, SetExpr, SetOp, asRelational, inf, interval, intersection, union } from '../sets/sets';
 import { solveUnivariateInequality, solveset } from '../solvers/inequalities';
@@ -355,7 +355,12 @@ export class ContinuousPSpace extends PSpace {
     const d = densityCall(this.computeDensity(expr));
     const x = new Dummy('x', { real: true });
     const t = new Dummy('t', { real: true });
-    return Lambda(t, integrate(mul(exp(mul(S.I, t, x)), d(x)), x, [S.NegativeInfinity, S.Infinity]));
+    const transform = integrate(mul(exp(mul(S.I, t, x)), d(x)), x, [S.NegativeInfinity, S.Infinity]);
+    if (transform instanceof Integral) {
+      const [scale, kernel] = asIndependent(transform.integrand, [x], { asAdd: false });
+      return Lambda(t, mul(scale, new Integral([kernel, ...transform.args.slice(1)])));
+    }
+    return Lambda(t, transform);
   }
   override computeMomentGeneratingFunction(expr: Expr): Expr {
     if (!isInterval(this.domain.set)) throw new NotImplementedError('Moment generating function of multivariate expressions not implemented');

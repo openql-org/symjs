@@ -302,10 +302,10 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
     const x = new Sym('x');
     expect(sympyStr(new PowerBasis(Poly.from(new Add([Rational.of(1n, 1n, { gcd: 1n }), x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Pow(x, Rational.of(4n, 1n, { gcd: 1n }))]), [x], { domain: 'ZZ', pure: false })))).toBe('PowerBasis(x**4 + x**3 + x**2 + x + 1)');
   });
-  // a primitive result that no library call returned
-  //   assert M == exp
-  //   => {0: {0: [1, 0, 0, 0], 1: [0, 1, 0, 0], 2: [0, 0, 1, 0], 3: [0, 0, 0, 1]}, 1: {1: [0, 0, 1, 0], 2: [0, 0, 0, 1], 3: [-1, -1, -1, -1]}, 2: {2: [-1, -1, -1, -1], 3: [1, 0, 0, 0]}, 3: {3: [0, 1, 0, 0]}}
-  it.todo("test_PowerBasis_mult_tab:191");
+  it("test_PowerBasis_mult_tab:191", () => {
+    const x = new Sym('x');
+    expect(sympyStr(new PowerBasis(Poly.from(new Add([Rational.of(1n, 1n, { gcd: 1n }), x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Pow(x, Rational.of(4n, 1n, { gcd: 1n }))]), [x], { domain: 'ZZ', pure: false })).multTab())).toBe('{0: {0: [1, 0, 0, 0], 1: [0, 1, 0, 0], 2: [0, 0, 1, 0], 3: [0, 0, 0, 1]}, 1: {1: [0, 0, 1, 0], 2: [0, 0, 0, 1], 3: [-1, -1, -1, -1]}, 2: {2: [-1, -1, -1, -1], 3: [1, 0, 0, 0]}, 3: {3: [0, 1, 0, 0]}}');
+  });
   it("test_PowerBasis_represent:201", () => {
     const x = new Sym('x');
     expect(sympyStr(new PowerBasis(Poly.from(new Add([Rational.of(1n, 1n, { gcd: 1n }), x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Pow(x, Rational.of(4n, 1n, { gcd: 1n }))]), [x], { domain: 'ZZ', pure: false })).represent(makeModElt(new PowerBasis(Poly.from(new Add([Rational.of(1n, 1n, { gcd: 1n }), x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Pow(x, Rational.of(4n, 1n, { gcd: 1n }))]), [x], { domain: 'ZZ', pure: false })), toCol([1n, 2n, 3n, 4n]), 1n)))).toBe('DomainMatrix([[1], [2], [3], [4]], (4, 1), ZZ)');
@@ -399,9 +399,11 @@ describe("sympy/polys/numberfields/tests/test_modules.py", () => {
   it("test_Submodule_discard_before:282", () => {
     expect(sympyStr(new DomainMatrix([[ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(2n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(2n, 1n, { gcd: 1n }))]], [4, 2], ZZ, { fmt: 'sparse' }))).toBe('DomainMatrix({2: {0: 2}, 3: {1: 2}}, (4, 2), ZZ)');
   });
-  it.fails("test_Submodule_discard_before:283", () => {
+  it("test_Submodule_discard_before:283", () => {
     const x = new Sym('x');
-    expect(sympyStr(new Submodule(new PowerBasis(Poly.from(new Add([Rational.of(1n, 1n, { gcd: 1n }), x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Pow(x, Rational.of(4n, 1n, { gcd: 1n }))]), [x], { domain: 'ZZ', pure: false })), new DomainMatrix([[ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(2n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(2n, 1n, { gcd: 1n }))]], [4, 2], ZZ, { fmt: 'sparse' }), 1n).multTab())).toBe('{0: {0: [-2, -2], 1: [0, 0]}, 1: {1: [0, 0]}}');
+    const v1 = new Submodule(new PowerBasis(Poly.from(new Add([Rational.of(1n, 1n, { gcd: 1n }), x, new Pow(x, Rational.of(2n, 1n, { gcd: 1n })), new Pow(x, Rational.of(3n, 1n, { gcd: 1n })), new Pow(x, Rational.of(4n, 1n, { gcd: 1n }))]), [x], { domain: 'ZZ', pure: false })), new DomainMatrix([[ZZ.fromSympy(Rational.of(2n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(2n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(2n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n }))], [ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(0n, 1n, { gcd: 1n })), ZZ.fromSympy(Rational.of(2n, 1n, { gcd: 1n }))]], [4, 4], ZZ, { fmt: 'sparse' }), 1n);
+    v1.computeMultTab();
+    expect(sympyStr(v1.discardBefore(2).multTab())).toBe('{0: {0: [-2, -2], 1: [0, 0]}, 1: {1: [0, 0]}}');
   });
   it("test_Submodule_QQ_matrix:291", () => {
     const x = new Sym('x');

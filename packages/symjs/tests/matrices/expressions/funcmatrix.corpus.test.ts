@@ -170,7 +170,7 @@ describe("sympy/matrices/expressions/tests/test_funcmatrix.py", () => {
   //   assert Matrix(X) == Matrix(3, 3, lambda i, j: i - j)
   //   => Matrix([[0, -1, -2], [1, 0, -1], [2, 1, 0]])
   it.todo("test_funcmatrix:48");
-  // cannot format [object Object]
+  // a callback parameter outside its callback
   //   assert X.replace(lambda x: True, lambda x: x) == X
   //   => FunctionMatrix(3, 3, Lambda((_i, _j), KroneckerDelta(_i, _j)))
   it.todo("test_replace_issue:54");

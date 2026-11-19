@@ -72,6 +72,7 @@ describe('limit_seq', () => {
       ['gamma(n)', 'oo'],
       ['exp(n)*(-1)**n', 'AccumBounds(-oo, oo)'],
       ['n**(-1)**n', 'AccumBounds(0, oo)'],
+      ['sin(pi*(n + 1/2))', 'AccumBounds(-1, 1)'],
       ['sin(pi*n/2)**2', 'AccumBounds(0, 1)'],
       // Discrete factorial and harmonic growth.
       ['subfactorial(n)/factorial(n)', 'exp(-1)'],

@@ -1095,6 +1095,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": ".handler",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": ".has",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."

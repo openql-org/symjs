@@ -159,8 +159,8 @@ function unwrapIn(v: unknown): unknown {
     const t = targetOf.get(v);
     if (t !== undefined) return t;
     if (Object.getPrototypeOf(v) === Object.prototype) {
-      const o: Record<string, unknown> = {};
-      for (const [k, x] of Object.entries(v)) o[k] = unwrapIn(x);
+      const o: Record<PropertyKey, unknown> = {};
+      for (const k of Reflect.ownKeys(v)) o[k] = unwrapIn(Reflect.get(v, k));
       return o;
     }
   }
@@ -237,7 +237,7 @@ const handler: ProxyHandler<object> = {
   get(target, prop) {
     const v: unknown = Reflect.get(target, prop, target);
     const self = nodeOf.get(target);
-    if (self === undefined || depth > 0 || prop === 'then' || typeof prop === 'symbol' || prop === 'prototype' || prop === 'constructor') return v;
+    if (self === undefined || depth > 0 || !Reflect.has(target, prop) || prop === 'then' || typeof prop === 'symbol' || prop === 'prototype' || prop === 'constructor') return v;
     if (typeof v === 'function') {
       if (proxyOf.has(v as object) || targetOf.has(v as object)) return v;
       const method = v as (...a: unknown[]) => unknown;

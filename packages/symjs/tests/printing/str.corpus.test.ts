@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { CoordSystem, Manifold, Patch } from '../../src/diffgeom';
-import { AccumBounds, Add, And, AppliedUndef, Array, ArrayElement, ArraySymbol, Category, Circle, Complement, CovarianceNode, Cycle, Dict, DieDistribution, Dummy, E, Ellipse, Equivalent, ExpectationNode, ExponentialDistribution, Float, FracField, Heaviside, I, Identity, IdentityMorphism, IndependentProductPSpace, Lambda, Limit, MatAdd, MatMul, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mul, MutableSparseMatrix, NamedMorphism, Naturals, NormalDistribution, Not, O, OneMatrix, Or, PSpace, Partition, Perm, Point2D, Poly, PolyRing, Polygon, Pow, ProbabilityNode, Product, PythonMPQ, Q, QQ, QQ_I, Quaternion, RandomSymbol, Rational, Reals, Relational, S, SingleContinuousPSpace, SingleFinitePSpace, Str, StrPrinter, Subs, Sum, Sym, SymObject, SymmetricDifference, Triangle, Tuple, UnevaluatedExpr, VarianceNode, Wild, WildFunction, ZZ, ZZ_I, ZeroMatrix, abs, add, derivative, exp, factor, finiteSet, float, fn, groebner, integral, interval, isUnsolved, oo, pi, pprintUseUnicode, precedence, rationalFromString, rootof, round, series, sqrt, sstr, sstrrepr, symbols, sympify, where, xreplace } from '../../src';
+import { AccumBounds, Add, And, AppliedUndef, Array, ArrayElement, ArraySymbol, Category, Circle, Complement, CovarianceNode, Cycle, Dict, DieDistribution, Dummy, E, Ellipse, Equivalent, ExpectationNode, ExponentialDistribution, Float, FracField, Heaviside, I, Identity, IdentityMorphism, IndependentProductPSpace, Lambda, Limit, MatAdd, MatMul, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, Mul, MutableSparseMatrix, NamedMorphism, Naturals, NormalDistribution, O, OneMatrix, Or, PSpace, Partition, Perm, Point2D, Poly, PolyRing, Polygon, Pow, ProbabilityNode, Product, PythonMPQ, Q, QQ, QQ_I, Quaternion, RandomSymbol, Rational, Reals, Relational, S, SingleContinuousPSpace, SingleFinitePSpace, Str, StrPrinter, Subs, Sum, Sym, SymObject, SymmetricDifference, Triangle, Tuple, UnevaluatedExpr, VarianceNode, Wild, WildFunction, ZZ, ZZ_I, ZeroMatrix, abs, add, derivative, exp, factor, finiteSet, float, fn, groebner, integral, interval, isUnsolved, not, oo, pi, pprintUseUnicode, precedence, rationalFromString, rootof, round, series, sqrt, sstr, sstrrepr, symbols, sympify, where, xreplace } from '../../src';
 import { pyStr, sympyStr, text } from '../sympy-str';
 
 describe("doctests of sympy.printing.str", () => {
@@ -121,7 +121,7 @@ describe("sympy/printing/tests/test_precedence.py", () => {
   });
   it("test_And_Or:89", () => {
     const y = new Sym('y');
-    expect(sympyStr(precedence(Not(y)))).toBe('100');
+    expect(sympyStr(precedence(not(y)))).toBe('100');
   });
   // the generated test does not reproduce the replay
   //   assert str(expr1) == "2*(x F y)"

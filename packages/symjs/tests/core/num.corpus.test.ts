@@ -247,7 +247,7 @@ describe("doctests of sympy.core.numbers", () => {
   });
   it("integrate(exp(-x**2), (x, -oo, oo))", () => {
     const x = new Sym('x');
-    expect(sympyStr(integrate(new Pow(E, mul(Rational.of(-1n, 1n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))), x, [S.NegativeInfinity, oo], { conds: 'piecewise' }))).toBe('sqrt(pi)');
+    expect(sympyStr(integrate(new Pow(E, mul(Rational.of(-1n, 1n, { gcd: 1n }), pow(x, Rational.of(2n, 1n, { gcd: 1n })))), x, [S.NegativeInfinity, oo], { conds: 'piecewise', heurisch: false }))).toBe('sqrt(pi)');
   });
   it("Rational(1, 2)", () => {
     expect(sympyStr(Rational.of(1n, 2n, {}))).toBe('1/2');

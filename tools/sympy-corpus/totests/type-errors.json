@@ -427,7 +427,6 @@
  "sympy.concrete.tests.test_sums_products:test_indexed_idx_sum:1059 #37f12f51b88fb5900f8e",
  "sympy.concrete.tests.test_sums_products:test_indexed_idx_sum:1063 #444f9dd9aee0a89be713",
  "sympy.concrete.tests.test_sums_products:test_indexed_idx_sum:1064 #a4ab6367237bdc282626",
- "sympy.concrete.tests.test_sums_products:test_issue_14313:1439 #4fdf9c29999fc1552725",
  "sympy.concrete.tests.test_sums_products:test_issue_4170:725 #ea40a08ee956cf604293",
  "sympy.concrete.tests.test_sums_products:test_other_sums:375 #6b34de5c241eab196126",
  "sympy.concrete.tests.test_sums_products:test_polynomial_sums:266 #7c61ef3d60a7f5fe6575",

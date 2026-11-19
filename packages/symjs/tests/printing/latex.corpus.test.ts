@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { BaseScalarField, CoordSystem, Differential, Manifold, Patch, R2R, WedgeProduct } from '../../src/diffgeom';
-import { AccumBounds, Add, Adjoint, AlgebraicNumber, And, AppliedUndef, Array, ArrayElement, ArraySymbol, BlockMatrix, CRootOf, CartesianComplexRegion, Category, Complexes, CompositeMorphism, ConditionSet, ConditionalFiniteDomain, Contains, CosineTransform, CovarianceNode, Cycle, DFT, Determinant, Diagram, Dict, DiracDelta, DotProduct, Dummy, E, ElementwiseApplyFunction, EmptySet, Equivalent, ExpectationNode, Float, FourierTransform, HadamardPower, HadamardProduct, Heaviside, I, IDFT, Identity, IdentityMorphism, Idx, ImageSet, ImmutableSparseNDimArray, Implies, IndexedBase, Integers, InverseCosineTransform, InverseFourierTransform, InverseLaplaceTransform, InverseMellinTransform, InverseSineTransform, KroneckerDelta, KroneckerProduct, Lambda, LambertW, LaplaceTransform, LeviCivita, Limit, MatAdd, MatMul, MatPow, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, MellinTransform, Mod, Mul, MutableDenseNDimArray, MutableSparseNDimArray, NamedMorphism, Naturals, Naturals0, NormalDistribution, Not, O, OneMatrix, Or, PartialDerivative, Perm, PermutationMatrix, PolarComplexRegion, Pow, PowerSet, ProbabilityNode, Product, ProductContinuousDomain, ProductSet, Quaternion, RandomSymbol, Range, Rational, Rationals, Reals, Relational, RootSumNode, S, SeqAddNode, SeqFormula, SeqMulNode, SeqPer, SetExpression, SetOp, SineTransform, SingleContinuousDomain, SingleContinuousPSpace, SingleFiniteDomain, SingularityFunction, Str, Subs, Sum, Sym, SymFunction, SymObject, TensAdd, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Trace, Transpose, Tuple, UnevaluatedExpr, UniversalSet, VarianceNode, Wild, Xor, ZeroMatrix, add, bell, derivative, finiteSet, fn, fourierSeries, fps, frac, hyper, integral, interval, jn, latex, meijerg, mul, multilineLatex, oo, pi, piecewise, pow, pprintUseUnicode, symbols, sympifyMatrix, translate, yn } from '../../src';
+import { AccumBounds, Add, Adjoint, AlgebraicNumber, And, AppliedUndef, Array, ArrayElement, ArraySymbol, BlockMatrix, CRootOf, CartesianComplexRegion, Category, Complexes, CompositeMorphism, ConditionSet, ConditionalFiniteDomain, Contains, CosineTransform, CovarianceNode, Cycle, DFT, Determinant, Diagram, Dict, DiracDelta, DotProduct, Dummy, E, ElementwiseApplyFunction, EmptySet, Equivalent, ExpectationNode, Float, FourierTransform, HadamardPower, HadamardProduct, Heaviside, I, IDFT, Identity, IdentityMorphism, Idx, ImageSet, ImmutableSparseNDimArray, Implies, IndexedBase, Integers, InverseCosineTransform, InverseFourierTransform, InverseLaplaceTransform, InverseMellinTransform, InverseSineTransform, KroneckerDelta, KroneckerProduct, Lambda, LambertW, LaplaceTransform, LeviCivita, Limit, MatAdd, MatMul, MatPow, Matrix, MatrixElement, MatrixSlice, MatrixSymbol, MellinTransform, Mod, Mul, MutableDenseNDimArray, MutableSparseNDimArray, NamedMorphism, Naturals, Naturals0, NormalDistribution, O, OneMatrix, Or, PartialDerivative, Perm, PermutationMatrix, PolarComplexRegion, Pow, PowerSet, ProbabilityNode, Product, ProductContinuousDomain, ProductSet, Quaternion, RandomSymbol, Range, Rational, Rationals, Reals, Relational, RootSumNode, S, SeqAddNode, SeqFormula, SeqMulNode, SeqPer, SetExpression, SetOp, SineTransform, SingleContinuousDomain, SingleContinuousPSpace, SingleFiniteDomain, SingularityFunction, Str, Subs, Sum, Sym, SymFunction, SymObject, TensAdd, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Trace, Transpose, Tuple, UnevaluatedExpr, UniversalSet, VarianceNode, Wild, Xor, ZeroMatrix, add, bell, derivative, finiteSet, fn, fourierSeries, fps, frac, hyper, integral, interval, jn, latex, meijerg, mul, multilineLatex, not, oo, pi, piecewise, pow, pprintUseUnicode, symbols, sympifyMatrix, translate, yn } from '../../src';
 import { pyStr, text } from '../sympy-str';
 
 describe("doctests of sympy.printing.latex", () => {
@@ -1056,7 +1056,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Not(x), {}))).toBe('\\neg x');
+      expect(text(latex(not(x), {}))).toBe('\\neg x');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1119,7 +1119,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Not(Implies(x, Not(y))), {}))).toBe('x \\not\\Rightarrow \\neg y');
+      expect(text(latex(not(Implies(x, not(y))), {}))).toBe('x \\not\\Rightarrow \\neg y');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1146,7 +1146,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Not(And(x, y)), {}))).toBe('\\neg \\left(x \\wedge y\\right)');
+      expect(text(latex(not(And(x, y)), {}))).toBe('\\neg \\left(x \\wedge y\\right)');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -1155,7 +1155,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const x = new Sym('x');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Not(x), { symbolNames: new Map([[x, 'x_i']]) }))).toBe('\\neg x_i');
+      expect(text(latex(not(x), { symbolNames: new Map([[x, 'x_i']]) }))).toBe('\\neg x_i');
     } finally {
       pprintUseUnicode(unicode);
     }
@@ -9840,7 +9840,7 @@ describe("sympy/printing/tests/test_latex.py", () => {
     const [x, y] = symbols('x y');
     const unicode = pprintUseUnicode(false);
     try {
-      expect(text(latex(Not(Equivalent(x, y)), {}))).toBe('x \\not\\Leftrightarrow y');
+      expect(text(latex(not(Equivalent(x, y)), {}))).toBe('x \\not\\Leftrightarrow y');
     } finally {
       pprintUseUnicode(unicode);
     }
