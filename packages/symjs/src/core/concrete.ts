@@ -6,12 +6,12 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Derivative, Dummy, Expr, ExtensionExpr, Sym, UndefFn, impl, registerHeadResolver } from './nodes';
+import { Derivative, Dummy, Expr, ExtensionExpr, Mul, Rel, Sym, UndefFn, impl, registerHeadResolver } from './nodes';
 import { add, mul, pow, sub, sympify } from './ops';
 import { at, getOrThrow } from './guard';
 import { ReorderError } from './errors';
 import type { Truth } from './truth';
-import { isZero } from './assumptions';
+import { isZero, isNegative, isPositive } from './assumptions';
 
 /**
  * Sum or Product: args [f, k1, a1, b1, k2, a2, b2, ...]. @internal ctor
@@ -131,6 +131,22 @@ export class Concrete extends Expr {
   }
 }
 
+/** SymPy AddWithLimits._eval_factor, applied from the innermost sum out. @internal */
+export function factorConcreteSum(sum: Concrete, factor: (term: Expr) => Expr): Expr {
+  const limits = sum.limits;
+  const [k, a, b] = at(limits, limits.length - 1);
+  const nested = limits.length > 1;
+  const term = factor(nested ? new Concrete('Sum', sum.args.slice(0, -3)) : sum.function);
+  if (nested && !term.has(k)) return mul(term, add(sub(b, a), 1));
+  if (!(term instanceof Mul)) return sum;
+  const outside: Expr[] = [], inside: Expr[] = [];
+  for (const t of term.args) {
+    const independent = t.isCommutative && ![...impl.freeSymbols(t)].some(s => s.equals(k));
+    (independent ? outside : inside).push(t);
+  }
+  return mul(...outside, new Concrete('Sum', [mul(...inside), k, a, b]));
+}
+
 type ConcreteLimit = readonly [Expr, ExprLike, ExprLike] | readonly [Expr, Expr];
 
 /** Set-valued limit processing supplied by concrete/exprwithlimits. @internal */
@@ -139,6 +155,7 @@ export const concreteHooks: { processLimit?: (f: Expr, k: Expr, domain: Expr) =>
 function withProcessedLimits(kind: 'Sum' | 'Product', fIn: ExprLike, limits: readonly ConcreteLimit[]): Expr {
   if (limits.length === 0) throw new RangeError(`${kind} requires a definite limit`);
   let f = sympify(fIn);
+  if (f instanceof Rel && f.op === 'Eq') return impl.rebuild(f, [withProcessedLimits(kind, f.lhs, limits), withProcessedLimits(kind, f.rhs, limits)]);
   const args: Expr[] = [];
   for (const limit of limits) {
     const k = limit[0];
@@ -149,7 +166,10 @@ function withProcessedLimits(kind: 'Sum' | 'Product', fIn: ExprLike, limits: rea
       f = term;
       args.push(k, lower, upper);
     } else {
-      args.push(k, sympify(limit[1]), sympify(limit[2]));
+      const lower = sympify(limit[1]), upper = sympify(limit[2]);
+      if ('lower' in k && k.lower instanceof Expr && isNegative(sub(lower, k.lower)) === true) throw new RangeError('Lower limit is outside the index range');
+      if ('upper' in k && k.upper instanceof Expr && isPositive(sub(upper, k.upper)) === true) throw new RangeError('Upper limit is outside the index range');
+      args.push(k, lower, upper);
     }
   }
   return new Concrete(kind, [f, ...args]);

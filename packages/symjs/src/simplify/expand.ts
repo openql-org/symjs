@@ -20,7 +20,7 @@ import { asNumerDenom } from '../core/methods';
 
 /** The core entry can distribute finite numeric limits without loading the full predicate engine. */
 export const expandHooks = {
-  canDistributeIntegral: (e: Integral): boolean => e.args.slice(2).every(isNum),
+  canDistributeIntegral: (e: Integral | Concrete): boolean => (e instanceof Concrete ? e.limits.flatMap(([, a, b]) => [a, b]) : e.args.slice(2)).every(isNum),
 };
 
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
@@ -583,6 +583,12 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     ...hints,
   };
   let e = sympify(ex);
+  if (e instanceof Concrete && e.kind2 === 'Sum' && h.basic !== false) {
+    const term = expand(e.function, hints);
+    const wrap = (f: Expr) => new Concrete('Sum', [f, ...e.args.slice(1)]);
+    return term instanceof Add && (h.force || term.isCommutative && expandHooks.canDistributeIntegral(e))
+      ? add(...term.args.map(wrap)) : wrap(term);
+  }
   if (e instanceof Integral && hints['basic'] !== false) {
     const limits: (readonly Expr[])[] = [];
     let body: Expr = e;

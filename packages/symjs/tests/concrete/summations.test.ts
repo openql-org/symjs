@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import { Concrete, Product, Sum, Sym, doit, eulerMaclaurin, isAbsolutelyConvergent, isConvergent, oo, parse, product, reverseOrder, subs, summation } from '../../src';
 import * as sj from '../../src';
 import { Expr } from '../../src/core/nodes';
+import { summationHooks } from '../../src/concrete/summations';
 import { NoMatchResult } from '../../src/core/truth';
 
 const Pplain = parse;
@@ -448,6 +449,7 @@ describe('results equal SymPy 1.14', () => {
     ["conv(sj.Sum(P('sin(k)'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)'), [k, moo, sj.oo])), "false"],
     ["sj.summation(P('1/(k*(k + 1))'), [k, 1, n])", () => sj.summation(P('1/(k*(k + 1))'), [k, 1, n]), "1 - 1/(n + 1)"],
     ["sj.summation(P('1/(k*(k + 2))'), [k, 1, n])", () => sj.summation(P('1/(k*(k + 2))'), [k, 1, n]), "3/4 - 1/(2*(n + 2)) - 1/(2*(n + 1))"],
+    ["sj.summation(P('k*2**k'), [k, 0, n])", () => sj.summation(P('k*2**k'), [k, 0, n]), "2*(2**n*n - 2**n + 1)"],
     ["sj.summation(P('log(k + 1) - log(k)'), [k, 1, n])", () => sj.summation(P('log(k + 1) - log(k)'), [k, 1, n]), "log(n + 1)"],
     ["sj.summation(P('cos(k + 1) - cos(k)'), [k, 1, n])", () => sj.summation(P('cos(k + 1) - cos(k)'), [k, 1, n]), "cos(n + 1) - cos(1)"],
     ["sj.summation(P('cos(k) - cos(k + 1)'), [k, 1, n])", () => sj.summation(P('cos(k) - cos(k + 1)'), [k, 1, n]), "-cos(n + 1) + cos(1)"],
@@ -471,7 +473,6 @@ describe('results that differ from SymPy 1.14', () => {
     // no summation by residues from -oo (as SymPy)
     ["sj.summation(P('1/(k**2+1)'), [k, moo, 3])", () => sj.summation(P('1/(k**2+1)'), [k, moo, 3]), "Sum(1/(k**2 + 1), (k, -oo, 3))", "Sum(1/(k**2 + 1), (k, -oo, 3))"],
     // arithmetic-geometric sums are not implemented
-    ["sj.summation(P('k*2**k'), [k, 0, n])", () => sj.summation(P('k*2**k'), [k, 0, n]), "Sum(2**k*k, (k, 0, n))", "2*(2**n*n - 2**n + 1)"],
     // comparison with |sin(k)| <= 1 is not implemented
     ["conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo])), "unknown", "true"],
     // SymPy raises ValueError
@@ -660,4 +661,70 @@ it('evaluates the summand with the signs its limits give the summation variable 
   // a constant factor with a factored denominator is taken out of a geometric sum
   const [i, k] = sj.symbols('i k');
   expect(String(sj.simplify(sj.sub(doit(Sum(parse('2**(-i)/(a - b)'), [i, 0, k])), parse('(2 - 2**(-k))/(a - b)'))))).toBe('0');
+});
+
+it('uses finite antidifferences and one-sided binomial support', () => {
+  const [k, n] = sj.symbols('k n');
+  const central = sj.binomial(k.mul(2), k);
+  expect(summation(central.mul(sj.pow(4, k.neg())), [k, 0, n]).equals(
+    sj.binomial(n.mul(2), n).mul(n.mul(2).add(1)).mul(sj.pow(4, n.neg())))).toBe(true);
+  expect(summation(central.mul(sj.pow(5, k.neg())), [k, sj.S.NegativeInfinity, oo]).equals(sj.sqrt(5))).toBe(true);
+  expect(sj.telescopic(k.pow(-1), k.add(1).pow(-1).neg(), [k, 1, n]).toString()).toBe('1 - 1/(n + 1)');
+  expect(sj.telescopic(k.pow(-1), k.neg().mul(k.add(1).pow(-1)), [k, 1, n])).toBe(sj.NoMatch);
+  expect(Sum(k, [k, 0, 2]).rewrite('Sum').kind).toBe('Concrete');
+  expect(Product(k, [k, 0, 2]).rewrite('Product').kind).toBe('Concrete');
+  expect(Sum(k, [k, 0, 2]).rewrite('Product').kind).toBe('Concrete');
+  expect(() => isConvergent(new Concrete('Sum', [k.mul(n), k, sj.S.One, sj.S.Infinity]))).toThrow(sj.NotImplementedError);
+});
+
+it('stops Euler–Maclaurin at a small nonzero term or correction', () => {
+  const k = sj.symbol('k'), y = sj.symbol('y');
+  const sum = (f: sj.Expr, start: sj.ExprLike, end: sj.ExprLike) => new Concrete('Sum', [f, k, sj.sympify(start), sj.sympify(end)]);
+  expect(eulerMaclaurin(sum(k.add(1).pow(-2), 0, 4), 5, 1, 0.3).map(String)).toEqual(['1', '1/4']);
+  expect(eulerMaclaurin(sum(y.mul(k.add(1).pow(-2)), 0, 4), 5, 1, 0.3).map(String)).toEqual(['y', '0']);
+  expect(eulerMaclaurin(sum(k.pow(2), 0, 3), 0, 3, 1).map(String)).toEqual(['27/2', '1/2']);
+});
+
+it('retains unsupported matrix powers and binomial tails with possible poles', () => {
+  const [k, n] = sj.symbols('k n');
+  const A = sj.MatrixSymbol('A', 2, 2), B = sj.MatrixSymbol('B', 2, 2);
+  const matrix = A.mul(B.pow(k));
+  expect(summation(matrix, [k, 0, n]).equals(Sum(matrix, [k, 0, n]))).toBe(true);
+  const pole = sj.binomial(k.mul(2), k).mul(k.add(2).pow(-1));
+  expect(summation(pole, [k, sj.S.NegativeInfinity, oo]).equals(Sum(pole, [k, sj.S.NegativeInfinity, oo]))).toBe(true);
+  const base = k.mul(n.pow(2).add(1).pow(k));
+  expect(doit(summation(base, [k, 0, n]).subs(n, 2)).equals(55)).toBe(true);
+  expect(() => isConvergent(new Concrete('Sum', [n, k, sj.S.Zero, oo]))).toThrow(sj.NotImplementedError);
+});
+
+it('computes Euler–Maclaurin correction errors at poles and with symbolic coefficients', () => {
+  const k = sj.symbol('k'), y = sj.symbol('y');
+  const pole = k.pow(-1).add(k.add(-1).pow(-1));
+  expect(eulerMaclaurin(new Concrete('Sum', [pole, k, sj.S.Zero, sj.S.One]), 0, 1, 0.1)).toEqual([sj.S.NaN, sj.S.NaN]);
+  expect(eulerMaclaurin(new Concrete('Sum', [y.mul(k.pow(2)), k, sj.S.Zero, sj.S.Two]), 0, 2, 0.1).map(String)).toEqual(['5*y', '0']);
+});
+
+it('leaves a binomial sum unevaluated when the Gosper service is absent', () => {
+  const [k, n] = sj.symbols('k n');
+  const f = sj.binomial(k.mul(2), k);
+  const previous = summationHooks.gosperSum;
+  delete summationHooks.gosperSum;
+  try {
+    expect(summation(f, [k, 0, n]).equals(Sum(f, [k, 0, n]))).toBe(true);
+  } finally {
+    summationHooks.gosperSum = previous;
+  }
+});
+
+it('matches positive and negative telescoping shifts beyond adjacent indices', () => {
+  const [k, n] = sj.symbols('k n');
+  const f = sj.SymFunction('f');
+  const L = f(k), R = f(k.add(12)).neg();
+  for (const [left, right] of [[L, R], [R, L]] as const) {
+    expect(sj.telescopic(left, right, [k, 1, n])).toEqual(sj.telescopicDirect(L, R, 12, [k, 1, n]));
+  }
+  const rational = [parse('1/(k*(k+1))'), parse('-1/(k**2+7*k+12)')] as const;
+  expect(sj.telescopic(...rational, [k, 1, n])).toEqual(sj.telescopicDirect(...rational, 3, [k, 1, n]));
+  expect(sj.telescopic(k.add(1), k, [k, 1, n])).toBe(sj.NoMatch);
+  expect(sj.telescopic(k, k.add(1), [k, 1, n])).toBe(sj.NoMatch);
 });

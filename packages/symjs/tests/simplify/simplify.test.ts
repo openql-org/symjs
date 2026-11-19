@@ -502,3 +502,16 @@ it('preserves piecewise values that do not define a Kronecker delta', () => {
     expect(result.has(delta)).toBe(true);
   }
 });
+
+it('preserves endpoints and substitutions when simplifying folded branches', () => {
+  const x = symbol('x', { real: true }), y = symbol('y', { real: true });
+  const closed = Piecewise([3, Le(fn('abs', [x]), 2)], [4, true]);
+  expect(String(simplify(closed))).toBe('Piecewise((3, (x >= -2) & (x <= 2)), (4, True))');
+  const overlapping = Piecewise([1, Lt(x, 0)], [2, Lt(fn('abs', [x]), 1)], [3, true]);
+  expect(String(simplify(overlapping))).toBe('Piecewise((1, x < 0), (2, x < 1), (3, True))');
+  const mixed = Piecewise([x.add(y), And(Eq(x, 1), Lt(x.add(y), 5))], [9, true]);
+  expect(simplify(mixed).subs(x, 1).subs(y, 2).equals(3)).toBe(true);
+  const nonlinear = Piecewise([5, Eq(x.pow(2), 1)], [0, true]);
+  expect(simplify(nonlinear).subs(x, -1).equals(5)).toBe(true);
+  expect(simplify(add(closed, 1)).subs(x, 3).equals(5)).toBe(true);
+});

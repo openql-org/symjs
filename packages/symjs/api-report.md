@@ -1516,7 +1516,7 @@ Total: 3383 stable, 27 experimental, 84 deprecated. The root `@symjs/symjs` re-e
 | `SringOptions` | type | stable |
 | `TschirnhausenOptions` | type | stable |
 
-## `@symjs/symjs/calculus` (188)
+## `@symjs/symjs/calculus` (189)
 
 | Export | Kind | Level |
 |---|---|---|
@@ -1686,6 +1686,7 @@ Total: 3383 stable, 27 experimental, 84 deprecated. The root `@symjs/symjs` re-e
 | `sumIsConvergent` | function | deprecated |
 | `summation` | function | stable |
 | `taylorTerm` | function | stable |
+| `telescopic` | function | stable |
 | `telescopicDirect` | function | stable |
 | `testDerivativeNumerically` | function | stable |
 | `transformIntegral` | function | stable |

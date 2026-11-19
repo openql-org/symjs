@@ -70,3 +70,9 @@ it('derives finite sum and product facts from their terms without evaluating the
   expect(ask(Q.negative(Product(2, [x, 0, S.Infinity])))).toBe(false);
   expect(ask(Q.positive(x))).toBe('unknown');
 });
+
+it('accepts connected continuous domains and rejects discrete or disconnected domains', () => {
+  expect(sj.integral(x, sj.and(sj.Ge(x, 0), sj.Lt(x, 3))).equals(sj.integral(x, [x, 0, 3]))).toBe(true);
+  expect(() => sj.integral(x, [x, sj.Range.of(3)])).toThrow(TypeError);
+  expect(() => sj.integral(x, [x, sj.finiteSet(0, 2)])).toThrow(sj.NotImplementedError);
+});

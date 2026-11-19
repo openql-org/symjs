@@ -211,6 +211,18 @@ function gammasimpCore(exprIn: Expr, asComb: boolean, level0 = 0): Expr {
       explicate(d, denomGammas, denomOthers);
     }
 
+    // Gamma(z + m)/Gamma(z) is a finite product for integral shifts.
+    for (const a of [...numerGammas]) {
+      for (const b of denomGammas) {
+        const shift = add(a, mul(-1, b));
+        if (!isInt(shift)) continue;
+        remove(numerGammas, a);
+        remove(denomGammas, b);
+        if (shift.isNegative) denomOthers.push(rising(a, Rational.of(-shift.p)));
+        else numerOthers.push(rising(b, shift));
+        break;
+      }
+    }
     if (!asComb) {
       reflection(numerGammas, numerOthers, denomOthers);
       reflection(denomGammas, denomOthers, numerOthers);
@@ -548,8 +560,13 @@ export function hypersimp(fIn: ExprLike, k: Expr): Expr | undefined {
   } catch {
     // keep the combined ratio
   }
-  const [n, d] = fraction(r);
-  return isPolyIn(n, k) && isPolyIn(d, k) ? r : undefined;
+  const rationalInIndex = (value: Expr): boolean => fraction(value).every(part => isPolyIn(part, k));
+  if (rationalInIndex(r)) return r;
+  const g = rewrite(f, 'gamma');
+  if (g.equals(f)) return undefined;
+  const shifted = g.subs(k, add(k, 1));
+  const reduced = factor(cancel(gammasimp(mul(shifted, pow(g, -1)))));
+  return rationalInIndex(reduced) ? reduced : undefined;
 }
 
 /** Is e a polynomial in k (k need not be a symbol: it is replaced by a dummy first)? */

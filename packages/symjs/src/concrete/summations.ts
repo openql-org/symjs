@@ -7,10 +7,10 @@
 
 import type { Expr, ExprLike } from '../core/nodes';
 import { NotImplementedError } from '../core/errors';
-import { Add, Dummy, Fn, Integral, Limit, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, asRational, impl, isNum } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Fn, Integral, Limit, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, Wild, asRational, impl, isNum, registerRewrite } from '../core/nodes';
 import { asNumerDenom } from '../core/methods';
 import { apart } from '../polys/partfrac';
-import { cancel, fraction } from '../simplify/rational';
+import { cancel, fraction, together } from '../simplify/rational';
 import { factor } from '../polys/sympoly';
 import { hyperexpand } from '../simplify/hyperexpand';
 import { Hyper, hyper } from '../functions/special/hyper';
@@ -29,12 +29,17 @@ import { expand as expandFull, expandMul, withFactoredDenominators } from '../si
 
 /** Distribution over sums with the denominators left factored: the summation rules match the factors of a term. */
 const expand = (e: ExprLike): Expr => withFactoredDenominators(() => expandMul(e));
-import { combsimp } from '../simplify/gammasimp';
+import { combsimp, hypersimp } from '../simplify/gammasimp';
 import { powsimp } from '../simplify/powsimp';
+import { factorTerms } from '../simplify/exprtools';
+import { match } from '../core/match';
 import { residue } from '../series/residues';
 import { Concrete } from './node';
 
 export { Concrete };
+
+/** Gosper summation is registered by the calculus entry alongside its solver dependencies. @internal */
+export const summationHooks: { gosperSum?: (f: Expr, limits: [Sym, Expr, Expr]) => Expr | NoMatchResult } = {};
 
 const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
 const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
@@ -42,8 +47,13 @@ const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 export { Sum, Product } from '../core/concrete';
 import { Sum, Product } from '../core/concrete';
 import { at, cast, defined, first, getOrThrow, pair } from '../core/guard';
-import { NoMatch, orNoMatch } from '../core/truth';
+import { NoMatch, isNoMatch, orNoMatch } from '../core/truth';
 import type { NoMatchResult } from '../core/truth';
+
+registerRewrite('Concrete', 'Sum', (args, self) => self instanceof Concrete && self.kind2 === 'Product'
+  ? exp(new Concrete('Sum', [log(first(args)), ...args.slice(1)])) : undefined);
+registerRewrite('Concrete', 'Product', (args, self) => self instanceof Concrete && self.kind2 === 'Sum' && fact(first(args), 'extended_real') === true
+  ? log(new Concrete('Product', [exp(first(args)), ...args.slice(1)])) : undefined);
 
 /** Evaluate an infinite rational sum by residues, or return NoMatch. */
 export function evalSumResidue(f: ExprLike, [k, a, b]: readonly [Sym, ExprLike, ExprLike]): Expr | NoMatchResult {
@@ -96,6 +106,16 @@ function sumOne(fIn: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | u
   // a Piecewise term whose condition bounds k: the sum over the range where it holds
   const pw = piecewiseRange(f, k, a, b);
   if (pw !== undefined) return pw;
+  // Pull constant matrix factors off the ends without commuting them across the summand.
+  if (f instanceof ExtensionExpr && f.name === 'MatMul') {
+    if (!isInt(diff_)) return undefined;
+    const dependent = f.args.filter(t => t.has(k));
+    if (dependent.length === 1) {
+      const body = first(dependent);
+      const term = directSum(body, k, a, diff_.p);
+      return f.withArgs(f.args.map(t => t === body ? term : t));
+    }
+  }
   // explicit evaluation for short finite ranges (SymPy: fewer than 100 terms)
   if (isInt(diff_) && diff_.p < 100n) return directSum(f, k, a, diff_.p);
   // Karr convention: sum_{k=a}^{-oo} f = -sum_{k=-oo}^{a-1} f
@@ -109,6 +129,21 @@ function sumOne(fIn: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | u
   if (isOo(b) && !mirrored) {
     const r = evalSumResidueImpl(f, k, a, b);
     if (r) return r;
+  }
+  // Binomial(n, k) vanishes at every negative integer k.
+  const binomialTerm = (f instanceof Mul ? f.args : [f]).find(t => t instanceof Fn && t.name === 'binomial' && at(t.args, 1).equals(k));
+  if (isNegOo(a) && isOo(b) && binomialTerm) {
+    const negativeIndex = new Dummy('j', { negative: true, integer: true });
+    const rest = mul(f, pow(binomialTerm, -1));
+    if (fact(xreplace(rest, [[k, negativeIndex]]), 'finite') === true) return sumOne(f, k, S.Zero, b);
+  }
+  if (f instanceof Pow && f.base instanceof Add && isInt(f.exp) && f.exp.isNegative) {
+    const factored = factorTerms(f);
+    if (factored instanceof Mul) {
+      const [coefficient, dependent] = splitFactors(factored, k);
+      const value = sumOne(mul(...dependent), k, a, b);
+      if (value !== undefined) return mul(coefficient, value);
+    }
   }
   const ef = expand(f);
   const pc = polyCoefficients(ef, k);
@@ -164,8 +199,28 @@ function sumOne(fIn: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | u
   }
   // two terms that cancel after a shift, also after a partial fraction decomposition (SymPy telescopic)
   if (!isOo(b)) {
-    const t = telescopic(f, k, a, b) ?? (isRationalIn(f, k) ? telescopic(apart(f, k), k, a, b) : undefined);
+    const t = telescopicAdd(f, k, a, b) ?? (isRationalIn(f, k) ? telescopicAdd(apart(f, k), k, a, b) : undefined);
     if (t !== undefined) return t;
+  }
+  // Gosper antidifferences for a binomial term, or an index times a geometric term.
+  if (!isOo(b) && !isNegOo(a)) {
+    const geometric = dep.find(t => t instanceof Pow && t.exp.equals(k) && !t.base.has(k));
+    const weighted = dep.length === 2 && dep.some(t => t.equals(k)) && geometric instanceof Pow;
+    if (weighted || binomialTerm && [...freeSymbols(f)].every(v => v.equals(k))) {
+      const result = summationHooks.gosperSum?.(f, [k, a, b]) ?? NoMatch;
+      if (!isNoMatch(result)) {
+        if (!weighted) return result;
+        const base = geometric.base;
+        const [num] = fraction(together(add(base, -1)));
+        let condition = Eq(base, 1);
+        for (const variable of [...freeSymbols(base)].filter(v => v instanceof Sym).sort((x, y) => x.name.localeCompare(y.name))) {
+          const root = linearRoot(num, variable);
+          if (root !== undefined) { condition = Eq(variable, factor(root)); break; }
+        }
+        const atOne = mul(c, S.Half, add(a, b), add(b, mul(-1, a), 1));
+        return piecewise([base instanceof Sym ? expand(atOne) : atOne, condition], [result, true]);
+      }
+    }
   }
   // a hypergeometric term: the hypergeometric series, expanded (SymPy eval_sum_hyper)
   if (isOo(b) && !isNegOo(a) && !isOo(a) && f instanceof Pow && !f.exp.has(k)) {
@@ -309,7 +364,7 @@ function sumHyperFrom(fIn: Expr, k: Sym, a: Expr, zeros = 0): [Expr, Expr] | und
     if (zeros >= 6) return undefined;
     return sumHyperFrom(xreplace(f, [[k, add(k, 1)]]), k, S.Zero, zeros + 1);
   }
-  const hs = termRatio(f, k);
+  const hs = termRatio(f, k) ?? hypersimp(f, k);
   if (hs === undefined) return undefined;
   const [numer, denom] = fraction(hs);
   const ab: Expr[] = [];
@@ -387,19 +442,29 @@ function isRationalIn(f: Expr, k: Sym): boolean {
  * sum_{k=a}^{b} (L + R) for R = -L(k + s) with an integer shift s (SymPy telescopic): the first
  * |s| terms of L (of R) and the last ones of R (of L) remain.
  */
-function telescopic(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
+function telescopicAdd(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   if (!(f instanceof Add && f.args.length === 2)) return undefined;
-  // (the terms of a sum are not sums)
-  const [L, R] = [at(f.args, 0), at(f.args, 1)];
-  for (let s = 1; s <= 8; s++) {
-    for (const sh of [s, -s]) {
-      if (!isZeroExpanded(add(xreplace(L, [[k, add(k, sh)]]), R))) continue;
-      // telescopic_direct(L, R, s) for s > 0, telescopic_direct(R, L, |s|) for s < 0
-      const [P, Q] = sh > 0 ? [L, R] : [R, L];
-      return telescopicDirect(P, Q, s, [k, a, b]);
-    }
+  const result = telescopic(first(f.args), at(f.args, 1), [k, a, b]);
+  return isNoMatch(result) ? undefined : result;
+}
+
+/** Sum two terms whose translates cancel, or return NoMatch. */
+export function telescopic(left: ExprLike, right: ExprLike, limits: readonly [Sym, ExprLike, ExprLike]): Expr | NoMatchResult {
+  const L = sympify(left), R = sympify(right), [k] = limits;
+  if (L instanceof Add || R instanceof Add) return NoMatch;
+  const shift = new Wild('shift', { exclude: [k] });
+  const shifted = xreplace(L, [[k, add(k, shift)]]);
+  const matched = match(mul(-1, R), shifted)?.get(shift);
+  const valid = (s: Expr): s is Rational => isInt(s) && !s.isZero && isZeroExpanded(fraction(together(add(xreplace(L, [[k, add(k, s)]]), R)))[0]);
+  let distance = matched;
+  if (distance === undefined || !valid(distance)) {
+    const numerator = expand(fraction(together(add(shifted, R)))[0]);
+    const candidates = polyCoefficients(numerator, shift) === undefined ? [] : roots(numerator, shift).filter(valid);
+    const distinct = [...new Map(candidates.map(s => [s.key, s])).values()];
+    if (distinct.length !== 1) return NoMatch;
+    distance = first(distinct);
   }
-  return undefined;
+  return isNegative(distance) === true ? telescopicDirect(R, L, mul(-1, distance), limits) : telescopicDirect(L, R, distance, limits);
 }
 
 /** Boundary terms left after cancelling a telescoping sum with a positive integer shift. */
@@ -768,6 +833,7 @@ function fractionOf(f: Expr): [Expr, Expr] {
 export function sumIsConvergent(c: Concrete): boolean | undefined {
   const [kE, a, b] = first(c.limits);
   const k0 = cast(kE, Sym, 'limit variable');
+  if (freeSymbols(c.function).size > 1) throw new NotImplementedError('convergence checking for more than one symbol containing series is not handled');
   if (isFiniteBound(a) && isFiniteBound(b)) return true;
   // as in SymPy, the summation variable is a positive integer
   const k = new Sym(k0.name, { integer: true, positive: true });
@@ -856,7 +922,7 @@ export function sumIsAbsolutelyConvergent(c: Concrete): boolean | undefined {
  * SymPy Sum.euler_maclaurin(m, n): [approximation, error estimate] by the
  * Euler-Maclaurin formula with m explicit leading terms and n correction terms.
  */
-export function eulerMaclaurin(sum: Concrete, mIn = 0, n = 0): [Expr, Expr] {
+export function eulerMaclaurin(sum: Concrete, mIn = 0, n = 0, eps = 0): [Expr, Expr] {
   let m = mIn;
   if (!(sum instanceof Concrete) || sum.limits.length !== 1) throw new TypeError('euler_maclaurin: a Sum with one limit expected');
   let f = sum.function;
@@ -874,7 +940,16 @@ export function eulerMaclaurin(sum: Concrete, mIn = 0, n = 0): [Expr, Expr] {
   let s: Expr = S.Zero;
   if (m) {
     if (a instanceof Rational && b instanceof Rational) m = Math.min(m, Number((b).p - (a).p) + 1);
-    s = add(...Array.from({ length: m }, (_, k) => at(f, add(a, k))));
+    const checkTerms = eps > 0 && polyCoefficients(expand(f), i) === undefined;
+    for (let k = 0; k < m; k++) {
+      const term = at(f, add(a, k));
+      if (checkTerms && term !== S.Zero) {
+        const value = numeric(term);
+        if (value === undefined && k === 0) return [term, S.Zero];
+        if (value !== undefined && Math.abs(value) < eps) return [s, abs(term)];
+      }
+      s = add(s, term);
+    }
     if (add(b, mul(-1, a), 1).key === Rational.of(m).key) return [s, S.Zero];
     a = add(a, m);
   }
@@ -896,6 +971,11 @@ export function eulerMaclaurin(sum: Concrete, mIn = 0, n = 0): [Expr, Expr] {
     const [ga, gb] = fpoint(g);
     term = mul(bernoulliNumber(2 * k), pow(factorial(2 * k), -1), add(gb, mul(-1, ga)));
     if (k > n) break;
+    if (eps > 0 && term !== S.Zero) {
+      const value = numeric(term);
+      if (value !== undefined && Number.isNaN(value)) return [S.NaN, S.NaN];
+      if (value !== undefined && Math.abs(value) < eps) break;
+    }
     s = add(s, term);
     g = impl.diff(g, i, 2);
   }

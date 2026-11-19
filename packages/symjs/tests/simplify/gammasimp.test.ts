@@ -230,3 +230,14 @@ describe('combsimp and gammasimp: further SymPy 1.14 cases', () => {
     expect(isHypergeometric(PA('factorial(n)', I), n)).toBe(true);
   });
 });
+
+it('reduces rational Gamma arguments and tests nonlinear factorial shifts', () => {
+  const k = symbol('k');
+  expect(String(gammasimp(P('gamma(7/3)')))).toBe('4*gamma(1/3)/9');
+  expect(String(hypersimp(P('factorial(k**2)'), k))).toBe('NoMatch');
+});
+
+it('obtains rational shift quotients from the Gamma rewrite of binomials', () => {
+  const n = symbol('n');
+  expect(String(hypersimp(P('4**n*n**4/binomial(2*n,n)'), n))).toBe('2*(n + 1)**5/(n**4*(2*n + 1))');
+});

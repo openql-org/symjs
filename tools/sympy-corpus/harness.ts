@@ -945,7 +945,7 @@ function concreteNode(kind: 'Sum' | 'Product', args: unknown[]): Expr {
     if (l.items.length !== 3) throw new RangeError('A discrete limit needs two bounds');
     return l.items as [Sym, Expr, Expr];
   });
-  return kind === 'Sum' ? sj.Sum(f as Expr, ...ls) : sj.Product(f as Expr, ...ls);
+  return kind === 'Sum' ? sj.Sum(asMatrixExpression(f), ...ls) : sj.Product(asMatrixExpression(f), ...ls);
 }
 
 function orderNode(e: unknown, rest: unknown[]): Expr {
@@ -3474,10 +3474,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.asSum(self, asExpr(args[0]), method, { evaluate: kw['evaluate'] !== false });
   },
   '.euler_maclaurin': (args, kw, self) => {
-    for (const k of Object.keys(kw)) if (k !== 'm' && k !== 'n') throw new Unsupported(`kwargs ${k}`);
-    const m = Number(((kw['m'] ?? args[0] ?? sj.Rational.of(0)) as sj.Rational).p);
-    const n = Number(((kw['n'] ?? args[1] ?? sj.Rational.of(0)) as sj.Rational).p);
-    return new JsTuple(sj.eulerMaclaurin(self as sj.Concrete, m, n));
+    for (const k of Object.keys(kw)) if (!['m', 'n', 'eps'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const m = intArg(kw['m'] ?? args[0] ?? 0), n = intArg(kw['n'] ?? args[1] ?? 0);
+    return new JsTuple(sj.eulerMaclaurin(self as sj.Concrete, m, n, asExpr(kw['eps'] ?? args[2] ?? 0).toNumber()));
   },
   '.from_coprime_ints': (args, kw) => (noKw(kw), sj.Rational.of(integerBigArg(args[0]), integerBigArg(args[1]))),
   '.approximation_interval': (args, kw, self) => {
@@ -4682,10 +4681,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p), dir, logx === undefined ? {} : { logx: asExpr(logx) });
   },
   O: (args, kw) => (noKw(kw), orderNode(asExpr(args[0]), args.slice(1))),
-  Sum: (args, kw) => (noKw(kw), concreteNode('Sum', [asExpr(args[0]), ...args.slice(1)])),
-  Product: (args, kw) => (noKw(kw), concreteNode('Product', [asExpr(args[0]), ...args.slice(1)])),
-  summation: (args, kw) => (noKw(kw), concreteDoit(concreteNode('Sum', [asExpr(args[0]), ...args.slice(1)]))),
-  product: (args, kw) => (noKw(kw), concreteDoit(concreteNode('Product', [asExpr(args[0]), ...args.slice(1)]))),
+  Sum: (args, kw) => (noKw(kw), concreteNode('Sum', args)),
+  Product: (args, kw) => (noKw(kw), concreteNode('Product', args)),
+  summation: (args, kw) => (noKw(kw), concreteDoit(concreteNode('Sum', args))),
+  product: (args, kw) => (noKw(kw), concreteDoit(concreteNode('Product', args))),
   '.reverse_order': (args, kw, self) => {
     noKw(kw);
     if (!(self instanceof sj.Concrete)) throw new Unsupported('reverse_order');
@@ -8472,7 +8471,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       // (a DomainMatrix error is the method's own result)
       const terminalFunctionError = self === undefined && ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn', 'loggamma', 'Piecewise'].includes(c.fn);
       const terminalTypeError = e instanceof TypeError
-        && ['parse_expr', '.copyin_list', '.applyfunc', '.inv_mod', '.diff', '.replace', 'Dict', '.has_free', '.has_xfree', '.evalf', '.n'].includes(c.fn);
+        && ['Integral', 'parse_expr', '.copyin_list', '.applyfunc', '.inv_mod', '.diff', '.replace', 'Dict', '.has_free', '.has_xfree', '.evalf', '.n'].includes(c.fn);
       const terminalPolynomialError = c.category === 'polys' && (
         e instanceof sj.BasePolynomialError || e instanceof sj.PolynomialError || e instanceof sj.DomainError
         || e instanceof sj.CoercionFailed || c.fn === 'degree' && e instanceof TypeError

@@ -1908,3 +1908,21 @@ it('retains coefficient domains in sums and rational denominator clearing', () =
   // The sign of the leading coefficient is unavailable for a non-polynomial generator.
   expect(String(sj.factor(parse('1.5/x+1.5'), { gens: [x] }))).toBe('1.5*(x + 1)/x');
 });
+
+it('retains expression-domain denominators and validates root generators', () => {
+  const x = sj.symbol('x');
+  const f = Poly.from(x.add(sj.exp(sj.symbol('y'))), [x], { domain: 'EX' });
+  expect(f.ratClearDenoms(f).map(String)).toEqual([String(f), String(f)]);
+  const formal = Poly.from(sj.sin(x).pow(2), [sj.sin(x)]);
+  expect(() => formal.realRoots({ extension: false })).toThrow(sj.PolynomialError);
+});
+
+it('factors a common float around a nonpolynomial expression', () => {
+  const x = sj.symbol('x');
+  const float = new sj.Float(2);
+  const expression = sj.add(float.mul(sj.sin(x)), float.mul(sj.cos(x)));
+  const result = sj.factor(expression, { gens: [x] });
+  expect(String(result)).toBe('2.0*(sin(x) + cos(x))');
+  const nested = sj.add(float.mul(sj.sin(float.mul(x))), float.mul(x));
+  expect(sj.factor(nested).subs(x, 0).equals(sj.S.Zero)).toBe(true);
+});

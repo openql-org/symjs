@@ -25,7 +25,7 @@ import { exptrigsimp, trigsimp } from './trigsimp';
 import { at, first } from '../core/guard';
 import { nsimplify, nfloat } from '../numeric/nfloat';
 import { simplifyRelation } from '../core/relational';
-import { isNegative } from '../core/assumptions';
+import { isNegative, isIntegerQ } from '../core/assumptions';
 import type { Truth } from '../core/truth';
 import { simplifyLogic } from '../logic/minimize';
 import { BoolOp, and } from '../core/boolalg';
@@ -185,7 +185,7 @@ const COMBINATORIAL = new Set(['factorial', 'factorial2', 'binomial', 'rf', 'ff'
 const COMBINATORIAL_GAMMA = new Set([...COMBINATORIAL, 'gamma']);
 const BESSEL = new Set(['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2', 'jn', 'yn']);
 const hasFn = (e: Expr, names: ReadonlySet<string>): boolean => some(e, (x) => x instanceof Fn && names.has(x.name));
-const isExpPow = (x: Expr): boolean => x instanceof Pow && x.base.key === S.E.key;
+const isExpPow = (x: Expr): x is Pow => x instanceof Pow && x.base.key === S.E.key;
 
 /**
  * The hyperexpand step of simplify. simplify cannot import hyperexpand (which simplifies its
@@ -208,6 +208,10 @@ function piecewiseConditionSet(condition: Expr, x: Sym): SetExpr | undefined {
     return undefined;
   }
   if (!(condition instanceof Rel) || condition.op === 'Eq' || condition.op === 'Ne') return undefined;
+  if (condition.lhs instanceof Fn && condition.lhs.name === 'abs' && first(condition.lhs.args).equals(x)
+      && (condition.op === 'Lt' || condition.op === 'Le') && condition.rhs instanceof Rational && condition.rhs.isPositive) {
+    return interval(mul(-1, condition.rhs), condition.rhs, condition.op === 'Lt', condition.op === 'Lt');
+  }
   const left = condition.lhs.key === x.key;
   if (!left && condition.rhs.key !== x.key) return undefined;
   const bound = left ? condition.rhs : condition.lhs;
@@ -231,7 +235,7 @@ function simplifyPiecewiseIntervals(e: Piecewise): [Expr, Expr][] {
     if (remaining === EmptySet) continue;
     const all = union(covered, set);
     let test = all === Reals ? S.true : condition;
-    if (test !== S.true && remaining instanceof Interval && !remaining.equals(set)) {
+    if (test !== S.true && remaining instanceof Interval && (!remaining.equals(set) || condition instanceof Rel && condition.lhs instanceof Fn && condition.lhs.name === 'abs')) {
       const entireLeft = interval(S.NegativeInfinity, remaining.start, true, !remaining.leftOpen);
       const lo = remaining.isLeftUnbounded || complement(entireLeft, covered) === EmptySet
         ? S.true : remaining.leftOpen ? Gt(x, remaining.start) : Ge(x, remaining.start);
@@ -252,6 +256,9 @@ function simplifyPiecewise(e: Piecewise, opts: SimplifyOptions): Expr {
     const parts = condition instanceof BoolOp && condition.op === 'And' ? condition.args : [condition];
     const equality = (part: Expr): part is Rel => part instanceof Rel && part.op === 'Eq';
     const equations = ordered(parts.filter(equality).map((eq) => {
+      if (isExpPow(eq.lhs) && eq.lhs.exp instanceof Add) {
+        return Eq(pow(S.E, signsimp(factorTerms(eq.lhs.exp))), eq.rhs);
+      }
       if (isSubstitutionEquation(eq) || eq.freeSymbols().size !== 1) return eq;
       const delta = expand(add(eq.lhs, mul(-1, eq.rhs)));
       return canonicalRelation(new Rel('Eq', delta, S.Zero));
@@ -344,7 +351,8 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
   /** SymPy done: doit, and the Abs factors collected when that is shorter. */
   const done = (e: Expr): Expr => {
     const rv = opts.doit !== false && impl.doit ? impl.doit(e) : reevaluate(e);
-    const result = shorter(rv, collectAbs(rv));
+    const reduced = !rv.equals(e) && some(rv, t => t instanceof Fn && t.name === 'gamma') ? shorter(rv, combsimp(rv)) : rv;
+    const result = shorter(reduced, collectAbs(reduced));
     return rationalized && opts.rational === null ? nfloat(result) : result;
   };
   // (SymPy first returns 0 for an expression known to be zero; the assumptions here decide that only
@@ -387,7 +395,7 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
       });
     }
     const folded = piecewiseFold(sympified);
-    if (folded instanceof Piecewise) return piecewise(...folded.pairs.map(([v, c]) => [simplify(v, opts), simplify(c, opts)] as const));
+    if (folded instanceof Piecewise) return simplifyPiecewise(folded, opts);
   }
   const leading = sympified instanceof Mul ? first(sympified.args) : undefined;
   if (leading instanceof Float && leading.mpf.man === 1n && leading.mpf.exp === 0n && !sympified.isCommutative) {
@@ -397,7 +405,11 @@ export function simplify(ex: ExprLike | AlgebraicNumber, opts: SimplifyOptions =
     sympified = mul(...sympified.args.map((a) => a instanceof Pow && a.exp.key === S.Half.key && isNegative(a.base) === true
       ? mul(S.I, pow(mul(-1, a.base), S.Half)) : a));
   }
-  const original = collectAbs(signsimp(sympified));
+  const original = collectAbs(signsimp(mapBottomUp(sympified, t => {
+    if (!isExpPow(t) || !t.exp.has(S.Pi) || !t.exp.has(S.I)) return t;
+    const cycles = cancel(mul(t.exp, pow(mul(2, S.Pi, S.I), -1)));
+    return isIntegerQ(cycles) === true ? S.One : t;
+  })));
   // deep simplification: the arguments of the nodes other than sums, products and powers
   let signed = absorbSign(original);
   if (hasFn(signed, SIGN) && hasFn(signed, ABS)) {

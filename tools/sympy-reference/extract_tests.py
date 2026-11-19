@@ -801,6 +801,8 @@ class Capture:
         # two random symbols of the same name print alike: the right-hand side is kept as a tree
         if op == "!=" and self.category == "stats" and isinstance(expected, sympy.stats.rv.RandomSymbol):
             case["comparisonTree"] = extract.ser(expected)
+        if op == "!=" and self.category == "concrete" and isinstance(expected, (sympy.Sum, sympy.Product, sympy.Integral)):
+            case["comparisonTree"] = extract.ser(expected)
         # symbols that differ only in their assumptions print alike in a geometric entity as well
         if op == "!=" and self.category == "geometry" and isinstance(expected, sympy.geometry.entity.GeometryEntity):
             case["comparisonTree"] = extract.ser(expected)

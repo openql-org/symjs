@@ -11,6 +11,7 @@
  */
 
 import { DomainError, ExactQuotientFailed, InvariantError, NotImplementedError, NotInvertible, PolynomialError, SympifyError } from '../core/errors';
+import { Concrete, factorConcreteSum } from '../core/concrete';
 import { parse } from '../parsing/parser';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch, isNoMatch } from '../core/truth';
@@ -2547,7 +2548,8 @@ function powered(f: Expr, k: Expr, exp: Expr, key: FactorKey): SymbolicFactor {
 function symbolicFactorList(expr: Expr, fixed: readonly Expr[]): [Expr, SymbolicFactor[]] {
   let coeff: Expr = S.One;
   const factors: SymbolicFactor[] = [];
-  for (const arg of expr instanceof Mul ? expr.args : [expr]) {
+  const terms = expr instanceof Mul ? expr.args : [expr];
+  for (const arg of terms.map(t => t instanceof Concrete && t.kind2 === 'Sum' ? factorConcreteSum(t, factor) : t)) {
     if (isNum(arg) || isPureComplex(arg)) {
       coeff = mul(coeff, arg);
       continue;
@@ -3066,6 +3068,7 @@ export function formalCoefficientDomain(coeffs: readonly Expr[]): string | undef
 
 export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: boolean; gaussian?: boolean; fraction?: boolean; gens?: readonly Expr[]; expand?: boolean } = {}): Expr {
   const e = sympify(ex);
+  if (e instanceof Concrete && e.kind2 === 'Sum') return factorConcreteSum(e, factor);
   if (e instanceof Rel) return new Rel(e.op, factor(e.lhs, opts), factor(e.rhs, opts));
   if (!e.args.length && !e.isCommutative) return e;
   if (opts.expand === false && opts.gens?.some((g) => hasUnexpandedFactors(e, g))) throw new PolynomialError('unexpanded factor contains a polynomial generator');
@@ -3106,14 +3109,30 @@ export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: bo
     // SymPy together (gcd_terms): a Float that is the coefficient of every term up to its sign is taken out,
     // and the rest is factored exactly (1.5*x + 1.5 is 1.5*(x + 1))
     const parts = e.args.map((t): [Float | undefined, Expr] => {
+<<<<<<< HEAD
       if (!(t instanceof Mul)) return [t instanceof Float ? t : undefined, S.One];
       const float = t.args.find((a): a is Float => a instanceof Float);
       return [float, mul(...t.args.filter(a => a !== float))];
+||||||| 855757b9
+      const float = t instanceof Float ? t : t instanceof Mul ? t.args.find((a): a is Float => a instanceof Float) : undefined;
+      return [float, float === undefined || t instanceof Float ? S.One : mul(...(t instanceof Mul ? t.args : []).filter((a) => a !== float))];
+=======
+      const float = t instanceof Float ? t : t instanceof Mul ? t.args.find((a): a is Float => a instanceof Float) : undefined;
+      return [float, float === undefined || t instanceof Float ? S.One : mul(...t.args.filter((a) => a !== float))];
+>>>>>>> feature/0.0.161/beta
     });
     const leading = at(parts, 0)[0];
     const magnitude = Math.abs(leading?.toNumber() ?? 1);
+<<<<<<< HEAD
     if (leading !== undefined && parts.every((part): part is [Float, Expr] => part[0] !== undefined && Math.abs(part[0].toNumber()) === magnitude)) {
       const inner = add(...parts.map(([c, rest]) => (c.toNumber() < 0 ? mul(-1, rest) : rest)));
+||||||| 855757b9
+    if (leading !== undefined && parts.every(([c]) => c !== undefined && Math.abs(c.toNumber()) === magnitude)) {
+      const inner = add(...parts.map(([c, rest]) => ((c?.toNumber() ?? 1) < 0 ? mul(-1, rest) : rest)));
+=======
+    if (leading !== undefined && parts.every(([c]) => c !== undefined && Math.abs(c.toNumber()) === magnitude)) {
+      const inner = add(...parts.map(([c, rest]) => (defined(c).toNumber() < 0 ? mul(-1, rest) : rest)));
+>>>>>>> feature/0.0.161/beta
       if (!some(inner, (a) => a instanceof Float)) {
         // the sign goes with the Float so that the leading coefficient of the rest is positive
         const positive = leading.toNumber() < 0 ? mul(-1, leading) : leading;
@@ -3244,7 +3263,9 @@ export function factorNc(ex: ExprLike): Expr {
     ...[...operators.values()].map((op): [Expr, Expr] => [op, new Dummy('operator')])];
   const f = factor(xreplace(e, reps));
   const back = xreplace(f, reps.map(([a, b]) => [b, a] as [Expr, Expr]));
-  const valid = expand(back).key === expand(e).key ? back : e;
+  const valid = mapBottomUp(expand(back).key === expand(e).key ? back : e, node =>
+    node instanceof Pow && !node.base.isCommutative && node.exp instanceof Add && node.exp.args.every(t => isIntegerQ(t) === true)
+      ? mul(...node.exp.args.map(t => pow(node.base, t))) : node);
   if (!(valid instanceof Add)) return valid;
   const factors = valid.args.map((term) => term instanceof Mul ? term.args : [term]);
   const right = first(factors).at(-1);
