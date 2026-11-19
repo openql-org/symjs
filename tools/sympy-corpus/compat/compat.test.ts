@@ -2,15 +2,15 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * Computes the SymPy compatibility metrics and writes compat/REPORT.md and
- * compat/report.json. Run with `bun run compat`.
+ * Computes the SymPy compatibility metrics and writes docs/doctest-compat-report.md and
+ * tools/sympy-corpus/compat/results/report.json. Run with `bun run corpus:compat`.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { runBaseChecks } from './base-scope';
-import { runOdeChecks } from '../tools/sympy-corpus/ode-checks';
-import { evidenceFor, adapterInventory } from '../tools/sympy-corpus/adapter-audit';
+import { runOdeChecks } from '../ode-checks';
+import { evidenceFor, adapterInventory } from '../adapter-audit';
 
 type FileCoverage = {
   path: string;
@@ -42,10 +42,10 @@ function categoryOf(fullPath: string): string {
 
 /** Per-file coverage from coverage/coverage-summary.json (written by `bun run coverage`). */
 function readCoverage(): { files: FileCoverage[] } | undefined {
-  const url = new URL('../coverage/coverage-summary.json', import.meta.url);
+  const url = new URL('../../../coverage/coverage-summary.json', import.meta.url);
   if (!existsSync(url)) return undefined;
   const data = JSON.parse(readFileSync(url, 'utf8')) as Record<string, Record<string, { total: number; pct: number }>>;
-  const root = new URL('..', import.meta.url).pathname;
+  const root = new URL('../../..', import.meta.url).pathname;
   const files: FileCoverage[] = [];
   for (const [abs, v] of Object.entries(data)) {
     if (abs === 'total') continue;
@@ -58,9 +58,9 @@ function readCoverage(): { files: FileCoverage[] } | undefined {
   return { files };
 }
 import { expect, it } from 'vitest';
-import { Case, Outcome, counterpartFor, hasCounterpart, runCase } from '../tools/sympy-corpus/harness';
-import { PORTS } from '../tools/sympy-corpus/ports';
-import { scopeLines, scopeSummary, type ScopeInventory } from '../tools/sympy-reference/scope-report';
+import { Case, Outcome, counterpartFor, hasCounterpart, runCase } from '../harness';
+import { PORTS } from '../ports';
+import { scopeLines, scopeSummary, type ScopeInventory } from '../../sympy-reference/scope-report';
 
 interface Corpus {
   sympy: string;
@@ -74,7 +74,7 @@ const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'od
 // a rate below 100% never prints as 100.0%
 const pct = (a: number, b: number) => (b === 0 ? '-' : `${(a < b ? Math.min((100 * a) / b, 99.9) : 100).toFixed(1)}%`);
 
-/** Cases and APIs that symjs does not support yet (compat/known-gaps.json). */
+/** Cases and APIs that symjs does not support yet (tools/sympy-corpus/doctest-known-gaps.json). */
 interface KnownGaps {
   cases: string[];
   api: string[];
@@ -91,7 +91,7 @@ const caseKey = (c: Case): string => `${caseLabel(c)} #${createHash('sha256').up
  * probability mass function at x. Sampling examples require external libraries
  * and are omitted by the extractor as random output or explicit +SKIP examples.
  */
-const OUT_OF_SCOPE: Readonly<Record<string, string>> = JSON.parse(readFileSync(new URL('../tools/sympy-reference/doctest-exclusions.json', import.meta.url), 'utf8'));
+const OUT_OF_SCOPE: Readonly<Record<string, string>> = JSON.parse(readFileSync(new URL('../../sympy-reference/doctest-exclusions.json', import.meta.url), 'utf8'));
 
 const apiKey = (a: { name: string; category: string; owner?: string }): string => `${a.category}: ${a.owner ? a.owner + ':' : ''}${a.name}`;
 /**
@@ -103,14 +103,14 @@ const OUT_OF_SCOPE_API: Readonly<Record<string, string>> = {
 };
 
 it('computes SymPy compatibility metrics', () => {
-  const corpus: Corpus = JSON.parse(readFileSync(new URL('../tools/sympy-corpus/corpus.json', import.meta.url), 'utf8'));
+  const corpus: Corpus = JSON.parse(readFileSync(new URL('../corpus.json', import.meta.url), 'utf8'));
   const extractedCalls = corpus.cases.length;
   corpus.cases = corpus.cases.filter((c) => OUT_OF_SCOPE[caseLabel(c)] === undefined);
   corpus.api = corpus.api.filter((a) => OUT_OF_SCOPE_API[apiKey(a)] === undefined);
   const results = corpus.cases.map((c) => ({ c, o: runCase(c) as Outcome, evidence: evidenceFor(c) }));
   const verifiedPass = results.filter(({ o, evidence }) => (o.status === 'pass' || o.status === 'equivalent') && (evidence === 'public-call' || evidence === 'reviewed-conversion')).length;
-  const inventory: ScopeInventory = JSON.parse(readFileSync(new URL('../tools/sympy-reference/scope-inventory.json', import.meta.url), 'utf8'));
-  const capabilities = JSON.parse(readFileSync(new URL('../tools/sympy-reference/capabilities.json', import.meta.url), 'utf8')) as { areas: { area: string; status: string; tested: string[]; remaining: string[]; outOfScope?: string[]; tests: string[] }[] };
+  const inventory: ScopeInventory = JSON.parse(readFileSync(new URL('../../sympy-reference/scope-inventory.json', import.meta.url), 'utf8'));
+  const capabilities = JSON.parse(readFileSync(new URL('../../sympy-reference/capabilities.json', import.meta.url), 'utf8')) as { areas: { area: string; status: string; tested: string[]; remaining: string[]; outOfScope?: string[]; tests: string[] }[] };
   const evidenceCounts = Object.fromEntries(['public-call', 'reviewed-conversion', 'harness-computation', 'unreviewed-adapter', 'unreviewed-translation'].map((evidence) => [evidence, results.filter((r) => r.evidence === evidence).length]));
   const apiEvidence = corpus.api.map((a) => ({ ...a, counterpart: counterpartFor(a) ?? null, status: counterpartFor(a) ? 'present' : 'unverified-or-absent', directCases: corpus.cases.filter((c) => c.category === a.category && c.fn === a.name).length }));
   const ported = corpus.cases.filter((c) => PORTS[`${c.module}:${c.src}`]).length;
@@ -159,13 +159,13 @@ it('computes SymPy compatibility metrics', () => {
 
   const cats = [...rows.keys()].sort((a, b) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b));
   const lines: string[] = [];
-  lines.push('# SymPy compatibility report', '');
-  lines.push(`Reference: SymPy ${corpus.sympy}. Generated by \`bun run compat\`.`, '');
+  lines.push('# SymPy doctest agreement and API presence (`bun run corpus:compat`)', '');
+  lines.push(`Reference: SymPy ${corpus.sympy}.`, '');
   lines.push(
     '- **Corpus result agreement** (includes unaudited harness code): share of SymPy doctest examples (public API calls in the in-scope modules) for which symjs gives the same result as SymPy: either the same `str()` output (**exact**) or a mathematically equivalent value in another form (**equivalent**: equal at test points respecting the symbol assumptions, or `simplify(a - b) == 0`; sets and solution lists compared without regard to order; for `dsolve`, a solution that satisfies the equations with as many integration constants, like SymPy `checkodesol`, which also accepts a correct solution where SymPy prints a wrong one). A result left unevaluated (`Integral`, `Limit`, `Sum`, ...) where SymPy computes a value is a failure, as are cases whose arguments symjs cannot represent. The **exact** rate is reported alongside (`packages/symjs/tests/sympy-equivalent.ts`).',
     '- **JavaScript translations**: doctests whose setup is Python code the extractor cannot serialize (user-defined classes, Python lambdas and functions as arguments, SymPy-internal containers) run as hand-written translations to the symjs public API (`tools/sympy-corpus/ports.ts`) and are compared with SymPy\'s output like the other cases.',
     '- **API presence** (not behavioral compatibility): share of in-scope public SymPy names (functions, classes, `Expr`/`Matrix` methods) that have a symjs counterpart.',
-    '- **Base scope checks**: behaviors the base module is meant to guarantee (assumptions, non-commutativity, bound variables, unevaluated objects, extension nodes, ...), checked against SymPy output (`compat/base-scope.ts`).',
+    '- **Base scope checks**: behaviors the base module is meant to guarantee (assumptions, non-commutativity, bound variables, unevaluated objects, extension nodes, ...), checked against SymPy output (`tools/sympy-corpus/compat/base-scope.ts`).',
     '- **ODE checks**: representative equations for each SymPy `dsolve` hint (`tools/sympy-corpus/ode-checks.json`, generated by `tools/sympy-reference/generators/gen_ode_checks.py`). A check passes when the solution is printed like SymPy\'s (**exact**) or, in another form, satisfies the equation with as many integration constants (**equivalent**, like SymPy `checkodesol`).',
     '- **Fully covered**: source files whose unit tests reach 100% coverage. This measures test coverage, not SymPy behavior.',
     '',
@@ -183,7 +183,7 @@ it('computes SymPy compatibility metrics', () => {
     '| Reason | Statements |', '|---|---:|',
     ...Object.entries(corpus.extraction.reasons).map(([reason, n]) => `| ${reason} | ${n} |`), '',
     '## Public API evidence', '',
-    `Names without a directly named corpus case: ${apiEvidence.filter((a) => a.directCases === 0).length}/${apiEvidence.length}. A method exercised under another name may still have unit tests; name presence alone does not establish correctness. Concrete export/member paths are recorded in report.json; an unmapped name is unverified or absent, not proof that the mathematical operation is unavailable.`, '',
+    `Names without a directly named corpus case: ${apiEvidence.filter((a) => a.directCases === 0).length}/${apiEvidence.length}. A method exercised under another name may still have unit tests; name presence alone does not establish correctness. Concrete export/member paths are recorded in tools/sympy-corpus/compat/results/report.json; an unmapped name is unverified or absent, not proof that the mathematical operation is unavailable.`, '',
     '| Execution route | Cases |', '|---|---:|',
     ...Object.entries(evidenceCounts).map(([kind, n]) => `| ${kind} | ${n} |`), '',
     'Every manual adapter is listed in `adapter-inventory.json`. Remaining mathematical helpers are quarantined from the verified count until migrated into public APIs. A change to adapters must update that inventory.', '',
@@ -259,9 +259,10 @@ it('computes SymPy compatibility metrics', () => {
     lines.push(`| \`${fn}\` | ${m.category} | ${m.n} |`);
   }
   lines.push('');
-  writeFileSync(new URL('./REPORT.md', import.meta.url), lines.join('\n'));
+  mkdirSync(new URL('./results/', import.meta.url), { recursive: true });
+  writeFileSync(new URL('../../../docs/doctest-compat-report.md', import.meta.url), lines.join('\n'));
   writeFileSync(
-    new URL('./report.json', import.meta.url),
+    new URL('./results/report.json', import.meta.url),
     JSON.stringify(
       {
         sympy: corpus.sympy,
@@ -285,19 +286,19 @@ it('computes SymPy compatibility metrics', () => {
   );
   console.log(lines.slice(0, 8 + cats.length + 4).join('\n'));
   expect(total.cases).toBeGreaterThan(0);
-  // Known gaps (compat/known-gaps.json): cases and APIs not supported yet. A failure that is not listed is a
+  // Known gaps (tools/sympy-corpus/doctest-known-gaps.json): cases and APIs not supported yet. A failure that is not listed is a
   // regression; a listed entry that now passes must be removed from the list, so the list only shrinks.
-  const gapsFile = new URL('./known-gaps.json', import.meta.url);
+  const gapsFile = new URL('../doctest-known-gaps.json', import.meta.url);
   const failing = results.filter(({ o }) => o.status !== 'pass' && o.status !== 'equivalent').map(({ c }) => caseKey(c)).sort();
   const missingApi = corpus.api.filter((a) => !hasCounterpart(a)).map(apiKey).sort();
   if (process.env['UPDATE_KNOWN_GAPS']) writeFileSync(gapsFile, JSON.stringify({ cases: failing, api: missingApi }, null, 1) + '\n');
   const gaps: KnownGaps = JSON.parse(readFileSync(gapsFile, 'utf8'));
   const knownCases = new Set(gaps.cases);
   const knownApi = new Set(gaps.api);
-  expect(failing.filter((k) => !knownCases.has(k)), 'SymPy behavior regressions (not in known-gaps.json)').toEqual([]);
-  expect(gaps.cases.filter((k) => !failing.includes(k)), 'fixed cases still listed in known-gaps.json').toEqual([]);
-  expect(missingApi.filter((k) => !knownApi.has(k)), 'SymPy API coverage regressions (not in known-gaps.json)').toEqual([]);
-  expect(gaps.api.filter((k) => !missingApi.includes(k)), 'APIs now supported but still listed in known-gaps.json').toEqual([]);
+  expect(failing.filter((k) => !knownCases.has(k)), 'SymPy behavior regressions (not in doctest-known-gaps.json)').toEqual([]);
+  expect(gaps.cases.filter((k) => !failing.includes(k)), 'fixed cases still listed in doctest-known-gaps.json').toEqual([]);
+  expect(missingApi.filter((k) => !knownApi.has(k)), 'SymPy API coverage regressions (not in doctest-known-gaps.json)').toEqual([]);
+  expect(gaps.api.filter((k) => !missingApi.includes(k)), 'APIs now supported but still listed in doctest-known-gaps.json').toEqual([]);
   expect(baseFail, 'base scope regressions').toEqual([]);
   expect(odeFail, 'ODE regressions').toEqual([]);
 });

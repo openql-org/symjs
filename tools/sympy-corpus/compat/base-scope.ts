@@ -7,11 +7,11 @@
  * unevaluated objects, extension nodes, ...). Each check compares symjs
  * with the output of SymPy 1.14 for the same input. These complement the
  * doctest-based behavior compatibility and are reported separately in
- * compat/REPORT.md ("Base scope checks").
+ * docs/doctest-compat-report.md ("Base scope checks").
  */
 
-import * as sj from '../packages/symjs/src';
-import { Expr, Sym } from '../packages/symjs/src';
+import * as sj from '../../../packages/symjs/src';
+import { Expr, Sym } from '../../../packages/symjs/src';
 
 export type BaseCheck = { area: string; name: string; expected: string; run: () => unknown };
 
